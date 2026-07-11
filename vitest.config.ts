@@ -19,7 +19,13 @@ export default defineConfig({
         'src/adapters/**',
         'src/types/**',
         'src/inline/runtime.generated.ts',
-        // Field-renderer registry is a thin map; fully exercised by lifecycle tests in Phase 10.
+        // Type-only interface module (no executable statements).
+        'src/client/config.ts',
+        // Build-time tooling, not shipped runtime code. It is exercised
+        // end-to-end (CLI subprocess + ts-morph program tests), but v8
+        // coverage cannot attribute subprocess execution to these files.
+        // The thresholds below police the shipped browser/server runtime.
+        'src/codegen/**',
       ],
       thresholds: {
         lines: 95,
