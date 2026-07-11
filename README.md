@@ -371,6 +371,14 @@ Bundle-size note: `import … from 'payload-live-preview/core'` is a lighter ent
 
 All three framework wirings are E2E-tested against real apps in `examples/` (Astro 7, Next.js 16, SvelteKit 2 — Chromium, Firefox and WebKit).
 
+**How the protocol coverage is layered** (so you know exactly what's proven):
+
+1. **Browser E2E** (`tests/e2e/`) drives a real browser + real iframe: `postMessage → runtime → DOM`. Its `/admin` page *emulates* the Payload admin.
+2. **Real-message contract test** (`tests/integration/real-payload-protocol.test.ts`) feeds a message **captured verbatim from a running Payload 3.85 admin** through the real `MessageBus` + runtime — closing the "does it handle the shape Payload actually sends?" gap (envelope quirks included: `collectionSlug` absent on a global, `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields).
+3. **Weekly protocol-watch** (`.github/workflows/protocol-watch.yml`) asserts the wire-format invariants against `@payloadcms/live-preview@latest` **and `@canary`** (Payload 4.0 pre-releases).
+
+A full browser-in-browser E2E against a live Payload backend (real admin driving our runtime end to end) has been verified manually against a real Payload 3.85 + Astro deployment; automating that tier in CI (dockerised Payload) is a tracked follow-up.
+
 ## Security model
 
 - **Origin validation** — every incoming `postMessage` is checked against explicit `allowedOrigins` plus (in dev) a localhost pattern. `document.referrer` is a **zero-config fallback only**: the moment you configure explicit origins, the referrer is ignored — a foreign site framing your page can never widen a pinned allow-list. After the first valid handshake the detector locks to that exact origin. ⚠️ In referrer-fallback mode any site that frames the page becomes a trusted sender — the runtime logs a warning; set explicit `allowedOrigins` and serve a `frame-ancestors` CSP in production (the adapters do the latter by default on preview responses).

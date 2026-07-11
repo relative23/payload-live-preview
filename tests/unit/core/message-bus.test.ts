@@ -75,6 +75,22 @@ describe('MessageBus — receive', () => {
     expect(onUpdate).toHaveBeenCalledWith(msg, TRUSTED);
   });
 
+  it('treats null optional scalars as absent (real global sends collectionSlug undefined/null)', () => {
+    // A global's message carries collectionSlug: undefined; a JSON round-trip
+    // turns that into null. Both must be accepted, not dropped as malformed.
+    const msg = {
+      type: 'payload-live-preview' as const,
+      data: { title: 'x' },
+      globalSlug: 'homepage',
+      collectionSlug: null,
+      locale: 'de',
+      externallyUpdatedRelationship: null,
+    };
+    window.dispatchEvent(makeMessage(msg, TRUSTED));
+    expect(onUpdate).toHaveBeenCalledWith(msg, TRUSTED);
+    expect(onInvalid).not.toHaveBeenCalled();
+  });
+
   it('routes payload-live-preview messages to onUpdate', () => {
     const message = { type: 'payload-live-preview' as const, data: { title: 'x' } };
     window.dispatchEvent(makeMessage(message, TRUSTED));

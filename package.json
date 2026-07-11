@@ -1,6 +1,6 @@
 {
   "name": "payload-live-preview",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Live preview for Payload CMS in Astro and any SSR/static frontend (SvelteKit, Nuxt, Next.js, plain HTML). Patches the DOM live, no rebuild.",
   "author": "relative23",
   "license": "MIT",

@@ -1,0 +1,77 @@
+{
+  "_comment": "Captured verbatim from a REAL Payload 3.85 admin (@payloadcms/ui LivePreview/Window) editing a global's live preview. The envelope (type, data, globalSlug, collectionSlug-present-but-undefined for a global, locale, externallyUpdatedRelationship: null) and the Lexical node field shapes reproduce exactly what the admin posts. Used by tests/integration/real-payload-protocol.test.ts to prove our runtime handles the real wire format, not just the emulated E2E fixture.",
+  "type": "payload-live-preview",
+  "globalSlug": "homepage",
+  "collectionSlug": null,
+  "locale": "de",
+  "externallyUpdatedRelationship": null,
+  "data": {
+    "id": "1",
+    "_status": "published",
+    "introTitle": "Ihr Ort für Thai-Massage und Entspannung in München",
+    "introText": {
+      "root": {
+        "type": "root",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "direction": "ltr",
+        "children": [
+          {
+            "type": "paragraph",
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "direction": "ltr",
+            "children": [
+              {
+                "mode": "normal",
+                "text": "Willkommen bei Sala Thai Massage & Spa in München.",
+                "type": "text",
+                "style": "",
+                "detail": 0,
+                "format": 0,
+                "version": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "faq": [
+      {
+        "id": "69d5a17593d036002f92dda0",
+        "question": "Was ist der Unterschied zwischen Thai-Massage und Aromaöl-Massage?",
+        "answer": {
+          "root": {
+            "type": "root",
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "direction": "ltr",
+            "children": [
+              {
+                "type": "paragraph",
+                "format": "",
+                "indent": 0,
+                "version": 1,
+                "direction": "ltr",
+                "children": [
+                  {
+                    "mode": "normal",
+                    "text": "Die traditionelle Thai-Massage arbeitet mit Druck entlang der Energielinien; die Aromaöl-Massage mit warmen Ölen.",
+                    "type": "text",
+                    "style": "",
+                    "detail": 0,
+                    "format": 0,
+                    "version": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

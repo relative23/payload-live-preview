@@ -1,5 +1,23 @@
 # payload-live-preview
 
+## 1.0.3
+
+### Patch Changes
+
+- Real-Payload protocol coverage + validation robustness.
+
+  - **New contract test** (`tests/integration/real-payload-protocol.test.ts`)
+    runs a message captured **verbatim from a running Payload 3.85 admin**
+    through the real MessageBus + runtime, asserting text, rich-text
+    (real Lexical) and array rendering. This closes the gap the emulated
+    E2E fixture left open — "does the runtime handle the shape Payload
+    actually sends?" — and documents the layered protocol coverage in the
+    README.
+  - **Guard robustness:** optional scalar fields now treat `null` the same
+    as absent. A real global sends `collectionSlug: undefined`; a JSON
+    round-trip or proxy can turn that into `null`. Both are accepted
+    rather than dropped as malformed.
+
 ## 1.0.2
 
 ### Patch Changes

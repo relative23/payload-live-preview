@@ -205,20 +205,30 @@ function isObjectMessage(value: unknown): value is { type: string } {
 /**
  * Full guard for a `payload-live-preview` message. Requires `data` to be
  * a plain object when present (a non-object `data` — string, array,
- * number — is rejected), and the optional scalar fields to have the
- * right primitive types. Unknown extra fields are tolerated.
+ * number — is rejected), and each optional scalar to have the right
+ * primitive type *or* be absent. `null` counts as absent: the real
+ * Payload admin sends `collectionSlug: undefined` for a global, and a
+ * JSON round-trip (or some serializers) turns that into `null` — both
+ * mean "no value", not "malformed". Unknown extra fields (e.g.
+ * `externallyUpdatedRelationship`) are tolerated.
  */
 function isLivePreviewMessage(value: { type: string }): value is PayloadLivePreviewMessage {
   const v = value as Record<string, unknown>;
-  if (v['data'] !== undefined && !isPlainObject(v['data'])) return false;
-  if (v['fieldSchemaJSON'] !== undefined && !Array.isArray(v['fieldSchemaJSON'])) return false;
-  if (v['globalSlug'] !== undefined && typeof v['globalSlug'] !== 'string') return false;
-  if (v['collectionSlug'] !== undefined && typeof v['collectionSlug'] !== 'string') return false;
-  if (v['locale'] !== undefined && typeof v['locale'] !== 'string') return false;
-  if (v['ready'] !== undefined && typeof v['ready'] !== 'boolean') return false;
-  if (v['previewToken'] !== undefined && typeof v['previewToken'] !== 'string') return false;
-  if (v['protocolVersion'] !== undefined && typeof v['protocolVersion'] !== 'number') return false;
+  if (v['data'] !== undefined && v['data'] !== null && !isPlainObject(v['data'])) return false;
+  if (!optionalTypeOk(v['fieldSchemaJSON'], (x) => Array.isArray(x))) return false;
+  if (!optionalTypeOk(v['globalSlug'], (x) => typeof x === 'string')) return false;
+  if (!optionalTypeOk(v['collectionSlug'], (x) => typeof x === 'string')) return false;
+  if (!optionalTypeOk(v['locale'], (x) => typeof x === 'string')) return false;
+  if (!optionalTypeOk(v['ready'], (x) => typeof x === 'boolean')) return false;
+  if (!optionalTypeOk(v['previewToken'], (x) => typeof x === 'string')) return false;
+  if (!optionalTypeOk(v['protocolVersion'], (x) => typeof x === 'number')) return false;
   return true;
+}
+
+/** `undefined`/`null` (absent) pass; otherwise the value must match `check`. */
+function optionalTypeOk(value: unknown, check: (v: unknown) => boolean): boolean {
+  if (value === undefined || value === null) return true;
+  return check(value);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
