@@ -20,9 +20,6 @@ export default defineConfig({
       ],
       debug: true,
       debounceMs: 25,
-      // For this demo a long heartbeat keeps the integration test
-      // deterministic (no surprise disconnects during scripted updates).
-      heartbeatMs: 10 * 60 * 1000,
     }),
   ],
 });

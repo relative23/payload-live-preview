@@ -14,6 +14,8 @@ Inbound `postMessage` events are dropped unless `event.origin` matches one of:
 
 After the first valid update, the detector **locks** to that exact origin. Subsequent messages from any other origin (including ones in the original allow-list) are dropped.
 
+⚠️ **Referrer-only trust:** when no explicit origins are configured and dev-mode matching is off, the referrer is the only trust source — and `document.referrer` always names whoever actually framed the page. Any site that embeds the preview page in an iframe could then post (sanitised) updates into it. The runtime logs a console warning in this configuration. Mitigations: set explicit `allowedOrigins`, and serve a `frame-ancestors` CSP so only the admin may frame the page (the adapters do this by default on preview responses).
+
 ### 2. Message-shape validation
 
 `MessageBus` validates that:
@@ -48,12 +50,13 @@ Everything else — `javascript:`, `data:`, `vbscript:`, `file:`, `blob:`, `abou
 
 ### 5. CSP integration
 
-Every adapter generates a cryptographic nonce per request via Web Crypto, builds:
+On preview responses, adapters merge `frame-ancestors 'self' <admin-origins>` into any existing `Content-Security-Policy` header — as a **union** with the existing directive's sources, never clobbering them (`mergeCspHeader`). Non-preview responses are left untouched.
 
-- `frame-ancestors 'self' <admin-origins>`
-- `script-src 'self' 'nonce-…' 'strict-dynamic' <extras>`
+Full `script-src` management is opt-in (`manageCsp: 'full'`): a per-request cryptographic nonce (Web Crypto, 128-bit) builds `script-src 'self' 'nonce-…' <extras>`. `'strict-dynamic'` is a further opt-in (`strictDynamic: true`) because under CSP 3 it makes browsers ignore `'self'` and host sources — framework hydration scripts without a nonce would break. Only enable it on fully nonce-disciplined pages.
 
-…and merges them into any existing `Content-Security-Policy` header. The CSP-3 `'strict-dynamic'` recipe lets the consumer drop `'unsafe-inline'` entirely.
+### 5b. Policed attribute writes
+
+`data-payload-attribute` bindings write remote-controlled values into attributes. The writer refuses event handlers (`on*`), `style`, `srcdoc`, `formaction`, `form`, `id`, `name`, `is`, `srcset`, non-scalar values, and validates `href`/`src`/`poster`/`cite`/`action` through `isSafeUrl`.
 
 ### 6. Prototype-pollution guard
 

@@ -1,19 +1,32 @@
 # @relative23/payload-live-preview
 
-> State-of-the-art, framework-agnostic, schema-driven live preview for Payload CMS. Astro-first; works with Next.js, SvelteKit, Nuxt, and plain HTML.
+> Framework-agnostic live preview for Payload CMS. Astro-first; works with Next.js, SvelteKit, Nuxt, and plain HTML.
+
+Bind DOM elements to Payload fields with `data-payload-*` attributes; the runtime listens for the Payload admin's `postMessage` updates and patches the DOM in place — no framework re-render, no page reload.
 
 ## Highlights
 
 | | |
 |---|---|
-| **Single source of truth** | One TypeScript runtime compiled to a 34 KB IIFE at build time — no parallel inline/class implementations to drift. |
-| **Complete Lexical renderer** | 14 node types incl. `upload`, `relationship`, `block`, `autolink`, `tab`, indent, RTL — closes the gap vs. `@payloadcms/live-preview`. |
-| **Schema-driven** | Parses Payload's `fieldSchemaJSON`, walks groups/arrays/blocks/tabs, auto-resolves field types without DOM annotations. |
-| **Structural updates** | id-keyed array/block diff applied as minimal DOM patches with View-Transitions animation where supported. |
-| **Strict security** | 100 % security-coverage, CSP nonce + `'strict-dynamic'`, escape-by-default sanitizer with extended whitelist, prototype-pollution guard. |
+| **Single source of truth** | One TypeScript runtime compiled to a self-contained IIFE (~57 KB raw, ~19 KB gzipped) at build time — no parallel inline/class implementations to drift. |
+| **Payload 3.x native** | Optional REST data merging (`serverURL`) re-fetches populated documents exactly like the official client, so relationship and upload fields render as content, not as bare IDs. |
+| **Complete Lexical renderer** | 16 node types incl. `upload`, `relationship`, `block`, `autolink`, `tab`, indent, RTL — plus automatic rich-text detection, so `data-payload-field` alone is enough. |
+| **Preview-gated injection** | Server adapters inject the runtime only into preview requests (`?preview=true`, `Sec-Fetch-Dest: iframe`, admin referer) — production traffic is untouched. |
+| **Strict security** | Escape-by-default sanitizer with curated whitelist, URL and `srcset` validation, prototype-pollution guards, policed attribute writes, CSP helpers with union-merge. |
 | **Per-instance** | No module-level singletons — multiple clients coexist, `destroy()` only affects its own listeners. |
-| **Production-safe defaults** | Pattern-based localhost matching for dev, handshake-verified origin lock for prod, heartbeat + reconnect, off-screen replay queue. |
+| **Typed DSL + codegen** | `pll-codegen` emits TypeScript interfaces from your `payload.config.ts`; `bind<T>()` gives compile-time-checked field bindings. |
 | **First-class adapters** | Astro (integration + middleware), Next.js, SvelteKit, Nuxt — all share the same core. |
+
+## Compatibility
+
+| | Payload 2.x | Payload 3.x |
+|---|---|---|
+| Scalar field updates | ✅ | ✅ |
+| Rich text (Lexical) | ✅ | ✅ |
+| Relationship / upload population | ✅ (admin merges client-side) | ✅ with `serverURL` (REST merge) |
+| Schema-driven field typing (`fieldSchemaJSON`) | ✅ | — (3.x removed it; DOM heuristics + Lexical auto-detection take over) |
+
+Astro **4 – 7** (E2E-tested on 4.16 and 7.0), Node ≥ 18.18.
 
 ## Install
 
@@ -23,7 +36,7 @@ npm install @relative23/payload-live-preview
 
 ## Quick start
 
-### Astro (zero-config)
+### Astro
 
 ```ts
 // astro.config.mjs
@@ -34,6 +47,8 @@ export default defineConfig({
   integrations: [
     livePreview({
       allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+      // Payload 3.x: populate relationship/upload fields via REST merge
+      serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
     }),
   ],
 });
@@ -43,11 +58,37 @@ Annotate the elements you want bound:
 
 ```astro
 <h1 data-payload-field="title">{title}</h1>
-<div data-payload-field="body" data-payload-richtext>...</div>
+<div data-payload-field="body">…server-rendered rich text…</div>
 <img data-payload-field="hero" alt={alt} src={url} />
 ```
 
-That's it — the inline script auto-detects the iframe context and starts updating.
+That's it — the inline script auto-detects the iframe context and starts updating. Rich text is detected automatically from the value shape; `data-payload-richtext` is only needed to force it.
+
+The integration injects the script at build time into every page (it stays inert outside the admin iframe). If you prefer request-time injection that touches **only preview requests**, use the middleware instead of (not in addition to) the integration:
+
+```ts
+// src/middleware.ts
+import { createLivePreviewMiddleware } from '@relative23/payload-live-preview/astro';
+
+export const onRequest = createLivePreviewMiddleware({
+  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+  serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
+});
+```
+
+The middleware detects preview requests (`?preview=true` / `?draft=true` query, `Sec-Fetch-Dest: iframe`, or an admin referer), injects the script into their `<head>`, and merges a `frame-ancestors` CSP directive so the admin may embed the page. Everything else streams through untouched. Astro ≥ 5 prerendered pages are skipped automatically.
+
+If you already have your own middleware, compose with the exported building blocks instead:
+
+```ts
+import { isPreviewRequest, mergeCspHeader, buildFrameAncestors } from '@relative23/payload-live-preview';
+
+if (isPreviewRequest(request, { adminOrigins: [ADMIN] })) {
+  headers.set('content-security-policy', mergeCspHeader(existing, {
+    'frame-ancestors': buildFrameAncestors({ origins: [ADMIN] }),
+  }));
+}
+```
 
 ### Next.js (App Router)
 
@@ -58,6 +99,7 @@ import { createLivePreviewMiddleware } from '@relative23/payload-live-preview/ne
 
 const livePreview = createLivePreviewMiddleware({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
+  serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
 });
 
 export async function middleware(request: NextRequest) {
@@ -73,29 +115,53 @@ export async function middleware(request: NextRequest) {
 import { livePreviewHandle } from '@relative23/payload-live-preview/sveltekit';
 export const handle = livePreviewHandle({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
+  serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
 });
 ```
 
 ### Nuxt 3
 
 ```ts
-// server/middleware/live-preview.ts
-import { defineLivePreviewServerHandler } from '@relative23/payload-live-preview/nuxt';
-export default defineLivePreviewServerHandler({
-  allowedOrigins: [process.env.NUXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
-});
+// server/plugins/live-preview.ts
+import { livePreviewNitroPlugin } from '@relative23/payload-live-preview/nuxt';
+
+export default defineNitroPlugin(
+  livePreviewNitroPlugin({
+    allowedOrigins: [process.env.NUXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+    serverURL: process.env.NUXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+  }),
+);
 ```
 
-Embed the rendered script in your layout via `useHead`.
+The plugin hooks `render:html`, injects the script into preview responses, and merges the CSP header. For manual embedding use `renderLivePreviewScript()` with `useHead`.
 
 ### Plain HTML (advanced)
 
 ```ts
-import { generateInlineScript } from '@relative23/payload-live-preview';
+import { generateInlineScript, wrapWithScriptTag } from '@relative23/payload-live-preview';
 const script = generateInlineScript({
   allowedOrigins: ['https://admin.example.com'],
+  serverURL: 'https://admin.example.com',
 });
-// Inject into your template via `<script>${script}</script>` or `dangerouslySetInnerHTML`.
+// Inject via `<script>${script}</script>` — or wrapWithScriptTag(script, { nonce }).
+```
+
+## Payload 3.x: populated relationships (`serverURL`)
+
+Payload 3.x posts **raw form values** on every edit — relationship and upload fields arrive as bare IDs. Set `serverURL` (any adapter, the inline generator, or the client) and the runtime re-fetches each update through the Payload REST API (`X-Payload-HTTP-Method-Override: GET`, `credentials: 'include'` — the same strategy as the official `@payloadcms/live-preview` client). The response is the populated document.
+
+Requirements: the preview page must be able to reach the Payload API with the editor's credentials (same-site cookies, or CORS with `credentials`). On failure the runtime falls back to rendering the raw values. Tune with `apiRoute` (default `/api`) and `mergeDepth` (default `1`).
+
+## Draft documents on first load
+
+Live preview patches the DOM **after** the page has loaded — the initial server render is your job. If you use Payload drafts, fetch draft content when rendering a preview request, otherwise editors see stale published content until their first keystroke:
+
+```ts
+// Astro example — in your page/loader code
+const draft = isPreviewRequest(Astro.request) ? '&draft=true' : '';
+const doc = await fetch(`${CMS}/api/pages?where[slug][equals]=${slug}${draft}`, {
+  headers: preview ? { Authorization: `users API-Key ${previewKey}` } : {},
+});
 ```
 
 ## Data-attribute reference
@@ -104,16 +170,23 @@ const script = generateInlineScript({
 |-----------|---------|---------|
 | `data-payload-field` | Bind element to a Payload field path | `data-payload-field="hero.title"` |
 | `data-payload-type` | Force a specific renderer | `data-payload-type="image"` |
+| `data-payload-attribute` | Write the value into an attribute instead of content (unsafe attributes and URLs are refused) | `data-payload-attribute="datetime"` |
 | `data-payload-href` | Read `href` from a sibling field | `data-payload-href="ctaUrl"` |
 | `data-payload-src` | Read `src` from a sibling field | `data-payload-src="hero.url"` |
 | `data-payload-alt` | Read `alt` from a sibling field | `data-payload-alt="hero.alt"` |
-| `data-payload-richtext` | Render value as Lexical rich text | `data-payload-richtext` |
+| `data-payload-richtext` | Force Lexical rendering (usually auto-detected) | `data-payload-richtext` |
 | `data-payload-html` | Render value as sanitised HTML | `data-payload-html` |
 | `data-payload-array` | Treat value as an array | `data-payload-array` |
 | `data-payload-array-template` | HTML template per array item | `data-payload-array-template="<li>{{title}}</li>"` |
 | `data-payload-array-separator` | Separator for primitive arrays | `data-payload-array-separator=" · "` |
 | `data-payload-structural` | Use diff-based structural updates | `data-payload-structural` |
 | `data-payload-locale` | Override locale for this element | `data-payload-locale="de-AT"` |
+
+**Empty-field gotcha:** the runtime can only patch elements that exist. If your template renders a binding only when the field is non-empty, editing a previously-empty field has nowhere to land. Render the anchor unconditionally:
+
+```astro
+<div data-payload-field="subtitle">{subtitle ?? ''}</div>
+```
 
 ## Field types
 
@@ -141,14 +214,92 @@ await client.use({
 });
 ```
 
+## Typed bindings and codegen
+
+Generate interfaces straight from your Payload config:
+
+```bash
+npx pll-codegen --config ../backend/src/payload.config.ts --out src/lib/bind-types.ts
+```
+
+(`ts-morph` must be installed — it is an optional peer dependency. Flags: `-c/--config`, `-o/--out`, `--tsconfig`, `-q/--quiet`.)
+
+Then bind with compile-time checking:
+
+```astro
+---
+import { bind } from '@relative23/payload-live-preview';
+import type { Homepage } from '../lib/bind-types';
+---
+<h1 {...bind<Homepage>('heroTitle')}>{data.heroTitle}</h1>
+<img {...bind<Homepage>('heroImage', { attribute: 'src' })} />
+```
+
+`bind('title')` emits `data-payload-field="title"`; misspelled field names fail the build. `bindByPath<T>(d => d.hero.title)` is the rename-safe proxy variant. There is also an Astro codegen integration: `import { livePreviewCodegen } from '@relative23/payload-live-preview/codegen/astro'`.
+
+## Events and plugins
+
+```ts
+const client = new LivePreviewClient({ allowedOrigins: [ADMIN] });
+
+client.events.on('connect', (e) => console.log('connected to', e.origin));
+client.events.on('beforeUpdate', (e) => { if (frozen) e.cancel(); });
+client.events.on('documentSave', () => location.reload());
+```
+
+Events: `init` · `connect` · `disconnect` · `beforeUpdate` · `afterUpdate` · `elementUpdate` · `documentSave` · `cacheRefresh` · `error` · `destroy`.
+
+Built-in plugins:
+
+| Plugin | Effect |
+|--------|--------|
+| `highlightPlugin` | Flashes an outline on updated elements (respects reduced-motion). |
+| `debugPlugin` | Logs every lifecycle event to the console. |
+| `createAnalyticsPlugin()` | Collects update statistics, exposed via `getStats()`. |
+| `documentSavePlugin({ strategy })` | Reacts to admin saves: `'silent'` · `'reload'` · `'revalidate'` · `'fetch'`. |
+
+## Configuration reference
+
+Options accepted by `generateInlineScript`, the adapters, and `LivePreviewClient`:
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `allowedOrigins` | `[]` | Trusted admin origins (recommended in production). |
+| `serverURL` | — | Payload origin for REST data merging (Payload 3.x population). |
+| `apiRoute` | `/api` | REST route prefix used with `serverURL`. |
+| `mergeDepth` | `1` | Population depth used with `serverURL`. |
+| `debug` | `false` | Verbose console logging. |
+| `debounceMs` | `50` | Debounce window for incoming updates. |
+| `heartbeatMs` | `0` (off) | Idle timeout. Leave off — Payload sends no keepalive. |
+| `enableA11y` | `true` | `aria-live` region announcing connect/update/disconnect. |
+| `disableVisibilityGate` | `false` | Apply updates to off-screen elements immediately. |
+| `visibilityGateThreshold` | `50` | Cache size above which off-screen updates are queued. |
+| `intersectionRootMargin` | `'200px'` | Pre-render margin for the visibility gate. |
+| `disableReferrerDetection` | `false` | Opt out of `document.referrer` origin auto-detection. |
+| `disableLocalhostMatching` | `false` | Opt out of dev-mode localhost origin matching. |
+
+Adapter-only options: `inject` (`'preview-only'` default / `'always'`), `previewQueryParams`, `autoInject`, `shouldInject`, `manageCsp` (`'frame-ancestors'` default / `'full'` / `false`), `strictDynamic`, `frameAncestorsExtra`, `scriptSrcExtra`, `nonce`.
+
+Bundle-size note: `import … from '@relative23/payload-live-preview/core'` is a lighter entry without the Lexical renderer, plugins, and inline generator.
+
 ## Security model
 
-- **Origin validation** — every incoming `postMessage` is checked against an allow-list assembled from explicit origins, `document.referrer`, and (in dev) a localhost pattern. After the first valid handshake the detector locks to that exact origin.
-- **HTML sanitisation** — Lexical output and HTML-typed fields run through an isomorphic DOM sanitiser with a curated tag/attribute whitelist (includes `<img>`, `<figure>`, `<video>` for media; rejects `<script>`, `<form>`, `<iframe>`, `<svg>`, inline event handlers, `style` attributes).
-- **URL validation** — every URL that lands in `href`/`src`/`srcset`/`poster` must match `http(s)` / `mailto:` / `tel:` / relative; `javascript:`, `data:`, `vbscript:`, `file:`, `blob:` are explicitly rejected (case-insensitive, even with leading whitespace).
-- **CSP-friendly** — every adapter generates a per-request nonce and assembles `script-src 'self' 'nonce-…' 'strict-dynamic'` so consumers can drop `unsafe-inline` entirely. `frame-ancestors` is built automatically.
-- **No prototype pollution** — nested field lookups refuse `__proto__`, `prototype`, `constructor`.
+- **Origin validation** — every incoming `postMessage` is checked against an allow-list assembled from explicit origins, `document.referrer`, and (in dev) a localhost pattern. After the first valid handshake the detector locks to that exact origin. ⚠️ When the referrer is the *only* trust source, any site that frames the page becomes a trusted sender — the runtime logs a warning; set explicit `allowedOrigins` and serve a `frame-ancestors` CSP in production (the adapters do the latter by default on preview responses).
+- **HTML sanitisation** — Lexical output and HTML-typed fields run through an isomorphic DOM sanitiser with a curated tag/attribute whitelist (media tags allowed; `<script>`, `<form>`, `<iframe>`, `<svg>`, event handlers, `style` rejected; `srcset` candidates URL-validated).
+- **URL validation** — every URL that lands in `href`/`src`/`srcset`/`poster` must be `http(s)` / `mailto:` / `tel:` / relative; `javascript:`, `data:`, `vbscript:`, `file:`, `blob:` are rejected (case-insensitive, whitespace-tolerant). External links — including protocol-relative ones — get `rel="noopener noreferrer"`.
+- **Policed attribute writes** — `data-payload-attribute` refuses event handlers, `style`, `srcdoc`, `formaction`, `id`/`name` (DOM clobbering) and validates URL attributes.
+- **CSP-friendly** — adapters merge `frame-ancestors` for the admin origins without clobbering your existing policy; opt-in `manageCsp: 'full'` manages a per-request nonce'd `script-src` (`'strict-dynamic'` opt-in — it disables `'self'`/host sources in CSP 3).
+- **No prototype pollution** — nested field lookups refuse `__proto__`, `prototype`, `constructor`; incoming data is never merged into existing objects.
+
+Full details in [docs/security.md](docs/security.md). Report vulnerabilities per [SECURITY.md](SECURITY.md).
+
+## Troubleshooting
+
+- **Nothing updates** — open the browser console inside the preview iframe (enable `debug: true`). The most common causes: the admin origin is not in `allowedOrigins`; the page is not actually loaded in an iframe; the binding element does not exist (see the empty-field gotcha above — the runtime warns about orphan updates in debug mode).
+- **Relationship fields show IDs** — set `serverURL` (Payload 3.x sends unpopulated form values).
+- **`Referrer-Policy: no-referrer`** on the admin breaks zero-config origin detection — set `allowedOrigins` explicitly.
+- **Preview iframe refuses to load** — your host sets `X-Frame-Options` or a restrictive `frame-ancestors`. The adapters' CSP management overrides `frame-ancestors` on preview responses, but `X-Frame-Options: DENY` from a proxy must be removed for preview requests.
 
 ## License
 
-MIT
+MIT © relative23

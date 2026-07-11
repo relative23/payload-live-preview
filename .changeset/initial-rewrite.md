@@ -11,7 +11,7 @@ Complete rewrite toward `1.0.0`. Highlights:
 - **Schema-driven engine**: parses Payload's `fieldSchemaJSON`, walks
   arrays/blocks/groups/tabs, and applies id-keyed structural diffs with
   optional View-Transitions animation.
-- **Complete Lexical renderer**: 14 node types including `upload`,
+- **Complete Lexical renderer**: 16 node types including `upload`,
   `relationship`, `block`, `autolink`, `tab`, indent, RTL.
 - **Per-instance architecture**: every primitive is a class; no
   module-level singletons. `destroy()` only affects the calling
