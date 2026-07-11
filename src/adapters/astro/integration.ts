@@ -41,9 +41,7 @@ interface VitePluginLike {
 interface AstroConfigSetupContext {
   readonly injectScript: (stage: ScriptStage, content: string) => void;
   readonly addMiddleware?: (entry: { entrypoint: string; order: 'pre' | 'post' }) => void;
-  readonly updateConfig?: (config: {
-    vite?: { plugins?: VitePluginLike[] };
-  }) => void;
+  readonly updateConfig?: (config: { vite?: { plugins?: VitePluginLike[] } }) => void;
 }
 
 export interface AstroIntegrationLike {
@@ -89,10 +87,7 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
   };
 }
 
-function setupMiddlewareMode(
-  ctx: AstroConfigSetupContext,
-  options: LivePreviewAstroOptions,
-): void {
+function setupMiddlewareMode(ctx: AstroConfigSetupContext, options: LivePreviewAstroOptions): void {
   if (ctx.addMiddleware === undefined || ctx.updateConfig === undefined) {
     throw new Error(
       "payload-live-preview: mode 'middleware' needs Astro's addMiddleware/updateConfig " +

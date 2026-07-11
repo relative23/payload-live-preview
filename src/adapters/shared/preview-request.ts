@@ -71,9 +71,7 @@ export function isPreviewRequest(
   request: PreviewRequestLike,
   options: PreviewRequestOptions = {},
 ): boolean {
-  const signals = new Set<PreviewSignal>(
-    options.signals ?? ['query', 'fetch-dest', 'referer'],
-  );
+  const signals = new Set<PreviewSignal>(options.signals ?? ['query', 'fetch-dest', 'referer']);
   const queryParams = options.queryParams ?? DEFAULT_QUERY_PARAMS;
   const checkFetchDest = (options.checkFetchDest ?? true) && signals.has('fetch-dest');
 
