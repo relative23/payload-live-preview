@@ -107,6 +107,7 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
+    "test:e2e:real-payload": "playwright test --config playwright.real-payload.config.ts",
     "test:bench": "vitest bench tests/benchmarks",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",

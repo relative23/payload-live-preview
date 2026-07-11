@@ -78,9 +78,7 @@ describe('real Payload 3.x protocol', () => {
     runtime.start();
 
     // Dispatch the REAL captured message exactly as the admin would.
-    window.dispatchEvent(
-      new MessageEvent('message', { data: realMessage, origin: ADMIN_ORIGIN }),
-    );
+    window.dispatchEvent(new MessageEvent('message', { data: realMessage, origin: ADMIN_ORIGIN }));
     await vi.advanceTimersByTimeAsync(50);
 
     // 1. It was accepted and processed (connected + counted), no errors.

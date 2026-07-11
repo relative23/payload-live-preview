@@ -373,11 +373,12 @@ All three framework wirings are E2E-tested against real apps in `examples/` (Ast
 
 **How the protocol coverage is layered** (so you know exactly what's proven):
 
-1. **Browser E2E** (`tests/e2e/`) drives a real browser + real iframe: `postMessage → runtime → DOM`. Its `/admin` page *emulates* the Payload admin.
-2. **Real-message contract test** (`tests/integration/real-payload-protocol.test.ts`) feeds a message **captured verbatim from a running Payload 3.85 admin** through the real `MessageBus` + runtime — closing the "does it handle the shape Payload actually sends?" gap (envelope quirks included: `collectionSlug` absent on a global, `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields).
-3. **Weekly protocol-watch** (`.github/workflows/protocol-watch.yml`) asserts the wire-format invariants against `@payloadcms/live-preview@latest` **and `@canary`** (Payload 4.0 pre-releases).
+1. **Full running-Payload E2E** (`tests/real-payload/`, `npm run test:e2e:real-payload`) boots an **actual Payload 3.x admin** — `examples/payload-backend`, a self-contained SQLite Payload + Next.js server, seeded and auto-logged-in — opens its **real** Live Preview panel, types into real form fields, and asserts the cross-origin Astro preview iframe (our injected runtime) patches the DOM. No mock, no fixture, no stub: `real admin → real form → real postMessage → real iframe → runtime → DOM`, driven by Payload's own admin code.
+2. **Browser E2E** (`tests/e2e/`) drives a real browser + real iframe across Chromium, Firefox and WebKit: `postMessage → runtime → DOM`. Its `/admin` page *emulates* the Payload admin, so it can exercise edge cases (XSS, origin spoofing, every field type) faster than booting a full server.
+3. **Real-message contract test** (`tests/integration/real-payload-protocol.test.ts`) feeds a message **captured verbatim from a running Payload 3.85 admin** through the real `MessageBus` + runtime — the envelope quirks included: `collectionSlug` absent on a global, `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields.
+4. **Weekly protocol-watch** (`.github/workflows/protocol-watch.yml`) **executes** the real `@payloadcms/live-preview@latest` **and `@canary`** (Payload 4.0 pre-releases) and asserts their actual behaviour — the `ready` handshake, event discriminators, and `mergeData` REST request — still matches our runtime's invariants.
 
-A full browser-in-browser E2E against a live Payload backend (real admin driving our runtime end to end) has been verified manually against a real Payload 3.85 + Astro deployment; automating that tier in CI (dockerised Payload) is a tracked follow-up.
+Together these span the whole spectrum: tier 1 proves the real thing works end to end, tier 2 exhausts edge cases quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches drift the moment Payload ships it.
 
 ## Security model
 

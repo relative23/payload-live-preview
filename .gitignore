@@ -32,6 +32,7 @@ coverage/
 playwright-report/
 test-results/
 .vitest-cache/
+.playwright-mcp/
 
 # Tool caches
 .changeset/.cache/

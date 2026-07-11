@@ -93,6 +93,33 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  real-payload-e2e:
+    name: Real Payload E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      # The Astro preview fixture consumes the freshly built package
+      # (file:../.. dep); the Payload backend is a standalone server that
+      # generates its admin import map on boot via `e2e:serve`.
+      - run: npm install --no-audit --no-fund --prefix examples/astro-payload
+      - run: npm install --no-audit --no-fund --prefix examples/payload-backend
+      # Boots a real Payload 3.x admin + the Astro preview and drives the
+      # real postMessage protocol end to end (playwright.real-payload.config.ts).
+      - run: npm run test:e2e:real-payload
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-real-payload
+          path: playwright-report/
+          retention-days: 7
+
   build:
     name: Build
     runs-on: ubuntu-latest
