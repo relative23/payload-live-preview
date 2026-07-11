@@ -4,10 +4,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node >= 20.19](https://img.shields.io/badge/node-%3E%3D20.19-brightgreen)](package.json)
 [![Payload 2.x / 3.x](https://img.shields.io/badge/Payload-2.x%20%2F%203.x-black)](https://payloadcms.com)
+[![npm](https://img.shields.io/npm/v/payload-live-preview?color=cb3837&logo=npm)](https://www.npmjs.com/package/payload-live-preview)
 
-> Framework-agnostic live preview for Payload CMS. Astro-first; works with Next.js, SvelteKit, Nuxt, and plain HTML.
+> **Live preview for Payload CMS in Astro** — and any other server-rendered or static frontend (SvelteKit, Nuxt, Next.js, plain HTML).
 
-Bind DOM elements to Payload fields with `data-payload-*` attributes; the runtime listens for the Payload admin's `postMessage` updates and patches the DOM in place — no framework re-render, no page reload.
+**The missing piece for Astro + Payload.** The official live-preview packages are React/Vue hooks — great for a hydrated SPA, but useless for an Astro site. This package makes the CMS's real-time preview work where there is no client framework to re-render: annotate your `.astro` markup with `data-payload-field`, add one line to `astro.config.mjs`, and edits stream into the preview iframe as the editor types. No rebuild, no page reload, no React.
+
+Under the hood it's framework-agnostic — the same runtime drives SvelteKit, Nuxt, Next.js (static/SSR) and plain HTML — but Astro is the first-class, end-to-end-tested path.
+
+**→ New to this? Start with the [Astro + Payload live preview guide](docs/astro.md) — zero to working preview in five steps.**
 
 ## Highlights
 
