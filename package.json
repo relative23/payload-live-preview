@@ -1,6 +1,6 @@
 {
   "name": "@relative23/payload-live-preview",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0",
   "description": "State-of-the-art, framework-agnostic, schema-driven live preview for Payload CMS. Astro-first.",
   "author": "relative23",
   "license": "MIT",
