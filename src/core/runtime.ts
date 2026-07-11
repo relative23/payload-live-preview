@@ -156,6 +156,11 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     version: VERSION,
     destroy: () => {
       runtime.destroy();
+      // Clear the global handle so a later bootstrap starts a fresh
+      // runtime instead of returning this now-dead API. The property is
+      // defined `configurable: true` precisely so it can be removed here.
+      const w = window as { __livePreview?: LivePreviewGlobalApi };
+      if (w.__livePreview === api) delete w.__livePreview;
     },
     refresh: () => {
       runtime.refreshCache();

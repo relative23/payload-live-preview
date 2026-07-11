@@ -49,6 +49,32 @@ describe('MessageBus — receive', () => {
     expect(onInvalid).toHaveBeenCalledWith('shape', TRUSTED);
   });
 
+  it('rejects a payload-live-preview message whose data is not an object', () => {
+    // Regression: the shallow guard used to let non-object `data`
+    // through, contradicting `data?: Record<string, unknown>`.
+    for (const badData of ['not an object', 42, true, ['a']]) {
+      onUpdate.mockClear();
+      onInvalid.mockClear();
+      window.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: badData }, TRUSTED));
+      expect(onUpdate).not.toHaveBeenCalled();
+      expect(onInvalid).toHaveBeenCalledWith('shape', TRUSTED);
+    }
+  });
+
+  it('rejects a payload-live-preview message with a wrongly-typed scalar field', () => {
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: {}, locale: 123 }, TRUSTED),
+    );
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(onInvalid).toHaveBeenCalledWith('shape', TRUSTED);
+  });
+
+  it('accepts a well-formed message with an object data and correct scalars', () => {
+    const msg = { type: 'payload-live-preview' as const, data: { title: 'x' }, locale: 'de' };
+    window.dispatchEvent(makeMessage(msg, TRUSTED));
+    expect(onUpdate).toHaveBeenCalledWith(msg, TRUSTED);
+  });
+
   it('routes payload-live-preview messages to onUpdate', () => {
     const message = { type: 'payload-live-preview' as const, data: { title: 'x' } };
     window.dispatchEvent(makeMessage(message, TRUSTED));
@@ -167,6 +193,45 @@ describe('MessageBus — token validation', () => {
     );
     expect(onUpdate).not.toHaveBeenCalled();
     expect(onInvalid).toHaveBeenCalledWith('token', TRUSTED);
+  });
+
+  it('serialises async validations in arrival order (no race)', async () => {
+    // Message A arrives first but its validation resolves LATER than B's.
+    // Without serialisation, B would dispatch before A. The chain must
+    // preserve arrival order: A dispatched before B.
+    const dispatched: string[] = [];
+    const resolvers: Record<string, (ok: boolean) => void> = {};
+    const bus = new MessageBus((o) => o === TRUSTED, {
+      onUpdate: (msg) => {
+        dispatched.push((msg.data as { id: string }).id);
+      },
+      onDocumentEvent: () => {},
+      onInvalid: () => {},
+      validateToken: (token) =>
+        new Promise<boolean>((resolve) => {
+          resolvers[token!] = resolve;
+        }),
+    });
+    bus.attach();
+
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { id: 'A' }, previewToken: 'A' }, TRUSTED),
+    );
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { id: 'B' }, previewToken: 'B' }, TRUSTED),
+    );
+
+    // Resolve B FIRST — the out-of-order completion the bug depends on.
+    resolvers['B']!(true);
+    await new Promise((r) => setTimeout(r, 5));
+    // Nothing dispatched yet: the chain is still waiting on A.
+    expect(dispatched).toEqual([]);
+
+    resolvers['A']!(true);
+    await new Promise((r) => setTimeout(r, 5));
+    expect(dispatched).toEqual(['A', 'B']);
+
+    bus.detach();
   });
 });
 

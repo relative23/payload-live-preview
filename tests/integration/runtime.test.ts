@@ -103,6 +103,35 @@ describe('bootstrapInlineRuntime — preview context', () => {
     api?.destroy();
   });
 
+  it('destroy() clears window.__livePreview so a re-bootstrap starts fresh', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig();
+    const { bootstrapInlineRuntime } = await import('@core/runtime');
+
+    const first = bootstrapInlineRuntime();
+    expect(window.__livePreview).toBe(first);
+    first?.destroy();
+    // The global handle must be gone, not a dead API.
+    expect(window.__livePreview).toBeUndefined();
+
+    // A second bootstrap must produce a NEW, live runtime — not return
+    // the destroyed one — and actually process updates.
+    const second = bootstrapInlineRuntime();
+    expect(second).toBeDefined();
+    expect(second).not.toBe(first);
+    expect(window.__livePreview).toBe(second);
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: 'payload-live-preview', data: { title: 'after rebootstrap' } },
+        origin: TRUSTED,
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('after rebootstrap');
+    second?.destroy();
+  });
+
   it('processes a valid postMessage and updates the DOM', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ =

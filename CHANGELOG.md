@@ -1,5 +1,39 @@
 # payload-live-preview
 
+## 1.0.2
+
+### Patch Changes
+
+- Hardening from an external code review — closes five real gaps where
+  the implementation was weaker than its own comments/docs claimed:
+
+  - **Message validation is now genuinely strict.** A `payload-live-preview`
+    message whose `data` is a non-object (string/array/number) was
+    previously accepted; a full per-type guard now rejects it (and
+    wrongly-typed scalar fields) as `onInvalid('shape')`. The runtime
+    enforces `data?: Record<string, unknown>` instead of only asserting it.
+  - **Async preview-token validation is serialised in arrival order.**
+    Verdicts were dispatched independently, so a slower validation could
+    let a later update overtake an earlier one. They now run through a
+    single ordered chain.
+  - **`destroy()` clears `window.__livePreview`.** It was left pointing at
+    the dead API, so a later `bootstrapInlineRuntime()` returned the
+    destroyed instance and never restarted. The handle is now removed on
+    destroy, so re-bootstrap starts a fresh runtime.
+  - **Structural-diff state is genuinely per-instance.** The
+    `structural-array` renderer's diff memory (previous values + nested
+    store + warning set) moved from module-level `WeakMap`s into
+    per-`buildBuiltinRenderers()` closures, so two clients never share
+    state and a destroyed client leaves nothing at module scope — making
+    the "no module-level singletons" guarantee literally true.
+  - **Docs aligned to the code.** The message-bus, structural-applier and
+    README/security claims now describe exactly what the implementation
+    does.
+
+  No public API changes. New regression tests cover each fix (malformed
+  `data` drop, out-of-order async-validation ordering, destroy→rebootstrap,
+  and two-instance diff isolation).
+
 ## 1.0.1
 
 ### Patch Changes

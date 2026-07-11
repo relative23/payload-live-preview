@@ -23,14 +23,19 @@ import { checkboxRenderer } from './checkbox';
 import { dateRenderer } from './date';
 import { numberRenderer } from './number';
 import { arrayRenderer } from './array';
-import { structuralArrayRenderer } from './structural-array';
+import { createStructuralArrayRenderer } from './structural-array';
 import {
   buildBuiltinRenderers as buildRegistry,
   registerBuiltinRenderer,
   __resetBuiltinRenderersForTests,
 } from './registry';
 
-const BUILTIN: readonly FieldRenderer[] = [
+/**
+ * The stateless built-in renderers, shared safely across instances.
+ * The `structural-array` renderer is intentionally NOT here — it owns
+ * per-instance diff state, so it is constructed fresh per build (below).
+ */
+const STATELESS_BUILTIN: readonly FieldRenderer[] = [
   textRenderer,
   textareaRenderer,
   richTextRenderer,
@@ -47,15 +52,15 @@ const BUILTIN: readonly FieldRenderer[] = [
   numberRenderer,
   arrayRenderer,
   { ...arrayRenderer, name: 'blocks' },
-  structuralArrayRenderer,
 ];
 
 /**
- * Built-in renderer map. Calling this from the runtime adds every
- * concrete renderer to the registry and snapshots the result.
+ * Built-in renderer map. Called once per client/runtime; the
+ * `structural-array` renderer gets a fresh instance with its own diff
+ * state so nothing is shared between concurrent clients.
  */
 export function buildBuiltinRenderers(): Readonly<Record<string, FieldRenderer>> {
-  return buildRegistry(BUILTIN);
+  return buildRegistry([...STATELESS_BUILTIN, createStructuralArrayRenderer()]);
 }
 
 export { registerBuiltinRenderer, __resetBuiltinRenderersForTests };

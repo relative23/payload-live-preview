@@ -5,8 +5,12 @@
  *
  *   1. Subscribe to the `message` event and reject anything that does
  *      not come from a trusted origin (matcher injected by the caller).
- *   2. Validate message shape with type guards before exposing the
- *      payload to downstream code. Anything malformed is dropped.
+ *   2. Validate message shape with a per-type guard before exposing the
+ *      payload downstream: a `payload-live-preview` update must carry a
+ *      `data` object (or none, for the `ready` handshake); anything
+ *      whose `data` is a non-object is dropped as `'shape'`. So the
+ *      `PayloadLivePreviewMessage.data?: Record<string, unknown>` type
+ *      is genuinely enforced at runtime, not just asserted.
  *   3. Send the `ready` handshake to potential parent windows.
  *
  * The matcher pattern decouples origin policy from message handling:
@@ -22,7 +26,6 @@
 import type {
   PayloadLivePreviewMessage,
   PayloadDocumentEventMessage,
-  PayloadProtocolMessage,
 } from '@/types/payload-protocol';
 import { LIBRARY_PROTOCOL_VERSION } from './protocol-version';
 
@@ -44,8 +47,11 @@ export interface MessageHandlers {
    * update message must carry a `previewToken` that this function
    * approves; otherwise the message is dropped with reason `'token'`.
    *
-   * Returning a Promise is supported — the bus serialises validation
-   * per message. Validation errors are treated as rejection (silent).
+   * Returning a Promise is supported. Async validations are **serialised
+   * in arrival order** through a single chain, so update A is always
+   * dispatched before update B when A arrived first — even if B's
+   * validation would otherwise resolve sooner. Validation errors are
+   * treated as rejection (silent).
    */
   readonly validateToken?: (
     token: string | undefined,
@@ -58,6 +64,12 @@ export class MessageBus {
   readonly #handlers: MessageHandlers;
   readonly #boundListener: (event: MessageEvent) => void;
   #attached = false;
+  /**
+   * Tail of the async token-validation chain. Each gated update appends
+   * its validation to this promise, guaranteeing validations resolve —
+   * and updates dispatch — in the order the messages arrived.
+   */
+  #validationChain: Promise<void> = Promise.resolve();
 
   constructor(matcher: OriginMatcher, handlers: MessageHandlers) {
     this.#matcher = matcher;
@@ -122,10 +134,14 @@ export class MessageBus {
     }
     switch (data.type) {
       case 'payload-live-preview':
+        if (!isLivePreviewMessage(data)) {
+          this.#handlers.onInvalid?.('shape', origin);
+          return;
+        }
         this.#dispatchUpdate(data, origin);
         return;
       case 'payload-document-event':
-        this.#handlers.onDocumentEvent(data, origin);
+        this.#handlers.onDocumentEvent(data as PayloadDocumentEventMessage, origin);
         return;
       default:
         this.#handlers.onInvalid?.('type', origin);
@@ -152,25 +168,59 @@ export class MessageBus {
       this.#handlers.onInvalid?.('token', origin);
       return;
     }
+    // Synchronous verdicts dispatch immediately and keep the natural
+    // arrival order on their own.
     if (typeof approved === 'boolean') {
       if (approved) this.#handlers.onUpdate(message, origin);
       else this.#handlers.onInvalid?.('token', origin);
       return;
     }
-    void approved.then(
-      (ok) => {
-        if (ok) this.#handlers.onUpdate(message, origin);
-        else this.#handlers.onInvalid?.('token', origin);
-      },
-      () => {
+    // Async verdicts are appended to a single chain so they resolve —
+    // and dispatch — strictly in the order the messages arrived, even
+    // when a later message's validation would settle first.
+    this.#validationChain = this.#validationChain.then(async () => {
+      let ok: boolean;
+      try {
+        ok = await approved;
+      } catch {
         this.#handlers.onInvalid?.('token', origin);
-      },
-    );
+        return;
+      }
+      if (ok) this.#handlers.onUpdate(message, origin);
+      else this.#handlers.onInvalid?.('token', origin);
+    });
   }
 }
 
-function isObjectMessage(value: unknown): value is PayloadProtocolMessage {
+/**
+ * Shallow guard: is this an object carrying a string `type`? Enough to
+ * route by type; the per-type guards below enforce the payload shape.
+ */
+function isObjectMessage(value: unknown): value is { type: string } {
   if (typeof value !== 'object' || value === null) return false;
   if (!('type' in value)) return false;
   return typeof value.type === 'string';
+}
+
+/**
+ * Full guard for a `payload-live-preview` message. Requires `data` to be
+ * a plain object when present (a non-object `data` — string, array,
+ * number — is rejected), and the optional scalar fields to have the
+ * right primitive types. Unknown extra fields are tolerated.
+ */
+function isLivePreviewMessage(value: { type: string }): value is PayloadLivePreviewMessage {
+  const v = value as Record<string, unknown>;
+  if (v['data'] !== undefined && !isPlainObject(v['data'])) return false;
+  if (v['fieldSchemaJSON'] !== undefined && !Array.isArray(v['fieldSchemaJSON'])) return false;
+  if (v['globalSlug'] !== undefined && typeof v['globalSlug'] !== 'string') return false;
+  if (v['collectionSlug'] !== undefined && typeof v['collectionSlug'] !== 'string') return false;
+  if (v['locale'] !== undefined && typeof v['locale'] !== 'string') return false;
+  if (v['ready'] !== undefined && typeof v['ready'] !== 'boolean') return false;
+  if (v['previewToken'] !== undefined && typeof v['previewToken'] !== 'string') return false;
+  if (v['protocolVersion'] !== undefined && typeof v['protocolVersion'] !== 'number') return false;
+  return true;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

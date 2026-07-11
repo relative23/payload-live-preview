@@ -20,12 +20,13 @@ Note on preview detection and CSP: the adapters treat `Sec-Fetch-Dest: iframe` a
 
 ### 2. Message-shape validation
 
-`MessageBus` validates that:
+`MessageBus` validates, before routing:
 
-- `event.data` is an `object`,
-- `data.type` is one of `payload-live-preview` / `payload-document-event`,
+- `event.data` is an object with a string `type`;
+- `type` is `payload-live-preview` or `payload-document-event` (unknown types → `onInvalid('type')`);
+- for `payload-live-preview`, a full per-type guard runs: `data` must be a plain object when present (a string/array/number `data` is rejected as `onInvalid('shape')`), and each optional scalar (`locale`, `globalSlug`, `previewToken`, `protocolVersion`, …) must have the right primitive type.
 
-before routing further. Unknown types fall into an `onInvalid('type', origin)` callback for telemetry.
+So the `PayloadLivePreviewMessage.data?: Record<string, unknown>` contract is enforced at runtime, not merely asserted. When an async preview-token validator is configured, verdicts are serialised in message-arrival order so a slower validation cannot let a later update overtake an earlier one.
 
 ### 3. HTML sanitisation
 

@@ -23,7 +23,7 @@ Under the hood it's framework-agnostic — the same runtime drives SvelteKit, Nu
 | **Complete Lexical renderer** | 16 node types incl. `upload`, `relationship`, `block`, `autolink`, `tab`, indent, RTL — plus automatic rich-text detection, so `data-payload-field` alone is enough. |
 | **Preview-gated injection** | Server adapters inject the runtime only into preview requests (`?preview=true`, `Sec-Fetch-Dest: iframe`, admin referer) — production traffic is untouched. |
 | **Strict security** | Escape-by-default sanitizer with curated whitelist, URL and `srcset` validation, prototype-pollution guards, policed attribute writes, CSP helpers with union-merge. |
-| **Per-instance** | No module-level singletons — multiple clients coexist, `destroy()` only affects its own listeners. |
+| **Per-instance** | No shared mutable client state — event emitter, plugins, renderers, connection, and structural-diff memory all live on the instance. Multiple clients coexist; `destroy()` tears down only its own listeners and clears the `window.__livePreview` handle. (The only module-level state is deterministic, read-only lookup tables.) |
 | **Typed DSL + codegen** | `pll-codegen` emits TypeScript interfaces from your `payload.config.ts`; `bind<T>()` gives compile-time-checked field bindings. |
 | **First-class adapters** | Astro (integration + middleware), Next.js, SvelteKit, Nuxt — all share the same core. |
 

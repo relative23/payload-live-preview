@@ -6,52 +6,70 @@
  * container's `innerHTML` on every update, the renderer diffs the
  * previous and next item lists and applies the minimal patch.
  *
- * The previous state is held in a `WeakMap` keyed by the container —
- * each element therefore has its own diff history. The renderer is
- * also wrapped in a View-Transition so reorders animate where
- * supported.
+ * All diff memory (previous top-level values, nested-diff store, and
+ * the missing-template warning set) lives in closures created by
+ * `createStructuralArrayRenderer()` — one set per runtime instance, so
+ * two clients never share state and a destroyed client leaves nothing
+ * behind at module scope. The renderer is wrapped in a View-Transition
+ * so reorders animate where supported.
  *
  * @module @field-types/structural-array
  */
 
 import { runWithTransition } from '@core/view-transitions';
-import { applyStructuralPatches } from '@core/structural-applier';
+import {
+  applyStructuralPatches,
+  createStructuralStore,
+  type StructuralStore,
+} from '@core/structural-applier';
 import { diffArray } from '@schema/diff';
 import type { FieldRenderer } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 
-const previousValues = new WeakMap<Element, readonly unknown[]>();
-const warnedContainers = new WeakSet<Element>();
+/**
+ * Build a `structural-array` renderer with its own, instance-local diff
+ * state. Called once per `buildBuiltinRenderers()` (i.e. once per
+ * client/runtime), so nothing is shared across instances.
+ */
+export function createStructuralArrayRenderer(): FieldRenderer {
+  const previousValues = new WeakMap<Element, readonly unknown[]>();
+  const warnedContainers = new WeakSet<Element>();
+  const store: StructuralStore = createStructuralStore();
 
-const structuralArrayRenderer: FieldRenderer = {
-  name: 'structural-array',
-  render(target, value) {
-    if (!Array.isArray(value)) return;
-    const container = target.element;
-    const template = target.arrayTemplate;
-    if (template === undefined || template.length === 0) {
-      warnMissingTemplate(container, target.fieldName);
-      return;
-    }
-    const previous = previousValues.get(container) ?? [];
-    const patches = diffArray(previous, value);
-    if (patches.length === 0) {
-      previousValues.set(container, value.slice() as readonly unknown[]);
-      return;
-    }
-    void runWithTransition(() => {
-      applyStructuralPatches({
-        template,
-        container,
-        patches,
-        nextItems: value,
+  return {
+    name: 'structural-array',
+    render(target, value) {
+      if (!Array.isArray(value)) return;
+      const container = target.element;
+      const template = target.arrayTemplate;
+      if (template === undefined || template.length === 0) {
+        warnMissingTemplate(warnedContainers, container, target.fieldName);
+        return;
+      }
+      const previous = previousValues.get(container) ?? [];
+      const patches = diffArray(previous, value);
+      if (patches.length === 0) {
+        previousValues.set(container, value.slice() as readonly unknown[]);
+        return;
+      }
+      void runWithTransition(() => {
+        applyStructuralPatches({
+          template,
+          container,
+          patches,
+          nextItems: value,
+          store,
+        });
       });
-    });
-    previousValues.set(container, value.slice() as readonly unknown[]);
-  },
-};
+      previousValues.set(container, value.slice() as readonly unknown[]);
+    },
+  };
+}
 
-function warnMissingTemplate(container: Element, fieldName: string): void {
+function warnMissingTemplate(
+  warnedContainers: WeakSet<Element>,
+  container: Element,
+  fieldName: string,
+): void {
   if (warnedContainers.has(container)) return;
   warnedContainers.add(container);
   console.warn(
@@ -62,7 +80,3 @@ function warnMissingTemplate(container: Element, fieldName: string): void {
       `materialise new items.`,
   );
 }
-
-registerBuiltinRenderer(structuralArrayRenderer);
-
-export { structuralArrayRenderer };

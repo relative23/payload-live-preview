@@ -86,4 +86,30 @@ describe('structural-array renderer', () => {
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  it('keeps diff state per instance: two builds do not share memory', () => {
+    // Two independent runtimes (each its own buildBuiltinRenderers()) render
+    // the SAME element. If diff state were module-level, instance B would see
+    // instance A's "previous" and compute an empty diff, wrongly skipping the
+    // rebuild. Genuine per-instance state means B rebuilds from scratch.
+    const rendererA = buildBuiltinRenderers()['structural-array']!;
+    const rendererB = buildBuiltinRenderers()['structural-array']!;
+    expect(rendererA).not.toBe(rendererB);
+
+    const ul = document.createElement('ul');
+    const items = [
+      { id: 1, label: 'a' },
+      { id: 2, label: 'b' },
+    ];
+    rendererA.render(target(ul, template), items, ctx());
+    expect([...ul.children].map((c) => c.textContent)).toEqual(['a', 'b']);
+
+    // Wipe the DOM (as if B mounted on a fresh render of the same node) and
+    // feed B the identical array. A module singleton would treat this as a
+    // no-op (previous === next) and leave the list empty; per-instance state
+    // makes B render the items.
+    ul.innerHTML = '';
+    rendererB.render(target(ul, template), items, ctx());
+    expect([...ul.children].map((c) => c.textContent)).toEqual(['a', 'b']);
+  });
 });

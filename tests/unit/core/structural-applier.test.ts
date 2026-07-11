@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { applyStructuralPatches, KEY_ATTRIBUTE } from '@core/structural-applier';
+import {
+  applyStructuralPatches,
+  createStructuralStore,
+  KEY_ATTRIBUTE,
+} from '@core/structural-applier';
+
+// One store shared across the file is safe: it's a WeakMap keyed by the
+// container element, and every test builds fresh elements, so tests can't
+// collide. Within a test, sequential calls on the same container share
+// memory, which is exactly what the nested-reconciliation cases exercise.
+const store = createStructuralStore();
 import { diffArray } from '@schema/diff';
 
 function asLabel(value: unknown): string {
@@ -38,6 +48,7 @@ describe('applyStructuralPatches', () => {
     const next = [items[0]!, { id: 3, label: 'c' }, items[1]!];
     const patches = diffArray(items, next);
     applyStructuralPatches({
+      store,
       template: '<li>{{label}}</li>',
       container: ul,
       patches,
@@ -56,6 +67,7 @@ describe('applyStructuralPatches', () => {
     const next = [items[0]!, items[2]!];
     const patches = diffArray(items, next);
     applyStructuralPatches({
+      store,
       template: '<li>{{label}}</li>',
       container: ul,
       patches,
@@ -75,6 +87,7 @@ describe('applyStructuralPatches', () => {
     const next = [items[1]!, items[0]!, items[2]!];
     const patches = diffArray(items, next);
     applyStructuralPatches({
+      store,
       template: '<li>{{label}}</li>',
       container: ul,
       patches,
@@ -98,6 +111,7 @@ describe('applyStructuralPatches', () => {
     ];
     const patches = diffArray(items, next);
     applyStructuralPatches({
+      store,
       template: '<li>{{label}}</li>',
       container: ul,
       patches,
@@ -112,6 +126,7 @@ describe('applyStructuralPatches', () => {
     const next = [{ id: 1, blockType: 'image', label: 'pic' }];
     const patches = diffArray(items, next);
     applyStructuralPatches({
+      store,
       template: '<li>{{label}}</li>',
       container: ul,
       patches,
@@ -124,6 +139,7 @@ describe('applyStructuralPatches', () => {
     const next = [{ id: 1, label: 'x' }];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: '<li>{{index}}-{{label}}</li>',
       container: ul,
       patches: diffArray([], next),
@@ -136,6 +152,7 @@ describe('applyStructuralPatches', () => {
     const next = [{ id: 1, label: '<script>x</script>' }];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: '<li>{{label}}</li>',
       container: ul,
       patches: diffArray([], next),
@@ -149,6 +166,7 @@ describe('applyStructuralPatches', () => {
     const next = [{ id: 'abc', label: 'x' }];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: '<li>{{label}}</li>',
       container: ul,
       patches: diffArray([], next),
@@ -162,6 +180,7 @@ describe('applyStructuralPatches', () => {
     const ul = makeList('<li>{{label}}</li>', items);
     const original = ul.firstElementChild;
     applyStructuralPatches({
+      store,
       template: '<li>{{label}}</li>',
       container: ul,
       patches: [],
@@ -194,6 +213,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
     ];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray([], next),
@@ -215,6 +235,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
     ];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray([], prev),
@@ -230,6 +251,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
       },
     ];
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray(prev, next),
@@ -253,6 +275,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
     ];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray([], prev),
@@ -271,6 +294,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
       },
     ];
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray(prev, next),
@@ -295,12 +319,14 @@ describe('applyStructuralPatches — recursive nested slots', () => {
     ];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray([], prev),
       nextItems: prev,
     });
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray(prev, []),
@@ -318,6 +344,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
       },
     ];
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray([], reborn),
@@ -339,6 +366,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
     ];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray([], prev),
@@ -354,6 +382,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
       },
     ];
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray(prev, next),
@@ -369,6 +398,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
     const next = [{ id: 1, title: 'No CTAs' }];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: ITEM_TEMPLATE,
       container: ul,
       patches: diffArray([], next),
@@ -403,6 +433,7 @@ describe('applyStructuralPatches — recursive nested slots', () => {
     ];
     const ul = document.createElement('ul');
     applyStructuralPatches({
+      store,
       template: deepTemplate,
       container: ul,
       patches: diffArray([], next),
@@ -422,6 +453,7 @@ describe('applyStructuralPatches — template filling edge cases', () => {
     const next = [{ id: 1, label: "Price: $& $' $` $$" }];
     const patches = diffArray(items, next);
     applyStructuralPatches({
+      store,
       template: '<li>{{label}}</li>',
       container: ul,
       patches,

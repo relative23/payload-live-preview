@@ -27,17 +27,19 @@ const NESTED_KEY_ATTRIBUTE = 'data-payload-nested-key';
 const NESTED_TEMPLATE_ATTRIBUTE = 'data-payload-nested-template';
 
 /**
- * Per-container memory of the last value rendered for each item key.
- * Used by recursive diffs: when an item updates, we need to know which
- * of its nested arrays *previously* held what, so we can compute the
- * minimal nested patch instead of rebuilding the whole sub-tree.
- *
- * The map is keyed by the container element (per-instance state — no
- * module singletons), then by the item's key from `readKey()`. Items
- * without an `id` aren't tracked, which is fine because they cannot
- * survive a positional diff anyway.
+ * Per-render memory of the last value seen for each item key, used by
+ * recursive nested diffs. It is **not** module-level: the caller owns
+ * the store (one per runtime instance — see
+ * `createStructuralArrayRenderer`), so two clients never share diff
+ * state and `destroy()` drops it with the instance. The store is keyed
+ * by the container element, then by the item's key from `readKey()`.
  */
-const previousItemValues = new WeakMap<Element, Map<string, unknown>>();
+export type StructuralStore = WeakMap<Element, Map<string, unknown>>;
+
+/** Create a fresh, instance-owned structural-diff store. */
+export function createStructuralStore(): StructuralStore {
+  return new WeakMap<Element, Map<string, unknown>>();
+}
 
 export interface StructuralApplyOptions {
   readonly template: string;
@@ -51,6 +53,11 @@ export interface StructuralApplyOptions {
    * the patch's `to`/`index` from this snapshot.
    */
   readonly nextItems: readonly unknown[];
+  /**
+   * Instance-owned nested-diff memory. Pass the same store across
+   * renders of the same runtime so nested arrays diff incrementally.
+   */
+  readonly store: StructuralStore;
 }
 
 /**
@@ -61,8 +68,8 @@ export interface StructuralApplyOptions {
  * container's children mirror `nextItems`.
  */
 export function applyStructuralPatches(options: StructuralApplyOptions): void {
-  const { template, container, patches } = options;
-  const memory = getMemory(container);
+  const { template, container, patches, store } = options;
+  const memory = getMemory(container, store);
 
   // Bucket the patches so we can apply each kind in a safe order.
   const removes: ArrayPatch[] = [];
@@ -96,7 +103,7 @@ export function applyStructuralPatches(options: StructuralApplyOptions): void {
     if (!node || !replacement) continue;
     // Block-type changed — nested DOM has a different shape, so we
     // populate the new item's slots from scratch instead of transplanting.
-    populateNestedSlots(replacement, patch.value);
+    populateNestedSlots(replacement, patch.value, store);
     container.replaceChild(replacement, node);
     rememberItem(memory, patch.value);
   }
@@ -105,7 +112,7 @@ export function applyStructuralPatches(options: StructuralApplyOptions): void {
     const oldNode = container.children[patch.index];
     const newNode = renderItem(template, patch.value, patch.index);
     if (!oldNode || !newNode) continue;
-    reconcileNestedSlots(oldNode, newNode, patch.value, memory);
+    reconcileNestedSlots(oldNode, newNode, patch.value, memory, store);
     container.replaceChild(newNode, oldNode);
     rememberItem(memory, patch.value);
   }
@@ -117,7 +124,7 @@ export function applyStructuralPatches(options: StructuralApplyOptions): void {
     const before = container.children[patch.index] ?? null;
     const node = renderItem(template, patch.value, patch.index);
     if (!node) continue;
-    populateNestedSlots(node, patch.value);
+    populateNestedSlots(node, patch.value, store);
     container.insertBefore(node, before);
     rememberItem(memory, patch.value);
   }
@@ -147,7 +154,7 @@ export function applyStructuralPatches(options: StructuralApplyOptions): void {
  * the nested array) and `data-payload-nested-template` (the inner
  * template for each nested child).
  */
-function populateNestedSlots(item: Element, value: unknown): void {
+function populateNestedSlots(item: Element, value: unknown, store: StructuralStore): void {
   const slots = item.querySelectorAll(`[${NESTED_KEY_ATTRIBUTE}]`);
   for (const slot of Array.from(slots)) {
     const key = slot.getAttribute(NESTED_KEY_ATTRIBUTE);
@@ -163,6 +170,7 @@ function populateNestedSlots(item: Element, value: unknown): void {
       container: slot,
       patches,
       nextItems: nestedItems,
+      store,
     });
   }
 }
@@ -182,6 +190,7 @@ function reconcileNestedSlots(
   newItem: Element,
   nextValue: unknown,
   memory: Map<string, unknown>,
+  store: StructuralStore,
 ): void {
   const oldSlots = oldItem.querySelectorAll(`[${NESTED_KEY_ATTRIBUTE}]`);
   if (oldSlots.length === 0) return;
@@ -209,6 +218,7 @@ function reconcileNestedSlots(
       container: oldSlot,
       patches,
       nextItems: nextNested,
+      store,
     });
   }
 }
@@ -220,11 +230,11 @@ function readNestedArray(value: unknown, key: string): readonly unknown[] | unde
   return nested as readonly unknown[];
 }
 
-function getMemory(container: Element): Map<string, unknown> {
-  let map = previousItemValues.get(container);
+function getMemory(container: Element, store: StructuralStore): Map<string, unknown> {
+  let map = store.get(container);
   if (!map) {
     map = new Map();
-    previousItemValues.set(container, map);
+    store.set(container, map);
   }
   return map;
 }
