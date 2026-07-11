@@ -9,6 +9,7 @@ export default defineConfig({
     'codegen-astro': 'src/codegen/astro-plugin.ts',
     payload: 'src/payload/index.ts',
     'adapters/astro/index': 'src/adapters/astro/index.ts',
+    'adapters/astro/middleware-entry': 'src/adapters/astro/middleware-entry.ts',
     'adapters/nextjs/index': 'src/adapters/nextjs/index.ts',
     'adapters/sveltekit/index': 'src/adapters/sveltekit/index.ts',
     'adapters/nuxt/index': 'src/adapters/nuxt/index.ts',
@@ -26,7 +27,8 @@ export default defineConfig({
     return { js: format === 'cjs' ? '.cjs' : '.js' };
   },
   // ts-morph is huge — never inline it. Codegen consumers install it
-  // themselves via the peerDependencies declaration.
-  external: ['ts-morph'],
+  // themselves via the peerDependencies declaration. The virtual
+  // module is resolved by the consumer's Vite (integration plugin).
+  external: ['ts-morph', /^virtual:/],
   tsconfig: 'tsconfig.json',
 });

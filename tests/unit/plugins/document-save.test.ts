@@ -179,3 +179,45 @@ describe('documentSavePlugin — fetch (custom)', () => {
     ).toBe(true);
   });
 });
+describe('documentSavePlugin — scroll preservation across reload', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    Object.defineProperty(window, 'scrollTo', { configurable: true, value: vi.fn() });
+  });
+
+  it('saves the scroll position before reloading', async () => {
+    Object.defineProperty(window, 'scrollX', { configurable: true, value: 12 });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 340 });
+    const { manager, events } = setup();
+    await manager.register(documentSavePlugin({ strategy: 'reload' }));
+    await events.emit('documentSave', { timestamp: Date.now() });
+    expect(reloadSpy).toHaveBeenCalledOnce();
+    const saved = JSON.parse(
+      sessionStorage.getItem('payload-live-preview:scroll') ?? '{}',
+    ) as Record<string, unknown>;
+    expect(saved['x']).toBe(12);
+    expect(saved['y']).toBe(340);
+    expect(saved['href']).toBe('http://localhost/');
+  });
+
+  it('restores the saved position on init when the URL matches', async () => {
+    sessionStorage.setItem(
+      'payload-live-preview:scroll',
+      JSON.stringify({ href: 'http://localhost/', x: 5, y: 99 }),
+    );
+    const { manager } = setup();
+    await manager.register(documentSavePlugin());
+    expect(window.scrollTo).toHaveBeenCalledWith(5, 99);
+    expect(sessionStorage.getItem('payload-live-preview:scroll')).toBeNull();
+  });
+
+  it('does not restore for a different URL', async () => {
+    sessionStorage.setItem(
+      'payload-live-preview:scroll',
+      JSON.stringify({ href: 'http://elsewhere.example/', x: 5, y: 99 }),
+    );
+    const { manager } = setup();
+    await manager.register(documentSavePlugin());
+    expect(window.scrollTo).not.toHaveBeenCalled();
+  });
+});

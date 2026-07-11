@@ -108,6 +108,7 @@ export function createLivePreviewMiddleware(
         ...(options.previewQueryParams !== undefined
           ? { queryParams: options.previewQueryParams }
           : {}),
+        ...(options.previewSignals !== undefined ? { signals: options.previewSignals } : {}),
         adminOrigins: allowedOrigins,
       });
     if (!isPreview) return response;

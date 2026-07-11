@@ -46,11 +46,24 @@ export {
   type PreviewRequestOptions,
 } from './adapters/shared/preview-request';
 
+// Draft-aware initial fetch for preview loaders
+export {
+  fetchPreviewDocument,
+  fetchPreviewGlobal,
+  type FetchPreviewDocumentOptions,
+  type FetchPreviewGlobalOptions,
+  type PreviewFetchBaseOptions,
+  type PreviewWhere,
+} from './preview-fetch';
+
 // Lexical rendering — useful for SSR pre-rendering of rich text fields
 export {
   isLexicalContent,
   lexicalToHtml,
   lexicalToPlainText,
+  registerBlockRenderer,
+  type BlockRenderer,
+  type BlockRenderContext,
   type LexicalNode,
   type LexicalRoot,
 } from './lexical';

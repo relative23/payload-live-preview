@@ -105,19 +105,26 @@ Annotate the elements you want bound:
 
 That's it — the inline script auto-detects the iframe context and starts updating. Rich text is detected automatically from the value shape; `data-payload-richtext` is only needed to force it.
 
-The integration injects the script at build time into every page (it stays inert outside the admin iframe). If you prefer request-time injection that touches **only preview requests**, use the middleware instead of (not in addition to) the integration:
+For rich text, the `<RichText />` component renders the field **through the same Lexical renderer the runtime uses for live patches** — SSR markup and preview updates cannot diverge, and the binding plus the empty-anchor pattern come for free:
 
-```ts
-// src/middleware.ts
-import { createLivePreviewMiddleware } from '@relative23/payload-live-preview/astro';
-
-export const onRequest = createLivePreviewMiddleware({
-  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
-  serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
-});
+```astro
+---
+import RichText from '@relative23/payload-live-preview/astro/RichText.astro';
+---
+<RichText value={page.body} field="body" class="prose" />
 ```
 
-The middleware detects preview requests (`?preview=true` / `?draft=true` query, `Sec-Fetch-Dest: iframe`, or an admin referer), injects the script into their `<head>`, and merges a `frame-ancestors` CSP directive so the admin may embed the page. Everything else streams through untouched. Astro ≥ 5 prerendered pages are skipped automatically.
+**Injection modes.** The default (`mode: 'inline'`) bakes the runtime into every page at build time — right for `output: 'static'`, where no middleware runs at request time. For SSR projects (`output: 'server'`), switch to request-time injection that touches **only preview requests**:
+
+```ts
+livePreview({
+  mode: 'middleware',
+  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+  serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
+}),
+```
+
+This auto-registers the preview middleware: it detects preview requests (`?preview=true` / `?draft=true` query, `Sec-Fetch-Dest: iframe`, or an admin referer — restrict via `previewSignals: ['query']` for high-security setups), injects the script into their `<head>`, and merges a `frame-ancestors` CSP directive so the admin may embed the page. Everything else streams through untouched; prerendered pages are skipped. The same middleware can also be registered manually via `createLivePreviewMiddleware()` in `src/middleware.ts` (needed when you want a `shouldInject` callback).
 
 If you already have your own middleware, compose with the exported building blocks instead:
 
@@ -223,13 +230,19 @@ Requirements: the preview page must be able to reach the Payload API with the ed
 
 ## Draft documents on first load
 
-Live preview patches the DOM **after** the page has loaded — the initial server render is your job. If you use Payload drafts, fetch draft content when rendering a preview request, otherwise editors see stale published content until their first keystroke:
+Live preview patches the DOM **after** the page has loaded — the initial server render is your job. If you use Payload drafts, fetch draft content when rendering a preview request, otherwise editors see stale published content until their first keystroke. `fetchPreviewDocument` / `fetchPreviewGlobal` wrap the query with the right flags:
 
 ```ts
 // Astro example — in your page/loader code
-const draft = isPreviewRequest(Astro.request) ? '&draft=true' : '';
-const doc = await fetch(`${CMS}/api/pages?where[slug][equals]=${slug}${draft}`, {
-  headers: preview ? { Authorization: `users API-Key ${previewKey}` } : {},
+import { isPreviewRequest, fetchPreviewDocument } from '@relative23/payload-live-preview';
+
+const page = await fetchPreviewDocument<Page>({
+  serverURL: import.meta.env.PAYLOAD_URL,
+  collection: 'pages',
+  where: { slug: { equals: Astro.params.slug } },
+  draft: isPreviewRequest(Astro.request), // published for normal traffic
+  depth: 1, // keep equal to mergeDepth!
+  headers: { Authorization: `users API-Key ${import.meta.env.PAYLOAD_PREVIEW_KEY}` },
 });
 ```
 
@@ -325,7 +338,7 @@ Built-in plugins:
 | `highlightPlugin` | Flashes an outline on updated elements (respects reduced-motion). |
 | `debugPlugin` | Logs every lifecycle event to the console. |
 | `createAnalyticsPlugin()` | Collects update statistics, exposed via `getStats()`. |
-| `documentSavePlugin({ strategy })` | Reacts to admin saves: `'silent'` · `'reload'` · `'revalidate'` · `'fetch'`. |
+| `documentSavePlugin({ strategy })` | Reacts to admin saves: `'silent'` · `'reload'` (scroll-preserving) · `'revalidate'` · `'fetch'`. |
 
 ## Configuration reference
 
@@ -347,9 +360,11 @@ Options accepted by `generateInlineScript`, the adapters, and `LivePreviewClient
 | `disableReferrerDetection` | `false` | Opt out of `document.referrer` origin auto-detection. |
 | `disableLocalhostMatching` | `false` | Opt out of dev-mode localhost origin matching. |
 
-Adapter-only options: `inject` (`'preview-only'` default / `'always'`), `previewQueryParams`, `autoInject`, `shouldInject`, `manageCsp` (`'frame-ancestors'` default / `'full'` / `false`), `strictDynamic`, `frameAncestorsExtra`, `scriptSrcExtra`, `nonce`.
+Adapter-only options: `inject` (`'preview-only'` default / `'always'`), `previewQueryParams`, `previewSignals` (restrict which signals count — `['query']` for strict setups), `autoInject`, `shouldInject`, `manageCsp` (`'frame-ancestors'` default / `'full'` / `false`), `strictDynamic`, `frameAncestorsExtra`, `scriptSrcExtra`, `nonce`; Astro integration additionally: `mode` (`'inline'` / `'middleware'`).
 
-Bundle-size note: `import … from '@relative23/payload-live-preview/core'` is a lighter entry without the Lexical renderer, plugins, and inline generator.
+Bundle-size note: `import … from '@relative23/payload-live-preview/core'` is a lighter entry without the Lexical renderer, plugins, and inline generator. Hot-path timings live in [docs/benchmarks.md](docs/benchmarks.md).
+
+All three framework wirings are E2E-tested against real apps in `examples/` (Astro 7, Next.js 16, SvelteKit 2 — Chromium, Firefox and WebKit).
 
 ## Security model
 

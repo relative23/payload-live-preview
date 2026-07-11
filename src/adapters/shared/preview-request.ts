@@ -22,7 +22,18 @@
  * @module @adapters/shared/preview-request
  */
 
+/** The individual signals the predicate can consider. */
+export type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
+
 export interface PreviewRequestOptions {
+  /**
+   * Which signals count as "this is a preview request". Default: all
+   * three. High-security setups that must never relax framing headers
+   * for unsolicited iframe loads can restrict to `['query']` — then
+   * only an explicit `?preview=true` (e.g. from `buildLivePreviewUrl`)
+   * activates preview handling.
+   */
+  readonly signals?: readonly PreviewSignal[];
   /**
    * Query parameters (with values `true` or `1`) that mark a request
    * as a preview. Default: `['preview', 'draft', 'livePreview']`.
@@ -30,6 +41,7 @@ export interface PreviewRequestOptions {
   readonly queryParams?: readonly string[];
   /**
    * Treat `Sec-Fetch-Dest: iframe` as a preview signal. Default `true`.
+   * Legacy alias for excluding `'fetch-dest'` from `signals`.
    */
   readonly checkFetchDest?: boolean;
   /**
@@ -59,19 +71,24 @@ export function isPreviewRequest(
   request: PreviewRequestLike,
   options: PreviewRequestOptions = {},
 ): boolean {
+  const signals = new Set<PreviewSignal>(
+    options.signals ?? ['query', 'fetch-dest', 'referer'],
+  );
   const queryParams = options.queryParams ?? DEFAULT_QUERY_PARAMS;
-  const checkFetchDest = options.checkFetchDest ?? true;
+  const checkFetchDest = (options.checkFetchDest ?? true) && signals.has('fetch-dest');
 
-  let url: URL | undefined;
-  try {
-    url = new URL(request.url);
-  } catch {
-    url = undefined;
-  }
-  if (url !== undefined) {
-    for (const param of queryParams) {
-      const value = url.searchParams.get(param);
-      if (value === 'true' || value === '1') return true;
+  if (signals.has('query')) {
+    let url: URL | undefined;
+    try {
+      url = new URL(request.url);
+    } catch {
+      url = undefined;
+    }
+    if (url !== undefined) {
+      for (const param of queryParams) {
+        const value = url.searchParams.get(param);
+        if (value === 'true' || value === '1') return true;
+      }
     }
   }
 
@@ -79,7 +96,7 @@ export function isPreviewRequest(
     return true;
   }
 
-  const adminOrigins = options.adminOrigins ?? [];
+  const adminOrigins = signals.has('referer') ? (options.adminOrigins ?? []) : [];
   if (adminOrigins.length > 0) {
     const referer = request.headers.get('referer');
     if (referer !== null) {

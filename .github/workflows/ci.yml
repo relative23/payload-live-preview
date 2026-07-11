@@ -77,12 +77,14 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run build
-      # The example app doubles as the E2E fixture; it consumes the
-      # freshly built package via its file:../.. dependency. `npm install`
-      # instead of `npm ci`: the lock file pins the file: dep at the
-      # version current at lock time, which `npm ci` rejects after any
-      # version bump.
+      # The example apps double as E2E fixtures; they consume the
+      # freshly built package via their file:../.. dependency. `npm
+      # install` instead of `npm ci`: the lock file pins the file: dep
+      # at the version current at lock time, which `npm ci` rejects
+      # after any version bump.
       - run: npm install --no-audit --no-fund --prefix examples/astro-payload
+      - run: npm install --no-audit --no-fund --prefix examples/nextjs-payload
+      - run: npm install --no-audit --no-fund --prefix examples/sveltekit-payload
       - run: npx playwright test --project=${{ matrix.browser }}
       - uses: actions/upload-artifact@v4
         if: failure()

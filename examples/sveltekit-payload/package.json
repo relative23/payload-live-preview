@@ -1,0 +1,22 @@
+{
+  "name": "sveltekit-payload-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 4175",
+    "build": "vite build",
+    "preview": "vite preview --port 4175",
+    "prepare": "svelte-kit sync || echo ''"
+  },
+  "dependencies": {
+    "@relative23/payload-live-preview": "file:../.."
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-auto": "^7.0.1",
+    "@sveltejs/kit": "^2.69.2",
+    "@sveltejs/vite-plugin-svelte": "^7.2.0",
+    "svelte": "^5.56.4",
+    "vite": "^8.1.4"
+  }
+}

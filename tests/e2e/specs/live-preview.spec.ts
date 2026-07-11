@@ -106,3 +106,18 @@ test.describe('live preview — origin enforcement', () => {
     );
   });
 });
+
+test.describe('RichText.astro component', () => {
+  test('SSR-renders the Lexical value through the shared renderer with the binding attached', async ({
+    page,
+  }) => {
+    // Load the page directly (not inside the mock admin, whose demo
+    // clock immediately patches the body field): this asserts the pure
+    // SSR output of the shared Lexical renderer.
+    await page.goto('/');
+    const body = page.locator('[data-payload-field="body"][data-payload-richtext]');
+    await expect(body.locator('h2')).toHaveText('Rich text from Lexical');
+    await expect(body.locator('strong')).toHaveText('bold');
+    await expect(body.locator('a[href="https://example.com"]')).toHaveText('links');
+  });
+});

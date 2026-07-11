@@ -1,7 +1,7 @@
 {
   "name": "@relative23/payload-live-preview",
-  "version": "1.0.0-alpha.5",
-  "description": "State-of-the-art, framework-agnostic, schema-driven live preview for Payload CMS. Astro-first.",
+  "version": "1.0.0",
+  "description": "Framework-agnostic live preview for Payload CMS — Astro-first; works with Next.js, SvelteKit, Nuxt, and plain HTML.",
   "author": "relative23",
   "license": "MIT",
   "type": "module",
@@ -78,6 +78,13 @@
         "types": "./dist/payload.d.cts",
         "default": "./dist/payload.cjs"
       }
+    },
+    "./astro/RichText.astro": "./dist/adapters/astro/RichText.astro",
+    "./astro/middleware-entry": {
+      "import": {
+        "types": "./dist/adapters/astro/middleware-entry.d.ts",
+        "default": "./dist/adapters/astro/middleware-entry.js"
+      }
     }
   },
   "bin": {
@@ -92,7 +99,8 @@
   "scripts": {
     "prepare": "npm run build:runtime",
     "build:runtime": "tsx scripts/build-runtime.ts",
-    "build": "npm run build:runtime && tsup",
+    "build": "npm run build:runtime && tsup && npm run build:assets",
+    "build:assets": "node -e \"require('node:fs').copyFileSync('src/adapters/astro/RichText.astro','dist/adapters/astro/RichText.astro')\"",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -123,7 +131,6 @@
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.5",
-    "tinybench": "^3.1.0",
     "ts-morph": "^28.0.0",
     "tsup": "^8.5.1",
     "tsx": "^4.23.0",

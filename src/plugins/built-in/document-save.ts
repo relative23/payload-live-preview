@@ -3,7 +3,10 @@
  * out-of-the-box strategies. Most consumers just want one of these:
  *
  *   - `'silent'` (default) → only emit the event, do nothing else.
- *   - `'reload'`           → call `window.location.reload()`.
+ *   - `'reload'`           → reload the page, **preserving the scroll
+ *                            position** across the reload (the
+ *                            framework-agnostic analog of Payload's
+ *                            `RefreshRouteOnSave`).
  *   - `'revalidate'`       → POST to a revalidation endpoint (Astro,
  *                            Next.js convention) so SSR caches refresh
  *                            without losing client state.
@@ -16,6 +19,41 @@
  */
 
 import type { LivePreviewPlugin } from '../types';
+
+/** sessionStorage key for the scroll position saved across a reload. */
+const SCROLL_KEY = 'payload-live-preview:scroll';
+
+function saveScrollPosition(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(
+      SCROLL_KEY,
+      JSON.stringify({ href: window.location.href, x: window.scrollX, y: window.scrollY }),
+    );
+  } catch {
+    // sessionStorage unavailable (sandboxed iframe without allow-same-origin)
+  }
+}
+
+function restoreScrollPosition(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = sessionStorage.getItem(SCROLL_KEY);
+    if (raw === null) return;
+    sessionStorage.removeItem(SCROLL_KEY);
+    const saved = JSON.parse(raw) as { href?: string; x?: number; y?: number };
+    if (saved.href !== window.location.href) return;
+    window.scrollTo(saved.x ?? 0, saved.y ?? 0);
+  } catch {
+    // corrupted entry or storage unavailable — nothing to restore
+  }
+}
+
+function reloadPreservingScroll(): void {
+  if (typeof window === 'undefined') return;
+  saveScrollPosition();
+  window.location.reload();
+}
 
 export type DocumentSaveStrategy = 'silent' | 'reload' | 'revalidate' | 'fetch';
 
@@ -54,8 +92,11 @@ export function documentSavePlugin(options: DocumentSavePluginOptions = {}): Liv
   const strategy = options.strategy ?? 'silent';
   return {
     name: 'document-save',
-    version: '1.0.0',
+    version: '1.1.0',
     init: (ctx) => {
+      // If the previous page load ended in a save-triggered reload,
+      // put the editor back where they were.
+      restoreScrollPosition();
       ctx.events.on('documentSave', () => {
         run(strategy, options, ctx.log);
       });
@@ -70,7 +111,7 @@ function run(
 ): void {
   if (strategy === 'silent') return;
   if (strategy === 'reload') {
-    if (typeof window !== 'undefined') window.location.reload();
+    reloadPreservingScroll();
     return;
   }
   if (strategy === 'fetch') {
@@ -120,6 +161,6 @@ async function runRevalidate(
     log('document-save revalidate failed:', err);
   }
   if (!ok && options.onRevalidateFailure === 'reload') {
-    if (typeof window !== 'undefined') window.location.reload();
+    reloadPreservingScroll();
   }
 }

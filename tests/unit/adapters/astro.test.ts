@@ -298,3 +298,63 @@ describe('renderLivePreviewScript', () => {
     expect(() => renderLivePreviewScript({ nonce: 'bad"injection' })).toThrow();
   });
 });
+
+describe('livePreview integration — middleware mode', () => {
+  function makeSetupContext() {
+    const injectScript = vi.fn();
+    const addMiddleware = vi.fn();
+    const plugins: {
+      name: string;
+      resolveId: (id: string) => string | undefined;
+      load: (id: string) => string | undefined;
+    }[] = [];
+    const updateConfig = vi.fn((config: { vite?: { plugins?: typeof plugins } }) => {
+      plugins.push(...(config.vite?.plugins ?? []));
+    });
+    return { injectScript, addMiddleware, updateConfig, plugins };
+  }
+
+  it('registers the middleware entrypoint and serves options via the virtual module', () => {
+    const ctx = makeSetupContext();
+    const integration = livePreview({
+      mode: 'middleware',
+      allowedOrigins: ['https://admin.example.com'],
+      serverURL: 'https://admin.example.com',
+    });
+    integration.hooks['astro:config:setup'](ctx);
+
+    expect(ctx.injectScript).not.toHaveBeenCalled();
+    expect(ctx.addMiddleware).toHaveBeenCalledWith({
+      entrypoint: '@relative23/payload-live-preview/astro/middleware-entry',
+      order: 'pre',
+    });
+
+    const plugin = ctx.plugins[0]!;
+    const resolved = plugin.resolveId('virtual:payload-live-preview/options')!;
+    const moduleSource = plugin.load(resolved)!;
+    expect(moduleSource).toContain('https://admin.example.com');
+    expect(moduleSource).toMatch(/^export default \{/);
+    // The mode marker itself must not leak into the middleware options.
+    expect(moduleSource).not.toContain('"mode"');
+  });
+
+  it('rejects shouldInject in middleware mode (not serializable)', () => {
+    const ctx = makeSetupContext();
+    const integration = livePreview({ mode: 'middleware', shouldInject: () => true });
+    expect(() => {
+      integration.hooks['astro:config:setup'](ctx);
+    }).toThrow(/shouldInject/);
+  });
+
+  it('escapes </script>-breaking sequences in the serialized options', () => {
+    const ctx = makeSetupContext();
+    const integration = livePreview({
+      mode: 'middleware',
+      previewQueryParams: ['x</script><script>'],
+    });
+    integration.hooks['astro:config:setup'](ctx);
+    const plugin = ctx.plugins[0]!;
+    const source = plugin.load(plugin.resolveId('virtual:payload-live-preview/options')!)!;
+    expect(source).not.toContain('</script>');
+  });
+});

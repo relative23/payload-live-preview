@@ -6,6 +6,19 @@
 
 export interface LivePreviewAstroOptions {
   /**
+   * How the integration wires the preview:
+   *
+   *   - `'inline'` (default) — bake the runtime into every page at
+   *     build time. For `output: 'static'` projects.
+   *   - `'middleware'` — auto-register the preview middleware:
+   *     request-time injection into preview requests only, plus
+   *     `frame-ancestors` CSP management. For `output: 'server'`.
+   *     (`shouldInject` is unsupported here — options serialize into
+   *     the build.)
+   */
+  readonly mode?: 'inline' | 'middleware';
+
+  /**
    * Trusted Payload admin origin(s). Required in production unless
    * `document.referrer` reliably exposes the parent origin.
    */
@@ -48,6 +61,15 @@ export interface LivePreviewAstroOptions {
    * or `1`). Default: `['preview', 'draft', 'livePreview']`.
    */
   readonly previewQueryParams?: readonly string[];
+
+  /**
+   * Which signals count as a preview request. Default: all three
+   * (`query`, `fetch-dest`, `referer`). Restrict to `['query']` when
+   * an unsolicited iframe load must never trigger preview handling
+   * (e.g. sites that serve `frame-ancestors 'none'` and only allow
+   * preview via the explicit `?preview=true` URL).
+   */
+  readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
 
   /**
    * Restrict auto-inject to requests where this function returns

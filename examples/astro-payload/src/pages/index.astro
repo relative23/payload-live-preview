@@ -7,6 +7,8 @@
  * In a real Astro project these initial values would come from
  * Payload via a server-side fetch; for the example we hard-code them.
  */
+import RichText from '@relative23/payload-live-preview/astro/RichText.astro';
+
 const initial = {
   title: 'Hello from the demo',
   subtitle: 'Type in the admin panel to see live updates.',
@@ -114,10 +116,9 @@ const initial = {
         alt={initial.hero.alt}
       />
 
-      <div data-payload-field="body" data-payload-richtext>
-        <h2>Rich text from Lexical</h2>
-        <p>Mix of <strong>bold</strong>, <em>italic</em>, and <a href="https://example.com">links</a>.</p>
-      </div>
+      {/* SSR-rendered through the SAME Lexical renderer the runtime
+          uses for live patches — markup cannot diverge. */}
+      <RichText value={initial.body} field="body" />
 
       <p>
         Count: <span data-payload-field="count" data-payload-type="number">{initial.count}</span>

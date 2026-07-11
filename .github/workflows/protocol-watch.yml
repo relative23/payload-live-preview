@@ -13,8 +13,21 @@ on:
 
 jobs:
   protocol-watch:
-    name: Wire-format invariants vs @payloadcms/live-preview@latest
+    name: Wire-format invariants (${{ matrix.dist-tag }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # latest is the gate: drift here = broken for real users NOW.
+          - dist-tag: latest
+            soft-fail: false
+          # canary (e.g. Payload 4.0 pre-releases) is an early-warning
+          # signal, not a gate — pre-release protocols may legitimately
+          # churn before stabilising.
+          - dist-tag: canary
+            soft-fail: true
+    continue-on-error: ${{ matrix.soft-fail }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,3 +36,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsx scripts/check-protocol-drift.ts
+        env:
+          PROTOCOL_WATCH_PACKAGE: '@payloadcms/live-preview@${{ matrix.dist-tag }}'

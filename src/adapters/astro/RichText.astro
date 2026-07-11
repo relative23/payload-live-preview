@@ -1,0 +1,55 @@
+---
+/**
+ * Server-rendered Lexical rich text with a live-preview binding.
+ *
+ * Renders the field through the SAME Lexical renderer the runtime
+ * uses for live updates, so preview patches and SSR output cannot
+ * diverge. Also solves the two classic integration papercuts:
+ *
+ *   - **Empty-anchor pattern**: the wrapper renders even when the
+ *     value is empty, so the runtime has a node to patch when the
+ *     editor fills a previously-empty field.
+ *   - **One-attribute binding**: emits `data-payload-field` +
+ *     `data-payload-richtext` for you.
+ *
+ * Usage:
+ *
+ * ```astro
+ * ---
+ * import RichText from '@relative23/payload-live-preview/astro/RichText.astro';
+ * ---
+ * <RichText value={page.body} field="body" class="prose" />
+ * ```
+ *
+ * Custom block renderers registered via `registerBlockRenderer` (from
+ * the main entry) apply here as well — register them in a module
+ * imported by your page before this component renders.
+ */
+// Self-referencing import so the shipped copy in dist/ resolves
+// through the package exports map in consumer projects.
+import { isLexicalContent, lexicalToHtml } from '@relative23/payload-live-preview';
+
+interface Props {
+  /** The Lexical value from Payload (may be null/undefined/empty). */
+  value: unknown;
+  /**
+   * Payload field path to bind for live preview, e.g. `"body"` or
+   * `"sections.intro"`. Omit to render without a live binding.
+   */
+  field?: string;
+  /** Wrapper element. Default `div`. */
+  as?: string;
+  class?: string;
+}
+
+const { value, field, as: tag = 'div', class: className } = Astro.props;
+const Tag = tag;
+const html = isLexicalContent(value) ? lexicalToHtml(value) : '';
+---
+
+<Tag
+  class={className}
+  data-payload-field={field}
+  data-payload-richtext={field !== undefined ? '' : undefined}
+  set:html={html}
+/>

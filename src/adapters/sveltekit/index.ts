@@ -42,6 +42,8 @@ export interface LivePreviewSvelteKitOptions {
   readonly inject?: 'preview-only' | 'always';
   /** Query params that mark a preview request. Default `['preview', 'draft', 'livePreview']`. */
   readonly previewQueryParams?: readonly string[];
+  /** Which signals count as a preview request. Default: query, fetch-dest, referer. */
+  readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
   readonly shouldInject?: (request: Request) => boolean;
   /**
    * CSP management: `'frame-ancestors'` (default) merges only the
@@ -109,6 +111,7 @@ export function livePreviewHandle(options: LivePreviewSvelteKitOptions = {}): Sv
         ...(options.previewQueryParams !== undefined
           ? { queryParams: options.previewQueryParams }
           : {}),
+        ...(options.previewSignals !== undefined ? { signals: options.previewSignals } : {}),
         adminOrigins: options.allowedOrigins ?? [],
       });
 

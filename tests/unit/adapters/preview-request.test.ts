@@ -58,3 +58,38 @@ describe('isPreviewRequest', () => {
     expect(isPreviewRequest(request, { adminOrigins: ['also not a url'] })).toBe(false);
   });
 });
+
+describe('isPreviewRequest — signal restriction', () => {
+  it("signals: ['query'] ignores fetch-dest and referer", () => {
+    const iframeLoad = new Request('https://x.test/p', {
+      headers: {
+        'sec-fetch-dest': 'iframe',
+        referer: 'https://cms.example.com/admin',
+      },
+    });
+    expect(
+      isPreviewRequest(iframeLoad, {
+        signals: ['query'],
+        adminOrigins: ['https://cms.example.com'],
+      }),
+    ).toBe(false);
+    expect(
+      isPreviewRequest(new Request('https://x.test/p?preview=true'), { signals: ['query'] }),
+    ).toBe(true);
+  });
+
+  it("signals: ['referer'] ignores query and fetch-dest", () => {
+    expect(
+      isPreviewRequest(new Request('https://x.test/p?preview=true'), { signals: ['referer'] }),
+    ).toBe(false);
+    const fromAdmin = new Request('https://x.test/p', {
+      headers: { referer: 'https://cms.example.com/admin' },
+    });
+    expect(
+      isPreviewRequest(fromAdmin, {
+        signals: ['referer'],
+        adminOrigins: ['https://cms.example.com'],
+      }),
+    ).toBe(true);
+  });
+});
