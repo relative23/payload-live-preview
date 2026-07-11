@@ -1,0 +1,167 @@
+{
+  "name": "@relative23/payload-live-preview",
+  "version": "1.0.0-alpha.5",
+  "description": "State-of-the-art, framework-agnostic, schema-driven live preview for Payload CMS. Astro-first.",
+  "author": "relative23",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./core": {
+      "import": {
+        "types": "./dist/core.d.ts",
+        "default": "./dist/core.js"
+      },
+      "require": {
+        "types": "./dist/core.d.cts",
+        "default": "./dist/core.cjs"
+      }
+    },
+    "./astro": {
+      "import": {
+        "types": "./dist/adapters/astro/index.d.ts",
+        "default": "./dist/adapters/astro/index.js"
+      }
+    },
+    "./nextjs": {
+      "import": {
+        "types": "./dist/adapters/nextjs/index.d.ts",
+        "default": "./dist/adapters/nextjs/index.js"
+      }
+    },
+    "./sveltekit": {
+      "import": {
+        "types": "./dist/adapters/sveltekit/index.d.ts",
+        "default": "./dist/adapters/sveltekit/index.js"
+      }
+    },
+    "./nuxt": {
+      "import": {
+        "types": "./dist/adapters/nuxt/index.d.ts",
+        "default": "./dist/adapters/nuxt/index.js"
+      }
+    },
+    "./codegen": {
+      "import": {
+        "types": "./dist/codegen.d.ts",
+        "default": "./dist/codegen.js"
+      },
+      "require": {
+        "types": "./dist/codegen.d.cts",
+        "default": "./dist/codegen.cjs"
+      }
+    },
+    "./codegen/astro": {
+      "import": {
+        "types": "./dist/codegen-astro.d.ts",
+        "default": "./dist/codegen-astro.js"
+      }
+    }
+  },
+  "bin": {
+    "pll-codegen": "./dist/codegen-cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build:runtime": "tsx scripts/build-runtime.ts",
+    "build": "npm run build:runtime && tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:e2e": "playwright test",
+    "test:bench": "vitest bench tests/benchmarks",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "prepublishOnly": "npm run check && npm run build",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "npm run build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^22.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "astro": "^4.16.19",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.13.0",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.4.0",
+    "tinybench": "^3.1.0",
+    "ts-morph": "^28.0.0",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "payload",
+    "payload-cms",
+    "payload-live-preview",
+    "live-preview",
+    "cms",
+    "headless",
+    "astro",
+    "nextjs",
+    "sveltekit",
+    "nuxt",
+    "vue",
+    "svelte",
+    "schema-driven",
+    "lexical",
+    "csp-safe",
+    "framework-agnostic"
+  ],
+  "peerDependencies": {
+    "astro": ">=4.0.0",
+    "ts-morph": "^28.0.0"
+  },
+  "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    },
+    "ts-morph": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/relative23/payload-live-preview.git"
+  },
+  "bugs": {
+    "url": "https://github.com/relative23/payload-live-preview/issues"
+  },
+  "homepage": "https://github.com/relative23/payload-live-preview#readme"
+}

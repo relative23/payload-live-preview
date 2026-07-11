@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tgz
+
+# Generated runtime artifact (committed elsewhere; rebuilt on install)
+src/inline/runtime.generated.ts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+.vitest-cache/
+
+# Tool caches
+.changeset/.cache/
+
+# Archive of legacy code (kept locally for reversibility, not shipped)
+.archive/

@@ -1,0 +1,16 @@
+{
+  "name": "@relative23/payload-live-preview-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host --port 4173",
+    "build": "astro build",
+    "preview": "astro preview --host --port 4173",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@relative23/payload-live-preview": "file:../..",
+    "astro": "^4.16.0"
+  }
+}
