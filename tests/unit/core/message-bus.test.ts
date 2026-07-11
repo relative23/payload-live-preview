@@ -9,15 +9,16 @@ function makeMessage(data: unknown, origin: string): MessageEvent {
 }
 
 describe('MessageBus — receive', () => {
-  let onUpdate: ReturnType<typeof vi.fn>;
-  let onDocumentEvent: ReturnType<typeof vi.fn>;
-  let onInvalid: ReturnType<typeof vi.fn>;
+  type BusHandlers = ConstructorParameters<typeof MessageBus>[1];
+  let onUpdate: ReturnType<typeof vi.fn<BusHandlers['onUpdate']>>;
+  let onDocumentEvent: ReturnType<typeof vi.fn<BusHandlers['onDocumentEvent']>>;
+  let onInvalid: ReturnType<typeof vi.fn<NonNullable<BusHandlers['onInvalid']>>>;
   let bus: MessageBus;
 
   beforeEach(() => {
-    onUpdate = vi.fn();
-    onDocumentEvent = vi.fn();
-    onInvalid = vi.fn();
+    onUpdate = vi.fn<BusHandlers['onUpdate']>();
+    onDocumentEvent = vi.fn<BusHandlers['onDocumentEvent']>();
+    onInvalid = vi.fn<NonNullable<BusHandlers['onInvalid']>>();
     bus = new MessageBus((origin) => origin === TRUSTED, {
       onUpdate,
       onDocumentEvent,
@@ -108,9 +109,7 @@ describe('MessageBus — token validation', () => {
 
   it('lets the ready handshake through even when a validator is set', () => {
     const { onUpdate } = withValidator(() => false);
-    window.dispatchEvent(
-      makeMessage({ type: 'payload-live-preview', ready: true }, TRUSTED),
-    );
+    window.dispatchEvent(makeMessage({ type: 'payload-live-preview', ready: true }, TRUSTED));
     expect(onUpdate).toHaveBeenCalledOnce();
   });
 
@@ -125,9 +124,7 @@ describe('MessageBus — token validation', () => {
 
   it('rejects messages without a token', () => {
     const { onUpdate, onInvalid } = withValidator((token) => token !== undefined);
-    window.dispatchEvent(
-      makeMessage({ type: 'payload-live-preview', data: { x: 1 } }, TRUSTED),
-    );
+    window.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: { x: 1 } }, TRUSTED));
     expect(onUpdate).not.toHaveBeenCalled();
     expect(onInvalid).toHaveBeenCalledWith('token', TRUSTED);
   });
@@ -135,10 +132,7 @@ describe('MessageBus — token validation', () => {
   it('rejects messages with an unapproved token', () => {
     const { onUpdate, onInvalid } = withValidator((token) => token === 'expected');
     window.dispatchEvent(
-      makeMessage(
-        { type: 'payload-live-preview', data: { x: 1 }, previewToken: 'wrong' },
-        TRUSTED,
-      ),
+      makeMessage({ type: 'payload-live-preview', data: { x: 1 }, previewToken: 'wrong' }, TRUSTED),
     );
     expect(onUpdate).not.toHaveBeenCalled();
     expect(onInvalid).toHaveBeenCalledWith('token', TRUSTED);
@@ -155,9 +149,7 @@ describe('MessageBus — token validation', () => {
   });
 
   it('treats async rejection as token failure', async () => {
-    const { onUpdate, onInvalid } = withValidator(() =>
-      Promise.reject(new Error('verify failed')),
-    );
+    const { onUpdate, onInvalid } = withValidator(() => Promise.reject(new Error('verify failed')));
     window.dispatchEvent(
       makeMessage({ type: 'payload-live-preview', data: { x: 1 }, previewToken: 't' }, TRUSTED),
     );

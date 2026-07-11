@@ -190,9 +190,7 @@ function reconcileNestedSlots(
   for (const oldSlot of Array.from(oldSlots)) {
     const key = oldSlot.getAttribute(NESTED_KEY_ATTRIBUTE);
     if (key === null) continue;
-    const newSlot = newItem.querySelector(
-      `[${NESTED_KEY_ATTRIBUTE}="${cssEscape(key)}"]`,
-    );
+    const newSlot = newItem.querySelector(`[${NESTED_KEY_ATTRIBUTE}="${cssEscape(key)}"]`);
     if (!newSlot) continue;
     // Transplant the live slot into the new item — its children carry
     // any state (focus, animations, plugin bindings) that we want to

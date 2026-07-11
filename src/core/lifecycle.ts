@@ -100,7 +100,10 @@ export interface RuntimeOptions {
    * component attaches the token; otherwise every real update would
    * be dropped.
    */
-  readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
+  readonly validateToken?: (
+    token: string | undefined,
+    origin: string,
+  ) => boolean | Promise<boolean>;
   /**
    * Server-side data merging (Payload 3.x). When configured, every
    * update is re-fetched through the Payload REST API so relationship
@@ -431,9 +434,7 @@ export class LivePreviewRuntime {
         fields,
         ...(this.#currentSchema !== undefined ? { schema: this.#currentSchema } : {}),
         ...(message.globalSlug !== undefined ? { globalSlug: message.globalSlug } : {}),
-        ...(message.collectionSlug !== undefined
-          ? { collectionSlug: message.collectionSlug }
-          : {}),
+        ...(message.collectionSlug !== undefined ? { collectionSlug: message.collectionSlug } : {}),
         ...(this.#currentLocale !== undefined ? { locale: this.#currentLocale } : {}),
       };
 

@@ -19,8 +19,7 @@ import { emitTypes, type EmitOptions } from './emit/emit-types';
 import type { ExtractedSchema } from './parser/types';
 
 export interface GenerateTypesOptions
-  extends Pick<ExtractSchemaOptions, 'configPath' | 'project' | 'tsConfigFilePath'>,
-    EmitOptions {
+  extends Pick<ExtractSchemaOptions, 'configPath' | 'project' | 'tsConfigFilePath'>, EmitOptions {
   /**
    * If set, the generated code is written to this absolute or
    * cwd-relative path. The function still returns the rendered string
@@ -71,8 +70,4 @@ export async function generateTypes(options: GenerateTypesOptions): Promise<Gene
 
 export { extractSchema } from './parser/extract-schema';
 export { emitTypes } from './emit/emit-types';
-export type {
-  ExtractedSchema,
-  ExtractedSlug,
-  ExtractedField,
-} from './parser/types';
+export type { ExtractedSchema, ExtractedSlug, ExtractedField } from './parser/types';

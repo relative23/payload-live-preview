@@ -148,9 +148,7 @@ describe('schema-driven field-type resolution', () => {
       locale: 'en-US',
     });
     await vi.advanceTimersByTimeAsync(50);
-    expect(document.querySelector('[data-payload-field="price"]')?.textContent).toMatch(
-      /1[.,]234/,
-    );
+    expect(document.querySelector('[data-payload-field="price"]')?.textContent).toMatch(/1[.,]234/);
     await client.destroy();
   });
 

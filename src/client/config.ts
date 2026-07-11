@@ -19,6 +19,14 @@ export interface LivePreviewClientConfig {
   readonly apiRoute?: string;
   /** Population depth used with `serverURL`. Defaults to `1`. */
   readonly mergeDepth?: number;
+  /**
+   * Custom fetch implementation for the `serverURL` merge request —
+   * the equivalent of the official client's `requestHandler`. Use it
+   * to attach auth headers or route through your own proxy. Only
+   * available on the programmatic client (functions cannot be
+   * serialised into the inline script).
+   */
+  readonly mergeFetch?: typeof fetch;
   /** Enable verbose console debug output. Defaults to dev-mode detection. */
   readonly debug?: boolean;
   /** Debounce window for incoming updates. Defaults to 50 ms. */

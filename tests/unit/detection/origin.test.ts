@@ -121,6 +121,22 @@ describe('OriginDetector — referrer detection', () => {
     const without = new OriginDetector({ referrer: '' });
     expect(without.referrerWasAvailable).toBe(false);
   });
+
+  it('referrer is a fallback, NOT a union member: explicit origins pin the allow-list', () => {
+    // When the consumer pins the admin origin explicitly, a foreign
+    // embedder (whose origin lands in document.referrer) must NOT be
+    // trusted — otherwise any site iframing the page could post
+    // updates despite the explicit configuration.
+    const detector = new OriginDetector({
+      additionalOrigins: ['https://admin.example.com'],
+      referrer: 'https://attacker.example/framing-page',
+      enableReferrerDetection: true,
+      forceDevMode: false,
+    });
+    expect(detector.matches('https://admin.example.com')).toBe(true);
+    expect(detector.matches('https://attacker.example')).toBe(false);
+    expect(detector.enumerate()).not.toContain('https://attacker.example');
+  });
 });
 
 describe('OriginDetector — localhost pattern', () => {

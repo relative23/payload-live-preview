@@ -21,7 +21,12 @@
  * @module @adapters/astro/middleware
  */
 
-import { generateCspNonce, buildFrameAncestors, buildScriptSrcWithNonce, mergeCspHeader } from '@security/csp';
+import {
+  generateCspNonce,
+  buildFrameAncestors,
+  buildScriptSrcWithNonce,
+  mergeCspHeader,
+} from '@security/csp';
 import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
 import { isPreviewRequest } from '@adapters/shared/preview-request';
 import type { LivePreviewAstroOptions } from './types';

@@ -378,7 +378,9 @@ describe('LivePreviewRuntime — orphan-field diagnostic', () => {
       data: { title: 'new', shortDescription: 'no anchor here' },
     });
     await vi.advanceTimersByTimeAsync(50);
-    expect(joinLog(log)).toMatch(/update arrived for field "shortDescription".*no .* element exists/s);
+    expect(joinLog(log)).toMatch(
+      /update arrived for field "shortDescription".*no .* element exists/s,
+    );
     runtime.destroy();
   });
 
@@ -528,7 +530,10 @@ describe('LivePreviewRuntime — orphan-field diagnostic', () => {
       data: { title: 'x', orphanField: 'no anchor' },
     });
     await vi.advanceTimersByTimeAsync(50);
-    const all = consoleWarnSpy.mock.calls.flatMap((c) => c).map((a) => String(a)).join(' ');
+    const all = consoleWarnSpy.mock.calls
+      .flatMap((c) => c)
+      .map((a) => String(a))
+      .join(' ');
     expect(all).toMatch(/update arrived for field "orphanField"/);
     consoleWarnSpy.mockRestore();
     runtime.destroy();

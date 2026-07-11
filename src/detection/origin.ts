@@ -2,13 +2,15 @@
  * Origin detection and matching.
  *
  * Builds the set of trusted Payload admin origins and exposes a fast
- * matcher used by the message bus. Three sources are combined, in
- * precedence order:
+ * matcher used by the message bus. Three sources, in precedence order:
  *
  *   1. Explicit origins passed via configuration. Always trusted.
- *   2. `document.referrer`. The browser writes the parent's origin
- *      here when the iframe is loaded; capturing it gives a zero-
- *      config production path.
+ *   2. `document.referrer` — **only when no explicit origins are
+ *      configured**. The browser writes the embedder's origin here
+ *      when the iframe loads; using it as a fallback gives a
+ *      zero-config path, but it must never widen an explicit
+ *      allow-list (the referrer is whoever framed the page, which in
+ *      an attack is the attacker).
  *   3. Localhost pattern (any port on `localhost` / `127.0.0.1`),
  *      enabled when development mode is detected. Replaces the
  *      legacy hand-rolled port list.
@@ -103,14 +105,26 @@ export class OriginDetector {
    * Returns `true` when `origin` is trusted under the current policy.
    *
    * If an origin has been locked, only that exact value matches.
-   * Otherwise the result is the union of explicit, referrer, and
-   * (in dev mode) localhost-pattern matches.
+   * Otherwise explicit origins and (in dev mode) localhost-pattern
+   * matches are accepted. The referrer-derived origin is a **fallback,
+   * not a union member**: it only counts when NO explicit origins are
+   * configured. `document.referrer` always names whoever actually
+   * framed the page — if it were unioned with the explicit list, any
+   * site embedding the page in an iframe would become a trusted
+   * postMessage sender despite the consumer having pinned the admin
+   * origin explicitly.
    */
   matches(origin: string): boolean {
     if (origin.length === 0 || origin === 'null') return false;
     if (this.#lockedOrigin !== undefined) return origin === this.#lockedOrigin;
     if (this.#explicitOrigins.has(origin)) return true;
-    if (this.#referrerOrigin !== undefined && origin === this.#referrerOrigin) return true;
+    if (
+      this.#explicitOrigins.size === 0 &&
+      this.#referrerOrigin !== undefined &&
+      origin === this.#referrerOrigin
+    ) {
+      return true;
+    }
     if (this.#allowLocalhost && LOCALHOST_PATTERN.test(origin)) return true;
     return false;
   }
@@ -159,7 +173,10 @@ export class OriginDetector {
   enumerate(): string[] {
     if (this.#lockedOrigin !== undefined) return [this.#lockedOrigin];
     const result = new Set<string>(this.#explicitOrigins);
-    if (this.#referrerOrigin !== undefined) result.add(this.#referrerOrigin);
+    // Referrer is a zero-config fallback only — mirroring matches().
+    if (this.#explicitOrigins.size === 0 && this.#referrerOrigin !== undefined) {
+      result.add(this.#referrerOrigin);
+    }
     if (this.#allowLocalhost) {
       for (const port of LOCALHOST_HANDSHAKE_PORTS) {
         result.add(`http://localhost:${String(port)}`);

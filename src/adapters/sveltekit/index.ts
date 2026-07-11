@@ -113,9 +113,7 @@ export function livePreviewHandle(options: LivePreviewSvelteKitOptions = {}): Sv
       });
 
     const apply =
-      isPreview &&
-      (options.autoInject ?? true) &&
-      (options.shouldInject?.(event.request) ?? true);
+      isPreview && (options.autoInject ?? true) && (options.shouldInject?.(event.request) ?? true);
     const transform = apply ? chunk(scriptBody(), nonce) : undefined;
     const response = await resolve(
       event,

@@ -100,22 +100,43 @@ function readImportMetaDev(): boolean | undefined {
 }
 
 /**
+ * Compile-time flag injected by `scripts/build-runtime.ts`. Inside the
+ * inline IIFE `import.meta` can never exist (classic scripts have no
+ * module meta, and no bundler rewrites the inline tag), so the probe
+ * below is statically disabled there — probing would run `new
+ * Function`, which pages with a strict `script-src` (no
+ * `unsafe-eval`) report as a CSP violation on every load.
+ */
+declare const __INLINE_RUNTIME_BUILD__: boolean | undefined;
+
+let importMetaEnvCache: Record<string, unknown> | null | undefined;
+
+/**
  * Safely read `import.meta.env` without throwing in runtimes that do
  * not support `import.meta`. Returns `undefined` when unavailable.
  *
  * The indirection through `Function('return import.meta...')` is
  * intentional: parsing `import.meta` in CJS bundles fails at parse
  * time. By wrapping it in `Function`, the parse happens lazily and
- * crashes are caught at call time.
+ * crashes are caught at call time. The result is memoised so the
+ * probe (an eval in CSP terms) runs at most once per page.
  */
 function tryReadImportMetaEnv(): Record<string, unknown> | undefined {
+  if (typeof __INLINE_RUNTIME_BUILD__ !== 'undefined' && __INLINE_RUNTIME_BUILD__) {
+    return undefined;
+  }
+  if (importMetaEnvCache !== undefined) return importMetaEnvCache ?? undefined;
+  importMetaEnvCache = null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-implied-eval -- intentional lazy parse
     const reader = new Function(
       'try { return import.meta && import.meta.env; } catch (_) { return undefined; }',
     ) as () => unknown;
     const result = reader();
-    if (result && typeof result === 'object') return result as Record<string, unknown>;
+    if (result && typeof result === 'object') {
+      importMetaEnvCache = result as Record<string, unknown>;
+      return importMetaEnvCache;
+    }
   } catch {
     // ignore
   }

@@ -137,8 +137,7 @@ describe('Lexical auto-detection without data-payload-richtext', () => {
   });
 
   it('does not override an explicit data-payload-type', async () => {
-    document.body.innerHTML =
-      '<div data-payload-field="body" data-payload-type="text">old</div>';
+    document.body.innerHTML = '<div data-payload-field="body" data-payload-type="text">old</div>';
     const rendered: unknown[] = [];
     const runtime = makeRuntime({
       renderers: {

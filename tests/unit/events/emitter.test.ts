@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 
 interface TestEventMap {
@@ -144,7 +144,7 @@ describe('EventEmitter — async handlers', () => {
 
 describe('EventEmitter — error isolation', () => {
   let emitter: EventEmitter<TestEventMap>;
-  let consoleSpy: ReturnType<typeof vi.spyOn>;
+  let consoleSpy: MockInstance<(typeof console)['error']>;
 
   beforeEach(() => {
     emitter = new EventEmitter<TestEventMap>();

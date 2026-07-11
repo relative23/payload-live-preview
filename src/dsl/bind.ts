@@ -94,7 +94,6 @@ export function bindByPath<T = Record<string, unknown>>(
   return buildAttributes(path.join('.'), options);
 }
 
-
 function buildAttributes(field: string, options: BindOptions | undefined): FieldBindingAttributes {
   if (field.length === 0) {
     throw new Error('bind: field name must be a non-empty string');

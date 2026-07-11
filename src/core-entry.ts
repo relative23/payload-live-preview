@@ -68,13 +68,7 @@ export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol-ve
 
 // Typed binding DSL — small enough to live in the core slice
 export { bind, bindByPath } from './dsl';
-export type {
-  BindOptions,
-  FieldBindingAttributes,
-  FieldName,
-  FieldPath,
-  ValueAt,
-} from './dsl';
+export type { BindOptions, FieldBindingAttributes, FieldName, FieldPath, ValueAt } from './dsl';
 
 // Core types
 export type { CachedElement, FieldRenderer, FieldType, RenderContext } from './core/types';

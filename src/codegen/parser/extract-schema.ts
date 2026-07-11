@@ -81,9 +81,7 @@ function findConfigLiteral(
   sourceFile: SourceFile,
   diagnostics: string[],
 ): ObjectLiteralExpression | undefined {
-  const defaultExport = sourceFile
-    .getExportSymbols()
-    .find((sym) => sym.getName() === 'default');
+  const defaultExport = sourceFile.getExportSymbols().find((sym) => sym.getName() === 'default');
   if (!defaultExport) {
     diagnostics.push('payload.config.ts has no default export.');
     return undefined;
@@ -200,9 +198,7 @@ function extractEntries(
   return out;
 }
 
-function extractFieldList(
-  configEntry: ObjectLiteralExpression,
-): readonly ExtractedField[] {
+function extractFieldList(configEntry: ObjectLiteralExpression): readonly ExtractedField[] {
   const fieldsProperty = configEntry.getProperty('fields');
   if (!fieldsProperty || !Node.isPropertyAssignment(fieldsProperty)) return [];
   const initialiser = fieldsProperty.getInitializer();

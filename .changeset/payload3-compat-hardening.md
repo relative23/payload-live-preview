@@ -48,3 +48,25 @@ Payload 3.x compatibility and public-release hardening:
   `payload-document-event` and `externallyUpdatedRelationship` typed
   to match the real wire format.
 - Astro peer range is now `>=4.0.0 <8.0.0`, E2E-tested on Astro 4 and 7.
+
+Additional hardening from the pre-release competitive audit:
+
+- **Referrer trust is now a fallback, not a union member**: once
+  explicit `allowedOrigins` are configured, `document.referrer` can no
+  longer widen the allow-list (previously a foreign embedder could be
+  trusted alongside the pinned admin origin).
+- The inline runtime no longer constructs `new Function` (CSP `eval`)
+  — the `import.meta.env` probe is compiled out of the IIFE.
+- Honest Next.js/Nuxt guidance: DOM patching targets server-rendered
+  markup; client-rendered React/Vue trees should use the official
+  `@payloadcms/live-preview-react`/`-vue` hooks. The Next.js middleware
+  is documented as CSP-only (it cannot inject into `NextResponse.next()`).
+- New `@relative23/payload-live-preview/payload` entry:
+  `buildLivePreviewUrl()` generates the `admin.livePreview.url`
+  callback from declarative slug → path maps.
+- `mergeFetch` option on `LivePreviewClient` (equivalent of the
+  official `requestHandler`) for auth headers / custom proxies.
+- Weekly protocol-watch CI job asserts the wire-format invariants
+  against `@payloadcms/live-preview@latest`.
+- Node engines raised to `>=20.19.0` (Node 18/20 are EOL); toolchain
+  moved to TypeScript 5.9, Vitest 4, ESLint 10, jsdom 29, esbuild 0.28.

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommitsDisabled"],
+  "rangeStrategy": "bump",
+  "packageRules": [
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev dependencies (non-major)"
+    },
+    {
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<6.0.0",
+      "description": "TS 6/7 blocked until ts-morph (public peer), tsup dts, and typescript-eslint support the new compiler"
+    }
+  ],
+  "schedule": ["before 6am on monday"]
+}

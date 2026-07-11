@@ -47,7 +47,10 @@ export interface MessageHandlers {
    * Returning a Promise is supported — the bus serialises validation
    * per message. Validation errors are treated as rejection (silent).
    */
-  readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
+  readonly validateToken?: (
+    token: string | undefined,
+    origin: string,
+  ) => boolean | Promise<boolean>;
 }
 
 export class MessageBus {

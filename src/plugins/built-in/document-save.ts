@@ -50,9 +50,7 @@ const DEFAULT_REVALIDATE_URL = '/api/revalidate';
 /**
  * Build the plugin. Pass it to `client.use(documentSavePlugin({ … }))`.
  */
-export function documentSavePlugin(
-  options: DocumentSavePluginOptions = {},
-): LivePreviewPlugin {
+export function documentSavePlugin(options: DocumentSavePluginOptions = {}): LivePreviewPlugin {
   const strategy = options.strategy ?? 'silent';
   return {
     name: 'document-save',

@@ -129,8 +129,7 @@ const codeBlockRenderer: BlockRenderer = (fields) => {
   const language = sanitizeIdent(str(fields, 'language') ?? '');
   const langClass = language === '' ? '' : ` class="language-${language}"`;
   const caption = str(fields, 'caption');
-  const labelHtml =
-    caption !== undefined ? `<figcaption>${escapeHtml(caption)}</figcaption>` : '';
+  const labelHtml = caption !== undefined ? `<figcaption>${escapeHtml(caption)}</figcaption>` : '';
   return `<figure class="lp-block-code">${labelHtml}<pre><code${langClass}>${escapeHtml(code)}</code></pre></figure>`;
 };
 
@@ -149,7 +148,8 @@ const ctaBlockRenderer: BlockRenderer = (fields) => {
   const href = safeUrlOrUndefined(fields, 'href') ?? safeUrlOrUndefined(fields, 'url');
   if (label === undefined || href === undefined) return '';
   const lead = str(fields, 'lead');
-  const leadHtml = lead !== undefined ? `<p class="lp-block-cta__lead">${escapeHtml(lead)}</p>` : '';
+  const leadHtml =
+    lead !== undefined ? `<p class="lp-block-cta__lead">${escapeHtml(lead)}</p>` : '';
 
   const buttons = [renderCtaAnchor(label, href, true)];
   const secondaryLabel = str(fields, 'secondaryLabel');
@@ -185,9 +185,7 @@ function readMedia(
   return candidate;
 }
 
-function readLexicalChildren(
-  fields: Record<string, unknown>,
-): readonly LexicalNode[] | undefined {
+function readLexicalChildren(fields: Record<string, unknown>): readonly LexicalNode[] | undefined {
   const body = fields['body'] ?? fields['content'];
   if (typeof body !== 'object' || body === null) return undefined;
   const root = (body as { root?: { children?: unknown } }).root;

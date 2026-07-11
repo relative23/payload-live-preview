@@ -21,7 +21,11 @@ async function writeConfig(source: string): Promise<string> {
   return path;
 }
 
-function captureStdio(): { stdoutSpy: ReturnType<typeof vi.fn>; stderrSpy: ReturnType<typeof vi.fn>; restore: () => void } {
+function captureStdio(): {
+  stdoutSpy: ReturnType<typeof vi.fn>;
+  stderrSpy: ReturnType<typeof vi.fn>;
+  restore: () => void;
+} {
   const stdoutSpy = vi.fn();
   const stderrSpy = vi.fn();
   const originalStdout = process.stdout.write.bind(process.stdout);

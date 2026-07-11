@@ -90,4 +90,3 @@ describe('bindByPath() — proxy form', () => {
     ).toEqual({ 'data-payload-field': 'heroTitle' });
   });
 });
-

@@ -84,6 +84,7 @@ export class LivePreviewClient {
               serverURL: config.serverURL,
               ...(config.apiRoute !== undefined ? { apiRoute: config.apiRoute } : {}),
               ...(config.mergeDepth !== undefined ? { depth: config.mergeDepth } : {}),
+              ...(config.mergeFetch !== undefined ? { fetchFn: config.mergeFetch } : {}),
             },
           }
         : {}),

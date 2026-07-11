@@ -7,6 +7,7 @@ export default defineConfig({
     codegen: 'src/codegen/index.ts',
     'codegen-cli': 'src/codegen/cli.ts',
     'codegen-astro': 'src/codegen/astro-plugin.ts',
+    payload: 'src/payload/index.ts',
     'adapters/astro/index': 'src/adapters/astro/index.ts',
     'adapters/nextjs/index': 'src/adapters/nextjs/index.ts',
     'adapters/sveltekit/index': 'src/adapters/sveltekit/index.ts',

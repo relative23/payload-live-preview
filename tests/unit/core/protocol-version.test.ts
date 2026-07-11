@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  LIBRARY_PROTOCOL_VERSION,
-  hasCapability,
-  negotiateProtocol,
-} from '@core/protocol-version';
+import { LIBRARY_PROTOCOL_VERSION, hasCapability, negotiateProtocol } from '@core/protocol-version';
 
 describe('protocol negotiation', () => {
   it('exposes a positive integer LIBRARY_PROTOCOL_VERSION', () => {

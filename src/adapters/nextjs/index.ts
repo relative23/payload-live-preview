@@ -1,21 +1,24 @@
 /**
  * Next.js adapter for Payload Live Preview.
  *
- * Supports both the App Router and the Pages Router. Provides:
+ * ⚠️ Scope: this package patches server-rendered/static DOM. For
+ * client-rendered React trees prefer the official
+ * `@payloadcms/live-preview-react` (`useLivePreview`) — React
+ * re-renders can revert DOM patches made here.
  *
- *   - `createLivePreviewMiddleware(options)` — a request middleware
- *     that injects the inline script into HTML preview responses and
- *     merges CSP headers. Use it in `middleware.ts`:
+ * Provides:
  *
- *     ```ts
- *     import { createLivePreviewMiddleware } from '@relative23/payload-live-preview/nextjs';
- *     export default createLivePreviewMiddleware({
- *       allowedOrigins: ['https://admin.example.com'],
- *     });
- *     ```
+ *   - `renderLivePreviewScript(options)` / `generateInlineScript` —
+ *     embed the script in your root layout via
+ *     `<script dangerouslySetInnerHTML>`. This is the PRIMARY wiring
+ *     for Next.js: standard middleware cannot inject into the HTML
+ *     body because `NextResponse.next()` carries no body.
  *
- *   - `renderLivePreviewScript(options)` — returns the inline script
- *     as a string suitable for `<Script>` / `dangerouslySetInnerHTML`.
+ *   - `createLivePreviewMiddleware(options)` — merges CSP headers
+ *     (`frame-ancestors`) onto preview responses. Its script-injection
+ *     path only activates when you pass it a `Response` that actually
+ *     carries an HTML body (custom servers, route handlers returning
+ *     HTML) — in standard `middleware.ts` use `autoInject: false`.
  *
  * @module @adapters/nextjs
  */

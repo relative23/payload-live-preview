@@ -9,12 +9,14 @@ The threat model is **a malicious parent window**: anything that postMessages th
 Inbound `postMessage` events are dropped unless `event.origin` matches one of:
 
 - An explicit origin from `allowedOrigins` (or `PAYLOAD_ADMIN_ORIGIN` env var).
-- The captured `document.referrer` origin (only when the preview page is loaded inside an iframe).
+- The captured `document.referrer` origin — **only as a zero-config fallback when no explicit origins are configured**. The referrer names whoever actually framed the page, so it must never widen an explicitly pinned allow-list; the detector enforces this.
 - A localhost pattern (`/^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i`) — only in development.
 
 After the first valid update, the detector **locks** to that exact origin. Subsequent messages from any other origin (including ones in the original allow-list) are dropped.
 
-⚠️ **Referrer-only trust:** when no explicit origins are configured and dev-mode matching is off, the referrer is the only trust source — and `document.referrer` always names whoever actually framed the page. Any site that embeds the preview page in an iframe could then post (sanitised) updates into it. The runtime logs a console warning in this configuration. Mitigations: set explicit `allowedOrigins`, and serve a `frame-ancestors` CSP so only the admin may frame the page (the adapters do this by default on preview responses).
+⚠️ **Referrer-fallback mode:** when no explicit origins are configured and dev-mode matching is off, the referrer is the only trust source — any site that embeds the preview page in an iframe could then post (sanitised) updates into it. The runtime logs a console warning in this configuration. Mitigations: set explicit `allowedOrigins`, and serve a `frame-ancestors` CSP so only the admin may frame the page (the adapters do this by default on preview responses).
+
+Note on preview detection and CSP: the adapters treat `Sec-Fetch-Dest: iframe` as a preview signal, so **any** iframe-destined request gets the merged `frame-ancestors 'self' <admin-origins>` policy. Foreign origins remain blocked from framing; the only relaxation versus a site-wide `frame-ancestors 'none'` is that `'self'` and the admin origins become allowed on those responses. Disable with `manageCsp: false` if you need `'none'` unconditionally.
 
 ### 2. Message-shape validation
 

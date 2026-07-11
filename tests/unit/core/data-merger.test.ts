@@ -106,7 +106,7 @@ describe('DataMerger.merge', () => {
       .mockImplementationOnce((_url: string, init: RequestInit) => {
         firstSignal = init.signal!;
         return new Promise((_resolve, reject) => {
-          (init.signal!).addEventListener('abort', () => {
+          init.signal!.addEventListener('abort', () => {
             reject(new DOMException('aborted', 'AbortError'));
           });
         });
@@ -129,7 +129,7 @@ describe('DataMerger.merge', () => {
     const fetchFn = vi.fn().mockImplementation(
       (_url: string, init: RequestInit) =>
         new Promise((_resolve, reject) => {
-          (init.signal!).addEventListener('abort', () => {
+          init.signal!.addEventListener('abort', () => {
             reject(new DOMException('aborted', 'AbortError'));
           });
         }),

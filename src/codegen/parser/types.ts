@@ -48,11 +48,7 @@ interface ExtractedFieldBase {
 export interface ExtractedScalarField extends ExtractedFieldBase {
   readonly kind: 'scalar';
   readonly typeRef:
-    | 'string'
-    | 'number'
-    | 'boolean'
-    | 'Date'
-    | 'unknown' /* code / point / ui / fallback */;
+    'string' | 'number' | 'boolean' | 'Date' | 'unknown' /* code / point / ui / fallback */;
 }
 
 export interface ExtractedArrayField extends ExtractedFieldBase {

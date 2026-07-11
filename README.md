@@ -26,13 +26,49 @@ Bind DOM elements to Payload fields with `data-payload-*` attributes; the runtim
 | Relationship / upload population | ✅ (admin merges client-side) | ✅ with `serverURL` (REST merge) |
 | Schema-driven field typing (`fieldSchemaJSON`) | ✅ | — (3.x removed it; DOM heuristics + Lexical auto-detection take over) |
 
-Astro **4 – 7** (E2E-tested on 4.16 and 7.0), Node ≥ 18.18.
+Astro **4 – 7** (E2E-tested on 4.16 and 7.0), Node ≥ 20.19. Protocol verified against `@payloadcms/live-preview` 3.86 (a weekly CI job watches for wire-format drift).
+
+**When to use the official packages instead:** for a client-rendered React or Vue app, [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` re-render your real component tree and are maintained in lockstep with Payload — that is the better tool there. This package exists for everything the official hooks cannot cover: Astro, static/SSR pages, SvelteKit/Nuxt server-rendered markup, plain HTML — anywhere there is no client framework to re-render the page.
 
 ## Install
 
 ```bash
 npm install @relative23/payload-live-preview
 ```
+
+## Configure Payload
+
+Enable live preview in `payload.config.ts` — the `url` callback maps the edited document to the frontend URL shown in the preview iframe. `buildLivePreviewUrl` replaces the usual lookup-table boilerplate:
+
+```ts
+import { buildLivePreviewUrl } from '@relative23/payload-live-preview/payload';
+
+export default buildConfig({
+  admin: {
+    livePreview: {
+      url: buildLivePreviewUrl({
+        baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:4321',
+        collections: {
+          posts: ({ data }) => `/blog/${String(data.slug ?? '')}`,
+          services: ({ data, locale }) => `/${locale}/services/${String(data.slug ?? '')}`,
+        },
+        globals: {
+          homepage: '/',
+        },
+        fallback: '/', // new drafts without a slug land here
+      }),
+      breakpoints: [
+        { label: 'Mobile', name: 'mobile', width: 375, height: 667 },
+        { label: 'Desktop', name: 'desktop', width: 1440, height: 900 },
+      ],
+      collections: ['posts', 'services'],
+      globals: ['homepage'],
+    },
+  },
+});
+```
+
+The helper appends `?preview=true` automatically so the adapters' preview detection recognises the request. A hand-written `url: ({ data, locale, collectionConfig, globalConfig }) => string` callback works exactly the same — see the [official docs](https://payloadcms.com/docs/live-preview/overview) for the full contract.
 
 ## Quick start
 
@@ -92,19 +128,43 @@ if (isPreviewRequest(request, { adminOrigins: [ADMIN] })) {
 
 ### Next.js (App Router)
 
+> **Client-rendered React app?** Use the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) (`useLivePreview`) instead — it re-renders your real component tree, so conditional sections and custom components update with full fidelity, and it ships in lockstep with Payload. This package's DOM patching targets **server-rendered/static markup**; a hydrating React tree can revert its patches on re-render. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
+
+For statically rendered pages, embed the script in the root layout — Next middleware cannot inject into the HTML body (a `NextResponse.next()` carries no body), so use it for CSP headers only:
+
+```tsx
+// app/layout.tsx — script executes because it is part of the SSR HTML
+import { generateInlineScript } from '@relative23/payload-live-preview';
+
+const previewScript = generateInlineScript({
+  allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
+  serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
+});
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: previewScript }} />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
 ```ts
-// middleware.ts
+// middleware.ts — frame-ancestors on preview requests
 import { NextResponse, type NextRequest } from 'next/server';
 import { createLivePreviewMiddleware } from '@relative23/payload-live-preview/nextjs';
 
 const livePreview = createLivePreviewMiddleware({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
-  serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
+  autoInject: false,
 });
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-  return livePreview(request, response);
+  return livePreview(request, NextResponse.next());
 }
 ```
 
@@ -135,6 +195,8 @@ export default defineNitroPlugin(
 
 The plugin hooks `render:html`, injects the script into preview responses, and merges the CSP header. For manual embedding use `renderLivePreviewScript()` with `useHead`.
 
+> Same caveat as Next.js: DOM patches apply to the server-rendered markup. A hydrated Vue island that re-renders the bound nodes will overwrite them — bind fields in server-rendered regions, or use the official `@payloadcms/live-preview-vue` composable inside client components.
+
 ### Plain HTML (advanced)
 
 ```ts
@@ -151,6 +213,8 @@ const script = generateInlineScript({
 Payload 3.x posts **raw form values** on every edit — relationship and upload fields arrive as bare IDs. Set `serverURL` (any adapter, the inline generator, or the client) and the runtime re-fetches each update through the Payload REST API (`X-Payload-HTTP-Method-Override: GET`, `credentials: 'include'` — the same strategy as the official `@payloadcms/live-preview` client). The response is the populated document.
 
 Requirements: the preview page must be able to reach the Payload API with the editor's credentials (same-site cookies, or CORS with `credentials`). On failure the runtime falls back to rendering the raw values. Tune with `apiRoute` (default `/api`) and `mergeDepth` (default `1`).
+
+⚠️ **`mergeDepth` must match the `depth` of your initial page fetch.** If the page was rendered from a `depth=2` query but merges arrive with `depth=1`, nested relationships that were objects on first load degrade to IDs after the first edit — the same footgun the official docs warn about for their `depth` option.
 
 ## Draft documents on first load
 
@@ -284,7 +348,7 @@ Bundle-size note: `import … from '@relative23/payload-live-preview/core'` is a
 
 ## Security model
 
-- **Origin validation** — every incoming `postMessage` is checked against an allow-list assembled from explicit origins, `document.referrer`, and (in dev) a localhost pattern. After the first valid handshake the detector locks to that exact origin. ⚠️ When the referrer is the *only* trust source, any site that frames the page becomes a trusted sender — the runtime logs a warning; set explicit `allowedOrigins` and serve a `frame-ancestors` CSP in production (the adapters do the latter by default on preview responses).
+- **Origin validation** — every incoming `postMessage` is checked against explicit `allowedOrigins` plus (in dev) a localhost pattern. `document.referrer` is a **zero-config fallback only**: the moment you configure explicit origins, the referrer is ignored — a foreign site framing your page can never widen a pinned allow-list. After the first valid handshake the detector locks to that exact origin. ⚠️ In referrer-fallback mode any site that frames the page becomes a trusted sender — the runtime logs a warning; set explicit `allowedOrigins` and serve a `frame-ancestors` CSP in production (the adapters do the latter by default on preview responses).
 - **HTML sanitisation** — Lexical output and HTML-typed fields run through an isomorphic DOM sanitiser with a curated tag/attribute whitelist (media tags allowed; `<script>`, `<form>`, `<iframe>`, `<svg>`, event handlers, `style` rejected; `srcset` candidates URL-validated).
 - **URL validation** — every URL that lands in `href`/`src`/`srcset`/`poster` must be `http(s)` / `mailto:` / `tel:` / relative; `javascript:`, `data:`, `vbscript:`, `file:`, `blob:` are rejected (case-insensitive, whitespace-tolerant). External links — including protocol-relative ones — get `rel="noopener noreferrer"`.
 - **Policed attribute writes** — `data-payload-attribute` refuses event handlers, `style`, `srcdoc`, `formaction`, `id`/`name` (DOM clobbering) and validates URL attributes.

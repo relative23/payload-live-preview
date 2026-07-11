@@ -1,0 +1,25 @@
+name: Protocol Watch
+
+# This library hand-mirrors Payload's live-preview postMessage protocol
+# (no `payload` dependency by design). This weekly job downloads the
+# latest @payloadcms/live-preview and asserts the wire-format
+# invariants we depend on, so protocol drift surfaces as a red run
+# instead of silent breakage in consumer projects.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  protocol-watch:
+    name: Wire-format invariants vs @payloadcms/live-preview@latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsx scripts/check-protocol-drift.ts

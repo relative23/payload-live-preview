@@ -58,6 +58,10 @@ async function buildRuntime(): Promise<string> {
     // these globals as identifiers, not literal-replace them.
     define: {
       'process.env.NODE_ENV': '"production"',
+      // Statically disables the `new Function('import.meta…')` probe —
+      // inline classic scripts can never have import.meta, and the
+      // probe counts as eval under a strict CSP.
+      __INLINE_RUNTIME_BUILD__: 'true',
     },
     tsconfig: resolve(ROOT, 'tsconfig.json'),
   });

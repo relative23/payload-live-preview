@@ -28,8 +28,7 @@ export type FieldPath<T, Depth extends 0 | 1 | 2 | 3 = 3> = Depth extends 0
     : T extends object
       ? {
           [K in Extract<keyof T, string>]:
-            | K
-            | (T[K] extends object ? `${K}.${FieldPath<T[K], Prev<Depth>>}` : never);
+            K | (T[K] extends object ? `${K}.${FieldPath<T[K], Prev<Depth>>}` : never);
         }[Extract<keyof T, string>]
       : never;
 

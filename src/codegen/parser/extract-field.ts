@@ -22,11 +22,7 @@ import {
   type ObjectLiteralExpression,
   type PropertyAssignment,
 } from 'ts-morph';
-import type {
-  ExtractedBlock,
-  ExtractedField,
-  ExtractedScalarField,
-} from './types';
+import type { ExtractedBlock, ExtractedField, ExtractedScalarField } from './types';
 
 const SCALAR_TYPE_MAP: Readonly<Record<string, ExtractedScalarField['typeRef']>> = {
   text: 'string',
@@ -219,10 +215,7 @@ function readSelectOptions(literal: ObjectLiteralExpression): readonly string[] 
   return out;
 }
 
-function readStringProperty(
-  literal: ObjectLiteralExpression,
-  name: string,
-): string | undefined {
+function readStringProperty(literal: ObjectLiteralExpression, name: string): string | undefined {
   const property = literal.getProperty(name);
   if (!property || !isPropertyAssignment(property)) return undefined;
   const initialiser = property.getInitializer();
@@ -233,10 +226,7 @@ function readStringProperty(
   return undefined;
 }
 
-function readBooleanProperty(
-  literal: ObjectLiteralExpression,
-  name: string,
-): boolean | undefined {
+function readBooleanProperty(literal: ObjectLiteralExpression, name: string): boolean | undefined {
   const property = literal.getProperty(name);
   if (!property || !isPropertyAssignment(property)) return undefined;
   const initialiser = property.getInitializer();

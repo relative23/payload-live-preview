@@ -107,9 +107,7 @@ export async function run(argv: readonly string[]): Promise<number> {
     const result = await generateTypes({
       configPath: args.configPath,
       outFile: args.outFile,
-      ...(args.tsConfigFilePath !== undefined
-        ? { tsConfigFilePath: args.tsConfigFilePath }
-        : {}),
+      ...(args.tsConfigFilePath !== undefined ? { tsConfigFilePath: args.tsConfigFilePath } : {}),
     });
     const slugCount = result.schema.globals.length + result.schema.collections.length;
     if (!args.quiet) {

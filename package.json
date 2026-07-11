@@ -68,6 +68,16 @@
         "types": "./dist/codegen-astro.d.ts",
         "default": "./dist/codegen-astro.js"
       }
+    },
+    "./payload": {
+      "import": {
+        "types": "./dist/payload.d.ts",
+        "default": "./dist/payload.js"
+      },
+      "require": {
+        "types": "./dist/payload.d.cts",
+        "default": "./dist/payload.cjs"
+      }
     }
   },
   "bin": {
@@ -103,25 +113,23 @@
     "release": "npm run build && changeset publish"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.0",
-    "@eslint/js": "^9.17.0",
+    "@changesets/cli": "^2.31.0",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
-    "@types/node": "^22.10.0",
-    "@typescript-eslint/eslint-plugin": "^8.18.0",
-    "@typescript-eslint/parser": "^8.18.0",
-    "@vitest/coverage-v8": "^2.1.8",
-    "esbuild": "^0.24.0",
-    "eslint": "^9.17.0",
-    "globals": "^15.13.0",
-    "jsdom": "^25.0.1",
-    "prettier": "^3.4.0",
+    "@types/node": "^22.20.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.5",
     "tinybench": "^3.1.0",
     "ts-morph": "^28.0.0",
-    "tsup": "^8.3.5",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.0",
-    "vitest": "^2.1.8"
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.63.0",
+    "vitest": "^4.1.10"
   },
   "keywords": [
     "payload",
@@ -154,7 +162,11 @@
     }
   },
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=20.19.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "repository": {
     "type": "git",

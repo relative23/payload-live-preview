@@ -128,7 +128,14 @@ describe('documentSavePlugin — revalidate', () => {
     await manager.register(documentSavePlugin({ strategy: 'revalidate' }));
     await events.emit('documentSave', { timestamp: 1 });
     await new Promise((r) => setTimeout(r, 5));
-    expect(logs.some((args) => args.map((a) => String(a)).join(' ').includes('revalidate failed'))).toBe(true);
+    expect(
+      logs.some((args) =>
+        args
+          .map((a) => String(a))
+          .join(' ')
+          .includes('revalidate failed'),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -148,13 +155,27 @@ describe('documentSavePlugin — fetch (custom)', () => {
     await manager.register(documentSavePlugin({ strategy: 'fetch', handler }));
     await events.emit('documentSave', { timestamp: 1 });
     await new Promise((r) => setTimeout(r, 5));
-    expect(logs.some((args) => args.map((a) => String(a)).join(' ').includes('handler threw'))).toBe(true);
+    expect(
+      logs.some((args) =>
+        args
+          .map((a) => String(a))
+          .join(' ')
+          .includes('handler threw'),
+      ),
+    ).toBe(true);
   });
 
   it('logs when strategy=fetch but no handler is supplied', async () => {
     const { manager, events, logs } = setup();
     await manager.register(documentSavePlugin({ strategy: 'fetch' }));
     await events.emit('documentSave', { timestamp: 1 });
-    expect(logs.some((args) => args.map((a) => String(a)).join(' ').includes('no handler supplied'))).toBe(true);
+    expect(
+      logs.some((args) =>
+        args
+          .map((a) => String(a))
+          .join(' ')
+          .includes('no handler supplied'),
+      ),
+    ).toBe(true);
   });
 });

@@ -253,10 +253,9 @@ describe('default block renderers (after registerDefaultBlocks)', () => {
 
   describe('fallback', () => {
     it('falls through to generic data-block-type for unknown slugs', () => {
-      const html = lexicalToHtml(
-        makeBlockRoot('totally-custom-slug', { text: 'x' }),
-        { sanitize: false },
-      );
+      const html = lexicalToHtml(makeBlockRoot('totally-custom-slug', { text: 'x' }), {
+        sanitize: false,
+      });
       expect(html).toContain('data-block-type="totally-custom-slug"');
       expect(html).toContain('data-block-text="x"');
     });
