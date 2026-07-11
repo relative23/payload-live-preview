@@ -27,10 +27,17 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
+      # npm >= 11.5 is required for OIDC trusted publishing (tokenless).
+      - run: npm install -g npm@latest
+
       - run: npm ci
       - run: npm run check
       - run: npm run build
 
+      # Publishes via npm Trusted Publishing (OIDC) — no NPM_TOKEN. The
+      # `id-token: write` permission above lets npm verify this repo +
+      # workflow against the trusted publisher configured on the package,
+      # and provenance is attached automatically.
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:
@@ -40,5 +47,4 @@ jobs:
           title: 'chore: release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
