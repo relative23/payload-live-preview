@@ -27,18 +27,47 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
-      # npm >= 11.5 is required for OIDC trusted publishing (tokenless).
-      - run: npm install -g npm@latest
+      # Decide whether this push should touch the registry at all. A plain
+      # feature push carries no changesets and its package.json version is
+      # already on npm — in that case changesets/action would otherwise try
+      # to republish the current version and fail ("cannot publish over
+      # 1.0.3"). Proceed only when there are pending changesets (→ open a
+      # Version PR) or the current version isn't published yet (→ publish
+      # it, e.g. right after a Version PR merge).
+      - name: Decide whether a release is needed
+        id: gate
+        shell: bash
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          changesets=false
+          if ls .changeset/*.md 2>/dev/null | grep -qvi 'readme'; then changesets=true; fi
+          published=$(npm view "$name@$version" version 2>/dev/null || true)
+          if [ "$changesets" = "true" ] || [ "$published" != "$version" ]; then
+            run=true
+          else
+            run=false
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "changesets=$changesets published=${published:-none} version=$version -> run=$run"
 
-      - run: npm ci
-      - run: npm run check
-      - run: npm run build
+      # npm >= 11.5 is required for OIDC trusted publishing (tokenless).
+      - if: steps.gate.outputs.run == 'true'
+        run: npm install -g npm@latest
+
+      - if: steps.gate.outputs.run == 'true'
+        run: npm ci
+      - if: steps.gate.outputs.run == 'true'
+        run: npm run check
+      - if: steps.gate.outputs.run == 'true'
+        run: npm run build
 
       # Publishes via npm Trusted Publishing (OIDC) — no NPM_TOKEN. The
       # `id-token: write` permission above lets npm verify this repo +
       # workflow against the trusted publisher configured on the package,
       # and provenance is attached automatically.
       - name: Create Release PR or Publish
+        if: steps.gate.outputs.run == 'true'
         uses: changesets/action@v1
         with:
           publish: npm run release
