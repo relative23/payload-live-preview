@@ -14,18 +14,25 @@
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
 export interface HeartbeatOptions {
-  /** Milliseconds of silence before declaring a timeout. Default: 30 000. */
+  /**
+   * Milliseconds of silence before declaring a timeout. `0` disables
+   * the timer entirely — the correct default for the real Payload
+   * protocol, which sends messages only on form edits and therefore
+   * has no keepalive: any idle-based timeout would produce false
+   * disconnects while the editor simply isn't typing.
+   */
   readonly timeoutMs?: number;
   /** Callback invoked when the heartbeat times out. */
   readonly onTimeout: () => void;
 }
 
-const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_TIMEOUT_MS = 0;
 
 /**
  * Heartbeat timer with `kick`/`stop` semantics. `kick()` is invoked
  * on every valid incoming message; if it is not called within
- * `timeoutMs` the `onTimeout` callback fires.
+ * `timeoutMs` the `onTimeout` callback fires. A `timeoutMs` of `0`
+ * (the default) disables the timer.
  */
 export class HeartbeatTimer {
   readonly #timeoutMs: number;
@@ -41,6 +48,7 @@ export class HeartbeatTimer {
   /** Reset the timer. Schedules `onTimeout` after `timeoutMs`. */
   kick(): void {
     this.#lastKick = Date.now();
+    if (this.#timeoutMs <= 0) return;
     if (this.#handle !== null) clearTimeout(this.#handle);
     this.#handle = setTimeout(() => {
       this.#handle = null;

@@ -1,24 +1,32 @@
 /**
  * Protocol-version negotiation.
  *
- * The Payload live-preview protocol has grown over time:
+ * ⚠️ Reality check: **stock Payload does not version its live-preview
+ * postMessage protocol.** The admin never sends a `protocolVersion`
+ * field and ignores extra fields in our `ready` handshake. Observed
+ * wire behaviour:
  *
- *   - **v1** — original Payload 2.x: data + slug + locale only.
- *   - **v2** — adds `fieldSchemaJSON`, enabling schema-driven type
- *     resolution without DOM annotations.
- *   - **v3** — adds `previewToken`, enabling JWT-gated previews for
- *     multi-tenant admin contexts.
- *   - **v4** — adds nested-array recursion and a richer document-event
- *     payload (this library's contribution).
+ *   - Payload **2.x** sent `fieldSchemaJSON` with the first update
+ *     (client-side merge era).
+ *   - Payload **3.x** removed `fieldSchemaJSON` entirely; the official
+ *     client re-fetches merged documents through the REST API instead.
+ *   - No Payload version sends `previewToken` or any keepalive.
  *
- * To stay forwards- and backwards-compatible, both sides advertise
- * their highest supported version in the `ready` handshake. The
- * runtime negotiates `min(ours, theirs)` and exposes the result as a
- * capability set the host can branch on without hard-coding numbers.
+ * This module therefore only matters for NON-stock admin panels — a
+ * custom `window.postMessage` sender can advertise a version and this
+ * library will negotiate `min(ours, theirs)` and expose capability
+ * flags. Against stock Payload, `theirs` stays `undefined`, negotiation
+ * collapses to v1, and nothing is gated on it: schema handling
+ * activates whenever `fieldSchemaJSON` is actually present, and token
+ * validation only runs when the consumer opts in.
  *
- * When the remote party does not advertise a version (older Payload
- * builds), we assume `v1` — the conservative default that disables
- * every feature added after the original protocol.
+ * Version ladder (this library's own numbering, not Payload's):
+ *
+ *   - **v1** — data + slug + locale (matches stock Payload of any era).
+ *   - **v2** — remote sends `fieldSchemaJSON` (Payload 2.x behaviour).
+ *   - **v3** — remote sends `previewToken` (custom senders only).
+ *   - **v4** — nested-array recursion / richer document events
+ *     (custom senders only).
  *
  * @module @core/protocol-version
  */

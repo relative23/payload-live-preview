@@ -25,6 +25,7 @@ import type { CachedElement, ElementPredicate, FieldType } from './types';
 
 export const FIELD_ATTRIBUTE = 'data-payload-field';
 export const TYPE_ATTRIBUTE = 'data-payload-type';
+export const TARGET_ATTRIBUTE_ATTRIBUTE = 'data-payload-attribute';
 export const HREF_ATTRIBUTE = 'data-payload-href';
 export const SRC_ATTRIBUTE = 'data-payload-src';
 export const ALT_ATTRIBUTE = 'data-payload-alt';
@@ -205,6 +206,7 @@ export class ElementCache {
     if (fieldName === null || fieldName.length === 0) return undefined;
     const explicit = element.getAttribute(TYPE_ATTRIBUTE);
     const fieldType = resolveFieldType(element);
+    const targetAttribute = element.getAttribute(TARGET_ATTRIBUTE_ATTRIBUTE);
     const hrefField = element.getAttribute(HREF_ATTRIBUTE);
     const srcField = element.getAttribute(SRC_ATTRIBUTE);
     const altField = element.getAttribute(ALT_ATTRIBUTE);
@@ -217,6 +219,7 @@ export class ElementCache {
       fieldName,
       fieldType,
       explicitFieldType: explicit !== null && VALID_FIELD_TYPES.has(explicit as FieldType),
+      ...(targetAttribute !== null && targetAttribute.length > 0 ? { targetAttribute } : {}),
       ...(hrefField !== null ? { hrefField } : {}),
       ...(srcField !== null ? { srcField } : {}),
       ...(altField !== null ? { altField } : {}),

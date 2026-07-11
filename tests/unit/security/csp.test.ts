@@ -3,6 +3,7 @@ import {
   generateCspNonce,
   buildFrameAncestors,
   buildScriptSrcWithNonce,
+  mergeCspHeader,
   setCspCrypto,
 } from '@security/csp';
 
@@ -165,23 +166,68 @@ describe('buildFrameAncestors', () => {
 });
 
 describe('buildScriptSrcWithNonce', () => {
-  it('builds the canonical CSP-3 recipe', () => {
-    expect(buildScriptSrcWithNonce('abc123')).toBe("'self' 'nonce-abc123' 'strict-dynamic'");
+  it('builds a nonce policy without strict-dynamic by default', () => {
+    // strict-dynamic makes CSP-3 browsers ignore 'self' and host
+    // sources, which breaks framework hydration scripts — opt-in only.
+    expect(buildScriptSrcWithNonce('abc123')).toBe("'self' 'nonce-abc123'");
   });
 
-  it('omits self when requested', () => {
-    expect(buildScriptSrcWithNonce('abc123', { self: false })).toBe(
-      "'nonce-abc123' 'strict-dynamic'",
+  it('adds strict-dynamic when explicitly requested', () => {
+    expect(buildScriptSrcWithNonce('abc123', { strictDynamic: true })).toBe(
+      "'self' 'nonce-abc123' 'strict-dynamic'",
     );
   });
 
-  it('appends extra sources after strict-dynamic', () => {
+  it('omits self when requested', () => {
+    expect(buildScriptSrcWithNonce('abc123', { self: false })).toBe("'nonce-abc123'");
+  });
+
+  it('appends extra sources after the nonce', () => {
     expect(buildScriptSrcWithNonce('abc123', { extra: ['https://cdn.example.com', ''] })).toBe(
-      "'self' 'nonce-abc123' 'strict-dynamic' https://cdn.example.com",
+      "'self' 'nonce-abc123' https://cdn.example.com",
     );
   });
 
   it('rejects empty nonce', () => {
     expect(() => buildScriptSrcWithNonce('')).toThrow(RangeError);
+  });
+});
+
+describe('mergeCspHeader', () => {
+  it('unions sources into an existing directive instead of replacing it', () => {
+    const merged = mergeCspHeader("script-src 'self' https://cdn.example.com", {
+      'script-src': "'nonce-abc'",
+    });
+    expect(merged).toBe("script-src 'self' https://cdn.example.com 'nonce-abc'");
+  });
+
+  it('preserves unrelated directives', () => {
+    const merged = mergeCspHeader("default-src 'self'; img-src https:", {
+      'frame-ancestors': "'self' https://admin.example.com",
+    });
+    expect(merged).toContain("default-src 'self'");
+    expect(merged).toContain('img-src https:');
+    expect(merged).toContain("frame-ancestors 'self' https://admin.example.com");
+  });
+
+  it("drops 'none' when real sources are merged in", () => {
+    const merged = mergeCspHeader("frame-ancestors 'none'", {
+      'frame-ancestors': "'self' https://admin.example.com",
+    });
+    expect(merged).toBe("frame-ancestors 'self' https://admin.example.com");
+  });
+
+  it('replaces the directive when mode is replace', () => {
+    const merged = mergeCspHeader("script-src 'unsafe-inline'", {
+      'script-src': { value: "'nonce-abc'", mode: 'replace' },
+    });
+    expect(merged).toBe("script-src 'nonce-abc'");
+  });
+
+  it('deduplicates repeated sources', () => {
+    const merged = mergeCspHeader("frame-ancestors 'self'", {
+      'frame-ancestors': "'self' https://a.example",
+    });
+    expect(merged).toBe("frame-ancestors 'self' https://a.example");
   });
 });

@@ -34,6 +34,9 @@ import type { FieldRenderer } from './types';
  */
 declare const __LIVE_PREVIEW_CONFIG__: {
   readonly additionalOrigins: readonly string[];
+  readonly serverURL: string;
+  readonly apiRoute: string;
+  readonly mergeDepth: number;
   readonly debug: boolean;
   readonly debounceMs: number;
   readonly enableA11y: boolean;
@@ -76,6 +79,12 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
   if (typeof window === 'undefined') return undefined;
   if (!isInPreviewContext()) return undefined;
 
+  // Double-injection guard: when the script is embedded twice (e.g. the
+  // Astro integration AND the middleware both inject it), the first
+  // instance wins and the second becomes a no-op.
+  const existing = (window as { __livePreview?: LivePreviewGlobalApi }).__livePreview;
+  if (existing !== undefined) return existing;
+
   const config = readBuildConfig();
 
   const detector = new OriginDetector({
@@ -89,6 +98,12 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
       '[live-preview] No trusted origin could be detected. ' +
         'Set the PAYLOAD_ADMIN_ORIGIN env var or pass `allowedOrigins` to generateInlineScript().',
     );
+  } else if (detector.isReferrerOnlyTrust) {
+    console.warn(
+      '[live-preview] Trusting the embedding page via document.referrer only — any site ' +
+        'that frames this page could post preview updates. Pass explicit `allowedOrigins` ' +
+        'and serve a `frame-ancestors` CSP for production.',
+    );
   }
 
   const emitter = new EventEmitter();
@@ -99,6 +114,17 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     originMatcher: (origin) => detector.matches(origin),
     readyTargets: detector.enumerate(),
     emitter,
+    // Guard on typeof — a config literal baked by an older generator
+    // (or a hand-written one in tests) may not carry the merge fields.
+    ...(typeof config.serverURL === 'string' && config.serverURL !== ''
+      ? {
+          dataMerge: {
+            serverURL: config.serverURL,
+            ...(typeof config.apiRoute === 'string' ? { apiRoute: config.apiRoute } : {}),
+            ...(typeof config.mergeDepth === 'number' ? { depth: config.mergeDepth } : {}),
+          },
+        }
+      : {}),
     debounceMs: config.debounceMs,
     heartbeatMs: config.heartbeatMs,
     intersectionRootMargin: config.intersectionRootMargin,
@@ -155,10 +181,13 @@ function readBuildConfig(): typeof __LIVE_PREVIEW_CONFIG__ {
   if (baked !== undefined) return baked;
   return {
     additionalOrigins: [],
+    serverURL: '',
+    apiRoute: '/api',
+    mergeDepth: 1,
     debug: false,
     debounceMs: 50,
     enableA11y: true,
-    heartbeatMs: 30_000,
+    heartbeatMs: 0,
     disableVisibilityGate: false,
     visibilityGateThreshold: 50,
     intersectionRootMargin: '200px',

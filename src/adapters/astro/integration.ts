@@ -51,6 +51,9 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
           ...(options.allowedOrigins !== undefined
             ? { allowedOrigins: options.allowedOrigins }
             : {}),
+          ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
+          ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
+          ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
           ...(options.debug !== undefined ? { debug: options.debug } : {}),
           ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
           ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),

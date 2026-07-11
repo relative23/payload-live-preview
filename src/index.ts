@@ -26,6 +26,7 @@ export {
   buildFrameAncestors,
   buildScriptSrcWithNonce,
   generateCspNonce,
+  mergeCspHeader,
   setCspCrypto,
   isSafeUrl,
   isExternalHttpUrl,
@@ -33,9 +34,17 @@ export {
   setSanitizerDocument,
   escapeHtml,
   escapeHtmlAttribute,
+  type CspDirectiveMerge,
   type FrameAncestorsOptions,
   type SanitizerDocument,
 } from './security';
+
+// Server-side preview-request detection — for hand-rolled middleware
+export {
+  isPreviewRequest,
+  type PreviewRequestLike,
+  type PreviewRequestOptions,
+} from './adapters/shared/preview-request';
 
 // Lexical rendering — useful for SSR pre-rendering of rich text fields
 export {
@@ -59,6 +68,9 @@ export {
   highlightPlugin,
   debugPlugin,
   createAnalyticsPlugin,
+  documentSavePlugin,
+  type DocumentSavePluginOptions,
+  type DocumentSaveStrategy,
   type LivePreviewPlugin,
   type PluginContext,
   type FieldTransform,

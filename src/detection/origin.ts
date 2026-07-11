@@ -191,6 +191,21 @@ export class OriginDetector {
     if (this.#referrerOrigin !== undefined) return false;
     return true;
   }
+
+  /**
+   * `true` when the referrer is the ONLY trust source (no explicit
+   * origins, no localhost matching). In that mode any site that frames
+   * the page becomes a trusted postMessage sender — `document.referrer`
+   * always names the actual embedder. Content is still sanitized, but
+   * the origin allow-list no longer restricts who may drive it. Hosts
+   * should surface a warning suggesting explicit `allowedOrigins` and
+   * a `frame-ancestors` policy in production.
+   */
+  get isReferrerOnlyTrust(): boolean {
+    if (this.#explicitOrigins.size > 0) return false;
+    if (this.#allowLocalhost) return false;
+    return this.#referrerOrigin !== undefined;
+  }
 }
 
 /**

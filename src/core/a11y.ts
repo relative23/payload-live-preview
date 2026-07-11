@@ -74,16 +74,25 @@ function resolveStrings(locale: string): Messages {
  * the same DOM node.
  */
 export class A11yAnnouncer {
-  readonly #element: HTMLElement | null;
+  #element: HTMLElement | null = null;
   readonly #strings: Messages;
   #clearTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(locale: string = detectInitialLocale()) {
     this.#strings = resolveStrings(locale);
-    if (typeof document === 'undefined') {
-      this.#element = null;
-      return;
-    }
+    // The live region is mounted lazily on first announcement: the
+    // announcer is constructed during runtime bootstrap, which can run
+    // from a <head> inline script while `document.body` is still null.
+  }
+
+  /**
+   * Create (or adopt) the shared live-region element. Returns `null`
+   * when no DOM is available yet — announcements are then dropped,
+   * which is fine: they are progress niceties, not state.
+   */
+  #mount(): HTMLElement | null {
+    if (this.#element !== null && this.#element.isConnected) return this.#element;
+    if (typeof document === 'undefined' || document.body === null) return null;
     let element: HTMLElement | null = document.getElementById(ELEMENT_ID);
     if (!element) {
       element = document.createElement('div');
@@ -95,6 +104,7 @@ export class A11yAnnouncer {
       document.body.appendChild(element);
     }
     this.#element = element;
+    return element;
   }
 
   /** Announce that the preview successfully connected. */
@@ -128,8 +138,9 @@ export class A11yAnnouncer {
   }
 
   #say(message: string): void {
-    if (!this.#element) return;
-    this.#element.textContent = message;
+    const element = this.#mount();
+    if (!element) return;
+    element.textContent = message;
     if (this.#clearTimer !== null) clearTimeout(this.#clearTimer);
     this.#clearTimer = setTimeout(() => {
       this.#clearTimer = null;

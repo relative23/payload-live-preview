@@ -9,7 +9,7 @@
  * @module @lexical/render
  */
 
-import { sanitizeHtml } from '@security/sanitizer';
+import { sanitizeHtml, hasSanitizerDocument } from '@security/sanitizer';
 import { lookup, register, type RenderNodeContext } from './registry';
 import type { LexicalNode, LexicalRoot } from './types';
 import { resolveAlignment, resolveIndent } from './utils';
@@ -85,7 +85,14 @@ export function lexicalToHtml(content: LexicalRoot, options: LexicalRenderOption
   if (!isLexicalContent(content)) return '';
   const html = renderChildren(content.root.children);
   if (options.sanitize === false) return html;
-  if (typeof document === 'undefined') return html;
+  // Honour `setSanitizerDocument()` overrides (SSR with linkedom/jsdom)
+  // instead of probing the `document` global — otherwise the sanitize
+  // backstop would silently disappear server-side even when the
+  // consumer wired a DOM for exactly this purpose. Without any DOM the
+  // per-node renderers' escaping still guarantees safe output for the
+  // built-in node set; custom block renderers should sanitize their own
+  // output when SSR-rendering without a sanitizer document.
+  if (!hasSanitizerDocument()) return html;
   return sanitizeHtml(html);
 }
 

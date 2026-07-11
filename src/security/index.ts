@@ -23,6 +23,8 @@ export {
   setCspCrypto,
   buildFrameAncestors,
   buildScriptSrcWithNonce,
+  mergeCspHeader,
+  type CspDirectiveMerge,
   type FrameAncestorSource,
   type FrameAncestorsOptions,
 } from './csp';

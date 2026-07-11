@@ -143,23 +143,101 @@ export function buildFrameAncestors(options: FrameAncestorsOptions = {}): string
 
 /**
  * Build a `script-src` value that permits a single nonce plus optional
- * extra sources. Always includes `'strict-dynamic'` so transitively
- * loaded scripts inherit trust from nonce-marked ancestors — the
- * modern CSP-3 recipe that lets us avoid `'unsafe-inline'` entirely.
+ * extra sources.
+ *
+ * `'strict-dynamic'` is **opt-in**: under CSP 3 it makes browsers
+ * ignore `'self'` and every host source in the directive, so any
+ * parser-inserted script without a nonce (framework hydration scripts,
+ * consumer `<script>` tags) would be blocked. Only enable it when every
+ * script on the page carries the nonce.
  */
 export function buildScriptSrcWithNonce(
   nonce: string,
-  options: { readonly self?: boolean; readonly extra?: readonly string[] } = {},
+  options: {
+    readonly self?: boolean;
+    readonly extra?: readonly string[];
+    readonly strictDynamic?: boolean;
+  } = {},
 ): string {
   if (nonce.length === 0) throw new RangeError('buildScriptSrcWithNonce: nonce is empty');
-  const { self = true, extra = [] } = options;
+  const { self = true, extra = [], strictDynamic = false } = options;
   const parts: string[] = [];
   if (self) parts.push("'self'");
   parts.push(`'nonce-${nonce}'`);
-  parts.push("'strict-dynamic'");
+  if (strictDynamic) parts.push("'strict-dynamic'");
   for (const e of extra) {
     const trimmed = e.trim();
     if (trimmed.length > 0) parts.push(trimmed);
   }
   return parts.join(' ');
+}
+
+/**
+ * How a directive is merged into an existing CSP header value.
+ *
+ *   - `union` (default) — the new sources are added to the existing
+ *     directive's sources (deduplicated). An existing `'none'` is
+ *     dropped when real sources are added, since `'none'` may not be
+ *     combined with other sources.
+ *   - `replace` — the new value overwrites the existing directive.
+ */
+export interface CspDirectiveMerge {
+  readonly value: string;
+  readonly mode?: 'union' | 'replace';
+}
+
+/**
+ * Merge directives into an existing `Content-Security-Policy` header
+ * value without clobbering what a consumer (or another middleware)
+ * already configured. Directives not mentioned in `additions` pass
+ * through untouched; new directives are appended.
+ *
+ * This is the single CSP-merge implementation shared by every adapter.
+ */
+export function mergeCspHeader(
+  existing: string,
+  additions: Readonly<Record<string, string | CspDirectiveMerge>>,
+): string {
+  const directives = new Map<string, string>();
+  for (const part of existing.split(';')) {
+    const trimmed = part.trim();
+    if (trimmed.length === 0) continue;
+    const spaceIndex = trimmed.indexOf(' ');
+    if (spaceIndex < 0) {
+      directives.set(trimmed.toLowerCase(), '');
+      continue;
+    }
+    directives.set(
+      trimmed.slice(0, spaceIndex).toLowerCase(),
+      trimmed.slice(spaceIndex + 1).trim(),
+    );
+  }
+
+  for (const [rawName, rawAddition] of Object.entries(additions)) {
+    const name = rawName.toLowerCase();
+    const addition: CspDirectiveMerge =
+      typeof rawAddition === 'string' ? { value: rawAddition } : rawAddition;
+    const mode = addition.mode ?? 'union';
+    const current = directives.get(name);
+    if (mode === 'replace' || current === undefined || current.length === 0) {
+      directives.set(name, addition.value);
+      continue;
+    }
+    const seen = new Set<string>();
+    const merged: string[] = [];
+    for (const token of [...current.split(/\s+/), ...addition.value.split(/\s+/)]) {
+      if (token.length === 0 || seen.has(token)) continue;
+      seen.add(token);
+      merged.push(token);
+    }
+    // `'none'` cannot coexist with other sources.
+    const withoutNone = merged.filter((token) => token !== "'none'");
+    directives.set(name, (withoutNone.length > 0 ? withoutNone : merged).join(' '));
+  }
+
+  const out: string[] = [];
+  for (const [name, value] of directives) {
+    out.push(value.length === 0 ? name : `${name} ${value}`);
+  }
+  return out.join('; ');
 }

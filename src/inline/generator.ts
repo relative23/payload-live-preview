@@ -17,13 +17,33 @@ import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './run
 export interface InlineScriptConfig {
   /** Additional trusted origins to merge with auto-detected ones. */
   readonly allowedOrigins?: readonly string[];
+  /**
+   * Payload server origin, e.g. `https://cms.example.com`. When set,
+   * every incoming update is re-fetched through the Payload REST API
+   * (`X-Payload-HTTP-Method-Override: GET`, same strategy as the
+   * official client) so relationship and upload fields render
+   * populated instead of as bare IDs. Strongly recommended for
+   * Payload 3.x. Requires the preview page to be able to reach the
+   * API with credentials (same-site cookies or CORS `credentials`).
+   */
+  readonly serverURL?: string;
+  /** REST API route prefix used with `serverURL`. Defaults to `/api`. */
+  readonly apiRoute?: string;
+  /** Population depth used with `serverURL`. Defaults to `1`. */
+  readonly mergeDepth?: number;
   /** Enable verbose console logging. Defaults to `false`. */
   readonly debug?: boolean;
   /** Debounce window for incoming updates in ms. Defaults to `50`. */
   readonly debounceMs?: number;
   /** Enable screen-reader live region. Defaults to `true`. */
   readonly enableA11y?: boolean;
-  /** Heartbeat timeout in ms. Defaults to `30000`. */
+  /**
+   * Heartbeat timeout in ms. Defaults to `0` (disabled). The Payload
+   * admin only posts messages on form edits — there is no protocol
+   * keepalive — so an idle-based timeout would fire spurious
+   * disconnects while the editor pauses. Enable only if your admin
+   * setup sends periodic messages.
+   */
   readonly heartbeatMs?: number;
   /**
    * Bypass the visibility-gate optimisation and apply every update
@@ -64,7 +84,7 @@ export interface InlineScriptConfig {
 }
 
 const DEFAULT_DEBOUNCE_MS = 50;
-const DEFAULT_HEARTBEAT_MS = 30_000;
+const DEFAULT_HEARTBEAT_MS = 0;
 const DEFAULT_VISIBILITY_GATE_THRESHOLD = 50;
 const DEFAULT_INTERSECTION_ROOT_MARGIN = '200px';
 
@@ -83,6 +103,9 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
   }
   const configLiteral = JSON.stringify({
     additionalOrigins: config.allowedOrigins ?? [],
+    serverURL: config.serverURL ?? '',
+    apiRoute: config.apiRoute ?? '/api',
+    mergeDepth: config.mergeDepth ?? 1,
     debug: config.debug ?? false,
     debounceMs: config.debounceMs ?? DEFAULT_DEBOUNCE_MS,
     enableA11y: config.enableA11y ?? true,
@@ -92,7 +115,10 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
     intersectionRootMargin: config.intersectionRootMargin ?? DEFAULT_INTERSECTION_ROOT_MARGIN,
     disableReferrerDetection: config.disableReferrerDetection ?? false,
     disableLocalhostMatching: config.disableLocalhostMatching ?? false,
-  });
+    // `<` must never appear literally inside an inline <script> body —
+    // a consumer-supplied string containing `</script>` would otherwise
+    // terminate the tag early.
+  }).replace(/</g, '\\u003C');
   // The IIFE declares its own scope. We inject the config via a global
   // assignment that the bundled runtime reads back through the
   // `__LIVE_PREVIEW_CONFIG__` constant placeholder.

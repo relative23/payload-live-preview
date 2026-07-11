@@ -25,15 +25,36 @@ describe('generateInlineScript', () => {
   it('sets sensible defaults when no config is provided', () => {
     const script = generateInlineScript();
     expect(script).toContain('"additionalOrigins":[]');
+    expect(script).toContain('"serverURL":""');
+    expect(script).toContain('"apiRoute":"/api"');
+    expect(script).toContain('"mergeDepth":1');
     expect(script).toContain('"debug":false');
     expect(script).toContain('"debounceMs":50');
     expect(script).toContain('"enableA11y":true');
-    expect(script).toContain('"heartbeatMs":30000');
+    // The Payload admin sends no keepalive — heartbeat defaults to off.
+    expect(script).toContain('"heartbeatMs":0');
     expect(script).toContain('"disableVisibilityGate":false');
     expect(script).toContain('"visibilityGateThreshold":50');
     expect(script).toContain('"intersectionRootMargin":"200px"');
     expect(script).toContain('"disableReferrerDetection":false');
     expect(script).toContain('"disableLocalhostMatching":false');
+  });
+
+  it('bakes the serverURL merge config when provided', () => {
+    const script = generateInlineScript({
+      serverURL: 'https://cms.example.com',
+      mergeDepth: 2,
+    });
+    expect(script).toContain('"serverURL":"https://cms.example.com"');
+    expect(script).toContain('"mergeDepth":2');
+  });
+
+  it('escapes `<` in config values so `</script>` cannot break the tag', () => {
+    const script = generateInlineScript({
+      allowedOrigins: ['https://admin.example.com/</script><script>alert(1)'],
+    });
+    expect(script).not.toContain('</script><script>');
+    expect(script).toContain('\\u003C');
   });
 
   it('forwards visibility-gate options into the runtime config', () => {

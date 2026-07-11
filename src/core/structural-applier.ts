@@ -292,10 +292,14 @@ function fillTemplate(template: string, value: unknown, index: number): string {
   if (typeof value === 'object' && value !== null) {
     for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
       const pattern = new RegExp(`\\{\\{${escapeRegex(key)}\\}\\}`, 'g');
-      out = out.replace(pattern, escapeHtml(stringifyForTemplate(raw)));
+      // Function replacement: a literal `$&`/`$'` in the field value
+      // must not trigger String.replace's substitution patterns.
+      const replacement = escapeHtml(stringifyForTemplate(raw));
+      out = out.replace(pattern, () => replacement);
     }
   } else {
-    out = out.replace(/\{\{value\}\}/g, escapeHtml(stringifyForTemplate(value)));
+    const replacement = escapeHtml(stringifyForTemplate(value));
+    out = out.replace(/\{\{value\}\}/g, () => replacement);
   }
   return out.replace(/\{\{index\}\}/g, String(index));
 }

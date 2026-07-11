@@ -1,9 +1,19 @@
 /**
  * Payload Live Preview message protocol.
  *
- * Mirrors the messages emitted by Payload CMS 2.x and 3.x through
- * `window.postMessage`. The shape is documented from the Payload
- * source — keep this in sync when Payload evolves the protocol.
+ * Mirrors the messages emitted by Payload CMS through
+ * `window.postMessage`, verified against the shipped admin code
+ * (`@payloadcms/ui` → `elements/LivePreview/Window`):
+ *
+ *   - Payload **3.x** sends `{ type, collectionSlug, globalSlug, data,
+ *     locale, externallyUpdatedRelationship }` on every form edit —
+ *     `data` holds **raw form values** (relationships as bare IDs) and
+ *     there is **no** `fieldSchemaJSON`.
+ *   - Payload **2.x** additionally sent `fieldSchemaJSON` with the
+ *     first update (client-side merge era).
+ *   - `previewToken` and `protocolVersion` are extensions of THIS
+ *     library for custom admin senders; stock Payload never sends
+ *     them and ignores them in our `ready` handshake.
  *
  * @module @/types/payload-protocol
  */
@@ -12,8 +22,8 @@
  * A `payload-live-preview` data update.
  *
  * `data` is the serialized document state. `fieldSchemaJSON`, when
- * present, allows the schema-driven engine to resolve field types
- * without any DOM annotations from the consumer.
+ * present (Payload 2.x or custom senders), allows the schema-driven
+ * engine to resolve field types without any DOM annotations.
  */
 export interface PayloadLivePreviewMessage {
   readonly type: 'payload-live-preview';
@@ -24,24 +34,43 @@ export interface PayloadLivePreviewMessage {
   readonly locale?: string;
   readonly ready?: boolean;
   /**
-   * Optional preview JWT issued by Payload. When `RuntimeOptions.tokenValidator`
-   * is set, the runtime requires every data update to carry a token that
-   * passes the validator; messages without a valid token are dropped.
+   * Payload 3.x: most recent relationship-document event (create/update
+   * in a drawer), or `null`. The official client ignores it too — it is
+   * modeled here for completeness and consumer event access.
+   */
+  readonly externallyUpdatedRelationship?: PayloadDocumentEventDetail | null;
+  /**
+   * Optional preview JWT. ⚠️ Library extension — stock Payload never
+   * sends one. When `RuntimeOptions.validateToken` is set, the runtime
+   * requires every data update to carry a token that passes the
+   * validator; messages without a valid token are dropped.
    */
   readonly previewToken?: string;
   /**
-   * Highest protocol version the sender supports. Both `ready`
-   * handshakes and `data` updates may include this so each side can
-   * negotiate the minimum shared version (`min(ours, theirs)`). When
-   * absent, the receiver assumes v1.
+   * Highest protocol version the sender supports. ⚠️ Library extension
+   * for custom senders — stock Payload sends no version. When absent,
+   * the receiver assumes v1.
    */
   readonly protocolVersion?: number;
 }
 
 /**
+ * Payload's `DocumentEvent` shape (admin `providers/DocumentEvents`).
+ */
+export interface PayloadDocumentEventDetail {
+  readonly entitySlug: string;
+  readonly operation?: 'create' | 'update';
+  readonly id?: string | number;
+  readonly updatedAt?: string;
+  readonly [extra: string]: unknown;
+}
+
+/**
  * A `payload-document-event` message — published when the document is
- * saved in the admin panel. We surface it as an event so the consumer
- * can revalidate caches, refresh server-rendered fragments, etc.
+ * saved in the admin panel. Stock Payload 3.x sends a **bare**
+ * `{ type: 'payload-document-event' }` with no further fields; the
+ * optional fields below only appear from custom senders. We surface it
+ * as a `documentSave` event so the consumer can revalidate caches.
  */
 export interface PayloadDocumentEventMessage {
   readonly type: 'payload-document-event';
@@ -91,8 +120,9 @@ export interface PayloadBlockSchema {
 }
 
 /**
- * The 14 Payload core field types. `tabs` is treated as a structural
- * container; `group` flattens nested fields.
+ * The Payload core field types this library recognises (20 as of
+ * Payload 3.x). `tabs` is treated as a structural container; `group`
+ * flattens nested fields.
  */
 export type PayloadFieldType =
   | 'text'

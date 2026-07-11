@@ -78,6 +78,15 @@ export class LivePreviewClient {
       originMatcher: (origin) => this.#detector.matches(origin),
       readyTargets: this.#detector.enumerate(),
       emitter: this.#emitter,
+      ...(config.serverURL !== undefined && config.serverURL !== ''
+        ? {
+            dataMerge: {
+              serverURL: config.serverURL,
+              ...(config.apiRoute !== undefined ? { apiRoute: config.apiRoute } : {}),
+              ...(config.mergeDepth !== undefined ? { depth: config.mergeDepth } : {}),
+            },
+          }
+        : {}),
       ...(config.debounceMs !== undefined ? { debounceMs: config.debounceMs } : {}),
       ...(config.heartbeatMs !== undefined ? { heartbeatMs: config.heartbeatMs } : {}),
       ...(config.intersectionRootMargin !== undefined

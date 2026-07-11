@@ -45,6 +45,13 @@ export interface CachedElement {
    * populates it for DOM-derived bindings.
    */
   readonly explicitFieldType?: boolean;
+  /**
+   * Optional target attribute: the value is written to this attribute
+   * instead of the element's content (from `data-payload-attribute`,
+   * or `bind(field, { attribute })`). Writes are policed — event
+   * handlers, `style`, and unsafe URLs are refused.
+   */
+  readonly targetAttribute?: string;
   /** Optional sibling-field path bound to the element's `href` attribute. */
   readonly hrefField?: string;
   /** Optional sibling-field path bound to the element's `src` attribute. */

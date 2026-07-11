@@ -7,11 +7,28 @@
 export interface LivePreviewClientConfig {
   /** Explicit additional trusted origins. */
   readonly allowedOrigins?: readonly string[];
+  /**
+   * Payload server origin, e.g. `https://cms.example.com`. When set,
+   * every incoming update is re-fetched through the Payload REST API
+   * so relationship/upload fields render populated instead of as bare
+   * IDs (same strategy as the official client). Recommended for
+   * Payload 3.x.
+   */
+  readonly serverURL?: string;
+  /** REST API route prefix used with `serverURL`. Defaults to `/api`. */
+  readonly apiRoute?: string;
+  /** Population depth used with `serverURL`. Defaults to `1`. */
+  readonly mergeDepth?: number;
   /** Enable verbose console debug output. Defaults to dev-mode detection. */
   readonly debug?: boolean;
   /** Debounce window for incoming updates. Defaults to 50 ms. */
   readonly debounceMs?: number;
-  /** Heartbeat timeout. Defaults to 30 s. */
+  /**
+   * Heartbeat timeout in ms. Defaults to `0` (disabled) because the
+   * Payload admin sends messages only on form edits — there is no
+   * protocol keepalive, so an idle timeout would produce false
+   * disconnects.
+   */
   readonly heartbeatMs?: number;
   /** IntersectionObserver rootMargin. Defaults to `200px`. */
   readonly intersectionRootMargin?: string;
@@ -35,8 +52,11 @@ export interface LivePreviewClientConfig {
    * Optional preview-token validator. When set, every data update
    * must carry a `previewToken` field that this function approves.
    *
-   * Use it to gate live preview in multi-tenant admin contexts where
-   * origin-trust alone is too permissive.
+   * ⚠️ `previewToken` is an extension of THIS library, not part of the
+   * stock Payload postMessage protocol — the Payload admin never sends
+   * one. Only enable this when a custom admin component adds the token
+   * to outgoing messages; against an unmodified Payload admin it would
+   * drop every update.
    */
   readonly validateToken?: (
     token: string | undefined,

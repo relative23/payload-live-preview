@@ -12,3 +12,8 @@ export {
 } from './middleware';
 export { renderLivePreviewScript, type RenderScriptOptions } from './component';
 export type { LivePreviewAstroOptions } from './types';
+export {
+  isPreviewRequest,
+  type PreviewRequestLike,
+  type PreviewRequestOptions,
+} from '@adapters/shared/preview-request';

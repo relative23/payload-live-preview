@@ -50,9 +50,18 @@ describe('HeartbeatTimer', () => {
     }).not.toThrow();
   });
 
-  it('uses default timeoutMs when not provided', () => {
+  it('is disabled by default — the Payload admin sends no keepalive', () => {
     const onTimeout = vi.fn();
     const heartbeat = new HeartbeatTimer({ onTimeout });
+    heartbeat.kick();
+    expect(heartbeat.pending).toBe(false);
+    vi.advanceTimersByTime(3_600_000);
+    expect(onTimeout).not.toHaveBeenCalled();
+  });
+
+  it('schedules the timeout when explicitly enabled', () => {
+    const onTimeout = vi.fn();
+    const heartbeat = new HeartbeatTimer({ onTimeout, timeoutMs: 30_000 });
     heartbeat.kick();
     vi.advanceTimersByTime(30_000);
     expect(onTimeout).toHaveBeenCalledOnce();

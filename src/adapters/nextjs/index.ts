@@ -4,8 +4,8 @@
  * Supports both the App Router and the Pages Router. Provides:
  *
  *   - `createLivePreviewMiddleware(options)` — a request middleware
- *     that injects the inline script into HTML responses and adds
- *     per-request CSP nonce + headers. Use it in `middleware.ts`:
+ *     that injects the inline script into HTML preview responses and
+ *     merges CSP headers. Use it in `middleware.ts`:
  *
  *     ```ts
  *     import { createLivePreviewMiddleware } from '@relative23/payload-live-preview/nextjs';
@@ -20,18 +20,46 @@
  * @module @adapters/nextjs
  */
 
-import { generateCspNonce, buildFrameAncestors, buildScriptSrcWithNonce } from '@security/csp';
+import {
+  generateCspNonce,
+  buildFrameAncestors,
+  buildScriptSrcWithNonce,
+  mergeCspHeader,
+} from '@security/csp';
 import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
+import { isPreviewRequest } from '@adapters/shared/preview-request';
 
 export interface LivePreviewNextOptions {
   readonly allowedOrigins?: readonly string[];
+  /** Payload server origin for REST data merging (Payload 3.x). */
+  readonly serverURL?: string;
+  /** REST API route prefix used with `serverURL`. Defaults to `/api`. */
+  readonly apiRoute?: string;
+  /** Population depth used with `serverURL`. Defaults to `1`. */
+  readonly mergeDepth?: number;
   readonly autoInject?: boolean;
+  /**
+   * `'preview-only'` (default) — inject only into responses that look
+   * like preview requests. `'always'` — every HTML response.
+   */
+  readonly inject?: 'preview-only' | 'always';
+  /** Query params that mark a preview request. Default `['preview', 'draft', 'livePreview']`. */
+  readonly previewQueryParams?: readonly string[];
   readonly shouldInject?: (request: Request) => boolean;
-  readonly manageCsp?: boolean;
+  /**
+   * CSP management: `'frame-ancestors'` (default) merges only the
+   * embed permission; `'full'` also manages a nonce'd `script-src`;
+   * `false` never touches CSP. `true` is a legacy alias for
+   * `'frame-ancestors'`.
+   */
+  readonly manageCsp?: boolean | 'frame-ancestors' | 'full';
+  /** Add `'strict-dynamic'` to the managed `script-src`. Default `false`. */
+  readonly strictDynamic?: boolean;
   readonly frameAncestorsExtra?: readonly string[];
   readonly scriptSrcExtra?: readonly string[];
   readonly debug?: boolean;
   readonly debounceMs?: number;
+  /** Heartbeat timeout in ms. Default `0` (disabled). */
   readonly heartbeatMs?: number;
 }
 
@@ -41,26 +69,41 @@ const HTML_CONTENT_TYPE = /text\/html/i;
 const HEAD_INSERT = /<head(\s[^>]*)?>/i;
 
 /**
- * Build a Next.js-compatible middleware. The function returns
- * `undefined` for non-HTML responses (so Next continues to its
- * default handler).
- *
- * Wrap with `NextResponse.next()` in your project to integrate with
- * Next's request pipeline — the middleware itself is framework-agnostic
- * because it operates on the standard `Request` / `Response`.
+ * Build a Next.js-compatible middleware operating on the standard
+ * `Request` / `Response` pair. Wrap with `NextResponse.next()` in your
+ * project to integrate with Next's request pipeline.
  */
 export function createLivePreviewMiddleware(
   options: LivePreviewNextOptions = {},
 ): (request: Request, response: Response) => Promise<Response> {
+  let cachedScriptBody: string | undefined;
+  const scriptBody = (): string => {
+    cachedScriptBody ??= buildScriptBody(options);
+    return cachedScriptBody;
+  };
+
   return async (request, response) => {
-    if (options.manageCsp ?? true) {
-      addCsp(response, request, options);
-    }
+    const isPreview =
+      (options.inject ?? 'preview-only') === 'always' ||
+      isPreviewRequest(request, {
+        ...(options.previewQueryParams !== undefined
+          ? { queryParams: options.previewQueryParams }
+          : {}),
+        adminOrigins: options.allowedOrigins ?? [],
+      });
+    if (!isPreview) return response;
+
+    let outResponse = response;
     const apply = (options.autoInject ?? true) && (options.shouldInject?.(request) ?? true);
-    if (!apply) return response;
     const contentType = response.headers.get('content-type') ?? '';
-    if (!HTML_CONTENT_TYPE.test(contentType)) return response;
-    return injectIntoResponse(response, options);
+    if (apply && HTML_CONTENT_TYPE.test(contentType)) {
+      outResponse = await injectIntoResponse(response, scriptBody());
+    }
+    const manageCsp = normalizeManageCsp(options.manageCsp);
+    if (manageCsp !== false) {
+      outResponse = addCsp(outResponse, manageCsp, options);
+    }
+    return outResponse;
   };
 }
 
@@ -73,6 +116,9 @@ export function renderLivePreviewScript(
 ): string {
   const body = generateInlineScript({
     ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
+    ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
+    ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
+    ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
     ...(options.debug !== undefined ? { debug: options.debug } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
@@ -81,26 +127,44 @@ export function renderLivePreviewScript(
   return wrapWithScriptTag(body, options.nonce !== undefined ? { nonce: options.nonce } : {});
 }
 
-async function injectIntoResponse(
-  response: Response,
-  options: LivePreviewNextOptions,
-): Promise<Response> {
-  const nonce = response.headers.get('x-live-preview-nonce') ?? generateCspNonce();
-  const html = await response.text();
-  const body = generateInlineScript({
+function buildScriptBody(options: LivePreviewNextOptions): string {
+  return generateInlineScript({
     ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
+    ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
+    ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
+    ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
     ...(options.debug !== undefined ? { debug: options.debug } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-    nonce,
   });
-  const scriptTag = wrapWithScriptTag(body, { nonce });
-  const out = HEAD_INSERT.test(html)
-    ? html.replace(HEAD_INSERT, (match) => `${match}${scriptTag}`)
-    : `${scriptTag}${html}`;
+}
+
+function normalizeManageCsp(
+  value: LivePreviewNextOptions['manageCsp'],
+): false | 'frame-ancestors' | 'full' {
+  if (value === false) return false;
+  if (value === 'full') return 'full';
+  return 'frame-ancestors';
+}
+
+async function injectIntoResponse(response: Response, body: string): Promise<Response> {
+  const nonce = response.headers.get('x-live-preview-nonce') ?? generateCspNonce();
+  const html = await response.text();
   const headers = new Headers(response.headers);
   headers.delete('content-length');
   headers.set('x-live-preview-nonce', nonce);
+
+  // Fragment responses without a <head> are skipped, not prepended to.
+  if (!HEAD_INSERT.test(html)) {
+    return new Response(html, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+
+  const scriptTag = wrapWithScriptTag(body, { nonce });
+  const out = html.replace(HEAD_INSERT, (match) => `${match}${scriptTag}`);
   return new Response(out, {
     status: response.status,
     statusText: response.statusText,
@@ -108,40 +172,38 @@ async function injectIntoResponse(
   });
 }
 
-function addCsp(response: Response, _request: Request, options: LivePreviewNextOptions): void {
+function addCsp(
+  response: Response,
+  mode: 'frame-ancestors' | 'full',
+  options: LivePreviewNextOptions,
+): Response {
   const nonce = response.headers.get('x-live-preview-nonce') ?? generateCspNonce();
-  response.headers.set('x-live-preview-nonce', nonce);
   const frameAncestors = buildFrameAncestors({
     self: true,
     origins: [...(options.allowedOrigins ?? []), ...(options.frameAncestorsExtra ?? [])],
   });
-  const scriptSrc = buildScriptSrcWithNonce(nonce, {
-    self: true,
-    ...(options.scriptSrcExtra !== undefined ? { extra: options.scriptSrcExtra } : {}),
-  });
+  const additions: Record<string, string> = { 'frame-ancestors': frameAncestors };
+  if (mode === 'full') {
+    additions['script-src'] = buildScriptSrcWithNonce(nonce, {
+      self: true,
+      strictDynamic: options.strictDynamic ?? false,
+      ...(options.scriptSrcExtra !== undefined ? { extra: options.scriptSrcExtra } : {}),
+    });
+  }
   const previous = response.headers.get('content-security-policy') ?? '';
-  response.headers.set(
-    'content-security-policy',
-    mergeCsp(previous, { 'frame-ancestors': frameAncestors, 'script-src': scriptSrc }),
-  );
-}
-
-function mergeCsp(existing: string, override: Readonly<Record<string, string>>): string {
-  const directives = new Map<string, string>();
-  for (const part of existing.split(';')) {
-    const trimmed = part.trim();
-    if (trimmed.length === 0) continue;
-    const idx = trimmed.indexOf(' ');
-    if (idx < 0) {
-      directives.set(trimmed.toLowerCase(), '');
-      continue;
-    }
-    directives.set(trimmed.slice(0, idx).toLowerCase(), trimmed.slice(idx + 1).trim());
+  const next = mergeCspHeader(previous, additions);
+  try {
+    response.headers.set('x-live-preview-nonce', nonce);
+    response.headers.set('content-security-policy', next);
+    return response;
+  } catch {
+    const headers = new Headers(response.headers);
+    headers.set('x-live-preview-nonce', nonce);
+    headers.set('content-security-policy', next);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
   }
-  for (const [name, value] of Object.entries(override)) {
-    directives.set(name.toLowerCase(), value);
-  }
-  return [...directives]
-    .map(([name, value]) => (value.length === 0 ? name : `${name} ${value}`))
-    .join('; ');
 }

@@ -62,6 +62,9 @@ export function isSafeUrl(url: unknown): boolean {
 
 /**
  * Returns `true` when the URL points to an external HTTP(S) origin.
+ * Protocol-relative URLs (`//example.com/...`) count as external —
+ * they resolve to another origin and need the same `noopener`
+ * hardening as absolute ones.
  *
  * Used by renderers to decide whether to add `target="_blank"` and the
  * `noopener noreferrer` rel attributes to anchors. Inputs that fail
@@ -69,7 +72,8 @@ export function isSafeUrl(url: unknown): boolean {
  */
 export function isExternalHttpUrl(url: string): boolean {
   if (!isSafeUrl(url)) return false;
-  return /^https?:\/\//i.test(url.trim());
+  const trimmed = url.trim();
+  return /^https?:\/\//i.test(trimmed) || /^\/\/[^/]/.test(trimmed);
 }
 
 /**

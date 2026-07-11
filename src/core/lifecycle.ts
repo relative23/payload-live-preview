@@ -32,6 +32,8 @@ import { ElementCache } from './cache';
 import { ObserverManager } from './observers';
 import { MessageBus } from './message-bus';
 import { ConnectionState, HeartbeatTimer } from './state';
+import { DataMerger } from './data-merger';
+import { applyAttributeBinding } from './attribute-binding';
 import { UpdateScheduler, type FlushStats, type ScheduledUpdate } from './update-scheduler';
 import { A11yAnnouncer } from './a11y';
 import {
@@ -91,11 +93,31 @@ export interface RuntimeOptions {
   /**
    * Optional preview-token validator. When provided, every data
    * update message must carry a `previewToken` that this function
-   * approves; otherwise the message is dropped. Useful in
-   * multi-tenant admin contexts where origin-trust alone is too
-   * permissive.
+   * approves; otherwise the message is dropped.
+   *
+   * ⚠️ `previewToken` is an extension of this library — the stock
+   * Payload admin never sends one. Enable only when a custom admin
+   * component attaches the token; otherwise every real update would
+   * be dropped.
    */
   readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
+  /**
+   * Server-side data merging (Payload 3.x). When configured, every
+   * update is re-fetched through the Payload REST API so relationship
+   * and upload fields arrive populated instead of as bare IDs — the
+   * same strategy the official `@payloadcms/live-preview` client uses.
+   * Failures fall back to rendering the raw form values.
+   */
+  readonly dataMerge?: {
+    /** Payload server origin, e.g. `https://cms.example.com`. */
+    readonly serverURL: string;
+    /** REST API route prefix. Defaults to `/api`. */
+    readonly apiRoute?: string;
+    /** Population depth. Defaults to `1`. */
+    readonly depth?: number;
+    /** Injectable fetch implementation (tests). */
+    readonly fetchFn?: typeof fetch;
+  };
   /** Hook for the inline runtime to log to the console in debug mode. */
   readonly log?: (...args: unknown[]) => void;
   /**
@@ -128,12 +150,14 @@ export class LivePreviewRuntime {
   readonly #warn: (...args: unknown[]) => void;
   readonly #readyTimers: ReturnType<typeof setTimeout>[] = [];
   readonly #a11y: A11yAnnouncer | null;
+  readonly #merger: DataMerger | null;
 
   #currentLocale: string | undefined;
   #currentSchema: readonly PayloadFieldSchema[] | undefined;
   #schemaIndex: SchemaIndex | undefined;
   #protocolNegotiation: ProtocolNegotiation = negotiateProtocol(undefined);
   #started = false;
+  #deferredStart: (() => void) | null = null;
   #updateCount = 0;
   /**
    * Field names we've already warned about as "orphan updates" — updates
@@ -154,6 +178,22 @@ export class LivePreviewRuntime {
     this.#log = options.log ?? noopLogger;
     this.#warn = options.warn ?? defaultWarn;
     this.#a11y = createA11y(options);
+    this.#merger =
+      options.dataMerge !== undefined
+        ? new DataMerger({
+            serverURL: options.dataMerge.serverURL,
+            ...(options.dataMerge.apiRoute !== undefined
+              ? { apiRoute: options.dataMerge.apiRoute }
+              : {}),
+            ...(options.dataMerge.depth !== undefined ? { depth: options.dataMerge.depth } : {}),
+            ...(options.dataMerge.fetchFn !== undefined
+              ? { fetchFn: options.dataMerge.fetchFn }
+              : {}),
+            log: (...args) => {
+              this.#log(...args);
+            },
+          })
+        : null;
 
     this.#cache = new ElementCache();
     this.#observers = new ObserverManager(
@@ -221,11 +261,34 @@ export class LivePreviewRuntime {
    * Start the runtime: build cache, attach observers, listen for
    * messages, broadcast `ready`. Returns `true` if it actually started
    * (it will refuse to start a second time).
+   *
+   * When the script executes while the document is still parsing
+   * (e.g. injected via `<script>` in `<head>` — Astro's `head-inline`
+   * stage), `document.body` does not exist yet and attaching the
+   * MutationObserver would throw. In that case the actual startup is
+   * deferred until `DOMContentLoaded`; `start()` still returns `true`
+   * and `destroy()` cancels the pending startup.
    */
   start(): boolean {
     if (this.#started) return false;
     this.#started = true;
 
+    const root = this.#root;
+    if (root instanceof Document && root.readyState === 'loading') {
+      const onReady = (): void => {
+        this.#deferredStart = null;
+        this.#startNow();
+      };
+      this.#deferredStart = onReady;
+      root.addEventListener('DOMContentLoaded', onReady, { once: true });
+      return true;
+    }
+
+    this.#startNow();
+    return true;
+  }
+
+  #startNow(): void {
     this.#buildCacheAndObserve();
     this.#observers.start(this.#root instanceof Document ? this.#root.body : this.#root);
     this.#bus.attach();
@@ -242,20 +305,28 @@ export class LivePreviewRuntime {
         this.#readyTimers.push(handle);
       }
     }
-
-    return true;
   }
 
   /** Tear down all observers, timers, and listeners. Idempotent. */
   destroy(): void {
     if (!this.#started) return;
     this.#started = false;
+    if (this.#deferredStart !== null) {
+      const root = this.#root;
+      if (root instanceof Document) {
+        root.removeEventListener('DOMContentLoaded', this.#deferredStart);
+      }
+      this.#deferredStart = null;
+      void this.#emitter.emit('destroy', { timestamp: Date.now() });
+      return;
+    }
     for (const handle of this.#readyTimers) clearTimeout(handle);
     this.#readyTimers.length = 0;
     this.#heartbeat.stop();
     this.#bus.detach();
     this.#observers.stop();
     this.#scheduler.destroy();
+    this.#merger?.destroy();
     this.#cache.clear();
     const wasConnected = this.#state.status === 'connected';
     this.#state.markDisconnected();
@@ -353,26 +424,56 @@ export class LivePreviewRuntime {
       this.#schemaIndex = buildSchemaIndex(message.fieldSchemaJSON);
     }
 
-    const data: PayloadLivePreviewData = {
-      fields: message.data,
-      ...(this.#currentSchema !== undefined ? { schema: this.#currentSchema } : {}),
-      ...(message.globalSlug !== undefined ? { globalSlug: message.globalSlug } : {}),
-      ...(message.collectionSlug !== undefined ? { collectionSlug: message.collectionSlug } : {}),
-      ...(this.#currentLocale !== undefined ? { locale: this.#currentLocale } : {}),
-    };
+    void this.#resolveIncomingFields(message).then((fields) => {
+      if (fields === null) return; // superseded by a newer update
 
-    let cancelled = false;
-    void this.#emitter
-      .emit('beforeUpdate', {
-        data,
-        cancel: (): void => {
-          cancelled = true;
-        },
-      })
-      .then(() => {
-        if (cancelled) return;
-        this.#scheduleAllFields(data);
-      });
+      const data: PayloadLivePreviewData = {
+        fields,
+        ...(this.#currentSchema !== undefined ? { schema: this.#currentSchema } : {}),
+        ...(message.globalSlug !== undefined ? { globalSlug: message.globalSlug } : {}),
+        ...(message.collectionSlug !== undefined
+          ? { collectionSlug: message.collectionSlug }
+          : {}),
+        ...(this.#currentLocale !== undefined ? { locale: this.#currentLocale } : {}),
+      };
+
+      let cancelled = false;
+      void this.#emitter
+        .emit('beforeUpdate', {
+          data,
+          cancel: (): void => {
+            cancelled = true;
+          },
+        })
+        .then(() => {
+          if (cancelled) return;
+          this.#scheduleAllFields(data);
+        });
+    });
+  }
+
+  /**
+   * Resolve the field values to render for an incoming update. With a
+   * configured `DataMerger` the raw form values are exchanged for the
+   * server-populated document; without one (or on failure) the raw
+   * values pass through unchanged. Returns `null` when a newer update
+   * superseded this one mid-flight.
+   */
+  async #resolveIncomingFields(
+    message: PayloadLivePreviewMessage,
+  ): Promise<Record<string, unknown> | null> {
+    // #handleUpdate has already returned when `data` is undefined.
+    const raw = message.data ?? {};
+    if (this.#merger === null) return raw;
+    const result = await this.#merger.merge({
+      collectionSlug: message.collectionSlug,
+      globalSlug: message.globalSlug,
+      data: raw,
+      locale: this.#currentLocale,
+    });
+    if (result.status === 'merged') return result.doc;
+    if (result.status === 'superseded') return null;
+    return raw;
   }
 
   #handleDocumentEvent(_message: PayloadDocumentEventMessage, _origin: string): void {
@@ -437,7 +538,17 @@ export class LivePreviewRuntime {
       this.#schemaIndex !== undefined
         ? lookupSchema(this.#schemaIndex, update.target.fieldName)
         : undefined;
-    const resolvedType = this.#resolveFieldType(update.target, schemaEntry?.type);
+    let resolvedType = this.#resolveFieldType(update.target, schemaEntry?.type);
+    // Payload 3.x sends no field schema, so rich-text fields would fall
+    // through to the `text` heuristic and render "[object Object]".
+    // A Lexical value is unmistakable — upgrade the renderer on sight.
+    if (
+      resolvedType === 'text' &&
+      update.target.explicitFieldType !== true &&
+      looksLikeLexicalRoot(update.value)
+    ) {
+      resolvedType = 'richText';
+    }
     const renderer = this.#renderers[resolvedType];
     const previous = readElementSnapshot(update.target.element);
     const context: RenderContext = {
@@ -446,7 +557,19 @@ export class LivePreviewRuntime {
       schema: schemaEntry,
     };
     try {
-      if (renderer) {
+      if (update.target.targetAttribute !== undefined) {
+        const outcome = applyAttributeBinding(
+          update.target.element,
+          update.target.targetAttribute,
+          update.value,
+        );
+        if (outcome === 'blocked') {
+          this.#warn(
+            `[live-preview] refused to write field "${update.target.fieldName}" ` +
+              `into attribute "${update.target.targetAttribute}" (unsafe attribute or value)`,
+          );
+        }
+      } else if (renderer) {
         renderer.render(update.target, update.value, context);
       } else {
         this.#log('no renderer for', resolvedType);
@@ -515,6 +638,20 @@ function createA11y(options: RuntimeOptions): A11yAnnouncer | null {
 
 function noopLogger(): void {
   // Intentionally empty — debug logging is opt-in via RuntimeOptions.log.
+}
+
+/**
+ * Structural check for a Lexical root payload. Mirrors
+ * `isLexicalContent` from `@lexical/render` — duplicated here (four
+ * lines) so the lightweight `./core` entry does not transitively pull
+ * the entire Lexical renderer just for this shape test.
+ */
+function looksLikeLexicalRoot(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  if (!('root' in value)) return false;
+  const root = value.root;
+  if (typeof root !== 'object' || root === null) return false;
+  return Array.isArray((root as { children?: unknown }).children);
 }
 
 /**

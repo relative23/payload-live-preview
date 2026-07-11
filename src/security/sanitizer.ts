@@ -285,6 +285,18 @@ function resolveDocument(): SanitizerDocument | undefined {
   return document;
 }
 
+/**
+ * Whether `sanitizeHtml` currently has a DOM to work with — either the
+ * global `document` or an override injected via `setSanitizerDocument`.
+ * Callers that treat sanitization as an optional defence-in-depth layer
+ * (e.g. `lexicalToHtml` during SSR) use this to decide whether the
+ * backstop is available instead of probing the `document` global
+ * directly, which would ignore the override.
+ */
+export function hasSanitizerDocument(): boolean {
+  return resolveDocument() !== undefined;
+}
+
 function sanitizeFragment(node: ParentNode, policy: ResolvedPolicy): void {
   // Iterate over a snapshot — we mutate children during the walk.
   for (const child of Array.from(node.childNodes)) {
@@ -339,23 +351,44 @@ function sanitizeAttributes(element: Element, tag: string, policy: ResolvedPolic
       element.removeAttribute(attr.name);
       continue;
     }
-    // Allow global, ARIA, and data-* attributes universally.
+    // Allow global, ARIA, and data-* attributes universally. They can
+    // carry arbitrary strings but no executable sinks (event handlers
+    // and `style` were already stripped above).
     if (
       ATTR_GLOBAL.has(name) ||
       name.startsWith(ATTR_ARIA_PREFIX) ||
       name.startsWith(ATTR_DATA_PREFIX)
     ) {
-      // For data-* and aria-*, still validate URL-ish data attributes if name suggests it.
       continue;
     }
     if (tagAttrs?.has(name)) {
       if (URL_ATTRIBUTES.has(name) && !isSafeUrl(attr.value)) {
+        element.removeAttribute(attr.name);
+      } else if (name === 'srcset' && !isSafeSrcset(attr.value)) {
         element.removeAttribute(attr.name);
       }
       continue;
     }
     element.removeAttribute(attr.name);
   }
+}
+
+/**
+ * Validate every candidate URL inside a `srcset` value. The attribute
+ * holds a comma-separated list of `<url> [<descriptor>]` pairs; each
+ * URL must individually pass `isSafeUrl`. Rejecting the whole
+ * attribute on any bad candidate is deliberate — partial rewriting
+ * would silently change rendering semantics.
+ */
+function isSafeSrcset(value: string): boolean {
+  const candidates = value.split(',');
+  for (const candidate of candidates) {
+    const trimmed = candidate.trim();
+    if (trimmed.length === 0) continue;
+    const url = trimmed.split(/\s+/, 1)[0];
+    if (url === undefined || url.length === 0 || !isSafeUrl(url)) return false;
+  }
+  return true;
 }
 
 function hardenAnchor(anchor: Element): void {
