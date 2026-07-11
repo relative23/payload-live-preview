@@ -14,8 +14,13 @@ afterEach(() => {
 });
 
 describe('A11yAnnouncer — element mounting', () => {
-  it('mounts a single aria-live region into the document', () => {
+  it('mounts lazily: no DOM node until the first announcement', () => {
+    // Lazy mounting matters because the announcer can be constructed
+    // from a <head> inline script while document.body is still null.
     const announcer = new A11yAnnouncer('en');
+    expect(document.getElementById(ID)).toBeNull();
+
+    announcer.announceConnected();
     const element = document.getElementById(ID);
     expect(element).not.toBeNull();
     expect(element?.getAttribute('role')).toBe('status');
@@ -27,9 +32,11 @@ describe('A11yAnnouncer — element mounting', () => {
   it('reuses an existing live region across multiple instances', () => {
     const a = new A11yAnnouncer('en');
     const b = new A11yAnnouncer('en');
+    a.announceConnected();
+    b.announceConnected();
     expect(document.querySelectorAll(`#${ID}`)).toHaveLength(1);
     a.detach();
-    // After detach the element is gone; b should still function gracefully.
+    // After detach the element is gone; b remounts on the next say.
     expect(document.getElementById(ID)).toBeNull();
     b.detach();
   });

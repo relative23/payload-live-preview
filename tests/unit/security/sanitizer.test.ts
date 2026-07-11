@@ -273,3 +273,32 @@ describe('setSanitizerDocument — SSR fallback', () => {
     }
   });
 });
+
+describe('sanitizeHtml — srcset validation', () => {
+  it('keeps srcset when every candidate URL is safe', () => {
+    const out = sanitizeHtml(
+      '<img src="https://a.example/1.jpg" srcset="https://a.example/1.jpg 1x, https://a.example/2.jpg 2x">',
+    );
+    expect(out).toContain('srcset');
+  });
+
+  it('drops srcset containing an unsafe candidate', () => {
+    const out = sanitizeHtml('<img src="/ok.jpg" srcset="javascript:alert(1) 1x">');
+    expect(out).not.toContain('srcset');
+    expect(out).toContain('src="/ok.jpg"');
+  });
+
+  it('drops srcset when any of several candidates is unsafe', () => {
+    const out = sanitizeHtml(
+      '<img src="/ok.jpg" srcset="https://a.example/1.jpg 1x, data:text/html,x 2x">',
+    );
+    expect(out).not.toContain('srcset');
+  });
+});
+
+describe('sanitizeHtml — protocol-relative anchor hardening', () => {
+  it('forces rel=noopener on protocol-relative external links', () => {
+    const out = sanitizeHtml('<a href="//evil.example/x" target="_blank">x</a>');
+    expect(out).toContain('rel="noopener noreferrer"');
+  });
+});

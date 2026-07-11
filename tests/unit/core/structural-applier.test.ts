@@ -414,3 +414,19 @@ describe('applyStructuralPatches — recursive nested slots', () => {
     expect(i2?.textContent).toBe('two');
   });
 });
+
+describe('applyStructuralPatches — template filling edge cases', () => {
+  it('renders literal $-sequences without triggering replace patterns', () => {
+    const items: unknown[] = [];
+    const ul = makeList('<li>{{label}}</li>', items);
+    const next = [{ id: 1, label: "Price: $& $' $` $$" }];
+    const patches = diffArray(items, next);
+    applyStructuralPatches({
+      template: '<li>{{label}}</li>',
+      container: ul,
+      patches,
+      nextItems: next,
+    });
+    expect(ul.children[0]?.textContent).toBe("Price: $& $' $` $$");
+  });
+});

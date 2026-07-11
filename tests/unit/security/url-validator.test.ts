@@ -69,6 +69,9 @@ describe('isExternalHttpUrl', () => {
     ['https://example.com', true],
     ['http://example.com', true],
     ['HTTPS://EXAMPLE.COM', true],
+    // Protocol-relative URLs resolve to another origin and need the
+    // same noopener hardening as absolute ones.
+    ['//evil.example/path', true],
     ['/relative', false],
     ['mailto:foo@example.com', false],
     ['tel:123', false],

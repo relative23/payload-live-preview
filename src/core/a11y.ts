@@ -92,7 +92,11 @@ export class A11yAnnouncer {
    */
   #mount(): HTMLElement | null {
     if (this.#element !== null && this.#element.isConnected) return this.#element;
-    if (typeof document === 'undefined' || document.body === null) return null;
+    // lib.dom types body as always-present, but during <head> execution
+    // it genuinely is null.
+    if (typeof document === 'undefined' || (document.body as HTMLElement | null) === null) {
+      return null;
+    }
     let element: HTMLElement | null = document.getElementById(ELEMENT_ID);
     if (!element) {
       element = document.createElement('div');

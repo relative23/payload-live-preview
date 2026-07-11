@@ -1,0 +1,72 @@
+name: Bug report
+description: Report a defect in @relative23/payload-live-preview
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please check existing issues and enable `debug: true` in your live-preview config to capture runtime logs.
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      description: Output of `npm ls @relative23/payload-live-preview`
+      placeholder: "1.0.0-alpha.5"
+    validations:
+      required: true
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework
+      options:
+        - Astro
+        - Next.js
+        - SvelteKit
+        - Nuxt
+        - Plain (core runtime only)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: framework-version
+    attributes:
+      label: Framework version
+      placeholder: "e.g. astro 4.16.19"
+    validations:
+      required: true
+  - type: input
+    id: payload-version
+    attributes:
+      label: Payload version
+      placeholder: "e.g. 3.14.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Link to a minimal repo/StackBlitz, or exact steps to reproduce from a fresh project. Issues without a reproduction are much harder to fix.
+      placeholder: "https://github.com/you/repro — or numbered steps"
+    validations:
+      required: true
+  - type: textarea
+    id: console-output
+    attributes:
+      label: Console output from the preview iframe
+      description: "Set `debug: true` in the live-preview options, reproduce the issue, and paste the console output from the preview iframe (not the admin panel)."
+      render: text
+  - type: checkboxes
+    id: origin-check
+    attributes:
+      label: Origin configuration
+      options:
+        - label: I have set `allowedOrigins` (or `PAYLOAD_ADMIN_ORIGIN`) correctly, or checked the browser console for `[live-preview]` warnings about dropped messages.
+          required: true
