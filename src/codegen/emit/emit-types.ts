@@ -40,9 +40,7 @@ export function emitTypes(schema: ExtractedSchema, options: EmitOptions = {}): s
   const lines: string[] = [];
   lines.push(options.header ?? DEFAULT_HEADER);
   lines.push('');
-  lines.push(
-    'import type { PayloadMedia, PayloadRelationship } from "payload-live-preview";',
-  );
+  lines.push('import type { PayloadMedia, PayloadRelationship } from "payload-live-preview";');
   lines.push('');
 
   // Emit slug interfaces (globals + collections), each potentially
