@@ -1,6 +1,6 @@
 # Astro × Payload Live Preview — Example
 
-A standalone Astro project that demonstrates `@relative23/payload-live-preview`.
+A standalone Astro project that demonstrates `payload-live-preview`.
 
 ## Run locally
 
@@ -29,7 +29,7 @@ Then open:
 In a real project replace `src/pages/admin.astro` with the Payload admin URL and update `allowedOrigins`:
 
 ```js
-import { livePreview } from '@relative23/payload-live-preview/astro';
+import { livePreview } from 'payload-live-preview/astro';
 
 export default defineConfig({
   integrations: [

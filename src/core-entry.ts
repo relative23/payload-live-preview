@@ -2,7 +2,7 @@
  * Narrow public entry — the minimum API for sites that only need to
  * receive postMessage updates and apply them to the DOM.
  *
- * Consumers who import from `@relative23/payload-live-preview/core`
+ * Consumers who import from `payload-live-preview/core`
  * get a bundle that **does not** include:
  *
  *   - the Lexical rich-text renderer (`@lexical/*`)
@@ -11,7 +11,7 @@
  *   - the framework adapters
  *
  * These pieces add weight without being needed on a typical
- * production page. The full entry (`@relative23/payload-live-preview`)
+ * production page. The full entry (`payload-live-preview`)
  * still re-exports everything for users who want the convenience.
  *
  * @packageDocumentation

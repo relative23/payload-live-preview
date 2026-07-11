@@ -4,7 +4,7 @@
  * Exposes a `handle` hook compatible with SvelteKit's `hooks.server.ts`:
  *
  * ```ts
- * import { livePreviewHandle } from '@relative23/payload-live-preview/sveltekit';
+ * import { livePreviewHandle } from 'payload-live-preview/sveltekit';
  *
  * export const handle = livePreviewHandle({
  *   allowedOrigins: ['https://admin.example.com'],

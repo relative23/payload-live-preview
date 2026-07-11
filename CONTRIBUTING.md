@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing to `@relative23/payload-live-preview`. This document covers everything you need to get a change from clone to merged PR.
+Thanks for contributing to `payload-live-preview`. This document covers everything you need to get a change from clone to merged PR.
 
 ## Development setup
 

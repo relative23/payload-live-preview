@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a defect in @relative23/payload-live-preview
+description: Report a defect in payload-live-preview
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -11,7 +11,7 @@ body:
     id: package-version
     attributes:
       label: Package version
-      description: Output of `npm ls @relative23/payload-live-preview`
+      description: Output of `npm ls payload-live-preview`
       placeholder: "1.0.0-alpha.5"
     validations:
       required: true

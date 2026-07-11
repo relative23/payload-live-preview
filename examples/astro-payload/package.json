@@ -1,5 +1,5 @@
 {
-  "name": "@relative23/payload-live-preview-example",
+  "name": "payload-live-preview-example",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@relative23/payload-live-preview": "file:../..",
+    "payload-live-preview": "file:../..",
     "astro": "^7.0.7"
   }
 }

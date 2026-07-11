@@ -26,7 +26,7 @@ The official React-focused library and this package coexist; they have different
 | Use this | When |
 |---|---|
 | `@payloadcms/live-preview-react` | You're rendering inside React and can `useLivePreview` directly. |
-| `@relative23/payload-live-preview` | You're rendering with Astro, SvelteKit, Nuxt, plain HTML — or want DOM-binding semantics that survive SSR/SSG. |
+| `payload-live-preview` | You're rendering with Astro, SvelteKit, Nuxt, plain HTML — or want DOM-binding semantics that survive SSR/SSG. |
 
 Migration steps when moving from the official library:
 

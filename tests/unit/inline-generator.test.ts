@@ -4,7 +4,7 @@ import { generateInlineScript, wrapWithScriptTag, runtimeBuildInfo } from '@inli
 describe('generateInlineScript', () => {
   it('emits a self-contained string that begins with a header', () => {
     const script = generateInlineScript();
-    expect(script).toMatch(/^\/\* @relative23\/payload-live-preview runtime/);
+    expect(script).toMatch(/^\/\* payload-live-preview runtime/);
   });
 
   it('injects the configuration object literal', () => {

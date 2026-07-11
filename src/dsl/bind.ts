@@ -47,7 +47,7 @@ export interface BindOptions {
  * String-literal binding helper.
  *
  *   ```ts
- *   import { bind } from '@relative23/payload-live-preview';
+ *   import { bind } from 'payload-live-preview';
  *   import type { Homepage } from './payload-types';
  *
  *   <h1 {...bind<Homepage>('heroTitle')}>{data.heroTitle}</h1>

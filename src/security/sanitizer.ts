@@ -236,7 +236,7 @@ let documentOverride: SanitizerDocument | undefined;
  *   ```ts
  *   // linkedom — recommended (smallest, fastest)
  *   import { parseHTML } from 'linkedom';
- *   import { setSanitizerDocument } from '@relative23/payload-live-preview';
+ *   import { setSanitizerDocument } from 'payload-live-preview';
  *   const { document } = parseHTML('<!doctype html><html><body></body></html>');
  *   setSanitizerDocument(document);
  *   ```

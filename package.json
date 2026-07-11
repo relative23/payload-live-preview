@@ -1,5 +1,5 @@
 {
-  "name": "@relative23/payload-live-preview",
+  "name": "payload-live-preview",
   "version": "1.0.0",
   "description": "Framework-agnostic live preview for Payload CMS — Astro-first; works with Next.js, SvelteKit, Nuxt, and plain HTML.",
   "author": "relative23",

@@ -1,5 +1,5 @@
 /**
- * @relative23/payload-live-preview
+ * payload-live-preview
  *
  * State-of-the-art, framework-agnostic, schema-driven live preview for Payload CMS.
  *

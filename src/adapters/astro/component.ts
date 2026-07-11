@@ -10,7 +10,7 @@
  *
  * ```astro
  * ---
- * import { renderLivePreviewScript } from '@relative23/payload-live-preview/astro';
+ * import { renderLivePreviewScript } from 'payload-live-preview/astro';
  * const script = renderLivePreviewScript({
  *   allowedOrigins: ['https://admin.example.com'],
  *   nonce: Astro.locals.livePreviewNonce,

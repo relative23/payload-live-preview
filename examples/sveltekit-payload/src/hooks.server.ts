@@ -11,7 +11,7 @@
  * top-level navigation to `/` stays untouched, which the E2E spec
  * relies on for its origin-enforcement test.
  */
-import { livePreviewHandle } from '@relative23/payload-live-preview/sveltekit';
+import { livePreviewHandle } from 'payload-live-preview/sveltekit';
 
 export const handle = livePreviewHandle({
   allowedOrigins: ['http://localhost:4175'],

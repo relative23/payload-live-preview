@@ -9,7 +9,7 @@
  * backend, updates come straight from the mock admin's postMessage.
  */
 import type { ReactNode } from 'react';
-import { generateInlineScript } from '@relative23/payload-live-preview';
+import { generateInlineScript } from 'payload-live-preview';
 
 const previewScript = generateInlineScript({
   allowedOrigins: ['http://localhost:4174'],

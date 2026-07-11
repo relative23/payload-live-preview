@@ -10,7 +10,7 @@
     "prepare": "svelte-kit sync || echo ''"
   },
   "dependencies": {
-    "@relative23/payload-live-preview": "file:../.."
+    "payload-live-preview": "file:../.."
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^7.0.1",

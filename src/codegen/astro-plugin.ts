@@ -4,7 +4,7 @@
  *
  *   ```ts
  *   // astro.config.mjs
- *   import { livePreviewCodegen } from '@relative23/payload-live-preview/codegen';
+ *   import { livePreviewCodegen } from 'payload-live-preview/codegen';
  *
  *   export default defineConfig({
  *     integrations: [
@@ -94,7 +94,7 @@ export function livePreviewCodegen(options: AstroCodegenOptions): AstroIntegrati
   }
 
   return {
-    name: '@relative23/payload-live-preview:codegen',
+    name: 'payload-live-preview:codegen',
     hooks: {
       'astro:config:setup': async ({ command, logger }) => {
         await regenerate(logger);

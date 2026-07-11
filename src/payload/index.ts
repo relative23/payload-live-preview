@@ -14,7 +14,7 @@
  *
  * ```ts
  * // payload.config.ts
- * import { buildLivePreviewUrl } from '@relative23/payload-live-preview/payload';
+ * import { buildLivePreviewUrl } from 'payload-live-preview/payload';
  *
  * admin: {
  *   livePreview: {

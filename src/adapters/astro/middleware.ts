@@ -61,7 +61,7 @@ const HEAD_INSERT = /<head(\s[^>]*)?>/i;
  * `src/middleware.ts`:
  *
  * ```ts
- * import { createLivePreviewMiddleware } from '@relative23/payload-live-preview/astro';
+ * import { createLivePreviewMiddleware } from 'payload-live-preview/astro';
  * export const onRequest = createLivePreviewMiddleware({
  *   allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
  * });

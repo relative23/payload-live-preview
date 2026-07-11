@@ -2,7 +2,7 @@
  * Programmatic codegen API.
  *
  *   ```ts
- *   import { generateTypes } from '@relative23/payload-live-preview/codegen';
+ *   import { generateTypes } from 'payload-live-preview/codegen';
  *   const { code, diagnostics } = await generateTypes({
  *     configPath: 'backend/src/payload.config.ts',
  *     outFile: 'frontend/src/payload-types.ts',

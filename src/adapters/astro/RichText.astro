@@ -16,7 +16,7 @@
  *
  * ```astro
  * ---
- * import RichText from '@relative23/payload-live-preview/astro/RichText.astro';
+ * import RichText from 'payload-live-preview/astro/RichText.astro';
  * ---
  * <RichText value={page.body} field="body" class="prose" />
  * ```
@@ -27,7 +27,7 @@
  */
 // Self-referencing import so the shipped copy in dist/ resolves
 // through the package exports map in consumer projects.
-import { isLexicalContent, lexicalToHtml } from '@relative23/payload-live-preview';
+import { isLexicalContent, lexicalToHtml } from 'payload-live-preview';
 
 interface Props {
   /** The Lexical value from Payload (may be null/undefined/empty). */

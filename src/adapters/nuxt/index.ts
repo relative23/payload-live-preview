@@ -9,7 +9,7 @@
  *     header. Drop it in `server/plugins/live-preview.ts`:
  *
  *     ```ts
- *     import { livePreviewNitroPlugin } from '@relative23/payload-live-preview/nuxt';
+ *     import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';
  *     export default defineNitroPlugin(
  *       livePreviewNitroPlugin({ allowedOrigins: ['https://admin.example.com'] }),
  *     );

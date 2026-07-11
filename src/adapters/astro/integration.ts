@@ -5,7 +5,7 @@
  *
  * ```ts
  * import { defineConfig } from 'astro/config';
- * import { livePreview } from '@relative23/payload-live-preview/astro';
+ * import { livePreview } from 'payload-live-preview/astro';
  *
  * export default defineConfig({
  *   integrations: [livePreview({ allowedOrigins: ['https://admin.example.com'] })],
@@ -53,7 +53,7 @@ export interface AstroIntegrationLike {
 
 const VIRTUAL_OPTIONS_ID = 'virtual:payload-live-preview/options';
 const RESOLVED_VIRTUAL_OPTIONS_ID = `\0${VIRTUAL_OPTIONS_ID}`;
-const MIDDLEWARE_ENTRYPOINT = '@relative23/payload-live-preview/astro/middleware-entry';
+const MIDDLEWARE_ENTRYPOINT = 'payload-live-preview/astro/middleware-entry';
 
 /**
  * Build the Astro integration. The injected script auto-detects the

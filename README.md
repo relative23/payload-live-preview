@@ -1,4 +1,4 @@
-# @relative23/payload-live-preview
+# payload-live-preview
 
 [![CI](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -38,7 +38,7 @@ Astro **4 – 7** (E2E-tested on 4.16 and 7.0), Node ≥ 20.19. Protocol verifie
 ## Install
 
 ```bash
-npm install @relative23/payload-live-preview
+npm install payload-live-preview
 ```
 
 ## Configure Payload
@@ -46,7 +46,7 @@ npm install @relative23/payload-live-preview
 Enable live preview in `payload.config.ts` — the `url` callback maps the edited document to the frontend URL shown in the preview iframe. `buildLivePreviewUrl` replaces the usual lookup-table boilerplate:
 
 ```ts
-import { buildLivePreviewUrl } from '@relative23/payload-live-preview/payload';
+import { buildLivePreviewUrl } from 'payload-live-preview/payload';
 
 export default buildConfig({
   admin: {
@@ -82,7 +82,7 @@ The helper appends `?preview=true` automatically so the adapters' preview detect
 ```ts
 // astro.config.mjs
 import { defineConfig } from 'astro/config';
-import { livePreview } from '@relative23/payload-live-preview/astro';
+import { livePreview } from 'payload-live-preview/astro';
 
 export default defineConfig({
   integrations: [
@@ -109,7 +109,7 @@ For rich text, the `<RichText />` component renders the field **through the same
 
 ```astro
 ---
-import RichText from '@relative23/payload-live-preview/astro/RichText.astro';
+import RichText from 'payload-live-preview/astro/RichText.astro';
 ---
 <RichText value={page.body} field="body" class="prose" />
 ```
@@ -129,7 +129,7 @@ This auto-registers the preview middleware: it detects preview requests (`?previ
 If you already have your own middleware, compose with the exported building blocks instead:
 
 ```ts
-import { isPreviewRequest, mergeCspHeader, buildFrameAncestors } from '@relative23/payload-live-preview';
+import { isPreviewRequest, mergeCspHeader, buildFrameAncestors } from 'payload-live-preview';
 
 if (isPreviewRequest(request, { adminOrigins: [ADMIN] })) {
   headers.set('content-security-policy', mergeCspHeader(existing, {
@@ -146,7 +146,7 @@ For statically rendered pages, embed the script in the root layout — Next midd
 
 ```tsx
 // app/layout.tsx — script executes because it is part of the SSR HTML
-import { generateInlineScript } from '@relative23/payload-live-preview';
+import { generateInlineScript } from 'payload-live-preview';
 
 const previewScript = generateInlineScript({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
@@ -168,7 +168,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 ```ts
 // middleware.ts — frame-ancestors on preview requests
 import { NextResponse, type NextRequest } from 'next/server';
-import { createLivePreviewMiddleware } from '@relative23/payload-live-preview/nextjs';
+import { createLivePreviewMiddleware } from 'payload-live-preview/nextjs';
 
 const livePreview = createLivePreviewMiddleware({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
@@ -184,7 +184,7 @@ export async function middleware(request: NextRequest) {
 
 ```ts
 // src/hooks.server.ts
-import { livePreviewHandle } from '@relative23/payload-live-preview/sveltekit';
+import { livePreviewHandle } from 'payload-live-preview/sveltekit';
 export const handle = livePreviewHandle({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
   serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
@@ -195,7 +195,7 @@ export const handle = livePreviewHandle({
 
 ```ts
 // server/plugins/live-preview.ts
-import { livePreviewNitroPlugin } from '@relative23/payload-live-preview/nuxt';
+import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';
 
 export default defineNitroPlugin(
   livePreviewNitroPlugin({
@@ -212,7 +212,7 @@ The plugin hooks `render:html`, injects the script into preview responses, and m
 ### Plain HTML (advanced)
 
 ```ts
-import { generateInlineScript, wrapWithScriptTag } from '@relative23/payload-live-preview';
+import { generateInlineScript, wrapWithScriptTag } from 'payload-live-preview';
 const script = generateInlineScript({
   allowedOrigins: ['https://admin.example.com'],
   serverURL: 'https://admin.example.com',
@@ -234,7 +234,7 @@ Live preview patches the DOM **after** the page has loaded — the initial serve
 
 ```ts
 // Astro example — in your page/loader code
-import { isPreviewRequest, fetchPreviewDocument } from '@relative23/payload-live-preview';
+import { isPreviewRequest, fetchPreviewDocument } from 'payload-live-preview';
 
 const page = await fetchPreviewDocument<Page>({
   serverURL: import.meta.env.PAYLOAD_URL,
@@ -277,7 +277,7 @@ const page = await fetchPreviewDocument<Page>({
 Custom renderers register via the plugin system:
 
 ```ts
-import { LivePreviewClient } from '@relative23/payload-live-preview';
+import { LivePreviewClient } from 'payload-live-preview';
 
 const client = new LivePreviewClient({ allowedOrigins: ['https://admin.example.com'] });
 await client.use({
@@ -310,14 +310,14 @@ Then bind with compile-time checking:
 
 ```astro
 ---
-import { bind } from '@relative23/payload-live-preview';
+import { bind } from 'payload-live-preview';
 import type { Homepage } from '../lib/bind-types';
 ---
 <h1 {...bind<Homepage>('heroTitle')}>{data.heroTitle}</h1>
 <img {...bind<Homepage>('heroImage', { attribute: 'src' })} />
 ```
 
-`bind('title')` emits `data-payload-field="title"`; misspelled field names fail the build. `bindByPath<T>(d => d.hero.title)` is the rename-safe proxy variant. There is also an Astro codegen integration: `import { livePreviewCodegen } from '@relative23/payload-live-preview/codegen/astro'`.
+`bind('title')` emits `data-payload-field="title"`; misspelled field names fail the build. `bindByPath<T>(d => d.hero.title)` is the rename-safe proxy variant. There is also an Astro codegen integration: `import { livePreviewCodegen } from 'payload-live-preview/codegen/astro'`.
 
 ## Events and plugins
 
@@ -362,7 +362,7 @@ Options accepted by `generateInlineScript`, the adapters, and `LivePreviewClient
 
 Adapter-only options: `inject` (`'preview-only'` default / `'always'`), `previewQueryParams`, `previewSignals` (restrict which signals count — `['query']` for strict setups), `autoInject`, `shouldInject`, `manageCsp` (`'frame-ancestors'` default / `'full'` / `false`), `strictDynamic`, `frameAncestorsExtra`, `scriptSrcExtra`, `nonce`; Astro integration additionally: `mode` (`'inline'` / `'middleware'`).
 
-Bundle-size note: `import … from '@relative23/payload-live-preview/core'` is a lighter entry without the Lexical renderer, plugins, and inline generator. Hot-path timings live in [docs/benchmarks.md](docs/benchmarks.md).
+Bundle-size note: `import … from 'payload-live-preview/core'` is a lighter entry without the Lexical renderer, plugins, and inline generator. Hot-path timings live in [docs/benchmarks.md](docs/benchmarks.md).
 
 All three framework wirings are E2E-tested against real apps in `examples/` (Astro 7, Next.js 16, SvelteKit 2 — Chromium, Firefox and WebKit).
 

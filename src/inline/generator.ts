@@ -125,7 +125,7 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
   const generatedAt =
     RUNTIME_BUILD_INFO.generatedAt === '' ? 'dev' : RUNTIME_BUILD_INFO.generatedAt;
   return [
-    `/* @relative23/payload-live-preview runtime ${generatedAt} */`,
+    `/* payload-live-preview runtime ${generatedAt} */`,
     `var __LIVE_PREVIEW_CONFIG__=${configLiteral};`,
     `var __INLINE_BUILD__=true;`,
     RUNTIME_SOURCE,

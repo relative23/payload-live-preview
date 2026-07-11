@@ -1,5 +1,5 @@
 import { defineConfig } from 'astro/config';
-import { livePreview } from '@relative23/payload-live-preview/astro';
+import { livePreview } from 'payload-live-preview/astro';
 
 // The mock-admin page serves both as the integration test target and
 // as a hands-on demonstration of the library. The integration is

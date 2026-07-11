@@ -325,7 +325,7 @@ describe('livePreview integration — middleware mode', () => {
 
     expect(ctx.injectScript).not.toHaveBeenCalled();
     expect(ctx.addMiddleware).toHaveBeenCalledWith({
-      entrypoint: '@relative23/payload-live-preview/astro/middleware-entry',
+      entrypoint: 'payload-live-preview/astro/middleware-entry',
       order: 'pre',
     });
 

@@ -1,4 +1,4 @@
-# @relative23/payload-live-preview
+# payload-live-preview
 
 ## 1.0.0
 
@@ -92,7 +92,7 @@
     markup; client-rendered React/Vue trees should use the official
     `@payloadcms/live-preview-react`/`-vue` hooks. The Next.js middleware
     is documented as CSP-only (it cannot inject into `NextResponse.next()`).
-  - New `@relative23/payload-live-preview/payload` entry:
+  - New `payload-live-preview/payload` entry:
     `buildLivePreviewUrl()` generates the `admin.livePreview.url`
     callback from declarative slug → path maps.
   - `mergeFetch` option on `LivePreviewClient` (equivalent of the

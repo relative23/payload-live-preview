@@ -79,7 +79,7 @@ describe('codegen end-to-end', () => {
 
     // Stub the runtime imports so the in-memory program can resolve them.
     project.createSourceFile(
-      '/node_modules/@relative23/payload-live-preview/index.d.ts',
+      '/node_modules/payload-live-preview/index.d.ts',
       `
         export interface PayloadMedia {
           readonly id?: string | number;

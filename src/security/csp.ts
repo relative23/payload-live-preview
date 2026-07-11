@@ -43,7 +43,7 @@ let cryptoOverride: WebCryptoLike | undefined;
  *
  *   ```ts
  *   import { webcrypto } from 'node:crypto';
- *   import { setCspCrypto } from '@relative23/payload-live-preview';
+ *   import { setCspCrypto } from 'payload-live-preview';
  *   setCspCrypto(webcrypto as { getRandomValues: typeof webcrypto.getRandomValues });
  *   ```
  *

@@ -21,6 +21,6 @@ The official `@payloadcms/live-preview-react`/`-vue` hooks are great when React/
 Honest scope: for client-rendered React/Vue apps, keep using the official hooks — this is for everything they don't cover.
 
 GitHub: https://github.com/relative23/payload-live-preview
-npm: https://www.npmjs.com/package/@relative23/payload-live-preview
+npm: https://www.npmjs.com/package/payload-live-preview
 
 Feedback and issues very welcome.
