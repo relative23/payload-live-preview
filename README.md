@@ -1,5 +1,10 @@
 # @relative23/payload-live-preview
 
+[![CI](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node >= 20.19](https://img.shields.io/badge/node-%3E%3D20.19-brightgreen)](package.json)
+[![Payload 2.x / 3.x](https://img.shields.io/badge/Payload-2.x%20%2F%203.x-black)](https://payloadcms.com)
+
 > Framework-agnostic live preview for Payload CMS. Astro-first; works with Next.js, SvelteKit, Nuxt, and plain HTML.
 
 Bind DOM elements to Payload fields with `data-payload-*` attributes; the runtime listens for the Payload admin's `postMessage` updates and patches the DOM in place — no framework re-render, no page reload.
