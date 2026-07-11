@@ -1,6 +1,6 @@
 {
   "name": "payload-live-preview",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Framework-agnostic live preview for Payload CMS — Astro-first; works with Next.js, SvelteKit, Nuxt, and plain HTML.",
   "author": "relative23",
   "license": "MIT",

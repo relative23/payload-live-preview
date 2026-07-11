@@ -1,5 +1,16 @@
 # payload-live-preview
 
+## 1.0.1
+
+### Patch Changes
+
+- Provenance-signed maintenance release. No runtime changes since 1.0.0 —
+  1.0.0 was published locally (without provenance) to bootstrap the
+  package; this release is published through the GitHub Actions pipeline
+  with a signed provenance attestation ("published via GitHub Actions" on
+  npm) and verifies the automated release chain end-to-end. The CI test
+  matrix now also covers Node 26.
+
 ## 1.0.0
 
 ### Major Changes
