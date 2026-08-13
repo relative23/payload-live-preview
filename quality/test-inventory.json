@@ -18,7 +18,7 @@
   "totals": {
     "files": 76,
     "suites": 215,
-    "tests": 1195,
+    "tests": 1196,
     "benchmarks": 10
   },
   "groups": {
@@ -55,7 +55,7 @@
     "unit": {
       "files": 63,
       "suites": 191,
-      "tests": 1118,
+      "tests": 1119,
       "benchmarks": 0
     }
   },
@@ -533,7 +533,7 @@
       "path": "tests/unit/release-contracts.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 37,
+      "tests": 38,
       "benchmarks": 0
     },
     {
