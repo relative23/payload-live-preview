@@ -12,6 +12,7 @@ import {
   MAINTAINER_INSTALL_POLICIES,
   PACKAGE_SMOKE_INSTALL_ARGS,
   PACKAGE_SMOKE_NPMRC,
+  PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS,
   sanitizeNpmScriptEnvironment,
 } from '../../scripts/release-contracts';
 
@@ -141,6 +142,17 @@ describe('packed-package consumer isolation contract', () => {
     expect(PACKAGE_SMOKE_INSTALL_ARGS).toContain('--omit=optional');
     expect(PACKAGE_SMOKE_INSTALL_ARGS).not.toContain('--ignore-scripts');
     expect(PACKAGE_SMOKE_INSTALL_ARGS).not.toContain('--legacy-peer-deps');
+  });
+
+  it('provisions the exact reviewed codegen peer before the archive is installed offline', () => {
+    expect(PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS).toContain('--strict-allow-scripts=true');
+    expect(PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS).toContain('--ignore-scripts=false');
+    expect(PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS).toContain('--dangerously-allow-all-scripts=false');
+    expect(PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS).toContain('--legacy-peer-deps=false');
+    expect(PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS).toContain('--package-lock=true');
+    expect(PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS).not.toContain('--offline');
+    expect(PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS).not.toContain('--ignore-scripts');
+    expect(PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS).not.toContain('--legacy-peer-deps');
   });
 
   it('removes inherited npm script-policy overrides case-insensitively', () => {

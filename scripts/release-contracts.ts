@@ -35,6 +35,28 @@ export const PACKAGE_SMOKE_INSTALL_ARGS = [
   '--no-save',
 ] as const;
 
+/**
+ * Strict online bootstrap for the exact, lockfile-reviewed codegen peer.
+ *
+ * A fresh npm cache may contain the package tarball from the maintainer install
+ * without containing the registry metadata needed to resolve it in a new
+ * consumer. Provision the exact direct dependency first; the package archive
+ * itself is still installed separately with PACKAGE_SMOKE_INSTALL_ARGS and is
+ * therefore exercised offline.
+ */
+export const PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS = [
+  '--strict-allow-scripts=true',
+  '--ignore-scripts=false',
+  '--dangerously-allow-all-scripts=false',
+  '--legacy-peer-deps=false',
+  '--no-audit',
+  '--no-fund',
+  '--package-lock=true',
+  '--omit=optional',
+  '--prefer-offline',
+  '--no-save',
+] as const;
+
 const REVIEWED_PACKAGE_MANAGER = 'npm@11.16.0';
 
 export interface MaintainerInstallPolicyProfile {

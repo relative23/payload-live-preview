@@ -46,6 +46,7 @@ import {
   MAINTAINER_INSTALL_POLICIES,
   PACKAGE_SMOKE_INSTALL_ARGS,
   PACKAGE_SMOKE_NPMRC,
+  PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS,
   sanitizeNpmScriptEnvironment,
 } from './release-contracts';
 
@@ -287,6 +288,19 @@ function installStrictly(
   return run(
     'npm',
     ['install', ...PACKAGE_SMOKE_INSTALL_ARGS, ...packageArguments],
+    consumer,
+    sanitizeNpmScriptEnvironment(process.env),
+  );
+}
+
+function bootstrapDeclaredPeersStrictly(consumer: string): {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly status: number;
+} {
+  return run(
+    'npm',
+    ['install', ...PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS],
     consumer,
     sanitizeNpmScriptEnvironment(process.env),
   );
@@ -597,6 +611,12 @@ async function main(): Promise<void> {
     await initializeConsumer(codegenConsumer, {
       'ts-morph': lockedTsMorphVersion,
     });
+    const codegenPeerInstall = bootstrapDeclaredPeersStrictly(codegenConsumer);
+    if (codegenPeerInstall.status !== 0) {
+      throw new Error(
+        `installing the exact reviewed codegen peer failed:\n${detailFor(codegenPeerInstall)}`,
+      );
+    }
     const codegenInstall = installStrictly(codegenConsumer, [tarball]);
     if (codegenInstall.status !== 0) {
       throw new Error(
