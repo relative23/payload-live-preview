@@ -1,0 +1,79 @@
+import {
+  LivePreviewClient,
+  bind,
+  generateInlineScript,
+  type FieldRenderer,
+  type LivePreviewPlugin,
+} from 'payload-live-preview';
+import { EventEmitter, initLivePreview } from 'payload-live-preview/core';
+import {
+  createLivePreviewMiddleware as createAstroMiddleware,
+  livePreview,
+  type LivePreviewAstroOptions,
+} from 'payload-live-preview/astro';
+import { onRequest } from 'payload-live-preview/astro/middleware-entry';
+import {
+  createLivePreviewMiddleware as createNextMiddleware,
+  type LivePreviewNextOptions,
+} from 'payload-live-preview/nextjs';
+import {
+  buildLivePreviewCsp,
+  livePreviewNitroPlugin,
+  type LivePreviewNuxtOptions,
+} from 'payload-live-preview/nuxt';
+import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import {
+  livePreviewHandle,
+  type LivePreviewSvelteKitOptions,
+} from 'payload-live-preview/sveltekit';
+
+const client = new LivePreviewClient({
+  allowedOrigins: ['https://admin.example.com'],
+  autoStart: false,
+  validateToken: async (_token, _origin) => true,
+});
+const unsubscribe = client.events.on('afterUpdate', ({ data, revision, updatedCount }) => {
+  void [data, revision, updatedCount];
+});
+
+const synchronousExpressionPlugin: LivePreviewPlugin = {
+  name: 'synchronous-expression',
+  init: (context) => context.registerTransform('title', (value) => value),
+};
+const asynchronousExpressionPlugin: LivePreviewPlugin = {
+  name: 'asynchronous-expression',
+  init: async (context) => context.registerFieldRenderer({ name: 'text', render: () => undefined }),
+};
+const valueReturningRenderer: FieldRenderer = {
+  name: 'text',
+  render: (target) => target.element.toggleAttribute('data-rendered'),
+};
+
+const astroOptions = {
+  mode: 'middleware',
+  inject: 'preview-only',
+} satisfies LivePreviewAstroOptions;
+const nextOptions = { inject: 'always' } satisfies LivePreviewNextOptions;
+const svelteOptions = { manageCsp: 'full' } satisfies LivePreviewSvelteKitOptions;
+const nuxtOptions = { previewSignals: ['query'] } satisfies LivePreviewNuxtOptions;
+
+const publicValues = [
+  generateInlineScript(),
+  bind<{ title: string }>('title'),
+  new EventEmitter(),
+  initLivePreview,
+  livePreview(astroOptions),
+  createAstroMiddleware(astroOptions),
+  createNextMiddleware(nextOptions),
+  livePreviewHandle(svelteOptions),
+  livePreviewNitroPlugin(nuxtOptions),
+  buildLivePreviewCsp(nuxtOptions, 'nonce'),
+  buildLivePreviewUrl({ baseUrl: 'https://example.com' }),
+  onRequest,
+  synchronousExpressionPlugin,
+  asynchronousExpressionPlugin,
+  valueReturningRenderer,
+] as const;
+
+unsubscribe();
+void publicValues;

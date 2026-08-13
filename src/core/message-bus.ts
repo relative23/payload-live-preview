@@ -26,14 +26,36 @@
 import type {
   PayloadLivePreviewMessage,
   PayloadDocumentEventMessage,
+  PayloadFieldSchema,
 } from '@/types/payload-protocol';
+import { parseFieldSchema } from '@schema/parser';
 import { LIBRARY_PROTOCOL_VERSION } from './protocol-version';
+import { observeThenableResult } from './thenable';
 
 export type OriginMatcher = (origin: string) => boolean;
 
+/**
+ * Stable identity assigned to a data-bearing update at message ingress.
+ *
+ * `revision` is monotonic for the lifetime of one `MessageBus` instance.
+ * `generation` identifies the listener attachment in which the message
+ * arrived; work from a detached generation is never dispatched.
+ */
+export interface MessageRevision {
+  readonly revision: number;
+  readonly generation: number;
+}
+
 export interface MessageHandlers {
-  /** Validated live preview data update. */
-  readonly onUpdate: (msg: PayloadLivePreviewMessage, origin: string) => void;
+  /**
+   * Validated live-preview message. Data-bearing updates include their
+   * revision identity; data-less ready handshakes intentionally do not.
+   */
+  readonly onUpdate: (
+    msg: PayloadLivePreviewMessage,
+    origin: string,
+    messageRevision?: MessageRevision,
+  ) => void;
   /** Validated document save event. */
   readonly onDocumentEvent: (msg: PayloadDocumentEventMessage, origin: string) => void;
   /**
@@ -51,7 +73,7 @@ export interface MessageHandlers {
    * in arrival order** through a single chain, so update A is always
    * dispatched before update B when A arrived first — even if B's
    * validation would otherwise resolve sooner. Validation errors are
-   * treated as rejection (silent).
+   * treated as rejection and routed to `onInvalid('token')` when provided.
    */
   readonly validateToken?: (
     token: string | undefined,
@@ -59,38 +81,147 @@ export interface MessageHandlers {
   ) => boolean | Promise<boolean>;
 }
 
-export class MessageBus {
-  readonly #matcher: OriginMatcher;
-  readonly #handlers: MessageHandlers;
-  readonly #boundListener: (event: MessageEvent) => void;
-  #attached = false;
-  /**
-   * Tail of the async token-validation chain. Each gated update appends
-   * its validation to this promise, guaranteeing validations resolve —
-   * and updates dispatch — in the order the messages arrived.
-   */
-  #validationChain: Promise<void> = Promise.resolve();
+interface PendingValidation {
+  readonly generation: number;
+  readonly message: PayloadLivePreviewMessage;
+  readonly origin: string;
+  readonly messageRevision: MessageRevision | undefined;
+  settled: boolean;
+  approved: boolean;
+}
 
+/**
+ * A consumed prefix is compacted only after it is both substantial and at
+ * least half of the backing array. This bounds retained settled entries while
+ * keeping dequeue amortized O(1); a fully drained or invalidated generation
+ * always drops the backing array immediately.
+ */
+const VALIDATION_QUEUE_COMPACTION_THRESHOLD = 1_024;
+
+const enum BusSlot {
+  Matcher,
+  Handlers,
+  BoundListener,
+  AttachedTarget,
+  Generation,
+  Revision,
+  ValidationQueue,
+  ValidationQueueHead,
+}
+
+/**
+ * One TS-private record keeps all mutable ingress state instance-local while
+ * avoiding private-field lowering in the ES2020 inline build. Named slots
+ * preserve queue and generation invariants without property-name mangling;
+ * this internal class never crosses the package boundary.
+ */
+type MessageBusState = [
+  matcher: OriginMatcher,
+  handlers: MessageHandlers,
+  boundListener: ((event: MessageEvent) => void) | undefined,
+  attachedTarget: Window | undefined,
+  generation: number,
+  revision: number,
+  validationQueue: PendingValidation[],
+  validationQueueHead: number,
+];
+
+export class MessageBus {
+  private readonly s: MessageBusState;
+  /**
+   * Validator calls start eagerly, but their outcomes commit from the
+   * head of this queue. This deliberately includes booleans and thrown
+   * errors: a synchronous result can never overtake an older promise.
+   * Detach replaces the queue, so a new generation is never blocked by
+   * unresolved work from its predecessor.
+   */
   constructor(matcher: OriginMatcher, handlers: MessageHandlers) {
-    this.#matcher = matcher;
-    this.#handlers = handlers;
-    this.#boundListener = (event: MessageEvent): void => {
-      this.#receive(event);
-    };
+    this.s = [matcher, handlers, undefined, undefined, 0, 0, [], 0];
   }
 
   /** Begin listening for window-level `message` events. Idempotent. */
   attach(target: Window = window): void {
-    if (this.#attached) return;
-    target.addEventListener('message', this.#boundListener);
-    this.#attached = true;
+    if (this.s[BusSlot.AttachedTarget] !== undefined) return;
+    let committed = false;
+    const listener = (event: MessageEvent): void => {
+      // Each attachment owns a distinct listener. An ineffectively removed
+      // listener from an older transaction must not borrow the new generation.
+      if (!committed || this.s[BusSlot.BoundListener] !== listener) return;
+      const generation = this.s[BusSlot.Generation];
+      try {
+        this.#receive(event, generation);
+      } catch {
+        // The guards below deliberately handle every expected protocol failure.
+        // Keep one final trust-boundary safety net for hostile accessors or other
+        // unexpected JavaScript values delivered through postMessage.
+        let origin = '';
+        try {
+          origin = event.origin;
+        } catch {
+          // A synthetic MessageEvent can itself expose hostile accessors.
+        }
+        this.#reportInvalid('shape', origin, generation);
+      }
+    };
+    this.s[BusSlot.Generation] += 1;
+    this.#resetValidationQueue();
+    this.s[BusSlot.AttachedTarget] = target;
+    this.s[BusSlot.BoundListener] = listener;
+    try {
+      target.addEventListener('message', listener);
+    } catch (error) {
+      // Invalidate this attempt before external rollback. A remove hook may
+      // attach a newer generation, which this older catch must not clobber.
+      if (this.s[BusSlot.BoundListener] === listener) {
+        this.s[BusSlot.AttachedTarget] = undefined;
+        this.s[BusSlot.BoundListener] = undefined;
+        this.#resetValidationQueue();
+      }
+      try {
+        target.removeEventListener('message', listener);
+      } catch {
+        // Preserve the original addEventListener failure.
+      }
+      throw error;
+    }
+    // addEventListener is a host boundary. Reentrant detach/attach may have
+    // installed a newer resource; remove only this attempt's unique listener.
+    if (this.s[BusSlot.BoundListener] === listener) {
+      committed = true;
+    } else {
+      try {
+        target.removeEventListener('message', listener);
+      } catch {
+        // The obsolete listener is identity-gated above even if removal fails.
+      }
+    }
   }
 
   /** Stop listening. Idempotent. */
-  detach(target: Window = window): void {
-    if (!this.#attached) return;
-    target.removeEventListener('message', this.#boundListener);
-    this.#attached = false;
+  detach(_target?: Window): void {
+    const target = this.s[BusSlot.AttachedTarget];
+    const listener = this.s[BusSlot.BoundListener];
+    if (target === undefined || listener === undefined) return;
+
+    // Invalidate first. A listener already on the stack, or a validator
+    // settling during removal, must observe the generation as obsolete.
+    this.s[BusSlot.AttachedTarget] = undefined;
+    this.s[BusSlot.BoundListener] = undefined;
+    this.#resetValidationQueue();
+    target.removeEventListener('message', listener);
+  }
+
+  /**
+   * Invalidate every pending validation while keeping the current listener
+   * attached. Used when the surrounding connection lifecycle expires: work
+   * accepted after this point belongs to a fresh generation and cannot be
+   * blocked or revived by an older validator.
+   */
+  advanceGeneration(): boolean {
+    if (this.s[BusSlot.AttachedTarget] === undefined) return false;
+    this.s[BusSlot.Generation] += 1;
+    this.#resetValidationQueue();
+    return true;
   }
 
   /**
@@ -121,74 +252,276 @@ export class MessageBus {
     }
   }
 
-  #receive(event: MessageEvent): void {
+  #receive(event: MessageEvent, generation: number): void {
+    if (!this.#isCurrentGeneration(generation)) return;
+
+    // Every read below can cross user-controlled JavaScript through a
+    // synthetic MessageEvent, Proxy, accessor, schema value, or callback.
+    // Re-check the captured generation after each such boundary so re-entry
+    // cannot continue an obsolete ingress into the fresh validation queue.
     const origin = event.origin;
-    if (!this.#matcher(origin)) {
-      this.#handlers.onInvalid?.('origin', origin);
+    if (!this.#isCurrentGeneration(generation)) return;
+    if (!this.#matchesOrigin(origin, generation)) {
+      this.#reportInvalid('origin', origin, generation);
       return;
     }
+
     const data: unknown = event.data;
-    if (!isObjectMessage(data)) {
-      this.#handlers.onInvalid?.('shape', origin);
+    if (!this.#isCurrentGeneration(generation)) return;
+    const isMessage = isObjectMessage(data);
+    if (!this.#isCurrentGeneration(generation)) return;
+    if (!isMessage) {
+      this.#reportInvalid('shape', origin, generation);
       return;
     }
-    switch (data.type) {
-      case 'payload-live-preview':
-        if (!isLivePreviewMessage(data)) {
-          this.#handlers.onInvalid?.('shape', origin);
+
+    const type = data.type;
+    if (!this.#isCurrentGeneration(generation)) return;
+    switch (type) {
+      case 'payload-live-preview': {
+        const isLivePreview = isLivePreviewMessage(data);
+        if (!this.#isCurrentGeneration(generation)) return;
+        if (!isLivePreview) {
+          this.#reportInvalid('shape', origin, generation);
           return;
         }
-        this.#dispatchUpdate(data, origin);
+        const message = normalizeLivePreviewMessage(data);
+        if (!this.#isCurrentGeneration(generation)) return;
+        this.#dispatchUpdate(message, origin, generation);
         return;
-      case 'payload-document-event':
-        this.#handlers.onDocumentEvent(data as PayloadDocumentEventMessage, origin);
+      }
+      case 'payload-document-event': {
+        const isDocumentEvent = isDocumentEventMessage(data);
+        if (!this.#isCurrentGeneration(generation)) return;
+        if (!isDocumentEvent) {
+          this.#reportInvalid('shape', origin, generation);
+          return;
+        }
+        let onDocumentEvent: MessageHandlers['onDocumentEvent'];
+        try {
+          onDocumentEvent = this.s[BusSlot.Handlers].onDocumentEvent;
+        } catch {
+          return;
+        }
+        if (!this.#isCurrentGeneration(generation)) return;
+        this.#invokeHandler(onDocumentEvent, data, origin);
         return;
+      }
       default:
-        this.#handlers.onInvalid?.('type', origin);
+        this.#reportInvalid('type', origin, generation);
     }
   }
 
-  #dispatchUpdate(message: PayloadLivePreviewMessage, origin: string): void {
-    const validator = this.#handlers.validateToken;
-    if (validator === undefined) {
-      this.#handlers.onUpdate(message, origin);
+  #dispatchUpdate(message: PayloadLivePreviewMessage, origin: string, generation: number): void {
+    if (!this.#isCurrentGeneration(generation)) return;
+
+    const data = message.data;
+    if (!this.#isCurrentGeneration(generation)) return;
+    const hasUpdateData = isPlainObject(data);
+    if (!this.#isCurrentGeneration(generation)) return;
+
+    // Shape-valid data updates consume their revision before validation.
+    // A rejected token therefore leaves an intentional gap.
+    const messageRevision = hasUpdateData
+      ? { generation, revision: (this.s[BusSlot.Revision] += 1) }
+      : undefined;
+    let validator: MessageHandlers['validateToken'];
+    try {
+      validator = this.s[BusSlot.Handlers].validateToken;
+    } catch {
       return;
     }
-    // The `ready` handshake handshake doesn't carry a token; let it
+    if (!this.#isCurrentGeneration(generation)) return;
+    if (validator === undefined) {
+      this.#commitUpdate(message, origin, generation, messageRevision);
+      return;
+    }
+    // The `ready` handshake doesn't carry a token; let it
     // through so the parent learns we're listening even when auth is
     // enabled. Only `data`-bearing updates are gated.
-    if (message.ready === true && message.data === undefined) {
-      this.#handlers.onUpdate(message, origin);
+    if (message.ready === true && data === undefined) {
+      this.#commitUpdate(message, origin, generation, undefined);
       return;
     }
-    let approved: boolean | Promise<boolean>;
+
+    const pending: PendingValidation = {
+      generation,
+      message,
+      origin,
+      messageRevision,
+      settled: false,
+      approved: false,
+    };
+    this.s[BusSlot.ValidationQueue].push(pending);
+
+    let verdict: unknown;
     try {
-      approved = validator(message.previewToken, origin);
+      // Invocation is intentionally eager. Only committing the outcome
+      // waits for earlier queue entries.
+      verdict = validator(message.previewToken, origin);
     } catch {
-      this.#handlers.onInvalid?.('token', origin);
+      this.#settleValidation(pending, false);
       return;
     }
-    // Synchronous verdicts dispatch immediately and keep the natural
-    // arrival order on their own.
-    if (typeof approved === 'boolean') {
-      if (approved) this.#handlers.onUpdate(message, origin);
-      else this.#handlers.onInvalid?.('token', origin);
+
+    if (typeof verdict === 'boolean') {
+      this.#settleValidation(pending, verdict);
       return;
     }
-    // Async verdicts are appended to a single chain so they resolve —
-    // and dispatch — strictly in the order the messages arrived, even
-    // when a later message's validation would settle first.
-    this.#validationChain = this.#validationChain.then(async () => {
-      let ok: boolean;
-      try {
-        ok = await approved;
-      } catch {
-        this.#handlers.onInvalid?.('token', origin);
-        return;
+
+    // Normalize even an incorrectly typed JavaScript return value through a
+    // real Promise. This safely assimilates thenables (including a throwing
+    // `then` getter), while the literal-true comparison below fails closed for
+    // strings, objects, and every other non-boolean fulfillment.
+    void Promise.resolve(verdict).then(
+      (approved) => {
+        this.#settleValidation(pending, approved === true);
+      },
+      () => {
+        this.#settleValidation(pending, false);
+      },
+    );
+  }
+
+  #settleValidation(pending: PendingValidation, approved: boolean): void {
+    if (!this.#isCurrentGeneration(pending.generation)) return;
+    pending.approved = approved;
+    pending.settled = true;
+    this.#drainValidationQueue(pending.generation);
+  }
+
+  #drainValidationQueue(generation: number): void {
+    while (this.#isCurrentGeneration(generation)) {
+      const pending = this.s[BusSlot.ValidationQueue][this.s[BusSlot.ValidationQueueHead]];
+      if (pending === undefined) return;
+
+      // The matcher may have narrowed since ingress (for example the client
+      // locks to the first committed origin). Re-check at the ordered commit
+      // boundary before waiting for the verdict. An obsolete origin must not
+      // retain the queue head and block newer work from the locked origin.
+      if (!this.#matchesOrigin(pending.origin, generation)) {
+        if (!this.#dequeueValidation(pending)) continue;
+        this.#reportInvalid('origin', pending.origin, pending.generation);
+        continue;
       }
-      if (ok) this.#handlers.onUpdate(message, origin);
-      else this.#handlers.onInvalid?.('token', origin);
-    });
+      if (!pending.settled) return;
+      if (!this.#dequeueValidation(pending)) continue;
+
+      if (pending.approved) {
+        this.#commitUpdate(
+          pending.message,
+          pending.origin,
+          pending.generation,
+          pending.messageRevision,
+        );
+      } else {
+        this.#reportInvalid('token', pending.origin, pending.generation);
+      }
+    }
+  }
+
+  #commitUpdate(
+    message: PayloadLivePreviewMessage,
+    origin: string,
+    generation: number,
+    messageRevision: MessageRevision | undefined,
+  ): void {
+    if (!this.#isCurrentGeneration(generation)) return;
+    let onUpdate: MessageHandlers['onUpdate'];
+    try {
+      onUpdate = this.s[BusSlot.Handlers].onUpdate;
+    } catch {
+      return;
+    }
+    if (!this.#isCurrentGeneration(generation)) return;
+    if (messageRevision === undefined) {
+      this.#invokeHandler(onUpdate, message, origin);
+    } else {
+      this.#invokeHandler(onUpdate, message, origin, messageRevision);
+    }
+  }
+
+  #reportInvalid(
+    reason: 'origin' | 'shape' | 'type' | 'token',
+    origin: string,
+    generation: number,
+  ): void {
+    if (!this.#isCurrentGeneration(generation)) return;
+    let onInvalid: MessageHandlers['onInvalid'];
+    try {
+      onInvalid = this.s[BusSlot.Handlers].onInvalid;
+    } catch {
+      return;
+    }
+    if (!this.#isCurrentGeneration(generation)) return;
+    if (onInvalid !== undefined) {
+      this.#invokeHandler(onInvalid, reason, origin);
+    }
+  }
+
+  /** Origin policy is a fail-closed trust boundary, including faulty matchers. */
+  #matchesOrigin(origin: string, generation: number): boolean {
+    if (!this.#isCurrentGeneration(generation)) return false;
+    try {
+      // Treat this as an untyped JavaScript boundary despite the TypeScript
+      // signature: only literal `true` grants trust, and that approval belongs
+      // only to the generation in which the matcher was invoked.
+      const approved: unknown = this.s[BusSlot.Matcher](origin);
+      return approved === true && this.#isCurrentGeneration(generation);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Consumer callbacks cannot be allowed to unwind the window listener or the
+   * ordered validation drain.
+   */
+  #invokeHandler<TArgs extends unknown[]>(
+    handler: (...args: TArgs) => unknown,
+    ...args: TArgs
+  ): void {
+    try {
+      observeThenableResult(handler(...args));
+    } catch {
+      // Boundary callbacks are isolated by contract; the bus keeps draining.
+    }
+  }
+
+  #isCurrentGeneration(generation: number): boolean {
+    return (
+      this.s[BusSlot.AttachedTarget] !== undefined && this.s[BusSlot.Generation] === generation
+    );
+  }
+
+  #dequeueValidation(expected: PendingValidation): boolean {
+    // Origin matchers are consumer callbacks. They may synchronously advance
+    // the generation and reset the queue during the commit-boundary recheck;
+    // never move the fresh generation's head on behalf of the old entry.
+    const state = this.s;
+    if (state[BusSlot.ValidationQueue][state[BusSlot.ValidationQueueHead]] !== expected) {
+      return false;
+    }
+    state[BusSlot.ValidationQueueHead] += 1;
+    if (state[BusSlot.ValidationQueueHead] === state[BusSlot.ValidationQueue].length) {
+      this.#resetValidationQueue();
+      return true;
+    }
+    if (
+      state[BusSlot.ValidationQueueHead] >= VALIDATION_QUEUE_COMPACTION_THRESHOLD &&
+      state[BusSlot.ValidationQueueHead] * 2 >= state[BusSlot.ValidationQueue].length
+    ) {
+      state[BusSlot.ValidationQueue] = state[BusSlot.ValidationQueue].slice(
+        state[BusSlot.ValidationQueueHead],
+      );
+      state[BusSlot.ValidationQueueHead] = 0;
+    }
+    return true;
+  }
+
+  #resetValidationQueue(): void {
+    this.s[BusSlot.ValidationQueue] = [];
+    this.s[BusSlot.ValidationQueueHead] = 0;
   }
 }
 
@@ -225,6 +558,37 @@ function isLivePreviewMessage(value: { type: string }): value is PayloadLivePrev
   return true;
 }
 
+/**
+ * Runtime guard for Payload's document-save notification. Stock Payload
+ * sends only the `type`; custom senders may add the optional typed fields.
+ */
+function isDocumentEventMessage(value: { type: string }): value is PayloadDocumentEventMessage {
+  const v = value as Record<string, unknown>;
+  if (
+    !optionalDocumentFieldOk(
+      v['action'],
+      (x) => x === 'updated' || x === 'created' || x === 'deleted',
+    )
+  ) {
+    return false;
+  }
+  if (!optionalDocumentFieldOk(v['slug'], (x) => typeof x === 'string')) return false;
+  if (
+    !optionalDocumentFieldOk(
+      v['id'],
+      (x) => typeof x === 'string' || (typeof x === 'number' && Number.isFinite(x)),
+    )
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/** Document-event extensions use omission, not `null`, for absence. */
+function optionalDocumentFieldOk(value: unknown, check: (v: unknown) => boolean): boolean {
+  return value === undefined || check(value);
+}
+
 /** `undefined`/`null` (absent) pass; otherwise the value must match `check`. */
 function optionalTypeOk(value: unknown, check: (v: unknown) => boolean): boolean {
   if (value === undefined || value === null) return true;
@@ -232,5 +596,50 @@ function optionalTypeOk(value: unknown, check: (v: unknown) => boolean): boolean
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  if (typeof value !== 'object' || value === null) return false;
+  const prototype = Object.getPrototypeOf(value) as object | null;
+  return prototype === null || Object.getPrototypeOf(prototype) === null;
+}
+
+const NULL_AS_ABSENT_FIELDS = [
+  'data',
+  'fieldSchemaJSON',
+  'globalSlug',
+  'collectionSlug',
+  'locale',
+  'ready',
+  'previewToken',
+  'protocolVersion',
+] as const satisfies readonly (keyof PayloadLivePreviewMessage)[];
+
+/**
+ * Normalize the permissive wire boundary into the stricter public type.
+ *
+ * Payload/JSON bridges may encode absent optional properties as `null`; the
+ * guard accepts that representation, so it must be removed before downstream
+ * classification (especially the data-less ready handshake). Unknown fields,
+ * including Payload's nullable relationship event, remain untouched for
+ * protocol evolution.
+ *
+ * The schema guard establishes only that the outer value is an array;
+ * `parseFieldSchema()` validates every nested entry and drops malformed ones.
+ * A defensive catch also contains pathological cyclic/deep values supplied by
+ * direct JavaScript `MessageEvent` construction.
+ */
+function normalizeLivePreviewMessage(
+  message: PayloadLivePreviewMessage,
+): PayloadLivePreviewMessage {
+  const normalized = { ...message };
+  for (const field of NULL_AS_ABSENT_FIELDS) {
+    const wireValue: unknown = Reflect.get(normalized, field);
+    if (wireValue === null) Reflect.deleteProperty(normalized, field);
+  }
+  if (!Array.isArray(normalized.fieldSchemaJSON)) return normalized;
+  let fieldSchemaJSON: readonly PayloadFieldSchema[];
+  try {
+    fieldSchemaJSON = parseFieldSchema(normalized.fieldSchemaJSON);
+  } catch {
+    fieldSchemaJSON = [];
+  }
+  return { ...normalized, fieldSchemaJSON };
 }

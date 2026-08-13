@@ -15,10 +15,15 @@
  *     body because `NextResponse.next()` carries no body.
  *
  *   - `createLivePreviewMiddleware(options)` — merges CSP headers
- *     (`frame-ancestors`) onto preview responses. Its script-injection
- *     path only activates when you pass it a `Response` that actually
- *     carries an HTML body (custom servers, route handlers returning
- *     HTML) — in standard `middleware.ts` use `autoInject: false`.
+ *     (`frame-ancestors`) onto responses carrying preview intent. Its
+ *     script-injection path only activates when you pass it a
+ *     `Response` that actually carries an HTML body (custom servers,
+ *     route handlers returning HTML) — in standard `middleware.ts`
+ *     use `autoInject: false`.
+ *
+ * Preview intent is not authorization. Run application-owned server
+ * authentication first and use its result to gate draft data, cache
+ * policy, privileged headers, CSP changes, and script rendering.
  *
  * @module @adapters/nextjs
  */
@@ -42,14 +47,19 @@ export interface LivePreviewNextOptions {
   readonly mergeDepth?: number;
   readonly autoInject?: boolean;
   /**
-   * `'preview-only'` (default) — inject only into responses that look
-   * like preview requests. `'always'` — every HTML response.
+   * `'preview-only'` (default) — inject only into responses carrying
+   * preview intent. The signals are client-controlled and do not
+   * authorize access. `'always'` — every HTML response.
    */
   readonly inject?: 'preview-only' | 'always';
-  /** Query params that mark a preview request. Default `['preview', 'draft', 'livePreview']`. */
+  /** Query params that signal preview intent. Default `['preview', 'draft', 'livePreview']`. */
   readonly previewQueryParams?: readonly string[];
-  /** Which signals count as a preview request. Default: query, fetch-dest, referer. */
+  /** Which signals count as preview intent. Default: query, fetch-dest, referer. */
   readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
+  /**
+   * Synchronous route/content filter for script injection only. It is
+   * not authentication and does not suppress CSP handling.
+   */
   readonly shouldInject?: (request: Request) => boolean;
   /**
    * CSP management: `'frame-ancestors'` (default) merges only the
@@ -76,7 +86,9 @@ const HEAD_INSERT = /<head(\s[^>]*)?>/i;
 /**
  * Build a Next.js-compatible middleware operating on the standard
  * `Request` / `Response` pair. Wrap with `NextResponse.next()` in your
- * project to integrate with Next's request pipeline.
+ * project to integrate with Next's request pipeline. Invoke it only
+ * after application-owned authorization when its response mutations
+ * are privileged.
  */
 export function createLivePreviewMiddleware(
   options: LivePreviewNextOptions = {},
@@ -115,7 +127,9 @@ export function createLivePreviewMiddleware(
 
 /**
  * Render the live-preview `<script>` tag — for embedding manually in
- * App Router or Pages Router layouts.
+ * App Router or Pages Router layouts. Rendering must be gated by the
+ * application's verified preview authorization, not merely an intent
+ * query parameter.
  */
 export function renderLivePreviewScript(
   options: LivePreviewNextOptions & { readonly nonce?: string } = {},

@@ -1,10 +1,18 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
+import coveragePolicy from './quality/coverage-policy.json' with { type: 'json' };
+import { ZeroSkipReporter } from './scripts/zero-skip-reporter';
 
 export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: false,
+    // Focused tests are never an acceptable local or CI success: the static
+    // test policy catches them before execution and this closes the runner-level
+    // escape hatch as well.
+    allowOnly: false,
+    retry: 0,
+    reporters: ['default', new ZeroSkipReporter()],
     include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts'],
     exclude: ['tests/e2e/**', 'tests/benchmarks/**', 'node_modules', '.archive', 'dist'],
     coverage: {
@@ -27,37 +35,32 @@ export default defineConfig({
         // The thresholds below police the shipped browser/server runtime.
         'src/codegen/**',
       ],
-      // Baselined under vitest 4's stricter V8 remapping (2026-07):
-      // 95.7 lines / 92.8 stmts / 85.3 branches / 94.3 funcs measured.
-      // The uncovered remainder is inline-runtime + SSR-fallback code
-      // that is exercised in production but hard to drive from jsdom
-      // (defaultSendReady's window detection, view-transitions support
-      // probing, etc.). The security-critical modules remain at 100%.
+      // The checked-in policy is shared with the diff gate. Global thresholds
+      // retain broad pressure while exact critical-file thresholds protect the
+      // security/revision/lifecycle paths at their measured baseline.
       thresholds: {
-        lines: 95,
-        functions: 94,
-        branches: 85,
-        statements: 92,
+        ...coveragePolicy.global,
+        ...coveragePolicy.criticalFiles,
       },
     },
     setupFiles: ['tests/setup.ts'],
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
-      '@core': resolve(__dirname, 'src/core'),
-      '@security': resolve(__dirname, 'src/security'),
-      '@lexical': resolve(__dirname, 'src/lexical'),
-      '@schema': resolve(__dirname, 'src/schema'),
-      '@field-types': resolve(__dirname, 'src/field-types'),
-      '@detection': resolve(__dirname, 'src/detection'),
-      '@events': resolve(__dirname, 'src/events'),
-      '@plugins': resolve(__dirname, 'src/plugins'),
-      '@inline': resolve(__dirname, 'src/inline'),
-      '@client': resolve(__dirname, 'src/client'),
-      '@adapters': resolve(__dirname, 'src/adapters'),
-      '@types': resolve(__dirname, 'src/types'),
-      '@dsl': resolve(__dirname, 'src/dsl'),
+      '@': resolve(import.meta.dirname, 'src'),
+      '@core': resolve(import.meta.dirname, 'src/core'),
+      '@security': resolve(import.meta.dirname, 'src/security'),
+      '@lexical': resolve(import.meta.dirname, 'src/lexical'),
+      '@schema': resolve(import.meta.dirname, 'src/schema'),
+      '@field-types': resolve(import.meta.dirname, 'src/field-types'),
+      '@detection': resolve(import.meta.dirname, 'src/detection'),
+      '@events': resolve(import.meta.dirname, 'src/events'),
+      '@plugins': resolve(import.meta.dirname, 'src/plugins'),
+      '@inline': resolve(import.meta.dirname, 'src/inline'),
+      '@client': resolve(import.meta.dirname, 'src/client'),
+      '@adapters': resolve(import.meta.dirname, 'src/adapters'),
+      '@types': resolve(import.meta.dirname, 'src/types'),
+      '@dsl': resolve(import.meta.dirname, 'src/dsl'),
     },
   },
 });

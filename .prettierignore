@@ -1,0 +1,18 @@
+# Generated or dependency-owned content
+node_modules/
+dist/
+coverage/
+src/inline/runtime.generated.ts
+package-lock.json
+examples/**/package-lock.json
+
+# Framework and browser-test output
+examples/**/.astro/
+examples/**/.next/
+examples/**/.svelte-kit/
+examples/**/next-env.d.ts
+examples/**/src/env.d.ts
+examples/payload-backend/payload-types.ts
+examples/payload-backend/src/app/(payload)/admin/importMap.js
+playwright-report/
+test-results/

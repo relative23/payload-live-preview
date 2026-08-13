@@ -81,8 +81,16 @@ async function main(): Promise<void> {
     client.ready({ serverURL: 'https://admin.example.com' });
     delete (globalThis as { window?: unknown }).window;
     const handshake = posted[0]?.message as { type?: string; ready?: boolean } | undefined;
-    assert('ready() targets serverURL', posted[0]?.origin === 'https://admin.example.com', String(posted[0]?.origin));
-    assert("ready() type is 'payload-live-preview'", handshake?.type === 'payload-live-preview', String(handshake?.type));
+    assert(
+      'ready() targets serverURL',
+      posted[0]?.origin === 'https://admin.example.com',
+      String(posted[0]?.origin),
+    );
+    assert(
+      "ready() type is 'payload-live-preview'",
+      handshake?.type === 'payload-live-preview',
+      String(handshake?.type),
+    );
     assert('ready() sets ready:true', handshake?.ready === true, String(handshake?.ready));
 
     // 3. Discriminators: exact-origin + type field, exactly as our bus routes.
@@ -94,7 +102,10 @@ async function main(): Promise<void> {
     );
     assert(
       'isLivePreviewEvent rejects a foreign origin',
-      !client.isLivePreviewEvent({ origin: 'https://evil.example', data: { type: 'payload-live-preview' } }, SRV),
+      !client.isLivePreviewEvent(
+        { origin: 'https://evil.example', data: { type: 'payload-live-preview' } },
+        SRV,
+      ),
       'expected false',
     );
     assert(
@@ -126,21 +137,38 @@ async function main(): Promise<void> {
     }
     const call = calls[0];
     assert('mergeData issued one request', calls.length === 1, `got ${calls.length}`);
-    assert('mergeData URL matches endpoint pattern', call?.url === 'https://admin.example.com/api/posts/42', String(call?.url));
+    assert(
+      'mergeData URL matches endpoint pattern',
+      call?.url === 'https://admin.example.com/api/posts/42',
+      String(call?.url),
+    );
     assert('mergeData uses POST', call?.init.method === 'POST', String(call?.init.method));
-    assert('mergeData sends credentials: include', call?.init.credentials === 'include', String(call?.init.credentials));
+    assert(
+      'mergeData sends credentials: include',
+      call?.init.credentials === 'include',
+      String(call?.init.credentials),
+    );
     const headers = (call?.init.headers ?? {}) as Record<string, string>;
     assert(
       'mergeData sends X-Payload-HTTP-Method-Override: GET',
       headers['X-Payload-HTTP-Method-Override'] === 'GET',
       JSON.stringify(headers),
     );
-    const body = JSON.parse(
-      typeof call?.init.body === 'string' ? call.init.body : '{}',
-    ) as Record<string, unknown>;
-    assert('mergeData body.flattenLocales is false', body['flattenLocales'] === false, String(body['flattenLocales']));
+    const body = JSON.parse(typeof call?.init.body === 'string' ? call.init.body : '{}') as Record<
+      string,
+      unknown
+    >;
+    assert(
+      'mergeData body.flattenLocales is false',
+      body['flattenLocales'] === false,
+      String(body['flattenLocales']),
+    );
     assert('mergeData body.depth is passed through', body['depth'] === 1, String(body['depth']));
-    assert('mergeData body.locale is passed through', body['locale'] === 'de', String(body['locale']));
+    assert(
+      'mergeData body.locale is passed through',
+      body['locale'] === 'de',
+      String(body['locale']),
+    );
     assert(
       'mergeData body.data is the incoming values',
       JSON.stringify(body['data']) === JSON.stringify({ id: '42', title: 'x' }),

@@ -12,7 +12,7 @@
 
 import { escapeHtml, escapeHtmlAttribute } from '@security/escape';
 import { isExternalHttpUrl, isSafeUrl } from '@security/url-validator';
-import { register, type NodeRenderer } from '../registry';
+import type { NodeRenderer } from '../registry';
 
 const linkRenderer: NodeRenderer = (node, ctx): string => {
   const url = typeof node['url'] === 'string' ? node['url'] : '';
@@ -40,8 +40,5 @@ function buildOptionalAttrs(node: Record<string, unknown>): string {
   if (target === '_blank') return ` target="_blank" rel="noopener noreferrer"`;
   return ` target="${safeTarget}"`;
 }
-
-register('link', linkRenderer);
-register('autolink', linkRenderer);
 
 export { linkRenderer };

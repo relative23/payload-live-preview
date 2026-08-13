@@ -17,17 +17,17 @@
  * @module @field-types/array
  */
 
-import { escapeHtml } from '@security/escape';
 import { sanitizeHtml } from '@security/sanitizer';
+import { interpolateArrayTemplate } from '@core/array-template';
+import { markNoWriteCallback } from '@core/internal-outcome';
 import type { FieldRenderer } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 import { safeStringify } from './utils';
 
 const arrayRenderer: FieldRenderer = {
   name: 'array',
-  render(target, value) {
+  render: markNoWriteCallback((target, value) => {
     const element = target.element;
-    if (!Array.isArray(value)) return;
+    if (!Array.isArray(value)) return false;
     const template = target.arrayTemplate;
     if (template !== undefined && template.length > 0) {
       const html = renderTemplate(template, value);
@@ -36,7 +36,8 @@ const arrayRenderer: FieldRenderer = {
     }
     const separator = target.arraySeparator ?? ', ';
     element.textContent = value.map(stringify).join(separator);
-  },
+    return;
+  }),
 };
 
 function renderTemplate(template: string, items: readonly unknown[]): string {
@@ -48,29 +49,11 @@ function renderTemplate(template: string, items: readonly unknown[]): string {
 }
 
 function interpolate(template: string, item: unknown, index: number): string {
-  let out = template;
-  if (typeof item === 'object' && item !== null) {
-    for (const [key, value] of Object.entries(item as Record<string, unknown>)) {
-      const pattern = new RegExp(`\\{\\{${escapeRegex(key)}\\}\\}`, 'g');
-      out = out.replace(pattern, escapeHtml(safeStringify(value)));
-    }
-  } else {
-    out = out.replace(/\{\{value\}\}/g, escapeHtml(safeStringify(item)));
-  }
-  out = out.replace(/\{\{index\}\}/g, String(index));
-  return out;
-}
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return interpolateArrayTemplate(template, item, index, safeStringify);
 }
 
 function stringify(value: unknown): string {
   return safeStringify(value);
 }
-
-registerBuiltinRenderer(arrayRenderer);
-// `blocks` shares the template-driven behaviour.
-registerBuiltinRenderer({ ...arrayRenderer, name: 'blocks' });
 
 export { arrayRenderer };

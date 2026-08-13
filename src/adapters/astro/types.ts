@@ -11,16 +11,21 @@ export interface LivePreviewAstroOptions {
    *   - `'inline'` (default) — bake the runtime into every page at
    *     build time. For `output: 'static'` projects.
    *   - `'middleware'` — auto-register the preview middleware:
-   *     request-time injection into preview requests only, plus
-   *     `frame-ancestors` CSP management. For `output: 'server'`.
+   *     request-time injection into requests with preview intent,
+   *     plus `frame-ancestors` CSP management. For `output: 'server'`.
    *     (`shouldInject` is unsupported here — options serialize into
    *     the build.)
+   *
+   * Intent signals are not authorization. If either response change
+   * must be access-controlled, compose `createLivePreviewMiddleware()`
+   * manually after an application-owned server-side authorization.
    */
   readonly mode?: 'inline' | 'middleware';
 
   /**
-   * Trusted Payload admin origin(s). Required in production unless
-   * `document.referrer` reliably exposes the parent origin.
+   * Allowed Payload admin origin(s) for inbound browser messages and
+   * the optional Referer intent signal. This does not authenticate the
+   * incoming HTTP request or authorize draft access.
    */
   readonly allowedOrigins?: readonly string[];
 
@@ -48,10 +53,11 @@ export interface LivePreviewAstroOptions {
    * When the middleware injects the script (integration-based
    * injection is always build-time and unaffected):
    *
-   *   - `'preview-only'` (default) — only into responses that look
-   *     like preview requests (`?preview=true` / `?draft=true` query,
+   *   - `'preview-only'` (default) — only into responses carrying a
+   *     preview-intent signal (`?preview=true` / `?draft=true` query,
    *     `Sec-Fetch-Dest: iframe`, or a referer from `allowedOrigins`).
-   *     Normal production traffic passes through untouched.
+   *     These client-controlled signals are a delivery optimisation,
+   *     not authorization.
    *   - `'always'` — into every HTML response.
    */
   readonly inject?: 'preview-only' | 'always';
@@ -63,7 +69,7 @@ export interface LivePreviewAstroOptions {
   readonly previewQueryParams?: readonly string[];
 
   /**
-   * Which signals count as a preview request. Default: all three
+   * Which signals count as preview intent. Default: all three
    * (`query`, `fetch-dest`, `referer`). Restrict to `['query']` when
    * an unsolicited iframe load must never trigger preview handling
    * (e.g. sites that serve `frame-ancestors 'none'` and only allow
@@ -72,13 +78,18 @@ export interface LivePreviewAstroOptions {
   readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
 
   /**
-   * Restrict auto-inject to requests where this function returns
-   * `true`. Applied on top of the `inject` mode.
+   * Restrict script injection to requests where this function returns
+   * `true`. Applied on top of the `inject` mode. This is a synchronous
+   * route/content filter, not authentication, and it does not suppress
+   * the adapter's CSP handling. Perform authorization before invoking
+   * the middleware.
    */
   readonly shouldInject?: (request: Request) => boolean;
 
   /**
-   * Content-Security-Policy management on preview responses:
+   * Content-Security-Policy management on responses carrying preview
+   * intent. The adapter does not authenticate those requests; invoke
+   * it only after authorization when this policy change is privileged:
    *
    *   - `'frame-ancestors'` (default) — merge a `frame-ancestors`
    *     directive allowing the admin origins to embed the page.
@@ -114,9 +125,7 @@ export interface LivePreviewAstroOptions {
    */
   readonly scriptSrcExtra?: readonly string[];
 
-  /**
-   * Enable verbose debug logging in the injected client. Default: dev mode.
-   */
+  /** Enable verbose debug logging in the injected client. Defaults to `false`. */
   readonly debug?: boolean;
 
   /**

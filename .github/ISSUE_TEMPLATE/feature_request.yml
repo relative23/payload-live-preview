@@ -1,7 +1,7 @@
 name: Feature request
 description: Suggest an improvement or new capability
-title: "[Feature]: "
-labels: ["enhancement"]
+title: '[Feature]: '
+labels: ['enhancement']
 body:
   - type: textarea
     id: problem
@@ -27,8 +27,8 @@ body:
     attributes:
       label: Are you willing to open a PR for this?
       options:
-        - "Yes"
-        - "Yes, with guidance"
-        - "No"
+        - 'Yes'
+        - 'Yes, with guidance'
+        - 'No'
     validations:
       required: true

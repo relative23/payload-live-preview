@@ -36,20 +36,25 @@ class IO implements IntersectionObserver {
 const TRUSTED = 'https://admin.example.com';
 
 interface BakedConfig {
-  additionalOrigins: readonly string[];
-  debug: boolean;
-  debounceMs: number;
-  enableA11y: boolean;
-  heartbeatMs: number;
-  disableVisibilityGate: boolean;
-  visibilityGateThreshold: number;
-  intersectionRootMargin: string;
-  disableReferrerDetection: boolean;
-  disableLocalhostMatching: boolean;
+  readonly additionalOrigins: readonly string[];
+  readonly serverURL?: string;
+  readonly apiRoute?: string;
+  readonly mergeDepth?: number;
+  readonly debug: boolean;
+  readonly debounceMs: number;
+  readonly enableA11y: boolean;
+  readonly heartbeatMs: number;
+  readonly disableVisibilityGate: boolean;
+  readonly visibilityGateThreshold: number;
+  readonly intersectionRootMargin: string;
+  readonly disableReferrerDetection: boolean;
+  readonly disableLocalhostMatching: boolean;
 }
 
-function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfig {
-  return {
+type BakedConfigTuple = readonly unknown[];
+
+function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfigTuple {
+  const config: BakedConfig = {
     additionalOrigins: [TRUSTED],
     debug: false,
     debounceMs: 0,
@@ -62,6 +67,21 @@ function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfig {
     disableLocalhostMatching: true,
     ...overrides,
   };
+  return [
+    config.additionalOrigins,
+    config.serverURL,
+    config.apiRoute,
+    config.mergeDepth,
+    config.debug,
+    config.debounceMs,
+    config.enableA11y,
+    config.heartbeatMs,
+    config.disableVisibilityGate,
+    config.visibilityGateThreshold,
+    config.intersectionRootMargin,
+    config.disableReferrerDetection,
+    config.disableLocalhostMatching,
+  ];
 }
 
 function fakeIframe(): void {
@@ -90,7 +110,7 @@ afterEach(() => {
 
 describe('bootstrapInlineRuntime — preview context', () => {
   it('exposes window.__livePreview with the expected shape', async () => {
-    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ =
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     const api = bootstrapInlineRuntime();
@@ -105,7 +125,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
 
   it('destroy() clears window.__livePreview so a re-bootstrap starts fresh', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
-    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ =
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
     const { bootstrapInlineRuntime } = await import('@core/runtime');
 
@@ -132,9 +152,43 @@ describe('bootstrapInlineRuntime — preview context', () => {
     second?.destroy();
   });
 
+  it('rolls back a started runtime when publishing the global handle fails', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">stable</h1>';
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig();
+    const originalDefineProperty = Object.defineProperty;
+    const publishError = new Error('global handle is not configurable');
+    const defineProperty = vi
+      .spyOn(Object, 'defineProperty')
+      .mockImplementation((target, property, descriptor) => {
+        if (target === window && property === '__livePreview') throw publishError;
+        return originalDefineProperty(target, property, descriptor);
+      });
+
+    try {
+      const { bootstrapInlineRuntime } = await import('@core/runtime');
+
+      expect(() => bootstrapInlineRuntime()).toThrow(publishError);
+      expect(window.__livePreview).toBeUndefined();
+      expect(vi.getTimerCount()).toBe(0);
+
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: 'payload-live-preview', data: { title: 'leaked update' } },
+          origin: TRUSTED,
+        }),
+      );
+      await vi.advanceTimersByTimeAsync(50);
+
+      expect(document.querySelector('h1')?.textContent).toBe('stable');
+    } finally {
+      defineProperty.mockRestore();
+    }
+  });
+
   it('processes a valid postMessage and updates the DOM', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
-    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ =
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     const api = bootstrapInlineRuntime();
@@ -150,7 +204,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
   });
 
   it('enumerateOrigins returns the trusted origin', async () => {
-    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ =
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     const api = bootstrapInlineRuntime();
@@ -160,7 +214,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
 
   it('refresh() rebuilds the cache for newly added bindings', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
-    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ =
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     const api = bootstrapInlineRuntime();
@@ -182,7 +236,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
 
   it('destroy tears down the listener so subsequent messages are ignored', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">stable</h1>';
-    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ =
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     const api = bootstrapInlineRuntime();
@@ -199,11 +253,12 @@ describe('bootstrapInlineRuntime — preview context', () => {
 
   it('emits a console warning when production is unconfigured', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ = bakeConfig({
-      additionalOrigins: [],
-      disableReferrerDetection: true,
-      disableLocalhostMatching: true,
-    });
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig({
+        additionalOrigins: [],
+        disableReferrerDetection: true,
+        disableLocalhostMatching: true,
+      });
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     const api = bootstrapInlineRuntime();
     expect(warn).toHaveBeenCalled();
@@ -211,13 +266,34 @@ describe('bootstrapInlineRuntime — preview context', () => {
     api?.destroy();
     warn.mockRestore();
   });
+
+  it('still bootstraps when the default console warning sink throws', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      throw new Error('console unavailable');
+    });
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig({
+        additionalOrigins: [],
+        disableReferrerDetection: true,
+        disableLocalhostMatching: true,
+      });
+    try {
+      const { bootstrapInlineRuntime } = await import('@core/runtime');
+      const api = bootstrapInlineRuntime();
+
+      expect(api).toBeDefined();
+      api?.destroy();
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });
 
 describe('bootstrapInlineRuntime — non-preview context', () => {
   it('returns undefined when window.top equals window (no iframe, no popener)', async () => {
     Object.defineProperty(window, 'top', { value: window, configurable: true });
     Object.defineProperty(window, 'opener', { value: null, configurable: true });
-    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ =
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     expect(bootstrapInlineRuntime()).toBeUndefined();
@@ -237,14 +313,38 @@ describe('bootstrapInlineRuntime — config defaults', () => {
   it('routes debug logs through console.debug when debug=true', async () => {
     document.body.innerHTML = '<p data-payload-field="x">x</p>';
     const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
-    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfig }).__LIVE_PREVIEW_CONFIG__ = bakeConfig({
-      debug: true,
-    });
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig({
+        debug: true,
+      });
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     const api = bootstrapInlineRuntime();
     expect(debug).toHaveBeenCalled();
     api?.destroy();
     debug.mockRestore();
+  });
+
+  it('observes a rejected console.debug thenable without aborting bootstrap', async () => {
+    const then = vi.fn(
+      (_resolve: (value: unknown) => void, reject: (reason: unknown) => void): void => {
+        reject(new Error('async console unavailable'));
+      },
+    );
+    const debug = vi.spyOn(console, 'debug').mockReturnValue({ then } as never);
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig({ debug: true });
+    try {
+      const { bootstrapInlineRuntime } = await import('@core/runtime');
+      const api = bootstrapInlineRuntime();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(api).toBeDefined();
+      expect(then).toHaveBeenCalled();
+      api?.destroy();
+    } finally {
+      debug.mockRestore();
+    }
   });
 });
 

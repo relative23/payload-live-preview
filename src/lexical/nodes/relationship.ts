@@ -11,7 +11,7 @@
 
 import { escapeHtml, escapeHtmlAttribute } from '@security/escape';
 import { isSafeUrl } from '@security/url-validator';
-import { register, type NodeRenderer } from '../registry';
+import type { NodeRenderer } from '../registry';
 
 interface RelationshipValue {
   readonly title?: string;
@@ -34,8 +34,6 @@ const relationshipRenderer: NodeRenderer = (node): string => {
   }
   return `<span${relAttr}>${safeLabel}</span>`;
 };
-
-register('relationship', relationshipRenderer);
 
 export { relationshipRenderer };
 

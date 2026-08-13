@@ -22,32 +22,38 @@
 
 import { isLexicalContent, lexicalToPlainText } from '@lexical/render';
 import { escapeAndLinebreak } from '@security/escape';
+import { safeConsoleWarn } from '@core/diagnostics';
+import { markNoWriteCallback } from '@core/internal-outcome';
 import type { FieldRenderer } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 
 const TEXT_OPT_IN_ATTRIBUTE = 'data-payload-text';
-const warnedElements = new WeakSet<Element>();
 
-const textRenderer: FieldRenderer = {
-  name: 'text',
-  render(target, value) {
-    const element = target.element;
-    const text = toPlainString(value);
-    if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-      (element as HTMLInputElement | HTMLTextAreaElement).value = text;
+/** Build a text renderer with registration-local warning deduplication state. */
+export function createTextRenderer(): FieldRenderer {
+  const warnedElements = new WeakSet<Element>();
+
+  return {
+    name: 'text',
+    render: markNoWriteCallback((target, value) => {
+      const element = target.element;
+      const text = toPlainString(value);
+      if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+        (element as HTMLInputElement | HTMLTextAreaElement).value = text;
+        return;
+      }
+      if (hasStructuredChildren(element) && !element.hasAttribute(TEXT_OPT_IN_ATTRIBUTE)) {
+        warnOnce(warnedElements, element, target.fieldName);
+        return false;
+      }
+      if (text.includes('\n') || text.includes('\r')) {
+        element.innerHTML = escapeAndLinebreak(text);
+        return;
+      }
+      element.textContent = text;
       return;
-    }
-    if (hasStructuredChildren(element) && !element.hasAttribute(TEXT_OPT_IN_ATTRIBUTE)) {
-      warnOnce(element, target.fieldName);
-      return;
-    }
-    if (text.includes('\n') || text.includes('\r')) {
-      element.innerHTML = escapeAndLinebreak(text);
-      return;
-    }
-    element.textContent = text;
-  },
-};
+    }),
+  };
+}
 
 function hasStructuredChildren(element: Element): boolean {
   // Elements with at least one element child (not a text node) are
@@ -56,14 +62,13 @@ function hasStructuredChildren(element: Element): boolean {
   return element.firstElementChild !== null;
 }
 
-function warnOnce(element: Element, fieldName: string): void {
+function warnOnce(warnedElements: WeakSet<Element>, element: Element, fieldName: string): void {
   if (warnedElements.has(element)) return;
   warnedElements.add(element);
-  console.warn(
-    `[live-preview] Skipping text update for "${fieldName}" — the bound ` +
-      `<${element.tagName.toLowerCase()}> has structured child elements. ` +
-      `Either move data-payload-field to the element whose textContent is the ` +
-      `field value, or opt in with data-payload-text to replace the structure.`,
+  safeConsoleWarn(
+    `[live-preview] Skipping text update for "${fieldName}": ` +
+      `<${element.tagName.toLowerCase()}> has structured children. Move ` +
+      `data-payload-field to the value element, or add data-payload-text to replace them.`,
   );
 }
 
@@ -74,7 +79,3 @@ function toPlainString(value: unknown): string {
   if (typeof value === 'number' || typeof value === 'boolean') return String(value);
   return JSON.stringify(value);
 }
-
-registerBuiltinRenderer(textRenderer);
-
-export { textRenderer };

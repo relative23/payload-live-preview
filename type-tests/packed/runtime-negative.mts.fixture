@@ -1,0 +1,30 @@
+import { bind, type FieldRenderer, type LivePreviewClient } from 'payload-live-preview';
+import { livePreview } from 'payload-live-preview/astro';
+import { onRequest } from 'payload-live-preview/astro/middleware-entry';
+import { createLivePreviewMiddleware as createNextMiddleware } from 'payload-live-preview/nextjs';
+import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';
+import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { livePreviewHandle } from 'payload-live-preview/sveltekit';
+
+declare const client: LivePreviewClient;
+
+// @ts-expect-error -- event names are a closed public union
+client.events.on('after-update', () => undefined);
+// @ts-expect-error -- schema-aware bindings reject unknown fields
+bind<{ title: string }>('subtitle');
+// @ts-expect-error -- 1.x renderers use the closed built-in field-type union
+const invalidRenderer: FieldRenderer = { name: 'custom-field', render: () => undefined };
+// @ts-expect-error -- fragment mode is not a 1.x Astro integration option
+livePreview({ mode: 'fragment' });
+// @ts-expect-error -- Next injection policy is intentionally closed
+createNextMiddleware({ inject: 'sometimes' });
+// @ts-expect-error -- SvelteKit preview signals are intentionally closed
+livePreviewHandle({ previewSignals: ['cookie'] });
+// @ts-expect-error -- Nuxt CSP policy is intentionally closed
+livePreviewNitroPlugin({ manageCsp: 'nonce-only' });
+// @ts-expect-error -- the backend URL helper requires an explicit base URL
+buildLivePreviewUrl({});
+// @ts-expect-error -- the Astro middleware entry is not a Request-only handler
+void onRequest(new Request('https://example.com'));
+
+void invalidRenderer;

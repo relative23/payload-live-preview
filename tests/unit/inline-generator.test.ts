@@ -1,10 +1,27 @@
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { generateInlineScript, wrapWithScriptTag, runtimeBuildInfo } from '@inline/generator';
 
+function generatedConfig(script: string): unknown[] {
+  const match = /var __LIVE_PREVIEW_CONFIG__=(\[[^;]*\]);/.exec(script);
+  if (match?.[1] === undefined) throw new Error('generated config missing');
+  const evaluated = runInNewContext(match[1], {}) as unknown;
+  if (!Array.isArray(evaluated)) throw new Error('generated config is not an array');
+  return evaluated;
+}
+
 describe('generateInlineScript', () => {
-  it('emits a self-contained string that begins with a header', () => {
+  it('keeps the established 1.0.x runtime marker for consumer presence checks', () => {
     const script = generateInlineScript();
-    expect(script).toMatch(/^\/\* payload-live-preview runtime/);
+
+    expect(script).toContain('var __LIVE_PREVIEW_CONFIG__=');
+    expect(script).not.toContain('__PLL_CONFIG__');
+  });
+
+  it('emits a self-contained string without redundant build metadata', () => {
+    const script = generateInlineScript();
+    expect(script.startsWith('var __LIVE_PREVIEW_CONFIG__=[];\n')).toBe(true);
+    expect(script).not.toContain(runtimeBuildInfo().generatedAt);
   });
 
   it('injects the configuration object literal', () => {
@@ -15,29 +32,51 @@ describe('generateInlineScript', () => {
       enableA11y: false,
       heartbeatMs: 60_000,
     });
-    expect(script).toContain('"additionalOrigins":["https://admin.example.com"]');
-    expect(script).toContain('"debug":true');
-    expect(script).toContain('"debounceMs":250');
-    expect(script).toContain('"enableA11y":false');
-    expect(script).toContain('"heartbeatMs":60000');
+    const config = generatedConfig(script);
+    expect(config[0]).toEqual(['https://admin.example.com']);
+    expect(config[4]).toBe(true);
+    expect(config[5]).toBe(250);
+    expect(config[6]).toBe(false);
+    expect(config[7]).toBe(60_000);
   });
 
-  it('sets sensible defaults when no config is provided', () => {
+  it('does not duplicate runtime defaults in the generated config', () => {
     const script = generateInlineScript();
-    expect(script).toContain('"additionalOrigins":[]');
-    expect(script).toContain('"serverURL":""');
-    expect(script).toContain('"apiRoute":"/api"');
-    expect(script).toContain('"mergeDepth":1');
-    expect(script).toContain('"debug":false');
-    expect(script).toContain('"debounceMs":50');
-    expect(script).toContain('"enableA11y":true');
-    // The Payload admin sends no keepalive — heartbeat defaults to off.
-    expect(script).toContain('"heartbeatMs":0');
-    expect(script).toContain('"disableVisibilityGate":false');
-    expect(script).toContain('"visibilityGateThreshold":50');
-    expect(script).toContain('"intersectionRootMargin":"200px"');
-    expect(script).toContain('"disableReferrerDetection":false');
-    expect(script).toContain('"disableLocalhostMatching":false');
+    expect(generatedConfig(script)).toEqual([]);
+  });
+
+  it('retains the deprecated nonce config as a no-op for 1.x compatibility', () => {
+    const withoutNonce = generateInlineScript();
+    const withNonce = generateInlineScript({ nonce: 'abc123' });
+
+    expect(withNonce).toBe(withoutNonce);
+  });
+
+  it('serializes explicit falsy overrides instead of dropping them', () => {
+    const script = generateInlineScript({
+      debug: false,
+      debounceMs: 0,
+      enableA11y: false,
+      heartbeatMs: 0,
+    });
+
+    const config = generatedConfig(script);
+    expect(config[4]).toBe(false);
+    expect(config[5]).toBe(0);
+    expect(config[6]).toBe(false);
+    expect(config[7]).toBe(0);
+  });
+
+  it('preserves omitted interior options as undefined so runtime defaults apply', () => {
+    const script = generateInlineScript({ debug: true, debounceMs: 25 });
+    const config = generatedConfig(script);
+
+    expect(config[1]).toBeUndefined();
+    expect(config[2]).toBeUndefined();
+    expect(config[3]).toBeUndefined();
+    expect(config[4]).toBe(true);
+    expect(config[5]).toBe(25);
+    expect(script.split('\n', 1)[0]).not.toContain('null');
   });
 
   it('bakes the serverURL merge config when provided', () => {
@@ -45,8 +84,9 @@ describe('generateInlineScript', () => {
       serverURL: 'https://cms.example.com',
       mergeDepth: 2,
     });
-    expect(script).toContain('"serverURL":"https://cms.example.com"');
-    expect(script).toContain('"mergeDepth":2');
+    const config = generatedConfig(script);
+    expect(config[1]).toBe('https://cms.example.com');
+    expect(config[3]).toBe(2);
   });
 
   it('escapes `<` in config values so `</script>` cannot break the tag', () => {
@@ -63,9 +103,10 @@ describe('generateInlineScript', () => {
       visibilityGateThreshold: 200,
       intersectionRootMargin: '500px',
     });
-    expect(script).toContain('"disableVisibilityGate":true');
-    expect(script).toContain('"visibilityGateThreshold":200');
-    expect(script).toContain('"intersectionRootMargin":"500px"');
+    const config = generatedConfig(script);
+    expect(config[8]).toBe(true);
+    expect(config[9]).toBe(200);
+    expect(config[10]).toBe('500px');
   });
 
   it('forwards origin-detection toggles into the runtime config', () => {
@@ -73,8 +114,9 @@ describe('generateInlineScript', () => {
       disableReferrerDetection: true,
       disableLocalhostMatching: true,
     });
-    expect(script).toContain('"disableReferrerDetection":true');
-    expect(script).toContain('"disableLocalhostMatching":true');
+    const config = generatedConfig(script);
+    expect(config[11]).toBe(true);
+    expect(config[12]).toBe(true);
   });
 
   it('includes the build-time runtime IIFE', () => {
@@ -85,9 +127,9 @@ describe('generateInlineScript', () => {
     expect(script).toMatch(/postMessage|payload-live-preview/);
   });
 
-  it('embeds the __INLINE_BUILD__ flag so the runtime auto-starts', () => {
+  it('bakes the auto-start path without a second runtime global', () => {
     const script = generateInlineScript();
-    expect(script).toContain('var __INLINE_BUILD__=true');
+    expect(script).not.toContain('__INLINE_BUILD__');
   });
 });
 

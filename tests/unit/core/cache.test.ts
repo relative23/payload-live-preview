@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ElementCache, FIELD_ATTRIBUTE, TYPE_ATTRIBUTE, resolveFieldType } from '@core/cache';
+import {
+  ElementCache,
+  FIELD_ATTRIBUTE,
+  TARGET_ATTRIBUTE_ATTRIBUTE,
+  TYPE_ATTRIBUTE,
+  resolveFieldType,
+} from '@core/cache';
 
 function makeHtml(html: string): Element {
   const container = document.createElement('div');
@@ -57,6 +63,15 @@ describe('ElementCache — buildFromRoot', () => {
     expect(items?.arraySeparator).toBe('; ');
   });
 
+  it('treats an empty locale attribute as no element-local override', () => {
+    const root = makeHtml('<span data-payload-field="title" data-payload-locale="">initial</span>');
+    const cache = new ElementCache();
+
+    cache.buildFromRoot(root);
+
+    expect(cache.get('title')?.[0]?.locale).toBeUndefined();
+  });
+
   it('respects a filter predicate', () => {
     const root = makeHtml(`
       <p data-payload-field="a">x</p>
@@ -78,6 +93,18 @@ describe('ElementCache — buildFromRoot', () => {
     expect(stats.elementCount).toBe(0);
     expect(cache.fieldCount).toBe(0);
   });
+
+  it('forgets an externally retained stale node on full rebuild', () => {
+    const root = makeHtml('<p data-payload-field="a">x</p>');
+    const cache = new ElementCache();
+    cache.buildFromRoot(root);
+    const retained = root.querySelector('[data-payload-field="a"]')!;
+    expect(cache.has(retained)).toBe(true);
+
+    cache.buildFromRoot(document.createElement('div'));
+    expect(cache.has(retained)).toBe(false);
+    expect(cache.getByElement(retained)).toBeUndefined();
+  });
 });
 
 describe('ElementCache — incremental mutation', () => {
@@ -95,6 +122,116 @@ describe('ElementCache — incremental mutation', () => {
     newEl.setAttribute(FIELD_ATTRIBUTE, 'subtitle');
     expect(cache.add(newEl)?.fieldName).toBe('subtitle');
     expect(cache.get('subtitle')).toHaveLength(1);
+  });
+
+  it('add replaces an existing binding instead of duplicating it', () => {
+    const target = root.querySelector('[data-payload-field="title"]')!;
+
+    expect(cache.add(target)?.fieldName).toBe('title');
+    target.setAttribute(TARGET_ATTRIBUTE_ATTRIBUTE, 'data-preview-value');
+    expect(cache.add(target)?.targetAttribute).toBe('data-preview-value');
+
+    expect(cache.get('title')).toHaveLength(1);
+    expect(cache.get('title')?.[0]?.targetAttribute).toBe('data-preview-value');
+    expect([...cache.values()].map((entry) => entry.element)).toEqual([target]);
+    expect(cache.elementCount).toBe(1);
+  });
+
+  it('refreshes a same-field binding in place without changing peer order', () => {
+    root = makeHtml(
+      '<p id="first" data-payload-field="title">first</p>' +
+        '<p id="second" data-payload-field="title">second</p>',
+    );
+    cache.buildFromRoot(root);
+    const first = root.querySelector('#first')!;
+    const second = root.querySelector('#second')!;
+    first.setAttribute(TARGET_ATTRIBUTE_ATTRIBUTE, 'aria-label');
+
+    const refreshed = cache.add(first);
+
+    expect(refreshed?.targetAttribute).toBe('aria-label');
+    expect(cache.get('title')?.map((entry) => entry.element)).toEqual([first, second]);
+    expect(cache.get('title')?.[0]).toBe(refreshed);
+    expect(cache.elementCount).toBe(2);
+  });
+
+  it('moves an existing element to its new field and remove leaves no stale bucket', () => {
+    const target = root.querySelector('[data-payload-field="title"]')!;
+    target.setAttribute(FIELD_ATTRIBUTE, 'subtitle');
+
+    expect(cache.add(target)?.fieldName).toBe('subtitle');
+    expect(cache.get('title')).toBeUndefined();
+    expect(cache.get('subtitle')).toHaveLength(1);
+    expect(cache.elementCount).toBe(1);
+
+    expect(cache.remove(target)).toBe(true);
+    expect(cache.get('title')).toBeUndefined();
+    expect(cache.get('subtitle')).toBeUndefined();
+    expect(cache.has(target)).toBe(false);
+    expect(cache.elementCount).toBe(0);
+  });
+
+  it('atomically removes an existing binding when the new binding is invalid', () => {
+    const target = root.querySelector('[data-payload-field="title"]')!;
+    target.removeAttribute(FIELD_ATTRIBUTE);
+
+    expect(cache.add(target)).toBeUndefined();
+    expect(cache.get('title')).toBeUndefined();
+    expect(cache.getByElement(target)).toBeUndefined();
+    expect(cache.elementCount).toBe(0);
+  });
+
+  it('removes only the invalidated element from a shared field bucket', () => {
+    root = makeHtml(
+      '<p id="first" data-payload-field="title">first</p>' +
+        '<p id="second" data-payload-field="title">second</p>',
+    );
+    cache.buildFromRoot(root);
+    const first = root.querySelector('#first')!;
+    const second = root.querySelector('#second')!;
+    first.removeAttribute(FIELD_ATTRIBUTE);
+
+    expect(cache.add(first)).toBeUndefined();
+
+    expect(cache.get('title')?.map((entry) => entry.element)).toEqual([second]);
+    expect(cache.has(first)).toBe(false);
+    expect(cache.getByElement(first)).toBeUndefined();
+    expect(cache.remove(first)).toBe(false);
+    expect(cache.elementCount).toBe(1);
+  });
+
+  it('atomically removes an existing binding when the filter stops accepting it', () => {
+    let accepted = true;
+    const filtered = new ElementCache({ filter: () => accepted });
+    const target = document.createElement('span');
+    target.setAttribute(FIELD_ATTRIBUTE, 'title');
+    expect(filtered.add(target)?.fieldName).toBe('title');
+
+    accepted = false;
+
+    expect(filtered.add(target)).toBeUndefined();
+    expect(filtered.get('title')).toBeUndefined();
+    expect(filtered.getByElement(target)).toBeUndefined();
+    expect(filtered.elementCount).toBe(0);
+  });
+
+  it('preserves the old binding atomically when the filter throws', () => {
+    let shouldThrow = false;
+    const filtered = new ElementCache({
+      filter: () => {
+        if (shouldThrow) throw new Error('filter failed');
+        return true;
+      },
+    });
+    const target = document.createElement('span');
+    target.setAttribute(FIELD_ATTRIBUTE, 'title');
+    const original = filtered.add(target);
+    shouldThrow = true;
+
+    expect(() => filtered.add(target)).toThrow('filter failed');
+    expect(filtered.get('title')).toEqual([original]);
+    expect(filtered.getByElement(target)).toBe(original);
+    expect(filtered.elementCount).toBe(1);
   });
 
   it('add returns undefined for elements without a field name', () => {
@@ -170,6 +307,16 @@ describe('ElementCache — introspection', () => {
     cache.clear();
     expect(cache.fieldCount).toBe(0);
     expect(cache.elementCount).toBe(0);
+  });
+
+  it('clear resets element membership for externally retained nodes', () => {
+    const root = makeHtml('<p data-payload-field="a">x</p>');
+    const cache = new ElementCache();
+    cache.buildFromRoot(root);
+    const retained = root.querySelector('[data-payload-field="a"]')!;
+    cache.clear();
+    expect(cache.has(retained)).toBe(false);
+    expect(cache.getByElement(retained)).toBeUndefined();
   });
 
   it('entries iterates the field map', () => {

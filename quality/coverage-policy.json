@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "global": {
+    "lines": 95,
+    "functions": 94,
+    "branches": 85,
+    "statements": 92
+  },
+  "criticalFiles": {
+    "src/core/attribute-binding.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/cache.ts": {
+      "lines": 96,
+      "functions": 100,
+      "branches": 95
+    },
+    "src/core/data-merger.ts": {
+      "lines": 97,
+      "functions": 100,
+      "branches": 87
+    },
+    "src/core/lifecycle.ts": {
+      "lines": 90,
+      "functions": 95,
+      "branches": 82
+    },
+    "src/core/message-bus.ts": {
+      "lines": 98,
+      "functions": 100,
+      "branches": 92
+    },
+    "src/core/observers.ts": {
+      "lines": 96,
+      "functions": 100,
+      "branches": 91
+    },
+    "src/core/update-scheduler.ts": {
+      "lines": 99,
+      "functions": 96,
+      "branches": 93
+    },
+    "src/detection/origin.ts": {
+      "lines": 93,
+      "functions": 100,
+      "branches": 89
+    },
+    "src/plugins/manager.ts": {
+      "lines": 98,
+      "functions": 98,
+      "branches": 87
+    },
+    "src/security/csp.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 98
+    },
+    "src/security/sanitizer.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 96
+    },
+    "src/security/url-validator.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    }
+  },
+  "diff": {
+    "lines": 90,
+    "criticalLines": 95,
+    "ignored": [
+      "src/**/*.d.ts",
+      "src/**/index.ts",
+      "src/**/types.ts",
+      "src/adapters/**",
+      "src/client/config.ts",
+      "src/codegen/**",
+      "src/index.ts",
+      "src/inline/runtime.generated.ts"
+    ]
+  }
+}

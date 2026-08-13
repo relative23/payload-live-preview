@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "npm@11.16.0",
   "scripts": {
     "dev": "vite dev --port 4175",
     "build": "vite build",
@@ -14,9 +15,15 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^7.0.1",
-    "@sveltejs/kit": "^2.69.2",
-    "@sveltejs/vite-plugin-svelte": "^7.2.0",
-    "svelte": "^5.56.4",
-    "vite": "^8.1.4"
+    "@sveltejs/kit": "^2.70.2",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "svelte": "^5.56.9",
+    "vite": "^8.2.1"
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": false
+  },
+  "overrides": {
+    "cookie": "0.7.2"
   }
 }

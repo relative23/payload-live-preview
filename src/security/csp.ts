@@ -20,6 +20,15 @@
  */
 const DEFAULT_NONCE_BYTES = 16;
 
+/** CSP3's exact whitespace set: HTAB, LF, FF, CR, and SPACE. */
+const CSP_ASCII_WHITESPACE = /[\t\n\f\r ]+/;
+const CSP_EDGE_ASCII_WHITESPACE = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
+
+/** CSP names are ASCII strings; Unicode case folding must not create directives. */
+function asciiLowercase(value: string): string {
+  return value.replace(/[A-Z]/g, (character) => character.toLowerCase());
+}
+
 /**
  * Minimal Web-Crypto surface area we actually call. The full `Crypto`
  * type drags in browser-only declarations that don't typecheck cleanly
@@ -190,7 +199,8 @@ export interface CspDirectiveMerge {
  * Merge directives into an existing `Content-Security-Policy` header
  * value without clobbering what a consumer (or another middleware)
  * already configured. Directives not mentioned in `additions` pass
- * through untouched; new directives are appended.
+ * through untouched; new directives are appended. Existing policy parsing
+ * follows CSP3's ASCII-whitespace and first-duplicate-wins rules.
  *
  * This is the single CSP-merge implementation shared by every adapter.
  */
@@ -200,21 +210,25 @@ export function mergeCspHeader(
 ): string {
   const directives = new Map<string, string>();
   for (const part of existing.split(';')) {
-    const trimmed = part.trim();
+    const trimmed = part.replace(CSP_EDGE_ASCII_WHITESPACE, '');
     if (trimmed.length === 0) continue;
-    const spaceIndex = trimmed.indexOf(' ');
-    if (spaceIndex < 0) {
-      directives.set(trimmed.toLowerCase(), '');
-      continue;
-    }
-    directives.set(
-      trimmed.slice(0, spaceIndex).toLowerCase(),
-      trimmed.slice(spaceIndex + 1).trim(),
-    );
+    const whitespaceIndex = trimmed.search(CSP_ASCII_WHITESPACE);
+    const name = asciiLowercase(whitespaceIndex < 0 ? trimmed : trimmed.slice(0, whitespaceIndex));
+
+    // CSP3 §2.2.1 is first-wins: a user agent ignores every later
+    // case-insensitive duplicate. Mirroring that rule before merging prevents a
+    // later, looser duplicate from becoming the policy we serialize.
+    if (directives.has(name)) continue;
+
+    const value =
+      whitespaceIndex < 0
+        ? ''
+        : trimmed.slice(whitespaceIndex).replace(CSP_EDGE_ASCII_WHITESPACE, '');
+    directives.set(name, value);
   }
 
   for (const [rawName, rawAddition] of Object.entries(additions)) {
-    const name = rawName.toLowerCase();
+    const name = asciiLowercase(rawName);
     const addition: CspDirectiveMerge =
       typeof rawAddition === 'string' ? { value: rawAddition } : rawAddition;
     const mode = addition.mode ?? 'union';
@@ -225,7 +239,10 @@ export function mergeCspHeader(
     }
     const seen = new Set<string>();
     const merged: string[] = [];
-    for (const token of [...current.split(/\s+/), ...addition.value.split(/\s+/)]) {
+    for (const token of [
+      ...current.split(CSP_ASCII_WHITESPACE),
+      ...addition.value.split(CSP_ASCII_WHITESPACE),
+    ]) {
       if (token.length === 0 || seen.has(token)) continue;
       seen.add(token);
       merged.push(token);

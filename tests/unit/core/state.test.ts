@@ -32,6 +32,27 @@ describe('HeartbeatTimer', () => {
     expect(onTimeout).toHaveBeenCalledOnce();
   });
 
+  it('ignores an ineffectively cancelled timer after a newer kick owns the timeout', () => {
+    const onTimeout = vi.fn();
+    const heartbeat = new HeartbeatTimer({ timeoutMs: 100, onTimeout });
+    heartbeat.kick();
+    vi.advanceTimersByTime(50);
+    const ineffectiveClearTimeout = vi
+      .spyOn(globalThis, 'clearTimeout')
+      .mockImplementation(() => undefined);
+    try {
+      heartbeat.kick();
+      vi.advanceTimersByTime(50);
+      expect(onTimeout).not.toHaveBeenCalled();
+      expect(heartbeat.pending).toBe(true);
+      vi.advanceTimersByTime(50);
+      expect(onTimeout).toHaveBeenCalledOnce();
+      expect(heartbeat.pending).toBe(false);
+    } finally {
+      ineffectiveClearTimeout.mockRestore();
+    }
+  });
+
   it('stop cancels pending timeout', () => {
     const onTimeout = vi.fn();
     const heartbeat = new HeartbeatTimer({ timeoutMs: 100, onTimeout });
@@ -40,6 +61,23 @@ describe('HeartbeatTimer', () => {
     vi.advanceTimersByTime(500);
     expect(onTimeout).not.toHaveBeenCalled();
     expect(heartbeat.pending).toBe(false);
+  });
+
+  it('keeps an ineffectively cancelled timer inert after stop', () => {
+    const onTimeout = vi.fn();
+    const heartbeat = new HeartbeatTimer({ timeoutMs: 100, onTimeout });
+    heartbeat.kick();
+    const ineffectiveClearTimeout = vi
+      .spyOn(globalThis, 'clearTimeout')
+      .mockImplementation(() => undefined);
+    try {
+      heartbeat.stop();
+      vi.advanceTimersByTime(100);
+      expect(onTimeout).not.toHaveBeenCalled();
+      expect(heartbeat.pending).toBe(false);
+    } finally {
+      ineffectiveClearTimeout.mockRestore();
+    }
   });
 
   it('stop is idempotent', () => {

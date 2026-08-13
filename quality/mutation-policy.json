@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "profile": "nightly-critical",
+  "report": {
+    "schemaVersion": "1.0",
+    "framework": {
+      "name": "StrykerJS",
+      "version": "9.6.1"
+    },
+    "strykerConfigFile": "stryker.config.js",
+    "vitestConfigFile": "vitest.stryker.config.ts",
+    "testRunner": "vitest",
+    "coverageAnalysis": "perTest",
+    "incremental": false,
+    "thresholds": {
+      "high": 75,
+      "low": 70,
+      "break": 70
+    }
+  },
+  "scope": [
+    "src/core/a11y.ts",
+    "src/core/attribute-binding.ts",
+    "src/core/cache.ts",
+    "src/core/data-merger.ts",
+    "src/core/field-value.ts",
+    "src/core/lifecycle.ts",
+    "src/core/message-bus.ts",
+    "src/core/observers.ts",
+    "src/core/update-scheduler.ts",
+    "src/detection/origin.ts",
+    "src/plugins/manager.ts",
+    "src/security/csp.ts",
+    "src/security/sanitizer.ts",
+    "src/security/url-validator.ts"
+  ],
+  "baseline": {
+    "total": 3623,
+    "mutationScoreMinimum": 79.05,
+    "mutationScorePrecision": 2,
+    "noCoverageMaximum": 63,
+    "timeoutMaximum": 11,
+    "errorMaximum": 0,
+    "ignoredMaximum": 0
+  }
+}

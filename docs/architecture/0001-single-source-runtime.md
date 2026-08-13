@@ -15,19 +15,73 @@ They diverged silently: `isSafeUrl('')` returned `true` in the class but `false`
 
 Both code paths are now produced from `src/core/runtime.ts`:
 
-- `scripts/build-runtime.ts` bundles that file with **esbuild** into a minified IIFE.
+- `scripts/build-runtime.ts` bundles and lowers that file to ES2020 with **esbuild**, then
+  applies a conservative three-pass **Terser** compression to the IIFE. Keeping syntax
+  lowering separate from final compression preserves the established browser target
+  while keeping correctness bookkeeping within the inline-runtime size budget.
 - The IIFE source is written to `src/inline/runtime.generated.ts` as a `string` literal.
-- `generateInlineScript(config)` wraps the literal with a `__LIVE_PREVIEW_CONFIG__` prologue.
+- `generateInlineScript(config)` wraps the literal with a compact
+  `__LIVE_PREVIEW_CONFIG__` tuple prologue. The 1.0.x identifier remains stable:
+  although it is not a public data API and carries no secret, existing
+  response-level consumer tests use it as a runtime-presence marker. Trailing
+  defaults are omitted, interior omissions remain sparse `undefined` slots, and
+  explicit falsy overrides remain distinguishable. This keeps runtime
+  destructuring defaults correct while the public object API stays readable
+  without duplicating default keys in every page.
 - `LivePreviewClient` instantiates the runtime via direct imports — no string template involved.
+- Published entries are lowered and minified by esbuild with `keepNames` enabled, then
+  receive a conservative two-pass Terser compression with composed source maps. Only exports with
+  an explicit `require` condition emit CommonJS JavaScript, declarations, and maps;
+  ESM-only adapters and the CLI do not ship unreachable parallel artifacts.
+  This reduces transfer and JavaScript parse input while retaining observable class and
+  function names used by diagnostics and existing consumers. Source maps remain enabled.
+- `npm run build` finishes with a deterministic raw/gzip/Brotli budget check for the
+  default inline script and every emitted JavaScript entry. It also verifies the names
+  of central public runtime exports in both module formats, every manifest target and
+  the adjacent source maps.
+- CI and `prepublishOnly` pack the completed build without running maintainer
+  lifecycle hooks, then validate the exact archive's content allow-list,
+  manifest/declaration targets, ESM and CommonJS imports, CLI entry, and strict
+  NodeNext types. The archive must expose none of npm's consumer-install hooks
+  (`preinstall`, `install`, `postinstall`, or `prepare`) and is installed without a
+  script bypass under `strict-allow-scripts=true`. Smoke consumers live outside the
+  repository tree so Node cannot satisfy an undeclared import from maintainer
+  `node_modules`: peer-free runtime entries are verified with optional peers absent,
+  while codegen, CLI, and their NodeNext types use a separate consumer that explicitly
+  installs the reviewed `ts-morph` peer. Build-time generation is always an explicit
+  maintainer step, so package verification cannot recursively mutate the artifact
+  being verified and consumer installs never need the source build toolchain.
+- CI derives `SOURCE_DATE_EPOCH` from the tested commit. The existing public
+  `RuntimeBuildInfo.generatedAt` string therefore remains available while repeated
+  builds of one commit produce the same value and byte-identical npm archives.
+  Local builds without the environment variable retain a wall-clock timestamp.
+- The CI package gate persists its already-verified tgz plus a manifest binding the
+  source/toolchain, raw SHA-1/SHA-256/SHA-512 digests, and complete npm inventory.
+  The `workflow_run` release downloads only that immutable artifact from the exact
+  triggering run, rechecks it without packing the checkout, and passes that tgz
+  directly to npm through trusted publishing. It downloads the registry archive
+  and proves exact equality before Changesets may create the tag and GitHub Release.
 
 Both consumers share **every** primitive: cache, observers, message bus, scheduler, state, lifecycle, security stack.
 
+Runtime classes with many internal fields consolidate storage behind one or two named
+tuple records. Package-internal classes use a short TypeScript-private tuple property:
+their instances never cross a public entry, and avoiding native `#private` lowering
+prevents ES2020 WeakMap scaffolding from consuming the patch-size budget. TypeScript
+erases the slot enums, while their descriptive names keep ownership readable in source.
+Stable dependencies and mutable lifecycle state remain separate, exported classes keep
+their hard-private storage, and public names are never property-mangled.
+
 ## Consequences
 
-| | |
-|---|---|
-| ✅ One audit, one test surface | Security review touches one path |
-| ✅ Renderers added in TS are immediately usable inline | No string-template porting |
-| ✅ Tree-shaking still works for consumer bundles | The high-level client imports only what it uses |
-| ⚠️ Build step now mandatory before publish | `npm run build:runtime` runs in `prepublishOnly` |
-| ⚠️ Generated file is committed-but-gitignored | Rebuilt on `npm install` via lifecycle |
+|                                                        |                                                                                                           |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| ✅ One audit, one test surface                         | Security review touches one path                                                                          |
+| ✅ Renderers added in TS are immediately usable inline | No string-template porting                                                                                |
+| ✅ Tree-shaking still works for consumer bundles       | The high-level client imports only what it uses                                                           |
+| ✅ Release-size regressions fail locally and in CI     | Budgets cover all emitted ESM/CJS entries and the default inline script                                   |
+| ✅ Published topology is tested as installed           | Isolated package checks operate on the exact tarball rather than the source or maintainer dependency tree |
+| ✅ Minification preserves diagnostic names             | `keepNames` plus artifact smoke checks pin the observable contract                                        |
+| ⚠️ Build step now mandatory before artifact creation   | CI/maintainers build explicitly; release promotes the certified archive without rebuilding                |
+| ⚠️ Generated file is local and gitignored              | Rebuilt explicitly by maintainer/CI commands; release artifacts contain the generated result              |
+| ⚠️ Maintainer builds use two reviewed tools            | Both esbuild and Terser are development-only and never become consumer runtime dependencies               |

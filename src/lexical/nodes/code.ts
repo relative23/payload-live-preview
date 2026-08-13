@@ -9,7 +9,7 @@
  */
 
 import { escapeHtml } from '@security/escape';
-import { register, type NodeRenderer } from '../registry';
+import type { NodeRenderer } from '../registry';
 import type { LexicalNode } from '../types';
 
 const codeRenderer: NodeRenderer = (node): string => {
@@ -27,9 +27,6 @@ const codeHighlightRenderer: NodeRenderer = (node): string => {
       : '';
   return `<span${highlight}>${escapeHtml(text)}</span>`;
 };
-
-register('code', codeRenderer);
-register('code-highlight', codeHighlightRenderer);
 
 export { codeRenderer, codeHighlightRenderer };
 

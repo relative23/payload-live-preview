@@ -5,9 +5,14 @@ const isCI = process.env['CI'] === 'true';
 const config: PlaywrightTestConfig = {
   testDir: './tests/e2e/specs',
   fullyParallel: true,
-  forbidOnly: isCI,
+  forbidOnly: true,
+  // Retries collect diagnostics, but a test that needed one is still a failed
+  // quality signal. Keep this enabled locally too so ad-hoc retry runs agree.
+  failOnFlakyTests: true,
   retries: isCI ? 2 : 0,
-  reporter: isCI ? [['github'], ['html']] : 'list',
+  reporter: isCI
+    ? [['github'], ['html'], ['./scripts/playwright-zero-skip-reporter.ts']]
+    : [['list'], ['./scripts/playwright-zero-skip-reporter.ts']],
   use: {
     baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
@@ -22,10 +27,19 @@ const config: PlaywrightTestConfig = {
     // The example apps double as demos and E2E fixtures, so the test
     // environment is identical to what consumers experience locally.
     {
-      command: 'npm --prefix examples/astro-payload run dev',
+      // Astro 7's development CLI may hand the server to a child process and
+      // let the foreground process exit. Playwright treats that as a failed
+      // managed server, so use the foreground preview server for a stable
+      // process lifetime in local and CI runs.
+      command:
+        'npm --prefix examples/astro-payload run build && npm --prefix examples/astro-payload run preview',
+      // Suppress Astro's AI-agent auto-background mode. The environment
+      // variable deliberately means "the caller handles backgrounding";
+      // without `--background`, Astro therefore remains in the foreground.
+      env: { ASTRO_PREVIEW_BACKGROUND: '1' },
       url: 'http://localhost:4173/admin',
       reuseExistingServer: !isCI,
-      timeout: 60_000,
+      timeout: 120_000,
     },
     {
       command: 'npm --prefix examples/nextjs-payload run dev',

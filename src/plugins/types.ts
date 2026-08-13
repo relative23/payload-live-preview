@@ -12,12 +12,68 @@
  * @module @plugins/types
  */
 
-import type { EventEmitter } from '@events/emitter';
 import type { CachedElement, FieldRenderer } from '@core/types';
+import type { EventEmitter } from '@events/emitter';
+import type { EventHandler, LivePreviewEventMap, Unsubscribe } from '@events/types';
+
+/** Idempotent handle that releases one plugin-owned resource. */
+export type PluginDisposer = () => void;
 
 /**
- * Function that mutates a value before the renderer receives it.
- * Returning a different shape than the input is allowed.
+ * Event subscriptions scoped to one plugin registration.
+ *
+ * This remains nominally compatible with the pre-1.0.4 `EventEmitter` context
+ * type. Its methods are registration-scoped: even bulk removal affects only
+ * this plugin's subscriptions, never a consumer's or another plugin's
+ * listeners.
+ */
+export interface PluginEvents extends EventEmitter {
+  readonly on: <E extends keyof LivePreviewEventMap>(
+    event: E,
+    handler: EventHandler<LivePreviewEventMap[E]>,
+  ) => Unsubscribe;
+  readonly once: <E extends keyof LivePreviewEventMap>(
+    event: E,
+    handler: EventHandler<LivePreviewEventMap[E]>,
+  ) => Unsubscribe;
+  readonly off: <E extends keyof LivePreviewEventMap>(
+    event: E,
+    handler: EventHandler<LivePreviewEventMap[E]>,
+  ) => void;
+  /** Emit through the owning client's event channel. */
+  readonly emit: <E extends keyof LivePreviewEventMap>(
+    event: E,
+    payload: LivePreviewEventMap[E],
+  ) => Promise<void>;
+  /**
+   * Guarded emit through the owning client channel. Dispatch stops when the
+   * caller predicate becomes false or this plugin registration is removed.
+   */
+  readonly emitWhile: <E extends keyof LivePreviewEventMap>(
+    event: E,
+    payload: LivePreviewEventMap[E],
+    shouldContinue: () => boolean,
+  ) => Promise<boolean>;
+  /** Number of listeners owned by this plugin registration. */
+  readonly listenerCount: (event: keyof LivePreviewEventMap) => number;
+  /** Remove only listeners owned by this plugin registration. */
+  readonly removeAllListeners: (event?: keyof LivePreviewEventMap) => void;
+  /** Event names for which this plugin registration owns listeners. */
+  readonly eventNames: () => (keyof LivePreviewEventMap)[];
+}
+
+/**
+ * Synchronous function that transforms a merged field value while a revision's
+ * per-binding scheduler entry is prepared. Transforms run in registration
+ * order and each receives the preceding transform's result. The final value is
+ * frozen into that entry before later renderer or attribute dispatch;
+ * `allFields` remains the merged, untransformed update snapshot.
+ *
+ * Returning a different shape than the input is allowed, but returning a
+ * Promise or other thenable is a contract error. If a transform throws or
+ * returns a thenable, the chain stops, the runtime emits an `error` event, and
+ * dispatch falls back to the original merged value. That fallback still passes
+ * through the normal renderer and attribute security controls.
  */
 export type FieldTransform = (
   value: unknown,
@@ -41,9 +97,17 @@ export type FieldTransform = (
  *   - log through the client's debug channel.
  */
 export interface PluginContext {
-  readonly events: EventEmitter;
+  readonly events: PluginEvents;
+  /** Register a renderer owned by this plugin registration. */
   readonly registerFieldRenderer: (renderer: FieldRenderer) => void;
+  /** Register an ordered transform owned by this plugin registration. */
   readonly registerTransform: (fieldName: string, transform: FieldTransform) => void;
+  /**
+   * Register any additional synchronous cleanup owned by this registration.
+   * The manager invokes it during rollback, `unuse()`, or client destruction.
+   * Optional so pre-1.0.4 structural context mocks remain assignable.
+   */
+  readonly registerCleanup?: (cleanup: PluginDisposer) => void;
   readonly getConfig: () => Readonly<Record<string, unknown>>;
   readonly log: (...args: unknown[]) => void;
 }

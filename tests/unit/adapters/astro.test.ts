@@ -6,6 +6,7 @@
  * — without booting an actual Astro project (that happens in the
  * end-to-end example in Phase 15).
  */
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
 import {
   livePreview,
@@ -13,6 +14,14 @@ import {
   NONCE_LOCALS_KEY,
   renderLivePreviewScript,
 } from '@adapters/astro/index';
+
+function injectedConfig(script: string): unknown[] {
+  const match = /var __LIVE_PREVIEW_CONFIG__=(\[[^;]*\]);/.exec(script);
+  if (match?.[1] === undefined) throw new Error('injected config missing');
+  const evaluated = runInNewContext(match[1], {}) as unknown;
+  if (!Array.isArray(evaluated)) throw new Error('injected config is not an array');
+  return evaluated;
+}
 
 describe('livePreview integration', () => {
   it('returns an integration with the expected name', () => {
@@ -48,9 +57,10 @@ describe('livePreview integration', () => {
     });
     integration.hooks['astro:config:setup']({ injectScript });
     const script = injectScript.mock.calls[0]![1] as string;
-    expect(script).toContain('"debug":true');
-    expect(script).toContain('"debounceMs":250');
-    expect(script).toContain('"heartbeatMs":60000');
+    const config = injectedConfig(script);
+    expect(config[4]).toBe(true);
+    expect(config[5]).toBe(250);
+    expect(config[7]).toBe(60_000);
   });
 });
 
@@ -244,6 +254,28 @@ describe('createLivePreviewMiddleware', () => {
     // Union merge: the pre-existing frame-ancestors source survives.
     expect(csp).toContain('https://other.example');
     expect(csp).toContain('https://admin.example.com');
+  });
+
+  it('parses CSP ASCII whitespace and ignores duplicate directive relaxations', async () => {
+    const middleware = createLivePreviewMiddleware({
+      allowedOrigins: ['https://admin.example.com'],
+    });
+    const ctx = makePreviewContext();
+    const response = await middleware(ctx, () =>
+      Promise.resolve(
+        new Response('<html><head></head></html>', {
+          headers: {
+            'content-type': 'text/html',
+            'content-security-policy':
+              "default-src\t'self'; frame-ancestors 'none'; FRAME-ANCESTORS *",
+          },
+        }),
+      ),
+    );
+
+    expect(response.headers.get('content-security-policy')).toBe(
+      "default-src 'self'; frame-ancestors 'self' https://admin.example.com",
+    );
   });
 
   it('skips CSP when manageCsp is false', async () => {

@@ -6,24 +6,38 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer PR revision makes an older run obsolete. Main runs include the
+  # commit verdict consumed by the release workflow and must not be cancelled.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
     name: Lint & Typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
+      # The published root package intentionally exposes no consumer lifecycle
+      # hook. Generate its ignored single-source runtime explicitly before
+      # checks that import it; dependency installers remain strictly allow-listed.
+      - run: npm run build:runtime
+      - run: npm audit --audit-level=high
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
+      - run: npm run test:policy
+      - run: npm run test:architecture
 
   unit:
     name: Unit Tests (Node ${{ matrix.node }})
@@ -33,11 +47,13 @@ jobs:
       matrix:
         node: [20, 22, 24, 26]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
       - run: npm run build:runtime
       - run: npm run test:unit
@@ -47,19 +63,141 @@ jobs:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # Diff coverage is computed against the reviewed base commit, not an
+          # arbitrary shallow checkout or the moving default branch.
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
       - run: npm run build:runtime
       - run: npm run test:coverage
-      - uses: actions/upload-artifact@v4
+      - name: Enforce changed-line coverage and threshold ratchets
+        env:
+          COVERAGE_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: npm run test:coverage:diff
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-report
           path: coverage/
           retention-days: 7
+
+  mutation:
+    name: PR Critical Mutation Tests
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npm run build:runtime
+      - name: Prove critical assertions kill injected faults
+        env:
+          STRYKER_SCOPE: pr
+        run: npm run test:mutation
+      - name: Enforce exact zero-error PR mutation baseline
+        run: npm run test:mutation:policy:pr
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: mutation-report-pr
+          path: |
+            test-results/stryker-pr.json
+            test-results/stryker-pr.html
+          if-no-files-found: ignore
+          retention-days: 7
+
+  critical-mutation:
+    name: Release Critical Mutation Baseline
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npm run build:runtime
+      - name: Mutate the complete release-critical runtime scope
+        env:
+          STRYKER_SCOPE: nightly
+        run: npm run test:mutation
+      - name: Enforce the reviewed critical mutation baseline
+        run: npm run test:mutation:policy
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: mutation-report-release-${{ github.sha }}
+          path: |
+            test-results/stryker-nightly.json
+            test-results/stryker-nightly.html
+          if-no-files-found: ignore
+          retention-days: 14
+
+  node-leak-soak:
+    name: Release Node Lifecycle Leak Gate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npm run build:runtime
+      - name: Prove 10,000 lifecycle cycles release owned resources
+        run: npm run test:leak
+
+  browser-soak:
+    name: Release Chromium Update & Heap Soak
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm install --no-audit --no-fund --prefix examples/astro-payload
+      - run: npm audit --audit-level=high --prefix examples/astro-payload
+      - name: Exercise five minutes of sustained browser updates
+        env:
+          PLP_SOAK_DURATION_MS: 300000
+        run: npm run test:soak
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: browser-soak-release-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/soak-results.json
+          if-no-files-found: ignore
+          retention-days: 14
 
   e2e:
     name: E2E (${{ matrix.browser }})
@@ -69,11 +207,13 @@ jobs:
       matrix:
         browser: [chromium, firefox, webkit]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run build
@@ -81,12 +221,16 @@ jobs:
       # freshly built package via their file:../.. dependency. `npm
       # install` instead of `npm ci`: the lock file pins the file: dep
       # at the version current at lock time, which `npm ci` rejects
-      # after any version bump.
+      # after any version bump. The package exposes no consumer install
+      # hooks; fixtures consume the reviewed dist built above.
       - run: npm install --no-audit --no-fund --prefix examples/astro-payload
       - run: npm install --no-audit --no-fund --prefix examples/nextjs-payload
       - run: npm install --no-audit --no-fund --prefix examples/sveltekit-payload
+      - run: npm audit --audit-level=high --prefix examples/astro-payload
+      - run: npm audit --audit-level=high --prefix examples/nextjs-payload
+      - run: npm audit --audit-level=high --prefix examples/sveltekit-payload
       - run: npx playwright test --project=${{ matrix.browser }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: playwright-report-${{ matrix.browser }}
@@ -97,11 +241,13 @@ jobs:
     name: Real Payload E2E
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
@@ -110,10 +256,12 @@ jobs:
       # generates its admin import map on boot via `e2e:serve`.
       - run: npm install --no-audit --no-fund --prefix examples/astro-payload
       - run: npm install --no-audit --no-fund --prefix examples/payload-backend
+      - run: npm audit --audit-level=high --prefix examples/astro-payload
+      - run: npm audit --audit-level=high --prefix examples/payload-backend
       # Boots a real Payload 3.x admin + the Astro preview and drives the
       # real postMessage protocol end to end (playwright.real-payload.config.ts).
       - run: npm run test:e2e:real-payload
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: playwright-report-real-payload
@@ -124,15 +272,40 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 22.23.2
           cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-artifact@v4
+      - name: Derive reproducible source date from the tested commit
+        id: source_date
+        env:
+          TESTED_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$TESTED_SHA"
+          epoch=$(git show -s --format=%ct "$TESTED_SHA")
+          case "$epoch" in
+            ''|*[!0-9]*) echo "invalid commit timestamp"; exit 1 ;;
+          esac
+          echo "epoch=$epoch" >> "$GITHUB_OUTPUT"
+      - name: Build reproducible release candidate
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
+        run: npm run build
+      - name: Verify and persist the exact package artifact
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
+          TESTED_SHA: ${{ github.sha }}
+        run: npm run test:package -- --artifact-dir release-artifact --source-commit "$TESTED_SHA"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: dist
-          path: dist/
+          name: release-candidate-${{ github.sha }}
+          path: |
+            release-artifact/*.tgz
+            release-artifact/package-artifact.json
+          if-no-files-found: error
+          compression-level: 0
           retention-days: 7

@@ -16,13 +16,14 @@
  *   - Errors thrown by one handler are logged via `console.error` and
  *     do not prevent later handlers from running.
  *   - `once()` semantics: registered into a separate map; the entire
- *     set for an event is cleared after dispatch, even if individual
- *     handlers throw.
+ *     snapshot for an event is claimed immediately before its dispatch,
+ *     and remains consumed even if individual handlers throw.
  *
  * @module @events/emitter
  */
 
 import type { EventHandler, LivePreviewEventMap, Unsubscribe } from './types';
+import { safeConsoleError } from '@core/diagnostics';
 
 type AnyHandler = EventHandler<unknown>;
 
@@ -55,8 +56,8 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
    * `once`-registered handlers. No-op when the handler isn't registered.
    */
   off<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): void {
-    this.#regular.get(event)?.delete(handler as AnyHandler);
-    this.#once.get(event)?.delete(handler as AnyHandler);
+    this.#remove(this.#regular, event, handler as AnyHandler);
+    this.#remove(this.#once, event, handler as AnyHandler);
   }
 
   /**
@@ -67,16 +68,56 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
    * exceptions are caught, logged, and isolated to the offending handler.
    */
   async emit<E extends keyof TMap>(event: E, payload: TMap[E]): Promise<void> {
+    await this.#emitSequential(event, payload);
+  }
+
+  /**
+   * Lifecycle-only guarded dispatch. The predicate is checked before and after
+   * every handler so an async boundary cannot let an obsolete transaction run
+   * later callbacks. `emit()` intentionally keeps its established behaviour.
+   *
+   * Once-handlers are claimed only when dispatch reaches the once phase. Once
+   * claimed, the whole snapshot remains consumed even if the predicate changes
+   * while one of its handlers is awaiting, matching normal once semantics.
+   *
+   * @internal
+   * @returns `true` when the complete handler sequence ran while eligible.
+   */
+  async emitWhile<E extends keyof TMap>(
+    event: E,
+    payload: TMap[E],
+    shouldContinue: () => boolean,
+  ): Promise<boolean> {
+    return this.#emitSequential(event, payload, shouldContinue);
+  }
+
+  async #emitSequential<E extends keyof TMap>(
+    event: E,
+    payload: TMap[E],
+    shouldContinue?: () => boolean,
+  ): Promise<boolean> {
+    const eligible = (): boolean => shouldContinue?.() ?? true;
+    if (!eligible()) return false;
     const regular = this.#regular.get(event);
     if (regular) {
-      for (const handler of [...regular]) await this.#invoke(handler, payload, event);
+      for (const handler of [...regular]) {
+        if (!eligible()) return false;
+        await this.#invoke(handler, payload, event);
+        if (!eligible()) return false;
+      }
     }
+    if (!eligible()) return false;
     const once = this.#once.get(event);
     if (once && once.size > 0) {
       const snapshot = [...once];
       this.#once.delete(event);
-      for (const handler of snapshot) await this.#invoke(handler, payload, event);
+      for (const handler of snapshot) {
+        if (!eligible()) return false;
+        await this.#invoke(handler, payload, event);
+        if (!eligible()) return false;
+      }
     }
+    return eligible();
   }
 
   /**
@@ -127,8 +168,15 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
     }
     set.add(handler);
     return () => {
-      bucket.get(event)?.delete(handler);
+      this.#remove(bucket, event, handler);
     };
+  }
+
+  #remove(bucket: Map<keyof TMap, Set<AnyHandler>>, event: keyof TMap, handler: AnyHandler): void {
+    const set = bucket.get(event);
+    if (set === undefined) return;
+    set.delete(handler);
+    if (set.size === 0) bucket.delete(event);
   }
 
   async #invoke(handler: AnyHandler, payload: unknown, event: keyof TMap): Promise<void> {
@@ -137,7 +185,7 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
     } catch (err) {
       const label =
         typeof event === 'string' || typeof event === 'number' ? String(event) : '<event>';
-      console.error(`[live-preview] handler for "${label}" threw:`, err);
+      safeConsoleError(`[live-preview] handler for "${label}" threw:`, err);
     }
   }
 }

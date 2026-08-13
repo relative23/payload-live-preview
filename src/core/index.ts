@@ -19,7 +19,12 @@ export {
   type ElementCacheOptions,
 } from './cache';
 export { ObserverManager, type ObserverCallbacks, type ObserverOptions } from './observers';
-export { MessageBus, type MessageHandlers, type OriginMatcher } from './message-bus';
+export {
+  MessageBus,
+  type MessageHandlers,
+  type MessageRevision,
+  type OriginMatcher,
+} from './message-bus';
 export {
   UpdateScheduler,
   type ApplyUpdate,

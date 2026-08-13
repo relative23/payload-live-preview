@@ -8,7 +8,7 @@
  * @module @lexical/nodes/heading
  */
 
-import { register, type NodeRenderer } from '../registry';
+import type { NodeRenderer } from '../registry';
 import { dirAttribute, styleAttribute } from '../utils';
 
 const VALID_TAGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
@@ -19,7 +19,5 @@ const headingRenderer: NodeRenderer = (node, ctx): string => {
   const children = ctx.renderChildren(node.children ?? []);
   return `<${tag}${dirAttribute(node)}${styleAttribute(node)}>${children}</${tag}>`;
 };
-
-register('heading', headingRenderer);
 
 export { headingRenderer };

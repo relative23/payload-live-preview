@@ -10,7 +10,7 @@
  */
 
 import type { FieldRenderer } from '@core/types';
-import { textRenderer } from './text';
+import { createTextRenderer } from './text';
 import { textareaRenderer } from './textarea';
 import { richTextRenderer } from './rich-text';
 import { htmlRenderer } from './html';
@@ -31,12 +31,11 @@ import {
 } from './registry';
 
 /**
- * The stateless built-in renderers, shared safely across instances.
- * The `structural-array` renderer is intentionally NOT here — it owns
- * per-instance diff state, so it is constructed fresh per build (below).
+ * The stateless built-in renderers, shared safely across instances. Text and
+ * structural-array renderers are intentionally NOT here: both own per-client
+ * warning/diff state and are constructed fresh per build (below).
  */
 const STATELESS_BUILTIN: readonly FieldRenderer[] = [
-  textRenderer,
   textareaRenderer,
   richTextRenderer,
   htmlRenderer,
@@ -60,7 +59,11 @@ const STATELESS_BUILTIN: readonly FieldRenderer[] = [
  * state so nothing is shared between concurrent clients.
  */
 export function buildBuiltinRenderers(): Readonly<Record<string, FieldRenderer>> {
-  return buildRegistry([...STATELESS_BUILTIN, createStructuralArrayRenderer()]);
+  return buildRegistry([
+    createTextRenderer(),
+    ...STATELESS_BUILTIN,
+    createStructuralArrayRenderer(),
+  ]);
 }
 
 export { registerBuiltinRenderer, __resetBuiltinRenderersForTests };

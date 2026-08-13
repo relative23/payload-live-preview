@@ -14,9 +14,9 @@ The official `@payloadcms/live-preview-react`/`-vue` hooks are great when React/
 - Speaks the stock Payload 3.x postMessage protocol (verified against `@payloadcms/live-preview` source; a weekly CI job watches for wire-format drift, including 4.0 canaries).
 - Populated relationships via the same REST-merge strategy as the official client — plus debounce and stale-request abort.
 - Full Lexical renderer (16 node types) with an `<RichText />` Astro component so SSR markup and live patches come from the same renderer.
-- Preview-gated server adapters: production traffic ships zero preview bytes; CSP `frame-ancestors` is merged (never clobbered) on preview responses.
-- Escape-by-default sanitizer, URL/srcset validation, origin allow-list with post-handshake lock.
-- E2E-tested against real Astro 7, Next.js 16 and SvelteKit 2 apps in three browsers; ~740 unit/integration tests.
+- Intent-gated server adapters can avoid preview bytes on requests without configured preview signals and merge (never clobber) CSP `frame-ancestors`. Query/iframe/referer signals are not authorization; protected draft, cache, CSP and injection decisions stay application-owned.
+- Escape-by-default sanitizer, URL/srcset validation, and an origin allow-list that locks after the first accepted data-bearing update.
+- E2E-tested against real Astro 7, Next.js 16 and SvelteKit 2 apps in three browsers, with an extensive unit/integration regression suite.
 
 Honest scope: for client-rendered React/Vue apps, keep using the official hooks — this is for everything they don't cover.
 

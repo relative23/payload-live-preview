@@ -9,7 +9,6 @@
  */
 
 import type { FieldRenderer } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 
 const checkboxRenderer: FieldRenderer = {
   name: 'checkbox',
@@ -27,7 +26,5 @@ const checkboxRenderer: FieldRenderer = {
     element.textContent = checked ? 'true' : 'false';
   },
 };
-
-registerBuiltinRenderer(checkboxRenderer);
 
 export { checkboxRenderer };

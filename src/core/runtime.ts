@@ -25,6 +25,7 @@ import { OriginDetector } from '@detection/origin';
 import { isInPreviewContext, isInIframe, isInPopup } from '@detection/environment';
 import { VERSION } from '../version';
 import type { FieldRenderer } from './types';
+import { safeConsoleDebug, safeConsoleWarn } from './diagnostics';
 
 /**
  * Build-time configuration baked into the inline IIFE.
@@ -32,21 +33,24 @@ import type { FieldRenderer } from './types';
  * Defaults come from `scripts/build-runtime.ts` and `inline/generator.ts`.
  * Consumers override them through `generateInlineScript()` options.
  */
-declare const __LIVE_PREVIEW_CONFIG__: {
-  readonly additionalOrigins: readonly string[];
-  readonly serverURL: string;
-  readonly apiRoute: string;
-  readonly mergeDepth: number;
-  readonly debug: boolean;
-  readonly debounceMs: number;
-  readonly enableA11y: boolean;
-  readonly heartbeatMs: number;
-  readonly disableVisibilityGate: boolean;
-  readonly visibilityGateThreshold: number;
-  readonly intersectionRootMargin: string;
-  readonly disableReferrerDetection: boolean;
-  readonly disableLocalhostMatching: boolean;
-};
+/** Compact private wire format shared only with `src/inline/generator.ts`. */
+type RuntimeBuildConfig = readonly [
+  additionalOrigins?: readonly string[],
+  serverURL?: string,
+  apiRoute?: string,
+  mergeDepth?: number,
+  debug?: boolean,
+  debounceMs?: number,
+  enableA11y?: boolean,
+  heartbeatMs?: number,
+  disableVisibilityGate?: boolean,
+  visibilityGateThreshold?: number,
+  intersectionRootMargin?: string,
+  disableReferrerDetection?: boolean,
+  disableLocalhostMatching?: boolean,
+];
+
+declare const __LIVE_PREVIEW_CONFIG__: RuntimeBuildConfig;
 
 /**
  * Field renderers built into the inline runtime.
@@ -85,24 +89,36 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
   const existing = (window as { __livePreview?: LivePreviewGlobalApi }).__livePreview;
   if (existing !== undefined) return existing;
 
-  const config = readBuildConfig();
+  const [
+    additionalOrigins = [],
+    serverURL = '',
+    apiRoute = '/api',
+    mergeDepth = 1,
+    debug = false,
+    debounceMs = 50,
+    enableA11y = true,
+    heartbeatMs = 0,
+    disableVisibilityGate = false,
+    visibilityGateThreshold = 50,
+    intersectionRootMargin = '200px',
+    disableReferrerDetection = false,
+    disableLocalhostMatching = false,
+  ] = readBuildConfig();
 
   const detector = new OriginDetector({
-    additionalOrigins: config.additionalOrigins,
-    enableReferrerDetection: !config.disableReferrerDetection,
-    enableLocalhostMatching: !config.disableLocalhostMatching,
+    additionalOrigins,
+    enableReferrerDetection: !disableReferrerDetection,
+    enableLocalhostMatching: !disableLocalhostMatching,
   });
 
   if (detector.isProductionUnconfigured) {
-    console.warn(
-      '[live-preview] No trusted origin could be detected. ' +
-        'Set the PAYLOAD_ADMIN_ORIGIN env var or pass `allowedOrigins` to generateInlineScript().',
+    safeConsoleWarn(
+      '[live-preview] No trusted origin. Set PAYLOAD_ADMIN_ORIGIN or pass allowedOrigins to generateInlineScript().',
     );
   } else if (detector.isReferrerOnlyTrust) {
-    console.warn(
-      '[live-preview] Trusting the embedding page via document.referrer only — any site ' +
-        'that frames this page could post preview updates. Pass explicit `allowedOrigins` ' +
-        'and serve a `frame-ancestors` CSP for production.',
+    safeConsoleWarn(
+      '[live-preview] document.referrer fallback trusts any framing site. ' +
+        'Set allowedOrigins and a frame-ancestors CSP in production.',
     );
   }
 
@@ -116,36 +132,35 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     emitter,
     // Guard on typeof — a config literal baked by an older generator
     // (or a hand-written one in tests) may not carry the merge fields.
-    ...(typeof config.serverURL === 'string' && config.serverURL !== ''
+    ...(serverURL !== ''
       ? {
           dataMerge: {
-            serverURL: config.serverURL,
-            ...(typeof config.apiRoute === 'string' ? { apiRoute: config.apiRoute } : {}),
-            ...(typeof config.mergeDepth === 'number' ? { depth: config.mergeDepth } : {}),
+            serverURL,
+            apiRoute,
+            depth: mergeDepth,
           },
         }
       : {}),
-    debounceMs: config.debounceMs,
-    heartbeatMs: config.heartbeatMs,
-    intersectionRootMargin: config.intersectionRootMargin,
-    disableVisibilityGate: config.disableVisibilityGate,
-    visibilityGateThreshold: config.visibilityGateThreshold,
-    enableA11y: config.enableA11y,
+    debounceMs,
+    heartbeatMs,
+    intersectionRootMargin,
+    disableVisibilityGate,
+    visibilityGateThreshold,
+    enableA11y,
     onHeartbeatTimeout: () => {
       detector.unlockOrigin();
     },
-    ...(config.debug
+    ...(debug
       ? {
           log: (...args: unknown[]): void => {
-            // eslint-disable-next-line no-console -- debug surface
-            console.debug('[live-preview]', ...args);
+            safeConsoleDebug('[live-preview]', ...args);
           },
         }
       : {}),
   });
 
-  // On the first valid connect, lock the detector to that origin so
-  // every subsequent message must match it exactly.
+  // On the first accepted data-bearing update, `connect` locks the detector
+  // to that origin so every subsequent message must match it exactly.
   emitter.on('connect', (e) => {
     detector.lockOrigin(e.origin);
   });
@@ -168,37 +183,25 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     enumerateOrigins: () => detector.enumerate(),
   });
 
-  Object.defineProperty(window, '__livePreview', {
-    value: api,
-    writable: false,
-    configurable: true,
-  });
+  try {
+    Object.defineProperty(window, '__livePreview', {
+      value: api,
+      writable: false,
+      configurable: true,
+    });
+  } catch (error) {
+    // Starting the runtime and publishing its owner handle are one bootstrap
+    // transaction. A hostile/pre-existing global descriptor must not leave an
+    // unreachable runtime listening, observing, or retrying in the background.
+    runtime.destroy();
+    throw error;
+  }
 
   return api;
 }
 
-function readBuildConfig(): typeof __LIVE_PREVIEW_CONFIG__ {
-  // The defaults are kept in sync with `generateInlineScript`. The
-  // build step replaces `__LIVE_PREVIEW_CONFIG__` with the consumer
-  // configuration; outside of that build the literal is undefined.
-  const baked: typeof __LIVE_PREVIEW_CONFIG__ | undefined =
-    typeof __LIVE_PREVIEW_CONFIG__ === 'undefined' ? undefined : __LIVE_PREVIEW_CONFIG__;
-  if (baked !== undefined) return baked;
-  return {
-    additionalOrigins: [],
-    serverURL: '',
-    apiRoute: '/api',
-    mergeDepth: 1,
-    debug: false,
-    debounceMs: 50,
-    enableA11y: true,
-    heartbeatMs: 0,
-    disableVisibilityGate: false,
-    visibilityGateThreshold: 50,
-    intersectionRootMargin: '200px',
-    disableReferrerDetection: false,
-    disableLocalhostMatching: false,
-  };
+function readBuildConfig(): RuntimeBuildConfig {
+  return typeof __LIVE_PREVIEW_CONFIG__ === 'undefined' ? [] : __LIVE_PREVIEW_CONFIG__;
 }
 
 // Auto-start when this module is executed as the inline IIFE.

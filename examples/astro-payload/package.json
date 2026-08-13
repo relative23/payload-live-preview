@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "npm@11.16.0",
   "scripts": {
     "dev": "astro dev --host --port 4173",
     "build": "astro build",
@@ -11,6 +12,10 @@
   },
   "dependencies": {
     "payload-live-preview": "file:../..",
-    "astro": "^7.0.7"
+    "astro": "^7.2.1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": false
   }
 }

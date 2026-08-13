@@ -170,6 +170,11 @@ const ATTR_BY_TAG: Readonly<Record<string, ReadonlySet<string>>> = {
 
 const URL_ATTRIBUTES: ReadonlySet<string> = new Set(['href', 'src', 'cite', 'poster']);
 
+// DOM nodeType values are standardized across realms. Numeric constants keep
+// an injected SSR document independent from a browser-global `Node` constructor.
+const ELEMENT_NODE = 1;
+const COMMENT_NODE = 8;
+
 /**
  * Thrown when `sanitizeHtml` is invoked in an environment without a
  * `document` (e.g., server-side rendering). Callers should catch this
@@ -266,8 +271,7 @@ export function sanitizeHtml(html: string, options?: SanitizeOptions): string {
   const doc = resolveDocument();
   if (!doc) {
     throw new SanitizerEnvironmentError(
-      'sanitizeHtml requires a DOM. Inject one via setSanitizerDocument() for SSR ' +
-        '(linkedom, jsdom, happy-dom, …) or use the plain-text path on the server.',
+      'sanitizeHtml needs a DOM; provide one with setSanitizerDocument() during SSR.',
     );
   }
   if (html === '') return '';
@@ -300,9 +304,9 @@ export function hasSanitizerDocument(): boolean {
 function sanitizeFragment(node: ParentNode, policy: ResolvedPolicy): void {
   // Iterate over a snapshot — we mutate children during the walk.
   for (const child of Array.from(node.childNodes)) {
-    if (child.nodeType === Node.ELEMENT_NODE) {
+    if (child.nodeType === ELEMENT_NODE) {
       sanitizeElement(child as Element, policy);
-    } else if (child.nodeType === Node.COMMENT_NODE) {
+    } else if (child.nodeType === COMMENT_NODE) {
       child.remove();
     }
   }
@@ -385,16 +389,18 @@ function isSafeSrcset(value: string): boolean {
   for (const candidate of candidates) {
     const trimmed = candidate.trim();
     if (trimmed.length === 0) continue;
-    const url = trimmed.split(/\s+/, 1)[0];
-    if (url === undefined || url.length === 0 || !isSafeUrl(url)) return false;
+    // `trimmed` is non-empty. Only the URL prefix before the first descriptor
+    // separator is needed; slicing avoids manufacturing an optional array item.
+    const descriptorStart = trimmed.search(/\s/);
+    const url = descriptorStart === -1 ? trimmed : trimmed.slice(0, descriptorStart);
+    if (!isSafeUrl(url)) return false;
   }
   return true;
 }
 
 function hardenAnchor(anchor: Element): void {
   const href = anchor.getAttribute('href');
-  if (!href) return;
-  if (!isExternalHttpUrl(href)) return;
+  if (href === null || !isExternalHttpUrl(href)) return;
   anchor.setAttribute('rel', 'noopener noreferrer');
   if (!anchor.hasAttribute('target')) anchor.setAttribute('target', '_blank');
 }

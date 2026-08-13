@@ -6,7 +6,8 @@
  *   - Per-instance event emitter (no singleton).
  *   - Per-instance plugin manager.
  *   - Custom-renderer registration.
- *   - Field-name transforms applied before renderer dispatch.
+ *   - Field-name transforms frozen into revision-bound scheduler entries before
+ *     their later attribute or renderer dispatch.
  *
  * Consumers who want full programmatic control instantiate
  * `LivePreviewClient` directly. Consumers who just want a working
@@ -15,36 +16,36 @@
  * @module @client
  */
 
-import type { FieldRenderer } from '@core/types';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import { EventEmitter } from '@events/emitter';
 import { OriginDetector } from '@detection/origin';
 import { PluginManager } from '@plugins/manager';
+import { RendererRegistry } from '@plugins/renderer-registry';
 import type { LivePreviewPlugin } from '@plugins/types';
 import { isDevMode, isInPreviewContext } from '@detection/environment';
 import { buildBuiltinRenderers } from '@field-types/index';
+import type { FieldType } from '@core/types';
 import type { LivePreviewClientConfig } from './config';
+import { noopDiagnostic, safeConsoleDebug } from '@core/diagnostics';
 
 export class LivePreviewClient {
   readonly #emitter = new EventEmitter();
   readonly #detector: OriginDetector;
-  readonly #renderers: Record<string, FieldRenderer>;
+  readonly #rendererRegistry: RendererRegistry;
   readonly #runtime: LivePreviewRuntime;
   readonly #plugins: PluginManager;
   readonly #log: (...args: unknown[]) => void;
   #started = false;
   #destroyed = false;
+  #destroyPromise: Promise<void> | null = null;
 
   constructor(config: LivePreviewClientConfig = {}) {
     const debug = config.debug ?? isDevMode();
     this.#log = debug
       ? (...args): void => {
-          // eslint-disable-next-line no-console -- opt-in debug channel
-          console.debug('[live-preview]', ...args);
+          safeConsoleDebug('[live-preview]', ...args);
         }
-      : (): void => {
-          /* silent */
-        };
+      : noopDiagnostic;
 
     this.#detector = new OriginDetector({
       ...(config.allowedOrigins !== undefined ? { additionalOrigins: config.allowedOrigins } : {}),
@@ -60,21 +61,28 @@ export class LivePreviewClient {
       this.#log('no trusted origin could be detected — set allowedOrigins or PAYLOAD_ADMIN_ORIGIN');
     }
 
-    const builtin = buildBuiltinRenderers();
-    this.#renderers = { ...builtin };
+    this.#rendererRegistry = new RendererRegistry(buildBuiltinRenderers());
 
     this.#plugins = new PluginManager({
       events: this.#emitter,
       config: Object.freeze({ ...config }),
-      registerFieldRenderer: (renderer) => {
-        this.#renderers[renderer.name] = renderer;
+      registerFieldRenderer: (renderer) => this.#rendererRegistry.register(renderer),
+      onTransformError: (error) => {
+        void this.#emitter.emit('error', { error, context: 'transform' });
       },
       log: this.#log,
     });
 
     this.#runtime = new LivePreviewRuntime({
       ...(config.root !== undefined ? { root: config.root } : {}),
-      renderers: this.#renderers,
+      renderers: this.#rendererRegistry.renderers,
+      resolveRenderer: (fieldType: FieldType) => this.#rendererRegistry.resolve(fieldType),
+      transformValue: (
+        fieldName: string,
+        value: unknown,
+        context: { readonly element: Element; readonly allFields: Record<string, unknown> },
+        isCurrent?: () => boolean,
+      ) => this.#plugins.applyTransforms(fieldName, value, context, isCurrent),
       originMatcher: (origin) => this.#detector.matches(origin),
       readyTargets: this.#detector.enumerate(),
       emitter: this.#emitter,
@@ -118,26 +126,56 @@ export class LivePreviewClient {
   }
 
   /**
-   * Start the runtime. Returns `true` when the runtime actually
-   * started (it may refuse to start outside a preview context).
+   * Start the runtime. Returns `true` when this client is eligible and runtime
+   * startup is active or scheduled for DOM readiness. Repeated calls on an
+   * active client also return `true`; `false` means the client was destroyed or
+   * the page is outside a preview context. A deferred startup can still fail,
+   * roll back, and be retried by a later call.
    */
   start(): boolean {
     if (this.#destroyed) return false;
-    if (this.#started) return true;
+    if (this.#started) {
+      // Normally the runtime is already active and returns false. Calling it is
+      // intentional: a deferred DOM-ready startup can fail after this method has
+      // returned; the runtime then rolls itself back and this call retries it.
+      this.#runtime.start();
+      return true;
+    }
     if (!isInPreviewContext()) return false;
-    this.#started = true;
-    return this.#runtime.start();
+    const started = this.#runtime.start();
+    if (started) this.#started = true;
+    return started;
   }
 
   /**
    * Stop the runtime and tear down every plugin. Idempotent.
    */
-  async destroy(): Promise<void> {
-    if (this.#destroyed) return;
+  destroy(): Promise<void> {
+    if (this.#destroyPromise !== null) return this.#destroyPromise;
     this.#destroyed = true;
-    this.#runtime.destroy();
-    await this.#plugins.destroyAll();
-    this.#emitter.removeAllListeners();
+    let resolveDestroy!: () => void;
+    let rejectDestroy!: (reason: unknown) => void;
+    const inFlight = new Promise<void>((resolve, reject) => {
+      resolveDestroy = resolve;
+      rejectDestroy = reject;
+    });
+    // Publish the shared promise before synchronous runtime teardown. A destroy
+    // event handler may call destroy() re-entrantly and must receive this same
+    // in-flight completion rather than starting or observing a partial teardown.
+    this.#destroyPromise = inFlight;
+    try {
+      this.#runtime.destroy();
+      void this.#plugins
+        .destroyAll()
+        .finally(() => {
+          this.#emitter.removeAllListeners();
+        })
+        .then(resolveDestroy, rejectDestroy);
+    } catch (error) {
+      this.#emitter.removeAllListeners();
+      rejectDestroy(error);
+    }
+    return inFlight;
   }
 
   /**
@@ -148,9 +186,7 @@ export class LivePreviewClient {
     await this.#plugins.register(plugin);
   }
 
-  /**
-   * Unregister a plugin by name.
-   */
+  /** Unregister a plugin and release all resources owned by that registration. */
   async unuse(name: string): Promise<void> {
     await this.#plugins.unregister(name);
   }
