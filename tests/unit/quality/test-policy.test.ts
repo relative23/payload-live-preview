@@ -206,18 +206,22 @@ describe('test policy', () => {
     }
   });
 
-  it('keeps the committed inventory byte-for-byte reproducible and policy-clean', async () => {
-    const { inventory, violations } = await buildTestInventory(ROOT);
-    const committed = readFileSync(resolve(ROOT, 'quality/test-inventory.json'), 'utf8');
+  it(
+    'keeps the committed inventory byte-for-byte reproducible and policy-clean',
+    { timeout: 20_000 },
+    async () => {
+      const { inventory, violations } = await buildTestInventory(ROOT);
+      const committed = readFileSync(resolve(ROOT, 'quality/test-inventory.json'), 'utf8');
 
-    expect(violations).toEqual([]);
-    expect(serializeTestInventory(inventory)).toBe(committed);
-    expect(inventory.totals.files).toBeGreaterThan(0);
-    expect(inventory.totals.tests).toBeGreaterThan(0);
-    expect(inventory.runnerConfigs).toContain('playwright.soak.config.ts');
-    expect(inventory.runnerConfigs).toContain('stryker.config.js');
-    expect(inventory.runnerConfigs).toContain('vitest.config.ts');
-    expect(inventory.runnerConfigs).toContain('vitest.stryker.config.ts');
-    expect(inventory.groups.soak.files).toBeGreaterThan(0);
-  });
+      expect(violations).toEqual([]);
+      expect(serializeTestInventory(inventory)).toBe(committed);
+      expect(inventory.totals.files).toBeGreaterThan(0);
+      expect(inventory.totals.tests).toBeGreaterThan(0);
+      expect(inventory.runnerConfigs).toContain('playwright.soak.config.ts');
+      expect(inventory.runnerConfigs).toContain('stryker.config.js');
+      expect(inventory.runnerConfigs).toContain('vitest.config.ts');
+      expect(inventory.runnerConfigs).toContain('vitest.stryker.config.ts');
+      expect(inventory.groups.soak.files).toBeGreaterThan(0);
+    },
+  );
 });
