@@ -2,12 +2,11 @@
  * Apply `ArrayPatch[]` to a DOM container.
  *
  * The structural applier turns the diff produced by `@schema/diff`
- * into individual DOM operations — `insertBefore`, `removeChild`,
- * `replaceChild`, in-place text update — instead of rebuilding the
- * whole list. The result is:
+ * into individual DOM operations — keyed placement, removal, and root
+ * replacement — instead of rebuilding the whole list. The result is:
  *
  *   - smaller paint area (browsers can keep most nodes alive),
- *   - View-Transitions animate moves automatically,
+ *   - synchronous, lifecycle-attributable DOM updates,
  *   - consumer JS state on existing child elements survives.
  *
  * Each child element is paired with the `id` of its source item via
@@ -18,11 +17,12 @@
  * @module @core/structural-applier
  */
 
-import { escapeHtml } from '@security/escape';
 import { sanitizeHtml } from '@security/sanitizer';
+import { interpolateArrayTemplate } from './array-template';
+import { safeStringify } from '@field-types/utils';
 import { diffArray, type ArrayPatch } from '@schema/diff';
 
-const KEY_ATTRIBUTE = 'data-payload-key';
+export const KEY_ATTRIBUTE = 'data-payload-key';
 const NESTED_KEY_ATTRIBUTE = 'data-payload-nested-key';
 const NESTED_TEMPLATE_ATTRIBUTE = 'data-payload-nested-template';
 
@@ -58,168 +58,271 @@ export interface StructuralApplyOptions {
    * renders of the same runtime so nested arrays diff incrementally.
    */
   readonly store: StructuralStore;
+  /** Re-render existing items even when their data comparison is unchanged. */
+  readonly forceRender?: boolean;
 }
 
 /**
- * Apply patches in a deterministic order: removes first (so indices
- * stay valid), then inserts, then moves, then updates.
+ * Reconcile patches in final-item order. Patch indices describe the `next`
+ * snapshot, while live DOM indices change during moves; resolving keyed nodes
+ * from the DOM before placing each final item avoids mixing those coordinate
+ * systems. `nextItems` is authoritative and any unclaimed direct child is
+ * removed after reconciliation.
  *
- * The applier mutates `container` in place. After the call, the
- * container's children mirror `nextItems`.
+ * The applier mutates `container` in place. After a complete call, the
+ * container's children mirror `nextItems`. It returns `true` for a real DOM
+ * mutation, `false` for an already-current tree, and `null` when required item
+ * markup has no sanitized element root. The latter is preflighted atomically,
+ * so the previous DOM and diff memory stay intact.
  */
-export function applyStructuralPatches(options: StructuralApplyOptions): void {
-  const { template, container, patches, store } = options;
+export function applyStructuralPatches(options: StructuralApplyOptions): boolean | null {
+  const { template, container, patches, nextItems, store, forceRender = false } = options;
+  const plan = prepareStructuralPlan(container, template, patches, nextItems, forceRender, store);
+  if (plan === null) return null;
+  return commitStructuralPlan(plan, store);
+}
+
+// Plans are short-lived internal transaction records. Named tuples keep their
+// positions explicit without emitting repeated object-property names into the
+// inline runtime for every recursive plan node.
+type StructuralPlan = readonly [
+  container: Element,
+  entries: readonly ReconciliationEntry[],
+  nextItems: readonly unknown[],
+];
+type ReconciliationEntry = readonly [
+  index: number,
+  live: Element | null,
+  rendered: Element | undefined,
+  nestedSlots: readonly NestedSlotPlan[],
+];
+type NestedSlotPlan = readonly [
+  live: Element | null,
+  rendered: Element,
+  children: StructuralPlan | undefined,
+];
+
+/**
+ * Materialize the complete recursive replacement tree before mutating live DOM.
+ * Nested template failures therefore abort the same transaction as top-level
+ * failures, while the plan still records which live slots can be transplanted
+ * during commit to retain their DOM identity.
+ */
+function prepareStructuralPlan(
+  container: Element,
+  template: string,
+  patches: readonly ArrayPatch[],
+  nextItems: readonly unknown[],
+  forceRender: boolean,
+  store: StructuralStore,
+): StructuralPlan | null {
+  const patchPlan = createPatchPlan(patches);
+  const memory = store.get(container);
+  const entries = prepareReconciliation(
+    container,
+    template,
+    nextItems,
+    patchPlan,
+    forceRender,
+    memory,
+    store,
+  );
+  if (entries === null) return null;
+  return [container, entries, nextItems];
+}
+
+/** Commit a previously validated recursive plan; no rendering occurs here. */
+function commitStructuralPlan(plan: StructuralPlan, store: StructuralStore): boolean {
+  const [container, entries, nextItems] = plan;
+  const claimed = new Set<Element>();
+  let mutated = false;
+
+  for (const entry of entries) {
+    const [index, live, rendered, nestedSlots] = entry;
+    let node = live;
+
+    if (rendered !== undefined) {
+      for (const nested of nestedSlots) {
+        if (nested[0] !== null) {
+          synchronizeAttributes(nested[0], nested[1]);
+          nested[1].replaceWith(nested[0]);
+        }
+        if (nested[2] !== undefined) {
+          // The recursive plan targets either the transplanted live slot or the
+          // detached new slot, so child identity survives exactly where valid.
+          commitStructuralPlan(nested[2], store);
+        }
+      }
+      if (live !== null) {
+        live.replaceWith(rendered);
+        mutated = true;
+      }
+      node = rendered;
+    }
+
+    // `prepareReconciliation()` materializes every missing node or returns
+    // `null` before this loop, so each entry owns one final child.
+    if (node === null) continue;
+    const before = container.children[index] ?? null;
+    if (node !== before) {
+      container.insertBefore(node, before);
+      mutated = true;
+    }
+    claimed.add(node);
+  }
+
+  // The final snapshot is the source of truth. This also removes SSR children
+  // that were not represented in the first incoming value.
+  for (const child of Array.from(container.children)) {
+    if (!claimed.has(child)) {
+      child.remove();
+      mutated = true;
+    }
+  }
+
   const memory = getMemory(container, store);
+  memory.clear();
+  for (const value of nextItems) rememberItem(memory, value);
+  return mutated;
+}
 
-  // Bucket the patches so we can apply each kind in a safe order.
-  const removes: ArrayPatch[] = [];
-  const inserts: ArrayPatch[] = [];
-  const moves: ArrayPatch[] = [];
-  const updates: ArrayPatch[] = [];
-  const replaces: ArrayPatch[] = [];
+function prepareReconciliation(
+  container: Element,
+  template: string,
+  nextItems: readonly unknown[],
+  plan: PatchPlan,
+  forceRender: boolean,
+  memory: ReadonlyMap<string, unknown> | undefined,
+  store: StructuralStore,
+): readonly ReconciliationEntry[] | null {
+  const initialChildren = Array.from(container.children);
+  const keyedChildren = indexByAttribute(initialChildren, KEY_ATTRIBUTE);
+  const reserved = new Set<Element>();
+  const entries: ReconciliationEntry[] = [];
+
+  for (let index = 0; index < nextItems.length; index += 1) {
+    const value = nextItems[index];
+    const key = readKey(value);
+    let live =
+      key === undefined
+        ? (initialChildren[index] ?? null)
+        : (takeIndexedElement(keyedChildren, key) ?? null);
+    if (live !== null && reserved.has(live)) live = null;
+    if (live !== null) reserved.add(live);
+
+    const replace = plan.replaces.has(index);
+    const needsRender = forceRender || plan.renders.has(index) || live === null;
+    const rendered = needsRender
+      ? renderItem(container.ownerDocument, template, value, index)
+      : undefined;
+    if (rendered === null) return null;
+    const nestedSlots =
+      rendered === undefined
+        ? []
+        : prepareNestedSlots(replace ? null : live, rendered, value, memory, store);
+    if (nestedSlots === null) return null;
+    entries.push([index, live, rendered ?? undefined, nestedSlots]);
+  }
+  return entries;
+}
+
+interface PatchPlan {
+  readonly renders: ReadonlySet<number>;
+  readonly replaces: ReadonlySet<number>;
+}
+
+function createPatchPlan(patches: readonly ArrayPatch[]): PatchPlan {
+  const renders = new Set<number>();
+  const replaces = new Set<number>();
   for (const patch of patches) {
-    if (patch.kind === 'remove') removes.push(patch);
-    else if (patch.kind === 'insert') inserts.push(patch);
-    else if (patch.kind === 'move') moves.push(patch);
-    else if (patch.kind === 'update') updates.push(patch);
-    else replaces.push(patch);
+    if (patch.kind === 'insert' || patch.kind === 'update') renders.add(patch.index);
+    else if (patch.kind === 'replace') {
+      renders.add(patch.index);
+      replaces.add(patch.index);
+    }
   }
-
-  // Removes first — apply in descending index so earlier indices stay valid.
-  removes.sort((a, b) => indexOf(b) - indexOf(a));
-  for (const patch of removes) {
-    if (patch.kind !== 'remove') continue;
-    const node = container.children[patch.index];
-    node?.remove();
-    forgetItem(memory, patch.value);
-  }
-
-  // Replaces and updates touch existing nodes — index now refers to
-  // the post-remove list, which is what `next` reports.
-  for (const patch of replaces) {
-    if (patch.kind !== 'replace') continue;
-    const node = container.children[patch.index];
-    const replacement = renderItem(template, patch.value, patch.index);
-    if (!node || !replacement) continue;
-    // Block-type changed — nested DOM has a different shape, so we
-    // populate the new item's slots from scratch instead of transplanting.
-    populateNestedSlots(replacement, patch.value, store);
-    container.replaceChild(replacement, node);
-    rememberItem(memory, patch.value);
-  }
-  for (const patch of updates) {
-    if (patch.kind !== 'update') continue;
-    const oldNode = container.children[patch.index];
-    const newNode = renderItem(template, patch.value, patch.index);
-    if (!oldNode || !newNode) continue;
-    reconcileNestedSlots(oldNode, newNode, patch.value, memory, store);
-    container.replaceChild(newNode, oldNode);
-    rememberItem(memory, patch.value);
-  }
-
-  // Inserts: apply in ascending order so later indices stay valid.
-  inserts.sort((a, b) => indexOf(a) - indexOf(b));
-  for (const patch of inserts) {
-    if (patch.kind !== 'insert') continue;
-    const before = container.children[patch.index] ?? null;
-    const node = renderItem(template, patch.value, patch.index);
-    if (!node) continue;
-    populateNestedSlots(node, patch.value, store);
-    container.insertBefore(node, before);
-    rememberItem(memory, patch.value);
-  }
-
-  // Moves last — by this point only the original nodes that didn't get
-  // replaced/removed are still in the DOM, so the `from` index is now
-  // shifted by earlier removes/inserts. We rely on `data-payload-key`
-  // to relocate the node reliably.
-  for (const patch of moves) {
-    if (patch.kind !== 'move') continue;
-    const key = readKey(patch.value);
-    const node = key !== undefined ? findByKey(container, key) : null;
-    if (!node) continue;
-    const before = container.children[patch.to] ?? null;
-    if (node === before) continue;
-    container.insertBefore(node, before);
-  }
+  return { renders, replaces };
 }
 
 /**
- * Walk every nested-array slot inside a freshly-rendered item and
- * populate its initial children. Called on `insert` and `replace`
- * (where the slot starts empty in the new DOM).
- *
- * A nested slot is any descendant element carrying both
- * `data-payload-nested-key` (which property of the item value holds
- * the nested array) and `data-payload-nested-template` (the inner
- * template for each nested child).
+ * Prepare each direct nested slot. Compatible live slots are recorded for a
+ * later transplant; new/replaced slots are populated entirely off-DOM. A
+ * failure at any depth propagates before commit starts.
  */
-function populateNestedSlots(item: Element, value: unknown, store: StructuralStore): void {
-  const slots = item.querySelectorAll(`[${NESTED_KEY_ATTRIBUTE}]`);
-  for (const slot of Array.from(slots)) {
-    const key = slot.getAttribute(NESTED_KEY_ATTRIBUTE);
-    if (key === null) continue;
-    const nestedTemplate = slot.getAttribute(NESTED_TEMPLATE_ATTRIBUTE);
-    if (!nestedTemplate) continue;
-    const nestedItems = readNestedArray(value, key);
-    if (nestedItems === undefined) continue;
-    const patches = diffArray([], nestedItems);
-    if (patches.length === 0) continue;
-    applyStructuralPatches({
-      template: nestedTemplate,
-      container: slot,
-      patches,
-      nextItems: nestedItems,
-      store,
-    });
-  }
-}
-
-/**
- * Update path — preserve nested-slot DOM identity across an item
- * update. The freshly-rendered `newItem` has empty nested slots; we
- * transplant the corresponding live slots from `oldItem` into it and
- * then recursively diff each one against the previous nested value.
- *
- * This is the heart of B5: a label change on an outer card no longer
- * blows away the inner CTA list, and a CTA reorder no longer rebuilds
- * its parent card.
- */
-function reconcileNestedSlots(
-  oldItem: Element,
+function prepareNestedSlots(
+  oldItem: Element | null,
   newItem: Element,
   nextValue: unknown,
-  memory: Map<string, unknown>,
+  memory: ReadonlyMap<string, unknown> | undefined,
   store: StructuralStore,
-): void {
-  const oldSlots = oldItem.querySelectorAll(`[${NESTED_KEY_ATTRIBUTE}]`);
-  if (oldSlots.length === 0) return;
+): readonly NestedSlotPlan[] | null {
+  const oldSlots = oldItem === null ? [] : findDirectNestedSlots(oldItem);
+  const oldSlotsByKey = indexByAttribute(oldSlots, NESTED_KEY_ATTRIBUTE);
   const itemKey = readKey(nextValue);
-  const prevValue = itemKey !== undefined ? memory.get(itemKey) : undefined;
-  for (const oldSlot of Array.from(oldSlots)) {
-    const key = oldSlot.getAttribute(NESTED_KEY_ATTRIBUTE);
+  const prevValue = itemKey !== undefined ? memory?.get(itemKey) : undefined;
+  const plans: NestedSlotPlan[] = [];
+  for (const newSlot of findDirectNestedSlots(newItem)) {
+    const key = newSlot.getAttribute(NESTED_KEY_ATTRIBUTE);
     if (key === null) continue;
-    const newSlot = newItem.querySelector(`[${NESTED_KEY_ATTRIBUTE}="${cssEscape(key)}"]`);
-    if (!newSlot) continue;
-    // Transplant the live slot into the new item — its children carry
-    // any state (focus, animations, plugin bindings) that we want to
-    // preserve.
-    newSlot.replaceWith(oldSlot);
-    const nestedTemplate =
-      oldSlot.getAttribute(NESTED_TEMPLATE_ATTRIBUTE) ??
-      newSlot.getAttribute(NESTED_TEMPLATE_ATTRIBUTE);
-    if (!nestedTemplate) continue;
-    const nextNested = readNestedArray(nextValue, key) ?? [];
-    const prevNested = readNestedArray(prevValue, key) ?? [];
-    const patches = diffArray(prevNested, nextNested);
-    if (patches.length === 0) continue;
-    applyStructuralPatches({
-      template: nestedTemplate,
-      container: oldSlot,
-      patches,
-      nextItems: nextNested,
-      store,
-    });
+    const oldSlot = takeIndexedElement(oldSlotsByKey, key) ?? null;
+    const nextTemplate = newSlot.getAttribute(NESTED_TEMPLATE_ATTRIBUTE);
+    // A slot without a usable nested template is no longer owned by recursive
+    // reconciliation. Keep its fully preflighted static subtree authoritative
+    // instead of transplanting stale children from the former managed slot.
+    const liveSlot = nextTemplate ? oldSlot : null;
+    const previousTemplate = liveSlot?.getAttribute(NESTED_TEMPLATE_ATTRIBUTE) ?? null;
+    let children: StructuralPlan | undefined;
+    if (nextTemplate) {
+      const nextNested = readNestedArray(nextValue, key);
+      if (nextNested !== undefined || liveSlot !== null) {
+        const resolvedNext = nextNested ?? [];
+        const prevNested = liveSlot === null ? [] : (readNestedArray(prevValue, key) ?? []);
+        const patches = diffArray(prevNested, resolvedNext);
+        const templateChanged = liveSlot !== null && previousTemplate !== nextTemplate;
+        if (patches.length > 0 || templateChanged) {
+          children =
+            prepareStructuralPlan(
+              liveSlot ?? newSlot,
+              nextTemplate,
+              patches,
+              resolvedNext,
+              templateChanged,
+              store,
+            ) ?? undefined;
+          if (children === undefined) return null;
+        }
+      }
+    }
+    plans.push([liveSlot, newSlot, children]);
+  }
+  return plans;
+}
+
+/**
+ * Return only this item's outermost nested slots. A transplanted slot owns the
+ * recursion below it; visiting its descendants again from the parent would
+ * reconcile detached template nodes and create a second source of truth.
+ */
+function findDirectNestedSlots(item: Element): readonly Element[] {
+  return Array.from(item.querySelectorAll(`[${NESTED_KEY_ATTRIBUTE}]`)).filter((slot) => {
+    let ancestor = slot.parentElement;
+    while (ancestor !== null && ancestor !== item) {
+      if (ancestor.hasAttribute(NESTED_KEY_ATTRIBUTE)) return false;
+      ancestor = ancestor.parentElement;
+    }
+    return ancestor === item;
+  });
+}
+
+/** Copy new sanitized slot metadata without replacing its live child subtree. */
+function synchronizeAttributes(target: Element, source: Element): void {
+  for (const attribute of Array.from(target.attributes)) {
+    if (!source.hasAttribute(attribute.name)) target.removeAttribute(attribute.name);
+  }
+  for (const attribute of Array.from(source.attributes)) {
+    if (target.getAttribute(attribute.name) !== attribute.value) {
+      target.setAttribute(attribute.name, attribute.value);
+    }
   }
 }
 
@@ -245,17 +348,6 @@ function rememberItem(memory: Map<string, unknown>, value: unknown): void {
   memory.set(key, value);
 }
 
-function forgetItem(memory: Map<string, unknown>, value: unknown): void {
-  const key = readKey(value);
-  if (key === undefined) return;
-  memory.delete(key);
-}
-
-function indexOf(patch: ArrayPatch): number {
-  if (patch.kind === 'move') return patch.to;
-  return patch.index;
-}
-
 function readKey(value: unknown): string | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
   const id = (value as Record<string, unknown>)['id'];
@@ -263,15 +355,24 @@ function readKey(value: unknown): string | undefined {
   return undefined;
 }
 
-function findByKey(container: Element, key: string): Element | null {
-  return container.querySelector(`[${KEY_ATTRIBUTE}="${cssEscape(key)}"]`);
+function indexByAttribute(elements: readonly Element[], attribute: string): Map<string, Element[]> {
+  const indexed = new Map<string, Element[]>();
+  // Reverse insertion lets pop() consume duplicate keys in DOM order without
+  // the O(n) shifting cost of queue arrays.
+  for (let index = elements.length - 1; index >= 0; index -= 1) {
+    const element = elements[index];
+    if (element === undefined) continue;
+    const key = element.getAttribute(attribute);
+    if (key === null) continue;
+    const bucket = indexed.get(key);
+    if (bucket === undefined) indexed.set(key, [element]);
+    else bucket.push(element);
+  }
+  return indexed;
 }
 
-function cssEscape(value: string): string {
-  // jsdom does not expose CSS.escape in older versions; fall through.
-  const css = (globalThis as { CSS?: { escape?: (input: string) => string } }).CSS;
-  if (css?.escape) return css.escape(value);
-  return value.replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+function takeIndexedElement(indexed: Map<string, Element[]>, key: string): Element | undefined {
+  return indexed.get(key)?.pop();
 }
 
 /**
@@ -282,11 +383,15 @@ function cssEscape(value: string): string {
  * elsewhere — and parsed via `<template>` so we get a real Element
  * back instead of a string concatenation.
  */
-function renderItem(template: string, value: unknown, index: number): Element | null {
-  if (typeof document === 'undefined') return null;
+function renderItem(
+  ownerDocument: Document,
+  template: string,
+  value: unknown,
+  index: number,
+): Element | null {
   const filled = fillTemplate(template, value, index);
   const safe = sanitizeHtml(filled);
-  const host = document.createElement('template');
+  const host = ownerDocument.createElement('template');
   host.innerHTML = safe;
   const first = host.content.firstElementChild;
   if (!first) return null;
@@ -296,33 +401,5 @@ function renderItem(template: string, value: unknown, index: number): Element | 
 }
 
 function fillTemplate(template: string, value: unknown, index: number): string {
-  let out = template;
-  if (typeof value === 'object' && value !== null) {
-    for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
-      const pattern = new RegExp(`\\{\\{${escapeRegex(key)}\\}\\}`, 'g');
-      // Function replacement: a literal `$&`/`$'` in the field value
-      // must not trigger String.replace's substitution patterns.
-      const replacement = escapeHtml(stringifyForTemplate(raw));
-      out = out.replace(pattern, () => replacement);
-    }
-  } else {
-    const replacement = escapeHtml(stringifyForTemplate(value));
-    out = out.replace(/\{\{value\}\}/g, () => replacement);
-  }
-  return out.replace(/\{\{index\}\}/g, String(index));
+  return interpolateArrayTemplate(template, value, index, safeStringify);
 }
-
-function stringifyForTemplate(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
-    return String(value);
-  }
-  return JSON.stringify(value);
-}
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-export { KEY_ATTRIBUTE };

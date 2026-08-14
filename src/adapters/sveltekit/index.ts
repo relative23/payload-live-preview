@@ -14,6 +14,12 @@
  * For projects that already use `sequence(...)`, compose the returned
  * handle with the others; it never short-circuits the chain.
  *
+ * The built-in signals detect preview intent only. They do not
+ * authenticate the request. Place application-owned server
+ * authorization around this handle and invoke it only after success
+ * when draft data, credentials, private cache policy, CSP changes, or
+ * runtime injection are gated.
+ *
  * @module @adapters/sveltekit
  */
 
@@ -36,14 +42,19 @@ export interface LivePreviewSvelteKitOptions {
   readonly mergeDepth?: number;
   readonly autoInject?: boolean;
   /**
-   * `'preview-only'` (default) — inject only into responses that look
-   * like preview requests. `'always'` — every HTML response.
+   * `'preview-only'` (default) — inject only into responses carrying
+   * preview intent. The signals are client-controlled and do not
+   * authorize access. `'always'` — every HTML response.
    */
   readonly inject?: 'preview-only' | 'always';
-  /** Query params that mark a preview request. Default `['preview', 'draft', 'livePreview']`. */
+  /** Query params that signal preview intent. Default `['preview', 'draft', 'livePreview']`. */
   readonly previewQueryParams?: readonly string[];
-  /** Which signals count as a preview request. Default: query, fetch-dest, referer. */
+  /** Which signals count as preview intent. Default: query, fetch-dest, referer. */
   readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
+  /**
+   * Synchronous route/content filter for script injection only. It is
+   * not authentication and does not suppress CSP handling.
+   */
   readonly shouldInject?: (request: Request) => boolean;
   /**
    * CSP management: `'frame-ancestors'` (default) merges only the
@@ -82,9 +93,14 @@ const HEAD_INSERT = /<head(\s[^>]*)?>/i;
  *
  *   1. Generates a CSP nonce and writes it to `event.locals.livePreviewNonce`
  *      so consumer-rendered scripts can read it from the load function.
- *   2. On preview requests, uses `resolve(..., { transformPageChunk })`
+ *   2. On requests carrying preview intent, uses
+ *      `resolve(..., { transformPageChunk })`
  *      to inject the script into the `<head>` of the HTML response.
- *   3. Merges the `Content-Security-Policy` header on preview responses.
+ *   3. Merges the `Content-Security-Policy` header on those responses.
+ *
+ * Call this handle only after application-owned authorization when
+ * those response mutations are privileged. `shouldInject` is not an
+ * authorization boundary and does not disable CSP handling.
  */
 export function livePreviewHandle(options: LivePreviewSvelteKitOptions = {}): SvelteKitHandle {
   let cachedScriptBody: string | undefined;

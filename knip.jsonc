@@ -1,0 +1,56 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  // Public/package entries, executable maintenance commands and test runners.
+  // Keeping this list explicit means a newly orphaned script is reported.
+  "entry": [
+    "src/index.ts",
+    "src/core-entry.ts",
+    // Intentional source-level barrels used by path-alias consumers and
+    // maintainer tooling even though the package manifest exposes dedicated
+    // compiled entries instead of these exact source files.
+    "src/core/index.ts",
+    "src/inline/index.ts",
+    "src/codegen/index.ts",
+    "src/codegen/cli.ts",
+    "src/codegen/astro-plugin.ts",
+    "src/payload/index.ts",
+    "src/adapters/astro/index.ts",
+    "src/adapters/astro/middleware-entry.ts",
+    "src/adapters/nextjs/index.ts",
+    "src/adapters/nuxt/index.ts",
+    "src/adapters/sveltekit/index.ts",
+    "scripts/api-contracts.ts",
+    "tests/**/*.{test,spec,bench}.ts",
+    "*.config.ts",
+  ],
+  // Analyze the complete maintained TS/JS surface. Build output, fixtures and
+  // mutation sandboxes are deliberately outside the project instead of hiding
+  // any production src subtree.
+  "project": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "*.config.ts"],
+  // Cycles and layer direction belong to scripts/architecture-policy.ts. Knip
+  // remains responsible for dead files/exports and dependency drift.
+  "include": ["files", "dependencies", "unlisted", "unresolved", "exports", "types", "duplicates"],
+  "includeEntryExports": false,
+  // Do not flag a symbol merely because it is exported in addition to being
+  // used by its own module (common for registry constants and data shapes).
+  "ignoreExportsUsedInFile": true,
+  // CLI-resolved tools are invoked through scripts/check-package.ts without a
+  // static package import. Keep only those exact dynamic binaries exempt.
+  "ignoreDependencies": ["@arethetypeswrong/cli", "publint"],
+  // Internal registry constants and helpers intentionally export for tests and
+  // source-barrel compatibility. Public/package exports remain entry points and
+  // therefore are not globally ignored.
+  "ignoreIssues": {
+    "scripts/release-contracts.ts": ["exports"],
+    "src/core/runtime.ts": ["exports"],
+    "src/detection/index.ts": ["exports", "types"],
+    "src/lexical/blocks/registry.ts": ["exports"],
+    "src/lexical/index.ts": ["exports", "types"],
+    "src/lexical/registry.ts": ["exports"],
+    "src/plugins/index.ts": ["exports", "types"],
+    "src/schema/index.ts": ["exports", "types"],
+    "src/security/index.ts": ["exports", "types"],
+    "src/plugins/types.ts": ["types"],
+    "src/types/payload-protocol.ts": ["types"],
+  },
+}

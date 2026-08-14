@@ -33,6 +33,61 @@ describe('structural-array renderer', () => {
     expect([...ul.children].map((el) => el.textContent)).toEqual(['a', 'b']);
   });
 
+  it('reconciles an SSR-seeded container on the first update without duplicating children', () => {
+    const isolatedRenderer = buildBuiltinRenderers()['structural-array']!;
+    const ul = document.createElement('ul');
+    ul.innerHTML =
+      '<li data-payload-key="1">server a</li>' + '<li data-payload-key="2">server b</li>';
+
+    isolatedRenderer.render(
+      target(ul, template),
+      [
+        { id: 1, label: 'client a' },
+        { id: 2, label: 'client b' },
+      ],
+      ctx(),
+    );
+
+    expect([...ul.children].map((el) => el.textContent)).toEqual(['client a', 'client b']);
+  });
+
+  it('re-renders unchanged data when the observed item template changes', () => {
+    const isolatedRenderer = buildBuiltinRenderers()['structural-array']!;
+    const ul = document.createElement('ul');
+    const items = [{ id: 1, label: 'same value' }];
+
+    isolatedRenderer.render(target(ul, '<li class="before">{{label}}</li>'), items, ctx());
+    isolatedRenderer.render(
+      target(ul, '<li class="after">{{label}}</li>'),
+      [{ id: 1, label: 'same value' }],
+      ctx(),
+    );
+
+    expect(ul.firstElementChild?.className).toBe('after');
+    expect(ul.firstElementChild?.textContent).toBe('same value');
+  });
+
+  it('applies synchronously without delegating authoritative DOM work to View Transitions', () => {
+    let capturedWork: (() => void) | undefined;
+    const startViewTransition = vi.fn((work: () => void) => {
+      capturedWork = work;
+      return { finished: Promise.resolve() };
+    });
+    Reflect.set(document, 'startViewTransition', startViewTransition);
+    const isolatedRenderer = buildBuiltinRenderers()['structural-array']!;
+    const ul = document.createElement('ul');
+
+    try {
+      isolatedRenderer.render(target(ul, template), [{ id: 1, label: 'synchronous' }], ctx());
+
+      expect(ul.textContent).toBe('synchronous');
+      expect(startViewTransition).not.toHaveBeenCalled();
+      expect(capturedWork).toBeUndefined();
+    } finally {
+      Reflect.deleteProperty(document, 'startViewTransition');
+    }
+  });
+
   it('keeps existing DOM nodes across reorders', () => {
     const ul = document.createElement('ul');
     const items = [
@@ -76,6 +131,23 @@ describe('structural-array renderer', () => {
     renderer.render(noTemplate, [{ id: 3, label: 'c' }], ctx());
     expect(warn).toHaveBeenCalledOnce();
     expect(warn.mock.calls[0]?.[0]).toMatch(/data-payload-array-template/);
+    warn.mockRestore();
+  });
+
+  it('keeps rendering isolated when the console warning channel throws', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      throw new Error('hostile console');
+    });
+    const ul = document.createElement('ul');
+
+    expect(() => {
+      renderer.render(
+        { element: ul, fieldName: 'items', fieldType: 'structural-array' },
+        [{ id: 1, label: 'a' }],
+        ctx(),
+      );
+    }).not.toThrow();
+    expect(warn).toHaveBeenCalledOnce();
     warn.mockRestore();
   });
 

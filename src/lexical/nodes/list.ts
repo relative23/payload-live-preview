@@ -10,7 +10,7 @@
  */
 
 import { escapeHtml } from '@security/escape';
-import { register, type NodeRenderer } from '../registry';
+import type { NodeRenderer } from '../registry';
 import { dirAttribute, styleAttribute } from '../utils';
 
 const listRenderer: NodeRenderer = (node, ctx): string => {
@@ -35,8 +35,5 @@ const listItemRenderer: NodeRenderer = (node, ctx): string => {
     typeof node['value'] === 'number' ? ` value="${escapeHtml(String(node['value']))}"` : '';
   return `<li${dirAttribute(node)}${styleAttribute(node)}${valueAttr}>${children}</li>`;
 };
-
-register('list', listRenderer);
-register('listitem', listItemRenderer);
 
 export { listRenderer, listItemRenderer };

@@ -194,6 +194,32 @@ describe('buildScriptSrcWithNonce', () => {
 });
 
 describe('mergeCspHeader', () => {
+  it.each([
+    ['horizontal tab', '\t'],
+    ['line feed', '\n'],
+    ['form feed', '\f'],
+    ['carriage return', '\r'],
+    ['space', ' '],
+  ])('recognises %s as CSP ASCII whitespace', (_name, whitespace) => {
+    const merged = mergeCspHeader(
+      `default-src${whitespace}'self'${whitespace}https://cdn.example.com`,
+      {
+        'default-src': 'https://assets.example.com',
+      },
+    );
+
+    expect(merged).toBe("default-src 'self' https://cdn.example.com https://assets.example.com");
+  });
+
+  it.each([
+    ['vertical tab', '\v'],
+    ['non-breaking space', '\u00a0'],
+  ])('does not treat %s as CSP ASCII whitespace', (_name, whitespace) => {
+    const merged = mergeCspHeader(`script-src${whitespace}*; script-src 'none'`, {});
+
+    expect(merged).toBe(`script-src${whitespace}*; script-src 'none'`);
+  });
+
   it('unions sources into an existing directive instead of replacing it', () => {
     const merged = mergeCspHeader("script-src 'self' https://cdn.example.com", {
       'script-src': "'nonce-abc'",
@@ -229,5 +255,28 @@ describe('mergeCspHeader', () => {
       'frame-ancestors': "'self' https://a.example",
     });
     expect(merged).toBe("frame-ancestors 'self' https://a.example");
+  });
+
+  it('keeps the first case-insensitive directive and ignores later duplicates', () => {
+    const merged = mergeCspHeader("script-src 'self'; SCRIPT-SRC https://ignored.example.com", {
+      'script-src': "'nonce-abc'",
+    });
+
+    expect(merged).toBe("script-src 'self' 'nonce-abc'");
+  });
+
+  it('uses ASCII-only lowercasing for directive names', () => {
+    const merged = mergeCspHeader("worKer-src *; worker-src 'none'", {});
+
+    expect(merged).toBe("worKer-src *; worker-src 'none'");
+  });
+
+  it('preserves a first naked directive instead of accepting a later relaxation', () => {
+    const merged = mergeCspHeader(
+      'sandbox; SANDBOX allow-scripts allow-same-origin; upgrade-insecure-requests',
+      {},
+    );
+
+    expect(merged).toBe('sandbox; upgrade-insecure-requests');
   });
 });

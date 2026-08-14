@@ -1,0 +1,15 @@
+import { bind, type FieldRenderer, type LivePreviewClient } from 'payload-live-preview';
+import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+
+declare const client: LivePreviewClient;
+
+// @ts-expect-error -- CommonJS consumers get the same closed event map
+client.events.on('unknown-event', () => undefined);
+// @ts-expect-error -- CommonJS consumers get the same schema-aware binding contract
+bind<{ title: string }>('subtitle');
+// @ts-expect-error -- CommonJS consumers get the same closed renderer union
+const invalidRenderer: FieldRenderer = { name: 'custom-field', render: () => undefined };
+// @ts-expect-error -- baseUrl remains a string in the require declaration surface
+buildLivePreviewUrl({ baseUrl: 123 });
+
+void invalidRenderer;

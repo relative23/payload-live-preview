@@ -1,15 +1,21 @@
 /**
- * Server-side preview-request detection.
+ * Server-side preview-intent detection.
  *
  * The live-preview runtime only ever activates inside the Payload
- * admin's iframe, but the *server* still has to decide whether to
- * inject the (sizeable) inline script into a given HTML response.
- * Injecting it into every page for every visitor buffers every
- * response and ships dead bytes to production traffic — so adapters
- * gate injection on this predicate by default, and consumers with
- * hand-rolled middleware can import it directly.
+ * admin's iframe, but the *server* still has to decide whether a
+ * request expresses preview intent before doing optional preview
+ * work. Adapters use this predicate as a delivery optimisation, and
+ * consumers with hand-rolled middleware can import it directly.
  *
- * A request counts as a preview when any of these hold:
+ * IMPORTANT: every signal inspected here is controlled or triggerable
+ * by the client. A positive result is never proof of identity,
+ * authentication, or permission to read drafts. Before forwarding
+ * credentials, fetching draft data, bypassing caches, changing CSP,
+ * or injecting the runtime, verify the request with an application-
+ * owned server session or a short-lived signed authorization. Use the
+ * same verified decision for all of those effects.
+ *
+ * Preview intent is present when any of these hold:
  *
  *   1. A preview query parameter is present (`?preview=true`,
  *      `?draft=true`, `?livePreview=true` — configurable).
@@ -27,26 +33,26 @@ export type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
 
 export interface PreviewRequestOptions {
   /**
-   * Which signals count as "this is a preview request". Default: all
-   * three. High-security setups that must never relax framing headers
-   * for unsolicited iframe loads can restrict to `['query']` — then
-   * only an explicit `?preview=true` (e.g. from `buildLivePreviewUrl`)
-   * activates preview handling.
+   * Which signals count as preview intent. Default: all three.
+   * Restricting this to `['query']` reduces accidental activation, but
+   * an explicit `?preview=true` is still client-controlled and must not
+   * authorize response changes or privileged data access by itself.
    */
   readonly signals?: readonly PreviewSignal[];
   /**
-   * Query parameters (with values `true` or `1`) that mark a request
-   * as a preview. Default: `['preview', 'draft', 'livePreview']`.
+   * Query parameters (with values `true` or `1`) that signal preview
+   * intent. Default: `['preview', 'draft', 'livePreview']`.
    */
   readonly queryParams?: readonly string[];
   /**
-   * Treat `Sec-Fetch-Dest: iframe` as a preview signal. Default `true`.
+   * Treat `Sec-Fetch-Dest: iframe` as a preview-intent signal. Default `true`.
    * Legacy alias for excluding `'fetch-dest'` from `signals`.
    */
   readonly checkFetchDest?: boolean;
   /**
-   * Admin origins whose `Referer` marks a request as a preview,
-   * e.g. `['https://cms.example.com']`.
+   * Admin origins whose `Referer` signals preview intent, e.g.
+   * `['https://cms.example.com']`. Referer matching is not HTTP-request
+   * authentication.
    */
   readonly adminOrigins?: readonly string[];
 }
@@ -64,8 +70,9 @@ export interface PreviewRequestLike {
 }
 
 /**
- * Decide whether `request` is a live-preview request. See the module
- * docblock for the exact signals.
+ * Detect whether `request` carries live-preview intent. See the module
+ * docblock for the exact signals and the required authorization
+ * boundary. This compatibility name does not imply authentication.
  */
 export function isPreviewRequest(
   request: PreviewRequestLike,

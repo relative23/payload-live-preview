@@ -20,13 +20,12 @@
  */
 
 import type {
-  PayloadDocumentEventMessage,
   PayloadFieldSchema,
   PayloadLivePreviewData,
   PayloadLivePreviewMessage,
 } from '@/types/payload-protocol';
 import type { EventEmitter } from '@events/emitter';
-import type { OriginMatcher } from './message-bus';
+import type { MessageRevision, OriginMatcher } from './message-bus';
 import type { CachedElement, FieldRenderer, FieldType, RenderContext } from './types';
 import { ElementCache } from './cache';
 import { ObserverManager } from './observers';
@@ -35,7 +34,11 @@ import { ConnectionState, HeartbeatTimer } from './state';
 import { DataMerger } from './data-merger';
 import { applyAttributeBinding } from './attribute-binding';
 import { UpdateScheduler, type FlushStats, type ScheduledUpdate } from './update-scheduler';
+import { observeThenableResult } from './thenable';
+import { resolveFieldValue } from './field-value';
 import { A11yAnnouncer } from './a11y';
+import { isolateDiagnostic, noopDiagnostic, safeConsoleWarn } from './diagnostics';
+import { markNoWriteCallback, rendererUsesNoWriteOutcome } from './internal-outcome';
 import {
   buildSchemaIndex,
   lookupSchema,
@@ -55,6 +58,24 @@ export interface RuntimeOptions {
   readonly root?: Document | Element;
   /** Map from field type to renderer. */
   readonly renderers: Readonly<Record<string, FieldRenderer>>;
+  /** Resolve the currently active renderer layer for a field type. */
+  readonly resolveRenderer?: (fieldType: FieldType) => FieldRenderer | undefined;
+  /**
+   * Transform a merged field value while preparing its per-binding scheduler
+   * entry. The result is frozen for debounce/replay, then passes through all
+   * downstream attribute or renderer security validation. `allFields` remains
+   * the untransformed revision snapshot.
+   */
+  readonly transformValue?: (
+    fieldName: string,
+    value: unknown,
+    context: {
+      readonly element: Element;
+      readonly allFields: Record<string, unknown>;
+    },
+    /** Stops a transform chain if synchronous re-entry supersedes this revision. */
+    isCurrent?: () => boolean,
+  ) => unknown;
   /** Origin matcher for incoming messages. */
   readonly originMatcher: OriginMatcher;
   /** Origins to broadcast `ready` to during the handshake. */
@@ -72,9 +93,11 @@ export interface RuntimeOptions {
   /** Cache-size threshold above which off-screen updates are queued for replay. Default 50. */
   readonly visibilityGateThreshold?: number;
   /**
-   * Mount an `aria-live` region and announce connect/update/disconnect
-   * to assistive technology. Default `true`. Set `false` for runtimes
-   * that already provide their own screen-reader announcements.
+   * Mount an `aria-live` region and announce connections, applied updates,
+   * and heartbeat-timeout disconnects while the runtime remains mounted.
+   * Destroy releases the region synchronously and does not promise a final
+   * audible announcement. Default `true`. Set `false` for runtimes that
+   * already provide their own screen-reader announcements.
    */
   readonly enableA11y?: boolean;
   /**
@@ -136,52 +159,109 @@ export interface RuntimeOptions {
   readonly warn?: (...args: unknown[]) => void;
 }
 
-export class LivePreviewRuntime {
-  readonly #emitter: EventEmitter;
-  readonly #cache: ElementCache;
-  readonly #observers: ObserverManager;
-  readonly #scheduler: UpdateScheduler;
-  readonly #bus: MessageBus;
-  readonly #state: ConnectionState;
-  readonly #heartbeat: HeartbeatTimer;
-  readonly #renderers: Readonly<Record<string, FieldRenderer>>;
-  readonly #root: Document | Element;
-  readonly #readyTargets: readonly string[];
-  readonly #sendReady: (origins: readonly string[]) => void;
-  readonly #onHeartbeatTimeoutHook: (() => void) | undefined;
-  readonly #log: (...args: unknown[]) => void;
-  readonly #warn: (...args: unknown[]) => void;
-  readonly #readyTimers: ReturnType<typeof setTimeout>[] = [];
-  readonly #a11y: A11yAnnouncer | null;
-  readonly #merger: DataMerger | null;
+interface UpdateTransaction {
+  readonly identity: MessageRevision;
+  readonly message: PayloadLivePreviewMessage;
+  readonly locale: string | undefined;
+  readonly schema: readonly PayloadFieldSchema[] | undefined;
+  readonly schemaIndex: SchemaIndex | undefined;
+  cancelled: boolean;
+}
 
-  #currentLocale: string | undefined;
-  #currentSchema: readonly PayloadFieldSchema[] | undefined;
-  #schemaIndex: SchemaIndex | undefined;
-  #protocolNegotiation: ProtocolNegotiation = negotiateProtocol(undefined);
-  #started = false;
-  #deferredStart: (() => void) | null = null;
-  #updateCount = 0;
+const enum RuntimeDependencySlot {
+  Emitter,
+  Cache,
+  Observers,
+  Scheduler,
+  Bus,
+  ConnectionState,
+  Heartbeat,
+  Renderers,
+  ResolveRenderer,
+  TransformValue,
+  Root,
+  ReadyTargets,
+  SendReady,
+  HeartbeatTimeoutHook,
+  Log,
+  Warn,
+  ReadyTimers,
+  A11y,
+  Merger,
+}
+
+/** Stable object/function references owned for the complete runtime lifetime. */
+type RuntimeDependencies = readonly [
+  emitter: EventEmitter,
+  cache: ElementCache,
+  observers: ObserverManager,
+  scheduler: UpdateScheduler,
+  bus: MessageBus,
+  connectionState: ConnectionState,
+  heartbeat: HeartbeatTimer,
+  renderers: Readonly<Record<string, FieldRenderer>>,
+  resolveRenderer: NonNullable<RuntimeOptions['resolveRenderer']>,
+  transformValue: RuntimeOptions['transformValue'],
+  root: Document | Element,
+  readyTargets: readonly string[],
+  sendReady: (origins: readonly string[]) => void,
+  heartbeatTimeoutHook: RuntimeOptions['onHeartbeatTimeout'],
+  log: (...args: unknown[]) => void,
+  warn: (...args: unknown[]) => void,
+  readyTimers: ReturnType<typeof setTimeout>[],
+  a11y: A11yAnnouncer | null,
+  merger: DataMerger | null,
+];
+
+const enum RuntimeLifecycleSlot {
+  CurrentLocale,
+  CurrentSchema,
+  SchemaIndex,
+  ProtocolNegotiation,
+  Started,
+  DeferredStart,
+  UpdateCount,
+  ActiveUpdate,
+  WarnedOrphanFields,
+}
+
+/** State that changes as the runtime starts, accepts revisions, and stops. */
+type RuntimeLifecycleState = [
+  currentLocale: string | undefined,
+  currentSchema: readonly PayloadFieldSchema[] | undefined,
+  schemaIndex: SchemaIndex | undefined,
+  protocolNegotiation: ProtocolNegotiation,
+  started: boolean,
+  deferredStart: (() => void) | null,
+  updateCount: number,
+  activeUpdate: UpdateTransaction | null,
+  warnedOrphanFields: Set<string>,
+];
+
+export class LivePreviewRuntime {
   /**
-   * Field names we've already warned about as "orphan updates" — updates
-   * arrived for them but no `[data-payload-field=…]` anchor exists.
-   * Set-membership prevents the diagnostic from spamming the console
-   * during continuous editing.
+   * Consolidating internal storage avoids ES2020 private-field WeakMaps in the
+   * inline build. Stable dependencies and mutable lifecycle state stay in
+   * separate named tuples so ownership and mutation boundaries remain explicit.
+   * This runtime class is not exported by a package entry.
    */
-  readonly #warnedOrphanFields = new Set<string>();
+  private readonly d: RuntimeDependencies;
+  private readonly l: RuntimeLifecycleState;
 
   constructor(options: RuntimeOptions) {
-    this.#emitter = options.emitter;
-    this.#renderers = options.renderers;
-    this.#root =
+    const emitter = options.emitter;
+    const renderers = options.renderers;
+    const resolveRenderer = options.resolveRenderer ?? ((fieldType) => renderers[fieldType]);
+    const transformValue = options.transformValue;
+    const root =
       options.root ?? (typeof document !== 'undefined' ? document : (null as unknown as Document));
-    this.#readyTargets = options.readyTargets;
-    this.#sendReady = options.sendReady ?? defaultSendReady;
-    this.#onHeartbeatTimeoutHook = options.onHeartbeatTimeout;
-    this.#log = options.log ?? noopLogger;
-    this.#warn = options.warn ?? defaultWarn;
-    this.#a11y = createA11y(options);
-    this.#merger =
+    const readyTargets = options.readyTargets;
+    const sendReady = options.sendReady ?? defaultSendReady;
+    const heartbeatTimeoutHook = options.onHeartbeatTimeout;
+    const log = options.log === undefined ? noopDiagnostic : isolateDiagnostic(options.log);
+    const warn = options.warn === undefined ? safeConsoleWarn : isolateDiagnostic(options.warn);
+    const a11y = createA11y(options);
+    const merger =
       options.dataMerge !== undefined
         ? new DataMerger({
             serverURL: options.dataMerge.serverURL,
@@ -193,19 +273,21 @@ export class LivePreviewRuntime {
               ? { fetchFn: options.dataMerge.fetchFn }
               : {}),
             log: (...args) => {
-              this.#log(...args);
+              log(...args);
             },
           })
         : null;
 
-    this.#cache = new ElementCache();
-    this.#observers = new ObserverManager(
+    const cache = new ElementCache();
+    const observers = new ObserverManager(
       {
         onStructuralChange: () => {
           this.#rebuildCache();
         },
         onVisibilityChange: (element, visible) => {
-          if (visible) this.#scheduler.notifyVisible(element);
+          if (visible) {
+            this.d[RuntimeDependencySlot.Scheduler].notifyVisible(element);
+          }
         },
       },
       {
@@ -214,10 +296,8 @@ export class LivePreviewRuntime {
           : {}),
       },
     );
-    this.#scheduler = new UpdateScheduler(
-      (update) => {
-        this.#applyUpdate(update);
-      },
+    const scheduler = new UpdateScheduler(
+      markNoWriteCallback((update) => this.#applyUpdate(update)),
       {
         ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
         ...(options.disableVisibilityGate !== undefined
@@ -226,44 +306,79 @@ export class LivePreviewRuntime {
         ...(options.visibilityGateThreshold !== undefined
           ? { visibilityGateThreshold: options.visibilityGateThreshold }
           : {}),
-        isVisible: (element) => this.#observers.isVisible(element),
-        getCacheSize: () => this.#cache.elementCount,
+        isVisible: (element) => observers.isVisible(element),
+        getCacheSize: () => cache.elementCount,
         onFlush: (stats) => {
           this.#onFlush(stats);
         },
       },
     );
-    this.#bus = new MessageBus(options.originMatcher, {
-      onUpdate: (msg, origin) => {
-        this.#handleUpdate(msg, origin);
+    const bus = new MessageBus(options.originMatcher, {
+      onUpdate: (msg, origin, identity) => {
+        this.#handleUpdate(msg, origin, identity);
       },
-      onDocumentEvent: (msg, origin) => {
-        this.#handleDocumentEvent(msg, origin);
+      onDocumentEvent: () => {
+        void emitter.emit('documentSave', { timestamp: Date.now() });
       },
       onInvalid: (reason, origin) => {
         if (reason === 'token') {
           const error = new Error(`Preview token rejected (origin: ${origin})`);
-          void this.#emitter.emit('error', { error, context: 'token' });
+          void emitter.emit('error', { error, context: 'token' });
         }
-        this.#log('message rejected:', reason, origin);
+        log('message rejected:', reason, origin);
       },
       ...(options.validateToken !== undefined ? { validateToken: options.validateToken } : {}),
     });
-    this.#state = new ConnectionState((next, prev) => {
-      this.#log('connection', prev, '→', next);
-    });
-    this.#heartbeat = new HeartbeatTimer({
+    // ConnectionState is deliberately callback-free here. Runtime transitions
+    // have trust-boundary ordering requirements (notably timeout unlock before
+    // disconnect observers), so arbitrary logging callbacks must not run from
+    // inside the atomic state mutation.
+    const connectionState = new ConnectionState(() => undefined);
+    const heartbeat = new HeartbeatTimer({
       ...(options.heartbeatMs !== undefined ? { timeoutMs: options.heartbeatMs } : {}),
       onTimeout: () => {
         this.#onHeartbeatTimeout();
       },
     });
+
+    this.d = [
+      emitter,
+      cache,
+      observers,
+      scheduler,
+      bus,
+      connectionState,
+      heartbeat,
+      renderers,
+      resolveRenderer,
+      transformValue,
+      root,
+      readyTargets,
+      sendReady,
+      heartbeatTimeoutHook,
+      log,
+      warn,
+      [],
+      a11y,
+      merger,
+    ];
+    this.l = [
+      undefined,
+      undefined,
+      undefined,
+      negotiateProtocol(undefined),
+      false,
+      null,
+      0,
+      null,
+      new Set<string>(),
+    ];
   }
 
   /**
    * Start the runtime: build cache, attach observers, listen for
-   * messages, broadcast `ready`. Returns `true` if it actually started
-   * (it will refuse to start a second time).
+   * messages, broadcast `ready`. Returns `true` when startup is accepted
+   * (it refuses a second attempt while one is active).
    *
    * When the script executes while the document is still parsing
    * (e.g. injected via `<script>` in `<head>` — Astro's `head-inline`
@@ -273,92 +388,172 @@ export class LivePreviewRuntime {
    * and `destroy()` cancels the pending startup.
    */
   start(): boolean {
-    if (this.#started) return false;
-    this.#started = true;
+    if (this.l[RuntimeLifecycleSlot.Started]) return false;
+    this.l[RuntimeLifecycleSlot.Started] = true;
 
-    const root = this.#root;
-    if (root instanceof Document && root.readyState === 'loading') {
+    const root = this.d[RuntimeDependencySlot.Root];
+    if (isDocumentRoot(root) && root.readyState === 'loading') {
       const onReady = (): void => {
-        this.#deferredStart = null;
-        this.#startNow();
+        if (!this.l[RuntimeLifecycleSlot.Started]) return;
+        this.l[RuntimeLifecycleSlot.DeferredStart] = null;
+        try {
+          this.#startNow();
+        } catch (error) {
+          // The original start() has already returned, so a deferred failure
+          // cannot be reported to its caller. Roll back every acquired resource
+          // and surface the failure through the established runtime error event.
+          this.#rollbackFailedStart();
+          this.#reportError(error, 'startup');
+        }
       };
-      this.#deferredStart = onReady;
-      root.addEventListener('DOMContentLoaded', onReady, { once: true });
+      this.l[RuntimeLifecycleSlot.DeferredStart] = onReady;
+      try {
+        root.addEventListener('DOMContentLoaded', onReady, { once: true });
+      } catch (error) {
+        this.#rollbackFailedStart();
+        throw error;
+      }
       return true;
     }
 
-    this.#startNow();
-    return true;
+    try {
+      this.#startNow();
+      return true;
+    } catch (error) {
+      this.#rollbackFailedStart();
+      throw error;
+    }
   }
 
   #startNow(): void {
+    if (!this.l[RuntimeLifecycleSlot.Started]) return;
+    const observerRoot: Node | null = isDocumentRoot(this.d[RuntimeDependencySlot.Root])
+      ? readDocumentBody(this.d[RuntimeDependencySlot.Root])
+      : this.d[RuntimeDependencySlot.Root];
+    if (observerRoot === null) {
+      throw new Error('LivePreviewRuntime: document.body unavailable');
+    }
+    this.d[RuntimeDependencySlot.Observers].start(observerRoot);
+    // The observer must exist before the cache scan registers its elements;
+    // otherwise initial bindings can be deferred but never become replayable.
     this.#buildCacheAndObserve();
-    this.#observers.start(this.#root instanceof Document ? this.#root.body : this.#root);
-    this.#bus.attach();
-    this.#emitInit();
+    if (!this.#isRunning()) return;
+    this.d[RuntimeDependencySlot.Bus].attach();
+    void this.d[RuntimeDependencySlot.Emitter].emitWhile(
+      'init',
+      { timestamp: Date.now() },
+      () => this.l[RuntimeLifecycleSlot.Started],
+    );
+    if (!this.#isRunning()) return;
 
     // Re-broadcast ready several times to absorb parent-side init latency.
     for (const delay of READY_RETRY_DELAYS_MS) {
+      if (!this.#isRunning()) return;
       if (delay === 0) {
-        this.#sendReady(this.#readyTargets);
+        this.d[RuntimeDependencySlot.SendReady](this.d[RuntimeDependencySlot.ReadyTargets]);
+        if (!this.#isRunning()) return;
       } else {
         const handle = setTimeout(() => {
-          this.#sendReady(this.#readyTargets);
+          if (!this.l[RuntimeLifecycleSlot.Started]) return;
+          this.#sendReadyAfterStart();
         }, delay);
-        this.#readyTimers.push(handle);
+        this.d[RuntimeDependencySlot.ReadyTimers].push(handle);
       }
     }
   }
 
   /** Tear down all observers, timers, and listeners. Idempotent. */
   destroy(): void {
-    if (!this.#started) return;
-    this.#started = false;
-    if (this.#deferredStart !== null) {
-      const root = this.#root;
-      if (root instanceof Document) {
-        root.removeEventListener('DOMContentLoaded', this.#deferredStart);
-      }
-      this.#deferredStart = null;
-      void this.#emitter.emit('destroy', { timestamp: Date.now() });
-      return;
-    }
-    for (const handle of this.#readyTimers) clearTimeout(handle);
-    this.#readyTimers.length = 0;
-    this.#heartbeat.stop();
-    this.#bus.detach();
-    this.#observers.stop();
-    this.#scheduler.destroy();
-    this.#merger?.destroy();
-    this.#cache.clear();
-    const wasConnected = this.#state.status === 'connected';
-    this.#state.markDisconnected();
+    if (!this.l[RuntimeLifecycleSlot.Started]) return;
+    const wasConnected = this.#releaseRuntimeResources();
     if (wasConnected) {
-      this.#a11y?.announceDisconnected();
-      void this.#emitter.emit('disconnect', { reason: 'destroy', timestamp: Date.now() });
+      void this.d[RuntimeDependencySlot.Emitter].emit('disconnect', {
+        reason: 'destroy',
+        timestamp: Date.now(),
+      });
     }
-    this.#a11y?.detach();
-    void this.#emitter.emit('destroy', { timestamp: Date.now() });
+    this.d[RuntimeDependencySlot.A11y]?.detach();
+    void this.d[RuntimeDependencySlot.Emitter].emit('destroy', {
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * Invalidate first, then release every resource that startup may have acquired.
+   * The same transaction boundary serves ordinary destroy and failed-start
+   * rollback, preventing a partial observer/bus/timer/cache lifecycle.
+   */
+  #releaseRuntimeResources(): boolean {
+    this.l[RuntimeLifecycleSlot.ActiveUpdate] = null;
+    this.l[RuntimeLifecycleSlot.Started] = false;
+
+    const deferredStart = this.l[RuntimeLifecycleSlot.DeferredStart];
+    this.l[RuntimeLifecycleSlot.DeferredStart] = null;
+    if (deferredStart !== null && isDocumentRoot(this.d[RuntimeDependencySlot.Root])) {
+      this.#runCleanup(() => {
+        this.d[RuntimeDependencySlot.Root].removeEventListener('DOMContentLoaded', deferredStart);
+      });
+    }
+
+    for (const handle of this.d[RuntimeDependencySlot.ReadyTimers]) {
+      this.#runCleanup(() => {
+        clearTimeout(handle);
+      });
+    }
+    this.d[RuntimeDependencySlot.ReadyTimers].length = 0;
+    this.#runCleanup(() => {
+      this.d[RuntimeDependencySlot.Heartbeat].stop();
+    });
+    this.#runCleanup(() => {
+      this.d[RuntimeDependencySlot.Bus].detach();
+    });
+    this.#runCleanup(() => {
+      this.d[RuntimeDependencySlot.Observers].stop();
+    });
+    this.#runCleanup(() => {
+      this.d[RuntimeDependencySlot.Scheduler].destroy();
+    });
+    this.#runCleanup(() => {
+      this.d[RuntimeDependencySlot.Merger]?.destroy();
+    });
+    this.d[RuntimeDependencySlot.Cache].clear();
+    return this.d[RuntimeDependencySlot.ConnectionState].markDisconnected();
+  }
+
+  #rollbackFailedStart(): void {
+    this.#releaseRuntimeResources();
+    this.#runCleanup(() => {
+      this.d[RuntimeDependencySlot.A11y]?.detach();
+    });
+  }
+
+  #runCleanup(cleanup: () => void): void {
+    try {
+      cleanup();
+    } catch (error) {
+      this.d[RuntimeDependencySlot.Log]('cleanup failed:', error);
+    }
   }
 
   /** Re-scan the DOM and re-register every binding. */
   refreshCache(): void {
+    if (!this.l[RuntimeLifecycleSlot.Started]) return;
     this.#rebuildCache();
   }
 
   /** Current connection status, exposed for the high-level client. */
   get status(): 'disconnected' | 'connecting' | 'connected' {
-    return this.#state.status;
+    return this.d[RuntimeDependencySlot.ConnectionState].status;
   }
 
   /** Read-only view of the element cache. */
   get cache(): ElementCache {
-    return this.#cache;
+    return this.d[RuntimeDependencySlot.Cache];
   }
 
   /** Read-only view of how many updates have been received. */
   get updateCount(): number {
-    return this.#updateCount;
+    return this.l[RuntimeLifecycleSlot.UpdateCount];
   }
 
   /**
@@ -368,7 +563,7 @@ export class LivePreviewRuntime {
    * version arrives on incoming messages.
    */
   get protocol(): ProtocolNegotiation {
-    return this.#protocolNegotiation;
+    return this.l[RuntimeLifecycleSlot.ProtocolNegotiation];
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -376,81 +571,199 @@ export class LivePreviewRuntime {
   // ──────────────────────────────────────────────────────────────────────────
 
   #buildCacheAndObserve(): void {
-    const stats = this.#cache.buildFromRoot(this.#root);
-    this.#log('cache built', stats);
-    void this.#emitter.emit('cacheRefresh', stats);
-    for (const entry of this.#cache.values()) {
-      this.#observers.observeElement(entry.element);
+    if (!this.l[RuntimeLifecycleSlot.Started]) return;
+    const stats = this.d[RuntimeDependencySlot.Cache].buildFromRoot(
+      this.d[RuntimeDependencySlot.Root],
+    );
+    this.d[RuntimeDependencySlot.Log]('cache', stats);
+    if (!this.#isRunning()) return;
+    void this.d[RuntimeDependencySlot.Emitter].emitWhile(
+      'cacheRefresh',
+      stats,
+      () => this.l[RuntimeLifecycleSlot.Started],
+    );
+    if (!this.#isRunning()) return;
+    for (const entry of this.d[RuntimeDependencySlot.Cache].values()) {
+      if (!this.#isRunning()) return;
+      this.d[RuntimeDependencySlot.Observers].observeElement(entry.element);
     }
   }
 
   #rebuildCache(): void {
-    for (const entry of this.#cache.values()) {
-      this.#observers.unobserveElement(entry.element);
-      this.#scheduler.forget(entry.element);
+    if (!this.l[RuntimeLifecycleSlot.Started]) return;
+    const previousBindings = new Map<Element, CachedElement>();
+    for (const entry of this.d[RuntimeDependencySlot.Cache].values()) {
+      previousBindings.set(entry.element, entry);
+      this.d[RuntimeDependencySlot.Observers].unobserveElement(entry.element);
     }
     this.#buildCacheAndObserve();
-  }
+    if (!this.#isRunning()) return;
 
-  #emitInit(): void {
-    void this.#emitter.emit('init', { timestamp: Date.now() });
+    // Rebuilding replaces every CachedElement snapshot. Buffered work may
+    // survive only while the same DOM element is still bound to the same
+    // field; retarget it so later flush/replay observes the rebuilt metadata.
+    // Removed or rebound elements must never receive their former field's data.
+    for (const entry of this.d[RuntimeDependencySlot.Cache].values()) {
+      const previous = previousBindings.get(entry.element);
+      if (previous?.fieldName === entry.fieldName) {
+        this.d[RuntimeDependencySlot.Scheduler].retarget(entry);
+      } else this.d[RuntimeDependencySlot.Scheduler].forget(entry.element);
+      previousBindings.delete(entry.element);
+    }
+    for (const removed of previousBindings.values()) {
+      this.d[RuntimeDependencySlot.Scheduler].forget(removed.element);
+    }
   }
 
   #applyNegotiation(remoteVersion: number): void {
     const next = negotiateProtocol(remoteVersion);
-    if (next.negotiated === this.#protocolNegotiation.negotiated) return;
-    this.#protocolNegotiation = next;
-    this.#log(
-      'protocol negotiated',
+    if (next.negotiated === this.l[RuntimeLifecycleSlot.ProtocolNegotiation].negotiated) {
+      return;
+    }
+    this.l[RuntimeLifecycleSlot.ProtocolNegotiation] = next;
+    this.d[RuntimeDependencySlot.Log](
+      'protocol',
       `ours=${LIBRARY_PROTOCOL_VERSION}`,
       `theirs=${remoteVersion}`,
       `negotiated=${next.negotiated}`,
     );
   }
 
-  #handleUpdate(message: PayloadLivePreviewMessage, origin: string): void {
-    this.#heartbeat.kick();
-    if (message.protocolVersion !== undefined) {
-      this.#applyNegotiation(message.protocolVersion);
-    }
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Each explicit
+   * transaction check follows an arbitrary consumer/DOM callback that can
+   * synchronously replace the active-update slot or destroy the runtime. TypeScript's
+   * local control-flow narrowing cannot observe that re-entrancy. */
+  #handleUpdate(
+    message: PayloadLivePreviewMessage,
+    origin: string,
+    identity: MessageRevision | undefined,
+  ): void {
+    this.d[RuntimeDependencySlot.Heartbeat].kick();
     if (message.data === undefined) {
+      if (message.protocolVersion !== undefined) {
+        this.#applyNegotiation(message.protocolVersion);
+      }
       return;
     }
-    if (this.#state.markConnected()) {
-      this.#a11y?.announceConnected();
-      void this.#emitter.emit('connect', { origin, timestamp: Date.now() });
+    // MessageBus supplies an identity for every shape-valid data update.
+    // Refuse identity-less work defensively so no alternate host path can
+    // bypass the revision model.
+    if (identity === undefined) return;
+    if (typeof message.locale === 'string') {
+      this.l[RuntimeLifecycleSlot.CurrentLocale] = message.locale;
     }
-    this.#updateCount += 1;
-    if (message.locale !== undefined) this.#currentLocale = message.locale;
-    if (message.fieldSchemaJSON !== undefined) {
-      this.#currentSchema = message.fieldSchemaJSON;
-      this.#schemaIndex = buildSchemaIndex(message.fieldSchemaJSON);
+    if (Array.isArray(message.fieldSchemaJSON)) {
+      this.l[RuntimeLifecycleSlot.CurrentSchema] = message.fieldSchemaJSON;
+      this.l[RuntimeLifecycleSlot.SchemaIndex] = buildSchemaIndex(message.fieldSchemaJSON);
     }
 
-    void this.#resolveIncomingFields(message).then((fields) => {
-      if (fields === null) return; // superseded by a newer update
+    const transaction: UpdateTransaction = {
+      identity,
+      message,
+      locale: this.l[RuntimeLifecycleSlot.CurrentLocale],
+      schema: this.l[RuntimeLifecycleSlot.CurrentSchema],
+      schemaIndex: this.l[RuntimeLifecycleSlot.SchemaIndex],
+      cancelled: false,
+    };
 
-      const data: PayloadLivePreviewData = {
-        fields,
-        ...(this.#currentSchema !== undefined ? { schema: this.#currentSchema } : {}),
-        ...(message.globalSlug !== undefined ? { globalSlug: message.globalSlug } : {}),
-        ...(message.collectionSlug !== undefined ? { collectionSlug: message.collectionSlug } : {}),
-        ...(this.#currentLocale !== undefined ? { locale: this.#currentLocale } : {}),
-      };
+    // Acceptance is the single supersession point. It clears old pending and
+    // replay work even if this revision is later cancelled or has no bindings.
+    this.l[RuntimeLifecycleSlot.ActiveUpdate] = transaction;
+    this.d[RuntimeDependencySlot.Scheduler].acceptRevision(identity);
+    this.l[RuntimeLifecycleSlot.UpdateCount] += 1;
 
-      let cancelled = false;
-      void this.#emitter
-        .emit('beforeUpdate', {
+    // User-provided log and event handlers are reentrant. They may dispatch a
+    // newer update synchronously, so the transaction must already be accepted
+    // and every continuation below must re-check its identity.
+    if (message.protocolVersion !== undefined) {
+      this.#applyNegotiation(message.protocolVersion);
+      if (!(
+        this.l[RuntimeLifecycleSlot.Started] &&
+        this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+      )) {
+        return;
+      }
+    }
+    if (this.d[RuntimeDependencySlot.ConnectionState].markConnected()) {
+      this.d[RuntimeDependencySlot.A11y]?.announceConnected();
+      void this.d[RuntimeDependencySlot.Emitter].emit('connect', {
+        origin,
+        timestamp: Date.now(),
+      });
+      if (!(
+        this.l[RuntimeLifecycleSlot.Started] &&
+        this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+      )) {
+        return;
+      }
+      this.d[RuntimeDependencySlot.Log]('connection', 'disconnected', '→', 'connected');
+      if (!(
+        this.l[RuntimeLifecycleSlot.Started] &&
+        this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+      )) {
+        return;
+      }
+    }
+    void this.#processUpdate(transaction);
+  }
+
+  async #processUpdate(transaction: UpdateTransaction): Promise<void> {
+    const fields = await this.#resolveIncomingFields(transaction);
+    if (
+      fields === null ||
+      !(
+        this.l[RuntimeLifecycleSlot.Started] &&
+        this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+      )
+    ) {
+      return;
+    }
+
+    const { message } = transaction;
+    const data: PayloadLivePreviewData = {
+      fields,
+      ...(transaction.schema !== undefined ? { schema: transaction.schema } : {}),
+      ...(typeof message.globalSlug === 'string' ? { globalSlug: message.globalSlug } : {}),
+      ...(typeof message.collectionSlug === 'string'
+        ? { collectionSlug: message.collectionSlug }
+        : {}),
+      ...(transaction.locale !== undefined ? { locale: transaction.locale } : {}),
+    };
+
+    if (this.d[RuntimeDependencySlot.Emitter].listenerCount('beforeUpdate') > 0) {
+      const completed = await this.d[RuntimeDependencySlot.Emitter].emitWhile(
+        'beforeUpdate',
+        {
           data,
+          revision: transaction.identity.revision,
           cancel: (): void => {
-            cancelled = true;
+            transaction.cancelled = true;
+            this.d[RuntimeDependencySlot.Scheduler].cancelRevision(transaction.identity);
           },
-        })
-        .then(() => {
-          if (cancelled) return;
-          this.#scheduleAllFields(data);
-        });
-    });
+        },
+        () =>
+          !transaction.cancelled &&
+          this.l[RuntimeLifecycleSlot.Started] &&
+          this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction,
+      );
+      if (
+        !completed ||
+        transaction.cancelled ||
+        !(
+          this.l[RuntimeLifecycleSlot.Started] &&
+          this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+        )
+      ) {
+        return;
+      }
+    }
+    if (!(
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+    )) {
+      return;
+    }
+    this.#scheduleAllFields(transaction, data);
   }
 
   /**
@@ -461,51 +774,98 @@ export class LivePreviewRuntime {
    * superseded this one mid-flight.
    */
   async #resolveIncomingFields(
-    message: PayloadLivePreviewMessage,
+    transaction: UpdateTransaction,
   ): Promise<Record<string, unknown> | null> {
+    const { message } = transaction;
     // #handleUpdate has already returned when `data` is undefined.
     const raw = message.data ?? {};
-    if (this.#merger === null) return raw;
-    const result = await this.#merger.merge({
+    if (this.d[RuntimeDependencySlot.Merger] === null) return raw;
+    const result = await this.d[RuntimeDependencySlot.Merger].merge({
       collectionSlug: message.collectionSlug,
       globalSlug: message.globalSlug,
       data: raw,
-      locale: this.#currentLocale,
+      locale: transaction.locale,
     });
+    if (!(
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+    )) {
+      return null;
+    }
     if (result.status === 'merged') return result.doc;
     if (result.status === 'superseded') return null;
     return raw;
   }
 
-  #handleDocumentEvent(_message: PayloadDocumentEventMessage, _origin: string): void {
-    void this.#emitter.emit('documentSave', { timestamp: Date.now() });
-  }
-
-  #scheduleAllFields(data: PayloadLivePreviewData): void {
-    for (const [fieldName, bindings] of this.#cache.entries()) {
-      const value = resolveFieldValue(data.fields, fieldName, this.#currentLocale);
-      if (value === undefined) continue;
+  #scheduleAllFields(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
+    if (!(
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+    )) {
+      return;
+    }
+    const isCurrent = (): boolean =>
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction;
+    for (const [fieldName, bindings] of this.d[RuntimeDependencySlot.Cache].entries()) {
+      if (!(
+        this.l[RuntimeLifecycleSlot.Started] &&
+        this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+      )) {
+        return;
+      }
       for (const target of bindings) {
+        const value = resolveFieldValue(
+          data.fields,
+          fieldName,
+          target.locale ?? transaction.locale,
+          target.locale !== undefined,
+        );
+        if (value === undefined) continue;
+        // Transforms are arbitrary plugin code and may synchronously dispatch a
+        // newer message. Stop the obsolete revision at that callback boundary
+        // before invoking another transform or scheduling any of its result.
+        if (!(
+          this.l[RuntimeLifecycleSlot.Started] &&
+          this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+        )) {
+          return;
+        }
+        const transformedValue = this.#transformForBinding(target, value, data.fields, isCurrent);
+        if (!(
+          this.l[RuntimeLifecycleSlot.Started] &&
+          this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+        )) {
+          return;
+        }
         const update: ScheduledUpdate = {
           target,
-          value,
+          value: transformedValue,
           allFields: data.fields,
+          identity: transaction.identity,
+          data,
         };
-        this.#scheduler.schedule(update);
+        if (!(
+          this.l[RuntimeLifecycleSlot.Started] &&
+          this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+        )) {
+          return;
+        }
+        this.d[RuntimeDependencySlot.Scheduler].schedule(update);
       }
     }
-    this.#diagnoseOrphanFields(data.fields);
+    this.#diagnoseOrphanFields(data.fields, transaction.locale);
   }
 
   /**
-   * Walk the incoming `data` payload and warn (via `this.#log`) when an
+   * Walk the incoming `data` payload and warn (via `this.d[RuntimeDependencySlot.Warn]`) when an
    * editable-looking field arrives for which **no `[data-payload-field]`
    * anchor exists** in the page. This is the most common live-preview
    * footgun: an SSR template renders the binding only when the field is
    * non-empty, so editing a previously-empty field has nowhere to land.
    *
-   * The warning is gated by:
-   *   - `this.#log` being a real logger (no-op when debug disabled)
+   * The warning remains active independently of verbose debug logging and is
+   * gated by:
    *   - per-field deduplication via `#warnedOrphanFields`
    *   - scalar value heuristic (objects/arrays don't get warned)
    *   - a small ignore-list of system fields Payload always ships
@@ -514,18 +874,34 @@ export class LivePreviewRuntime {
    * because it depends on the locale and on schema knowledge that the
    * cache does not own.
    */
-  #diagnoseOrphanFields(fields: Record<string, unknown>): void {
-    if (this.#cache.elementCount === 0) return;
-    const boundNames = new Set<string>();
-    for (const [name] of this.#cache.entries()) boundNames.add(name);
+  #diagnoseOrphanFields(fields: Record<string, unknown>, locale: string | undefined): void {
+    if (this.d[RuntimeDependencySlot.Cache].fieldCount === 0) return;
+    let localisedBindingNames: Set<string> | undefined;
     for (const [rawName, value] of Object.entries(fields)) {
-      if (this.#warnedOrphanFields.has(rawName)) continue;
+      if (this.l[RuntimeLifecycleSlot.WarnedOrphanFields].has(rawName)) continue;
       if (SYSTEM_FIELD_NAMES.has(rawName)) continue;
       if (!isLiveBindableScalar(value)) continue;
-      const baseName = stripLocaleSuffix(rawName, this.#currentLocale);
-      if (boundNames.has(rawName) || boundNames.has(baseName)) continue;
-      this.#warnedOrphanFields.add(rawName);
-      this.#warn(
+      const baseName = stripLocaleSuffix(rawName, locale);
+      if (this.d[RuntimeDependencySlot.Cache].get(rawName) !== undefined) continue;
+      if (baseName !== rawName && this.d[RuntimeDependencySlot.Cache].get(baseName) !== undefined) {
+        continue;
+      }
+      // Element-local locales can intentionally consume several suffixed
+      // variants of one field while the message's global locale is different.
+      // Build this alias set lazily only after the direct/common checks miss.
+      if (localisedBindingNames === undefined) {
+        localisedBindingNames = new Set<string>();
+        for (const [fieldName, bindings] of this.d[RuntimeDependencySlot.Cache].entries()) {
+          for (const binding of bindings) {
+            if (binding.locale !== undefined) {
+              localisedBindingNames.add(`${fieldName}_${binding.locale}`);
+            }
+          }
+        }
+      }
+      if (localisedBindingNames.has(rawName)) continue;
+      this.l[RuntimeLifecycleSlot.WarnedOrphanFields].add(rawName);
+      this.d[RuntimeDependencySlot.Warn](
         `[live-preview] update arrived for field "${rawName}" but no ` +
           `<… data-payload-field="${baseName}"> element exists on this page. ` +
           `Render the binding anchor unconditionally in your template so ` +
@@ -534,27 +910,132 @@ export class LivePreviewRuntime {
     }
   }
 
-  #applyUpdate(update: ScheduledUpdate): void {
+  /**
+   * Freeze the per-binding transformed value into the revision's scheduler
+   * entry. Replays therefore cannot observe plugins registered or removed
+   * after this revision was prepared.
+   */
+  #transformForBinding(
+    target: CachedElement,
+    originalValue: unknown,
+    allFields: Record<string, unknown>,
+    isCurrent: () => boolean,
+  ): unknown {
+    if (this.d[RuntimeDependencySlot.TransformValue] === undefined) {
+      return originalValue;
+    }
+    try {
+      const transformed = this.d[RuntimeDependencySlot.TransformValue](
+        target.fieldName,
+        originalValue,
+        {
+          element: target.element,
+          allFields,
+        },
+        isCurrent,
+      );
+      const returnedThenable = observeThenableResult(transformed);
+      if (!isCurrent()) return originalValue;
+      if (returnedThenable) {
+        throw new TypeError(
+          `Transform for "${target.fieldName}" returned a Promise/thenable; transforms must be synchronous`,
+        );
+      }
+      return transformed;
+    } catch (err) {
+      if (!isCurrent()) return originalValue;
+      const error = err instanceof Error ? err : new Error(String(err));
+      void this.d[RuntimeDependencySlot.Emitter].emit('error', {
+        error,
+        context: 'transform',
+      });
+      return originalValue;
+    }
+  }
+
+  /** Re-read lifecycle state after an arbitrary reentrant callback. */
+  #isRunning(): boolean {
+    return this.l[RuntimeLifecycleSlot.Started];
+  }
+
+  #applyUpdate(update: ScheduledUpdate): boolean {
+    const transaction = this.l[RuntimeLifecycleSlot.ActiveUpdate];
+    if (
+      transaction === null ||
+      update.identity === undefined ||
+      !sameRevision(transaction.identity, update.identity) ||
+      !(
+        this.l[RuntimeLifecycleSlot.Started] &&
+        this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+      )
+    ) {
+      return false;
+    }
     const schemaEntry =
-      this.#schemaIndex !== undefined
-        ? lookupSchema(this.#schemaIndex, update.target.fieldName)
+      transaction.schemaIndex !== undefined
+        ? lookupSchema(transaction.schemaIndex, update.target.fieldName)
         : undefined;
-    let resolvedType = this.#resolveFieldType(update.target, schemaEntry?.type);
+    const value = update.value;
+    let resolvedType = resolveRuntimeFieldType(update.target, schemaEntry?.type);
     // Payload 3.x sends no field schema, so rich-text fields would fall
     // through to the `text` heuristic and render "[object Object]".
     // A Lexical value is unmistakable — upgrade the renderer on sight.
     if (
       resolvedType === 'text' &&
       update.target.explicitFieldType !== true &&
-      looksLikeLexicalRoot(update.value)
+      looksLikeLexicalRoot(value)
     ) {
       resolvedType = 'richText';
     }
-    const renderer = this.#renderers[resolvedType];
-    const previous = readElementSnapshot(update.target.element);
+    let renderer: FieldRenderer | undefined;
+    try {
+      renderer = this.d[RuntimeDependencySlot.ResolveRenderer](resolvedType);
+    } catch (err) {
+      if (!(
+        this.l[RuntimeLifecycleSlot.Started] &&
+        this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+      )) {
+        return false;
+      }
+      const error = err instanceof Error ? err : new Error(String(err));
+      void this.d[RuntimeDependencySlot.Emitter].emitWhile(
+        'error',
+        { error, context: 'renderer' },
+        () =>
+          this.l[RuntimeLifecycleSlot.Started] &&
+          this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction,
+      );
+      return false;
+    }
+    // Renderer resolution is plugin code and may synchronously accept a newer
+    // message. Never let the obsolete transaction proceed to a DOM write.
+    if (!(
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+    )) {
+      return false;
+    }
+    // Element snapshots exist solely for `elementUpdate`. The inline runtime
+    // normally has no listener for that event, so avoid a needless DOM read
+    // and event Promise for every binding on the default hot path. Listener
+    // presence is captured before renderer dispatch, alongside the value the
+    // event describes; registrations made by that renderer begin with the
+    // next element update.
+    const emitElementUpdate =
+      this.d[RuntimeDependencySlot.Emitter].listenerCount('elementUpdate') > 0;
+    const previous = emitElementUpdate ? readElementSnapshot(update.target.element) : undefined;
+    // Custom-element DOM accessors can execute application code. Treat the
+    // optional snapshot as the same reentrant boundary as renderer lookup and
+    // dispatch so a getter-triggered newer revision wins before any DOM write.
+    if (!(
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+    )) {
+      return false;
+    }
     const context: RenderContext = {
       allFields: update.allFields,
-      locale: this.#currentLocale,
+      locale: update.target.locale ?? transaction.locale,
       schema: schemaEntry,
     };
     try {
@@ -562,83 +1043,225 @@ export class LivePreviewRuntime {
         const outcome = applyAttributeBinding(
           update.target.element,
           update.target.targetAttribute,
-          update.value,
+          value,
         );
         if (outcome === 'blocked') {
-          this.#warn(
+          this.d[RuntimeDependencySlot.Warn](
             `[live-preview] refused to write field "${update.target.fieldName}" ` +
               `into attribute "${update.target.targetAttribute}" (unsafe attribute or value)`,
           );
+          return false;
         }
       } else if (renderer) {
-        renderer.render(update.target, update.value, context);
+        // `FieldRenderer` intentionally retains its public 1.x `void` result.
+        // Marked built-ins use an internal exact-false sentinel for known
+        // no-write paths. Custom/plugin return values remain ignored exactly as
+        // before, including a `false` produced by a real DOM mutation.
+        const outcome = invokeRenderer(renderer, update.target, value, context);
+        if (outcome === false && rendererUsesNoWriteOutcome(renderer)) return false;
       } else {
-        this.#log('no renderer for', resolvedType);
+        this.d[RuntimeDependencySlot.Log]('no renderer for', resolvedType);
+        return false;
       }
     } catch (err) {
+      // A renderer or custom-element attribute reaction may have accepted a
+      // newer revision before throwing. Its obsolete failure is not a current
+      // runtime error and must not trigger any later lifecycle callbacks.
+      if (!(
+        this.l[RuntimeLifecycleSlot.Started] &&
+        this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+      )) {
+        return false;
+      }
       const error = err instanceof Error ? err : new Error(String(err));
-      void this.#emitter.emit('error', { error, context: 'renderer' });
-      return;
+      void this.d[RuntimeDependencySlot.Emitter].emitWhile(
+        'error',
+        { error, context: 'renderer' },
+        () =>
+          this.l[RuntimeLifecycleSlot.Started] &&
+          this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction,
+      );
+      return false;
     }
-    void this.#emitter.emit('elementUpdate', {
-      element: update.target.element,
-      fieldName: update.target.fieldName,
-      previousValue: previous,
-      nextValue: update.value,
-    });
-  }
-
-  /**
-   * Resolve the renderer name for an update. Explicit consumer DOM
-   * attributes (`data-payload-type`) always win; otherwise the schema
-   * type maps to a renderer; otherwise the cache's tag-based heuristic
-   * stands.
-   */
-  #resolveFieldType(target: CachedElement, schemaType: string | undefined): FieldType {
-    if (target.explicitFieldType) return target.fieldType;
-    if (schemaType !== undefined) {
-      const mapped = payloadTypeToRenderer(schemaType);
-      if (mapped !== undefined) return mapped;
+    // Both renderer writes and setAttribute/removeAttribute can execute
+    // consumer code synchronously (plugins or custom-element reactions).
+    if (!(
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+    )) {
+      return false;
     }
-    return target.fieldType;
+    if (emitElementUpdate) {
+      void this.d[RuntimeDependencySlot.Emitter].emitWhile(
+        'elementUpdate',
+        {
+          element: update.target.element,
+          fieldName: update.target.fieldName,
+          previousValue: previous,
+          nextValue: value,
+          revision: transaction.identity.revision,
+        },
+        () =>
+          this.l[RuntimeLifecycleSlot.Started] &&
+          this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction,
+      );
+    }
+    // emitWhile invokes its first handler before yielding. Account for a
+    // synchronous reentrant update so the obsolete write is not counted as a
+    // successful flush and cannot publish afterUpdate.
+    return (
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+    );
   }
 
   #onFlush(stats: FlushStats): void {
-    if (stats.applied === 0 && stats.deferred === 0) return;
-    if (stats.applied > 0) this.#a11y?.announceUpdate(stats.applied);
-    void this.#emitter.emit('afterUpdate', {
-      data: {
-        fields: {},
-        ...(this.#currentLocale !== undefined ? { locale: this.#currentLocale } : {}),
+    const { identity, data } = stats;
+    if (stats.applied === 0 || identity === undefined || data === undefined) return;
+    const transaction = this.l[RuntimeLifecycleSlot.ActiveUpdate];
+    if (
+      transaction === null ||
+      !(
+        this.l[RuntimeLifecycleSlot.Started] &&
+        this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
+      ) ||
+      !sameRevision(transaction.identity, identity)
+    ) {
+      return;
+    }
+    const isCurrent = (): boolean =>
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction &&
+      sameRevision(transaction.identity, identity);
+    this.d[RuntimeDependencySlot.A11y]?.announceUpdate(stats.applied);
+    if (!isCurrent()) return;
+    if (this.d[RuntimeDependencySlot.Emitter].listenerCount('afterUpdate') === 0) {
+      return;
+    }
+    void this.d[RuntimeDependencySlot.Emitter].emitWhile(
+      'afterUpdate',
+      {
+        data,
+        updatedCount: stats.applied,
+        durationMs: stats.durationMs,
+        revision: identity.revision,
       },
-      updatedCount: stats.applied,
-      durationMs: stats.durationMs,
+      isCurrent,
+    );
+  }
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+
+  #onHeartbeatTimeout(): void {
+    if (!this.#isRunning()) return;
+    this.d[RuntimeDependencySlot.Bus].advanceGeneration();
+    const active = this.l[RuntimeLifecycleSlot.ActiveUpdate];
+    this.l[RuntimeLifecycleSlot.ActiveUpdate] = null;
+    if (active !== null) {
+      this.d[RuntimeDependencySlot.Scheduler].cancelRevision(active.identity);
+    }
+    this.d[RuntimeDependencySlot.Merger]?.destroy();
+    const wasConnected = this.d[RuntimeDependencySlot.ConnectionState].markDisconnected();
+
+    // Release the old origin before publishing the disconnect. A synchronous
+    // disconnect listener may immediately dispatch from another allow-listed
+    // origin; that update then connects and locks within the fresh generation,
+    // and no later timeout step may undo its lock.
+    try {
+      this.d[RuntimeDependencySlot.HeartbeatTimeoutHook]?.();
+    } catch (err) {
+      this.d[RuntimeDependencySlot.Log]('heartbeat:', err);
+    }
+    if (!this.#isRunning()) return;
+    if (wasConnected && this.#isDisconnectedWithoutActiveUpdate()) {
+      this.d[RuntimeDependencySlot.A11y]?.announceDisconnected();
+      void this.d[RuntimeDependencySlot.Emitter].emitWhile(
+        'disconnect',
+        { reason: 'timeout', timestamp: Date.now() },
+        () => this.#isDisconnectedWithoutActiveUpdate(),
+      );
+      if (!this.#isRunning()) return;
+      if (this.#isDisconnectedWithoutActiveUpdate()) {
+        this.d[RuntimeDependencySlot.Log]('connection', 'connected', '→', 'disconnected');
+        if (!this.#isRunning()) return;
+      }
+    }
+    if (!this.#isRunning()) return;
+    this.#sendReadyAfterStart();
+  }
+
+  /** Later handshake retries are best-effort and must not escape timer callbacks. */
+  #sendReadyAfterStart(): void {
+    try {
+      this.d[RuntimeDependencySlot.SendReady](this.d[RuntimeDependencySlot.ReadyTargets]);
+    } catch (error) {
+      this.#reportError(error, 'ready');
+    }
+  }
+
+  #reportError(cause: unknown, context: string): void {
+    const error = cause instanceof Error ? cause : new Error(String(cause));
+    void this.d[RuntimeDependencySlot.Emitter].emit('error', {
+      error,
+      context,
     });
   }
 
-  #onHeartbeatTimeout(): void {
-    if (this.#state.markDisconnected()) {
-      this.#a11y?.announceDisconnected();
-      void this.#emitter.emit('disconnect', { reason: 'timeout', timestamp: Date.now() });
-    }
-    try {
-      this.#onHeartbeatTimeoutHook?.();
-    } catch (err) {
-      this.#log('onHeartbeatTimeout hook threw:', err);
-    }
-    this.#sendReady(this.#readyTargets);
+  #isDisconnectedWithoutActiveUpdate(): boolean {
+    return (
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.d[RuntimeDependencySlot.ConnectionState].status === 'disconnected' &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === null
+    );
   }
+}
+
+/** Resolve explicit binding metadata before schema and tag-name fallbacks. */
+function resolveRuntimeFieldType(target: CachedElement, schemaType: string | undefined): FieldType {
+  if (target.explicitFieldType) return target.fieldType;
+  if (schemaType !== undefined) {
+    const mapped = payloadTypeToRenderer(schemaType);
+    if (mapped !== undefined) return mapped;
+  }
+  return target.fieldType;
+}
+
+/**
+ * Invoke the public 1.x void renderer contract without erasing its JavaScript
+ * return value. Built-ins reserve exact `false` for a deliberate no-write;
+ * every other result (including custom `void`) retains legacy success semantics.
+ */
+function invokeRenderer(
+  renderer: FieldRenderer,
+  target: CachedElement,
+  value: unknown,
+  context: RenderContext,
+): unknown {
+  // TypeScript's `void` is intentionally caller-facing: implementations may
+  // return a value, while callers cannot depend on it. Reading it internally
+  // here is the narrow compatibility bridge for the built-in sentinel.
+  // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+  return renderer.render(target, value, context);
 }
 
 function createA11y(options: RuntimeOptions): A11yAnnouncer | null {
   if (options.enableA11y === false) return null;
-  return options.a11yLocale !== undefined
-    ? new A11yAnnouncer(options.a11yLocale)
-    : new A11yAnnouncer();
+  const targetDocument =
+    options.root === undefined
+      ? undefined
+      : options.root.nodeType === 9
+        ? (options.root as Document)
+        : options.root.ownerDocument;
+  return new A11yAnnouncer(options.a11yLocale, targetDocument);
 }
 
-function noopLogger(): void {
-  // Intentionally empty — debug logging is opt-in via RuntimeOptions.log.
+/** DOM node types are stable across realms; global constructors are not. */
+function isDocumentRoot(root: Document | Element): root is Document {
+  return root.nodeType === 9;
+}
+
+/** lib.dom models body as present, although head-time documents can lack it. */
+function readDocumentBody(root: Document): HTMLElement | null {
+  return root.body;
 }
 
 /**
@@ -656,18 +1279,6 @@ function looksLikeLexicalRoot(value: unknown): boolean {
 }
 
 /**
- * Default `warn` channel — routes to `console.warn` so consumer-side
- * mistakes (orphan field updates, etc.) reach the developer even when
- * debug logging is off. Falls back to a no-op when `console` is
- * unavailable (some sandboxes).
- */
-function defaultWarn(...args: unknown[]): void {
-  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-    console.warn(...args);
-  }
-}
-
-/**
  * Default ready broadcaster used when the host does not inject one.
  * Posts to `window.parent` and `window.opener` for each origin.
  */
@@ -679,14 +1290,9 @@ function defaultSendReady(origins: readonly string[]): void {
   MessageBus.sendReady(targets, origins);
 }
 
-/**
- * Resolve a field value from the update payload, walking nested dotted
- * paths and trying locale-suffixed fallbacks when a locale is active.
- *
- * Hardened against prototype pollution: keys `__proto__`, `prototype`,
- * and `constructor` short-circuit to `undefined`.
- */
-const BLOCKED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+function sameRevision(a: MessageRevision, b: MessageRevision): boolean {
+  return a.generation === b.generation && a.revision === b.revision;
+}
 
 /**
  * Top-level Payload document fields the live-preview engine ships in
@@ -734,36 +1340,6 @@ function stripLocaleSuffix(name: string, locale: string | undefined): string {
   const suffix = `_${locale}`;
   return name.endsWith(suffix) ? name.slice(0, -suffix.length) : name;
 }
-export function resolveFieldValue(
-  fields: Record<string, unknown>,
-  path: string,
-  locale: string | undefined,
-): unknown {
-  const direct = readSafe(fields, path);
-  if (direct !== undefined) return direct;
-  if (path.includes('.')) {
-    const segments = path.split('.');
-    let current: unknown = fields;
-    for (const segment of segments) {
-      if (BLOCKED_KEYS.has(segment)) return undefined;
-      if (current === null || typeof current !== 'object') return undefined;
-      current = (current as Record<string, unknown>)[segment];
-    }
-    if (current !== undefined) return current;
-  }
-  if (locale !== undefined) {
-    const localised = readSafe(fields, `${path}_${locale}`);
-    if (localised !== undefined) return localised;
-  }
-  return undefined;
-}
-
-function readSafe(obj: Record<string, unknown>, key: string): unknown {
-  if (BLOCKED_KEYS.has(key)) return undefined;
-  if (!Object.prototype.hasOwnProperty.call(obj, key)) return undefined;
-  return obj[key];
-}
-
 function readElementSnapshot(element: Element): unknown {
   if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
     return (element as HTMLInputElement).value;
@@ -775,3 +1351,4 @@ function readElementSnapshot(element: Element): unknown {
 }
 
 export type { CachedElement };
+export { resolveFieldValue } from './field-value';

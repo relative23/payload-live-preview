@@ -10,7 +10,6 @@
 import { isLexicalContent, lexicalToPlainText } from '@lexical/render';
 import { escapeAndLinebreak } from '@security/escape';
 import type { FieldRenderer } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 import { safeStringify } from './utils';
 
 const textareaRenderer: FieldRenderer = {
@@ -25,7 +24,5 @@ const textareaRenderer: FieldRenderer = {
     element.innerHTML = escapeAndLinebreak(text);
   },
 };
-
-registerBuiltinRenderer(textareaRenderer);
 
 export { textareaRenderer };

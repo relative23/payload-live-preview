@@ -7,6 +7,14 @@ interface TestEventMap {
   readonly done: undefined;
 }
 
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
 describe('EventEmitter — registration and dispatch', () => {
   let emitter: EventEmitter<TestEventMap>;
 
@@ -64,6 +72,32 @@ describe('EventEmitter — registration and dispatch', () => {
     expect(() => {
       emitter.off('ping', () => {});
     }).not.toThrow();
+  });
+});
+
+describe('EventEmitter — 1.x lifecycle producer compatibility', () => {
+  it('accepts legacy lifecycle payloads without revision metadata', async () => {
+    const emitter = new EventEmitter();
+    const before = vi.fn();
+    const after = vi.fn();
+    const element = vi.fn();
+    emitter.on('beforeUpdate', before);
+    emitter.on('afterUpdate', after);
+    emitter.on('elementUpdate', element);
+
+    const data = { fields: { title: 'legacy' } };
+    await emitter.emit('beforeUpdate', { data, cancel: () => undefined });
+    await emitter.emit('afterUpdate', { data, updatedCount: 1, durationMs: 0 });
+    await emitter.emit('elementUpdate', {
+      element: document.createElement('p'),
+      fieldName: 'title',
+      previousValue: 'old',
+      nextValue: 'legacy',
+    });
+
+    expect(before).toHaveBeenCalledOnce();
+    expect(after).toHaveBeenCalledOnce();
+    expect(element).toHaveBeenCalledOnce();
   });
 });
 
@@ -140,6 +174,39 @@ describe('EventEmitter — async handlers', () => {
     await emitter.emit('ping', { n: 1 });
     expect(order).toEqual(['first', 'second']);
   });
+
+  it('emitWhile stops between handlers when its continuation becomes ineligible', async () => {
+    const release = deferred<undefined>();
+    const later = vi.fn();
+    let eligible = true;
+    emitter.on('ping', async () => release.promise);
+    emitter.on('ping', later);
+
+    const dispatched = emitter.emitWhile('ping', { n: 1 }, () => eligible);
+    eligible = false;
+    release.resolve(undefined);
+
+    await expect(dispatched).resolves.toBe(false);
+    expect(later).not.toHaveBeenCalled();
+  });
+
+  it('emitWhile leaves once handlers unclaimed when regular dispatch becomes obsolete', async () => {
+    const release = deferred<undefined>();
+    const once = vi.fn();
+    let eligible = true;
+    const regular = async (): Promise<void> => release.promise;
+    emitter.on('ping', regular);
+    emitter.once('ping', once);
+
+    const dispatched = emitter.emitWhile('ping', { n: 1 }, () => eligible);
+    eligible = false;
+    release.resolve(undefined);
+    await expect(dispatched).resolves.toBe(false);
+    emitter.off('ping', regular);
+
+    await emitter.emit('ping', { n: 2 });
+    expect(once).toHaveBeenCalledOnce();
+  });
 });
 
 describe('EventEmitter — error isolation', () => {
@@ -171,6 +238,42 @@ describe('EventEmitter — error isolation', () => {
     emitter.on('ping', () => Promise.reject(new Error('async boom')));
     emitter.on('ping', after);
     await emitter.emit('ping', { n: 1 });
+    expect(after).toHaveBeenCalledOnce();
+  });
+
+  it('continues and resolves when the diagnostic console itself throws', async () => {
+    const after = vi.fn();
+    consoleSpy.mockImplementation(() => {
+      throw new Error('console unavailable');
+    });
+    emitter.on('ping', () => {
+      throw new Error('handler failed');
+    });
+    emitter.on('ping', after);
+
+    await expect(emitter.emit('ping', { n: 1 })).resolves.toBeUndefined();
+    expect(after).toHaveBeenCalledOnce();
+  });
+
+  it('observes a rejected thenable returned by console.error without interrupting emitWhile', async () => {
+    const after = vi.fn();
+    const rejection = new Error('async console unavailable');
+    const then = vi.fn(
+      (_resolve: (value: unknown) => void, reject: (reason: unknown) => void): void => {
+        reject(rejection);
+      },
+    );
+    consoleSpy.mockReturnValue({ then } as never);
+    emitter.on('ping', () => {
+      throw new Error('handler failed');
+    });
+    emitter.on('ping', after);
+
+    await expect(emitter.emitWhile('ping', { n: 1 }, () => true)).resolves.toBe(true);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(then).toHaveBeenCalledOnce();
     expect(after).toHaveBeenCalledOnce();
   });
 
@@ -221,6 +324,27 @@ describe('EventEmitter — introspection', () => {
     emitter.on('ping', () => {});
     emitter.once('pong', () => {});
     expect(new Set(emitter.eventNames())).toEqual(new Set(['ping', 'pong']));
+  });
+
+  it('eventNames drops empty buckets after exact unsubscription', () => {
+    const unsubscribeRegular = emitter.on('ping', () => {});
+    const unsubscribeOnce = emitter.once('pong', () => {});
+
+    unsubscribeRegular();
+    unsubscribeOnce();
+
+    expect(emitter.eventNames()).toEqual([]);
+  });
+
+  it('eventNames drops empty regular and once buckets after off', () => {
+    const handler = vi.fn();
+    emitter.on('ping', handler);
+    emitter.once('ping', handler);
+
+    emitter.off('ping', handler);
+
+    expect(emitter.listenerCount('ping')).toBe(0);
+    expect(emitter.eventNames()).toEqual([]);
   });
 
   it('removeAllListeners(event) removes only that event', () => {

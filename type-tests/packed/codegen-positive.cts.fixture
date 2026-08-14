@@ -1,0 +1,17 @@
+import {
+  emitTypes,
+  extractSchema,
+  generateTypes,
+  type GenerateTypesOptions,
+} from 'payload-live-preview/codegen';
+
+const options = {
+  configPath: './payload.config.ts',
+} satisfies GenerateTypesOptions;
+const publicValues = [
+  generateTypes(options),
+  extractSchema(options),
+  emitTypes({ globals: [], collections: [], diagnostics: [] }),
+] as const;
+
+void publicValues;

@@ -9,8 +9,8 @@
  */
 
 import { isSafeUrl } from '@security/url-validator';
+import { resolveFieldValue } from '@core/field-value';
 import type { FieldRenderer } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 import { safeStringify } from './utils';
 
 const urlRenderer: FieldRenderer = {
@@ -21,7 +21,15 @@ const urlRenderer: FieldRenderer = {
     if (element.tagName === 'A') {
       const anchor = element as HTMLAnchorElement;
       const hrefField = target.hrefField;
-      const hrefSource = hrefField ? context.allFields[hrefField] : value;
+      const hrefSource =
+        hrefField === undefined || hrefField.length === 0
+          ? value
+          : resolveFieldValue(
+              context.allFields,
+              hrefField,
+              context.locale,
+              target.locale !== undefined,
+            );
       if (typeof hrefSource === 'string' && isSafeUrl(hrefSource)) {
         anchor.href = hrefSource;
       }
@@ -35,11 +43,5 @@ const urlRenderer: FieldRenderer = {
     element.textContent = text;
   },
 };
-
-registerBuiltinRenderer(urlRenderer);
-
-// `email` shares semantics with `url` once the value is set — Payload
-// emits a string for both.
-registerBuiltinRenderer({ ...urlRenderer, name: 'email' });
 
 export { urlRenderer };

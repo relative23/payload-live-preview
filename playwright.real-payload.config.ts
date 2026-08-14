@@ -21,10 +21,14 @@ const isCI = process.env['CI'] === 'true';
 const config: PlaywrightTestConfig = {
   testDir: './tests/real-payload',
   fullyParallel: false,
-  forbidOnly: isCI,
+  forbidOnly: true,
+  // A pass on retry must not hide nondeterminism in the release fixture.
+  failOnFlakyTests: true,
   retries: isCI ? 2 : 0,
   workers: 1,
-  reporter: isCI ? [['github'], ['html']] : 'list',
+  reporter: isCI
+    ? [['github'], ['html'], ['./scripts/playwright-zero-skip-reporter.ts']]
+    : [['list'], ['./scripts/playwright-zero-skip-reporter.ts']],
   use: {
     baseURL: 'http://localhost:3001',
     trace: 'on-first-retry',
@@ -40,6 +44,9 @@ const config: PlaywrightTestConfig = {
       // reliable choice for a managed web server.
       command:
         'npm --prefix examples/astro-payload run build && npm --prefix examples/astro-payload run preview',
+      // Suppress Astro's AI-agent auto-background mode so Playwright owns the
+      // foreground process and can reliably observe and terminate it.
+      env: { ASTRO_PREVIEW_BACKGROUND: '1' },
       url: 'http://localhost:4173/',
       reuseExistingServer: !isCI,
       timeout: 120_000,

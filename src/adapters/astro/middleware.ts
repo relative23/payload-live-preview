@@ -5,14 +5,21 @@
  *
  *   1. Generate a per-response CSP nonce and stash it on
  *      `Astro.locals.livePreviewNonce` so consumers can reference it.
- *   2. On **preview requests only** (see `isPreviewRequest`), rewrite
- *      the HTML response to inject the live-preview `<script>` tag.
- *      Normal production traffic streams through untouched — no
- *      buffering, no extra bytes.
- *   3. On preview requests, merge `frame-ancestors` into the
+ *   2. On requests carrying **preview intent** (see
+ *      `isPreviewRequest`), rewrite the HTML response to inject the
+ *      live-preview `<script>` tag.
+ *   3. On those requests, merge `frame-ancestors` into the
  *      `Content-Security-Policy` header so the Payload admin may embed
  *      the page. Full `script-src` nonce management is opt-in via
  *      `manageCsp: 'full'`.
+ *
+ * The intent signals are client-controlled and this middleware does
+ * not authenticate them. For protected preview responses, first verify
+ * an application-owned server session or short-lived authorization,
+ * then invoke this middleware with that same decision also governing
+ * draft reads, credentials, and cache policy. `shouldInject` filters
+ * script insertion only; it is not an authorization boundary and does
+ * not disable CSP handling.
  *
  * Prerendered pages are skipped entirely: Astro runs middleware at
  * build time for those, where per-request nonces and response headers
@@ -144,7 +151,7 @@ async function injectScript(response: Response, nonce: string, body: string): Pr
   headers.delete('content-length');
 
   // Fragment responses (server islands, page partials) have no <head>;
-  // injecting a 50 KB runtime into each of them would corrupt every
+  // injecting a roughly 60 KB runtime into each of them would corrupt every
   // fragment for zero benefit — the full document already carries it.
   if (!HEAD_INSERT.test(html)) {
     return new Response(html, {

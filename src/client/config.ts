@@ -44,7 +44,10 @@ export interface LivePreviewClientConfig {
   readonly disableVisibilityGate?: boolean;
   /** Cache-size threshold above which off-screen updates are queued for replay. Defaults to 50. */
   readonly visibilityGateThreshold?: number;
-  /** Mount an `aria-live` region and announce lifecycle to screen readers. Default `true`. */
+  /**
+   * Mount an `aria-live` region for connections, applied updates, and mounted
+   * heartbeat-timeout disconnects. Destroy releases it synchronously. Default `true`.
+   */
   readonly enableA11y?: boolean;
   /** Locale used to pick A11y announcement strings. Defaults to detected locale. */
   readonly a11yLocale?: string;

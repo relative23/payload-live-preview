@@ -9,18 +9,18 @@
 
 import { escapeHtml, escapeHtmlAttribute } from '@security/escape';
 import { isSafeUrl } from '@security/url-validator';
+import { markNoWriteCallback } from '@core/internal-outcome';
 import type { FieldRenderer } from '@core/types';
 import type { PayloadMedia } from './types';
-import { registerBuiltinRenderer } from './registry';
 
 const uploadRenderer: FieldRenderer = {
   name: 'upload',
-  render(target, value) {
+  render: markNoWriteCallback((target, value) => {
     const element = target.element;
     const media = readMedia(value);
-    if (media === undefined) return;
+    if (media === undefined) return false;
     const url = media.url;
-    if (typeof url !== 'string' || !isSafeUrl(url)) return;
+    if (typeof url !== 'string' || !isSafeUrl(url)) return false;
     if (element.tagName === 'IMG') {
       const img = element as HTMLImageElement;
       img.src = url;
@@ -35,14 +35,13 @@ const uploadRenderer: FieldRenderer = {
     }
     const label = media.filename !== undefined ? escapeHtml(media.filename) : escapeHtml(url);
     element.innerHTML = `<a href="${escapeHtmlAttribute(url)}">${label}</a>`;
-  },
+    return;
+  }),
 };
 
 function readMedia(value: unknown): PayloadMedia | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
   return value;
 }
-
-registerBuiltinRenderer(uploadRenderer);
 
 export { uploadRenderer };

@@ -3,28 +3,41 @@
  *
  * The live-preview runtime patches the DOM *after* the page loads —
  * the initial server render is the consumer's job. With Payload
- * drafts enabled, a preview must render the **draft** version on
- * first load, otherwise editors see stale published content until
- * their first keystroke.
+ * drafts enabled, an **authorized** preview should render the draft
+ * version on first load, otherwise editors see stale published
+ * content until their first keystroke.
  *
- * These helpers wrap the two REST queries every preview loader needs,
- * with the right flags (`draft=true`, `depth`) and an explicit nudge
- * to keep `depth` in sync with the runtime's `mergeDepth` — a
- * mismatch makes populated relationships degrade to IDs after the
- * first edit.
+ * These helpers wrap the corresponding REST queries with `draft` and
+ * `depth` options and an explicit nudge to keep `depth` in sync with
+ * the runtime's `mergeDepth` — a mismatch makes populated
+ * relationships degrade to IDs after the first edit.
+ *
+ * These helpers do not authenticate or authorize requests.
+ * `isPreviewRequest()` detects client-controlled preview intent only.
+ * Verify an application-owned server session or short-lived signed
+ * authorization first, and use that one decision to gate `draft`, any
+ * privileged headers, cache bypass, CSP changes, and runtime injection.
+ * Never attach a long-lived service/API key merely because
+ * `isPreviewRequest()` returned `true`.
  *
  * Isomorphic and dependency-free: works in Astro frontmatter,
  * SvelteKit `load`, Next.js server components, or any Node/edge
  * runtime with `fetch`.
  *
  * ```ts
- * // Astro frontmatter
+ * // Astro frontmatter. `verifyAppPreviewSession` is application-owned,
+ * // server-only code; it validates the request and returns only the
+ * // minimal Payload session headers needed for this request.
+ * const hasPreviewIntent = isPreviewRequest(Astro.request);
+ * const authorization = hasPreviewIntent
+ *   ? await verifyAppPreviewSession(Astro.request)
+ *   : null;
  * const page = await fetchPreviewDocument<Page>({
  *   serverURL: import.meta.env.PAYLOAD_URL,
  *   collection: 'pages',
  *   where: { slug: { equals: Astro.params.slug } },
- *   draft: isPreviewRequest(Astro.request),
- *   headers: { Authorization: `users API-Key ${import.meta.env.PAYLOAD_PREVIEW_KEY}` },
+ *   draft: authorization !== null,
+ *   ...(authorization === null ? {} : { headers: authorization.payloadHeaders }),
  * });
  * ```
  *
@@ -44,16 +57,18 @@ export interface PreviewFetchBaseOptions {
    */
   readonly depth?: number;
   /**
-   * Fetch the draft version. Defaults to `true` (this is a *preview*
-   * fetch). Pass the result of `isPreviewRequest(request)` to make
-   * the same loader serve published content to normal traffic.
+   * Fetch the draft version. Defaults to `true` for 1.x compatibility.
+   * Set this from a verified authorization decision, not directly
+   * from `isPreviewRequest()`, whose result only expresses intent.
    */
   readonly draft?: boolean;
   /** Locale to fetch. */
   readonly locale?: string;
   /**
-   * Extra request headers — typically auth, since draft reads require
-   * an authenticated user (e.g. `Authorization: users API-Key …`).
+   * Extra request headers. Supply only credentials derived from the
+   * current request's verified server-side session (or another
+   * short-lived, scoped authorization). Do not attach a long-lived
+   * service/API key based on a preview-intent signal.
    */
   readonly headers?: Readonly<Record<string, string>>;
   /** Injectable fetch implementation (tests, custom agents). */
@@ -81,7 +96,8 @@ export interface FetchPreviewGlobalOptions extends PreviewFetchBaseOptions {
 }
 
 /**
- * Fetch a single collection document (draft-first by default).
+ * Fetch a single collection document (draft-first by default for 1.x
+ * compatibility; callers must authorize draft access).
  * Returns `null` when nothing matches or the request fails —
  * loaders should fall back to their regular data path or a 404.
  */
@@ -107,7 +123,8 @@ export async function fetchPreviewDocument<T = Record<string, unknown>>(
 }
 
 /**
- * Fetch a global (draft-first by default). Returns `null` on failure.
+ * Fetch a global (draft-first by default for 1.x compatibility;
+ * callers must authorize draft access). Returns `null` on failure.
  */
 export async function fetchPreviewGlobal<T = Record<string, unknown>>(
   options: FetchPreviewGlobalOptions,

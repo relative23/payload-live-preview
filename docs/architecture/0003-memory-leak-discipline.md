@@ -4,21 +4,35 @@
 
 ## Context
 
-A long-running live-preview session may emit thousands of updates over its lifetime. The previous module-singleton model in `0.1.0` already burned us once (see ADR 0002); the per-instance model fixes the cross-instance pollution, but it does *not* automatically prevent the slow, single-instance leaks that show up after an editor has been writing for an hour.
+A long-running live-preview session may emit thousands of updates over its lifetime. The previous module-singleton model in `0.1.0` already burned us once (see ADR 0002); the per-instance model fixes the cross-instance pollution, but it does _not_ automatically prevent the slow, single-instance leaks that show up after an editor has been writing for an hour.
 
 This ADR documents the rules every state-bearing primitive in the library must follow so the runtime can stay flat in memory across long sessions.
 
 ## Decision
 
-### 1. WeakMap / WeakSet for DOM-keyed state
+### 1. WeakMap / WeakSet for persistent DOM-keyed metadata
 
-Any state keyed by an `Element` lives in a `WeakMap` or `WeakSet`, never a plain `Map`/`Set`/array. The element becoming unreachable (because the host re-rendered its DOM) must let the entry collect.
+Persistent passive metadata keyed by an `Element` or `Document` lives in a `WeakMap`
+or `WeakSet`. The DOM key becoming unreachable (because the host re-rendered its DOM
+or discarded a document) must let the entry collect.
+
+Enumerable, active-work state is the narrow exception. Scheduler pending/replay/flush
+snapshots and the observer's current visibility set use strong collections while the
+owning runtime is active because they must be iterated or synchronously reconciled.
+Those collections are bounded by live work, remove entries when bindings disappear or
+are superseded, and are synchronously cleared by `stop()`/`destroy()`. Strong DOM keys
+must never be used as an unbounded passive metadata cache.
 
 Affected modules:
 
 - `@core/cache` — `ElementCache` walks the live tree; any per-element annotation goes through WeakMap.
+- `@core/a11y` — a runtime-root-document-keyed lease coordinates the shared live region, reference count, ownership flag, package-owned announcement node, and one bounded clear timer without detaching consumer children.
 - `@core/structural-applier` — `previousItemValues: WeakMap<Element, Map<string, unknown>>` keeps a per-container snapshot for recursive nested-array diffs.
-- `@field-types/structural-array` — `previousValues: WeakMap<Element, …>` and `warnedContainers: WeakSet<Element>` follow the same rule.
+- `@field-types/structural-array` — per-renderer `WeakMap<Element, …>` state keeps
+  values, template metadata, and the last direct-child key snapshot together;
+  `warnedContainers: WeakSet<Element>` follows the same rule.
+- `@field-types/text` — its one-time structured-child warning set is created with
+  each renderer/client snapshot rather than shared at module scope.
 - `@plugins/manager` — plugin contexts are owned per-runtime, dropped on `destroy()`.
 
 ### 2. Every observer / timer pairs with an explicit teardown
@@ -45,25 +59,43 @@ When adding a new cache, copy that pattern — including a test that asserts the
 
 The plugin manager enforces this for `LivePreviewPlugin` instances: every listener registered through `ctx.events.on` is collected and revoked on plugin unregister.
 
-### 5. The inline runtime owns no module-level state
+### 5. The inline runtime owns no strongly retained module-level lifecycle or DOM state
 
-The inline IIFE that ships in `runtime.generated.ts` instantiates a single `LivePreviewRuntime` and stores it on a per-page global (`window.__livePreview`). Re-entry (HMR, SPA navigation, View-Transitions) must call `destroy()` on the previous instance before constructing a new one. The bootstrap does this; consumers should not need to.
+The inline IIFE that ships in `runtime.generated.ts` instantiates one
+`LivePreviewRuntime` and stores its API on the per-page global
+`window.__livePreview`. Duplicate script injection reuses that live API instead of
+constructing a second runtime. Explicitly calling the global API's `destroy()` tears
+down the runtime and clears the handle, so a later bootstrap can construct a fresh
+instance. The highlight plugin and accessibility announcer use the narrow module-scope
+`WeakMap` lease exceptions documented in ADR 0002: their weak DOM keys coordinate
+multi-client ownership without retaining discarded documents or elements. The
+announcer's final lease release also cancels its shared timer.
+Realm-wide renderer configuration and the bounded pure-value Intl cache are the
+non-DOM exceptions described in ADR 0002 and section 3; neither owns a client lifecycle
+or retains a document/element.
 
 ## Consequences
 
-| | |
-|---|---|
-| ✅ Long sessions stay flat | Editor + autosave loops for hours don't drift in heap |
-| ✅ DOM-tree rebuilds release state automatically | View-Transitions, fragment swaps |
-| ✅ Test discipline catches regressions at PR time | Each new observer comes with a teardown test |
-| ⚠️ Slightly more verbose API surface | Every primitive is a class with `destroy()` — acceptable trade for correctness |
+|                                                   |                                                                                |
+| ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| ✅ Long sessions stay flat                        | Editor + autosave loops for hours don't drift in heap                          |
+| ✅ DOM-tree rebuilds release state automatically  | View-Transitions, fragment swaps                                               |
+| ✅ Test discipline catches regressions at PR time | Each new observer comes with a teardown test                                   |
+| ⚠️ Slightly more verbose API surface              | Every primitive is a class with `destroy()` — acceptable trade for correctness |
 
 ## How to verify
 
 - `npm run test` — every primitive's teardown is asserted.
-- `npm run test:bench tests/benchmarks/leak.bench.ts` (when added) — drives N=10k update cycles and measures `process.memoryUsage().heapUsed` deltas. Threshold target: <2 MB drift across 10k cycles.
+- `npm run test:leak` — runs under `node --expose-gc`, drives 10,000 fully
+  awaited updates through one long-lived runtime plus repeated ownership churn,
+  and checks both retained heap and exact observer/listener/timer/DOM-resource
+  counts. Retained drift must stay below 2 MiB after forced collection.
 - Manual: open Chrome DevTools → Memory → record heap snapshot before and after a 5-minute editor session against a Payload admin instance. Diff should be < 1 MB.
 
 ## When in doubt
 
-Default to a class with a teardown method, a `WeakMap` for DOM-keyed state, and a unit test that destroys-and-recreates the primitive in a tight loop. Reach for module-scoped state only when the value is pure (no listeners, no DOM references) and even then put a bound on it.
+Default to a class with a teardown method, a `WeakMap` for persistent DOM-keyed metadata,
+and a unit test that destroys-and-recreates the primitive in a tight loop. Use a strong
+DOM-keyed collection only for bounded, enumerable in-flight state with synchronous
+removal and teardown. Reach for module-scoped state only when the value is pure (no
+listeners, no DOM references) and even then put a bound on it.

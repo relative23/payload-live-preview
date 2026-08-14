@@ -10,7 +10,6 @@
 
 import { sanitizeHtml } from '@security/sanitizer';
 import type { FieldRenderer } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 import { safeStringify } from './utils';
 
 const htmlRenderer: FieldRenderer = {
@@ -24,7 +23,5 @@ const htmlRenderer: FieldRenderer = {
     target.element.innerHTML = sanitizeHtml(html);
   },
 };
-
-registerBuiltinRenderer(htmlRenderer);
 
 export { htmlRenderer };

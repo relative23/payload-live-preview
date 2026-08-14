@@ -28,6 +28,20 @@ export interface HeartbeatOptions {
 
 const DEFAULT_TIMEOUT_MS = 0;
 
+const enum HeartbeatSlot {
+  TimeoutMs,
+  OnTimeout,
+  Handle,
+  LastKick,
+}
+
+type HeartbeatState = [
+  timeoutMs: number,
+  onTimeout: () => void,
+  handle: ReturnType<typeof setTimeout> | null,
+  lastKick: number,
+];
+
 /**
  * Heartbeat timer with `kick`/`stop` semantics. `kick()` is invoked
  * on every valid incoming message; if it is not called within
@@ -35,42 +49,42 @@ const DEFAULT_TIMEOUT_MS = 0;
  * (the default) disables the timer.
  */
 export class HeartbeatTimer {
-  readonly #timeoutMs: number;
-  readonly #onTimeout: () => void;
-  #handle: ReturnType<typeof setTimeout> | null = null;
-  #lastKick = 0;
+  private readonly s: HeartbeatState;
 
   constructor(options: HeartbeatOptions) {
-    this.#timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    this.#onTimeout = options.onTimeout;
+    this.s = [options.timeoutMs ?? DEFAULT_TIMEOUT_MS, options.onTimeout, null, 0];
   }
 
   /** Reset the timer. Schedules `onTimeout` after `timeoutMs`. */
   kick(): void {
-    this.#lastKick = Date.now();
-    if (this.#timeoutMs <= 0) return;
-    if (this.#handle !== null) clearTimeout(this.#handle);
-    this.#handle = setTimeout(() => {
-      this.#handle = null;
-      this.#onTimeout();
-    }, this.#timeoutMs);
+    this.s[HeartbeatSlot.LastKick] = Date.now();
+    if (this.s[HeartbeatSlot.TimeoutMs] <= 0) return;
+    if (this.s[HeartbeatSlot.Handle] !== null) {
+      clearTimeout(this.s[HeartbeatSlot.Handle]);
+    }
+    const handle = setTimeout(() => {
+      if (this.s[HeartbeatSlot.Handle] !== handle) return;
+      this.s[HeartbeatSlot.Handle] = null;
+      this.s[HeartbeatSlot.OnTimeout]();
+    }, this.s[HeartbeatSlot.TimeoutMs]);
+    this.s[HeartbeatSlot.Handle] = handle;
   }
 
   /** Cancel any pending timeout. Safe to call repeatedly. */
   stop(): void {
-    if (this.#handle === null) return;
-    clearTimeout(this.#handle);
-    this.#handle = null;
+    if (this.s[HeartbeatSlot.Handle] === null) return;
+    clearTimeout(this.s[HeartbeatSlot.Handle]);
+    this.s[HeartbeatSlot.Handle] = null;
   }
 
   /** Test introspection: timestamp of the most recent kick (ms epoch). */
   get lastKickAt(): number {
-    return this.#lastKick;
+    return this.s[HeartbeatSlot.LastKick];
   }
 
   /** Test introspection: is a timeout currently scheduled? */
   get pending(): boolean {
-    return this.#handle !== null;
+    return this.s[HeartbeatSlot.Handle] !== null;
   }
 }
 
@@ -79,37 +93,39 @@ export class HeartbeatTimer {
  * a callback so the host can wire it to its event emitter.
  */
 export class ConnectionState {
-  #status: ConnectionStatus = 'disconnected';
-  readonly #onChange: (next: ConnectionStatus, previous: ConnectionStatus) => void;
+  private readonly s: [
+    status: ConnectionStatus,
+    onChange: (next: ConnectionStatus, previous: ConnectionStatus) => void,
+  ];
 
   constructor(onChange: (next: ConnectionStatus, previous: ConnectionStatus) => void) {
-    this.#onChange = onChange;
+    this.s = ['disconnected', onChange];
   }
 
   get status(): ConnectionStatus {
-    return this.#status;
+    return this.s[0];
   }
 
   /** Mark as `connected`; idempotent. Returns true if state transitioned. */
   markConnected(): boolean {
-    return this.#transition('connected');
+    return this.transition('connected');
   }
 
   /** Mark as `connecting`; idempotent. */
   markConnecting(): boolean {
-    return this.#transition('connecting');
+    return this.transition('connecting');
   }
 
   /** Mark as `disconnected`; idempotent. */
   markDisconnected(): boolean {
-    return this.#transition('disconnected');
+    return this.transition('disconnected');
   }
 
-  #transition(next: ConnectionStatus): boolean {
-    if (this.#status === next) return false;
-    const previous = this.#status;
-    this.#status = next;
-    this.#onChange(next, previous);
+  private transition(next: ConnectionStatus): boolean {
+    if (this.s[0] === next) return false;
+    const previous = this.s[0];
+    this.s[0] = next;
+    this.s[1](next, previous);
     return true;
   }
 }

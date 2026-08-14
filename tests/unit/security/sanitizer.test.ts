@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   sanitizeHtml,
+  hasSanitizerDocument,
   setSanitizerDocument,
   SanitizerEnvironmentError,
   SANITIZER_POLICY,
@@ -31,6 +32,20 @@ describe('sanitizeHtml — allow-list', () => {
 
   it('handles empty input', () => {
     expect(sanitizeHtml('')).toBe('');
+  });
+
+  it('does not invoke the HTML parser for empty input', () => {
+    const createElement = vi.fn(() => {
+      throw new Error('the empty-input fast path must not parse');
+    });
+    setSanitizerDocument({ createElement });
+
+    try {
+      expect(sanitizeHtml('')).toBe('');
+      expect(createElement).not.toHaveBeenCalled();
+    } finally {
+      setSanitizerDocument(null);
+    }
   });
 });
 
@@ -69,6 +84,14 @@ describe('sanitizeHtml — dangerous content removal', () => {
     expect(result).toBe('<p>x</p>');
   });
 
+  it('does not let extension options re-enable event handlers or inline CSS', () => {
+    const result = sanitizeHtml('<span onclick="alert(1)" style="color:red">x</span>', {
+      additionalAllowedAttributes: { span: ['onclick', 'style'] },
+    });
+
+    expect(result).toBe('<span>x</span>');
+  });
+
   it('strips unknown attributes from allowed tags', () => {
     const result = sanitizeHtml('<a href="https://example.com" formaction="x">link</a>');
     expect(result).toContain('href="https://example.com"');
@@ -91,6 +114,17 @@ describe('sanitizeHtml — dangerous content removal', () => {
     const result = sanitizeHtml('<p>a</p><!-- evil --><p>b</p>');
     expect(result).toBe('<p>a</p><p>b</p>');
   });
+
+  it('validates every built-in URL-bearing attribute', () => {
+    const result = sanitizeHtml(
+      '<a href="javascript:alert(1)">a</a>' +
+        '<img src="javascript:alert(1)" alt="img">' +
+        '<q cite="javascript:alert(1)">q</q>' +
+        '<video poster="javascript:alert(1)"></video>',
+    );
+
+    expect(result).toBe('<a>a</a><img alt="img"><q>q</q><video></video>');
+  });
 });
 
 describe('sanitizeHtml — link hardening', () => {
@@ -110,6 +144,21 @@ describe('sanitizeHtml — link hardening', () => {
     const result = sanitizeHtml('<a href="https://example.com" target="_self">x</a>');
     expect(result).toContain('target="_self"');
     expect(result).toContain('rel="noopener noreferrer"');
+  });
+
+  it('leaves anchors without href unchanged', () => {
+    expect(sanitizeHtml('<a rel="author">x</a>')).toBe('<a rel="author">x</a>');
+  });
+
+  it('does not apply anchor hardening to extension elements with URL attributes', () => {
+    const result = sanitizeHtml(
+      '<span href="https://example.com" rel="author" target="_self">x</span>',
+      {
+        additionalAllowedAttributes: { span: ['href', 'rel', 'target'] },
+      },
+    );
+
+    expect(result).toBe('<span href="https://example.com" rel="author" target="_self">x</span>');
   });
 });
 
@@ -166,6 +215,22 @@ describe('sanitizeHtml — option overrides', () => {
     });
     expect(result).toContain('foo="bar"');
   });
+
+  it('merges additional attributes with the built-in per-tag policy', () => {
+    const result = sanitizeHtml('<a href="/safe" data-custom="yes">x</a>', {
+      additionalAllowedAttributes: { a: ['data-custom'] },
+    });
+
+    expect(result).toBe('<a href="/safe" data-custom="yes">x</a>');
+  });
+
+  it('does not interpret ordinary extension attributes as srcset URLs', () => {
+    const result = sanitizeHtml('<span label="data:text/html,x">x</span>', {
+      additionalAllowedAttributes: { span: ['label'] },
+    });
+
+    expect(result).toBe('<span label="data:text/html,x">x</span>');
+  });
 });
 
 describe('SanitizerEnvironmentError', () => {
@@ -187,10 +252,145 @@ describe('SanitizerEnvironmentError', () => {
 });
 
 describe('SANITIZER_POLICY', () => {
-  it('exposes the resolved allow-list sets', () => {
-    expect(SANITIZER_POLICY.allowedTags.has('p')).toBe(true);
-    expect(SANITIZER_POLICY.removeCompletely.has('script')).toBe(true);
-    expect(SANITIZER_POLICY.urlAttributes.has('href')).toBe(true);
+  it('exposes the complete reviewed tag and URL-attribute policy', () => {
+    expect([...SANITIZER_POLICY.allowedTags]).toEqual([
+      'p',
+      'br',
+      'strong',
+      'b',
+      'em',
+      'i',
+      'u',
+      's',
+      'strike',
+      'mark',
+      'small',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'ul',
+      'ol',
+      'li',
+      'dl',
+      'dt',
+      'dd',
+      'blockquote',
+      'code',
+      'pre',
+      'kbd',
+      'samp',
+      'var',
+      'a',
+      'span',
+      'div',
+      'section',
+      'article',
+      'aside',
+      'header',
+      'footer',
+      'nav',
+      'figure',
+      'figcaption',
+      'img',
+      'picture',
+      'source',
+      'audio',
+      'video',
+      'sub',
+      'sup',
+      'hr',
+      'time',
+      'abbr',
+      'cite',
+      'q',
+      'table',
+      'thead',
+      'tbody',
+      'tfoot',
+      'tr',
+      'th',
+      'td',
+      'caption',
+      'colgroup',
+      'col',
+    ]);
+    expect([...SANITIZER_POLICY.removeCompletely]).toEqual([
+      'script',
+      'style',
+      'iframe',
+      'object',
+      'embed',
+      'link',
+      'meta',
+      'base',
+      'form',
+      'input',
+      'button',
+      'select',
+      'textarea',
+      'svg',
+      'math',
+      'template',
+      'frame',
+      'frameset',
+      'noframes',
+      'noscript',
+    ]);
+    expect([...SANITIZER_POLICY.globalAttributes]).toEqual([
+      'id',
+      'class',
+      'lang',
+      'dir',
+      'title',
+      'role',
+      'tabindex',
+    ]);
+    expect([...SANITIZER_POLICY.urlAttributes]).toEqual(['href', 'src', 'cite', 'poster']);
+  });
+
+  it('exposes the complete reviewed per-tag attribute policy', () => {
+    expect(
+      Object.fromEntries(
+        Object.entries(SANITIZER_POLICY.attributesByTag).map(([tag, attributes]) => [
+          tag,
+          [...attributes],
+        ]),
+      ),
+    ).toEqual({
+      a: ['href', 'target', 'rel', 'download', 'hreflang', 'type'],
+      img: ['src', 'srcset', 'sizes', 'alt', 'width', 'height', 'loading', 'decoding'],
+      picture: [],
+      source: ['src', 'srcset', 'sizes', 'type', 'media'],
+      audio: ['src', 'controls', 'autoplay', 'loop', 'muted', 'preload'],
+      video: [
+        'src',
+        'poster',
+        'controls',
+        'autoplay',
+        'loop',
+        'muted',
+        'preload',
+        'width',
+        'height',
+        'playsinline',
+      ],
+      time: ['datetime'],
+      abbr: ['title'],
+      q: ['cite'],
+      blockquote: ['cite'],
+      table: ['summary'],
+      th: ['colspan', 'rowspan', 'scope', 'headers', 'abbr'],
+      td: ['colspan', 'rowspan', 'headers'],
+      col: ['span'],
+      colgroup: ['span'],
+      ol: ['start', 'reversed', 'type'],
+      li: ['value'],
+      code: ['class'],
+      pre: ['class'],
+    });
   });
 });
 
@@ -218,10 +418,35 @@ describe('setSanitizerDocument — SSR fallback', () => {
     delete globalThis.document;
     try {
       setSanitizerDocument(surrogate);
+      expect(hasSanitizerDocument()).toBe(true);
       const result = sanitizeHtml('<p>hi <script>x</script></p>');
       expect(result).toBe('<p>hi </p>');
     } finally {
       globalThis.document = originalDocument;
+    }
+  });
+
+  it('uses an injected document without relying on a global Node constructor', () => {
+    const originalDocument = globalThis.document;
+    const originalNode = globalThis.Node;
+    const surrogate = {
+      createElement: (tag: string): { innerHTML: string; readonly content: ParentNode } =>
+        originalDocument.createElement(tag) as unknown as {
+          innerHTML: string;
+          readonly content: ParentNode;
+        },
+    };
+
+    Reflect.deleteProperty(globalThis, 'document');
+    Reflect.deleteProperty(globalThis, 'Node');
+    try {
+      setSanitizerDocument(surrogate);
+      expect(sanitizeHtml('<p>Hello<!-- hidden --></p><script>bad()</script>')).toBe(
+        '<p>Hello</p>',
+      );
+    } finally {
+      globalThis.document = originalDocument;
+      globalThis.Node = originalNode;
     }
   });
 
@@ -267,6 +492,7 @@ describe('setSanitizerDocument — SSR fallback', () => {
     delete globalThis.document;
     try {
       setSanitizerDocument(null);
+      expect(hasSanitizerDocument()).toBe(false);
       expect(() => sanitizeHtml('<p>x</p>')).toThrow(SanitizerEnvironmentError);
     } finally {
       globalThis.document = originalDocument;
@@ -293,6 +519,20 @@ describe('sanitizeHtml — srcset validation', () => {
       '<img src="/ok.jpg" srcset="https://a.example/1.jpg 1x, data:text/html,x 2x">',
     );
     expect(out).not.toContain('srcset');
+  });
+
+  it('validates srcset on source elements as well as images', () => {
+    const out = sanitizeHtml(
+      '<picture><source srcset="javascript:alert(1) 1x"><img src="/fallback.jpg" alt="x"></picture>',
+    );
+
+    expect(out).toBe('<picture><source><img src="/fallback.jpg" alt="x"></picture>');
+  });
+
+  it('ignores empty candidates while validating every populated candidate', () => {
+    const out = sanitizeHtml('<img srcset=", /safe.jpg 1x,   " alt="x">');
+
+    expect(out).toContain('srcset=", /safe.jpg 1x,   "');
   });
 });
 

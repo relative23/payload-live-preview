@@ -15,9 +15,10 @@
  *      enabled when development mode is detected. Replaces the
  *      legacy hand-rolled port list.
  *
- * Once the parent's origin is *confirmed* through a successful message
- * handshake, callers can call `lockOrigin()` to drop every other
- * candidate, making subsequent matches exact.
+ * Once the parent's origin is confirmed by an accepted data-bearing
+ * update, callers can call `lockOrigin()` to drop every other candidate,
+ * making subsequent matches exact. A data-less `ready` handshake does
+ * not lock the detector.
  *
  * @module @detection/origin
  */
@@ -49,19 +50,32 @@ export interface OriginDetectorOptions {
   readonly referrer?: string;
 }
 
+const enum OriginSlot {
+  ExplicitOrigins,
+  ReferrerOrigin,
+  AllowLocalhost,
+  ReferrerWasAvailable,
+  LockedOrigin,
+}
+
+type OriginState = [
+  explicitOrigins: ReadonlySet<string>,
+  referrerOrigin: string | undefined,
+  allowLocalhost: boolean,
+  referrerWasAvailable: boolean,
+  lockedOrigin: string | undefined,
+];
+
 /**
  * Holds the resolved origin policy and exposes a matcher.
  *
  * The detector is stateful: it starts with the union of all candidate
- * sources, then narrows down to a single, verified origin once
- * `lockOrigin()` is called by the message bus on first valid handshake.
+ * sources, then narrows down to a single, verified origin once the
+ * lifecycle calls `lockOrigin()` for its first accepted data-bearing
+ * update.
  */
 export class OriginDetector {
-  readonly #explicitOrigins: ReadonlySet<string>;
-  readonly #referrerOrigin: string | undefined;
-  readonly #allowLocalhost: boolean;
-  readonly #referrerWasAvailable: boolean;
-  #lockedOrigin: string | undefined;
+  readonly #state: OriginState;
 
   constructor(options: OriginDetectorOptions = {}) {
     const explicit = new Set<string>();
@@ -77,8 +91,6 @@ export class OriginDetector {
         if (normalised !== undefined) explicit.add(normalised);
       }
     }
-    this.#explicitOrigins = explicit;
-
     const useReferrer = options.enableReferrerDetection ?? true;
     let referrerOrigin: string | undefined;
     if (useReferrer) {
@@ -93,12 +105,15 @@ export class OriginDetector {
         }
       }
     }
-    this.#referrerOrigin = referrerOrigin;
-    this.#referrerWasAvailable = referrerOrigin !== undefined;
-
     const allowLocalhost =
       (options.enableLocalhostMatching ?? true) && (options.forceDevMode ?? isDevMode());
-    this.#allowLocalhost = allowLocalhost;
+    this.#state = [
+      explicit,
+      referrerOrigin,
+      allowLocalhost,
+      referrerOrigin !== undefined,
+      undefined,
+    ];
   }
 
   /**
@@ -116,22 +131,25 @@ export class OriginDetector {
    */
   matches(origin: string): boolean {
     if (origin.length === 0 || origin === 'null') return false;
-    if (this.#lockedOrigin !== undefined) return origin === this.#lockedOrigin;
-    if (this.#explicitOrigins.has(origin)) return true;
+    if (this.#state[OriginSlot.LockedOrigin] !== undefined) {
+      return origin === this.#state[OriginSlot.LockedOrigin];
+    }
+    if (this.#state[OriginSlot.ExplicitOrigins].has(origin)) return true;
     if (
-      this.#explicitOrigins.size === 0 &&
-      this.#referrerOrigin !== undefined &&
-      origin === this.#referrerOrigin
+      this.#state[OriginSlot.ExplicitOrigins].size === 0 &&
+      this.#state[OriginSlot.ReferrerOrigin] !== undefined &&
+      origin === this.#state[OriginSlot.ReferrerOrigin]
     ) {
       return true;
     }
-    if (this.#allowLocalhost && LOCALHOST_PATTERN.test(origin)) return true;
+    if (this.#state[OriginSlot.AllowLocalhost] && LOCALHOST_PATTERN.test(origin)) return true;
     return false;
   }
 
   /**
-   * Narrow the trusted set to a single origin after a successful
-   * handshake. Subsequent calls to `matches()` only allow `origin`.
+   * Narrow the trusted set to a single origin after an accepted
+   * data-bearing update. Subsequent calls to `matches()` only allow
+   * `origin`.
    *
    * Returns `true` if locking succeeded; `false` if the candidate is
    * not currently considered trusted (which would defeat the purpose
@@ -139,28 +157,28 @@ export class OriginDetector {
    */
   lockOrigin(origin: string): boolean {
     if (!this.matches(origin)) return false;
-    this.#lockedOrigin = origin;
+    this.#state[OriginSlot.LockedOrigin] = origin;
     return true;
   }
 
   /**
    * Release the origin lock so any allow-listed origin is trusted
-   * again until the next successful handshake. The lifecycle calls
-   * this on heartbeat timeout — after the trusted parent disappears,
+   * again until the next accepted data-bearing update. The lifecycle
+   * calls this on heartbeat timeout — after the trusted parent disappears,
    * a different (still-allowed) origin should be free to reconnect.
    *
    * Returns the previously-locked origin, or `undefined` when nothing
    * was locked.
    */
   unlockOrigin(): string | undefined {
-    const previous = this.#lockedOrigin;
-    this.#lockedOrigin = undefined;
+    const previous = this.#state[OriginSlot.LockedOrigin];
+    this.#state[OriginSlot.LockedOrigin] = undefined;
     return previous;
   }
 
   /** The currently locked origin, or `undefined`. */
   get lockedOrigin(): string | undefined {
-    return this.#lockedOrigin;
+    return this.#state[OriginSlot.LockedOrigin];
   }
 
   /**
@@ -171,13 +189,18 @@ export class OriginDetector {
    * so the handshake can find a Payload running on its usual port.
    */
   enumerate(): string[] {
-    if (this.#lockedOrigin !== undefined) return [this.#lockedOrigin];
-    const result = new Set<string>(this.#explicitOrigins);
-    // Referrer is a zero-config fallback only — mirroring matches().
-    if (this.#explicitOrigins.size === 0 && this.#referrerOrigin !== undefined) {
-      result.add(this.#referrerOrigin);
+    if (this.#state[OriginSlot.LockedOrigin] !== undefined) {
+      return [this.#state[OriginSlot.LockedOrigin]];
     }
-    if (this.#allowLocalhost) {
+    const result = new Set<string>(this.#state[OriginSlot.ExplicitOrigins]);
+    // Referrer is a zero-config fallback only — mirroring matches().
+    if (
+      this.#state[OriginSlot.ExplicitOrigins].size === 0 &&
+      this.#state[OriginSlot.ReferrerOrigin] !== undefined
+    ) {
+      result.add(this.#state[OriginSlot.ReferrerOrigin]);
+    }
+    if (this.#state[OriginSlot.AllowLocalhost]) {
       for (const port of LOCALHOST_HANDSHAKE_PORTS) {
         result.add(`http://localhost:${String(port)}`);
         result.add(`http://127.0.0.1:${String(port)}`);
@@ -193,7 +216,7 @@ export class OriginDetector {
    * (because of a `Referrer-Policy: no-referrer` header).
    */
   get referrerWasAvailable(): boolean {
-    return this.#referrerWasAvailable;
+    return this.#state[OriginSlot.ReferrerWasAvailable];
   }
 
   /**
@@ -203,9 +226,9 @@ export class OriginDetector {
    */
   get isProductionUnconfigured(): boolean {
     if (!isInIframe()) return false;
-    if (this.#explicitOrigins.size > 0) return false;
-    if (this.#allowLocalhost) return false;
-    if (this.#referrerOrigin !== undefined) return false;
+    if (this.#state[OriginSlot.ExplicitOrigins].size > 0) return false;
+    if (this.#state[OriginSlot.AllowLocalhost]) return false;
+    if (this.#state[OriginSlot.ReferrerOrigin] !== undefined) return false;
     return true;
   }
 
@@ -219,9 +242,9 @@ export class OriginDetector {
    * a `frame-ancestors` policy in production.
    */
   get isReferrerOnlyTrust(): boolean {
-    if (this.#explicitOrigins.size > 0) return false;
-    if (this.#allowLocalhost) return false;
-    return this.#referrerOrigin !== undefined;
+    if (this.#state[OriginSlot.ExplicitOrigins].size > 0) return false;
+    if (this.#state[OriginSlot.AllowLocalhost]) return false;
+    return this.#state[OriginSlot.ReferrerOrigin] !== undefined;
   }
 }
 

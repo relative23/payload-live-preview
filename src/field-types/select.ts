@@ -11,7 +11,6 @@
  */
 
 import type { FieldRenderer } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 import { safeStringify } from './utils';
 
 const selectRenderer: FieldRenderer = {
@@ -36,8 +35,5 @@ function stringify(value: unknown): string {
   if (Array.isArray(value)) return value.map((v) => stringify(v)).join(', ');
   return safeStringify(value);
 }
-
-registerBuiltinRenderer(selectRenderer);
-registerBuiltinRenderer({ ...selectRenderer, name: 'radio' });
 
 export { selectRenderer };

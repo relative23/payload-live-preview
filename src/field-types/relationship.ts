@@ -13,7 +13,6 @@
 import { isSafeUrl } from '@security/url-validator';
 import type { FieldRenderer } from '@core/types';
 import type { PayloadRelationship } from './types';
-import { registerBuiltinRenderer } from './registry';
 import { safeStringify } from './utils';
 
 const relationshipRenderer: FieldRenderer = {
@@ -50,7 +49,5 @@ function pickLabel(value: unknown): string {
   }
   return safeStringify(value);
 }
-
-registerBuiltinRenderer(relationshipRenderer);
 
 export { relationshipRenderer };

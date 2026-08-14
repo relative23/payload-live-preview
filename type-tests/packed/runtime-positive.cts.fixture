@@ -1,0 +1,35 @@
+import {
+  LivePreviewClient,
+  bind,
+  generateInlineScript,
+  type FieldRenderer,
+  type LivePreviewPlugin,
+} from 'payload-live-preview';
+import { EventEmitter, initLivePreview } from 'payload-live-preview/core';
+import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+
+const client = new LivePreviewClient({ autoStart: false });
+const unsubscribe = client.events.once('disconnect', ({ reason }) => {
+  void reason;
+});
+const plugin: LivePreviewPlugin = {
+  name: 'commonjs-contract',
+  init: (context) => context.registerTransform('title', (value) => value),
+};
+const renderer: FieldRenderer = {
+  name: 'text',
+  render: () => undefined,
+};
+
+const publicValues = [
+  generateInlineScript(),
+  bind<{ title: string }>('title'),
+  new EventEmitter(),
+  initLivePreview,
+  buildLivePreviewUrl({ baseUrl: 'https://example.com' }),
+  plugin,
+  renderer,
+] as const;
+
+unsubscribe();
+void publicValues;

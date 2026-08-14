@@ -70,9 +70,10 @@ export interface BuildLivePreviewUrlOptions {
    */
   readonly fallback?: string;
   /**
-   * Query parameter appended so the frontend can recognise the request
-   * as a preview (`isPreviewRequest` checks it). Set `null` to disable.
-   * Default `'preview'` → `?preview=true`.
+   * Query parameter appended so the frontend can detect preview intent
+   * (`isPreviewRequest` checks it). This client-controlled signal does
+   * not authenticate or authorize draft access or response changes.
+   * Set `null` to disable. Default `'preview'` → `?preview=true`.
    */
   readonly previewParam?: string | null;
 }

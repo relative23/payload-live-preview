@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import '@field-types/index';
-import { buildBuiltinRenderers } from '@field-types/registry';
+import { buildBuiltinRenderers } from '@field-types/index';
 import type { CachedElement, FieldRenderer, RenderContext } from '@core/types';
 
 function makeTarget(element: Element, overrides: Partial<CachedElement> = {}): CachedElement {
@@ -106,6 +105,21 @@ describe('text renderer', () => {
     expect(warn).toHaveBeenCalledOnce();
     warn.mockRestore();
   });
+
+  it('keeps rendering isolated when the structured-markup warning channel throws', () => {
+    const el = document.createElement('h1');
+    el.appendChild(document.createElement('span'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      throw new Error('hostile console');
+    });
+
+    expect(() => {
+      renderer('text').render(makeTarget(el), 'replacement', emptyContext());
+    }).not.toThrow();
+    expect(el.children).toHaveLength(1);
+    expect(warn).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
 });
 
 describe('textarea renderer', () => {
@@ -183,10 +197,32 @@ describe('url renderer', () => {
     expect(el.href).toBe('https://example.com/');
   });
 
+  it('resolves a dotted sibling href path without traversing prototypes', () => {
+    const el = document.createElement('a');
+    renderer('url').render(
+      makeTarget(el, { hrefField: 'cta.destination' }),
+      'Visit',
+      emptyContext({ cta: { destination: 'https://example.com/nested' } }),
+    );
+
+    expect(el.href).toBe('https://example.com/nested');
+  });
+
   it('writes plain text on non-anchors', () => {
     const el = document.createElement('p');
     renderer('url').render(makeTarget(el), 'https://example.com', emptyContext());
     expect(el.textContent).toBe('https://example.com');
+  });
+
+  it('treats an empty sibling href path as absent', () => {
+    const el = document.createElement('a');
+    renderer('url').render(
+      makeTarget(el, { hrefField: '' }),
+      'https://example.com',
+      emptyContext(),
+    );
+
+    expect(el.href).toBe('https://example.com/');
   });
 
   it('refuses unsafe URLs when reading hrefField', () => {
@@ -223,6 +259,62 @@ describe('image renderer', () => {
     expect(el.alt).toBe('fallback');
   });
 
+  it('lets an explicit sibling alt override a media-object alt', () => {
+    const el = document.createElement('img');
+    renderer('image').render(
+      makeTarget(el, { altField: 'caption' }),
+      { url: 'https://cdn.example.com/a.jpg', alt: 'media alt' },
+      emptyContext({ caption: 'explicit alt' }),
+    );
+
+    expect(el.alt).toBe('explicit alt');
+  });
+
+  it('uses the element locale for an explicit sibling alt override', () => {
+    const el = document.createElement('img');
+    renderer('image').render(
+      makeTarget(el, { altField: 'caption', locale: 'de' }),
+      { url: 'https://cdn.example.com/a.jpg', alt: 'media alt' },
+      { ...emptyContext({ caption: 'English', caption_de: 'Deutsch' }), locale: 'de' },
+    );
+
+    expect(el.alt).toBe('Deutsch');
+  });
+
+  it('resolves dotted sibling alt paths', () => {
+    const el = document.createElement('img');
+    renderer('image').render(
+      makeTarget(el, { altField: 'hero.alt' }),
+      { url: 'https://cdn.example.com/a.jpg' },
+      emptyContext({ hero: { alt: 'nested fallback' } }),
+    );
+
+    expect(el.alt).toBe('nested fallback');
+  });
+
+  it('pulls src from the configured sibling field', () => {
+    const el = document.createElement('img');
+    renderer('image').render(
+      makeTarget(el, { srcField: 'hero.assetUrl' }),
+      'descriptive label',
+      emptyContext({ hero: { assetUrl: 'https://cdn.example.com/from-sibling.jpg' } }),
+    );
+
+    expect(el.src).toBe('https://cdn.example.com/from-sibling.jpg');
+  });
+
+  it('refuses unsafe URLs from the configured sibling src field', () => {
+    const el = document.createElement('img');
+    el.src = 'https://cdn.example.com/before.jpg';
+    renderer('image').render(
+      makeTarget(el, { srcField: 'assetUrl' }),
+      'https://cdn.example.com/fallback.jpg',
+      emptyContext({ assetUrl: 'javascript:alert(1)' }),
+    );
+
+    expect(el.src).toBe('https://cdn.example.com/before.jpg');
+  });
+
   it('sets background-image on non-img elements', () => {
     const el = document.createElement('div');
     renderer('image').render(
@@ -245,6 +337,18 @@ describe('image renderer', () => {
     const el = document.createElement('img');
     renderer('image').render(makeTarget(el), 'https://cdn.example.com/x.jpg', emptyContext());
     expect(el.src).toBe('https://cdn.example.com/x.jpg');
+  });
+
+  it('treats empty sibling src and alt paths as absent', () => {
+    const el = document.createElement('img');
+    renderer('image').render(
+      makeTarget(el, { srcField: '', altField: '' }),
+      { url: 'https://cdn.example.com/x.jpg', alt: 'media alt' },
+      emptyContext(),
+    );
+
+    expect(el.src).toBe('https://cdn.example.com/x.jpg');
+    expect(el.alt).toBe('media alt');
   });
 });
 
@@ -488,6 +592,56 @@ describe('array renderer', () => {
     expect(el.innerHTML).not.toContain('<script>');
     expect(el.innerHTML).toContain('&lt;script&gt;');
   });
+
+  it.each(['$&', '$$', '$`', "$'"])(
+    'renders replacement metasequence %s literally in object templates',
+    (value) => {
+      const el = document.createElement('div');
+      renderer('array').render(
+        makeTarget(el, { arrayTemplate: '<span>{{title}}</span>' }),
+        [{ title: value }],
+        emptyContext(),
+      );
+
+      expect(el.querySelector('span')?.textContent).toBe(value);
+    },
+  );
+
+  it('does not interpret placeholders introduced by an earlier object-field replacement', () => {
+    const el = document.createElement('div');
+    renderer('array').render(
+      makeTarget(el, { arrayTemplate: '<span>{{title}}</span>' }),
+      [{ title: 'literal {{index}} and {{suffix}}', suffix: 'nested replacement' }],
+      emptyContext(),
+    );
+
+    expect(el.querySelector('span')?.textContent).toBe('literal {{index}} and {{suffix}}');
+  });
+
+  it('does not interpret placeholders introduced by a primitive replacement', () => {
+    const el = document.createElement('div');
+    renderer('array').render(
+      makeTarget(el, { arrayTemplate: '<span>{{value}}</span>' }),
+      ['literal {{index}}'],
+      emptyContext(),
+    );
+
+    expect(el.querySelector('span')?.textContent).toBe('literal {{index}}');
+  });
+
+  it.each(['$&', '$$', '$`', "$'"])(
+    'renders replacement metasequence %s literally in primitive templates',
+    (value) => {
+      const el = document.createElement('div');
+      renderer('array').render(
+        makeTarget(el, { arrayTemplate: '<span>{{value}}</span>' }),
+        [value],
+        emptyContext(),
+      );
+
+      expect(el.querySelector('span')?.textContent).toBe(value);
+    },
+  );
 
   it('ignores non-array values', () => {
     const el = document.createElement('span');

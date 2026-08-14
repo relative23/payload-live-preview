@@ -18,7 +18,7 @@
 
 import { escapeHtml, escapeHtmlAttribute } from '@security/escape';
 import { isSafeUrl } from '@security/url-validator';
-import { register, type NodeRenderer } from '../registry';
+import type { NodeRenderer } from '../registry';
 
 interface UploadValue {
   readonly url?: string;
@@ -41,8 +41,6 @@ const uploadRenderer: NodeRenderer = (node): string => {
   if (mime === '' || mime.startsWith('image/')) return renderImage(value, url);
   return renderFallbackLink(value, url);
 };
-
-register('upload', uploadRenderer);
 
 export { uploadRenderer };
 

@@ -141,7 +141,9 @@
     documented as library extensions (stock Payload sends neither);
     `payload-document-event` and `externallyUpdatedRelationship` typed
     to match the real wire format.
-  - Astro peer range is now `>=4.0.0 <8.0.0`, E2E-tested on Astro 4 and 7.
+  - Astro peer range is now `>=4.0.0 <8.0.0`. The maintained real-app
+    browser fixture currently exercises Astro 7; the peer range is broader
+    than that single-major E2E fixture.
 
   Additional hardening from the pre-release competitive audit:
 
@@ -175,12 +177,15 @@
     empty-anchor pattern automatically. `registerBlockRenderer` is now
     exported from the main entry for custom block markup.
   - **Draft-first initial loads**: `fetchPreviewDocument()` /
-    `fetchPreviewGlobal()` wrap the REST query with `draft=true`, depth,
-    locale and auth headers — pass `draft: isPreviewRequest(request)` to
-    serve published content to normal traffic from the same loader.
+    `fetchPreviewGlobal()` wrap the REST query with draft, depth, locale and
+    auth headers. Security clarification: `isPreviewRequest()` detects only
+    client-controlled preview intent. Authorize the request with an
+    application-owned session or short-lived scoped signature, then pass
+    `draft: authorization !== null` and only that authorization's minimum
+    request-scoped credentials.
   - **Astro integration `mode: 'middleware'`**: auto-registers the
     preview middleware via `addMiddleware()` + a virtual options module —
-    request-time, preview-gated injection for `output: 'server'`
+    request-time, preview-intent-gated injection for `output: 'server'`
     projects without a hand-written `src/middleware.ts`.
   - **Scroll-preserving reload** in `documentSavePlugin`: the `'reload'`
     strategy (and the revalidate-failure fallback) now restores the

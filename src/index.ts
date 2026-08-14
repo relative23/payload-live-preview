@@ -82,10 +82,13 @@ export {
   debugPlugin,
   createAnalyticsPlugin,
   documentSavePlugin,
+  type DocumentSaveHandler,
   type DocumentSavePluginOptions,
   type DocumentSaveStrategy,
   type LivePreviewPlugin,
   type PluginContext,
+  type PluginEvents,
+  type PluginDisposer,
   type FieldTransform,
   type AnalyticsSnapshot,
 } from './plugins';

@@ -76,17 +76,14 @@ export interface InlineScriptConfig {
    */
   readonly disableLocalhostMatching?: boolean;
   /**
-   * Optional CSP nonce for the generated `<script>` tag. When provided
-   * via `wrapWithScriptTag()` the nonce is set on the tag. Useful for
-   * strict CSP policies that disallow `unsafe-inline`.
+   * Retained for 1.x source compatibility, but has no effect here:
+   * `generateInlineScript()` returns a script body and creates no tag.
+   * Pass the nonce separately to `wrapWithScriptTag(body, { nonce })`.
+   *
+   * @deprecated Use the second argument of `wrapWithScriptTag()`.
    */
   readonly nonce?: string;
 }
-
-const DEFAULT_DEBOUNCE_MS = 50;
-const DEFAULT_HEARTBEAT_MS = 0;
-const DEFAULT_VISIBILITY_GATE_THRESHOLD = 50;
-const DEFAULT_INTERSECTION_ROOT_MARGIN = '200px';
 
 /**
  * Build an inline script body. The result is a self-contained IIFE
@@ -101,35 +98,38 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
       '[live-preview] runtime.generated.ts is empty. Run `npm run build:runtime` before bundling.',
     );
   }
-  const configLiteral = JSON.stringify({
-    additionalOrigins: config.allowedOrigins ?? [],
-    serverURL: config.serverURL ?? '',
-    apiRoute: config.apiRoute ?? '/api',
-    mergeDepth: config.mergeDepth ?? 1,
-    debug: config.debug ?? false,
-    debounceMs: config.debounceMs ?? DEFAULT_DEBOUNCE_MS,
-    enableA11y: config.enableA11y ?? true,
-    heartbeatMs: config.heartbeatMs ?? DEFAULT_HEARTBEAT_MS,
-    disableVisibilityGate: config.disableVisibilityGate ?? false,
-    visibilityGateThreshold: config.visibilityGateThreshold ?? DEFAULT_VISIBILITY_GATE_THRESHOLD,
-    intersectionRootMargin: config.intersectionRootMargin ?? DEFAULT_INTERSECTION_ROOT_MARGIN,
-    disableReferrerDetection: config.disableReferrerDetection ?? false,
-    disableLocalhostMatching: config.disableLocalhostMatching ?? false,
-    // `<` must never appear literally inside an inline <script> body —
-    // a consumer-supplied string containing `</script>` would otherwise
-    // terminate the tag early.
-  }).replace(/</g, '\\u003C');
+  // Compact private wire format; keep this order aligned with
+  // `RuntimeBuildConfig` in `src/core/runtime.ts`.
+  const compactConfig: unknown[] = [
+    config.allowedOrigins,
+    config.serverURL,
+    config.apiRoute,
+    config.mergeDepth,
+    config.debug,
+    config.debounceMs,
+    config.enableA11y,
+    config.heartbeatMs,
+    config.disableVisibilityGate,
+    config.visibilityGateThreshold,
+    config.intersectionRootMargin,
+    config.disableReferrerDetection,
+    config.disableLocalhostMatching,
+  ];
+  while (compactConfig.length > 0 && compactConfig.at(-1) === undefined) compactConfig.pop();
+  // Preserve omitted interior options as sparse JavaScript slots. JSON arrays
+  // encode `undefined` as `null`, which would bypass the runtime's destructuring
+  // defaults and can turn an omitted serverURL into an invalid configured value.
+  // `<` must never appear literally inside an inline <script> body — a
+  // consumer-supplied string containing `</script>` would terminate the tag.
+  const configLiteral = `[${compactConfig
+    .map((value) => (value === undefined ? '' : JSON.stringify(value)))
+    .join(',')}]`.replace(/</g, '\\u003C');
   // The IIFE declares its own scope. We inject the config via a global
   // assignment that the bundled runtime reads back through the
-  // `__LIVE_PREVIEW_CONFIG__` constant placeholder.
-  const generatedAt =
-    RUNTIME_BUILD_INFO.generatedAt === '' ? 'dev' : RUNTIME_BUILD_INFO.generatedAt;
-  return [
-    `/* payload-live-preview runtime ${generatedAt} */`,
-    `var __LIVE_PREVIEW_CONFIG__=${configLiteral};`,
-    `var __INLINE_BUILD__=true;`,
-    RUNTIME_SOURCE,
-  ].join('\n');
+  // `__LIVE_PREVIEW_CONFIG__` constant placeholder. The identifier is retained
+  // across 1.0.x because existing deployments use it as a non-secret runtime
+  // presence/leak signal in response-level integration tests.
+  return [`var __LIVE_PREVIEW_CONFIG__=${configLiteral};`, RUNTIME_SOURCE].join('\n');
 }
 
 /**

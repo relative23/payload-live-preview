@@ -24,7 +24,7 @@
 
 import { escapeHtml } from '@security/escape';
 import { lookupBlockRenderer } from '../blocks/registry';
-import { register, type NodeRenderer } from '../registry';
+import type { NodeRenderer } from '../registry';
 
 const blockRenderer: NodeRenderer = (node, ctx): string => {
   const fields = readFields(node);
@@ -52,8 +52,6 @@ const blockRenderer: NodeRenderer = (node, ctx): string => {
   const attrString = attrs.length === 0 ? '' : ` ${attrs.join(' ')}`;
   return `<div${attrString}></div>`;
 };
-
-register('block', blockRenderer);
 
 export { blockRenderer };
 

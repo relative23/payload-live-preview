@@ -12,7 +12,6 @@
 import { detectInitialLocale } from '@detection/locale';
 import { getDateTimeFormat } from '@core/intl-cache';
 import type { FieldRenderer, RenderContext } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 import { safeStringify } from './utils';
 
 const dateRenderer: FieldRenderer = {
@@ -62,7 +61,5 @@ function toIsoForInput(type: string, date: Date): string {
   if (type === 'datetime-local') return date.toISOString().slice(0, 16);
   return date.toISOString();
 }
-
-registerBuiltinRenderer(dateRenderer);
 
 export { dateRenderer };

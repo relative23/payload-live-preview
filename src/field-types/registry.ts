@@ -9,11 +9,9 @@
  *   - Plugins can register custom renderers via the high-level client.
  *   - New field types ship without touching `lifecycle.ts`.
  *
- * The built-in renderers are collected through `registerBuiltinRenderer`
- * from each renderer module. To avoid tree-shaking, the explicit
- * aggregator `buildBuiltinRenderers` accepts an *additional* renderer
- * array — `@field-types/index` invokes it with every concrete renderer
- * so the references stay reachable.
+ * The explicit aggregator in `@field-types/index` supplies the default
+ * renderers as values, so it remains tree-shaking-safe without module import
+ * side effects. This registry stores only explicit consumer overrides.
  *
  * @module @field-types/registry
  */
@@ -23,21 +21,22 @@ import type { FieldRenderer, FieldType } from '@core/types';
 const builtinRenderers = new Map<FieldType, FieldRenderer>();
 
 /**
- * Snapshot the built-in renderer map. Returned object is a fresh,
- * frozen plain object so consumers cannot mutate the registry.
+ * Assemble a fresh renderer map. Defaults are copied first and explicit
+ * registrations are layered above them, so `registerBuiltinRenderer()` keeps
+ * its documented override semantics. The registry never retains the defaults;
+ * stateful defaults can therefore be recreated independently per client.
  */
 export function buildBuiltinRenderers(
-  extras: readonly FieldRenderer[] = [],
+  defaults: readonly FieldRenderer[] = [],
 ): Readonly<Record<string, FieldRenderer>> {
-  for (const renderer of extras) builtinRenderers.set(renderer.name, renderer);
   const out: Record<string, FieldRenderer> = {};
+  for (const renderer of defaults) out[renderer.name] = renderer;
   for (const [type, renderer] of builtinRenderers) out[type] = renderer;
   return Object.freeze(out);
 }
 
 /**
- * Register a built-in renderer. Called from each individual renderer
- * module's side-effecting registration.
+ * Register or replace an explicit renderer override for future snapshots.
  */
 export function registerBuiltinRenderer(renderer: FieldRenderer): void {
   builtinRenderers.set(renderer.name, renderer);

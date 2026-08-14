@@ -57,6 +57,16 @@ function reloadPreservingScroll(): void {
 
 export type DocumentSaveStrategy = 'silent' | 'reload' | 'revalidate' | 'fetch';
 
+/**
+ * A fetch strategy handler. The optional parameter preserves calls through
+ * pre-1.0.4 option objects (`options.handler?.()`), while method bivariance
+ * also accepts explicitly signal-aware handlers. The built-in plugin always
+ * supplies a live `AbortSignal`.
+ */
+export type DocumentSaveHandler = {
+  bivarianceHack(signal?: AbortSignal): void | Promise<void>;
+}['bivarianceHack'];
+
 export interface DocumentSavePluginOptions {
   /** Strategy to invoke on each `documentSave` event. Default `'silent'`. */
   readonly strategy?: DocumentSaveStrategy;
@@ -72,9 +82,11 @@ export interface DocumentSavePluginOptions {
   readonly revalidateHeaders?: Readonly<Record<string, string>>;
   /**
    * For `'fetch'`: async handler called on each event. The plugin
-   * awaits it; rejections are logged but don't crash the runtime.
+   * awaits it; rejections are logged but don't crash the runtime. The signal
+   * aborts when the plugin is removed. Existing zero-argument handlers remain
+   * compatible because they may ignore the argument.
    */
-  readonly handler?: () => void | Promise<void>;
+  readonly handler?: DocumentSaveHandler;
   /**
    * Optional fallback strategy when `'revalidate'` POST fails (network
    * error or non-2xx). Set to `'reload'` to hard-refresh the page when
@@ -94,44 +106,51 @@ export function documentSavePlugin(options: DocumentSavePluginOptions = {}): Liv
     name: 'document-save',
     version: '1.1.0',
     init: (ctx) => {
+      let active = true;
+      const controllers = new Set<AbortController>();
+      ctx.registerCleanup?.(() => {
+        active = false;
+        for (const controller of controllers) controller.abort();
+        controllers.clear();
+      });
       // If the previous page load ended in a save-triggered reload,
       // put the editor back where they were.
       restoreScrollPosition();
       ctx.events.on('documentSave', () => {
-        run(strategy, options, ctx.log);
+        if (!active) return;
+        if (strategy === 'silent') return;
+        if (strategy === 'reload') {
+          reloadPreservingScroll();
+          return;
+        }
+        const controller = new AbortController();
+        controllers.add(controller);
+        const operation =
+          strategy === 'fetch'
+            ? runFetch(options, ctx.log, controller.signal, () => active)
+            : runRevalidate(options, ctx.log, controller.signal, () => active);
+        void operation.finally(() => {
+          controllers.delete(controller);
+        });
       });
     },
   };
 }
 
-function run(
-  strategy: DocumentSaveStrategy,
-  options: DocumentSavePluginOptions,
-  log: (...args: unknown[]) => void,
-): void {
-  if (strategy === 'silent') return;
-  if (strategy === 'reload') {
-    reloadPreservingScroll();
-    return;
-  }
-  if (strategy === 'fetch') {
-    void runFetch(options, log);
-    return;
-  }
-  void runRevalidate(options, log);
-}
-
 async function runFetch(
   options: DocumentSavePluginOptions,
   log: (...args: unknown[]) => void,
+  signal: AbortSignal,
+  isActive: () => boolean,
 ): Promise<void> {
   if (!options.handler) {
     log('document-save: fetch strategy selected but no handler supplied');
     return;
   }
   try {
-    await options.handler();
+    await options.handler(signal);
   } catch (err) {
+    if (!isActive() || signal.aborted) return;
     log('document-save handler threw:', err);
   }
 }
@@ -139,6 +158,8 @@ async function runFetch(
 async function runRevalidate(
   options: DocumentSavePluginOptions,
   log: (...args: unknown[]) => void,
+  signal: AbortSignal,
+  isActive: () => boolean,
 ): Promise<void> {
   if (typeof fetch === 'undefined') {
     log('document-save: revalidate strategy needs fetch — not available');
@@ -149,15 +170,18 @@ async function runRevalidate(
   try {
     const response = await fetch(url, {
       method: 'POST',
+      signal,
       headers: {
         'Content-Type': 'application/json',
         ...(options.revalidateHeaders ?? {}),
       },
       body: JSON.stringify({ source: 'payload-live-preview' }),
     });
+    if (!isActive() || signal.aborted) return;
     ok = response.ok;
     if (!ok) log('document-save revalidate non-2xx:', response.status);
   } catch (err) {
+    if (!isActive() || signal.aborted) return;
     log('document-save revalidate failed:', err);
   }
   if (!ok && options.onRevalidateFailure === 'reload') {

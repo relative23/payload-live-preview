@@ -1,0 +1,9 @@
+import { generateTypes } from 'payload-live-preview/codegen';
+import { livePreviewCodegen } from 'payload-live-preview/codegen/astro';
+
+// @ts-expect-error -- code generation always needs a config path
+void generateTypes({});
+// @ts-expect-error -- unknown generation options must not be accepted silently
+void generateTypes({ configPath: './payload.config.ts', watch: true });
+// @ts-expect-error -- the Astro codegen watch option is boolean
+void livePreviewCodegen({ configPath: './payload.config.ts', outPath: './types.ts', watch: 'yes' });

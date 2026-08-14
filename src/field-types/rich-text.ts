@@ -11,22 +11,22 @@
 
 import { isLexicalContent, lexicalToHtml } from '@lexical/render';
 import { sanitizeHtml } from '@security/sanitizer';
+import { markNoWriteCallback } from '@core/internal-outcome';
 import type { FieldRenderer } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 
 const richTextRenderer: FieldRenderer = {
   name: 'richText',
-  render(target, value) {
+  render: markNoWriteCallback((target, value) => {
     if (isLexicalContent(value)) {
       target.element.innerHTML = lexicalToHtml(value);
       return;
     }
     if (typeof value === 'string') {
       target.element.innerHTML = sanitizeHtml(value);
+      return;
     }
-  },
+    return false;
+  }),
 };
-
-registerBuiltinRenderer(richTextRenderer);
 
 export { richTextRenderer };

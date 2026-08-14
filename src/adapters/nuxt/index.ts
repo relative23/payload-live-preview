@@ -5,8 +5,8 @@
  *
  *   - `livePreviewNitroPlugin(options)` — the recommended wiring: a
  *     Nitro plugin body that hooks `render:html`, injects the inline
- *     script into the head of preview responses, and merges the CSP
- *     header. Drop it in `server/plugins/live-preview.ts`:
+ *     script into the head of responses carrying preview intent, and
+ *     merges the CSP header. Drop it in `server/plugins/live-preview.ts`:
  *
  *     ```ts
  *     import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';
@@ -25,6 +25,12 @@
  *     server middleware that ONLY stashes a per-request nonce on
  *     `event.context.livePreviewNonce`. It does not inject anything;
  *     prefer the Nitro plugin above.
+ *
+ * Preview-intent signals are client-controlled and do not authenticate
+ * a request. This convenience plugin has no authorization hook. When
+ * response changes are protected, use an application-owned render hook
+ * and call `renderLivePreviewScript()` / `buildLivePreviewCsp()` only
+ * after the same verified decision that gates draft data and caching.
  *
  * @module @adapters/nuxt
  */
@@ -48,13 +54,14 @@ export interface LivePreviewNuxtOptions {
   readonly mergeDepth?: number;
   readonly autoInject?: boolean;
   /**
-   * `'preview-only'` (default) — inject only into responses that look
-   * like preview requests. `'always'` — every HTML response.
+   * `'preview-only'` (default) — inject only into responses carrying
+   * preview intent. The signals are not authorization. `'always'` —
+   * every HTML response.
    */
   readonly inject?: 'preview-only' | 'always';
-  /** Query params that mark a preview request. Default `['preview', 'draft', 'livePreview']`. */
+  /** Query params that signal preview intent. Default `['preview', 'draft', 'livePreview']`. */
   readonly previewQueryParams?: readonly string[];
-  /** Which signals count as a preview request. Default: query, fetch-dest, referer. */
+  /** Which signals count as preview intent. Default: query, fetch-dest, referer. */
   readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
   /**
    * CSP management: `'frame-ancestors'` (default) merges only the
@@ -108,9 +115,11 @@ export type NitroHandler = (event: H3EventLike) => Promise<Response | undefined>
 
 /**
  * Body for a Nitro plugin (`defineNitroPlugin(livePreviewNitroPlugin(...))`).
- * Hooks `render:html`: on preview requests it appends the inline
- * runtime to the document head and merges the CSP header onto the
- * response.
+ * Hooks `render:html`: on requests carrying preview intent it appends
+ * the inline runtime to the document head and merges the CSP header
+ * onto the response. This convenience path detects intent only; use a
+ * custom application-owned hook with the manual helpers when these
+ * response changes require authorization.
  */
 export function livePreviewNitroPlugin(
   options: LivePreviewNuxtOptions = {},
@@ -183,7 +192,8 @@ export function defineLivePreviewServerHandler(
 
 /**
  * Render the live-preview `<script>` tag for embedding in a Nuxt
- * layout via `useHead`:
+ * layout via `useHead`. Call this only after the application's verified
+ * preview authorization when script delivery is restricted:
  *
  * ```ts
  * useHead({

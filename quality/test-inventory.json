@@ -1,0 +1,596 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "focused": 0,
+    "skipped": 0,
+    "todo": 0,
+    "expectedFailure": 0
+  },
+  "runnerConfigs": [
+    "playwright.config.ts",
+    "playwright.real-payload.config.ts",
+    "playwright.soak.config.ts",
+    "stryker.config.js",
+    "vitest.bench.config.ts",
+    "vitest.config.ts",
+    "vitest.stryker.config.ts"
+  ],
+  "totals": {
+    "files": 76,
+    "suites": 215,
+    "tests": 1196,
+    "benchmarks": 10
+  },
+  "groups": {
+    "benchmarks": {
+      "files": 2,
+      "suites": 8,
+      "tests": 0,
+      "benchmarks": 10
+    },
+    "e2e": {
+      "files": 4,
+      "suites": 8,
+      "tests": 18,
+      "benchmarks": 0
+    },
+    "integration": {
+      "files": 5,
+      "suites": 7,
+      "tests": 55,
+      "benchmarks": 0
+    },
+    "real-payload": {
+      "files": 1,
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    "soak": {
+      "files": 1,
+      "suites": 0,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    "unit": {
+      "files": 63,
+      "suites": 191,
+      "tests": 1119,
+      "benchmarks": 0
+    }
+  },
+  "files": [
+    {
+      "path": "tests/benchmarks/hot-paths.bench.ts",
+      "group": "benchmarks",
+      "suites": 7,
+      "tests": 0,
+      "benchmarks": 9
+    },
+    {
+      "path": "tests/benchmarks/revision-pipeline.bench.ts",
+      "group": "benchmarks",
+      "suites": 1,
+      "tests": 0,
+      "benchmarks": 1
+    },
+    {
+      "path": "tests/e2e/specs/accessibility.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/live-preview.spec.ts",
+      "group": "e2e",
+      "suites": 3,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/nextjs-live-preview.spec.ts",
+      "group": "e2e",
+      "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/sveltekit-live-preview.spec.ts",
+      "group": "e2e",
+      "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/client.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 31,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/codegen.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/real-payload-protocol.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/runtime.test.ts",
+      "group": "integration",
+      "suites": 3,
+      "tests": 13,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/schema-driven.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/real-payload/homepage-live-preview.spec.ts",
+      "group": "real-payload",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/soak/live-preview-soak.spec.ts",
+      "group": "soak",
+      "suites": 0,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/astro.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 27,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/preview-request.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 10,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/api-contracts.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/bundle-budgets.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/bundle-shape.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/codegen/cli.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/codegen/emit-types.test.ts",
+      "group": "unit",
+      "suites": 5,
+      "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/codegen/extract-schema.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/a11y.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 28,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/attribute-binding.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/cache.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 33,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/data-merger.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 29,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/diagnostics.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/intl-cache.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/lifecycle-dom-ready.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 16,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/lifecycle.test.ts",
+      "group": "unit",
+      "suites": 6,
+      "tests": 98,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/message-bus.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 68,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/observers.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 26,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/protocol-version.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/public-types.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/state.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/structural-applier.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 24,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/update-scheduler.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 32,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/view-transitions.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/detection/environment.test.ts",
+      "group": "unit",
+      "suites": 5,
+      "tests": 10,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/detection/locale.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/detection/origin.test.ts",
+      "group": "unit",
+      "suites": 8,
+      "tests": 25,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/dsl/bind.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/events/emitter.test.ts",
+      "group": "unit",
+      "suites": 8,
+      "tests": 32,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/field-types/registry.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/field-types/renderers.test.ts",
+      "group": "unit",
+      "suites": 13,
+      "tests": 66,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/field-types/structural-array.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/inline-generator.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 17,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/lexical/blocks.test.ts",
+      "group": "unit",
+      "suites": 8,
+      "tests": 21,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/lexical/registry.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/lexical/render.test.ts",
+      "group": "unit",
+      "suites": 13,
+      "tests": 46,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/package-artifact.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/plugins/built-in.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 16,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/plugins/document-save.test.ts",
+      "group": "unit",
+      "suites": 5,
+      "tests": 21,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/plugins/manager.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 63,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/plugins/public-types.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/plugins/renderer-registry.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/preview-fetch.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/property/lifecycle-model.property.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/property/message-bus.property.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/property/security.property.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 21,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/publish-artifact.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/architecture-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/config-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/coverage-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/mutation-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/playwright-runtime-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/runtime-test-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/test-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/release-contracts.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 38,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/schema/diff.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 15,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/schema/parser.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/schema/walker.test.ts",
+      "group": "unit",
+      "suites": 7,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/csp.test.ts",
+      "group": "unit",
+      "suites": 5,
+      "tests": 32,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/escape.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/sanitizer.test.ts",
+      "group": "unit",
+      "suites": 11,
+      "tests": 48,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/url-validator.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/smoke.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    }
+  ]
+}

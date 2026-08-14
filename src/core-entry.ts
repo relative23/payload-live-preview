@@ -5,23 +5,40 @@
  * Consumers who import from `payload-live-preview/core`
  * get a bundle that **does not** include:
  *
- *   - the Lexical rich-text renderer (`@lexical/*`)
- *   - the built-in plugins (`@plugins/built-in/*`)
+ *   - the built-in plugin constructors (`@plugins/built-in/*`)
  *   - the inline-script generator and the embedded runtime source
  *   - the framework adapters
  *
- * These pieces add weight without being needed on a typical
- * production page. The full entry (`payload-live-preview`)
- * still re-exports everything for users who want the convenience.
+ * The client still includes its built-in field renderers, including Lexical
+ * rendering. The omitted exports add weight without being needed on a typical
+ * production page. The full entry (`payload-live-preview`) re-exports them for
+ * users who want the convenience.
  *
  * @packageDocumentation
  */
+
+import { LivePreviewClient as CoreLivePreviewClient } from './client';
+import { EventEmitter as CoreEventEmitter } from './events';
+import { OriginDetector as CoreOriginDetector } from './detection';
+
+// The dedicated core build mangles internal names aggressively but preserves
+// the long-established `.name` values of its three public classes. Keeping the
+// assignments at this entry boundary avoids retaining hundreds of private
+// helper names in every consumer bundle.
+for (const [constructor, name] of [
+  [CoreEventEmitter, 'EventEmitter'],
+  [CoreLivePreviewClient, 'LivePreviewClient'],
+  [CoreOriginDetector, 'OriginDetector'],
+] as const) {
+  Object.defineProperty(constructor, 'name', { configurable: true, value: name });
+}
 
 export { VERSION } from './version';
 export const CORE_ENTRY = true;
 
 // High-level client — without the heavyweight built-in plugins.
-export { LivePreviewClient, initLivePreview, type LivePreviewClientConfig } from './client';
+export { CoreLivePreviewClient as LivePreviewClient };
+export { initLivePreview, type LivePreviewClientConfig } from './client';
 
 // Security primitives (consumers building their own CSP)
 export {
@@ -40,16 +57,12 @@ export {
 } from './security';
 
 // Events
-export {
-  EventEmitter,
-  type EventHandler,
-  type LivePreviewEventMap,
-  type Unsubscribe,
-} from './events';
+export { CoreEventEmitter as EventEmitter };
+export { type EventHandler, type LivePreviewEventMap, type Unsubscribe } from './events';
 
 // Detection helpers
+export { CoreOriginDetector as OriginDetector };
 export {
-  OriginDetector,
   detectInitialLocale,
   isInIframe,
   isInPopup,

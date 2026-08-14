@@ -2,7 +2,7 @@
  * Benchmarks for the runtime's hot paths.
  *
  * Run with `npm run test:bench`. Numbers land in docs/benchmarks.md —
- * refresh them when touching the cache, sanitizer, or Lexical
+ * refresh them when touching the cache, lifecycle, sanitizer, or Lexical
  * renderer. jsdom is not a browser: treat results as relative
  * regression signals, not absolute browser timings.
  */
@@ -14,6 +14,7 @@ import { escapeHtml } from '@security/escape';
 import { lexicalToHtml } from '@lexical/render';
 import type { LexicalRoot } from '@lexical/types';
 import { diffArray } from '@schema/diff';
+import { EventEmitter } from '@events/emitter';
 
 function buildDom(fieldCount: number): void {
   const parts: string[] = [];
@@ -26,9 +27,29 @@ function buildDom(fieldCount: number): void {
   document.body.innerHTML = parts.join('');
 }
 
+function buildFlatDom(bindingCount: number): void {
+  const parts: string[] = [];
+  for (let index = 0; index < bindingCount; index += 1) {
+    parts.push(`<span data-payload-field="field_${String(index)}">value</span>`);
+  }
+  document.body.innerHTML = parts.join('');
+}
+
 describe('element cache', () => {
   bench('buildFromRoot — 300 bound elements', () => {
     buildDom(100); // 3 bindings per section
+    const cache = new ElementCache();
+    cache.buildFromRoot(document);
+  });
+
+  bench('buildFromRoot — 1,000 flat bindings', () => {
+    buildFlatDom(1_000);
+    const cache = new ElementCache();
+    cache.buildFromRoot(document);
+  });
+
+  bench('buildFromRoot — 5,000 flat bindings', () => {
+    buildFlatDom(5_000);
     const cache = new ElementCache();
     cache.buildFromRoot(document);
   });
@@ -41,6 +62,30 @@ describe('field resolution', () => {
   };
   bench('resolveFieldValue — 4-level nested path', () => {
     resolveFieldValue(fields, 'hero.media.sizes.large.url', undefined);
+  });
+});
+
+describe('empty lifecycle event path', () => {
+  const emitter = new EventEmitter();
+  const elements = Array.from({ length: 300 }, () => document.createElement('span'));
+
+  bench('skip elementUpdate snapshot/dispatch — 300 bindings, no listeners', () => {
+    for (const element of elements) {
+      // Mirrors the runtime fast path: the payload, DOM snapshot, eligibility
+      // closure, and Promise are created only for an observed event channel.
+      if (emitter.listenerCount('elementUpdate') === 0) continue;
+      void emitter.emitWhile(
+        'elementUpdate',
+        {
+          element,
+          fieldName: 'title',
+          previousValue: element.textContent,
+          nextValue: 'next',
+          revision: 1,
+        },
+        () => true,
+      );
+    }
   });
 });
 

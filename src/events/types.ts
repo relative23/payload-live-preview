@@ -12,13 +12,21 @@
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 
 export interface LivePreviewEventMap {
-  /** Fired once when a client instance finishes its synchronous init. */
+  /**
+   * Fired once per startup attempt after observers, cache, and message listening
+   * are active. A later startup failure may roll that attempt back; retrying then
+   * emits a new `init` event.
+   */
   readonly init: { readonly timestamp: number };
 
-  /** Fired the first time a valid update message is received from a trusted origin. */
+  /** Fired for the first accepted data-bearing update from a trusted origin. */
   readonly connect: { readonly origin: string; readonly timestamp: number };
 
-  /** Fired when the heartbeat times out or the iframe is unloaded. */
+  /**
+   * Fired when the heartbeat times out or the runtime is destroyed. The
+   * `'unload'` reason remains in the public union for 1.x producer compatibility;
+   * the built-in runtime does not currently emit it.
+   */
   readonly disconnect: {
     readonly reason: 'timeout' | 'destroy' | 'unload';
     readonly timestamp: number;
@@ -27,27 +35,37 @@ export interface LivePreviewEventMap {
   /**
    * Fired before the DOM is mutated for an incoming update.
    *
-   * Handlers may call `cancel()` synchronously to skip the update —
-   * useful for read-only previews or A/B testing.
+   * Handlers may call `cancel()` before their synchronous or asynchronous
+   * work settles to skip exactly this revision.
    */
   readonly beforeUpdate: {
     readonly data: PayloadLivePreviewData;
+    /** Runtime-populated ordering metadata; optional for 1.x producer compatibility. */
+    readonly revision?: number;
     readonly cancel: () => void;
   };
 
-  /** Fired after all DOM mutations for an incoming update have completed. */
+  /**
+   * Fired after each actual, current DOM application batch. Visibility replay
+   * may produce another event for the same revision; cancelled, obsolete, and
+   * deferred-only batches produce none.
+   */
   readonly afterUpdate: {
     readonly data: PayloadLivePreviewData;
     readonly updatedCount: number;
     readonly durationMs: number;
+    /** Runtime-populated ordering metadata; optional for 1.x producer compatibility. */
+    readonly revision?: number;
   };
 
-  /** Fired for each individual element write performed during an update. */
+  /** Fired for each successful, still-current element write. */
   readonly elementUpdate: {
     readonly element: Element;
     readonly fieldName: string;
     readonly previousValue: unknown;
     readonly nextValue: unknown;
+    /** Runtime-populated ordering metadata; optional for 1.x producer compatibility. */
+    readonly revision?: number;
   };
 
   /** Fired whenever the element cache is rebuilt (initial scan or MutationObserver-triggered). */
@@ -70,7 +88,11 @@ export interface LivePreviewEventMap {
     readonly context: string;
   };
 
-  /** Fired during destroy after observers and listeners are removed. */
+  /**
+   * Fired during destroy after browser observers and the message listener are
+   * removed. Event/plugin listeners remain available for this notification and
+   * are released by the owning client afterwards.
+   */
   readonly destroy: { readonly timestamp: number };
 }
 

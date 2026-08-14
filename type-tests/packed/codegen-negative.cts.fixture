@@ -1,0 +1,6 @@
+import { generateTypes } from 'payload-live-preview/codegen';
+
+// @ts-expect-error -- require consumers get the same required config path
+void generateTypes({});
+// @ts-expect-error -- require consumers reject unknown generation options too
+void generateTypes({ configPath: './payload.config.ts', watch: true });

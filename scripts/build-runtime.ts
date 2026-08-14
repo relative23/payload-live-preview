@@ -1,22 +1,24 @@
 /**
  * Build-time inliner for the live preview runtime.
  *
- * Bundles `src/core/runtime.ts` with esbuild into a minified IIFE and
- * writes the result as a string literal to `src/inline/runtime.generated.ts`.
+ * Bundles `src/core/runtime.ts` with esbuild, applies a final Terser compression,
+ * and writes the minified IIFE as a string literal to
+ * `src/inline/runtime.generated.ts`.
  *
  * The generated file is the *single source of truth* for both the
  * inline script generator and the high-level client. They never diverge
  * because they originate from the same TypeScript module.
  *
- * The build keeps `__LIVE_PREVIEW_CONFIG__` and `__INLINE_BUILD__` as
- * external globals — the inline generator injects concrete values for
- * them per-invocation, so the same compiled runtime serves every
- * configuration variant.
+ * The build keeps `__LIVE_PREVIEW_CONFIG__` as an external global — the inline
+ * generator injects consumer overrides per invocation. The auto-start branch is
+ * selected statically because this entry is built only for inline execution.
  */
 import { access, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
+import { minify } from 'terser';
+import { buildGeneratedAt } from './source-date-epoch';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -62,12 +64,43 @@ async function buildRuntime(): Promise<string> {
       // inline classic scripts can never have import.meta, and the
       // probe counts as eval under a strict CSP.
       __INLINE_RUNTIME_BUILD__: 'true',
+      __INLINE_BUILD__: 'true',
     },
     tsconfig: resolve(ROOT, 'tsconfig.json'),
   });
   const file = result.outputFiles[0];
   if (!file) throw new Error('esbuild produced no output');
-  return file.text;
+  // esbuild performs the syntax lowering and its first minification pass.
+  // Terser's conservative multi-pass compressor then removes enough repeated
+  // lifecycle/validation scaffolding to keep the shipped inline runtime within
+  // its gzip budget without raising the ES2020 browser syntax target.
+  const compressed = await minify(file.text, {
+    compress: {
+      passes: 3,
+      // The input is a closed IIFE with no module exports. Module-aware
+      // compression and declaration hoisting expose repeated lifecycle setup
+      // to Terser without changing the ES2020 syntax target or public names.
+      module: true,
+      hoist_funs: true,
+      hoist_vars: true,
+      // Large sequences and aggressive inlining save raw bytes here but make
+      // the highly repetitive validation/lifecycle code compress worse.
+      sequences: false,
+      inline: 1,
+      join_vars: false,
+      // Terser preserves strict boolean comparisons while representing literal
+      // booleans compactly as `!0`/`!1`; callbacks still receive booleans, not
+      // numeric wire values. This is part of the generated artifact only.
+      booleans_as_integers: true,
+    },
+    ecma: 2020,
+    mangle: true,
+    // ASCII escapes are value-preserving and improve Brotli dictionary reuse
+    // for the few localized strings embedded in the classic-script artifact.
+    format: { comments: false, ascii_only: true },
+  });
+  if (compressed.code === undefined) throw new Error('terser produced no output');
+  return compressed.code;
 }
 
 async function main(): Promise<void> {
@@ -80,7 +113,7 @@ async function main(): Promise<void> {
   }
 
   const source = await buildRuntime();
-  const generatedAt = new Date().toISOString();
+  const generatedAt = buildGeneratedAt(process.env);
   const escaped = JSON.stringify(source);
   const contents =
     HEADER +

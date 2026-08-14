@@ -2,9 +2,9 @@
 
 ## Supported versions
 
-| Version | Supported |
-| --- | --- |
-| 1.x | Yes |
+| Version            | Supported              |
+| ------------------ | ---------------------- |
+| 1.x                | Yes                    |
 | < 1.0 (alpha/beta) | Latest prerelease only |
 
 ## Reporting a vulnerability
@@ -33,9 +33,16 @@ Out of scope: vulnerabilities in Payload CMS itself, in consumer application cod
 
 ## Threat model summary
 
-The primary adversary is a malicious parent window. Defenses are layered:
+The primary adversaries are an unauthenticated HTTP requester and a malicious parent
+window. Preview-intent signals are not authorization; applications must verify a
+server session or short-lived scoped signature before privileged draft reads, cache
+bypass, CSP changes, or runtime injection. Browser defenses are layered:
 
-- **postMessage origin allow-listing** — inbound messages are dropped unless the origin is explicitly allowed, then the detector locks to the first verified origin.
+- **postMessage origin policy** — inbound messages must match an explicit origin,
+  or the documented development-localhost/referrer fallback when no explicit origin
+  is configured. The detector then locks to the first verified origin. Production
+  deployments should configure explicit origins and an appropriate `frame-ancestors`
+  CSP.
 - **Escape-by-default rendering** — field values are escaped unless a field is explicitly typed as HTML, in which case it is sanitized.
 - **CSP helpers** — utilities for generating Content-Security-Policy headers compatible with the inline runtime.
 

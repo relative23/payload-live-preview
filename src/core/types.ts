@@ -86,7 +86,10 @@ export interface RenderContext {
  * Renderers are pure DOM-write functions: they receive the cached
  * binding plus the new value and apply it to the element. They must
  * not throw — failures should be silenced and logged so that one bad
- * field cannot stop an entire update.
+ * field cannot stop an entire update. The public renderer result remains
+ * `void` for 1.x compatibility. Built-in renderers may use an internal exact
+ * `false` sentinel when they deliberately perform no DOM write; callers must
+ * not rely on that implementation detail.
  */
 export interface FieldRenderer {
   readonly name: FieldType;

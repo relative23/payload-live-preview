@@ -10,7 +10,6 @@
 import { detectInitialLocale } from '@detection/locale';
 import { getNumberFormat } from '@core/intl-cache';
 import type { FieldRenderer, RenderContext } from '@core/types';
-import { registerBuiltinRenderer } from './registry';
 import { safeStringify } from './utils';
 
 const numberRenderer: FieldRenderer = {
@@ -43,7 +42,5 @@ function format(num: number, context: RenderContext): string {
     return String(num);
   }
 }
-
-registerBuiltinRenderer(numberRenderer);
 
 export { numberRenderer };

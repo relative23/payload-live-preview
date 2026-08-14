@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   applyStructuralPatches,
   createStructuralStore,
@@ -97,6 +97,36 @@ describe('applyStructuralPatches', () => {
     // The same element survived the move — reference equality verifies
     // that the DOM was not rebuilt.
     expect(ul.children[0]).toBe(original);
+  });
+
+  it('removes unclaimed SSR children after placing keyed items in final order', () => {
+    const items = [
+      { id: 'a', label: 'a' },
+      { id: 'b', label: 'b' },
+    ];
+    const ul = makeList('<li>{{label}}</li>', items);
+    const unclaimedBefore = document.createElement('li');
+    const unclaimedMiddle = document.createElement('li');
+    unclaimedBefore.textContent = 'stale-before';
+    unclaimedMiddle.textContent = 'stale-middle';
+    ul.prepend(unclaimedBefore);
+    ul.insertBefore(unclaimedMiddle, ul.lastElementChild);
+    const originalB = ul.querySelector(`[${KEY_ATTRIBUTE}="b"]`);
+    const next = [items[1]!, items[0]!];
+
+    const mutated = applyStructuralPatches({
+      store,
+      template: '<li>{{label}}</li>',
+      container: ul,
+      patches: diffArray(items, next),
+      nextItems: next,
+    });
+
+    expect(mutated).toBe(true);
+    expect([...ul.children].map((element) => element.textContent)).toEqual(['b', 'a']);
+    expect(ul.firstElementChild).toBe(originalB);
+    expect(unclaimedBefore.isConnected).toBe(false);
+    expect(unclaimedMiddle.isConnected).toBe(false);
   });
 
   it('updates an item in place', () => {
@@ -260,6 +290,149 @@ describe('applyStructuralPatches — recursive nested slots', () => {
     expect(ul.firstElementChild!.textContent).toContain('Card A — updated');
     // Same DOM node survives — proof we didn't rebuild the inner sub-tree.
     expect(ul.querySelector(`[${KEY_ATTRIBUTE}="cta-1"]`)).toBe(ctaEl);
+  });
+
+  it('updates nested template metadata recursively while retaining the slot identity', () => {
+    const previousTemplate =
+      '<li>{{title}}<ul class="before" data-payload-nested-key="ctas" ' +
+      'data-payload-nested-template="&lt;a class=&quot;before&quot;&gt;{{label}}&lt;/a&gt;"></ul></li>';
+    const nextTemplate =
+      '<li>{{title}}<ul class="after" data-payload-nested-key="ctas" ' +
+      'data-payload-nested-template="&lt;a class=&quot;after&quot;&gt;{{label}}&lt;/a&gt;"></ul></li>';
+    const items = [{ id: 1, title: 'Card', ctas: [{ id: 'cta-1', label: 'Buy' }] }];
+    const ul = document.createElement('ul');
+    applyStructuralPatches({
+      store,
+      template: previousTemplate,
+      container: ul,
+      patches: diffArray([], items),
+      nextItems: items,
+    });
+    const slot = ul.querySelector('[data-payload-nested-key="ctas"]');
+    const previousCta = ul.querySelector(`[${KEY_ATTRIBUTE}="cta-1"]`);
+    if (slot === null || previousCta === null) throw new Error('initial nested structure missing');
+
+    applyStructuralPatches({
+      store,
+      template: nextTemplate,
+      container: ul,
+      patches: [],
+      nextItems: items,
+      forceRender: true,
+    });
+
+    const nextSlot = ul.querySelector('[data-payload-nested-key="ctas"]');
+    const nextCta = ul.querySelector(`[${KEY_ATTRIBUTE}="cta-1"]`);
+    expect(nextSlot).toBe(slot);
+    expect(nextSlot?.className).toBe('after');
+    expect(nextSlot?.getAttribute('data-payload-nested-template')).toContain('class="after"');
+    expect(nextCta?.className).toBe('after');
+    expect(nextCta).not.toBe(previousCta);
+  });
+
+  it('uses sanitized static slot content when a nested template is removed', () => {
+    const previousTemplate =
+      '<section><ul data-payload-nested-key="ctas" ' +
+      'data-payload-nested-template="&lt;li&gt;{{label}}&lt;/li&gt;"></ul></section>';
+    const nextTemplate =
+      '<section><ul data-payload-nested-key="ctas"><li class="static">Static fallback' +
+      '<script>unsafe()</script></li></ul></section>';
+    const items = [{ id: 'card', ctas: [{ id: 'cta', label: 'Managed child' }] }];
+    const container = document.createElement('main');
+
+    applyStructuralPatches({
+      store,
+      template: previousTemplate,
+      container,
+      patches: diffArray([], items),
+      nextItems: items,
+    });
+    const previousSlot = container.querySelector('[data-payload-nested-key="ctas"]');
+    const previousManagedChild = previousSlot?.firstElementChild;
+    expect(previousSlot?.textContent).toBe('Managed child');
+
+    applyStructuralPatches({
+      store,
+      template: nextTemplate,
+      container,
+      patches: [],
+      nextItems: items,
+      forceRender: true,
+    });
+
+    const nextSlot = container.querySelector('[data-payload-nested-key="ctas"]');
+    expect(nextSlot?.hasAttribute('data-payload-nested-template')).toBe(false);
+    expect(nextSlot?.innerHTML).toBe('<li class="static">Static fallback</li>');
+    expect(nextSlot?.firstElementChild).not.toBe(previousManagedChild);
+    expect(previousManagedChild?.isConnected).toBe(false);
+    expect(container.querySelector(`[${KEY_ATTRIBUTE}="cta"]`)).toBeNull();
+  });
+
+  it('preflights the complete nested tree before mutating live DOM or memory', () => {
+    const escapeAttribute = (value: string): string =>
+      value
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    const previousLeafTemplate = '<span class="safe">{{label}}</span>';
+    const invalidLeafTemplate = '<script>{{label}}</script>';
+    const buildGroupTemplate = (leafTemplate: string): string =>
+      '<li>{{title}}<div data-payload-nested-key="links" ' +
+      `data-payload-nested-template="${escapeAttribute(leafTemplate)}"></div></li>`;
+    const buildCardTemplate = (groupTemplate: string): string =>
+      '<section>{{title}}<ul data-payload-nested-key="groups" ' +
+      `data-payload-nested-template="${escapeAttribute(groupTemplate)}"></ul></section>`;
+    const previousTemplate = buildCardTemplate(buildGroupTemplate(previousLeafTemplate));
+    const invalidTemplate = buildCardTemplate(buildGroupTemplate(invalidLeafTemplate));
+    const items = [
+      {
+        id: 'card',
+        title: 'Card',
+        groups: [
+          {
+            id: 'group',
+            title: 'Group',
+            links: [{ id: 'link', label: 'Safe link' }],
+          },
+        ],
+      },
+    ];
+    const container = document.createElement('main');
+    expect(
+      applyStructuralPatches({
+        store,
+        template: previousTemplate,
+        container,
+        patches: diffArray([], items),
+        nextItems: items,
+      }),
+    ).toBe(true);
+    const card = container.firstElementChild;
+    const group = container.querySelector(`[${KEY_ATTRIBUTE}="group"]`);
+    const link = container.querySelector(`[${KEY_ATTRIBUTE}="link"]`);
+    const leafSlot = container.querySelector('[data-payload-nested-key="links"]');
+    if (card === null || group === null || link === null || leafSlot === null) {
+      throw new Error('initial recursive structure missing');
+    }
+    const previousMarkup = container.innerHTML;
+    const previousLeafMetadata = leafSlot.getAttribute('data-payload-nested-template');
+
+    const outcome = applyStructuralPatches({
+      store,
+      template: invalidTemplate,
+      container,
+      patches: [],
+      nextItems: items,
+      forceRender: true,
+    });
+
+    expect(outcome).toBeNull();
+    expect(container.innerHTML).toBe(previousMarkup);
+    expect(container.firstElementChild).toBe(card);
+    expect(container.querySelector(`[${KEY_ATTRIBUTE}="group"]`)).toBe(group);
+    expect(container.querySelector(`[${KEY_ATTRIBUTE}="link"]`)).toBe(link);
+    expect(leafSlot.getAttribute('data-payload-nested-template')).toBe(previousLeafMetadata);
   });
 
   it('diffs nested arrays surgically when only nested items change', () => {
@@ -460,5 +633,79 @@ describe('applyStructuralPatches — template filling edge cases', () => {
       nextItems: next,
     });
     expect(ul.children[0]?.textContent).toBe("Price: $& $' $` $$");
+  });
+
+  it('does not interpret placeholders introduced by an earlier field replacement', () => {
+    const ul = document.createElement('ul');
+    const next = [
+      {
+        id: 1,
+        label: 'literal {{index}} and {{suffix}}',
+        suffix: 'must not replace nested text',
+      },
+    ];
+
+    applyStructuralPatches({
+      store,
+      template: '<li>{{label}}</li>',
+      container: ul,
+      patches: diffArray([], next),
+      nextItems: next,
+    });
+
+    expect(ul.firstElementChild?.textContent).toBe('literal {{index}} and {{suffix}}');
+  });
+
+  it('keeps key order correct when one update also moves in the same patch set', () => {
+    const previous = [
+      { id: 'a', label: 'A before' },
+      { id: 'b', label: 'B' },
+    ];
+    const next = [
+      { id: 'b', label: 'B' },
+      { id: 'a', label: 'A after' },
+    ];
+    const ul = makeList('<li>{{label}}</li>', previous);
+
+    applyStructuralPatches({
+      store,
+      template: '<li>{{label}}</li>',
+      container: ul,
+      patches: diffArray(previous, next),
+      nextItems: next,
+    });
+
+    expect([...ul.children].map((element) => element.getAttribute(KEY_ATTRIBUTE))).toEqual([
+      'b',
+      'a',
+    ]);
+    expect([...ul.children].map((element) => element.textContent)).toEqual(['B', 'A after']);
+  });
+});
+
+describe('applyStructuralPatches — document ownership', () => {
+  it('parses rendered roots with the container ownerDocument', () => {
+    const targetDocument = document.implementation.createHTMLDocument('structural target');
+    const createElement = vi.spyOn(targetDocument, 'createElement');
+    const container = targetDocument.createElement('ul');
+    createElement.mockClear();
+
+    try {
+      const next = [{ id: 'target', label: 'Owned' }];
+      expect(
+        applyStructuralPatches({
+          store,
+          template: '<li>{{label}}</li>',
+          container,
+          patches: diffArray([], next),
+          nextItems: next,
+        }),
+      ).toBe(true);
+
+      expect(createElement).toHaveBeenCalledWith('template');
+      expect(container.firstElementChild?.ownerDocument).toBe(targetDocument);
+    } finally {
+      createElement.mockRestore();
+    }
   });
 });

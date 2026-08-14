@@ -1,10 +1,10 @@
 /**
  * Cross-browser wrapper around the View-Transitions API.
  *
- * Used by structural updates (array reorder/insert/remove) so the host
- * page can animate between states without a single line of consumer
- * code. Browsers without the API fall through to immediate execution
- * — the contract `runWithTransition(callback)` is a no-op shell.
+ * This utility is intentionally separate from revision-authoritative DOM writes.
+ * Callers may use it only when work is allowed to finish asynchronously; renderers
+ * whose completion feeds lifecycle events must mutate synchronously instead.
+ * Browsers without the API fall through to immediate execution.
  *
  * @module @core/view-transitions
  */
@@ -30,15 +30,16 @@ export function viewTransitionsSupported(): boolean {
  * to executing the callback synchronously and resolving immediately.
  */
 export async function runWithTransition(callback: () => void): Promise<void> {
-  if (!viewTransitionsSupported()) {
+  if (typeof document === 'undefined') {
     callback();
     return;
   }
-  // `startViewTransition` is non-null because of the support check above.
-  const start = (document as DocumentWithTransitions).startViewTransition as (
-    callback: () => void,
-  ) => ViewTransitionLike;
-  const transition = start.call(document, callback);
+  const transitionDocument = document as DocumentWithTransitions;
+  if (typeof transitionDocument.startViewTransition !== 'function') {
+    callback();
+    return;
+  }
+  const transition = transitionDocument.startViewTransition(callback);
   try {
     await transition.finished;
   } catch {

@@ -32,6 +32,14 @@ function fireMessage(data: unknown, origin: string = TRUSTED): void {
   window.dispatchEvent(new MessageEvent('message', { data, origin }));
 }
 
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
 function textRenderer(): FieldRenderer {
   return {
     name: 'text',
@@ -65,6 +73,46 @@ afterEach(() => {
 });
 
 describe('deferred startup while the document is parsing', () => {
+  it('rolls back when a ready document has no body so startup can retry', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const body = document.body;
+    const bodyGetter = vi.spyOn(document, 'body', 'get').mockReturnValue(null as never);
+    const runtime = makeRuntime();
+
+    expect(() => runtime.start()).toThrow();
+    expect(runtime.cache.elementCount).toBe(0);
+    bodyGetter.mockReturnValue(body);
+
+    expect(runtime.start()).toBe(true);
+    fireMessage({ type: 'payload-live-preview', data: { title: 'after retry' } });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('after retry');
+
+    runtime.destroy();
+    bodyGetter.mockRestore();
+  });
+
+  it('rolls back a failed DOM-ready listener acquisition so startup can retry', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const readyState = vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+    const addEventListener = vi.spyOn(document, 'addEventListener').mockImplementationOnce(() => {
+      throw new Error('listener unavailable');
+    });
+    const runtime = makeRuntime();
+
+    expect(() => runtime.start()).toThrow('listener unavailable');
+    addEventListener.mockRestore();
+    readyState.mockReturnValue('interactive');
+
+    expect(runtime.start()).toBe(true);
+    fireMessage({ type: 'payload-live-preview', data: { title: 'after retry' } });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('after retry');
+
+    runtime.destroy();
+    readyState.mockRestore();
+  });
+
   it('waits for DOMContentLoaded when readyState is loading', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const readyState = vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
@@ -102,6 +150,45 @@ describe('deferred startup while the document is parsing', () => {
     await vi.advanceTimersByTimeAsync(50);
     expect(document.querySelector('h1')?.textContent).toBe('old');
     readyState.mockRestore();
+  });
+
+  it('reports and rolls back a deferred startup failure so it can retry', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const readyState = vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+    const originalIntersectionObserver = globalThis.IntersectionObserver;
+    class FailingIntersectionObserver extends IO {
+      constructor(_callback: IntersectionObserverCallback) {
+        super();
+        throw new Error('deferred observer unavailable');
+      }
+    }
+    globalThis.IntersectionObserver = FailingIntersectionObserver;
+    const emitter = new EventEmitter();
+    const startupErrors: string[] = [];
+    emitter.on('error', ({ error, context }) => {
+      if (context === 'startup') startupErrors.push(error.message);
+    });
+    const runtime = makeRuntime({ emitter });
+
+    try {
+      expect(runtime.start()).toBe(true);
+      readyState.mockReturnValue('interactive');
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      await Promise.resolve();
+
+      expect(startupErrors).toEqual(['deferred observer unavailable']);
+      expect(runtime.cache.elementCount).toBe(0);
+
+      globalThis.IntersectionObserver = originalIntersectionObserver;
+      expect(runtime.start()).toBe(true);
+      fireMessage({ type: 'payload-live-preview', data: { title: 'after retry' } });
+      await vi.advanceTimersByTimeAsync(50);
+      expect(document.querySelector('h1')?.textContent).toBe('after retry');
+    } finally {
+      globalThis.IntersectionObserver = originalIntersectionObserver;
+      runtime.destroy();
+      readyState.mockRestore();
+    }
   });
 });
 
@@ -190,6 +277,162 @@ describe('data-payload-attribute bindings', () => {
 });
 
 describe('dataMerge option (Payload 3.x REST merging)', () => {
+  it('preserves an explicit API route and zero population depth', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'post-1', title: 'merged title' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    const runtime = makeRuntime({
+      dataMerge: {
+        serverURL: 'https://cms.example.com/',
+        apiRoute: '/custom-api',
+        depth: 0,
+        fetchFn,
+      },
+    });
+    runtime.start();
+
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: 'post-1', title: 'raw title' },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(fetchFn).toHaveBeenCalledOnce();
+    const firstCall = fetchFn.mock.calls[0];
+    expect(firstCall?.[0]).toBe('https://cms.example.com/custom-api/posts/post-1');
+    const requestBody = firstCall?.[1]?.body;
+    expect(typeof requestBody).toBe('string');
+    const body: unknown = typeof requestBody === 'string' ? JSON.parse(requestBody) : null;
+    expect(body).toMatchObject({ depth: 0 });
+    expect(document.querySelector('h1')?.textContent).toBe('merged title');
+    runtime.destroy();
+  });
+
+  it('discards an abort-ignoring merge response after runtime destroy', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">initial</h1>';
+    const response = deferred<Response>();
+    const fetchFn = vi.fn<typeof fetch>(() => response.promise);
+    const emitter = new EventEmitter();
+    const elementUpdate = vi.fn();
+    const afterUpdate = vi.fn();
+    emitter.on('elementUpdate', elementUpdate);
+    emitter.on('afterUpdate', afterUpdate);
+    const runtime = makeRuntime({
+      emitter,
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn },
+    });
+    runtime.start();
+
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: '1', title: 'zombie' },
+    });
+    expect(fetchFn).toHaveBeenCalledOnce();
+    const signal = fetchFn.mock.calls[0]?.[1]?.signal;
+    runtime.destroy();
+    expect(signal?.aborted).toBe(true);
+
+    response.resolve(new Response(JSON.stringify({ id: '1', title: 'zombie merged' })));
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(document.querySelector('h1')?.textContent).toBe('initial');
+    expect(elementUpdate).not.toHaveBeenCalled();
+    expect(afterUpdate).not.toHaveBeenCalled();
+  });
+
+  it('discards an abort-ignoring merge from an expired heartbeat generation', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">initial</h1>';
+    const oldResponse = deferred<Response>();
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(() => oldResponse.promise)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: '1', title: 'current merged' })));
+    const emitter = new EventEmitter();
+    const afterUpdate = vi.fn();
+    emitter.on('afterUpdate', afterUpdate);
+    const runtime = makeRuntime({
+      emitter,
+      heartbeatMs: 100,
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn },
+    });
+    runtime.start();
+
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: '1', title: 'expired raw' },
+    });
+    const oldSignal = fetchFn.mock.calls[0]?.[1]?.signal;
+    await vi.advanceTimersByTimeAsync(100);
+    expect(oldSignal?.aborted).toBe(true);
+
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: '1', title: 'current raw' },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('current merged');
+
+    oldResponse.resolve(new Response(JSON.stringify({ id: '1', title: 'expired merged' })));
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(document.querySelector('h1')?.textContent).toBe('current merged');
+    expect(afterUpdate).toHaveBeenCalledOnce();
+    expect(afterUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { fields: { id: '1', title: 'current merged' }, collectionSlug: 'posts' },
+        revision: 2,
+      }),
+    );
+    runtime.destroy();
+  });
+
+  it('discards an older merge result even when fetch ignores its abort signal', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const first = deferred<Response>();
+    const second = deferred<Response>();
+    const fetchFn = vi
+      .fn()
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise);
+    const emitter = new EventEmitter();
+    const afterUpdate = vi.fn();
+    emitter.on('afterUpdate', afterUpdate);
+    const runtime = makeRuntime({
+      emitter,
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn: fetchFn as typeof fetch },
+    });
+    runtime.start();
+
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: '1', title: 'raw A' },
+    });
+    await Promise.resolve();
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: '1', title: 'raw B' },
+    });
+    second.resolve(new Response(JSON.stringify({ id: '1', title: 'merged B' })));
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('merged B');
+
+    first.resolve(new Response(JSON.stringify({ id: '1', title: 'merged A' })));
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('merged B');
+    expect(afterUpdate).toHaveBeenCalledOnce();
+    runtime.destroy();
+  });
+
   it('renders the merged document instead of the raw form values', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const fetchFn = vi.fn().mockResolvedValue(

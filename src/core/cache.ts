@@ -32,6 +32,35 @@ export const ALT_ATTRIBUTE = 'data-payload-alt';
 export const ARRAY_TEMPLATE_ATTRIBUTE = 'data-payload-array-template';
 export const ARRAY_SEPARATOR_ATTRIBUTE = 'data-payload-array-separator';
 export const LOCALE_ATTRIBUTE = 'data-payload-locale';
+export const RICH_TEXT_ATTRIBUTE = 'data-payload-richtext';
+export const HTML_ATTRIBUTE = 'data-payload-html';
+export const ARRAY_ATTRIBUTE = 'data-payload-array';
+export const STRUCTURAL_ATTRIBUTE = 'data-payload-structural';
+export const INPUT_TYPE_ATTRIBUTE = 'type';
+
+/**
+ * Attributes whose values are captured in a {@link CachedElement} snapshot.
+ *
+ * Mutation observation consumes this list directly. Keep the cache resolver
+ * and observer filter coupled here so adding binding metadata cannot leave
+ * already-mounted elements with stale cached values.
+ */
+export const BINDING_ATTRIBUTES: readonly string[] = [
+  FIELD_ATTRIBUTE,
+  TYPE_ATTRIBUTE,
+  TARGET_ATTRIBUTE_ATTRIBUTE,
+  HREF_ATTRIBUTE,
+  SRC_ATTRIBUTE,
+  ALT_ATTRIBUTE,
+  ARRAY_TEMPLATE_ATTRIBUTE,
+  ARRAY_SEPARATOR_ATTRIBUTE,
+  LOCALE_ATTRIBUTE,
+  RICH_TEXT_ATTRIBUTE,
+  HTML_ATTRIBUTE,
+  ARRAY_ATTRIBUTE,
+  STRUCTURAL_ATTRIBUTE,
+  INPUT_TYPE_ATTRIBUTE,
+];
 
 const FIELD_SELECTOR = `[${FIELD_ATTRIBUTE}]`;
 
@@ -86,7 +115,7 @@ export interface ElementCacheOptions {
  */
 export class ElementCache {
   readonly #entries = new Map<string, CachedElement[]>();
-  readonly #elementToEntry = new WeakMap<Element, CachedElement>();
+  #elementToEntry = new WeakMap<Element, CachedElement>();
   readonly #filter: ElementPredicate;
 
   constructor(options: ElementCacheOptions = {}) {
@@ -100,17 +129,12 @@ export class ElementCache {
    */
   buildFromRoot(root: ParentNode): CacheBuildStats {
     const t0 = performance.now();
-    this.#entries.clear();
+    this.clear();
 
     const elements = root.querySelectorAll(FIELD_SELECTOR);
     let elementCount = 0;
     for (const element of elements) {
-      if (!this.#filter(element)) continue;
-      const entry = this.#resolveBinding(element);
-      if (!entry) continue;
-      this.#append(entry);
-      this.#elementToEntry.set(element, entry);
-      elementCount += 1;
+      if (this.add(element) !== undefined) elementCount += 1;
     }
 
     return {
@@ -121,13 +145,30 @@ export class ElementCache {
   }
 
   /**
-   * Insert a single element into the cache, returning the new entry
-   * (or `undefined` if the element does not declare a valid binding).
+   * Insert or replace a single element's binding, returning the new entry.
+   *
+   * The element identity is unique in the cache. Re-adding it refreshes its
+   * complete metadata snapshot without duplicating the binding. If its new
+   * state is filtered or invalid, any previous binding is removed.
    */
   add(element: Element): CachedElement | undefined {
-    if (!this.#filter(element)) return undefined;
-    const entry = this.#resolveBinding(element);
-    if (!entry) return undefined;
+    // Resolve first so a throwing consumer filter cannot partially mutate a
+    // previously valid registration. Once resolved, replacement is one
+    // synchronous operation with no externally observable intermediate state.
+    const entry = this.#filter(element) ? this.#resolveBinding(element) : undefined;
+    const previous = this.#elementToEntry.get(element);
+
+    if (entry === undefined) {
+      if (previous !== undefined) this.#removeEntry(element, previous);
+      return undefined;
+    }
+
+    if (previous !== undefined && this.#replaceEntry(previous, entry)) {
+      this.#elementToEntry.set(element, entry);
+      return entry;
+    }
+
+    if (previous !== undefined) this.#removeEntry(element, previous);
     this.#append(entry);
     this.#elementToEntry.set(element, entry);
     return entry;
@@ -140,13 +181,34 @@ export class ElementCache {
   remove(element: Element): boolean {
     const entry = this.#elementToEntry.get(element);
     if (!entry) return false;
-    this.#elementToEntry.delete(element);
-    const bucket = this.#entries.get(entry.fieldName);
+    return this.#removeEntry(element, entry);
+  }
+
+  /** Replace in place when the field bucket is unchanged, preserving order. */
+  #replaceEntry(previous: CachedElement, next: CachedElement): boolean {
+    if (previous.fieldName !== next.fieldName) return false;
+    const bucket = this.#entries.get(previous.fieldName);
     if (!bucket) return false;
-    const index = bucket.indexOf(entry);
+    const index = bucket.indexOf(previous);
     if (index < 0) return false;
+    bucket[index] = next;
+    return true;
+  }
+
+  #removeEntry(element: Element, entry: CachedElement): boolean {
+    const bucket = this.#entries.get(entry.fieldName);
+    if (!bucket) {
+      this.#elementToEntry.delete(element);
+      return false;
+    }
+    const index = bucket.indexOf(entry);
+    if (index < 0) {
+      this.#elementToEntry.delete(element);
+      return false;
+    }
     bucket.splice(index, 1);
     if (bucket.length === 0) this.#entries.delete(entry.fieldName);
+    this.#elementToEntry.delete(element);
     return true;
   }
 
@@ -190,6 +252,9 @@ export class ElementCache {
   /** Remove every entry. */
   clear(): void {
     this.#entries.clear();
+    // WeakMap has no clear operation. Replacing it is required so callers
+    // retaining a detached Element cannot observe stale cache membership.
+    this.#elementToEntry = new WeakMap<Element, CachedElement>();
   }
 
   #append(entry: CachedElement): void {
@@ -220,12 +285,12 @@ export class ElementCache {
       fieldType,
       explicitFieldType: explicit !== null && VALID_FIELD_TYPES.has(explicit as FieldType),
       ...(targetAttribute !== null && targetAttribute.length > 0 ? { targetAttribute } : {}),
-      ...(hrefField !== null ? { hrefField } : {}),
-      ...(srcField !== null ? { srcField } : {}),
-      ...(altField !== null ? { altField } : {}),
+      ...(hrefField !== null && hrefField.length > 0 ? { hrefField } : {}),
+      ...(srcField !== null && srcField.length > 0 ? { srcField } : {}),
+      ...(altField !== null && altField.length > 0 ? { altField } : {}),
       ...(arrayTemplate !== null ? { arrayTemplate } : {}),
       ...(arraySeparator !== null ? { arraySeparator } : {}),
-      ...(locale !== null ? { locale } : {}),
+      ...(locale !== null && locale.length > 0 ? { locale } : {}),
     };
     return entry;
   }
@@ -241,10 +306,10 @@ export function resolveFieldType(element: Element): FieldType {
   if (explicit !== null && VALID_FIELD_TYPES.has(explicit as FieldType)) {
     return explicit as FieldType;
   }
-  if (element.hasAttribute('data-payload-richtext')) return 'richText';
-  if (element.hasAttribute('data-payload-html')) return 'html';
-  if (element.hasAttribute('data-payload-structural')) return 'structural-array';
-  if (element.hasAttribute('data-payload-array')) return 'array';
+  if (element.hasAttribute(RICH_TEXT_ATTRIBUTE)) return 'richText';
+  if (element.hasAttribute(HTML_ATTRIBUTE)) return 'html';
+  if (element.hasAttribute(STRUCTURAL_ATTRIBUTE)) return 'structural-array';
+  if (element.hasAttribute(ARRAY_ATTRIBUTE)) return 'array';
   if (element.tagName === 'IMG') return 'image';
   if (element.tagName === 'A') return 'url';
   if (element.tagName === 'TIME') return 'date';

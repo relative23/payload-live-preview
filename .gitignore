@@ -33,6 +33,7 @@ playwright-report/
 test-results/
 .vitest-cache/
 .playwright-mcp/
+.stryker-tmp/
 
 # Tool caches
 .changeset/.cache/

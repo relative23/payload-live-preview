@@ -20,9 +20,11 @@
  *     time. The runtime stays inert outside the admin iframe.
  *   - **`mode: 'middleware'`** — registers the preview middleware via
  *     `addMiddleware()`: the runtime is injected at request time into
- *     preview requests only, and `frame-ancestors` CSP is managed.
- *     Right choice for `output: 'server'` — production responses ship
- *     zero preview bytes. (`shouldInject` is not supported in this
+ *     requests carrying preview intent, and `frame-ancestors` CSP is
+ *     managed. This is a delivery gate, not authentication. For
+ *     authorization-gated response changes, register
+ *     `createLivePreviewMiddleware()` manually after the application's
+ *     server-side verifier. (`shouldInject` is not supported in this
  *     mode: options travel through a serialized virtual module.)
  *
  * @module @adapters/astro/integration
@@ -57,8 +59,8 @@ const MIDDLEWARE_ENTRYPOINT = 'payload-live-preview/astro/middleware-entry';
 
 /**
  * Build the Astro integration. The injected script auto-detects the
- * preview context — pages opened directly (not in an iframe) are
- * unaffected.
+ * browser preview context and stays inert on ordinary top-level pages.
+ * Browser-context detection does not authorize HTTP response changes.
  */
 export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegrationLike {
   return {

@@ -11,7 +11,7 @@
 import { escapeHtml } from '@security/escape';
 import type { LexicalNode } from '../types';
 import { TextFormat } from '../types';
-import { register, type NodeRenderer } from '../registry';
+import type { NodeRenderer } from '../registry';
 
 const textRenderer: NodeRenderer = (node: LexicalNode): string => {
   const raw = typeof node.text === 'string' ? node.text : '';
@@ -27,7 +27,5 @@ const textRenderer: NodeRenderer = (node: LexicalNode): string => {
   if ((format & TextFormat.HIGHLIGHT) !== 0) out = `<mark>${out}</mark>`;
   return out;
 };
-
-register('text', textRenderer);
 
 export { textRenderer };
