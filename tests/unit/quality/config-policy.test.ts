@@ -43,14 +43,150 @@ describe('test runner policy', () => {
       ['cpu mode', workflow.replace('mode: simulation', 'mode: walltime')],
       [
         'cpu command',
-        workflow.replace('run: npm run test:bench:codspeed', 'run: npm run test:bench'),
+        workflow.replace(
+          'mode: simulation\n          run: npm run test:bench:codspeed',
+          'mode: simulation\n          run: npm run test:bench',
+        ),
+      ],
+      [
+        'cpu hard validation',
+        workflow.replace(
+          'name: Validate deterministic CPU benchmark harness',
+          'name: Skip deterministic CPU benchmark harness',
+        ),
+      ],
+      [
+        'cpu hard validation cannot soft-fail',
+        workflow.replace(
+          'name: Validate deterministic CPU benchmark harness\n        run: npm run test:bench:codspeed',
+          'name: Validate deterministic CPU benchmark harness\n        continue-on-error: true\n        run: npm run test:bench:codspeed',
+        ),
+      ],
+      [
+        'cpu hard validation cannot hide its command in env',
+        workflow.replace(
+          'name: Validate deterministic CPU benchmark harness\n        run: npm run test:bench:codspeed\n        shell: bash',
+          'name: Validate deterministic CPU benchmark harness\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n        env:\n          run: npm run test:bench:codspeed',
+        ),
+      ],
+      [
+        'cpu hard validation cannot replace its shell',
+        workflow.replace('shell: bash', 'shell: "true {0}"'),
+      ],
+      [
+        'cpu job cannot soft-fail',
+        workflow.replace(
+          'cpu:\n    name: CodSpeed CPU',
+          'cpu:\n    name: CodSpeed CPU\n    continue-on-error: true',
+        ),
+      ],
+      [
+        'cpu job cannot be skipped',
+        workflow.replace(
+          'cpu:\n    name: CodSpeed CPU',
+          'cpu:\n    name: CodSpeed CPU\n    if: false',
+        ),
+      ],
+      [
+        'cpu job cannot use a quoted skip key',
+        workflow.replace(
+          'cpu:\n    name: CodSpeed CPU',
+          'cpu:\n    name: CodSpeed CPU\n    "if": false',
+        ),
+      ],
+      [
+        'staged upload policy',
+        workflow.replace(
+          "continue-on-error: ${{ vars.CODSPEED_REQUIRED != 'true' }}",
+          'continue-on-error: true',
+        ),
+      ],
+      [
+        'cpu upload cannot use a decoy policy',
+        workflow.replace(
+          "continue-on-error: ${{ vars.CODSPEED_REQUIRED != 'true' }}\n        uses: CodSpeedHQ/action@",
+          "continue-on-error: ${{ vars.CODSPEED_REQUIRED != 'true' }}\n        continue-on-error: true\n        uses: CodSpeedHQ/action@",
+        ),
+      ],
+      [
+        'cpu upload cannot be skipped',
+        workflow.replace(
+          'name: Record deterministic CPU trends\n',
+          'name: Record deterministic CPU trends\n        if: false\n',
+        ),
+      ],
+      [
+        'cpu upload cannot use a quoted skip key',
+        workflow.replace(
+          'name: Record deterministic CPU trends\n',
+          'name: Record deterministic CPU trends\n        "if": false\n',
+        ),
+      ],
+      [
+        'cpu mode cannot use an env decoy',
+        workflow.replace(
+          'with:\n          mode: simulation',
+          'env:\n          mode: simulation\n        with:\n          mode: instrumentation',
+        ),
+      ],
+      [
+        'memory staged upload policy',
+        workflow.replace(
+          "name: Record allocation trends\n        continue-on-error: ${{ vars.CODSPEED_REQUIRED != 'true' }}",
+          'name: Record allocation trends\n        continue-on-error: true',
+        ),
       ],
       [
         'memory PR guard',
         workflow.replace("if: github.event_name != 'pull_request'", 'if: always()'),
       ],
+      [
+        'memory PR guard cannot use a step decoy',
+        workflow
+          .replace("if: github.event_name != 'pull_request'", 'if: always()')
+          .replace(
+            'memory:\n    name: CodSpeed Allocations\n    if: always()\n    runs-on: ubuntu-latest\n    steps:\n      - uses:',
+            "memory:\n    name: CodSpeed Allocations\n    if: always()\n    runs-on: ubuntu-latest\n    steps:\n      - name: Guard decoy\n        if: github.event_name != 'pull_request'\n        run: true\n      - uses:",
+          ),
+      ],
       ['memory mode', workflow.replace('mode: memory', 'mode: simulation')],
+      [
+        'memory command',
+        workflow.replace(
+          'mode: memory\n          run: npm run test:bench:codspeed',
+          'mode: memory\n          run: npm run test:bench',
+        ),
+      ],
+      [
+        'memory job cannot soft-fail',
+        workflow.replace(
+          'memory:\n    name: CodSpeed Allocations',
+          'memory:\n    name: CodSpeed Allocations\n    continue-on-error: true',
+        ),
+      ],
+      [
+        'memory job cannot use a quoted soft-fail key',
+        workflow.replace(
+          'memory:\n    name: CodSpeed Allocations',
+          'memory:\n    name: CodSpeed Allocations\n    "continue-on-error": true',
+        ),
+      ],
+      [
+        'cpu harness cannot use a quoted soft-fail key',
+        workflow.replace(
+          'name: Validate deterministic CPU benchmark harness\n',
+          'name: Validate deterministic CPU benchmark harness\n        "continue-on-error": true\n',
+        ),
+      ],
+      [
+        'cpu job controls cannot hide after steps',
+        workflow.replace(
+          '          run: npm run test:bench:codspeed\n\n  memory:',
+          '          run: npm run test:bench:codspeed\n    if: false\n\n  memory:',
+        ),
+      ],
     ] as const) {
+      expect(mutated, `${label} mutation must change the workflow`).not.toBe(workflow);
       expect(findCodspeedWorkflowViolations(mutated), label).not.toEqual([]);
     }
   });

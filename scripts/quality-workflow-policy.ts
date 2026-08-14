@@ -12,6 +12,26 @@ function jobBlock(workflow: string, job: string): string | undefined {
   return workflow.slice(start, end);
 }
 
+function namedStepBlock(job: string | undefined, name: string): string | undefined {
+  if (job === undefined) return undefined;
+  const marker = `      - name: ${name}\n`;
+  const start = job.indexOf(marker);
+  if (start < 0) return undefined;
+  const followingStep = job.slice(start + 1).search(/\n {6}- /u);
+  const end = followingStep < 0 ? job.length : start + 1 + followingStep;
+  return job.slice(start, end);
+}
+
+function stepMappingBlock(step: string | undefined, key: string): string | undefined {
+  if (step === undefined) return undefined;
+  const marker = `        ${key}:\n`;
+  const start = step.indexOf(marker);
+  if (start < 0) return undefined;
+  const followingRootKey = step.slice(start + 1).search(/\n {8}[A-Za-z0-9_-]+:/u);
+  const end = followingRootKey < 0 ? step.length : start + 1 + followingRootKey;
+  return step.slice(start, end);
+}
+
 function requireMatch(
   violations: string[],
   source: string | undefined,
@@ -19,6 +39,28 @@ function requireMatch(
   message: string,
 ): void {
   if (source === undefined || !pattern.test(source)) violations.push(message);
+}
+
+function forbidMatch(
+  violations: string[],
+  source: string | undefined,
+  pattern: RegExp,
+  message: string,
+): void {
+  if (source === undefined || pattern.test(source)) violations.push(message);
+}
+
+function requireSingleLine(
+  violations: string[],
+  source: string | undefined,
+  expected: RegExp,
+  key: RegExp,
+  message: string,
+): void {
+  const matches = source?.match(key) ?? [];
+  if (source === undefined || matches.length !== 1 || !expected.test(source)) {
+    violations.push(message);
+  }
 }
 
 export interface WorkflowSource {
@@ -53,25 +95,152 @@ export function findCodspeedWorkflowViolations(workflow: string): readonly strin
   const violations: string[] = [];
   const cpu = jobBlock(workflow, 'cpu');
   const memory = jobBlock(workflow, 'memory');
+  const cpuHarness = namedStepBlock(cpu, 'Validate deterministic CPU benchmark harness');
+  const cpuUpload = namedStepBlock(cpu, 'Record deterministic CPU trends');
+  const memoryUpload = namedStepBlock(memory, 'Record allocation trends');
+  const cpuUploadWith = stepMappingBlock(cpuUpload, 'with');
+  const memoryUploadWith = stepMappingBlock(memoryUpload, 'with');
 
-  requireMatch(violations, cpu, /^\s+mode:\s*simulation\s*$/mu, 'cpu job must use simulation mode');
-  requireMatch(
+  requireSingleLine(
     violations,
     cpu,
-    /^\s+run:\s*npm run test:bench:codspeed\s*$/mu,
+    /^ {6}- name:\s*Validate deterministic CPU benchmark harness\s*$/mu,
+    /^ {6}- name:\s*Validate deterministic CPU benchmark harness\s*$/gmu,
+    'cpu benchmark harness step must exist exactly once',
+  );
+  requireSingleLine(
+    violations,
+    cpu,
+    /^ {6}- name:\s*Record deterministic CPU trends\s*$/mu,
+    /^ {6}- name:\s*Record deterministic CPU trends\s*$/gmu,
+    'cpu upload step must exist exactly once',
+  );
+  requireSingleLine(
+    violations,
+    memory,
+    /^ {6}- name:\s*Record allocation trends\s*$/mu,
+    /^ {6}- name:\s*Record allocation trends\s*$/gmu,
+    'memory upload step must exist exactly once',
+  );
+  forbidMatch(
+    violations,
+    cpu,
+    /^ {4}(?:"(?:if|continue-on-error)"|'(?:if|continue-on-error)'|(?:if|continue-on-error)):/mu,
+    'cpu job must not be conditional or soft-failing',
+  );
+  forbidMatch(
+    violations,
+    memory,
+    /^ {4}(?:"continue-on-error"|'continue-on-error'|continue-on-error):/mu,
+    'memory job must not be soft-failing',
+  );
+  requireSingleLine(
+    violations,
+    cpuHarness,
+    /^ {8}run:\s*npm run test:bench:codspeed\s*$/mu,
+    /^ {8}(?:"run"|'run'|run):.*$/gmu,
+    'cpu benchmark harness must remain a hard workflow step',
+  );
+  requireSingleLine(
+    violations,
+    cpuHarness,
+    /^ {8}shell:\s*bash\s*$/mu,
+    /^ {8}(?:"shell"|'shell'|shell):.*$/gmu,
+    'cpu benchmark harness must use the explicit bash shell',
+  );
+  forbidMatch(
+    violations,
+    cpuHarness,
+    /^ {8}(?:"(?:uses|if|continue-on-error)"|'(?:uses|if|continue-on-error)'|(?:uses|if|continue-on-error)):/mu,
+    'cpu benchmark harness must not be conditional or soft-failing',
+  );
+  requireSingleLine(
+    violations,
+    cpuUpload,
+    /^ {8}uses:\s*CodSpeedHQ\/action@[0-9a-f]{40}\s*(?:#.*)?$/mu,
+    /^ {8}(?:"uses"|'uses'|uses):.*$/gmu,
+    'cpu trends must use the immutable CodSpeed action',
+  );
+  requireSingleLine(
+    violations,
+    cpuUpload,
+    /^ {8}with:\s*$/mu,
+    /^ {8}(?:"with"|'with'|with):.*$/gmu,
+    'cpu upload must have exactly one action input mapping',
+  );
+  requireSingleLine(
+    violations,
+    cpuUploadWith,
+    /^ {10}mode:\s*simulation\s*$/mu,
+    /^ {10}(?:"mode"|'mode'|mode):.*$/gmu,
+    'cpu job must use simulation mode',
+  );
+  requireSingleLine(
+    violations,
+    cpuUploadWith,
+    /^ {10}run:\s*npm run test:bench:codspeed\s*$/mu,
+    /^ {10}(?:"run"|'run'|run):.*$/gmu,
     'cpu job must run the CodSpeed benchmark suite',
   );
-  requireMatch(
+  forbidMatch(
+    violations,
+    cpuUpload,
+    /^ {8}(?:"if"|'if'|if):/mu,
+    'cpu upload step must not be conditionally skipped',
+  );
+  requireSingleLine(
+    violations,
+    cpuUpload,
+    /^ {8}continue-on-error:\s*\$\{\{\s*vars\.CODSPEED_REQUIRED\s*!=\s*'true'\s*\}\}\s*$/mu,
+    /^ {8}(?:"continue-on-error"|'continue-on-error'|continue-on-error):.*$/gmu,
+    'cpu upload must use the reviewed CodSpeed onboarding policy',
+  );
+  requireSingleLine(
     violations,
     memory,
-    /^\s+if:\s*github\.event_name != 'pull_request'\s*$/mu,
+    /^ {4}if:\s*github\.event_name != 'pull_request'\s*$/mu,
+    /^ {4}(?:"if"|'if'|if):.*$/gmu,
     'memory job must stay disabled for pull requests',
   );
-  requireMatch(violations, memory, /^\s+mode:\s*memory\s*$/mu, 'memory job must use memory mode');
-  requireMatch(
+  requireSingleLine(
     violations,
-    memory,
-    /^\s+run:\s*npm run test:bench:codspeed\s*$/mu,
+    memoryUpload,
+    /^ {8}uses:\s*CodSpeedHQ\/action@[0-9a-f]{40}\s*(?:#.*)?$/mu,
+    /^ {8}(?:"uses"|'uses'|uses):.*$/gmu,
+    'memory trends must use the immutable CodSpeed action',
+  );
+  requireSingleLine(
+    violations,
+    memoryUpload,
+    /^ {8}with:\s*$/mu,
+    /^ {8}(?:"with"|'with'|with):.*$/gmu,
+    'memory upload must have exactly one action input mapping',
+  );
+  requireSingleLine(
+    violations,
+    memoryUploadWith,
+    /^ {10}mode:\s*memory\s*$/mu,
+    /^ {10}(?:"mode"|'mode'|mode):.*$/gmu,
+    'memory job must use memory mode',
+  );
+  forbidMatch(
+    violations,
+    memoryUpload,
+    /^ {8}(?:"if"|'if'|if):/mu,
+    'memory upload step must not be conditionally skipped',
+  );
+  requireSingleLine(
+    violations,
+    memoryUpload,
+    /^ {8}continue-on-error:\s*\$\{\{\s*vars\.CODSPEED_REQUIRED\s*!=\s*'true'\s*\}\}\s*$/mu,
+    /^ {8}(?:"continue-on-error"|'continue-on-error'|continue-on-error):.*$/gmu,
+    'memory upload must use the reviewed CodSpeed onboarding policy',
+  );
+  requireSingleLine(
+    violations,
+    memoryUploadWith,
+    /^ {10}run:\s*npm run test:bench:codspeed\s*$/mu,
+    /^ {10}(?:"run"|'run'|run):.*$/gmu,
     'memory job must run the CodSpeed benchmark suite',
   );
   return violations;
@@ -178,7 +347,7 @@ async function main(): Promise<void> {
     );
   }
   console.log(
-    'Quality workflow policy passed: immutable Actions, CodSpeed and deep-quality gates are fail-closed.',
+    'Quality workflow policy passed: immutable Actions, the CodSpeed harness and staged upload policy, and deep-quality gates are pinned.',
   );
 }
 

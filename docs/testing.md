@@ -107,10 +107,16 @@ latest-write behavior and no page errors, forces collection through CDP, and cap
 retained renderer heap drift at 8 MiB. Chromium provides the heap measurement;
 all three browser engines remain required for functional correctness.
 
-CodSpeed records controlled relative trends. It is not a hard nanosecond gate
-until enough repository history exists to calibrate stable thresholds. Absolute
-raw/gzip/Brotli package budgets and deterministic algorithmic invariants remain
-hard gates throughout that calibration period.
+The deterministic CodSpeed benchmark harness is a hard workflow step. Uploading
+its trends is temporarily allowed to fail only until the repository is imported
+into CodSpeed and its GitHub App is installed. That transition is explicit: set
+the repository variable `CODSPEED_REQUIRED=true` after onboarding to make upload
+authentication and action execution fail-closed. A hard regression gate additionally
+requires calibrated CodSpeed thresholds, informational failures disabled, and the
+`CodSpeed Performance Analysis` status made required through the repository ruleset.
+Until that governance is configured, CodSpeed timings remain trend telemetry.
+Absolute raw/gzip/Brotli package budgets and deterministic algorithmic invariants
+remain hard gates throughout that calibration period.
 
 ## Failure handling
 

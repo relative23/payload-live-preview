@@ -31,7 +31,14 @@ jobs:
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
       - run: npm run build:runtime
+      - name: Validate deterministic CPU benchmark harness
+        run: npm run test:bench:codspeed
+        shell: bash
       - name: Record deterministic CPU trends
+        # Keep the benchmark itself required before CodSpeed repository onboarding.
+        # Once the GitHub App is installed, set CODSPEED_REQUIRED=true so action
+        # execution, authentication, and upload are fail-closed.
+        continue-on-error: ${{ vars.CODSPEED_REQUIRED != 'true' }}
         uses: CodSpeedHQ/action@f22792bfac16f3e14eb9fbea76f4a48e9cc22b93 # v4.19.1
         with:
           mode: simulation
@@ -52,6 +59,7 @@ jobs:
       - run: npm ci
       - run: npm run build:runtime
       - name: Record allocation trends
+        continue-on-error: ${{ vars.CODSPEED_REQUIRED != 'true' }}
         uses: CodSpeedHQ/action@f22792bfac16f3e14eb9fbea76f4a48e9cc22b93 # v4.19.1
         with:
           mode: memory
