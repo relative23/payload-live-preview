@@ -1,5 +1,11 @@
 # payload-live-preview
 
+## 1.0.5
+
+### Patch Changes
+
+- 6cdea3b: Preserve `ready: true` as a boolean in the minified inline runtime handshake so strict Payload protocol consumers can establish live preview reliably.
+
 ## 1.0.4
 
 ### Patch Changes
