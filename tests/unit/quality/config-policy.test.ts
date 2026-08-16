@@ -212,6 +212,13 @@ describe('test runner policy', () => {
       ['leak command', workflow.replace('npm run test:leak', 'npm run test')],
       ['Sunday duration', workflow.replace("'1800000'", "'300000'")],
       ['weekday duration', workflow.replace("'300000'", "'60000'")],
+      [
+        'fixture clean install',
+        workflow.replace(
+          'npm ci --no-audit --no-fund --prefix examples/astro-payload',
+          'npm install --no-audit --no-fund --prefix examples/astro-payload',
+        ),
+      ],
       ['soak command', workflow.replace('npm run test:soak', 'npm run test:e2e')],
     ] as const) {
       expect(findDeepQualityWorkflowViolations(mutated), label).not.toEqual([]);

@@ -84,7 +84,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
-      - run: npm install --no-audit --no-fund --prefix examples/astro-payload
+      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
       - run: npm audit --audit-level=high --prefix examples/astro-payload
       - name: Exercise the built runtime under sustained browser updates
         env:

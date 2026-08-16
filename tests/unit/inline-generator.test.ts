@@ -2,6 +2,18 @@ import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { generateInlineScript, wrapWithScriptTag, runtimeBuildInfo } from '@inline/generator';
 
+class InlineIntersectionObserver implements IntersectionObserver {
+  readonly root: Element | Document | null = null;
+  readonly rootMargin = '';
+  readonly thresholds: readonly number[] = [];
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+}
+
 function generatedConfig(script: string): unknown[] {
   const match = /var __LIVE_PREVIEW_CONFIG__=(\[[^;]*\]);/.exec(script);
   if (match?.[1] === undefined) throw new Error('generated config missing');
@@ -125,6 +137,70 @@ describe('generateInlineScript', () => {
     expect(script).toMatch(/\(\(\)=>|\(function/);
     // It must contain references to message-bus and lifecycle features.
     expect(script).toMatch(/postMessage|payload-live-preview/);
+  });
+
+  it('keeps the minified ready handshake boolean on the public wire', () => {
+    const posted: unknown[] = [];
+    const parent = {
+      postMessage: (message: unknown) => {
+        posted.push(message);
+      },
+    } as unknown as Window;
+    const topDescriptor = Object.getOwnPropertyDescriptor(window, 'top');
+    const parentDescriptor = Object.getOwnPropertyDescriptor(window, 'parent');
+    const intersectionObserverDescriptor = Object.getOwnPropertyDescriptor(
+      globalThis,
+      'IntersectionObserver',
+    );
+
+    Object.defineProperty(window, 'top', { configurable: true, value: parent });
+    Object.defineProperty(window, 'parent', { configurable: true, value: parent });
+    globalThis.IntersectionObserver = InlineIntersectionObserver;
+
+    try {
+      const script = generateInlineScript({
+        allowedOrigins: ['https://admin.example.com'],
+        debounceMs: 0,
+        enableA11y: false,
+        heartbeatMs: 0,
+        disableVisibilityGate: true,
+        disableReferrerDetection: true,
+        disableLocalhostMatching: true,
+      });
+
+      runInNewContext(script, {
+        AbortController,
+        clearTimeout,
+        console,
+        document,
+        IntersectionObserver: InlineIntersectionObserver,
+        MutationObserver,
+        navigator,
+        performance,
+        setTimeout,
+        URL,
+        window,
+        Window,
+      });
+
+      expect(posted).toContainEqual({
+        type: 'payload-live-preview',
+        ready: true,
+        protocolVersion: 4,
+      });
+      expect(typeof (posted[0] as { ready?: unknown } | undefined)?.ready).toBe('boolean');
+    } finally {
+      const api = (window as unknown as { __livePreview?: { destroy: () => void } }).__livePreview;
+      api?.destroy();
+      Reflect.deleteProperty(window, '__livePreview');
+      if (topDescriptor !== undefined) Object.defineProperty(window, 'top', topDescriptor);
+      if (parentDescriptor !== undefined) Object.defineProperty(window, 'parent', parentDescriptor);
+      if (intersectionObserverDescriptor === undefined) {
+        Reflect.deleteProperty(globalThis, 'IntersectionObserver');
+      } else {
+        Object.defineProperty(globalThis, 'IntersectionObserver', intersectionObserverDescriptor);
+      }
+    }
   });
 
   it('bakes the auto-start path without a second runtime global', () => {

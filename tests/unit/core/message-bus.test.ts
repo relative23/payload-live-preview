@@ -1718,6 +1718,18 @@ describe('MessageBus.sendReady', () => {
     MessageBus.sendReady([targetA, targetB], [TRUSTED, UNTRUSTED]);
     expect(postA.mock.calls).toHaveLength(2);
     expect(postB.mock.calls).toHaveLength(2);
+    expect(postA).toHaveBeenNthCalledWith(
+      1,
+      {
+        type: 'payload-live-preview',
+        ready: true,
+        protocolVersion: 4,
+      },
+      TRUSTED,
+    );
+    expect(typeof (postA.mock.calls[0]?.[0] as { ready?: unknown } | undefined)?.ready).toBe(
+      'boolean',
+    );
   });
 
   it('is a no-op when no targets are given', () => {

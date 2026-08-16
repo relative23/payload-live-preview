@@ -130,6 +130,14 @@ After focused observer, sanitizer, and lifecycle hardening, the final uncached
 tests: 3,623 total, 2,853 killed, 696 survived, 63 without coverage, 11 timed out,
 zero errors, and zero ignored (79.05% total; 80.45% covered score).
 
+The `ready` wire-type regression added a runtime boolean expression and its exact
+minified-artifact assertion. A fresh uncached run after that change completed in
+13 minutes 40 seconds after the same 950 related tests: 3,625 total, 2,854 killed,
+697 survived, 63 without coverage, 11 timed out, zero errors, and zero ignored
+(79.03% total; 80.43% covered score). The remaining no-target/no-origin loop
+elisions are behaviorally equivalent because either loop has no iterations; they
+remain visible rather than being ignored.
+
 `quality/mutation-policy.json` pins that exact file set, total, score, no-coverage,
 timeout, error, and ignored baseline. Both regressions and improvements fail until a
 maintainer consciously ratchets it. This makes scope reduction or a better score

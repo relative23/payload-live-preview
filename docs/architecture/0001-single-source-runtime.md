@@ -18,7 +18,11 @@ Both code paths are now produced from `src/core/runtime.ts`:
 - `scripts/build-runtime.ts` bundles and lowers that file to ES2020 with **esbuild**, then
   applies a conservative three-pass **Terser** compression to the IIFE. Keeping syntax
   lowering separate from final compression preserves the established browser target
-  while keeping correctness bookkeeping within the inline-runtime size budget.
+  while keeping correctness bookkeeping within the inline-runtime size budget. The
+  final compressor may compact internal boolean literals; the ready handshake therefore
+  derives its flag from a typed runtime expression. An artifact-level test executes the
+  generated IIFE to verify that this public message carries the boolean `true` required
+  by `PayloadLivePreviewMessage`.
 - The IIFE source is written to `src/inline/runtime.generated.ts` as a `string` literal.
 - `generateInlineScript(config)` wraps the literal with a compact
   `__LIVE_PREVIEW_CONFIG__` tuple prologue. The 1.0.x identifier remains stable:
@@ -82,6 +86,7 @@ their hard-private storage, and public names are never property-mangled.
 | ✅ Release-size regressions fail locally and in CI     | Budgets cover all emitted ESM/CJS entries and the default inline script                                   |
 | ✅ Published topology is tested as installed           | Isolated package checks operate on the exact tarball rather than the source or maintainer dependency tree |
 | ✅ Minification preserves diagnostic names             | `keepNames` plus artifact smoke checks pin the observable contract                                        |
+| ✅ Minification preserves the ready wire type          | The executed generated-IIFE test pins the handshake as a boolean, not merely a truthy value               |
 | ⚠️ Build step now mandatory before artifact creation   | CI/maintainers build explicitly; release promotes the certified archive without rebuilding                |
 | ⚠️ Generated file is local and gitignored              | Rebuilt explicitly by maintainer/CI commands; release artifacts contain the generated result              |
 | ⚠️ Maintainer builds use two reviewed tools            | Both esbuild and Terser are development-only and never become consumer runtime dependencies               |

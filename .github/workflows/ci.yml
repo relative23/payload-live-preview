@@ -183,7 +183,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
-      - run: npm install --no-audit --no-fund --prefix examples/astro-payload
+      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
       - run: npm audit --audit-level=high --prefix examples/astro-payload
       - name: Exercise five minutes of sustained browser updates
         env:
@@ -217,15 +217,12 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run build
-      # The example apps double as E2E fixtures; they consume the
-      # freshly built package via their file:../.. dependency. `npm
-      # install` instead of `npm ci`: the lock file pins the file: dep
-      # at the version current at lock time, which `npm ci` rejects
-      # after any version bump. The package exposes no consumer install
-      # hooks; fixtures consume the reviewed dist built above.
-      - run: npm install --no-audit --no-fund --prefix examples/astro-payload
-      - run: npm install --no-audit --no-fund --prefix examples/nextjs-payload
-      - run: npm install --no-audit --no-fund --prefix examples/sveltekit-payload
+      # The version step keeps each file:../.. entry synchronized with the
+      # package identity, so every browser fixture can use a clean, immutable
+      # lockfile install of the freshly built package.
+      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
+      - run: npm ci --no-audit --no-fund --prefix examples/nextjs-payload
+      - run: npm ci --no-audit --no-fund --prefix examples/sveltekit-payload
       - run: npm audit --audit-level=high --prefix examples/astro-payload
       - run: npm audit --audit-level=high --prefix examples/nextjs-payload
       - run: npm audit --audit-level=high --prefix examples/sveltekit-payload
@@ -254,8 +251,8 @@ jobs:
       # The Astro preview fixture consumes the freshly built package
       # (file:../.. dep); the Payload backend is a standalone server that
       # generates its admin import map on boot via `e2e:serve`.
-      - run: npm install --no-audit --no-fund --prefix examples/astro-payload
-      - run: npm install --no-audit --no-fund --prefix examples/payload-backend
+      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
+      - run: npm ci --no-audit --no-fund --prefix examples/payload-backend
       - run: npm audit --audit-level=high --prefix examples/astro-payload
       - run: npm audit --audit-level=high --prefix examples/payload-backend
       # Boots a real Payload 3.x admin + the Astro preview and drives the

@@ -233,10 +233,13 @@ export class MessageBus {
    * happens to be served on.
    */
   static sendReady(targets: readonly Window[], origins: readonly string[]): void {
-    if (targets.length === 0 || origins.length === 0) return;
+    const hasTargets = targets.length > 0;
+    if (!hasTargets || origins.length === 0) return;
     const payload: PayloadLivePreviewMessage = {
       type: 'payload-live-preview',
-      ready: true,
+      // Keep this as a runtime boolean expression. The inline build compacts
+      // literal booleans, but the ready handshake must remain a real boolean.
+      ready: hasTargets,
       protocolVersion: LIBRARY_PROTOCOL_VERSION,
     };
     for (const target of targets) {

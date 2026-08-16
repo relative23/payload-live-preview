@@ -88,9 +88,8 @@ async function buildRuntime(): Promise<string> {
       sequences: false,
       inline: 1,
       join_vars: false,
-      // Terser preserves strict boolean comparisons while representing literal
-      // booleans compactly as `!0`/`!1`; callbacks still receive booleans, not
-      // numeric wire values. This is part of the generated artifact only.
+      // Internal literal booleans may be compacted. The ready handshake uses a
+      // runtime boolean expression and is pinned by an executed-artifact test.
       booleans_as_integers: true,
     },
     ecma: 2020,

@@ -41,8 +41,10 @@ import {
   findForbiddenPackageLifecycleScripts,
   findExactPublisherManifestViolations,
   findMaintainerInstallPolicyViolations,
+  findPackageLockMetadataViolations,
   findPackageSmokeIsolationViolations,
   findReleaseWorkflowViolations,
+  LOCAL_FILE_PACKAGE_FIXTURES,
   MAINTAINER_INSTALL_POLICIES,
   PACKAGE_SMOKE_INSTALL_ARGS,
   PACKAGE_SMOKE_NPMRC,
@@ -397,24 +399,49 @@ async function main(): Promise<void> {
     for (const violation of findReleaseWorkflowViolations(releaseWorkflow, ciWorkflow)) {
       failures.push(`release contract: ${violation}`);
     }
-    for (const policy of MAINTAINER_INSTALL_POLICIES) {
-      const directory = resolve(ROOT, policy.directory);
-      const [npmrc, manifestSource, lockfileSource] = await Promise.all([
-        readFile(resolve(directory, '.npmrc'), 'utf8'),
-        readFile(resolve(directory, 'package.json'), 'utf8'),
-        readFile(resolve(directory, 'package-lock.json'), 'utf8'),
-      ]);
-      for (const violation of findMaintainerInstallPolicyViolations(
-        {
-          label: policy.label,
-          npmrc,
-          manifest: JSON.parse(manifestSource) as unknown,
-          lockfile: JSON.parse(lockfileSource) as unknown,
-        },
-        policy,
-      )) {
+    const installPolicyInputs = await Promise.all(
+      MAINTAINER_INSTALL_POLICIES.map(async (policy) => {
+        const directory = resolve(ROOT, policy.directory);
+        const [npmrc, manifestSource, lockfileSource] = await Promise.all([
+          readFile(resolve(directory, '.npmrc'), 'utf8'),
+          readFile(resolve(directory, 'package.json'), 'utf8'),
+          readFile(resolve(directory, 'package-lock.json'), 'utf8'),
+        ]);
+        return {
+          policy,
+          input: {
+            label: policy.label,
+            npmrc,
+            manifest: JSON.parse(manifestSource) as unknown,
+            lockfile: JSON.parse(lockfileSource) as unknown,
+          },
+        };
+      }),
+    );
+    for (const { input, policy } of installPolicyInputs) {
+      for (const violation of findMaintainerInstallPolicyViolations(input, policy)) {
         failures.push(`install policy: ${violation}`);
       }
+    }
+
+    const rootLockMetadata = installPolicyInputs.find(
+      ({ policy }) => policy.directory === '.',
+    )?.input;
+    if (rootLockMetadata === undefined) {
+      throw new Error('root lock metadata is absent from the maintainer policy inventory');
+    }
+    const fixtureLockMetadata = LOCAL_FILE_PACKAGE_FIXTURES.map(({ label, directory }) => {
+      const match = installPolicyInputs.find(({ policy }) => policy.directory === directory)?.input;
+      if (match === undefined) {
+        throw new Error(`${label} lock metadata is absent from the maintainer policy inventory`);
+      }
+      return match;
+    });
+    for (const violation of findPackageLockMetadataViolations({
+      root: rootLockMetadata,
+      fixtures: fixtureLockMetadata,
+    })) {
+      failures.push(`lock metadata: ${violation}`);
     }
 
     let evidence: PackageArchiveEvidence;
