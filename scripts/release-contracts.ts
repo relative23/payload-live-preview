@@ -128,10 +128,133 @@ export const MAINTAINER_INSTALL_POLICIES = [
   },
 ] as const satisfies readonly MaintainerInstallPolicyProfile[];
 
+/** Fixtures that install this repository through the reviewed local file specifier. */
+export const LOCAL_FILE_PACKAGE_FIXTURES = [
+  { label: 'Astro fixture', directory: 'examples/astro-payload' },
+  { label: 'Next.js fixture', directory: 'examples/nextjs-payload' },
+  { label: 'SvelteKit fixture', directory: 'examples/sveltekit-payload' },
+] as const;
+
+export interface PackageLockMetadataDocument {
+  readonly label: string;
+  readonly manifest: unknown;
+  readonly lockfile: unknown;
+}
+
+export interface PackageLockMetadataInput {
+  readonly root: PackageLockMetadataDocument;
+  readonly fixtures: readonly PackageLockMetadataDocument[];
+}
+
 type JsonRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export const LOCAL_PACKAGE_SPECIFIER = 'file:../..';
+
+/**
+ * Keep Changesets' package version synchronized with every lockfile location
+ * that npm copies from the local package. This is deliberately a metadata-only
+ * contract: dependency resolution remains owned by reviewed npm install work.
+ */
+export function findPackageLockMetadataViolations(
+  input: PackageLockMetadataInput,
+): readonly string[] {
+  const violations: string[] = [];
+  const rootManifest = input.root.manifest;
+  if (!isRecord(rootManifest)) {
+    return [`${input.root.label}: package.json is not an object`];
+  }
+  const packageName = rootManifest['name'];
+  const packageVersion = rootManifest['version'];
+  if (typeof packageName !== 'string' || packageName.length === 0) {
+    violations.push(`${input.root.label}: package.json name must be a non-empty string`);
+  }
+  if (typeof packageVersion !== 'string' || packageVersion.length === 0) {
+    violations.push(`${input.root.label}: package.json version must be a non-empty string`);
+  }
+  if (
+    typeof packageName !== 'string' ||
+    packageName.length === 0 ||
+    typeof packageVersion !== 'string' ||
+    packageVersion.length === 0
+  ) {
+    return violations;
+  }
+
+  const rootLockfile = input.root.lockfile;
+  if (!isRecord(rootLockfile)) {
+    return [...violations, `${input.root.label}: package-lock.json is not an object`];
+  }
+  if (rootLockfile['name'] !== packageName) {
+    violations.push(
+      `${input.root.label}: package-lock.json name must match package.json name ${packageName}`,
+    );
+  }
+  if (rootLockfile['version'] !== packageVersion) {
+    violations.push(
+      `${input.root.label}: package-lock.json version must match package.json version ${packageVersion}`,
+    );
+  }
+  const rootPackages = rootLockfile['packages'];
+  const rootEntry = isRecord(rootPackages) ? rootPackages[''] : undefined;
+  if (!isRecord(rootEntry)) {
+    violations.push(`${input.root.label}: package-lock.json packages[""] is not an object`);
+  } else {
+    if (rootEntry['name'] !== packageName) {
+      violations.push(
+        `${input.root.label}: package-lock.json packages[""] name must match package.json name ${packageName}`,
+      );
+    }
+    if (rootEntry['version'] !== packageVersion) {
+      violations.push(
+        `${input.root.label}: package-lock.json packages[""] version must match package.json version ${packageVersion}`,
+      );
+    }
+  }
+
+  const installedPath = `node_modules/${packageName}`;
+  for (const fixture of input.fixtures) {
+    const manifest = fixture.manifest;
+    const manifestDependencies = isRecord(manifest) ? manifest['dependencies'] : undefined;
+    if (
+      !isRecord(manifestDependencies) ||
+      manifestDependencies[packageName] !== LOCAL_PACKAGE_SPECIFIER
+    ) {
+      violations.push(
+        `${fixture.label}: package.json must depend on ${packageName} through ${LOCAL_PACKAGE_SPECIFIER}`,
+      );
+    }
+
+    const lockfile = fixture.lockfile;
+    const packages = isRecord(lockfile) ? lockfile['packages'] : undefined;
+    const fixtureRoot = isRecord(packages) ? packages[''] : undefined;
+    const fixtureDependencies = isRecord(fixtureRoot) ? fixtureRoot['dependencies'] : undefined;
+    if (
+      !isRecord(fixtureDependencies) ||
+      fixtureDependencies[packageName] !== LOCAL_PACKAGE_SPECIFIER
+    ) {
+      violations.push(
+        `${fixture.label}: package-lock.json root dependency must remain ${LOCAL_PACKAGE_SPECIFIER}`,
+      );
+    }
+
+    const installedEntry = isRecord(packages) ? packages[installedPath] : undefined;
+    if (!isRecord(installedEntry) || installedEntry['resolved'] !== LOCAL_PACKAGE_SPECIFIER) {
+      violations.push(
+        `${fixture.label}: package-lock.json installed entry must resolve to ${LOCAL_PACKAGE_SPECIFIER}`,
+      );
+    }
+    if (!isRecord(installedEntry) || installedEntry['version'] !== packageVersion) {
+      violations.push(
+        `${fixture.label}: ${LOCAL_PACKAGE_SPECIFIER} lock entry version must match ${packageName}@${packageVersion}`,
+      );
+    }
+  }
+
+  return violations;
 }
 
 export interface MaintainerInstallPolicyInput {
@@ -450,8 +573,8 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
       ['does not install Chromium', /run:\s*npx playwright install --with-deps chromium/],
       ['does not run npm run build', /run:\s*npm run build(?:\s|$)/],
       [
-        'does not install the Astro fixture',
-        /run:\s*npm install --no-audit --no-fund --prefix examples\/astro-payload/,
+        'does not clean-install examples/astro-payload',
+        /run:\s*npm ci --no-audit --no-fund --prefix examples\/astro-payload/,
       ],
       [
         'does not audit the Astro fixture',
@@ -462,6 +585,18 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
     ],
     e2e: [
       ['does not run npm run build', /run:\s*npm run build(?:\s|$)/],
+      [
+        'does not clean-install examples/astro-payload',
+        /run:\s*npm ci --no-audit --no-fund --prefix examples\/astro-payload/,
+      ],
+      [
+        'does not clean-install examples/nextjs-payload',
+        /run:\s*npm ci --no-audit --no-fund --prefix examples\/nextjs-payload/,
+      ],
+      [
+        'does not clean-install examples/sveltekit-payload',
+        /run:\s*npm ci --no-audit --no-fund --prefix examples\/sveltekit-payload/,
+      ],
       [
         'does not run every browser project',
         /run:\s*npx playwright test --project=\$\{\{\s*matrix\.browser\s*\}\}/,
@@ -481,6 +616,14 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
     ],
     'real-payload-e2e': [
       ['does not run npm run build', /run:\s*npm run build(?:\s|$)/],
+      [
+        'does not clean-install examples/astro-payload',
+        /run:\s*npm ci --no-audit --no-fund --prefix examples\/astro-payload/,
+      ],
+      [
+        'does not clean-install examples/payload-backend',
+        /run:\s*npm ci --no-audit --no-fund --prefix examples\/payload-backend/,
+      ],
       [
         'does not run npm run test:e2e:real-payload',
         /run:\s*npm run test:e2e:real-payload(?:\s|$)/,

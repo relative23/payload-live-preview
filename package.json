@@ -133,7 +133,7 @@
     "check": "npm run typecheck && npm run lint && npm run test:policy && npm run test:architecture && npm run test",
     "prepublishOnly": "npm run build && npm run check && npm run format:check && npm run test:package",
     "changeset": "changeset",
-    "version": "changeset version",
+    "version": "changeset version && tsx scripts/sync-lockfile-metadata.ts",
     "release": "tsx scripts/publish-artifact.ts"
   },
   "devDependencies": {

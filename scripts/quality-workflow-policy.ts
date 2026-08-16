@@ -310,6 +310,12 @@ export function findDeepQualityWorkflowViolations(workflow: string): readonly st
   requireMatch(
     violations,
     browser,
+    /^\s+- run:\s*npm ci --no-audit --no-fund --prefix examples\/astro-payload\s*$/mu,
+    'browser soak must clean-install the Astro fixture',
+  );
+  requireMatch(
+    violations,
+    browser,
     /^\s+PLP_SOAK_DURATION_MS:\s*\$\{\{ github\.event\.schedule == '17 2 \* \* 0' && '1800000' \|\| '300000' \}\}\s*$/mu,
     'browser soak must retain five-minute and thirty-minute durations',
   );

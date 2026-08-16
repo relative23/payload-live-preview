@@ -17,8 +17,8 @@
   ],
   "totals": {
     "files": 76,
-    "suites": 215,
-    "tests": 1196,
+    "suites": 216,
+    "tests": 1210,
     "benchmarks": 10
   },
   "groups": {
@@ -54,8 +54,8 @@
     },
     "unit": {
       "files": 63,
-      "suites": 191,
-      "tests": 1119,
+      "suites": 192,
+      "tests": 1133,
       "benchmarks": 0
     }
   },
@@ -379,7 +379,7 @@
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 17,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -532,8 +532,8 @@
     {
       "path": "tests/unit/release-contracts.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 38,
+      "suites": 5,
+      "tests": 51,
       "benchmarks": 0
     },
     {
