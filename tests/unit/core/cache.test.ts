@@ -395,3 +395,59 @@ describe('resolveFieldType', () => {
     expect(resolveFieldType(document.createElement('span'))).toBe('text');
   });
 });
+
+describe('ElementCache — binding ownership', () => {
+  it('resolves the owner from the nearest marked ancestor', () => {
+    const root = makeHtml(`
+      <section data-payload-owner="global:homepage">
+        <h1 data-payload-field="title">A</h1>
+        <div><p data-payload-field="intro">B</p></div>
+      </section>
+    `);
+    const cache = new ElementCache();
+    cache.buildFromRoot(root);
+
+    expect(cache.get('title')?.[0]?.owner).toBe('global:homepage');
+    expect(cache.get('intro')?.[0]?.owner).toBe('global:homepage');
+  });
+
+  it('lets a nested document override the owner it would inherit', () => {
+    const root = makeHtml(`
+      <section data-payload-owner="global:homepage">
+        <h1 data-payload-field="title">A</h1>
+        <article data-payload-owner="collection:services:73">
+          <h2 data-payload-field="title">B</h2>
+        </article>
+      </section>
+    `);
+    const cache = new ElementCache();
+    cache.buildFromRoot(root);
+
+    expect(cache.get('title')?.map((binding) => binding.owner)).toEqual([
+      'global:homepage',
+      'collection:services:73',
+    ]);
+  });
+
+  it('lets a binding own itself', () => {
+    const root = makeHtml(
+      '<h1 data-payload-owner="global:homepage" data-payload-field="title">A</h1>',
+    );
+    const cache = new ElementCache();
+    cache.buildFromRoot(root);
+
+    expect(cache.get('title')?.[0]?.owner).toBe('global:homepage');
+  });
+
+  it('leaves an unmarked or empty-valued binding unowned', () => {
+    const root = makeHtml(`
+      <h1 data-payload-field="title">A</h1>
+      <section data-payload-owner=""><p data-payload-field="intro">B</p></section>
+    `);
+    const cache = new ElementCache();
+    cache.buildFromRoot(root);
+
+    expect(cache.get('title')?.[0]?.owner).toBeUndefined();
+    expect(cache.get('intro')?.[0]?.owner).toBeUndefined();
+  });
+});

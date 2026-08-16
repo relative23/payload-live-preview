@@ -296,6 +296,7 @@ const page = await fetchPreviewDocument<Page>({
 | `data-payload-array-separator` | Separator for primitive arrays                                                                | `data-payload-array-separator=" · "`               |
 | `data-payload-structural`      | Use diff-based structural updates                                                             | `data-payload-structural`                          |
 | `data-payload-locale`          | Override locale for this element                                                              | `data-payload-locale="de-AT"`                      |
+| `data-payload-owner`           | Document this subtree belongs to (see below)                                                  | `data-payload-owner="global:homepage"`             |
 
 Binding metadata is live: changing any of these attributes (including inferred
 type markers and an input's native `type`) rebuilds the affected cache snapshot
@@ -307,6 +308,52 @@ field value, and stale work prepared for a previous element locale is discarded.
 ```astro
 <div data-payload-field="subtitle">{subtitle ?? ''}</div>
 ```
+
+### Pages that preview more than one document
+
+By default a binding's identity is its field path alone. On a page that renders
+several documents — a page global, shared SEO metadata, and a list of collection
+rows — a field called `title` in any of them matches every `title` on the page,
+so editing one overwrites all of them.
+
+`data-payload-owner` names the document a subtree belongs to. It is resolved
+from the nearest marked ancestor (the element itself included), so a shell
+component can own a whole region without repeating the marker, and a nested
+document can override the owner it would inherit:
+
+```astro
+<section data-payload-owner="global:homepage">
+  <h1 data-payload-field="title">{page.title}</h1>
+
+  <article data-payload-owner={`collection:services:${service.id}`}>
+    <h2 data-payload-field="title">{service.title}</h2>
+  </article>
+</section>
+```
+
+The grammar is `global:<slug>`, `collection:<slug>`, or
+`collection:<slug>:<id>`. A marker without an id claims every document of that
+collection, which is what a page rendering exactly one of them wants.
+
+Enable enforcement with `scopeBindingsByOwner` — off by default so existing 1.x
+pages keep working unchanged:
+
+```ts
+new LivePreviewClient({ allowedOrigins: [...], scopeBindingsByOwner: true });
+```
+
+Payload already sends the edited document's identity on every message, so
+nothing else needs configuring. While enabled:
+
+- an update reaches only bindings owned by the document it names;
+- a binding **without** an owner is never updated — ownership is a deliberate
+  claim, not a default that silently matches everything;
+- an exact `collection:<slug>:<id>` marker stays unreachable while the message
+  carries no document id, rather than being addressed on a guess;
+- a message naming neither a global nor a collection changes nothing and warns
+  once.
+
+The same option exists on `generateInlineScript()` for the adapter path.
 
 ## Field types
 
@@ -404,6 +451,7 @@ Additional runtime options accepted by `generateInlineScript` and `LivePreviewCl
 | `enableA11y`               | `true`    | Shared `aria-live` region announcing connections, applied updates, and heartbeat-timeout disconnects while mounted; destroy releases it synchronously without promising a final audible announcement. |
 | `disableVisibilityGate`    | `false`   | Apply updates to off-screen elements immediately.                                                                                                                                                     |
 | `visibilityGateThreshold`  | `50`      | Cache size above which off-screen updates are queued.                                                                                                                                                 |
+| `scopeBindingsByOwner`     | `false`   | Restrict each update to bindings owned by the document it names (`data-payload-owner`). Unowned bindings stop updating.                                                                               |
 | `intersectionRootMargin`   | `'200px'` | Pre-render margin for the visibility gate.                                                                                                                                                            |
 | `disableReferrerDetection` | `false`   | Opt out of `document.referrer` origin auto-detection.                                                                                                                                                 |
 | `disableLocalhostMatching` | `false`   | Opt out of dev-mode localhost origin matching.                                                                                                                                                        |

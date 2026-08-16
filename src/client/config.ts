@@ -40,6 +40,20 @@ export interface LivePreviewClientConfig {
   readonly heartbeatMs?: number;
   /** IntersectionObserver rootMargin. Defaults to `200px`. */
   readonly intersectionRootMargin?: string;
+  /**
+   * Restrict each update to the bindings owned by the document it describes.
+   *
+   * Ownership is declared in markup with `data-payload-owner`, resolved from
+   * the nearest ancestor: `global:<slug>`, `collection:<slug>`, or
+   * `collection:<slug>:<id>`. Payload already sends the edited document's
+   * identity, so nothing else needs configuring.
+   *
+   * Defaults to `false`, which keeps the 1.x behaviour of matching on the
+   * field name alone. Enable it when one page previews more than one document
+   * and a field name is therefore no longer a unique identity. While enabled,
+   * a binding without an owner is never updated.
+   */
+  readonly scopeBindingsByOwner?: boolean;
   /** Bypass the visibility gate (apply every update). Defaults to `false`. */
   readonly disableVisibilityGate?: boolean;
   /** Cache-size threshold above which off-screen updates are queued for replay. Defaults to 50. */

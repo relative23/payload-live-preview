@@ -76,6 +76,15 @@ export interface InlineScriptConfig {
    */
   readonly disableLocalhostMatching?: boolean;
   /**
+   * Restrict each update to the bindings owned by the document it describes,
+   * declared in markup with `data-payload-owner` and resolved from the nearest
+   * ancestor. Default `false`, which keeps matching on the field name alone.
+   *
+   * Enable it when one page previews more than one document. While enabled a
+   * binding without an owner is never updated.
+   */
+  readonly scopeBindingsByOwner?: boolean;
+  /**
    * Retained for 1.x source compatibility, but has no effect here:
    * `generateInlineScript()` returns a script body and creates no tag.
    * Pass the nonce separately to `wrapWithScriptTag(body, { nonce })`.
@@ -114,6 +123,7 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
     config.intersectionRootMargin,
     config.disableReferrerDetection,
     config.disableLocalhostMatching,
+    config.scopeBindingsByOwner,
   ];
   while (compactConfig.length > 0 && compactConfig.at(-1) === undefined) compactConfig.pop();
   // Preserve omitted interior options as sparse JavaScript slots. JSON arrays

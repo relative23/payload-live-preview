@@ -57,6 +57,17 @@ describe('generateInlineScript', () => {
     expect(generatedConfig(script)).toEqual([]);
   });
 
+  it('carries owner scoping in its own trailing wire slot', () => {
+    const script = generateInlineScript({ scopeBindingsByOwner: true });
+    const config = generatedConfig(script);
+
+    // Appending keeps every existing slot at its established index, so a page
+    // still serving an older config literal keeps its meaning.
+    expect(config).toHaveLength(14);
+    expect(config[13]).toBe(true);
+    expect(config.slice(0, 13).every((value) => value === undefined)).toBe(true);
+  });
+
   it('retains the deprecated nonce config as a no-op for 1.x compatibility', () => {
     const withoutNonce = generateInlineScript();
     const withNonce = generateInlineScript({ nonce: 'abc123' });

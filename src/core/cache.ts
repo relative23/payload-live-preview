@@ -36,6 +36,7 @@ export const RICH_TEXT_ATTRIBUTE = 'data-payload-richtext';
 export const HTML_ATTRIBUTE = 'data-payload-html';
 export const ARRAY_ATTRIBUTE = 'data-payload-array';
 export const STRUCTURAL_ATTRIBUTE = 'data-payload-structural';
+export const OWNER_ATTRIBUTE = 'data-payload-owner';
 export const INPUT_TYPE_ATTRIBUTE = 'type';
 
 /**
@@ -59,10 +60,25 @@ export const BINDING_ATTRIBUTES: readonly string[] = [
   HTML_ATTRIBUTE,
   ARRAY_ATTRIBUTE,
   STRUCTURAL_ATTRIBUTE,
+  OWNER_ATTRIBUTE,
   INPUT_TYPE_ATTRIBUTE,
 ];
 
 const FIELD_SELECTOR = `[${FIELD_ATTRIBUTE}]`;
+const OWNER_SELECTOR = `[${OWNER_ATTRIBUTE}]`;
+
+/**
+ * Resolve the document a binding belongs to from its nearest marked ancestor,
+ * the element itself included.
+ *
+ * Nearest-ancestor resolution lets a shell component own a whole subtree
+ * without repeating the marker on every safe text child, and lets a nested
+ * document (a card inside a page) override the owner it inherits.
+ */
+export function resolveBindingOwner(element: Element): string | undefined {
+  const owner = element.closest(OWNER_SELECTOR)?.getAttribute(OWNER_ATTRIBUTE);
+  return owner === null || owner === undefined || owner.length === 0 ? undefined : owner;
+}
 
 const VALID_FIELD_TYPES: ReadonlySet<FieldType> = new Set<FieldType>([
   'text',
@@ -278,6 +294,7 @@ export class ElementCache {
     const arrayTemplate = element.getAttribute(ARRAY_TEMPLATE_ATTRIBUTE);
     const arraySeparator = element.getAttribute(ARRAY_SEPARATOR_ATTRIBUTE);
     const locale = element.getAttribute(LOCALE_ATTRIBUTE);
+    const owner = resolveBindingOwner(element);
 
     const entry: CachedElement = {
       element,
@@ -291,6 +308,7 @@ export class ElementCache {
       ...(arrayTemplate !== null ? { arrayTemplate } : {}),
       ...(arraySeparator !== null ? { arraySeparator } : {}),
       ...(locale !== null && locale.length > 0 ? { locale } : {}),
+      ...(owner !== undefined ? { owner } : {}),
     };
     return entry;
   }

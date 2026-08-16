@@ -95,6 +95,7 @@ const EXPECTED_BINDING_ATTRIBUTES = [
   'data-payload-html',
   'data-payload-array',
   'data-payload-structural',
+  'data-payload-owner',
   'type',
 ] as const;
 
@@ -142,6 +143,31 @@ describe('ObserverManager — mutations', () => {
     vi.advanceTimersByTime(10);
 
     expect(onStructuralChange).not.toHaveBeenCalled();
+    observer.stop();
+  });
+
+  it('rebuilds when an owner changes on an ancestor that is not itself a binding', async () => {
+    const root = document.body;
+    const shell = document.createElement('section');
+    shell.setAttribute('data-payload-owner', 'global:homepage');
+    const tracked = document.createElement('p');
+    tracked.setAttribute('data-payload-field', 'title');
+    shell.appendChild(tracked);
+    root.appendChild(shell);
+    const onStructuralChange = vi.fn();
+    const observer = new ObserverManager(
+      { onStructuralChange, onVisibilityChange: () => {} },
+      { mutationDebounceMs: 10 },
+    );
+    observer.start(root);
+
+    // The owner re-attributes every binding below it, so a change here must
+    // rebuild even though the mutated element carries no field attribute.
+    shell.setAttribute('data-payload-owner', 'global:services-page');
+    await flushMutations();
+    vi.advanceTimersByTime(10);
+
+    expect(onStructuralChange).toHaveBeenCalledOnce();
     observer.stop();
   });
 
