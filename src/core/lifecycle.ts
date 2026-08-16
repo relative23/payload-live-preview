@@ -28,6 +28,7 @@ import type { EventEmitter } from '@events/emitter';
 import type { MessageRevision, OriginMatcher } from './message-bus';
 import type { CachedElement, FieldRenderer, FieldType, RenderContext } from './types';
 import { ElementCache } from './cache';
+import { isBindingInScope, messageOwnerKeys, readDocumentId } from './binding-owner';
 import { ObserverManager } from './observers';
 import { MessageBus } from './message-bus';
 import { ConnectionState, HeartbeatTimer } from './state';
@@ -88,6 +89,16 @@ export interface RuntimeOptions {
   readonly heartbeatMs?: number;
   /** Optional rootMargin for the IntersectionObserver. */
   readonly intersectionRootMargin?: string;
+  /**
+   * Restrict every update to the bindings owned by the document the message
+   * describes, resolved from the nearest `data-payload-owner` ancestor.
+   *
+   * Off by default: a 1.x page whose bindings carry no owner keeps matching on
+   * the field name alone. Once enabled, an unowned binding and a binding owned
+   * by another document are both out of scope, so a page that previews several
+   * documents stops sharing a field name between them.
+   */
+  readonly scopeBindingsByOwner?: boolean;
   /** When true, every update applies regardless of visibility. */
   readonly disableVisibilityGate?: boolean;
   /** Cache-size threshold above which off-screen updates are queued for replay. Default 50. */
@@ -188,6 +199,7 @@ const enum RuntimeDependencySlot {
   ReadyTimers,
   A11y,
   Merger,
+  ScopeBindingsByOwner,
 }
 
 /** Stable object/function references owned for the complete runtime lifetime. */
@@ -211,6 +223,7 @@ type RuntimeDependencies = readonly [
   readyTimers: ReturnType<typeof setTimeout>[],
   a11y: A11yAnnouncer | null,
   merger: DataMerger | null,
+  scopeBindingsByOwner: boolean,
 ];
 
 const enum RuntimeLifecycleSlot {
@@ -223,6 +236,7 @@ const enum RuntimeLifecycleSlot {
   UpdateCount,
   ActiveUpdate,
   WarnedOrphanFields,
+  WarnedUnattributableMessage,
 }
 
 /** State that changes as the runtime starts, accepts revisions, and stops. */
@@ -236,6 +250,7 @@ type RuntimeLifecycleState = [
   updateCount: number,
   activeUpdate: UpdateTransaction | null,
   warnedOrphanFields: Set<string>,
+  warnedUnattributableMessage: boolean,
 ];
 
 export class LivePreviewRuntime {
@@ -361,6 +376,7 @@ export class LivePreviewRuntime {
       [],
       a11y,
       merger,
+      options.scopeBindingsByOwner === true,
     ];
     this.l = [
       undefined,
@@ -372,6 +388,7 @@ export class LivePreviewRuntime {
       0,
       null,
       new Set<string>(),
+      false,
     ];
   }
 
@@ -807,6 +824,7 @@ export class LivePreviewRuntime {
     const isCurrent = (): boolean =>
       this.l[RuntimeLifecycleSlot.Started] &&
       this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction;
+    const ownerKeys = this.#ownerKeysForUpdate(transaction, data.fields);
     for (const [fieldName, bindings] of this.d[RuntimeDependencySlot.Cache].entries()) {
       if (!(
         this.l[RuntimeLifecycleSlot.Started] &&
@@ -815,6 +833,7 @@ export class LivePreviewRuntime {
         return;
       }
       for (const target of bindings) {
+        if (ownerKeys !== false && !isBindingInScope(target.owner, ownerKeys)) continue;
         const value = resolveFieldValue(
           data.fields,
           fieldName,
@@ -854,7 +873,53 @@ export class LivePreviewRuntime {
         this.d[RuntimeDependencySlot.Scheduler].schedule(update);
       }
     }
-    this.#diagnoseOrphanFields(data.fields, transaction.locale);
+    this.#diagnoseOrphanFields(data.fields, transaction.locale, ownerKeys);
+  }
+
+  /**
+   * Owner keys this update may address, or `false` when scoping is disabled.
+   *
+   * `false` and `null` are deliberately different: the first means "ownership
+   * is not in play, match on field name as 1.x always has", the second means
+   * "scoping is active but this message names no document", which is
+   * fail-closed. Warned once, because a silent no-op is the hardest possible
+   * symptom to diagnose.
+   */
+  #ownerKeysForUpdate(
+    transaction: UpdateTransaction,
+    fields: Record<string, unknown>,
+  ): readonly string[] | null | false {
+    if (!this.d[RuntimeDependencySlot.ScopeBindingsByOwner]) return false;
+    const { message } = transaction;
+    const keys = messageOwnerKeys({
+      globalSlug: typeof message.globalSlug === 'string' ? message.globalSlug : undefined,
+      collectionSlug:
+        typeof message.collectionSlug === 'string' ? message.collectionSlug : undefined,
+      documentId: readDocumentId(fields),
+    });
+    if (keys === null && !this.l[RuntimeLifecycleSlot.WarnedUnattributableMessage]) {
+      this.l[RuntimeLifecycleSlot.WarnedUnattributableMessage] = true;
+      this.d[RuntimeDependencySlot.Warn](
+        '[live-preview] scopeBindingsByOwner: update names no document; nothing applied',
+      );
+    }
+    return keys;
+  }
+
+  /** Whether this document owns any binding currently on the page. */
+  #ownsAnyBinding(ownerKeys: readonly string[] | null): boolean {
+    for (const binding of this.d[RuntimeDependencySlot.Cache].values()) {
+      if (isBindingInScope(binding.owner, ownerKeys)) return true;
+    }
+    return false;
+  }
+
+  /** Whether any cached binding for `fieldName` may receive this update. */
+  #hasAddressableBinding(fieldName: string, ownerKeys: readonly string[] | null | false): boolean {
+    const bindings = this.d[RuntimeDependencySlot.Cache].get(fieldName);
+    if (bindings === undefined) return false;
+    if (ownerKeys === false) return true;
+    return bindings.some((binding) => isBindingInScope(binding.owner, ownerKeys));
   }
 
   /**
@@ -874,16 +939,24 @@ export class LivePreviewRuntime {
    * because it depends on the locale and on schema knowledge that the
    * cache does not own.
    */
-  #diagnoseOrphanFields(fields: Record<string, unknown>, locale: string | undefined): void {
+  #diagnoseOrphanFields(
+    fields: Record<string, unknown>,
+    locale: string | undefined,
+    ownerKeys: readonly string[] | null | false,
+  ): void {
     if (this.d[RuntimeDependencySlot.Cache].fieldCount === 0) return;
+    // With scoping active, a page that renders none of this document's
+    // bindings is the normal case, not a missing anchor. Warning per field
+    // there would report the whole document as broken on every keystroke.
+    if (ownerKeys !== false && !this.#ownsAnyBinding(ownerKeys)) return;
     let localisedBindingNames: Set<string> | undefined;
     for (const [rawName, value] of Object.entries(fields)) {
       if (this.l[RuntimeLifecycleSlot.WarnedOrphanFields].has(rawName)) continue;
       if (SYSTEM_FIELD_NAMES.has(rawName)) continue;
       if (!isLiveBindableScalar(value)) continue;
       const baseName = stripLocaleSuffix(rawName, locale);
-      if (this.d[RuntimeDependencySlot.Cache].get(rawName) !== undefined) continue;
-      if (baseName !== rawName && this.d[RuntimeDependencySlot.Cache].get(baseName) !== undefined) {
+      if (this.#hasAddressableBinding(rawName, ownerKeys)) continue;
+      if (baseName !== rawName && this.#hasAddressableBinding(baseName, ownerKeys)) {
         continue;
       }
       // Element-local locales can intentionally consume several suffixed
@@ -893,6 +966,7 @@ export class LivePreviewRuntime {
         localisedBindingNames = new Set<string>();
         for (const [fieldName, bindings] of this.d[RuntimeDependencySlot.Cache].entries()) {
           for (const binding of bindings) {
+            if (ownerKeys !== false && !isBindingInScope(binding.owner, ownerKeys)) continue;
             if (binding.locale !== undefined) {
               localisedBindingNames.add(`${fieldName}_${binding.locale}`);
             }

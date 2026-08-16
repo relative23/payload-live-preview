@@ -101,6 +101,9 @@ export class LivePreviewClient {
       ...(config.intersectionRootMargin !== undefined
         ? { intersectionRootMargin: config.intersectionRootMargin }
         : {}),
+      ...(config.scopeBindingsByOwner !== undefined
+        ? { scopeBindingsByOwner: config.scopeBindingsByOwner }
+        : {}),
       ...(config.disableVisibilityGate !== undefined
         ? { disableVisibilityGate: config.disableVisibilityGate }
         : {}),

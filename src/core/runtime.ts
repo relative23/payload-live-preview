@@ -48,6 +48,7 @@ type RuntimeBuildConfig = readonly [
   intersectionRootMargin?: string,
   disableReferrerDetection?: boolean,
   disableLocalhostMatching?: boolean,
+  scopeBindingsByOwner?: boolean,
 ];
 
 declare const __LIVE_PREVIEW_CONFIG__: RuntimeBuildConfig;
@@ -103,6 +104,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     intersectionRootMargin = '200px',
     disableReferrerDetection = false,
     disableLocalhostMatching = false,
+    scopeBindingsByOwner = false,
   ] = readBuildConfig();
 
   const detector = new OriginDetector({
@@ -147,6 +149,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     disableVisibilityGate,
     visibilityGateThreshold,
     enableA11y,
+    scopeBindingsByOwner,
     onHeartbeatTimeout: () => {
       detector.unlockOrigin();
     },

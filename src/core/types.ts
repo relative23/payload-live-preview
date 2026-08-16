@@ -64,6 +64,15 @@ export interface CachedElement {
   readonly arraySeparator?: string;
   /** Optional locale code locked onto this element (overrides the global locale). */
   readonly locale?: string;
+  /**
+   * Optional document this binding belongs to, resolved from the nearest
+   * `data-payload-owner` ancestor (the element itself included).
+   *
+   * Only consulted while owner scoping is enabled. Without it a field name is
+   * the sole identity, so every document rendered on the page competes for the
+   * same name.
+   */
+  readonly owner?: string;
 }
 
 /**

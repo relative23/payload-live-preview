@@ -21,7 +21,7 @@
  * @module @core/observers
  */
 
-import { BINDING_ATTRIBUTES, FIELD_ATTRIBUTE } from './cache';
+import { BINDING_ATTRIBUTES, FIELD_ATTRIBUTE, OWNER_ATTRIBUTE } from './cache';
 
 /**
  * Callbacks the observer manager invokes back into its host.
@@ -243,12 +243,15 @@ function hasStructuralImpact(mutations: readonly MutationRecord[]): boolean {
       m.attributeName !== null &&
       BINDING_ATTRIBUTES.includes(m.attributeName)
     ) {
-      // The field attribute itself can add, remove, or retarget a binding. All
-      // other metadata — especially the generic native `type` attribute — only
-      // matters on an element that is still a live-preview binding. This keeps
-      // unrelated form activity from causing whole-cache rebuilds.
+      // The field attribute itself can add, remove, or retarget a binding, and
+      // the owner attribute re-attributes every binding below it — neither is
+      // required to sit on a binding element. All other metadata — especially
+      // the generic native `type` attribute — only matters on an element that
+      // is still a live-preview binding. This keeps unrelated form activity
+      // from causing whole-cache rebuilds.
       if (
         m.attributeName === FIELD_ATTRIBUTE ||
+        m.attributeName === OWNER_ATTRIBUTE ||
         (m.target.nodeType === ELEMENT_NODE && (m.target as Element).hasAttribute(FIELD_ATTRIBUTE))
       ) {
         return true;

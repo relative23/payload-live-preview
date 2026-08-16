@@ -60,6 +60,7 @@ export interface CachedElement {
     readonly fieldType: FieldType;
     readonly hrefField?: string;
     readonly locale?: string;
+    readonly owner?: string;
     readonly srcField?: string;
     readonly targetAttribute?: string;
 }
@@ -224,6 +225,7 @@ export interface InlineScriptConfig {
     readonly mergeDepth?: number;
     // @deprecated
     readonly nonce?: string;
+    readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly visibilityGateThreshold?: number;
 }
@@ -333,6 +335,7 @@ export interface LivePreviewClientConfig {
     readonly mergeDepth?: number;
     readonly mergeFetch?: typeof fetch;
     readonly root?: Document | Element;
+    readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
     readonly visibilityGateThreshold?: number;

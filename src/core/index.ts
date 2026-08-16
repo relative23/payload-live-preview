@@ -15,9 +15,18 @@ export {
   ARRAY_TEMPLATE_ATTRIBUTE,
   ARRAY_SEPARATOR_ATTRIBUTE,
   LOCALE_ATTRIBUTE,
+  OWNER_ATTRIBUTE,
+  resolveBindingOwner,
   type CacheBuildStats,
   type ElementCacheOptions,
 } from './cache';
+export {
+  collectionOwnerKey,
+  globalOwnerKey,
+  isBindingInScope,
+  messageOwnerKeys,
+  type MessageDocumentIdentity,
+} from './binding-owner';
 export { ObserverManager, type ObserverCallbacks, type ObserverOptions } from './observers';
 export {
   MessageBus,

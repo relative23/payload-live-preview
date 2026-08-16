@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 76,
-    "suites": 216,
-    "tests": 1210,
+    "files": 78,
+    "suites": 223,
+    "tests": 1241,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 63,
-      "suites": 192,
-      "tests": 1133,
+      "files": 65,
+      "suites": 199,
+      "tests": 1164,
       "benchmarks": 0
     }
   },
@@ -222,10 +222,24 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/core/cache.test.ts",
+      "path": "tests/unit/core/binding-owner-scope.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/binding-owner.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 33,
+      "tests": 16,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/cache.test.ts",
+      "group": "unit",
+      "suites": 5,
+      "tests": 37,
       "benchmarks": 0
     },
     {
@@ -274,7 +288,7 @@
       "path": "tests/unit/core/observers.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 26,
+      "tests": 27,
       "benchmarks": 0
     },
     {
@@ -379,7 +393,7 @@
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 18,
+      "tests": 19,
       "benchmarks": 0
     },
     {
