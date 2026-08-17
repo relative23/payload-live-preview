@@ -68,6 +68,15 @@ describe('MessageBus — receive', () => {
     expect(onInvalid).toHaveBeenCalledWith('origin', TRUSTED);
   });
 
+  it('rejects a non-string type as a shape fault, not as an unknown type', () => {
+    window.dispatchEvent(makeMessage({ type: 42, data: { x: 1 } }, TRUSTED));
+
+    expect(onUpdate).not.toHaveBeenCalled();
+    // Accepting the object and letting the type switch miss would report
+    // `type` instead — the payload never was a well-formed message.
+    expect(onInvalid).toHaveBeenCalledWith('shape', TRUSTED);
+  });
+
   it('rejects non-object payloads', () => {
     window.dispatchEvent(makeMessage('hello', TRUSTED));
     expect(onUpdate).not.toHaveBeenCalled();
@@ -715,6 +724,28 @@ describe('MessageBus — receive', () => {
     bus.attach(windowTarget);
     target.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: {} }, TRUSTED));
 
+    expect(onUpdate).toHaveBeenCalledOnce();
+  });
+
+  it('ignores a committed listener that a newer attachment has superseded', () => {
+    bus.detach();
+    const target = new EventTarget();
+    const nativeAdd = target.addEventListener.bind(target);
+    Object.defineProperties(target, {
+      addEventListener: { value: nativeAdd },
+      // An ineffective removal leaves the older listener registered, so both
+      // receive the event and only ownership can tell them apart.
+      removeEventListener: { value: (): void => {} },
+    });
+    const windowTarget = target as unknown as Window;
+
+    bus.attach(windowTarget);
+    bus.detach();
+    bus.attach(windowTarget);
+
+    target.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: {} }, TRUSTED));
+
+    // Both listeners are live; the superseded one must stay silent.
     expect(onUpdate).toHaveBeenCalledOnce();
   });
 
