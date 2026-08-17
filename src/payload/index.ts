@@ -57,6 +57,15 @@ export interface PathResolverContext {
 
 export type PathResolver = string | ((context: PathResolverContext) => string);
 
+/**
+ * Path resolver that may decline a document entirely.
+ *
+ * `null` means "this document has no preview target" — Payload then shows no
+ * preview iframe. An empty string keeps its 1.x meaning and falls back.
+ */
+export type NullablePathResolver =
+  string | null | ((context: PathResolverContext) => string | null);
+
 export interface BuildLivePreviewUrlOptions {
   /** Frontend origin, e.g. `https://site.example` (no trailing slash needed). */
   readonly baseUrl: string;
@@ -79,37 +88,106 @@ export interface BuildLivePreviewUrlOptions {
 }
 
 /**
+ * Options that let a document have no preview target at all.
+ *
+ * Identical to {@link BuildLivePreviewUrlOptions} except that resolvers and
+ * `fallback` accept `null`. Using any of them widens the built callback's
+ * return type to `string | null`, which is what Payload's own `url` callback
+ * accepts — a document without a reachable route should show no iframe rather
+ * than silently point at a public page.
+ */
+export interface BuildLivePreviewUrlNullableOptions {
+  /** Frontend origin, e.g. `https://site.example` (no trailing slash needed). */
+  readonly baseUrl: string;
+  /** Per-collection path resolvers keyed by collection slug. */
+  readonly collections?: Readonly<Record<string, NullablePathResolver>>;
+  /** Per-global path resolvers keyed by global slug. */
+  readonly globals?: Readonly<Record<string, NullablePathResolver>>;
+  /**
+   * Path used when no resolver matches, or when a resolver returns an empty
+   * string. `null` declines every unmapped document instead of sending it to
+   * a default route. Default `/`.
+   */
+  readonly fallback?: string | null;
+  /** See {@link BuildLivePreviewUrlOptions.previewParam}. */
+  readonly previewParam?: string | null;
+}
+
+/**
  * Build an `admin.livePreview.url` callback from declarative slug →
  * path mappings.
+ *
+ * With string-only resolvers the callback always produces a URL, exactly as
+ * in 1.0. Let a resolver or `fallback` return `null` and the callback becomes
+ * nullable, so a document with no reachable route resolves to no preview
+ * instead of to a default public page.
  */
 export function buildLivePreviewUrl(
   options: BuildLivePreviewUrlOptions,
-): (args: LivePreviewUrlArgs) => string {
+): (args: LivePreviewUrlArgs) => string;
+export function buildLivePreviewUrl(
+  options: BuildLivePreviewUrlNullableOptions,
+): (args: LivePreviewUrlArgs) => string | null;
+export function buildLivePreviewUrl(
+  options: BuildLivePreviewUrlNullableOptions,
+): (args: LivePreviewUrlArgs) => string | null {
   const base = options.baseUrl.replace(/\/+$/, '');
-  const fallback = options.fallback ?? '/';
+  // `??` would swallow an explicit `null`, which is the whole point of the
+  // nullable form: only an absent option falls back to the default path.
+  const fallback = options.fallback === undefined ? '/' : options.fallback;
   const previewParam = options.previewParam === undefined ? 'preview' : options.previewParam;
 
   return (args) => {
     const locale = normaliseLocale(args.locale);
     const context: PathResolverContext = { data: args.data, locale };
 
-    const resolver =
-      (args.collectionConfig !== undefined
-        ? options.collections?.[args.collectionConfig.slug]
-        : undefined) ??
-      (args.globalConfig !== undefined ? options.globals?.[args.globalConfig.slug] : undefined);
+    // A registered resolver whose value is `null` must not be mistaken for an
+    // absent one, so presence is tested rather than coalesced.
+    const entry = findResolver(options, args);
 
-    let path = fallback;
-    if (resolver !== undefined) {
-      const resolved = typeof resolver === 'function' ? resolver(context) : resolver;
+    let path: string | null = fallback;
+    if (entry !== undefined) {
+      const resolved = typeof entry === 'function' ? entry(context) : entry;
+      // `null` is the resolver declining the document; an empty string keeps
+      // its 1.x meaning and falls back.
+      if (resolved === null) return null;
       if (resolved.length > 0) path = resolved;
     }
+    if (path === null) return null;
     if (!path.startsWith('/')) path = `/${path}`;
 
     if (previewParam === null) return `${base}${path}`;
     const separator = path.includes('?') ? '&' : '?';
     return `${base}${path}${separator}${previewParam}=true`;
   };
+}
+
+/**
+ * Registered resolver for this document, or `undefined` when the slug is not
+ * mapped at all. A mapped-but-`null` entry returns `null`, which is a resolver
+ * value in its own right.
+ */
+function findResolver(
+  options: BuildLivePreviewUrlNullableOptions,
+  args: LivePreviewUrlArgs,
+): NullablePathResolver | undefined {
+  const collectionSlug = args.collectionConfig?.slug;
+  if (
+    collectionSlug !== undefined &&
+    options.collections !== undefined &&
+    Object.hasOwn(options.collections, collectionSlug)
+  ) {
+    return options.collections[collectionSlug];
+  }
+  const globalSlug = args.globalConfig?.slug;
+  if (
+    globalSlug !== undefined &&
+    options.globals !== undefined &&
+    Object.hasOwn(options.globals, globalSlug)
+  ) {
+    return options.globals[globalSlug];
+  }
+  return undefined;
 }
 
 function normaliseLocale(locale: LivePreviewUrlArgs['locale']): string | undefined {

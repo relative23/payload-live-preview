@@ -8,6 +8,18 @@
 export function buildLivePreviewUrl(options: BuildLivePreviewUrlOptions): (args: LivePreviewUrlArgs) => string;
 
 // @public (undocumented)
+export function buildLivePreviewUrl(options: BuildLivePreviewUrlNullableOptions): (args: LivePreviewUrlArgs) => string | null;
+
+// @public
+export interface BuildLivePreviewUrlNullableOptions {
+    readonly baseUrl: string;
+    readonly collections?: Readonly<Record<string, NullablePathResolver>>;
+    readonly fallback?: string | null;
+    readonly globals?: Readonly<Record<string, NullablePathResolver>>;
+    readonly previewParam?: string | null;
+}
+
+// @public (undocumented)
 export interface BuildLivePreviewUrlOptions {
     readonly baseUrl: string;
     readonly collections?: Readonly<Record<string, PathResolver>>;
@@ -35,6 +47,9 @@ export interface LivePreviewUrlArgs {
         readonly code: string;
     };
 }
+
+// @public
+export type NullablePathResolver = string | null | ((context: PathResolverContext) => string | null);
 
 // @public (undocumented)
 export type PathResolver = string | ((context: PathResolverContext) => string);

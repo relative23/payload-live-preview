@@ -80,6 +80,28 @@ export default buildConfig({
 
 The helper appends `?preview=true` automatically so the adapters detect preview intent. That query parameter is client-controlled and does not authorize draft access or response changes. A hand-written `url: ({ data, locale, collectionConfig, globalConfig }) => string` callback works exactly the same — see the [official docs](https://payloadcms.com/docs/live-preview/overview) for the full contract.
 
+**Documents without a preview target.** Not every document has a reachable
+route: a draft with no slug yet, a collection that is never rendered, a
+document whose id is missing. Payload's `url` callback accepts `null` for
+exactly this — it then shows no preview iframe. Return `null` from a resolver,
+or set `fallback: null` to decline every unmapped document:
+
+```ts
+url: buildLivePreviewUrl({
+  baseUrl: process.env.FRONTEND_URL,
+  collections: {
+    // No id yet means no stable route — no iframe beats a wrong one.
+    services: ({ data }) => (typeof data.id === 'number' ? `/services/${data.id}` : null),
+  },
+  globals: { homepage: '/' },
+  fallback: null, // anything unmapped resolves to no preview
+}),
+```
+
+With string-only resolvers and a string `fallback` the callback keeps its
+1.0 type and always produces a URL. Using `null` anywhere widens the return
+type to `string | null`, so the two forms cannot be confused.
+
 ## Quick start
 
 ### Astro
