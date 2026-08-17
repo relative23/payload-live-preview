@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 79,
-    "suites": 226,
-    "tests": 1255,
+    "files": 80,
+    "suites": 228,
+    "tests": 1268,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 66,
-      "suites": 202,
-      "tests": 1178,
+      "files": 67,
+      "suites": 204,
+      "tests": 1191,
       "benchmarks": 0
     }
   },
@@ -429,6 +429,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/payload/build-live-preview-url.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 13,
       "benchmarks": 0
     },
     {
