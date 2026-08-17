@@ -123,8 +123,18 @@ export {
 export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol-version';
 
 // Typed binding DSL — pair with codegen-emitted schema interfaces
-export { bind, bindByPath } from './dsl';
-export type { BindOptions, FieldBindingAttributes, FieldName, FieldPath, ValueAt } from './dsl';
+export { bind, bindByPath, createPreviewBindings } from './dsl';
+export type {
+  BindOptions,
+  FieldBindingAttributes,
+  FieldName,
+  FieldPath,
+  OwnerBindingAttributes,
+  PreviewBindings,
+  PreviewBindingsOptions,
+  SuppressedBinding,
+  ValueAt,
+} from './dsl';
 
 // Payload protocol types
 export type {

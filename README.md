@@ -355,6 +355,54 @@ nothing else needs configuring. While enabled:
 
 The same option exists on `generateInlineScript()` for the adapter path.
 
+### Keeping binding attributes off public responses
+
+Binding attributes are not neutral markup. `data-payload-field` names a CMS
+field, and `data-payload-owner` names a global, a collection and often a
+document id. Emitted unconditionally they publish the shape of your content
+model — and the identity of documents — to every anonymous visitor and
+crawler.
+
+The gate is the same decision that already controls draft reads. Apply it once
+per request with `createPreviewBindings()` so no individual call site can
+forget it:
+
+```ts
+const preview = createPreviewBindings({
+  authorized: authorization !== null, // your verified server-side decision
+  owner: `global:${slug}`,
+});
+```
+
+```astro
+<section {...preview.owner()}>
+  <h1 {...preview.bind<Homepage>('heroTitle')}>{data.heroTitle}</h1>
+  <div {...preview.bind<Homepage>('intro', { richtext: true })} />
+</section>
+```
+
+While unauthorized every helper returns an empty attribute set, so the response
+carries no `data-payload-*` at all.
+
+**Emit a binding as one unit.** A field travels with its type, locale,
+rich-text marker and owner. Hand-writing a companion next to a gated field
+leaves it behind when the gate closes — the taxonomy leaks anyway, and the
+runtime sees a binding whose field is gone. Pass companions through
+`BindOptions` (`richtext`, `html`, `locale`, `type`, `attribute`) instead of
+writing the attributes yourself.
+
+⚠️ **Do not key CSS off `data-payload-*`.** A selector like
+
+```css
+section:not(:has([data-payload-field]:not(:empty))) {
+  display: none;
+}
+```
+
+reads "no filled binding" as "empty section" the moment nobody is logged in,
+so gating emission silently changes your **public** layout. Style on a stable
+marker of your own that has nothing to do with preview state.
+
 ## Field types
 
 `text` · `textarea` · `richText` · `html` · `email` · `number` · `checkbox` · `date` · `select` · `radio` · `relationship` · `upload` · `image` · `url` · `array` · `blocks` · `structural-array`
@@ -490,6 +538,7 @@ Together these span the whole spectrum: tier 1 proves the real thing works end t
 - **Origin validation** — every incoming `postMessage` is checked against explicit `allowedOrigins` plus (in dev) a localhost pattern. `document.referrer` is a **zero-config fallback only**: the moment you configure explicit origins, the referrer is ignored — a foreign site framing your page can never widen a pinned allow-list. After the first accepted data-bearing update the detector locks to that exact origin. ⚠️ In referrer-fallback mode any site that frames the page becomes a trusted sender — the inline bootstrap logs a warning; set explicit `allowedOrigins` and serve a `frame-ancestors` CSP in production. Adapters add that policy by default on intent-matched responses; invoke them behind application authorization when the policy change is privileged.
 - **HTML sanitisation** — Browser/live Lexical and HTML-field writes run through a DOM sanitiser with a curated tag/attribute whitelist (media tags allowed; `<script>`, `<form>`, `<iframe>`, `<svg>`, event handlers, `style` rejected; `srcset` candidates URL-validated). SSR `lexicalToHtml()` uses the same backstop when a DOM is supplied with `setSanitizerDocument()`; without one, built-in nodes remain escape-by-default but custom node/block renderers must sanitize their own HTML.
 - **URL validation** — every URL that lands in `href`/`src`/`srcset`/`poster` must be `http(s)` / `mailto:` / `tel:` / relative; `javascript:`, `data:`, `vbscript:`, `file:`, `blob:` are rejected (case-insensitive, whitespace-tolerant). External links — including protocol-relative ones — get `rel="noopener noreferrer"`.
+- **Binding attributes are disclosure** — `data-payload-field` names a CMS field and `data-payload-owner` names a document; emitting them unconditionally publishes your content model to anonymous visitors. `createPreviewBindings({ authorized })` applies one verified decision per request and suppresses the field together with every companion attribute, so no partial binding survives. Never key CSS off these attributes: gating them would then change public layout.
 - **Policed attribute writes** — `data-payload-attribute` refuses event handlers, `style`, `srcdoc`, `formaction`, `id`/`name` (DOM clobbering) and validates URL attributes.
 - **CSP-friendly** — adapters merge `frame-ancestors` for the admin origins without clobbering your existing policy; opt-in `manageCsp: 'full'` manages a per-request nonce'd `script-src` (`'strict-dynamic'` opt-in — it disables `'self'`/host sources in CSP 3).
 - **No prototype pollution** — nested field lookups refuse `__proto__`, `prototype`, `constructor`; incoming data is never merged into existing objects.
