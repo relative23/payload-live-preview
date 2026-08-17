@@ -718,6 +718,36 @@ describe('MessageBus — receive', () => {
     expect(onUpdate).toHaveBeenCalledOnce();
   });
 
+  it('ignores a message delivered while its own attachment is still registering', () => {
+    bus.detach();
+    const target = new EventTarget();
+    const nativeAdd = target.addEventListener.bind(target);
+    const nativeRemove = target.removeEventListener.bind(target);
+    Object.defineProperties(target, {
+      addEventListener: {
+        value: (
+          type: string,
+          listener: EventListenerOrEventListenerObject,
+          options?: boolean | AddEventListenerOptions,
+        ): void => {
+          nativeAdd(type, listener, options);
+          // The bound listener is already recorded at this point but the
+          // attachment has not committed, so this delivery falls into the one
+          // window where identity alone cannot decide ownership.
+          target.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: {} }, TRUSTED));
+        },
+      },
+      removeEventListener: { value: nativeRemove },
+    });
+
+    bus.attach(target as unknown as Window);
+    expect(onUpdate).not.toHaveBeenCalled();
+
+    // The very same listener serves normally once the transaction committed.
+    target.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: {} }, TRUSTED));
+    expect(onUpdate).toHaveBeenCalledOnce();
+  });
+
   it('leaves no listener when addEventListener detaches reentrantly', () => {
     bus.detach();
     const target = new EventTarget();
