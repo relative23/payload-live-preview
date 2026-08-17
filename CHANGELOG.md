@@ -1,5 +1,27 @@
 # payload-live-preview
 
+## 1.2.0
+
+### Minor Changes
+
+- 7dec677: Add `createPreviewBindings()`, an authorization-gated emission unit for binding attributes, so a public response can carry no `data-payload-*` at all.
+
+  Binding attributes are not neutral markup. `data-payload-field` names a CMS field and `data-payload-owner` names a global, a collection and often a document id, so emitting them unconditionally publishes the shape of the content model — and the identity of documents — to every anonymous visitor and crawler.
+
+  The gate itself stays with the application: it is the same verified decision that already controls draft reads and cache policy. What the package now provides is a place to apply that decision once per request, so no individual call site can forget it, and an emission unit that cannot be partially suppressed. While unauthorized, `bind`, `bindByPath` and `owner` all return an empty attribute set.
+
+  That indivisibility is the substantive part. A field travels with its type, locale, rich-text marker and owner; gating only the field name leaves the companions behind, which discloses the taxonomy anyway and leaves the runtime looking at a binding whose field is gone. `BindOptions` therefore gained `richtext`, `html` and `locale`, the companions that previously had to be hand-written as literals next to a gated field.
+
+  The README documents both the gate and a trap it exposes: consumer CSS keyed on `data-payload-*` couples public layout to preview state, so gating emission silently changes what anonymous visitors see.
+
+- a8a972f: `buildLivePreviewUrl` can now decline a document instead of always producing a URL.
+
+  The callback returned `string`, so "this document has no preview target" was unexpressible. A draft without a slug, a collection that is never rendered, a document with no id — each of them fell through to the fallback path and pointed the preview iframe at an unrelated public page. Payload's own `url` callback accepts `null` for precisely this case and then shows no iframe. Consumers were writing guards around the helper to recover that.
+
+  A resolver may now return `null`, and `fallback` accepts `null` to decline every unmapped document. Both forms stay distinguishable at the type level: with string-only resolvers and a string fallback the callback keeps its 1.0 signature and always produces a URL, while using `null` anywhere widens the return type to `string | null`. Existing configurations are unaffected in behaviour and in type.
+
+  An empty string keeps its 1.x meaning and falls back, and a slug mapped explicitly to `null` is now treated as a resolver in its own right rather than as an absent entry.
+
 ## 1.1.0
 
 ### Minor Changes
