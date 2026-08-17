@@ -12,6 +12,11 @@
       "functions": 100,
       "branches": 100
     },
+    "src/core/binding-owner.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/cache.ts": {
       "lines": 96,
       "functions": 100,
