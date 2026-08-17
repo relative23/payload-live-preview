@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 78,
-    "suites": 223,
-    "tests": 1241,
+    "files": 79,
+    "suites": 226,
+    "tests": 1255,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 65,
-      "suites": 199,
-      "tests": 1164,
+      "files": 66,
+      "suites": 202,
+      "tests": 1178,
       "benchmarks": 0
     }
   },
@@ -359,6 +359,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/dsl/preview-bindings.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 14,
       "benchmarks": 0
     },
     {

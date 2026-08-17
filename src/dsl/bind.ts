@@ -34,6 +34,9 @@ export interface FieldBindingAttributes {
   readonly 'data-payload-field': string;
   readonly 'data-payload-attribute'?: string;
   readonly 'data-payload-type'?: string;
+  readonly 'data-payload-richtext'?: string;
+  readonly 'data-payload-html'?: string;
+  readonly 'data-payload-locale'?: string;
 }
 
 export interface BindOptions {
@@ -41,6 +44,15 @@ export interface BindOptions {
   readonly attribute?: string;
   /** Explicit field-type override — bypasses schema detection. */
   readonly type?: string;
+  /**
+   * Mark the binding as Lexical rich text. Usually detected automatically;
+   * set it where the initial render is empty and there is nothing to detect.
+   */
+  readonly richtext?: boolean;
+  /** Render the value as sanitised HTML rather than text. */
+  readonly html?: boolean;
+  /** Lock this element to one locale, overriding the message locale. */
+  readonly locale?: string;
 }
 
 /**
@@ -98,13 +110,22 @@ function buildAttributes(field: string, options: BindOptions | undefined): Field
   if (field.length === 0) {
     throw new Error('bind: field name must be a non-empty string');
   }
+  // A binding is one unit: the field and every companion that describes it are
+  // built together so a caller cannot emit half of one.
   const attrs: {
     'data-payload-field': string;
     'data-payload-attribute'?: string;
     'data-payload-type'?: string;
+    'data-payload-richtext'?: string;
+    'data-payload-html'?: string;
+    'data-payload-locale'?: string;
   } = { 'data-payload-field': field };
   if (options?.attribute !== undefined) attrs['data-payload-attribute'] = options.attribute;
   if (options?.type !== undefined) attrs['data-payload-type'] = options.type;
+  // Presence attributes: the runtime tests for the attribute, not its value.
+  if (options?.richtext === true) attrs['data-payload-richtext'] = '';
+  if (options?.html === true) attrs['data-payload-html'] = '';
+  if (options?.locale !== undefined) attrs['data-payload-locale'] = options.locale;
   return attrs;
 }
 

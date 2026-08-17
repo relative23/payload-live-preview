@@ -13,6 +13,9 @@ export function bindByPath<T = Record<string, unknown>>(picker: (data: T) => unk
 // @public (undocumented)
 export interface BindOptions {
     readonly attribute?: string;
+    readonly html?: boolean;
+    readonly locale?: string;
+    readonly richtext?: boolean;
     readonly type?: string;
 }
 
@@ -49,6 +52,9 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<string, number>>;
 export const CORE_ENTRY = true;
 
 // @public
+export function createPreviewBindings(options: PreviewBindingsOptions): PreviewBindings;
+
+// @public
 export function detectInitialLocale(): string;
 
 // @public
@@ -79,6 +85,12 @@ export interface FieldBindingAttributes {
     readonly 'data-payload-attribute'?: string;
     // (undocumented)
     readonly 'data-payload-field': string;
+    // (undocumented)
+    readonly 'data-payload-html'?: string;
+    // (undocumented)
+    readonly 'data-payload-locale'?: string;
+    // (undocumented)
+    readonly 'data-payload-richtext'?: string;
     // (undocumented)
     readonly 'data-payload-type'?: string;
 }
@@ -278,6 +290,12 @@ interface OriginDetectorOptions {
     readonly referrer?: string;
 }
 
+// @public
+export interface OwnerBindingAttributes {
+    // (undocumented)
+    readonly 'data-payload-owner': string;
+}
+
 // @public (undocumented)
 interface PayloadBlockSchema {
     // (undocumented)
@@ -412,6 +430,20 @@ interface PluginEvents extends EventEmitter {
 // @public
 type Prev<N extends 0 | 1 | 2 | 3> = N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
 
+// @public
+export interface PreviewBindings {
+    readonly authorized: boolean;
+    bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
+    bindByPath: <T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
+    owner: () => OwnerBindingAttributes | SuppressedBinding;
+}
+
+// @public (undocumented)
+export interface PreviewBindingsOptions {
+    readonly authorized: boolean;
+    readonly owner?: string;
+}
+
 // Warning: (ae-forgotten-export) The symbol "CAPABILITY_REQUIREMENTS" needs to be exported by the entry point core.d.ts
 //
 // @public (undocumented)
@@ -459,6 +491,9 @@ export function setCspCrypto(crypto: WebCryptoLike | null): void;
 
 // @public
 export function setSanitizerDocument(doc: SanitizerDocument | null): void;
+
+// @public
+export type SuppressedBinding = Readonly<Record<string, never>>;
 
 // @public
 export type Unsubscribe = () => void;
