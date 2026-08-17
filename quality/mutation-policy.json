@@ -21,6 +21,7 @@
   "scope": [
     "src/core/a11y.ts",
     "src/core/attribute-binding.ts",
+    "src/core/binding-owner.ts",
     "src/core/cache.ts",
     "src/core/data-merger.ts",
     "src/core/field-value.ts",
@@ -35,8 +36,8 @@
     "src/security/url-validator.ts"
   ],
   "baseline": {
-    "total": 3625,
-    "mutationScoreMinimum": 79.03,
+    "total": 3770,
+    "mutationScoreMinimum": 79.58,
     "mutationScorePrecision": 2,
     "noCoverageMaximum": 63,
     "timeoutMaximum": 11,
