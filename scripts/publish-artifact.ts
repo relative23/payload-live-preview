@@ -29,6 +29,88 @@ interface CommandResult {
 export type RegistryArtifactState =
   { readonly kind: 'missing' } | { readonly kind: 'published'; readonly integrity: string };
 
+/**
+ * How long the registry may take to serve what it has already accepted.
+ *
+ * npm acknowledges a publish before the new version is readable, and the delay
+ * is neither announced nor bounded by the API. Every read after the publish is
+ * therefore expected to fail for a while and to succeed afterwards — the one
+ * situation where retrying is correct rather than papering over a fault.
+ */
+export interface RegistryPropagationPolicy {
+  /** Total budget for one read to become consistent. */
+  readonly timeoutMs: number;
+  /** Delay between attempts. */
+  readonly intervalMs: number;
+}
+
+export const REGISTRY_PROPAGATION_POLICY: RegistryPropagationPolicy = {
+  timeoutMs: 180_000,
+  intervalMs: 5_000,
+};
+
+/** Injectable clock so the wait is testable without real time passing. */
+export interface PropagationClock {
+  readonly now: () => number;
+  readonly sleep: (ms: number) => Promise<void>;
+}
+
+export const systemPropagationClock: PropagationClock = {
+  now: () => Date.now(),
+  sleep: (ms) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    }),
+};
+
+export interface PropagationOutcome<T> {
+  /** `false` when the budget ran out; the caller owns the error message. */
+  readonly ready: boolean;
+  /** Result of the last attempt, ready or not. */
+  readonly value: T;
+  readonly attempts: number;
+  readonly waitedMs: number;
+}
+
+/**
+ * Repeat a registry read until it is consistent or the budget is spent.
+ *
+ * The first attempt is never delayed, so a registry that is already consistent
+ * costs nothing. Failure is still closed: this returns the last value with
+ * `ready: false` rather than deciding what that means.
+ */
+export async function awaitRegistryPropagation<T>(
+  read: () => T | Promise<T>,
+  isReady: (value: T) => boolean,
+  policy: RegistryPropagationPolicy = REGISTRY_PROPAGATION_POLICY,
+  clock: PropagationClock = systemPropagationClock,
+): Promise<PropagationOutcome<T>> {
+  const started = clock.now();
+  let attempts = 0;
+  let value = await read();
+  attempts += 1;
+
+  while (!isReady(value)) {
+    const waited = clock.now() - started;
+    // Stop before sleeping past the budget rather than after.
+    if (waited + policy.intervalMs > policy.timeoutMs) {
+      return { ready: false, value, attempts, waitedMs: waited };
+    }
+    await clock.sleep(policy.intervalMs);
+    value = await read();
+    attempts += 1;
+  }
+  return { ready: true, value, attempts, waitedMs: clock.now() - started };
+}
+
+/**
+ * Whether a failed registry command is the known read-after-write delay rather
+ * than a real fault. Anything else must fail immediately.
+ */
+export function isRegistryPropagationDelay(output: string): boolean {
+  return /\bETARGET\b|\bE404\b|\bnotarget\b|No matching version found/u.test(output);
+}
+
 export interface CertifiedPublishOperations {
   readonly readRegistryState: () => RegistryArtifactState | Promise<RegistryArtifactState>;
   readonly publishExactArchive: () => void | Promise<void>;
@@ -143,27 +225,43 @@ async function verifyRegistryArchive(
     readonly npmVersion: string;
   },
 ): Promise<void> {
-  const state = readRegistryState(expected.name, expected.version);
-  if (state.kind !== 'published') {
-    throw new Error('npm publish returned success but the exact package version is not observable');
+  const visible = await awaitRegistryPropagation(
+    () => readRegistryState(expected.name, expected.version),
+    (candidate) => candidate.kind === 'published',
+  );
+  if (visible.value.kind !== 'published') {
+    throw new Error(
+      'npm publish returned success but the exact package version is not observable ' +
+        `after ${String(visible.attempts)} attempts over ${String(Math.round(visible.waitedMs / 1000))}s`,
+    );
   }
-  registryArtifactAction(state, manifest.archive.integrity);
+  registryArtifactAction(visible.value, manifest.archive.integrity);
 
   const temporaryRoot = await mkdtemp(resolve(tmpdir(), 'payload-live-preview-registry-proof-'));
   try {
-    const packed = run('npm', [
-      'pack',
-      `${expected.name}@${expected.version}`,
-      '--ignore-scripts',
-      '--json',
-      '--pack-destination',
-      temporaryRoot,
-      '--prefer-online',
-      '--registry',
-      NPM_REGISTRY,
-    ]);
+    // Metadata can be readable while the tarball still is not, so this read
+    // gets its own budget instead of trusting the visibility check above.
+    const download = await awaitRegistryPropagation(
+      () =>
+        run('npm', [
+          'pack',
+          `${expected.name}@${expected.version}`,
+          '--ignore-scripts',
+          '--json',
+          '--pack-destination',
+          temporaryRoot,
+          '--prefer-online',
+          '--registry',
+          NPM_REGISTRY,
+        ]),
+      (result) => result.status === 0 || !isRegistryPropagationDelay(detail(result)),
+    );
+    const packed = download.value;
     if (packed.status !== 0) {
-      throw new Error(`downloading the published npm archive failed:\n${detail(packed)}`);
+      const waited = isRegistryPropagationDelay(detail(packed))
+        ? ` after ${String(download.attempts)} attempts over ${String(Math.round(download.waitedMs / 1000))}s`
+        : '';
+      throw new Error(`downloading the published npm archive failed${waited}:\n${detail(packed)}`);
     }
     const report = parseNpmPackReport(packed.stdout);
     const registryTarball = resolve(temporaryRoot, report.filename);
