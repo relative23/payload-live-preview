@@ -618,6 +618,42 @@ describe('LivePreviewClient — end-to-end', () => {
     }
   });
 
+  it('reports the first flush the visibility gate holds back, once', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">initial</p>';
+    const element = document.querySelector('p');
+    if (element === null) throw new Error('binding missing');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const client = new LivePreviewClient({
+      allowedOrigins: [TRUSTED],
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      visibilityGateThreshold: 0,
+    });
+    try {
+      await fireUpdate({ title: 'first' });
+      // Held back: the element is offscreen and the gate is on.
+      expect(element.textContent).toBe('initial');
+      const gateWarnings = (): string[] =>
+        warn.mock.calls
+          .map((call) => String(call[0]))
+          .filter((message) => message.includes('visibility gate held'));
+      expect(gateWarnings()).toHaveLength(1);
+      expect(gateWarnings()[0]).toContain('visibilityGateThreshold');
+
+      // A second deferral must not repeat it: a warning that fires per flush
+      // during typing is noise, and noise is why this cliff went unnoticed.
+      await fireUpdate({ title: 'second' });
+      expect(gateWarnings()).toHaveLength(1);
+
+      IO.latest?.setVisible(element, true);
+      await Promise.resolve();
+      expect(element.textContent).toBe('second');
+    } finally {
+      await client.destroy();
+      warn.mockRestore();
+    }
+  });
+
   it('freezes transformed values before an offscreen revision enters replay', async () => {
     document.body.innerHTML = '<p data-payload-field="title">initial</p>';
     const element = document.querySelector('p');

@@ -237,6 +237,7 @@ const enum RuntimeLifecycleSlot {
   ActiveUpdate,
   WarnedOrphanFields,
   WarnedUnattributableMessage,
+  WarnedVisibilityGate,
 }
 
 /** State that changes as the runtime starts, accepts revisions, and stops. */
@@ -251,6 +252,7 @@ type RuntimeLifecycleState = [
   activeUpdate: UpdateTransaction | null,
   warnedOrphanFields: Set<string>,
   warnedUnattributableMessage: boolean,
+  warnedVisibilityGate: boolean,
 ];
 
 export class LivePreviewRuntime {
@@ -388,6 +390,7 @@ export class LivePreviewRuntime {
       0,
       null,
       new Set<string>(),
+      false,
       false,
     ];
   }
@@ -1032,6 +1035,30 @@ export class LivePreviewRuntime {
     return this.l[RuntimeLifecycleSlot.Started];
   }
 
+  /**
+   * Report the first flush the visibility gate held back.
+   *
+   * The gate is off until the cache grows past `visibilityGateThreshold`, and
+   * from then on an offscreen binding is buffered until it scrolls into view.
+   * That is a deliberate trade, but it is also a cliff: a page that grows one
+   * binding past the threshold changes its update semantics wholesale, and the
+   * symptom — "editing a field below the fold does nothing" — looks exactly
+   * like a broken runtime. Nothing else in the pipeline reports it, so a
+   * consumer can only discover it by instrumenting this package.
+   *
+   * Warned once, on the same reasoning as the unattributable-message warning:
+   * a silent no-op is the hardest possible symptom to diagnose.
+   */
+  #warnOnDeferredWrites(stats: FlushStats): void {
+    if (stats.deferred === 0) return;
+    if (this.l[RuntimeLifecycleSlot.WarnedVisibilityGate]) return;
+    this.l[RuntimeLifecycleSlot.WarnedVisibilityGate] = true;
+    this.d[RuntimeDependencySlot.Warn](
+      `[live-preview] visibility gate held ${String(stats.deferred)} offscreen ` +
+        'update(s) until scrolled into view; see visibilityGateThreshold.',
+    );
+  }
+
   #applyUpdate(update: ScheduledUpdate): boolean {
     const transaction = this.l[RuntimeLifecycleSlot.ActiveUpdate];
     if (
@@ -1190,6 +1217,9 @@ export class LivePreviewRuntime {
   }
 
   #onFlush(stats: FlushStats): void {
+    // Before every early return below. A flush that applied nothing is exactly
+    // the flush this reports, and the `applied === 0` guard would swallow it.
+    this.#warnOnDeferredWrites(stats);
     const { identity, data } = stats;
     if (stats.applied === 0 || identity === undefined || data === undefined) return;
     const transaction = this.l[RuntimeLifecycleSlot.ActiveUpdate];

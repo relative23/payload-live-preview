@@ -18,7 +18,7 @@
   "totals": {
     "files": 80,
     "suites": 230,
-    "tests": 1277,
+    "tests": 1278,
     "benchmarks": 10
   },
   "groups": {
@@ -37,7 +37,7 @@
     "integration": {
       "files": 5,
       "suites": 7,
-      "tests": 55,
+      "tests": 56,
       "benchmarks": 0
     },
     "real-payload": {
@@ -106,7 +106,7 @@
       "path": "tests/integration/client.test.ts",
       "group": "integration",
       "suites": 1,
-      "tests": 31,
+      "tests": 32,
       "benchmarks": 0
     },
     {
