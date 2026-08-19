@@ -37,7 +37,7 @@
   ],
   "baseline": {
     "total": 3770,
-    "mutationScoreMinimum": 79.71,
+    "mutationScoreMinimum": 79.79,
     "mutationScorePrecision": 2,
     "noCoverageMaximum": 63,
     "timeoutMaximum": 11,
