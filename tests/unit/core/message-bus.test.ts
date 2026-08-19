@@ -591,6 +591,40 @@ describe('MessageBus — receive', () => {
     }
   });
 
+  it('leaves the revision untouched when the generation advances during the shape check', () => {
+    // The recheck between `isPlainObject(data)` and the revision allocation is
+    // invisible in the callbacks: with it removed a later recheck still stops
+    // the stale message, so `onUpdate` looks identical either way. What differs
+    // is the counter — a stale message that gets past this point consumes a
+    // revision the next update then skips. Asserting callbacks alone left this
+    // guard's `false` mutant alive, and which CI run happened to kill it was a
+    // matter of timing.
+    // Two prototype reads happen per message: the shape check on the way in,
+    // and `isPlainObject` inside the dispatch. Advancing on the first is caught
+    // by the entry recheck, so it says nothing about this one — the advance has
+    // to land on the second.
+    let reads = 0;
+    const data = new Proxy(
+      { id: 'stale' },
+      {
+        getPrototypeOf(target) {
+          reads += 1;
+          if (reads === 2) expect(bus.advanceGeneration()).toBe(true);
+          return Reflect.getPrototypeOf(target);
+        },
+      },
+    );
+
+    window.dispatchEvent(makeMessage({ type: 'payload-live-preview', data }, TRUSTED));
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { id: 'fresh' } }, TRUSTED),
+    );
+
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    expect(onUpdate.mock.calls[0]?.[0].data).toEqual({ id: 'fresh' });
+    expect(onUpdate.mock.calls[0]?.[2]).toEqual({ generation: 2, revision: 1 });
+  });
+
   it('rechecks generation after proxy handler lookup before invoking callbacks', () => {
     type HandlerName = 'onUpdate' | 'onDocumentEvent' | 'onInvalid';
     const cases: readonly (readonly [HandlerName, unknown, string])[] = [

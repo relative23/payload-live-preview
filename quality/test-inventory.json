@@ -18,7 +18,7 @@
   "totals": {
     "files": 80,
     "suites": 230,
-    "tests": 1278,
+    "tests": 1279,
     "benchmarks": 10
   },
   "groups": {
@@ -55,7 +55,7 @@
     "unit": {
       "files": 67,
       "suites": 206,
-      "tests": 1200,
+      "tests": 1201,
       "benchmarks": 0
     }
   },
@@ -281,7 +281,7 @@
       "path": "tests/unit/core/message-bus.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 71,
+      "tests": 72,
       "benchmarks": 0
     },
     {
