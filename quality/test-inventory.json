@@ -18,7 +18,7 @@
   "totals": {
     "files": 81,
     "suites": 231,
-    "tests": 1291,
+    "tests": 1292,
     "benchmarks": 10
   },
   "groups": {
@@ -55,7 +55,7 @@
     "unit": {
       "files": 68,
       "suites": 207,
-      "tests": 1210,
+      "tests": 1211,
       "benchmarks": 0
     }
   },
@@ -281,7 +281,7 @@
       "path": "tests/unit/core/lifecycle.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 98,
+      "tests": 99,
       "benchmarks": 0
     },
     {

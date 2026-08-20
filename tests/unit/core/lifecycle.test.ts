@@ -1848,6 +1848,47 @@ describe('LivePreviewRuntime — error handling', () => {
 });
 
 describe('LivePreviewRuntime — disconnect / heartbeat', () => {
+  it('reports a suspension as a disconnect, and only once it was connected', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">initial</p>';
+    const emitter = new EventEmitter();
+    const disconnect = vi.fn();
+    emitter.on('disconnect', disconnect);
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: (origin) => origin === TRUSTED,
+      readyTargets: [TRUSTED],
+      emitter,
+      sendReady: vi.fn(),
+      disableVisibilityGate: true,
+      enableA11y: false,
+      log: vi.fn(),
+    });
+
+    runtime.start();
+    // Nothing has connected yet: a suspension here has no connection to report,
+    // and announcing one would tell a consumer it lost something it never had.
+    expect(runtime.suspend()).toBe(true);
+    expect(disconnect).not.toHaveBeenCalled();
+
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { title: 'connected' } });
+    await flushMicrotasks();
+    // The connection, not the DOM write: the write goes through the scheduler's
+    // debounce, which has nothing to do with what this test is about.
+    expect(runtime.status).toBe('connected');
+
+    expect(runtime.suspend()).toBe(true);
+    expect(disconnect).toHaveBeenCalledOnce();
+    // `unload` rather than `destroy`: the instance is still usable, and a
+    // consumer distinguishing the two must not be told the runtime is gone.
+    expect(disconnect.mock.calls[0]?.[0]).toMatchObject({ reason: 'unload' });
+
+    // Idempotent, and a second suspension has nothing left to announce.
+    expect(runtime.suspend()).toBe(false);
+    expect(disconnect).toHaveBeenCalledOnce();
+    runtime.destroy();
+  });
+
   it('continues disconnect and ready recovery when the timeout hook throws', async () => {
     document.body.innerHTML = '<p data-payload-field="title">initial</p>';
     const emitter = new EventEmitter();
