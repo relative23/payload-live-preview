@@ -769,10 +769,13 @@ describe('MessageBus — receive', () => {
     // that no longer exists, which is exactly what a trust boundary must not do.
     bus.detach();
     const seen: string[] = [];
-    const scoped = new MessageBus((origin) => {
-      seen.push(origin);
-      return origin === TRUSTED;
-    }, { onUpdate, onDocumentEvent: () => undefined });
+    const scoped = new MessageBus(
+      (origin) => {
+        seen.push(origin);
+        return origin === TRUSTED;
+      },
+      { onUpdate, onDocumentEvent: () => undefined },
+    );
     scoped.attach();
 
     const event = new Event('message');
