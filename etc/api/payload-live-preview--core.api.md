@@ -171,8 +171,10 @@ export class LivePreviewClient {
     get events(): EventEmitter;
     get plugins(): readonly string[];
     refreshCache(): void;
+    resume(): boolean;
     start(): boolean;
     get status(): 'disconnected' | 'connecting' | 'connected';
+    suspend(): boolean;
     unuse(name: string): Promise<void>;
     get updateCount(): number;
     // Warning: (ae-forgotten-export) The symbol "LivePreviewPlugin" needs to be exported by the entry point core.d.ts

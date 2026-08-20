@@ -94,6 +94,79 @@ afterEach(() => {
 });
 
 describe('LivePreviewClient — end-to-end', () => {
+  it('goes quiet while suspended and delivers again after resuming', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const client = new LivePreviewClient({
+      allowedOrigins: [TRUSTED],
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+    });
+
+    try {
+      await fireUpdate({ title: 'before' });
+      expect(document.querySelector('h1')?.textContent).toBe('before');
+
+      expect(client.suspend()).toBe(true);
+      await fireUpdate({ title: 'while suspended' });
+      // The ingress is released, so the message reaches nothing at all.
+      expect(document.querySelector('h1')?.textContent).toBe('before');
+
+      expect(client.resume()).toBe(true);
+      await fireUpdate({ title: 'after' });
+      expect(document.querySelector('h1')?.textContent).toBe('after');
+    } finally {
+      await client.destroy();
+    }
+  });
+
+  it('keeps plugins across a suspension, unlike destroy', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const client = new LivePreviewClient({
+      allowedOrigins: [TRUSTED],
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+    });
+
+    try {
+      await client.use({
+        name: 'shouty',
+        init: (ctx) => {
+          ctx.registerTransform('title', (value) => `!${String(value)}`);
+        },
+      });
+      expect(client.suspend()).toBe(true);
+      expect(client.resume()).toBe(true);
+      await fireUpdate({ title: 'kept' });
+
+      // A rebuild would have lost the transform; a suspension must not.
+      expect(document.querySelector('h1')?.textContent).toBe('!kept');
+      expect(client.plugins).toContain('shouty');
+    } finally {
+      await client.destroy();
+    }
+  });
+
+  it('refuses to suspend or resume a client that never started or was destroyed', async () => {
+    const client = new LivePreviewClient({
+      allowedOrigins: [TRUSTED],
+      autoStart: false,
+      debounceMs: 0,
+    });
+    expect(client.suspend()).toBe(false);
+    expect(client.resume()).toBe(false);
+
+    expect(client.start()).toBe(true);
+    expect(client.suspend()).toBe(true);
+    // Idempotent: nothing is running any more.
+    expect(client.suspend()).toBe(false);
+
+    await client.destroy();
+    expect(client.resume()).toBe(false);
+    expect(client.suspend()).toBe(false);
+  });
+
   it('can retry a failed runtime startup without reconstructing the client', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const originalIntersectionObserver = globalThis.IntersectionObserver;

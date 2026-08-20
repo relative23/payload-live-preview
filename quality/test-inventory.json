@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 80,
-    "suites": 230,
-    "tests": 1284,
+    "files": 81,
+    "suites": 231,
+    "tests": 1291,
     "benchmarks": 10
   },
   "groups": {
@@ -37,7 +37,7 @@
     "integration": {
       "files": 5,
       "suites": 7,
-      "tests": 56,
+      "tests": 59,
       "benchmarks": 0
     },
     "real-payload": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 67,
-      "suites": 206,
-      "tests": 1206,
+      "files": 68,
+      "suites": 207,
+      "tests": 1210,
       "benchmarks": 0
     }
   },
@@ -106,7 +106,7 @@
       "path": "tests/integration/client.test.ts",
       "group": "integration",
       "suites": 1,
-      "tests": 32,
+      "tests": 35,
       "benchmarks": 0
     },
     {
@@ -184,6 +184,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/client/navigation-lifecycle.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {

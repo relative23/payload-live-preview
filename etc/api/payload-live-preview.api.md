@@ -22,6 +22,9 @@ export function bind<T = Record<string, unknown>>(field: FieldName<T>, options?:
 // @public
 export function bindByPath<T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions): FieldBindingAttributes;
 
+// @public
+export function bindNavigationLifecycle(target: NavigationLifecycleTarget, options?: NavigationLifecycleOptions): () => void;
+
 // @public (undocumented)
 export interface BindOptions {
     readonly attribute?: string;
@@ -323,8 +326,10 @@ export class LivePreviewClient {
     get events(): EventEmitter;
     get plugins(): readonly string[];
     refreshCache(): void;
+    resume(): boolean;
     start(): boolean;
     get status(): 'disconnected' | 'connecting' | 'connected';
+    suspend(): boolean;
     unuse(name: string): Promise<void>;
     get updateCount(): number;
     use(plugin: LivePreviewPlugin): Promise<void>;
@@ -415,6 +420,23 @@ export interface LivePreviewPlugin {
 
 // @public
 export function mergeCspHeader(existing: string, additions: Readonly<Record<string, string | CspDirectiveMerge>>): string;
+
+// @public (undocumented)
+export interface NavigationLifecycleOptions {
+    readonly documentTarget?: EventTarget;
+    readonly softNavigationEvents?: readonly string[];
+    readonly windowTarget?: EventTarget;
+}
+
+// @public
+export interface NavigationLifecycleTarget {
+    // (undocumented)
+    refreshCache(): void;
+    // (undocumented)
+    resume(): boolean;
+    // (undocumented)
+    suspend(): boolean;
+}
 
 // @public
 export function negotiateProtocol(theirs: number | undefined): ProtocolNegotiation;

@@ -483,6 +483,38 @@ export class LivePreviewRuntime {
   }
 
   /** Tear down all observers, timers, and listeners. Idempotent. */
+  /**
+   * Release the message ingress without tearing the instance down.
+   *
+   * A back/forward-cache restore never re-runs module scripts, so a runtime
+   * that keeps its listener across `pagehide` comes back attached to a page the
+   * browser froze and thawed: observers bound to nodes that were never
+   * re-created, a heartbeat that measured the frozen interval, and pending
+   * writes from before the freeze. It does not fail — it goes quiet, which is
+   * the hardest symptom to attribute.
+   *
+   * Unlike `destroy()` this keeps everything the consumer configured: plugins,
+   * renderers, transforms and the accessibility announcer all survive, and
+   * `start()` brings the same instance back. `DataMerger` and `UpdateScheduler`
+   * are reusable across a stop/start cycle by design, which is what makes this
+   * a suspension rather than a rebuild.
+   *
+   * Emits `disconnect` with the existing `'unload'` reason, which the public
+   * union has always carried for exactly this producer and nothing has emitted
+   * until now.
+   */
+  suspend(): boolean {
+    if (!this.l[RuntimeLifecycleSlot.Started]) return false;
+    const wasConnected = this.#releaseRuntimeResources();
+    if (wasConnected) {
+      void this.d[RuntimeDependencySlot.Emitter].emit('disconnect', {
+        reason: 'unload',
+        timestamp: Date.now(),
+      });
+    }
+    return true;
+  }
+
   destroy(): void {
     if (!this.l[RuntimeLifecycleSlot.Started]) return;
     const wasConnected = this.#releaseRuntimeResources();

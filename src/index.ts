@@ -12,6 +12,11 @@ export { VERSION } from './version';
 
 // High-level client
 export { LivePreviewClient, initLivePreview, type LivePreviewClientConfig } from './client';
+export {
+  bindNavigationLifecycle,
+  type NavigationLifecycleOptions,
+  type NavigationLifecycleTarget,
+} from './client/navigation-lifecycle';
 
 // Inline-script generator
 export {

@@ -151,6 +151,33 @@ export class LivePreviewClient {
   }
 
   /**
+   * Release the message ingress while keeping this client usable.
+   *
+   * For the document lifecycle, not for teardown: a back/forward-cache restore
+   * does not re-run module scripts, so a client that stays attached across
+   * `pagehide` returns bound to a frozen page and silently stops updating.
+   * Plugins, renderers and transforms survive; `resume()` brings the same
+   * client back. Returns `false` when there was nothing running to suspend.
+   */
+  suspend(): boolean {
+    if (this.#destroyed || !this.#started) return false;
+    return this.#runtime.suspend();
+  }
+
+  /**
+   * Reacquire after `suspend()`.
+   *
+   * Deliberately the same path as `start()`: a restored document needs the
+   * cache rebuilt, the observers rebound and the handshake rebroadcast, which
+   * is exactly what starting does. Returns `false` for a destroyed client or
+   * one that was never started.
+   */
+  resume(): boolean {
+    if (this.#destroyed || !this.#started) return false;
+    return this.#runtime.start();
+  }
+
+  /**
    * Stop the runtime and tear down every plugin. Idempotent.
    */
   destroy(): Promise<void> {
