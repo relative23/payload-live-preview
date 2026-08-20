@@ -761,6 +761,85 @@ describe('MessageBus — receive', () => {
     expect(onUpdate).toHaveBeenCalledOnce();
   });
 
+  it('does not consult the origin matcher for a superseded generation', () => {
+    // `#matchesOrigin` rechecks the generation on entry and again around the
+    // matcher's verdict. Removing the entry check does not change the verdict —
+    // the second one still refuses — so callbacks look identical. What changes
+    // is that a consumer-supplied matcher is invoked on behalf of an attachment
+    // that no longer exists, which is exactly what a trust boundary must not do.
+    bus.detach();
+    const seen: string[] = [];
+    const scoped = new MessageBus((origin) => {
+      seen.push(origin);
+      return origin === TRUSTED;
+    }, { onUpdate, onDocumentEvent: () => undefined });
+    scoped.attach();
+
+    const event = new Event('message');
+    Object.defineProperties(event, {
+      origin: {
+        get(): string {
+          // Reading the origin is the last host boundary before the check.
+          scoped.advanceGeneration();
+          return TRUSTED;
+        },
+      },
+      data: { value: { type: 'payload-live-preview', data: { id: 'stale' } } },
+    });
+    window.dispatchEvent(event);
+
+    expect(seen).toEqual([]);
+    expect(onUpdate).not.toHaveBeenCalled();
+    scoped.detach();
+  });
+
+  it('removes its own listener when a reentrant attachment supersedes it', () => {
+    // The commit is identity-gated: an attempt whose listener was replaced
+    // mid-`addEventListener` must not claim ownership, and must take its own
+    // listener back off the target. Committing anyway is invisible in the
+    // callbacks — the obsolete listener stays registered but is silenced by the
+    // same identity check at dispatch — so only the removal itself shows it.
+    bus.detach();
+    const target = new EventTarget();
+    const windowTarget = target as unknown as Window;
+    const nativeAdd = target.addEventListener.bind(target);
+    const added: EventListenerOrEventListenerObject[] = [];
+    const remove = vi.fn(target.removeEventListener.bind(target));
+    let reenter = true;
+    Object.defineProperties(target, {
+      addEventListener: {
+        value: (
+          type: string,
+          listener: EventListenerOrEventListenerObject,
+          options?: boolean | AddEventListenerOptions,
+        ): void => {
+          added.push(listener);
+          nativeAdd(type, listener, options);
+          if (reenter) {
+            reenter = false;
+            bus.detach();
+            bus.attach(windowTarget);
+          }
+        },
+      },
+      removeEventListener: { value: remove },
+    });
+
+    bus.attach(windowTarget);
+
+    // The reentrant `detach()` removes something too, so a bare "was called"
+    // says nothing. What must hold is that the *superseded* attempt's own
+    // listener — the first one registered — was taken back off the target.
+    const superseded = added[0];
+    expect(superseded).toBeDefined();
+    // Twice: once by the reentrant `detach()`, once by the superseded attempt
+    // taking its own listener back. Committing instead of removing drops the
+    // second one, and nothing else in the observable behaviour changes.
+    expect(remove.mock.calls.filter((call) => call[1] === superseded)).toHaveLength(2);
+    target.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: {} }, TRUSTED));
+    expect(onUpdate).toHaveBeenCalledOnce();
+  });
+
   it('ignores a committed listener that a newer attachment has superseded', () => {
     bus.detach();
     const target = new EventTarget();
