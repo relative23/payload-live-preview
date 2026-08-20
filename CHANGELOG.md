@@ -1,5 +1,12 @@
 # payload-live-preview
 
+## 1.2.2
+
+### Patch Changes
+
+- a1afc20: Report the first flush the visibility gate holds back. The scheduler stops writing offscreen elements once the binding cache exceeds `visibilityGateThreshold` (default 50) and buffers them until they scroll into view; nothing said so, and the symptom — a page that stops updating below the fold the moment it crosses the threshold — is indistinguishable from a broken runtime. Behaviour is unchanged: the knob already existed, it was simply invisible, and the one code path that saw the deferral returned early on the flushes worth reporting.
+- dc2b6da: Stop the release-critical mutation gate from failing on measurement noise. The baseline was compared exactly, so a single mutant that survives on one machine and dies on another moved the second decimal and turned scheduling luck into a red release. The policy can now declare how many flipped mutants count as noise; drift inside that band is reported for diagnosis and no longer fails the run, while a drop below the band is still a regression and a gain above it still demands a ratchet. Policies that declare no band keep comparing exactly.
+
 ## 1.2.1
 
 ### Patch Changes
