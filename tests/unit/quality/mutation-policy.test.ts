@@ -312,6 +312,51 @@ describe('nightly mutation policy', () => {
     ]);
   });
 
+  it('reports score drift inside the noise band without failing the run', () => {
+    // One mutant that survives on one machine and dies on another moves the
+    // score, and comparing it exactly turns scheduling luck into a red release.
+    // The drift must stay visible — that is how untested guards get found — but
+    // it must not be the thing that stops a release.
+    const result = evaluateMutationReport(
+      report(),
+      policy({ mutationScoreMinimum: 71.5, mutationScoreDriftMutants: 1 }),
+    );
+
+    expect(result.violations).toEqual([]);
+    expect(result.notices).toEqual([
+      '[drift] mutation score 71.4286 differs from reviewed 71.5 within the 1-mutant noise band; ' +
+        'not failed, but a repeated drift is worth diagnosing',
+    ]);
+  });
+
+  it('still fails a drop and still demands a ratchet beyond the band', () => {
+    expect(
+      evaluateMutationReport(
+        report(),
+        policy({ mutationScoreMinimum: 90, mutationScoreDriftMutants: 1 }),
+      ).violations,
+    ).toEqual(['[regression] mutation score 71.4286 is below reviewed minimum 90']);
+
+    expect(
+      evaluateMutationReport(
+        report(),
+        policy({ mutationScoreMinimum: 50, mutationScoreDriftMutants: 1 }),
+      ).violations,
+    ).toEqual([
+      '[improvement] mutation score 71.4286 exceeds reviewed minimum 50; ratchet the policy',
+    ]);
+  });
+
+  it('compares exactly when no band is declared', () => {
+    // Omitting the field must not quietly widen an existing policy.
+    const result = evaluateMutationReport(report(), policy({ mutationScoreMinimum: 71.5 }));
+
+    expect(result.violations).toEqual([
+      '[regression] mutation score 71.4286 is below reviewed minimum 71.5',
+    ]);
+    expect(result.notices).toEqual([]);
+  });
+
   it('reports a lower total as an explicit production-code reduction to ratchet', () => {
     const reduced = report({
       'src/core/cache.ts': ['Killed', 'Killed'],

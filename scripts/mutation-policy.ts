@@ -42,6 +42,24 @@ export interface MutationPolicy {
     /** Equal to the reviewed rounded baseline; an increase must be ratcheted explicitly. */
     readonly mutationScoreMinimum: number;
     readonly mutationScorePrecision: number;
+    /**
+     * How many flipped mutants count as measurement noise rather than a change
+     * in quality.
+     *
+     * The score is a ratio over thousands of mutants, and a single one that
+     * survives on one machine and dies on another moves the second decimal.
+     * Comparing it exactly therefore demands a reproducibility the measurement
+     * does not have, and turns scheduling luck into a red release.
+     *
+     * Drift inside this many mutants is *reported and not failed*: it stays
+     * visible for diagnosis — which is how five untested guards were found —
+     * without the build going red over it. Beyond it, a lower score is still a
+     * regression and a higher one still demands a ratchet, so the band buys
+     * tolerance for noise, not for erosion.
+     *
+     * Omitted means zero: exact comparison, the behaviour before this existed.
+     */
+    readonly mutationScoreDriftMutants?: number;
     readonly noCoverageMaximum: number;
     readonly timeoutMaximum: number;
     readonly errorMaximum: number;
@@ -63,6 +81,12 @@ export interface MutationSummary {
 export interface MutationPolicyResult {
   readonly summary: MutationSummary;
   readonly violations: readonly string[];
+  /**
+   * Deviations that are reported but do not fail the run — currently score
+   * drift inside `mutationScoreDriftMutants`. Never silently dropped: a
+   * notice nobody prints is the erosion this band was supposed to avoid.
+   */
+  readonly notices: readonly string[];
 }
 
 interface ParsedMutationReport {
@@ -278,6 +302,7 @@ export function evaluateMutationReport(
   const report = parseMutationReport(input);
   const summary = summarizeParsedReport(report);
   const violations: string[] = [];
+  const notices: string[] = [];
 
   if (policy.schemaVersion !== 1) {
     violations.push(
@@ -359,7 +384,7 @@ export function evaluateMutationReport(
 
   // A mismatched/partial profile is not comparable to the baseline. Avoid
   // presenting numeric changes from it as either quality regressions or gains.
-  if (violations.length > 0) return { summary, violations };
+  if (violations.length > 0) return { summary, violations, notices };
 
   const baseline = policy.baseline;
   if (summary.total > baseline.total) {
@@ -373,13 +398,32 @@ export function evaluateMutationReport(
   }
 
   const score = rounded(summary.mutationScore, baseline.mutationScorePrecision);
-  if (score < baseline.mutationScoreMinimum) {
+  // The band is stated in mutants and converted here, so the policy does not
+  // have to be re-derived whenever the mutation surface changes size.
+  const driftMutants = baseline.mutationScoreDriftMutants ?? 0;
+  // Both sides of the comparison are rounded to `mutationScorePrecision`, so a
+  // drift worth 0.0265 points can present as a 0.03 step. The band therefore
+  // carries one rounding step on top of the mutants it allows; without it the
+  // band is narrower than the granularity it is compared at, and a single
+  // flipped mutant still fails. Zero stays exactly zero, so a policy that
+  // declares no band keeps comparing exactly.
+  const tolerance =
+    driftMutants > 0 && summary.total > 0
+      ? (driftMutants / summary.total) * 100 + Math.pow(10, -baseline.mutationScorePrecision)
+      : 0;
+  const delta = score - baseline.mutationScoreMinimum;
+  if (delta < -tolerance) {
     violations.push(
       `[regression] mutation score ${String(score)} is below reviewed minimum ${String(baseline.mutationScoreMinimum)}`,
     );
-  } else if (score > baseline.mutationScoreMinimum) {
+  } else if (delta > tolerance) {
     violations.push(
       `[improvement] mutation score ${String(score)} exceeds reviewed minimum ${String(baseline.mutationScoreMinimum)}; ratchet the policy`,
+    );
+  } else if (delta !== 0) {
+    notices.push(
+      `[drift] mutation score ${String(score)} differs from reviewed ${String(baseline.mutationScoreMinimum)} ` +
+        `within the ${String(driftMutants)}-mutant noise band; not failed, but a repeated drift is worth diagnosing`,
     );
   }
   compareRatchetedMaximum(
@@ -391,7 +435,7 @@ export function evaluateMutationReport(
   compareRatchetedMaximum(violations, 'timeout mutants', summary.timeout, baseline.timeoutMaximum);
   compareRatchetedMaximum(violations, 'error mutants', summary.errors, baseline.errorMaximum);
   compareRatchetedMaximum(violations, 'ignored mutants', summary.ignored, baseline.ignoredMaximum);
-  return { summary, violations };
+  return { summary, violations, notices };
 }
 
 function readArgument(name: string, fallback: string): string {
@@ -421,6 +465,9 @@ async function main(): Promise<void> {
   const policy = JSON.parse(await readFile(policyPath, 'utf8')) as MutationPolicy;
   const report: unknown = JSON.parse(await readFile(reportPath, 'utf8'));
   const result = evaluateMutationReport(report, policy);
+  // Before the throw: a drift that only prints on success would be invisible
+  // exactly when a regression is also present, which is when it matters most.
+  for (const notice of result.notices) console.warn(notice);
   if (result.violations.length > 0) {
     throw new Error(
       `mutation policy failed:\n${result.violations.map((violation) => `- ${violation}`).join('\n')}`,

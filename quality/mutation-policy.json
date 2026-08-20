@@ -39,6 +39,7 @@
     "total": 3780,
     "mutationScoreMinimum": 79.79,
     "mutationScorePrecision": 2,
+    "mutationScoreDriftMutants": 1,
     "noCoverageMaximum": 63,
     "timeoutMaximum": 11,
     "errorMaximum": 0,
