@@ -7,6 +7,12 @@
 import { Project } from 'ts-morph';
 
 // @public
+export function buildPreviewInventory(schema: ExtractedSchema): PreviewInventory;
+
+// @public
+export function checkPreviewBindings(inventory: PreviewInventory, bindings: readonly PreviewBindingReference[], options?: PreviewCoverageOptions): readonly string[];
+
+// @public
 interface EmitOptions {
     readonly header?: string;
     readonly markLocalizedAsDeprecated?: boolean;
@@ -153,6 +159,7 @@ export function generateTypes(options: GenerateTypesOptions): Promise<GenerateTy
 // @public
 export interface GenerateTypesOptions extends Pick<ExtractSchemaOptions, 'configPath' | 'project' | 'tsConfigFilePath'>, EmitOptions {
     readonly cwd?: string;
+    readonly inventoryFile?: string;
     readonly outFile?: string;
 }
 
@@ -162,10 +169,57 @@ export interface GenerateTypesResult {
     readonly code: string;
     // (undocumented)
     readonly diagnostics: readonly string[];
+    readonly inventory: PreviewInventory;
+    // (undocumented)
+    readonly inventoryFile?: string;
     // (undocumented)
     readonly outFile?: string;
     // (undocumented)
     readonly schema: ExtractedSchema;
+}
+
+// @public
+export interface PreviewBindingReference {
+    // (undocumented)
+    readonly kind: 'global' | 'collection';
+    // (undocumented)
+    readonly path: string;
+    // (undocumented)
+    readonly slug: string;
+    readonly source?: string;
+}
+
+// @public (undocumented)
+export interface PreviewCoverageOptions {
+    readonly reportUnbound?: boolean;
+}
+
+// @public (undocumented)
+export interface PreviewInventory {
+    // (undocumented)
+    readonly collections: readonly PreviewInventoryEntry[];
+    // (undocumented)
+    readonly globals: readonly PreviewInventoryEntry[];
+}
+
+// @public (undocumented)
+export interface PreviewInventoryEntry {
+    // (undocumented)
+    readonly fields: readonly PreviewInventoryField[];
+    // (undocumented)
+    readonly slug: string;
+    // (undocumented)
+    readonly typeName: string;
+}
+
+// @public
+export interface PreviewInventoryField {
+    readonly kind: ExtractedField['kind'];
+    // (undocumented)
+    readonly localized: boolean;
+    readonly path: string;
+    // (undocumented)
+    readonly required: boolean;
 }
 
 // (No @packageDocumentation comment for this package)

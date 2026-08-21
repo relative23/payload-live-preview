@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 81,
-    "suites": 231,
-    "tests": 1292,
+    "files": 82,
+    "suites": 233,
+    "tests": 1300,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 68,
-      "suites": 207,
-      "tests": 1211,
+      "files": 69,
+      "suites": 209,
+      "tests": 1219,
       "benchmarks": 0
     }
   },
@@ -197,7 +197,7 @@
       "path": "tests/unit/codegen/cli.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -212,6 +212,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/codegen/inventory.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {

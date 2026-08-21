@@ -73,6 +73,46 @@ describe('pll-codegen CLI', () => {
     }
   });
 
+  it('writes the preview inventory when asked, and not otherwise', async () => {
+    const configPath = await writeConfig(`
+      export default {
+        globals: [{
+          slug: 'homepage',
+          fields: [
+            { name: 'heroTitle', type: 'text', localized: true },
+            { type: 'row', fields: [{ name: 'tagline', type: 'text' }] },
+          ],
+        }],
+        collections: [],
+      };
+    `);
+    const outPath = join(workDir, 'types.ts');
+    const inventoryPath = join(workDir, 'inventory.json');
+    const { stdoutSpy, restore } = captureStdio();
+    try {
+      expect(await run(['--config', configPath, '--out', outPath])).toBe(0);
+      await expect(readFile(inventoryPath, 'utf8')).rejects.toThrow();
+
+      expect(
+        await run(['--config', configPath, '--out', outPath, '--inventory', inventoryPath]),
+      ).toBe(0);
+      const inventory = JSON.parse(await readFile(inventoryPath, 'utf8')) as {
+        globals: { slug: string; fields: { path: string; localized: boolean }[] }[];
+      };
+      expect(inventory.globals[0]?.fields.map((field) => field.path)).toEqual([
+        'heroTitle',
+        // The `row` contributes no segment, matching what the runtime resolves.
+        'tagline',
+      ]);
+      expect(inventory.globals[0]?.fields[0]?.localized).toBe(true);
+
+      const stdout = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(stdout).toContain('2 addressable fields');
+    } finally {
+      restore();
+    }
+  });
+
   it('supports --config=value syntax', async () => {
     const configPath = await writeConfig(`
       export default {

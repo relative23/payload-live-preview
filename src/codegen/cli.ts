@@ -20,6 +20,7 @@ import { generateTypes } from './index';
 interface ParsedArgs {
   configPath: string | undefined;
   outFile: string | undefined;
+  inventoryFile: string | undefined;
   tsConfigFilePath: string | undefined;
   showHelp: boolean;
   quiet: boolean;
@@ -29,6 +30,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
   const parsed: ParsedArgs = {
     configPath: undefined,
     outFile: undefined,
+    inventoryFile: undefined,
     tsConfigFilePath: undefined,
     showHelp: false,
     quiet: false,
@@ -53,6 +55,11 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       i += 1;
       continue;
     }
+    if (token === '--inventory') {
+      parsed.inventoryFile = argv[i + 1];
+      i += 1;
+      continue;
+    }
     if (token === '--tsconfig') {
       parsed.tsConfigFilePath = argv[i + 1];
       i += 1;
@@ -66,6 +73,10 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       parsed.outFile = token.slice('--out='.length);
       continue;
     }
+    if (token?.startsWith('--inventory=')) {
+      parsed.inventoryFile = token.slice('--inventory='.length);
+      continue;
+    }
     if (token?.startsWith('--tsconfig=')) {
       parsed.tsConfigFilePath = token.slice('--tsconfig='.length);
       continue;
@@ -77,7 +88,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
 const HELP_TEXT = `pll-codegen — generate TypeScript types from a Payload config
 
 Usage:
-  pll-codegen --config <path> --out <path> [--quiet]
+  pll-codegen --config <path> --out <path> [--inventory <path>] [--quiet]
 
 Options:
   -c, --config <path>   Path to payload.config.ts (required)
@@ -107,6 +118,7 @@ export async function run(argv: readonly string[]): Promise<number> {
     const result = await generateTypes({
       configPath: args.configPath,
       outFile: args.outFile,
+      ...(args.inventoryFile !== undefined ? { inventoryFile: args.inventoryFile } : {}),
       ...(args.tsConfigFilePath !== undefined ? { tsConfigFilePath: args.tsConfigFilePath } : {}),
     });
     const slugCount = result.schema.globals.length + result.schema.collections.length;
@@ -115,6 +127,15 @@ export async function run(argv: readonly string[]): Promise<number> {
         `pll-codegen: wrote ${result.outFile} ` +
           `(${result.schema.globals.length} globals, ${result.schema.collections.length} collections)\n`,
       );
+      if (result.inventoryFile !== undefined) {
+        const fieldCount = [...result.inventory.globals, ...result.inventory.collections].reduce(
+          (total, entry) => total + entry.fields.length,
+          0,
+        );
+        process.stdout.write(
+          `pll-codegen: wrote ${result.inventoryFile} (${String(fieldCount)} addressable fields)\n`,
+        );
+      }
       for (const diagnostic of result.diagnostics) {
         process.stderr.write(`  warning: ${diagnostic}\n`);
       }
