@@ -1,5 +1,11 @@
 # payload-live-preview
 
+## 1.3.0
+
+### Minor Changes
+
+- b15eb33: Own the document lifecycle instead of leaving it to every integration. `LivePreviewClient` gains `suspend()` and `resume()`, and `bindNavigationLifecycle()` wires them to `pagehide` and a persisted `pageshow`. A back/forward-cache restore does not re-run module scripts, so a client that stays attached across `pagehide` comes back bound to a document the browser froze and thawed, and silently stops updating. Unlike `destroy()`, a suspension keeps plugins, renderers and transforms, so the same client comes back. Soft-navigation cache rebuilds are opt-in per event name, because the package cannot know which framework is present.
+
 ## 1.2.2
 
 ### Patch Changes
