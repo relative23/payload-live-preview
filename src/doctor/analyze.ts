@@ -142,7 +142,7 @@ export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): Doctor
     context.adminOrigin !== undefined &&
     !frameAncestors.includes(context.adminOrigin) &&
     // `'self'` names the admin without spelling it out when they share an origin.
-    !(sameOrigin && /'self'/u.test(frameAncestors))
+    !(sameOrigin && frameAncestors.includes("'self'"))
   ) {
     findings.push({
       code: 'LP0702',
