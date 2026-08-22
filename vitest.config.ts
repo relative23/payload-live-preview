@@ -59,6 +59,7 @@ export default defineConfig({
       '@inline': resolve(import.meta.dirname, 'src/inline'),
       '@client': resolve(import.meta.dirname, 'src/client'),
       '@adapters': resolve(import.meta.dirname, 'src/adapters'),
+      '@doctor': resolve(import.meta.dirname, 'src/doctor'),
       '@types': resolve(import.meta.dirname, 'src/types'),
       '@dsl': resolve(import.meta.dirname, 'src/dsl'),
     },

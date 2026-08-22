@@ -116,6 +116,13 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RendererThrew: "LP0603";
     readonly StartupFailed: "LP0605";
     readonly ReadyFailed: "LP0606";
+    readonly AuditRuntimeMissing: "LP0701";
+    readonly AuditNoFrameAncestors: "LP0702";
+    readonly AuditFrameOptionsBlocks: "LP0703";
+    readonly AuditBindingsExposed: "LP0704";
+    readonly AuditGateThresholdExceeded: "LP0705";
+    readonly AuditUnownedBindings: "LP0706";
+    readonly AuditNoBindings: "LP0707";
 }>;
 
 // @public
