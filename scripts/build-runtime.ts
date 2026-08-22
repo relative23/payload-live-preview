@@ -88,9 +88,16 @@ async function buildRuntime(): Promise<string> {
       sequences: false,
       inline: 1,
       join_vars: false,
-      // Internal literal booleans may be compacted. The ready handshake uses a
-      // runtime boolean expression and is pinned by an executed-artifact test.
-      booleans_as_integers: true,
+      // Off since `inspect()` exists. The setting rewrites `true`/`false` to
+      // `1`/`0`, which was safe while every literal boolean stayed internal —
+      // the ready handshake was the one exception and got pinned individually
+      // after F-31. A public snapshot ends that: `started` reads a slot
+      // assigned from a literal and is typed `boolean`, so the shipped build
+      // was handing consumers `1`. Two of the snapshot's three booleans
+      // survived only because they come from computed expressions, which makes
+      // every future field a coin flip. Costs 24 gzip bytes; buys a class of
+      // contract violation that no type check can see.
+      booleans_as_integers: false,
     },
     ecma: 2020,
     mangle: true,

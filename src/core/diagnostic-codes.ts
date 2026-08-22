@@ -16,6 +16,8 @@
  * - `LP04xx` — rendering: a value reached an element and was refused.
  * - `LP05xx` — protocol and messages: something arrived that was not accepted.
  * - `LP06xx` — consumer callbacks: code the consumer supplied threw.
+ * - `LP07xx` — audit findings from `pll doctor`, which reports on a served
+ *   response rather than on a running runtime.
  *
  * A code is part of the public contract. Codes are never reused for a
  * different meaning and never renumbered; a retired code stays retired.
@@ -77,6 +79,23 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   StartupFailed: 'LP0605',
   /** Sending the ready handshake failed. */
   ReadyFailed: 'LP0606',
+
+  /** The audit found no runtime in a response that carried preview intent. */
+  AuditRuntimeMissing: 'LP0701',
+  /** The preview response declares no `frame-ancestors`. */
+  AuditNoFrameAncestors: 'LP0702',
+  /** `X-Frame-Options` forbids framing, which no CSP can undo. */
+  AuditFrameOptionsBlocks: 'LP0703',
+  /** Binding attributes are served to anonymous visitors. */
+  AuditBindingsExposed: 'LP0704',
+  /** More bindings than the default visibility gate will write eagerly. */
+  AuditGateThresholdExceeded: 'LP0705',
+  /** Owner markers exist, but some bindings are outside all of them. */
+  AuditUnownedBindings: 'LP0706',
+  /** The preview response carries no bindings at all. */
+  AuditNoBindings: 'LP0707',
+  /** The URL did not return an HTML page, so nothing else can be judged. */
+  AuditNotAPage: 'LP0708',
 } as const);
 
 /** A diagnostic code, as it appears in log output and on the `error` event. */

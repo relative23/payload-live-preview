@@ -51,7 +51,8 @@
       "@client/*": ["src/client/*"],
       "@adapters/*": ["src/adapters/*"],
       "@types/*": ["src/types/*"],
-      "@dsl/*": ["src/dsl/*"]
+      "@dsl/*": ["src/dsl/*"],
+      "@doctor/*": ["src/doctor/*"]
     }
   },
   "include": ["src/**/*", "tests/**/*", "scripts/**/*", "*.config.ts"],

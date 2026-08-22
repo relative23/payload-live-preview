@@ -19,6 +19,8 @@
     "src/adapters/nextjs/index.ts",
     "src/adapters/nuxt/index.ts",
     "src/adapters/sveltekit/index.ts",
+    "src/doctor/index.ts",
+    "src/doctor/cli.ts",
     "scripts/api-contracts.ts",
     "tests/**/*.{test,spec,bench}.ts",
     "*.config.ts",

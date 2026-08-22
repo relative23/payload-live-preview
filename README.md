@@ -604,6 +604,42 @@ injected script and the field names are `data-payload-field` attributes in the
 DOM — and a preview that misbehaves only on the deployed site is exactly the
 case where the information is worth having.
 
+## Auditing a deployment: `pll doctor`
+
+`inspect()` answers "what is this runtime doing right now" from inside the page.
+`pll doctor` answers the question one step earlier: **what is this deployment
+actually serving?**
+
+```
+npx pll doctor https://example.com/some-page --admin https://cms.example.com
+```
+
+It fetches the URL twice — once as an ordinary visitor, once with the headers
+the admin's iframe sends — and reports the difference. That comparison is the
+point: a config can say `allowedOrigins: [...]` while a proxy strips the
+header, an adapter runs in a mode nobody remembers choosing, or a build emits
+binding attributes on public pages.
+
+What it checks:
+
+| Code     | Finding                                                                                                                                                                                                                                                                                             |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LP0701` | No inline runtime in the preview response. A warning, not an error: the audit cannot tell an adapter that missed the request from a consumer who starts `LivePreviewClient` themselves. Also reports, as information, when the runtime reaches anonymous visitors (correct for `inject: 'always'`). |
+| `LP0702` | No `frame-ancestors` on the preview response, or a policy that does not admit `--admin`. A bare `'self'` counts as admitting it when admin and site share an origin.                                                                                                                                |
+| `LP0703` | `X-Frame-Options` forbids framing — browsers honour it independently of CSP. `SAMEORIGIN` is accepted when `--admin` shares the page's origin; `DENY` never is.                                                                                                                                     |
+| `LP0704` | Binding attributes served to anonymous visitors.                                                                                                                                                                                                                                                    |
+| `LP0705` | More bindings than the default `visibilityGateThreshold` writes eagerly.                                                                                                                                                                                                                            |
+| `LP0706` | Bindings outside every owner marker, which receive nothing under `scopeBindingsByOwner`.                                                                                                                                                                                                            |
+| `LP0707` | The runtime is present with nothing to write into.                                                                                                                                                                                                                                                  |
+
+Exit codes: `0` no error-level findings, `1` usage error or the URL could not be
+fetched, `2` at least one error-level finding — so it drops into CI as a smoke
+test against a deploy preview. `--json` emits the report as data.
+
+The audit makes exactly the two requests it is told to make, sends no
+credentials, and reports no telemetry. `analyzeProbe()` is exported from
+`payload-live-preview/doctor` for callers who fetch the responses themselves.
+
 ## Diagnostic codes
 
 Every message the runtime reports carries a stable code. Prose gets reworded; a

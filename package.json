@@ -70,6 +70,12 @@
         "default": "./dist/codegen-astro.js"
       }
     },
+    "./doctor": {
+      "import": {
+        "types": "./dist/doctor.d.ts",
+        "default": "./dist/doctor.js"
+      }
+    },
     "./payload": {
       "import": {
         "types": "./dist/payload.d.ts",
@@ -89,7 +95,8 @@
     }
   },
   "bin": {
-    "pll-codegen": "./dist/codegen-cli.js"
+    "pll-codegen": "./dist/codegen-cli.js",
+    "pll": "./dist/doctor-cli.js"
   },
   "files": [
     "dist",

@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 86,
-    "suites": 245,
-    "tests": 1340,
+    "files": 90,
+    "suites": 266,
+    "tests": 1399,
     "benchmarks": 10
   },
   "groups": {
@@ -29,9 +29,9 @@
       "benchmarks": 10
     },
     "e2e": {
-      "files": 6,
-      "suites": 11,
-      "tests": 24,
+      "files": 7,
+      "suites": 13,
+      "tests": 28,
       "benchmarks": 0
     },
     "integration": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 71,
-      "suites": 218,
-      "tests": 1248,
+      "files": 74,
+      "suites": 237,
+      "tests": 1303,
       "benchmarks": 0
     }
   },
@@ -79,6 +79,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/diagnostics.spec.ts",
+      "group": "e2e",
+      "suites": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -394,6 +401,27 @@
       "group": "unit",
       "suites": 8,
       "tests": 25,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/doctor/analyze.test.ts",
+      "group": "unit",
+      "suites": 11,
+      "tests": 30,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/doctor/cli.test.ts",
+      "group": "unit",
+      "suites": 5,
+      "tests": 20,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/doctor/probe.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {

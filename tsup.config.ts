@@ -12,6 +12,8 @@ export const CORE_ENTRY = {
 
 export const ESM_ONLY_ENTRIES = {
   'codegen-cli': 'src/codegen/cli.ts',
+  'doctor-cli': 'src/doctor/cli.ts',
+  doctor: 'src/doctor/index.ts',
   'codegen-astro': 'src/codegen/astro-plugin.ts',
   'adapters/astro/index': 'src/adapters/astro/index.ts',
   'adapters/astro/middleware-entry': 'src/adapters/astro/middleware-entry.ts',

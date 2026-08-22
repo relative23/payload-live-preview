@@ -85,7 +85,14 @@ export interface FlushStats {
 }
 
 const DEFAULT_DEBOUNCE_MS = 50;
-const DEFAULT_VISIBILITY_THRESHOLD = 50;
+/**
+ * Binding count above which the gate starts deferring offscreen writes.
+ *
+ * Exported so `pll doctor`'s test can prove its own copy of this number has
+ * not drifted. The audit runs outside the runtime bundle and restates the
+ * value rather than importing it.
+ */
+export const DEFAULT_VISIBILITY_THRESHOLD = 50;
 
 /**
  * Buffer entry — one per (field, element) pair. The latest write
