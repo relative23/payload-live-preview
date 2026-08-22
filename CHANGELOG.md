@@ -1,5 +1,33 @@
 # payload-live-preview
 
+## 1.5.0
+
+### Minor Changes
+
+- 8cbe510: Give every diagnostic a stable code. Prose gets reworded; a code does not, so a log filter, an alert rule, or a bug report that names `LP0301` keeps meaning the same thing after the sentence around it is rewritten — and a code is greppable in a way a sentence fragment is not.
+
+  Fourteen codes cover what the runtime reports today, grouped by the question they answer: configuration and origin trust (`LP01xx`), bindings and markup (`LP02xx`), scheduling (`LP03xx`), rendering (`LP04xx`), messages (`LP05xx`), and consumer callbacks (`LP06xx`). Every warning now prints its code, and the `error` event carries `code` alongside the existing `context` — branch on `code`, read `context` for the human-readable origin. `DIAGNOSTIC_CODES` is exported so consumers can name a code instead of copying a literal.
+
+  A test holds the registry against the source tree in both directions: no code is emitted that the registry does not define, and no registry entry exists that nothing reports. `LP0604` is reserved rather than assigned, because a throwing token validator is deliberately treated as a rejection and reported as `LP0502` — there is nothing distinct to report yet, and the number stays reserved rather than being handed to something else.
+
+- a28e955: Let a running preview explain itself. `inspect()` returns a point-in-time snapshot of what the runtime actually sees — bound and orphaned fields, the document owners on the page, the origin it locked onto, revisions accepted and superseded, the negotiated protocol, and the scheduler's pending and deferred work with the visibility gate's threshold and whether it is currently deferring. It performs no I/O and transmits nothing.
+
+  It is reachable where the failures happen: `__livePreview.inspect()` on the global handle every adapter injects, and `client.inspect()` for consumers driving the runtime themselves. Shipping diagnostics to the programmatic client alone would repeat the mistake that made `bindNavigationLifecycle()` unreachable for adapter users in 1.3.0.
+
+  The snapshot is not gated to development builds. It discloses nothing that is not already on the page — the trusted origins are inside the injected script, the field names are `data-payload-field` attributes in the DOM — and a preview that only misbehaves on the deployed site is exactly the case where the information is worth having.
+
+  Fixed along the way: the protocol negotiation compared only the negotiated version, so a remote party announcing version 1 left `protocol.theirs` as `undefined`, indistinguishable from one that never announced at all.
+
+- 73be6a3: Add `pll doctor`, an audit of what a deployment actually serves. `inspect()` answers "what is this runtime doing right now" from inside the page; the doctor answers the question one step earlier, from outside it.
+
+  `npx pll doctor <url> --admin <origin>` fetches the URL twice — once as an ordinary visitor, once with the headers the admin's iframe sends — and reports the difference. That comparison is the whole design. A configuration file can say `allowedOrigins: [...]` while a proxy strips the header, an adapter runs in an inject mode nobody remembers choosing, or a build emits binding attributes on public pages; the gap between what a project believes it is configured to do and what it puts on the wire is where this package's most expensive findings have lived.
+
+  Verified against a real same-origin consumer before release, which immediately paid for itself: the first run produced three findings and all three were wrong for that topology. `'self'` in `frame-ancestors` does name the admin when admin and site share an origin, `X-Frame-Options: SAMEORIGIN` does permit that framing, and a missing inline runtime is expected when the consumer starts `LivePreviewClient` themselves. All three are corrected and pinned by regression tests; a missing runtime is now a warning that names both readings rather than an error that assumes one.
+
+  Seven checks, each stamped with a code: no runtime in the preview response, a missing `frame-ancestors` or one that excludes the admin origin, an `X-Frame-Options` that no CSP can undo, binding attributes served to anonymous visitors, more bindings than the visibility gate writes eagerly, bindings outside every owner marker, and a runtime with nothing to write into. Exit code 2 on any error-level finding, so it drops into CI against a deploy preview; `--json` emits the report as data.
+
+  `analyzeProbe()` is exported from `payload-live-preview/doctor` for callers who fetch the responses themselves — the judging is pure, and only the fetching lives in the CLI. The audit makes exactly the two requests it is told to make, sends no credentials, and reports no telemetry.
+
 ## 1.4.1
 
 ### Patch Changes
