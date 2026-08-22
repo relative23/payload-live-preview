@@ -119,7 +119,53 @@ describe('bootstrapInlineRuntime — preview context', () => {
     expect(typeof api?.destroy).toBe('function');
     expect(typeof api?.refresh).toBe('function');
     expect(typeof api?.enumerateOrigins).toBe('function');
+    expect(typeof api?.inspect).toBe('function');
     expect(window.__livePreview).toBe(api);
+    api?.destroy();
+  });
+
+  it('inspect() reports the page the inline runtime is actually bound to', async () => {
+    // The inline runtime is what every adapter injects, so this is the only
+    // path an adapter user can reach a snapshot through — there is no client
+    // object to call a method on. Shipping the API to the client alone was
+    // exactly the F-36 mistake.
+    document.body.innerHTML =
+      '<div data-payload-owner="global:home">' +
+      '<h1 data-payload-field="title">t</h1>' +
+      '<p data-payload-field="subtitle">s</p>' +
+      '</div>';
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig();
+    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const api = bootstrapInlineRuntime();
+
+    const snapshot = api?.inspect();
+    expect(snapshot?.started).toBe(true);
+    expect(snapshot?.bindings.fieldNames).toEqual(['subtitle', 'title']);
+    expect(snapshot?.bindings.owners).toEqual(['global:home']);
+    expect(snapshot?.origins.trusted.length).toBeGreaterThan(0);
+    expect(snapshot?.version).toBe(api?.version);
+    api?.destroy();
+  });
+
+  it('inspect() reports the origin the runtime locked onto', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig();
+    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const api = bootstrapInlineRuntime();
+
+    expect(api?.inspect().origins.locked).toBeUndefined();
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: 'payload-live-preview', data: { title: 'new' } },
+        origin: TRUSTED,
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(api?.inspect().origins.locked).toBe(TRUSTED);
+    expect(api?.inspect().revisions.accepted).toBe(1);
     api?.destroy();
   });
 

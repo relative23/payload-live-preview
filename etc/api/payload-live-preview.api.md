@@ -74,6 +74,9 @@ export interface CachedElement {
 // @public
 const CAPABILITY_REQUIREMENTS: Readonly<Record<string, number>>;
 
+// @public
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
+
 // @public (undocumented)
 export function createAnalyticsPlugin(): LivePreviewPlugin & {
     readonly getStats: () => AnalyticsSnapshot;
@@ -246,6 +249,50 @@ export interface InlineScriptConfig {
 }
 
 // @public
+export interface InspectionBindings {
+    readonly elements: number;
+    readonly fieldNames: readonly string[];
+    readonly fields: number;
+    readonly orphanFields: readonly string[];
+    readonly owners: readonly string[];
+    readonly ownerScoped: boolean;
+}
+
+// @public
+export interface InspectionOrigins {
+    readonly locked: string | undefined;
+    readonly trusted: readonly string[];
+}
+
+// @public
+export interface InspectionProtocol {
+    readonly capabilities: readonly string[];
+    readonly negotiated: number;
+    readonly ours: number;
+    readonly theirs: number | undefined;
+}
+
+// @public
+export interface InspectionRevisions {
+    readonly accepted: number;
+    readonly active: number | undefined;
+    readonly superseded: number;
+}
+
+// @public
+export interface InspectionScheduler {
+    readonly deferred: number;
+    readonly lastFlush: {
+        readonly applied: number;
+        readonly deferred: number;
+        readonly durationMs: number;
+    } | undefined;
+    readonly pending: number;
+    readonly visibilityGateActive: boolean;
+    readonly visibilityGateThreshold: number;
+}
+
+// @public
 export function isDevMode(): boolean;
 
 // @public
@@ -324,6 +371,7 @@ export class LivePreviewClient {
     destroy(): Promise<void>;
     get destroyed(): boolean;
     get events(): EventEmitter;
+    inspect(): LivePreviewInspection;
     get plugins(): readonly string[];
     refreshCache(): void;
     resume(): boolean;
@@ -331,6 +379,7 @@ export class LivePreviewClient {
     get status(): 'disconnected' | 'connecting' | 'connected';
     suspend(): boolean;
     unuse(name: string): Promise<void>;
+    // (undocumented)
     get updateCount(): number;
     use(plugin: LivePreviewPlugin): Promise<void>;
 }
@@ -404,6 +453,24 @@ export interface LivePreviewEventMap {
     readonly init: {
         readonly timestamp: number;
     };
+}
+
+// @public
+export interface LivePreviewInspection {
+    // (undocumented)
+    readonly bindings: InspectionBindings;
+    // (undocumented)
+    readonly origins: InspectionOrigins;
+    // (undocumented)
+    readonly protocol: InspectionProtocol;
+    readonly renderers: readonly string[];
+    // (undocumented)
+    readonly revisions: InspectionRevisions;
+    // (undocumented)
+    readonly scheduler: InspectionScheduler;
+    readonly started: boolean;
+    readonly status: ConnectionStatus;
+    readonly version: string;
 }
 
 // @public
@@ -784,7 +851,7 @@ export function wrapWithScriptTag(body: string, options?: {
 
 // Warnings were encountered during analysis:
 //
-// dist/index.d.ts:108:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
+// dist/index.d.ts:246:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -78,6 +78,15 @@ export {
   negotiateProtocol,
 } from './core/protocol-version';
 export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol-version';
+export type {
+  InspectionBindings,
+  InspectionOrigins,
+  InspectionProtocol,
+  InspectionRevisions,
+  InspectionScheduler,
+  LivePreviewInspection,
+} from './core/inspection/types';
+export type { ConnectionStatus } from './core/state';
 
 // Typed binding DSL — small enough to live in the core slice
 export { bind, bindByPath, createPreviewBindings } from './dsl';

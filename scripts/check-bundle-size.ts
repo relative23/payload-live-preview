@@ -17,19 +17,19 @@ const PACKAGE_JSON = resolve(ROOT, 'package.json');
 // Budgets include narrow headroom for patch-level correctness fixes while still
 // failing the unminified 1.0.4 artifacts. Public names and source maps are retained.
 const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
-  'adapters/astro/index.js': { raw: 75_000, gzip: 23_500, brotli: 21_000 },
-  'adapters/astro/middleware-entry.js': { raw: 73_000, gzip: 23_000, brotli: 20_500 },
-  'adapters/nextjs/index.js': { raw: 74_000, gzip: 23_000, brotli: 20_500 },
-  'adapters/nuxt/index.js': { raw: 74_000, gzip: 23_000, brotli: 20_500 },
-  'adapters/sveltekit/index.js': { raw: 73_000, gzip: 23_000, brotli: 20_500 },
+  'adapters/astro/index.js': { raw: 76_500, gzip: 23_800, brotli: 21_100 },
+  'adapters/astro/middleware-entry.js': { raw: 74_500, gzip: 23_400, brotli: 20_700 },
+  'adapters/nextjs/index.js': { raw: 75_000, gzip: 23_400, brotli: 20_700 },
+  'adapters/nuxt/index.js': { raw: 75_000, gzip: 23_400, brotli: 20_700 },
+  'adapters/sveltekit/index.js': { raw: 74_000, gzip: 23_300, brotli: 20_600 },
   'codegen-astro.js': { raw: 13_000, gzip: 4_300, brotli: 3_900 },
   'codegen-cli.js': { raw: 15_000, gzip: 4_800, brotli: 4_300 },
   'codegen.cjs': { raw: 13_000, gzip: 4_100, brotli: 3_700 },
   'codegen.js': { raw: 13_000, gzip: 4_100, brotli: 3_700 },
-  'core.cjs': { raw: 76_000, gzip: 25_000, brotli: 22_000 },
-  'core.js': { raw: 76_000, gzip: 25_000, brotli: 22_000 },
-  'index.cjs': { raw: 156_000, gzip: 47_900, brotli: 37_000 },
-  'index.js': { raw: 156_000, gzip: 47_900, brotli: 37_000 },
+  'core.cjs': { raw: 77_500, gzip: 25_000, brotli: 22_000 },
+  'core.js': { raw: 77_500, gzip: 25_000, brotli: 22_000 },
+  'index.cjs': { raw: 159_500, gzip: 49_000, brotli: 37_000 },
+  'index.js': { raw: 159_000, gzip: 48_700, brotli: 37_000 },
   'payload.cjs': { raw: 1_100, gzip: 600, brotli: 500 },
   'payload.js': { raw: 1_100, gzip: 600, brotli: 500 },
 };

@@ -567,9 +567,46 @@ Together these span the whole spectrum: tier 1 proves the real thing works end t
 
 Full details in [docs/security.md](docs/security.md). Report vulnerabilities per [SECURITY.md](SECURITY.md).
 
+## Inspecting a running preview
+
+When a preview misbehaves, `inspect()` returns a point-in-time snapshot of what
+the runtime actually sees. It performs no I/O and transmits nothing.
+
+Adapter users reach it on the global handle inside the preview iframe — that is
+the point, because there is no client object to call a method on:
+
+```js
+// In the browser console, inside the preview iframe
+__livePreview.inspect();
+```
+
+Consumers driving the runtime themselves call it on the client:
+
+```ts
+const client = initLivePreview({ allowedOrigins: ['https://cms.example.com'] });
+console.log(client.inspect());
+```
+
+The snapshot answers the questions that are otherwise guesswork:
+
+| Reading                                                    | What it tells you                                                                                                                                                                    |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bindings.orphanFields`                                    | Field names that arrived but matched no element. A name here is a markup problem; a name in neither this nor `bindings.fieldNames` was never sent.                                   |
+| `scheduler.deferred` with `scheduler.visibilityGateActive` | Updates the visibility gate is holding until the element scrolls into view. On a page nobody scrolls, that is "never" — the symptom is a preview that stops updating below the fold. |
+| `revisions.superseded`                                     | Updates abandoned because a newer one arrived. Tracking `accepted` closely is normal for fast typing; it only matters when the _last_ update is among them.                          |
+| `origins.locked`                                           | The origin the runtime locked onto after its first accepted update. Every other origin is refused from then on.                                                                      |
+| `bindings.ownerScoped` with `bindings.owners`              | Whether owner scoping is on, and which documents the page declares. Under scoping, an unowned binding receives nothing.                                                              |
+| `protocol.negotiated`                                      | The version both sides share, which caps the capabilities in `protocol.capabilities`.                                                                                                |
+
+This is deliberately not gated to development builds. A snapshot discloses
+nothing that is not already on the page — the trusted origins are inside the
+injected script and the field names are `data-payload-field` attributes in the
+DOM — and a preview that misbehaves only on the deployed site is exactly the
+case where the information is worth having.
+
 ## Troubleshooting
 
-- **Nothing updates** — open the browser console inside the preview iframe (`debug: true` adds verbose diagnostics). The most common causes: the admin origin is not in `allowedOrigins`; the page is not actually loaded in an iframe; the binding element does not exist (see the empty-field gotcha above — orphan-update warnings are always enabled and deduplicated per field).
+- **Nothing updates** — call `__livePreview.inspect()` in the preview iframe's console first; it names the cause in most cases (see [Inspecting a running preview](#inspecting-a-running-preview)). `debug: true` adds verbose diagnostics on top. The most common causes: the admin origin is not in `allowedOrigins`; the page is not actually loaded in an iframe; the binding element does not exist (see the empty-field gotcha above — orphan-update warnings are always enabled and deduplicated per field).
 - **Relationship fields show IDs** — set `serverURL` (Payload 3.x sends unpopulated form values).
 - **`Referrer-Policy: no-referrer`** on the admin breaks zero-config origin detection — set `allowedOrigins` explicitly.
 - **Preview iframe refuses to load** — your host sets `X-Frame-Options` or a restrictive `frame-ancestors`. The adapters' CSP management overrides `frame-ancestors` on intent-matched responses, but `X-Frame-Options: DENY` from a proxy must be removed for authorized preview responses.

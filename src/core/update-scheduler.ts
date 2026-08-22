@@ -311,6 +311,22 @@ export class UpdateScheduler {
     return this.s[SchedulerSlot.Replay].size;
   }
 
+  /** Binding count above which the visibility gate starts deferring writes. */
+  get gateThreshold(): number {
+    return this.s[SchedulerSlot.GateThreshold];
+  }
+
+  /**
+   * Whether the gate is deferring right now. Mirrors the condition in
+   * `#flush()` so a diagnostic read cannot drift from the real decision.
+   */
+  get gateActive(): boolean {
+    return (
+      !this.s[SchedulerSlot.GateDisabled] &&
+      this.s[SchedulerSlot.GetCacheSize]() > this.s[SchedulerSlot.GateThreshold]
+    );
+  }
+
   #armDebounce(): void {
     const token = (this.s[SchedulerSlot.DebounceToken] += 1);
     const timer = this.s[SchedulerSlot.DebounceTimer];

@@ -17,6 +17,7 @@
  */
 
 import { LivePreviewRuntime } from '@core/lifecycle';
+import type { LivePreviewInspection } from '@core/inspection/types';
 import { EventEmitter } from '@events/emitter';
 import { OriginDetector } from '@detection/origin';
 import { PluginManager } from '@plugins/manager';
@@ -115,6 +116,7 @@ export class LivePreviewClient {
       onHeartbeatTimeout: () => {
         this.#detector.unlockOrigin();
       },
+      lockedOrigin: () => this.#detector.lockedOrigin,
       ...(config.validateToken !== undefined ? { validateToken: config.validateToken } : {}),
       log: this.#log,
     });
@@ -242,6 +244,18 @@ export class LivePreviewClient {
   }
 
   /** Number of valid updates received so far. */
+  /**
+   * Point-in-time read of runtime state, for diagnosing a preview that is not
+   * updating. Performs no I/O and transmits nothing.
+   *
+   * Read `bindings.orphanFields` when a field refuses to update, and
+   * `scheduler.deferred` together with `scheduler.visibilityGateActive` when
+   * updates stop below the fold.
+   */
+  inspect(): LivePreviewInspection {
+    return this.#runtime.inspect();
+  }
+
   get updateCount(): number {
     return this.#runtime.updateCount;
   }
