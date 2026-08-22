@@ -35,6 +35,8 @@ import { ConnectionState, HeartbeatTimer } from './state';
 import { DataMerger } from './data-merger';
 import { applyAttributeBinding } from './attribute-binding';
 import { UpdateScheduler, type FlushStats, type ScheduledUpdate } from './update-scheduler';
+import type { LivePreviewInspection } from './inspection/types';
+import { VERSION } from '../version';
 import { observeThenableResult } from './thenable';
 import { resolveFieldValue } from './field-value';
 import { A11yAnnouncer } from './a11y';
@@ -79,6 +81,12 @@ export interface RuntimeOptions {
   ) => unknown;
   /** Origin matcher for incoming messages. */
   readonly originMatcher: OriginMatcher;
+  /**
+   * Reads the origin the host has locked onto, for the inspection snapshot.
+   * The lock lives in the `OriginDetector` the caller owns, not in the
+   * runtime, so the runtime has to be told how to read it.
+   */
+  readonly lockedOrigin?: () => string | undefined;
   /** Origins to broadcast `ready` to during the handshake. */
   readonly readyTargets: readonly string[];
   /** Event emitter (per-instance). */
@@ -200,6 +208,7 @@ const enum RuntimeDependencySlot {
   A11y,
   Merger,
   ScopeBindingsByOwner,
+  LockedOrigin,
 }
 
 /** Stable object/function references owned for the complete runtime lifetime. */
@@ -224,6 +233,7 @@ type RuntimeDependencies = readonly [
   a11y: A11yAnnouncer | null,
   merger: DataMerger | null,
   scopeBindingsByOwner: boolean,
+  lockedOrigin: () => string | undefined,
 ];
 
 const enum RuntimeLifecycleSlot {
@@ -238,6 +248,8 @@ const enum RuntimeLifecycleSlot {
   WarnedOrphanFields,
   WarnedUnattributableMessage,
   WarnedVisibilityGate,
+  SupersededCount,
+  LastFlush,
 }
 
 /** State that changes as the runtime starts, accepts revisions, and stops. */
@@ -253,6 +265,8 @@ type RuntimeLifecycleState = [
   warnedOrphanFields: Set<string>,
   warnedUnattributableMessage: boolean,
   warnedVisibilityGate: boolean,
+  supersededCount: number,
+  lastFlush: FlushStats | null,
 ];
 
 export class LivePreviewRuntime {
@@ -379,6 +393,7 @@ export class LivePreviewRuntime {
       a11y,
       merger,
       options.scopeBindingsByOwner === true,
+      options.lockedOrigin ?? ((): undefined => undefined),
     ];
     this.l = [
       undefined,
@@ -392,6 +407,8 @@ export class LivePreviewRuntime {
       new Set<string>(),
       false,
       false,
+      0,
+      null,
     ];
   }
 
@@ -618,6 +635,74 @@ export class LivePreviewRuntime {
     return this.l[RuntimeLifecycleSlot.ProtocolNegotiation];
   }
 
+  /**
+   * Point-in-time read of runtime state for diagnosing a preview that is not
+   * updating. Performs no I/O and sends nothing anywhere; see
+   * `@core/inspection` for why this is not gated to development builds.
+   *
+   * Assembled inline rather than delegated to a helper because the inline
+   * runtime pays for every byte of indirection, and because the values live
+   * in private state no helper could reach without being handed all of it.
+   */
+  inspect(): LivePreviewInspection {
+    const cache = this.d[RuntimeDependencySlot.Cache];
+    const scheduler = this.d[RuntimeDependencySlot.Scheduler];
+    const negotiation = this.l[RuntimeLifecycleSlot.ProtocolNegotiation];
+    const active = this.l[RuntimeLifecycleSlot.ActiveUpdate];
+    const flush = this.l[RuntimeLifecycleSlot.LastFlush];
+    const fieldNames: string[] = [];
+    const owners = new Set<string>();
+    for (const [fieldName, bindings] of cache.entries()) {
+      fieldNames.push(fieldName);
+      for (const binding of bindings) {
+        if (binding.owner !== undefined) owners.add(binding.owner);
+      }
+    }
+    return {
+      version: VERSION,
+      started: this.l[RuntimeLifecycleSlot.Started],
+      status: this.d[RuntimeDependencySlot.ConnectionState].status,
+      origins: {
+        trusted: [...this.d[RuntimeDependencySlot.ReadyTargets]],
+        locked: this.d[RuntimeDependencySlot.LockedOrigin](),
+      },
+      protocol: {
+        ours: negotiation.ours,
+        theirs: negotiation.theirs,
+        negotiated: negotiation.negotiated,
+        capabilities: [...negotiation.capabilities].sort(),
+      },
+      revisions: {
+        accepted: this.l[RuntimeLifecycleSlot.UpdateCount],
+        superseded: this.l[RuntimeLifecycleSlot.SupersededCount],
+        active: active === null ? undefined : active.identity.revision,
+      },
+      bindings: {
+        elements: cache.elementCount,
+        fields: cache.fieldCount,
+        fieldNames: fieldNames.sort(),
+        orphanFields: [...this.l[RuntimeLifecycleSlot.WarnedOrphanFields]].sort(),
+        ownerScoped: this.d[RuntimeDependencySlot.ScopeBindingsByOwner],
+        owners: [...owners].sort(),
+      },
+      scheduler: {
+        pending: scheduler.pendingCount,
+        deferred: scheduler.replayCount,
+        visibilityGateThreshold: scheduler.gateThreshold,
+        visibilityGateActive: scheduler.gateActive,
+        lastFlush:
+          flush === null
+            ? undefined
+            : {
+                applied: flush.applied,
+                deferred: flush.deferred,
+                durationMs: flush.durationMs,
+              },
+      },
+      renderers: Object.keys(this.d[RuntimeDependencySlot.Renderers]).sort(),
+    };
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
   // Internals
   // ──────────────────────────────────────────────────────────────────────────
@@ -668,11 +753,17 @@ export class LivePreviewRuntime {
   }
 
   #applyNegotiation(remoteVersion: number): void {
+    const current = this.l[RuntimeLifecycleSlot.ProtocolNegotiation];
+    // Every data message repeats the version, so the common case is that
+    // nothing changed and there is nothing to record or say.
+    if (current.theirs === remoteVersion) return;
     const next = negotiateProtocol(remoteVersion);
-    if (next.negotiated === this.l[RuntimeLifecycleSlot.ProtocolNegotiation].negotiated) {
-      return;
-    }
     this.l[RuntimeLifecycleSlot.ProtocolNegotiation] = next;
+    // Record the announcement even when it does not move the negotiated
+    // version — `theirs` is public, and comparing only `negotiated` left a
+    // remote announcing version 1 indistinguishable from one that never
+    // announced at all. Log only a real negotiation change.
+    if (next.negotiated === current.negotiated) return;
     this.d[RuntimeDependencySlot.Log](
       'protocol',
       `ours=${LIBRARY_PROTOCOL_VERSION}`,
@@ -720,6 +811,11 @@ export class LivePreviewRuntime {
 
     // Acceptance is the single supersession point. It clears old pending and
     // replay work even if this revision is later cancelled or has no bindings.
+    // A transaction still sitting here is therefore exactly one that never
+    // finished, which is what the inspection snapshot counts.
+    if (this.l[RuntimeLifecycleSlot.ActiveUpdate] !== null) {
+      this.l[RuntimeLifecycleSlot.SupersededCount] += 1;
+    }
     this.l[RuntimeLifecycleSlot.ActiveUpdate] = transaction;
     this.d[RuntimeDependencySlot.Scheduler].acceptRevision(identity);
     this.l[RuntimeLifecycleSlot.UpdateCount] += 1;
@@ -1251,6 +1347,9 @@ export class LivePreviewRuntime {
   #onFlush(stats: FlushStats): void {
     // Before every early return below. A flush that applied nothing is exactly
     // the flush this reports, and the `applied === 0` guard would swallow it.
+    // The same reasoning holds for the inspection snapshot: an empty flush is
+    // the one a diagnosing reader most needs to see.
+    this.l[RuntimeLifecycleSlot.LastFlush] = stats;
     this.#warnOnDeferredWrites(stats);
     const { identity, data } = stats;
     if (stats.applied === 0 || identity === undefined || data === undefined) return;

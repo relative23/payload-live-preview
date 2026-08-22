@@ -25,6 +25,7 @@ import { OriginDetector } from '@detection/origin';
 import { isInPreviewContext, isInIframe, isInPopup } from '@detection/environment';
 import { bindNavigationLifecycle } from './navigation-lifecycle';
 import { VERSION } from '../version';
+import type { LivePreviewInspection } from './inspection/types';
 import type { FieldRenderer } from './types';
 import { safeConsoleDebug, safeConsoleWarn } from './diagnostics';
 
@@ -72,6 +73,14 @@ export interface LivePreviewGlobalApi {
   readonly destroy: () => void;
   readonly refresh: () => void;
   readonly enumerateOrigins: () => readonly string[];
+  /**
+   * Point-in-time read of runtime state, for diagnosing a preview that is not
+   * updating. Reachable from the browser console as
+   * `__livePreview.inspect()`, which is the point: an adapter user has no
+   * client object to call a method on, and the failures worth diagnosing
+   * happen on a deployed page rather than in a test.
+   */
+  readonly inspect: () => LivePreviewInspection;
   readonly version: string;
 }
 
@@ -131,6 +140,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
   const runtime = new LivePreviewRuntime({
     renderers,
     originMatcher: (origin) => detector.matches(origin),
+    lockedOrigin: () => detector.lockedOrigin,
     readyTargets: detector.enumerate(),
     emitter,
     // Guard on typeof — a config literal baked by an older generator
@@ -203,6 +213,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
       runtime.refreshCache();
     },
     enumerateOrigins: () => detector.enumerate(),
+    inspect: () => runtime.inspect(),
   });
 
   try {

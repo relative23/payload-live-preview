@@ -17,6 +17,15 @@ export {
   type NavigationLifecycleOptions,
   type NavigationLifecycleTarget,
 } from './core/navigation-lifecycle';
+export type {
+  InspectionBindings,
+  InspectionOrigins,
+  InspectionProtocol,
+  InspectionRevisions,
+  InspectionScheduler,
+  LivePreviewInspection,
+} from './core/inspection/types';
+export type { ConnectionStatus } from './core/state';
 
 // Inline-script generator
 export {
