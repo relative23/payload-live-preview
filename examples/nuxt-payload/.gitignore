@@ -1,0 +1,4 @@
+# Nuxt regenerates these on `npm install`/`npm ci` via the `prepare` script.
+# They embed absolute machine paths, so they must not be committed.
+.nuxt/
+.output/

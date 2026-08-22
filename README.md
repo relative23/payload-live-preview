@@ -543,7 +543,7 @@ the nonce to `wrapWithScriptTag()` when embedding it manually.
 
 Bundle-size note: `import … from 'payload-live-preview/core'` is a lighter entry without the built-in plugin constructors, inline generator/runtime source, or framework adapters. It still includes the built-in field renderers used by `LivePreviewClient`, including Lexical rendering. Hot-path timings live in [docs/benchmarks.md](docs/benchmarks.md).
 
-The three real-app browser fixtures in `examples/` cover Astro 7, Next.js 16, and SvelteKit 2 in Chromium, Firefox, and WebKit. The Nuxt adapter currently has unit/integration coverage, not an equivalent real-app browser fixture. The Astro 4–7 peer range is likewise broader than the single Astro-major browser fixture.
+The four real-app browser fixtures in `examples/` cover Astro 7, Next.js 16, SvelteKit 2, and Nuxt 3 in Chromium, Firefox, and WebKit. The Astro 4–7 peer range is broader than the single Astro-major browser fixture.
 
 **How the protocol coverage is layered** (so you know exactly what's proven):
 

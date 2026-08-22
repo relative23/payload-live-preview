@@ -54,6 +54,14 @@ const config: PlaywrightTestConfig = {
       reuseExistingServer: !isCI,
       timeout: 60_000,
     },
+    {
+      command: 'npm --prefix examples/nuxt-payload run dev',
+      url: 'http://localhost:4176/admin.html',
+      reuseExistingServer: !isCI,
+      // Nuxt compiles the Nitro server and the client bundle on first
+      // request; a cold CI cache makes that as slow as Next's.
+      timeout: 120_000,
+    },
   ],
 };
 

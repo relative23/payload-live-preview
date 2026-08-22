@@ -1,0 +1,24 @@
+{
+  "name": "nuxt-payload-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.16.0",
+  "scripts": {
+    "dev": "nuxt dev --port 4176",
+    "build": "nuxt build",
+    "preview": "nuxt preview --port 4176",
+    "prepare": "nuxt prepare || echo ''"
+  },
+  "dependencies": {
+    "payload-live-preview": "file:../.."
+  },
+  "devDependencies": {
+    "nuxt": "^3.19.2",
+    "vue": "^3.5.22"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "fsevents@2.3.3": false
+  }
+}
