@@ -15,7 +15,7 @@
  * instead of re-deriving it — which is what every integration has had to do so
  * far.
  *
- * @module @client/navigation-lifecycle
+ * @module @core/navigation-lifecycle
  */
 
 /** The part of the client this owner drives. */

@@ -3,7 +3,7 @@ import { findBudgetViolations, INLINE_BUDGET, measureBundle } from '../../script
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 66_000, gzip: 20_400, brotli: 18_100 });
+    expect(INLINE_BUDGET).toEqual({ raw: 67_000, gzip: 20_600, brotli: 18_200 });
   });
 
   it('measures raw, gzip, and Brotli bytes deterministically', () => {

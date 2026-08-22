@@ -203,6 +203,84 @@ describe('bootstrapInlineRuntime — preview context', () => {
     api?.destroy();
   });
 
+  it('survives a back/forward-cache restore instead of going quiet', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig();
+    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const api = bootstrapInlineRuntime();
+
+    const send = async (title: string): Promise<void> => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: 'payload-live-preview', data: { title } },
+          origin: TRUSTED,
+        }),
+      );
+      await vi.advanceTimersByTimeAsync(50);
+    };
+
+    await send('before hide');
+    expect(document.querySelector('h1')?.textContent).toBe('before hide');
+
+    window.dispatchEvent(new Event('pagehide'));
+    await send('while frozen');
+    // The ingress is released while the document is away, so nothing lands.
+    expect(document.querySelector('h1')?.textContent).toBe('before hide');
+
+    // A restore never re-runs this script. Without the lifecycle the runtime
+    // would stay released here and the preview would look broken with no error.
+    const restore = new Event('pageshow');
+    Object.defineProperty(restore, 'persisted', { value: true });
+    window.dispatchEvent(restore);
+
+    await send('after restore');
+    expect(document.querySelector('h1')?.textContent).toBe('after restore');
+    api?.destroy();
+  });
+
+  it('ignores an ordinary pageshow, which already re-ran this script', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig();
+    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const api = bootstrapInlineRuntime();
+
+    // No `persisted` flag: a normal load. Resuming would rebuild a cache the
+    // bootstrap above just built.
+    window.dispatchEvent(new Event('pageshow'));
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: 'payload-live-preview', data: { title: 'still live' } },
+        origin: TRUSTED,
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('still live');
+    api?.destroy();
+  });
+
+  it('unbinds the lifecycle on destroy so a dead runtime cannot resurrect', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig();
+    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const api = bootstrapInlineRuntime();
+    api?.destroy();
+
+    const restore = new Event('pageshow');
+    Object.defineProperty(restore, 'persisted', { value: true });
+    window.dispatchEvent(restore);
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: 'payload-live-preview', data: { title: 'must not land' } },
+        origin: TRUSTED,
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('old');
+  });
+
   it('enumerateOrigins returns the trusted origin', async () => {
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();

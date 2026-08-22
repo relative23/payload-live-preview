@@ -23,6 +23,7 @@ import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from './lifecycle';
 import { OriginDetector } from '@detection/origin';
 import { isInPreviewContext, isInIframe, isInPopup } from '@detection/environment';
+import { bindNavigationLifecycle } from './navigation-lifecycle';
 import { VERSION } from '../version';
 import type { FieldRenderer } from './types';
 import { safeConsoleDebug, safeConsoleWarn } from './diagnostics';
@@ -170,9 +171,27 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
 
   runtime.start();
 
+  // Own the document lifecycle here rather than leaving it to each adapter.
+  // A back/forward-cache restore does not re-run this script, so without it an
+  // inline runtime returns bound to a document the browser froze and thawed and
+  // silently stops updating. Every adapter injects this entry, so binding it
+  // here is what makes the behaviour reachable at all — the programmatic client
+  // exposes `bindNavigationLifecycle` for consumers that start it themselves.
+  //
+  // Soft navigation is deliberately not bound: only the host knows which event
+  // its router fires, and guessing would rebuild the cache on the wrong one.
+  const unbindLifecycle = bindNavigationLifecycle({
+    suspend: () => runtime.suspend(),
+    resume: () => runtime.start(),
+    refreshCache: () => {
+      runtime.refreshCache();
+    },
+  });
+
   const api: LivePreviewGlobalApi = Object.freeze({
     version: VERSION,
     destroy: () => {
+      unbindLifecycle();
       runtime.destroy();
       // Clear the global handle so a later bootstrap starts a fresh
       // runtime instead of returning this now-dead API. The property is
@@ -196,6 +215,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     // Starting the runtime and publishing its owner handle are one bootstrap
     // transaction. A hostile/pre-existing global descriptor must not leave an
     // unreachable runtime listening, observing, or retrying in the background.
+    unbindLifecycle();
     runtime.destroy();
     throw error;
   }

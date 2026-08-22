@@ -42,6 +42,7 @@ declare module '$env/static/private' {
 	export const GJS_DEBUG_TOPICS: string;
 	export const XDG_ACTIVATION_TOKEN: string;
 	export const LESSOPEN: string;
+	export const ATUIN_SESSION: string;
 	export const AI_AGENT: string;
 	export const SNAP_INSTANCE_KEY: string;
 	export const USER: string;
@@ -60,6 +61,7 @@ declare module '$env/static/private' {
 	export const HOME: string;
 	export const MOZ_ENABLE_WAYLAND: string;
 	export const SNAP_LIBRARY_PATH: string;
+	export const OLDPWD: string;
 	export const DESKTOP_SESSION: string;
 	export const SNAP_USER_DATA: string;
 	export const npm_package_json: string;
@@ -79,16 +81,18 @@ declare module '$env/static/private' {
 	export const GIO_LAUNCHED_DESKTOP_FILE_PID: string;
 	export const COLOR: string;
 	export const DEBUGINFOD_URLS: string;
-	export const npm_config_metrics_registry: string;
 	export const WAYLAND_DISPLAY: string;
+	export const ATUIN_PREEXEC_BACKEND: string;
 	export const npm_config_audit: string;
 	export const FORCE_COLOR: string;
 	export const LOGNAME: string;
+	export const npm_config_strict_allow_scripts: string;
 	export const SNAP_CONTEXT: string;
 	export const MANAGERPIDFDID: string;
 	export const JOURNAL_STREAM: string;
 	export const _: string;
 	export const npm_config_prefix: string;
+	export const npm_config_npm_version: string;
 	export const MEMORY_PRESSURE_WATCH: string;
 	export const CLAUDE_CODE_SSE_PORT: string;
 	export const XDG_SESSION_CLASS: string;
@@ -101,6 +105,7 @@ declare module '$env/static/private' {
 	export const GNOME_DESKTOP_SESSION_ID: string;
 	export const SNAP_INSTANCE_NAME: string;
 	export const npm_config_node_gyp: string;
+	export const npm_config_install_links: string;
 	export const PATH: string;
 	export const INVOCATION_ID: string;
 	export const NODE: string;
@@ -112,6 +117,7 @@ declare module '$env/static/private' {
 	export const XDG_RUNTIME_DIR: string;
 	export const CLAUDE_EFFORT: string;
 	export const DISPLAY: string;
+	export const CLAUDE_PID: string;
 	export const DESKTOP_STARTUP_ID: string;
 	export const NoDefaultCurrentDirectoryInExePath: string;
 	export const LANG: string;
@@ -150,7 +156,6 @@ declare module '$env/static/private' {
 	export const ENABLE_IDE_INTEGRATION: string;
 	export const INTELLIJ_TERMINAL_COMMAND_BLOCKS_REWORKED: string;
 	export const CUDA_HOME: string;
-	export const npm_config_globalignorefile: string;
 	export const npm_execpath: string;
 	export const XDG_CONFIG_DIRS: string;
 	export const SNAP_REAL_HOME: string;
@@ -162,6 +167,7 @@ declare module '$env/static/private' {
 	export const SNAP_EUID: string;
 	export const NVD_BACKEND: string;
 	export const SNAP: string;
+	export const npm_config_allow_scripts: string;
 	export const npm_command: string;
 	export const QT_IM_MODULES: string;
 	export const MEMORY_PRESSURE_WRITE: string;
@@ -259,6 +265,7 @@ declare module '$env/dynamic/private' {
 		GJS_DEBUG_TOPICS: string;
 		XDG_ACTIVATION_TOKEN: string;
 		LESSOPEN: string;
+		ATUIN_SESSION: string;
 		AI_AGENT: string;
 		SNAP_INSTANCE_KEY: string;
 		USER: string;
@@ -277,6 +284,7 @@ declare module '$env/dynamic/private' {
 		HOME: string;
 		MOZ_ENABLE_WAYLAND: string;
 		SNAP_LIBRARY_PATH: string;
+		OLDPWD: string;
 		DESKTOP_SESSION: string;
 		SNAP_USER_DATA: string;
 		npm_package_json: string;
@@ -296,16 +304,18 @@ declare module '$env/dynamic/private' {
 		GIO_LAUNCHED_DESKTOP_FILE_PID: string;
 		COLOR: string;
 		DEBUGINFOD_URLS: string;
-		npm_config_metrics_registry: string;
 		WAYLAND_DISPLAY: string;
+		ATUIN_PREEXEC_BACKEND: string;
 		npm_config_audit: string;
 		FORCE_COLOR: string;
 		LOGNAME: string;
+		npm_config_strict_allow_scripts: string;
 		SNAP_CONTEXT: string;
 		MANAGERPIDFDID: string;
 		JOURNAL_STREAM: string;
 		_: string;
 		npm_config_prefix: string;
+		npm_config_npm_version: string;
 		MEMORY_PRESSURE_WATCH: string;
 		CLAUDE_CODE_SSE_PORT: string;
 		XDG_SESSION_CLASS: string;
@@ -318,6 +328,7 @@ declare module '$env/dynamic/private' {
 		GNOME_DESKTOP_SESSION_ID: string;
 		SNAP_INSTANCE_NAME: string;
 		npm_config_node_gyp: string;
+		npm_config_install_links: string;
 		PATH: string;
 		INVOCATION_ID: string;
 		NODE: string;
@@ -329,6 +340,7 @@ declare module '$env/dynamic/private' {
 		XDG_RUNTIME_DIR: string;
 		CLAUDE_EFFORT: string;
 		DISPLAY: string;
+		CLAUDE_PID: string;
 		DESKTOP_STARTUP_ID: string;
 		NoDefaultCurrentDirectoryInExePath: string;
 		LANG: string;
@@ -367,7 +379,6 @@ declare module '$env/dynamic/private' {
 		ENABLE_IDE_INTEGRATION: string;
 		INTELLIJ_TERMINAL_COMMAND_BLOCKS_REWORKED: string;
 		CUDA_HOME: string;
-		npm_config_globalignorefile: string;
 		npm_execpath: string;
 		XDG_CONFIG_DIRS: string;
 		SNAP_REAL_HOME: string;
@@ -379,6 +390,7 @@ declare module '$env/dynamic/private' {
 		SNAP_EUID: string;
 		NVD_BACKEND: string;
 		SNAP: string;
+		npm_config_allow_scripts: string;
 		npm_command: string;
 		QT_IM_MODULES: string;
 		MEMORY_PRESSURE_WRITE: string;

@@ -28,8 +28,8 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'codegen.js': { raw: 13_000, gzip: 4_100, brotli: 3_700 },
   'core.cjs': { raw: 76_000, gzip: 25_000, brotli: 22_000 },
   'core.js': { raw: 76_000, gzip: 25_000, brotli: 22_000 },
-  'index.cjs': { raw: 155_000, gzip: 47_700, brotli: 37_000 },
-  'index.js': { raw: 155_000, gzip: 47_700, brotli: 37_000 },
+  'index.cjs': { raw: 156_000, gzip: 47_900, brotli: 37_000 },
+  'index.js': { raw: 156_000, gzip: 47_900, brotli: 37_000 },
   'payload.cjs': { raw: 1_100, gzip: 600, brotli: 500 },
   'payload.js': { raw: 1_100, gzip: 600, brotli: 500 },
 };

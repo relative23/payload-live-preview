@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 82,
-    "suites": 233,
-    "tests": 1300,
+    "files": 83,
+    "suites": 234,
+    "tests": 1305,
     "benchmarks": 10
   },
   "groups": {
@@ -29,15 +29,15 @@
       "benchmarks": 10
     },
     "e2e": {
-      "files": 4,
-      "suites": 8,
-      "tests": 18,
+      "files": 5,
+      "suites": 9,
+      "tests": 20,
       "benchmarks": 0
     },
     "integration": {
       "files": 5,
       "suites": 7,
-      "tests": 59,
+      "tests": 62,
       "benchmarks": 0
     },
     "real-payload": {
@@ -89,6 +89,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/navigation-lifecycle.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/nextjs-live-preview.spec.ts",
       "group": "e2e",
       "suites": 2,
@@ -127,7 +134,7 @@
       "path": "tests/integration/runtime.test.ts",
       "group": "integration",
       "suites": 3,
-      "tests": 13,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -184,13 +191,6 @@
       "group": "unit",
       "suites": 2,
       "tests": 5,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/client/navigation-lifecycle.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -296,6 +296,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 74,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/navigation-lifecycle.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {

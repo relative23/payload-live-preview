@@ -16,7 +16,7 @@ export {
   bindNavigationLifecycle,
   type NavigationLifecycleOptions,
   type NavigationLifecycleTarget,
-} from './client/navigation-lifecycle';
+} from './core/navigation-lifecycle';
 
 // Inline-script generator
 export {
