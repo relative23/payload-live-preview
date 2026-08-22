@@ -227,9 +227,11 @@ jobs:
       - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
       - run: npm ci --no-audit --no-fund --prefix examples/nextjs-payload
       - run: npm ci --no-audit --no-fund --prefix examples/sveltekit-payload
+      - run: npm ci --no-audit --no-fund --prefix examples/nuxt-payload
       - run: npm audit --audit-level=high --prefix examples/astro-payload
       - run: npm audit --audit-level=high --prefix examples/nextjs-payload
       - run: npm audit --audit-level=high --prefix examples/sveltekit-payload
+      - run: npm audit --audit-level=high --prefix examples/nuxt-payload
       - run: npx playwright test --project=${{ matrix.browser }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()

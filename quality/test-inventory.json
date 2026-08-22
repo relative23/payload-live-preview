@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 83,
-    "suites": 234,
-    "tests": 1305,
+    "files": 84,
+    "suites": 236,
+    "tests": 1309,
     "benchmarks": 10
   },
   "groups": {
@@ -29,9 +29,9 @@
       "benchmarks": 10
     },
     "e2e": {
-      "files": 5,
-      "suites": 9,
-      "tests": 20,
+      "files": 6,
+      "suites": 11,
+      "tests": 24,
       "benchmarks": 0
     },
     "integration": {
@@ -97,6 +97,13 @@
     },
     {
       "path": "tests/e2e/specs/nextjs-live-preview.spec.ts",
+      "group": "e2e",
+      "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/nuxt-live-preview.spec.ts",
       "group": "e2e",
       "suites": 2,
       "tests": 4,

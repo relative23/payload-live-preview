@@ -28,7 +28,7 @@ import {
 const ROOT = resolve(import.meta.dirname, '../..');
 const CI_WORKFLOW = resolve(ROOT, '.github/workflows/ci.yml');
 const RELEASE_WORKFLOW = resolve(ROOT, '.github/workflows/release.yml');
-const MAINTAINER_INSTALL_POLICY_INDEXES = [0, 1, 2, 3, 4] as const;
+const MAINTAINER_INSTALL_POLICY_INDEXES = [0, 1, 2, 3, 4, 5] as const;
 
 function repositoryPackageIdentity(): { readonly name: string; readonly version: string } {
   const manifest = readJson(resolve(ROOT, 'package.json')) as {
@@ -368,7 +368,7 @@ describe('maintainer install-script policy contract', () => {
 
 describe('workspace package-lock identity contract', () => {
   it('keeps package.json, the root lock, and all file:../.. fixture entries synchronized', () => {
-    expect(LOCAL_FILE_PACKAGE_FIXTURES).toHaveLength(3);
+    expect(LOCAL_FILE_PACKAGE_FIXTURES).toHaveLength(4);
     expect(findPackageLockMetadataViolations(readPackageLockMetadataInput())).toEqual([]);
   });
 
@@ -530,7 +530,7 @@ describe('workspace package-lock identity contract', () => {
             await rename(source, target);
           },
         }),
-      ).resolves.toBe(4);
+      ).resolves.toBe(5);
 
       expect(
         findPackageLockMetadataViolations(readPackageLockMetadataInput(repositoryRoot)),
@@ -558,10 +558,15 @@ describe('workspace package-lock identity contract', () => {
         'write:4',
         'sync:4',
         'close:4',
+        'open:5',
+        'write:5',
+        'sync:5',
+        'close:5',
         'rename:1',
         'rename:2',
         'rename:3',
         'rename:4',
+        'rename:5',
       ]);
     } finally {
       await rm(repositoryRoot, { recursive: true, force: true });
@@ -718,7 +723,7 @@ describe('workspace package-lock identity contract', () => {
   it('is idempotent on disk without opening or replacing any file', async () => {
     const { repositoryRoot, targetPaths } = await createStaleLockfileMetadataRepository();
     try {
-      await expect(synchronizePackageLockMetadataFiles(repositoryRoot)).resolves.toBe(4);
+      await expect(synchronizePackageLockMetadataFiles(repositoryRoot)).resolves.toBe(5);
       const synchronized = await Promise.all(targetPaths.map((path) => readFile(path, 'utf8')));
 
       await expect(

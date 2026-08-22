@@ -115,6 +115,16 @@ export const MAINTAINER_INSTALL_POLICIES = [
     },
   },
   {
+    label: 'Nuxt fixture',
+    directory: 'examples/nuxt-payload',
+    npmrc: 'strict-allow-scripts=true\ninstall-links=true\n',
+    packageManager: REVIEWED_PACKAGE_MANAGER,
+    allowScripts: {
+      'esbuild@0.28.2': true,
+      'fsevents@2.3.3': false,
+    },
+  },
+  {
     label: 'real Payload fixture',
     directory: 'examples/payload-backend',
     npmrc: 'strict-allow-scripts=true\n',
@@ -133,6 +143,7 @@ export const LOCAL_FILE_PACKAGE_FIXTURES = [
   { label: 'Astro fixture', directory: 'examples/astro-payload' },
   { label: 'Next.js fixture', directory: 'examples/nextjs-payload' },
   { label: 'SvelteKit fixture', directory: 'examples/sveltekit-payload' },
+  { label: 'Nuxt fixture', directory: 'examples/nuxt-payload' },
 ] as const;
 
 export interface PackageLockMetadataDocument {
@@ -598,6 +609,10 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
         /run:\s*npm ci --no-audit --no-fund --prefix examples\/sveltekit-payload/,
       ],
       [
+        'does not clean-install examples/nuxt-payload',
+        /run:\s*npm ci --no-audit --no-fund --prefix examples\/nuxt-payload/,
+      ],
+      [
         'does not run every browser project',
         /run:\s*npx playwright test --project=\$\{\{\s*matrix\.browser\s*\}\}/,
       ],
@@ -612,6 +627,10 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
       [
         'does not audit the SvelteKit fixture',
         /run:\s*npm audit --audit-level=high --prefix examples\/sveltekit-payload/,
+      ],
+      [
+        'does not audit the Nuxt fixture',
+        /run:\s*npm audit --audit-level=high --prefix examples\/nuxt-payload/,
       ],
     ],
     'real-payload-e2e': [

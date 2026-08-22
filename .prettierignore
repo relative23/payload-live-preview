@@ -10,6 +10,8 @@ examples/**/package-lock.json
 examples/**/.astro/
 examples/**/.next/
 examples/**/.svelte-kit/
+examples/**/.nuxt/
+examples/**/.output/
 examples/**/next-env.d.ts
 examples/**/src/env.d.ts
 examples/payload-backend/payload-types.ts
