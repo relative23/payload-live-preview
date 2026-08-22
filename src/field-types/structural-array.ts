@@ -128,7 +128,7 @@ function warnMissingTemplate(
   if (warnedContainers.has(container)) return;
   warnedContainers.add(container);
   safeConsoleWarn(
-    `[live-preview] Skipping structural update for "${fieldName}": ` +
+    `[live-preview] LP0403: Skipping structural update for "${fieldName}": ` +
       `<${container.tagName.toLowerCase()} data-payload-structural> needs ` +
       `data-payload-array-template (for example "<li>{{label}}</li>").`,
   );

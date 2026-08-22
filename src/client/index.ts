@@ -69,7 +69,7 @@ export class LivePreviewClient {
       config: Object.freeze({ ...config }),
       registerFieldRenderer: (renderer) => this.#rendererRegistry.register(renderer),
       onTransformError: (error) => {
-        void this.#emitter.emit('error', { error, context: 'transform' });
+        void this.#emitter.emit('error', { error, context: 'transform', code: 'LP0602' });
       },
       log: this.#log,
     });

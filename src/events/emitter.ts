@@ -185,7 +185,7 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
     } catch (err) {
       const label =
         typeof event === 'string' || typeof event === 'number' ? String(event) : '<event>';
-      safeConsoleError(`[live-preview] handler for "${label}" threw:`, err);
+      safeConsoleError(`[live-preview] LP0601: handler for "${label}" threw:`, err);
     }
   }
 }

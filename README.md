@@ -604,6 +604,43 @@ injected script and the field names are `data-payload-field` attributes in the
 DOM — and a preview that misbehaves only on the deployed site is exactly the
 case where the information is worth having.
 
+## Diagnostic codes
+
+Every message the runtime reports carries a stable code. Prose gets reworded; a
+code does not — so a log filter, an alert rule, or a bug report that names
+`LP0301` still means the same thing after the sentence around it changes.
+
+| Code     | Meaning                                              | What to do                                                                                             |
+| -------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `LP0101` | No trusted origin configured in production           | Set `PAYLOAD_ADMIN_ORIGIN` or pass `allowedOrigins`. Nothing is accepted until you do.                 |
+| `LP0102` | Origin trust rests on `document.referrer`            | Any framing site is trusted. Set `allowedOrigins` and a `frame-ancestors` CSP.                         |
+| `LP0201` | An update named a field with no binding on the page  | Render the binding anchor unconditionally so edits to an initially-empty field have somewhere to land. |
+| `LP0202` | Owner scoping is on and the update names no document | The message carries neither a global slug nor a collection slug plus id.                               |
+| `LP0301` | The visibility gate held offscreen writes back       | Raise `visibilityGateThreshold`, or accept that below-the-fold updates wait for a scroll.              |
+| `LP0401` | A value was refused as an unsafe attribute write     | The attribute or the value is not safe to write; see the security model.                               |
+| `LP0402` | A text element has structured children               | Move `data-payload-field` to the value element, or add `data-payload-text`.                            |
+| `LP0403` | A structural container has no array template         | Add `data-payload-array-template`.                                                                     |
+| `LP0501` | A message was rejected before the update pipeline    | Reason is one of origin, shape, type, token. Visible with `debug: true`.                               |
+| `LP0502` | A preview token was rejected                         | Also reported when your `validateToken` throws — a throwing validator fails closed.                    |
+| `LP0601` | A consumer event handler threw                       | Your `on(...)` handler; the runtime continued.                                                         |
+| `LP0602` | A consumer transform threw                           | The original value was kept.                                                                           |
+| `LP0603` | A renderer threw while writing                       | That one write was abandoned.                                                                          |
+| `LP0605` | Runtime startup failed                               |                                                                                                        |
+| `LP0606` | Sending the ready handshake failed                   |                                                                                                        |
+
+Codes on the `error` event can be branched on directly:
+
+```ts
+import { DIAGNOSTIC_CODES } from 'payload-live-preview';
+
+client.events.on('error', (e) => {
+  if (e.code === DIAGNOSTIC_CODES.TransformThrew) reportToSentry(e.error);
+});
+```
+
+Codes are never reused for a different meaning and never renumbered. `LP0604`
+is reserved and unassigned.
+
 ## Troubleshooting
 
 - **Nothing updates** — call `__livePreview.inspect()` in the preview iframe's console first; it names the cause in most cases (see [Inspecting a running preview](#inspecting-a-running-preview)). `debug: true` adds verbose diagnostics on top. The most common causes: the admin origin is not in `allowedOrigins`; the page is not actually loaded in an iframe; the binding element does not exist (see the empty-field gotcha above — orphan-update warnings are always enabled and deduplicated per field).

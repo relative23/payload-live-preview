@@ -10,6 +10,7 @@
  */
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
+import type { DiagnosticCode } from '@core/diagnostic-codes';
 
 export interface LivePreviewEventMap {
   /**
@@ -81,11 +82,14 @@ export interface LivePreviewEventMap {
   /**
    * Fired on errors that the runtime caught but cannot fully recover from.
    *
-   * The `context` string identifies where the error originated.
+   * The `context` string identifies where the error originated. `code` says
+   * the same thing in a form that survives rewording — branch on `code`, read
+   * `context` when you want the human-readable origin.
    */
   readonly error: {
     readonly error: Error;
     readonly context: string;
+    readonly code: DiagnosticCode;
   };
 
   /**

@@ -100,6 +100,28 @@ export const debugPlugin: LivePreviewPlugin;
 export function detectInitialLocale(): string;
 
 // @public
+export const DIAGNOSTIC_CODES: Readonly<{
+    readonly NoTrustedOrigin: "LP0101";
+    readonly ReferrerOnlyTrust: "LP0102";
+    readonly OrphanField: "LP0201";
+    readonly UnattributableUpdate: "LP0202";
+    readonly VisibilityGateDeferred: "LP0301";
+    readonly UnsafeAttributeWrite: "LP0401";
+    readonly TextTargetHasChildren: "LP0402";
+    readonly MissingArrayTemplate: "LP0403";
+    readonly MessageRejected: "LP0501";
+    readonly TokenRejected: "LP0502";
+    readonly HandlerThrew: "LP0601";
+    readonly TransformThrew: "LP0602";
+    readonly RendererThrew: "LP0603";
+    readonly StartupFailed: "LP0605";
+    readonly ReadyFailed: "LP0606";
+}>;
+
+// @public
+export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_CODES];
+
+// @public
 export type DocumentSaveHandler = {
     bivarianceHack(signal?: AbortSignal): void | Promise<void>;
 }['bivarianceHack'];
@@ -449,6 +471,7 @@ export interface LivePreviewEventMap {
     readonly error: {
         readonly error: Error;
         readonly context: string;
+        readonly code: DiagnosticCode;
     };
     readonly init: {
         readonly timestamp: number;

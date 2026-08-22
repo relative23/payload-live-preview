@@ -86,6 +86,7 @@ export type {
   InspectionScheduler,
   LivePreviewInspection,
 } from './core/inspection/types';
+export { DIAGNOSTIC_CODES, type DiagnosticCode } from './core/diagnostic-codes';
 export type { ConnectionStatus } from './core/state';
 
 // Typed binding DSL — small enough to live in the core slice

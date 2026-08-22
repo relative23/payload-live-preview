@@ -288,6 +288,7 @@ describe('debug plugin', () => {
     await events.emit('error', {
       error: new Error('oops'),
       context: 'renderer',
+      code: 'LP0603',
     });
     expect(logs.length).toBeGreaterThan(0);
   });

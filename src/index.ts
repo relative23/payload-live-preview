@@ -25,6 +25,7 @@ export type {
   InspectionScheduler,
   LivePreviewInspection,
 } from './core/inspection/types';
+export { DIAGNOSTIC_CODES, type DiagnosticCode } from './core/diagnostic-codes';
 export type { ConnectionStatus } from './core/state';
 
 // Inline-script generator
