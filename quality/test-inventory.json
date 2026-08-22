@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 88,
-    "suites": 257,
-    "tests": 1378,
+    "files": 89,
+    "suites": 263,
+    "tests": 1389,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 73,
-      "suites": 230,
-      "tests": 1286,
+      "files": 74,
+      "suites": 236,
+      "tests": 1297,
       "benchmarks": 0
     }
   },
@@ -399,15 +399,22 @@
     {
       "path": "tests/unit/doctor/analyze.test.ts",
       "group": "unit",
-      "suites": 9,
-      "tests": 22,
+      "suites": 10,
+      "tests": 24,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/doctor/cli.test.ts",
       "group": "unit",
+      "suites": 5,
+      "tests": 20,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/doctor/probe.test.ts",
+      "group": "unit",
       "suites": 3,
-      "tests": 16,
+      "tests": 5,
       "benchmarks": 0
     },
     {

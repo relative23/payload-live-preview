@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { formatReport, runDoctor, type DoctorFetch } from '@doctor/index';
-import { run } from '@doctor/cli';
+import { isCliInvocation, run } from '@doctor/cli';
 
 const RUNTIME = '<script>var __LIVE_PREVIEW_CONFIG__=[["https://cms.example.com"]];</script>';
 const ADMIN = 'https://cms.example.com';
@@ -249,3 +249,53 @@ describe('pll CLI', () => {
     expect(err.text()).toContain('could not probe');
   });
 });
+
+describe('deciding whether this module was run or imported', () => {
+  // The first version matched `includes('pll')` against the whole path, which
+  // would auto-run the CLI on import for any project living in a directory
+  // whose name happens to contain those three letters.
+  it('accepts the bin shim by basename', () => {
+    expect(isCliInvocation([undefined, '/x/node_modules/.bin/pll'])).toBe(true);
+    expect(isCliInvocation([undefined, 'C:\\x\\node_modules\\.bin\\pll.cmd'])).toBe(true);
+    expect(isCliInvocation([undefined, '/x/dist/doctor-cli.js'])).toBe(true);
+  });
+
+  it('refuses a path that merely contains the letters', () => {
+    expect(isCliInvocation([undefined, '/home/dev/pll-site/scripts/build.js'])).toBe(false);
+    expect(isCliInvocation([undefined, '/opt/apollo/server.js'])).toBe(false);
+  });
+
+  it('refuses a missing or empty entry', () => {
+    expect(isCliInvocation([undefined, undefined])).toBe(false);
+    expect(isCliInvocation([undefined, ''])).toBe(false);
+  });
+});
+
+describe('failures that are not Error instances', () => {
+  it('still reports a usable message instead of [object Object]', async () => {
+    const err = captureStderrOutside();
+    const code = await run(['doctor', 'https://example.com/'], () => {
+      // A fetch implementation is consumer-supplied in principle; nothing
+      // guarantees it rejects with an Error.
+      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- deliberate
+      return Promise.reject('socket hang up');
+    });
+    err.restore();
+    expect(code).toBe(1);
+    expect(err.text()).toContain('socket hang up');
+  });
+});
+
+function captureStderrOutside(): { text: () => string; restore: () => void } {
+  let buffer = '';
+  const spy = vi.spyOn(process.stderr, 'write').mockImplementation((chunk: string | Uint8Array) => {
+    buffer += String(chunk);
+    return true;
+  });
+  return {
+    text: () => buffer,
+    restore: () => {
+      spy.mockRestore();
+    },
+  };
+}

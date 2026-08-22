@@ -136,12 +136,19 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
   return report.errors > 0 ? 2 : 0;
 }
 
-/** Mirrors `pll-codegen`'s guard so the module stays importable in tests. */
-function isCliInvocation(): boolean {
+/**
+ * Whether this module was run as a program rather than imported.
+ *
+ * Matches the entry's basename, not the whole path: `includes('pll')` against
+ * the full path would auto-run the CLI on import for any project whose
+ * directory happens to contain those three letters.
+ */
+export function isCliInvocation(argv: readonly (string | undefined)[] = process.argv): boolean {
   if (typeof process === 'undefined') return false;
-  const entry = process.argv[1];
-  if (!entry) return false;
-  return entry.includes('pll') || entry.includes('doctor-cli');
+  const entry = argv[1];
+  if (entry === undefined || entry === '') return false;
+  const name = entry.split(/[\\/]/u).pop() ?? '';
+  return name === 'pll' || name === 'pll.cmd' || name.startsWith('doctor-cli');
 }
 
 if (isCliInvocation()) {

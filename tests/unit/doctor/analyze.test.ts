@@ -383,3 +383,40 @@ describe('a missing inline runtime is not automatically a fault', () => {
     expect(finding?.detail).toContain('LivePreviewClient');
   });
 });
+
+describe('a CSP that says nothing about framing', () => {
+  it('is treated as no policy at all, not as a policy that passed', () => {
+    // Common in the wild: a site sets default-src and never mentions
+    // frame-ancestors. Reading "a CSP exists" as "framing is declared" would
+    // silence the one warning that matters here.
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({
+          headers: { 'content-security-policy': "default-src 'self'; script-src 'self'" },
+          body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+        }),
+      },
+      context,
+    );
+    const finding = report.findings.find((f) => f.code === 'LP0702');
+    expect(finding?.level).toBe('warning');
+    expect(finding?.title).toContain('no frame-ancestors');
+  });
+
+  it('finds the directive when it is not the first one', () => {
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({
+          headers: {
+            'content-security-policy': `default-src 'self'; frame-ancestors ${ADMIN}; img-src *`,
+          },
+          body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+        }),
+      },
+      context,
+    );
+    expect(report.findings).toEqual([]);
+  });
+});
