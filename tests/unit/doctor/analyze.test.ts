@@ -420,3 +420,98 @@ describe('a CSP that says nothing about framing', () => {
     expect(report.findings).toEqual([]);
   });
 });
+
+describe('responses that are not a page at all', () => {
+  // Found by probing the audit with shapes nobody had tried: a 404, a redirect
+  // to a login, a 500 and a JSON endpoint all produced the same plausible
+  // sentence about adapter configuration. Someone who mistypes a URL would
+  // have gone looking for a bug in their inject mode.
+  function preview(
+    status: number,
+    body: string,
+    headers: Record<string, string> = {},
+  ): ReturnType<typeof healthy> {
+    return {
+      publicResponse: response({ body: '<h1>t</h1>' }),
+      previewResponse: { status, headers, body },
+    };
+  }
+
+  it.each([
+    ['404', 404, '<h1>404 — not found</h1>'],
+    ['302 to a login', 302, ''],
+    ['500', 500, '<h1>Internal Server Error</h1>'],
+  ])('reports LP0708 for %s rather than diagnosing the error page', (_label, status, body) => {
+    const report = analyzeProbe(preview(status, body), context);
+    expect(report.findings).toHaveLength(1);
+    expect(report.findings[0]?.code).toBe('LP0708');
+    expect(report.findings[0]?.level).toBe('error');
+  });
+
+  it('reports LP0708 for a non-HTML content type', () => {
+    const report = analyzeProbe(
+      preview(200, '{"ok":true}', { 'content-type': 'application/json' }),
+      context,
+    );
+    expect(report.findings).toHaveLength(1);
+    expect(report.findings[0]?.title).toContain('application/json');
+  });
+
+  it('reports LP0708 for a 2xx with an empty body, which 204 always is', () => {
+    const report = analyzeProbe(preview(204, ''), context);
+    expect(report.findings[0]?.code).toBe('LP0708');
+    expect(report.findings[0]?.title).toContain('empty body');
+  });
+
+  it('accepts HTML with or without a charset, and XHTML', () => {
+    for (const contentType of ['text/html', 'text/html; charset=utf-8', 'application/xhtml+xml']) {
+      const report = analyzeProbe(
+        {
+          publicResponse: response({ body: '<h1>t</h1>' }),
+          previewResponse: {
+            status: 200,
+            headers: {
+              'content-type': contentType,
+              'content-security-policy': `frame-ancestors 'self' ${ADMIN}`,
+            },
+            body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+          },
+        },
+        context,
+      );
+      expect(report.findings, contentType).toEqual([]);
+    }
+  });
+
+  it('accepts a response that states no content type at all', () => {
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: {
+          status: 200,
+          headers: { 'content-security-policy': `frame-ancestors 'self' ${ADMIN}` },
+          body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+        },
+      },
+      context,
+    );
+    expect(report.findings).toEqual([]);
+  });
+
+  it('judges only the preview probe, because a gated site may 302 the public one', () => {
+    // A public response that redirects is a legitimate shape. Treating it the
+    // same way would be the same mistake pointed the other direction.
+    const report = analyzeProbe(
+      {
+        publicResponse: { status: 302, headers: {}, body: '' },
+        previewResponse: {
+          status: 200,
+          headers: { 'content-security-policy': `frame-ancestors 'self' ${ADMIN}` },
+          body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+        },
+      },
+      context,
+    );
+    expect(report.findings).toEqual([]);
+  });
+});

@@ -23,7 +23,13 @@
  *
  * @module @doctor/analyze
  */
-import type { DoctorContext, DoctorFinding, DoctorProbe, DoctorReport } from './types';
+import type {
+  DoctorContext,
+  DoctorFinding,
+  DoctorProbe,
+  DoctorReport,
+  DoctorResponse,
+} from './types';
 
 /**
  * Marker the inline runtime always carries.
@@ -81,6 +87,54 @@ function isSameOrigin(pageUrl: string, adminOrigin: string | undefined): boolean
   }
 }
 
+/**
+ * Why this response cannot be audited as a page, or `undefined` if it can.
+ *
+ * Deliberately only the preview probe: the public response being a redirect or
+ * a 404 is a legitimate shape for a gated site, and judging it would be the
+ * same mistake in the other direction.
+ */
+function describeNonPage(preview: DoctorResponse): DoctorFinding | undefined {
+  if (preview.status < 200 || preview.status > 299) {
+    return {
+      code: 'LP0708',
+      level: 'error',
+      title: `The preview request returned ${String(preview.status)}, not a page`,
+      detail:
+        'Nothing below this can be judged: a status outside 2xx means the ' +
+        'body is an error page, a redirect target, or empty.',
+      remedy:
+        'Check the URL. A redirect to a login usually means the route needs ' +
+        'authentication that a plain probe cannot supply.',
+    };
+  }
+  if (preview.body.trim() === '') {
+    return {
+      code: 'LP0708',
+      level: 'error',
+      title: `The preview request returned ${String(preview.status)} with an empty body`,
+      detail:
+        'A 2xx status with nothing in it — 204 and 205 are defined that way — ' +
+        'is not a page, so its missing runtime and missing bindings say nothing.',
+      remedy: 'Point the audit at a route that renders a document.',
+    };
+  }
+  const contentType = preview.headers['content-type'];
+  if (contentType !== undefined && !contentType.toLowerCase().includes('html')) {
+    return {
+      code: 'LP0708',
+      level: 'error',
+      title: `The preview request returned ${contentType}, not HTML`,
+      detail:
+        'The audit reads a rendered page. A non-HTML response has no runtime ' +
+        'and no bindings by definition, so reporting their absence would say ' +
+        'nothing about the deployment.',
+      remedy: 'Point the audit at a page route rather than an API or an asset.',
+    };
+  }
+  return undefined;
+}
+
 function frameAncestorsOf(csp: string | undefined): string | undefined {
   if (csp === undefined) return undefined;
   for (const directive of csp.split(';')) {
@@ -99,6 +153,21 @@ export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): Doctor
   const findings: DoctorFinding[] = [];
   const { publicResponse: pub, previewResponse: preview } = probe;
   const sameOrigin = isSameOrigin(context.url, context.adminOrigin);
+
+  // Everything below reads a rendered page. A 404, a redirect to a login, a
+  // 500 or a JSON endpoint would each be diagnosed as "no inline runtime,
+  // perhaps you start the client yourself" — a plausible sentence about the
+  // wrong problem, which is worse than saying nothing. Establish that there is
+  // a page before judging its contents.
+  const notAPage = describeNonPage(preview);
+  if (notAPage !== undefined) {
+    return {
+      url: context.url,
+      findings: [notAPage],
+      errors: 1,
+      warnings: 0,
+    };
+  }
 
   const runtimeInPreview = preview.body.includes(RUNTIME_MARKER);
   const runtimeInPublic = pub.body.includes(RUNTIME_MARKER);

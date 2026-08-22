@@ -84,6 +84,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly AuditGateThresholdExceeded: "LP0705";
     readonly AuditUnownedBindings: "LP0706";
     readonly AuditNoBindings: "LP0707";
+    readonly AuditNotAPage: "LP0708";
 }>;
 
 // @public

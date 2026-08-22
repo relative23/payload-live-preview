@@ -94,6 +94,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   AuditUnownedBindings: 'LP0706',
   /** The preview response carries no bindings at all. */
   AuditNoBindings: 'LP0707',
+  /** The URL did not return an HTML page, so nothing else can be judged. */
+  AuditNotAPage: 'LP0708',
 } as const);
 
 /** A diagnostic code, as it appears in log output and on the `error` event. */
