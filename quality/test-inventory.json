@@ -17,8 +17,8 @@
   ],
   "totals": {
     "files": 88,
-    "suites": 255,
-    "tests": 1373,
+    "suites": 257,
+    "tests": 1378,
     "benchmarks": 10
   },
   "groups": {
@@ -54,8 +54,8 @@
     },
     "unit": {
       "files": 73,
-      "suites": 228,
-      "tests": 1281,
+      "suites": 230,
+      "tests": 1286,
       "benchmarks": 0
     }
   },
@@ -399,8 +399,8 @@
     {
       "path": "tests/unit/doctor/analyze.test.ts",
       "group": "unit",
-      "suites": 7,
-      "tests": 17,
+      "suites": 9,
+      "tests": 22,
       "benchmarks": 0
     },
     {

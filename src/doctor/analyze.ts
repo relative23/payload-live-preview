@@ -64,6 +64,23 @@ function unownedBindingsBeforeFirstOwner(body: string): number {
   return count(body.slice(0, firstOwner), BINDING_ATTRIBUTE);
 }
 
+/**
+ * Whether the admin is served from the same origin as the page being probed.
+ *
+ * This changes three verdicts, because a same-origin admin is admitted by
+ * `'self'` and by `X-Frame-Options: SAMEORIGIN` without either naming it.
+ * Getting this wrong turns a correct deployment into three red findings —
+ * which is exactly what the first run against a real same-origin consumer did.
+ */
+function isSameOrigin(pageUrl: string, adminOrigin: string | undefined): boolean {
+  if (adminOrigin === undefined) return false;
+  try {
+    return new URL(pageUrl).origin === new URL(adminOrigin).origin;
+  } catch {
+    return false;
+  }
+}
+
 function frameAncestorsOf(csp: string | undefined): string | undefined {
   if (csp === undefined) return undefined;
   for (const directive of csp.split(';')) {
@@ -81,6 +98,7 @@ function frameAncestorsOf(csp: string | undefined): string | undefined {
 export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): DoctorReport {
   const findings: DoctorFinding[] = [];
   const { publicResponse: pub, previewResponse: preview } = probe;
+  const sameOrigin = isSameOrigin(context.url, context.adminOrigin);
 
   const runtimeInPreview = preview.body.includes(RUNTIME_MARKER);
   const runtimeInPublic = pub.body.includes(RUNTIME_MARKER);
@@ -91,15 +109,17 @@ export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): Doctor
   if (!runtimeInPreview) {
     findings.push({
       code: 'LP0701',
-      level: 'error',
-      title: 'No live-preview runtime in the preview response',
+      level: 'warning',
+      title: 'No inline runtime in the preview response',
       detail:
         `A request carrying Sec-Fetch-Dest: iframe returned ${String(preview.status)} ` +
-        'without the inline runtime. The admin will show the page and nothing will update.',
+        'without the inline runtime. Two readings, and this audit cannot tell them ' +
+        'apart from the response alone: an adapter that did not recognise the ' +
+        'request as a preview, or a consumer that starts LivePreviewClient itself ' +
+        'and never wanted the inline build.',
       remedy:
-        'Check that the adapter is wired for this route and that its inject mode ' +
-        'recognises the request as a preview. A proxy that drops Sec-Fetch-Dest ' +
-        'produces exactly this.',
+        'If you use an adapter, check its inject mode and whether a proxy strips ' +
+        'Sec-Fetch-Dest. If you start the client yourself, this line is expected.',
     });
   }
 
@@ -120,7 +140,9 @@ export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): Doctor
   } else if (
     frameAncestors !== undefined &&
     context.adminOrigin !== undefined &&
-    !frameAncestors.includes(context.adminOrigin)
+    !frameAncestors.includes(context.adminOrigin) &&
+    // `'self'` names the admin without spelling it out when they share an origin.
+    !(sameOrigin && /'self'/u.test(frameAncestors))
   ) {
     findings.push({
       code: 'LP0702',
@@ -134,7 +156,10 @@ export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): Doctor
   }
 
   const frameOptions = preview.headers['x-frame-options'];
-  if (frameOptions !== undefined && /deny|sameorigin/iu.test(frameOptions)) {
+  const frameOptionsBlocks =
+    frameOptions !== undefined &&
+    (/deny/iu.test(frameOptions) || (/sameorigin/iu.test(frameOptions) && !sameOrigin));
+  if (frameOptionsBlocks) {
     findings.push({
       code: 'LP0703',
       level: 'error',

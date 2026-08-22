@@ -223,17 +223,22 @@ describe('pll CLI', () => {
   });
 
   it('emits JSON for --json and exits 2 on an error-level finding', async () => {
-    const { fetchImpl } = serverFetch({
-      publicBody: '<h1>t</h1>',
-      previewBody: '<h1 data-payload-field="title">t</h1>',
-    });
+    // X-Frame-Options: DENY is unconditionally fatal, unlike a missing inline
+    // runtime, which a consumer starting the client themselves would produce.
+    const { fetchImpl } = serverFetch(
+      {
+        publicBody: '<h1>t</h1>',
+        previewBody: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+      },
+      { 'content-security-policy': `frame-ancestors ${ADMIN}`, 'x-frame-options': 'DENY' },
+    );
     const out = captureStdout();
     const code = await run(['doctor', 'https://example.com/', '--json'], fetchImpl);
     out.restore();
     expect(code).toBe(2);
     const parsed = JSON.parse(out.text()) as { findings: { code: string }[]; errors: number };
     expect(parsed.errors).toBe(1);
-    expect(parsed.findings[0]?.code).toBe('LP0701');
+    expect(parsed.findings[0]?.code).toBe('LP0703');
   });
 
   it('reports an unreachable URL as a usage-level failure, not a finding', async () => {

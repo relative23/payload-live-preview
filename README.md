@@ -622,15 +622,15 @@ binding attributes on public pages.
 
 What it checks:
 
-| Code     | Finding                                                                                                                                                                                                     |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LP0701` | The preview response carries no runtime — the admin will show the page and nothing will update. Also reports, as information, when the runtime reaches anonymous visitors (correct for `inject: 'always'`). |
-| `LP0702` | No `frame-ancestors` on the preview response, or a policy that does not admit `--admin`.                                                                                                                    |
-| `LP0703` | `X-Frame-Options` forbids framing. Browsers honour it independently of CSP, so no `frame-ancestors` can undo it.                                                                                            |
-| `LP0704` | Binding attributes served to anonymous visitors.                                                                                                                                                            |
-| `LP0705` | More bindings than the default `visibilityGateThreshold` writes eagerly.                                                                                                                                    |
-| `LP0706` | Bindings outside every owner marker, which receive nothing under `scopeBindingsByOwner`.                                                                                                                    |
-| `LP0707` | The runtime is present with nothing to write into.                                                                                                                                                          |
+| Code     | Finding                                                                                                                                                                                                                                                                                             |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LP0701` | No inline runtime in the preview response. A warning, not an error: the audit cannot tell an adapter that missed the request from a consumer who starts `LivePreviewClient` themselves. Also reports, as information, when the runtime reaches anonymous visitors (correct for `inject: 'always'`). |
+| `LP0702` | No `frame-ancestors` on the preview response, or a policy that does not admit `--admin`. A bare `'self'` counts as admitting it when admin and site share an origin.                                                                                                                                |
+| `LP0703` | `X-Frame-Options` forbids framing — browsers honour it independently of CSP. `SAMEORIGIN` is accepted when `--admin` shares the page's origin; `DENY` never is.                                                                                                                                     |
+| `LP0704` | Binding attributes served to anonymous visitors.                                                                                                                                                                                                                                                    |
+| `LP0705` | More bindings than the default `visibilityGateThreshold` writes eagerly.                                                                                                                                                                                                                            |
+| `LP0706` | Bindings outside every owner marker, which receive nothing under `scopeBindingsByOwner`.                                                                                                                                                                                                            |
+| `LP0707` | The runtime is present with nothing to write into.                                                                                                                                                                                                                                                  |
 
 Exit codes: `0` no error-level findings, `1` usage error or the URL could not be
 fetched, `2` at least one error-level finding — so it drops into CI as a smoke

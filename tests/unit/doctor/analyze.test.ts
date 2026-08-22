@@ -41,20 +41,6 @@ describe('a healthy deployment', () => {
 });
 
 describe('injection', () => {
-  it('reports LP0701 when the preview response carries no runtime', () => {
-    const probe = healthy();
-    const report = analyzeProbe(
-      {
-        ...probe,
-        previewResponse: response({ body: '<h1 data-payload-field="title">t</h1>' }),
-      },
-      context,
-    );
-    const finding = report.findings.find((f) => f.code === 'LP0701');
-    expect(finding?.level).toBe('error');
-    expect(report.errors).toBeGreaterThan(0);
-  });
-
   it('mentions the runtime on the public response only as information', () => {
     // inject: 'always' is a legitimate configuration, so this must not fail a run.
     const probe = healthy();
@@ -293,5 +279,107 @@ describe('regression guards', () => {
       context,
     );
     expect(report.findings.map((f) => f.code)).toContain('LP0701');
+  });
+});
+
+describe('same-origin admin', () => {
+  // Found by running the audit against a real consumer whose admin and site
+  // share a host: all three framing checks fired, and all three were wrong.
+  const SAME = 'https://site.example.com';
+  const sameContext = { url: `${SAME}/page`, adminOrigin: SAME };
+
+  it("accepts frame-ancestors 'self' when the admin shares the origin", () => {
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({
+          headers: { 'content-security-policy': "frame-ancestors 'self'" },
+          body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+        }),
+      },
+      sameContext,
+    );
+    expect(report.findings.map((f) => f.code)).not.toContain('LP0702');
+  });
+
+  it("still rejects 'self' when the admin is on another origin", () => {
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({
+          headers: { 'content-security-policy': "frame-ancestors 'self'" },
+          body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+        }),
+      },
+      { url: `${SAME}/page`, adminOrigin: 'https://cms.other.com' },
+    );
+    expect(report.findings.find((f) => f.code === 'LP0702')?.level).toBe('error');
+  });
+
+  it('accepts X-Frame-Options: SAMEORIGIN when the admin shares the origin', () => {
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({
+          headers: {
+            'content-security-policy': "frame-ancestors 'self'",
+            'x-frame-options': 'SAMEORIGIN',
+          },
+          body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+        }),
+      },
+      sameContext,
+    );
+    expect(report.findings).toEqual([]);
+  });
+
+  it('rejects X-Frame-Options: DENY even for a same-origin admin', () => {
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({
+          headers: {
+            'content-security-policy': "frame-ancestors 'self'",
+            'x-frame-options': 'DENY',
+          },
+          body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+        }),
+      },
+      sameContext,
+    );
+    expect(report.findings.find((f) => f.code === 'LP0703')?.level).toBe('error');
+  });
+
+  it('treats an unparseable admin origin as "not same origin" rather than throwing', () => {
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({
+          headers: { 'content-security-policy': "frame-ancestors 'self'" },
+          body: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
+        }),
+      },
+      { url: `${SAME}/page`, adminOrigin: 'not a url' },
+    );
+    expect(report.findings.find((f) => f.code === 'LP0702')?.level).toBe('error');
+  });
+});
+
+describe('a missing inline runtime is not automatically a fault', () => {
+  it('warns rather than errors, because the client may be started by the consumer', () => {
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({
+          headers: { 'content-security-policy': `frame-ancestors 'self' ${ADMIN}` },
+          body: '<h1 data-payload-field="title">t</h1>',
+        }),
+      },
+      context,
+    );
+    const finding = report.findings.find((f) => f.code === 'LP0701');
+    expect(finding?.level).toBe('warning');
+    expect(report.errors).toBe(0);
+    expect(finding?.detail).toContain('LivePreviewClient');
   });
 });
