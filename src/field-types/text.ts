@@ -66,7 +66,7 @@ function warnOnce(warnedElements: WeakSet<Element>, element: Element, fieldName:
   if (warnedElements.has(element)) return;
   warnedElements.add(element);
   safeConsoleWarn(
-    `[live-preview] Skipping text update for "${fieldName}": ` +
+    `[live-preview] LP0402: Skipping text update for "${fieldName}": ` +
       `<${element.tagName.toLowerCase()}> has structured children. Move ` +
       `data-payload-field to the value element, or add data-payload-text to replace them.`,
   );

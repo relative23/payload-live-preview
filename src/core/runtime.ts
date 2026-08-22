@@ -125,11 +125,11 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
 
   if (detector.isProductionUnconfigured) {
     safeConsoleWarn(
-      '[live-preview] No trusted origin. Set PAYLOAD_ADMIN_ORIGIN or pass allowedOrigins to generateInlineScript().',
+      '[live-preview] LP0101: No trusted origin. Set PAYLOAD_ADMIN_ORIGIN or pass allowedOrigins to generateInlineScript().',
     );
   } else if (detector.isReferrerOnlyTrust) {
     safeConsoleWarn(
-      '[live-preview] document.referrer fallback trusts any framing site. ' +
+      '[live-preview] LP0102: document.referrer fallback trusts any framing site. ' +
         'Set allowedOrigins and a frame-ancestors CSP in production.',
     );
   }

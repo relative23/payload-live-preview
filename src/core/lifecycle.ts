@@ -36,6 +36,7 @@ import { DataMerger } from './data-merger';
 import { applyAttributeBinding } from './attribute-binding';
 import { UpdateScheduler, type FlushStats, type ScheduledUpdate } from './update-scheduler';
 import type { LivePreviewInspection } from './inspection/types';
+import type { DiagnosticCode } from './diagnostic-codes';
 import { VERSION } from '../version';
 import { observeThenableResult } from './thenable';
 import { resolveFieldValue } from './field-value';
@@ -354,9 +355,9 @@ export class LivePreviewRuntime {
       onInvalid: (reason, origin) => {
         if (reason === 'token') {
           const error = new Error(`Preview token rejected (origin: ${origin})`);
-          void emitter.emit('error', { error, context: 'token' });
+          void emitter.emit('error', { error, context: 'token', code: 'LP0502' });
         }
-        log('message rejected:', reason, origin);
+        log('LP0501 message rejected:', reason, origin);
       },
       ...(options.validateToken !== undefined ? { validateToken: options.validateToken } : {}),
     });
@@ -440,7 +441,7 @@ export class LivePreviewRuntime {
           // cannot be reported to its caller. Roll back every acquired resource
           // and surface the failure through the established runtime error event.
           this.#rollbackFailedStart();
-          this.#reportError(error, 'startup');
+          this.#reportError(error, 'startup', 'LP0605');
         }
       };
       this.l[RuntimeLifecycleSlot.DeferredStart] = onReady;
@@ -1031,7 +1032,7 @@ export class LivePreviewRuntime {
     if (keys === null && !this.l[RuntimeLifecycleSlot.WarnedUnattributableMessage]) {
       this.l[RuntimeLifecycleSlot.WarnedUnattributableMessage] = true;
       this.d[RuntimeDependencySlot.Warn](
-        '[live-preview] scopeBindingsByOwner: update names no document; nothing applied',
+        '[live-preview] LP0202: scopeBindingsByOwner: update names no document; nothing applied',
       );
     }
     return keys;
@@ -1107,7 +1108,7 @@ export class LivePreviewRuntime {
       if (localisedBindingNames.has(rawName)) continue;
       this.l[RuntimeLifecycleSlot.WarnedOrphanFields].add(rawName);
       this.d[RuntimeDependencySlot.Warn](
-        `[live-preview] update arrived for field "${rawName}" but no ` +
+        `[live-preview] LP0201: update arrived for field "${rawName}" but no ` +
           `<… data-payload-field="${baseName}"> element exists on this page. ` +
           `Render the binding anchor unconditionally in your template so ` +
           `live edits to an initially-empty field have somewhere to land.`,
@@ -1153,6 +1154,7 @@ export class LivePreviewRuntime {
       void this.d[RuntimeDependencySlot.Emitter].emit('error', {
         error,
         context: 'transform',
+        code: 'LP0602',
       });
       return originalValue;
     }
@@ -1182,7 +1184,7 @@ export class LivePreviewRuntime {
     if (this.l[RuntimeLifecycleSlot.WarnedVisibilityGate]) return;
     this.l[RuntimeLifecycleSlot.WarnedVisibilityGate] = true;
     this.d[RuntimeDependencySlot.Warn](
-      `[live-preview] visibility gate held ${String(stats.deferred)} offscreen ` +
+      `[live-preview] LP0301: visibility gate held ${String(stats.deferred)} offscreen ` +
         'update(s) until scrolled into view; see visibilityGateThreshold.',
     );
   }
@@ -1229,7 +1231,7 @@ export class LivePreviewRuntime {
       const error = err instanceof Error ? err : new Error(String(err));
       void this.d[RuntimeDependencySlot.Emitter].emitWhile(
         'error',
-        { error, context: 'renderer' },
+        { error, context: 'renderer', code: 'LP0603' },
         () =>
           this.l[RuntimeLifecycleSlot.Started] &&
           this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction,
@@ -1276,7 +1278,7 @@ export class LivePreviewRuntime {
         );
         if (outcome === 'blocked') {
           this.d[RuntimeDependencySlot.Warn](
-            `[live-preview] refused to write field "${update.target.fieldName}" ` +
+            `[live-preview] LP0401: refused to write field "${update.target.fieldName}" ` +
               `into attribute "${update.target.targetAttribute}" (unsafe attribute or value)`,
           );
           return false;
@@ -1305,7 +1307,7 @@ export class LivePreviewRuntime {
       const error = err instanceof Error ? err : new Error(String(err));
       void this.d[RuntimeDependencySlot.Emitter].emitWhile(
         'error',
-        { error, context: 'renderer' },
+        { error, context: 'renderer', code: 'LP0603' },
         () =>
           this.l[RuntimeLifecycleSlot.Started] &&
           this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction,
@@ -1429,15 +1431,16 @@ export class LivePreviewRuntime {
     try {
       this.d[RuntimeDependencySlot.SendReady](this.d[RuntimeDependencySlot.ReadyTargets]);
     } catch (error) {
-      this.#reportError(error, 'ready');
+      this.#reportError(error, 'ready', 'LP0606');
     }
   }
 
-  #reportError(cause: unknown, context: string): void {
+  #reportError(cause: unknown, context: string, code: DiagnosticCode): void {
     const error = cause instanceof Error ? cause : new Error(String(cause));
     void this.d[RuntimeDependencySlot.Emitter].emit('error', {
       error,
       context,
+      code,
     });
   }
 

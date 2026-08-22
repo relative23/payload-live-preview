@@ -136,6 +136,44 @@ describe('deferred startup while the document is parsing', () => {
     readyState.mockRestore();
   });
 
+  it('reports LP0605 when the deferred startup itself fails', () => {
+    // start() has already returned by the time DOMContentLoaded fires, so a
+    // failure here cannot reach its caller and must surface as an error event.
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const readyState = vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+    const emitter = new EventEmitter();
+    const codes: string[] = [];
+    const contexts: string[] = [];
+    emitter.on('error', (e) => {
+      codes.push(e.code);
+      contexts.push(e.context);
+    });
+
+    const runtime = makeRuntime({
+      emitter,
+      // Fails only once the deferred startup runs, not while start() is on the
+      // stack: the observer is acquired during #startNow().
+      resolveRenderer: () => {
+        throw new Error('resolution exploded');
+      },
+    });
+    expect(runtime.start()).toBe(true);
+
+    const original = globalThis.IntersectionObserver;
+    globalThis.IntersectionObserver = function broken(): never {
+      throw new Error('observer unavailable');
+    } as unknown as typeof IntersectionObserver;
+    readyState.mockReturnValue('interactive');
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+    globalThis.IntersectionObserver = original;
+
+    expect(codes).toContain('LP0605');
+    expect(contexts).toContain('startup');
+
+    runtime.destroy();
+    readyState.mockRestore();
+  });
+
   it('destroy() before DOMContentLoaded cancels the pending startup', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const readyState = vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
