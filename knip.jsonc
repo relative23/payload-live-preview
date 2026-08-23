@@ -21,6 +21,8 @@
     "src/adapters/sveltekit/index.ts",
     "src/doctor/index.ts",
     "src/doctor/cli.ts",
+    // esbuild entry for the static-delivery bootstrap; nothing imports it.
+    "src/core/loader.ts",
     "scripts/api-contracts.ts",
     "tests/**/*.{test,spec,bench}.ts",
     "*.config.ts",

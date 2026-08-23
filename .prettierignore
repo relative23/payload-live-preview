@@ -3,6 +3,7 @@ node_modules/
 dist/
 coverage/
 src/inline/runtime.generated.ts
+src/inline/loader.generated.ts
 package-lock.json
 examples/**/package-lock.json
 

@@ -141,7 +141,29 @@ import RichText from 'payload-live-preview/astro/RichText.astro';
 <RichText value={page.body} field="body" class="prose" />
 ```
 
-**Injection modes.** The default (`mode: 'inline'`) bakes the runtime into every page at build time — right for `output: 'static'`, where no middleware runs at request time. For SSR projects (`output: 'server'`), request-time injection can limit the bytes to requests carrying preview intent:
+**Injection modes.** Three, and for a statically built site the default is rarely the best one.
+
+`mode: 'inline'` (the default) bakes the runtime into every page at build time. Simple, and it works without a server — but every ordinary visitor downloads and parses ~21 KB gzip for a feature only an editor uses.
+
+`mode: 'loader'` is the same deal without that cost. The page carries a few hundred bytes that check the preview context and fetch the runtime as a content-hashed, SRI-verified asset **only inside a preview**. Measured on the Astro fixture in this repository:
+
+|                  | `index.html`    |
+| ---------------- | --------------- |
+| `mode: 'inline'` | 70 314 bytes    |
+| `mode: 'loader'` | **3 151 bytes** |
+
+That is per page, so a hundred-page site saves it a hundred times. The asset is published once at `/_payload-live-preview/runtime.<hash>.js`, cached across every page, and — because the configuration stays in the inline bootstrap — byte identical for every site on this version. It therefore cannot carry a deployment secret, and a redeploy that did not change the runtime does not invalidate the cached copy. `astro dev` serves the same path from memory, so development and production behave the same.
+
+```ts
+livePreview({
+  mode: 'loader',
+  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+}),
+```
+
+The trade is one extra request the first time an editor opens a preview. If your CSP restricts `script-src`, the asset is a normal same-origin script and needs no `'unsafe-inline'`; the small bootstrap is inline and takes the nonce like any other injected script.
+
+For SSR projects (`output: 'server'`), request-time injection can limit the bytes to requests carrying preview intent:
 
 ```ts
 livePreview({

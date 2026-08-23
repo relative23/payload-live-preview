@@ -10,6 +10,11 @@ export interface LivePreviewAstroOptions {
    *
    *   - `'inline'` (default) — bake the runtime into every page at
    *     build time. For `output: 'static'` projects.
+   *   - `'loader'` — inject a few hundred bytes that check the preview
+   *     context and fetch the runtime as a hashed, SRI-verified asset only
+   *     when it is one. Also for `output: 'static'`, and the better choice
+   *     there: `'inline'` charges every ordinary visitor ~21 KB gzip for a
+   *     feature only an editor uses.
    *   - `'middleware'` — auto-register the preview middleware:
    *     request-time injection into requests with preview intent,
    *     plus `frame-ancestors` CSP management. For `output: 'server'`.
@@ -20,7 +25,7 @@ export interface LivePreviewAstroOptions {
    * must be access-controlled, compose `createLivePreviewMiddleware()`
    * manually after an application-owned server-side authorization.
    */
-  readonly mode?: 'inline' | 'middleware';
+  readonly mode?: 'inline' | 'loader' | 'middleware';
 
   /**
    * Allowed Payload admin origin(s) for inbound browser messages and

@@ -17,7 +17,7 @@ const PACKAGE_JSON = resolve(ROOT, 'package.json');
 // Budgets include narrow headroom for patch-level correctness fixes while still
 // failing the unminified 1.0.4 artifacts. Public names and source maps are retained.
 const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
-  'adapters/astro/index.js': { raw: 76_500, gzip: 23_800, brotli: 21_100 },
+  'adapters/astro/index.js': { raw: 78_500, gzip: 24_700, brotli: 21_900 },
   'adapters/astro/middleware-entry.js': { raw: 74_500, gzip: 23_400, brotli: 20_700 },
   'adapters/nextjs/index.js': { raw: 75_000, gzip: 23_400, brotli: 20_700 },
   'adapters/nuxt/index.js': { raw: 75_000, gzip: 23_400, brotli: 20_700 },

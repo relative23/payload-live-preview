@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 90,
-    "suites": 266,
-    "tests": 1399,
+    "files": 93,
+    "suites": 272,
+    "tests": 1422,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 74,
-      "suites": 237,
-      "tests": 1303,
+      "files": 77,
+      "suites": 243,
+      "tests": 1326,
       "benchmarks": 0
     }
   },
@@ -175,8 +175,8 @@
     {
       "path": "tests/unit/adapters/astro.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 27,
+      "suites": 5,
+      "tests": 36,
       "benchmarks": 0
     },
     {
@@ -317,6 +317,13 @@
       "group": "unit",
       "suites": 6,
       "tests": 99,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/loader-source.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -471,6 +478,20 @@
       "group": "unit",
       "suites": 3,
       "tests": 19,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/inline-loader-guard.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/inline-loader.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 10,
       "benchmarks": 0
     },
     {

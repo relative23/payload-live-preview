@@ -335,10 +335,28 @@ describe('livePreview integration — middleware mode', () => {
   function makeSetupContext() {
     const injectScript = vi.fn();
     const addMiddleware = vi.fn();
+    // Mirrors the integration's own shim: `resolveId`/`load` belong to the
+    // middleware mode's virtual module, `configureServer` to the loader
+    // mode's dev route, and no plugin carries all three.
     const plugins: {
       name: string;
-      resolveId: (id: string) => string | undefined;
-      load: (id: string) => string | undefined;
+      resolveId?: (id: string) => string | undefined;
+      load?: (id: string) => string | undefined;
+      configureServer?: (server: {
+        middlewares: {
+          use: (
+            handler: (
+              req: { url?: string | undefined },
+              res: {
+                statusCode: number;
+                setHeader: (n: string, v: string) => void;
+                end: (b?: string) => void;
+              },
+              next: () => void,
+            ) => void,
+          ) => void;
+        };
+      }) => void;
     }[] = [];
     const updateConfig = vi.fn((config: { vite?: { plugins?: typeof plugins } }) => {
       plugins.push(...(config.vite?.plugins ?? []));
@@ -362,8 +380,8 @@ describe('livePreview integration — middleware mode', () => {
     });
 
     const plugin = ctx.plugins[0]!;
-    const resolved = plugin.resolveId('virtual:payload-live-preview/options')!;
-    const moduleSource = plugin.load(resolved)!;
+    const resolved = plugin.resolveId!('virtual:payload-live-preview/options')!;
+    const moduleSource = plugin.load!(resolved)!;
     expect(moduleSource).toContain('https://admin.example.com');
     expect(moduleSource).toMatch(/^export default \{/);
     // The mode marker itself must not leak into the middleware options.
@@ -386,7 +404,178 @@ describe('livePreview integration — middleware mode', () => {
     });
     integration.hooks['astro:config:setup'](ctx);
     const plugin = ctx.plugins[0]!;
-    const source = plugin.load(plugin.resolveId('virtual:payload-live-preview/options')!)!;
+    const source = plugin.load!(plugin.resolveId!('virtual:payload-live-preview/options')!)!;
     expect(source).not.toContain('</script>');
+  });
+});
+
+describe('livePreview integration — loader mode', () => {
+  function makeLoaderContext(base?: string) {
+    const injectScript = vi.fn();
+    const plugins: {
+      name: string;
+      generateBundle?: (this: {
+        emitFile: (file: { type: 'asset'; fileName: string; source: string }) => void;
+      }) => void;
+      configureServer?: (server: {
+        middlewares: {
+          use: (
+            handler: (
+              req: { url?: string | undefined },
+              res: {
+                statusCode: number;
+                setHeader: (n: string, v: string) => void;
+                end: (b?: string) => void;
+              },
+              next: () => void,
+            ) => void,
+          ) => void;
+        };
+      }) => void;
+    }[] = [];
+    const updateConfig = vi.fn((config: { vite?: { plugins?: typeof plugins } }) => {
+      plugins.push(...(config.vite?.plugins ?? []));
+    });
+    return {
+      injectScript,
+      updateConfig,
+      plugins,
+      ...(base === undefined ? {} : { config: { base } }),
+    };
+  }
+
+  /** Drive the dev-server plugin and capture what it answers for one URL. */
+  function requestFromDevServer(
+    plugin: { configureServer?: (server: never) => void },
+    url: string,
+  ): { handled: boolean; status?: number; headers: Record<string, string>; body?: string } {
+    const headers: Record<string, string> = {};
+    let handled = false;
+    let status: number | undefined;
+    let body: string | undefined;
+    const server = {
+      middlewares: {
+        use(handler: (req: unknown, res: unknown, next: () => void) => void) {
+          handler(
+            { url },
+            {
+              set statusCode(value: number) {
+                status = value;
+              },
+              setHeader(name: string, value: string) {
+                headers[name] = value;
+              },
+              end(chunk?: string) {
+                handled = true;
+                body = chunk;
+              },
+            },
+            () => {
+              handled = false;
+            },
+          );
+        },
+      },
+    };
+    plugin.configureServer?.(server as never);
+    return {
+      handled,
+      ...(status === undefined ? {} : { status }),
+      headers,
+      ...(body === undefined ? {} : { body }),
+    };
+  }
+
+  it('injects the bootstrap instead of the runtime', () => {
+    const ctx = makeLoaderContext();
+    livePreview({ mode: 'loader', allowedOrigins: ['https://admin.example.com'] }).hooks[
+      'astro:config:setup'
+    ](ctx);
+
+    const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
+    expect(ctx.injectScript).toHaveBeenCalledTimes(1);
+    expect(injected).toContain('https://admin.example.com');
+    expect(injected).toContain('integrity');
+    // The saving only exists if the runtime body stays out of the page.
+    expect(injected).not.toContain('MutationObserver');
+    expect(injected.length).toBeLessThan(2000);
+  });
+
+  it('points the bootstrap at a content-hashed path with an SRI hash', () => {
+    const ctx = makeLoaderContext();
+    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
+
+    expect(injected).toMatch(/_payload-live-preview\/runtime\.[0-9a-f]{16}\.js/u);
+    expect(injected).toMatch(/sha384-[A-Za-z0-9+/=]+/u);
+  });
+
+  it('honours Astro base so a site under a subpath still finds the asset', () => {
+    const ctx = makeLoaderContext('/docs/');
+    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
+    expect(injected).toContain('/docs/_payload-live-preview/runtime.');
+  });
+
+  it('serves the runtime during astro dev from the same path it will be built to', () => {
+    const ctx = makeLoaderContext();
+    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
+    const urlPath = /"(\/_payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(injected)?.[1];
+    expect(urlPath).toBeDefined();
+
+    const answer = requestFromDevServer(ctx.plugins[0]!, urlPath!);
+    expect(answer.handled).toBe(true);
+    expect(answer.status).toBe(200);
+    expect(answer.headers['Content-Type']).toContain('javascript');
+    expect(answer.body).toContain('MutationObserver');
+  });
+
+  it('ignores a query string so a cache-busting reload still resolves', () => {
+    const ctx = makeLoaderContext();
+    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
+    const urlPath = /"(\/_payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(injected)?.[1];
+
+    expect(requestFromDevServer(ctx.plugins[0]!, `${urlPath!}?v=2`).handled).toBe(true);
+  });
+
+  it('passes every other request through untouched', () => {
+    const ctx = makeLoaderContext();
+    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    expect(requestFromDevServer(ctx.plugins[0]!, '/index.html').handled).toBe(false);
+  });
+
+  it('does nothing at all when autoInject is off', () => {
+    const ctx = makeLoaderContext();
+    livePreview({ mode: 'loader', autoInject: false }).hooks['astro:config:setup'](ctx);
+    expect(ctx.injectScript).not.toHaveBeenCalled();
+    expect(ctx.plugins).toEqual([]);
+  });
+
+  it('emits the asset into the build output at the injected path', () => {
+    const ctx = makeLoaderContext();
+    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
+    const urlPath = /"(\/_payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(injected)?.[1];
+
+    const emitted: { fileName: string; source: string }[] = [];
+    ctx.plugins[0]!.generateBundle?.call({
+      emitFile: (file) => emitted.push({ fileName: file.fileName, source: file.source }),
+    });
+
+    // The bootstrap requests exactly this path. If the two ever disagree the
+    // preview 404s in production and nowhere else.
+    expect(emitted).toHaveLength(1);
+    expect(`/${emitted[0]!.fileName}`).toBe(urlPath);
+    expect(emitted[0]!.source).toContain('MutationObserver');
+  });
+
+  it('registers no asset plugin in the default inline mode', () => {
+    // The emitter is armed only by loader mode; an inline build must not grow
+    // a second copy of the runtime beside the one already in its pages.
+    const ctx = makeLoaderContext();
+    livePreview({}).hooks['astro:config:setup'](ctx);
+    expect(ctx.plugins).toEqual([]);
   });
 });

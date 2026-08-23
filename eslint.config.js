@@ -15,6 +15,7 @@ export default tseslint.config(
       'test-results/**',
       '*.config.js',
       'src/inline/runtime.generated.ts',
+      'src/inline/loader.generated.ts',
     ],
   },
   js.configs.recommended,
