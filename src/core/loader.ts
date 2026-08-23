@@ -46,6 +46,12 @@ function loadRuntime(): void {
     script.integrity = __LP_RUNTIME_INTEGRITY__;
     script.crossOrigin = 'anonymous';
   }
+  // Matches the platform default for a script created with `createElement`,
+  // which is already non-blocking. Stated anyway so a reader does not have to
+  // recall that rule. Its mutation is deliberately unkillable: with exactly
+  // one inserted script there is no observable difference between `true` and
+  // `false`, so no honest test can pin it and inventing one would only assert
+  // the assignment back at itself.
   script.async = true;
   document.head.appendChild(script);
 }

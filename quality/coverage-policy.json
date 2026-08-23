@@ -32,6 +32,11 @@
       "functions": 95,
       "branches": 82
     },
+    "src/core/loader.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/message-bus.ts": {
       "lines": 98,
       "functions": 100,
