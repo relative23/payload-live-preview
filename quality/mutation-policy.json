@@ -26,6 +26,7 @@
     "src/core/data-merger.ts",
     "src/core/field-value.ts",
     "src/core/lifecycle.ts",
+    "src/core/loader.ts",
     "src/core/message-bus.ts",
     "src/core/observers.ts",
     "src/core/update-scheduler.ts",
@@ -36,8 +37,8 @@
     "src/security/url-validator.ts"
   ],
   "baseline": {
-    "total": 3844,
-    "mutationScoreMinimum": 80.12,
+    "total": 3856,
+    "mutationScoreMinimum": 80.16,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 1,
     "noCoverageMaximum": 62,
