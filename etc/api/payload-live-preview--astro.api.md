@@ -4,10 +4,10 @@
 
 ```ts
 
-import { c as createLivePreviewMiddleware } from '../../middleware-CkSeLZ-9.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-CkSeLZ-9.js';
-import { a as LivePreviewMiddleware } from '../../middleware-CkSeLZ-9.js';
-import { N as NONCE_LOCALS_KEY } from '../../middleware-CkSeLZ-9.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-DD4Hwomt.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-DD4Hwomt.js';
+import { a as LivePreviewMiddleware } from '../../middleware-DD4Hwomt.js';
+import { N as NONCE_LOCALS_KEY } from '../../middleware-DD4Hwomt.js';
 
 // @public (undocumented)
 interface AstroConfigSetupContext {
@@ -16,6 +16,9 @@ interface AstroConfigSetupContext {
         entrypoint: string;
         order: 'pre' | 'post';
     }) => void;
+    readonly config?: {
+        readonly base?: string;
+    };
     // Warning: (ae-forgotten-export) The symbol "ScriptStage" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -39,6 +42,22 @@ export interface AstroIntegrationLike {
 }
 
 export { createLivePreviewMiddleware }
+
+// @public (undocumented)
+interface DevRequest {
+    // (undocumented)
+    readonly url?: string | undefined;
+}
+
+// @public (undocumented)
+interface DevResponse {
+    // (undocumented)
+    end: (body?: string) => void;
+    // (undocumented)
+    setHeader: (name: string, value: string) => void;
+    // (undocumented)
+    statusCode: number;
+}
 
 // @public
 export function isPreviewRequest(request: PreviewRequestLike, options?: PreviewRequestOptions): boolean;
@@ -83,22 +102,50 @@ export interface RenderScriptOptions extends LivePreviewAstroOptions {
 }
 
 // @public
+interface RollupEmitContext {
+    // (undocumented)
+    emitFile: (file: {
+        type: 'asset';
+        fileName: string;
+        source: string;
+    }) => void;
+}
+
+// @public
 type ScriptStage = 'head-inline' | 'page' | 'before-hydration' | 'page-ssr';
+
+// @public
+interface ViteDevServerLike {
+    // (undocumented)
+    readonly middlewares: {
+        use: (handler: (req: DevRequest, res: DevResponse, next: () => void) => void) => void;
+    };
+}
 
 // @public (undocumented)
 interface VitePluginLike {
+    // Warning: (ae-forgotten-export) The symbol "ViteDevServerLike" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    readonly load: (id: string) => string | undefined;
+    readonly configureServer?: (server: ViteDevServerLike) => void;
+    // Warning: (ae-forgotten-export) The symbol "RollupEmitContext" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly generateBundle?: (this: RollupEmitContext) => void;
+    // (undocumented)
+    readonly load?: (id: string) => string | undefined;
     // (undocumented)
     readonly name: string;
     // (undocumented)
-    readonly resolveId: (id: string) => string | undefined;
+    readonly resolveId?: (id: string) => string | undefined;
 }
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/astro/index.d.ts:50:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:57:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:55:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:55:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:74:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:85:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

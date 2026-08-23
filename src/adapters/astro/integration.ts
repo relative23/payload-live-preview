@@ -30,22 +30,44 @@
  * @module @adapters/astro/integration
  */
 
-import { generateInlineScript } from '@inline/generator';
+import { generateInlineScript, generateLoaderScript } from '@inline/generator';
+import { loaderAsset } from './loader-asset';
 import type { LivePreviewAstroOptions } from './types';
 
 // Local Astro type shims — keep `astro` as a runtime-optional peer.
 type ScriptStage = 'head-inline' | 'page' | 'before-hydration' | 'page-ssr';
 interface VitePluginLike {
   readonly name: string;
-  readonly resolveId: (id: string) => string | undefined;
-  readonly load: (id: string) => string | undefined;
+  readonly resolveId?: (id: string) => string | undefined;
+  readonly load?: (id: string) => string | undefined;
+  readonly configureServer?: (server: ViteDevServerLike) => void;
+  readonly generateBundle?: (this: RollupEmitContext) => void;
+}
+/** The one Rollup facility this needs: publishing a file into the output. */
+interface RollupEmitContext {
+  emitFile: (file: { type: 'asset'; fileName: string; source: string }) => void;
+}
+/** Just enough of Vite's dev server to serve one file. */
+interface ViteDevServerLike {
+  readonly middlewares: {
+    use: (handler: (req: DevRequest, res: DevResponse, next: () => void) => void) => void;
+  };
+}
+interface DevRequest {
+  readonly url?: string | undefined;
+}
+interface DevResponse {
+  statusCode: number;
+  setHeader: (name: string, value: string) => void;
+  end: (body?: string) => void;
 }
 interface AstroConfigSetupContext {
   readonly injectScript: (stage: ScriptStage, content: string) => void;
   readonly addMiddleware?: (entry: { entrypoint: string; order: 'pre' | 'post' }) => void;
   readonly updateConfig?: (config: { vite?: { plugins?: VitePluginLike[] } }) => void;
+  /** Astro's configured `base`; absent on versions that do not expose it. */
+  readonly config?: { readonly base?: string };
 }
-
 export interface AstroIntegrationLike {
   readonly name: string;
   readonly hooks: {
@@ -72,20 +94,87 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
           return;
         }
         if (options.autoInject === false) return;
-        const script = generateInlineScript({
-          ...(options.allowedOrigins !== undefined
-            ? { allowedOrigins: options.allowedOrigins }
-            : {}),
-          ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
-          ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
-          ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
-          ...(options.debug !== undefined ? { debug: options.debug } : {}),
-          ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-          ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-        });
-        ctx.injectScript('head-inline', script);
+        if (options.mode === 'loader') {
+          setupLoaderMode(ctx, options);
+          return;
+        }
+        ctx.injectScript('head-inline', generateInlineScript(inlineConfigFrom(options)));
       },
     },
+  };
+}
+
+/**
+ * Static delivery: inject a few hundred bytes, publish the runtime beside it.
+ *
+ * The bootstrap goes into every page like the inline script does, but it only
+ * fetches the runtime when the page is actually a preview. Ordinary visitors
+ * pay the bootstrap and nothing else.
+ *
+ * The asset is written twice over a project's life and by two different
+ * mechanisms: a dev-server route while `astro dev` runs, and a real file when
+ * the build finishes. Both serve the identical bytes from the identical path,
+ * so a preview behaves the same in development and in production.
+ */
+function setupLoaderMode(ctx: AstroConfigSetupContext, options: LivePreviewAstroOptions): void {
+  const asset = loaderAsset(ctx.config?.base ?? '/');
+
+  ctx.injectScript(
+    'head-inline',
+    generateLoaderScript(inlineConfigFrom(options), {
+      runtimeSrc: asset.urlPath,
+      integrity: asset.integrity,
+    }),
+  );
+
+  // One plugin covers both lifetimes: `generateBundle` puts the file in the
+  // build output, `configureServer` answers the same path during `astro dev`.
+  // Emitting through Vite rather than writing it from an Astro hook keeps this
+  // module free of Node builtins — it is reachable from a browser entry, and
+  // the architecture policy refuses them there.
+  ctx.updateConfig?.({
+    vite: {
+      plugins: [
+        {
+          name: 'payload-live-preview:loader-asset',
+          generateBundle() {
+            this.emitFile({ type: 'asset', fileName: asset.fileName, source: asset.source });
+          },
+          configureServer(server) {
+            server.middlewares.use((req, res, next) => {
+              // Compare against the path only: a query string would otherwise
+              // make the runtime 404 on the first cache-busting reload.
+              const path = (req.url ?? '').split('?')[0];
+              if (path !== asset.urlPath) {
+                next();
+                return;
+              }
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+              // No long cache in development: the file changes whenever the
+              // installed package does, and a stale one is hard to notice.
+              res.setHeader('Cache-Control', 'no-cache');
+              res.end(asset.source);
+            });
+          },
+        },
+      ],
+    },
+  });
+}
+
+/** Narrow adapter options down to what the inline generator accepts. */
+function inlineConfigFrom(
+  options: LivePreviewAstroOptions,
+): Parameters<typeof generateInlineScript>[0] {
+  return {
+    ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
+    ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
+    ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
+    ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
+    ...(options.debug !== undefined ? { debug: options.debug } : {}),
+    ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
+    ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
   };
 }
 

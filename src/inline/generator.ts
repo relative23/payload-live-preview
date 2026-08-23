@@ -13,6 +13,7 @@
  */
 
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
+import { LOADER_SOURCE } from './loader.generated';
 
 export interface InlineScriptConfig {
   /** Additional trusted origins to merge with auto-detected ones. */
@@ -107,6 +108,21 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
       '[live-preview] runtime.generated.ts is empty. Run `npm run build:runtime` before bundling.',
     );
   }
+  // The IIFE declares its own scope. We inject the config via a `var`
+  // declaration that the bundled runtime reads back through the
+  // `__LIVE_PREVIEW_CONFIG__` constant placeholder. The identifier is retained
+  // across 1.0.x because existing deployments use it as a non-secret runtime
+  // presence/leak signal in response-level integration tests.
+  return [`var __LIVE_PREVIEW_CONFIG__=${buildConfigLiteral(config)};`, RUNTIME_SOURCE].join('\n');
+}
+
+/**
+ * Serialize the runtime configuration into the compact wire literal.
+ *
+ * Shared by the inline script and the static-delivery bootstrap so the two can
+ * never disagree about the format. The runtime destructures this positionally.
+ */
+function buildConfigLiteral(config: InlineScriptConfig): string {
   // Compact private wire format; keep this order aligned with
   // `RuntimeBuildConfig` in `src/core/runtime.ts`.
   const compactConfig: unknown[] = [
@@ -134,12 +150,57 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
   const configLiteral = `[${compactConfig
     .map((value) => (value === undefined ? '' : JSON.stringify(value)))
     .join(',')}]`.replace(/</g, '\\u003C');
-  // The IIFE declares its own scope. We inject the config via a global
-  // assignment that the bundled runtime reads back through the
-  // `__LIVE_PREVIEW_CONFIG__` constant placeholder. The identifier is retained
-  // across 1.0.x because existing deployments use it as a non-secret runtime
-  // presence/leak signal in response-level integration tests.
-  return [`var __LIVE_PREVIEW_CONFIG__=${configLiteral};`, RUNTIME_SOURCE].join('\n');
+  return configLiteral;
+}
+
+/** Where the runtime asset lives, and how the browser should verify it. */
+export interface LoaderScriptTarget {
+  /** URL the bootstrap appends. Same-origin or absolute; hashed by the caller. */
+  readonly runtimeSrc: string;
+  /**
+   * Subresource-integrity value for that asset, e.g. `sha384-…`.
+   *
+   * Empty disables the check and the `crossorigin` attribute that enforcement
+   * requires. Only appropriate where the asset is served from the same origin
+   * as the page and the deployment already guarantees they ship together.
+   */
+  readonly integrity?: string;
+}
+
+/**
+ * Generate the static-delivery bootstrap instead of the whole runtime.
+ *
+ * Emits the configuration plus a few hundred bytes that check the preview
+ * context and, only then, append the runtime as an external script. A
+ * statically built site otherwise bakes the full runtime into every page,
+ * charging every ordinary visitor for a feature only an editor uses.
+ *
+ * The runtime asset stays configuration-free: the config lives in this inline
+ * body, so the asset is byte identical across sites and deployments — which is
+ * what lets it be cached and hashed, and what makes it structurally incapable
+ * of carrying a token.
+ */
+export function generateLoaderScript(
+  config: InlineScriptConfig = {},
+  target: LoaderScriptTarget,
+): string {
+  if (LOADER_SOURCE.length === 0) {
+    throw new Error(
+      '[live-preview] loader.generated.ts is empty. Run `npm run build:runtime` before bundling.',
+    );
+  }
+  if (target.runtimeSrc === '') {
+    throw new Error('[live-preview] generateLoaderScript needs a runtimeSrc.');
+  }
+  // `<` must never appear literally inside an inline <script> body: a
+  // consumer-supplied URL containing `</script>` would terminate the tag.
+  const encode = (value: string): string => JSON.stringify(value).replace(/</gu, '\\u003C');
+  return [
+    `var __LIVE_PREVIEW_CONFIG__=${buildConfigLiteral(config)};`,
+    `var __LP_RUNTIME_SRC__=${encode(target.runtimeSrc)};`,
+    `var __LP_RUNTIME_INTEGRITY__=${encode(target.integrity ?? '')};`,
+    LOADER_SOURCE,
+  ].join('\n');
 }
 
 /**

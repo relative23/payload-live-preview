@@ -31,8 +31,17 @@ export interface ApiReportCheckOptions {
   readonly updateReports: boolean;
 }
 
-/** Reviewed 1.0.x debt visible in the API reports, never a blanket warning ignore. */
-export const FORGOTTEN_EXPORT_BASELINE = 48;
+/**
+ * Reviewed 1.0.x debt visible in the API reports, never a blanket warning ignore.
+ *
+ * 48 → 52 for static delivery: `AstroIntegrationLike` is public and reaches
+ * four more local shims through it — `ViteDevServerLike`, `DevRequest`,
+ * `DevResponse` and `RollupEmitContext`. They describe the slivers of Vite and
+ * Rollup the loader mode touches, exist only to keep `astro` and `vite` as
+ * runtime-optional peers, and exporting them would put third-party structural
+ * types on this package's surface for no consumer benefit.
+ */
+export const FORGOTTEN_EXPORT_BASELINE = 52;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.
