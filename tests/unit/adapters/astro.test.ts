@@ -571,6 +571,34 @@ describe('livePreview integration — loader mode', () => {
     expect(emitted[0]!.source).toContain('MutationObserver');
   });
 
+  it('refuses loudly when Astro cannot publish the asset', () => {
+    // Without updateConfig there is no Vite plugin, so nothing emits the asset
+    // and nothing serves it — while the bootstrap is injected anyway and points
+    // at a URL that 404s. Ordinary pages look fine and only the preview stays
+    // dead, with no message anywhere. Middleware mode already refuses this.
+    expect(() =>
+      livePreview({ mode: 'loader' }).hooks['astro:config:setup']({
+        injectScript: vi.fn(),
+      }),
+    ).toThrow(/updateConfig/u);
+  });
+
+  it.each([
+    ['/', '/_payload-live-preview/'],
+    ['', '/_payload-live-preview/'],
+    ['/docs/', '/docs/_payload-live-preview/'],
+    ['/docs', '/docs/_payload-live-preview/'],
+    ['docs', '/docs/_payload-live-preview/'],
+    ['//docs//', '/docs/_payload-live-preview/'],
+    ['/a/b/', '/a/b/_payload-live-preview/'],
+  ])('normalises base %j to %j', (base, expected) => {
+    // A wrong URL here is a 404 nobody sees: the page renders, the preview
+    // simply never wakes up.
+    const ctx = makeLoaderContext(base);
+    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    expect(ctx.injectScript.mock.calls[0]?.[1] as string).toContain(expected);
+  });
+
   it('registers no asset plugin in the default inline mode', () => {
     // The emitter is armed only by loader mode; an inline build must not grow
     // a second copy of the runtime beside the one already in its pages.

@@ -117,6 +117,19 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
  * so a preview behaves the same in development and in production.
  */
 function setupLoaderMode(ctx: AstroConfigSetupContext, options: LivePreviewAstroOptions): void {
+  // Without `updateConfig` there is no Vite plugin, so nothing emits the asset
+  // and nothing serves it — while the bootstrap is injected all the same and
+  // points at a URL that will 404. That failure is invisible: ordinary pages
+  // render fine and only a preview stays dead, with no message anywhere.
+  // Refuse up front, the way middleware mode already does.
+  if (ctx.updateConfig === undefined) {
+    throw new Error(
+      "payload-live-preview: mode 'loader' needs Astro's updateConfig hook " +
+        '(Astro >= 4) to publish the runtime asset. Upgrade Astro or use the ' +
+        'default inline mode.',
+    );
+  }
+
   const asset = loaderAsset(ctx.config?.base ?? '/');
 
   ctx.injectScript(
@@ -132,7 +145,7 @@ function setupLoaderMode(ctx: AstroConfigSetupContext, options: LivePreviewAstro
   // Emitting through Vite rather than writing it from an Astro hook keeps this
   // module free of Node builtins — it is reachable from a browser entry, and
   // the architecture policy refuses them there.
-  ctx.updateConfig?.({
+  ctx.updateConfig({
     vite: {
       plugins: [
         {

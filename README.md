@@ -161,7 +161,9 @@ livePreview({
 }),
 ```
 
-The trade is one extra request the first time an editor opens a preview. If your CSP restricts `script-src`, the asset is a normal same-origin script and needs no `'unsafe-inline'`; the small bootstrap is inline and takes the nonce like any other injected script.
+The trade is one extra request the first time an editor opens a preview.
+
+Under a strict CSP, the asset itself is unremarkable: a same-origin script with an `integrity` attribute, needing no `'unsafe-inline'`. The bootstrap does need covering, though — a static build has no request, so there is no per-request nonce to attach and Astro emits it as a plain inline `<script>`. Its content is deterministic for a given package version and configuration, so the practical answer is a `'sha256-…'` source expression rather than `'unsafe-inline'`. `mode: 'middleware'` is the option that can carry a real nonce, because there a request exists to derive one from.
 
 For SSR projects (`output: 'server'`), request-time injection can limit the bytes to requests carrying preview intent:
 
