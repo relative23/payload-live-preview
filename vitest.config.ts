@@ -24,7 +24,6 @@ export default defineConfig({
         'src/index.ts',
         'src/**/index.ts',
         'src/**/types.ts',
-        'src/adapters/**',
         'src/types/**',
         'src/inline/runtime.generated.ts',
         // Type-only interface module (no executable statements).
@@ -47,6 +46,12 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // Provided by the integration's Vite plugin in a real build; a
+      // fixture here so the middleware entry can be imported and measured.
+      'virtual:payload-live-preview/options': resolve(
+        import.meta.dirname,
+        'tests/fixtures/astro-virtual-options.ts',
+      ),
       '@': resolve(import.meta.dirname, 'src'),
       '@core': resolve(import.meta.dirname, 'src/core'),
       '@security': resolve(import.meta.dirname, 'src/security'),

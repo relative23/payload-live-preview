@@ -93,3 +93,20 @@ describe('isPreviewRequest — signal restriction', () => {
     ).toBe(true);
   });
 });
+
+describe('isPreviewRequest — a url the URL parser rejects', () => {
+  it('treats an unparseable url as "no query signal" rather than throwing', () => {
+    // Adapters synthesise a Request-like object from framework events, and a
+    // malformed one must not take the whole request down. The other signals
+    // still have to work.
+    const bogus = { url: 'not a url', headers: new Headers() } as unknown as Request;
+    expect(() => isPreviewRequest(bogus, { adminOrigins: [] })).not.toThrow();
+    expect(isPreviewRequest(bogus, { adminOrigins: [] })).toBe(false);
+
+    const iframe = {
+      url: '::::',
+      headers: new Headers({ 'sec-fetch-dest': 'iframe' }),
+    } as unknown as Request;
+    expect(isPreviewRequest(iframe, { adminOrigins: [] })).toBe(true);
+  });
+});
