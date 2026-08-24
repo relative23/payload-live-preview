@@ -18,7 +18,7 @@
   "totals": {
     "files": 97,
     "suites": 294,
-    "tests": 1486,
+    "tests": 1488,
     "benchmarks": 10
   },
   "groups": {
@@ -55,7 +55,7 @@
     "unit": {
       "files": 81,
       "suites": 265,
-      "tests": 1390,
+      "tests": 1392,
       "benchmarks": 0
     }
   },
@@ -323,7 +323,7 @@
       "path": "tests/unit/core/inspection.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 13,
+      "tests": 15,
       "benchmarks": 0
     },
     {

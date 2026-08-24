@@ -177,9 +177,11 @@ export function initLivePreview(config?: LivePreviewClientConfig): LivePreviewCl
 
 // @public
 export interface InspectionBindings {
+    readonly absentFields: readonly string[];
     readonly elements: number;
     readonly fieldNames: readonly string[];
     readonly fields: number;
+    // (undocumented)
     readonly orphanFields: readonly string[];
     readonly owners: readonly string[];
     readonly ownerScoped: boolean;
@@ -612,7 +614,7 @@ interface WebCryptoLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/core.d.ts:231:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point core.d.ts
+// dist/core.d.ts:242:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point core.d.ts
 
 // (No @packageDocumentation comment for this package)
 

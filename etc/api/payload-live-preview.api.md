@@ -280,9 +280,11 @@ export interface InlineScriptConfig {
 
 // @public
 export interface InspectionBindings {
+    readonly absentFields: readonly string[];
     readonly elements: number;
     readonly fieldNames: readonly string[];
     readonly fields: number;
+    // (undocumented)
     readonly orphanFields: readonly string[];
     readonly owners: readonly string[];
     readonly ownerScoped: boolean;
@@ -882,7 +884,7 @@ export function wrapWithScriptTag(body: string, options?: {
 
 // Warnings were encountered during analysis:
 //
-// dist/index.d.ts:246:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
+// dist/index.d.ts:257:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
