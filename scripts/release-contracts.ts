@@ -801,12 +801,19 @@ export function findReleaseWorkflowViolations(
     ],
     violations,
   );
+  // stderr must stay out of $registry_result. It is compared against the
+  // package version to decide whether to publish, and npm writes config
+  // warnings to stderr: merging them made the two unequal for reasons that
+  // have nothing to do with the registry, so the gate read an already
+  // published version as unpublished. The final clause forbids that regression
+  // rather than pinning only the shape of the command.
   if (
-    !has(gate, /registry_result=\$\(npm view "\$name@\$version" version 2>&1\)/) ||
+    !has(gate, /registry_result=\$\(npm view "\$name@\$version" version 2>"\$registry_stderr"\)/) ||
     !has(gate, /registry_status=\$\?/) ||
-    !has(gate, /elif echo "\$registry_result" \| grep -q ['"]E404['"]; then/) ||
+    !has(gate, /elif grep -q ['"]E404['"] "\$registry_stderr"; then/) ||
     !has(gate, /else .*exit "\$registry_status" .*fi/) ||
-    has(gate, /npm view .*\|\|\s*true/)
+    has(gate, /npm view .*\|\|\s*true/) ||
+    has(gate, /registry_result=\$\([^)]*2>&1[^)]*\)/)
   ) {
     violations.push('release registry lookup does not fail closed');
   }
