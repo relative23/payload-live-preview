@@ -251,6 +251,7 @@ const enum RuntimeLifecycleSlot {
   WarnedVisibilityGate,
   SupersededCount,
   LastFlush,
+  AbsentFields,
 }
 
 /** State that changes as the runtime starts, accepts revisions, and stops. */
@@ -268,6 +269,7 @@ type RuntimeLifecycleState = [
   warnedVisibilityGate: boolean,
   supersededCount: number,
   lastFlush: FlushStats | null,
+  absentFields: Set<string>,
 ];
 
 export class LivePreviewRuntime {
@@ -410,6 +412,7 @@ export class LivePreviewRuntime {
       false,
       0,
       null,
+      new Set<string>(),
     ];
   }
 
@@ -682,6 +685,7 @@ export class LivePreviewRuntime {
         elements: cache.elementCount,
         fields: cache.fieldCount,
         fieldNames: fieldNames.sort(),
+        absentFields: [...this.l[RuntimeLifecycleSlot.AbsentFields]].sort(),
         orphanFields: [...this.l[RuntimeLifecycleSlot.WarnedOrphanFields]].sort(),
         ownerScoped: this.d[RuntimeDependencySlot.ScopeBindingsByOwner],
         owners: [...owners].sort(),
@@ -972,7 +976,14 @@ export class LivePreviewRuntime {
           target.locale ?? transaction.locale,
           target.locale !== undefined,
         );
-        if (value === undefined) continue;
+        if (value === undefined) {
+          // Ein gebundenes Feld, fuer das die Nachricht keinen Wert traegt,
+          // wird hier uebersprungen. Das ist der Gegenfall zu orphanFields (ein
+          // Wert ohne Anker) und war von aussen unsichtbar: die Bindung bleibt
+          // auf ihrem alten Text stehen, ohne jede Spur.
+          this.l[RuntimeLifecycleSlot.AbsentFields].add(fieldName);
+          continue;
+        }
         // Transforms are arbitrary plugin code and may synchronously dispatch a
         // newer message. Stop the obsolete revision at that callback boundary
         // before invoking another transform or scheduling any of its result.

@@ -78,6 +78,17 @@ export interface InspectionBindings {
    * to update: a name here is a markup problem, a name absent from here and
    * from `fieldNames` was never sent.
    */
+  /**
+   * Bound fields that some update since start carried no value for, so the
+   * binding kept whatever text it already had. Cumulative, like
+   * `orphanFields`, and the exact opposite of it: a binding with no value
+   * rather than a value with no binding.
+   *
+   * This is why a binding can stay stale while its siblings update. Without
+   * it the two cases are indistinguishable from the DOM, since neither
+   * leaves a trace.
+   */
+  readonly absentFields: readonly string[];
   readonly orphanFields: readonly string[];
   /** Whether `scopeBindingsByOwner` is active. */
   readonly ownerScoped: boolean;

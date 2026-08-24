@@ -180,6 +180,35 @@ describe('inspect() revision accounting', () => {
     expect(runtime.inspect().bindings.orphanFields).toContain('nosuchfield');
     runtime.destroy();
   });
+
+  it('names a bound field the update carried no value for', async () => {
+    // The opposite of an orphan: a binding with no value rather than a value
+    // with no binding. The binding keeps whatever text it had, which is
+    // indistinguishable from "the update never arrived" unless it is reported.
+    const runtime = createRuntime();
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { subtitle: 'only this one' } });
+    await vi.advanceTimersByTimeAsync(50);
+
+    const snapshot = runtime.inspect();
+    expect(snapshot.bindings.absentFields).toContain('title');
+    // The field that did arrive must not be listed as absent.
+    expect(snapshot.bindings.absentFields).not.toContain('subtitle');
+    runtime.destroy();
+  });
+
+  it('leaves absentFields empty while every bound field is carried', async () => {
+    const runtime = createRuntime();
+    runtime.start();
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title: 'a', subtitle: 'b' },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(runtime.inspect().bindings.absentFields).toEqual([]);
+    runtime.destroy();
+  });
 });
 
 describe('inspect() visibility gate', () => {
