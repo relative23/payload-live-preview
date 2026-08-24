@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 93,
-    "suites": 272,
-    "tests": 1424,
+    "files": 97,
+    "suites": 294,
+    "tests": 1485,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 77,
-      "suites": 243,
-      "tests": 1328,
+      "files": 81,
+      "suites": 265,
+      "tests": 1389,
       "benchmarks": 0
     }
   },
@@ -173,6 +173,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/astro-middleware-entry.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/astro.test.ts",
       "group": "unit",
       "suites": 5,
@@ -180,10 +187,31 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/nextjs.test.ts",
+      "group": "unit",
+      "suites": 6,
+      "tests": 21,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/nuxt.test.ts",
+      "group": "unit",
+      "suites": 8,
+      "tests": 21,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/preview-request.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 10,
+      "suites": 3,
+      "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/sveltekit.test.ts",
+      "group": "unit",
+      "suites": 6,
+      "tests": 17,
       "benchmarks": 0
     },
     {
