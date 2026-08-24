@@ -75,17 +75,25 @@ jobs:
 
           # A registry outage is not evidence that a version is unpublished.
           # Fail closed unless npm explicitly reports a missing package/version.
+          #
+          # stderr is captured to its own file rather than merged into the
+          # result. npm writes config warnings there, and folding them into
+          # $published made it unequal to $version for reasons that have
+          # nothing to do with the registry, which flips the comparison below
+          # to "not published" and asks the publisher to release over an
+          # existing version.
+          registry_stderr=$(mktemp)
           set +e
-          registry_result=$(npm view "$name@$version" version 2>&1)
+          registry_result=$(npm view "$name@$version" version 2>"$registry_stderr")
           registry_status=$?
           set -e
           if [ "$registry_status" -eq 0 ]; then
-            published=$registry_result
-          elif echo "$registry_result" | grep -q 'E404'; then
+            published=$(printf '%s\n' "$registry_result" | grep -v '^[[:space:]]*$' | tail -n 1 | tr -d '[:space:]')
+          elif grep -q 'E404' "$registry_stderr"; then
             published=
           else
             echo "npm registry lookup failed; refusing to infer an unpublished version"
-            echo "$registry_result"
+            cat "$registry_stderr"
             exit "$registry_status"
           fi
 
@@ -106,21 +114,25 @@ jobs:
               tagged=true
             fi
 
+            # Same reason as the npm lookup above: stderr stays out of the
+            # value that gets compared against "$tag".
+            release_stderr=$(mktemp)
             set +e
-            release_result=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq .tag_name 2>&1)
+            release_result=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq .tag_name 2>"$release_stderr")
             release_status=$?
             set -e
             if [ "$release_status" -eq 0 ]; then
+              release_result=$(printf '%s\n' "$release_result" | grep -v '^[[:space:]]*$' | tail -n 1 | tr -d '[:space:]')
               if [ "$release_result" != "$tag" ]; then
                 echo "GitHub returned an unexpected release tag: $release_result"
                 exit 1
               fi
               released=true
-            elif echo "$release_result" | grep -q 'HTTP 404'; then
+            elif grep -q 'HTTP 404' "$release_stderr"; then
               released=false
             else
               echo "GitHub release lookup failed; refusing to infer missing release state"
-              echo "$release_result"
+              cat "$release_stderr"
               exit "$release_status"
             fi
 

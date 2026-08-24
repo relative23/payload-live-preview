@@ -328,6 +328,32 @@ export function findDeepQualityWorkflowViolations(workflow: string): readonly st
   return violations;
 }
 
+/**
+ * The release gate decides whether a version reaches npm by comparing command
+ * output against the version in package.json. Merging stderr into that value
+ * defeats the comparison: an npm config warning once made `published` unequal
+ * to `version` for reasons unrelated to the registry, so the gate concluded an
+ * already-published version was unpublished and asked the publisher to release
+ * over it. Only the exact-artifact check downstream stopped it.
+ */
+function findReleaseGateViolations(release: string): string[] {
+  const violations: string[] = [];
+  const gate = jobBlock(release, 'gate');
+  forbidMatch(
+    violations,
+    gate,
+    /\$\([^)]*2>&1[^)]*\)/u,
+    'release gate must not merge stderr into a captured value; redirect it to a file instead',
+  );
+  requireMatch(
+    violations,
+    gate,
+    /registry_result=\$\(npm view "\$name@\$version" version 2>"\$registry_stderr"\)/u,
+    'release gate must read the published version with stderr kept separate',
+  );
+  return violations;
+}
+
 async function main(): Promise<void> {
   const repositoryRoot = resolve(import.meta.dirname, '..');
   const workflowDirectory = resolve(repositoryRoot, '.github/workflows');
@@ -342,9 +368,11 @@ async function main(): Promise<void> {
   );
   const codspeed = workflows.find(({ name }) => name === 'codspeed.yml')?.source ?? '';
   const deepQuality = workflows.find(({ name }) => name === 'deep-quality.yml')?.source ?? '';
+  const release = workflows.find(({ name }) => name === 'release.yml')?.source ?? '';
   const violations = [
     ...findCodspeedWorkflowViolations(codspeed),
     ...findDeepQualityWorkflowViolations(deepQuality),
+    ...findReleaseGateViolations(release),
     ...findWorkflowActionPinViolations(workflows),
   ];
   if (violations.length > 0) {
@@ -353,7 +381,7 @@ async function main(): Promise<void> {
     );
   }
   console.log(
-    'Quality workflow policy passed: immutable Actions, the CodSpeed harness and staged upload policy, and deep-quality gates are pinned.',
+    'Quality workflow policy passed: immutable Actions, the CodSpeed harness and staged upload policy, deep-quality gates, and the release gate stderr contract are pinned.',
   );
 }
 

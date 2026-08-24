@@ -1185,6 +1185,21 @@ describe('release workflow exact-commit contract', () => {
     );
   });
 
+  it('rejects a registry lookup that merges stderr into the compared value', () => {
+    // The value is compared against the package version to decide whether to
+    // publish. npm writes config warnings to stderr, so merging them made an
+    // already-published version read as unpublished and sent the publisher at
+    // a version that was already on the registry.
+    const workflow = readFileSync(RELEASE_WORKFLOW, 'utf8').replace(
+      'registry_result=$(npm view "$name@$version" version 2>"$registry_stderr")',
+      'registry_result=$(npm view "$name@$version" version 2>&1)',
+    );
+
+    expect(findReleaseWorkflowViolations(workflow, ciWorkflow)).toContain(
+      'release registry lookup does not fail closed',
+    );
+  });
+
   it('rejects a registry lookup that does not fail closed', () => {
     const workflow = readFileSync(RELEASE_WORKFLOW, 'utf8').replace(
       '            exit "$registry_status"',
