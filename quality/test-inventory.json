@@ -18,7 +18,7 @@
   "totals": {
     "files": 97,
     "suites": 294,
-    "tests": 1490,
+    "tests": 1491,
     "benchmarks": 10
   },
   "groups": {
@@ -55,7 +55,7 @@
     "unit": {
       "files": 81,
       "suites": 265,
-      "tests": 1394,
+      "tests": 1395,
       "benchmarks": 0
     }
   },
@@ -407,7 +407,7 @@
       "path": "tests/unit/core/update-scheduler.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 32,
+      "tests": 33,
       "benchmarks": 0
     },
     {
