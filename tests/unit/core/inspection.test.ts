@@ -197,6 +197,37 @@ describe('inspect() revision accounting', () => {
     runtime.destroy();
   });
 
+  it('names the fields the last flush applied, not just how many', async () => {
+    // A count cannot separate "this binding was written" from "this binding was
+    // never scheduled": a stale binding beside applied=3 is consistent with
+    // both. Diagnosing a real stale-binding failure needed exactly this.
+    const runtime = createRuntime();
+    runtime.start();
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title: 'a', subtitle: 'b' },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    const flush = runtime.inspect().scheduler.lastFlush;
+    expect(flush?.appliedFields).toContain('title');
+    expect(flush?.appliedFields).toContain('subtitle');
+    expect(flush?.appliedFields.length).toBe(flush?.applied);
+    runtime.destroy();
+  });
+
+  it('omits a field the update did not carry from appliedFields', async () => {
+    const runtime = createRuntime();
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { subtitle: 'only this' } });
+    await vi.advanceTimersByTimeAsync(50);
+
+    const flush = runtime.inspect().scheduler.lastFlush;
+    expect(flush?.appliedFields).toContain('subtitle');
+    expect(flush?.appliedFields).not.toContain('title');
+    runtime.destroy();
+  });
+
   it('leaves absentFields empty while every bound field is carried', async () => {
     const runtime = createRuntime();
     runtime.start();

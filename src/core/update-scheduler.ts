@@ -78,6 +78,14 @@ export interface UpdateSchedulerOptions {
 
 export interface FlushStats {
   readonly applied: number;
+  /**
+   * Field names this flush actually applied, in application order.
+   *
+   * `applied` alone cannot distinguish "the field was written" from "the
+   * field was never scheduled": a flush that applies three entries and a
+   * binding that stays stale are consistent with either. The names settle it.
+   */
+  readonly appliedFields: readonly string[];
   readonly deferred: number;
   readonly durationMs: number;
   readonly identity?: MessageRevision;
@@ -270,7 +278,15 @@ export class UpdateScheduler {
     if (!this.#isCurrent(entry)) return;
     const t0 = performance.now();
     const applied = this.#didApply(entry) ? 1 : 0;
-    this.s[SchedulerSlot.OnFlush]?.(this.#statsFor(entry, applied, 0, performance.now() - t0));
+    this.s[SchedulerSlot.OnFlush]?.(
+      this.#statsFor(
+        entry,
+        applied,
+        0,
+        performance.now() - t0,
+        applied === 1 ? [entry.target.fieldName] : [],
+      ),
+    );
   }
 
   /**
@@ -384,6 +400,7 @@ export class UpdateScheduler {
     this.s[SchedulerSlot.Pending] = new Map();
 
     let applied = 0;
+    const appliedFields: string[] = [];
     let deferred = 0;
     let batchEntry: BufferEntry | undefined;
     this.s[SchedulerSlot.ActiveFlushes].add(pending);
@@ -403,12 +420,21 @@ export class UpdateScheduler {
         // A visible write for this element supersedes any older replay entry,
         // including legacy/unversioned callers of the scheduler.
         this.s[SchedulerSlot.Replay].delete(entry.target.element);
-        if (this.#didApply(entry)) applied += 1;
+        if (this.#didApply(entry)) {
+          applied += 1;
+          appliedFields.push(entry.target.fieldName);
+        }
       }
     } finally {
       this.s[SchedulerSlot.ActiveFlushes].delete(pending);
     }
-    const stats = this.#statsFor(batchEntry, applied, deferred, performance.now() - t0);
+    const stats = this.#statsFor(
+      batchEntry,
+      applied,
+      deferred,
+      performance.now() - t0,
+      appliedFields,
+    );
     this.s[SchedulerSlot.OnFlush]?.(stats);
     return stats;
   }
@@ -455,9 +481,11 @@ export class UpdateScheduler {
     applied: number,
     deferred: number,
     durationMs: number,
+    appliedFields: readonly string[] = [],
   ): FlushStats {
     return {
       applied,
+      appliedFields,
       deferred,
       durationMs,
       ...(entry?.identity !== undefined ? { identity: entry.identity } : {}),

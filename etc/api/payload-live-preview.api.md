@@ -316,6 +316,7 @@ export interface InspectionScheduler {
     readonly deferred: number;
     readonly lastFlush: {
         readonly applied: number;
+        readonly appliedFields: readonly string[];
         readonly deferred: number;
         readonly durationMs: number;
     } | undefined;
@@ -884,7 +885,7 @@ export function wrapWithScriptTag(body: string, options?: {
 
 // Warnings were encountered during analysis:
 //
-// dist/index.d.ts:257:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
+// dist/index.d.ts:265:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

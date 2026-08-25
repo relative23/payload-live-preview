@@ -213,6 +213,7 @@ export interface InspectionScheduler {
     readonly deferred: number;
     readonly lastFlush: {
         readonly applied: number;
+        readonly appliedFields: readonly string[];
         readonly deferred: number;
         readonly durationMs: number;
     } | undefined;
@@ -614,7 +615,7 @@ interface WebCryptoLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/core.d.ts:242:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point core.d.ts
+// dist/core.d.ts:250:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point core.d.ts
 
 // (No @packageDocumentation comment for this package)
 

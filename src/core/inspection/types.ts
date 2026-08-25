@@ -114,6 +114,14 @@ export interface InspectionScheduler {
   readonly lastFlush:
     | {
         readonly applied: number;
+        /**
+         * Field names the flush applied, in application order.
+         *
+         * `applied` is a count, and a count cannot separate "this binding was
+         * written" from "this binding was never scheduled" — a stale binding
+         * next to a non-zero count is consistent with both. The names can.
+         */
+        readonly appliedFields: readonly string[];
         readonly deferred: number;
         readonly durationMs: number;
       }
