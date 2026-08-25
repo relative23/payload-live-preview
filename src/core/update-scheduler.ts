@@ -481,7 +481,7 @@ export class UpdateScheduler {
     applied: number,
     deferred: number,
     durationMs: number,
-    appliedFields: readonly string[] = [],
+    appliedFields: readonly string[],
   ): FlushStats {
     return {
       applied,

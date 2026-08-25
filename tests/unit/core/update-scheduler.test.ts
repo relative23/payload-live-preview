@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UpdateScheduler, type ApplyUpdate, type ScheduledUpdate } from '@core/update-scheduler';
+import {
+  UpdateScheduler,
+  type ApplyUpdate,
+  type FlushStats,
+  type ScheduledUpdate,
+} from '@core/update-scheduler';
 import { markNoWriteCallback } from '@core/internal-outcome';
 import type { CachedElement } from '@core/types';
 
@@ -426,6 +431,52 @@ describe('UpdateScheduler — offscreen replay queue', () => {
     expect(apply).toHaveBeenCalledOnce();
     expect((apply.mock.calls[0]?.[0] as ScheduledUpdate).value).toBe('replay-me');
     expect(scheduler.replayCount).toBe(0);
+  });
+
+  it('names the replayed field in the flush stats, and names nothing when nothing applied', () => {
+    // The visible-replay path builds its own single-entry stats, separate from
+    // the batch flush. Both of its branches were unexercised: the mutation
+    // baseline surfaced them as survivors the moment appliedFields was added.
+    const visible = new Set<Element>();
+    const stats: FlushStats[] = [];
+    const applyResult = { value: undefined as unknown };
+    const scheduler = new UpdateScheduler(
+      markNoWriteCallback(() => applyResult.value),
+      {
+        debounceMs: 0,
+        isVisible: (el) => visible.has(el),
+        getCacheSize: () => 100,
+        visibilityGateThreshold: 50,
+        onFlush: (s) => stats.push(s),
+        scheduleFrame: (cb) => {
+          cb(0);
+          return 1;
+        },
+        cancelFrame: () => {},
+      },
+    );
+
+    const el = document.createElement('p');
+    scheduler.schedule(update(entry(el), 'replay-me'));
+    scheduler.flushNow();
+    stats.length = 0;
+    scheduler.notifyVisible(el);
+
+    expect(stats).toHaveLength(1);
+    expect(stats[0]?.applied).toBe(1);
+    expect(stats[0]?.appliedFields).toEqual([entry(el).fieldName]);
+
+    // A renderer that declines the write must name no field either.
+    applyResult.value = false;
+    const other = document.createElement('p');
+    scheduler.schedule(update(entry(other), 'declined'));
+    scheduler.flushNow();
+    stats.length = 0;
+    scheduler.notifyVisible(other);
+
+    expect(stats).toHaveLength(1);
+    expect(stats[0]?.applied).toBe(0);
+    expect(stats[0]?.appliedFields).toEqual([]);
   });
 
   it('never replays an older buffered value after a newer visible update', () => {
