@@ -700,6 +700,7 @@ export class LivePreviewRuntime {
             ? undefined
             : {
                 applied: flush.applied,
+                appliedFields: flush.appliedFields,
                 deferred: flush.deferred,
                 durationMs: flush.durationMs,
               },
