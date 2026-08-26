@@ -1099,13 +1099,16 @@ export class LivePreviewRuntime {
     const previous = this.l[RuntimeLifecycleSlot.PreviousFieldIdentity];
     const next = new Map<string, string | undefined>();
     const invalidated = new Set<string>();
-    for (const source of Object.keys(dependencies)) {
+    // Entries, not keys: indexing a Record by its own key still types as
+    // possibly undefined, and the `?? []` that needed was a branch nothing
+    // could reach — the mutation baseline reported it as uncovered.
+    for (const [source, dependents] of Object.entries(dependencies)) {
       const identity = valueIdentity(fields[source]);
       next.set(source, identity);
       const changed =
         previous === null || identity === undefined || previous.get(source) !== identity;
       if (!changed) continue;
-      for (const dependent of dependencies[source] ?? []) invalidated.add(dependent);
+      for (const dependent of dependents) invalidated.add(dependent);
     }
     this.l[RuntimeLifecycleSlot.PreviousFieldIdentity] = next;
     return invalidated;

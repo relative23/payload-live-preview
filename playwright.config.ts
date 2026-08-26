@@ -1,6 +1,12 @@
 import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test';
 
 const isCI = process.env['CI'] === 'true';
+// Local override for the Astro fixture's port. `reuseExistingServer` reuses
+// whatever answers on the URL, and on a shared machine that can be another
+// project's dev server on 4173 — every spec then runs against a foreign page
+// and fails with "preview frame missing". Unset, nothing changes; CI never
+// sets it.
+const astroPort = process.env['PLP_E2E_PORT'] ?? '4173';
 
 const config: PlaywrightTestConfig = {
   testDir: './tests/e2e/specs',
@@ -14,7 +20,7 @@ const config: PlaywrightTestConfig = {
     ? [['github'], ['html'], ['./scripts/playwright-zero-skip-reporter.ts']]
     : [['list'], ['./scripts/playwright-zero-skip-reporter.ts']],
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${astroPort}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -31,13 +37,15 @@ const config: PlaywrightTestConfig = {
       // let the foreground process exit. Playwright treats that as a failed
       // managed server, so use the foreground preview server for a stable
       // process lifetime in local and CI runs.
-      command:
-        'npm --prefix examples/astro-payload run build && npm --prefix examples/astro-payload run preview',
+      // The fixture's own `preview` script pins 4173, and a second `--port`
+      // appended through npm does not reliably win. Invoke astro directly so
+      // the port is stated exactly once.
+      command: `npm --prefix examples/astro-payload run build && cd examples/astro-payload && npx astro preview --host --port ${astroPort}`,
       // Suppress Astro's AI-agent auto-background mode. The environment
       // variable deliberately means "the caller handles backgrounding";
       // without `--background`, Astro therefore remains in the foreground.
       env: { ASTRO_PREVIEW_BACKGROUND: '1' },
-      url: 'http://localhost:4173/admin',
+      url: `http://localhost:${astroPort}/admin`,
       reuseExistingServer: !isCI,
       timeout: 120_000,
     },

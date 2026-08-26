@@ -113,3 +113,37 @@ jobs:
             test-results/soak-results.json
           if-no-files-found: ignore
           retention-days: 14
+
+  browser-bench:
+    name: Chromium Update-to-Paint Trend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
+      - run: npm audit --audit-level=high --prefix examples/astro-payload
+      # A trend, not a gate: the spec reports each scenario against its stated
+      # budget and fails only when a measurement could not be taken. Timing
+      # on a shared runner is noise; the deterministic budgets remain the
+      # hard gates.
+      - name: Measure update-to-paint on the 300 / 1,000 / 5,000-binding scenarios
+        run: npm run test:browser-bench
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: browser-bench-report
+          path: |
+            test-results/browser-bench.json
+            test-results/browser-bench-results.json
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 90

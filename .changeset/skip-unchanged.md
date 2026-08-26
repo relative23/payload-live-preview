@@ -21,5 +21,6 @@ Off by default in 1.x: renderers and `elementUpdate` listeners stop seeing
 repeats, which is observable. `inspect().revisions.skippedUnchanged` counts the
 skips. Available on the client, the inline runtime and every adapter.
 
-The inline runtime grows by 449 gzip bytes; the bundle budgets moved
-accordingly.
+Measured on a 300-binding page with one changed field per keystroke (jsdom):
+text bindings 20–23 → 17.5–18 ms, rich-text bindings 58–99 → 19 ms across two runs. The inline
+runtime grows by 353 gzip bytes; the bundle budgets moved accordingly.

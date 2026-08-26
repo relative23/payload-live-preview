@@ -12,11 +12,18 @@
  * "The same" has to mean structural equality: Payload allocates a fresh
  * object graph for every message, so reference identity would never match a
  * rich-text value and the optimisation would skip exactly nothing where it
- * matters most. JSON with sorted keys is that equality for the value shapes
- * the protocol carries, which are JSON to begin with. Anything JSON cannot
- * represent — a cycle, a BigInt inside an object — has no identity and is
- * treated as changed; the asymmetry is deliberate, since a false "equal"
- * leaves a stale binding and a false "different" merely renders once more.
+ * matters most. Plain JSON is that equality for the value shapes the protocol
+ * carries, which are JSON to begin with.
+ *
+ * Plain, not key-sorted. Sorting keys costs a fresh object per node and
+ * measured six times the price of rendering a small Lexical document — the
+ * comparison must stay cheaper than the work it avoids or it is a pessimism.
+ * The wire writes a given document's keys in one stable order, so the sort
+ * bought nothing there; and where an order does differ the value counts as
+ * changed, which is the safe direction. Anything JSON cannot represent — a
+ * cycle, a BigInt inside an object — likewise has no identity and is treated
+ * as changed. The asymmetry is deliberate: a false "equal" leaves a stale
+ * binding, a false "different" merely renders once more.
  *
  * @module @core/value-identity
  */
@@ -34,8 +41,8 @@ export const IDENTITY_SIZE_LIMIT = 64 * 1024;
  * Primitives carry a type tag so `1` and `'1'` differ, as do `null` and
  * `undefined`, even though a text renderer would print them alike: the
  * renderer decides that, not this comparison. Inside an object the wire's own
- * JSON semantics apply — key order is ignored, `undefined` properties are
- * dropped, `NaN` becomes `null` — because that is what the message meant.
+ * JSON semantics apply — `undefined` properties are dropped, `NaN` becomes
+ * `null` — because that is what the message meant.
  */
 export function valueIdentity(value: unknown): string | undefined {
   switch (typeof value) {
@@ -55,7 +62,7 @@ export function valueIdentity(value: unknown): string | undefined {
       let json: string;
       try {
         // Throws on a cycle and on a nested BigInt; both mean "no identity".
-        json = JSON.stringify(value, sortedKeys);
+        json = JSON.stringify(value);
       } catch {
         return undefined;
       }
@@ -65,13 +72,4 @@ export function valueIdentity(value: unknown): string | undefined {
     case 'function':
       return undefined;
   }
-}
-
-/** JSON replacer that rewrites every plain object with its keys sorted. */
-function sortedKeys(_key: string, item: unknown): unknown {
-  if (item === null || typeof item !== 'object' || Array.isArray(item)) return item;
-  const source = item as Record<string, unknown>;
-  const sorted: Record<string, unknown> = {};
-  for (const key of Object.keys(source).sort()) sorted[key] = source[key];
-  return sorted;
 }

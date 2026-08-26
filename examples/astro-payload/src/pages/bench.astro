@@ -1,0 +1,53 @@
+---
+/**
+ * Host page for the scale scenarios and the browser benchmark.
+ *
+ * It frames one target page — `?target=/scenario/5000/` — and does nothing
+ * else. The driver is the test: it posts messages straight into the frame,
+ * the way the soak does, so there is no form state to keep in step and no
+ * input-event path between the measurement and the runtime.
+ *
+ * The target is chosen on the client, not here. This fixture is built with
+ * `output: 'static'`, so the frontmatter runs exactly once at build time with
+ * no query string, and `astro preview` serves that one result for every
+ * request. Reading `?target=` here would silently frame the default for every
+ * scenario — which is precisely what the first version of this page did.
+ *
+ * The frame carries the same `data-testid` as the mock admin's so the helpers
+ * that address the preview frame work unchanged here.
+ */
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Benchmark host</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      iframe {
+        /* A fixed viewport so "on-screen" means the same thing in every run. */
+        width: 800px;
+        height: 600px;
+        border: 0;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe id="preview" data-testid="preview-frame" title="Scenario"></iframe>
+    <script is:inline>
+      // Same-origin paths only. This page is a test host, not a navigator.
+      const requested = new URLSearchParams(location.search).get('target') ?? '/scenario/300/';
+      const target =
+        requested.startsWith('/') && !requested.startsWith('//') ? requested : '/scenario/300/';
+      // Set before the load event so the frame's navigation is part of the
+      // page load a driver waits for.
+      document.getElementById('preview').src = target;
+    </script>
+  </body>
+</html>

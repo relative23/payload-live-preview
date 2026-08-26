@@ -107,6 +107,18 @@ latest-write behavior and no page errors, forces collection through CDP, and cap
 retained renderer heap drift at 8 MiB. Chromium provides the heap measurement;
 all three browser engines remain required for functional correctness.
 
+The Chromium update-to-paint trend runs the 300, 1,000 and 5,000-binding
+scenario pages and measures one changed field per message from the Admin's
+`postMessage` to the first animation frame after the bound element changed —
+the earliest instant the new text can be on screen, not the compositor's own
+timestamp. It reports p50/p95/max per scenario against the roadmap's stated
+budget (p95 ≤ 100 ms) and keeps ninety days of reports as artifacts. It is a
+trend: the only assertions are that every sample produced a measurement and
+the page raised no errors, because timing on a shared runner is not a fact a
+pull request should fail on. The same three scenario pages are functional E2E
+in all three engines, where 5,000 bindings proves the visibility gate's replay
+path rather than merely that 5,000 writes complete.
+
 The deterministic CodSpeed benchmark harness is a hard workflow step. Uploading
 its trends is temporarily allowed to fail only until the repository is imported
 into CodSpeed and its GitHub App is installed. That transition is explicit: set

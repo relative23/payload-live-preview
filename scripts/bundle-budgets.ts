@@ -9,10 +9,12 @@ export interface BundleMeasurement {
 export type BundleBudget = BundleMeasurement;
 
 /** Exact inline patch-delta and transfer-size ceilings used by the release gate. */
-// Raised 2026-08-27 for `skipUnchanged` (+449 gzip measured: value identity
-// 189, option plumbing 195, dependency invalidation 65). Opt-in, and the
-// render it avoids costs more per keystroke than these bytes cost per page.
-export const INLINE_BUDGET = { raw: 69_500, gzip: 21_500, brotli: 19_100 } as const;
+// Raised 2026-08-27 for `skipUnchanged`: measured +353 gzip on top of the
+// 20 996 before it (plain-JSON identity, option plumbing, dependency
+// invalidation). Opt-in, and the render it avoids costs more per keystroke
+// than these bytes cost per page; a 300-binding rich-text page went from
+// 98 ms to 19 ms per keystroke in the jsdom bench.
+export const INLINE_BUDGET = { raw: 69_500, gzip: 21_400, brotli: 18_950 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

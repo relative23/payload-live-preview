@@ -198,6 +198,19 @@ describe('inspect() revision accounting', () => {
     runtime.destroy();
   });
 
+  it('lists absent fields in sorted order, like orphanFields', async () => {
+    // Two fixtures bind `title` and `subtitle`; send neither, so both are
+    // absent, and pin the order — a diagnostic that lists names in cache
+    // order would differ run to run for no reason a reader could see.
+    const runtime = createRuntime();
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { unrelated: 'x' } });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(runtime.inspect().bindings.absentFields).toEqual(['subtitle', 'title']);
+    runtime.destroy();
+  });
+
   it('names the fields the last flush applied, not just how many', async () => {
     // A count cannot separate "this binding was written" from "this binding was
     // never scheduled": a stale binding beside applied=3 is consistent with

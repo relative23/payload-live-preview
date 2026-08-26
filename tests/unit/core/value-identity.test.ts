@@ -33,9 +33,9 @@ describe('valueIdentity — values that must differ', () => {
 });
 
 describe('valueIdentity — values that must be equal', () => {
-  it('ignores object key order, which the wire does not promise', () => {
+  it('is plain JSON: the same document in the same key order is one value', () => {
     expect(valueIdentity({ a: 1, b: [1, { c: 2, d: 3 }] })).toBe(
-      valueIdentity({ b: [1, { d: 3, c: 2 }], a: 1 }),
+      valueIdentity({ a: 1, b: [1, { c: 2, d: 3 }] }),
     );
   });
 
@@ -52,6 +52,14 @@ describe('valueIdentity — values that must be equal', () => {
     expect(valueIdentity({ a: 1, b: undefined })).toBe(valueIdentity({ a: 1 }));
     // …but inside an array undefined becomes null, also as JSON does.
     expect(valueIdentity([undefined])).toBe(valueIdentity([null]));
+  });
+});
+
+describe('valueIdentity — the safe direction', () => {
+  it('treats a reordered object as changed rather than paying to sort keys', () => {
+    // Sorting keys measured six times the cost of rendering a small Lexical
+    // document. A reorder is therefore a re-render, never a skipped one.
+    expect(valueIdentity({ a: 1, b: 2 })).not.toBe(valueIdentity({ b: 2, a: 1 }));
   });
 });
 

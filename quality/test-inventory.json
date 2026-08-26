@@ -7,6 +7,7 @@
     "expectedFailure": 0
   },
   "runnerConfigs": [
+    "playwright.bench.config.ts",
     "playwright.config.ts",
     "playwright.real-payload.config.ts",
     "playwright.soak.config.ts",
@@ -16,22 +17,28 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 100,
-    "suites": 300,
-    "tests": 1519,
-    "benchmarks": 10
+    "files": 103,
+    "suites": 303,
+    "tests": 1523,
+    "benchmarks": 11
   },
   "groups": {
     "benchmarks": {
-      "files": 2,
-      "suites": 8,
+      "files": 3,
+      "suites": 9,
       "tests": 0,
-      "benchmarks": 10
+      "benchmarks": 11
+    },
+    "browser-bench": {
+      "files": 1,
+      "suites": 0,
+      "tests": 1,
+      "benchmarks": 0
     },
     "e2e": {
-      "files": 7,
-      "suites": 13,
-      "tests": 28,
+      "files": 8,
+      "suites": 14,
+      "tests": 30,
       "benchmarks": 0
     },
     "integration": {
@@ -54,8 +61,8 @@
     },
     "unit": {
       "files": 84,
-      "suites": 271,
-      "tests": 1423,
+      "suites": 272,
+      "tests": 1424,
       "benchmarks": 0
     }
   },
@@ -73,6 +80,20 @@
       "suites": 1,
       "tests": 0,
       "benchmarks": 1
+    },
+    {
+      "path": "tests/benchmarks/skip-unchanged.bench.ts",
+      "group": "benchmarks",
+      "suites": 1,
+      "tests": 0,
+      "benchmarks": 1
+    },
+    {
+      "path": "tests/browser-bench/update-to-paint.spec.ts",
+      "group": "browser-bench",
+      "suites": 0,
+      "tests": 1,
+      "benchmarks": 0
     },
     {
       "path": "tests/e2e/specs/accessibility.spec.ts",
@@ -114,6 +135,13 @@
       "group": "e2e",
       "suites": 2,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/scenarios.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -420,8 +448,8 @@
     {
       "path": "tests/unit/core/value-identity.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 12,
+      "suites": 4,
+      "tests": 13,
       "benchmarks": 0
     },
     {
