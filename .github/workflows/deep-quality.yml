@@ -35,7 +35,20 @@ jobs:
           PLP_PROPERTY_RUNS: 10000
         run: |
           echo "PLP_PROPERTY_SEED=$PLP_PROPERTY_SEED"
-          npm run test:property
+          mkdir -p test-results
+          # Captured to a file and echoed afterwards, not piped through tee:
+          # the pinned command must stay on its own line, and a plain
+          # redirection cannot lose the tail to a flush race the way process
+          # substitution can. Without this a failure reaches the reader as
+          # "Process completed with exit code 1" and nothing else — the run
+          # that failed on 2026-08-26 left no counterexample, no property
+          # name, and its logs expired before they could be read.
+          status=0
+          {
+            npm run test:property
+          } >test-results/property-exploration.log 2>&1 || status=$?
+          cat test-results/property-exploration.log
+          exit "$status"
       - name: Mutate the complete critical runtime scope
         env:
           STRYKER_SCOPE: nightly
@@ -49,6 +62,7 @@ jobs:
           path: |
             test-results/stryker-nightly.json
             test-results/stryker-nightly.html
+            test-results/property-exploration.log
           if-no-files-found: ignore
           retention-days: 14
 
