@@ -41,7 +41,7 @@ export function createTextRenderer(): FieldRenderer {
         (element as HTMLInputElement | HTMLTextAreaElement).value = text;
         return;
       }
-      if (hasStructuredChildren(element) && !element.hasAttribute(TEXT_OPT_IN_ATTRIBUTE)) {
+      if (hasForeignChildren(element) && !element.hasAttribute(TEXT_OPT_IN_ATTRIBUTE)) {
         warnOnce(warnedElements, element, target.fieldName);
         return false;
       }
@@ -55,11 +55,19 @@ export function createTextRenderer(): FieldRenderer {
   };
 }
 
-function hasStructuredChildren(element: Element): boolean {
-  // Elements with at least one element child (not a text node) are
-  // considered "structured" — typically a template uses styled wrappers
-  // around the actual field value.
-  return element.firstElementChild !== null;
+/**
+ * Whether the element has an element child this renderer did not put there.
+ *
+ * The guard below preserves a styled wrapper around the value rather than
+ * destroying it. `<br>` is excluded because it is this renderer's own output:
+ * a multiline value is written as `innerHTML` with `<br>` separators, so
+ * counting those as foreign made the second update to a multiline field
+ * refuse because of what the first one wrote, freezing that binding for the
+ * rest of the session. An element whose children are only line breaks is not
+ * a wrapper — it is the value.
+ */
+function hasForeignChildren(element: Element): boolean {
+  return element.querySelector(':scope > :not(br)') !== null;
 }
 
 function warnOnce(warnedElements: WeakSet<Element>, element: Element, fieldName: string): void {

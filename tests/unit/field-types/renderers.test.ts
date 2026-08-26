@@ -68,6 +68,61 @@ describe('text renderer', () => {
     expect(el.textContent).toBe('42');
   });
 
+  it('keeps updating a multiline field after its own <br> made the element structured', () => {
+    // The regression: a multiline value is written as innerHTML with <br>
+    // separators, which makes the element structured by the check below. The
+    // next update was then refused because of what the previous one wrote, and
+    // the binding stayed frozen for the rest of the session. Reproduced in a
+    // real Admin three times across roughly a thousand browser rounds; the
+    // only affected document was the one whose seeded quote had a paragraph.
+    const el = document.createElement('blockquote');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    renderer('text').render(makeTarget(el), 'first line\n\nsecond line', emptyContext());
+    expect(el.querySelectorAll('br').length).toBeGreaterThan(0);
+
+    renderer('text').render(makeTarget(el), 'replacement value', emptyContext());
+    expect(el.textContent).toBe('replacement value');
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('still refuses when a consumer wraps the value after a multiline write', () => {
+    // The exemption is for line breaks, not for the element: as soon as a real
+    // wrapper appears, consumer markup is protected again. Otherwise the fix
+    // would trade a frozen binding for a silently destroyed template.
+    const el = document.createElement('blockquote');
+    renderer('text').render(makeTarget(el), 'first line\n\nsecond line', emptyContext());
+
+    const wrapper = document.createElement('span');
+    wrapper.textContent = 'consumer markup';
+    el.replaceChildren(wrapper);
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderer('text').render(makeTarget(el), 'replacement value', emptyContext());
+
+    expect(el.firstElementChild?.textContent).toBe('consumer markup');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('protects a wrapper added after a single-line value replaced the breaks', () => {
+    const el = document.createElement('blockquote');
+    renderer('text').render(makeTarget(el), 'a\n\nb', emptyContext());
+    renderer('text').render(makeTarget(el), 'plain', emptyContext());
+
+    const inner = document.createElement('span');
+    inner.textContent = 'consumer markup';
+    el.append(inner);
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderer('text').render(makeTarget(el), 'replacement', emptyContext());
+
+    expect(el.lastElementChild?.textContent).toBe('consumer markup');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('skips elements with structured child elements (preserves styled markup)', () => {
     const el = document.createElement('h1');
     const inner1 = document.createElement('span');
