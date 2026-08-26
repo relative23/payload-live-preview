@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 98,
-    "suites": 295,
-    "tests": 1497,
+    "files": 100,
+    "suites": 300,
+    "tests": 1519,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 82,
-      "suites": 266,
-      "tests": 1401,
+      "files": 84,
+      "suites": 271,
+      "tests": 1423,
       "benchmarks": 0
     }
   },
@@ -183,7 +183,7 @@
       "path": "tests/unit/adapters/astro.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 38,
+      "tests": 39,
       "benchmarks": 0
     },
     {
@@ -390,6 +390,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/skip-unchanged.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/state.test.ts",
       "group": "unit",
       "suites": 2,
@@ -408,6 +415,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 33,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/value-identity.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -505,7 +519,7 @@
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 19,
+      "tests": 20,
       "benchmarks": 0
     },
     {

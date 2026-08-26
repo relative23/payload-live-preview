@@ -188,6 +188,7 @@ function inlineConfigFrom(
     ...(options.debug !== undefined ? { debug: options.debug } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
+    ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
   };
 }
 

@@ -30,6 +30,7 @@ export interface LivePreviewSvelteKitOptions {
     readonly scriptSrcExtra?: readonly string[];
     readonly serverURL?: string;
     readonly shouldInject?: (request: Request) => boolean;
+    readonly skipUnchanged?: boolean;
     readonly strictDynamic?: boolean;
 }
 
@@ -63,8 +64,8 @@ type SvelteKitResolve = (event: SvelteKitRequestEvent, opts?: ResolveOptions) =>
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/sveltekit/index.d.ts:77:5 - (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
-// dist/adapters/sveltekit/index.d.ts:78:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:79:5 - (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:80:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

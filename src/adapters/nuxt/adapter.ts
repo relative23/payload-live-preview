@@ -78,6 +78,8 @@ export interface LivePreviewNuxtOptions {
   readonly debounceMs?: number;
   /** Heartbeat timeout in ms. Default `0` (disabled). */
   readonly heartbeatMs?: number;
+  /** Skip bindings whose value is identical to the one last applied. Default `false`. */
+  readonly skipUnchanged?: boolean;
 }
 
 // Nitro / H3 types are duck-typed so the adapter compiles without the
@@ -134,6 +136,7 @@ export function livePreviewNitroPlugin(
       ...(options.debug !== undefined ? { debug: options.debug } : {}),
       ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
       ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
+      ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
     });
     return cachedScriptBody;
   };
@@ -214,6 +217,7 @@ export function renderLivePreviewScript(
     ...(options.debug !== undefined ? { debug: options.debug } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
+    ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
     ...(options.nonce !== undefined ? { nonce: options.nonce } : {}),
   });
   return wrapWithScriptTag(body, options.nonce !== undefined ? { nonce: options.nonce } : {});

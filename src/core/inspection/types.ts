@@ -60,6 +60,13 @@ export interface InspectionRevisions {
    * when the last update is among the abandoned ones.
    */
   readonly superseded: number;
+  /**
+   * Bindings not scheduled because their value was identical to the one last
+   * applied. Cumulative since start; always `0` unless `skipUnchanged` is on.
+   * A large number next to a small `accepted` is the optimisation working; a
+   * stale binding next to a non-zero number is where to look first.
+   */
+  readonly skippedUnchanged: number;
   /** Revision currently in flight, or `undefined` when the pipeline is idle. */
   readonly active: number | undefined;
 }

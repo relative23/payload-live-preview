@@ -81,6 +81,7 @@ describe('inspect() before the runtime starts', () => {
     expect(snapshot.revisions).toEqual({
       accepted: 0,
       superseded: 0,
+      skippedUnchanged: 0,
       active: undefined,
     });
     expect(snapshot.scheduler.lastFlush).toBeUndefined();

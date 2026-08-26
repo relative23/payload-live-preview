@@ -275,6 +275,7 @@ export interface InlineScriptConfig {
     readonly nonce?: string;
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
+    readonly skipUnchanged?: boolean;
     readonly visibilityGateThreshold?: number;
 }
 
@@ -308,6 +309,7 @@ export interface InspectionProtocol {
 export interface InspectionRevisions {
     readonly accepted: number;
     readonly active: number | undefined;
+    readonly skippedUnchanged: number;
     readonly superseded: number;
 }
 
@@ -425,6 +427,7 @@ export interface LivePreviewClientConfig {
     readonly autoStart?: boolean;
     readonly debounceMs?: number;
     readonly debug?: boolean;
+    readonly dependencies?: Readonly<Record<string, readonly string[]>>;
     readonly disableLocalhostMatching?: boolean;
     readonly disableReferrerDetection?: boolean;
     readonly disableVisibilityGate?: boolean;
@@ -436,6 +439,7 @@ export interface LivePreviewClientConfig {
     readonly root?: Document | Element;
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
+    readonly skipUnchanged?: boolean;
     readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
     readonly visibilityGateThreshold?: number;
 }
@@ -885,7 +889,7 @@ export function wrapWithScriptTag(body: string, options?: {
 
 // Warnings were encountered during analysis:
 //
-// dist/index.d.ts:265:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
+// dist/index.d.ts:272:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

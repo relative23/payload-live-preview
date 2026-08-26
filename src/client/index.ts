@@ -105,6 +105,8 @@ export class LivePreviewClient {
       ...(config.scopeBindingsByOwner !== undefined
         ? { scopeBindingsByOwner: config.scopeBindingsByOwner }
         : {}),
+      ...(config.skipUnchanged !== undefined ? { skipUnchanged: config.skipUnchanged } : {}),
+      ...(config.dependencies !== undefined ? { dependencies: config.dependencies } : {}),
       ...(config.disableVisibilityGate !== undefined
         ? { disableVisibilityGate: config.disableVisibilityGate }
         : {}),

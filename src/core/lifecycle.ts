@@ -40,6 +40,7 @@ import type { DiagnosticCode } from './diagnostic-codes';
 import { VERSION } from '../version';
 import { observeThenableResult } from './thenable';
 import { resolveFieldValue } from './field-value';
+import { valueIdentity } from './value-identity';
 import { A11yAnnouncer } from './a11y';
 import { isolateDiagnostic, noopDiagnostic, safeConsoleWarn } from './diagnostics';
 import { markNoWriteCallback, rendererUsesNoWriteOutcome } from './internal-outcome';
@@ -88,6 +89,27 @@ export interface RuntimeOptions {
    * runtime, so the runtime has to be told how to read it.
    */
   readonly lockedOrigin?: () => string | undefined;
+  /**
+   * Skip a binding whose value is structurally identical to the one it last
+   * applied. Every message carries the whole document, so on a page with many
+   * bindings almost every value in a keystroke is unchanged; rendering it
+   * again costs a Lexical pass and a sanitizer pass for nothing.
+   *
+   * Off by default in 1.x, because it is observable: renderers and
+   * `elementUpdate` listeners stop seeing repeats. A binding is still applied
+   * when a field it depends on changed (see `dependencies`), when its element
+   * is new to the cache, or when the value cannot be given an identity.
+   */
+  readonly skipUnchanged?: boolean;
+  /**
+   * Fields whose change must re-apply other bindings even when those
+   * bindings' own values did not change: `{ price: ['priceLabel'] }` says a
+   * change to `price` invalidates `priceLabel`. Consulted only with
+   * `skipUnchanged`. Empty until markup can declare it (`data-payload-depends`
+   * is planned); the shape exists now so that declaration lands here instead
+   * of reopening this option.
+   */
+  readonly dependencies?: Readonly<Record<string, readonly string[]>>;
   /** Origins to broadcast `ready` to during the handshake. */
   readonly readyTargets: readonly string[];
   /** Event emitter (per-instance). */
@@ -210,6 +232,8 @@ const enum RuntimeDependencySlot {
   Merger,
   ScopeBindingsByOwner,
   LockedOrigin,
+  SkipUnchanged,
+  Dependencies,
 }
 
 /** Stable object/function references owned for the complete runtime lifetime. */
@@ -235,6 +259,8 @@ type RuntimeDependencies = readonly [
   merger: DataMerger | null,
   scopeBindingsByOwner: boolean,
   lockedOrigin: () => string | undefined,
+  skipUnchanged: boolean,
+  dependencies: Readonly<Record<string, readonly string[]>>,
 ];
 
 const enum RuntimeLifecycleSlot {
@@ -252,6 +278,9 @@ const enum RuntimeLifecycleSlot {
   SupersededCount,
   LastFlush,
   AbsentFields,
+  LastAppliedIdentity,
+  SkippedUnchangedCount,
+  PreviousFieldIdentity,
 }
 
 /** State that changes as the runtime starts, accepts revisions, and stops. */
@@ -270,6 +299,9 @@ type RuntimeLifecycleState = [
   supersededCount: number,
   lastFlush: FlushStats | null,
   absentFields: Set<string>,
+  lastAppliedIdentity: WeakMap<Element, string>,
+  skippedUnchangedCount: number,
+  previousFieldIdentity: Map<string, string | undefined> | null,
 ];
 
 export class LivePreviewRuntime {
@@ -397,6 +429,8 @@ export class LivePreviewRuntime {
       merger,
       options.scopeBindingsByOwner === true,
       options.lockedOrigin ?? ((): undefined => undefined),
+      options.skipUnchanged === true,
+      options.dependencies ?? {},
     ];
     this.l = [
       undefined,
@@ -413,6 +447,9 @@ export class LivePreviewRuntime {
       0,
       null,
       new Set<string>(),
+      new WeakMap<Element, string>(),
+      0,
+      null,
     ];
   }
 
@@ -679,6 +716,7 @@ export class LivePreviewRuntime {
       revisions: {
         accepted: this.l[RuntimeLifecycleSlot.UpdateCount],
         superseded: this.l[RuntimeLifecycleSlot.SupersededCount],
+        skippedUnchanged: this.l[RuntimeLifecycleSlot.SkippedUnchangedCount],
         active: active === null ? undefined : active.identity.revision,
       },
       bindings: {
@@ -962,6 +1000,13 @@ export class LivePreviewRuntime {
       this.l[RuntimeLifecycleSlot.Started] &&
       this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction;
     const ownerKeys = this.#ownerKeysForUpdate(transaction, data.fields);
+    // Computed once per update and only when skipping is on: the fields whose
+    // change forces dependents to re-apply this time round.
+    let invalidatedSet: ReadonlySet<string> | undefined;
+    const invalidated = (): ReadonlySet<string> => {
+      invalidatedSet ??= this.#invalidatedDependents(data.fields);
+      return invalidatedSet;
+    };
     for (const [fieldName, bindings] of this.d[RuntimeDependencySlot.Cache].entries()) {
       if (!(
         this.l[RuntimeLifecycleSlot.Started] &&
@@ -1001,6 +1046,10 @@ export class LivePreviewRuntime {
         )) {
           return;
         }
+        if (this.#isUnchangedForElement(target, fieldName, transformedValue, invalidated())) {
+          this.l[RuntimeLifecycleSlot.SkippedUnchangedCount] += 1;
+          continue;
+        }
         const update: ScheduledUpdate = {
           target,
           value: transformedValue,
@@ -1018,6 +1067,48 @@ export class LivePreviewRuntime {
       }
     }
     this.#diagnoseOrphanFields(data.fields, transaction.locale, ownerKeys);
+  }
+
+  /**
+   * Whether `value` is what this element last applied and nothing forces a
+   * re-apply. Never true with `skipUnchanged` off, for a fresh element, for a
+   * value without an identity, or for a dependent of a field that changed.
+   */
+  #isUnchangedForElement(
+    target: CachedElement,
+    fieldName: string,
+    value: unknown,
+    invalidated: ReadonlySet<string>,
+  ): boolean {
+    if (!this.d[RuntimeDependencySlot.SkipUnchanged]) return false;
+    if (invalidated.has(fieldName)) return false;
+    const identity = valueIdentity(value);
+    if (identity === undefined) return false;
+    return this.l[RuntimeLifecycleSlot.LastAppliedIdentity].get(target.element) === identity;
+  }
+
+  /**
+   * Dependents of every top-level field whose identity differs from the
+   * previous update's. The previous snapshot is replaced here, so the
+   * comparison is always against the last message, not the last applied one:
+   * a dependent must re-apply when its source *changed*, whether or not that
+   * source has a binding of its own.
+   */
+  #invalidatedDependents(fields: Record<string, unknown>): ReadonlySet<string> {
+    const dependencies = this.d[RuntimeDependencySlot.Dependencies];
+    const previous = this.l[RuntimeLifecycleSlot.PreviousFieldIdentity];
+    const next = new Map<string, string | undefined>();
+    const invalidated = new Set<string>();
+    for (const source of Object.keys(dependencies)) {
+      const identity = valueIdentity(fields[source]);
+      next.set(source, identity);
+      const changed =
+        previous === null || identity === undefined || previous.get(source) !== identity;
+      if (!changed) continue;
+      for (const dependent of dependencies[source] ?? []) invalidated.add(dependent);
+    }
+    this.l[RuntimeLifecycleSlot.PreviousFieldIdentity] = next;
+    return invalidated;
   }
 
   /**
@@ -1352,10 +1443,20 @@ export class LivePreviewRuntime {
     // emitWhile invokes its first handler before yielding. Account for a
     // synchronous reentrant update so the obsolete write is not counted as a
     // successful flush and cannot publish afterUpdate.
-    return (
+    const applied =
       this.l[RuntimeLifecycleSlot.Started] &&
-      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction
-    );
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction;
+    if (applied && this.d[RuntimeDependencySlot.SkipUnchanged]) {
+      // Recorded only for a write that counted. A refused or superseded write
+      // leaves the previous identity in place, so the next message re-applies.
+      const identity = valueIdentity(value);
+      if (identity !== undefined) {
+        this.l[RuntimeLifecycleSlot.LastAppliedIdentity].set(update.target.element, identity);
+      } else {
+        this.l[RuntimeLifecycleSlot.LastAppliedIdentity].delete(update.target.element);
+      }
+    }
+    return applied;
   }
 
   #onFlush(stats: FlushStats): void {

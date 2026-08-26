@@ -86,6 +86,12 @@ export interface InlineScriptConfig {
    */
   readonly scopeBindingsByOwner?: boolean;
   /**
+   * Skip bindings whose value is identical to the one last applied, so a
+   * keystroke re-renders only what changed. Default `false` in 1.x because
+   * renderers and `elementUpdate` listeners then stop seeing repeats.
+   */
+  readonly skipUnchanged?: boolean;
+  /**
    * Retained for 1.x source compatibility, but has no effect here:
    * `generateInlineScript()` returns a script body and creates no tag.
    * Pass the nonce separately to `wrapWithScriptTag(body, { nonce })`.
@@ -140,6 +146,7 @@ function buildConfigLiteral(config: InlineScriptConfig): string {
     config.disableReferrerDetection,
     config.disableLocalhostMatching,
     config.scopeBindingsByOwner,
+    config.skipUnchanged,
   ];
   while (compactConfig.length > 0 && compactConfig.at(-1) === undefined) compactConfig.pop();
   // Preserve omitted interior options as sparse JavaScript slots. JSON arrays

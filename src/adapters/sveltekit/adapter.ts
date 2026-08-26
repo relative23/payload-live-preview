@@ -71,6 +71,8 @@ export interface LivePreviewSvelteKitOptions {
   readonly debounceMs?: number;
   /** Heartbeat timeout in ms. Default `0` (disabled). */
   readonly heartbeatMs?: number;
+  /** Skip bindings whose value is identical to the one last applied. Default `false`. */
+  readonly skipUnchanged?: boolean;
 }
 
 interface SvelteKitRequestEvent {
@@ -113,6 +115,7 @@ export function livePreviewHandle(options: LivePreviewSvelteKitOptions = {}): Sv
       ...(options.debug !== undefined ? { debug: options.debug } : {}),
       ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
       ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
+      ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
     });
     return cachedScriptBody;
   };
