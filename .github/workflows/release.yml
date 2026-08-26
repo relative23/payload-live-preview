@@ -287,3 +287,12 @@ jobs:
           PACKAGE_ARTIFACT_DIR: release-artifact
           PACKAGE_SOURCE_COMMIT: ${{ github.event.workflow_run.head_sha }}
           SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
+
+      # Everything before this point reasons about the tarball this job built.
+      # This installs what the registry actually serves, in a directory with no
+      # workspace, no lockfile and no local dist to fall back on, and imports
+      # every subpath a Node consumer can reach. A release can be green end to
+      # end and still leave an uninstallable package; the publish has already
+      # happened here, so a failure cannot prevent it — it makes it loud.
+      - name: Smoke-test the published package from the registry
+        run: npm run test:smoke
