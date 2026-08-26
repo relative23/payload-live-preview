@@ -18,7 +18,7 @@
   "totals": {
     "files": 97,
     "suites": 294,
-    "tests": 1491,
+    "tests": 1494,
     "benchmarks": 10
   },
   "groups": {
@@ -55,7 +55,7 @@
     "unit": {
       "files": 81,
       "suites": 265,
-      "tests": 1395,
+      "tests": 1398,
       "benchmarks": 0
     }
   },
@@ -491,7 +491,7 @@
       "path": "tests/unit/field-types/renderers.test.ts",
       "group": "unit",
       "suites": 13,
-      "tests": 66,
+      "tests": 69,
       "benchmarks": 0
     },
     {
