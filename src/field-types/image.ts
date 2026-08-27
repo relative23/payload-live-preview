@@ -20,7 +20,7 @@ import type { PayloadMedia } from './types';
 
 const imageRenderer: FieldRenderer = {
   name: 'image',
-  render: markNoWriteCallback((target, value, context) => {
+  render: /* @__PURE__ */ markNoWriteCallback((target, value, context) => {
     const element = target.element;
     const media = readMedia(value);
     const preferLocale = target.locale !== undefined;

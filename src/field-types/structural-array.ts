@@ -42,7 +42,7 @@ export function createStructuralArrayRenderer(): FieldRenderer {
 
   return {
     name: 'structural-array',
-    render: markNoWriteCallback((target, value) => {
+    render: /* @__PURE__ */ markNoWriteCallback((target, value) => {
       if (!Array.isArray(value)) return false;
       const container = target.element;
       const template = target.arrayTemplate;

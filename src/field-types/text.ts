@@ -35,7 +35,7 @@ export function createTextRenderer(): FieldRenderer {
 
   return {
     name: 'text',
-    render: markNoWriteCallback((target, value) => {
+    render: /* @__PURE__ */ markNoWriteCallback((target, value) => {
       const element = target.element;
       const text = toPlainString(value);
       if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {

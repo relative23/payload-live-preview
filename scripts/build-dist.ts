@@ -16,9 +16,40 @@ import { BUILD_PROFILES } from '../tsup.config';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(ROOT, 'dist');
 
-/** Public callable names exposed by `payload-live-preview/core`. */
-const CORE_PUBLIC_FUNCTION_NAMES =
-  /^(?:EventEmitter|LivePreviewClient|OriginDetector|bind|bindByPath|buildFrameAncestors|buildScriptSrcWithNonce|createPreviewBindings|isAuthorizedPreviewContext|isInsideIsland|detectInitialLocale|escapeHtml|escapeHtmlAttribute|generateCspNonce|hasCapability|initLivePreview|isDevMode|isExternalHttpUrl|isInIframe|isInPopup|isInPreviewContext|isSafeUrl|negotiateProtocol|sanitizeHtml|setCspCrypto|setSanitizerDocument)$/;
+/**
+ * Callable names that stay observable on the built artefacts (`fn.name`), the
+ * contract `scripts/check-bundle-size.ts` asserts. Everything else is mangled.
+ */
+const PUBLIC_FUNCTION_NAMES: readonly string[] = [
+  'EventEmitter',
+  'LivePreviewClient',
+  'OriginDetector',
+  'generateInlineScript',
+  'bind',
+  'bindByPath',
+  'buildFrameAncestors',
+  'buildScriptSrcWithNonce',
+  'createPreviewBindings',
+  'isAuthorizedPreviewContext',
+  'isInsideIsland',
+  'detectInitialLocale',
+  'escapeHtml',
+  'escapeHtmlAttribute',
+  'generateCspNonce',
+  'hasCapability',
+  'initLivePreview',
+  'isDevMode',
+  'isExternalHttpUrl',
+  'isInIframe',
+  'isInPopup',
+  'isInPreviewContext',
+  'isSafeUrl',
+  'negotiateProtocol',
+  'sanitizeHtml',
+  'setCspCrypto',
+  'setSanitizerDocument',
+];
+const PUBLIC_FUNCTION_NAME_PATTERN = new RegExp(`^(?:${PUBLIC_FUNCTION_NAMES.join('|')})$`, 'u');
 
 await rm(DIST, { recursive: true, force: true });
 
@@ -27,25 +58,28 @@ for (const profile of BUILD_PROFILES) {
 }
 
 /**
- * esbuild performs syntax lowering and tree shaking. Most profiles preserve
- * names up front; the dedicated core profile leaves internal names minifiable
- * and the final pass preserves its complete public callable allow-list instead.
- * The original source map is supplied as input so every published artifact still
- * maps back to TypeScript.
+ * esbuild lowers syntax and minifies whitespace; this pass mangles identifiers.
+ * Names on the public allow-list are kept so `fn.name` stays meaningful, and
+ * nothing else is preserved — a preserved internal name costs bytes in every
+ * consumer bundle. Pure annotations survive so a consumer's bundler can drop
+ * what it does not import. The original source map is supplied as input so
+ * every published artefact still maps back to TypeScript.
  */
 async function compressJavaScript(path: string): Promise<void> {
   const sourceMapPath = `${path}.map`;
   const isModule = path.endsWith('.js');
-  const isCoreEntry = /^core\.(?:cjs|js)$/.test(basename(path));
   const result = await minify(await readFile(path, 'utf8'), {
-    compress: { module: isModule, passes: isCoreEntry ? 3 : 2 },
+    compress: { module: isModule, passes: 2 },
     ecma: 2022,
-    format: { comments: false },
-    keep_classnames: isCoreEntry ? CORE_PUBLIC_FUNCTION_NAMES : false,
-    keep_fnames: isCoreEntry ? CORE_PUBLIC_FUNCTION_NAMES : false,
-    mangle: true,
+    format: { comments: false, preserve_annotations: true },
+    // esbuild emits classes as `var X = class {}`, whose `.name` is inferred
+    // from the binding; reserving the identifiers keeps the names for classes and
+    // functions alike, where `keep_classnames` would only cover `class X {}`.
+    keep_classnames: PUBLIC_FUNCTION_NAME_PATTERN,
+    keep_fnames: PUBLIC_FUNCTION_NAME_PATTERN,
+    mangle: { reserved: [...PUBLIC_FUNCTION_NAMES] },
     module: isModule,
-    toplevel: isCoreEntry,
+    toplevel: true,
     sourceMap: {
       content: await readFile(sourceMapPath, 'utf8'),
       filename: basename(path),

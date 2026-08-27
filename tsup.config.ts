@@ -20,8 +20,15 @@ const SHARED_OPTIONS = {
   // Published entries are parsed and transferred by every consumer. Full
   // esbuild minification cuts that cost substantially; `keepNames` preserves
   // observable class/function names used by diagnostics and existing code.
-  minify: true,
-  keepNames: true,
+  // esbuild only bundles and lowers syntax here. Minification is the terser
+  // pass in scripts/build-dist.ts, for two measured reasons: esbuild's minify
+  // strips the `/* @__PURE__ */` annotations a consumer's bundler needs to drop
+  // what it does not import, and esbuild's `keepNames` is implemented with
+  // top-level statements that bundler cannot prove pure — with it, one symbol
+  // imported from the root barrel shipped the whole bundle
+  // (scripts/check-tree-shaking.ts).
+  minify: false,
+  keepNames: false,
   treeshake: true,
   target: 'es2022',
   outDir: 'dist',
@@ -61,12 +68,6 @@ export const BUILD_PROFILES: Options[] = [
     name: 'core',
     entry: CORE_ENTRY,
     format: ['esm', 'cjs'],
-    // The core entry contains a large internal runtime graph. Preserving every
-    // internal symbol name makes that graph materially larger, while only its
-    // exported function/class names are observable. `scripts/build-dist.ts`
-    // retains that exact public allow-list during the final minification pass.
-    keepNames: false,
-    minify: false,
   },
   {
     ...SHARED_OPTIONS,

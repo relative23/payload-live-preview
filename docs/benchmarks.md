@@ -103,3 +103,39 @@ replace". Pre-seeded 100-item `<ul>` containers; the sample is one update.
 The morph keeps the live element and edits it; the difference on a changed
 item is the attribute diff and child walk that retention costs. Measured
 2026-08-27 in jsdom; a trend, not a gate.
+
+## Tree shaking — what one import costs
+
+Measured 2026-08-27 with `npm run test:treeshake` (`scripts/check-tree-shaking.ts`):
+a one-line consumer imports one symbol, Vite bundles it against the built
+package resolved through `node_modules` (so `exports` and `sideEffects`
+apply as after `npm install`), minified, gzip level 9.
+
+| Consumer imports                                      | raw     | gzip     | budget |
+| ----------------------------------------------------- | ------- | -------- | ------ |
+| `escapeHtml` from `payload-live-preview`              | 287 B   | 220 B    | 250    |
+| `lexicalToHtml` from `payload-live-preview`           | 13.6 KB | 4,273 B  | 4,350  |
+| `initLivePreview` from `payload-live-preview`         | 113 KB  | 30,461 B | 31,000 |
+| `generateInlineScript` from `payload-live-preview`    | 79.6 KB | 24,810 B | 25,200 |
+| `initLivePreview` from `payload-live-preview/core`    | 113 KB  | 30,472 B | 31,000 |
+| `lexicalToHtml` from `payload-live-preview/lexical`   | 13.8 KB | 4,383 B  | 4,450  |
+| `morphElement` from `payload-live-preview/structural` | 2.9 KB  | 1,108 B  | 1,150  |
+| `PluginManager` from `payload-live-preview/plugins`   | 13.0 KB | 3,621 B  | 3,700  |
+
+Before this measurement existed, every row was 64 KB gzip: the root barrel
+did not tree-shake at all. Three causes, all fixed in the same change:
+
+1. esbuild's `keepNames` — implemented with top-level helper statements a
+   consumer's bundler cannot prove pure. Name preservation now happens in
+   the terser pass with the public allow-list (`scripts/build-dist.ts`), so
+   `fn.name` on exported classes and functions is unchanged.
+2. Minification in esbuild strips `/* @__PURE__ */` annotations (114 in the
+   root bundle) that Rollup needs to drop unused constructions. esbuild now
+   only bundles; terser minifies with `preserve_annotations`.
+3. Import-time side effects in the library: the built-in renderer table
+   (object spreads at module scope), Lexical node registration by
+   `register()` calls at import, and an eager `new TextEncoder()`. Each is
+   now a pure table or created on first use.
+
+Rollup's `experimentalLogSideEffects` reports no remaining top-level side
+effect in the source graph; the gate keeps it that way.

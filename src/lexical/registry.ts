@@ -10,6 +10,7 @@
  */
 
 import type { LexicalNode } from './types';
+import { BUILTIN_NODE_RENDERERS } from './nodes/builtin';
 
 /**
  * Context passed to node renderers. Includes the recursive renderer
@@ -53,12 +54,12 @@ export function register(type: string, renderer: NodeRenderer): void {
 
 /** Look up the renderer for `type`, or `undefined`. */
 export function lookup(type: string): NodeRenderer | undefined {
-  return registry.get(type);
+  return registry.get(type) ?? BUILTIN_NODE_RENDERERS[type];
 }
 
 /** Snapshot of registered node types. Useful for diagnostics. */
 export function registeredTypes(): readonly string[] {
-  return [...registry.keys()];
+  return [...new Set([...Object.keys(BUILTIN_NODE_RENDERERS), ...registry.keys()])];
 }
 
 /** Test-only helper: clear the registry. */

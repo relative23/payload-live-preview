@@ -657,7 +657,16 @@ does not suppress CSP handling. Astro additionally accepts `mode` (`'inline'` /
 per-request `nonce`; `generateInlineScript()` itself returns a script body, so pass
 the nonce to `wrapWithScriptTag()` when embedding it manually.
 
-Bundle-size note: `import … from 'payload-live-preview/core'` is a lighter entry without the built-in plugin constructors, inline generator/runtime source, or framework adapters. It still includes the built-in field renderers used by `LivePreviewClient`, including Lexical rendering. Hot-path timings live in [docs/benchmarks.md](docs/benchmarks.md).
+Bundle-size note: the root barrel tree-shakes, and that is measured rather
+than declared — `npm run test:treeshake` bundles one-symbol consumers with
+Vite against the built package and holds each to a budget. Importing
+`escapeHtml` from the root ships 220 B gzip, `lexicalToHtml` 4.3 KB,
+`initLivePreview` 30.5 KB (the client with its built-in renderers, Lexical
+included), `generateInlineScript` 24.8 KB (the inline runtime source and
+nothing of the client). The focused entries under [Package entries](#package-entries)
+give a bundler less to look through and a reader a smaller surface; the
+bytes are the same. Hot-path timings and the tree-shaking table live in
+[docs/benchmarks.md](docs/benchmarks.md).
 
 The four real-app browser fixtures in `examples/` cover Astro 7, Next.js 16, SvelteKit 2, and Nuxt 3 in Chromium, Firefox, and WebKit. The Astro 4–7 peer range is broader than the single Astro-major browser fixture.
 

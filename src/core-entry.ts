@@ -17,27 +17,11 @@
  * @packageDocumentation
  */
 
-import { LivePreviewClient as CoreLivePreviewClient } from './client';
-import { EventEmitter as CoreEventEmitter } from './events';
-import { OriginDetector as CoreOriginDetector } from './detection';
-
-// The dedicated core build mangles internal names aggressively but preserves
-// the long-established `.name` values of its three public classes. Keeping the
-// assignments at this entry boundary avoids retaining hundreds of private
-// helper names in every consumer bundle.
-for (const [constructor, name] of [
-  [CoreEventEmitter, 'EventEmitter'],
-  [CoreLivePreviewClient, 'LivePreviewClient'],
-  [CoreOriginDetector, 'OriginDetector'],
-] as const) {
-  Object.defineProperty(constructor, 'name', { configurable: true, value: name });
-}
-
 export { VERSION } from './version';
 export const CORE_ENTRY = true;
 
 // High-level client — without the heavyweight built-in plugins.
-export { CoreLivePreviewClient as LivePreviewClient };
+export { LivePreviewClient } from './client';
 export { initLivePreview, type LivePreviewClientConfig } from './client';
 
 // Security primitives (consumers building their own CSP)
@@ -57,11 +41,11 @@ export {
 } from './security';
 
 // Events
-export { CoreEventEmitter as EventEmitter };
+export { EventEmitter } from './events';
 export { type EventHandler, type LivePreviewEventMap, type Unsubscribe } from './events';
 
 // Detection helpers
-export { CoreOriginDetector as OriginDetector };
+export { OriginDetector } from './detection';
 export {
   detectInitialLocale,
   isInIframe,
