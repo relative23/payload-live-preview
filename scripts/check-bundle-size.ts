@@ -41,8 +41,8 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'doctor.js': { raw: 8_700, gzip: 3_700, brotli: 3_150 },
   'core.cjs': { raw: 92_400, gzip: 28_900, brotli: 25_450 },
   'core.js': { raw: 91_950, gzip: 28_850, brotli: 25_400 },
-  'index.cjs': { raw: 194_550, gzip: 60_050, brotli: 40_250 },
-  'index.js': { raw: 193_900, gzip: 59_600, brotli: 39_900 },
+  'index.cjs': { raw: 195_750, gzip: 61_150, brotli: 43_050 },
+  'index.js': { raw: 195_150, gzip: 60_700, brotli: 42_850 },
   'payload.cjs': { raw: 1_100, gzip: 600, brotli: 500 },
   'payload.js': { raw: 1_100, gzip: 600, brotli: 500 },
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.

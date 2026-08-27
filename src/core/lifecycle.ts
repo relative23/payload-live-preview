@@ -344,6 +344,9 @@ export class LivePreviewRuntime {
   private readonly d: RuntimeDependencies;
   readonly #renderRichText: RichTextRenderer | undefined;
   readonly #warnedStrategy = new WeakSet<Element>();
+  /** Watches `<html>` for a replaced `<body>` so the observers follow it (F-36). */
+  #rootSentinel: MutationObserver | null = null;
+  #observedRoot: Node | null = null;
   private readonly l: RuntimeLifecycleState;
 
   constructor(options: RuntimeOptions) {
@@ -551,6 +554,8 @@ export class LivePreviewRuntime {
       throw new Error('LivePreviewRuntime: document.body unavailable');
     }
     this.d[RuntimeDependencySlot.Observers].start(observerRoot);
+    this.#observedRoot = observerRoot;
+    this.#watchRootReplacement();
     // The observer must exist before the cache scan registers its elements;
     // otherwise initial bindings can be deferred but never become replayable.
     this.#buildCacheAndObserve();
@@ -657,6 +662,11 @@ export class LivePreviewRuntime {
       this.d[RuntimeDependencySlot.Bus].detach();
     });
     this.#runCleanup(() => {
+      this.#rootSentinel?.disconnect();
+      this.#rootSentinel = null;
+      this.#observedRoot = null;
+    });
+    this.#runCleanup(() => {
       this.d[RuntimeDependencySlot.Observers].stop();
     });
     this.#runCleanup(() => {
@@ -687,6 +697,35 @@ export class LivePreviewRuntime {
   /** Re-scan the DOM and re-register every binding. */
   refreshCache(): void {
     if (!this.l[RuntimeLifecycleSlot.Started]) return;
+    this.#followReplacedRoot();
+    this.#rebuildCache();
+  }
+
+  /**
+   * A framework that swaps `document.body` (some routers do on navigation)
+   * leaves a MutationObserver bound to a detached node: no error, no updates.
+   * The sentinel watches `<html>` for that swap and rebinds observers and
+   * cache to the new body — the F-36 remainder.
+   */
+  #watchRootReplacement(): void {
+    const root = this.d[RuntimeDependencySlot.Root];
+    if (!isDocumentRoot(root) || typeof MutationObserver === 'undefined') return;
+    const html = root.documentElement;
+    this.#rootSentinel?.disconnect();
+    this.#rootSentinel = new MutationObserver(() => {
+      this.#followReplacedRoot();
+    });
+    this.#rootSentinel.observe(html, { childList: true });
+  }
+
+  /** Rebind observers and cache when the observed body is no longer the document's body. */
+  #followReplacedRoot(): void {
+    const root = this.d[RuntimeDependencySlot.Root];
+    if (!this.#isRunning() || !isDocumentRoot(root)) return;
+    const body = readDocumentBody(root);
+    if (body === null || body === this.#observedRoot) return;
+    this.#observedRoot = body;
+    this.d[RuntimeDependencySlot.Observers].start(body);
     this.#rebuildCache();
   }
 
