@@ -114,12 +114,16 @@
       // callback; this fixture has no Payload, so it asks the example's own
       // fixture endpoint. Without the token the page is a public response:
       // no runtime, no bindings, nothing to preview.
-      fetch('/preview-token?path=/')
+      // `?target=/owners` previews another route of this site (tests use it);
+      // anything that is not a same-site path falls back to the home page.
+      const requested = new URLSearchParams(window.location.search).get('target') ?? '/';
+      const target = /^\/(?!\/)[^?#]*$/.test(requested) ? requested : '/';
+      fetch(`/preview-token?path=${encodeURIComponent(target)}`)
         .then((response) => response.text())
         .then((token) => {
           // `preview=true` is the intent signal `buildLivePreviewUrl` appends;
           // the token rides alongside it and is what the hook verifies.
-          iframe.src = `/?preview=true&previewToken=${encodeURIComponent(token)}`;
+          iframe.src = `${target}?preview=true&previewToken=${encodeURIComponent(token)}`;
         });
 
       function buildData() {

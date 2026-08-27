@@ -120,3 +120,75 @@ test.describe('sveltekit live preview — authorized preview context (ADR 0006)'
     expect(response.headers()['content-security-policy']).toContain('frame-ancestors');
   });
 });
+
+test.describe("sveltekit live preview — eventSourcePolicy 'parent-or-opener' (defaults: 'v2')", () => {
+  async function previewUrl(request: Parameters<Parameters<typeof test>[2]>[0]['request']) {
+    const token = await (await request.get(`${APP}/preview-token?path=/`)).text();
+    return `${APP}/?preview=true&previewToken=${encodeURIComponent(token)}`;
+  }
+
+  test('a message posted by the page itself is refused even though its origin is trusted', async ({
+    page,
+  }) => {
+    await page.goto(`${APP}/admin.html`);
+    const preview = page.frameLocator('[data-testid="preview-frame"]');
+    await expect(preview.locator('[data-payload-field="title"]')).toBeVisible();
+    // The parent (this admin page) is the one legitimate sender: prove the
+    // runtime is live by going through it first.
+    await page.getByTestId('title-input').fill('From the parent');
+    await expect(preview.locator('[data-payload-field="title"]')).toHaveText('From the parent');
+    // Now post from inside the frame: same origin, wrong window.
+    const frame = page.frame({ url: /previewToken=/ });
+    if (frame === null) throw new Error('preview frame not found');
+    await frame.evaluate(() => {
+      window.postMessage(
+        {
+          type: 'payload-live-preview',
+          data: { title: 'From the page itself' },
+          collectionSlug: 'pages',
+        },
+        window.location.origin,
+      );
+    });
+    await page.waitForTimeout(200);
+    await expect(preview.locator('[data-payload-field="title"]')).toHaveText('From the parent');
+  });
+
+  test('a message from the opener of a popup is accepted', async ({ page, request }) => {
+    await page.goto(`${APP}/admin.html`);
+    const url = await previewUrl(request);
+    const popupPromise = page.waitForEvent('popup');
+    await page.evaluate((target) => {
+      (window as Window & { __popup?: Window | null }).__popup = window.open(
+        target,
+        'preview-popup',
+      );
+    }, url);
+    const popup = await popupPromise;
+    await expect(popup.locator('[data-payload-field="title"]')).toBeVisible();
+    await expect
+      .poll(
+        () =>
+          popup.evaluate(
+            () =>
+              (
+                window as Window & { __livePreview?: { inspect: () => { started: boolean } } }
+              ).__livePreview?.inspect().started ?? false,
+          ),
+        { timeout: 15_000 },
+      )
+      .toBe(true);
+    await page.evaluate((origin) => {
+      (window as Window & { __popup?: Window | null }).__popup?.postMessage(
+        {
+          type: 'payload-live-preview',
+          data: { title: 'From the opener' },
+          collectionSlug: 'pages',
+        },
+        origin,
+      );
+    }, APP);
+    await expect(popup.locator('[data-payload-field="title"]')).toHaveText('From the opener');
+    await popup.close();
+  });
+});

@@ -9,9 +9,9 @@
  * path and the next few minutes. Everything else is a public response,
  * byte for byte.
  *
- * `strict: true` makes the handle refuse to start without the hook, and
- * requires https admin origins outside development; the example runs under
- * `vite dev`, where http://localhost is allowed.
+ * `defaults: 'v2'` implies `strict`: the handle refuses to start without the
+ * hook and requires https admin origins outside development; the example
+ * runs under `vite dev`, where http://localhost is allowed.
  */
 import { livePreviewHandle } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest } from 'payload-live-preview';
@@ -24,7 +24,10 @@ export const handle = livePreviewHandle({
   // Two documents may share a field name on one page (`/owners`); an update
   // names its document and patches only that one.
   scopeBindingsByOwner: true,
-  strict: true,
+  // Every 2.0 default that exists today (ADR 0007): strict configuration,
+  // query-only intent, no referrer trust, updates only from the window that
+  // framed or opened the page, unchanged bindings skipped.
+  defaults: 'v2',
   authorizePreview: (request) =>
     authorizePreviewRequest(request, {
       type: 'signed-token',

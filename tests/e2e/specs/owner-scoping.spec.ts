@@ -8,24 +8,17 @@ import { expect, test, type FrameLocator, type Page } from '@playwright/test';
  * Runs against the SvelteKit fixture, whose hook enables
  * `scopeBindingsByOwner` and whose `/owners` route renders `global:a` and
  * `global:b`, both with a `title` binding. The runtime starts only inside a
- * preview context, so the page is framed by the fixture's mock admin and
- * opened with a real preview token; updates are posted from the admin
- * window — the parent, on the origin the fixture trusts.
+ * preview context, so the page is framed by the fixture's mock admin
+ * (`admin.html?target=/owners`), which fetches a real preview token for it;
+ * updates are posted from the admin window — the parent, on the origin the
+ * fixture trusts.
  */
 
 const APP = 'http://localhost:4175';
 
 async function openOwners(page: Page): Promise<FrameLocator> {
-  const token = await (await page.request.get(`${APP}/preview-token?path=/owners`)).text();
-  await page.goto(`${APP}/admin.html`);
-  await page.evaluate(
-    (src) => {
-      const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-      if (frame === null) throw new Error('preview frame missing');
-      frame.src = src;
-    },
-    `${APP}/owners?preview=true&previewToken=${encodeURIComponent(token)}`,
-  );
+  // The mock admin fetches a token for `target` and frames that route.
+  await page.goto(`${APP}/admin.html?target=/owners`);
   const frame = page.frameLocator('[data-testid="preview-frame"]');
   await expect(frame.getByTestId('doc-a')).toBeVisible();
   await expect
