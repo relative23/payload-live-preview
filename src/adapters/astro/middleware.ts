@@ -29,13 +29,12 @@
  */
 
 import {
-  generateCspNonce,
-  buildFrameAncestors,
-  buildScriptSrcWithNonce,
-  mergeCspHeader,
-} from '@security/csp';
-import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
-import { isPreviewRequest } from '@adapters/shared/preview-request';
+  HTML_CONTENT_TYPE,
+  createPreviewPolicy,
+  injectIntoHead,
+  type CspMode,
+  type PreviewPolicy,
+} from '@adapters/shared/policy';
 import type { LivePreviewAstroOptions } from './types';
 
 // Astro type imports are deferred via a local declaration so consumers
@@ -60,110 +59,46 @@ export type LivePreviewMiddleware = (
  */
 export const NONCE_LOCALS_KEY = 'livePreviewNonce';
 
-const HTML_CONTENT_TYPE = /text\/html/i;
-const HEAD_INSERT = /<head(\s[^>]*)?>/i;
-
 /**
- * Build the Astro-compatible middleware. Register it in
- * `src/middleware.ts`:
- *
- * ```ts
- * import { createLivePreviewMiddleware } from 'payload-live-preview/astro';
- * export const onRequest = createLivePreviewMiddleware({
- *   allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
- * });
- * ```
+ * Build the Astro middleware. It generates a nonce for every request (so
+ * consumer templates can read `Astro.locals.livePreviewNonce` whether or not
+ * this is a preview), and on requests carrying preview intent injects the
+ * runtime into the HTML response and merges the CSP header. Prerendered
+ * responses are left alone: there is no request to decide for at build time.
  */
 export function createLivePreviewMiddleware(
   options: LivePreviewAstroOptions = {},
 ): LivePreviewMiddleware {
-  const allowedOrigins = options.allowedOrigins ?? [];
-  const autoInject = options.autoInject ?? true;
-  const injectMode = options.inject ?? 'preview-only';
-  const manageCsp = normalizeManageCsp(options.manageCsp);
-  const shouldInject = options.shouldInject;
-
-  // The script body is configuration-static (the nonce only decorates
-  // the surrounding tag) — generate it once, not per request.
-  let cachedScriptBody: string | undefined;
-  const scriptBody = (): string => {
-    cachedScriptBody ??= generateInlineScript({
-      ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
-      ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
-      ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
-      ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
-      ...(options.debug !== undefined ? { debug: options.debug } : {}),
-      ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-      ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-    });
-    return cachedScriptBody;
-  };
-
+  const policy = createPreviewPolicy(options);
   return async (context, next) => {
-    const nonce = generateCspNonce();
+    const nonce = policy.nonce();
     context.locals[NONCE_LOCALS_KEY] = nonce;
-
     const response = await next();
-
-    // Build-time prerendering: no meaningful request headers, no
-    // response headers in the static output, and a baked-forever nonce.
     if (context.isPrerendered === true) return response;
-
-    const isPreview =
-      injectMode === 'always' ||
-      isPreviewRequest(context.request, {
-        ...(options.previewQueryParams !== undefined
-          ? { queryParams: options.previewQueryParams }
-          : {}),
-        ...(options.previewSignals !== undefined ? { signals: options.previewSignals } : {}),
-        adminOrigins: allowedOrigins,
-      });
-    if (!isPreview) return response;
-
+    const decision = policy.decide(
+      context.request,
+      () => options.shouldInject?.(context.request) ?? true,
+    );
+    if (!decision.isPreview) return response;
     let outResponse = response;
-
     const contentType = response.headers.get('content-type') ?? '';
-    const apply = autoInject && (shouldInject?.(context.request) ?? true);
-    if (apply && HTML_CONTENT_TYPE.test(contentType)) {
-      outResponse = await injectScript(response, nonce, scriptBody());
+    if (decision.inject && HTML_CONTENT_TYPE.test(contentType)) {
+      outResponse = await injectScript(response, policy.scriptTag(nonce));
     }
-
-    if (manageCsp !== false) {
-      outResponse = applyCspHeaders(outResponse, nonce, allowedOrigins, manageCsp, options);
+    if (decision.cspMode !== false) {
+      outResponse = applyCspHeaders(outResponse, policy, nonce, decision.cspMode);
     }
-
     return outResponse;
   };
 }
 
-function normalizeManageCsp(
-  value: LivePreviewAstroOptions['manageCsp'],
-): false | 'frame-ancestors' | 'full' {
-  if (value === false) return false;
-  if (value === 'full') return 'full';
-  // `true` (legacy) and `undefined` both mean the safe default.
-  return 'frame-ancestors';
-}
-
-async function injectScript(response: Response, nonce: string, body: string): Promise<Response> {
+async function injectScript(response: Response, scriptTag: string): Promise<Response> {
   const html = await response.text();
   const headers = new Headers(response.headers);
   headers.delete('content-length');
-
-  // Fragment responses (server islands, page partials) have no <head>;
-  // injecting a roughly 60 KB runtime into each of them would corrupt every
-  // fragment for zero benefit — the full document already carries it.
-  if (!HEAD_INSERT.test(html)) {
-    return new Response(html, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-  }
-
-  const scriptTag = wrapWithScriptTag(body, { nonce });
-  const out = html.replace(HEAD_INSERT, (match) => `${match}${scriptTag}`);
-  return new Response(out, {
+  // A document without a <head> is passed through unchanged, not prepended to.
+  const injected = injectIntoHead(html, scriptTag);
+  return new Response(injected ?? html, {
     status: response.status,
     statusText: response.statusText,
     headers,
@@ -172,28 +107,12 @@ async function injectScript(response: Response, nonce: string, body: string): Pr
 
 function applyCspHeaders(
   response: Response,
+  policy: PreviewPolicy,
   nonce: string,
-  allowedOrigins: readonly string[],
-  mode: 'frame-ancestors' | 'full',
-  options: LivePreviewAstroOptions,
+  mode: Exclude<CspMode, false>,
 ): Response {
-  const frameAncestors = buildFrameAncestors({
-    self: true,
-    origins: [...allowedOrigins, ...(options.frameAncestorsExtra ?? [])],
-  });
-
-  const additions: Record<string, string> = { 'frame-ancestors': frameAncestors };
-  if (mode === 'full') {
-    additions['script-src'] = buildScriptSrcWithNonce(nonce, {
-      self: true,
-      strictDynamic: options.strictDynamic ?? false,
-      ...(options.scriptSrcExtra !== undefined ? { extra: options.scriptSrcExtra } : {}),
-    });
-  }
-
   const previous = response.headers.get('content-security-policy') ?? '';
-  const next = mergeCspHeader(previous, additions);
-
+  const next = policy.csp(previous, nonce, mode);
   // Responses passed through from `fetch()` can carry immutable
   // headers — clone into a mutable Response instead of mutating.
   try {

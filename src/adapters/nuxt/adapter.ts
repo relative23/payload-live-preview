@@ -35,14 +35,14 @@
  * @module @adapters/nuxt
  */
 
-import {
-  generateCspNonce,
-  buildFrameAncestors,
-  buildScriptSrcWithNonce,
-  mergeCspHeader,
-} from '@security/csp';
+import { generateCspNonce } from '@security/csp';
 import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
-import { isPreviewRequest } from '@adapters/shared/preview-request';
+import {
+  buildPreviewCsp,
+  createPreviewPolicy,
+  inlineScriptConfig,
+  normalizeCspMode,
+} from '@adapters/shared/policy';
 
 export interface LivePreviewNuxtOptions {
   readonly allowedOrigins?: readonly string[];
@@ -126,60 +126,30 @@ export type NitroHandler = (event: H3EventLike) => Promise<Response | undefined>
 export function livePreviewNitroPlugin(
   options: LivePreviewNuxtOptions = {},
 ): (nitroApp: NitroAppLike) => void {
-  let cachedScriptBody: string | undefined;
-  const scriptBody = (): string => {
-    cachedScriptBody ??= generateInlineScript({
-      ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
-      ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
-      ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
-      ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
-      ...(options.debug !== undefined ? { debug: options.debug } : {}),
-      ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-      ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-      ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
-    });
-    return cachedScriptBody;
-  };
-
+  const policy = createPreviewPolicy(options);
   return (nitroApp) => {
     nitroApp.hooks.hook('render:html', (html, { event }) => {
-      const isPreview =
-        (options.inject ?? 'preview-only') === 'always' ||
-        isPreviewRequest(toPreviewRequestLike(event), {
-          ...(options.previewQueryParams !== undefined
-            ? { queryParams: options.previewQueryParams }
-            : {}),
-          ...(options.previewSignals !== undefined ? { signals: options.previewSignals } : {}),
-          adminOrigins: options.allowedOrigins ?? [],
-        });
-      if (!isPreview) return;
-
+      const decision = policy.decide(toPreviewRequestLike(event));
+      if (!decision.isPreview) return;
       const nonce = generateCspNonce();
       if (event.context !== undefined) event.context['livePreviewNonce'] = nonce;
-
-      if (options.autoInject ?? true) {
-        html.head.push(wrapWithScriptTag(scriptBody(), { nonce }));
+      if (decision.inject) {
+        html.head.push(policy.scriptTag(nonce));
       }
-
-      const manageCsp = normalizeManageCsp(options.manageCsp);
       const res = event.node?.res;
-      if (manageCsp !== false && res?.setHeader !== undefined) {
+      if (decision.cspMode !== false && res?.setHeader !== undefined) {
         const previous = res.getHeader?.('content-security-policy');
         const existing = typeof previous === 'string' ? previous : '';
-        res.setHeader(
-          'content-security-policy',
-          buildLivePreviewCsp(options, nonce, existing, manageCsp),
-        );
+        res.setHeader('content-security-policy', policy.csp(existing, nonce, decision.cspMode));
       }
     });
   };
 }
 
 /**
- * Minimal Nitro server middleware: stashes a per-request nonce on
- * `event.context.livePreviewNonce` for consumers that embed the
- * script manually via `useHead`. It injects nothing — use
- * `livePreviewNitroPlugin` for automatic injection.
+ * A server handler (`defineEventHandler(defineLivePreviewServerHandler())`)
+ * that only stashes a request-scoped nonce on `event.context.livePreviewNonce`
+ * for templates that render their own scripts. It injects nothing.
  */
 export function defineLivePreviewServerHandler(
   _options: LivePreviewNuxtOptions = {},
@@ -194,38 +164,22 @@ export function defineLivePreviewServerHandler(
 }
 
 /**
- * Render the live-preview `<script>` tag for embedding in a Nuxt
- * layout via `useHead`. Call this only after the application's verified
- * preview authorization when script delivery is restricted:
- *
- * ```ts
- * useHead({
- *   script: [
- *     { innerHTML: renderLivePreviewScript({ nonce: useNonce() }) },
- *   ],
- * });
- * ```
+ * Render the `<script>` tag for manual insertion (e.g. via `useHead()`)
+ * when the plugin's automatic injection is disabled.
  */
 export function renderLivePreviewScript(
   options: LivePreviewNuxtOptions & { readonly nonce?: string } = {},
 ): string {
-  const body = generateInlineScript({
-    ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
-    ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
-    ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
-    ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
-    ...(options.debug !== undefined ? { debug: options.debug } : {}),
-    ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-    ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-    ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
-    ...(options.nonce !== undefined ? { nonce: options.nonce } : {}),
-  });
+  const body = generateInlineScript(inlineScriptConfig(options));
   return wrapWithScriptTag(body, options.nonce !== undefined ? { nonce: options.nonce } : {});
 }
 
 /**
- * Build the merged CSP header value for a Nuxt response. Useful when
- * the consumer manages CSP themselves via `useResponseHeader`.
+ * The CSP header value for these options, for consumers that set the header
+ * themselves. Without an explicit `mode` the options' `manageCsp` decides
+ * between frame-ancestors only and full; `manageCsp: false` still yields
+ * frame-ancestors here, as it always has — this helper builds, it does not
+ * gate.
  */
 export function buildLivePreviewCsp(
   options: LivePreviewNuxtOptions,
@@ -233,30 +187,21 @@ export function buildLivePreviewCsp(
   existing = '',
   mode?: 'frame-ancestors' | 'full',
 ): string {
-  const resolvedMode = mode ?? normalizeManageCsp(options.manageCsp);
-  const frameAncestors = buildFrameAncestors({
-    self: true,
-    origins: [...(options.allowedOrigins ?? []), ...(options.frameAncestorsExtra ?? [])],
-  });
-  const additions: Record<string, string> = { 'frame-ancestors': frameAncestors };
-  if (resolvedMode === 'full') {
-    additions['script-src'] = buildScriptSrcWithNonce(nonce, {
-      self: true,
-      strictDynamic: options.strictDynamic ?? false,
-      ...(options.scriptSrcExtra !== undefined ? { extra: options.scriptSrcExtra } : {}),
-    });
-  }
-  return mergeCspHeader(existing, additions);
+  const resolved = mode ?? normalizeCspMode(options.manageCsp);
+  return buildPreviewCsp(
+    options,
+    nonce,
+    existing,
+    resolved === 'full' ? 'full' : 'frame-ancestors',
+  );
 }
 
-function normalizeManageCsp(
-  value: LivePreviewNuxtOptions['manageCsp'],
-): 'frame-ancestors' | 'full' | false {
-  if (value === false) return false;
-  if (value === 'full') return 'full';
-  return 'frame-ancestors';
-}
-
+/**
+ * The minimal request shape the intent check reads, built from an H3 event.
+ * Node hands repeated headers over as `string[]`; the first value is taken,
+ * because comparing the raw array against `'iframe'` never matches and the
+ * preview would silently not load.
+ */
 function toPreviewRequestLike(event: H3EventLike): {
   url: string;
   headers: { get(name: string): string | null };
