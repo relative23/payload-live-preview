@@ -1,5 +1,12 @@
 {
 	"/": [
-		"src/routes/+page.ts"
+		"src/routes/+page.ts",
+		"src/routes/+page.server.ts"
+	],
+	"/owners": [
+		"src/routes/owners/+page.server.ts"
+	],
+	"/preview-token": [
+		"src/routes/preview-token/+server.ts"
 	]
 }

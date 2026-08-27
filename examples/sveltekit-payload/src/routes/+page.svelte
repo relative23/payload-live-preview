@@ -1,16 +1,20 @@
 <script>
   /**
    * Preview target page. Mounted by the mock admin (and by tests) inside
-   * an iframe. Every binding here is annotated with `data-payload-field`
-   * so the live preview engine picks it up automatically.
+   * an iframe. Every binding here comes from `createPreviewBindings` in
+   * `+page.server.ts`, keyed on the hook's authorization verdict: on a
+   * public response the spreads contribute nothing, and the markup carries
+   * no `data-payload-*` attribute at all.
    *
-   * In a real SvelteKit project these initial values would come from
-   * Payload via a `load` function; for the example we hard-code them.
+   * In a real SvelteKit project the initial values would come from Payload
+   * via `fetchPreviewDocument({ authorization })`; for the example they are
+   * hard-coded.
    *
    * The markup mirrors `examples/astro-payload/src/pages/index.astro`
    * one-to-one (same field names, same attributes) so both example apps
    * exercise the exact same runtime surface.
    */
+  export let data;
   const initial = {
     title: 'Hello from the demo',
     subtitle: 'Type in the admin panel to see live updates.',
@@ -24,58 +28,39 @@
     ctaLabel: 'Visit Payload',
     ctaUrl: 'https://payloadcms.com',
   };
+  const b = data.bindings;
 </script>
 
 <svelte:head>
   <title>Live Preview Demo</title>
 </svelte:head>
 
-<article class="grid">
+<article class="grid" {...b.owner}>
   <header class="grid">
-    <h1 data-payload-field="title">{initial.title}</h1>
-    <p data-payload-field="subtitle">{initial.subtitle}</p>
+    <h1 {...b.title}>{initial.title}</h1>
+    <p {...b.subtitle}>{initial.subtitle}</p>
   </header>
-
-  <img
-    data-payload-field="hero"
-    data-payload-type="image"
-    data-payload-alt="hero.alt"
-    src={initial.hero.url}
-    alt={initial.hero.alt}
-  />
-
-  <div data-payload-field="body" data-payload-richtext>
+  <img {...b.hero} src={initial.hero.url} alt={initial.hero.alt} />
+  <div {...b.body}>
     <h2>Rich text from Lexical</h2>
     <p>Mix of <strong>bold</strong>, <em>italic</em>, and <a href="https://example.com">links</a>.</p>
   </div>
-
   <p>
-    Count: <span data-payload-field="count" data-payload-type="number">{initial.count}</span>
+    Count: <span {...b.count}>{initial.count}</span>
   </p>
-
   <p>
     Published:
-    <time data-payload-field="publishedAt" datetime={initial.publishedAt}>{initial.publishedAt}</time>
+    <time {...b.publishedAt} datetime={initial.publishedAt}>{initial.publishedAt}</time>
   </p>
-
-  <ul
-    class="tags"
-    data-payload-field="tags"
-    data-payload-type="array"
-    data-payload-array-template="<li>{'{{value}}'}</li>"
-  >
+  <ul class="tags" {...b.tags}>
     {#each initial.tags as tag (tag)}
       <li>{tag}</li>
     {/each}
   </ul>
-
   <p>
-    <a
-      data-payload-field="ctaLabel"
-      data-payload-href="ctaUrl"
-      href={initial.ctaUrl}
-      target="_blank"
-      rel="noopener noreferrer">{initial.ctaLabel}</a>
+    <a {...b.ctaLabel} href={initial.ctaUrl} target="_blank" rel="noopener noreferrer"
+      >{initial.ctaLabel}</a
+    >
   </p>
 </article>
 

@@ -4,8 +4,8 @@
 
 ```ts
 
-import { D } from '../../policy-DAKG-5Pb.js';
-import { P } from '../../policy-DAKG-5Pb.js';
+import { D } from '../../policy-Ba9mk0NH.js';
+import { P } from '../../policy-Ba9mk0NH.js';
 
 // @public
 export function createLivePreviewMiddleware(options?: LivePreviewNextOptions): (request: Request, response: Response) => Promise<Response>;
@@ -31,6 +31,7 @@ export interface LivePreviewNextOptions {
     readonly mergeDepth?: number;
     readonly previewQueryParams?: readonly string[];
     readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
+    readonly scopeBindingsByOwner?: boolean;
     // (undocumented)
     readonly scriptSrcExtra?: readonly string[];
     readonly serverURL?: string;

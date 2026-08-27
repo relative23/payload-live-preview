@@ -4,8 +4,8 @@
 
 ```ts
 
-import { D } from '../../policy-DAKG-5Pb.js';
-import { P } from '../../policy-DAKG-5Pb.js';
+import { D } from '../../policy-Ba9mk0NH.js';
+import { P } from '../../policy-Ba9mk0NH.js';
 
 // @public
 export function livePreviewHandle(options?: LivePreviewSvelteKitOptions): SvelteKitHandle;
@@ -31,6 +31,7 @@ export interface LivePreviewSvelteKitOptions {
     readonly mergeDepth?: number;
     readonly previewQueryParams?: readonly string[];
     readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
+    readonly scopeBindingsByOwner?: boolean;
     // (undocumented)
     readonly scriptSrcExtra?: readonly string[];
     readonly serverURL?: string;
@@ -70,8 +71,8 @@ type SvelteKitResolve = (event: SvelteKitRequestEvent, opts?: ResolveOptions) =>
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/sveltekit/index.d.ts:104:5 - (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
-// dist/adapters/sveltekit/index.d.ts:105:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:110:5 - (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:111:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -54,7 +54,10 @@ export function bindNavigationLifecycle(target: NavigationLifecycleTarget, optio
 
 // @public (undocumented)
 export interface BindOptions {
+    readonly alt?: string;
+    readonly arrayTemplate?: string;
     readonly attribute?: string;
+    readonly href?: string;
     readonly html?: boolean;
     readonly locale?: string;
     readonly richtext?: boolean;
@@ -235,9 +238,15 @@ export interface FetchPreviewGlobalOptions extends PreviewFetchBaseOptions {
 // @public
 export interface FieldBindingAttributes {
     // (undocumented)
+    readonly 'data-payload-alt'?: string;
+    // (undocumented)
+    readonly 'data-payload-array-template'?: string;
+    // (undocumented)
     readonly 'data-payload-attribute'?: string;
     // (undocumented)
     readonly 'data-payload-field': string;
+    // (undocumented)
+    readonly 'data-payload-href'?: string;
     // (undocumented)
     readonly 'data-payload-html'?: string;
     // (undocumented)
@@ -356,6 +365,7 @@ export interface InspectionProtocol {
 export interface InspectionRevisions {
     readonly accepted: number;
     readonly active: number | undefined;
+    readonly completed: number;
     readonly skippedUnchanged: number;
     readonly superseded: number;
 }
@@ -516,10 +526,14 @@ export interface LivePreviewEventMap {
         readonly updatedCount: number;
         readonly durationMs: number;
         readonly revision?: number;
+        readonly receivedAt?: number;
+        readonly source?: 'patch';
     };
     readonly beforeUpdate: {
         readonly data: PayloadLivePreviewData;
         readonly revision?: number;
+        readonly receivedAt?: number;
+        readonly source?: 'patch';
         readonly cancel: () => void;
     };
     readonly cacheRefresh: {
@@ -547,6 +561,8 @@ export interface LivePreviewEventMap {
         readonly previousValue: unknown;
         readonly nextValue: unknown;
         readonly revision?: number;
+        readonly receivedAt?: number;
+        readonly source?: 'patch';
     };
     readonly error: {
         readonly error: Error;
@@ -1102,7 +1118,7 @@ export function wrapWithScriptTag(body: string, options?: {
 
 // Warnings were encountered during analysis:
 //
-// dist/index.d.ts:272:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
+// dist/index.d.ts:279:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

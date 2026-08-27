@@ -152,6 +152,12 @@ export interface LivePreviewAstroOptions {
    * `false` in 1.x; see the client option of the same name.
    */
   readonly skipUnchanged?: boolean;
+  /**
+   * Scope bindings by document owner (`data-payload-owner`): an update
+   * patches only the bindings of the document it names, and a page that
+   * previews several documents stops sharing a field name between them.
+   */
+  readonly scopeBindingsByOwner?: boolean;
 
   /**
    * Verify that the request is an authorized preview before anything

@@ -15,7 +15,7 @@
  * Type-level brand for `AuthorizedPreviewContext`. Declared, never
  * defined: it has no runtime value, so no object literal can carry it and no
  * boolean can be cast into it without a deliberate `as`. The runtime check
- * uses a private symbol instead — see `isAuthorizedPreviewContext()`.
+ * uses a registry symbol instead — see `isAuthorizedPreviewContext()`.
  */
 export declare const AUTHORIZED_PREVIEW_BRAND: unique symbol;
 
@@ -59,7 +59,19 @@ export interface AuthorizedPreviewContext {
   readonly payloadHeaders: Readonly<Record<string, string>>;
 }
 
-const BRAND = Symbol('payload-live-preview.authorized-preview-context');
+/**
+ * A registry symbol, not a private one, on purpose: the root entry and each
+ * adapter entry are separate bundles, and each would otherwise evaluate its
+ * own `Symbol()` — a context produced by `authorizePreviewRequest` (root)
+ * would then be refused by `livePreviewHandle` (adapter) in the packaged
+ * package while every unit test, which runs one module graph, passed.
+ * `Symbol.for` is identical across bundles and across duplicate package
+ * copies in one process. The brand catches accidental look-alikes —
+ * literals, copies, JSON round trips — which is all it ever promised; a
+ * deliberate forger could cast past a private symbol too.
+ */
+export const AUTHORIZED_PREVIEW_BRAND_KEY = 'payload-live-preview.authorized-preview-context';
+const BRAND = Symbol.for(AUTHORIZED_PREVIEW_BRAND_KEY);
 
 /**
  * Whether `value` was produced by `authorizePreviewRequest()`. A structural

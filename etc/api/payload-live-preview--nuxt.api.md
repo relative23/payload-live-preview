@@ -4,9 +4,9 @@
 
 ```ts
 
-import { D } from '../../policy-DAKG-5Pb.js';
+import { D } from '../../policy-Ba9mk0NH.js';
 import { P } from '../../preview-request-OtCAmNe2.js';
-import { P as P_2 } from '../../policy-DAKG-5Pb.js';
+import { P as P_2 } from '../../policy-Ba9mk0NH.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;
@@ -59,6 +59,7 @@ export interface LivePreviewNuxtOptions {
     readonly mergeDepth?: number;
     readonly previewQueryParams?: readonly string[];
     readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
+    readonly scopeBindingsByOwner?: boolean;
     // (undocumented)
     readonly scriptSrcExtra?: readonly string[];
     readonly serverURL?: string;
@@ -93,8 +94,8 @@ export function renderLivePreviewScript(options?: LivePreviewNuxtOptions & {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/nuxt/index.d.ts:120:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/nuxt/index.d.ts:121:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:126:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:127:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

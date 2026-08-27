@@ -80,6 +80,7 @@ export interface PreviewPolicyOptions {
   readonly debounceMs?: number;
   readonly heartbeatMs?: number;
   readonly skipUnchanged?: boolean;
+  readonly scopeBindingsByOwner?: boolean;
   readonly inject?: 'preview-only' | 'always';
   readonly autoInject?: boolean;
   readonly previewQueryParams?: readonly string[];
@@ -153,6 +154,9 @@ export function inlineScriptConfig(
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
     ...(resolved.skipUnchanged !== undefined ? { skipUnchanged: resolved.skipUnchanged } : {}),
+    ...(options.scopeBindingsByOwner !== undefined
+      ? { scopeBindingsByOwner: options.scopeBindingsByOwner }
+      : {}),
     ...(resolved.disableReferrerDetection !== undefined
       ? { disableReferrerDetection: resolved.disableReferrerDetection }
       : {}),

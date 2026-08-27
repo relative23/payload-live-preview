@@ -67,10 +67,56 @@ test.describe('sveltekit live preview — origin enforcement', () => {
         '*',
       );
     });
-    // Give the runtime time to (not) react.
+    // Give the runtime time to (not) react. Since 1.1.0 a public response
+    // carries no binding at all, so there is nothing an attacker could even
+    // address — the heading is plain markup and stays what it was.
     await page.waitForTimeout(150);
-    await expect(page.locator('[data-payload-field="title"]')).not.toHaveText(
-      'attacker-controlled',
-    );
+    await expect(page.locator('[data-payload-field]')).toHaveCount(0);
+    await expect(page.locator('h1')).toHaveText('Hello from the demo');
+  });
+});
+
+test.describe('sveltekit live preview — authorized preview context (ADR 0006)', () => {
+  async function token(request: Parameters<Parameters<typeof test>[2]>[0]['request']) {
+    const response = await request.get(`${APP}/preview-token?path=/`);
+    return response.text();
+  }
+
+  test('a public request carries no binding, no runtime and no preview CSP', async ({
+    request,
+  }) => {
+    const response = await request.get(`${APP}/`);
+    expect(response.status()).toBe(200);
+    const html = await response.text();
+    expect(html).not.toMatch(/\sdata-payload-[a-z-]+="/);
+    expect(html).not.toContain('__LIVE_PREVIEW_CONFIG__');
+    expect(response.headers()['content-security-policy']).toBeUndefined();
+  });
+
+  test('intent without a token is refused the same way', async ({ request }) => {
+    const response = await request.get(`${APP}/?preview=true`, {
+      headers: { 'sec-fetch-dest': 'iframe' },
+    });
+    const html = await response.text();
+    expect(html).not.toMatch(/\sdata-payload-[a-z-]+="/);
+    expect(html).not.toContain('__LIVE_PREVIEW_CONFIG__');
+    expect(response.headers()['content-security-policy']).toBeUndefined();
+  });
+
+  test('a token bound to another path is refused', async ({ request }) => {
+    const other = await request.get(`${APP}/preview-token?path=/elsewhere`);
+    const response = await request.get(`${APP}/?preview=true&previewToken=${await other.text()}`);
+    const html = await response.text();
+    expect(html).not.toMatch(/\sdata-payload-[a-z-]+="/);
+    expect(html).not.toContain('__LIVE_PREVIEW_CONFIG__');
+  });
+
+  test('a valid token yields bindings, runtime and CSP together', async ({ request }) => {
+    const response = await request.get(`${APP}/?preview=true&previewToken=${await token(request)}`);
+    const html = await response.text();
+    expect(html).toContain('data-payload-field="title"');
+    expect(html).toContain('data-payload-owner="collection:pages"');
+    expect(html).toContain('__LIVE_PREVIEW_CONFIG__');
+    expect(response.headers()['content-security-policy']).toContain('frame-ancestors');
   });
 });

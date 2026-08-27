@@ -90,3 +90,22 @@ describe('bindByPath() — proxy form', () => {
     ).toEqual({ 'data-payload-field': 'heroTitle' });
   });
 });
+
+describe('companion attributes (1.1.0)', () => {
+  it('emits alt, href and array-template companions with the binding, never without it', () => {
+    expect(bind('hero', { type: 'image', alt: 'hero.alt' })).toEqual({
+      'data-payload-field': 'hero',
+      'data-payload-type': 'image',
+      'data-payload-alt': 'hero.alt',
+    });
+    expect(bind('ctaLabel', { href: 'ctaUrl' })).toEqual({
+      'data-payload-field': 'ctaLabel',
+      'data-payload-href': 'ctaUrl',
+    });
+    expect(bind('tags', { type: 'array', arrayTemplate: '<li>{{value}}</li>' })).toEqual({
+      'data-payload-field': 'tags',
+      'data-payload-type': 'array',
+      'data-payload-array-template': '<li>{{value}}</li>',
+    });
+  });
+});

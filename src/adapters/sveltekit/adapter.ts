@@ -73,6 +73,12 @@ export interface LivePreviewSvelteKitOptions {
   readonly heartbeatMs?: number;
   /** Skip bindings whose value is identical to the one last applied. Default `false`. */
   readonly skipUnchanged?: boolean;
+  /**
+   * Scope bindings by document owner (`data-payload-owner`): an update
+   * patches only the bindings of the document it names, and a page that
+   * previews several documents stops sharing a field name between them.
+   */
+  readonly scopeBindingsByOwner?: boolean;
 
   /**
    * Verify that the request is an authorized preview before anything

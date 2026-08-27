@@ -65,7 +65,10 @@ compromised application server. Each of those already holds the assets.
 
 ### 1. One branded verdict, produced only by verification
 
-`AuthorizedPreviewContext` is a frozen object carrying a private symbol brand.
+`AuthorizedPreviewContext` is a frozen object carrying a symbol brand —
+a registry symbol (`Symbol.for`), because the root entry and each adapter
+entry are separate bundles and a per-bundle `Symbol()` would make the
+adapter refuse what the root produced.
 `authorizePreviewRequest()` is the only producer inside the package.
 `isAuthorizedPreviewContext()` checks the brand at runtime, so a plain object
 literal, a `true`, or a cast survives type-checking only by deliberate effort

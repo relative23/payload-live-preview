@@ -61,10 +61,10 @@ export interface InspectionRevisions {
    */
   readonly superseded: number;
   /**
-   * Updates whose scheduled writes reached the DOM. `accepted - superseded -
-   * completed` is what is in flight or was cancelled; a `superseded` that
-   * tracks `accepted` while `completed` stays low is the editor out-typing
-   * the pipeline.
+   * Updates whose scheduled writes reached the DOM. What is neither
+   * superseded nor completed is in flight or was cancelled; a `superseded`
+   * that tracks `accepted` while `completed` stays low is the editor
+   * out-typing the pipeline.
    */
   readonly completed: number;
   /**

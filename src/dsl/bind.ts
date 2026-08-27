@@ -37,6 +37,9 @@ export interface FieldBindingAttributes {
   readonly 'data-payload-richtext'?: string;
   readonly 'data-payload-html'?: string;
   readonly 'data-payload-locale'?: string;
+  readonly 'data-payload-alt'?: string;
+  readonly 'data-payload-href'?: string;
+  readonly 'data-payload-array-template'?: string;
 }
 
 export interface BindOptions {
@@ -53,6 +56,15 @@ export interface BindOptions {
   readonly html?: boolean;
   /** Lock this element to one locale, overriding the message locale. */
   readonly locale?: string;
+  /** Field whose value becomes the image `alt` — emitted as `data-payload-alt`. */
+  readonly alt?: string;
+  /** Field whose value becomes the link `href` — emitted as `data-payload-href`. */
+  readonly href?: string;
+  /**
+   * Markup for each array item, with the double-brace `value` placeholder
+   * substituted per item — emitted as `data-payload-array-template`.
+   */
+  readonly arrayTemplate?: string;
 }
 
 /**
@@ -119,6 +131,9 @@ function buildAttributes(field: string, options: BindOptions | undefined): Field
     'data-payload-richtext'?: string;
     'data-payload-html'?: string;
     'data-payload-locale'?: string;
+    'data-payload-alt'?: string;
+    'data-payload-href'?: string;
+    'data-payload-array-template'?: string;
   } = { 'data-payload-field': field };
   if (options?.attribute !== undefined) attrs['data-payload-attribute'] = options.attribute;
   if (options?.type !== undefined) attrs['data-payload-type'] = options.type;
@@ -126,6 +141,11 @@ function buildAttributes(field: string, options: BindOptions | undefined): Field
   if (options?.richtext === true) attrs['data-payload-richtext'] = '';
   if (options?.html === true) attrs['data-payload-html'] = '';
   if (options?.locale !== undefined) attrs['data-payload-locale'] = options.locale;
+  if (options?.alt !== undefined) attrs['data-payload-alt'] = options.alt;
+  if (options?.href !== undefined) attrs['data-payload-href'] = options.href;
+  if (options?.arrayTemplate !== undefined) {
+    attrs['data-payload-array-template'] = options.arrayTemplate;
+  }
   return attrs;
 }
 
