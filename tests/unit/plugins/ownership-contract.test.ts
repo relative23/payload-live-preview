@@ -108,6 +108,32 @@ describe('snapshot — ownership is observable', () => {
       { name: 'slow', state: 'active', registrations: { transforms: 1 } },
     ]);
   });
+
+  it('reports tearing-down with no live registrations while an async destroy runs', async () => {
+    const { manager } = harness();
+    let finishDestroy!: () => void;
+    const destroyDone = new Promise<void>((resolve) => {
+      finishDestroy = resolve;
+    });
+    await manager.register(
+      plugin('leaving', (ctx) => ctx.registerTransform('x', (v) => v), {
+        destroy: () => destroyDone,
+      }),
+    );
+    const unregistering = manager.unregister('leaving');
+    await Promise.resolve();
+    expect(manager.snapshot()).toEqual([
+      {
+        name: 'leaving',
+        version: undefined,
+        state: 'tearing-down',
+        registrations: { transforms: 0, renderers: 0, subscriptions: 0, cleanups: 0 },
+      },
+    ]);
+    finishDestroy();
+    await unregistering;
+    expect(manager.snapshot()).toEqual([]);
+  });
 });
 
 describe('ordering, precedence, duplicates, rollback, async destroy', () => {

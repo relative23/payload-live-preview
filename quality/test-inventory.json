@@ -19,7 +19,7 @@
   "totals": {
     "files": 116,
     "suites": 350,
-    "tests": 1666,
+    "tests": 1667,
     "benchmarks": 11
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 96,
       "suites": 316,
-      "tests": 1558,
+      "tests": 1559,
       "benchmarks": 0
     }
   },
@@ -687,7 +687,7 @@
       "path": "tests/unit/plugins/ownership-contract.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 9,
+      "tests": 10,
       "benchmarks": 0
     },
     {

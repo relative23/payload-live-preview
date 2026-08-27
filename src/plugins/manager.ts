@@ -125,9 +125,9 @@ class ResourceScope {
    * later registrations immediately; retained closed contexts are rejected.
    */
   stage(
+    kind: ResourceKind,
     acquire: () => PluginDisposer | undefined,
     finalize?: () => void,
-    kind: ResourceKind = 'cleanup',
   ): PluginDisposer {
     this.assertOpen();
     const resource: ScopedResource = {
@@ -158,9 +158,8 @@ class ResourceScope {
       subscription: 0,
       cleanup: 0,
     };
-    for (const resource of this.#resources) {
-      if (!resource.disposed) counts[resource.kind] += 1;
-    }
+    // Disposed resources leave the set in `#dispose`, so what is here is live.
+    for (const resource of this.#resources) counts[resource.kind] += 1;
     return counts;
   }
 
@@ -348,12 +347,12 @@ class ScopedPluginEvents extends EventEmitter implements PluginEvents {
       dispose: noopDisposer,
     };
     dispose = this.#scope.stage(
+      'subscription',
       () => this.#events[kind](event, wrapped),
       () => {
         subscriptionActive = false;
         this.#subscriptions.delete(subscription);
       },
-      'subscription',
     );
     subscription.dispose = dispose;
     this.#subscriptions.add(subscription);
@@ -503,15 +502,16 @@ export class PluginManager {
     for (const [name, registration] of this.#plugins) {
       entries.push(describe(name, registration.plugin.version, 'active', registration.scope));
     }
+    // A name with a pending teardown is never in `#plugins`: unregister removes
+    // it before the teardown starts, and register refuses it until the teardown
+    // settles — so every teardown is a plugin on its way out.
     for (const name of this.#teardowns.keys()) {
-      if (!this.#plugins.has(name)) {
-        entries.push({
-          name,
-          version: undefined,
-          state: 'tearing-down',
-          registrations: { transforms: 0, renderers: 0, subscriptions: 0, cleanups: 0 },
-        });
-      }
+      entries.push({
+        name,
+        version: undefined,
+        state: 'tearing-down',
+        registrations: { transforms: 0, renderers: 0, subscriptions: 0, cleanups: 0 },
+      });
     }
     return entries;
   }
@@ -562,36 +562,28 @@ export class PluginManager {
     return {
       events: new ScopedPluginEvents(this.#events, scope),
       registerFieldRenderer: (renderer) => {
-        scope.stage(
-          () => {
-            const result = this.#registerRenderer(renderer);
-            return isPluginDisposer(result) ? result : undefined;
-          },
-          undefined,
-          'renderer',
-        );
+        scope.stage('renderer', () => {
+          const result = this.#registerRenderer(renderer);
+          return isPluginDisposer(result) ? result : undefined;
+        });
       },
       registerTransform: (fieldName, transform) => {
         const registration: TransformRegistration = { transform, active: false };
-        scope.stage(
-          () => {
-            registration.active = true;
-            const existing = this.#transforms.get(fieldName);
-            if (existing === undefined) this.#transforms.set(fieldName, [registration]);
-            else existing.push(registration);
+        scope.stage('transform', () => {
+          registration.active = true;
+          const existing = this.#transforms.get(fieldName);
+          if (existing === undefined) this.#transforms.set(fieldName, [registration]);
+          else existing.push(registration);
 
-            return () => {
-              registration.active = false;
-              const current = this.#transforms.get(fieldName);
-              if (current === undefined) return;
-              const index = current.indexOf(registration);
-              if (index >= 0) current.splice(index, 1);
-              if (current.length === 0) this.#transforms.delete(fieldName);
-            };
-          },
-          undefined,
-          'transform',
-        );
+          return () => {
+            registration.active = false;
+            const current = this.#transforms.get(fieldName);
+            if (current === undefined) return;
+            const index = current.indexOf(registration);
+            if (index >= 0) current.splice(index, 1);
+            if (current.length === 0) this.#transforms.delete(fieldName);
+          };
+        });
       },
       registerCleanup: (cleanup) => {
         scope.own(cleanup);
