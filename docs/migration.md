@@ -60,3 +60,16 @@ Nothing breaks. Three things are new, and one name changes:
 - `createPreviewBindings({ authorized: boolean })` still works; prefer
   `{ authorization: context }` with the context from `authorizePreviewRequest()`.
   Under `strict` the boolean is refused.
+
+## From `1.1.0` to `1.2.0`
+
+Nothing breaks. The initial draft read has a home:
+
+- `payload-live-preview/server` is the server-only surface: `definePreview({ serverURL, depth })`
+  with `fetchDocument()` / `fetchGlobal()` (explicit `authorization`, typed failure,
+  `signal`, timeout), plus `authorizePreviewRequest`, `issuePreviewToken`,
+  `hasPreviewIntent` and the binding helpers. Spread `runtimeOptions` into the
+  adapter so fetch and merge share one depth.
+- `fetchPreviewDocument()` / `fetchPreviewGlobal()` on the root entry are deprecated
+  and warn once outside production; they are removed in 2.0
+  ([ADR 0007](architecture/0007-v2-defaults-and-renames-ledger.md), entries 9–10).

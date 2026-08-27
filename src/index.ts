@@ -93,7 +93,9 @@ export {
 
 // Draft-aware initial fetch for preview loaders
 export {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- kept through 1.x (ADR 0007, entry 9)
   fetchPreviewDocument,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- kept through 1.x (ADR 0007, entry 9)
   fetchPreviewGlobal,
   type FetchPreviewDocumentOptions,
   type FetchPreviewGlobalOptions,

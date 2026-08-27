@@ -47,8 +47,14 @@ export interface ApiReportCheckOptions {
  * authorization surface references is exported from the entry that
  * references it (root, `core`, the four adapters), so the new surface adds
  * no debt. Reviewed against the report diff, not assumed.
+ *
+ * 51 → 52 with the server subpath (1.2.0): `payload-live-preview/server`
+ * re-exports `FieldPath` and `ValueAt`, whose recursion is bounded by the
+ * internal `Prev` helper type. The root entry carries the same warning in
+ * this baseline already; exporting a depth-limiter tuple type would put an
+ * implementation detail on the surface for no consumer benefit.
  */
-export const FORGOTTEN_EXPORT_BASELINE = 51;
+export const FORGOTTEN_EXPORT_BASELINE = 52;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

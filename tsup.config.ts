@@ -6,6 +6,16 @@ export const DUAL_FORMAT_ENTRIES = {
   payload: 'src/payload/index.ts',
 } as const;
 
+/**
+ * Built alone: the server entry shares modules with the root entry, and one
+ * profile for both would make tsup emit a shared declaration chunk whose file
+ * extension differs between ESM and CJS — which the declaration-parity gate
+ * rightly refuses. Its own profile keeps `server.d.ts` self-contained.
+ */
+export const SERVER_ENTRY = {
+  server: 'src/server/index.ts',
+} as const;
+
 export const CORE_ENTRY = {
   core: 'src/core-entry.ts',
 } as const;
@@ -61,6 +71,12 @@ export const BUILD_PROFILES: Options[] = [
     ...SHARED_OPTIONS,
     name: 'dual-format',
     entry: DUAL_FORMAT_ENTRIES,
+    format: ['esm', 'cjs'],
+  },
+  {
+    ...SHARED_OPTIONS,
+    name: 'server',
+    entry: SERVER_ENTRY,
     format: ['esm', 'cjs'],
   },
   {

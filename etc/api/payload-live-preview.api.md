@@ -217,7 +217,7 @@ export type FetchLike = (input: string, init: {
     json(): Promise<unknown>;
 }>;
 
-// @public
+// @public @deprecated
 export function fetchPreviewDocument<T = Record<string, unknown>>(options: FetchPreviewDocumentOptions): Promise<T | null>;
 
 // @public (undocumented)
@@ -227,7 +227,7 @@ export interface FetchPreviewDocumentOptions extends PreviewFetchBaseOptions {
     readonly where?: PreviewWhere;
 }
 
-// @public
+// @public @deprecated
 export function fetchPreviewGlobal<T = Record<string, unknown>>(options: FetchPreviewGlobalOptions): Promise<T | null>;
 
 // @public (undocumented)

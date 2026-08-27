@@ -49,6 +49,7 @@ import {
   type AuthorizedPreviewContext,
 } from '@/types/authorized-preview';
 
+import { warnDeprecatedOnce } from '@adapters/shared/deprecation';
 export interface PreviewFetchBaseOptions {
   /** Payload server origin, e.g. `https://cms.example.com`. */
   readonly serverURL: string;
@@ -113,10 +114,21 @@ export interface FetchPreviewGlobalOptions extends PreviewFetchBaseOptions {
  * compatibility; callers must authorize draft access).
  * Returns `null` when nothing matches or the request fails —
  * loaders should fall back to their regular data path or a 404.
+ *
+ * @deprecated since 1.2.0 — use `definePreview()` from `payload-live-preview/server`:
+ * one depth shared with the runtime, an explicit authorization verdict as the
+ * draft decision, `AbortSignal`, timeout and a typed failure. This helper keeps
+ * its 1.x behaviour (draft by default, `null` on any failure) and is removed
+ * in 2.0 (ADR 0007, entry 9).
  */
 export async function fetchPreviewDocument<T = Record<string, unknown>>(
   options: FetchPreviewDocumentOptions,
 ): Promise<T | null> {
+  warnDeprecatedOnce(
+    'fetchPreviewDocument',
+    'fetchPreviewDocument() is deprecated; use definePreview() from payload-live-preview/server ' +
+      '(docs/architecture/0007-v2-defaults-and-renames-ledger.md, entry 9).',
+  );
   const params = baseParams(options);
   if (options.id !== undefined) {
     const url = `${apiBase(options)}/${encodeURIComponent(options.collection)}/${encodeURIComponent(
@@ -138,10 +150,21 @@ export async function fetchPreviewDocument<T = Record<string, unknown>>(
 /**
  * Fetch a global (draft-first by default for 1.x compatibility;
  * callers must authorize draft access). Returns `null` on failure.
+ *
+ * @deprecated since 1.2.0 — use `definePreview()` from `payload-live-preview/server`:
+ * one depth shared with the runtime, an explicit authorization verdict as the
+ * draft decision, `AbortSignal`, timeout and a typed failure. This helper keeps
+ * its 1.x behaviour (draft by default, `null` on any failure) and is removed
+ * in 2.0 (ADR 0007, entry 9).
  */
 export async function fetchPreviewGlobal<T = Record<string, unknown>>(
   options: FetchPreviewGlobalOptions,
 ): Promise<T | null> {
+  warnDeprecatedOnce(
+    'fetchPreviewGlobal',
+    'fetchPreviewGlobal() is deprecated; use definePreview() from payload-live-preview/server ' +
+      '(docs/architecture/0007-v2-defaults-and-renames-ledger.md, entry 9).',
+  );
   const params = baseParams(options);
   const url = `${apiBase(options)}/globals/${encodeURIComponent(options.global)}?${params.toString()}`;
   return requestJson<T>(url, options);

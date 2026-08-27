@@ -180,26 +180,35 @@ The page reuses that request-scoped verdict for the draft query and for
 the binding attributes, instead of authorizing again or trusting the
 intent signal:
 
-```astro
----
-import { createPreviewBindings, fetchPreviewDocument } from 'payload-live-preview';
-
-const authorization = Astro.locals.livePreviewAuthorization ?? null;
-const page = await fetchPreviewDocument<Page>({
-  serverURL: import.meta.env.PAYLOAD_URL,
-  collection: 'pages',
-  where: { slug: { equals: Astro.params.slug } },
-  authorization, // draft + forwarded session material follow the verdict
-  depth: 1,      // keep equal to the integration's mergeDepth
-});
-const preview = createPreviewBindings({ authorization, owner: `pages:${page.id}` });
----
-<h1 {...preview.bind<Page>('title')}>{page.title}</h1>
+```ts
+// src/lib/preview.ts — server-only; the adapter spreads `runtimeOptions`
+import { definePreview } from 'payload-live-preview/server';
+export const preview = definePreview({ serverURL: import.meta.env.PAYLOAD_URL, depth: 1 });
 ```
 
-Without `authorization` the helpers keep their 1.x behaviour: `draft`
-defaults to `true` and nothing is forwarded — set `draft` explicitly if
-you verify elsewhere. Never attach a long-lived API key or service token
+```astro
+---
+import { createPreviewBindings } from 'payload-live-preview/server';
+import { preview } from '../lib/preview';
+
+const authorization = Astro.locals.livePreviewAuthorization ?? null;
+const result = await preview.fetchDocument<Page>({
+  collection: 'pages',
+  where: { slug: { equals: Astro.params.slug } },
+  authorization, // the draft decision, and the forwarded session material
+  signal: Astro.request.signal,
+});
+if (!result.ok || result.data === null) return Astro.rewrite('/404');
+const page = result.data;
+const bindings = createPreviewBindings({ authorization, owner: `pages:${page.id}` });
+---
+<h1 {...bindings.bind<Page>('title')}>{page.title}</h1>
+```
+
+`definePreview` has no draft default: `authorization` is the decision, and
+`depth` is written once for the read and the runtime merge. The root-entry
+`fetchPreviewDocument()` keeps its 1.x behaviour (draft by default) and is
+deprecated. Never attach a long-lived API key or service token
 merely because `hasPreviewIntent()` returned `true`. One verdict governs
 the draft flag, forwarded credentials, attribute emission, CSP mutation,
 and runtime injection together; your own page cache should consume the

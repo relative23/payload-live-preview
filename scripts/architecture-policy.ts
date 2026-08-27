@@ -33,7 +33,7 @@ export interface ArchitectureViolation {
   readonly message: string;
 }
 
-const SERVER_ONLY_DOMAINS = new Set(['codegen', 'payload']);
+const SERVER_ONLY_DOMAINS = new Set(['codegen', 'payload', 'server']);
 const NODE_BUILTINS = new Set(
   builtinModules.flatMap((module) => [
     module,

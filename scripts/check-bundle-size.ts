@@ -43,6 +43,9 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'index.js': { raw: 172_250, gzip: 53_550, brotli: 37_950 },
   'payload.cjs': { raw: 1_100, gzip: 600, brotli: 500 },
   'payload.js': { raw: 1_100, gzip: 600, brotli: 500 },
+  // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
+  'server.cjs': { raw: 12_600, gzip: 4_800, brotli: 4_350 },
+  'server.js': { raw: 12_450, gzip: 4_720, brotli: 4_260 },
 };
 
 const STABLE_EXPORT_NAMES: Readonly<Record<string, readonly string[]>> = {
