@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 123,
-    "suites": 374,
-    "tests": 1718,
+    "files": 127,
+    "suites": 380,
+    "tests": 1735,
     "benchmarks": 12
   },
   "groups": {
@@ -36,15 +36,15 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 11,
-      "suites": 19,
-      "tests": 44,
+      "files": 12,
+      "suites": 20,
+      "tests": 46,
       "benchmarks": 0
     },
     "integration": {
       "files": 5,
-      "suites": 7,
-      "tests": 64,
+      "suites": 8,
+      "tests": 67,
       "benchmarks": 0
     },
     "real-payload": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 101,
-      "suites": 337,
-      "tests": 1605,
+      "files": 104,
+      "suites": 341,
+      "tests": 1617,
       "benchmarks": 0
     }
   },
@@ -152,6 +152,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/root-replacement.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/scenarios.spec.ts",
       "group": "e2e",
       "suites": 1,
@@ -196,8 +203,8 @@
     {
       "path": "tests/integration/runtime.test.ts",
       "group": "integration",
-      "suites": 3,
-      "tests": 18,
+      "suites": 4,
+      "tests": 21,
       "benchmarks": 0
     },
     {
@@ -462,8 +469,8 @@
     {
       "path": "tests/unit/core/morph.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 17,
+      "suites": 7,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -505,6 +512,13 @@
       "path": "tests/unit/core/revision-contract.test.ts",
       "group": "unit",
       "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/root-replacement.test.ts",
+      "group": "unit",
+      "suites": 1,
       "tests": 4,
       "benchmarks": 0
     },
@@ -607,6 +621,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/entry-surfaces.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/events/emitter.test.ts",
       "group": "unit",
       "suites": 8,
@@ -681,6 +702,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/package-entries.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {

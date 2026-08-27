@@ -128,9 +128,13 @@ function tryReadImportMetaEnv(): Record<string, unknown> | undefined {
   if (importMetaEnvCache !== undefined) return importMetaEnvCache ?? undefined;
   importMetaEnvCache = null;
   try {
+    // The probe source deliberately writes `(import.meta` and `&&import.meta`
+    // rather than ` import.meta`: package linters classify a CommonJS file as
+    // ESM when `import.meta` follows whitespace, and this string is the one
+    // place the token appears in the CommonJS builds.
     // eslint-disable-next-line @typescript-eslint/no-implied-eval -- intentional lazy parse
     const reader = new Function(
-      'try { return import.meta && import.meta.env; } catch (_) { return undefined; }',
+      'try{return(import.meta&&import.meta.env)}catch(_){return undefined}',
     ) as () => unknown;
     const result = reader();
     if (result && typeof result === 'object') {

@@ -26,7 +26,7 @@ import { safeStringify } from './utils';
 
 const arrayRenderer: FieldRenderer = {
   name: 'array',
-  render: markNoWriteCallback((target, value) => {
+  render: /* @__PURE__ */ markNoWriteCallback((target, value) => {
     const element = target.element;
     if (!Array.isArray(value)) return false;
     const template = target.arrayTemplate;

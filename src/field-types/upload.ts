@@ -16,7 +16,7 @@ import type { PayloadMedia } from './types';
 
 const uploadRenderer: FieldRenderer = {
   name: 'upload',
-  render: markNoWriteCallback((target, value) => {
+  render: /* @__PURE__ */ markNoWriteCallback((target, value) => {
     const element = target.element;
     const media = readMedia(value);
     if (media === undefined) return false;

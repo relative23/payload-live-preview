@@ -381,10 +381,17 @@ interface WireClaims {
   readonly jti: string;
 }
 
-const encoder = new TextEncoder();
+// Created on first use: an eager `new TextEncoder()` at module scope is a side
+// effect a bundler must keep, and with it this whole module, in a consumer that
+// imports an unrelated symbol from the root barrel.
+let cachedEncoder: TextEncoder | undefined;
+function encoder(): TextEncoder {
+  cachedEncoder ??= new TextEncoder();
+  return cachedEncoder;
+}
 
 function secretBytes(secret: string | Uint8Array): Uint8Array {
-  const bytes = typeof secret === 'string' ? encoder.encode(secret) : secret;
+  const bytes = typeof secret === 'string' ? encoder().encode(secret) : secret;
   if (bytes.byteLength < MIN_SECRET_BYTES) {
     throw new Error(
       `payload-live-preview: the preview token secret must be at least ${String(MIN_SECRET_BYTES)} bytes`,
@@ -458,10 +465,10 @@ export async function issuePreviewToken(
     exp: now + ttl,
     jti: toBase64Url(id),
   };
-  const payload = toBase64Url(encoder.encode(JSON.stringify(wire)));
+  const payload = toBase64Url(encoder().encode(JSON.stringify(wire)));
   const signed = `${TOKEN_VERSION}.${payload}`;
   const key = await hmacKey(crypto, secret);
-  const signature = new Uint8Array(await crypto.subtle.sign('HMAC', key, encoder.encode(signed)));
+  const signature = new Uint8Array(await crypto.subtle.sign('HMAC', key, encoder().encode(signed)));
   return `${signed}.${toBase64Url(signature)}`;
 }
 
@@ -532,7 +539,7 @@ async function authorizeToken(
       'HMAC',
       key,
       signature,
-      encoder.encode(`${TOKEN_VERSION}.${payloadText}`),
+      encoder().encode(`${TOKEN_VERSION}.${payloadText}`),
     );
   } catch {
     return refused('unavailable');

@@ -96,6 +96,46 @@
         "default": "./dist/server.cjs"
       }
     },
+    "./client": {
+      "import": {
+        "types": "./dist/client.d.ts",
+        "default": "./dist/client.js"
+      },
+      "require": {
+        "types": "./dist/client.d.cts",
+        "default": "./dist/client.cjs"
+      }
+    },
+    "./structural": {
+      "import": {
+        "types": "./dist/structural.d.ts",
+        "default": "./dist/structural.js"
+      },
+      "require": {
+        "types": "./dist/structural.d.cts",
+        "default": "./dist/structural.cjs"
+      }
+    },
+    "./lexical": {
+      "import": {
+        "types": "./dist/lexical.d.ts",
+        "default": "./dist/lexical.js"
+      },
+      "require": {
+        "types": "./dist/lexical.d.cts",
+        "default": "./dist/lexical.cjs"
+      }
+    },
+    "./plugins": {
+      "import": {
+        "types": "./dist/plugins.d.ts",
+        "default": "./dist/plugins.js"
+      },
+      "require": {
+        "types": "./dist/plugins.d.cts",
+        "default": "./dist/plugins.cjs"
+      }
+    },
     "./astro/RichText.astro": "./dist/adapters/astro/RichText.astro",
     "./astro/PreviewBoundary.astro": "./dist/adapters/astro/PreviewBoundary.astro",
     "./astro/middleware-entry": {
@@ -117,7 +157,7 @@
   "sideEffects": false,
   "scripts": {
     "build:runtime": "tsx scripts/build-runtime.ts",
-    "build": "npm run build:runtime && tsx scripts/build-dist.ts && npm run build:assets && npm run test:bundle",
+    "build": "npm run build:runtime && tsx scripts/build-dist.ts && npm run build:assets && npm run test:bundle && npm run test:treeshake && npm run test:edge",
     "build:assets": "node -e \"const fs=require('node:fs');for(const f of ['RichText','PreviewBoundary'])fs.copyFileSync('src/adapters/astro/'+f+'.astro','dist/adapters/astro/'+f+'.astro')\"",
     "dev": "tsup --watch",
     "test": "vitest run",
@@ -132,6 +172,10 @@
     "test:bench": "vitest bench tests/benchmarks",
     "test:bench:codspeed": "vitest bench --run --config vitest.bench.config.ts",
     "test:bundle": "tsx scripts/check-bundle-size.ts",
+    "test:treeshake": "tsx scripts/check-tree-shaking.ts",
+    "test:edge": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' tsx scripts/check-edge-runtime.ts",
+    "compat:check": "tsx scripts/compat-table.ts --check",
+    "compat:write": "tsx scripts/compat-table.ts --write",
     "test:package": "tsx scripts/check-package.ts",
     "test:smoke": "tsx scripts/post-publish-smoke.ts",
     "test:coverage": "vitest run --coverage",
@@ -184,6 +228,7 @@
     "tsx": "^4.23.12",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.67.0",
+    "vite": "^7.3.6",
     "vitest": "^4.1.10"
   },
   "overrides": {

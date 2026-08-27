@@ -74,6 +74,11 @@ import { buildBuiltinRenderers } from '@field-types/index';
  * belongs in the high-level client.
  */
 export interface LivePreviewGlobalApi {
+  /**
+   * The build configuration this instance was created from. An inline script
+   * that runs again with a different one hands over to a new instance (F-36).
+   */
+  readonly configSignature?: string;
   readonly destroy: () => void;
   readonly refresh: () => void;
   readonly enumerateOrigins: () => readonly string[];
@@ -102,7 +107,18 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
   // Astro integration AND the middleware both inject it), the first
   // instance wins and the second becomes a no-op.
   const existing = (window as { __livePreview?: LivePreviewGlobalApi }).__livePreview;
-  if (existing !== undefined) return existing;
+  // A second bootstrap on the same page is a soft navigation whose new document
+  // re-ran the inline script. Same configuration: the running instance stays
+  // and rescans. Different configuration (another serverURL, another origin
+  // list): hand over — the replacement starts first, the old one is destroyed
+  // second, so a message arriving in between reaches at least one of them.
+  const signature = JSON.stringify(readBuildConfig());
+  if (existing !== undefined) {
+    if (existing.configSignature === undefined || existing.configSignature === signature) {
+      existing.refresh();
+      return existing;
+    }
+  }
 
   const [
     additionalOrigins = [],
@@ -190,6 +206,8 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
   });
 
   runtime.start();
+  // Handover (F-36): the replacement is live before the previous instance goes.
+  existing?.destroy();
 
   // Own the document lifecycle here rather than leaving it to each adapter.
   // A back/forward-cache restore does not re-run this script, so without it an
@@ -210,6 +228,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
 
   const api: LivePreviewGlobalApi = Object.freeze({
     version: VERSION,
+    configSignature: signature,
     destroy: () => {
       unbindLifecycle();
       runtime.destroy();

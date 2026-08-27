@@ -203,6 +203,7 @@ export type {
 
 // Payload protocol types
 export type {
+  PayloadFieldCondition,
   PayloadFieldSchema,
   PayloadFieldType,
   PayloadLivePreviewData,

@@ -10,7 +10,7 @@
  */
 
 import { sanitizeHtml, hasSanitizerDocument } from '@security/sanitizer';
-import { lookup, register, type RenderNodeContext } from './registry';
+import { lookup, type RenderNodeContext } from './registry';
 import type { LexicalNode, LexicalRoot } from './types';
 import { resolveAlignment, resolveIndent } from './utils';
 
@@ -20,35 +20,6 @@ import { resolveAlignment, resolveIndent } from './utils';
 // `sideEffects: false` field tree-shake side-effect-only imports.
 // Wiring the registry from a single point eliminates that risk —
 // every renderer is unambiguously referenced as a value.
-import { textRenderer } from './nodes/text';
-import { paragraphRenderer } from './nodes/paragraph';
-import { headingRenderer } from './nodes/heading';
-import { listRenderer, listItemRenderer } from './nodes/list';
-import { linkRenderer } from './nodes/link';
-import { quoteRenderer } from './nodes/quote';
-import { codeRenderer, codeHighlightRenderer } from './nodes/code';
-import { linebreakRenderer, horizontalRuleRenderer, tabRenderer } from './nodes/linebreak';
-import { uploadRenderer } from './nodes/upload';
-import { relationshipRenderer } from './nodes/relationship';
-import { blockRenderer } from './nodes/block';
-
-register('text', textRenderer);
-register('paragraph', paragraphRenderer);
-register('heading', headingRenderer);
-register('list', listRenderer);
-register('listitem', listItemRenderer);
-register('link', linkRenderer);
-register('autolink', linkRenderer);
-register('quote', quoteRenderer);
-register('code', codeRenderer);
-register('code-highlight', codeHighlightRenderer);
-register('linebreak', linebreakRenderer);
-register('horizontalrule', horizontalRuleRenderer);
-register('tab', tabRenderer);
-register('upload', uploadRenderer);
-register('relationship', relationshipRenderer);
-register('block', blockRenderer);
-
 const RENDER_CONTEXT: RenderNodeContext = {
   renderChildren,
   resolveAlignment,

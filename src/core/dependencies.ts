@@ -2,10 +2,10 @@
  * Field dependencies: the one parser for `data-payload-depends` and the one
  * merge for the runtime's `dependencies` option (roadmap 1.3.0 / 1.5.0).
  *
- * A dependent binding declares its sources — `data-payload-depends="price,
- * currency"` on the element bound to `priceLabel` — while the runtime option
- * is keyed the other way round (`{ price: ['priceLabel'] }`), because the
- * scheduler asks "what changed, and who cares". Both end up in one map of
+ * A dependent binding declares its sources — `data-payload-depends="price, currency"`
+ * on the element bound to `priceLabel` — while the runtime option is keyed the
+ * other way round (`{ price: ['priceLabel'] }`), because the scheduler asks
+ * "what changed, and who cares". Both end up in one map of
  * source → dependents that `skipUnchanged` consults.
  *
  * @module @core/dependencies

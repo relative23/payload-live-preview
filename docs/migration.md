@@ -73,3 +73,23 @@ Nothing breaks. The initial draft read has a home:
 - `fetchPreviewDocument()` / `fetchPreviewGlobal()` on the root entry are deprecated
   and warn once outside production; they are removed in 2.0
   ([ADR 0007](architecture/0007-v2-defaults-and-renames-ledger.md), entries 9–10).
+
+## From `1.8.x` to `1.9.0`
+
+Nothing breaks. What changed underneath:
+
+- Four focused entries — `payload-live-preview/client`, `/structural`,
+  `/lexical`, `/plugins` — sit beside `/core` and `/server`. The root barrel
+  is unchanged and now tree-shakes: one symbol imported from it ships that
+  symbol, not the bundle (`npm run test:treeshake` holds the numbers; table
+  in [docs/benchmarks.md](benchmarks.md)). Nothing to migrate; importing
+  from a focused entry is optional.
+- Minification moved from esbuild to terser. The public callable names
+  still carry their `fn.name`; internal names are mangled as before.
+- The keyed morph no longer moves a retained element around whitespace-only
+  text nodes, so a focused `<input>` survives an update in markup that keeps
+  its indentation (Astro 4–6, most SSR). If you had worked around lost
+  focus by setting `data-payload-strategy="replace"` on such lists, you can
+  remove it.
+- The README compatibility table is generated from `quality/compat-matrix.json`;
+  every version in it is one CI installs (ADR 0009).

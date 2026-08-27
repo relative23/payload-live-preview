@@ -1,36 +1,13 @@
 import { defineConfig, type Options } from 'tsup';
 
-export const DUAL_FORMAT_ENTRIES = {
-  index: 'src/index.ts',
-  codegen: 'src/codegen/index.ts',
-  payload: 'src/payload/index.ts',
-} as const;
+import {
+  CORE_ENTRY,
+  DUAL_FORMAT_ENTRIES,
+  ESM_ONLY_ENTRIES,
+  STANDALONE_ENTRIES,
+} from './scripts/package-entries';
 
-/**
- * Built alone: the server entry shares modules with the root entry, and one
- * profile for both would make tsup emit a shared declaration chunk whose file
- * extension differs between ESM and CJS — which the declaration-parity gate
- * rightly refuses. Its own profile keeps `server.d.ts` self-contained.
- */
-export const SERVER_ENTRY = {
-  server: 'src/server/index.ts',
-} as const;
-
-export const CORE_ENTRY = {
-  core: 'src/core-entry.ts',
-} as const;
-
-export const ESM_ONLY_ENTRIES = {
-  'codegen-cli': 'src/codegen/cli.ts',
-  'doctor-cli': 'src/doctor/cli.ts',
-  doctor: 'src/doctor/index.ts',
-  'codegen-astro': 'src/codegen/astro-plugin.ts',
-  'adapters/astro/index': 'src/adapters/astro/index.ts',
-  'adapters/astro/middleware-entry': 'src/adapters/astro/middleware-entry.ts',
-  'adapters/nextjs/index': 'src/adapters/nextjs/index.ts',
-  'adapters/sveltekit/index': 'src/adapters/sveltekit/index.ts',
-  'adapters/nuxt/index': 'src/adapters/nuxt/index.ts',
-} as const;
+export { CORE_ENTRY, DUAL_FORMAT_ENTRIES, ESM_ONLY_ENTRIES, STANDALONE_ENTRIES };
 
 const SHARED_OPTIONS = {
   dts: true,
@@ -43,8 +20,15 @@ const SHARED_OPTIONS = {
   // Published entries are parsed and transferred by every consumer. Full
   // esbuild minification cuts that cost substantially; `keepNames` preserves
   // observable class/function names used by diagnostics and existing code.
-  minify: true,
-  keepNames: true,
+  // esbuild only bundles and lowers syntax here. Minification is the terser
+  // pass in scripts/build-dist.ts, for two measured reasons: esbuild's minify
+  // strips the `/* @__PURE__ */` annotations a consumer's bundler needs to drop
+  // what it does not import, and esbuild's `keepNames` is implemented with
+  // top-level statements that bundler cannot prove pure — with it, one symbol
+  // imported from the root barrel shipped the whole bundle
+  // (scripts/check-tree-shaking.ts).
+  minify: false,
+  keepNames: false,
   treeshake: true,
   target: 'es2022',
   outDir: 'dist',
@@ -73,23 +57,17 @@ export const BUILD_PROFILES: Options[] = [
     entry: DUAL_FORMAT_ENTRIES,
     format: ['esm', 'cjs'],
   },
-  {
+  ...Object.entries(STANDALONE_ENTRIES).map(([name, source]): Options => ({
     ...SHARED_OPTIONS,
-    name: 'server',
-    entry: SERVER_ENTRY,
+    name,
+    entry: { [name]: source },
     format: ['esm', 'cjs'],
-  },
+  })),
   {
     ...SHARED_OPTIONS,
     name: 'core',
     entry: CORE_ENTRY,
     format: ['esm', 'cjs'],
-    // The core entry contains a large internal runtime graph. Preserving every
-    // internal symbol name makes that graph materially larger, while only its
-    // exported function/class names are observable. `scripts/build-dist.ts`
-    // retains that exact public allow-list during the final minification pass.
-    keepNames: false,
-    minify: false,
   },
   {
     ...SHARED_OPTIONS,

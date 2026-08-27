@@ -715,7 +715,7 @@ interface PayloadDocumentEventDetail {
 }
 
 // @public
-type PayloadFieldCondition = (data: unknown, siblingData: unknown) => boolean;
+export type PayloadFieldCondition = (data: unknown, siblingData: unknown) => boolean;
 
 // @public
 export interface PayloadFieldSchema {
@@ -1205,10 +1205,6 @@ interface WebCryptoLike {
 export function wrapWithScriptTag(body: string, options?: {
     nonce?: string;
 }): string;
-
-// Warnings were encountered during analysis:
-//
-// dist/index.d.ts:300:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

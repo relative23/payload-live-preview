@@ -35,23 +35,6 @@ import {
  * structural-array renderers are intentionally NOT here: both own per-client
  * warning/diff state and are constructed fresh per build (below).
  */
-const STATELESS_BUILTIN: readonly FieldRenderer[] = [
-  textareaRenderer,
-  richTextRenderer,
-  htmlRenderer,
-  urlRenderer,
-  { ...urlRenderer, name: 'email' },
-  imageRenderer,
-  uploadRenderer,
-  relationshipRenderer,
-  selectRenderer,
-  { ...selectRenderer, name: 'radio' },
-  checkboxRenderer,
-  dateRenderer,
-  numberRenderer,
-  arrayRenderer,
-  { ...arrayRenderer, name: 'blocks' },
-];
 
 /**
  * Built-in renderer map. Called once per client/runtime; the
@@ -59,11 +42,28 @@ const STATELESS_BUILTIN: readonly FieldRenderer[] = [
  * state so nothing is shared between concurrent clients.
  */
 export function buildBuiltinRenderers(): Readonly<Record<string, FieldRenderer>> {
-  return buildRegistry([
-    createTextRenderer(),
-    ...STATELESS_BUILTIN,
-    createStructuralArrayRenderer(),
-  ]);
+  // Built here, not at module level: the object spreads are not provably pure
+  // for a bundler, and a table at module scope would pin every renderer into a
+  // consumer that imports an unrelated symbol from the root barrel.
+  const stateless: readonly FieldRenderer[] = [
+    textareaRenderer,
+    richTextRenderer,
+    htmlRenderer,
+    urlRenderer,
+    { ...urlRenderer, name: 'email' },
+    imageRenderer,
+    uploadRenderer,
+    relationshipRenderer,
+    selectRenderer,
+    { ...selectRenderer, name: 'radio' },
+    checkboxRenderer,
+    dateRenderer,
+    numberRenderer,
+    arrayRenderer,
+    { ...arrayRenderer, name: 'blocks' },
+  ];
+
+  return buildRegistry([createTextRenderer(), ...stateless, createStructuralArrayRenderer()]);
 }
 
 export { registerBuiltinRenderer, __resetBuiltinRenderersForTests };

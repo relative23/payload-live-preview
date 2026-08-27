@@ -36,7 +36,22 @@ Under the hood it's framework-agnostic — the same runtime drives SvelteKit, Nu
 | Relationship / upload population               | ✅ (admin merges client-side) | ✅ with `serverURL` (REST merge)                                      |
 | Schema-driven field typing (`fieldSchemaJSON`) | ✅                            | — (3.x removed it; DOM heuristics + Lexical auto-detection take over) |
 
-Astro **4 – 7** is the supported peer range; the current real-app browser fixture exercises Astro 7, not every supported Astro major. Node ≥ 20.19. Protocol compatibility is covered by captured-message integration tests plus a weekly `@payloadcms/live-preview` latest/canary drift check.
+<!-- compat-matrix:start -->
+
+| Framework | Supported             | Tested in CI on every push (version, browsers)                                    |
+| --------- | --------------------- | --------------------------------------------------------------------------------- |
+| Astro     | >=4.0.0 <8.0.0        | 7.2.1 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
+| Next.js   | App Router, 15 and 16 | 16.3.0 (chromium, firefox, webkit)                                                |
+| SvelteKit | 2.x                   | 2.70.2 (chromium, firefox, webkit)                                                |
+| Nuxt      | 3.x                   | 3.21.11 (chromium, firefox, webkit)                                               |
+
+Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
+
+- Payload 2.x: captured-message integration tests.
+- Payload 3.x: real Payload 3.x admin E2E (examples/payload-backend) and a message captured from 3.85.
+- Payload 4.0 pre-releases: weekly protocol watch against @payloadcms/live-preview@canary.
+
+<!-- compat-matrix:end -->
 
 **When to use the official packages instead:** for a client-rendered React or Vue app, [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` re-render your real component tree and are maintained in lockstep with Payload — that is the better tool there. This package exists for everything the official hooks cannot cover: Astro, static/SSR pages, SvelteKit/Nuxt server-rendered markup, plain HTML — anywhere there is no client framework to re-render the page.
 
@@ -45,6 +60,24 @@ Astro **4 – 7** is the supported peer range; the current real-app browser fixt
 ```bash
 npm install payload-live-preview
 ```
+
+### Package entries
+
+The root import carries everything. The focused entries below ship the same
+code as smaller, self-contained bundles — each with ESM and CommonJS builds,
+its own type declarations, size budget and API report:
+
+| Entry                                                | Contents                                                                                          |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `payload-live-preview`                               | Everything: client, inline script generator, renderers, plugins, adapters' shared helpers.        |
+| `payload-live-preview/core`                          | The client and runtime without the built-in plugin constructors, generator or adapters.           |
+| `payload-live-preview/client`                        | `LivePreviewClient` and `initLivePreview()` alone.                                                |
+| `payload-live-preview/structural`                    | The structural array renderer, the keyed morph (ADR 0008) and the `data-payload-depends` helpers. |
+| `payload-live-preview/lexical`                       | `lexicalToHtml()`, `lexicalToPlainText()`, node and block renderer registries.                    |
+| `payload-live-preview/plugins`                       | `PluginManager`, plugin types and the built-in plugins.                                           |
+| `payload-live-preview/server`                        | `definePreview()` and `authorizePreviewRequest()` for server code.                                |
+| `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | One framework adapter each.                                                                       |
+| `payload-live-preview/codegen`                       | Type generation from a Payload config.                                                            |
 
 ## Configure Payload
 
@@ -639,7 +672,16 @@ does not suppress CSP handling. Astro additionally accepts `mode` (`'inline'` /
 per-request `nonce`; `generateInlineScript()` itself returns a script body, so pass
 the nonce to `wrapWithScriptTag()` when embedding it manually.
 
-Bundle-size note: `import … from 'payload-live-preview/core'` is a lighter entry without the built-in plugin constructors, inline generator/runtime source, or framework adapters. It still includes the built-in field renderers used by `LivePreviewClient`, including Lexical rendering. Hot-path timings live in [docs/benchmarks.md](docs/benchmarks.md).
+Bundle-size note: the root barrel tree-shakes, and that is measured rather
+than declared — `npm run test:treeshake` bundles one-symbol consumers with
+Vite against the built package and holds each to a budget. Importing
+`escapeHtml` from the root ships 220 B gzip, `lexicalToHtml` 4.3 KB,
+`initLivePreview` 30.5 KB (the client with its built-in renderers, Lexical
+included), `generateInlineScript` 24.8 KB (the inline runtime source and
+nothing of the client). The focused entries under [Package entries](#package-entries)
+give a bundler less to look through and a reader a smaller surface; the
+bytes are the same. Hot-path timings and the tree-shaking table live in
+[docs/benchmarks.md](docs/benchmarks.md).
 
 The four real-app browser fixtures in `examples/` cover Astro 7, Next.js 16, SvelteKit 2, and Nuxt 3 in Chromium, Firefox, and WebKit. The Astro 4–7 peer range is broader than the single Astro-major browser fixture.
 
