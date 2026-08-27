@@ -7,6 +7,13 @@ const isCI = process.env['CI'] === 'true';
 // and fails with "preview frame missing". Unset, nothing changes; CI never
 // sets it.
 const astroPort = process.env['PLP_E2E_PORT'] ?? '4173';
+/**
+ * Which fixture servers to start, e.g. `PLP_E2E_SERVERS=astro` for a job that
+ * installs only the Astro fixture (the Astro matrix). Default: all four.
+ */
+const servers = new Set(
+  (process.env['PLP_E2E_SERVERS'] ?? 'astro,nextjs,sveltekit,nuxt').split(','),
+);
 
 const config: PlaywrightTestConfig = {
   testDir: './tests/e2e/specs',
@@ -40,6 +47,7 @@ const config: PlaywrightTestConfig = {
       // The fixture's own `preview` script pins 4173, and a second `--port`
       // appended through npm does not reliably win. Invoke astro directly so
       // the port is stated exactly once.
+      name: 'astro',
       command: `npm --prefix examples/astro-payload run build && cd examples/astro-payload && npx astro preview --host --port ${astroPort}`,
       // Suppress Astro's AI-agent auto-background mode. The environment
       // variable deliberately means "the caller handles backgrounding";
@@ -50,6 +58,7 @@ const config: PlaywrightTestConfig = {
       timeout: 120_000,
     },
     {
+      name: 'nextjs',
       command: 'npm --prefix examples/nextjs-payload run dev',
       url: 'http://localhost:4174/admin.html',
       reuseExistingServer: !isCI,
@@ -57,12 +66,14 @@ const config: PlaywrightTestConfig = {
       timeout: 120_000,
     },
     {
+      name: 'sveltekit',
       command: 'npm --prefix examples/sveltekit-payload run dev',
       url: 'http://localhost:4175/admin.html',
       reuseExistingServer: !isCI,
       timeout: 60_000,
     },
     {
+      name: 'nuxt',
       command: 'npm --prefix examples/nuxt-payload run dev',
       url: 'http://localhost:4176/admin.html',
       reuseExistingServer: !isCI,
@@ -70,7 +81,7 @@ const config: PlaywrightTestConfig = {
       // request; a cold CI cache makes that as slow as Next's.
       timeout: 120_000,
     },
-  ],
+  ].filter((server) => servers.has(server.name)),
 };
 
 if (isCI) {

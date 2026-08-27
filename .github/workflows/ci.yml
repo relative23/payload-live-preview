@@ -284,7 +284,9 @@ jobs:
       # version it resolved is printed so the log states what was tested.
       - run: npm --prefix examples/astro-payload install --no-audit --no-fund --dangerously-allow-all-scripts "astro@^${{ matrix.astro }}"
       - run: node -p "'astro ' + require('./examples/astro-payload/node_modules/astro/package.json').version"
-      - run: >-
+      - env:
+          PLP_E2E_SERVERS: astro
+        run: >-
           npx playwright test --project=chromium
           tests/e2e/specs/accessibility.spec.ts
           tests/e2e/specs/diagnostics.spec.ts
