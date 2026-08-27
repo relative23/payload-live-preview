@@ -24,10 +24,10 @@ export default defineConfig({
         'src/index.ts',
         'src/**/index.ts',
         'src/**/types.ts',
-        'src/types/**',
+        // Type-only protocol module. `src/types/authorized-preview.ts` carries
+        // the runtime brand check and is measured like any other source file.
+        'src/types/payload-protocol.ts',
         'src/inline/runtime.generated.ts',
-        // Type-only interface module (no executable statements).
-        'src/client/config.ts',
         // Build-time tooling, not shipped runtime code. It is exercised
         // end-to-end (CLI subprocess + ts-morph program tests), but v8
         // coverage cannot attribute subprocess execution to these files.
