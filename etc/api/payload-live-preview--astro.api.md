@@ -7,14 +7,13 @@
 import { A } from '../../policy-B4DHbtJN.js';
 import { A as AUTHORIZATION_LOCALS_KEY } from '../../middleware-DIQtCes5.js';
 import { c as createLivePreviewMiddleware } from '../../middleware-DIQtCes5.js';
-import { h as hasPreviewIntent } from '../../preview-request-OtCAmNe2.js';
-import { i as isPreviewRequest } from '../../preview-request-OtCAmNe2.js';
+import { h as hasPreviewIntent } from '../../preview-request-CCLPaG55.js';
 import { L as LivePreviewAstroOptions } from '../../middleware-DIQtCes5.js';
 import { a as LivePreviewMiddleware } from '../../middleware-DIQtCes5.js';
 import { N as NONCE_LOCALS_KEY } from '../../middleware-DIQtCes5.js';
 import { P } from '../../policy-B4DHbtJN.js';
-import { P as PreviewRequestLike } from '../../preview-request-OtCAmNe2.js';
-import { a as PreviewRequestOptions } from '../../preview-request-OtCAmNe2.js';
+import { P as PreviewRequestLike } from '../../preview-request-CCLPaG55.js';
+import { a as PreviewRequestOptions } from '../../preview-request-CCLPaG55.js';
 
 // @public
 export type AstroComponentLike = object;
@@ -127,8 +126,6 @@ export interface FragmentRenderInput {
 }
 
 export { hasPreviewIntent }
-
-export { isPreviewRequest }
 
 // @public
 export function livePreview(options?: LivePreviewAstroOptions): AstroIntegrationLike;

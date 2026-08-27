@@ -74,7 +74,9 @@ describe('livePreviewNitroPlugin — CSP', () => {
     // Throwing there would fail the whole build over a header nobody can set,
     // and skipping the injection would leave that page without a runtime.
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ inject: 'always', allowedOrigins: [ADMIN] })(nitro.app);
+    livePreviewNitroPlugin({ defaults: 'v1', inject: 'always', allowedOrigins: [ADMIN] })(
+      nitro.app,
+    );
     const bare: FakeEvent = { path: '/', context: {} };
 
     // A rejection here is the failure the comment above describes.
@@ -145,7 +147,7 @@ describe('livePreviewNitroPlugin — sparse Nitro events', () => {
     // node response. Reaching into `context` unguarded would throw and fail
     // the whole build.
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ inject: 'always' })(nitro.app);
+    livePreviewNitroPlugin({ defaults: 'v1', inject: 'always' })(nitro.app);
 
     // A rejection here is the failure the comment above describes.
     const { head } = await nitro.render({ path: '/' });
@@ -154,7 +156,7 @@ describe('livePreviewNitroPlugin — sparse Nitro events', () => {
 
   it('falls back to the request url when the event has no path', async () => {
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ allowedOrigins: [ADMIN] })(nitro.app);
+    livePreviewNitroPlugin({ defaults: 'v1', allowedOrigins: [ADMIN] })(nitro.app);
     const ev: FakeEvent = {
       context: {},
       node: { req: { url: '/?preview=true', headers: {} } },
@@ -168,7 +170,7 @@ describe('livePreviewNitroPlugin — sparse Nitro events', () => {
     // The host is deliberately not the probe here: a comma-joined host still
     // parses as a url, so it would prove nothing.
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ allowedOrigins: [ADMIN] })(nitro.app);
+    livePreviewNitroPlugin({ defaults: 'v1', allowedOrigins: [ADMIN] })(nitro.app);
     const ev: FakeEvent = {
       path: '/',
       context: {},

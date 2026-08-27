@@ -792,30 +792,16 @@ export interface PreviewBindings {
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @public
-export interface PreviewBindingsBooleanOptions extends PreviewBindingsCommonOptions {
-    // (undocumented)
-    readonly authorization?: undefined;
-    // (undocumented)
-    readonly authorized: boolean;
-}
-
 // @public (undocumented)
 export interface PreviewBindingsCommonOptions {
     readonly owner?: string;
-    readonly strict?: boolean;
 }
 
 // @public
-export interface PreviewBindingsContextOptions extends PreviewBindingsCommonOptions {
+export interface PreviewBindingsOptions extends PreviewBindingsCommonOptions {
     // (undocumented)
     readonly authorization: AuthorizedPreviewContext | null;
-    // (undocumented)
-    readonly authorized?: undefined;
 }
-
-// @public (undocumented)
-export type PreviewBindingsOptions = PreviewBindingsContextOptions | PreviewBindingsBooleanOptions;
 
 // @public
 export const PROTOCOL_CAPABILITIES: readonly ProtocolCapability[];

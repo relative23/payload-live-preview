@@ -49,7 +49,7 @@ describe('createLivePreviewMiddleware — responses it must not corrupt', () => 
     // Next.js serves RSC and partial responses that are HTML but have no head.
     // Prepending a script there would put it ahead of the fragment's own markup.
     const fragment = '<div id="card">just a fragment</div>';
-    const middleware = createLivePreviewMiddleware({ inject: 'always' });
+    const middleware = createLivePreviewMiddleware({ defaults: 'v1', inject: 'always' });
     const result = await middleware(request(), htmlResponse(fragment));
 
     expect(await result.text()).toBe(fragment);
@@ -57,7 +57,7 @@ describe('createLivePreviewMiddleware — responses it must not corrupt', () => 
   });
 
   it('preserves status and statusText when it rewrites the body', async () => {
-    const middleware = createLivePreviewMiddleware({ inject: 'always' });
+    const middleware = createLivePreviewMiddleware({ defaults: 'v1', inject: 'always' });
     const result = await middleware(
       request(),
       htmlResponse(undefined, { status: 201, statusText: 'Created' }),
@@ -72,7 +72,7 @@ describe('createLivePreviewMiddleware — responses it must not corrupt', () => 
     // The injected script makes the body longer. A surviving content-length
     // would truncate the page at the client.
     const body = '<html><head></head><body></body></html>';
-    const middleware = createLivePreviewMiddleware({ inject: 'always' });
+    const middleware = createLivePreviewMiddleware({ defaults: 'v1', inject: 'always' });
     const result = await middleware(
       request(),
       htmlResponse(body, { headers: { 'content-length': String(body.length) } }),
@@ -95,6 +95,7 @@ describe('createLivePreviewMiddleware — a runtime that refuses header mutation
 
   it('falls back to a fresh response instead of throwing', async () => {
     const middleware = createLivePreviewMiddleware({
+      defaults: 'v1',
       inject: 'always',
       autoInject: false,
       allowedOrigins: [ADMIN],

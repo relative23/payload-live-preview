@@ -1,6 +1,6 @@
 # ADR 0007 — 2.0 defaults, migration policy, and the renames ledger
 
-**Status:** Accepted • **Date:** 2026-08-27 (started; appended to by every change that renames, moves, re-defaults or removes something)
+**Status:** Accepted — Shipped in 2.0 • **Date:** 2026-08-27 (started; appended to by every change that renames, moves, re-defaults or removes something)
 
 ## Context
 
@@ -13,6 +13,11 @@ private roadmap lists the defaults; this file lists the _changes_, one entry
 each, in the order they landed.
 
 ## Decision
+
+**2.0 shipped (2026-08-27):** every ledger row below has landed — the v2
+profile is the default, the renamed/moved APIs (entries 1, 7, 9–10) were
+removed, and `serverURL` now requires an explicit `mergeDepth`. `defaults: 'v1'`
+remains through the 2.x line as the staged-migration escape hatch.
 
 ### 1. `defaults: 'v2'` is one switch
 

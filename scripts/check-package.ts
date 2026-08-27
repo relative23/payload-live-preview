@@ -765,7 +765,7 @@ async function main(): Promise<void> {
       loader,
       [
         'const VIRTUAL_OPTIONS = "virtual:payload-live-preview/options";',
-        'const VIRTUAL_URL = "data:text/javascript,export default {};";',
+        'const VIRTUAL_URL = "data:text/javascript,export default {defaults:\\"v1\\"};";',
         'export function resolve(specifier, context, nextResolve) {',
         '  if (specifier === VIRTUAL_OPTIONS) return { url: VIRTUAL_URL, shortCircuit: true };',
         '  return nextResolve(specifier, context);',

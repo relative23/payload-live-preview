@@ -42,10 +42,6 @@ export function warnOnce(key: string, message: string): void {
   }
 }
 
-export function warnDeprecatedOnce(key: string, message: string): void {
-  warnOnce(`deprecated:${key}`, message);
-}
-
 /** Test hook: forget every warning issued so far in this process. */
 export function resetDeprecationWarnings(): void {
   const holder = globalThis as unknown as Record<string, Set<string> | undefined>;

@@ -31,7 +31,10 @@ describe('livePreview integration', () => {
 
   it('injects the script via head-inline by default', () => {
     const injectScript = vi.fn();
-    const integration = livePreview({ allowedOrigins: ['https://admin.example.com'] });
+    const integration = livePreview({
+      defaults: 'v1',
+      allowedOrigins: ['https://admin.example.com'],
+    });
     integration.hooks['astro:config:setup']({ injectScript });
     expect(injectScript).toHaveBeenCalledOnce();
     const call = injectScript.mock.calls[0]!;
@@ -43,7 +46,7 @@ describe('livePreview integration', () => {
 
   it('honours autoInject: false', () => {
     const injectScript = vi.fn();
-    const integration = livePreview({ autoInject: false });
+    const integration = livePreview({ defaults: 'v1', autoInject: false });
     integration.hooks['astro:config:setup']({ injectScript });
     expect(injectScript).not.toHaveBeenCalled();
   });
@@ -51,6 +54,7 @@ describe('livePreview integration', () => {
   it('forwards debounce, heartbeat, and debug options into the injected script', () => {
     const injectScript = vi.fn();
     const integration = livePreview({
+      defaults: 'v1',
       debug: true,
       debounceMs: 250,
       heartbeatMs: 60_000,
@@ -65,7 +69,9 @@ describe('livePreview integration', () => {
 
   it('forwards skipUnchanged into the trailing wire slot', () => {
     const injectScript = vi.fn();
-    livePreview({ skipUnchanged: true }).hooks['astro:config:setup']({ injectScript });
+    livePreview({ defaults: 'v1', skipUnchanged: true }).hooks['astro:config:setup']({
+      injectScript,
+    });
     const config = injectedConfig(injectScript.mock.calls[0]![1] as string);
     expect(config[14]).toBe(true);
   });
@@ -102,7 +108,7 @@ describe('createLivePreviewMiddleware', () => {
   }
 
   it('writes a nonce to locals on every request', async () => {
-    const middleware = createLivePreviewMiddleware();
+    const middleware = createLivePreviewMiddleware({ defaults: 'v1' });
     const ctx = makePlainContext();
     await middleware(ctx, () => Promise.resolve(makeHtmlResponse('<html><head></head></html>')));
     expect(typeof ctx.locals[NONCE_LOCALS_KEY]).toBe('string');
@@ -110,7 +116,7 @@ describe('createLivePreviewMiddleware', () => {
   });
 
   it('skips prerendered contexts entirely (Astro 5 build-time middleware)', async () => {
-    const middleware = createLivePreviewMiddleware();
+    const middleware = createLivePreviewMiddleware({ defaults: 'v1' });
     const ctx = { ...makePreviewContext(), isPrerendered: true };
     const original = makeHtmlResponse('<html><head></head></html>');
     const response = await middleware(ctx, () => Promise.resolve(original));
@@ -120,6 +126,7 @@ describe('createLivePreviewMiddleware', () => {
 
   it('adds strict-dynamic only when explicitly requested', async () => {
     const middleware = createLivePreviewMiddleware({
+      defaults: 'v1',
       manageCsp: 'full',
       strictDynamic: true,
     });
@@ -132,6 +139,7 @@ describe('createLivePreviewMiddleware', () => {
 
   it('parses CSP ASCII whitespace and ignores duplicate directive relaxations', async () => {
     const middleware = createLivePreviewMiddleware({
+      defaults: 'v1',
       allowedOrigins: ['https://admin.example.com'],
     });
     const ctx = makePreviewContext();
@@ -153,7 +161,7 @@ describe('createLivePreviewMiddleware', () => {
   });
 
   it('skips injection for fragment responses without a <head> (server islands)', async () => {
-    const middleware = createLivePreviewMiddleware();
+    const middleware = createLivePreviewMiddleware({ defaults: 'v1' });
     const ctx = makePreviewContext();
     const response = await middleware(ctx, () => Promise.resolve(makeHtmlResponse('<p>x</p>')));
     const body = await response.text();
@@ -163,6 +171,7 @@ describe('createLivePreviewMiddleware', () => {
 
   it('survives responses with immutable headers', async () => {
     const middleware = createLivePreviewMiddleware({
+      defaults: 'v1',
       allowedOrigins: ['https://admin.example.com'],
       autoInject: false,
     });
@@ -232,6 +241,7 @@ describe('livePreview integration — middleware mode', () => {
   it('registers the middleware entrypoint and serves options via the virtual module', () => {
     const ctx = makeSetupContext();
     const integration = livePreview({
+      defaults: 'v1',
       mode: 'middleware',
       allowedOrigins: ['https://admin.example.com'],
       serverURL: 'https://admin.example.com',
@@ -255,7 +265,11 @@ describe('livePreview integration — middleware mode', () => {
 
   it('rejects shouldInject in middleware mode (not serializable)', () => {
     const ctx = makeSetupContext();
-    const integration = livePreview({ mode: 'middleware', shouldInject: () => true });
+    const integration = livePreview({
+      defaults: 'v1',
+      mode: 'middleware',
+      shouldInject: () => true,
+    });
     expect(() => {
       integration.hooks['astro:config:setup'](ctx);
     }).toThrow(/shouldInject/);
@@ -264,6 +278,7 @@ describe('livePreview integration — middleware mode', () => {
   it('escapes </script>-breaking sequences in the serialized options', () => {
     const ctx = makeSetupContext();
     const integration = livePreview({
+      defaults: 'v1',
       mode: 'middleware',
       previewQueryParams: ['x</script><script>'],
     });
@@ -353,9 +368,11 @@ describe('livePreview integration — loader mode', () => {
 
   it('injects the bootstrap instead of the runtime', () => {
     const ctx = makeLoaderContext();
-    livePreview({ mode: 'loader', allowedOrigins: ['https://admin.example.com'] }).hooks[
-      'astro:config:setup'
-    ](ctx);
+    livePreview({
+      defaults: 'v1',
+      mode: 'loader',
+      allowedOrigins: ['https://admin.example.com'],
+    }).hooks['astro:config:setup'](ctx);
 
     const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
     expect(ctx.injectScript).toHaveBeenCalledTimes(1);
@@ -368,7 +385,7 @@ describe('livePreview integration — loader mode', () => {
 
   it('points the bootstrap at a content-hashed path with an SRI hash', () => {
     const ctx = makeLoaderContext();
-    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    livePreview({ defaults: 'v1', mode: 'loader' }).hooks['astro:config:setup'](ctx);
     const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
 
     expect(injected).toMatch(/_payload-live-preview\/runtime\.[0-9a-f]{16}\.js/u);
@@ -377,14 +394,14 @@ describe('livePreview integration — loader mode', () => {
 
   it('honours Astro base so a site under a subpath still finds the asset', () => {
     const ctx = makeLoaderContext('/docs/');
-    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    livePreview({ defaults: 'v1', mode: 'loader' }).hooks['astro:config:setup'](ctx);
     const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
     expect(injected).toContain('/docs/_payload-live-preview/runtime.');
   });
 
   it('serves the runtime during astro dev from the same path it will be built to', () => {
     const ctx = makeLoaderContext();
-    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    livePreview({ defaults: 'v1', mode: 'loader' }).hooks['astro:config:setup'](ctx);
     const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
     const urlPath = /"(\/_payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(injected)?.[1];
     expect(urlPath).toBeDefined();
@@ -398,7 +415,7 @@ describe('livePreview integration — loader mode', () => {
 
   it('ignores a query string so a cache-busting reload still resolves', () => {
     const ctx = makeLoaderContext();
-    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    livePreview({ defaults: 'v1', mode: 'loader' }).hooks['astro:config:setup'](ctx);
     const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
     const urlPath = /"(\/_payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(injected)?.[1];
 
@@ -407,20 +424,22 @@ describe('livePreview integration — loader mode', () => {
 
   it('passes every other request through untouched', () => {
     const ctx = makeLoaderContext();
-    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    livePreview({ defaults: 'v1', mode: 'loader' }).hooks['astro:config:setup'](ctx);
     expect(requestFromDevServer(ctx.plugins[0]!, '/index.html').handled).toBe(false);
   });
 
   it('does nothing at all when autoInject is off', () => {
     const ctx = makeLoaderContext();
-    livePreview({ mode: 'loader', autoInject: false }).hooks['astro:config:setup'](ctx);
+    livePreview({ defaults: 'v1', mode: 'loader', autoInject: false }).hooks['astro:config:setup'](
+      ctx,
+    );
     expect(ctx.injectScript).not.toHaveBeenCalled();
     expect(ctx.plugins).toEqual([]);
   });
 
   it('emits the asset into the build output at the injected path', () => {
     const ctx = makeLoaderContext();
-    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    livePreview({ defaults: 'v1', mode: 'loader' }).hooks['astro:config:setup'](ctx);
     const injected = ctx.injectScript.mock.calls[0]?.[1] as string;
     const urlPath = /"(\/_payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(injected)?.[1];
 
@@ -442,7 +461,7 @@ describe('livePreview integration — loader mode', () => {
     // at a URL that 404s. Ordinary pages look fine and only the preview stays
     // dead, with no message anywhere. Middleware mode already refuses this.
     expect(() =>
-      livePreview({ mode: 'loader' }).hooks['astro:config:setup']({
+      livePreview({ defaults: 'v1', mode: 'loader' }).hooks['astro:config:setup']({
         injectScript: vi.fn(),
       }),
     ).toThrow(/updateConfig/u);
@@ -460,7 +479,7 @@ describe('livePreview integration — loader mode', () => {
     // A wrong URL here is a 404 nobody sees: the page renders, the preview
     // simply never wakes up.
     const ctx = makeLoaderContext(base);
-    livePreview({ mode: 'loader' }).hooks['astro:config:setup'](ctx);
+    livePreview({ defaults: 'v1', mode: 'loader' }).hooks['astro:config:setup'](ctx);
     expect(ctx.injectScript.mock.calls[0]?.[1] as string).toContain(expected);
   });
 
@@ -468,7 +487,7 @@ describe('livePreview integration — loader mode', () => {
     // The emitter is armed only by loader mode; an inline build must not grow
     // a second copy of the runtime beside the one already in its pages.
     const ctx = makeLoaderContext();
-    livePreview({}).hooks['astro:config:setup'](ctx);
+    livePreview({ defaults: 'v1' }).hooks['astro:config:setup'](ctx);
     expect(ctx.plugins).toEqual([]);
   });
 });

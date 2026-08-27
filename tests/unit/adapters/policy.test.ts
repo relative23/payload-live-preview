@@ -22,21 +22,41 @@ function request(url = 'https://site.example.com/', headers: Record<string, stri
 }
 
 describe('previewIntentFor', () => {
-  it('is intent, not authorization: a query flag, an iframe destination, or an admin referer', () => {
+  it('2.0 default is query-only: an iframe destination or admin referer is not intent', () => {
     const options = { allowedOrigins: [ADMIN] };
     expect(previewIntentFor(request(), options)).toBe(false);
     expect(previewIntentFor(request('https://site.example.com/?preview=true'), options)).toBe(true);
+    // Under the v2 default only the query signal counts; iframe and referer do not.
     expect(
       previewIntentFor(
         request('https://site.example.com/', { 'sec-fetch-dest': 'iframe' }),
         options,
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       previewIntentFor(
         request('https://site.example.com/', { referer: `${ADMIN}/admin` }),
         options,
       ),
+    ).toBe(false);
+  });
+
+  it('the broad 1.x signal set is opt-in via previewSignals or defaults: v1', () => {
+    const broad = {
+      allowedOrigins: [ADMIN],
+      previewSignals: ['query', 'fetch-dest', 'referer'] as const,
+    };
+    expect(
+      previewIntentFor(request('https://site.example.com/', { 'sec-fetch-dest': 'iframe' }), broad),
+    ).toBe(true);
+    expect(
+      previewIntentFor(request('https://site.example.com/', { referer: `${ADMIN}/admin` }), broad),
+    ).toBe(true);
+    expect(
+      previewIntentFor(request('https://site.example.com/', { 'sec-fetch-dest': 'iframe' }), {
+        allowedOrigins: [ADMIN],
+        defaults: 'v1',
+      }),
     ).toBe(true);
   });
 
@@ -126,7 +146,7 @@ describe('injectIntoHead', () => {
 
 describe('createPreviewPolicy — decisions', () => {
   it('decides nothing for a request without intent', async () => {
-    const policy = createPreviewPolicy({ allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     expect(await policy.decide(request())).toMatchObject({
       isPreview: false,
       inject: false,
@@ -137,7 +157,7 @@ describe('createPreviewPolicy — decisions', () => {
   });
 
   it('injects and manages CSP for an intent request by default', async () => {
-    const policy = createPreviewPolicy({ allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     expect(await policy.decide(request('https://site.example.com/?preview=true'))).toMatchObject({
       isPreview: true,
       inject: true,
@@ -152,7 +172,7 @@ describe('createPreviewPolicy — decisions', () => {
     // shouldInject is a route filter, not an authorization boundary — the
     // split F-09 describes. It stays true here on purpose until 1.1.0 gates
     // every mutation on a verified context.
-    const policy = createPreviewPolicy({ allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     const decision = await policy.decide(request('https://site.example.com/?preview=true'), {
       shouldInject: () => false,
     });
@@ -163,7 +183,7 @@ describe('createPreviewPolicy — decisions', () => {
   it('consults the content filter only once intent is established', async () => {
     // A consumer's filter must not start running on every ordinary request.
     let calls = 0;
-    const policy = createPreviewPolicy({ allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     const shouldInject = (): boolean => {
       calls += 1;
       return true;
@@ -175,21 +195,25 @@ describe('createPreviewPolicy — decisions', () => {
   });
 
   it('honours autoInject: false while still managing CSP', async () => {
-    const policy = createPreviewPolicy({ allowedOrigins: [ADMIN], autoInject: false });
+    const policy = createPreviewPolicy({
+      defaults: 'v1',
+      allowedOrigins: [ADMIN],
+      autoInject: false,
+    });
     const decision = await policy.decide(request('https://site.example.com/?preview=true'));
     expect(decision.inject).toBe(false);
     expect(decision.cspMode).toBe('frame-ancestors');
   });
 
   it('turns CSP off entirely with manageCsp: false, even with intent', async () => {
-    const policy = createPreviewPolicy({ manageCsp: false, inject: 'always' });
+    const policy = createPreviewPolicy({ defaults: 'v1', manageCsp: false, inject: 'always' });
     expect((await policy.decide(request())).cspMode).toBe(false);
   });
 });
 
 describe('createPreviewPolicy — artefacts', () => {
   it('builds the script body once and stamps each tag with the nonce it is given', () => {
-    const policy = createPreviewPolicy({ allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     const a = policy.scriptTag('n1');
     const b = policy.scriptTag('n2');
     expect(a).toContain('nonce="n1"');
@@ -200,12 +224,12 @@ describe('createPreviewPolicy — artefacts', () => {
   });
 
   it('issues a fresh nonce on each call', () => {
-    const policy = createPreviewPolicy({});
+    const policy = createPreviewPolicy({ defaults: 'v1' });
     expect(policy.nonce()).not.toBe(policy.nonce());
   });
 
   it('routes csp() through the same builder the adapters used to carry', () => {
-    const policy = createPreviewPolicy({ allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     expect(policy.csp('', 'n', 'frame-ancestors')).toBe(
       buildPreviewCsp({ allowedOrigins: [ADMIN] }, 'n', '', 'frame-ancestors'),
     );

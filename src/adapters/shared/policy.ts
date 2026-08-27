@@ -46,7 +46,7 @@ import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
 import {
   adapterDefaultsFor,
   runtimeDefaultsFor,
-  V1_RUNTIME_DEFAULTS,
+  V2_RUNTIME_DEFAULTS,
   type DefaultsProfile,
 } from '@core/defaults-profile';
 import { hasPreviewIntent, type PreviewRequestLike, type PreviewSignal } from './preview-request';
@@ -120,16 +120,16 @@ export interface ResolvedPolicyOptions {
 export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPolicyOptions {
   const adapter = adapterDefaultsFor(options.defaults);
   const runtime = runtimeDefaultsFor(options.defaults);
-  const isV2 = options.defaults === 'v2';
-  // Under v1 the runtime keeps its own defaults, which are the v1 rows; only
-  // rows that differ from them are written into the inline configuration.
-  const runtimeRow = <K extends keyof typeof V1_RUNTIME_DEFAULTS>(
+  // 2.0: the inline runtime defaults to the v2 rows, so a row is written into
+  // the inline configuration only when the resolved profile differs from that
+  // — i.e. for an explicit `defaults: 'v1'` consumer staging the migration.
+  const runtimeRow = <K extends keyof typeof V2_RUNTIME_DEFAULTS>(
     key: K,
-  ): (typeof V1_RUNTIME_DEFAULTS)[K] | undefined =>
-    isV2 && runtime[key] !== V1_RUNTIME_DEFAULTS[key] ? runtime[key] : undefined;
+  ): (typeof V2_RUNTIME_DEFAULTS)[K] | undefined =>
+    runtime[key] !== V2_RUNTIME_DEFAULTS[key] ? runtime[key] : undefined;
   return {
     strict: options.strict ?? adapter.strict,
-    previewSignals: options.previewSignals ?? (isV2 ? adapter.previewSignals : undefined),
+    previewSignals: options.previewSignals ?? adapter.previewSignals,
     skipUnchanged: options.skipUnchanged ?? runtimeRow('skipUnchanged'),
     disableReferrerDetection: runtimeRow('disableReferrerDetection'),
     eventSourcePolicy: runtimeRow('eventSourcePolicy'),
@@ -250,6 +250,23 @@ export function injectIntoHead(html: string, scriptTag: string): string | undefi
  * the policy is created, so a misconfigured deployment fails at startup
  * rather than serving public responses quietly.
  */
+/**
+ * 2.0 (ADR 0007, entry 10): when a deployment enables server-side merging by
+ * setting `serverURL`, it must also choose a `mergeDepth` rather than inherit
+ * a silent default. Under an explicit `defaults: 'v1'` the 1.x default (depth
+ * 1) still applies, so a staged migration keeps working.
+ */
+export function assertMergeDepthExplicit(options: PreviewPolicyOptions): void {
+  if (options.defaults === 'v1') return;
+  if (options.serverURL !== undefined && options.mergeDepth === undefined) {
+    throw new Error(
+      'payload-live-preview: `serverURL` needs an explicit `mergeDepth` under the 2.0 defaults — ' +
+        'choose the relationship population depth deliberately (0 for none). ' +
+        "Pass `defaults: 'v1'` to keep the 1.x default of 1 while migrating (ADR 0007, entry 10).",
+    );
+  }
+}
+
 export function assertStrictConfiguration(options: PreviewPolicyOptions): void {
   if (typeof options.authorizePreview !== 'function') {
     throw new Error(
@@ -359,6 +376,7 @@ function contextFrom(result: PreviewAuthorizationHookResult): {
 
 export function createPreviewPolicy(options: PreviewPolicyOptions): PreviewPolicy {
   const resolved = resolvePolicyOptions(options);
+  assertMergeDepthExplicit(options);
   const authorizes = typeof options.authorizePreview === 'function';
   if (resolved.strict) {
     assertStrictConfiguration(options);

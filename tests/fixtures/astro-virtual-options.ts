@@ -8,6 +8,9 @@
  * file from coverage with a warning nobody reads.
  */
 export default {
+  // v1 so the entry builds without an authorizePreview hook (2.0 strict-default
+  // would otherwise refuse); the flip itself is covered by the policy suites.
+  defaults: 'v1',
   allowedOrigins: ['https://admin.example.com'],
   inject: 'always',
 } as const;

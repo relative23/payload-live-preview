@@ -137,15 +137,15 @@ describe('decide — with an authorizePreview hook', () => {
 
   it('reports whether a hook is configured so adapters can bind it', () => {
     expect(createPreviewPolicy(options).authorizes).toBe(true);
-    expect(createPreviewPolicy({ allowedOrigins: [ADMIN] }).authorizes).toBe(false);
+    expect(createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] }).authorizes).toBe(false);
   });
 });
 
 describe('decide — without a hook (1.x behaviour)', () => {
   it('keeps gating on intent and exposes the nonce, and says so once per process', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const policy = createPreviewPolicy({ allowedOrigins: [ADMIN] });
-    createPreviewPolicy({ allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
+    createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0]?.[0])).toContain('authorizePreview');
     const decision = await policy.decide(request(INTENT));
@@ -162,7 +162,7 @@ describe('decide — without a hook (1.x behaviour)', () => {
   it('does not warn in production', () => {
     process.env['NODE_ENV'] = 'production';
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    createPreviewPolicy({ allowedOrigins: [ADMIN] });
+    createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     expect(warn).not.toHaveBeenCalled();
   });
 
@@ -226,21 +226,14 @@ describe("defaults: 'v2'", () => {
       authorizePreview: () => null,
       allowedOrigins: [ADMIN],
     } as const;
+    // 2.0: the inline runtime defaults to the v2 rows, so resolve reports the
+    // adapter-side decisions and leaves the runtime rows undefined (nothing to
+    // override), and the inline config carries only the origins.
     expect(resolvePolicyOptions(options)).toEqual({
       strict: true,
       previewSignals: ['query'],
-      skipUnchanged: true,
-      disableReferrerDetection: true,
-      eventSourcePolicy: 'parent-or-opener',
-      sanitizerPolicy: 'strict',
     });
-    expect(inlineScriptConfig(options)).toEqual({
-      allowedOrigins: [ADMIN],
-      skipUnchanged: true,
-      disableReferrerDetection: true,
-      eventSourcePolicy: 'parent-or-opener',
-      sanitizerPolicy: 'strict',
-    });
+    expect(inlineScriptConfig(options)).toEqual({ allowedOrigins: [ADMIN] });
   });
 
   it('lets explicit options win over the profile', () => {
@@ -268,10 +261,47 @@ describe("defaults: 'v2'", () => {
     expect((await policy.decide(request(INTENT))).isPreview).toBe(true);
   });
 
-  it("changes nothing under 'v1' or when unset — an empty options object stays an empty config", () => {
+  it('2.0: an unset profile is v2 (strict, query-only) and needs no override rows', () => {
+    // The inline runtime defaults to the v2 rows, so a default config writes none.
     expect(inlineScriptConfig({})).toEqual({});
-    expect(inlineScriptConfig({ defaults: 'v1' })).toEqual({});
-    expect(resolvePolicyOptions({}).strict).toBe(false);
-    expect(resolvePolicyOptions({}).previewSignals).toBeUndefined();
+    expect(resolvePolicyOptions({}).strict).toBe(true);
+    expect(resolvePolicyOptions({}).previewSignals).toEqual(['query']);
+  });
+
+  it("an explicit 'v1' writes the override rows the v2 runtime would not use", () => {
+    expect(inlineScriptConfig({ defaults: 'v1' })).toEqual({
+      skipUnchanged: false,
+      disableReferrerDetection: false,
+      eventSourcePolicy: 'any',
+      sanitizerPolicy: 'compat',
+    });
+    expect(resolvePolicyOptions({ defaults: 'v1' }).strict).toBe(false);
+    expect(resolvePolicyOptions({ defaults: 'v1' }).previewSignals).toEqual([
+      'query',
+      'fetch-dest',
+      'referer',
+    ]);
+  });
+  it('2.0: serverURL without mergeDepth is refused, and defaults: v1 keeps the old behaviour', () => {
+    expect(() =>
+      createPreviewPolicy({
+        authorizePreview: () => null,
+        allowedOrigins: [ADMIN],
+        serverURL: 'https://cms.example.com',
+      }),
+    ).toThrow(/mergeDepth/);
+    // Explicit depth is fine.
+    expect(() =>
+      createPreviewPolicy({
+        authorizePreview: () => null,
+        allowedOrigins: [ADMIN],
+        serverURL: 'https://cms.example.com',
+        mergeDepth: 0,
+      }),
+    ).not.toThrow();
+    // v1 keeps the 1.x default (no throw).
+    expect(() =>
+      createPreviewPolicy({ defaults: 'v1', serverURL: 'https://cms.example.com' }),
+    ).not.toThrow();
   });
 });

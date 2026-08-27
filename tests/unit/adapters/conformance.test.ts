@@ -39,7 +39,8 @@ function response(request: ConformanceRequest): Response {
 const nextjs: ConformanceHarness = {
   name: 'Next.js',
   async run(options, request) {
-    const middleware = nextMiddleware(options);
+    const opts = { defaults: 'v1' as const, ...options };
+    const middleware = nextMiddleware(opts);
     const result = await middleware(toRequest(request), response(request));
     return {
       body: await result.text(),
@@ -52,7 +53,8 @@ const nextjs: ConformanceHarness = {
 const sveltekit: ConformanceHarness = {
   name: 'SvelteKit',
   async run(options, request) {
-    const handle = livePreviewHandle(options);
+    const opts = { defaults: 'v1' as const, ...options };
+    const handle = livePreviewHandle(opts);
     const event = {
       request: toRequest(request),
       locals: {} as Record<string, unknown>,
@@ -79,7 +81,8 @@ const sveltekit: ConformanceHarness = {
 const astro: ConformanceHarness = {
   name: 'Astro',
   async run(options, request) {
-    const middleware = astroMiddleware(options);
+    const opts = { defaults: 'v1' as const, ...options };
+    const middleware = astroMiddleware(opts);
     const locals: Record<string, unknown> = {};
     const result = await middleware({ request: toRequest(request), locals }, () =>
       Promise.resolve(response(request)),
@@ -114,7 +117,7 @@ const nuxt: ConformanceHarness = {
     }
     let hook:
       ((h: { head: string[] }, c: { event: NitroEvent }) => void | Promise<void>) | undefined;
-    livePreviewNitroPlugin(options)({
+    livePreviewNitroPlugin({ defaults: 'v1' as const, ...options })({
       hooks: {
         hook(_name: 'render:html', fn: NonNullable<typeof hook>) {
           hook = fn;

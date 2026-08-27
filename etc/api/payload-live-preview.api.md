@@ -285,24 +285,6 @@ export type FetchLike = (input: string, init: {
     json(): Promise<unknown>;
 }>;
 
-// @public @deprecated
-export function fetchPreviewDocument<T = Record<string, unknown>>(options: FetchPreviewDocumentOptions): Promise<T | null>;
-
-// @public (undocumented)
-export interface FetchPreviewDocumentOptions extends PreviewFetchBaseOptions {
-    readonly collection: string;
-    readonly id?: string | number;
-    readonly where?: PreviewWhere;
-}
-
-// @public @deprecated
-export function fetchPreviewGlobal<T = Record<string, unknown>>(options: FetchPreviewGlobalOptions): Promise<T | null>;
-
-// @public (undocumented)
-export interface FetchPreviewGlobalOptions extends PreviewFetchBaseOptions {
-    readonly global: string;
-}
-
 // @public
 export interface FieldBindingAttributes {
     // (undocumented)
@@ -559,9 +541,6 @@ export interface IslandUpdateDetail {
 
 // @public
 export function isLexicalContent(value: unknown): value is LexicalRoot;
-
-// @public @deprecated (undocumented)
-export function isPreviewRequest(request: PreviewRequestLike, options?: PreviewRequestOptions): boolean;
 
 // @public
 export function isSafeUrl(url: unknown): boolean;
@@ -1076,41 +1055,15 @@ export interface PreviewBindings {
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @public
-export interface PreviewBindingsBooleanOptions extends PreviewBindingsCommonOptions {
-    // (undocumented)
-    readonly authorization?: undefined;
-    // (undocumented)
-    readonly authorized: boolean;
-}
-
 // @public (undocumented)
 export interface PreviewBindingsCommonOptions {
     readonly owner?: string;
-    readonly strict?: boolean;
 }
 
 // @public
-export interface PreviewBindingsContextOptions extends PreviewBindingsCommonOptions {
+export interface PreviewBindingsOptions extends PreviewBindingsCommonOptions {
     // (undocumented)
     readonly authorization: AuthorizedPreviewContext | null;
-    // (undocumented)
-    readonly authorized?: undefined;
-}
-
-// @public (undocumented)
-export type PreviewBindingsOptions = PreviewBindingsContextOptions | PreviewBindingsBooleanOptions;
-
-// @public
-export interface PreviewFetchBaseOptions {
-    readonly apiRoute?: string;
-    readonly authorization?: AuthorizedPreviewContext | null;
-    readonly depth?: number;
-    readonly draft?: boolean;
-    readonly fetchFn?: typeof fetch;
-    readonly headers?: Readonly<Record<string, string>>;
-    readonly locale?: string;
-    readonly serverURL: string;
 }
 
 // @public
@@ -1176,9 +1129,6 @@ export interface PreviewVerifierClaims {
     // (undocumented)
     readonly subject?: string;
 }
-
-// @public
-export type PreviewWhere = Readonly<Record<string, unknown>>;
 
 // @public
 export const PROTOCOL_CAPABILITIES: readonly ProtocolCapability[];

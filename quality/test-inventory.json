@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 143,
-    "suites": 395,
-    "tests": 1779,
+    "suites": 391,
+    "tests": 1767,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 116,
-      "suites": 351,
-      "tests": 1639,
+      "suites": 347,
+      "tests": 1627,
       "benchmarks": 0
     }
   },
@@ -309,21 +309,21 @@
       "path": "tests/unit/adapters/policy-authorization.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 20,
+      "tests": 22,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 19,
+      "tests": 20,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/preview-request.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 14,
+      "suites": 3,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -352,6 +352,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/client/merge-depth.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -700,8 +707,8 @@
     {
       "path": "tests/unit/dsl/preview-bindings.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 17,
+      "suites": 3,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -884,13 +891,6 @@
       "group": "unit",
       "suites": 1,
       "tests": 3,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/preview-fetch.test.ts",
-      "group": "unit",
-      "suites": 3,
-      "tests": 11,
       "benchmarks": 0
     },
     {

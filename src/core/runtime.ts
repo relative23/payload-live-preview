@@ -145,12 +145,12 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     disableVisibilityGate = false,
     visibilityGateThreshold = 50,
     intersectionRootMargin = '200px',
-    disableReferrerDetection = false,
+    disableReferrerDetection = true,
     disableLocalhostMatching = false,
     scopeBindingsByOwner = false,
-    skipUnchanged = false,
-    eventSourcePolicy = 'any',
-    sanitizerPolicy = 'compat',
+    skipUnchanged = true,
+    eventSourcePolicy = 'parent-or-opener',
+    sanitizerPolicy = 'strict',
     fragmentEndpoint,
   ] = readBuildConfig();
   const strategies =

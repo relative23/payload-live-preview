@@ -49,6 +49,10 @@ interface BakedConfig {
   readonly intersectionRootMargin: string;
   readonly disableReferrerDetection: boolean;
   readonly disableLocalhostMatching: boolean;
+  readonly scopeBindingsByOwner?: boolean;
+  readonly skipUnchanged?: boolean;
+  readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
+  readonly sanitizerPolicy?: 'compat' | 'strict';
 }
 
 type BakedConfigTuple = readonly unknown[];
@@ -65,6 +69,12 @@ function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfigTuple {
     intersectionRootMargin: '200px',
     disableReferrerDetection: true,
     disableLocalhostMatching: true,
+    // These pipeline tests predate the 2.0 default flip and assert v1 behaviour
+    // (any message source, no skip-unchanged, compat sanitizer). The flip
+    // itself is covered by defaults-profile, dual-mode and the adapter suites.
+    skipUnchanged: false,
+    eventSourcePolicy: 'any',
+    sanitizerPolicy: 'compat',
     ...overrides,
   };
   return [
@@ -81,6 +91,10 @@ function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfigTuple {
     config.intersectionRootMargin,
     config.disableReferrerDetection,
     config.disableLocalhostMatching,
+    config.scopeBindingsByOwner,
+    config.skipUnchanged,
+    config.eventSourcePolicy,
+    config.sanitizerPolicy,
   ];
 }
 
@@ -550,14 +564,7 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
     vi.stubGlobal('__LIVE_PREVIEW_FRAGMENT__', { createFragmentStrategy, createRouteStrategy });
     document.body.innerHTML =
       '<section data-payload-fragment="hero"><h1 data-payload-field="title">old</h1></section>';
-    const tuple = [
-      ...bakeConfig(),
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      '/payload/fragment',
-    ];
+    const tuple = [...bakeConfig(), '/payload/fragment'];
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     const api = bootstrapInlineRuntime();
@@ -569,14 +576,7 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
   it('has no fragment client without the prelude, whatever the wire slot says', async () => {
     vi.stubGlobal('__LIVE_PREVIEW_FRAGMENT__', undefined);
     document.body.innerHTML = '';
-    const tuple = [
-      ...bakeConfig(),
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      '/payload/fragment',
-    ];
+    const tuple = [...bakeConfig(), '/payload/fragment'];
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
     const { bootstrapInlineRuntime } = await import('@core/runtime');
     const api = bootstrapInlineRuntime();
