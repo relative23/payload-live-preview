@@ -193,6 +193,7 @@
     "compat:check": "tsx scripts/compat-table.ts --check",
     "compat:write": "tsx scripts/compat-table.ts --write",
     "test:package": "tsx scripts/check-package.ts",
+    "audit:gate": "tsx scripts/audit-gate.ts",
     "test:smoke": "tsx scripts/post-publish-smoke.ts",
     "test:coverage": "vitest run --coverage",
     "test:coverage:diff": "tsx scripts/coverage-policy.ts",

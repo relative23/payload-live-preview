@@ -1,0 +1,35 @@
+---
+/**
+ * A large rich-text scenario: one Lexical field the runtime re-renders to HTML
+ * when the editor types. A driver posts a document with many paragraphs, so
+ * the rich-text renderer is exercised at a size a real long-form page reaches
+ * (not the two or three nodes a unit test uses). Framed by
+ * `/bench?target=/scenario/richtext/`.
+ */
+const PARAGRAPHS = 400;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Large rich text</title>
+    <style>
+      body {
+        margin: 0;
+        font: 16px/1.6 system-ui, sans-serif;
+        padding: 1rem 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <article
+      data-testid="body"
+      data-payload-owner="global:scenario"
+      data-payload-field="body"
+      data-payload-richtext
+      data-scenario-paragraphs={PARAGRAPHS}
+    >
+      <p>Initial content, replaced on the first preview message.</p>
+    </article>
+  </body>
+</html>

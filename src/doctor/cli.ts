@@ -200,6 +200,16 @@ async function runMigrateCommand(argv: readonly string[]): Promise<number> {
   const verb = write ? 'Migrated' : 'Would migrate';
   process.stdout.write(`\n${verb} ${String(result.changedCount)} file(s).`);
   process.stdout.write(write ? '\n' : ' Re-run with --write to apply.\n');
+  const conflicted = result.files.filter((file) => file.conflicts.length > 0);
+  if (conflicted.length > 0) {
+    process.stdout.write(`\n${String(conflicted.length)} file(s) need manual attention:\n`);
+    for (const file of conflicted) {
+      for (const conflict of file.conflicts) {
+        process.stdout.write(`  ${file.file}: ${conflict.reason}\n`);
+      }
+    }
+    return 1;
+  }
   return 0;
 }
 

@@ -40,7 +40,7 @@ describe('livePreviewHandle — the nonce contract', () => {
   it('writes a nonce to locals on every request, preview or not', async () => {
     // Consumer load functions read this to nonce their own scripts; it must be
     // there even when nothing is injected, or their CSP breaks on plain pages.
-    const handle = livePreviewHandle({ allowedOrigins: [ADMIN] });
+    const handle = livePreviewHandle({ defaults: 'v1', allowedOrigins: [ADMIN] });
     const plain = event();
     await handle({ event: plain, resolve: makeResolve([PAGE]) });
 
@@ -49,7 +49,7 @@ describe('livePreviewHandle — the nonce contract', () => {
   });
 
   it('issues a different nonce per request', async () => {
-    const handle = livePreviewHandle({ allowedOrigins: [ADMIN] });
+    const handle = livePreviewHandle({ defaults: 'v1', allowedOrigins: [ADMIN] });
     const a = event();
     const b = event();
     await handle({ event: a, resolve: makeResolve([PAGE]) });
@@ -64,7 +64,7 @@ describe('livePreviewHandle — when it injects', () => {
     // transformPageChunk is called per chunk. Injecting on each would give the
     // page as many runtimes as it has chunks, and streaming is SvelteKit's
     // normal mode — a fixture serving one chunk would never reveal it.
-    const response = await livePreviewHandle({ inject: 'always' })({
+    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<html><head>', '</head><body>', 'hi</body></html>']),
     });
@@ -82,7 +82,7 @@ describe('livePreviewHandle — chunks it must leave alone', () => {
   it('returns a chunk without a <head> unchanged', async () => {
     // Every streamed chunk after the first has no head. The transform must
     // decline them rather than rewrite them.
-    const response = await livePreviewHandle({ inject: 'always' })({
+    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<div>fragment only</div>']),
     });
@@ -90,7 +90,7 @@ describe('livePreviewHandle — chunks it must leave alone', () => {
   });
 
   it('injects into the head chunk and no other', async () => {
-    const response = await livePreviewHandle({ inject: 'always' })({
+    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<html><head></head>', '<body>a</body>', '</html>']),
     });
@@ -118,7 +118,11 @@ describe('livePreviewHandle — a runtime that refuses header mutation', () => {
   }
 
   it('falls back to a fresh response instead of throwing', async () => {
-    const response = await livePreviewHandle({ inject: 'always', allowedOrigins: [ADMIN] })({
+    const response = await livePreviewHandle({
+      defaults: 'v1',
+      inject: 'always',
+      allowedOrigins: [ADMIN],
+    })({
       event: event(),
       resolve: frozen(['<p>body</p>']),
     });

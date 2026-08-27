@@ -45,6 +45,20 @@ function renameIdentifier(source: string, name: string, replacement: string): st
 }
 
 /**
+ * Whether the module already binds `name` as its own declaration or import —
+ * a function, const/let/var, class, or a named import. A rename into a name
+ * the module already uses would collide (or, for a same-named wrapper, recurse),
+ * so a codemod that would do that must skip the file and report it instead.
+ */
+function alreadyBinds(source: string, name: string): boolean {
+  const decl = new RegExp(
+    `(?:function|const|let|var|class)\\s+${name}\\b|\\b${name}\\s+as\\b|\\bas\\s+${name}\\b|\\{[^}]*\\b${name}\\b[^}]*\\}\\s*from`,
+    'u',
+  );
+  return decl.test(source);
+}
+
+/**
  * The codemods, in the order they should run. Each is idempotent: applying it
  * twice is the same as applying it once.
  */
@@ -53,10 +67,14 @@ export const CODEMODS: readonly Codemod[] = [
     id: 'rename-is-preview-request',
     summary: '`isPreviewRequest()` → `hasPreviewIntent()` (same signature)',
     ledgerEntry: 1,
-    apply: (source) =>
-      importsThisPackage(source)
-        ? renameIdentifier(source, 'isPreviewRequest', 'hasPreviewIntent')
-        : source,
+    apply: (source) => {
+      if (!importsThisPackage(source) || !/\bisPreviewRequest\b/u.test(source)) return source;
+      // The module already has a `hasPreviewIntent` of its own (commonly a
+      // wrapper around the import). Renaming into it would collide or recurse,
+      // so leave the file for a human — the runner reports it as a conflict.
+      if (alreadyBinds(source, 'hasPreviewIntent')) return source;
+      return renameIdentifier(source, 'isPreviewRequest', 'hasPreviewIntent');
+    },
   },
   {
     id: 'rename-bindings-authorized-option',
@@ -98,11 +116,39 @@ export const CODEMODS: readonly Codemod[] = [
   },
 ];
 
+/** A removed API a codemod could not rewrite automatically, and why. */
+export interface CodemodConflict {
+  readonly codemod: string;
+  readonly reason: string;
+}
+
+/** Removed names a codemod could not rewrite because the module already binds the target. */
+function conflictsIn(source: string): CodemodConflict[] {
+  const conflicts: CodemodConflict[] = [];
+  if (
+    importsThisPackage(source) &&
+    /\bisPreviewRequest\b/u.test(source) &&
+    alreadyBinds(source, 'hasPreviewIntent')
+  ) {
+    conflicts.push({
+      codemod: 'rename-is-preview-request',
+      reason:
+        'isPreviewRequest was removed but this module already binds hasPreviewIntent; ' +
+        'rename your local hasPreviewIntent (or drop the wrapper and import the package’s directly).',
+    });
+  }
+  return conflicts;
+}
+
 /** Apply every codemod (or a chosen subset) to one source string. */
 export function migrateSource(
   source: string,
   options: { readonly only?: readonly string[] } = {},
-): { readonly output: string; readonly edits: readonly CodemodEdit[] } {
+): {
+  readonly output: string;
+  readonly edits: readonly CodemodEdit[];
+  readonly conflicts: readonly CodemodConflict[];
+} {
   const chosen =
     options.only === undefined ? CODEMODS : CODEMODS.filter((c) => options.only?.includes(c.id));
   let output = source;
@@ -112,5 +158,5 @@ export function migrateSource(
     output = codemod.apply(output);
     if (output !== before) edits.push({ codemod: codemod.id, before, after: output });
   }
-  return { output, edits };
+  return { output, edits, conflicts: conflictsIn(output) };
 }

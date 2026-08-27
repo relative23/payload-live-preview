@@ -77,6 +77,21 @@ async function sendUpdate(page: Page, data: Record<string, unknown>): Promise<vo
   }, data);
 }
 
+/** Open a named scenario page (array/richtext) in the bench frame. */
+async function openNamedScenario(page: Page, name: string): Promise<Frame> {
+  const path = `/scenario/${name}/`;
+  await page.goto(`/bench?target=${path}`);
+  await expect
+    .poll(() => previewFrame(page)?.url().endsWith(path) ?? false, { timeout: 15_000 })
+    .toBe(true);
+  const frame = previewFrame(page);
+  if (!frame) throw new Error('preview frame missing');
+  await expect
+    .poll(async () => (await inspect(frame))?.started ?? false, { timeout: 15_000 })
+    .toBe(true);
+  return frame;
+}
+
 /**
  * One scenario per call. Registered from a plain function rather than a loop:
  * the test policy forbids registering tests under a loop or a condition, so
@@ -151,4 +166,60 @@ test('5,000 bindings: a burst of updates leaves the newest value on screen and n
 
   await expect(first).toHaveText('burst-49');
   await expect.poll(async () => (await snapshot(frame)).scheduler.pending).toBe(0);
+});
+
+test('a large keyed array reorders and relabels under one message', async ({ page }) => {
+  const frame = await openNamedScenario(page, 'array');
+  const rows = frame.locator('[data-testid="rows"] > li');
+  const count = Number(
+    await frame.locator('[data-testid="rows"]').getAttribute('data-scenario-count'),
+  );
+  expect(count).toBeGreaterThan(500);
+  await expect(rows).toHaveCount(count);
+  await expect(rows.first().locator('.t')).toHaveText('Row 0');
+
+  // Move the last row to the top and relabel the first two — a keyed morph, not
+  // a rebuild.
+  const next = [
+    { id: `r${String(count - 1)}`, title: 'Moved to top' },
+    { id: 'r0', title: 'Row 0 renamed' },
+    ...Array.from({ length: count - 2 }, (_, index) => ({
+      id: `r${String(index + 1)}`,
+      title: `Row ${String(index + 1)}`,
+    })),
+  ];
+  await sendUpdate(page, { rows: next });
+
+  await expect(rows.first().locator('.t')).toHaveText('Moved to top');
+  await expect(rows.nth(1).locator('.t')).toHaveText('Row 0 renamed');
+  await expect(rows).toHaveCount(count);
+  expect((await snapshot(frame)).revisions.accepted).toBe(1);
+});
+
+test('a large rich-text document renders to HTML on a preview message', async ({ page }) => {
+  const frame = await openNamedScenario(page, 'richtext');
+  const body = frame.locator('[data-testid="body"]');
+  const paragraphs = Number(await body.getAttribute('data-scenario-paragraphs'));
+  expect(paragraphs).toBeGreaterThan(100);
+
+  const doc = {
+    root: {
+      type: 'root',
+      children: Array.from({ length: paragraphs }, (_, index) => ({
+        type: 'paragraph',
+        children: [{ type: 'text', text: `Paragraph ${String(index)}`, version: 1 }],
+        version: 1,
+      })),
+      direction: null,
+      format: '',
+      indent: 0,
+      version: 1,
+    },
+  };
+  await sendUpdate(page, { body: doc });
+
+  await expect(body.locator('p')).toHaveCount(paragraphs);
+  await expect(body.locator('p').first()).toHaveText('Paragraph 0');
+  await expect(body.locator('p').last()).toHaveText(`Paragraph ${String(paragraphs - 1)}`);
+  expect((await snapshot(frame)).revisions.accepted).toBe(1);
 });

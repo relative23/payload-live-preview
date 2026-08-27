@@ -1,5 +1,12 @@
 # Migration guide
 
+> **2.0 is released.** The v2 readiness table is now the default (strict
+> authorization, query-only intent, referrer trust off, parent/opener message
+> source, skip-unchanged, strict sanitizer), `serverURL` requires an explicit
+> `mergeDepth`, and the deprecated 1.x names below were removed. Pass
+> `defaults: 'v1'` to stage the migration one row at a time; run `pll migrate`
+> for the renames and `pll doctor --v2` to audit a page.
+
 ## From `0.1.0` of this package
 
 `1.0.0` is a clean break — there is no API shim. The migration is small in code but large in semantics:

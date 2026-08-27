@@ -68,6 +68,8 @@ describe('schema-driven field-type resolution', () => {
     // data-payload-richtext — pure data-payload-field.
     document.body.innerHTML = '<div data-payload-field="body"></div>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -98,6 +100,8 @@ describe('schema-driven field-type resolution', () => {
   it('schema upload type drives the upload renderer when the DOM has only data-payload-field', async () => {
     document.body.innerHTML = '<img data-payload-field="hero" alt="">';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -118,6 +122,8 @@ describe('schema-driven field-type resolution', () => {
   it('schema relationship type drives the relationship renderer', async () => {
     document.body.innerHTML = '<span data-payload-field="author"></span>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -136,6 +142,8 @@ describe('schema-driven field-type resolution', () => {
   it('schema number type drives Intl.NumberFormat rendering', async () => {
     document.body.innerHTML = '<span data-payload-field="price"></span>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -156,6 +164,8 @@ describe('schema-driven field-type resolution', () => {
     // The DOM says "text" but schema says "richText" — DOM wins.
     document.body.innerHTML = '<div data-payload-field="body" data-payload-type="text"></div>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -183,6 +193,8 @@ describe('schema-driven field-type resolution', () => {
   it('falls back to the cache-resolved type when no schema arrives', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -201,6 +213,8 @@ describe('schema-driven field-type resolution', () => {
   it('walks nested schema paths (group → child)', async () => {
     document.body.innerHTML = '<p data-payload-field="hero.subtitle"></p>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -225,6 +239,8 @@ describe('schema-driven field-type resolution', () => {
   it('keeps the schema across updates that omit it (sticky)', async () => {
     document.body.innerHTML = '<div data-payload-field="body"></div>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,

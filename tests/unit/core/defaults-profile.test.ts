@@ -45,12 +45,13 @@ describe("defaults: 'v2' covers every readiness row", () => {
     expect(Object.isFrozen(READINESS_ROWS)).toBe(true);
   });
 
-  it('resolves v2 for v2 and v1 for everything else', () => {
+  it('resolves v1 only for an explicit v1, and v2 for v2 or no profile (2.0 default)', () => {
     expect(adapterDefaultsFor('v2')).toBe(V2_ADAPTER_DEFAULTS);
     expect(adapterDefaultsFor('v1')).toBe(V1_ADAPTER_DEFAULTS);
-    expect(adapterDefaultsFor(undefined)).toBe(V1_ADAPTER_DEFAULTS);
+    expect(adapterDefaultsFor(undefined)).toBe(V2_ADAPTER_DEFAULTS);
     expect(runtimeDefaultsFor('v2')).toBe(V2_RUNTIME_DEFAULTS);
-    expect(runtimeDefaultsFor(undefined)).toBe(V1_RUNTIME_DEFAULTS);
+    expect(runtimeDefaultsFor('v1')).toBe(V1_RUNTIME_DEFAULTS);
+    expect(runtimeDefaultsFor(undefined)).toBe(V2_RUNTIME_DEFAULTS);
   });
 });
 
@@ -70,12 +71,15 @@ describe('withProfileDefaults (client)', () => {
     });
   });
 
-  it('returns the same object under v1 or no profile', () => {
-    const config = { allowedOrigins: ['https://admin.example.com'] };
+  it('returns the same object only under an explicit v1 (2.0: v2 is the default)', () => {
+    const config = { allowedOrigins: ['https://admin.example.com'], defaults: 'v1' as const };
     expect(withProfileDefaults(config)).toBe(config);
-    expect(withProfileDefaults({ ...config, defaults: 'v1' })).toEqual({
-      ...config,
-      defaults: 'v1',
+    // No profile now means v2, so the runtime rows are filled in.
+    expect(withProfileDefaults({ allowedOrigins: ['https://admin.example.com'] })).toMatchObject({
+      skipUnchanged: true,
+      disableReferrerDetection: true,
+      eventSourcePolicy: 'parent-or-opener',
+      sanitizerPolicy: 'strict',
     });
   });
 });

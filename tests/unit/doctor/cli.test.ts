@@ -299,3 +299,23 @@ function captureStderrOutside(): { text: () => string; restore: () => void } {
     },
   };
 }
+
+describe('pll doctor --v2', () => {
+  it('threads the --v2 flag into the report as LP0709 readiness findings', async () => {
+    const { fetchImpl } = serverFetch({
+      publicBody: '<h1>Title</h1>',
+      previewBody: `${RUNTIME}<h1 data-payload-field="title">Title</h1>`,
+    });
+    const out: string[] = [];
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: string | Uint8Array) => {
+        out.push(String(chunk));
+        return true;
+      });
+    const code = await run(['doctor', 'https://example.com/', '--v2', '--json'], fetchImpl);
+    write.mockRestore();
+    expect(code).toBe(0);
+    expect(out.join('')).toContain('LP0709');
+  });
+});

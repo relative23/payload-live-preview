@@ -146,8 +146,9 @@ export interface LivePreviewClientConfig {
  * win, the profile fills the rest, `'v1'` (or none) changes nothing.
  */
 export function withProfileDefaults(config: LivePreviewClientConfig): LivePreviewClientConfig {
-  if (config.defaults !== 'v2') return config;
-  const rows = runtimeDefaultsFor('v2');
+  // 2.0: v2 is the default; only an explicit `defaults: 'v1'` opts out.
+  if (config.defaults === 'v1') return config;
+  const rows = runtimeDefaultsFor(config.defaults);
   return {
     ...config,
     skipUnchanged: config.skipUnchanged ?? rows.skipUnchanged,

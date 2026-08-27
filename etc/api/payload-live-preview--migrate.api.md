@@ -13,6 +13,14 @@ export interface Codemod {
 }
 
 // @public
+export interface CodemodConflict {
+    // (undocumented)
+    readonly codemod: string;
+    // (undocumented)
+    readonly reason: string;
+}
+
+// @public
 export interface CodemodEdit {
     // (undocumented)
     readonly after: string;
@@ -34,6 +42,7 @@ export function migrateSource(source: string, options?: {
 }): {
     readonly output: string;
     readonly edits: readonly CodemodEdit[];
+    readonly conflicts: readonly CodemodConflict[];
 };
 
 // (No @packageDocumentation comment for this package)

@@ -52,7 +52,7 @@ jobs:
       # hook. Generate its ignored single-source runtime explicitly before
       # checks that import it; dependency installers remain strictly allow-listed.
       - run: npm run build:runtime
-      - run: npm audit --audit-level=high
+      - run: npm run audit:gate
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check

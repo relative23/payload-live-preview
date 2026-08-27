@@ -91,7 +91,7 @@ async function main(): Promise<void> {
         const create = nextjs['createLivePreviewMiddleware'] as (
           o: unknown,
         ) => (r: Request, x: Response) => Promise<Response>;
-        const middleware = create({ allowedOrigins: [ADMIN] });
+        const middleware = create({ defaults: 'v1', allowedOrigins: [ADMIN] });
         const injected = await middleware(new Request(INTENT), html());
         check((await injected.text()).includes('__LIVE_PREVIEW_CONFIG__'), 'Next.js: no injection');
         check(
@@ -108,7 +108,7 @@ async function main(): Promise<void> {
         const create = sveltekit['livePreviewHandle'] as (
           o: unknown,
         ) => (i: unknown) => Promise<Response>;
-        const handle = create({ allowedOrigins: [ADMIN] });
+        const handle = create({ defaults: 'v1', allowedOrigins: [ADMIN] });
         const locals: Record<string, unknown> = {};
         const resolve = (
           _event: unknown,
@@ -135,7 +135,7 @@ async function main(): Promise<void> {
         const create = astro['createLivePreviewMiddleware'] as (
           o: unknown,
         ) => (c: unknown, n: () => Promise<Response>) => Promise<Response>;
-        const middleware = create({ allowedOrigins: [ADMIN] });
+        const middleware = create({ defaults: 'v1', allowedOrigins: [ADMIN] });
         const locals: Record<string, unknown> = {};
         const response = await middleware({ request: new Request(INTENT), locals }, () =>
           Promise.resolve(html()),
@@ -150,7 +150,7 @@ async function main(): Promise<void> {
         const plugin = nuxt['livePreviewNitroPlugin'] as (o: unknown) => (nitro: unknown) => void;
         let hook:
           ((h: { head: string[] }, c: { event: unknown }) => void | Promise<void>) | undefined;
-        plugin({ allowedOrigins: [ADMIN] })({
+        plugin({ defaults: 'v1', allowedOrigins: [ADMIN] })({
           hooks: {
             hook(_name: string, fn: NonNullable<typeof hook>) {
               hook = fn;

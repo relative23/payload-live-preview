@@ -97,6 +97,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('goes quiet while suspended and delivers again after resuming', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -123,6 +125,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('keeps plugins across a suspension, unlike destroy', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -150,6 +154,8 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('refuses to suspend or resume a client that never started or was destroyed', async () => {
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       autoStart: false,
       debounceMs: 0,
@@ -178,6 +184,8 @@ describe('LivePreviewClient — end-to-end', () => {
     }
     globalThis.IntersectionObserver = FailingIntersectionObserver;
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       autoStart: false,
       debounceMs: 0,
@@ -210,6 +218,8 @@ describe('LivePreviewClient — end-to-end', () => {
     }
     globalThis.IntersectionObserver = FailingIntersectionObserver;
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       autoStart: false,
       debounceMs: 0,
@@ -247,6 +257,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('boots, connects, and renders a text update', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -266,6 +278,8 @@ describe('LivePreviewClient — end-to-end', () => {
       throw new Error('console unavailable');
     });
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debug: true,
       debounceMs: 0,
@@ -286,6 +300,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('renders Lexical rich text into a richText field', async () => {
     document.body.innerHTML = '<div data-payload-field="body" data-payload-richtext></div>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -317,6 +333,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('rejects updates from untrusted origins', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -335,6 +353,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('renders an image field', async () => {
     document.body.innerHTML = '<img data-payload-field="hero" alt="">';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -362,6 +382,8 @@ describe('LivePreviewClient — end-to-end', () => {
     });
     Reflect.set(document, 'startViewTransition', startViewTransition);
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -401,6 +423,8 @@ describe('LivePreviewClient — end-to-end', () => {
   ])('does not emit afterUpdate for a structural %s no-op', async (_label, templateAttribute) => {
     document.body.innerHTML = `<ul data-payload-field="items" data-payload-structural${templateAttribute}></ul>`;
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -425,6 +449,8 @@ describe('LivePreviewClient — end-to-end', () => {
       'data-payload-array-template="<script>{{label}}</script>">' +
       '<li data-payload-key="old">server state</li></ul>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -451,6 +477,8 @@ describe('LivePreviewClient — end-to-end', () => {
       '<ul data-payload-field="items" data-payload-structural ' +
       'data-payload-array-template="<li>{{label}}</li>"></ul>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -503,6 +531,8 @@ describe('LivePreviewClient — end-to-end', () => {
   ])('does not emit afterUpdate for $label', async ({ markup, value }) => {
     document.body.innerHTML = markup;
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -523,6 +553,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('ignores a custom renderer false return after a real DOM write', async () => {
     document.body.innerHTML = '<div data-payload-field="value" data-payload-type="text"></div>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -561,6 +593,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('honours a plugin renderer override', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -588,6 +622,8 @@ describe('LivePreviewClient — end-to-end', () => {
       '<p data-payload-field="title">old</p>' +
       '<span data-payload-field="label" data-payload-attribute="data-label"></span>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -628,6 +664,8 @@ describe('LivePreviewClient — end-to-end', () => {
       }),
     );
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       serverURL: 'https://cms.example.com',
       mergeFetch: mergeFetch as typeof fetch,
@@ -670,6 +708,8 @@ describe('LivePreviewClient — end-to-end', () => {
     document.body.innerHTML =
       '<a data-payload-field="destination" data-payload-attribute="href" href="/initial">link</a>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -697,6 +737,8 @@ describe('LivePreviewClient — end-to-end', () => {
     if (element === null) throw new Error('binding missing');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -732,6 +774,8 @@ describe('LivePreviewClient — end-to-end', () => {
     const element = document.querySelector('p');
     if (element === null) throw new Error('binding missing');
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -763,6 +807,8 @@ describe('LivePreviewClient — end-to-end', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const transforms: string[] = [];
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -818,6 +864,8 @@ describe('LivePreviewClient — end-to-end', () => {
     document.body.innerHTML =
       '<p data-payload-field="throws">old</p><p data-payload-field="async">old</p>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -856,6 +904,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('restores the previous renderer layer and then the built-in renderer on unuse', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -903,6 +953,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('keeps the top renderer active when a lower renderer layer is removed', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -948,6 +1000,8 @@ describe('LivePreviewClient — end-to-end', () => {
     document.body.innerHTML = '<p data-payload-field="title">x</p>';
     const seen: string[] = [];
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -969,12 +1023,16 @@ describe('LivePreviewClient — end-to-end', () => {
   it('per-instance isolation — destroying one does not affect another', async () => {
     document.body.innerHTML = '<p data-payload-field="a">x</p><p data-payload-field="b">y</p>';
     const c1 = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
       disableVisibilityGate: true,
     });
     const c2 = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -998,12 +1056,16 @@ describe('LivePreviewClient — end-to-end', () => {
   it('keeps the shared accessibility region alive for a surviving client', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     const c1 = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
       disableVisibilityGate: true,
     });
     const c2 = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
@@ -1030,6 +1092,8 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('destroy is idempotent and clears state', async () => {
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       heartbeatMs: 10 * 60_000,
     });
@@ -1041,6 +1105,8 @@ describe('LivePreviewClient — end-to-end', () => {
   it('shares one in-flight destroy promise across concurrent callers', async () => {
     const releaseDestroy = deferred<undefined>();
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       heartbeatMs: 10 * 60_000,
     });
@@ -1074,6 +1140,8 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('lets a plugin destroy hook await client.unuse for another plugin', async () => {
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       heartbeatMs: 10 * 60_000,
     });
@@ -1111,6 +1179,8 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('lets plugin init await client.unuse for its own pending registration', async () => {
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       heartbeatMs: 10 * 60_000,
     });
@@ -1135,6 +1205,8 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('lets plugin init await client.use for another plugin', async () => {
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       heartbeatMs: 10 * 60_000,
     });
@@ -1159,6 +1231,8 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('lets plugin destroy await client.use for another plugin during unuse', async () => {
     const client = new LivePreviewClient({
+      // Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip.
+      defaults: 'v1',
       allowedOrigins: [TRUSTED],
       heartbeatMs: 10 * 60_000,
     });

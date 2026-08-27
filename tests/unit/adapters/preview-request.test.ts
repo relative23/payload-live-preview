@@ -1,9 +1,8 @@
 /**
  * Server-side preview-request detection shared by every adapter.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { hasPreviewIntent, isPreviewRequest } from '@adapters/shared/preview-request';
-import { resetDeprecationWarnings } from '@adapters/shared/deprecation';
+import { describe, expect, it } from 'vitest';
+import { hasPreviewIntent } from '@adapters/shared/preview-request';
 
 describe('hasPreviewIntent', () => {
   it('detects the default preview query params', () => {
@@ -60,7 +59,7 @@ describe('hasPreviewIntent', () => {
   });
 });
 
-describe('isPreviewRequest — signal restriction', () => {
+describe('hasPreviewIntent — signal restriction', () => {
   it("signals: ['query'] ignores fetch-dest and referer", () => {
     const iframeLoad = new Request('https://x.test/p', {
       headers: {
@@ -95,7 +94,7 @@ describe('isPreviewRequest — signal restriction', () => {
   });
 });
 
-describe('isPreviewRequest — a url the URL parser rejects', () => {
+describe('hasPreviewIntent — a url the URL parser rejects', () => {
   it('treats an unparseable url as "no query signal" rather than throwing', () => {
     // Adapters synthesise a Request-like object from framework events, and a
     // malformed one must not take the whole request down. The other signals
@@ -111,45 +110,3 @@ describe('isPreviewRequest — a url the URL parser rejects', () => {
     expect(hasPreviewIntent(iframe, { adminOrigins: [] })).toBe(true);
   });
 });
-
-/* eslint-disable @typescript-eslint/no-deprecated -- the alias is the subject under test */
-describe('isPreviewRequest — deprecated alias (ADR 0007, entry 1)', () => {
-  const env = process.env['NODE_ENV'];
-  afterEach(() => {
-    process.env['NODE_ENV'] = env;
-    resetDeprecationWarnings();
-    vi.restoreAllMocks();
-  });
-
-  it('returns exactly what hasPreviewIntent returns', () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const withIntent = new Request('https://x.test/p?preview=true');
-    const without = new Request('https://x.test/p');
-    expect(isPreviewRequest(withIntent)).toBe(hasPreviewIntent(withIntent));
-    expect(isPreviewRequest(without)).toBe(hasPreviewIntent(without));
-    expect(isPreviewRequest(withIntent, { signals: ['referer'] })).toBe(
-      hasPreviewIntent(withIntent, { signals: ['referer'] }),
-    );
-  });
-
-  it('warns once per process outside production and names the replacement', () => {
-    process.env['NODE_ENV'] = 'development';
-    resetDeprecationWarnings();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    isPreviewRequest(new Request('https://x.test/p'));
-    isPreviewRequest(new Request('https://x.test/p?preview=true'));
-    expect(warn).toHaveBeenCalledTimes(1);
-    const text = String(warn.mock.calls[0]?.[0]);
-    expect(text).toContain('hasPreviewIntent()');
-    expect(text).toContain('0007');
-  });
-
-  it('is silent in production', () => {
-    process.env['NODE_ENV'] = 'production';
-    resetDeprecationWarnings();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    isPreviewRequest(new Request('https://x.test/p'));
-    expect(warn).not.toHaveBeenCalled();
-  });
-});
-/* eslint-enable @typescript-eslint/no-deprecated */

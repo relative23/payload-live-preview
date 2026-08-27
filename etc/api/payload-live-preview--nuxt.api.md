@@ -6,7 +6,7 @@
 
 import { a } from '../../policy-B4DHbtJN.js';
 import { D } from '../../policy-B4DHbtJN.js';
-import { P } from '../../preview-request-OtCAmNe2.js';
+import { P } from '../../preview-request-CCLPaG55.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;

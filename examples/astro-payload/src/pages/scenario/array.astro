@@ -1,0 +1,50 @@
+---
+/**
+ * A large keyed structural array, for the scale scenario the roadmap asks for
+ * alongside the scalar `[count]` pages. 800 rows is well past the
+ * visibility-gate threshold, so the keyed morph runs at scale: a driver posts
+ * a reordered, relabelled `rows` value and the morph must move and update the
+ * keyed items without rebuilding the list. Framed by
+ * `/bench?target=/scenario/array/`.
+ */
+const COUNT = 800;
+const initial = Array.from({ length: COUNT }, (_, index) => ({
+  id: `r${String(index)}`,
+  title: `Row ${String(index)}`,
+}));
+const template = '<li class="row" data-payload-key="{{id}}"><span class="t">{{title}}</span></li>';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{COUNT} array rows</title>
+    <style>
+      body {
+        margin: 0;
+        font: 14px/1.4 system-ui, sans-serif;
+      }
+      .row {
+        height: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <ul
+      data-testid="rows"
+      data-payload-owner="global:scenario"
+      data-payload-field="rows"
+      data-payload-structural
+      data-payload-array-template={template}
+      data-scenario-count={COUNT}
+    >
+      {
+        initial.map((item) => (
+          <li class="row" data-payload-key={item.id}>
+            <span class="t">{item.title}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </body>
+</html>

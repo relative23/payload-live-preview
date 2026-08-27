@@ -27,7 +27,7 @@ class IO implements IntersectionObserver {
 
 const TRUSTED = 'https://admin.example.com';
 const MODES = [
-  { name: 'v1 (default)', defaults: undefined },
+  { name: 'v1 (explicit)', defaults: 'v1' as const },
   { name: 'v2', defaults: 'v2' as const },
 ];
 
@@ -64,7 +64,7 @@ function afterUpdate(): Promise<void> {
 }
 
 /** Build a runtime with the runtime rows the profile resolves to. */
-function startFor(defaults: 'v2' | undefined): LivePreviewRuntime {
+function startFor(defaults: 'v1' | 'v2' | undefined): LivePreviewRuntime {
   const config = withProfileDefaults({ ...(defaults !== undefined ? { defaults } : {}) });
   const rows = runtimeDefaultsFor(defaults);
   runtime = new LivePreviewRuntime({

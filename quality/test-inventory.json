@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 143,
+    "files": 145,
     "suites": 395,
-    "tests": 1779,
+    "tests": 1781,
     "benchmarks": 12
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 13,
-      "suites": 21,
-      "tests": 57,
+      "files": 14,
+      "suites": 22,
+      "tests": 60,
       "benchmarks": 0
     },
     "integration": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 116,
-      "suites": 351,
-      "tests": 1639,
+      "files": 117,
+      "suites": 350,
+      "tests": 1638,
       "benchmarks": 0
     }
   },
@@ -131,6 +131,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/navigation-lifecycle-per-framework.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/navigation-lifecycle.spec.ts",
       "group": "e2e",
       "suites": 1,
@@ -169,7 +176,7 @@
       "path": "tests/e2e/specs/scenarios.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -309,21 +316,21 @@
       "path": "tests/unit/adapters/policy-authorization.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 20,
+      "tests": 22,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 19,
+      "tests": 20,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/preview-request.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 14,
+      "suites": 3,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -352,6 +359,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/client/merge-depth.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -665,15 +679,15 @@
     {
       "path": "tests/unit/doctor/cli.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 20,
+      "suites": 6,
+      "tests": 21,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/doctor/migrate-cli.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -700,8 +714,8 @@
     {
       "path": "tests/unit/dsl/preview-bindings.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 17,
+      "suites": 3,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -799,7 +813,7 @@
       "path": "tests/unit/migrate/codemods.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -887,13 +901,6 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/preview-fetch.test.ts",
-      "group": "unit",
-      "suites": 3,
-      "tests": 11,
-      "benchmarks": 0
-    },
-    {
       "path": "tests/unit/property/lifecycle-model.property.test.ts",
       "group": "unit",
       "suites": 1,
@@ -926,6 +933,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/audit-gate.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {

@@ -112,9 +112,7 @@ export type {
   OwnerBindingAttributes,
   PreviewBindings,
   PreviewBindingsOptions,
-  PreviewBindingsBooleanOptions,
   PreviewBindingsCommonOptions,
-  PreviewBindingsContextOptions,
   SuppressedBinding,
   ValueAt,
 } from './dsl';

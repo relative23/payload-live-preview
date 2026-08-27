@@ -103,23 +103,9 @@ export type { DefaultsProfile, EventSourcePolicy } from './core/defaults-profile
 // Server-side preview-request detection — for hand-rolled middleware
 export {
   hasPreviewIntent,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- kept through 1.x (ADR 0007, entry 1)
-  isPreviewRequest,
   type PreviewRequestLike,
   type PreviewRequestOptions,
 } from './adapters/shared/preview-request';
-
-// Draft-aware initial fetch for preview loaders
-export {
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- kept through 1.x (ADR 0007, entry 9)
-  fetchPreviewDocument,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- kept through 1.x (ADR 0007, entry 9)
-  fetchPreviewGlobal,
-  type FetchPreviewDocumentOptions,
-  type FetchPreviewGlobalOptions,
-  type PreviewFetchBaseOptions,
-  type PreviewWhere,
-} from './preview-fetch';
 
 // Lexical rendering — useful for SSR pre-rendering of rich text fields
 export {
@@ -212,9 +198,7 @@ export type {
   OwnerBindingAttributes,
   PreviewBindings,
   PreviewBindingsOptions,
-  PreviewBindingsBooleanOptions,
   PreviewBindingsCommonOptions,
-  PreviewBindingsContextOptions,
   SuppressedBinding,
   ValueAt,
 } from './dsl';

@@ -47,11 +47,6 @@ const SUPPRESSED: SuppressedBinding = Object.freeze({});
 
 export interface PreviewBindingsCommonOptions {
   /**
-   * Refuse the boolean form: under `strict` only a context produced by
-   * `authorizePreviewRequest()` authorizes emission. ADR 0007, entry 7.
-   */
-  readonly strict?: boolean;
-  /**
    * Document this subtree belongs to, emitted as `data-payload-owner` by
    * {@link PreviewBindings.owner}. Required only when the page previews more
    * than one document and the runtime runs with `scopeBindingsByOwner`.
@@ -59,25 +54,15 @@ export interface PreviewBindingsCommonOptions {
   readonly owner?: string;
 }
 
-/** The verdict as a context from `authorizePreviewRequest()`, or `null` for a public response. */
-export interface PreviewBindingsContextOptions extends PreviewBindingsCommonOptions {
-  readonly authorization: AuthorizedPreviewContext | null;
-  readonly authorized?: undefined;
-}
-
 /**
- * The verdict as a boolean the application verified elsewhere. Kept through
- * 1.x; refused under `strict`. Never derive it from `?preview=true`, an
- * iframe destination or a referer — those are client-controlled intent
- * signals. Use the same verified result that decides whether drafts may be
- * read.
+ * The authorization verdict as a context from `authorizePreviewRequest()`, or
+ * `null` for a public response. 2.0 removed the `authorized: boolean` form
+ * (ADR 0007, entry 7): only a branded context authorizes emission, so a
+ * client-controlled intent signal can never be mistaken for a verdict.
  */
-export interface PreviewBindingsBooleanOptions extends PreviewBindingsCommonOptions {
-  readonly authorized: boolean;
-  readonly authorization?: undefined;
+export interface PreviewBindingsOptions extends PreviewBindingsCommonOptions {
+  readonly authorization: AuthorizedPreviewContext | null;
 }
-
-export type PreviewBindingsOptions = PreviewBindingsContextOptions | PreviewBindingsBooleanOptions;
 
 /** Request-scoped binding helpers that carry one authorization decision. */
 export interface PreviewBindings {
@@ -142,17 +127,9 @@ export function createPreviewBindings(options: PreviewBindingsOptions): PreviewB
 }
 
 /**
- * One boolean from either option form. A context is trusted only when the
- * brand check says it is one — a copied or hand-written object is a public
- * response. The boolean form is refused under `strict`.
+ * A context is trusted only when the brand check says it is one — a copied or
+ * hand-written object is a public response.
  */
 function resolveVerdict(options: PreviewBindingsOptions): boolean {
-  if (options.authorization !== undefined) return isAuthorizedPreviewContext(options.authorization);
-  if (options.strict === true) {
-    throw new Error(
-      'payload-live-preview: strict preview bindings need `authorization` from ' +
-        'authorizePreviewRequest(), not an `authorized` boolean (ADR 0007, entry 7).',
-    );
-  }
-  return options.authorized;
+  return isAuthorizedPreviewContext(options.authorization);
 }

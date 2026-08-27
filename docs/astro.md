@@ -206,9 +206,10 @@ const bindings = createPreviewBindings({ authorization, owner: `pages:${page.id}
 ```
 
 `definePreview` has no draft default: `authorization` is the decision, and
-`depth` is written once for the read and the runtime merge. The root-entry
-`fetchPreviewDocument()` keeps its 1.x behaviour (draft by default) and is
-deprecated. Never attach a long-lived API key or service token
+`depth` is written once for the read and the runtime merge, and is required
+(choose `0` for no relationship population). The root-entry
+`fetchPreviewDocument()`/`fetchPreviewGlobal()` helpers were removed in 2.0 —
+use `definePreview()`. Never attach a long-lived API key or service token
 merely because `hasPreviewIntent()` returned `true`. One verdict governs
 the draft flag, forwarded credentials, attribute emission, CSP mutation,
 and runtime injection together; your own page cache should consume the

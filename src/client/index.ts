@@ -42,6 +42,20 @@ export class LivePreviewClient {
 
   constructor(rawConfig: LivePreviewClientConfig = {}) {
     const config = withProfileDefaults(rawConfig);
+    // 2.0 (ADR 0007, entry 10): setting `serverURL` requires an explicit
+    // `mergeDepth`; `defaults: 'v1'` keeps the 1.x default of 1 while migrating.
+    if (
+      rawConfig.defaults !== 'v1' &&
+      config.serverURL !== undefined &&
+      config.serverURL !== '' &&
+      config.mergeDepth === undefined
+    ) {
+      throw new Error(
+        'payload-live-preview: `serverURL` needs an explicit `mergeDepth` under the 2.0 defaults — ' +
+          "choose the population depth deliberately (0 for none), or pass `defaults: 'v1'` to keep " +
+          'the 1.x default of 1 while migrating (ADR 0007, entry 10).',
+      );
+    }
     if (config.sanitizerPolicy !== undefined) setSanitizerPolicy(config.sanitizerPolicy);
     const debug = config.debug ?? isDevMode();
     this.#log = debug

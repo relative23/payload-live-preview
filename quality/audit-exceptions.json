@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "comment": "Reviewed npm audit exceptions. Each entry lets a specific high/critical advisory pass the audit gate until it expires. Keep this empty; add an entry only with a real reachability analysis and a near-term expiry, and remove it the moment a fix is available.",
+  "exceptions": []
+}

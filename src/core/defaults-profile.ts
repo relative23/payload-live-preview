@@ -74,10 +74,15 @@ export const V1_RUNTIME_DEFAULTS: RuntimeProfileDefaults = Object.freeze({
   sanitizerPolicy: 'compat',
 });
 
+/**
+ * 2.0: the default profile is `v2`. Only an explicit `defaults: 'v1'` opts
+ * back into the 1.x table (kept for one 2.x line so a consumer can stage the
+ * migration). Every readiness row ships at its hardened value out of the box.
+ */
 export function adapterDefaultsFor(profile: DefaultsProfile | undefined): AdapterProfileDefaults {
-  return profile === 'v2' ? V2_ADAPTER_DEFAULTS : V1_ADAPTER_DEFAULTS;
+  return profile === 'v1' ? V1_ADAPTER_DEFAULTS : V2_ADAPTER_DEFAULTS;
 }
 
 export function runtimeDefaultsFor(profile: DefaultsProfile | undefined): RuntimeProfileDefaults {
-  return profile === 'v2' ? V2_RUNTIME_DEFAULTS : V1_RUNTIME_DEFAULTS;
+  return profile === 'v1' ? V1_RUNTIME_DEFAULTS : V2_RUNTIME_DEFAULTS;
 }

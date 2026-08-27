@@ -56,6 +56,18 @@ describe('codemods', () => {
     expect(migrateSource(once).output).toBe(once);
   });
 
+  it('skips the rename and reports a conflict when the module already binds hasPreviewIntent', () => {
+    const src =
+      "import { isPreviewRequest } from 'payload-live-preview';\n" +
+      'export function hasPreviewIntent(r) { return isPreviewRequest(r, { signals: ["query"] }); }\n';
+    const { output, edits, conflicts } = migrateSource(src, {
+      only: ['rename-is-preview-request'],
+    });
+    expect(output).toBe(src); // unchanged — renaming would collide with the local wrapper
+    expect(edits).toEqual([]);
+    expect(conflicts.map((c) => c.codemod)).toEqual(['rename-is-preview-request']);
+  });
+
   it('every codemod maps to a real ledger entry (1–12)', () => {
     for (const codemod of CODEMODS) {
       expect(codemod.ledgerEntry).toBeGreaterThanOrEqual(1);
