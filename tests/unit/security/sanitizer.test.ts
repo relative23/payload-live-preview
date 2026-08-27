@@ -542,3 +542,29 @@ describe('sanitizeHtml — protocol-relative anchor hardening', () => {
     expect(out).toContain('rel="noopener noreferrer"');
   });
 });
+
+describe('sanitizeHtml — allowFormControls (author templates only)', () => {
+  it('drops form controls by default and keeps them when the caller vouches for the markup', () => {
+    const html =
+      '<div><input type="text" onfocus="x()"><button>b</button><textarea>t</textarea></div>';
+    // Dropped completely, content included — a control is never text.
+    expect(sanitizeHtml(html)).toBe('<div></div>');
+    expect(
+      sanitizeHtml(html, {
+        allowFormControls: true,
+        additionalAllowedAttributes: { input: ['type'] },
+      }),
+    ).toBe('<div><input type="text"><button>b</button><textarea>t</textarea></div>');
+  });
+
+  it('never un-drops form itself, and still strips handlers and unsafe URLs', () => {
+    const out = sanitizeHtml(
+      '<form action="javascript:x()"><p>inside</p></form><input onclick="y()"><a href="javascript:z()">l</a>',
+      { allowFormControls: true },
+    );
+    expect(out).not.toContain('<form');
+    expect(out).not.toContain('onclick');
+    expect(out).not.toContain('javascript:');
+    expect(out).toContain('<input>');
+  });
+});

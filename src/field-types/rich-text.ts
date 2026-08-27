@@ -10,6 +10,7 @@
  */
 
 import { isLexicalContent, lexicalToHtml } from '@lexical/render';
+import { trustedHtml } from '@security/trusted-types';
 import { sanitizeHtml } from '@security/sanitizer';
 import { markNoWriteCallback } from '@core/internal-outcome';
 import type { FieldRenderer } from '@core/types';
@@ -20,21 +21,23 @@ const richTextRenderer: FieldRenderer = {
     // A project renderer, when configured, renders every value — Lexical or
     // not — and its output passes the sanitizer like everything else here.
     if (context.renderRichText !== undefined) {
-      target.element.innerHTML = sanitizeHtml(
-        context.renderRichText(value, {
-          fieldName: target.fieldName,
-          element: target.element,
-          locale: context.locale,
-        }),
+      target.element.innerHTML = trustedHtml(
+        sanitizeHtml(
+          context.renderRichText(value, {
+            fieldName: target.fieldName,
+            element: target.element,
+            locale: context.locale,
+          }),
+        ),
       );
       return;
     }
     if (isLexicalContent(value)) {
-      target.element.innerHTML = lexicalToHtml(value);
+      target.element.innerHTML = trustedHtml(lexicalToHtml(value));
       return;
     }
     if (typeof value === 'string') {
-      target.element.innerHTML = sanitizeHtml(value);
+      target.element.innerHTML = trustedHtml(sanitizeHtml(value));
       return;
     }
     return false;

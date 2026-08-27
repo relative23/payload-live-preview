@@ -89,3 +89,17 @@ object per node: 0.685 ms for 300 small Lexical documents against 0.110 ms to
 render them — the comparison cost six times the work it was avoiding. Plain
 `JSON.stringify` is 0.153 ms for the same 300, and a reordered object simply
 counts as changed, which is the safe direction.
+
+## Structural updates: keyed morph versus replace (ADR 0008)
+
+`tests/benchmarks/hot-paths.bench.ts`, "structural apply — morph versus
+replace". Pre-seeded 100-item `<ul>` containers; the sample is one update.
+
+| Case                     | replace  | morph    | Δ             |
+| ------------------------ | -------- | -------- | ------------- |
+| one of 100 items changed | 0.425 ms | 0.455 ms | +7 % (~30 µs) |
+| 100 items reordered      | 0.357 ms | 0.361 ms | within noise  |
+
+The morph keeps the live element and edits it; the difference on a changed
+item is the attribute diff and child walk that retention costs. Measured
+2026-08-27 in jsdom; a trend, not a gate.

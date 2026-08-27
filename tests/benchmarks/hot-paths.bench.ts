@@ -14,6 +14,7 @@ import { escapeHtml } from '@security/escape';
 import { lexicalToHtml } from '@lexical/render';
 import type { LexicalRoot } from '@lexical/types';
 import { diffArray } from '@schema/diff';
+import { applyStructuralPatches, createStructuralStore } from '@core/structural-applier';
 import { EventEmitter } from '@events/emitter';
 
 function buildDom(fieldCount: number): void {
@@ -145,4 +146,83 @@ describe('structural diff', () => {
   bench('diffArray — 100 items, insert + remove + moves', () => {
     diffArray(before, after);
   });
+});
+
+/**
+ * ADR 0008 §6: the morph replaces `replaceWith()` only if it is not slower
+ * on the cases that matter — one changed item in a 100-item list, and a
+ * full reorder. Both modes run on identical DOM so the ratio is the signal.
+ */
+describe('structural apply — morph versus replace (ADR 0008)', () => {
+  const TEMPLATE = '<li class="row"><span class="t">{{title}}</span><em>{{index}}</em></li>';
+  const POOL = 80;
+  const items = (offset: number): readonly Record<string, unknown>[] =>
+    Array.from({ length: 100 }, (_, i) => ({
+      id: `k${String(i)}`,
+      title: `Title ${String(i + offset)}`,
+    }));
+  const base = items(0);
+  const oneChanged = base.map((item, i) => (i === 50 ? { ...item, title: 'changed' } : item));
+  const reordered = [...base.slice(50), ...base.slice(0, 50)];
+
+  interface Seeded {
+    readonly container: Element;
+    readonly store: ReturnType<typeof createStructuralStore>;
+  }
+  // Seeding is the expensive part and not what is measured: a pool of
+  // pre-seeded containers is prepared once per bench and each iteration
+  // consumes one, so the sample is the update alone.
+  function seedPool(): Seeded[] {
+    document.body.innerHTML = '';
+    const pool: Seeded[] = [];
+    for (let n = 0; n < POOL; n += 1) {
+      const container = document.createElement('ul');
+      document.body.append(container);
+      const store = createStructuralStore();
+      applyStructuralPatches({
+        template: TEMPLATE,
+        container,
+        patches: diffArray([], base),
+        nextItems: base,
+        store,
+        forceRender: true,
+      });
+      pool.push({ container, store });
+    }
+    return pool;
+  }
+
+  function scenario(morph: boolean, next: readonly Record<string, unknown>[]): void {
+    let pool: Seeded[] = [];
+    let cursor = 0;
+    bench(
+      `${next === reordered ? '100 items reordered' : 'one of 100 items changed'} — ${morph ? 'morph' : 'replace'}`,
+      () => {
+        const seeded = pool[cursor] ?? pool[0];
+        cursor = (cursor + 1) % pool.length;
+        if (seeded === undefined) return;
+        applyStructuralPatches({
+          template: TEMPLATE,
+          container: seeded.container,
+          patches: diffArray(base, next),
+          nextItems: next,
+          store: seeded.store,
+          morph,
+        });
+      },
+      {
+        setup: () => {
+          pool = seedPool();
+          cursor = 0;
+        },
+        iterations: POOL,
+        warmupIterations: 0,
+      },
+    );
+  }
+
+  scenario(true, oneChanged);
+  scenario(false, oneChanged);
+  scenario(true, reordered);
+  scenario(false, reordered);
 });

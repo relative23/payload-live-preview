@@ -158,6 +158,8 @@ export interface LivePreviewAstroOptions {
    * previews several documents stops sharing a field name between them.
    */
   readonly scopeBindingsByOwner?: boolean;
+  /** Sanitizer policy for rich text and HTML writes: `'compat'` (1.x) or `'strict'` (2.0, implied by `defaults: 'v2'`). */
+  readonly sanitizerPolicy?: 'compat' | 'strict';
 
   /**
    * Verify that the request is an authorized preview before anything

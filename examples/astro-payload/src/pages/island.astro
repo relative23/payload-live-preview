@@ -1,0 +1,43 @@
+---
+/**
+ * Island fixture for the interoperability tests (roadmap 1.3.0).
+ *
+ * `<x-island data-payload-island>` stands in for a hydrated framework
+ * island: it owns its subtree and re-renders it from its own state. The
+ * runtime must not patch the `data-payload-field` inside it, and must hand
+ * it every update as a `payload-live-preview:update` event — which the
+ * island applies itself, the way a `useEffect` or `onMount` would.
+ */
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Island fixture</title>
+  </head>
+  <body>
+    <h1 data-payload-field="title" data-testid="outside">Outside</h1>
+    <x-island data-payload-island data-testid="island">
+      <p data-payload-field="title" data-testid="inside">Island-owned</p>
+      <output data-testid="renders">0</output>
+    </x-island>
+    <script>
+      // A framework stand-in: it rerenders its own markup from bridge data and
+      // counts how often it did, so a test can tell a rerender from a patch.
+      class Island extends HTMLElement {
+        #renders = 0;
+        connectedCallback() {
+          this.addEventListener('payload-live-preview:update', (event) => {
+            const detail = (event as CustomEvent<{ fields: Record<string, unknown> }>).detail;
+            this.#renders += 1;
+            const inside = this.querySelector('[data-testid="inside"]');
+            const renders = this.querySelector('[data-testid="renders"]');
+            if (inside) inside.textContent = `island: ${String(detail.fields.title ?? '')}`;
+            if (renders) renders.textContent = String(this.#renders);
+          });
+        }
+      }
+      customElements.define('x-island', Island);
+    </script>
+  </body>
+</html>

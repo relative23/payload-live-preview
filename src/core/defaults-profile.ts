@@ -32,6 +32,7 @@ export const READINESS_ROWS = Object.freeze({
   disableReferrerDetection: 'referrer trust off outside local dev',
   eventSourcePolicy: 'messages must come from parent/opener',
   skipUnchanged: 'skip unchanged bindings by default',
+  sanitizerPolicy: 'hardened sanitizer id/data-* policy',
 } as const);
 
 /** Options an adapter's request decision reads from the profile. */
@@ -45,6 +46,7 @@ export interface RuntimeProfileDefaults {
   readonly disableReferrerDetection: boolean;
   readonly eventSourcePolicy: EventSourcePolicy;
   readonly skipUnchanged: boolean;
+  readonly sanitizerPolicy: 'compat' | 'strict';
 }
 
 export const V2_ADAPTER_DEFAULTS: AdapterProfileDefaults = Object.freeze({
@@ -56,6 +58,7 @@ export const V2_RUNTIME_DEFAULTS: RuntimeProfileDefaults = Object.freeze({
   disableReferrerDetection: true,
   eventSourcePolicy: 'parent-or-opener',
   skipUnchanged: true,
+  sanitizerPolicy: 'strict',
 });
 
 /** Today's defaults, spelled out so the two profiles are comparable row by row. */
@@ -68,6 +71,7 @@ export const V1_RUNTIME_DEFAULTS: RuntimeProfileDefaults = Object.freeze({
   disableReferrerDetection: false,
   eventSourcePolicy: 'any',
   skipUnchanged: false,
+  sanitizerPolicy: 'compat',
 });
 
 export function adapterDefaultsFor(profile: DefaultsProfile | undefined): AdapterProfileDefaults {

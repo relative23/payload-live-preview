@@ -26,6 +26,7 @@ import {
   type StructuralStore,
 } from '@core/structural-applier';
 import { diffArray } from '@schema/diff';
+import { DIAGNOSTIC_CODES } from '@core/diagnostic-codes';
 import type { FieldRenderer } from '@core/types';
 
 /**
@@ -36,6 +37,7 @@ import type { FieldRenderer } from '@core/types';
 export function createStructuralArrayRenderer(): FieldRenderer {
   const states = new WeakMap<Element, StructuralRenderState>();
   const warnedContainers = new WeakSet<Element>();
+  const warnedKeys = new WeakMap<Element, Set<string>>();
   const store: StructuralStore = createStructuralStore();
 
   return {
@@ -61,6 +63,7 @@ export function createStructuralArrayRenderer(): FieldRenderer {
         });
         return false;
       }
+      warnAboutKeys(warnedKeys, container, target.fieldName, previousState?.values, value);
       const applied = applyStructuralPatches({
         template,
         container,
@@ -68,6 +71,15 @@ export function createStructuralArrayRenderer(): FieldRenderer {
         nextItems: value,
         store,
         forceRender,
+        onDuplicateKey: (owner, key) => {
+          warnOnce(
+            warnedKeys,
+            owner,
+            DIAGNOSTIC_CODES.StructuralDuplicateKey,
+            `LP0405: two items of "${target.fieldName}" share the key "${key}"; ` +
+              'later ones pair by position. Make `id` unique per item.',
+          );
+        },
       });
       if (applied === null) return false;
       states.set(container, {
@@ -132,4 +144,75 @@ function warnMissingTemplate(
       `<${container.tagName.toLowerCase()} data-payload-structural> needs ` +
       `data-payload-array-template (for example "<li>{{label}}</li>").`,
   );
+}
+
+function itemKey(value: unknown): string | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const id = (value as Record<string, unknown>)['id'];
+  return typeof id === 'string' || typeof id === 'number' ? String(id) : undefined;
+}
+
+/** ADR 0008 §5: missing and unstable keys are announced once per container; they degrade, not break. */
+function warnAboutKeys(
+  warned: WeakMap<Element, Set<string>>,
+  container: Element,
+  fieldName: string,
+  previous: readonly unknown[] | undefined,
+  next: readonly unknown[],
+): void {
+  const nextKeys = next.map(itemKey);
+  const seen = new Set<string>();
+  const duplicate = nextKeys.find((key) => {
+    if (key === undefined) return false;
+    if (seen.has(key)) return true;
+    seen.add(key);
+    return false;
+  });
+  if (duplicate !== undefined) {
+    warnOnce(
+      warned,
+      container,
+      DIAGNOSTIC_CODES.StructuralDuplicateKey,
+      `LP0405: two items of "${fieldName}" share the key "${duplicate}"; later ones pair by ` +
+        'position. Make `id` unique per item.',
+    );
+  }
+  if (nextKeys.some((key) => key === undefined)) {
+    warnOnce(
+      warned,
+      container,
+      DIAGNOSTIC_CODES.StructuralItemUnkeyed,
+      `LP0404: an item of "${fieldName}" has no id and pairs by ` +
+        'position, so an insert re-renders every row after it. Give items a stable id.',
+    );
+  }
+  if (previous?.length === next.length && next.length > 1) {
+    const previousKeys = new Set(previous.map(itemKey).filter((key) => key !== undefined));
+    const stable = nextKeys.some((key) => key !== undefined && previousKeys.has(key));
+    if (previousKeys.size > 0 && !stable) {
+      warnOnce(
+        warned,
+        container,
+        DIAGNOSTIC_CODES.StructuralUnstableKeys,
+        `LP0406: every key of "${fieldName}" changed at once; the ` +
+          'source generates ids per message, so no item can be retained across updates.',
+      );
+    }
+  }
+}
+
+function warnOnce(
+  warned: WeakMap<Element, Set<string>>,
+  container: Element,
+  code: string,
+  message: string,
+): void {
+  let codes = warned.get(container);
+  if (codes === undefined) {
+    codes = new Set();
+    warned.set(container, codes);
+  }
+  if (codes.has(code)) return;
+  codes.add(code);
+  safeConsoleWarn(`[live-preview] ${message}`);
 }

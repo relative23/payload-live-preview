@@ -31,6 +31,7 @@ export interface LivePreviewNextOptions {
     readonly mergeDepth?: number;
     readonly previewQueryParams?: readonly string[];
     readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
+    readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     // (undocumented)
     readonly scriptSrcExtra?: readonly string[];

@@ -352,9 +352,15 @@ describe('security properties', () => {
   it('sanitizes arbitrary parser input to a stable allow-listed tree', () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 300 }), (input) => {
-        const output = sanitizeHtml(input);
-        assertSanitizedTree(output);
-        expect(sanitizeHtml(output)).toBe(output);
+        // Both policies: the 2.0 default is one that already holds today.
+        for (const policy of ['compat', 'strict'] as const) {
+          const output = sanitizeHtml(input, { policy });
+          assertSanitizedTree(output);
+          expect(sanitizeHtml(output, { policy })).toBe(output);
+          if (policy === 'strict') {
+            expect(output).not.toMatch(/\s(?:id|name|data-payload-[a-z-]+)=/iu);
+          }
+        }
       }),
       propertyParameters(0x53414e31, 150),
     );
@@ -368,9 +374,11 @@ describe('security properties', () => {
         TOKEN,
         (tag, scheme, token) => {
           const input = `<${tag} onclick="${token}()" style="url(${scheme}:x)" href="${scheme}:${token}" src="${scheme}:${token}" poster="${scheme}:${token}">${token}<script>${token}()</script></${tag}>`;
-          const output = sanitizeHtml(input);
-          assertSanitizedTree(output);
-          expect(output.toLowerCase()).not.toContain('<script');
+          for (const policy of ['compat', 'strict'] as const) {
+            const output = sanitizeHtml(input, { policy });
+            assertSanitizedTree(output);
+            expect(output.toLowerCase()).not.toContain('<script');
+          }
         },
       ),
       propertyParameters(0x53414e32),

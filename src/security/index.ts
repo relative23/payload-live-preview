@@ -13,6 +13,8 @@ export { isSafeUrl, isExternalHttpUrl, SAFE_URL_PROTOCOLS } from './url-validato
 export {
   sanitizeHtml,
   setSanitizerDocument,
+  setSanitizerPolicy,
+  type SanitizerPolicyMode,
   SanitizerEnvironmentError,
   SANITIZER_POLICY,
   type SanitizeOptions,
@@ -51,3 +53,9 @@ export {
   type SubtleCryptoLike,
   type VerifierStrategy,
 } from './preview-authorization';
+export {
+  setTrustedTypesPolicy,
+  trustedHtml,
+  TRUSTED_TYPES_POLICY_NAME,
+  type TrustedHtmlPolicyLike,
+} from './trusted-types';

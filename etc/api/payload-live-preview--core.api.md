@@ -61,6 +61,8 @@ export interface CachedElement {
     readonly altField?: string;
     readonly arraySeparator?: string;
     readonly arrayTemplate?: string;
+    readonly boundary?: boolean;
+    readonly dependsOn?: readonly string[];
     readonly element: Element;
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
@@ -69,6 +71,7 @@ export interface CachedElement {
     readonly locale?: string;
     readonly owner?: string;
     readonly srcField?: string;
+    readonly strategy?: string;
     readonly targetAttribute?: string;
 }
 
@@ -103,6 +106,10 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnsafeAttributeWrite: "LP0401";
     readonly TextTargetHasChildren: "LP0402";
     readonly MissingArrayTemplate: "LP0403";
+    readonly StructuralItemUnkeyed: "LP0404";
+    readonly StructuralDuplicateKey: "LP0405";
+    readonly StructuralUnstableKeys: "LP0406";
+    readonly UnsupportedStrategy: "LP0407";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly HandlerThrew: "LP0601";
@@ -285,6 +292,24 @@ export function isInPopup(): boolean;
 export function isInPreviewContext(): boolean;
 
 // @public
+export function isInsideIsland(element: Element): boolean;
+
+// @public
+export const ISLAND_EVENT = "payload-live-preview:update";
+
+// @public
+export interface IslandUpdateDetail {
+    // (undocumented)
+    readonly fields: Readonly<Record<string, unknown>>;
+    // (undocumented)
+    readonly locale: string | undefined;
+    // (undocumented)
+    readonly receivedAt: number;
+    // (undocumented)
+    readonly revision: number;
+}
+
+// @public
 export function isSafeUrl(url: unknown): boolean;
 
 // @public
@@ -332,6 +357,7 @@ export interface LivePreviewClientConfig {
     readonly renderRichText?: RichTextRenderer;
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
     readonly root?: Document | Element;
+    readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
@@ -691,6 +717,9 @@ export function sanitizeHtml(html: string, options?: SanitizeOptions): string;
 interface SanitizeOptions {
     readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
     readonly additionalAllowedTags?: readonly string[];
+    readonly allowedDataAttributes?: readonly string[];
+    readonly allowFormControls?: boolean;
+    readonly policy?: SanitizerPolicyMode;
 }
 
 // @public
@@ -701,6 +730,9 @@ export interface SanitizerDocument {
         readonly content: ParentNode;
     };
 }
+
+// @public
+export type SanitizerPolicyMode = 'compat' | 'strict';
 
 // Warning: (ae-forgotten-export) The symbol "WebCryptoLike" needs to be exported by the entry point core.d.ts
 //

@@ -25,6 +25,10 @@ describe('published subpath classification', () => {
     // the Astro component and the virtual-module entry, so a future addition
     // cannot hide behind them.
     const skipped = classified.filter(([, kind]) => kind === 'not-node-importable').map(([e]) => e);
-    expect(skipped).toEqual(['./astro/RichText.astro', './astro/middleware-entry']);
+    expect(skipped).toEqual([
+      './astro/RichText.astro',
+      './astro/PreviewBoundary.astro',
+      './astro/middleware-entry',
+    ]);
   });
 });

@@ -17,17 +17,17 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 116,
-    "suites": 350,
-    "tests": 1667,
-    "benchmarks": 11
+    "files": 123,
+    "suites": 374,
+    "tests": 1718,
+    "benchmarks": 12
   },
   "groups": {
     "benchmarks": {
       "files": 3,
-      "suites": 9,
+      "suites": 10,
       "tests": 0,
-      "benchmarks": 11
+      "benchmarks": 12
     },
     "browser-bench": {
       "files": 1,
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 9,
-      "suites": 17,
-      "tests": 39,
+      "files": 11,
+      "suites": 19,
+      "tests": 44,
       "benchmarks": 0
     },
     "integration": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 96,
-      "suites": 316,
-      "tests": 1559,
+      "files": 101,
+      "suites": 337,
+      "tests": 1605,
       "benchmarks": 0
     }
   },
@@ -70,9 +70,9 @@
     {
       "path": "tests/benchmarks/hot-paths.bench.ts",
       "group": "benchmarks",
-      "suites": 7,
+      "suites": 8,
       "tests": 0,
-      "benchmarks": 9
+      "benchmarks": 10
     },
     {
       "path": "tests/benchmarks/revision-pipeline.bench.ts",
@@ -107,6 +107,13 @@
       "group": "e2e",
       "suites": 2,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/island-bridge.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -149,6 +156,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/structural-morph.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -397,6 +411,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/islands.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/lifecycle-dom-ready.test.ts",
       "group": "unit",
       "suites": 4,
@@ -418,6 +439,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/markup-ergonomics.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/message-bus-source.test.ts",
       "group": "unit",
       "suites": 2,
@@ -429,6 +457,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 74,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/morph.test.ts",
+      "group": "unit",
+      "suites": 6,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -490,8 +525,8 @@
     {
       "path": "tests/unit/core/structural-applier.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 24,
+      "suites": 5,
+      "tests": 27,
       "benchmarks": 0
     },
     {
@@ -595,8 +630,8 @@
     {
       "path": "tests/unit/field-types/structural-array.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 11,
+      "suites": 2,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -845,10 +880,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/security/sanitizer-policy.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/security/sanitizer.test.ts",
       "group": "unit",
-      "suites": 11,
-      "tests": 48,
+      "suites": 12,
+      "tests": 50,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/trusted-types.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
       "benchmarks": 0
     },
     {

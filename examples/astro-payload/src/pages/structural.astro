@@ -1,0 +1,76 @@
+---
+/**
+ * Structural list fixture for the keyed-morph acceptance tests (ADR 0008 §7).
+ *
+ * Each item carries an `<input>` (focus, selection and typed value must
+ * survive an update to the item), a `<details>` (visitor-opened state must
+ * survive unless the template says otherwise) and an `<x-counter>` custom
+ * element with internal state the morph must never touch. The list is
+ * framed by `/bench?target=/structural/`, which is how the E2E posts updates
+ * from the parent window.
+ */
+const initial = [
+  { id: 'a', title: 'Alpha' },
+  { id: 'b', title: 'Beta' },
+  { id: 'c', title: 'Gamma' },
+];
+const template =
+  '<li class="row"><span class="t">{{title}}</span>' +
+  '<input class="i" aria-label="{{title}}">' +
+  '<details><summary>more</summary><p>Details of {{title}}</p></details>' +
+  '<x-counter></x-counter></li>';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Structural morph fixture</title>
+  </head>
+  <body>
+    <ul
+      data-testid="rows"
+      data-payload-field="rows"
+      data-payload-structural
+      data-payload-array-template={template}
+    >
+      {
+        initial.map((item) => (
+          <li class="row" data-payload-key={item.id}>
+            <span class="t">{item.title}</span>
+            <input class="i" aria-label={item.title} />
+            <details>
+              <summary>more</summary>
+              <p>Details of {item.title}</p>
+            </details>
+            <x-counter />
+          </li>
+        ))
+      }
+    </ul>
+    <script>
+      // A custom element with state the morph cannot see: a click count kept
+      // in a private field and rendered into a shadow root.
+      class Counter extends HTMLElement {
+        #count = 0;
+        connectedCallback() {
+          if (this.shadowRoot === null) {
+            const root = this.attachShadow({ mode: 'open' });
+            root.innerHTML = '<button type="button">0</button>';
+            root.querySelector('button')?.addEventListener('click', () => {
+              this.#count += 1;
+              this.render();
+            });
+          }
+        }
+        get count() {
+          return this.#count;
+        }
+        render() {
+          const button = this.shadowRoot?.querySelector('button');
+          if (button) button.textContent = String(this.#count);
+        }
+      }
+      customElements.define('x-counter', Counter);
+    </script>
+  </body>
+</html>

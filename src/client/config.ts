@@ -108,6 +108,8 @@ export interface LivePreviewClientConfig {
    * opened the page. `defaults: 'v2'` sets the latter.
    */
   readonly eventSourcePolicy?: EventSourcePolicy;
+  /** Sanitizer policy for rich text and HTML writes: `'compat'` (1.x) or `'strict'` (2.0, set by `defaults: 'v2'`). */
+  readonly sanitizerPolicy?: 'compat' | 'strict';
   /**
    * `'v2'` applies every 2.0 runtime default that exists as a 1.x option —
    * `skipUnchanged`, `disableReferrerDetection`, `eventSourcePolicy` — at
@@ -144,5 +146,6 @@ export function withProfileDefaults(config: LivePreviewClientConfig): LivePrevie
     skipUnchanged: config.skipUnchanged ?? rows.skipUnchanged,
     disableReferrerDetection: config.disableReferrerDetection ?? rows.disableReferrerDetection,
     eventSourcePolicy: config.eventSourcePolicy ?? rows.eventSourcePolicy,
+    sanitizerPolicy: config.sanitizerPolicy ?? rows.sanitizerPolicy,
   };
 }

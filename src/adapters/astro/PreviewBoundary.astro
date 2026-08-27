@@ -1,0 +1,66 @@
+---
+/**
+ * A stable anchor for a field that may be empty.
+ *
+ * The runtime can only patch elements that exist. A template that renders a
+ * binding only when the field is non-empty leaves the editor with nothing to
+ * see when they fill a previously empty field. `PreviewBoundary` renders the
+ * wrapper always: with content when the value is present, and as an empty,
+ * `hidden` element otherwise — out of layout and out of the accessibility
+ * tree, so a public visitor and a screen reader see exactly what they would
+ * have seen without live preview. When an update fills the field, the
+ * runtime removes `hidden`; when it empties it, the runtime hides the
+ * wrapper again.
+ *
+ * Usage:
+ *
+ * ```astro
+ * ---
+ * import PreviewBoundary from 'payload-live-preview/astro/PreviewBoundary.astro';
+ * ---
+ * <PreviewBoundary field="subtitle" value={page.subtitle} as="p" class="lede">
+ *   {page.subtitle}
+ * </PreviewBoundary>
+ * ```
+ *
+ * `data-payload-strategy="patch"` is written explicitly: the wrapper is a
+ * patch target, and markup that needs the future fragment strategy says so
+ * with a different value.
+ */
+
+interface Props {
+  /** Payload field path to bind, e.g. `"subtitle"` or `"hero.caption"`. */
+  field: string;
+  /** The field's value, used only to decide whether the anchor starts hidden. */
+  value: unknown;
+  /** Wrapper tag. Default `div`. */
+  as?: string;
+  /** Renderer to force (`data-payload-type`), e.g. `richText`. */
+  type?: string;
+  /** Additional attributes are forwarded to the wrapper. */
+  [attribute: string]: unknown;
+}
+
+const { field, value, as = 'div', type, ...rest } = Astro.props as Props;
+
+function isEmpty(candidate: unknown): boolean {
+  if (candidate === null || candidate === undefined) return true;
+  if (typeof candidate === 'string') return candidate.trim().length === 0;
+  if (Array.isArray(candidate)) return candidate.length === 0;
+  return false;
+}
+
+const Tag = as;
+const empty = isEmpty(value);
+---
+
+<Tag
+  {...rest}
+  data-payload-field={field}
+  data-payload-type={type}
+  data-payload-boundary=""
+  data-payload-strategy="patch"
+  hidden={empty ? true : undefined}
+>
+  <slot />
+</Tag>

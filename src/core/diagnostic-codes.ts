@@ -63,6 +63,14 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   TextTargetHasChildren: 'LP0402',
   /** A structural container has no array template, so the update was skipped. */
   MissingArrayTemplate: 'LP0403',
+  /** A structural item has no `id`; it pairs positionally, so an insert re-renders every row after it. */
+  StructuralItemUnkeyed: 'LP0404',
+  /** Two structural items share a key; later ones pair positionally. */
+  StructuralDuplicateKey: 'LP0405',
+  /** Every structural key changed while the length did not; the source generates keys per message. */
+  StructuralUnstableKeys: 'LP0406',
+  /** A binding asks for a delivery strategy this release does not have; it is left unchanged. */
+  UnsupportedStrategy: 'LP0407',
 
   /** A message was rejected before it reached the update pipeline. */
   MessageRejected: 'LP0501',

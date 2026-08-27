@@ -391,29 +391,34 @@ Spread `preview.runtimeOptions` (`serverURL`, `apiRoute`, `mergeDepth`) into the
 
 ## Data-attribute reference
 
-| Attribute                      | Purpose                                                                                       | Example                                            |
-| ------------------------------ | --------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `data-payload-field`           | Bind element to a Payload field path                                                          | `data-payload-field="hero.title"`                  |
-| `data-payload-type`            | Force a specific renderer                                                                     | `data-payload-type="image"`                        |
-| `data-payload-attribute`       | Write the value into an attribute instead of content (unsafe attributes and URLs are refused) | `data-payload-attribute="datetime"`                |
-| `data-payload-href`            | Read `href` from a sibling field                                                              | `data-payload-href="ctaUrl"`                       |
-| `data-payload-src`             | Read `src` from a sibling field                                                               | `data-payload-src="hero.url"`                      |
-| `data-payload-alt`             | Read `alt` from a sibling field                                                               | `data-payload-alt="hero.alt"`                      |
-| `data-payload-richtext`        | Force Lexical rendering (usually auto-detected)                                               | `data-payload-richtext`                            |
-| `data-payload-html`            | Render value as sanitised HTML                                                                | `data-payload-html`                                |
-| `data-payload-array`           | Treat value as an array                                                                       | `data-payload-array`                               |
-| `data-payload-array-template`  | HTML template per array item                                                                  | `data-payload-array-template="<li>{{title}}</li>"` |
-| `data-payload-array-separator` | Separator for primitive arrays                                                                | `data-payload-array-separator=" · "`               |
-| `data-payload-structural`      | Use diff-based structural updates                                                             | `data-payload-structural`                          |
-| `data-payload-locale`          | Override locale for this element                                                              | `data-payload-locale="de-AT"`                      |
-| `data-payload-owner`           | Document this subtree belongs to (see below)                                                  | `data-payload-owner="global:homepage"`             |
+| Attribute                      | Purpose                                                                                                                | Example                                            |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `data-payload-field`           | Bind element to a Payload field path                                                                                   | `data-payload-field="hero.title"`                  |
+| `data-payload-type`            | Force a specific renderer                                                                                              | `data-payload-type="image"`                        |
+| `data-payload-attribute`       | Write the value into an attribute instead of content (unsafe attributes and URLs are refused)                          | `data-payload-attribute="datetime"`                |
+| `data-payload-href`            | Read `href` from a sibling field                                                                                       | `data-payload-href="ctaUrl"`                       |
+| `data-payload-src`             | Read `src` from a sibling field                                                                                        | `data-payload-src="hero.url"`                      |
+| `data-payload-alt`             | Read `alt` from a sibling field                                                                                        | `data-payload-alt="hero.alt"`                      |
+| `data-payload-richtext`        | Force Lexical rendering (usually auto-detected)                                                                        | `data-payload-richtext`                            |
+| `data-payload-html`            | Render value as sanitised HTML                                                                                         | `data-payload-html`                                |
+| `data-payload-array`           | Treat value as an array                                                                                                | `data-payload-array`                               |
+| `data-payload-array-template`  | HTML template per array item                                                                                           | `data-payload-array-template="<li>{{title}}</li>"` |
+| `data-payload-array-separator` | Separator for primitive arrays                                                                                         | `data-payload-array-separator=" · "`               |
+| `data-payload-structural`      | Use diff-based structural updates                                                                                      | `data-payload-structural`                          |
+| `data-payload-locale`          | Override locale for this element                                                                                       | `data-payload-locale="de-AT"`                      |
+| `data-payload-owner`           | Document this subtree belongs to (see below)                                                                           | `data-payload-owner="global:homepage"`             |
+| `data-payload-depends`         | Fields whose change re-applies this binding under `skipUnchanged`, e.g. `data-payload-depends="price currency"`        | `data-payload-depends="price"`                     |
+| `data-payload-strategy`        | Delivery strategy; `patch` (the default) is the only one in 1.x — anything else is left alone with `LP0407`            | `data-payload-strategy="patch"`                    |
+| `data-payload-boundary`        | A stable anchor for a possibly-empty field: hidden while empty, shown when filled (`PreviewBoundary.astro` renders it) | `data-payload-boundary hidden`                     |
+| `data-payload-island`          | A hydrated framework root: never patched or morphed into (see docs/renderers.md, islands)                              | `data-payload-island`                              |
+| `data-payload-owned`           | A subtree the site scripts itself: the morph retains it whole                                                          | `data-payload-owned`                               |
 
 Binding metadata is live: changing any of these attributes (including inferred
 type markers and an input's native `type`) rebuilds the affected cache snapshot
 after the mutation debounce. Locale-specific bindings resolve their own suffixed
 field value, and stale work prepared for a previous element locale is discarded.
 
-**Empty-field gotcha:** the runtime can only patch elements that exist. If your template renders a binding only when the field is non-empty, editing a previously-empty field has nowhere to land. Render the anchor unconditionally:
+**Empty-field gotcha:** the runtime can only patch elements that exist. `PreviewBoundary.astro` (`payload-live-preview/astro/PreviewBoundary.astro`) renders a hidden anchor for an empty field and the runtime unhides it when the editor fills the field. If your template renders a binding only when the field is non-empty, editing a previously-empty field has nowhere to land. Render the anchor unconditionally:
 
 ```astro
 <div data-payload-field="subtitle">{subtitle ?? ''}</div>
@@ -606,17 +611,18 @@ Options accepted by `generateInlineScript`, every adapter, and `LivePreviewClien
 Additional runtime options accepted by `generateInlineScript` and `LivePreviewClient`
 (not by the adapter option objects):
 
-| Option                     | Default   | Meaning                                                                                                                                                                                                                           |
-| -------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enableA11y`               | `true`    | Shared `aria-live` region announcing connections, applied updates, and heartbeat-timeout disconnects while mounted; destroy releases it synchronously without promising a final audible announcement.                             |
-| `disableVisibilityGate`    | `false`   | Apply updates to off-screen elements immediately.                                                                                                                                                                                 |
-| `visibilityGateThreshold`  | `50`      | Cache size above which off-screen updates are queued.                                                                                                                                                                             |
-| `scopeBindingsByOwner`     | `false`   | Restrict each update to bindings owned by the document it names (`data-payload-owner`). Unowned bindings stop updating.                                                                                                           |
-| `skipUnchanged`            | `false`   | Skip a binding whose value is identical to the one it last applied, so a keystroke re-renders only what changed. Renderers and `elementUpdate` then stop seeing repeats; `inspect().revisions.skippedUnchanged` counts the skips. |
-| `dependencies`             | `{}`      | Fields whose change re-applies other bindings even when their own value did not change: `{ price: ['priceLabel'] }`. Used only with `skipUnchanged`.                                                                              |
-| `intersectionRootMargin`   | `'200px'` | Pre-render margin for the visibility gate.                                                                                                                                                                                        |
-| `disableReferrerDetection` | `false`   | Opt out of `document.referrer` origin auto-detection.                                                                                                                                                                             |
-| `disableLocalhostMatching` | `false`   | Opt out of dev-mode localhost origin matching.                                                                                                                                                                                    |
+| Option                     | Default    | Meaning                                                                                                                                                                                                                           |
+| -------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enableA11y`               | `true`     | Shared `aria-live` region announcing connections, applied updates, and heartbeat-timeout disconnects while mounted; destroy releases it synchronously without promising a final audible announcement.                             |
+| `disableVisibilityGate`    | `false`    | Apply updates to off-screen elements immediately.                                                                                                                                                                                 |
+| `visibilityGateThreshold`  | `50`       | Cache size above which off-screen updates are queued.                                                                                                                                                                             |
+| `scopeBindingsByOwner`     | `false`    | Restrict each update to bindings owned by the document it names (`data-payload-owner`). Unowned bindings stop updating.                                                                                                           |
+| `skipUnchanged`            | `false`    | Skip a binding whose value is identical to the one it last applied, so a keystroke re-renders only what changed. Renderers and `elementUpdate` then stop seeing repeats; `inspect().revisions.skippedUnchanged` counts the skips. |
+| `sanitizerPolicy`          | `'compat'` | `'strict'` (the 2.0 default, set by `defaults: 'v2'`) strips `id`, `name` and `data-payload-*` from rich-text/HTML writes and passes other `data-*` only by list — see docs/security.md §3.                                       |
+| `dependencies`             | `{}`       | Fields whose change re-applies other bindings even when their own value did not change: `{ price: ['priceLabel'] }`. Used only with `skipUnchanged`.                                                                              |
+| `intersectionRootMargin`   | `'200px'`  | Pre-render margin for the visibility gate.                                                                                                                                                                                        |
+| `disableReferrerDetection` | `false`    | Opt out of `document.referrer` origin auto-detection.                                                                                                                                                                             |
+| `disableLocalhostMatching` | `false`    | Opt out of dev-mode localhost origin matching.                                                                                                                                                                                    |
 
 `LivePreviewClient` additionally accepts the programmatic-only `mergeFetch`,
 `a11yLocale`, `root`, `autoStart`, and `validateToken` options. `validateToken` is a
@@ -739,23 +745,27 @@ Every message the runtime reports carries a stable code. Prose gets reworded; a
 code does not — so a log filter, an alert rule, or a bug report that names
 `LP0301` still means the same thing after the sentence around it changes.
 
-| Code     | Meaning                                              | What to do                                                                                             |
-| -------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `LP0101` | No trusted origin configured in production           | Set `PAYLOAD_ADMIN_ORIGIN` or pass `allowedOrigins`. Nothing is accepted until you do.                 |
-| `LP0102` | Origin trust rests on `document.referrer`            | Any framing site is trusted. Set `allowedOrigins` and a `frame-ancestors` CSP.                         |
-| `LP0201` | An update named a field with no binding on the page  | Render the binding anchor unconditionally so edits to an initially-empty field have somewhere to land. |
-| `LP0202` | Owner scoping is on and the update names no document | The message carries neither a global slug nor a collection slug plus id.                               |
-| `LP0301` | The visibility gate held offscreen writes back       | Raise `visibilityGateThreshold`, or accept that below-the-fold updates wait for a scroll.              |
-| `LP0401` | A value was refused as an unsafe attribute write     | The attribute or the value is not safe to write; see the security model.                               |
-| `LP0402` | A text element has structured children               | Move `data-payload-field` to the value element, or add `data-payload-text`.                            |
-| `LP0403` | A structural container has no array template         | Add `data-payload-array-template`.                                                                     |
-| `LP0501` | A message was rejected before the update pipeline    | Reason is one of origin, shape, type, token. Visible with `debug: true`.                               |
-| `LP0502` | A preview token was rejected                         | Also reported when your `validateToken` throws — a throwing validator fails closed.                    |
-| `LP0601` | A consumer event handler threw                       | Your `on(...)` handler; the runtime continued.                                                         |
-| `LP0602` | A consumer transform threw                           | The original value was kept.                                                                           |
-| `LP0603` | A renderer threw while writing                       | That one write was abandoned.                                                                          |
-| `LP0605` | Runtime startup failed                               |                                                                                                        |
-| `LP0606` | Sending the ready handshake failed                   |                                                                                                        |
+| Code     | Meaning                                                  | What to do                                                                                               |
+| -------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `LP0101` | No trusted origin configured in production               | Set `PAYLOAD_ADMIN_ORIGIN` or pass `allowedOrigins`. Nothing is accepted until you do.                   |
+| `LP0102` | Origin trust rests on `document.referrer`                | Any framing site is trusted. Set `allowedOrigins` and a `frame-ancestors` CSP.                           |
+| `LP0201` | An update named a field with no binding on the page      | Render the binding anchor unconditionally so edits to an initially-empty field have somewhere to land.   |
+| `LP0202` | Owner scoping is on and the update names no document     | The message carries neither a global slug nor a collection slug plus id.                                 |
+| `LP0301` | The visibility gate held offscreen writes back           | Raise `visibilityGateThreshold`, or accept that below-the-fold updates wait for a scroll.                |
+| `LP0401` | A value was refused as an unsafe attribute write         | The attribute or the value is not safe to write; see the security model.                                 |
+| `LP0402` | A text element has structured children                   | Move `data-payload-field` to the value element, or add `data-payload-text`.                              |
+| `LP0403` | A structural container has no array template             | Add `data-payload-array-template`.                                                                       |
+| `LP0404` | A structural item has no `id`                            | Give items a stable `id`; without one they pair by position and an insert re-renders every row after it. |
+| `LP0405` | Two structural items share a key                         | Make `id` unique per item; later duplicates pair by position.                                            |
+| `LP0406` | Every structural key changed at once                     | The source generates keys per message; the morph cannot retain nodes across such updates.                |
+| `LP0407` | A binding asks for a strategy this release does not have | Only `patch` exists in 1.x; the element is left unchanged. The fragment strategy arrives in 1.7.0.       |
+| `LP0501` | A message was rejected before the update pipeline        | Reason is one of origin, shape, type, token. Visible with `debug: true`.                                 |
+| `LP0502` | A preview token was rejected                             | Also reported when your `validateToken` throws — a throwing validator fails closed.                      |
+| `LP0601` | A consumer event handler threw                           | Your `on(...)` handler; the runtime continued.                                                           |
+| `LP0602` | A consumer transform threw                               | The original value was kept.                                                                             |
+| `LP0603` | A renderer threw while writing                           | That one write was abandoned.                                                                            |
+| `LP0605` | Runtime startup failed                                   |                                                                                                          |
+| `LP0606` | Sending the ready handshake failed                       |                                                                                                          |
 
 Codes on the `error` event can be branched on directly:
 

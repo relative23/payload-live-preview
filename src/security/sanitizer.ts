@@ -21,6 +21,7 @@
  * @module @security/sanitizer
  */
 
+import { trustedHtml } from './trusted-types';
 import { isSafeUrl, isExternalHttpUrl } from './url-validator';
 
 /**
@@ -99,6 +100,16 @@ const ALLOWED_TAGS: ReadonlySet<string> = new Set([
  * unwrapping fallback because their contents are themselves harmful
  * (script source, CSS, raw HTML, etc.).
  */
+/** Tags `allowFormControls` un-drops for author templates; `form` is deliberately not among them. */
+const FORM_CONTROLS: ReadonlySet<string> = new Set([
+  'input',
+  'button',
+  'textarea',
+  'select',
+  'option',
+  'label',
+]);
+
 const REMOVE_COMPLETELY: ReadonlySet<string> = new Set([
   'script',
   'style',
@@ -134,6 +145,7 @@ const ATTR_GLOBAL: ReadonlySet<string> = new Set([
 
 const ATTR_ARIA_PREFIX = 'aria-';
 const ATTR_DATA_PREFIX = 'data-';
+const BINDING_DATA_PREFIX = 'data-payload-';
 
 const ATTR_BY_TAG: Readonly<Record<string, ReadonlySet<string>>> = {
   a: new Set(['href', 'target', 'rel', 'download', 'hreflang', 'type']),
@@ -185,7 +197,29 @@ export class SanitizerEnvironmentError extends Error {
   override readonly name = 'SanitizerEnvironmentError';
 }
 
+/**
+ * `'compat'` is the 1.x policy: `id` and every `data-*` attribute pass.
+ * `'strict'` is the 2.0 policy, available now: `id` and `name` are stripped
+ * (DOM clobbering, docs/security.md §5c), `data-payload-*` is stripped
+ * (rich text must not add bindings), and other `data-*` pass only when
+ * listed in `allowedDataAttributes`.
+ */
+export type SanitizerPolicyMode = 'compat' | 'strict';
+
 export interface SanitizeOptions {
+  /** Overrides the module default set by `setSanitizerPolicy()`. */
+  readonly policy?: SanitizerPolicyMode;
+  /** `data-*` attributes (full names) that pass under `'strict'`. */
+  readonly allowedDataAttributes?: readonly string[];
+  /**
+   * Keep `input`, `button`, `textarea`, `select`, `option` and `label`
+   * instead of dropping them. Only for markup the page author wrote — the
+   * structural item templates — never for CMS content: every interpolated
+   * value is escaped before the sanitizer runs, so these tags can come only
+   * from the template. `form` stays dropped, and so do event handlers,
+   * `style` and unsafe URLs.
+   */
+  readonly allowFormControls?: boolean;
   /** Extra tags to allow beyond the built-in list. Lower-case, untrimmed. */
   readonly additionalAllowedTags?: readonly string[];
   /** Extra per-tag attributes to allow. Tag and attribute names must be lower-case. */
@@ -194,17 +228,34 @@ export interface SanitizeOptions {
 
 interface ResolvedPolicy {
   readonly allowedTags: ReadonlySet<string>;
+  readonly allowFormControls: boolean;
+  readonly mode: SanitizerPolicyMode;
+  readonly allowedData: ReadonlySet<string>;
   readonly attrByTag: ReadonlyMap<string, ReadonlySet<string>>;
+}
+
+let defaultMode: SanitizerPolicyMode = 'compat';
+
+/** Set the policy every `sanitizeHtml()` call without an explicit `policy` uses. The runtime sets it from `sanitizerPolicy`. */
+export function setSanitizerPolicy(mode: SanitizerPolicyMode): void {
+  defaultMode = mode;
 }
 
 function resolvePolicy(options: SanitizeOptions | undefined): ResolvedPolicy {
   if (!options) {
     const attrMap = new Map<string, ReadonlySet<string>>();
     for (const [tag, attrs] of Object.entries(ATTR_BY_TAG)) attrMap.set(tag, attrs);
-    return { allowedTags: ALLOWED_TAGS, attrByTag: attrMap };
+    return {
+      allowedTags: ALLOWED_TAGS,
+      attrByTag: attrMap,
+      allowFormControls: false,
+      mode: defaultMode,
+      allowedData: new Set(),
+    };
   }
   const allowed = new Set(ALLOWED_TAGS);
   for (const tag of options.additionalAllowedTags ?? []) allowed.add(tag);
+  if (options.allowFormControls === true) for (const tag of FORM_CONTROLS) allowed.add(tag);
   const attrMap = new Map<string, ReadonlySet<string>>();
   for (const [tag, attrs] of Object.entries(ATTR_BY_TAG)) attrMap.set(tag, attrs);
   for (const [tag, attrs] of Object.entries(options.additionalAllowedAttributes ?? {})) {
@@ -213,7 +264,13 @@ function resolvePolicy(options: SanitizeOptions | undefined): ResolvedPolicy {
     for (const attr of attrs) merged.add(attr);
     attrMap.set(tag, merged);
   }
-  return { allowedTags: allowed, attrByTag: attrMap };
+  return {
+    allowedTags: allowed,
+    attrByTag: attrMap,
+    allowFormControls: options.allowFormControls === true,
+    mode: options.policy ?? defaultMode,
+    allowedData: new Set((options.allowedDataAttributes ?? []).map((name) => name.toLowerCase())),
+  };
 }
 
 /**
@@ -278,7 +335,8 @@ export function sanitizeHtml(html: string, options?: SanitizeOptions): string {
 
   const policy = resolvePolicy(options);
   const template = doc.createElement('template');
-  template.innerHTML = html;
+  // The sanitizer's own parse is a sink too: under Trusted Types it needs the policy.
+  template.innerHTML = trustedHtml(html);
   sanitizeFragment(template.content, policy);
   return template.innerHTML;
 }
@@ -315,7 +373,7 @@ function sanitizeFragment(node: ParentNode, policy: ResolvedPolicy): void {
 function sanitizeElement(element: Element, policy: ResolvedPolicy): void {
   const tag = element.tagName.toLowerCase();
 
-  if (REMOVE_COMPLETELY.has(tag)) {
+  if (REMOVE_COMPLETELY.has(tag) && !(policy.allowFormControls && FORM_CONTROLS.has(tag))) {
     element.remove();
     return;
   }
@@ -358,7 +416,19 @@ function sanitizeAttributes(element: Element, tag: string, policy: ResolvedPolic
     // Allow global, ARIA, and data-* attributes universally. They can
     // carry arbitrary strings but no executable sinks (event handlers
     // and `style` were already stripped above).
-    if (
+    if (policy.mode === 'strict') {
+      // DOM clobbering and binding injection (docs/security.md §5c): no `id`,
+      // no `name`, no `data-payload-*`, other `data-*` only by explicit list.
+      if (name === 'id' || name === 'name' || name.startsWith(BINDING_DATA_PREFIX)) {
+        element.removeAttribute(attr.name);
+        continue;
+      }
+      if (name.startsWith(ATTR_DATA_PREFIX)) {
+        if (!policy.allowedData.has(name)) element.removeAttribute(attr.name);
+        continue;
+      }
+      if (ATTR_GLOBAL.has(name) || name.startsWith(ATTR_ARIA_PREFIX)) continue;
+    } else if (
       ATTR_GLOBAL.has(name) ||
       name.startsWith(ATTR_ARIA_PREFIX) ||
       name.startsWith(ATTR_DATA_PREFIX)

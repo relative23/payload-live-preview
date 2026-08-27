@@ -20,6 +20,7 @@ import { LivePreviewRuntime } from '@core/lifecycle';
 import type { LivePreviewInspection } from '@core/inspection/types';
 import { EventEmitter } from '@events/emitter';
 import { OriginDetector } from '@detection/origin';
+import { setSanitizerPolicy } from '@security/sanitizer';
 import { PluginManager } from '@plugins/manager';
 import { RendererRegistry } from '@plugins/renderer-registry';
 import type { LivePreviewPlugin } from '@plugins/types';
@@ -41,6 +42,7 @@ export class LivePreviewClient {
 
   constructor(rawConfig: LivePreviewClientConfig = {}) {
     const config = withProfileDefaults(rawConfig);
+    if (config.sanitizerPolicy !== undefined) setSanitizerPolicy(config.sanitizerPolicy);
     const debug = config.debug ?? isDevMode();
     this.#log = debug
       ? (...args): void => {

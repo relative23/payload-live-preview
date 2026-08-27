@@ -18,6 +18,7 @@
  */
 
 import { sanitizeHtml } from '@security/sanitizer';
+import { trustedHtml } from '@security/trusted-types';
 import { interpolateArrayTemplate } from '@core/array-template';
 import { markNoWriteCallback } from '@core/internal-outcome';
 import type { FieldRenderer } from '@core/types';
@@ -31,7 +32,7 @@ const arrayRenderer: FieldRenderer = {
     const template = target.arrayTemplate;
     if (template !== undefined && template.length > 0) {
       const html = renderTemplate(template, value);
-      element.innerHTML = sanitizeHtml(html);
+      element.innerHTML = trustedHtml(sanitizeHtml(html));
       return;
     }
     const separator = target.arraySeparator ?? ', ';

@@ -47,6 +47,8 @@ import { VERSION } from '../version';
 import { observeThenableResult } from './thenable';
 import { resolveFieldValue } from './field-value';
 import { valueIdentity } from './value-identity';
+import { mergeDependencyMaps } from './dependencies';
+import { dispatchIslandUpdate, isInsideIsland } from './islands';
 import { A11yAnnouncer } from './a11y';
 import { isolateDiagnostic, noopDiagnostic, safeConsoleWarn } from './diagnostics';
 import { markNoWriteCallback, rendererUsesNoWriteOutcome } from './internal-outcome';
@@ -341,6 +343,7 @@ export class LivePreviewRuntime {
    */
   private readonly d: RuntimeDependencies;
   readonly #renderRichText: RichTextRenderer | undefined;
+  readonly #warnedStrategy = new WeakSet<Element>();
   private readonly l: RuntimeLifecycleState;
 
   constructor(options: RuntimeOptions) {
@@ -374,7 +377,9 @@ export class LivePreviewRuntime {
           })
         : null;
 
-    const cache = new ElementCache();
+    // Bindings inside a hydrated island are the island's business (ADR 0008 §4);
+    // the island receives every update as a DOM event instead.
+    const cache = new ElementCache({ filter: (element) => !isInsideIsland(element) });
     const observers = new ObserverManager(
       {
         onStructuralChange: () => {
@@ -1059,6 +1064,10 @@ export class LivePreviewRuntime {
       }
       for (const target of bindings) {
         if (ownerKeys !== false && !isBindingInScope(target.owner, ownerKeys)) continue;
+        if (target.strategy !== undefined && target.strategy !== 'patch') {
+          this.#warnUnsupportedStrategy(target);
+          continue;
+        }
         const value = resolveFieldValue(
           data.fields,
           fieldName,
@@ -1146,7 +1155,11 @@ export class LivePreviewRuntime {
    * source has a binding of its own.
    */
   #invalidatedDependents(fields: Record<string, unknown>): ReadonlySet<string> {
-    const dependencies = this.d[RuntimeDependencySlot.Dependencies];
+    // The option map plus what the markup declares with `data-payload-depends`.
+    const dependencies = mergeDependencyMaps(
+      this.d[RuntimeDependencySlot.Dependencies],
+      this.d[RuntimeDependencySlot.Cache].dependencyMap(),
+    );
     const previous = this.l[RuntimeLifecycleSlot.PreviousFieldIdentity];
     const next = new Map<string, string | undefined>();
     const invalidated = new Set<string>();
@@ -1174,6 +1187,16 @@ export class LivePreviewRuntime {
    * fail-closed. Warned once, because a silent no-op is the hardest possible
    * symptom to diagnose.
    */
+  /** LP0407, once per element: a strategy this release does not have is left alone, not guessed at. */
+  #warnUnsupportedStrategy(target: CachedElement): void {
+    if (this.#warnedStrategy.has(target.element)) return;
+    this.#warnedStrategy.add(target.element);
+    this.d[RuntimeDependencySlot.Warn](
+      `[live-preview] LP0407: "${target.fieldName}" asks for strategy "${String(target.strategy)}"; ` +
+        'only "patch" exists in 1.x, so the element is left unchanged. The fragment strategy arrives in 1.7.0.',
+    );
+  }
+
   #ownerKeysForUpdate(
     transaction: UpdateTransaction,
     fields: Record<string, unknown>,
@@ -1427,6 +1450,11 @@ export class LivePreviewRuntime {
       schema: schemaEntry,
       ...(this.#renderRichText !== undefined ? { renderRichText: this.#renderRichText } : {}),
     };
+    // A boundary anchor is out of layout and out of the accessibility tree
+    // while its field is empty, and appears the moment the editor fills it.
+    if (update.target.boundary === true) {
+      update.target.element.toggleAttribute('hidden', isEmptyFieldValue(value));
+    }
     try {
       if (update.target.targetAttribute !== undefined) {
         const outcome = applyAttributeBinding(
@@ -1549,6 +1577,13 @@ export class LivePreviewRuntime {
       this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction &&
       sameRevision(transaction.identity, identity);
     this.d[RuntimeDependencySlot.A11y]?.announceUpdate(stats.applied);
+    if (!isCurrent()) return;
+    dispatchIslandUpdate(this.d[RuntimeDependencySlot.Root], {
+      fields: data.fields,
+      revision: identity.revision,
+      receivedAt: transaction.receivedAt,
+      locale: transaction.locale,
+    });
     if (!isCurrent()) return;
     if (this.d[RuntimeDependencySlot.Emitter].listenerCount('afterUpdate') === 0) {
       return;
@@ -1773,3 +1808,10 @@ function readElementSnapshot(element: Element): unknown {
 
 export type { CachedElement };
 export { resolveFieldValue } from './field-value';
+
+/** Empty for a boundary anchor: nothing, an empty string, or an empty array. */
+function isEmptyFieldValue(value: unknown): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string') return value.trim().length === 0;
+  return Array.isArray(value) && value.length === 0;
+}

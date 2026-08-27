@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildBuiltinRenderers } from '@field-types/index';
+import { createStructuralArrayRenderer } from '@field-types/structural-array';
 import type { CachedElement, RenderContext } from '@core/types';
 
 function target(element: Element, template: string): CachedElement {
@@ -183,5 +184,70 @@ describe('structural-array renderer', () => {
     ul.innerHTML = '';
     rendererB.render(target(ul, template), items, ctx());
     expect([...ul.children].map((c) => c.textContent)).toEqual(['a', 'b']);
+  });
+});
+
+describe('key diagnostics (ADR 0008 §5)', () => {
+  function harness(template = '<li>{{title}}</li>') {
+    document.body.innerHTML = '<ul data-payload-field="rows" data-payload-structural></ul>';
+    const element = document.body.firstElementChild!;
+    const renderer = createStructuralArrayRenderer();
+    const target = {
+      element,
+      fieldName: 'rows',
+      fieldType: 'structural-array',
+      arrayTemplate: template,
+    } as unknown as Parameters<typeof renderer.render>[0];
+    const context = { allFields: {}, locale: undefined, schema: undefined };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    return { render: (value: unknown) => renderer.render(target, value, context), warn, element };
+  }
+
+  it('warns once per container when an item has no id (LP0404)', () => {
+    const { render, warn } = harness();
+    render([{ title: 'a' }, { title: 'b' }]);
+    render([{ title: 'a' }, { title: 'b' }, { title: 'c' }]);
+    const hits = warn.mock.calls.filter((c) => String(c[0]).includes('LP0404'));
+    expect(hits).toHaveLength(1);
+    warn.mockRestore();
+  });
+
+  it('warns once when every key changed at once (LP0406)', () => {
+    const { render, warn } = harness();
+    render([
+      { id: 1, title: 'a' },
+      { id: 2, title: 'b' },
+    ]);
+    render([
+      { id: 3, title: 'a' },
+      { id: 4, title: 'b' },
+    ]);
+    render([
+      { id: 5, title: 'a' },
+      { id: 6, title: 'b' },
+    ]);
+    const hits = warn.mock.calls.filter((c) => String(c[0]).includes('LP0406'));
+    expect(hits).toHaveLength(1);
+    warn.mockRestore();
+  });
+
+  it('warns once when two items share a key (LP0405) and keeps rendering', () => {
+    const { render, warn, element } = harness();
+    render([
+      { id: 'x', title: 'first' },
+      { id: 'x', title: 'second' },
+    ]);
+    render([
+      { id: 'x', title: 'FIRST' },
+      { id: 'x', title: 'SECOND' },
+    ]);
+    render([
+      { id: 'x', title: 'F' },
+      { id: 'x', title: 'S' },
+    ]);
+    const hits = warn.mock.calls.filter((c) => String(c[0]).includes('LP0405'));
+    expect(hits).toHaveLength(1);
+    expect(Array.from(element.children, (li) => li.textContent)).toEqual(['F', 'S']);
+    warn.mockRestore();
   });
 });

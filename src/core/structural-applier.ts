@@ -17,10 +17,12 @@
  * @module @core/structural-applier
  */
 
-import { sanitizeHtml } from '@security/sanitizer';
+import { sanitizeHtml, type SanitizeOptions } from '@security/sanitizer';
+import { trustedHtml } from '@security/trusted-types';
 import { interpolateArrayTemplate } from './array-template';
 import { safeStringify } from '@field-types/utils';
 import { diffArray, type ArrayPatch } from '@schema/diff';
+import { morphElement } from './morph';
 
 export const KEY_ATTRIBUTE = 'data-payload-key';
 const NESTED_KEY_ATTRIBUTE = 'data-payload-nested-key';
@@ -60,6 +62,25 @@ export interface StructuralApplyOptions {
   readonly store: StructuralStore;
   /** Re-render existing items even when their data comparison is unchanged. */
   readonly forceRender?: boolean;
+  /**
+   * Edit a changed item's live element toward its re-rendered markup instead
+   * of replacing it (ADR 0008). Default `true`; `false` is the pre-1.3.0
+   * behaviour, kept for the benchmark that measures the two.
+   */
+  readonly morph?: boolean;
+  /** Reported once per container when two items share a key (`LP0405`). */
+  readonly onDuplicateKey?: (container: Element, key: string) => void;
+}
+
+/**
+ * A nested slot whose rendered counterpart still carries a nested template
+ * keeps its children for its own plan; the morph only aligns its attributes.
+ * A slot whose template went away takes the rendered static content.
+ */
+function isManagedNestedSlot(_live: Element, rendered: Element): boolean {
+  return (
+    rendered.hasAttribute(NESTED_KEY_ATTRIBUTE) && rendered.hasAttribute(NESTED_TEMPLATE_ATTRIBUTE)
+  );
 }
 
 /**
@@ -79,7 +100,10 @@ export function applyStructuralPatches(options: StructuralApplyOptions): boolean
   const { template, container, patches, nextItems, store, forceRender = false } = options;
   const plan = prepareStructuralPlan(container, template, patches, nextItems, forceRender, store);
   if (plan === null) return null;
-  return commitStructuralPlan(plan, store);
+  return commitStructuralPlan(plan, store, {
+    morph: options.morph ?? true,
+    onDuplicateKey: options.onDuplicateKey,
+  });
 }
 
 // Plans are short-lived internal transaction records. Named tuples keep their
@@ -95,6 +119,8 @@ type ReconciliationEntry = readonly [
   live: Element | null,
   rendered: Element | undefined,
   nestedSlots: readonly NestedSlotPlan[],
+  /** The item at this index is a different one (`replace` patch): never morph the live element toward it. */
+  replace: boolean,
 ];
 type NestedSlotPlan = readonly [
   live: Element | null,
@@ -132,32 +158,64 @@ function prepareStructuralPlan(
 }
 
 /** Commit a previously validated recursive plan; no rendering occurs here. */
-function commitStructuralPlan(plan: StructuralPlan, store: StructuralStore): boolean {
+interface CommitOptions {
+  readonly morph: boolean;
+  readonly onDuplicateKey: ((container: Element, key: string) => void) | undefined;
+}
+
+function commitStructuralPlan(
+  plan: StructuralPlan,
+  store: StructuralStore,
+  options: CommitOptions,
+): boolean {
   const [container, entries, nextItems] = plan;
   const claimed = new Set<Element>();
   let mutated = false;
 
   for (const entry of entries) {
-    const [index, live, rendered, nestedSlots] = entry;
+    const [index, live, rendered, nestedSlots, replace] = entry;
     let node = live;
 
     if (rendered !== undefined) {
+      // A changed item keeps its live element when the markup is compatible
+      // (ADR 0008): attributes and children are edited in place, nested slots
+      // are retained whole for their own plan below. Otherwise the pre-1.3.0
+      // path — transplant the live slots into the rendered item and swap.
+      const retained =
+        options.morph && !replace && live !== null
+          ? morphElement(live, rendered, {
+              keyAttributes: [KEY_ATTRIBUTE, NESTED_KEY_ATTRIBUTE],
+              retainChildrenOf: isManagedNestedSlot,
+              ...(options.onDuplicateKey !== undefined
+                ? { onDuplicateKey: options.onDuplicateKey }
+                : {}),
+            }) === live
+          : false;
+      if (!retained) {
+        for (const nested of nestedSlots) {
+          if (nested[0] !== null) {
+            synchronizeAttributes(nested[0], nested[1]);
+            nested[1].replaceWith(nested[0]);
+          }
+        }
+      }
       for (const nested of nestedSlots) {
-        if (nested[0] !== null) {
-          synchronizeAttributes(nested[0], nested[1]);
-          nested[1].replaceWith(nested[0]);
-        }
         if (nested[2] !== undefined) {
-          // The recursive plan targets either the transplanted live slot or the
-          // detached new slot, so child identity survives exactly where valid.
-          commitStructuralPlan(nested[2], store);
+          // The recursive plan targets the live slot — retained in place by the
+          // morph, or transplanted into the rendered item — or the detached new
+          // slot, so child identity survives exactly where valid.
+          commitStructuralPlan(nested[2], store, options);
         }
       }
-      if (live !== null) {
-        live.replaceWith(rendered);
+      if (retained) {
         mutated = true;
+      } else {
+        if (live !== null) {
+          live.replaceWith(rendered);
+          mutated = true;
+        }
+        node = rendered;
       }
-      node = rendered;
     }
 
     // `prepareReconciliation()` materializes every missing node or returns
@@ -221,7 +279,7 @@ function prepareReconciliation(
         ? []
         : prepareNestedSlots(replace ? null : live, rendered, value, memory, store);
     if (nestedSlots === null) return null;
-    entries.push([index, live, rendered ?? undefined, nestedSlots]);
+    entries.push([index, live, rendered ?? undefined, nestedSlots, replace]);
   }
   return entries;
 }
@@ -390,9 +448,9 @@ function renderItem(
   index: number,
 ): Element | null {
   const filled = fillTemplate(template, value, index);
-  const safe = sanitizeHtml(filled);
+  const safe = sanitizeHtml(filled, templateSanitizeOptions(template));
   const host = ownerDocument.createElement('template');
-  host.innerHTML = safe;
+  host.innerHTML = trustedHtml(safe);
   const first = host.content.firstElementChild;
   if (!first) return null;
   const key = readKey(value);
@@ -402,4 +460,74 @@ function renderItem(
 
 function fillTemplate(template: string, value: unknown, index: number): string {
   return interpolateArrayTemplate(template, value, index, safeStringify);
+}
+
+/**
+ * Elements an item template may contain beyond the sanitizer's default
+ * allow-list. The template is the page author's markup — the same trust as
+ * the page — while every interpolated value is escaped to text before the
+ * sanitizer runs, so these tags can come only from the template. Interactive
+ * and state-bearing elements are what ADR 0008 exists to preserve; custom
+ * elements are boundaries the morph respects. Event handlers, `style` and
+ * unsafe URLs are still stripped.
+ */
+const TEMPLATE_EXTRA_TAGS: readonly string[] = [
+  'input',
+  'textarea',
+  'select',
+  'option',
+  'button',
+  'label',
+  'details',
+  'summary',
+  'dialog',
+  'video',
+  'audio',
+  'progress',
+  'meter',
+];
+const TEMPLATE_EXTRA_ATTRIBUTES: readonly string[] = [
+  'type',
+  'name',
+  'placeholder',
+  'open',
+  'disabled',
+  'readonly',
+  'required',
+  'checked',
+  'selected',
+  'value',
+  'min',
+  'max',
+  'step',
+  'rows',
+  'cols',
+  'for',
+  'controls',
+  'muted',
+  'loop',
+  'poster',
+  'src',
+];
+const TAG_NAME_PATTERN = /<([a-z][a-z0-9]*(?:-[a-z0-9]+)+)\b/gi;
+const templateOptionsCache = new Map<string, SanitizeOptions>();
+
+function templateSanitizeOptions(template: string): SanitizeOptions {
+  const cached = templateOptionsCache.get(template);
+  if (cached !== undefined) return cached;
+  const custom = new Set<string>();
+  for (const match of template.matchAll(TAG_NAME_PATTERN)) {
+    const tag = match[1]?.toLowerCase();
+    if (tag !== undefined) custom.add(tag);
+  }
+  const tags = [...TEMPLATE_EXTRA_TAGS, ...custom];
+  const attributes: Record<string, readonly string[]> = {};
+  for (const tag of tags) attributes[tag] = TEMPLATE_EXTRA_ATTRIBUTES;
+  const options: SanitizeOptions = {
+    additionalAllowedTags: tags,
+    additionalAllowedAttributes: attributes,
+    allowFormControls: true,
+  };
+  templateOptionsCache.set(template, options);
+  return options;
 }

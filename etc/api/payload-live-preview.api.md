@@ -90,6 +90,8 @@ export interface CachedElement {
     readonly altField?: string;
     readonly arraySeparator?: string;
     readonly arrayTemplate?: string;
+    readonly boundary?: boolean;
+    readonly dependsOn?: readonly string[];
     readonly element: Element;
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
@@ -98,6 +100,7 @@ export interface CachedElement {
     readonly locale?: string;
     readonly owner?: string;
     readonly srcField?: string;
+    readonly strategy?: string;
     readonly targetAttribute?: string;
 }
 
@@ -145,6 +148,10 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnsafeAttributeWrite: "LP0401";
     readonly TextTargetHasChildren: "LP0402";
     readonly MissingArrayTemplate: "LP0403";
+    readonly StructuralItemUnkeyed: "LP0404";
+    readonly StructuralDuplicateKey: "LP0405";
+    readonly StructuralUnstableKeys: "LP0406";
+    readonly UnsupportedStrategy: "LP0407";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly HandlerThrew: "LP0601";
@@ -332,6 +339,7 @@ export interface InlineScriptConfig {
     readonly mergeDepth?: number;
     // @deprecated
     readonly nonce?: string;
+    readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
@@ -404,6 +412,24 @@ export function isInPopup(): boolean;
 
 // @public
 export function isInPreviewContext(): boolean;
+
+// @public
+export function isInsideIsland(element: Element): boolean;
+
+// @public
+export const ISLAND_EVENT = "payload-live-preview:update";
+
+// @public
+export interface IslandUpdateDetail {
+    // (undocumented)
+    readonly fields: Readonly<Record<string, unknown>>;
+    // (undocumented)
+    readonly locale: string | undefined;
+    // (undocumented)
+    readonly receivedAt: number;
+    // (undocumented)
+    readonly revision: number;
+}
 
 // @public
 export function isLexicalContent(value: unknown): value is LexicalRoot;
@@ -517,6 +543,7 @@ export interface LivePreviewClientConfig {
     readonly renderRichText?: RichTextRenderer;
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
     readonly root?: Document | Element;
+    readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
@@ -1071,6 +1098,9 @@ export function sanitizeHtml(html: string, options?: SanitizeOptions): string;
 interface SanitizeOptions {
     readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
     readonly additionalAllowedTags?: readonly string[];
+    readonly allowedDataAttributes?: readonly string[];
+    readonly allowFormControls?: boolean;
+    readonly policy?: SanitizerPolicyMode;
 }
 
 // @public
@@ -1082,6 +1112,9 @@ export interface SanitizerDocument {
     };
 }
 
+// @public
+export type SanitizerPolicyMode = 'compat' | 'strict';
+
 // Warning: (ae-forgotten-export) The symbol "WebCryptoLike" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -1089,6 +1122,12 @@ export function setCspCrypto(crypto: WebCryptoLike | null): void;
 
 // @public
 export function setSanitizerDocument(doc: SanitizerDocument | null): void;
+
+// @public
+export function setSanitizerPolicy(mode: SanitizerPolicyMode): void;
+
+// @public
+export function setTrustedTypesPolicy(policy: TrustedHtmlPolicyLike | null | undefined): void;
 
 // @public
 export interface SignedTokenStrategy {
@@ -1124,6 +1163,18 @@ export interface SubtleCryptoLike {
 
 // @public
 export type SuppressedBinding = Readonly<Record<string, never>>;
+
+// @public (undocumented)
+export const TRUSTED_TYPES_POLICY_NAME = "payload-live-preview";
+
+// @public
+export function trustedHtml(html: string): string;
+
+// @public
+export interface TrustedHtmlPolicyLike {
+    // (undocumented)
+    createHTML(input: string): unknown;
+}
 
 // @public
 export type Unsubscribe = () => void;

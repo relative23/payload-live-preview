@@ -214,6 +214,29 @@ the draft flag, forwarded credentials, attribute emission, CSP mutation,
 and runtime injection together; your own page cache should consume the
 same verdict (`Cache-Control: private, no-store` on authorized responses).
 
+## Fields that may be empty: `PreviewBoundary`
+
+The runtime patches elements that exist. A field that renders nothing when
+empty leaves the editor with nothing to see when they fill it. The
+component renders the anchor always — hidden while empty, out of layout
+and out of the accessibility tree — and the runtime unhides it the moment
+a value arrives:
+
+```astro
+---
+import PreviewBoundary from 'payload-live-preview/astro/PreviewBoundary.astro';
+---
+<PreviewBoundary field="subtitle" value={page.subtitle} as="p" class="lede">
+  {page.subtitle}
+</PreviewBoundary>
+```
+
+It writes `data-payload-strategy="patch"` explicitly. Markup whose
+conditional logic cannot be expressed as a patch target — a component that
+appears or disappears with its own islands and scripts — is what the
+fragment strategy (1.7.0) is for; until then such markup should say
+`data-payload-strategy="fragment"` and is left alone (`LP0407`).
+
 ## Gotchas
 
 - **Empty fields need an anchor.** The runtime can only patch elements

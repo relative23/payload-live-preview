@@ -81,6 +81,7 @@ export interface PreviewPolicyOptions {
   readonly heartbeatMs?: number;
   readonly skipUnchanged?: boolean;
   readonly scopeBindingsByOwner?: boolean;
+  readonly sanitizerPolicy?: 'compat' | 'strict';
   readonly inject?: 'preview-only' | 'always';
   readonly autoInject?: boolean;
   readonly previewQueryParams?: readonly string[];
@@ -111,6 +112,7 @@ export interface ResolvedPolicyOptions {
   readonly skipUnchanged: boolean | undefined;
   readonly disableReferrerDetection: boolean | undefined;
   readonly eventSourcePolicy: 'any' | 'parent-or-opener' | undefined;
+  readonly sanitizerPolicy: 'compat' | 'strict' | undefined;
 }
 
 export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPolicyOptions {
@@ -129,6 +131,7 @@ export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPol
     skipUnchanged: options.skipUnchanged ?? runtimeRow('skipUnchanged'),
     disableReferrerDetection: runtimeRow('disableReferrerDetection'),
     eventSourcePolicy: runtimeRow('eventSourcePolicy'),
+    sanitizerPolicy: options.sanitizerPolicy ?? runtimeRow('sanitizerPolicy'),
   };
 }
 
@@ -162,6 +165,9 @@ export function inlineScriptConfig(
       : {}),
     ...(resolved.eventSourcePolicy !== undefined
       ? { eventSourcePolicy: resolved.eventSourcePolicy }
+      : {}),
+    ...(resolved.sanitizerPolicy !== undefined
+      ? { sanitizerPolicy: resolved.sanitizerPolicy }
       : {}),
   };
 }

@@ -24,6 +24,7 @@
 
 import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
 import type { LivePreviewAstroOptions } from './types';
+import { inlineScriptConfig } from '@adapters/shared/policy';
 
 export interface RenderScriptOptions extends LivePreviewAstroOptions {
   /**
@@ -40,15 +41,6 @@ export interface RenderScriptOptions extends LivePreviewAstroOptions {
  * `set:html={…}`.
  */
 export function renderLivePreviewScript(options: RenderScriptOptions = {}): string {
-  const body = generateInlineScript({
-    ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
-    ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
-    ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
-    ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
-    ...(options.debug !== undefined ? { debug: options.debug } : {}),
-    ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-    ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-    ...(options.nonce !== undefined ? { nonce: options.nonce } : {}),
-  });
+  const body = generateInlineScript(inlineScriptConfig(options));
   return wrapWithScriptTag(body, options.nonce !== undefined ? { nonce: options.nonce } : {});
 }
