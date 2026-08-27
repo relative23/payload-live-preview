@@ -13,25 +13,22 @@ import { run } from '@doctor/cli';
 let dir: string;
 let out: string;
 let err: string;
-let outSpy: ReturnType<typeof vi.spyOn>;
-let errSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'plp-migrate-cli-'));
   out = '';
   err = '';
-  outSpy = vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
+  vi.spyOn(process.stdout, 'write').mockImplementation((chunk: string | Uint8Array) => {
     out += String(chunk);
     return true;
   });
-  errSpy = vi.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
+  vi.spyOn(process.stderr, 'write').mockImplementation((chunk: string | Uint8Array) => {
     err += String(chunk);
     return true;
   });
 });
 afterEach(async () => {
-  outSpy.mockRestore();
-  errSpy.mockRestore();
+  vi.restoreAllMocks();
   await rm(dir, { recursive: true, force: true });
 });
 

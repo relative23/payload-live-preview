@@ -27,7 +27,11 @@ export default {
   },
   coverageAnalysis: 'perTest',
   concurrency: 4,
-  timeoutMS: 10_000,
+  // Raised from 10s: the fragment/route and dual-mode suites (event-driven,
+  // with real debounce/afterUpdate waits) are `related` to field-value.ts
+  // through the lifecycle, so a borderline field-value mutant can run long on
+  // a shared CI runner and be miscounted as a timeout rather than killed.
+  timeoutMS: 20_000,
   cleanTempDir: 'always',
   // CI and baselines are full runs. Local repeat runs can opt into the cache.
   incremental: process.env['STRYKER_INCREMENTAL'] === '1',
