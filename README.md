@@ -47,13 +47,15 @@ Under the hood it's framework-agnostic — the same runtime drives SvelteKit, Nu
 
 Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-- Payload 2.x: captured-message integration tests.
-- Payload 3.x: real Payload 3.x admin E2E (examples/payload-backend) and a message captured from 3.85.
-- Payload 4.0 pre-releases: weekly protocol watch against @payloadcms/live-preview@canary.
+- Payload 2.x: captured-message integration tests and fieldSchemaJSON typing.
+- Payload 3.85.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
+- Payload 3.88.0: real admin E2E (examples/payload-backend) on every push, plus a wire corpus captured from it.
+- Payload latest: weekly protocol watch executes @payloadcms/live-preview@latest against the corpus.
+- Payload 4.0 pre-releases: weekly protocol watch against @payloadcms/live-preview@canary, early warning only.
 
 <!-- compat-matrix:end -->
 
-**When to use the official packages instead:** for a client-rendered React or Vue app, [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` re-render your real component tree and are maintained in lockstep with Payload — that is the better tool there. This package exists for everything the official hooks cannot cover: Astro, static/SSR pages, SvelteKit/Nuxt server-rendered markup, plain HTML — anywhere there is no client framework to re-render the page.
+**When to use the official packages instead:** for a client-rendered React or Vue app, [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` re-render your real component tree and are maintained in lockstep with Payload — that is the better tool there. This package exists for everything the official hooks cannot cover: Astro, static/SSR pages, SvelteKit/Nuxt server-rendered markup, plain HTML — anywhere there is no client framework to re-render the page. The longer comparison — what is shared, what is not, and running both on one page — is in [docs/interop.md](docs/interop.md).
 
 ## Install
 
@@ -612,7 +614,7 @@ client.events.on('beforeUpdate', (e) => {
 client.events.on('documentSave', () => location.reload());
 ```
 
-Events: `init` · `connect` · `disconnect` · `beforeUpdate` · `afterUpdate` · `elementUpdate` · `documentSave` · `cacheRefresh` · `error` · `destroy`.
+Events: `init` · `connect` · `disconnect` · `beforeUpdate` · `afterUpdate` · `elementUpdate` · `documentSave` · `relationshipUpdate` · `cacheRefresh` · `error` · `destroy`. `relationshipUpdate` fires when an update carries `externallyUpdatedRelationship` (a related document edited in an admin drawer); that update re-renders every bound field even under `skipUnchanged`, because populated values may have changed while the form values did not.
 
 Since 1.1.0 `beforeUpdate`, `afterUpdate` and `elementUpdate` also carry `receivedAt` (when the runtime accepted the message, Unix ms) and `source` (`'patch'` for an admin postMessage; fragment strategies will name themselves here), next to `revision`.
 
@@ -689,7 +691,7 @@ The four real-app browser fixtures in `examples/` cover Astro 7, Next.js 16, Sve
 
 1. **Full running-Payload E2E** (`tests/real-payload/`, `npm run test:e2e:real-payload`) boots an **actual Payload 3.x admin** — `examples/payload-backend`, a self-contained SQLite Payload + Next.js server, seeded and auto-logged-in — opens its **real** Live Preview panel, types into real form fields, and asserts the cross-origin Astro preview iframe (our injected runtime) patches the DOM. No mock, no fixture, no stub: `real admin → real form → real postMessage → real iframe → runtime → DOM`, driven by Payload's own admin code.
 2. **Browser E2E** (`tests/e2e/`) drives a real browser + real iframe across Chromium, Firefox and WebKit: `postMessage → runtime → DOM`. Its `/admin` page _emulates_ the Payload admin, so it can exercise edge cases (XSS, origin spoofing, every field type) faster than booting a full server.
-3. **Real-message contract test** (`tests/integration/real-payload-protocol.test.ts`) feeds a message **captured verbatim from a running Payload 3.85 admin** through the real `MessageBus` + runtime — the envelope quirks included: `collectionSlug` absent on a global, `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields.
+3. **Wire corpus** (`tests/fixtures/wire-corpus/`, one file per Payload version, recorded from a real admin by `tests/real-payload/record-wire-corpus.spec.ts` with `PLP_RECORD_CORPUS=1`) is replayed through the real runtime by `tests/integration/wire-corpus.test.ts`: every capture must validate, render, and demonstrate exactly the capabilities the runtime then reports. The protocol watch also checks that the official client still recognises every captured message. The original **real-message contract test** (`tests/integration/real-payload-protocol.test.ts`) feeds a message **captured verbatim from a running Payload 3.85 admin** through the real `MessageBus` + runtime — the envelope quirks included: `collectionSlug` absent on a global, `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields.
 4. **Weekly protocol-watch** (`.github/workflows/protocol-watch.yml`) **executes** the real `@payloadcms/live-preview@latest` **and `@canary`** (Payload 4.0 pre-releases) and asserts their actual behaviour — the `ready` handshake, event discriminators, and `mergeData` REST request — still matches our runtime's invariants.
 
 Together these span the whole spectrum: tier 1 proves the real thing works end to end, tier 2 exhausts edge cases quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches drift the moment Payload ships it.
@@ -729,15 +731,17 @@ console.log(client.inspect());
 
 The snapshot answers the questions that are otherwise guesswork:
 
-| Reading                                                    | What it tells you                                                                                                                                                                    |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `bindings.orphanFields`                                    | Field names that arrived but matched no element. A name here is a markup problem; a name in neither this nor `bindings.fieldNames` was never sent.                                   |
-| `scheduler.deferred` with `scheduler.visibilityGateActive` | Updates the visibility gate is holding until the element scrolls into view. On a page nobody scrolls, that is "never" — the symptom is a preview that stops updating below the fold. |
-| `revisions.superseded`                                     | Updates abandoned because a newer one arrived. Tracking `accepted` closely is normal for fast typing; it only matters when the _last_ update is among them.                          |
-| `revisions.completed`                                      | Updates whose flush ran — their writes reached the DOM, or there was nothing to write. `accepted − superseded − completed` is in flight or cancelled.                                |
-| `origins.locked`                                           | The origin the runtime locked onto after its first accepted update. Every other origin is refused from then on.                                                                      |
-| `bindings.ownerScoped` with `bindings.owners`              | Whether owner scoping is on, and which documents the page declares. Under scoping, an unowned binding receives nothing.                                                              |
-| `protocol.negotiated`                                      | The version both sides share, which caps the capabilities in `protocol.capabilities`.                                                                                                |
+| Reading                                                    | What it tells you                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bindings.orphanFields`                                    | Field names that arrived but matched no element. A name here is a markup problem; a name in neither this nor `bindings.fieldNames` was never sent.                                                                                                                                                        |
+| `scheduler.deferred` with `scheduler.visibilityGateActive` | Updates the visibility gate is holding until the element scrolls into view. On a page nobody scrolls, that is "never" — the symptom is a preview that stops updating below the fold.                                                                                                                      |
+| `revisions.superseded`                                     | Updates abandoned because a newer one arrived. Tracking `accepted` closely is normal for fast typing; it only matters when the _last_ update is among them.                                                                                                                                               |
+| `revisions.completed`                                      | Updates whose flush ran — their writes reached the DOM, or there was nothing to write. `accepted − superseded − completed` is in flight or cancelled.                                                                                                                                                     |
+| `origins.locked`                                           | The origin the runtime locked onto after its first accepted update. Every other origin is refused from then on.                                                                                                                                                                                           |
+| `bindings.ownerScoped` with `bindings.owners`              | Whether owner scoping is on, and which documents the page declares. Under scoping, an unowned binding receives nothing.                                                                                                                                                                                   |
+| `protocol.negotiated`                                      | The version both sides share, which caps the capabilities in `protocol.capabilities`.                                                                                                                                                                                                                     |
+| `protocol.observed`                                        | Capabilities seen on the wire rather than granted by version — the stock admin announces no version, so this is how its abilities become known (`locale`, `schema-json`, `document-events`, `relationship-events`, `preview-token`). Each capability declares a fallback; see `CAPABILITY_DOCUMENTATION`. |
+| `protocol.profile`                                         | What the observed capabilities imply: `payload-2` (a schema on the wire; the admin populates relationships itself, so no REST merge), `payload-3` (document or relationship events seen), or `unknown` (treated like 3.x for merging).                                                                    |
 
 This is deliberately not gated to development builds. A snapshot discloses
 nothing that is not already on the page — the trusted origins are inside the

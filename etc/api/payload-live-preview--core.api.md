@@ -76,7 +76,55 @@ export interface CachedElement {
 }
 
 // @public
-const CAPABILITY_REQUIREMENTS: Readonly<Record<string, number>>;
+export const CAPABILITY_DECLARATIONS: {
+    readonly basic: {
+        readonly since: 1;
+    };
+    readonly 'schema-json': {
+        readonly since: 2;
+        readonly observed: "schema";
+    };
+    readonly locale: {
+        readonly since: 2;
+        readonly observed: "locale";
+    };
+    readonly 'preview-token': {
+        readonly since: 3;
+        readonly observed: "preview-token";
+    };
+    readonly 'nested-arrays': {
+        readonly since: 4;
+    };
+    readonly 'recursive-diffs': {
+        readonly since: 4;
+    };
+    readonly 'document-events': {
+        readonly since: 4;
+        readonly observed: "document-event";
+    };
+    readonly 'relationship-events': {
+        readonly since: 4;
+        readonly observed: "relationship-event";
+    };
+};
+
+// @public (undocumented)
+export const CAPABILITY_DOCUMENTATION: Readonly<Record<ProtocolCapability, CapabilityDocumentation>>;
+
+// @public (undocumented)
+export interface CapabilityDeclaration {
+    readonly observed?: 'schema' | 'locale' | 'preview-token' | 'document-event' | 'relationship-event';
+    readonly since: number;
+}
+
+// @public
+export interface CapabilityDocumentation {
+    readonly fallback: string;
+    readonly gates: string;
+}
+
+// @public
+export type CapabilitySource = 'version' | 'observed';
 
 // @public
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
@@ -95,6 +143,9 @@ export type DefaultsProfile = 'v1' | 'v2';
 
 // @public
 export function detectInitialLocale(): string;
+
+// @public
+export function detectProtocolProfile(observed: ReadonlySet<ProtocolCapability>): ProtocolProfile;
 
 // @public
 export const DIAGNOSTIC_CODES: Readonly<{
@@ -246,7 +297,9 @@ export interface InspectionOrigins {
 export interface InspectionProtocol {
     readonly capabilities: readonly string[];
     readonly negotiated: number;
+    readonly observed: readonly string[];
     readonly ours: number;
+    readonly profile: string;
     readonly theirs: number | undefined;
 }
 
@@ -418,6 +471,10 @@ export interface LivePreviewEventMap {
     readonly init: {
         readonly timestamp: number;
     };
+    readonly relationshipUpdate: {
+        readonly detail: PayloadDocumentEventDetail;
+        readonly timestamp: number;
+    };
 }
 
 // @public
@@ -455,7 +512,7 @@ interface LivePreviewPlugin {
 }
 
 // @public
-export function negotiateProtocol(theirs: number | undefined): ProtocolNegotiation;
+export function negotiateProtocol(theirs: number | undefined, observed?: Iterable<ProtocolCapability>): ProtocolNegotiation;
 
 // @public
 export class OriginDetector {
@@ -566,7 +623,6 @@ export interface PayloadLivePreviewMessage {
     readonly collectionSlug?: string;
     // (undocumented)
     readonly data?: Record<string, unknown>;
-    // Warning: (ae-forgotten-export) The symbol "PayloadDocumentEventDetail" needs to be exported by the entry point core.d.ts
     readonly externallyUpdatedRelationship?: PayloadDocumentEventDetail | null;
     // (undocumented)
     readonly fieldSchemaJSON?: readonly PayloadFieldSchema[];
@@ -677,18 +733,32 @@ export interface PreviewBindingsContextOptions extends PreviewBindingsCommonOpti
 // @public (undocumented)
 export type PreviewBindingsOptions = PreviewBindingsContextOptions | PreviewBindingsBooleanOptions;
 
-// Warning: (ae-forgotten-export) The symbol "CAPABILITY_REQUIREMENTS" needs to be exported by the entry point core.d.ts
-//
+// @public
+export const PROTOCOL_CAPABILITIES: readonly ProtocolCapability[];
+
 // @public (undocumented)
-export type ProtocolCapability = keyof typeof CAPABILITY_REQUIREMENTS;
+export type ProtocolCapability = keyof typeof CAPABILITY_DECLARATIONS;
 
 // @public (undocumented)
 export interface ProtocolNegotiation {
-    readonly capabilities: ReadonlySet<string>;
+    readonly capabilities: ReadonlySet<ProtocolCapability>;
     readonly negotiated: number;
+    readonly observed: ReadonlySet<ProtocolCapability>;
     readonly ours: number;
     readonly theirs: number | undefined;
 }
+
+// @public (undocumented)
+export interface ProtocolProfile {
+    readonly documentEvents: boolean;
+    readonly fieldTyping: 'schema' | 'heuristic';
+    // (undocumented)
+    readonly name: ProtocolProfileName;
+    readonly populatesRelationships: 'admin' | 'server';
+}
+
+// @public
+export type ProtocolProfileName = 'unknown' | 'payload-2' | 'payload-3';
 
 // @public
 export interface RenderContext {
@@ -759,6 +829,10 @@ interface WebCryptoLike {
     // (undocumented)
     getRandomValues: <T extends ArrayBufferView | null>(array: T) => T;
 }
+
+// Warnings were encountered during analysis:
+//
+// dist/core.d.ts:538:9 - (ae-forgotten-export) The symbol "PayloadDocumentEventDetail" needs to be exported by the entry point core.d.ts
 
 // (No @packageDocumentation comment for this package)
 

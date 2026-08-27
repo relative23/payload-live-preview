@@ -183,6 +183,12 @@ export {
   negotiateProtocol,
 } from './core/protocol-version';
 export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol-version';
+export { CAPABILITY_DECLARATIONS, PROTOCOL_CAPABILITIES } from './core/protocol-version';
+export type { CapabilityDeclaration, CapabilitySource } from './core/protocol-version';
+export { CAPABILITY_DOCUMENTATION } from './core/protocol-capability-docs';
+export type { CapabilityDocumentation } from './core/protocol-capability-docs';
+export { detectProtocolProfile } from './core/protocol-profile';
+export type { ProtocolProfile, ProtocolProfileName } from './core/protocol-profile';
 
 // Typed binding DSL — pair with codegen-emitted schema interfaces
 export { bind, bindByPath, createPreviewBindings } from './dsl';

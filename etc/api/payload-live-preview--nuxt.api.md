@@ -64,6 +64,7 @@ export interface LivePreviewNuxtOptions {
     // (undocumented)
     readonly scriptSrcExtra?: readonly string[];
     readonly serverURL?: string;
+    readonly shouldInject?: (request: P) => boolean;
     readonly skipUnchanged?: boolean;
     readonly strict?: boolean;
     readonly strictDynamic?: boolean;
@@ -95,8 +96,8 @@ export function renderLivePreviewScript(options?: LivePreviewNuxtOptions & {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/nuxt/index.d.ts:128:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/nuxt/index.d.ts:129:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:134:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:135:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

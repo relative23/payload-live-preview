@@ -40,3 +40,7 @@ test-results/
 
 # Archive of legacy code (kept locally for reversibility, not shipped)
 .archive/
+
+# Written by `next dev` (Next.js 16) into the fixtures; not part of the examples.
+examples/*/AGENTS.md
+examples/*/CLAUDE.md

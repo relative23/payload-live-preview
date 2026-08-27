@@ -1057,7 +1057,12 @@ describe('LivePreviewRuntime — happy path', () => {
 
     expect(runtime.updateCount).toBe(0);
     expect(runtime.protocol).toMatchObject({ ours: 4, theirs: 3, negotiated: 3 });
-    expect([...runtime.protocol.capabilities]).toEqual(['basic', 'schema-json', 'preview-token']);
+    expect([...runtime.protocol.capabilities]).toEqual([
+      'basic',
+      'schema-json',
+      'locale',
+      'preview-token',
+    ]);
     runtime.destroy();
   });
 

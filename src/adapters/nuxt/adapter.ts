@@ -57,6 +57,12 @@ export interface LivePreviewNuxtOptions {
   readonly mergeDepth?: number;
   readonly autoInject?: boolean;
   /**
+   * Filter which preview responses receive the script — a route or content
+   * filter, not authorization. Receives the request as the policy sees it
+   * (`url`, `headers`). Consulted only once preview intent is established.
+   */
+  readonly shouldInject?: (request: PreviewRequestLike) => boolean;
+  /**
    * `'preview-only'` (default) — inject only into responses carrying
    * preview intent. The signals are not authorization. `'always'` —
    * every HTML response.
@@ -169,6 +175,7 @@ export function livePreviewNitroPlugin(
     nitroApp.hooks.hook('render:html', async (html, { event }) => {
       const request = toPreviewRequestLike(event);
       const decision = await policy.decide(request, {
+        shouldInject: () => options.shouldInject?.(request) ?? true,
         ...(policy.authorizes ? { authorize: () => options.authorizePreview?.(request) } : {}),
       });
       if (!decision.isPreview) return;

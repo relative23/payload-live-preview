@@ -13,9 +13,24 @@
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E"
         },
-        { "major": 6, "source": "astro-matrix", "browsers": ["chromium"], "job": "Astro matrix" },
-        { "major": 5, "source": "astro-matrix", "browsers": ["chromium"], "job": "Astro matrix" },
-        { "major": 4, "source": "astro-matrix", "browsers": ["chromium"], "job": "Astro matrix" }
+        {
+          "major": 6,
+          "source": "astro-matrix",
+          "browsers": ["chromium"],
+          "job": "Astro matrix"
+        },
+        {
+          "major": 5,
+          "source": "astro-matrix",
+          "browsers": ["chromium"],
+          "job": "Astro matrix"
+        },
+        {
+          "major": 4,
+          "source": "astro-matrix",
+          "browsers": ["chromium"],
+          "job": "Astro matrix"
+        }
       ]
     },
     {
@@ -67,14 +82,30 @@
     "job": "Unit Tests"
   },
   "payload": [
-    { "version": "2.x", "how": "captured-message integration tests" },
     {
-      "version": "3.x",
-      "how": "real Payload 3.x admin E2E (examples/payload-backend) and a message captured from 3.85"
+      "version": "2.x",
+      "how": "captured-message integration tests and fieldSchemaJSON typing",
+      "source": "tests"
+    },
+    {
+      "version": "3.85.0",
+      "how": "wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts",
+      "source": "corpus"
+    },
+    {
+      "version": "3.88.0",
+      "how": "real admin E2E (examples/payload-backend) on every push, plus a wire corpus captured from it",
+      "source": "corpus"
+    },
+    {
+      "version": "latest",
+      "how": "weekly protocol watch executes @payloadcms/live-preview@latest against the corpus",
+      "source": "watch"
     },
     {
       "version": "4.0 pre-releases",
-      "how": "weekly protocol watch against @payloadcms/live-preview@canary"
+      "how": "weekly protocol watch against @payloadcms/live-preview@canary, early warning only",
+      "source": "watch"
     }
   ]
 }

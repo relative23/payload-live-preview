@@ -42,6 +42,38 @@ body:
       placeholder: 'e.g. 3.14.0'
     validations:
       required: true
+  - type: dropdown
+    id: strategy
+    attributes:
+      label: Update strategy
+      description: What the affected elements use (`data-payload-strategy`, or the default).
+      options:
+        - patch (default)
+        - replace
+        - structural list (data-payload-structural)
+        - island (data-payload-island)
+        - not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: authorization-mode
+    attributes:
+      label: Authorization mode
+      description: How preview requests are authorized on the server (`authorizePreview` / `authorizePreviewRequest`).
+      options:
+        - none (intent only, 1.0 behaviour)
+        - payload-session (cookie forwarded to /api/users/me)
+        - signed-token (previewToken)
+        - verifier (custom)
+        - not sure
+    validations:
+      required: true
+  - type: textarea
+    id: protocol-diagnostics
+    attributes:
+      label: Protocol diagnostics
+      description: 'In the preview iframe console run `JSON.stringify(__livePreview.inspect(), null, 2)` (or `client.inspect()`) and paste the result. It carries the protocol view (`protocol.observed`, `protocol.profile`), revisions and bindings.'
+      render: json
   - type: textarea
     id: what-happened
     attributes:
@@ -53,7 +85,7 @@ body:
     id: reproduction
     attributes:
       label: Minimal reproduction
-      description: Link to a minimal repo/StackBlitz, or exact steps to reproduce from a fresh project. Issues without a reproduction are much harder to fix.
+      description: 'Link to a minimal repo/StackBlitz, or exact steps to reproduce from a fresh project. The quickest fixture: copy examples/<framework>-payload, bind one field, and show the message the admin sends (the wire corpus format under tests/fixtures/wire-corpus/ is a good shape). Issues without a reproduction are much harder to fix.'
       placeholder: 'https://github.com/you/repro — or numbered steps'
     validations:
       required: true

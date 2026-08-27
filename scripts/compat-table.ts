@@ -11,7 +11,7 @@
  *
  * @module scripts/compat-table
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -43,7 +43,11 @@ interface Matrix {
     readonly tested: readonly number[];
     readonly job: string;
   };
-  readonly payload: readonly { readonly version: string; readonly how: string }[];
+  readonly payload: readonly {
+    readonly version: string;
+    readonly how: string;
+    readonly source?: 'tests' | 'corpus' | 'watch';
+  }[];
 }
 
 function label(entry: Tested): string {
@@ -109,6 +113,19 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
   if (astroMajors.join(',') !== workflowAstro.join(',')) {
     problems.push(
       `Astro matrix: file lists [${astroMajors.join(', ')}], workflow runs [${workflowAstro.join(', ')}]`,
+    );
+  }
+  const corpusVersions = (await readdir(resolve(ROOT, 'tests/fixtures/wire-corpus')))
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => file.replace(/^payload-/u, '').replace(/\.json$/u, ''))
+    .sort();
+  const listedCorpus = matrix.payload
+    .filter((entry) => entry.source === 'corpus')
+    .map((entry) => entry.version)
+    .sort();
+  if (corpusVersions.join(',') !== listedCorpus.join(',')) {
+    problems.push(
+      `Payload corpus: files cover [${corpusVersions.join(', ')}], matrix lists [${listedCorpus.join(', ')}]`,
     );
   }
   const workflowNode = workflowList(workflow, 'node');
