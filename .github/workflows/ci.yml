@@ -58,6 +58,7 @@ jobs:
       - run: npm run format:check
       - run: npm run test:policy
       - run: npm run test:architecture
+      - run: npm run compat:check
 
   unit:
     name: Unit Tests (Node ${{ matrix.node }})
@@ -256,6 +257,47 @@ jobs:
         if: failure()
         with:
           name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 7
+
+  astro-matrix:
+    name: Astro matrix (Astro ${{ matrix.astro }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        astro: [6, 5, 4]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      # The same fixture as the E2E job, on another supported Astro major. The
+      # install mutates the fixture's manifest in this checkout only; the
+      # version it resolved is printed so the log states what was tested.
+      - run: npm --prefix examples/astro-payload install --no-audit --no-fund --dangerously-allow-all-scripts "astro@^${{ matrix.astro }}"
+      - run: node -p "'astro ' + require('./examples/astro-payload/node_modules/astro/package.json').version"
+      - run: >-
+          npx playwright test --project=chromium
+          tests/e2e/specs/accessibility.spec.ts
+          tests/e2e/specs/diagnostics.spec.ts
+          tests/e2e/specs/island-bridge.spec.ts
+          tests/e2e/specs/live-preview.spec.ts
+          tests/e2e/specs/navigation-lifecycle.spec.ts
+          tests/e2e/specs/root-replacement.spec.ts
+          tests/e2e/specs/scenarios.spec.ts
+          tests/e2e/specs/structural-morph.spec.ts
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-astro-${{ matrix.astro }}
           path: playwright-report/
           retention-days: 7
 

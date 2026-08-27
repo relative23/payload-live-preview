@@ -36,7 +36,22 @@ Under the hood it's framework-agnostic — the same runtime drives SvelteKit, Nu
 | Relationship / upload population               | ✅ (admin merges client-side) | ✅ with `serverURL` (REST merge)                                      |
 | Schema-driven field typing (`fieldSchemaJSON`) | ✅                            | — (3.x removed it; DOM heuristics + Lexical auto-detection take over) |
 
-Astro **4 – 7** is the supported peer range; the current real-app browser fixture exercises Astro 7, not every supported Astro major. Node ≥ 20.19. Protocol compatibility is covered by captured-message integration tests plus a weekly `@payloadcms/live-preview` latest/canary drift check.
+<!-- compat-matrix:start -->
+
+| Framework | Supported             | Tested in CI on every push (version, browsers)                                    |
+| --------- | --------------------- | --------------------------------------------------------------------------------- |
+| Astro     | >=4.0.0 <8.0.0        | 7.2.1 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
+| Next.js   | App Router, 15 and 16 | 16.3.0 (chromium, firefox, webkit)                                                |
+| SvelteKit | 2.x                   | 2.70.2 (chromium, firefox, webkit)                                                |
+| Nuxt      | 3.x                   | 3.21.11 (chromium, firefox, webkit)                                               |
+
+Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
+
+- Payload 2.x: captured-message integration tests.
+- Payload 3.x: real Payload 3.x admin E2E (examples/payload-backend) and a message captured from 3.85.
+- Payload 4.0 pre-releases: weekly protocol watch against @payloadcms/live-preview@canary.
+
+<!-- compat-matrix:end -->
 
 **When to use the official packages instead:** for a client-rendered React or Vue app, [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` re-render your real component tree and are maintained in lockstep with Payload — that is the better tool there. This package exists for everything the official hooks cannot cover: Astro, static/SSR pages, SvelteKit/Nuxt server-rendered markup, plain HTML — anywhere there is no client framework to re-render the page.
 

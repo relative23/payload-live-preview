@@ -145,6 +145,15 @@ function morphChildren(live: Element, rendered: Element, options: MorphOptions):
 
     const node: Node = kept ?? next;
     claimed.add(node);
+    // Whitespace-only text the template does not render is surplus and goes at
+    // the end; stepping the cursor over it keeps a retained element where it
+    // is. That matters: `insertBefore` on a node already in the tree is a
+    // remove-and-insert, which blurs a focused input and drops its selection —
+    // and every SSR that keeps its source indentation puts such text between
+    // the elements (Astro 4–6 do, Astro 7 compacts it).
+    while (cursor !== null && cursor !== node && !claimed.has(cursor) && isBlankText(cursor)) {
+      cursor = cursor.nextSibling;
+    }
     // Place the node at the cursor; a retained node already there costs nothing.
     if (node !== cursor) live.insertBefore(node, cursor);
     cursor = node.nextSibling;
@@ -167,6 +176,10 @@ function reconcile(candidate: Node, next: Node, options: MorphOptions): Node {
   // `sameKind()` admits only element pairs and text pairs here.
   if (candidate.nodeValue !== next.nodeValue) candidate.nodeValue = next.nodeValue;
   return candidate;
+}
+
+function isBlankText(node: Node): boolean {
+  return node.nodeType === Node.TEXT_NODE && (node.nodeValue ?? '').trim().length === 0;
 }
 
 function sameKind(a: Node, b: Node): boolean {

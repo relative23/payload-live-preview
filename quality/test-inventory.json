@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 127,
-    "suites": 379,
-    "tests": 1734,
+    "suites": 380,
+    "tests": 1735,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 104,
-      "suites": 340,
-      "tests": 1616,
+      "suites": 341,
+      "tests": 1617,
       "benchmarks": 0
     }
   },
@@ -469,8 +469,8 @@
     {
       "path": "tests/unit/core/morph.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 17,
+      "suites": 7,
+      "tests": 18,
       "benchmarks": 0
     },
     {

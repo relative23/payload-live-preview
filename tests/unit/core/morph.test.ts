@@ -206,3 +206,39 @@ describe('replacement paths', () => {
     expect(live.firstElementChild?.textContent).toBe('plain now');
   });
 });
+
+describe('whitespace between children', () => {
+  it('keeps a retained element in place when the live markup carries indentation the template does not', () => {
+    // Astro 4–6, and most SSR that keeps source indentation, render text
+    // nodes between the elements; the template renders none. A retained
+    // element must not be moved to reach the rendered order — a DOM move is a
+    // remove-and-insert that blurs a focused input.
+    document.body.innerHTML =
+      '<li data-key="b">\n  <span class="t">Beta</span>\n  <input class="i" aria-label="Beta">\n  <details><summary>more</summary></details>\n</li>';
+    const live = document.body.firstElementChild as HTMLElement;
+    const input = live.querySelector('input')!;
+    input.value = 'half typed';
+    const removed: Node[] = [];
+    const observer = new MutationObserver((records) => {
+      for (const record of records) removed.push(...Array.from(record.removedNodes));
+    });
+    observer.observe(live, { childList: true, subtree: true });
+
+    const rendered = document.createElement('template');
+    rendered.innerHTML =
+      '<li data-key="b"><span class="t">Beta, edited</span><input class="i" aria-label="Beta, edited"><details><summary>more</summary></details></li>';
+    const result = morphElement(live, rendered.content.firstElementChild!, {
+      keyAttributes: ['data-key'],
+    });
+    observer.takeRecords().forEach((record) => removed.push(...Array.from(record.removedNodes)));
+    observer.disconnect();
+
+    expect(result).toBe(live);
+    expect(live.querySelector('input')).toBe(input);
+    expect(input.value).toBe('half typed');
+    expect(input.getAttribute('aria-label')).toBe('Beta, edited');
+    expect(live.querySelector('.t')?.textContent).toBe('Beta, edited');
+    expect(removed.filter((node) => node.nodeType === Node.ELEMENT_NODE)).toEqual([]);
+    expect(live.innerHTML).not.toContain('\n');
+  });
+});

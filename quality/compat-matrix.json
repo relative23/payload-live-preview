@@ -1,0 +1,80 @@
+{
+  "$comment": "What CI actually runs. scripts/compat-table.ts --check holds this file against the fixture lockfiles and the workflow, and the README section it renders against this file. Edit here, then npm run compat:write.",
+  "frameworks": [
+    {
+      "name": "Astro",
+      "package": "astro",
+      "supported": ">=4.0.0 <8.0.0",
+      "fixture": "examples/astro-payload",
+      "tested": [
+        {
+          "version": "7.2.1",
+          "source": "lockfile",
+          "browsers": ["chromium", "firefox", "webkit"],
+          "job": "E2E"
+        },
+        { "major": 6, "source": "astro-matrix", "browsers": ["chromium"], "job": "Astro matrix" },
+        { "major": 5, "source": "astro-matrix", "browsers": ["chromium"], "job": "Astro matrix" },
+        { "major": 4, "source": "astro-matrix", "browsers": ["chromium"], "job": "Astro matrix" }
+      ]
+    },
+    {
+      "name": "Next.js",
+      "package": "next",
+      "supported": "App Router, 15 and 16",
+      "fixture": "examples/nextjs-payload",
+      "tested": [
+        {
+          "version": "16.3.0",
+          "source": "lockfile",
+          "browsers": ["chromium", "firefox", "webkit"],
+          "job": "E2E"
+        }
+      ]
+    },
+    {
+      "name": "SvelteKit",
+      "package": "@sveltejs/kit",
+      "supported": "2.x",
+      "fixture": "examples/sveltekit-payload",
+      "tested": [
+        {
+          "version": "2.70.2",
+          "source": "lockfile",
+          "browsers": ["chromium", "firefox", "webkit"],
+          "job": "E2E"
+        }
+      ]
+    },
+    {
+      "name": "Nuxt",
+      "package": "nuxt",
+      "supported": "3.x",
+      "fixture": "examples/nuxt-payload",
+      "tested": [
+        {
+          "version": "3.21.11",
+          "source": "lockfile",
+          "browsers": ["chromium", "firefox", "webkit"],
+          "job": "E2E"
+        }
+      ]
+    }
+  ],
+  "node": {
+    "engines": ">=20.19.0",
+    "tested": [20, 22, 24, 26],
+    "job": "Unit Tests"
+  },
+  "payload": [
+    { "version": "2.x", "how": "captured-message integration tests" },
+    {
+      "version": "3.x",
+      "how": "real Payload 3.x admin E2E (examples/payload-backend) and a message captured from 3.85"
+    },
+    {
+      "version": "4.0 pre-releases",
+      "how": "weekly protocol watch against @payloadcms/live-preview@canary"
+    }
+  ]
+}
