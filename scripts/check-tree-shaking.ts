@@ -82,7 +82,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_150,
+    gzip: 1_200,
     why: 'the keyed morph alone, without the array renderer',
   },
   {

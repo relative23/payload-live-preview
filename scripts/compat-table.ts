@@ -120,6 +120,23 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
   return problems;
 }
 
+/**
+ * Prettier re-pads Markdown table cells and separators after `--write`, so
+ * the comparison ignores cell padding and dash-run length — content, not
+ * alignment, is what must agree.
+ */
+function normalize(text: string): string {
+  return text
+    .split('\n')
+    .map((line) =>
+      line
+        .replace(/\s*\|\s*/gu, '|')
+        .replace(/-{3,}/gu, '---')
+        .trimEnd(),
+    )
+    .join('\n');
+}
+
 function replaceBlock(readme: string, block: string): string {
   const start = readme.indexOf(START);
   const end = readme.indexOf(END);
@@ -139,10 +156,11 @@ async function main(): Promise<void> {
   const readme = await readFile(README, 'utf8');
   const block = render(matrix);
   const next = replaceBlock(readme, block);
+  const same = normalize(next) === normalize(readme);
   if (mode === '--write') {
-    if (next !== readme) await writeFile(README, next, 'utf8');
-    console.log(`compat-table: README ${next === readme ? 'unchanged' : 'updated'}`);
-  } else if (next !== readme) {
+    if (!same) await writeFile(README, next, 'utf8');
+    console.log(`compat-table: README ${same ? 'unchanged' : 'updated (run npm run format)'}`);
+  } else if (!same) {
     problems.push(
       'README compatibility block differs from quality/compat-matrix.json; run npm run compat:write',
     );
