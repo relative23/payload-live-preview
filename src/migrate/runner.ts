@@ -7,7 +7,7 @@
  */
 import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
-import { migrateSource, type CodemodEdit } from './index';
+import { migrateSource, type CodemodConflict, type CodemodEdit } from './index';
 
 const SOURCE_EXTENSIONS = new Set([
   '.ts',
@@ -36,6 +36,8 @@ export interface MigrateFileResult {
   readonly file: string;
   readonly edits: readonly CodemodEdit[];
   readonly changed: boolean;
+  /** Removed APIs this file uses that a codemod could not rewrite automatically. */
+  readonly conflicts: readonly CodemodConflict[];
 }
 
 export interface MigrateRunResult {
@@ -44,6 +46,8 @@ export interface MigrateRunResult {
   readonly changedCount: number;
   /** Codemod id → number of files it touched. */
   readonly byCodemod: Readonly<Record<string, number>>;
+  /** Files needing manual attention (a rewrite that could not be applied safely). */
+  readonly conflictCount: number;
 }
 
 async function collectFiles(root: string): Promise<string[]> {
@@ -93,7 +97,7 @@ export async function runMigrate(
   const byCodemod: Record<string, number> = {};
   for (const file of files) {
     const source = await io.read(file);
-    const { output, edits } = migrateSource(
+    const { output, edits, conflicts } = migrateSource(
       source,
       options.only === undefined ? {} : { only: options.only },
     );
@@ -102,12 +106,13 @@ export async function runMigrate(
     if (changed) {
       for (const edit of edits) byCodemod[edit.codemod] = (byCodemod[edit.codemod] ?? 0) + 1;
     }
-    results.push({ file: relativeTo(root, file), edits, changed });
+    results.push({ file: relativeTo(root, file), edits, changed, conflicts });
   }
   return {
     files: results,
     changedCount: results.filter((result) => result.changed).length,
     byCodemod,
+    conflictCount: results.filter((result) => result.conflicts.length > 0).length,
   };
 }
 

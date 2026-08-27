@@ -19,7 +19,7 @@
   "totals": {
     "files": 143,
     "suites": 391,
-    "tests": 1767,
+    "tests": 1768,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 116,
       "suites": 347,
-      "tests": 1627,
+      "tests": 1628,
       "benchmarks": 0
     }
   },
@@ -806,7 +806,7 @@
       "path": "tests/unit/migrate/codemods.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {

@@ -7,7 +7,6 @@
 > `defaults: 'v1'` to stage the migration one row at a time; run `pll migrate`
 > for the renames and `pll doctor --v2` to audit a page.
 
-
 ## From `0.1.0` of this package
 
 `1.0.0` is a clean break — there is no API shim. The migration is small in code but large in semantics:
