@@ -28,14 +28,15 @@
  * @module @adapters/nextjs
  */
 
-import {
-  generateCspNonce,
-  buildFrameAncestors,
-  buildScriptSrcWithNonce,
-  mergeCspHeader,
-} from '@security/csp';
 import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
-import { isPreviewRequest } from '@adapters/shared/preview-request';
+import {
+  HTML_CONTENT_TYPE,
+  createPreviewPolicy,
+  injectIntoHead,
+  inlineScriptConfig,
+  type CspMode,
+  type PreviewPolicy,
+} from '@adapters/shared/policy';
 
 export interface LivePreviewNextOptions {
   readonly allowedOrigins?: readonly string[];
@@ -82,9 +83,6 @@ export interface LivePreviewNextOptions {
 
 export type NextMiddleware = (request: Request) => Promise<Response | undefined>;
 
-const HTML_CONTENT_TYPE = /text\/html/i;
-const HEAD_INSERT = /<head(\s[^>]*)?>/i;
-
 /**
  * Build a Next.js-compatible middleware operating on the standard
  * `Request` / `Response` pair. Wrap with `NextResponse.next()` in your
@@ -95,101 +93,52 @@ const HEAD_INSERT = /<head(\s[^>]*)?>/i;
 export function createLivePreviewMiddleware(
   options: LivePreviewNextOptions = {},
 ): (request: Request, response: Response) => Promise<Response> {
-  let cachedScriptBody: string | undefined;
-  const scriptBody = (): string => {
-    cachedScriptBody ??= buildScriptBody(options);
-    return cachedScriptBody;
-  };
-
+  const policy = createPreviewPolicy(options);
   return async (request, response) => {
-    const isPreview =
-      (options.inject ?? 'preview-only') === 'always' ||
-      isPreviewRequest(request, {
-        ...(options.previewQueryParams !== undefined
-          ? { queryParams: options.previewQueryParams }
-          : {}),
-        ...(options.previewSignals !== undefined ? { signals: options.previewSignals } : {}),
-        adminOrigins: options.allowedOrigins ?? [],
-      });
-    if (!isPreview) return response;
-
+    const decision = policy.decide(request, () => options.shouldInject?.(request) ?? true);
+    if (!decision.isPreview) return response;
     let outResponse = response;
-    const apply = (options.autoInject ?? true) && (options.shouldInject?.(request) ?? true);
     const contentType = response.headers.get('content-type') ?? '';
-    if (apply && HTML_CONTENT_TYPE.test(contentType)) {
-      outResponse = await injectIntoResponse(response, scriptBody());
+    if (decision.inject && HTML_CONTENT_TYPE.test(contentType)) {
+      outResponse = await injectIntoResponse(response, policy);
     }
-    const manageCsp = normalizeManageCsp(options.manageCsp);
-    if (manageCsp !== false) {
-      outResponse = addCsp(outResponse, manageCsp, options);
+    if (decision.cspMode !== false) {
+      outResponse = addCsp(outResponse, decision.cspMode, policy);
     }
     return outResponse;
   };
 }
 
 /**
- * Render the live-preview `<script>` tag — for embedding manually in
- * App Router or Pages Router layouts. Rendering must be gated by the
- * application's verified preview authorization, not merely an intent
- * query parameter.
+ * Render the `<script>` tag for manual insertion (e.g. in `app/layout.tsx`)
+ * when the middleware's automatic injection is disabled. Pass the nonce
+ * your CSP uses so the tag is permitted under it.
  */
 export function renderLivePreviewScript(
   options: LivePreviewNextOptions & { readonly nonce?: string } = {},
 ): string {
-  const body = generateInlineScript({
-    ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
-    ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
-    ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
-    ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
-    ...(options.debug !== undefined ? { debug: options.debug } : {}),
-    ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-    ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-    ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
-    ...(options.nonce !== undefined ? { nonce: options.nonce } : {}),
-  });
+  const body = generateInlineScript(inlineScriptConfig(options));
   return wrapWithScriptTag(body, options.nonce !== undefined ? { nonce: options.nonce } : {});
 }
 
-function buildScriptBody(options: LivePreviewNextOptions): string {
-  return generateInlineScript({
-    ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
-    ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
-    ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
-    ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
-    ...(options.debug !== undefined ? { debug: options.debug } : {}),
-    ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-    ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-    ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
-  });
+/**
+ * The nonce a response already carries, or a fresh one. Injection and CSP
+ * run as two steps on the same response; the header is how the second
+ * step learns the nonce the first one stamped into the script tag.
+ */
+function nonceFor(response: Response, policy: PreviewPolicy): string {
+  return response.headers.get('x-live-preview-nonce') ?? policy.nonce();
 }
 
-function normalizeManageCsp(
-  value: LivePreviewNextOptions['manageCsp'],
-): false | 'frame-ancestors' | 'full' {
-  if (value === false) return false;
-  if (value === 'full') return 'full';
-  return 'frame-ancestors';
-}
-
-async function injectIntoResponse(response: Response, body: string): Promise<Response> {
-  const nonce = response.headers.get('x-live-preview-nonce') ?? generateCspNonce();
+async function injectIntoResponse(response: Response, policy: PreviewPolicy): Promise<Response> {
+  const nonce = nonceFor(response, policy);
   const html = await response.text();
   const headers = new Headers(response.headers);
   headers.delete('content-length');
   headers.set('x-live-preview-nonce', nonce);
-
   // Fragment responses without a <head> are skipped, not prepended to.
-  if (!HEAD_INSERT.test(html)) {
-    return new Response(html, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-  }
-
-  const scriptTag = wrapWithScriptTag(body, { nonce });
-  const out = html.replace(HEAD_INSERT, (match) => `${match}${scriptTag}`);
-  return new Response(out, {
+  const injected = injectIntoHead(html, policy.scriptTag(nonce));
+  return new Response(injected ?? html, {
     status: response.status,
     statusText: response.statusText,
     headers,
@@ -198,29 +147,18 @@ async function injectIntoResponse(response: Response, body: string): Promise<Res
 
 function addCsp(
   response: Response,
-  mode: 'frame-ancestors' | 'full',
-  options: LivePreviewNextOptions,
+  mode: Exclude<CspMode, false>,
+  policy: PreviewPolicy,
 ): Response {
-  const nonce = response.headers.get('x-live-preview-nonce') ?? generateCspNonce();
-  const frameAncestors = buildFrameAncestors({
-    self: true,
-    origins: [...(options.allowedOrigins ?? []), ...(options.frameAncestorsExtra ?? [])],
-  });
-  const additions: Record<string, string> = { 'frame-ancestors': frameAncestors };
-  if (mode === 'full') {
-    additions['script-src'] = buildScriptSrcWithNonce(nonce, {
-      self: true,
-      strictDynamic: options.strictDynamic ?? false,
-      ...(options.scriptSrcExtra !== undefined ? { extra: options.scriptSrcExtra } : {}),
-    });
-  }
+  const nonce = nonceFor(response, policy);
   const previous = response.headers.get('content-security-policy') ?? '';
-  const next = mergeCspHeader(previous, additions);
+  const next = policy.csp(previous, nonce, mode);
   try {
     response.headers.set('x-live-preview-nonce', nonce);
     response.headers.set('content-security-policy', next);
     return response;
   } catch {
+    // Responses passed through from `fetch()` can carry immutable headers.
     const headers = new Headers(response.headers);
     headers.set('x-live-preview-nonce', nonce);
     headers.set('content-security-policy', next);

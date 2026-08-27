@@ -17,11 +17,15 @@ const PACKAGE_JSON = resolve(ROOT, 'package.json');
 // Budgets include narrow headroom for patch-level correctness fixes while still
 // failing the unminified 1.0.4 artifacts. Public names and source maps are retained.
 const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
-  'adapters/astro/index.js': { raw: 80_500, gzip: 25_000, brotli: 22_100 },
-  'adapters/astro/middleware-entry.js': { raw: 76_000, gzip: 23_800, brotli: 21_000 },
-  'adapters/nextjs/index.js': { raw: 77_000, gzip: 23_900, brotli: 21_000 },
-  'adapters/nuxt/index.js': { raw: 76_500, gzip: 23_900, brotli: 21_000 },
-  'adapters/sveltekit/index.js': { raw: 76_000, gzip: 23_700, brotli: 20_900 },
+  // Adapter rows raised 2026-08-27 (+~200 B gzip, +~180 B brotli each) when the
+  // four adapters moved onto the shared preview policy: one decision path per
+  // bundle costs a little more than straight-line code the minifier could fold,
+  // and the duplication it replaced was free per bundle. Measured, with ~1 % headroom.
+  'adapters/astro/index.js': { raw: 80_500, gzip: 25_300, brotli: 22_400 },
+  'adapters/astro/middleware-entry.js': { raw: 76_500, gzip: 24_150, brotli: 21_300 },
+  'adapters/nextjs/index.js': { raw: 77_000, gzip: 24_100, brotli: 21_300 },
+  'adapters/nuxt/index.js': { raw: 76_500, gzip: 24_150, brotli: 21_300 },
+  'adapters/sveltekit/index.js': { raw: 76_000, gzip: 24_050, brotli: 21_200 },
   'codegen-astro.js': { raw: 13_000, gzip: 4_300, brotli: 3_900 },
   'codegen-cli.js': { raw: 15_000, gzip: 4_800, brotli: 4_300 },
   'codegen.cjs': { raw: 13_000, gzip: 4_100, brotli: 3_700 },

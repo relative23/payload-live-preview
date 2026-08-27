@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 103,
-    "suites": 303,
-    "tests": 1524,
+    "files": 104,
+    "suites": 310,
+    "tests": 1543,
     "benchmarks": 11
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 84,
-      "suites": 272,
-      "tests": 1425,
+      "files": 85,
+      "suites": 279,
+      "tests": 1444,
       "benchmarks": 0
     }
   },
@@ -226,6 +226,13 @@
       "group": "unit",
       "suites": 8,
       "tests": 21,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/policy.test.ts",
+      "group": "unit",
+      "suites": 7,
+      "tests": 19,
       "benchmarks": 0
     },
     {

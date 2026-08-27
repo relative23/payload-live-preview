@@ -24,13 +24,11 @@
  */
 
 import {
-  generateCspNonce,
-  buildFrameAncestors,
-  buildScriptSrcWithNonce,
-  mergeCspHeader,
-} from '@security/csp';
-import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
-import { isPreviewRequest } from '@adapters/shared/preview-request';
+  createPreviewPolicy,
+  injectIntoHead,
+  type CspMode,
+  type PreviewPolicy,
+} from '@adapters/shared/policy';
 
 export interface LivePreviewSvelteKitOptions {
   readonly allowedOrigins?: readonly string[];
@@ -88,8 +86,6 @@ export type SvelteKitHandle = (input: {
   readonly resolve: SvelteKitResolve;
 }) => Promise<Response>;
 
-const HEAD_INSERT = /<head(\s[^>]*)?>/i;
-
 /**
  * Build a SvelteKit `handle` hook. The hook:
  *
@@ -105,91 +101,46 @@ const HEAD_INSERT = /<head(\s[^>]*)?>/i;
  * authorization boundary and does not disable CSP handling.
  */
 export function livePreviewHandle(options: LivePreviewSvelteKitOptions = {}): SvelteKitHandle {
-  let cachedScriptBody: string | undefined;
-  const scriptBody = (): string => {
-    cachedScriptBody ??= generateInlineScript({
-      ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
-      ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
-      ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
-      ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
-      ...(options.debug !== undefined ? { debug: options.debug } : {}),
-      ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-      ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-      ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
-    });
-    return cachedScriptBody;
-  };
-
+  const policy = createPreviewPolicy(options);
   return async ({ event, resolve }) => {
-    const nonce = generateCspNonce();
+    const nonce = policy.nonce();
     event.locals['livePreviewNonce'] = nonce;
-
-    const isPreview =
-      (options.inject ?? 'preview-only') === 'always' ||
-      isPreviewRequest(event.request, {
-        ...(options.previewQueryParams !== undefined
-          ? { queryParams: options.previewQueryParams }
-          : {}),
-        ...(options.previewSignals !== undefined ? { signals: options.previewSignals } : {}),
-        adminOrigins: options.allowedOrigins ?? [],
-      });
-
-    const apply =
-      isPreview && (options.autoInject ?? true) && (options.shouldInject?.(event.request) ?? true);
-    const transform = apply ? chunk(scriptBody(), nonce) : undefined;
+    const decision = policy.decide(
+      event.request,
+      () => options.shouldInject?.(event.request) ?? true,
+    );
+    const transform = decision.inject ? chunk(policy, nonce) : undefined;
     const response = await resolve(
       event,
       transform !== undefined ? { transformPageChunk: transform } : {},
     );
-    const manageCsp = normalizeManageCsp(options.manageCsp);
-    if (isPreview && manageCsp !== false) {
-      return applyCsp(response, options, manageCsp, nonce);
+    if (decision.cspMode !== false) {
+      return applyCsp(response, policy, decision.cspMode, nonce);
     }
     return response;
   };
 }
 
-function normalizeManageCsp(
-  value: LivePreviewSvelteKitOptions['manageCsp'],
-): false | 'frame-ancestors' | 'full' {
-  if (value === false) return false;
-  if (value === 'full') return 'full';
-  return 'frame-ancestors';
-}
-
 type ChunkTransform = NonNullable<ResolveOptions['transformPageChunk']>;
-function chunk(body: string, nonce: string): ChunkTransform {
-  return ({ html }) => {
-    if (!HEAD_INSERT.test(html)) return undefined;
-    const tag = wrapWithScriptTag(body, { nonce });
-    return html.replace(HEAD_INSERT, (m) => `${m}${tag}`);
-  };
+/** transformPageChunk is called per chunk; only the one carrying `<head>` is touched. */
+function chunk(policy: PreviewPolicy, nonce: string): ChunkTransform {
+  const tag = policy.scriptTag(nonce);
+  return ({ html }) => injectIntoHead(html, tag);
 }
 
 function applyCsp(
   response: Response,
-  options: LivePreviewSvelteKitOptions,
-  mode: 'frame-ancestors' | 'full',
+  policy: PreviewPolicy,
+  mode: Exclude<CspMode, false>,
   nonce: string,
 ): Response {
-  const frameAncestors = buildFrameAncestors({
-    self: true,
-    origins: [...(options.allowedOrigins ?? []), ...(options.frameAncestorsExtra ?? [])],
-  });
-  const additions: Record<string, string> = { 'frame-ancestors': frameAncestors };
-  if (mode === 'full') {
-    additions['script-src'] = buildScriptSrcWithNonce(nonce, {
-      self: true,
-      strictDynamic: options.strictDynamic ?? false,
-      ...(options.scriptSrcExtra !== undefined ? { extra: options.scriptSrcExtra } : {}),
-    });
-  }
   const previous = response.headers.get('content-security-policy') ?? '';
-  const next = mergeCspHeader(previous, additions);
+  const next = policy.csp(previous, nonce, mode);
   try {
     response.headers.set('content-security-policy', next);
     return response;
   } catch {
+    // Adapter responses can arrive with an immutable header guard.
     const headers = new Headers(response.headers);
     headers.set('content-security-policy', next);
     return new Response(response.body, {

@@ -32,6 +32,7 @@
 
 import { generateInlineScript, generateLoaderScript } from '@inline/generator';
 import { loaderAsset } from './loader-asset';
+import { inlineScriptConfig } from '@adapters/shared/policy';
 import type { LivePreviewAstroOptions } from './types';
 
 // Local Astro type shims — keep `astro` as a runtime-optional peer.
@@ -180,16 +181,7 @@ function setupLoaderMode(ctx: AstroConfigSetupContext, options: LivePreviewAstro
 function inlineConfigFrom(
   options: LivePreviewAstroOptions,
 ): Parameters<typeof generateInlineScript>[0] {
-  return {
-    ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
-    ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
-    ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
-    ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
-    ...(options.debug !== undefined ? { debug: options.debug } : {}),
-    ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-    ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-    ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
-  };
+  return inlineScriptConfig(options);
 }
 
 function setupMiddlewareMode(ctx: AstroConfigSetupContext, options: LivePreviewAstroOptions): void {
