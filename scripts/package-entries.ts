@@ -27,6 +27,7 @@ export const STANDALONE_ENTRIES = {
   structural: 'src/structural-entry.ts',
   lexical: 'src/lexical-entry.ts',
   plugins: 'src/plugins-entry.ts',
+  fragment: 'src/fragment/index.ts',
 } as const;
 
 /** The lighter runtime entry; built unminified so consumers' bundlers tree-shake it. */
@@ -39,6 +40,7 @@ export const ESM_ONLY_ENTRIES = {
   'codegen-cli': 'src/codegen/cli.ts',
   'doctor-cli': 'src/doctor/cli.ts',
   doctor: 'src/doctor/index.ts',
+  migrate: 'src/migrate/index.ts',
   'codegen-astro': 'src/codegen/astro-plugin.ts',
   'adapters/astro/index': 'src/adapters/astro/index.ts',
   'adapters/astro/middleware-entry': 'src/adapters/astro/middleware-entry.ts',

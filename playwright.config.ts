@@ -12,7 +12,7 @@ const astroPort = process.env['PLP_E2E_PORT'] ?? '4173';
  * installs only the Astro fixture (the Astro matrix). Default: all four.
  */
 const servers = new Set(
-  (process.env['PLP_E2E_SERVERS'] ?? 'astro,nextjs,sveltekit,nuxt').split(','),
+  (process.env['PLP_E2E_SERVERS'] ?? 'astro,nextjs,sveltekit,nuxt,hybrid').split(','),
 );
 
 const config: PlaywrightTestConfig = {
@@ -79,6 +79,16 @@ const config: PlaywrightTestConfig = {
       reuseExistingServer: !isCI,
       // Nuxt compiles the Nitro server and the client bundle on first
       // request; a cold CI cache makes that as slow as Next's.
+      timeout: 120_000,
+    },
+    {
+      name: 'hybrid',
+      // The SSR fixture for the fragment strategy: built with the Node adapter
+      // and served by its standalone entry, so the fragment endpoint renders.
+      command:
+        'npm --prefix examples/astro-hybrid run build && HOST=127.0.0.1 PORT=4177 node examples/astro-hybrid/dist/server/entry.mjs',
+      url: 'http://localhost:4177/bench',
+      reuseExistingServer: !isCI,
       timeout: 120_000,
     },
   ].filter((server) => servers.has(server.name)),

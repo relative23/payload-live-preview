@@ -20,3 +20,12 @@ export {
   type PreviewRequestLike,
   type PreviewRequestOptions,
 } from '@adapters/shared/preview-request';
+export {
+  createFragmentEndpoint,
+  type AstroComponentLike,
+  type FragmentEndpointOptions,
+  type FragmentRegistry,
+  type FragmentRegistryEntry,
+  type FragmentRenderInput,
+  type FragmentRenderer,
+} from './fragments';

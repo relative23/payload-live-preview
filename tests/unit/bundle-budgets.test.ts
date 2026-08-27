@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { findBudgetViolations, INLINE_BUDGET, measureBundle } from '../../scripts/bundle-budgets';
+import {
+  findBudgetViolations,
+  INLINE_BUDGET,
+  INLINE_FRAGMENT_BUDGET,
+  measureBundle,
+} from '../../scripts/bundle-budgets';
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 81_750, gzip: 25_350, brotli: 22_300 });
+    expect(INLINE_BUDGET).toEqual({ raw: 86_550, gzip: 26_850, brotli: 23_500 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 96_400, gzip: 30_050, brotli: 26_250 });
   });
 
   it('measures raw, gzip, and Brotli bytes deterministically', () => {

@@ -55,6 +55,10 @@ export default defineConfig({
       '@': resolve(import.meta.dirname, 'src'),
       '@core': resolve(import.meta.dirname, 'src/core'),
       '@security': resolve(import.meta.dirname, 'src/security'),
+
+      '@fragment': resolve(import.meta.dirname, 'src/fragment'),
+
+      '@migrate': resolve(import.meta.dirname, 'src/migrate'),
       '@lexical': resolve(import.meta.dirname, 'src/lexical'),
       '@schema': resolve(import.meta.dirname, 'src/schema'),
       '@field-types': resolve(import.meta.dirname, 'src/field-types'),

@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 131,
-    "suites": 378,
-    "tests": 1704,
+    "files": 143,
+    "suites": 395,
+    "tests": 1779,
     "benchmarks": 12
   },
   "groups": {
@@ -36,21 +36,21 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 12,
-      "suites": 20,
-      "tests": 46,
+      "files": 13,
+      "suites": 21,
+      "tests": 57,
       "benchmarks": 0
     },
     "integration": {
       "files": 6,
-      "suites": 9,
-      "tests": 72,
+      "suites": 10,
+      "tests": 74,
       "benchmarks": 0
     },
     "real-payload": {
-      "files": 2,
-      "suites": 2,
-      "tests": 4,
+      "files": 3,
+      "suites": 3,
+      "tests": 7,
       "benchmarks": 0
     },
     "soak": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 106,
-      "suites": 337,
-      "tests": 1580,
+      "files": 116,
+      "suites": 351,
+      "tests": 1639,
       "benchmarks": 0
     }
   },
@@ -107,6 +107,13 @@
       "group": "e2e",
       "suites": 2,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/hybrid-fragment.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -203,8 +210,8 @@
     {
       "path": "tests/integration/runtime.test.ts",
       "group": "integration",
-      "suites": 4,
-      "tests": 21,
+      "suites": 5,
+      "tests": 23,
       "benchmarks": 0
     },
     {
@@ -229,6 +236,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/real-payload/hybrid-live-preview.spec.ts",
+      "group": "real-payload",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/real-payload/record-wire-corpus.spec.ts",
       "group": "real-payload",
       "suites": 1,
@@ -240,6 +254,13 @@
       "group": "soak",
       "suites": 0,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/astro-fragments.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -425,6 +446,20 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/dual-mode.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/fragment-strategy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/inspection.test.ts",
       "group": "unit",
       "suites": 5,
@@ -551,6 +586,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/route-strategy.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/skip-unchanged.test.ts",
       "group": "unit",
       "suites": 2,
@@ -628,10 +670,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/doctor/migrate-cli.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/doctor/probe.test.ts",
       "group": "unit",
       "suites": 3,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/doctor/v2-readiness.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -684,10 +740,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/fragment/client.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/fragment/route.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 20,
+      "tests": 21,
       "benchmarks": 0
     },
     {
@@ -723,6 +793,20 @@
       "group": "unit",
       "suites": 13,
       "tests": 46,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/codemods.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/runner.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {

@@ -54,12 +54,22 @@ export interface ApiReportCheckOptions {
  * this baseline already; exporting a depth-limiter tuple type would put an
  * implementation detail on the surface for no consumer benefit.
  *
+ * 50 → 46 with the hybrid strategies (1.6.0/1.7.0): the strategy, inspection
+ * and event types the fragment/route surface adds (`StrategyHandlers`,
+ * `FragmentStrategy`, `RouteStrategy`, `FragmentContext`, `RouteContext`,
+ * `InspectionFragments`, `InspectionRoute`, `UpdateSource`,
+ * `PayloadDocumentEventDetail`) are now exported from the root, core, client
+ * and plugins entries rather than left forgotten, a net reduction. The two
+ * that remain on `./fragment` (`DiagnosticCode`, `DIAGNOSTIC_CODES`) are an
+ * API-Extractor rollup artifact: the entry re-exports them and also uses
+ * `DiagnosticCode` in its own signatures, which the rollup double-counts.
+ *
  * 52 → 50 with the focused entries (1.4.0): `client`, `structural`, `lexical`
  * and `plugins` re-export every type their signatures reference, so they add
  * nothing; and `PayloadFieldCondition`, which `PayloadFieldSchema` references
  * and the root and core entries had left unexported, is now exported by both.
  */
-export const FORGOTTEN_EXPORT_BASELINE = 50;
+export const FORGOTTEN_EXPORT_BASELINE = 46;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

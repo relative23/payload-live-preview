@@ -75,6 +75,13 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly AuditUnownedBindings: "LP0706";
     readonly AuditNoBindings: "LP0707";
     readonly AuditNotAPage: "LP0708";
+    readonly FragmentRequestFailed: "LP0801";
+    readonly FragmentResponseInvalid: "LP0802";
+    readonly FragmentUnauthorized: "LP0803";
+    readonly FragmentSuperseded: "LP0804";
+    readonly RouteRefreshLoop: "LP0805";
+    readonly FragmentStrategyUnavailable: "LP0806";
+    readonly V2ReadinessGap: "LP0709";
 }>;
 
 // @public
@@ -145,13 +152,13 @@ export interface LivePreviewEventMap {
         readonly durationMs: number;
         readonly revision?: number;
         readonly receivedAt?: number;
-        readonly source?: 'patch';
+        readonly source?: UpdateSource;
     };
     readonly beforeUpdate: {
         readonly data: PayloadLivePreviewData;
         readonly revision?: number;
         readonly receivedAt?: number;
-        readonly source?: 'patch';
+        readonly source?: UpdateSource;
         readonly cancel: () => void;
     };
     readonly cacheRefresh: {
@@ -180,12 +187,21 @@ export interface LivePreviewEventMap {
         readonly nextValue: unknown;
         readonly revision?: number;
         readonly receivedAt?: number;
-        readonly source?: 'patch';
+        readonly source?: UpdateSource;
     };
     readonly error: {
         readonly error: Error;
         readonly context: string;
         readonly code: DiagnosticCode;
+    };
+    readonly fragmentRender: {
+        readonly element: Element;
+        readonly id: string;
+        readonly key: string | undefined;
+        readonly status: 'rendered' | 'failed';
+        readonly code?: DiagnosticCode;
+        readonly revision: number;
+        readonly receivedAt: number;
     };
     readonly init: {
         readonly timestamp: number;
@@ -220,7 +236,7 @@ export interface PayloadBlockSchema {
 }
 
 // @public
-interface PayloadDocumentEventDetail {
+export interface PayloadDocumentEventDetail {
     // (undocumented)
     readonly [extra: string]: unknown;
     // (undocumented)
@@ -381,9 +397,8 @@ export type RichTextRenderer = (value: unknown, context: {
 // @public
 export type Unsubscribe = () => void;
 
-// Warnings were encountered during analysis:
-//
-// dist/plugins.d.ts:440:9 - (ae-forgotten-export) The symbol "PayloadDocumentEventDetail" needs to be exported by the entry point plugins.d.ts
+// @public
+export type UpdateSource = 'patch' | 'fragment' | 'route';
 
 // (No @packageDocumentation comment for this package)
 

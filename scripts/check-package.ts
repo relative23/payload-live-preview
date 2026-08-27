@@ -791,10 +791,15 @@ async function main(): Promise<void> {
       ],
       [packageSpecifier(packageName, './lexical')]: ['lexicalToHtml', 'isLexicalContent'],
       [packageSpecifier(packageName, './plugins')]: ['PluginManager', 'createAnalyticsPlugin'],
+      [packageSpecifier(packageName, './fragment')]: [
+        'createFragmentStrategy',
+        'parseFragmentResponse',
+      ],
       [packageSpecifier(packageName, './astro/middleware-entry')]: ['onRequest'],
     };
     const esmCodegenExports: Readonly<Record<string, readonly string[]>> = {
       [packageSpecifier(packageName, './codegen')]: ['generateTypes'],
+      [packageSpecifier(packageName, './migrate')]: ['migrateSource', 'CODEMODS'],
       [packageSpecifier(packageName, './codegen/astro')]: ['livePreviewCodegen'],
     };
 
@@ -844,6 +849,10 @@ async function main(): Promise<void> {
           ],
           [packageSpecifier(packageName, './lexical')]: ['lexicalToHtml', 'isLexicalContent'],
           [packageSpecifier(packageName, './plugins')]: ['PluginManager', 'createAnalyticsPlugin'],
+          [packageSpecifier(packageName, './fragment')]: [
+            'createFragmentStrategy',
+            'parseFragmentResponse',
+          ],
         })}; for (const specifier of ${JSON.stringify(runtimeCjsSpecifiers)}) { const namespace = require(specifier); if ((typeof namespace !== 'object' && typeof namespace !== 'function') || namespace === null) throw new Error(specifier); for (const name of expected[specifier] ?? []) if (typeof namespace[name] !== 'function') throw new Error(specifier + ' missing function ' + name); }`,
       ],
       consumer,

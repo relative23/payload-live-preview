@@ -15,11 +15,13 @@
  * @module @doctor/cli
  */
 import { formatReport, runDoctor, type DoctorFetch } from './index';
+import { runMigrate } from '../migrate/runner';
 
 interface ParsedArgs {
   url: string | undefined;
   adminOrigin: string | undefined;
   json: boolean;
+  v2: boolean;
   showHelp: boolean;
   unknown: string[];
 }
@@ -29,6 +31,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     url: undefined,
     adminOrigin: undefined,
     json: false,
+    v2: false,
     showHelp: false,
     unknown: [],
   };
@@ -41,6 +44,10 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     }
     if (token === '--json') {
       parsed.json = true;
+      continue;
+    }
+    if (token === '--v2') {
+      parsed.v2 = true;
       continue;
     }
     if (token === '--admin' || token === '-a') {
@@ -64,7 +71,8 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
 const HELP_TEXT = `pll doctor — audit what a live-preview deployment actually serves
 
 Usage:
-  pll doctor <url> [--admin <origin>] [--json]
+  pll doctor <url> [--admin <origin>] [--json] [--v2]
+  pll migrate <path> [--write] [--only <id,id>]
 
 The URL is fetched twice: once as an ordinary visitor and once with the
 headers the Payload admin's iframe sends. Most findings come from the
@@ -75,6 +83,7 @@ Options:
                         frame-ancestors check to verify the origin is admitted,
                         not merely that a policy exists.
       --json            Emit the report as JSON instead of text
+      --v2              Also check the page against the 2.0 readiness table
   -h, --help            Show this help
 
 Exit codes:
@@ -98,6 +107,7 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
     process.stdout.write(HELP_TEXT);
     return subcommand === undefined ? 1 : 0;
   }
+  if (subcommand === 'migrate') return runMigrateCommand(rest);
   if (subcommand !== 'doctor') {
     process.stderr.write(`pll: unknown command "${subcommand}". Try \`pll --help\`.\n`);
     return 1;
@@ -122,6 +132,7 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
     report = await runDoctor({
       url: args.url,
       ...(args.adminOrigin !== undefined ? { adminOrigin: args.adminOrigin } : {}),
+      ...(args.v2 ? { v2: true } : {}),
       ...(fetchImpl !== undefined ? { fetchImpl } : {}),
     });
   } catch (error) {
@@ -135,6 +146,76 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
   );
   return report.errors > 0 ? 2 : 0;
 }
+
+async function runMigrateCommand(argv: readonly string[]): Promise<number> {
+  let target: string | undefined;
+  let write = false;
+  let only: string[] | undefined;
+  for (let i = 0; i < argv.length; i += 1) {
+    const token = argv[i];
+    if (token === undefined) continue;
+    if (token === '-h' || token === '--help') {
+      process.stdout.write(MIGRATE_HELP);
+      return 0;
+    }
+    if (token === '--write') {
+      write = true;
+      continue;
+    }
+    if (token === '--only') {
+      only = (argv[i + 1] ?? '').split(',').filter((id) => id.length > 0);
+      i += 1;
+      continue;
+    }
+    if (token.startsWith('--only=')) {
+      only = token
+        .slice('--only='.length)
+        .split(',')
+        .filter((id) => id.length > 0);
+      continue;
+    }
+    if (token.startsWith('-')) {
+      process.stderr.write(`pll migrate: unknown option ${token}\n`);
+      return 1;
+    }
+    target ??= token;
+  }
+  if (target === undefined) {
+    process.stderr.write('pll migrate: a path is required. Try `pll migrate --help`.\n');
+    return 1;
+  }
+  let result;
+  try {
+    result = await runMigrate(target, { write, ...(only !== undefined ? { only } : {}) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`pll migrate: ${message}\n`);
+    return 1;
+  }
+  for (const file of result.files) {
+    if (!file.changed) continue;
+    const ids = [...new Set(file.edits.map((edit) => edit.codemod))].join(', ');
+    process.stdout.write(`${write ? 'migrated' : 'would migrate'} ${file.file} (${ids})\n`);
+  }
+  const verb = write ? 'Migrated' : 'Would migrate';
+  process.stdout.write(`\n${verb} ${String(result.changedCount)} file(s).`);
+  process.stdout.write(write ? '\n' : ' Re-run with --write to apply.\n');
+  return 0;
+}
+
+const MIGRATE_HELP = `pll migrate — rewrite 1.x APIs to their 2.0 names and homes (ADR 0007)
+
+Usage:
+  pll migrate <path> [--write] [--only <id,id>]
+
+Without --write the run only reports what it would change. Codemods touch
+only imports from payload-live-preview and the names they bind.
+
+Options:
+      --write           Apply the changes (otherwise dry-run)
+      --only <ids>      Run only these codemods (comma-separated)
+  -h, --help            Show this help
+`;
 
 /**
  * Whether this module was run as a program rather than imported.

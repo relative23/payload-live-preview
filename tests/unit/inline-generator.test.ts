@@ -77,6 +77,18 @@ describe('generateInlineScript', () => {
     expect(config.slice(0, 14).every((value) => value === undefined)).toBe(true);
   });
 
+  it('carries the fragment endpoint in its own trailing wire slot and emits the fragment prelude ahead of the runtime', () => {
+    const script = generateInlineScript({ fragmentEndpoint: '/payload/fragment' });
+    const config = generatedConfig(script);
+
+    expect(config).toHaveLength(18);
+    expect(config[17]).toBe('/payload/fragment');
+    expect(config.slice(0, 17).every((value) => value === undefined)).toBe(true);
+    expect(script).not.toBe(generateInlineScript());
+    expect(script).toContain('var __LIVE_PREVIEW_FRAGMENT__=');
+    expect(generateInlineScript()).not.toContain('var __LIVE_PREVIEW_FRAGMENT__=');
+  });
+
   it('retains the deprecated nonce config as a no-op for 1.x compatibility', () => {
     const withoutNonce = generateInlineScript();
     const withNonce = generateInlineScript({ nonce: 'abc123' });

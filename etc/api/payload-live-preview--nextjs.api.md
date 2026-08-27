@@ -4,8 +4,8 @@
 
 ```ts
 
-import { D } from '../../policy-Ba9mk0NH.js';
-import { P } from '../../policy-Ba9mk0NH.js';
+import { a } from '../../policy-B4DHbtJN.js';
+import { D } from '../../policy-B4DHbtJN.js';
 
 // @public
 export function createLivePreviewMiddleware(options?: LivePreviewNextOptions): (request: Request, response: Response) => Promise<Response>;
@@ -15,7 +15,7 @@ export interface LivePreviewNextOptions {
     // (undocumented)
     readonly allowedOrigins?: readonly string[];
     readonly apiRoute?: string;
-    readonly authorizePreview?: (request: Request) => P | Promise<P>;
+    readonly authorizePreview?: (request: Request) => a | Promise<a>;
     // (undocumented)
     readonly autoInject?: boolean;
     // (undocumented)

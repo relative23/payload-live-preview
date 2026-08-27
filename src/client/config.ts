@@ -5,6 +5,7 @@
  */
 
 import type { CachedElement, FieldRenderer, RendererKey, RichTextRenderer } from '@core/types';
+import type { StrategyHandlers } from '@core/strategies';
 import {
   runtimeDefaultsFor,
   type DefaultsProfile,
@@ -71,6 +72,12 @@ export interface LivePreviewClientConfig {
    * value: `{ price: ['priceLabel'] }`. Used only with `skipUnchanged`.
    */
   readonly dependencies?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * Strategy handlers beyond patching. `fragment` renders `data-payload-fragment`
+   * boundaries on the server; `createFragmentStrategy()` from
+   * `payload-live-preview/fragment` builds one for an endpoint.
+   */
+  readonly strategies?: StrategyHandlers;
   /** Bypass the visibility gate (apply every update). Defaults to `false`. */
   readonly disableVisibilityGate?: boolean;
   /** Cache-size threshold above which off-screen updates are queued for replay. Defaults to 50. */

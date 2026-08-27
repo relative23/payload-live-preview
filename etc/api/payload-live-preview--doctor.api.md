@@ -4,22 +4,27 @@
 
 ```ts
 
-import { d as DIAGNOSTIC_CODES } from './probe-B6c60E1g.js';
-import { e as DiagnosticCode } from './probe-B6c60E1g.js';
-import { b as DoctorContext } from './probe-B6c60E1g.js';
-import { D as DoctorFetch } from './probe-B6c60E1g.js';
-import { f as DoctorFinding } from './probe-B6c60E1g.js';
-import { g as DoctorLevel } from './probe-B6c60E1g.js';
-import { a as DoctorProbe } from './probe-B6c60E1g.js';
-import { c as DoctorReport } from './probe-B6c60E1g.js';
-import { h as DoctorResponse } from './probe-B6c60E1g.js';
-import { i as formatReport } from './probe-B6c60E1g.js';
-import { l as lowercaseHeaders } from './probe-B6c60E1g.js';
-import { r as runDoctor } from './probe-B6c60E1g.js';
-import { R as RunDoctorOptions } from './probe-B6c60E1g.js';
+import { e as DIAGNOSTIC_CODES } from './probe-Bz_2Q7_W.js';
+import { f as DiagnosticCode } from './probe-Bz_2Q7_W.js';
+import { b as DoctorContext } from './probe-Bz_2Q7_W.js';
+import { D as DoctorFetch } from './probe-Bz_2Q7_W.js';
+import { d as DoctorFinding } from './probe-Bz_2Q7_W.js';
+import { g as DoctorLevel } from './probe-Bz_2Q7_W.js';
+import { a as DoctorProbe } from './probe-Bz_2Q7_W.js';
+import { c as DoctorReport } from './probe-Bz_2Q7_W.js';
+import { h as DoctorResponse } from './probe-Bz_2Q7_W.js';
+import { i as formatReport } from './probe-Bz_2Q7_W.js';
+import { l as lowercaseHeaders } from './probe-Bz_2Q7_W.js';
+import { r as runDoctor } from './probe-Bz_2Q7_W.js';
+import { R as RunDoctorOptions } from './probe-Bz_2Q7_W.js';
 
 // @public
-export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): DoctorReport;
+export function analyzeProbe(probe: DoctorProbe, context: DoctorContext & {
+    readonly v2?: boolean;
+}): DoctorReport;
+
+// @public
+export function analyzeV2Readiness(probe: DoctorProbe): readonly DoctorFinding[];
 
 export { DIAGNOSTIC_CODES }
 

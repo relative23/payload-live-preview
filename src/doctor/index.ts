@@ -6,7 +6,7 @@
  *
  * @module @doctor/index
  */
-export { analyzeProbe } from './analyze';
+export { analyzeProbe, analyzeV2Readiness } from './analyze';
 // Findings are stamped with the same codes the runtime uses, so a consumer
 // reading a report needs the vocabulary here too.
 export { DIAGNOSTIC_CODES, type DiagnosticCode } from '../core/diagnostic-codes';

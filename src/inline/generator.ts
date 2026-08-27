@@ -13,6 +13,7 @@
  */
 
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
+import { FRAGMENT_SOURCE } from './fragment.generated';
 import { LOADER_SOURCE } from './loader.generated';
 
 export interface InlineScriptConfig {
@@ -96,6 +97,12 @@ export interface InlineScriptConfig {
   /** Sanitizer policy for rich text and HTML writes; `'strict'` is the 2.0 default (`defaults: 'v2'`). */
   readonly sanitizerPolicy?: 'compat' | 'strict';
   /**
+   * Same-origin path of a fragment endpoint (ADR 0011). When set, the inline
+   * script carries the fragment client and renders `data-payload-fragment`
+   * boundaries through it; a page without it gets the plain runtime.
+   */
+  readonly fragmentEndpoint?: string;
+  /**
    * Retained for 1.x source compatibility, but has no effect here:
    * `generateInlineScript()` returns a script body and creates no tag.
    * Pass the nonce separately to `wrapWithScriptTag(body, { nonce })`.
@@ -123,7 +130,13 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
   // `__LIVE_PREVIEW_CONFIG__` constant placeholder. The identifier is retained
   // across 1.0.x because existing deployments use it as a non-secret runtime
   // presence/leak signal in response-level integration tests.
-  return [`var __LIVE_PREVIEW_CONFIG__=${buildConfigLiteral(config)};`, RUNTIME_SOURCE].join('\n');
+  // A page with `fragments` gets the fragment prelude ahead of the runtime;
+  // the runtime itself is one build for every page.
+  return [
+    `var __LIVE_PREVIEW_CONFIG__=${buildConfigLiteral(config)};`,
+    ...(config.fragmentEndpoint === undefined ? [] : [FRAGMENT_SOURCE]),
+    RUNTIME_SOURCE,
+  ].join('\n');
 }
 
 /**
@@ -153,6 +166,7 @@ function buildConfigLiteral(config: InlineScriptConfig): string {
     config.skipUnchanged,
     config.eventSourcePolicy,
     config.sanitizerPolicy,
+    config.fragmentEndpoint,
   ];
   while (compactConfig.length > 0 && compactConfig.at(-1) === undefined) compactConfig.pop();
   // Preserve omitted interior options as sparse JavaScript slots. JSON arrays
@@ -212,6 +226,7 @@ export function generateLoaderScript(
     `var __LIVE_PREVIEW_CONFIG__=${buildConfigLiteral(config)};`,
     `var __LP_RUNTIME_SRC__=${encode(target.runtimeSrc)};`,
     `var __LP_RUNTIME_INTEGRITY__=${encode(target.integrity ?? '')};`,
+    ...(config.fragmentEndpoint === undefined ? [] : [FRAGMENT_SOURCE]),
     LOADER_SOURCE,
   ].join('\n');
 }

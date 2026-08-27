@@ -76,6 +76,12 @@
         "default": "./dist/doctor.js"
       }
     },
+    "./migrate": {
+      "import": {
+        "types": "./dist/migrate.d.ts",
+        "default": "./dist/migrate.js"
+      }
+    },
     "./payload": {
       "import": {
         "types": "./dist/payload.d.ts",
@@ -134,6 +140,16 @@
       "require": {
         "types": "./dist/plugins.d.cts",
         "default": "./dist/plugins.cjs"
+      }
+    },
+    "./fragment": {
+      "import": {
+        "types": "./dist/fragment.d.ts",
+        "default": "./dist/fragment.js"
+      },
+      "require": {
+        "types": "./dist/fragment.d.cts",
+        "default": "./dist/fragment.cjs"
       }
     },
     "./astro/RichText.astro": "./dist/adapters/astro/RichText.astro",

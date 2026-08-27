@@ -82,6 +82,8 @@ export interface PreviewPolicyOptions {
   readonly skipUnchanged?: boolean;
   readonly scopeBindingsByOwner?: boolean;
   readonly sanitizerPolicy?: 'compat' | 'strict';
+  /** Server-rendered fragment boundaries (ADR 0011): the same-origin endpoint the runtime posts to. */
+  readonly fragments?: { readonly endpoint: string };
   readonly inject?: 'preview-only' | 'always';
   readonly autoInject?: boolean;
   readonly previewQueryParams?: readonly string[];
@@ -169,6 +171,7 @@ export function inlineScriptConfig(
     ...(resolved.sanitizerPolicy !== undefined
       ? { sanitizerPolicy: resolved.sanitizerPolicy }
       : {}),
+    ...(options.fragments !== undefined ? { fragmentEndpoint: options.fragments.endpoint } : {}),
   };
 }
 

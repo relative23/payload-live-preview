@@ -73,6 +73,7 @@ describe('package entries', () => {
   it('the focused entries are exactly the five documented ones', () => {
     expect(Object.keys(STANDALONE_ENTRIES).sort()).toEqual([
       'client',
+      'fragment',
       'lexical',
       'plugins',
       'server',

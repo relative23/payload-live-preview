@@ -23,9 +23,21 @@ export type {
   InspectionProtocol,
   InspectionRevisions,
   PluginInspection,
+  InspectionFragments,
+  InspectionRoute,
   InspectionScheduler,
   LivePreviewInspection,
 } from './core/inspection/types';
+export type {
+  FragmentContext,
+  FragmentReport,
+  FragmentStrategy,
+  RouteContext,
+  RouteStrategy,
+  StrategyHandlers,
+  UpdateSource,
+} from './core/strategies';
+export type { PayloadDocumentEventDetail } from './types/payload-protocol';
 export { DIAGNOSTIC_CODES, type DiagnosticCode } from './core/diagnostic-codes';
 export type { ConnectionStatus } from './core/state';
 

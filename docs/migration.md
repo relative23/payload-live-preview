@@ -93,3 +93,63 @@ Nothing breaks. What changed underneath:
   remove it.
 - The README compatibility table is generated from `quality/compat-matrix.json`;
   every version in it is one CI installs (ADR 0009).
+
+## To 2.0: `defaults: 'v2'`, one row at a time
+
+2.0 flips a table of defaults toward security and performance. You can adopt
+every flip today, incrementally, by opting in — `defaults: 'v2'` sets the
+whole table, or set any single option to move one row. `pll doctor --v2`
+audits a served page against the table; `pll migrate` rewrites the renamed
+APIs. Nothing here breaks in 1.x; the flip is the 2.0 release.
+
+Run the tooling first:
+
+```bash
+npx pll migrate ./src            # dry-run: shows the renames it would make
+npx pll migrate ./src --write    # apply them
+npx pll doctor https://your-site/page --admin https://cms --v2
+```
+
+Then adopt the rows. Each is a readiness-table entry (ADR 0007):
+
+| Row                | 1.x default                        | 2.0 (`'v2'`)                          | Adopt by                                     | Watch for                                                                     |
+| ------------------ | ---------------------------------- | ------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------- |
+| Authorization      | response changes on intent alone   | `authorizePreview` required           | passing `authorizePreview` / `authorization` | a page that showed preview to anyone now needs a real editor session or token |
+| Intent signals     | `['query','fetch-dest','referer']` | `['query']`                           | `previewSignals: ['query']`                  | a flow that relied on the admin referer alone must add `?preview=true`        |
+| Referrer trust     | on                                 | off outside local dev                 | `disableReferrerDetection: true`             | same as above                                                                 |
+| Message source     | any origin-valid window            | parent/opener only                    | `eventSourcePolicy: 'parent-or-opener'`      | a custom embedding that posts from another window                             |
+| Unchanged bindings | re-applied                         | skipped                               | `skipUnchanged: true`                        | a renderer with side effects that expected every message                      |
+| Sanitizer          | `id` and every `data-*` pass       | `id`/`name`/`data-payload-*` stripped | `sanitizerPolicy: 'strict'`                  | rich text that relies on `id` or `data-*` (list the CSP `trusted-types` name) |
+| `allowedOrigins`   | optional                           | required, non-empty, `https:`         | set it explicitly                            | a dev-only origin left implicit                                               |
+
+### Renamed and moved (what `pll migrate` handles)
+
+- `isPreviewRequest()` → `hasPreviewIntent()` — same signature.
+- `createPreviewBindings({ authorized })` → `{ authorization }` — pass the
+  context from `authorizePreviewRequest()`.
+- `fetchPreviewDocument()` / `fetchPreviewGlobal()` (root) →
+  `definePreview({ serverURL, depth }).fetchDocument()` / `.fetchGlobal()`
+  from `payload-live-preview/server`.
+
+### Before / after
+
+```ts
+// 1.x
+import { isPreviewRequest, fetchPreviewDocument } from 'payload-live-preview';
+if (isPreviewRequest(request)) {
+  /* … */
+}
+const doc = await fetchPreviewDocument({ serverURL, slug });
+
+// 2.0 (after `pll migrate --write`, plus definePreview wiring)
+import { hasPreviewIntent } from 'payload-live-preview';
+import { definePreview } from 'payload-live-preview/server';
+if (hasPreviewIntent(request)) {
+  /* … */
+}
+const preview = definePreview({ serverURL, depth: 2 });
+const doc = await preview.fetchDocument({ slug, authorization });
+```
+
+The runtime keeps warning, once per process outside production, for every
+renamed or moved API until 2.0 removes it.

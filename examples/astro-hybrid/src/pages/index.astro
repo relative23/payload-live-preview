@@ -1,0 +1,52 @@
+---
+export const prerender = false;
+import Hero from '../components/Hero.astro';
+import { heroProps } from '../document';
+import { authorizePreviewRequest } from 'payload-live-preview/server';
+import { strategy } from '../preview';
+
+// The page authorizes the same request the fragment endpoint will, so both
+// render the document identically — the editor tools appear in the SSR page
+// and in a fragment render for the same authorized preview.
+const authorization = await authorizePreviewRequest(Astro.request, strategy);
+const document = heroProps({}, { editor: authorization.authorized });
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- A head binding: the route strategy re-renders the whole route for it. -->
+    <title data-payload-field="title">{document.title}</title>
+  </head>
+  <body>
+    <!-- Changes on every server render, so a test can tell a route refresh from a patch. -->
+    <p data-testid="route-stamp">{Date.now()}</p>
+    <div style="height: 1400px" aria-hidden="true"></div>
+    <section data-payload-fragment="hero" data-payload-depends="title,subtitle,body,blocks,author,image" data-testid="hero">
+      <Hero {...document} />
+    </section>
+    <footer data-payload-field="footer" data-testid="footer">Patched footer</footer>
+    <x-island data-payload-island data-testid="island">
+      <p data-payload-field="title" data-testid="island-inside">Island-owned</p>
+      <output data-testid="island-renders">0</output>
+    </x-island>
+    <script>
+      // A framework stand-in on the same page as patch and fragment markup: it
+      // re-renders itself from the bridge event and is never patched or morphed.
+      class Island extends HTMLElement {
+        #renders = 0;
+        connectedCallback() {
+          this.addEventListener('payload-live-preview:update', (event) => {
+            const detail = (event as CustomEvent<{ fields: Record<string, unknown> }>).detail;
+            this.#renders += 1;
+            const inside = this.querySelector('[data-testid="island-inside"]');
+            const renders = this.querySelector('[data-testid="island-renders"]');
+            if (inside) inside.textContent = `island: ${String(detail.fields.title ?? '')}`;
+            if (renders) renders.textContent = String(this.#renders);
+          });
+        }
+      }
+      customElements.define('x-island', Island);
+    </script>
+  </body>
+</html>
