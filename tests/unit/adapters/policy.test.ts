@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPreviewCsp,
   createPreviewPolicy,
-  hasPreviewIntent,
+  previewIntentFor,
   injectIntoHead,
   inlineScriptConfig,
   normalizeCspMode,
@@ -21,19 +21,19 @@ function request(url = 'https://site.example.com/', headers: Record<string, stri
   return new Request(url, { headers });
 }
 
-describe('hasPreviewIntent', () => {
+describe('previewIntentFor', () => {
   it('is intent, not authorization: a query flag, an iframe destination, or an admin referer', () => {
     const options = { allowedOrigins: [ADMIN] };
-    expect(hasPreviewIntent(request(), options)).toBe(false);
-    expect(hasPreviewIntent(request('https://site.example.com/?preview=true'), options)).toBe(true);
+    expect(previewIntentFor(request(), options)).toBe(false);
+    expect(previewIntentFor(request('https://site.example.com/?preview=true'), options)).toBe(true);
     expect(
-      hasPreviewIntent(
+      previewIntentFor(
         request('https://site.example.com/', { 'sec-fetch-dest': 'iframe' }),
         options,
       ),
     ).toBe(true);
     expect(
-      hasPreviewIntent(
+      previewIntentFor(
         request('https://site.example.com/', { referer: `${ADMIN}/admin` }),
         options,
       ),
@@ -41,18 +41,18 @@ describe('hasPreviewIntent', () => {
   });
 
   it("treats inject: 'always' as intent on every request", () => {
-    expect(hasPreviewIntent(request(), { inject: 'always' })).toBe(true);
+    expect(previewIntentFor(request(), { inject: 'always' })).toBe(true);
   });
 
   it('honours a narrowed signal set', () => {
     const options = { allowedOrigins: [ADMIN], previewSignals: ['query'] as const };
     expect(
-      hasPreviewIntent(
+      previewIntentFor(
         request('https://site.example.com/', { 'sec-fetch-dest': 'iframe' }),
         options,
       ),
     ).toBe(false);
-    expect(hasPreviewIntent(request('https://site.example.com/?preview=1'), options)).toBe(true);
+    expect(previewIntentFor(request('https://site.example.com/?preview=1'), options)).toBe(true);
   });
 });
 

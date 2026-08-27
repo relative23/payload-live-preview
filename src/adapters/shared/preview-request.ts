@@ -29,6 +29,8 @@
  */
 
 /** The individual signals the predicate can consider. */
+import { warnDeprecatedOnce } from './deprecation';
+
 export type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
 
 export interface PreviewRequestOptions {
@@ -74,7 +76,7 @@ export interface PreviewRequestLike {
  * docblock for the exact signals and the required authorization
  * boundary. This compatibility name does not imply authentication.
  */
-export function isPreviewRequest(
+export function hasPreviewIntent(
   request: PreviewRequestLike,
   options: PreviewRequestOptions = {},
 ): boolean {
@@ -121,4 +123,23 @@ export function isPreviewRequest(
   }
 
   return false;
+}
+
+/**
+ * @deprecated since 1.1.0 — use {@link hasPreviewIntent}, the same function
+ * under the name that says what it is: intent detection, not authorization.
+ * Removed in 2.0; ADR 0007 ledger entry 1. Warns once per process outside
+ * production.
+ */
+export function isPreviewRequest(
+  request: PreviewRequestLike,
+  options: PreviewRequestOptions = {},
+): boolean {
+  warnDeprecatedOnce(
+    'isPreviewRequest',
+    'isPreviewRequest() is deprecated; use hasPreviewIntent() — same signature, honest name. ' +
+      'It detects client-controlled intent and is not authorization ' +
+      '(docs/architecture/0007-v2-defaults-and-renames-ledger.md, entry 1).',
+  );
+  return hasPreviewIntent(request, options);
 }

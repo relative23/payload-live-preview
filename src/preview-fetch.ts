@@ -13,12 +13,12 @@
  * relationships degrade to IDs after the first edit.
  *
  * These helpers do not authenticate or authorize requests.
- * `isPreviewRequest()` detects client-controlled preview intent only.
+ * `hasPreviewIntent()` detects client-controlled preview intent only.
  * Verify an application-owned server session or short-lived signed
  * authorization first, and use that one decision to gate `draft`, any
  * privileged headers, cache bypass, CSP changes, and runtime injection.
  * Never attach a long-lived service/API key merely because
- * `isPreviewRequest()` returned `true`.
+ * `hasPreviewIntent()` returned `true`.
  *
  * Isomorphic and dependency-free: works in Astro frontmatter,
  * SvelteKit `load`, Next.js server components, or any Node/edge
@@ -28,8 +28,8 @@
  * // Astro frontmatter. `verifyAppPreviewSession` is application-owned,
  * // server-only code; it validates the request and returns only the
  * // minimal Payload session headers needed for this request.
- * const hasPreviewIntent = isPreviewRequest(Astro.request);
- * const authorization = hasPreviewIntent
+ * const intent = hasPreviewIntent(Astro.request);
+ * const authorization = intent
  *   ? await verifyAppPreviewSession(Astro.request)
  *   : null;
  * const page = await fetchPreviewDocument<Page>({
@@ -59,7 +59,7 @@ export interface PreviewFetchBaseOptions {
   /**
    * Fetch the draft version. Defaults to `true` for 1.x compatibility.
    * Set this from a verified authorization decision, not directly
-   * from `isPreviewRequest()`, whose result only expresses intent.
+   * from `hasPreviewIntent()`, whose result only expresses intent.
    */
   readonly draft?: boolean;
   /** Locale to fetch. */

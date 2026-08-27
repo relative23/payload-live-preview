@@ -31,7 +31,7 @@ import {
   mergeCspHeader,
 } from '@security/csp';
 import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
-import { isPreviewRequest, type PreviewRequestLike, type PreviewSignal } from './preview-request';
+import { hasPreviewIntent, type PreviewRequestLike, type PreviewSignal } from './preview-request';
 
 /** How the adapter manages Content-Security-Policy, normalised. */
 export type CspMode = false | 'frame-ancestors' | 'full';
@@ -97,21 +97,19 @@ export function normalizeCspMode(value: PreviewPolicyOptions['manageCsp']): CspM
 }
 
 /**
- * Whether the request shows preview intent under these options.
+ * Whether the request shows preview intent under an adapter's options —
+ * `hasPreviewIntent()` with the adapter's option names, plus `inject: 'always'`.
  *
  * Intent, not authorization: a query parameter, an iframe fetch destination or
- * an admin referer says an editor *may* be looking, and nothing more. The
- * name is deliberately the one the roadmap reserves for the public honest
- * replacement of `isPreviewRequest()`; when that lands this is the function
- * it exports.
+ * an admin referer says an editor *may* be looking, and nothing more.
  */
-export function hasPreviewIntent(
+export function previewIntentFor(
   request: PreviewRequestLike,
   options: PreviewPolicyOptions,
 ): boolean {
   return (
     (options.inject ?? 'preview-only') === 'always' ||
-    isPreviewRequest(request, {
+    hasPreviewIntent(request, {
       ...(options.previewQueryParams !== undefined
         ? { queryParams: options.previewQueryParams }
         : {}),
@@ -202,7 +200,7 @@ export function createPreviewPolicy(options: PreviewPolicyOptions): PreviewPolic
   };
   return {
     decide(request, shouldInject) {
-      const isPreview = hasPreviewIntent(request, options);
+      const isPreview = previewIntentFor(request, options);
       return {
         isPreview,
         inject: isPreview && autoInject && (shouldInject?.() ?? true),
