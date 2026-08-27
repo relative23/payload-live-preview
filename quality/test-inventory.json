@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 112,
-    "suites": 336,
-    "tests": 1632,
+    "suites": 337,
+    "tests": 1634,
     "benchmarks": 11
   },
   "groups": {
@@ -37,8 +37,8 @@
     },
     "e2e": {
       "files": 9,
-      "suites": 16,
-      "tests": 37,
+      "suites": 17,
+      "tests": 39,
       "benchmarks": 0
     },
     "integration": {
@@ -154,8 +154,8 @@
     {
       "path": "tests/e2e/specs/sveltekit-live-preview.spec.ts",
       "group": "e2e",
-      "suites": 3,
-      "tests": 8,
+      "suites": 4,
+      "tests": 10,
       "benchmarks": 0
     },
     {
