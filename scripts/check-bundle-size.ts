@@ -24,23 +24,25 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // authorizePreview, strict-mode checks, the defaults profile, the development
   // warnings, and the runtime's source policy embedded in every adapter bundle.
   // The HMAC/session code is not in these bundles; the brand check is imported
-  // from the `types` leaf for exactly that reason. core.* rows: +~200 B gzip for
+  // from the `types` leaf for exactly that reason. 2026-08-27 (1.3.0): the keyed
+  // morph (ADR 0008), its diagnostics and the template sanitizer options add
+  // ~1.4 KB gzip to the inline runtime and therefore to every adapter bundle. core.* rows: +~200 B gzip for
   // the message bus source policy (eventSourcePolicy), same date.
-  'adapters/astro/index.js': { raw: 85_000, gzip: 26_800, brotli: 23_700 },
-  'adapters/astro/middleware-entry.js': { raw: 80_500, gzip: 25_400, brotli: 22_400 },
-  'adapters/nextjs/index.js': { raw: 80_500, gzip: 25_300, brotli: 22_350 },
-  'adapters/nuxt/index.js': { raw: 80_500, gzip: 25_400, brotli: 22_400 },
-  'adapters/sveltekit/index.js': { raw: 80_200, gzip: 25_300, brotli: 22_300 },
+  'adapters/astro/index.js': { raw: 90_000, gzip: 28_400, brotli: 25_100 },
+  'adapters/astro/middleware-entry.js': { raw: 86_800, gzip: 27_450, brotli: 24_200 },
+  'adapters/nextjs/index.js': { raw: 86_850, gzip: 27_350, brotli: 24_150 },
+  'adapters/nuxt/index.js': { raw: 86_850, gzip: 27_450, brotli: 24_200 },
+  'adapters/sveltekit/index.js': { raw: 86_500, gzip: 27_350, brotli: 24_100 },
   'codegen-astro.js': { raw: 13_000, gzip: 4_300, brotli: 3_900 },
   'codegen-cli.js': { raw: 15_000, gzip: 4_800, brotli: 4_300 },
   'codegen.cjs': { raw: 13_000, gzip: 4_100, brotli: 3_700 },
   'codegen.js': { raw: 13_000, gzip: 4_100, brotli: 3_700 },
   'doctor-cli.js': { raw: 10_500, gzip: 4_400, brotli: 3_800 },
   'doctor.js': { raw: 8_700, gzip: 3_700, brotli: 3_150 },
-  'core.cjs': { raw: 84_300, gzip: 26_350, brotli: 23_200 },
-  'core.js': { raw: 83_900, gzip: 26_300, brotli: 23_150 },
-  'index.cjs': { raw: 177_050, gzip: 55_300, brotli: 39_400 },
-  'index.js': { raw: 176_450, gzip: 54_900, brotli: 39_000 },
+  'core.cjs': { raw: 89_200, gzip: 27_950, brotli: 24_600 },
+  'core.js': { raw: 87_450, gzip: 27_450, brotli: 24_200 },
+  'index.cjs': { raw: 186_400, gzip: 57_250, brotli: 39_400 },
+  'index.js': { raw: 185_800, gzip: 56_850, brotli: 39_000 },
   'payload.cjs': { raw: 1_100, gzip: 600, brotli: 500 },
   'payload.js': { raw: 1_100, gzip: 600, brotli: 500 },
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.

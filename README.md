@@ -739,23 +739,26 @@ Every message the runtime reports carries a stable code. Prose gets reworded; a
 code does not — so a log filter, an alert rule, or a bug report that names
 `LP0301` still means the same thing after the sentence around it changes.
 
-| Code     | Meaning                                              | What to do                                                                                             |
-| -------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `LP0101` | No trusted origin configured in production           | Set `PAYLOAD_ADMIN_ORIGIN` or pass `allowedOrigins`. Nothing is accepted until you do.                 |
-| `LP0102` | Origin trust rests on `document.referrer`            | Any framing site is trusted. Set `allowedOrigins` and a `frame-ancestors` CSP.                         |
-| `LP0201` | An update named a field with no binding on the page  | Render the binding anchor unconditionally so edits to an initially-empty field have somewhere to land. |
-| `LP0202` | Owner scoping is on and the update names no document | The message carries neither a global slug nor a collection slug plus id.                               |
-| `LP0301` | The visibility gate held offscreen writes back       | Raise `visibilityGateThreshold`, or accept that below-the-fold updates wait for a scroll.              |
-| `LP0401` | A value was refused as an unsafe attribute write     | The attribute or the value is not safe to write; see the security model.                               |
-| `LP0402` | A text element has structured children               | Move `data-payload-field` to the value element, or add `data-payload-text`.                            |
-| `LP0403` | A structural container has no array template         | Add `data-payload-array-template`.                                                                     |
-| `LP0501` | A message was rejected before the update pipeline    | Reason is one of origin, shape, type, token. Visible with `debug: true`.                               |
-| `LP0502` | A preview token was rejected                         | Also reported when your `validateToken` throws — a throwing validator fails closed.                    |
-| `LP0601` | A consumer event handler threw                       | Your `on(...)` handler; the runtime continued.                                                         |
-| `LP0602` | A consumer transform threw                           | The original value was kept.                                                                           |
-| `LP0603` | A renderer threw while writing                       | That one write was abandoned.                                                                          |
-| `LP0605` | Runtime startup failed                               |                                                                                                        |
-| `LP0606` | Sending the ready handshake failed                   |                                                                                                        |
+| Code     | Meaning                                              | What to do                                                                                               |
+| -------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `LP0101` | No trusted origin configured in production           | Set `PAYLOAD_ADMIN_ORIGIN` or pass `allowedOrigins`. Nothing is accepted until you do.                   |
+| `LP0102` | Origin trust rests on `document.referrer`            | Any framing site is trusted. Set `allowedOrigins` and a `frame-ancestors` CSP.                           |
+| `LP0201` | An update named a field with no binding on the page  | Render the binding anchor unconditionally so edits to an initially-empty field have somewhere to land.   |
+| `LP0202` | Owner scoping is on and the update names no document | The message carries neither a global slug nor a collection slug plus id.                                 |
+| `LP0301` | The visibility gate held offscreen writes back       | Raise `visibilityGateThreshold`, or accept that below-the-fold updates wait for a scroll.                |
+| `LP0401` | A value was refused as an unsafe attribute write     | The attribute or the value is not safe to write; see the security model.                                 |
+| `LP0402` | A text element has structured children               | Move `data-payload-field` to the value element, or add `data-payload-text`.                              |
+| `LP0403` | A structural container has no array template         | Add `data-payload-array-template`.                                                                       |
+| `LP0404` | A structural item has no `id`                        | Give items a stable `id`; without one they pair by position and an insert re-renders every row after it. |
+| `LP0405` | Two structural items share a key                     | Make `id` unique per item; later duplicates pair by position.                                            |
+| `LP0406` | Every structural key changed at once                 | The source generates keys per message; the morph cannot retain nodes across such updates.                |
+| `LP0501` | A message was rejected before the update pipeline    | Reason is one of origin, shape, type, token. Visible with `debug: true`.                                 |
+| `LP0502` | A preview token was rejected                         | Also reported when your `validateToken` throws — a throwing validator fails closed.                      |
+| `LP0601` | A consumer event handler threw                       | Your `on(...)` handler; the runtime continued.                                                           |
+| `LP0602` | A consumer transform threw                           | The original value was kept.                                                                             |
+| `LP0603` | A renderer threw while writing                       | That one write was abandoned.                                                                            |
+| `LP0605` | Runtime startup failed                               |                                                                                                          |
+| `LP0606` | Sending the ready handshake failed                   |                                                                                                          |
 
 Codes on the `error` event can be branched on directly:
 

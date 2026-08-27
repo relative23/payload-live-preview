@@ -99,6 +99,16 @@ const ALLOWED_TAGS: ReadonlySet<string> = new Set([
  * unwrapping fallback because their contents are themselves harmful
  * (script source, CSS, raw HTML, etc.).
  */
+/** Tags `allowFormControls` un-drops for author templates; `form` is deliberately not among them. */
+const FORM_CONTROLS: ReadonlySet<string> = new Set([
+  'input',
+  'button',
+  'textarea',
+  'select',
+  'option',
+  'label',
+]);
+
 const REMOVE_COMPLETELY: ReadonlySet<string> = new Set([
   'script',
   'style',
@@ -186,6 +196,15 @@ export class SanitizerEnvironmentError extends Error {
 }
 
 export interface SanitizeOptions {
+  /**
+   * Keep `input`, `button`, `textarea`, `select`, `option` and `label`
+   * instead of dropping them. Only for markup the page author wrote — the
+   * structural item templates — never for CMS content: every interpolated
+   * value is escaped before the sanitizer runs, so these tags can come only
+   * from the template. `form` stays dropped, and so do event handlers,
+   * `style` and unsafe URLs.
+   */
+  readonly allowFormControls?: boolean;
   /** Extra tags to allow beyond the built-in list. Lower-case, untrimmed. */
   readonly additionalAllowedTags?: readonly string[];
   /** Extra per-tag attributes to allow. Tag and attribute names must be lower-case. */
@@ -194,6 +213,7 @@ export interface SanitizeOptions {
 
 interface ResolvedPolicy {
   readonly allowedTags: ReadonlySet<string>;
+  readonly allowFormControls: boolean;
   readonly attrByTag: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
@@ -201,10 +221,11 @@ function resolvePolicy(options: SanitizeOptions | undefined): ResolvedPolicy {
   if (!options) {
     const attrMap = new Map<string, ReadonlySet<string>>();
     for (const [tag, attrs] of Object.entries(ATTR_BY_TAG)) attrMap.set(tag, attrs);
-    return { allowedTags: ALLOWED_TAGS, attrByTag: attrMap };
+    return { allowedTags: ALLOWED_TAGS, attrByTag: attrMap, allowFormControls: false };
   }
   const allowed = new Set(ALLOWED_TAGS);
   for (const tag of options.additionalAllowedTags ?? []) allowed.add(tag);
+  if (options.allowFormControls === true) for (const tag of FORM_CONTROLS) allowed.add(tag);
   const attrMap = new Map<string, ReadonlySet<string>>();
   for (const [tag, attrs] of Object.entries(ATTR_BY_TAG)) attrMap.set(tag, attrs);
   for (const [tag, attrs] of Object.entries(options.additionalAllowedAttributes ?? {})) {
@@ -213,7 +234,11 @@ function resolvePolicy(options: SanitizeOptions | undefined): ResolvedPolicy {
     for (const attr of attrs) merged.add(attr);
     attrMap.set(tag, merged);
   }
-  return { allowedTags: allowed, attrByTag: attrMap };
+  return {
+    allowedTags: allowed,
+    attrByTag: attrMap,
+    allowFormControls: options.allowFormControls === true,
+  };
 }
 
 /**
@@ -315,7 +340,7 @@ function sanitizeFragment(node: ParentNode, policy: ResolvedPolicy): void {
 function sanitizeElement(element: Element, policy: ResolvedPolicy): void {
   const tag = element.tagName.toLowerCase();
 
-  if (REMOVE_COMPLETELY.has(tag)) {
+  if (REMOVE_COMPLETELY.has(tag) && !(policy.allowFormControls && FORM_CONTROLS.has(tag))) {
     element.remove();
     return;
   }
