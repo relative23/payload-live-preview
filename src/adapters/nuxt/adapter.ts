@@ -42,7 +42,10 @@ import {
   createPreviewPolicy,
   inlineScriptConfig,
   normalizeCspMode,
+  type PreviewAuthorizationHookResult,
 } from '@adapters/shared/policy';
+import type { PreviewRequestLike } from '@adapters/shared/preview-request';
+import type { DefaultsProfile } from '@core/defaults-profile';
 
 export interface LivePreviewNuxtOptions {
   readonly allowedOrigins?: readonly string[];
@@ -80,6 +83,39 @@ export interface LivePreviewNuxtOptions {
   readonly heartbeatMs?: number;
   /** Skip bindings whose value is identical to the one last applied. Default `false`. */
   readonly skipUnchanged?: boolean;
+  /**
+   * Scope bindings by document owner (`data-payload-owner`): an update
+   * patches only the bindings of the document it names, and a page that
+   * previews several documents stops sharing a field name between them.
+   */
+  readonly scopeBindingsByOwner?: boolean;
+
+  /**
+   * Verify that the request is an authorized preview before anything
+   * privileged is decided. Called only on requests with preview intent.
+   * Return the result of `authorizePreviewRequest()` (or the context it
+   * carries); anything else refuses, and a refusal blocks runtime injection,
+   * CSP changes and nonce exposure regardless of `autoInject` and
+   * `shouldInject`. Without this hook the adapter gates on intent alone, as
+   * it did in 1.0 — announced once per process outside production.
+   * ADR 0006 records the threat model.
+   */
+  readonly authorizePreview?: (
+    request: PreviewRequestLike,
+  ) => PreviewAuthorizationHookResult | Promise<PreviewAuthorizationHookResult>;
+
+  /**
+   * Refuse insecure configuration at startup: requires `authorizePreview`,
+   * explicit non-empty `allowedOrigins` (https outside development), and no
+   * referrer trust. Implied by `defaults: 'v2'`.
+   */
+  readonly strict?: boolean;
+
+  /**
+   * `'v2'` applies every 2.0 default that exists as a 1.x option at once —
+   * the readiness table in ADR 0007. Explicit options override the profile.
+   */
+  readonly defaults?: DefaultsProfile;
 }
 
 // Nitro / H3 types are duck-typed so the adapter compiles without the
@@ -108,7 +144,7 @@ interface NitroAppLike {
   readonly hooks: {
     hook(
       name: 'render:html',
-      fn: (html: RenderHtmlContextLike, context: { event: H3EventLike }) => void,
+      fn: (html: RenderHtmlContextLike, context: { event: H3EventLike }) => void | Promise<void>,
     ): void;
   };
 }
@@ -128,11 +164,19 @@ export function livePreviewNitroPlugin(
 ): (nitroApp: NitroAppLike) => void {
   const policy = createPreviewPolicy(options);
   return (nitroApp) => {
-    nitroApp.hooks.hook('render:html', (html, { event }) => {
-      const decision = policy.decide(toPreviewRequestLike(event));
+    nitroApp.hooks.hook('render:html', async (html, { event }) => {
+      const request = toPreviewRequestLike(event);
+      const decision = await policy.decide(request, {
+        ...(policy.authorizes ? { authorize: () => options.authorizePreview?.(request) } : {}),
+      });
       if (!decision.isPreview) return;
       const nonce = generateCspNonce();
-      if (event.context !== undefined) event.context['livePreviewNonce'] = nonce;
+      if (decision.exposeNonce && event.context !== undefined) {
+        event.context['livePreviewNonce'] = nonce;
+      }
+      if (decision.authorization !== null && event.context !== undefined) {
+        event.context['livePreviewAuthorization'] = decision.authorization;
+      }
       if (decision.inject) {
         html.head.push(policy.scriptTag(nonce));
       }

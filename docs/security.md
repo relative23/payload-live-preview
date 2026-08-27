@@ -9,44 +9,66 @@ corresponding server or browser boundary verifies them.
 
 ### 0. Preview intent is not HTTP authorization
 
-`isPreviewRequest()` is a compatibility-named **intent detector**. It
-checks query parameters, `Sec-Fetch-Dest: iframe`, and optionally an
-admin-origin `Referer`. A client can add a query parameter, cause an
-iframe navigation, or forge/omit request headers outside the browser,
-so a `true` result proves neither identity nor permission to read a
-draft.
+`hasPreviewIntent()` (1.1.0; `isPreviewRequest()` is its deprecated alias)
+is an **intent detector**. It checks query parameters,
+`Sec-Fetch-Dest: iframe`, and optionally an admin-origin `Referer`. A client
+can add a query parameter, cause an iframe navigation, or forge/omit request
+headers outside the browser, so a `true` result proves neither identity nor
+permission to read a draft.
 
-The 1.x adapters use those signals as a delivery optimisation by
-default; they do not authenticate the incoming HTTP request. The other
-related controls have deliberately narrower responsibilities:
+Since 1.1.0 the package expresses the verification itself.
+`authorizePreviewRequest(request, strategy)` turns one of three strategies
+into a branded `AuthorizedPreviewContext` — or a refusal with a named
+outcome, never an exception:
 
-| Control                                 | Responsibility                                                                       | Not a substitute for                                     |
-| --------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------- |
-| `isPreviewRequest()` / `previewSignals` | Detect likely preview intent                                                         | Authentication or authorization                          |
-| `allowedOrigins`                        | Constrain browser `postMessage` senders and optionally match a Referer intent signal | HTTP-session authorization                               |
-| `shouldInject`                          | Filter script insertion by route/content                                             | Authorization; it does not suppress adapter CSP handling |
-| `draft` / privileged fetch headers      | Select and authenticate a Payload data request                                       | Verifying the frontend request that chose them           |
+| Strategy          | What it verifies                                                                                                                 | What it forwards to Payload                  |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `payload-session` | Exactly one named cookie (default `payload-token`) against `GET /api/<users>/me?depth=0`, bounded timeout, auth-collection check | That one cookie, as `context.payloadHeaders` |
+| `signed-token`    | An HMAC-SHA256 token from `issuePreviewToken()` bound to audience, path, locale, purpose, expiry; optional replay store          | Nothing                                      |
+| `verifier`        | Your own async function (SSO, custom cookie, edge auth) returning claims or `null`                                               | Whatever the verifier chose                  |
 
-For a protected preview, perform one application-owned, request-scoped
-server authorization after detecting intent: validate an authenticated
-Payload session, or verify a short-lived signed authorization bound to
-its audience, route, purpose, and expiry. Reuse that result to gate all
-effects of the request:
+Every adapter accepts that verification as `authorizePreview`. It runs only
+on requests with intent, and a refusal blocks **all** response changes the
+adapter owns — runtime injection, CSP directives, nonce exposure —
+regardless of `autoInject` and `shouldInject`. The same context is what
+`createPreviewBindings({ authorization })` and the draft helpers'
+`authorization` option consume, so one verdict gates draft selection,
+attribute emission, and delivery. The threat model, the token format and
+the leakage channels it is designed against are in
+[ADR 0006](architecture/0006-authorized-preview-context.md).
 
-- selecting `draft: true` and forwarding only the minimum required
-  session/header material;
-- bypassing application caches and returning `Cache-Control` set to
-  `private, no-store`;
-- invoking runtime injection and changing CSP/nonces; and
-- exposing any other privileged preview response data.
+The controls keep deliberately narrow responsibilities:
 
-When verification fails or is unavailable, serve the ordinary
-published response without privileged headers or preview-specific
-response changes. Never attach a long-lived API/service key because an
-intent signal was present. `fetchPreviewDocument()` and
-`fetchPreviewGlobal()` construct requests but do not authenticate them;
-their `draft` default remains `true` only for 1.x compatibility, so
-secure callers set it explicitly from the verified decision.
+| Control                                         | Responsibility                                                                       | Not a substitute for                                     |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| `hasPreviewIntent()` / `previewSignals`         | Detect likely preview intent                                                         | Authentication or authorization                          |
+| `authorizePreview` / `AuthorizedPreviewContext` | Verify the request and gate every privileged response change                         | Application caches you own (consume the verdict there)   |
+| `allowedOrigins`                                | Constrain browser `postMessage` senders and optionally match a Referer intent signal | HTTP-session authorization                               |
+| `shouldInject`                                  | Filter script insertion by route/content                                             | Authorization; it does not suppress adapter CSP handling |
+| `draft` / privileged fetch headers              | Select and authenticate a Payload data request                                       | Verifying the frontend request that chose them           |
+
+Without `authorizePreview` the adapters behave as in 1.0 — intent-gated
+delivery — for the rest of 1.x, and say so once per process outside
+production. `strict: true` refuses to start without the hook, without
+explicit `https` admin origins, or with referrer trust; `defaults: 'v2'`
+implies it. Both are the 2.0 defaults, available now.
+
+When verification fails or is unavailable, serve the ordinary published
+response without privileged headers or preview-specific response changes —
+the adapters do exactly that. Bypass application caches and return
+`Cache-Control: private, no-store` on authorized responses. Never attach a
+long-lived API/service key because an intent signal was present.
+`fetchPreviewDocument()` and `fetchPreviewGlobal()` accept the context as
+`authorization`; without it their `draft` default remains `true` only for
+1.x compatibility, so secure callers pass the verified context.
+
+Signed tokens travel in a query parameter by default, which the browser
+history, the `Referer` header, server and CDN logs, and error reporters all
+see. The bindings above make a leaked token worth one path on one site for
+a few minutes; to shrink that further, prefer the session strategy, send
+the token in the `x-preview-token` header where you control the fetch, set
+`Referrer-Policy: no-referrer` on preview responses, exclude `previewToken`
+from log formats and error-reporter URLs, and supply a replay store.
 
 ### 1. Origin allow-list
 
@@ -114,6 +136,56 @@ Full `script-src` management is opt-in (`manageCsp: 'full'`): a per-request cryp
 ### 5b. Policed attribute writes
 
 `data-payload-attribute` bindings write remote-controlled values into attributes. The writer refuses event handlers (`on*`), `style`, `srcdoc`, `formaction`, `form`, `id`, `name`, `is`, `srcset`, non-scalar values, and validates `href`/`src`/`poster`/`cite`/`action` through `isSafeUrl`.
+
+### 5c. DOM clobbering through sanitized `id`, `name` and `data-*`
+
+The sanitizer keeps `id` (a global attribute) and every `data-*` attribute
+on rich-text output, and drops `name` except where a tag's allow-list
+carries it (none of the allowed tags do). Those decisions have a threat
+model, written down here so the 1.3.0 strict sanitizer policy changes them
+deliberately rather than by accident.
+
+**Who can author the input.** Rich text comes from the Payload editor, so
+the author is an editor — someone the site already trusts with its content
+— or an attacker who has taken over an editor's session, or a field whose
+value is user-generated and rendered through `lexicalToHtml()` by the
+application. The third case is the one that matters: the sanitizer promises
+that arbitrary Lexical JSON produces no executable content; it does not
+promise the output is inert to the page's own scripts.
+
+**What `id` and `name` can do.** Browsers expose elements with an `id` as
+properties of `window` and elements with a `name` as properties of
+`document` and of their `<form>`. A rendered `<a id="config">` shadows a
+global `config` a page script reads without declaring it; a rendered
+`<img name="body">` (were `name` allowed) would shadow `document.body`. The
+runtime itself is not clobberable this way: `window.__livePreview` is
+assigned by the runtime before any content it renders, and every internal
+reference is a module binding, never a global lookup. The exposure is the
+application's own scripts, and only those that read undeclared globals.
+
+**What `data-*` can do — the one that matters here.** The runtime binds by
+attribute: an element carrying `data-payload-field="price"` is a binding,
+wherever it came from. Rich text that renders `<span data-payload-field="price">`
+inside a bound `body` field therefore creates a nested binding the runtime
+will patch on the next update, and `data-payload-owner` on such an element
+would claim a document. With owner scoping on, a claimed owner that is not
+the selected document is out of scope and never patched; without it, the
+injected binding receives the field's value like any other. The effect is
+content-only — the runtime writes text through the same sanitized
+renderers — so this is an integrity nuisance an editor could inflict on
+their own page, not an escalation. It is still a binding the author of the
+page did not write.
+
+**Controls today.** Keep rich-text output out of `id`-sensitive scripts —
+declare every global a page script reads. Run with `scopeBindingsByOwner`
+so a claimed owner cannot reach into another document. Treat
+user-generated Lexical as untrusted for a different reason than XSS: it can
+add bindings.
+
+**What 1.3.0 changes (F-21).** The strict sanitizer policy drops `id` and
+every `data-payload-*` attribute from sanitized output and becomes the 2.0
+default; `data-*` in general stays, because it is inert and widely used for
+styling hooks. That row is on the readiness table in ADR 0007.
 
 ### 6. Prototype-pollution guard
 

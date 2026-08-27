@@ -61,6 +61,13 @@ export interface InspectionRevisions {
    */
   readonly superseded: number;
   /**
+   * Updates whose scheduled writes reached the DOM. What is neither
+   * superseded nor completed is in flight or was cancelled; a `superseded`
+   * that tracks `accepted` while `completed` stays low is the editor
+   * out-typing the pipeline.
+   */
+  readonly completed: number;
+  /**
    * Bindings not scheduled because their value was identical to the one last
    * applied. Cumulative since start; always `0` unless `skipUnchanged` is on.
    * A large number next to a small `accepted` is the optimisation working; a

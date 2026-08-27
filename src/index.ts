@@ -54,8 +54,38 @@ export {
   type SanitizerDocument,
 } from './security';
 
+// Authorized preview context — the one verdict privileged preview decisions
+// are keyed on. See docs/architecture/0006-authorized-preview-context.md.
+export {
+  authorizePreviewRequest,
+  isAuthorizedPreviewContext,
+  issuePreviewToken,
+} from './security/preview-authorization';
+export type {
+  AuthorizedPreviewContext,
+  AuthorizedPreviewScope,
+  FetchLike,
+  IssuePreviewTokenOptions,
+  PayloadSessionStrategy,
+  PreviewAuthorization,
+  PreviewAuthorizationOutcome,
+  PreviewAuthorizationRequest,
+  PreviewAuthorizationStrategy,
+  PreviewAuthorizationStrategyName,
+  PreviewTokenClaims,
+  PreviewTokenReplayStore,
+  PreviewTokenTransport,
+  PreviewVerifierClaims,
+  SignedTokenStrategy,
+  SubtleCryptoLike,
+  VerifierStrategy,
+} from './security/preview-authorization';
+export type { DefaultsProfile, EventSourcePolicy } from './core/defaults-profile';
+
 // Server-side preview-request detection — for hand-rolled middleware
 export {
+  hasPreviewIntent,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- kept through 1.x (ADR 0007, entry 1)
   isPreviewRequest,
   type PreviewRequestLike,
   type PreviewRequestOptions,
@@ -147,6 +177,9 @@ export type {
   OwnerBindingAttributes,
   PreviewBindings,
   PreviewBindingsOptions,
+  PreviewBindingsBooleanOptions,
+  PreviewBindingsCommonOptions,
+  PreviewBindingsContextOptions,
   SuppressedBinding,
   ValueAt,
 } from './dsl';

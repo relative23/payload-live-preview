@@ -29,18 +29,22 @@ interface FakeEvent {
 
 /** A Nitro app that captures the `render:html` hook so a test can fire it. */
 function fakeNitro() {
-  let hook: ((html: { head: string[] }, ctx: { event: FakeEvent }) => void) | undefined;
+  let hook:
+    ((html: { head: string[] }, ctx: { event: FakeEvent }) => void | Promise<void>) | undefined;
   return {
     app: {
       hooks: {
-        hook(_name: 'render:html', fn: (h: { head: string[] }, c: { event: FakeEvent }) => void) {
+        hook(
+          _name: 'render:html',
+          fn: (h: { head: string[] }, c: { event: FakeEvent }) => void | Promise<void>,
+        ) {
           hook = fn;
         },
       },
     },
-    render(event: FakeEvent): { head: string[]; headers: Record<string, string> } {
+    async render(event: FakeEvent): Promise<{ head: string[]; headers: Record<string, string> }> {
       const head: string[] = [];
-      hook?.({ head }, { event });
+      await hook?.({ head }, { event });
       return { head, headers: event.context?.['__headers'] as Record<string, string> };
     },
   };
@@ -67,52 +71,52 @@ function event(url = '/', headers: Record<string, string | undefined> = {}): Fak
 const IFRAME = { 'sec-fetch-dest': 'iframe' } as const;
 
 describe('livePreviewNitroPlugin — when it injects', () => {
-  it('adds nothing to the head for an ordinary request', () => {
+  it('adds nothing to the head for an ordinary request', async () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ allowedOrigins: [ADMIN] })(nitro.app);
-    expect(nitro.render(event()).head).toEqual([]);
+    expect((await nitro.render(event())).head).toEqual([]);
   });
 
-  it('pushes exactly one script tag for an iframe load', () => {
+  it('pushes exactly one script tag for an iframe load', async () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ allowedOrigins: [ADMIN] })(nitro.app);
-    const { head } = nitro.render(event('/', IFRAME));
+    const { head } = await nitro.render(event('/', IFRAME));
 
     expect(head).toHaveLength(1);
     expect(head[0]).toContain('__LIVE_PREVIEW_CONFIG__');
     expect(head[0]).toMatch(/^<script/u);
   });
 
-  it('injects for a query-parameter intent signal', () => {
+  it('injects for a query-parameter intent signal', async () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ allowedOrigins: [ADMIN] })(nitro.app);
-    expect(nitro.render(event('/?preview=true')).head).toHaveLength(1);
+    expect((await nitro.render(event('/?preview=true'))).head).toHaveLength(1);
   });
 
-  it("injects on every render with inject: 'always'", () => {
+  it("injects on every render with inject: 'always'", async () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ inject: 'always' })(nitro.app);
-    expect(nitro.render(event()).head).toHaveLength(1);
+    expect((await nitro.render(event())).head).toHaveLength(1);
   });
 
-  it('honours autoInject: false while still writing CSP', () => {
+  it('honours autoInject: false while still writing CSP', async () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ inject: 'always', autoInject: false, allowedOrigins: [ADMIN] })(
       nitro.app,
     );
-    const rendered = nitro.render(event());
+    const rendered = await nitro.render(event());
 
     expect(rendered.head).toEqual([]);
     expect(rendered.headers['content-security-policy']).toContain('frame-ancestors');
   });
 
-  it('nonces the injected tag with the same value it stashes on the context', () => {
+  it('nonces the injected tag with the same value it stashes on the context', async () => {
     // A consumer reads `livePreviewNonce` to nonce its own scripts. If the two
     // ever diverged the injected script would be the one CSP rejects.
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ inject: 'always', manageCsp: 'full' })(nitro.app);
     const ev = event();
-    const { head } = nitro.render(ev);
+    const { head } = await nitro.render(ev);
 
     const nonce = ev.context?.['livePreviewNonce'];
     expect(typeof nonce).toBe('string');
@@ -121,35 +125,37 @@ describe('livePreviewNitroPlugin — when it injects', () => {
 });
 
 describe('livePreviewNitroPlugin — CSP', () => {
-  it('adds frame-ancestors for the configured admin origin', () => {
+  it('adds frame-ancestors for the configured admin origin', async () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ allowedOrigins: [ADMIN] })(nitro.app);
-    const csp = nitro.render(event('/', IFRAME)).headers['content-security-policy'] ?? '';
+    const csp = (await nitro.render(event('/', IFRAME))).headers['content-security-policy'] ?? '';
 
     expect(csp).toContain('frame-ancestors');
     expect(csp).toContain(ADMIN);
   });
 
-  it('keeps the directives an existing policy already declared', () => {
+  it('keeps the directives an existing policy already declared', async () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ allowedOrigins: [ADMIN] })(nitro.app);
     const ev = event('/', IFRAME);
     (ev.context?.['__headers'] as Record<string, string>)['content-security-policy'] =
       "default-src 'self'; img-src *";
-    const csp = nitro.render(ev).headers['content-security-policy'] ?? '';
+    const csp = (await nitro.render(ev)).headers['content-security-policy'] ?? '';
 
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain('img-src *');
     expect(csp).toContain('frame-ancestors');
   });
 
-  it('writes no CSP when manageCsp is false', () => {
+  it('writes no CSP when manageCsp is false', async () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ allowedOrigins: [ADMIN], manageCsp: false })(nitro.app);
-    expect(nitro.render(event('/', IFRAME)).headers['content-security-policy']).toBeUndefined();
+    expect(
+      (await nitro.render(event('/', IFRAME))).headers['content-security-policy'],
+    ).toBeUndefined();
   });
 
-  it('still injects, without throwing, when the event exposes no response object', () => {
+  it('still injects, without throwing, when the event exposes no response object', async () => {
     // Nitro can render without a node response — a prerender pass, for one.
     // Throwing there would fail the whole build over a header nobody can set,
     // and skipping the injection would leave that page without a runtime.
@@ -157,10 +163,8 @@ describe('livePreviewNitroPlugin — CSP', () => {
     livePreviewNitroPlugin({ inject: 'always', allowedOrigins: [ADMIN] })(nitro.app);
     const bare: FakeEvent = { path: '/', context: {} };
 
-    let head: string[] = [];
-    expect(() => {
-      head = nitro.render(bare).head;
-    }).not.toThrow();
+    // A rejection here is the failure the comment above describes.
+    const { head } = await nitro.render(bare);
     expect(head).toHaveLength(1);
     expect(head[0]).toContain('__LIVE_PREVIEW_CONFIG__');
   });
@@ -222,31 +226,29 @@ describe('buildLivePreviewCsp', () => {
 });
 
 describe('livePreviewNitroPlugin — sparse Nitro events', () => {
-  it('injects for an event that carries no context at all', () => {
+  it('injects for an event that carries no context at all', async () => {
     // A prerender pass can hand the hook an event with neither context nor a
     // node response. Reaching into `context` unguarded would throw and fail
     // the whole build.
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ inject: 'always' })(nitro.app);
 
-    let head: string[] = [];
-    expect(() => {
-      head = nitro.render({ path: '/' }).head;
-    }).not.toThrow();
+    // A rejection here is the failure the comment above describes.
+    const { head } = await nitro.render({ path: '/' });
     expect(head).toHaveLength(1);
   });
 
-  it('falls back to the request url when the event has no path', () => {
+  it('falls back to the request url when the event has no path', async () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ allowedOrigins: [ADMIN] })(nitro.app);
     const ev: FakeEvent = {
       context: {},
       node: { req: { url: '/?preview=true', headers: {} } },
     };
-    expect(nitro.render(ev).head).toHaveLength(1);
+    expect((await nitro.render(ev)).head).toHaveLength(1);
   });
 
-  it('reads a header that arrives as a string array', () => {
+  it('reads a header that arrives as a string array', async () => {
     // Node hands repeated headers over as string[]. Comparing the raw array
     // against 'iframe' never matches, so the preview would silently not load.
     // The host is deliberately not the probe here: a comma-joined host still
@@ -260,7 +262,7 @@ describe('livePreviewNitroPlugin — sparse Nitro events', () => {
         req: { url: '/', headers: { 'sec-fetch-dest': ['iframe'] as unknown as string } },
       },
     };
-    expect(nitro.render(ev).head).toHaveLength(1);
+    expect((await nitro.render(ev)).head).toHaveLength(1);
   });
 });
 

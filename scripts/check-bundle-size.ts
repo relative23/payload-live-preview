@@ -17,25 +17,30 @@ const PACKAGE_JSON = resolve(ROOT, 'package.json');
 // Budgets include narrow headroom for patch-level correctness fixes while still
 // failing the unminified 1.0.4 artifacts. Public names and source maps are retained.
 const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
-  // Adapter rows raised 2026-08-27 (+~200 B gzip, +~180 B brotli each) when the
-  // four adapters moved onto the shared preview policy: one decision path per
-  // bundle costs a little more than straight-line code the minifier could fold,
-  // and the duplication it replaced was free per bundle. Measured, with ~1 % headroom.
-  'adapters/astro/index.js': { raw: 80_500, gzip: 25_300, brotli: 22_400 },
-  'adapters/astro/middleware-entry.js': { raw: 76_500, gzip: 24_150, brotli: 21_300 },
-  'adapters/nextjs/index.js': { raw: 77_000, gzip: 24_100, brotli: 21_300 },
-  'adapters/nuxt/index.js': { raw: 76_500, gzip: 24_150, brotli: 21_300 },
-  'adapters/sveltekit/index.js': { raw: 76_000, gzip: 24_050, brotli: 21_200 },
+  // Adapter rows raised twice on 2026-08-27, measured with ~1 % headroom:
+  // +~200 B gzip when the four adapters moved onto the shared preview policy
+  // (one decision path per bundle costs more than straight-line code the
+  // minifier could fold), then +~1.2 KB gzip for the authorization gate —
+  // authorizePreview, strict-mode checks, the defaults profile, the development
+  // warnings, and the runtime's source policy embedded in every adapter bundle.
+  // The HMAC/session code is not in these bundles; the brand check is imported
+  // from the `types` leaf for exactly that reason. core.* rows: +~200 B gzip for
+  // the message bus source policy (eventSourcePolicy), same date.
+  'adapters/astro/index.js': { raw: 85_000, gzip: 26_800, brotli: 23_700 },
+  'adapters/astro/middleware-entry.js': { raw: 80_500, gzip: 25_400, brotli: 22_400 },
+  'adapters/nextjs/index.js': { raw: 80_500, gzip: 25_300, brotli: 22_350 },
+  'adapters/nuxt/index.js': { raw: 80_500, gzip: 25_400, brotli: 22_400 },
+  'adapters/sveltekit/index.js': { raw: 80_200, gzip: 25_300, brotli: 22_300 },
   'codegen-astro.js': { raw: 13_000, gzip: 4_300, brotli: 3_900 },
   'codegen-cli.js': { raw: 15_000, gzip: 4_800, brotli: 4_300 },
   'codegen.cjs': { raw: 13_000, gzip: 4_100, brotli: 3_700 },
   'codegen.js': { raw: 13_000, gzip: 4_100, brotli: 3_700 },
   'doctor-cli.js': { raw: 10_500, gzip: 4_400, brotli: 3_800 },
   'doctor.js': { raw: 8_700, gzip: 3_700, brotli: 3_150 },
-  'core.cjs': { raw: 80_000, gzip: 24_800, brotli: 21_900 },
-  'core.js': { raw: 79_500, gzip: 24_700, brotli: 21_800 },
-  'index.cjs': { raw: 162_500, gzip: 50_200, brotli: 35_100 },
-  'index.js': { raw: 162_000, gzip: 50_000, brotli: 35_100 },
+  'core.cjs': { raw: 81_100, gzip: 25_300, brotli: 22_350 },
+  'core.js': { raw: 80_750, gzip: 25_200, brotli: 22_300 },
+  'index.cjs': { raw: 172_800, gzip: 53_850, brotli: 38_100 },
+  'index.js': { raw: 172_250, gzip: 53_550, brotli: 37_950 },
   'payload.cjs': { raw: 1_100, gzip: 600, brotli: 500 },
   'payload.js': { raw: 1_100, gzip: 600, brotli: 500 },
 };

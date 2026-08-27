@@ -40,3 +40,23 @@ This makes previews work in SSR/SSG regions without a client-side component owne
 outside hydrated React/Vue/Svelte islands: a later component render can overwrite
 direct DOM patches. Inside such islands, use the official framework hook so the
 owning component tree performs the update.
+
+## From `1.0.x` to `1.1.0`
+
+Nothing breaks. Three things are new, and one name changes:
+
+- `isPreviewRequest()` → `hasPreviewIntent()`. Same signature, honest name.
+  The old name stays for the rest of 1.x and warns once per process outside
+  production. It is removed in 2.0 ([ADR 0007](architecture/0007-v2-defaults-and-renames-ledger.md), entry 1).
+- Every adapter accepts `authorizePreview`. Without it the adapter behaves
+  as before and says so once outside production; with it a refusal blocks
+  injection, CSP and the nonce. `strict: true` requires it, plus explicit
+  `https` admin origins and no referrer trust.
+- `defaults: 'v2'` applies every 2.0 default that exists as an option
+  (`strict`, query-only `previewSignals`, `skipUnchanged`,
+  `disableReferrerDetection`, `eventSourcePolicy: 'parent-or-opener'`).
+  Set it now to run today what 2.0 will run by default; override any row
+  explicitly where you need the old behaviour.
+- `createPreviewBindings({ authorized: boolean })` still works; prefer
+  `{ authorization: context }` with the context from `authorizePreviewRequest()`.
+  Under `strict` the boolean is refused.

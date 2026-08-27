@@ -43,6 +43,14 @@ export interface LivePreviewEventMap {
     readonly data: PayloadLivePreviewData;
     /** Runtime-populated ordering metadata; optional for 1.x producer compatibility. */
     readonly revision?: number;
+    /** When the runtime accepted the message, Unix milliseconds. Optional for 1.x producer compatibility. */
+    readonly receivedAt?: number;
+    /**
+     * What produced the update. `'patch'` — a postMessage from the admin — is
+     * the only source until fragment strategies arrive; then it names the
+     * strategy. Optional for 1.x producer compatibility.
+     */
+    readonly source?: 'patch';
     readonly cancel: () => void;
   };
 
@@ -57,6 +65,14 @@ export interface LivePreviewEventMap {
     readonly durationMs: number;
     /** Runtime-populated ordering metadata; optional for 1.x producer compatibility. */
     readonly revision?: number;
+    /** When the runtime accepted the message, Unix milliseconds. Optional for 1.x producer compatibility. */
+    readonly receivedAt?: number;
+    /**
+     * What produced the update. `'patch'` — a postMessage from the admin — is
+     * the only source until fragment strategies arrive; then it names the
+     * strategy. Optional for 1.x producer compatibility.
+     */
+    readonly source?: 'patch';
   };
 
   /** Fired for each successful, still-current element write. */
@@ -67,6 +83,14 @@ export interface LivePreviewEventMap {
     readonly nextValue: unknown;
     /** Runtime-populated ordering metadata; optional for 1.x producer compatibility. */
     readonly revision?: number;
+    /** When the runtime accepted the message, Unix milliseconds. Optional for 1.x producer compatibility. */
+    readonly receivedAt?: number;
+    /**
+     * What produced the update. `'patch'` — a postMessage from the admin — is
+     * the only source until fragment strategies arrive; then it names the
+     * strategy. Optional for 1.x producer compatibility.
+     */
+    readonly source?: 'patch';
   };
 
   /** Fired whenever the element cache is rebuilt (initial scan or MutationObserver-triggered). */

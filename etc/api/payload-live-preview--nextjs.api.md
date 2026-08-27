@@ -4,6 +4,9 @@
 
 ```ts
 
+import { D } from '../../policy-Ba9mk0NH.js';
+import { P } from '../../policy-Ba9mk0NH.js';
+
 // @public
 export function createLivePreviewMiddleware(options?: LivePreviewNextOptions): (request: Request, response: Response) => Promise<Response>;
 
@@ -12,12 +15,14 @@ export interface LivePreviewNextOptions {
     // (undocumented)
     readonly allowedOrigins?: readonly string[];
     readonly apiRoute?: string;
+    readonly authorizePreview?: (request: Request) => P | Promise<P>;
     // (undocumented)
     readonly autoInject?: boolean;
     // (undocumented)
     readonly debounceMs?: number;
     // (undocumented)
     readonly debug?: boolean;
+    readonly defaults?: D;
     // (undocumented)
     readonly frameAncestorsExtra?: readonly string[];
     readonly heartbeatMs?: number;
@@ -26,11 +31,13 @@ export interface LivePreviewNextOptions {
     readonly mergeDepth?: number;
     readonly previewQueryParams?: readonly string[];
     readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
+    readonly scopeBindingsByOwner?: boolean;
     // (undocumented)
     readonly scriptSrcExtra?: readonly string[];
     readonly serverURL?: string;
     readonly shouldInject?: (request: Request) => boolean;
     readonly skipUnchanged?: boolean;
+    readonly strict?: boolean;
     readonly strictDynamic?: boolean;
 }
 

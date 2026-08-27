@@ -4,6 +4,12 @@
  * @module @client/config
  */
 
+import {
+  runtimeDefaultsFor,
+  type DefaultsProfile,
+  type EventSourcePolicy,
+} from '@core/defaults-profile';
+
 export interface LivePreviewClientConfig {
   /** Explicit additional trusted origins. */
   readonly allowedOrigins?: readonly string[];
@@ -81,6 +87,18 @@ export interface LivePreviewClientConfig {
   readonly disableReferrerDetection?: boolean;
   /** Disable the localhost dev-mode pattern matcher. */
   readonly disableLocalhostMatching?: boolean;
+  /**
+   * Which windows may post updates: `'any'` that passes the origin check
+   * (default), or `'parent-or-opener'` — only the window that framed or
+   * opened the page. `defaults: 'v2'` sets the latter.
+   */
+  readonly eventSourcePolicy?: EventSourcePolicy;
+  /**
+   * `'v2'` applies every 2.0 runtime default that exists as a 1.x option —
+   * `skipUnchanged`, `disableReferrerDetection`, `eventSourcePolicy` — at
+   * once. Explicit options override the profile. ADR 0007.
+   */
+  readonly defaults?: DefaultsProfile;
   /** Auto-start the runtime in the constructor. Defaults to `true`. */
   readonly autoStart?: boolean;
   /**
@@ -97,4 +115,19 @@ export interface LivePreviewClientConfig {
     token: string | undefined,
     origin: string,
   ) => boolean | Promise<boolean>;
+}
+
+/**
+ * The configuration with the `defaults` profile applied: explicit options
+ * win, the profile fills the rest, `'v1'` (or none) changes nothing.
+ */
+export function withProfileDefaults(config: LivePreviewClientConfig): LivePreviewClientConfig {
+  if (config.defaults !== 'v2') return config;
+  const rows = runtimeDefaultsFor('v2');
+  return {
+    ...config,
+    skipUnchanged: config.skipUnchanged ?? rows.skipUnchanged,
+    disableReferrerDetection: config.disableReferrerDetection ?? rows.disableReferrerDetection,
+    eventSourcePolicy: config.eventSourcePolicy ?? rows.eventSourcePolicy,
+  };
 }

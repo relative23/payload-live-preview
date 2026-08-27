@@ -5,6 +5,30 @@
 ```ts
 
 // @public
+const AUTHORIZED_PREVIEW_BRAND: unique symbol;
+
+// @public
+export interface AuthorizedPreviewContext {
+    // (undocumented)
+    readonly [AUTHORIZED_PREVIEW_BRAND]: true;
+    readonly authorizedAt: number;
+    readonly expiresAt: number | undefined;
+    readonly payloadHeaders: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly scope: AuthorizedPreviewScope;
+    // (undocumented)
+    readonly strategy: PreviewAuthorizationStrategyName;
+    readonly subject: string | undefined;
+}
+
+// @public
+export interface AuthorizedPreviewScope {
+    readonly audience?: string;
+    readonly locale?: string;
+    readonly path?: string;
+}
+
+// @public
 export function bind<T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions): FieldBindingAttributes;
 
 // @public
@@ -12,7 +36,10 @@ export function bindByPath<T = Record<string, unknown>>(picker: (data: T) => unk
 
 // @public (undocumented)
 export interface BindOptions {
+    readonly alt?: string;
+    readonly arrayTemplate?: string;
     readonly attribute?: string;
+    readonly href?: string;
     readonly html?: boolean;
     readonly locale?: string;
     readonly richtext?: boolean;
@@ -56,6 +83,9 @@ export const CORE_ENTRY = true;
 
 // @public
 export function createPreviewBindings(options: PreviewBindingsOptions): PreviewBindings;
+
+// @public
+export type DefaultsProfile = 'v1' | 'v2';
 
 // @public
 export function detectInitialLocale(): string;
@@ -113,11 +143,20 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
 export type EventHandler<TPayload> = (payload: TPayload) => void | Promise<void>;
 
 // @public
+export type EventSourcePolicy = 'any' | 'parent-or-opener';
+
+// @public
 export interface FieldBindingAttributes {
+    // (undocumented)
+    readonly 'data-payload-alt'?: string;
+    // (undocumented)
+    readonly 'data-payload-array-template'?: string;
     // (undocumented)
     readonly 'data-payload-attribute'?: string;
     // (undocumented)
     readonly 'data-payload-field': string;
+    // (undocumented)
+    readonly 'data-payload-href'?: string;
     // (undocumented)
     readonly 'data-payload-html'?: string;
     // (undocumented)
@@ -205,6 +244,7 @@ export interface InspectionProtocol {
 export interface InspectionRevisions {
     readonly accepted: number;
     readonly active: number | undefined;
+    readonly completed: number;
     readonly skippedUnchanged: number;
     readonly superseded: number;
 }
@@ -222,6 +262,9 @@ export interface InspectionScheduler {
     readonly visibilityGateActive: boolean;
     readonly visibilityGateThreshold: number;
 }
+
+// @public
+export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext;
 
 // @public
 export function isDevMode(): boolean;
@@ -246,7 +289,7 @@ export const LIBRARY_PROTOCOL_VERSION = 4;
 
 // @public
 export class LivePreviewClient {
-    constructor(config?: LivePreviewClientConfig);
+    constructor(rawConfig?: LivePreviewClientConfig);
     destroy(): Promise<void>;
     get destroyed(): boolean;
     get events(): EventEmitter;
@@ -272,11 +315,13 @@ export interface LivePreviewClientConfig {
     readonly autoStart?: boolean;
     readonly debounceMs?: number;
     readonly debug?: boolean;
+    readonly defaults?: DefaultsProfile;
     readonly dependencies?: Readonly<Record<string, readonly string[]>>;
     readonly disableLocalhostMatching?: boolean;
     readonly disableReferrerDetection?: boolean;
     readonly disableVisibilityGate?: boolean;
     readonly enableA11y?: boolean;
+    readonly eventSourcePolicy?: EventSourcePolicy;
     readonly heartbeatMs?: number;
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
@@ -296,10 +341,14 @@ export interface LivePreviewEventMap {
         readonly updatedCount: number;
         readonly durationMs: number;
         readonly revision?: number;
+        readonly receivedAt?: number;
+        readonly source?: 'patch';
     };
     readonly beforeUpdate: {
         readonly data: PayloadLivePreviewData;
         readonly revision?: number;
+        readonly receivedAt?: number;
+        readonly source?: 'patch';
         readonly cancel: () => void;
     };
     readonly cacheRefresh: {
@@ -327,6 +376,8 @@ export interface LivePreviewEventMap {
         readonly previousValue: unknown;
         readonly nextValue: unknown;
         readonly revision?: number;
+        readonly receivedAt?: number;
+        readonly source?: 'patch';
     };
     readonly error: {
         readonly error: Error;
@@ -537,6 +588,9 @@ interface PluginEvents extends EventEmitter {
 type Prev<N extends 0 | 1 | 2 | 3> = N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
 
 // @public
+export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
+
+// @public
 export interface PreviewBindings {
     readonly authorized: boolean;
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
@@ -544,11 +598,30 @@ export interface PreviewBindings {
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @public (undocumented)
-export interface PreviewBindingsOptions {
+// @public
+export interface PreviewBindingsBooleanOptions extends PreviewBindingsCommonOptions {
+    // (undocumented)
+    readonly authorization?: undefined;
+    // (undocumented)
     readonly authorized: boolean;
-    readonly owner?: string;
 }
+
+// @public (undocumented)
+export interface PreviewBindingsCommonOptions {
+    readonly owner?: string;
+    readonly strict?: boolean;
+}
+
+// @public
+export interface PreviewBindingsContextOptions extends PreviewBindingsCommonOptions {
+    // (undocumented)
+    readonly authorization: AuthorizedPreviewContext | null;
+    // (undocumented)
+    readonly authorized?: undefined;
+}
+
+// @public (undocumented)
+export type PreviewBindingsOptions = PreviewBindingsContextOptions | PreviewBindingsBooleanOptions;
 
 // Warning: (ae-forgotten-export) The symbol "CAPABILITY_REQUIREMENTS" needs to be exported by the entry point core.d.ts
 //
@@ -618,7 +691,7 @@ interface WebCryptoLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/core.d.ts:257:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point core.d.ts
+// dist/core.d.ts:264:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point core.d.ts
 
 // (No @packageDocumentation comment for this package)
 

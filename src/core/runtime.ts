@@ -52,6 +52,7 @@ type RuntimeBuildConfig = readonly [
   disableLocalhostMatching?: boolean,
   scopeBindingsByOwner?: boolean,
   skipUnchanged?: boolean,
+  eventSourcePolicy?: 'any' | 'parent-or-opener',
 ];
 
 declare const __LIVE_PREVIEW_CONFIG__: RuntimeBuildConfig;
@@ -117,6 +118,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     disableLocalhostMatching = false,
     scopeBindingsByOwner = false,
     skipUnchanged = false,
+    eventSourcePolicy = 'any',
   ] = readBuildConfig();
 
   const detector = new OriginDetector({
@@ -145,6 +147,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     lockedOrigin: () => detector.lockedOrigin,
     readyTargets: detector.enumerate(),
     emitter,
+    eventSourcePolicy,
     // Guard on typeof — a config literal baked by an older generator
     // (or a hand-written one in tests) may not carry the merge fields.
     ...(serverURL !== ''

@@ -13,12 +13,12 @@
  * relationships degrade to IDs after the first edit.
  *
  * These helpers do not authenticate or authorize requests.
- * `isPreviewRequest()` detects client-controlled preview intent only.
+ * `hasPreviewIntent()` detects client-controlled preview intent only.
  * Verify an application-owned server session or short-lived signed
  * authorization first, and use that one decision to gate `draft`, any
  * privileged headers, cache bypass, CSP changes, and runtime injection.
  * Never attach a long-lived service/API key merely because
- * `isPreviewRequest()` returned `true`.
+ * `hasPreviewIntent()` returned `true`.
  *
  * Isomorphic and dependency-free: works in Astro frontmatter,
  * SvelteKit `load`, Next.js server components, or any Node/edge
@@ -28,8 +28,8 @@
  * // Astro frontmatter. `verifyAppPreviewSession` is application-owned,
  * // server-only code; it validates the request and returns only the
  * // minimal Payload session headers needed for this request.
- * const hasPreviewIntent = isPreviewRequest(Astro.request);
- * const authorization = hasPreviewIntent
+ * const intent = hasPreviewIntent(Astro.request);
+ * const authorization = intent
  *   ? await verifyAppPreviewSession(Astro.request)
  *   : null;
  * const page = await fetchPreviewDocument<Page>({
@@ -43,6 +43,11 @@
  *
  * @module @preview-fetch
  */
+
+import {
+  isAuthorizedPreviewContext,
+  type AuthorizedPreviewContext,
+} from '@/types/authorized-preview';
 
 export interface PreviewFetchBaseOptions {
   /** Payload server origin, e.g. `https://cms.example.com`. */
@@ -59,9 +64,17 @@ export interface PreviewFetchBaseOptions {
   /**
    * Fetch the draft version. Defaults to `true` for 1.x compatibility.
    * Set this from a verified authorization decision, not directly
-   * from `isPreviewRequest()`, whose result only expresses intent.
+   * from `hasPreviewIntent()`, whose result only expresses intent.
    */
   readonly draft?: boolean;
+  /**
+   * The verdict from `authorizePreviewRequest()`, or `null` for a public
+   * request. When given it governs: `draft` follows it (a real context reads
+   * the draft, anything else the published document, whatever `draft` says)
+   * and the context's `payloadHeaders` are forwarded. Prefer this over
+   * setting `draft` and `headers` by hand.
+   */
+  readonly authorization?: AuthorizedPreviewContext | null;
   /** Locale to fetch. */
   readonly locale?: string;
   /**
@@ -143,7 +156,7 @@ function apiBase(options: PreviewFetchBaseOptions): string {
 function baseParams(options: PreviewFetchBaseOptions): URLSearchParams {
   const params = new URLSearchParams();
   params.set('depth', String(options.depth ?? 1));
-  if (options.draft ?? true) params.set('draft', 'true');
+  if (wantsDraft(options)) params.set('draft', 'true');
   if (options.locale !== undefined) params.set('locale', options.locale);
   return params;
 }
@@ -177,6 +190,9 @@ async function requestJson<T>(url: string, options: PreviewFetchBaseOptions): Pr
       headers: {
         Accept: 'application/json',
         ...(options.headers ?? {}),
+        ...(isAuthorizedPreviewContext(options.authorization)
+          ? options.authorization.payloadHeaders
+          : {}),
       },
     });
     if (!response.ok) return null;
@@ -186,4 +202,10 @@ async function requestJson<T>(url: string, options: PreviewFetchBaseOptions): Pr
   } catch {
     return null;
   }
+}
+
+/** The verdict decides when it is present; the 1.x default (`draft: true`) applies only without one. */
+function wantsDraft(options: PreviewFetchBaseOptions): boolean {
+  if (options.authorization !== undefined) return isAuthorizedPreviewContext(options.authorization);
+  return options.draft ?? true;
 }

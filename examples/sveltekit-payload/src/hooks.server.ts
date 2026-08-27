@@ -1,20 +1,37 @@
 /**
- * SvelteKit server hook wiring for Payload Live Preview.
+ * SvelteKit server hook for the live preview example.
  *
  * `livePreviewHandle` injects the inline runtime into the `<head>` of
- * preview responses (detected via `?preview=true`, `Sec-Fetch-Dest:
- * iframe`, or an admin referer) and merges the CSP `frame-ancestors`
- * so the Payload admin may embed the page. The default
- * `inject: 'preview-only'` mode is kept on purpose: the mock admin
- * loads `/` inside an iframe, so the request carries
- * `Sec-Fetch-Dest: iframe` and gets the script — while a plain
- * top-level navigation to `/` stays untouched, which the E2E spec
- * relies on for its origin-enforcement test.
+ * responses that carry preview intent, merges a `frame-ancestors` CSP so
+ * the admin may frame the page, and — since 1.1.0 — verifies that intent
+ * before doing either. The hook below uses the `signed-token` strategy: a
+ * request is a preview only if it carries a token bound to this site, this
+ * path and the next few minutes. Everything else is a public response,
+ * byte for byte.
+ *
+ * `defaults: 'v2'` implies `strict`: the handle refuses to start without the
+ * hook and requires https admin origins outside development; the example
+ * runs under `vite dev`, where http://localhost is allowed.
  */
 import { livePreviewHandle } from 'payload-live-preview/sveltekit';
+import { authorizePreviewRequest } from 'payload-live-preview';
+import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview';
 
 export const handle = livePreviewHandle({
   allowedOrigins: ['http://localhost:4175'],
   debug: true,
   debounceMs: 25,
+  // Two documents may share a field name on one page (`/owners`); an update
+  // names its document and patches only that one.
+  scopeBindingsByOwner: true,
+  // Every 2.0 default that exists today (ADR 0007): strict configuration,
+  // query-only intent, no referrer trust, updates only from the window that
+  // framed or opened the page, unchanged bindings skipped.
+  defaults: 'v2',
+  authorizePreview: (request) =>
+    authorizePreviewRequest(request, {
+      type: 'signed-token',
+      secret: PREVIEW_TOKEN_SECRET,
+      audience: PREVIEW_AUDIENCE,
+    }),
 });

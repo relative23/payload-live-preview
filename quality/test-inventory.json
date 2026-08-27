@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 104,
-    "suites": 310,
-    "tests": 1543,
+    "files": 112,
+    "suites": 337,
+    "tests": 1634,
     "benchmarks": 11
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 8,
-      "suites": 14,
-      "tests": 30,
+      "files": 9,
+      "suites": 17,
+      "tests": 39,
       "benchmarks": 0
     },
     "integration": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 85,
-      "suites": 279,
-      "tests": 1444,
+      "files": 92,
+      "suites": 303,
+      "tests": 1526,
       "benchmarks": 0
     }
   },
@@ -138,6 +138,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/owner-scoping.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/scenarios.spec.ts",
       "group": "e2e",
       "suites": 1,
@@ -147,8 +154,8 @@
     {
       "path": "tests/e2e/specs/sveltekit-live-preview.spec.ts",
       "group": "e2e",
-      "suites": 2,
-      "tests": 4,
+      "suites": 4,
+      "tests": 10,
       "benchmarks": 0
     },
     {
@@ -215,6 +222,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/authorize-preview.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/nextjs.test.ts",
       "group": "unit",
       "suites": 6,
@@ -229,6 +243,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/policy-authorization.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 20,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
@@ -238,8 +259,8 @@
     {
       "path": "tests/unit/adapters/preview-request.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 11,
+      "suites": 4,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -341,6 +362,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/defaults-profile.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/diagnostic-codes.test.ts",
       "group": "unit",
       "suites": 4,
@@ -390,6 +418,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/message-bus-source.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/message-bus.test.ts",
       "group": "unit",
       "suites": 3,
@@ -422,6 +457,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/revision-contract.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -511,15 +553,15 @@
     {
       "path": "tests/unit/dsl/bind.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 12,
+      "suites": 3,
+      "tests": 13,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/dsl/preview-bindings.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 14,
+      "suites": 4,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -651,8 +693,8 @@
     {
       "path": "tests/unit/preview-fetch.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 7,
+      "suites": 3,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -775,6 +817,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/security/preview-authorization.test.ts",
+      "group": "unit",
+      "suites": 5,
+      "tests": 20,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/security/sanitizer.test.ts",
       "group": "unit",
       "suites": 11,
@@ -793,6 +842,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/types/authorized-preview.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     }
   ]
