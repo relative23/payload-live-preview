@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 138,
-    "suites": 390,
-    "tests": 1756,
+    "files": 142,
+    "suites": 394,
+    "tests": 1772,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 111,
-      "suites": 346,
-      "tests": 1616,
+      "files": 115,
+      "suites": 350,
+      "tests": 1632,
       "benchmarks": 0
     }
   },
@@ -446,6 +446,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/dual-mode.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/fragment-strategy.test.ts",
       "group": "unit",
       "suites": 1,
@@ -670,6 +677,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/doctor/v2-readiness.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/dsl/bind.test.ts",
       "group": "unit",
       "suites": 3,
@@ -772,6 +786,20 @@
       "group": "unit",
       "suites": 13,
       "tests": 46,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/codemods.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/runner.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {

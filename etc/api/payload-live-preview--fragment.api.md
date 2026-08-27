@@ -54,6 +54,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly FragmentSuperseded: "LP0804";
     readonly RouteRefreshLoop: "LP0805";
     readonly FragmentStrategyUnavailable: "LP0806";
+    readonly V2ReadinessGap: "LP0709";
 }>;
 
 // @public

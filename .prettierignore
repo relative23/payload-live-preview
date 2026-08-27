@@ -4,6 +4,7 @@ dist/
 coverage/
 src/inline/runtime.generated.ts
 src/inline/loader.generated.ts
+src/inline/fragment.generated.ts
 package-lock.json
 examples/**/package-lock.json
 

@@ -24,6 +24,8 @@ export interface RunDoctorOptions {
   readonly adminOrigin?: string | undefined;
   /** Defaults to `globalThis.fetch`. */
   readonly fetchImpl?: DoctorFetch | undefined;
+  /** Also check the served page against the 2.0 readiness table (`pll doctor --v2`). */
+  readonly v2?: boolean;
 }
 
 /**
@@ -82,7 +84,11 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
 
   return analyzeProbe(
     { publicResponse, previewResponse },
-    { url: options.url, adminOrigin: options.adminOrigin },
+    {
+      url: options.url,
+      adminOrigin: options.adminOrigin,
+      ...(options.v2 === true ? { v2: true } : {}),
+    },
   );
 }
 

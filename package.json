@@ -76,6 +76,12 @@
         "default": "./dist/doctor.js"
       }
     },
+    "./migrate": {
+      "import": {
+        "types": "./dist/migrate.d.ts",
+        "default": "./dist/migrate.js"
+      }
+    },
     "./payload": {
       "import": {
         "types": "./dist/payload.d.ts",

@@ -149,7 +149,10 @@ function frameAncestorsOf(csp: string | undefined): string | undefined {
  *
  * Pure: the caller performs the two fetches and hands the results in.
  */
-export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): DoctorReport {
+export function analyzeProbe(
+  probe: DoctorProbe,
+  context: DoctorContext & { readonly v2?: boolean },
+): DoctorReport {
   const findings: DoctorFinding[] = [];
   const { publicResponse: pub, previewResponse: preview } = probe;
   const sameOrigin = isSameOrigin(context.url, context.adminOrigin);
@@ -315,6 +318,8 @@ export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): Doctor
     });
   }
 
+  if (context.v2 === true) findings.push(...analyzeV2Readiness(probe));
+
   findings.sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]);
 
   return {
@@ -323,4 +328,124 @@ export function analyzeProbe(probe: DoctorProbe, context: DoctorContext): Doctor
     errors: findings.filter((f) => f.level === 'error').length,
     warnings: findings.filter((f) => f.level === 'warning').length,
   };
+}
+
+/**
+ * The inline configuration tuple as `readBuildConfig()` reads it, parsed from
+ * the served inline script. The generator emits it as a JSON array after
+ * `var __LIVE_PREVIEW_CONFIG__=`; only the runtime rows the readiness table
+ * covers are read here, by position (ADR 0007, mirrored in runtime.ts).
+ */
+const CONFIG_MARKER = 'var __LIVE_PREVIEW_CONFIG__=';
+const RUNTIME_SLOT = Object.freeze({
+  disableReferrerDetection: 11,
+  skipUnchanged: 14,
+  eventSourcePolicy: 15,
+  sanitizerPolicy: 16,
+});
+
+function parseInlineConfig(body: string): readonly unknown[] | undefined {
+  const start = body.indexOf(CONFIG_MARKER);
+  if (start === -1) return undefined;
+  const index = start + CONFIG_MARKER.length;
+  if (body[index] !== '[') return undefined;
+  // Scan to the matching bracket, ignoring brackets inside strings.
+  let depth = 0;
+  let inString: string | undefined;
+  for (let i = index; i < body.length; i += 1) {
+    const ch = body[i];
+    if (inString !== undefined) {
+      if (ch === '\\') i += 1;
+      else if (ch === inString) inString = undefined;
+      continue;
+    }
+    if (ch === '"' || ch === "'") inString = ch;
+    else if (ch === '[') depth += 1;
+    else if (ch === ']') {
+      depth -= 1;
+      if (depth === 0) {
+        const literal = body.slice(index, i + 1);
+        try {
+          // The generator emits array elisions (`,,`) for unset slots, which
+          // JSON cannot express but a JS array literal can (a hole reads as
+          // undefined). This runs in the Node doctor, never in the browser.
+          // eslint-disable-next-line @typescript-eslint/no-implied-eval
+          const read = new Function(`return (${literal});`) as () => unknown;
+          const value: unknown = read();
+          return Array.isArray(value) ? (value as readonly unknown[]) : undefined;
+        } catch {
+          return undefined;
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Check the served preview against the 2.0 readiness table (roadmap 1.9.0):
+ * each runtime row still at its 1.x value is one `LP0709` finding pointing at
+ * `defaults: 'v2'`. Observable rows only — the ones baked into the inline
+ * configuration; authorization and origin policy are the adapter's and are
+ * covered by the existing frame-ancestors and bindings findings.
+ */
+export function analyzeV2Readiness(probe: DoctorProbe): readonly DoctorFinding[] {
+  const config = parseInlineConfig(probe.previewResponse.body);
+  const findings: DoctorFinding[] = [];
+  if (config === undefined) {
+    return [
+      {
+        code: 'LP0709',
+        level: 'info',
+        title: 'Could not read the inline configuration for a v2 readiness check',
+        detail: 'The preview response carried no readable `__LIVE_PREVIEW_CONFIG__` inline script.',
+        remedy:
+          'Run this against a page with the inline runtime (not loader mode without a preview context).',
+      },
+    ];
+  }
+  const gap = (title: string, detail: string, remedy: string): DoctorFinding => ({
+    code: 'LP0709',
+    level: 'warning',
+    title,
+    detail,
+    remedy,
+  });
+  if (config[RUNTIME_SLOT.disableReferrerDetection] !== true) {
+    findings.push(
+      gap(
+        'Referrer trust is still on',
+        'The runtime accepts the admin referer as a preview signal.',
+        "Set `defaults: 'v2'` (or `disableReferrerDetection: true`) so referrer trust is off outside local dev.",
+      ),
+    );
+  }
+  if (config[RUNTIME_SLOT.eventSourcePolicy] !== 'parent-or-opener') {
+    findings.push(
+      gap(
+        'Messages are accepted from any window',
+        `eventSourcePolicy is ${JSON.stringify(config[RUNTIME_SLOT.eventSourcePolicy] ?? 'any')}.`,
+        "Set `defaults: 'v2'` (or `eventSourcePolicy: 'parent-or-opener'`).",
+      ),
+    );
+  }
+  if (config[RUNTIME_SLOT.sanitizerPolicy] !== 'strict') {
+    findings.push(
+      gap(
+        'Sanitizer is in compat mode',
+        `sanitizerPolicy is ${JSON.stringify(config[RUNTIME_SLOT.sanitizerPolicy] ?? 'compat')}; id and every data-* pass.`,
+        "Set `defaults: 'v2'` (or `sanitizerPolicy: 'strict'`) once rich text no longer relies on id/data-*.",
+      ),
+    );
+  }
+  if (config[RUNTIME_SLOT.skipUnchanged] !== true) {
+    findings.push(
+      gap(
+        'Unchanged bindings are re-applied every message',
+        'skipUnchanged is off.',
+        "Set `defaults: 'v2'` (or `skipUnchanged: true`) to skip bindings whose value did not change.",
+      ),
+    );
+  }
+  return findings;
 }

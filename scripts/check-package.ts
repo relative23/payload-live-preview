@@ -799,6 +799,7 @@ async function main(): Promise<void> {
     };
     const esmCodegenExports: Readonly<Record<string, readonly string[]>> = {
       [packageSpecifier(packageName, './codegen')]: ['generateTypes'],
+      [packageSpecifier(packageName, './migrate')]: ['migrateSource', 'CODEMODS'],
       [packageSpecifier(packageName, './codegen/astro')]: ['livePreviewCodegen'],
     };
 

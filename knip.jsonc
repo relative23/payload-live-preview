@@ -26,7 +26,9 @@
     "src/adapters/nuxt/index.ts",
     "src/adapters/sveltekit/index.ts",
     "src/doctor/index.ts",
+    "src/migrate/index.ts",
     "src/doctor/cli.ts",
+    "src/migrate/runner.ts",
     // esbuild entry for the static-delivery bootstrap; nothing imports it.
     "src/core/loader.ts",
     "src/fragment/inline.ts",

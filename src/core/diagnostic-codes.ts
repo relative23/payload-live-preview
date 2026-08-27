@@ -116,6 +116,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   RouteRefreshLoop: 'LP0805',
   /** A boundary asks for the fragment strategy but no fragment handler is configured; it is patched. */
   FragmentStrategyUnavailable: 'LP0806',
+  /** A readiness row is not yet at its 2.0 value; `pll doctor --v2` reports it. */
+  V2ReadinessGap: 'LP0709',
 } as const);
 
 /** A diagnostic code, as it appears in log output and on the `error` event. */
