@@ -161,4 +161,26 @@ export interface LivePreviewInspection {
   readonly scheduler: InspectionScheduler;
   /** Field types with a registered renderer, sorted. */
   readonly renderers: readonly string[];
+  /**
+   * Every registered plugin with its live registrations. Empty on a bare
+   * runtime; `LivePreviewClient.inspect()` fills it from the plugin manager,
+   * so "teardown is complete" is a snapshot fact, not a listener count in one
+   * test.
+   */
+  readonly plugins: readonly PluginInspection[];
+}
+
+/** One plugin as `inspect().plugins` reports it. */
+export interface PluginInspection {
+  readonly name: string;
+  readonly version: string | undefined;
+  /** `initializing` while `init` runs, `active` afterwards, `tearing-down` while `destroy` runs. */
+  readonly state: 'initializing' | 'active' | 'tearing-down';
+  /** Live registrations owned by the plugin's scope, by kind. */
+  readonly registrations: {
+    readonly transforms: number;
+    readonly renderers: number;
+    readonly subscriptions: number;
+    readonly cleanups: number;
+  };
 }

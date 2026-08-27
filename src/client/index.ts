@@ -259,7 +259,7 @@ export class LivePreviewClient {
    * updates stop below the fold.
    */
   inspect(): LivePreviewInspection {
-    return this.#runtime.inspect();
+    return { ...this.#runtime.inspect(), plugins: this.#plugins.snapshot() };
   }
 
   get updateCount(): number {

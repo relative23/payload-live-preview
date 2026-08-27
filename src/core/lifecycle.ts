@@ -765,6 +765,7 @@ export class LivePreviewRuntime {
                 durationMs: flush.durationMs,
               },
       },
+      plugins: [],
       renderers: Object.keys(this.d[RuntimeDependencySlot.Renderers]).sort(),
     };
   }

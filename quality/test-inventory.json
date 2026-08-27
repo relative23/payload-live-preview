@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 113,
-    "suites": 340,
-    "tests": 1646,
+    "files": 115,
+    "suites": 346,
+    "tests": 1660,
     "benchmarks": 11
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 93,
-      "suites": 306,
-      "tests": 1538,
+      "files": 95,
+      "suites": 312,
+      "tests": 1552,
       "benchmarks": 0
     }
   },
@@ -656,6 +656,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/plugins/compat.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/plugins/document-save.test.ts",
       "group": "unit",
       "suites": 5,
@@ -667,6 +674,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 63,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/plugins/ownership-contract.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 9,
       "benchmarks": 0
     },
     {

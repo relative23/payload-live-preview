@@ -22,3 +22,4 @@ export {
   type DocumentSavePluginOptions,
   type DocumentSaveStrategy,
 } from './built-in/document-save';
+export type { PluginCompatibility } from './compat';
