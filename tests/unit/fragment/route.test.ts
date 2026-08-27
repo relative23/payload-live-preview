@@ -99,6 +99,28 @@ describe('refresh', () => {
     document.head.innerHTML = '';
   });
 
+  it('adds a new meta and updates the canonical link from the fresh head', async () => {
+    logs.length = 0;
+    document.head.innerHTML = '<title>Old</title><link rel="canonical" href="/old">';
+    document.body.innerHTML = '<p data-testid="layout">x</p>';
+    const strategy = createRouteStrategy({
+      fetch: vi.fn<FetchLike>(() =>
+        Promise.resolve(
+          html(
+            '<p data-testid="layout">y</p>',
+            '<title>New</title><meta name="robots" content="noindex"><link rel="canonical" href="/new">',
+          ),
+        ),
+      ),
+      location: { href: 'https://site.example.com/' },
+      window: { scrollX: 0, scrollY: 0, scrollTo: () => {} },
+    });
+    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('/new');
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex');
+    document.head.innerHTML = '';
+  });
+
   it('refuses a second refresh inside the minimum interval with LP0805', async () => {
     logs.length = 0;
     const strategy = createRouteStrategy({

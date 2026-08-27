@@ -2,12 +2,14 @@
 export const prerender = false;
 import Hero from '../components/Hero.astro';
 import { heroProps } from '../document';
+import { authorizePreviewRequest } from 'payload-live-preview/server';
+import { strategy } from '../preview';
 
-// The page and the fragment endpoint render the same document the same way:
-// an authorized preview (the middleware put its context into locals) sees
-// the editor tools in both.
-const authorization = Astro.locals.livePreviewAuthorization as { subject?: string } | undefined;
-const document = heroProps({}, { editor: authorization?.subject !== undefined });
+// The page authorizes the same request the fragment endpoint will, so both
+// render the document identically — the editor tools appear in the SSR page
+// and in a fragment render for the same authorized preview.
+const authorization = await authorizePreviewRequest(Astro.request, strategy);
+const document = heroProps({}, { editor: authorization.authorized });
 ---
 
 <html lang="en">

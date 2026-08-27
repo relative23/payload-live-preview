@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 142,
-    "suites": 394,
-    "tests": 1772,
+    "files": 143,
+    "suites": 395,
+    "tests": 1779,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 115,
-      "suites": 350,
-      "tests": 1632,
+      "files": 116,
+      "suites": 351,
+      "tests": 1639,
       "benchmarks": 0
     }
   },
@@ -670,6 +670,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/doctor/migrate-cli.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/doctor/probe.test.ts",
       "group": "unit",
       "suites": 3,
@@ -743,7 +750,7 @@
       "path": "tests/unit/fragment/route.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 5,
+      "tests": 6,
       "benchmarks": 0
     },
     {
