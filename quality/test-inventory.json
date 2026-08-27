@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 143,
-    "suites": 391,
-    "tests": 1768,
+    "files": 145,
+    "suites": 394,
+    "tests": 1778,
     "benchmarks": 12
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 13,
-      "suites": 21,
-      "tests": 57,
+      "files": 14,
+      "suites": 22,
+      "tests": 60,
       "benchmarks": 0
     },
     "integration": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 116,
-      "suites": 347,
-      "tests": 1628,
+      "files": 117,
+      "suites": 349,
+      "tests": 1635,
       "benchmarks": 0
     }
   },
@@ -131,6 +131,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/navigation-lifecycle-per-framework.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/navigation-lifecycle.spec.ts",
       "group": "e2e",
       "suites": 1,
@@ -169,7 +176,7 @@
       "path": "tests/e2e/specs/scenarios.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -926,6 +933,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/audit-gate.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {

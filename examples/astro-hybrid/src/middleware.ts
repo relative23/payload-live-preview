@@ -52,6 +52,12 @@ const establishPreviewToken = defineMiddleware(async (context, next) => {
 export const onRequest = sequence(
   establishPreviewToken,
   createLivePreviewMiddleware({
+    // The page injects on intent and does not gate injection on authorization —
+    // the real cross-origin admin shares no session with this fixture, and
+    // authorization lives at the fragment endpoint instead. `defaults: 'v1'`
+    // keeps injection ungated (2.0's strict default would require
+    // authorizePreview here); the endpoint stays strict via its own strategy.
+    defaults: 'v1',
     allowedOrigins: ADMIN_ORIGINS,
     fragments: { endpoint: '/payload/fragment' },
     debug: true,

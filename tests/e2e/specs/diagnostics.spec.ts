@@ -135,13 +135,13 @@ test.describe('diagnostic codes reach the browser console', () => {
       page.frameLocator('[data-testid="preview-frame"]').locator('[data-payload-field="title"]'),
     ).toBeVisible();
 
-    // Post a field the page has no anchor for, the way the admin would.
-    await previewFrame(page).evaluate(() => {
-      window.postMessage(
-        {
-          type: 'payload-live-preview',
-          data: { thisFieldHasNoAnchor: 'x' },
-        },
+    // Post a field the page has no anchor for, the way the admin would — from
+    // the parent window into the iframe, so the v2 parent-or-opener source
+    // policy accepts it (a self-post would be dropped, correctly).
+    await page.evaluate(() => {
+      const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
+      iframe?.contentWindow?.postMessage(
+        { type: 'payload-live-preview', data: { thisFieldHasNoAnchor: 'x' } },
         window.location.origin,
       );
     });

@@ -530,7 +530,7 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
 
   const requiredJobs: Readonly<Record<string, readonly RequiredPattern[]>> = {
     lint: [
-      ['does not run npm audit --audit-level=high', /run:\s*npm audit --audit-level=high/],
+      ['does not run the reviewed audit gate', /run:\s*npm run audit:gate/],
       ['does not run npm run typecheck', /run:\s*npm run typecheck(?:\s|$)/],
       ['does not run npm run lint', /run:\s*npm run lint(?:\s|$)/],
       ['does not run npm run format:check', /run:\s*npm run format:check(?:\s|$)/],
