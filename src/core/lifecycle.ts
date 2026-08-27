@@ -214,7 +214,15 @@ interface UpdateTransaction {
   readonly locale: string | undefined;
   readonly schema: readonly PayloadFieldSchema[] | undefined;
   readonly schemaIndex: SchemaIndex | undefined;
+  /** When the message was accepted, Unix milliseconds; surfaced on lifecycle events. */
+  readonly receivedAt: number;
   cancelled: boolean;
+  /**
+   * Terminal state: the revision's scheduled writes reached the DOM. A newer
+   * message arriving before this counts as a supersession; after it, the
+   * previous update simply finished.
+   */
+  completed: boolean;
 }
 
 const enum RuntimeDependencySlot {
@@ -288,6 +296,7 @@ const enum RuntimeLifecycleSlot {
   LastAppliedIdentity,
   SkippedUnchangedCount,
   PreviousFieldIdentity,
+  CompletedCount,
 }
 
 /** State that changes as the runtime starts, accepts revisions, and stops. */
@@ -309,6 +318,7 @@ type RuntimeLifecycleState = [
   lastAppliedIdentity: WeakMap<Element, string>,
   skippedUnchangedCount: number,
   previousFieldIdentity: Map<string, string | undefined> | null,
+  completedCount: number,
 ];
 
 export class LivePreviewRuntime {
@@ -460,6 +470,7 @@ export class LivePreviewRuntime {
       new WeakMap<Element, string>(),
       0,
       null,
+      0,
     ];
   }
 
@@ -726,6 +737,7 @@ export class LivePreviewRuntime {
       revisions: {
         accepted: this.l[RuntimeLifecycleSlot.UpdateCount],
         superseded: this.l[RuntimeLifecycleSlot.SupersededCount],
+        completed: this.l[RuntimeLifecycleSlot.CompletedCount],
         skippedUnchanged: this.l[RuntimeLifecycleSlot.SkippedUnchangedCount],
         active: active === null ? undefined : active.identity.revision,
       },
@@ -860,14 +872,18 @@ export class LivePreviewRuntime {
       locale: this.l[RuntimeLifecycleSlot.CurrentLocale],
       schema: this.l[RuntimeLifecycleSlot.CurrentSchema],
       schemaIndex: this.l[RuntimeLifecycleSlot.SchemaIndex],
+      receivedAt: Date.now(),
       cancelled: false,
+      completed: false,
     };
 
     // Acceptance is the single supersession point. It clears old pending and
     // replay work even if this revision is later cancelled or has no bindings.
-    // A transaction still sitting here is therefore exactly one that never
-    // finished, which is what the inspection snapshot counts.
-    if (this.l[RuntimeLifecycleSlot.ActiveUpdate] !== null) {
+    // Only a transaction that never reached its terminal state was abandoned;
+    // one whose writes already landed simply finished, and counting it would
+    // make `superseded` track `accepted` on every fast keystroke.
+    const previous = this.l[RuntimeLifecycleSlot.ActiveUpdate];
+    if (previous !== null && !previous.completed) {
       this.l[RuntimeLifecycleSlot.SupersededCount] += 1;
     }
     this.l[RuntimeLifecycleSlot.ActiveUpdate] = transaction;
@@ -938,6 +954,8 @@ export class LivePreviewRuntime {
         {
           data,
           revision: transaction.identity.revision,
+          receivedAt: transaction.receivedAt,
+          source: 'patch',
           cancel: (): void => {
             transaction.cancelled = true;
             this.d[RuntimeDependencySlot.Scheduler].cancelRevision(transaction.identity);
@@ -1010,6 +1028,7 @@ export class LivePreviewRuntime {
       this.l[RuntimeLifecycleSlot.Started] &&
       this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction;
     const ownerKeys = this.#ownerKeysForUpdate(transaction, data.fields);
+    let scheduled = 0;
     // Computed once per update and only when skipping is on: the fields whose
     // change forces dependents to re-apply this time round.
     let invalidatedSet: ReadonlySet<string> | undefined;
@@ -1074,9 +1093,17 @@ export class LivePreviewRuntime {
           return;
         }
         this.d[RuntimeDependencySlot.Scheduler].schedule(update);
+        scheduled += 1;
       }
     }
     this.#diagnoseOrphanFields(data.fields, transaction.locale, ownerKeys);
+    // Nothing to flush — every field unbound, out of scope, or unchanged — is
+    // still this update reaching its end. Without the mark here the next
+    // message would count a finished update as abandoned.
+    if (scheduled === 0 && !transaction.completed) {
+      transaction.completed = true;
+      this.l[RuntimeLifecycleSlot.CompletedCount] += 1;
+    }
   }
 
   /**
@@ -1447,6 +1474,8 @@ export class LivePreviewRuntime {
           previousValue: previous,
           nextValue: value,
           revision: transaction.identity.revision,
+          receivedAt: transaction.receivedAt,
+          source: 'patch',
         },
         () =>
           this.l[RuntimeLifecycleSlot.Started] &&
@@ -1480,7 +1509,7 @@ export class LivePreviewRuntime {
     this.l[RuntimeLifecycleSlot.LastFlush] = stats;
     this.#warnOnDeferredWrites(stats);
     const { identity, data } = stats;
-    if (stats.applied === 0 || identity === undefined || data === undefined) return;
+    if (identity === undefined) return;
     const transaction = this.l[RuntimeLifecycleSlot.ActiveUpdate];
     if (
       transaction === null ||
@@ -1492,6 +1521,14 @@ export class LivePreviewRuntime {
     ) {
       return;
     }
+    // The revision's flush ran: terminal state, whether or not it applied a
+    // write (every value may have been unchanged, or nothing was bound). A
+    // later message now finds a finished update, not an abandoned one.
+    if (!transaction.completed) {
+      transaction.completed = true;
+      this.l[RuntimeLifecycleSlot.CompletedCount] += 1;
+    }
+    if (stats.applied === 0 || data === undefined) return;
     const isCurrent = (): boolean =>
       this.l[RuntimeLifecycleSlot.Started] &&
       this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction &&
@@ -1508,6 +1545,8 @@ export class LivePreviewRuntime {
         updatedCount: stats.applied,
         durationMs: stats.durationMs,
         revision: identity.revision,
+        receivedAt: transaction.receivedAt,
+        source: 'patch',
       },
       isCurrent,
     );

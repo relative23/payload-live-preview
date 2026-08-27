@@ -279,6 +279,8 @@ describe('LivePreviewRuntime — happy path', () => {
       previousValue: 'old snapshot',
       nextValue: 'new',
       revision: 1,
+      receivedAt: expect.any(Number) as number,
+      source: 'patch',
     });
     expect(afterUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1021,7 +1023,16 @@ describe('LivePreviewRuntime — happy path', () => {
 
     expect(visible.textContent).toBe('new title');
     expect(deferredElement.textContent).toBe('old subtitle');
-    expect(after).toEqual([{ data: { fields }, revision: 1, updatedCount: 1, durationMs: 0 }]);
+    expect(after).toEqual([
+      {
+        data: { fields },
+        revision: 1,
+        updatedCount: 1,
+        durationMs: 0,
+        receivedAt: expect.any(Number) as number,
+        source: 'patch',
+      },
+    ]);
 
     IO.latest?.setVisible(deferredElement, true);
     await flushMicrotasks();

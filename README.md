@@ -502,6 +502,8 @@ client.events.on('documentSave', () => location.reload());
 
 Events: `init` · `connect` · `disconnect` · `beforeUpdate` · `afterUpdate` · `elementUpdate` · `documentSave` · `cacheRefresh` · `error` · `destroy`.
 
+Since 1.1.0 `beforeUpdate`, `afterUpdate` and `elementUpdate` also carry `receivedAt` (when the runtime accepted the message, Unix ms) and `source` (`'patch'` for an admin postMessage; fragment strategies will name themselves here), next to `revision`.
+
 Plugin resources are registration-scoped. `client.unuse(name)` revokes that registration's event listeners, transforms, renderer layers, and `registerCleanup()` callbacks without touching another plugin or the built-in renderer; registering it again starts with a fresh scope. Resources remain staged until `init()` succeeds, and a failed `init()` rolls them back without exposing a partial registration. Renderers form a per-type stack (last active registration wins, removal reveals the previous layer). Synchronous transforms see the merged field value and run in registration order while each revision-bound binding entry is prepared, immediately before that entry is scheduled. The transformed value is fixed in the entry and later passes through the normal attribute or renderer dispatch. A thrown error or Promise/thenable result emits a lifecycle `error` and stores the original merged value as fallback, which still passes through the normal security checks.
 
 Built-in plugins:
@@ -610,6 +612,7 @@ The snapshot answers the questions that are otherwise guesswork:
 | `bindings.orphanFields`                                    | Field names that arrived but matched no element. A name here is a markup problem; a name in neither this nor `bindings.fieldNames` was never sent.                                   |
 | `scheduler.deferred` with `scheduler.visibilityGateActive` | Updates the visibility gate is holding until the element scrolls into view. On a page nobody scrolls, that is "never" — the symptom is a preview that stops updating below the fold. |
 | `revisions.superseded`                                     | Updates abandoned because a newer one arrived. Tracking `accepted` closely is normal for fast typing; it only matters when the _last_ update is among them.                          |
+| `revisions.completed`                                      | Updates whose flush ran — their writes reached the DOM, or there was nothing to write. `accepted − superseded − completed` is in flight or cancelled.                                |
 | `origins.locked`                                           | The origin the runtime locked onto after its first accepted update. Every other origin is refused from then on.                                                                      |
 | `bindings.ownerScoped` with `bindings.owners`              | Whether owner scoping is on, and which documents the page declares. Under scoping, an unowned binding receives nothing.                                                              |
 | `protocol.negotiated`                                      | The version both sides share, which caps the capabilities in `protocol.capabilities`.                                                                                                |
