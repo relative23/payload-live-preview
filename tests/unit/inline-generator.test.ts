@@ -68,6 +68,15 @@ describe('generateInlineScript', () => {
     expect(config.slice(0, 13).every((value) => value === undefined)).toBe(true);
   });
 
+  it('carries skipUnchanged in its own trailing wire slot', () => {
+    const script = generateInlineScript({ skipUnchanged: true });
+    const config = generatedConfig(script);
+
+    expect(config).toHaveLength(15);
+    expect(config[14]).toBe(true);
+    expect(config.slice(0, 14).every((value) => value === undefined)).toBe(true);
+  });
+
   it('retains the deprecated nonce config as a no-op for 1.x compatibility', () => {
     const withoutNonce = generateInlineScript();
     const withNonce = generateInlineScript({ nonce: 'abc123' });

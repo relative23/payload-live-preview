@@ -153,6 +153,7 @@ declare module '$env/static/private' {
 	export const CLAUDE_CODE_EXECPATH: string;
 	export const XDG_SESSION_EXTRA_DEVICE_ACCESS: string;
 	export const npm_config_global_prefix: string;
+	export const PLP_E2E_PORT: string;
 	export const SNAP_EUID: string;
 	export const NVD_BACKEND: string;
 	export const SNAP: string;
@@ -365,6 +366,7 @@ declare module '$env/dynamic/private' {
 		CLAUDE_CODE_EXECPATH: string;
 		XDG_SESSION_EXTRA_DEVICE_ACCESS: string;
 		npm_config_global_prefix: string;
+		PLP_E2E_PORT: string;
 		SNAP_EUID: string;
 		NVD_BACKEND: string;
 		SNAP: string;

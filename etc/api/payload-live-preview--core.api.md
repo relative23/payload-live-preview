@@ -205,6 +205,7 @@ export interface InspectionProtocol {
 export interface InspectionRevisions {
     readonly accepted: number;
     readonly active: number | undefined;
+    readonly skippedUnchanged: number;
     readonly superseded: number;
 }
 
@@ -271,6 +272,7 @@ export interface LivePreviewClientConfig {
     readonly autoStart?: boolean;
     readonly debounceMs?: number;
     readonly debug?: boolean;
+    readonly dependencies?: Readonly<Record<string, readonly string[]>>;
     readonly disableLocalhostMatching?: boolean;
     readonly disableReferrerDetection?: boolean;
     readonly disableVisibilityGate?: boolean;
@@ -282,6 +284,7 @@ export interface LivePreviewClientConfig {
     readonly root?: Document | Element;
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
+    readonly skipUnchanged?: boolean;
     readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
     readonly visibilityGateThreshold?: number;
 }
@@ -615,7 +618,7 @@ interface WebCryptoLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/core.d.ts:250:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point core.d.ts
+// dist/core.d.ts:257:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point core.d.ts
 
 // (No @packageDocumentation comment for this package)
 

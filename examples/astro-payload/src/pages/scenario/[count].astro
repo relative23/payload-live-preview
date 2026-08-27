@@ -1,0 +1,54 @@
+---
+/**
+ * A page with N bound fields, for the scale scenarios the roadmap asks for.
+ *
+ * Three sizes are built statically: 300, 1,000 and 5,000. The last one is the
+ * interesting one — it is a hundred times the visibility-gate threshold, so
+ * most of its bindings sit off-screen and are served from the replay buffer
+ * on scroll. A scenario that only proves "5,000 writes complete" would miss
+ * the mechanism that actually runs at that size.
+ *
+ * Every binding is owned by one document so the page also exercises owner
+ * scoping at scale, and the field names are positional (`f0` … `fN-1`) so a
+ * driver can address any of them without a lookup.
+ */
+export function getStaticPaths() {
+  return [300, 1_000, 5_000].map((count) => ({ params: { count: String(count) } }));
+}
+
+const count = Number(Astro.params.count);
+const fields = Array.from({ length: count }, (_, index) => `f${String(index)}`);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{count} bindings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        margin: 0;
+        font: 14px/1.4 system-ui, sans-serif;
+      }
+      ol {
+        margin: 0;
+        padding: 1rem 2rem;
+      }
+      li {
+        /* Fixed height so the number of on-screen bindings is a property of
+           the viewport, not of the content, and the gate's behaviour is
+           reproducible across runs. */
+        height: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <ol data-payload-owner="global:scenario" data-scenario-count={count}>
+      {fields.map((field) => (
+        <li>
+          <span data-payload-field={field}>{field}</span>
+        </li>
+      ))}
+    </ol>
+  </body>
+</html>

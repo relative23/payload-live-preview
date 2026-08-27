@@ -76,6 +76,8 @@ export interface LivePreviewNextOptions {
   readonly debounceMs?: number;
   /** Heartbeat timeout in ms. Default `0` (disabled). */
   readonly heartbeatMs?: number;
+  /** Skip bindings whose value is identical to the one last applied. Default `false`. */
+  readonly skipUnchanged?: boolean;
 }
 
 export type NextMiddleware = (request: Request) => Promise<Response | undefined>;
@@ -142,6 +144,7 @@ export function renderLivePreviewScript(
     ...(options.debug !== undefined ? { debug: options.debug } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
+    ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
     ...(options.nonce !== undefined ? { nonce: options.nonce } : {}),
   });
   return wrapWithScriptTag(body, options.nonce !== undefined ? { nonce: options.nonce } : {});
@@ -156,6 +159,7 @@ function buildScriptBody(options: LivePreviewNextOptions): string {
     ...(options.debug !== undefined ? { debug: options.debug } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
+    ...(options.skipUnchanged !== undefined ? { skipUnchanged: options.skipUnchanged } : {}),
   });
 }
 

@@ -4,10 +4,10 @@
 
 ```ts
 
-import { c as createLivePreviewMiddleware } from '../../middleware-DD4Hwomt.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-DD4Hwomt.js';
-import { a as LivePreviewMiddleware } from '../../middleware-DD4Hwomt.js';
-import { N as NONCE_LOCALS_KEY } from '../../middleware-DD4Hwomt.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-7E1UAJTD.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-7E1UAJTD.js';
+import { a as LivePreviewMiddleware } from '../../middleware-7E1UAJTD.js';
+import { N as NONCE_LOCALS_KEY } from '../../middleware-7E1UAJTD.js';
 
 // @public (undocumented)
 interface AstroConfigSetupContext {

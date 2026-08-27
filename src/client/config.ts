@@ -54,6 +54,16 @@ export interface LivePreviewClientConfig {
    * a binding without an owner is never updated.
    */
   readonly scopeBindingsByOwner?: boolean;
+  /**
+   * Skip a binding whose value is identical to the one it last applied.
+   * Defaults to `false`; enable to re-render only what a keystroke changed.
+   */
+  readonly skipUnchanged?: boolean;
+  /**
+   * Fields whose change re-applies other bindings regardless of their own
+   * value: `{ price: ['priceLabel'] }`. Used only with `skipUnchanged`.
+   */
+  readonly dependencies?: Readonly<Record<string, readonly string[]>>;
   /** Bypass the visibility gate (apply every update). Defaults to `false`. */
   readonly disableVisibilityGate?: boolean;
   /** Cache-size threshold above which off-screen updates are queued for replay. Defaults to 50. */

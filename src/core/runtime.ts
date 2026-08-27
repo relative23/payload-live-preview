@@ -51,6 +51,7 @@ type RuntimeBuildConfig = readonly [
   disableReferrerDetection?: boolean,
   disableLocalhostMatching?: boolean,
   scopeBindingsByOwner?: boolean,
+  skipUnchanged?: boolean,
 ];
 
 declare const __LIVE_PREVIEW_CONFIG__: RuntimeBuildConfig;
@@ -115,6 +116,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     disableReferrerDetection = false,
     disableLocalhostMatching = false,
     scopeBindingsByOwner = false,
+    skipUnchanged = false,
   ] = readBuildConfig();
 
   const detector = new OriginDetector({
@@ -161,6 +163,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     visibilityGateThreshold,
     enableA11y,
     scopeBindingsByOwner,
+    skipUnchanged,
     onHeartbeatTimeout: () => {
       detector.unlockOrigin();
     },

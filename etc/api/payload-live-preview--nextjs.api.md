@@ -30,6 +30,7 @@ export interface LivePreviewNextOptions {
     readonly scriptSrcExtra?: readonly string[];
     readonly serverURL?: string;
     readonly shouldInject?: (request: Request) => boolean;
+    readonly skipUnchanged?: boolean;
     readonly strictDynamic?: boolean;
 }
 

@@ -144,4 +144,9 @@ export interface LivePreviewAstroOptions {
    * disconnects).
    */
   readonly heartbeatMs?: number;
+  /**
+   * Skip bindings whose value is identical to the one last applied. Default
+   * `false` in 1.x; see the client option of the same name.
+   */
+  readonly skipUnchanged?: boolean;
 }

@@ -62,6 +62,13 @@ describe('livePreview integration', () => {
     expect(config[5]).toBe(250);
     expect(config[7]).toBe(60_000);
   });
+
+  it('forwards skipUnchanged into the trailing wire slot', () => {
+    const injectScript = vi.fn();
+    livePreview({ skipUnchanged: true }).hooks['astro:config:setup']({ injectScript });
+    const config = injectedConfig(injectScript.mock.calls[0]![1] as string);
+    expect(config[14]).toBe(true);
+  });
 });
 
 describe('createLivePreviewMiddleware', () => {

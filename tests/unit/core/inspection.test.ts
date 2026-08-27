@@ -81,6 +81,7 @@ describe('inspect() before the runtime starts', () => {
     expect(snapshot.revisions).toEqual({
       accepted: 0,
       superseded: 0,
+      skippedUnchanged: 0,
       active: undefined,
     });
     expect(snapshot.scheduler.lastFlush).toBeUndefined();
@@ -194,6 +195,19 @@ describe('inspect() revision accounting', () => {
     expect(snapshot.bindings.absentFields).toContain('title');
     // The field that did arrive must not be listed as absent.
     expect(snapshot.bindings.absentFields).not.toContain('subtitle');
+    runtime.destroy();
+  });
+
+  it('lists absent fields in sorted order, like orphanFields', async () => {
+    // Two fixtures bind `title` and `subtitle`; send neither, so both are
+    // absent, and pin the order — a diagnostic that lists names in cache
+    // order would differ run to run for no reason a reader could see.
+    const runtime = createRuntime();
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { unrelated: 'x' } });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(runtime.inspect().bindings.absentFields).toEqual(['subtitle', 'title']);
     runtime.destroy();
   });
 

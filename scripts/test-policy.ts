@@ -22,6 +22,7 @@ import {
 
 const TEST_FILE_PATTERN = /\.(?:test|spec|bench)\.[cm]?[jt]sx?$/u;
 const RUNNER_CONFIGS = [
+  'playwright.bench.config.ts',
   'playwright.config.ts',
   'playwright.real-payload.config.ts',
   'playwright.soak.config.ts',
@@ -59,7 +60,8 @@ const NON_DECLARATION_METHODS = new Set([
 ]);
 
 export type TestKind = 'benchmark' | 'suite' | 'test';
-export type TestGroup = 'benchmarks' | 'e2e' | 'integration' | 'real-payload' | 'soak' | 'unit';
+export type TestGroup =
+  'benchmarks' | 'browser-bench' | 'e2e' | 'integration' | 'real-payload' | 'soak' | 'unit';
 
 export interface TestPolicyViolation {
   readonly file: string;
@@ -428,6 +430,7 @@ async function discoverTestFiles(directory: string): Promise<readonly string[]> 
 
 export function groupForFile(path: string): TestGroup | undefined {
   if (path.startsWith('tests/benchmarks/')) return 'benchmarks';
+  if (path.startsWith('tests/browser-bench/')) return 'browser-bench';
   if (path.startsWith('tests/e2e/')) return 'e2e';
   if (path.startsWith('tests/integration/')) return 'integration';
   if (path.startsWith('tests/real-payload/')) return 'real-payload';
@@ -549,6 +552,7 @@ export async function buildTestInventory(repositoryRoot: string): Promise<{
 
   const groups: Record<TestGroup, TestInventoryGroup> = {
     benchmarks: emptyGroup(),
+    'browser-bench': emptyGroup(),
     e2e: emptyGroup(),
     integration: emptyGroup(),
     'real-payload': emptyGroup(),

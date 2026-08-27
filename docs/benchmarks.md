@@ -36,3 +36,56 @@ measured 0.1267 ms versus 0.00128 ms after unused DOM snapshots and Promise disp
 were skipped. The committed suite retains the optimized 1,000-verdict and no-listener
 paths as ongoing trend signals. Functional tests, rather than these wall-clock values,
 assert order, reset, reentrancy, and event truth.
+
+## Update-to-paint in a real browser
+
+`npm run test:browser-bench` (Playwright, Chromium, `playwright.bench.config.ts`)
+measures the whole chain on the 300 / 1,000 / 5,000-binding scenario pages:
+from the host's `postMessage` to the first animation frame after the bound
+element changed, one changed field per message. The frame's MutationObserver
+supplies the mutation time and the following `requestAnimationFrame` the paint
+proxy — the earliest instant the new text can be on screen, not the
+compositor's own timestamp. 200 samples per scenario after 20 warm-up
+messages; the fixture's debounce is 25 ms and is included.
+
+Measured 2026-08-27 on the maintainer host, `skipUnchanged` off (the fixture's
+default):
+
+| Bindings |     p50 |     p95 |     max | mutation p95 | budget (p95) |
+| -------: | ------: | ------: | ------: | -----------: | -----------: |
+|      300 | 18.6 ms | 39.6 ms | 41.2 ms |      22.8 ms |       100 ms |
+|    1,000 | 30.3 ms | 44.9 ms | 87.6 ms |      28.1 ms |       100 ms |
+|    5,000 | 43.0 ms | 64.3 ms | 83.9 ms |      40.6 ms |       100 ms |
+
+The p50 grows with the page because every binding is resolved and rendered on
+every message even though one changed — that is the cost `skipUnchanged`
+removes. The scheduled deep-quality job runs this nightly as a **trend** and
+keeps ninety days of reports; it asserts only that every sample produced a
+measurement, because timing on a shared runner is not a fact a pull request
+should fail on.
+
+Not yet measured: the same scenarios with `skipUnchanged` on. The fixture's
+runtime configuration is site-wide, so a second variant needs a per-page
+override, which is topology work rather than benchmark work.
+
+## `skipUnchanged` — what a keystroke costs with and without it
+
+`tests/benchmarks/skip-unchanged.bench.ts` (Vitest bench, jsdom): one message
+carrying 300 fields of which one changed, on a page with 300 bindings, awaiting
+the flush's `afterUpdate`. jsdom's `requestAnimationFrame` is a ~16 ms timer,
+so every figure includes that floor; the difference between the columns is the
+work.
+
+| Population             | off, mean | on, mean | work removed |
+| ---------------------- | --------: | -------: | -----------: |
+| 300 text bindings      |   22.7 ms |  17.8 ms |         ~4 × |
+| 300 rich-text bindings |   98.5 ms |  18.9 ms |        ~30 × |
+
+Two findings from getting these numbers right. The first version of this
+bench awaited a `setTimeout(0)` and reported ~1.6 ms in both modes: the
+scheduler flushes on `requestAnimationFrame`, so it was timing message dispatch
+alone. And the first identity sorted object keys, which allocates a fresh
+object per node: 0.685 ms for 300 small Lexical documents against 0.110 ms to
+render them — the comparison cost six times the work it was avoiding. Plain
+`JSON.stringify` is 0.153 ms for the same 300, and a reordered object simply
+counts as changed, which is the safe direction.

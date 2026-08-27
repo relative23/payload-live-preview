@@ -117,6 +117,7 @@
     "test:e2e:real-payload": "playwright test --config playwright.real-payload.config.ts",
     "test:a11y": "playwright test tests/e2e/specs/accessibility.spec.ts",
     "test:soak": "playwright test --config playwright.soak.config.ts",
+    "test:browser-bench": "playwright test --config playwright.bench.config.ts",
     "test:bench": "vitest bench tests/benchmarks",
     "test:bench:codspeed": "vitest bench --run --config vitest.bench.config.ts",
     "test:bundle": "tsx scripts/check-bundle-size.ts",
