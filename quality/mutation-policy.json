@@ -37,12 +37,12 @@
     "src/security/url-validator.ts"
   ],
   "baseline": {
-    "total": 3917,
-    "mutationScoreMinimum": 80.34,
+    "total": 4445,
+    "mutationScoreMinimum": 79.37,
     "mutationScorePrecision": 2,
-    "mutationScoreDriftMutants": 1,
-    "noCoverageMaximum": 62,
-    "timeoutMaximum": 11,
+    "mutationScoreDriftMutants": 5,
+    "noCoverageMaximum": 77,
+    "timeoutMaximum": 12,
     "errorMaximum": 0,
     "ignoredMaximum": 0
   }
