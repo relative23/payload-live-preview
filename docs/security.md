@@ -137,6 +137,56 @@ Full `script-src` management is opt-in (`manageCsp: 'full'`): a per-request cryp
 
 `data-payload-attribute` bindings write remote-controlled values into attributes. The writer refuses event handlers (`on*`), `style`, `srcdoc`, `formaction`, `form`, `id`, `name`, `is`, `srcset`, non-scalar values, and validates `href`/`src`/`poster`/`cite`/`action` through `isSafeUrl`.
 
+### 5c. DOM clobbering through sanitized `id`, `name` and `data-*`
+
+The sanitizer keeps `id` (a global attribute) and every `data-*` attribute
+on rich-text output, and drops `name` except where a tag's allow-list
+carries it (none of the allowed tags do). Those decisions have a threat
+model, written down here so the 1.3.0 strict sanitizer policy changes them
+deliberately rather than by accident.
+
+**Who can author the input.** Rich text comes from the Payload editor, so
+the author is an editor — someone the site already trusts with its content
+— or an attacker who has taken over an editor's session, or a field whose
+value is user-generated and rendered through `lexicalToHtml()` by the
+application. The third case is the one that matters: the sanitizer promises
+that arbitrary Lexical JSON produces no executable content; it does not
+promise the output is inert to the page's own scripts.
+
+**What `id` and `name` can do.** Browsers expose elements with an `id` as
+properties of `window` and elements with a `name` as properties of
+`document` and of their `<form>`. A rendered `<a id="config">` shadows a
+global `config` a page script reads without declaring it; a rendered
+`<img name="body">` (were `name` allowed) would shadow `document.body`. The
+runtime itself is not clobberable this way: `window.__livePreview` is
+assigned by the runtime before any content it renders, and every internal
+reference is a module binding, never a global lookup. The exposure is the
+application's own scripts, and only those that read undeclared globals.
+
+**What `data-*` can do — the one that matters here.** The runtime binds by
+attribute: an element carrying `data-payload-field="price"` is a binding,
+wherever it came from. Rich text that renders `<span data-payload-field="price">`
+inside a bound `body` field therefore creates a nested binding the runtime
+will patch on the next update, and `data-payload-owner` on such an element
+would claim a document. With owner scoping on, a claimed owner that is not
+the selected document is out of scope and never patched; without it, the
+injected binding receives the field's value like any other. The effect is
+content-only — the runtime writes text through the same sanitized
+renderers — so this is an integrity nuisance an editor could inflict on
+their own page, not an escalation. It is still a binding the author of the
+page did not write.
+
+**Controls today.** Keep rich-text output out of `id`-sensitive scripts —
+declare every global a page script reads. Run with `scopeBindingsByOwner`
+so a claimed owner cannot reach into another document. Treat
+user-generated Lexical as untrusted for a different reason than XSS: it can
+add bindings.
+
+**What 1.3.0 changes (F-21).** The strict sanitizer policy drops `id` and
+every `data-payload-*` attribute from sanitized output and becomes the 2.0
+default; `data-*` in general stays, because it is inert and widely used for
+styling hooks. That row is on the readiness table in ADR 0007.
+
 ### 6. Prototype-pollution guard
 
 Nested field lookups (`hero.title`, `hero.__proto__.x`) refuse the keys `__proto__`, `prototype`, `constructor`. The sanitizer never assigns these on parsed nodes.

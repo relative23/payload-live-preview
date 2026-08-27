@@ -78,6 +78,69 @@ export default buildConfig({
 });
 ```
 
+### Authorized preview URLs: a token per page, for a few minutes
+
+The URL above says `?preview=true`, which is intent, not proof. To let the
+frontend verify the iframe request without a session cookie crossing
+origins, mint a short-lived token on the Payload side and verify it in the
+adapter with the `signed-token` strategy. The token is bound to the site,
+the path, the locale and ten minutes; a leaked one is worth that much.
+
+```ts
+// payload.config.ts
+import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { issuePreviewToken } from 'payload-live-preview';
+
+const toPreviewUrl = buildLivePreviewUrl({
+  baseUrl: process.env.FRONTEND_URL!,
+  collections: { posts: ({ data }) => `/blog/${String(data.slug ?? '')}` },
+  globals: { homepage: '/' },
+  fallback: '/',
+});
+
+export default buildConfig({
+  admin: {
+    livePreview: {
+      url: async (args) => {
+        const url = new URL(toPreviewUrl(args));
+        const locale = typeof args.locale === 'string' ? args.locale : args.locale?.code;
+        url.searchParams.set(
+          'previewToken',
+          await issuePreviewToken(
+            {
+              audience: url.origin,
+              path: url.pathname,
+              ...(locale ? { locale } : {}),
+              ttlMs: 10 * 60_000,
+            },
+            { secret: process.env.PREVIEW_TOKEN_SECRET! }, // ≥ 32 bytes, shared with the frontend
+          ),
+        );
+        return url.toString();
+      },
+      // …breakpoints, collections, globals as above
+    },
+  },
+});
+```
+
+```ts
+// frontend middleware — the matching side
+authorizePreview: (request) =>
+  authorizePreviewRequest(request, {
+    type: 'signed-token',
+    secret: import.meta.env.PREVIEW_TOKEN_SECRET,
+    audience: import.meta.env.SITE_ORIGIN,
+    locale: (request) => new URL(request.url).pathname.split('/')[1],
+  }),
+```
+
+Keep the query parameter out of access-log formats and error-reporter URLs,
+set `Referrer-Policy: no-referrer` on preview responses, and hand the
+adapter a replay store if a replay inside the ten minutes matters to you —
+[ADR 0006](docs/architecture/0006-authorized-preview-context.md) lists the
+channels and what each binding closes.
+
 The helper appends `?preview=true` automatically so the adapters detect preview intent. That query parameter is client-controlled and does not authorize draft access or response changes. A hand-written `url: ({ data, locale, collectionConfig, globalConfig }) => string` callback works exactly the same — see the [official docs](https://payloadcms.com/docs/live-preview/overview) for the full contract.
 
 **Documents without a preview target.** Not every document has a reachable

@@ -127,7 +127,11 @@ export default buildConfig({
 
 `buildLivePreviewUrl` appends `?preview=true` so the frontend recognises
 preview intent. The query parameter is not a credential or proof of
-authorization. A hand-written `url` callback works identically.
+authorization. A hand-written `url` callback works identically. To make
+the iframe request verifiable without a cookie, wrap the callback and add
+a token from `issuePreviewToken()` — the README section "Authorized
+preview URLs" shows both sides; the middleware in step 5 verifies it with
+the `signed-token` strategy.
 
 ## 5. Authorize once, then fetch the initial draft
 
