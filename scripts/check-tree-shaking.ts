@@ -61,7 +61,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 25_200,
+    gzip: 25_700,
     why: 'the generator carries the inline runtime source and nothing of the client',
   },
   {

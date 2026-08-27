@@ -30,6 +30,7 @@ const PUBLIC_FUNCTION_NAMES: readonly string[] = [
   'buildFrameAncestors',
   'buildScriptSrcWithNonce',
   'createPreviewBindings',
+  'detectProtocolProfile',
   'isAuthorizedPreviewContext',
   'isInsideIsland',
   'detectInitialLocale',

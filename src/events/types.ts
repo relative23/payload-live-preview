@@ -9,7 +9,7 @@
  * @module @events/types
  */
 
-import type { PayloadLivePreviewData } from '@/types/payload-protocol';
+import type { PayloadDocumentEventDetail, PayloadLivePreviewData } from '@/types/payload-protocol';
 import type { DiagnosticCode } from '@core/diagnostic-codes';
 
 export interface LivePreviewEventMap {
@@ -102,6 +102,17 @@ export interface LivePreviewEventMap {
 
   /** Fired when a `payload-document-event` message arrives (document save). */
   readonly documentSave: { readonly timestamp: number };
+
+  /**
+   * Fired when a data update carries `externallyUpdatedRelationship` — a
+   * related document was created or edited in an admin drawer. The update
+   * itself re-renders unconditionally, because populated values may have
+   * changed while the form values did not.
+   */
+  readonly relationshipUpdate: {
+    readonly detail: PayloadDocumentEventDetail;
+    readonly timestamp: number;
+  };
 
   /**
    * Fired on errors that the runtime caught but cannot fully recover from.

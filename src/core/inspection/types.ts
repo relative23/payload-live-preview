@@ -47,6 +47,10 @@ export interface InspectionProtocol {
   readonly negotiated: number;
   /** Capability flags enabled at the negotiated version. */
   readonly capabilities: readonly string[];
+  /** The subset of `capabilities` seen on the wire rather than granted by version. */
+  readonly observed: readonly string[];
+  /** The Payload profile the observed capabilities imply: `unknown`, `payload-2` or `payload-3`. */
+  readonly profile: string;
 }
 
 /** Revision accounting for the update pipeline. */

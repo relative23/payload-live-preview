@@ -14,7 +14,7 @@ export type BundleBudget = BundleMeasurement;
 // invalidation). Opt-in, and the render it avoids costs more per keystroke
 // than these bytes cost per page; a 300-binding rich-text page went from
 // 98 ms to 19 ms per keystroke in the jsdom bench.
-export const INLINE_BUDGET = { raw: 79_400, gzip: 24_700, brotli: 21_750 } as const;
+export const INLINE_BUDGET = { raw: 81_750, gzip: 25_350, brotli: 22_300 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

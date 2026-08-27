@@ -39,6 +39,7 @@ import { ObserverManager } from './observers';
 import { MessageBus } from './message-bus';
 import { ConnectionState, HeartbeatTimer } from './state';
 import { DataMerger } from './data-merger';
+import { detectProtocolProfile } from './protocol-profile';
 import { applyAttributeBinding } from './attribute-binding';
 import { UpdateScheduler, type FlushStats, type ScheduledUpdate } from './update-scheduler';
 import type { LivePreviewInspection } from './inspection/types';
@@ -61,6 +62,8 @@ import {
 import {
   LIBRARY_PROTOCOL_VERSION,
   negotiateProtocol,
+  observeCapabilities,
+  type ProtocolCapability,
   type ProtocolNegotiation,
 } from './protocol-version';
 
@@ -229,6 +232,8 @@ interface UpdateTransaction {
   readonly schemaIndex: SchemaIndex | undefined;
   /** When the message was accepted, Unix milliseconds; surfaced on lifecycle events. */
   readonly receivedAt: number;
+  /** Render every bound field even when its value is unchanged (a relationship edit may have changed populated values only). */
+  readonly forceRender: boolean;
   cancelled: boolean;
   /**
    * Terminal state: the revision's scheduled writes reached the DOM. A newer
@@ -310,6 +315,7 @@ const enum RuntimeLifecycleSlot {
   SkippedUnchangedCount,
   PreviousFieldIdentity,
   CompletedCount,
+  ObservedCapabilities,
 }
 
 /** State that changes as the runtime starts, accepts revisions, and stops. */
@@ -332,6 +338,7 @@ type RuntimeLifecycleState = [
   skippedUnchangedCount: number,
   previousFieldIdentity: Map<string, string | undefined> | null,
   completedCount: number,
+  observedCapabilities: Set<ProtocolCapability>,
 ];
 
 export class LivePreviewRuntime {
@@ -422,6 +429,7 @@ export class LivePreviewRuntime {
         this.#handleUpdate(msg, origin, identity);
       },
       onDocumentEvent: () => {
+        this.#observe(['document-events']);
         void emitter.emit('documentSave', { timestamp: Date.now() });
       },
       onInvalid: (reason, origin) => {
@@ -492,6 +500,7 @@ export class LivePreviewRuntime {
       0,
       null,
       0,
+      new Set<ProtocolCapability>(),
     ];
   }
 
@@ -790,6 +799,8 @@ export class LivePreviewRuntime {
         theirs: negotiation.theirs,
         negotiated: negotiation.negotiated,
         capabilities: [...negotiation.capabilities].sort(),
+        observed: [...negotiation.observed].sort(),
+        profile: detectProtocolProfile(negotiation.observed).name,
       },
       revisions: {
         accepted: this.l[RuntimeLifecycleSlot.UpdateCount],
@@ -876,12 +887,30 @@ export class LivePreviewRuntime {
     }
   }
 
+  /**
+   * Record capabilities a message demonstrated and renegotiate when one is
+   * new. The stock admin announces no version, so this is how its
+   * capabilities become known; a version-granted capability is unaffected.
+   */
+  #observe(capabilities: readonly ProtocolCapability[]): void {
+    const observed = this.l[RuntimeLifecycleSlot.ObservedCapabilities];
+    const fresh = capabilities.filter((capability) => !observed.has(capability));
+    if (fresh.length === 0) return;
+    for (const capability of fresh) observed.add(capability);
+    const current = this.l[RuntimeLifecycleSlot.ProtocolNegotiation];
+    this.l[RuntimeLifecycleSlot.ProtocolNegotiation] = negotiateProtocol(current.theirs, observed);
+    this.d[RuntimeDependencySlot.Log]('protocol', `observed=${fresh.join(',')}`);
+  }
+
   #applyNegotiation(remoteVersion: number): void {
     const current = this.l[RuntimeLifecycleSlot.ProtocolNegotiation];
     // Every data message repeats the version, so the common case is that
     // nothing changed and there is nothing to record or say.
     if (current.theirs === remoteVersion) return;
-    const next = negotiateProtocol(remoteVersion);
+    const next = negotiateProtocol(
+      remoteVersion,
+      this.l[RuntimeLifecycleSlot.ObservedCapabilities],
+    );
     this.l[RuntimeLifecycleSlot.ProtocolNegotiation] = next;
     // Record the announcement even when it does not move the negotiated
     // version — `theirs` is public, and comparing only `negotiated` left a
@@ -906,6 +935,7 @@ export class LivePreviewRuntime {
     identity: MessageRevision | undefined,
   ): void {
     this.d[RuntimeDependencySlot.Heartbeat].kick();
+    this.#observe(observeCapabilities(message));
     if (message.data === undefined) {
       if (message.protocolVersion !== undefined) {
         this.#applyNegotiation(message.protocolVersion);
@@ -916,6 +946,14 @@ export class LivePreviewRuntime {
     // Refuse identity-less work defensively so no alternate host path can
     // bypass the revision model.
     if (identity === undefined) return;
+    const relationship = message.externallyUpdatedRelationship;
+    const relationshipEdited = typeof relationship === 'object' && relationship !== null;
+    if (relationshipEdited) {
+      void this.d[RuntimeDependencySlot.Emitter].emit('relationshipUpdate', {
+        detail: relationship,
+        timestamp: Date.now(),
+      });
+    }
     if (typeof message.locale === 'string') {
       this.l[RuntimeLifecycleSlot.CurrentLocale] = message.locale;
     }
@@ -931,6 +969,7 @@ export class LivePreviewRuntime {
       schema: this.l[RuntimeLifecycleSlot.CurrentSchema],
       schemaIndex: this.l[RuntimeLifecycleSlot.SchemaIndex],
       receivedAt: Date.now(),
+      forceRender: relationshipEdited,
       cancelled: false,
       completed: false,
     };
@@ -1058,6 +1097,10 @@ export class LivePreviewRuntime {
     // #handleUpdate has already returned when `data` is undefined.
     const raw = message.data ?? {};
     if (this.d[RuntimeDependencySlot.Merger] === null) return raw;
+    // A Payload 2.x admin posts populated relationships itself; asking the
+    // REST API again would only replace them with a depth-limited copy.
+    const profile = detectProtocolProfile(this.l[RuntimeLifecycleSlot.ObservedCapabilities]);
+    if (profile.populatesRelationships === 'admin') return raw;
     const result = await this.d[RuntimeDependencySlot.Merger].merge({
       collectionSlug: message.collectionSlug,
       globalSlug: message.globalSlug,
@@ -1137,7 +1180,10 @@ export class LivePreviewRuntime {
         )) {
           return;
         }
-        if (this.#isUnchangedForElement(target, fieldName, transformedValue, invalidated())) {
+        if (
+          !transaction.forceRender &&
+          this.#isUnchangedForElement(target, fieldName, transformedValue, invalidated())
+        ) {
           this.l[RuntimeLifecycleSlot.SkippedUnchangedCount] += 1;
           continue;
         }

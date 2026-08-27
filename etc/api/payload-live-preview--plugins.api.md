@@ -190,6 +190,10 @@ export interface LivePreviewEventMap {
     readonly init: {
         readonly timestamp: number;
     };
+    readonly relationshipUpdate: {
+        readonly detail: PayloadDocumentEventDetail;
+        readonly timestamp: number;
+    };
 }
 
 // @public
@@ -213,6 +217,20 @@ export interface PayloadBlockSchema {
     readonly fields: readonly PayloadFieldSchema[];
     // (undocumented)
     readonly slug: string;
+}
+
+// @public
+interface PayloadDocumentEventDetail {
+    // (undocumented)
+    readonly [extra: string]: unknown;
+    // (undocumented)
+    readonly entitySlug: string;
+    // (undocumented)
+    readonly id?: string | number;
+    // (undocumented)
+    readonly operation?: 'create' | 'update';
+    // (undocumented)
+    readonly updatedAt?: string;
 }
 
 // @public
@@ -362,6 +380,10 @@ export type RichTextRenderer = (value: unknown, context: {
 
 // @public
 export type Unsubscribe = () => void;
+
+// Warnings were encountered during analysis:
+//
+// dist/plugins.d.ts:440:9 - (ae-forgotten-export) The symbol "PayloadDocumentEventDetail" needs to be exported by the entry point plugins.d.ts
 
 // (No @packageDocumentation comment for this package)
 
