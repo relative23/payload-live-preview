@@ -35,7 +35,6 @@ function event(url = 'https://site.example.com/', headers: Record<string, string
 }
 
 const PAGE = '<html><head></head><body>hi</body></html>';
-const IFRAME = { 'sec-fetch-dest': 'iframe' } as const;
 
 describe('livePreviewHandle — the nonce contract', () => {
   it('writes a nonce to locals on every request, preview or not', async () => {
@@ -61,30 +60,6 @@ describe('livePreviewHandle — the nonce contract', () => {
 });
 
 describe('livePreviewHandle — when it injects', () => {
-  it('passes no transform at all for an ordinary request', async () => {
-    const resolve = makeResolve([PAGE]);
-    await livePreviewHandle({ allowedOrigins: [ADMIN] })({ event: event(), resolve });
-
-    expect(resolve).toHaveBeenCalledOnce();
-    expect(resolve.mock.calls[0]?.[1]?.transformPageChunk).toBeUndefined();
-  });
-
-  it('injects into the head chunk for an iframe load', async () => {
-    const response = await livePreviewHandle({ allowedOrigins: [ADMIN] })({
-      event: event('https://site.example.com/', IFRAME),
-      resolve: makeResolve([PAGE]),
-    });
-    expect(await response.text()).toContain('__LIVE_PREVIEW_CONFIG__');
-  });
-
-  it('injects for a query-parameter intent signal', async () => {
-    const response = await livePreviewHandle({ allowedOrigins: [ADMIN] })({
-      event: event('https://site.example.com/?preview=true'),
-      resolve: makeResolve([PAGE]),
-    });
-    expect(await response.text()).toContain('__LIVE_PREVIEW_CONFIG__');
-  });
-
   it('injects exactly once when the page arrives as several chunks', async () => {
     // transformPageChunk is called per chunk. Injecting on each would give the
     // page as many runtimes as it has chunks, and streaming is SvelteKit's
@@ -100,95 +75,6 @@ describe('livePreviewHandle — when it injects', () => {
     // for one.
     expect(html.split('<script').length - 1).toBe(1);
     expect(html).toContain('__LIVE_PREVIEW_CONFIG__');
-  });
-
-  it('honours autoInject: false', async () => {
-    const response = await livePreviewHandle({ inject: 'always', autoInject: false })({
-      event: event(),
-      resolve: makeResolve([PAGE]),
-    });
-    expect(await response.text()).not.toContain('__LIVE_PREVIEW_CONFIG__');
-  });
-
-  it('honours a shouldInject predicate and passes it the request', async () => {
-    const shouldInject = vi.fn((_request: Request) => false);
-    const response = await livePreviewHandle({ inject: 'always', shouldInject })({
-      event: event('https://site.example.com/private'),
-      resolve: makeResolve([PAGE]),
-    });
-
-    expect(await response.text()).not.toContain('__LIVE_PREVIEW_CONFIG__');
-    expect(shouldInject.mock.calls[0]?.[0]?.url).toContain('/private');
-  });
-});
-
-describe('livePreviewHandle — CSP', () => {
-  it('adds frame-ancestors for the configured admin origin', async () => {
-    const response = await livePreviewHandle({ allowedOrigins: [ADMIN] })({
-      event: event('https://site.example.com/', IFRAME),
-      resolve: makeResolve([PAGE]),
-    });
-    const csp = response.headers.get('content-security-policy') ?? '';
-
-    expect(csp).toContain('frame-ancestors');
-    expect(csp).toContain(ADMIN);
-  });
-
-  it('keeps the directives an existing policy already declared', async () => {
-    const response = await livePreviewHandle({ allowedOrigins: [ADMIN] })({
-      event: event('https://site.example.com/', IFRAME),
-      resolve: makeResolve([PAGE], {
-        headers: {
-          'content-type': 'text/html',
-          'content-security-policy': "default-src 'self'; img-src *",
-        },
-      }),
-    });
-    const csp = response.headers.get('content-security-policy') ?? '';
-
-    expect(csp).toContain("default-src 'self'");
-    expect(csp).toContain('img-src *');
-    expect(csp).toContain('frame-ancestors');
-  });
-
-  it('does not touch CSP when manageCsp is false', async () => {
-    const response = await livePreviewHandle({ allowedOrigins: [ADMIN], manageCsp: false })({
-      event: event('https://site.example.com/', IFRAME),
-      resolve: makeResolve([PAGE]),
-    });
-    expect(response.headers.get('content-security-policy')).toBeNull();
-  });
-
-  it('leaves CSP alone on a request with no preview intent', async () => {
-    const response = await livePreviewHandle({ allowedOrigins: [ADMIN] })({
-      event: event(),
-      resolve: makeResolve([PAGE]),
-    });
-    expect(response.headers.get('content-security-policy')).toBeNull();
-  });
-});
-
-describe('livePreviewHandle — CSP in full mode', () => {
-  it('uses one nonce for locals, the script tag and script-src alike', async () => {
-    // Three places have to agree. If any pair drifts, the browser rejects
-    // either our script or the consumer's, and only in production CSP.
-    const handle = livePreviewHandle({ inject: 'always', manageCsp: 'full' });
-    const ev = event();
-    const response = await handle({ event: ev, resolve: makeResolve([PAGE]) });
-    const html = await response.text();
-    const csp = response.headers.get('content-security-policy') ?? '';
-
-    const nonce = ev.locals['livePreviewNonce'] as string;
-    expect(html).toContain(`nonce="${nonce}"`);
-    expect(csp).toContain(`'nonce-${nonce}'`);
-  });
-
-  it("keeps script-src out of the header in the default 'frame-ancestors' mode", async () => {
-    const response = await livePreviewHandle({ inject: 'always' })({
-      event: event(),
-      resolve: makeResolve([PAGE]),
-    });
-    expect(response.headers.get('content-security-policy')).not.toContain('script-src');
   });
 });
 

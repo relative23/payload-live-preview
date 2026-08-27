@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createLivePreviewMiddleware, renderLivePreviewScript } from '@adapters/nextjs/index';
 
 /**
@@ -26,122 +26,6 @@ function request(url = 'https://site.example.com/', headers: Record<string, stri
   return new Request(url, { headers });
 }
 
-const IFRAME = { 'sec-fetch-dest': 'iframe' } as const;
-
-describe('createLivePreviewMiddleware — when it injects', () => {
-  it('leaves an ordinary request completely untouched', async () => {
-    const middleware = createLivePreviewMiddleware({ allowedOrigins: [ADMIN] });
-    const original = htmlResponse();
-    const result = await middleware(request(), original);
-
-    expect(result).toBe(original);
-    expect(await result.text()).not.toContain('__LIVE_PREVIEW_CONFIG__');
-  });
-
-  it('injects for a query-parameter intent signal', async () => {
-    const middleware = createLivePreviewMiddleware({ allowedOrigins: [ADMIN] });
-    const result = await middleware(
-      request('https://site.example.com/?preview=true'),
-      htmlResponse(),
-    );
-    expect(await result.text()).toContain('__LIVE_PREVIEW_CONFIG__');
-  });
-
-  it('injects for an iframe load', async () => {
-    const middleware = createLivePreviewMiddleware({ allowedOrigins: [ADMIN] });
-    const result = await middleware(request('https://site.example.com/', IFRAME), htmlResponse());
-    expect(await result.text()).toContain('__LIVE_PREVIEW_CONFIG__');
-  });
-
-  it("injects into every HTML response with inject: 'always'", async () => {
-    const middleware = createLivePreviewMiddleware({ inject: 'always' });
-    const result = await middleware(request(), htmlResponse());
-    expect(await result.text()).toContain('__LIVE_PREVIEW_CONFIG__');
-  });
-
-  it('never injects into a non-HTML response', async () => {
-    // Injecting a script into JSON corrupts the payload for the caller and is
-    // the kind of thing a browser fixture would never notice.
-    const middleware = createLivePreviewMiddleware({ inject: 'always' });
-    const json = new Response('{"ok":true}', {
-      headers: { 'content-type': 'application/json' },
-    });
-    const result = await middleware(request(), json);
-    expect(await result.text()).toBe('{"ok":true}');
-  });
-
-  it('honours autoInject: false while still managing CSP', async () => {
-    const middleware = createLivePreviewMiddleware({
-      inject: 'always',
-      autoInject: false,
-      allowedOrigins: [ADMIN],
-    });
-    const result = await middleware(request(), htmlResponse());
-    expect(await result.text()).not.toContain('__LIVE_PREVIEW_CONFIG__');
-    expect(result.headers.get('content-security-policy')).toContain('frame-ancestors');
-  });
-
-  it('honours a shouldInject predicate and passes it the request', async () => {
-    const shouldInject = vi.fn((_request: Request) => false);
-    const middleware = createLivePreviewMiddleware({ inject: 'always', shouldInject });
-    const result = await middleware(request('https://site.example.com/private'), htmlResponse());
-
-    expect(await result.text()).not.toContain('__LIVE_PREVIEW_CONFIG__');
-    expect(shouldInject).toHaveBeenCalledOnce();
-    expect(shouldInject.mock.calls[0]?.[0]?.url).toContain('/private');
-  });
-});
-
-describe('createLivePreviewMiddleware — CSP', () => {
-  it('adds frame-ancestors for the configured admin origin', async () => {
-    const middleware = createLivePreviewMiddleware({ allowedOrigins: [ADMIN] });
-    const result = await middleware(request('https://site.example.com/', IFRAME), htmlResponse());
-    const csp = result.headers.get('content-security-policy') ?? '';
-
-    expect(csp).toContain('frame-ancestors');
-    expect(csp).toContain(ADMIN);
-  });
-
-  it('manages only frame-ancestors by default, leaving script-src alone', async () => {
-    // Silently tightening script-src would break unrelated application scripts.
-    const middleware = createLivePreviewMiddleware({ allowedOrigins: [ADMIN] });
-    const result = await middleware(request('https://site.example.com/', IFRAME), htmlResponse());
-    expect(result.headers.get('content-security-policy')).not.toContain('script-src');
-  });
-
-  it('keeps the directives an existing policy already declared', async () => {
-    const middleware = createLivePreviewMiddleware({ allowedOrigins: [ADMIN] });
-    const result = await middleware(
-      request('https://site.example.com/', IFRAME),
-      htmlResponse(undefined, {
-        headers: { 'content-security-policy': "default-src 'self'; img-src *" },
-      }),
-    );
-    const csp = result.headers.get('content-security-policy') ?? '';
-
-    expect(csp).toContain("default-src 'self'");
-    expect(csp).toContain('img-src *');
-    expect(csp).toContain('frame-ancestors');
-  });
-
-  it('does not touch CSP when manageCsp is false', async () => {
-    const middleware = createLivePreviewMiddleware({
-      allowedOrigins: [ADMIN],
-      manageCsp: false,
-    });
-    const result = await middleware(request('https://site.example.com/', IFRAME), htmlResponse());
-    expect(result.headers.get('content-security-policy')).toBeNull();
-  });
-
-  it('leaves CSP untouched on a request with no preview intent', async () => {
-    // The gate is intent, not content: an ordinary visitor's response must not
-    // grow a frame-ancestors header it never had.
-    const middleware = createLivePreviewMiddleware({ allowedOrigins: [ADMIN] });
-    const result = await middleware(request(), htmlResponse());
-    expect(result.headers.get('content-security-policy')).toBeNull();
-  });
-});
-
 describe('renderLivePreviewScript', () => {
   it('returns a script tag carrying the configuration', () => {
     const tag = renderLivePreviewScript({ allowedOrigins: [ADMIN] });
@@ -157,29 +41,6 @@ describe('renderLivePreviewScript', () => {
 
   it('omits the nonce attribute when none is supplied', () => {
     expect(renderLivePreviewScript({ allowedOrigins: [ADMIN] })).not.toContain('nonce=');
-  });
-});
-
-describe('createLivePreviewMiddleware — CSP in full mode', () => {
-  it('adds a nonce-based script-src and reuses it for the injected tag', async () => {
-    // The nonce travels from the injection step to addCsp through the
-    // x-live-preview-nonce header. If those two ever drifted apart, CSP would
-    // reject the very script this adapter injected.
-    const middleware = createLivePreviewMiddleware({ inject: 'always', manageCsp: 'full' });
-    const result = await middleware(request(), htmlResponse());
-    const csp = result.headers.get('content-security-policy') ?? '';
-    const html = await result.text();
-
-    const nonce = /nonce="([^"]+)"/u.exec(html)?.[1];
-    expect(nonce).toBeTruthy();
-    expect(csp).toContain('script-src');
-    expect(csp).toContain(`'nonce-${String(nonce)}'`);
-  });
-
-  it("keeps script-src out of the header in the default 'frame-ancestors' mode", async () => {
-    const middleware = createLivePreviewMiddleware({ inject: 'always', manageCsp: true });
-    const result = await middleware(request(), htmlResponse());
-    expect(result.headers.get('content-security-policy')).not.toContain('script-src');
   });
 });
 

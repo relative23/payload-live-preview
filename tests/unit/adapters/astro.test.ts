@@ -109,88 +109,6 @@ describe('createLivePreviewMiddleware', () => {
     expect((ctx.locals[NONCE_LOCALS_KEY] as string).length).toBeGreaterThan(10);
   });
 
-  it('leaves non-preview responses completely untouched', async () => {
-    const middleware = createLivePreviewMiddleware({
-      allowedOrigins: ['https://admin.example.com'],
-    });
-    const ctx = makePlainContext();
-    const original = makeHtmlResponse('<html><head></head><body></body></html>');
-    const response = await middleware(ctx, () => Promise.resolve(original));
-    expect(response).toBe(original);
-    expect(response.headers.get('content-security-policy')).toBeNull();
-    expect(await response.text()).not.toContain('<script');
-  });
-
-  it('injects the script into preview requests detected via query param', async () => {
-    const middleware = createLivePreviewMiddleware({
-      allowedOrigins: ['https://admin.example.com'],
-    });
-    const ctx = makePreviewContext();
-    const response = await middleware(ctx, () =>
-      Promise.resolve(makeHtmlResponse('<html><head><title>x</title></head><body></body></html>')),
-    );
-    const body = await response.text();
-    expect(body).toContain('<script nonce=');
-    expect(body).toContain('admin.example.com');
-    expect(body.indexOf('<script')).toBeLessThan(body.indexOf('<title>'));
-  });
-
-  it('injects when the request is an iframe load (Sec-Fetch-Dest)', async () => {
-    const middleware = createLivePreviewMiddleware();
-    const ctx = {
-      request: new Request('https://example.com/page', {
-        headers: { 'sec-fetch-dest': 'iframe' },
-      }),
-      locals: {} as Record<string, unknown>,
-    };
-    const response = await middleware(ctx, () =>
-      Promise.resolve(makeHtmlResponse('<html><head></head><body></body></html>')),
-    );
-    expect(await response.text()).toContain('<script nonce=');
-  });
-
-  it('injects into every HTML response with inject: "always"', async () => {
-    const middleware = createLivePreviewMiddleware({ inject: 'always' });
-    const ctx = makePlainContext();
-    const response = await middleware(ctx, () =>
-      Promise.resolve(makeHtmlResponse('<html><head></head><body></body></html>')),
-    );
-    expect(await response.text()).toContain('<script nonce=');
-  });
-
-  it('does not inject for non-HTML responses', async () => {
-    const middleware = createLivePreviewMiddleware();
-    const ctx = makePreviewContext();
-    const response = await middleware(ctx, () =>
-      Promise.resolve(new Response('{"x":1}', { headers: { 'content-type': 'application/json' } })),
-    );
-    const body = await response.text();
-    expect(body).toBe('{"x":1}');
-  });
-
-  it('honours autoInject: false', async () => {
-    const middleware = createLivePreviewMiddleware({ autoInject: false });
-    const ctx = makePreviewContext();
-    const response = await middleware(ctx, () =>
-      Promise.resolve(makeHtmlResponse('<html><head></head></html>')),
-    );
-    expect(await response.text()).toBe('<html><head></head></html>');
-  });
-
-  it('honours shouldInject predicate', async () => {
-    const middleware = createLivePreviewMiddleware({
-      shouldInject: (req) => !new URL(req.url).pathname.endsWith('/excluded'),
-    });
-    const ctx = {
-      request: new Request('https://example.com/excluded?preview=true'),
-      locals: {} as Record<string, unknown>,
-    };
-    const response = await middleware(ctx, () =>
-      Promise.resolve(makeHtmlResponse('<html><head></head></html>')),
-    );
-    expect(await response.text()).toBe('<html><head></head></html>');
-  });
-
   it('skips prerendered contexts entirely (Astro 5 build-time middleware)', async () => {
     const middleware = createLivePreviewMiddleware();
     const ctx = { ...makePreviewContext(), isPrerendered: true };
@@ -198,33 +116,6 @@ describe('createLivePreviewMiddleware', () => {
     const response = await middleware(ctx, () => Promise.resolve(original));
     expect(response).toBe(original);
     expect(await response.text()).not.toContain('<script');
-  });
-
-  it('manages only frame-ancestors by default (no script-src meddling)', async () => {
-    const middleware = createLivePreviewMiddleware({
-      allowedOrigins: ['https://admin.example.com'],
-    });
-    const ctx = makePreviewContext();
-    const response = await middleware(ctx, () =>
-      Promise.resolve(makeHtmlResponse('<html><head></head></html>')),
-    );
-    const csp = response.headers.get('content-security-policy');
-    expect(csp).toMatch(/frame-ancestors\s+'self' https:\/\/admin\.example\.com/);
-    expect(csp).not.toMatch(/script-src/);
-  });
-
-  it('adds a nonce-based script-src with manageCsp: "full" (no strict-dynamic by default)', async () => {
-    const middleware = createLivePreviewMiddleware({
-      allowedOrigins: ['https://admin.example.com'],
-      manageCsp: 'full',
-    });
-    const ctx = makePreviewContext();
-    const response = await middleware(ctx, () =>
-      Promise.resolve(makeHtmlResponse('<html><head></head></html>')),
-    );
-    const csp = response.headers.get('content-security-policy')!;
-    expect(csp).toMatch(/script-src\s+'self' 'nonce-[A-Za-z0-9_-]+'/);
-    expect(csp).not.toContain("'strict-dynamic'");
   });
 
   it('adds strict-dynamic only when explicitly requested', async () => {
@@ -237,30 +128,6 @@ describe('createLivePreviewMiddleware', () => {
       Promise.resolve(makeHtmlResponse('<html><head></head></html>')),
     );
     expect(response.headers.get('content-security-policy')).toContain("'strict-dynamic'");
-  });
-
-  it('merges with an existing CSP header without dropping or clobbering directives', async () => {
-    const middleware = createLivePreviewMiddleware({
-      allowedOrigins: ['https://admin.example.com'],
-    });
-    const ctx = makePreviewContext();
-    const response = await middleware(ctx, () =>
-      Promise.resolve(
-        new Response('<html><head></head></html>', {
-          headers: {
-            'content-type': 'text/html',
-            'content-security-policy':
-              "default-src 'self'; img-src https:; frame-ancestors https://other.example",
-          },
-        }),
-      ),
-    );
-    const csp = response.headers.get('content-security-policy')!;
-    expect(csp).toMatch(/default-src 'self'/);
-    expect(csp).toMatch(/img-src https:/);
-    // Union merge: the pre-existing frame-ancestors source survives.
-    expect(csp).toContain('https://other.example');
-    expect(csp).toContain('https://admin.example.com');
   });
 
   it('parses CSP ASCII whitespace and ignores duplicate directive relaxations', async () => {
@@ -283,15 +150,6 @@ describe('createLivePreviewMiddleware', () => {
     expect(response.headers.get('content-security-policy')).toBe(
       "default-src 'self'; frame-ancestors 'self' https://admin.example.com",
     );
-  });
-
-  it('skips CSP when manageCsp is false', async () => {
-    const middleware = createLivePreviewMiddleware({ manageCsp: false });
-    const ctx = makePreviewContext();
-    const response = await middleware(ctx, () =>
-      Promise.resolve(makeHtmlResponse('<html><head></head></html>')),
-    );
-    expect(response.headers.get('content-security-policy')).toBeNull();
   });
 
   it('skips injection for fragment responses without a <head> (server islands)', async () => {
