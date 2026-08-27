@@ -137,3 +137,6 @@ export type {
 } from './types/payload-protocol';
 export type { PluginCompatibility } from './plugins';
 export type { SanitizerPolicyMode } from './security';
+
+// Island interoperability — the bridge event and the boundary test (docs/renderers.md, islands).
+export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/islands';

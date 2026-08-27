@@ -208,3 +208,6 @@ export type {
   PayloadLivePreviewData,
   PayloadLivePreviewMessage,
 } from './types/payload-protocol';
+
+// Island interoperability — the bridge event and the boundary test (docs/renderers.md, islands).
+export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/islands';

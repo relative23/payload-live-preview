@@ -414,6 +414,24 @@ export function isInPopup(): boolean;
 export function isInPreviewContext(): boolean;
 
 // @public
+export function isInsideIsland(element: Element): boolean;
+
+// @public
+export const ISLAND_EVENT = "payload-live-preview:update";
+
+// @public
+export interface IslandUpdateDetail {
+    // (undocumented)
+    readonly fields: Readonly<Record<string, unknown>>;
+    // (undocumented)
+    readonly locale: string | undefined;
+    // (undocumented)
+    readonly receivedAt: number;
+    // (undocumented)
+    readonly revision: number;
+}
+
+// @public
 export function isLexicalContent(value: unknown): value is LexicalRoot;
 
 // @public @deprecated (undocumented)

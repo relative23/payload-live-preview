@@ -48,6 +48,7 @@ import { observeThenableResult } from './thenable';
 import { resolveFieldValue } from './field-value';
 import { valueIdentity } from './value-identity';
 import { mergeDependencyMaps } from './dependencies';
+import { dispatchIslandUpdate, isInsideIsland } from './islands';
 import { A11yAnnouncer } from './a11y';
 import { isolateDiagnostic, noopDiagnostic, safeConsoleWarn } from './diagnostics';
 import { markNoWriteCallback, rendererUsesNoWriteOutcome } from './internal-outcome';
@@ -376,7 +377,9 @@ export class LivePreviewRuntime {
           })
         : null;
 
-    const cache = new ElementCache();
+    // Bindings inside a hydrated island are the island's business (ADR 0008 §4);
+    // the island receives every update as a DOM event instead.
+    const cache = new ElementCache({ filter: (element) => !isInsideIsland(element) });
     const observers = new ObserverManager(
       {
         onStructuralChange: () => {
@@ -1574,6 +1577,13 @@ export class LivePreviewRuntime {
       this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction &&
       sameRevision(transaction.identity, identity);
     this.d[RuntimeDependencySlot.A11y]?.announceUpdate(stats.applied);
+    if (!isCurrent()) return;
+    dispatchIslandUpdate(this.d[RuntimeDependencySlot.Root], {
+      fields: data.fields,
+      revision: identity.revision,
+      receivedAt: transaction.receivedAt,
+      locale: transaction.locale,
+    });
     if (!isCurrent()) return;
     if (this.d[RuntimeDependencySlot.Emitter].listenerCount('afterUpdate') === 0) {
       return;

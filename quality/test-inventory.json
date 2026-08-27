@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 122,
-    "suites": 373,
-    "tests": 1717,
+    "files": 123,
+    "suites": 374,
+    "tests": 1718,
     "benchmarks": 12
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 10,
-      "suites": 18,
-      "tests": 43,
+      "files": 11,
+      "suites": 19,
+      "tests": 44,
       "benchmarks": 0
     },
     "integration": {
@@ -107,6 +107,13 @@
       "group": "e2e",
       "suites": 2,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/island-bridge.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 1,
       "benchmarks": 0
     },
     {

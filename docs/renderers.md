@@ -142,3 +142,29 @@ A plugin owns what it registers, and only for as long as it is registered:
   state and live registrations by kind, so "teardown is complete" is a
   snapshot fact. `tests/unit/plugins/ownership-contract.test.ts` pins that
   300 register/unregister cycles return every count to its baseline.
+
+## Islands
+
+A hydrated framework island — `astro-island`, or any element marked
+`data-payload-island` — owns its subtree. The runtime does not patch a
+binding inside it, and the keyed morph never enters it (ADR 0008 §4).
+Instead, every applied update is dispatched on each island root as a
+`payload-live-preview:update` DOM event whose `detail` is
+`{ fields, revision, receivedAt, locale }`:
+
+```ts
+// inside a React island
+useEffect(() => {
+  const root = ref.current?.closest('[data-payload-island]');
+  const onUpdate = (e: Event) => setFields((e as CustomEvent<IslandUpdateDetail>).detail.fields);
+  root?.addEventListener('payload-live-preview:update', onUpdate);
+  return () => root?.removeEventListener('payload-live-preview:update', onUpdate);
+}, []);
+```
+
+An island that uses Payload's official `useLivePreview` hook needs nothing
+from the bridge: the admin's `postMessage` reaches the window the island
+lives in, and this runtime keeps its hands off the island's DOM. An island
+that wants the runtime's patching after all opts in with
+`data-payload-island="patch"` and receives no event.
+`tests/e2e/specs/island-bridge.spec.ts` proves the split in three browsers.
