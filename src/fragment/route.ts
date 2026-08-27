@@ -140,6 +140,7 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
           response = await fetchFn(where.href, {
             method: 'GET',
             credentials: 'same-origin',
+            cache: 'no-store',
             headers: { accept: 'text/html', [ROUTE_REFRESH_HEADER]: 'route' },
             signal: controller.signal,
           });
