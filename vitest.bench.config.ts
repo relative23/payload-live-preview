@@ -17,6 +17,14 @@ export default mergeConfig(
     test: {
       benchmark: {
         include: ['tests/benchmarks/**/*.bench.ts'],
+        // CodSpeed measures deterministic hot paths under instrumentation.
+        // The skipUnchanged bench is an integration measurement: it drives the
+        // whole runtime and awaits a flush that arrives on
+        // requestAnimationFrame, which never fires under the instrumented
+        // run — the job hung for six hours until the runner killed it. Its
+        // figures are meaningful only with a real event loop, so it lives in
+        // `npm run test:bench` and the browser trend, not here.
+        exclude: ['tests/benchmarks/skip-unchanged.bench.ts'],
       },
     },
   }),
