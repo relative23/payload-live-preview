@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 145,
-    "suites": 394,
-    "tests": 1778,
+    "suites": 395,
+    "tests": 1781,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 117,
-      "suites": 349,
-      "tests": 1635,
+      "suites": 350,
+      "tests": 1638,
       "benchmarks": 0
     }
   },
@@ -679,15 +679,15 @@
     {
       "path": "tests/unit/doctor/cli.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 20,
+      "suites": 6,
+      "tests": 21,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/doctor/migrate-cli.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 8,
       "benchmarks": 0
     },
     {

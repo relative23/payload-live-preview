@@ -82,6 +82,26 @@ describe('pll migrate', () => {
     expect(err).toContain('a path is required');
   });
 
+  it('reports a conflict and exits 1 when a rename cannot be applied safely', async () => {
+    await writeFile(
+      join(dir, 'wrapper.ts'),
+      "import { isPreviewRequest } from 'payload-live-preview';\n" +
+        'export function hasPreviewIntent(r) { return isPreviewRequest(r, { signals: ["query"] }); }\n',
+      'utf8',
+    );
+    const code = await run(['migrate', dir]);
+    expect(code).toBe(1);
+    expect(out).toContain('need manual attention');
+    expect(out).toContain('already binds hasPreviewIntent');
+  });
+
+  it('accepts the --only=<id> form', async () => {
+    await writeFile(join(dir, 'a.ts'), SRC, 'utf8');
+    const code = await run(['migrate', dir, '--write', '--only=rename-is-preview-request']);
+    expect(code).toBe(0);
+    expect(await readFile(join(dir, 'a.ts'), 'utf8')).toContain('hasPreviewIntent');
+  });
+
   it('rejects an unknown option', async () => {
     expect(await run(['migrate', dir, '--bogus'])).toBe(1);
     expect(err).toContain('unknown option --bogus');
