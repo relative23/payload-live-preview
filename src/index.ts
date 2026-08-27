@@ -22,6 +22,7 @@ export type {
   InspectionOrigins,
   InspectionProtocol,
   InspectionRevisions,
+  PluginInspection,
   InspectionScheduler,
   LivePreviewInspection,
 } from './core/inspection/types';
@@ -93,7 +94,9 @@ export {
 
 // Draft-aware initial fetch for preview loaders
 export {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- kept through 1.x (ADR 0007, entry 9)
   fetchPreviewDocument,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- kept through 1.x (ADR 0007, entry 9)
   fetchPreviewGlobal,
   type FetchPreviewDocumentOptions,
   type FetchPreviewGlobalOptions,
@@ -131,6 +134,7 @@ export {
   type DocumentSavePluginOptions,
   type DocumentSaveStrategy,
   type LivePreviewPlugin,
+  type PluginCompatibility,
   type PluginContext,
   type PluginEvents,
   type PluginDisposer,
@@ -157,7 +161,15 @@ export {
 } from './field-types';
 
 // Core types
-export type { CachedElement, FieldRenderer, FieldType, RenderContext } from './core/types';
+export type {
+  CachedElement,
+  CustomRendererKey,
+  FieldRenderer,
+  FieldType,
+  RenderContext,
+  RendererKey,
+  RichTextRenderer,
+} from './core/types';
 
 // Protocol negotiation
 export {

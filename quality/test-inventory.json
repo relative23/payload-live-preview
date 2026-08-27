@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 112,
-    "suites": 337,
-    "tests": 1634,
+    "files": 116,
+    "suites": 350,
+    "tests": 1667,
     "benchmarks": 11
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 92,
-      "suites": 303,
-      "tests": 1526,
+      "files": 96,
+      "suites": 316,
+      "tests": 1559,
       "benchmarks": 0
     }
   },
@@ -460,6 +460,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/renderer-api.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/revision-contract.test.ts",
       "group": "unit",
       "suites": 2,
@@ -656,6 +663,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/plugins/compat.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/plugins/document-save.test.ts",
       "group": "unit",
       "suites": 5,
@@ -667,6 +681,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 63,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/plugins/ownership-contract.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 10,
       "benchmarks": 0
     },
     {
@@ -835,6 +856,13 @@
       "group": "unit",
       "suites": 4,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/server/preview-server.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 12,
       "benchmarks": 0
     },
     {

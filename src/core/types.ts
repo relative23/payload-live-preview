@@ -15,6 +15,32 @@ import type { PayloadFieldType, PayloadFieldSchema } from '@/types/payload-proto
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';
 
 /**
+ * A project-defined renderer key: namespaced, so it can never collide with a
+ * built-in field type or be produced by a typo of one. `data-payload-type="acme:price"`
+ * selects the renderer registered under that exact name; an unknown key
+ * without a namespace still falls back to the tag heuristics.
+ */
+export type CustomRendererKey = `${string}:${string}`;
+
+/** What a renderer may be registered under and an element may ask for. */
+export type RendererKey = FieldType | CustomRendererKey;
+
+/**
+ * A project-provided rich-text renderer, shared by SSR and preview so one
+ * Lexical document produces the same markup on both sides. The runtime passes
+ * its output through the sanitizer; render with the same `sanitizeHtml()` on
+ * the server for byte equality.
+ */
+export type RichTextRenderer = (
+  value: unknown,
+  context: {
+    readonly fieldName: string;
+    readonly element: Element;
+    readonly locale: string | undefined;
+  },
+) => string;
+
+/**
  * A DOM element that has been registered as a live preview binding.
  *
  * Stored in the element cache indexed by `fieldName`. Multiple cached
@@ -35,7 +61,7 @@ export interface CachedElement {
    * `false` the lifecycle is allowed to override this with the type
    * learned from the schema once `fieldSchemaJSON` arrives.
    */
-  readonly fieldType: FieldType;
+  readonly fieldType: RendererKey;
   /**
    * `true` when the field type was set by an explicit
    * `data-payload-type` attribute (consumer trumps schema), `false`
@@ -87,6 +113,8 @@ export interface RenderContext {
   readonly locale: string | undefined;
   /** Optional schema descriptor for the field, when available. */
   readonly schema: PayloadFieldSchema | undefined;
+  /** The project's rich-text renderer, when the client was configured with one. */
+  readonly renderRichText?: RichTextRenderer;
 }
 
 /**
@@ -101,7 +129,7 @@ export interface RenderContext {
  * not rely on that implementation detail.
  */
 export interface FieldRenderer {
-  readonly name: FieldType;
+  readonly name: RendererKey;
   render(target: CachedElement, value: unknown, context: RenderContext): void;
 }
 

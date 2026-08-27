@@ -58,9 +58,10 @@ response without privileged headers or preview-specific response changes —
 the adapters do exactly that. Bypass application caches and return
 `Cache-Control: private, no-store` on authorized responses. Never attach a
 long-lived API/service key because an intent signal was present.
-`fetchPreviewDocument()` and `fetchPreviewGlobal()` accept the context as
-`authorization`; without it their `draft` default remains `true` only for
-1.x compatibility, so secure callers pass the verified context.
+`definePreview()` on `payload-live-preview/server` takes the context as its
+required `authorization` and reads a draft only with a real one; the
+root-entry `fetchPreviewDocument()` / `fetchPreviewGlobal()` (deprecated)
+still default `draft` to `true` for 1.x compatibility.
 
 Signed tokens travel in a query parameter by default, which the browser
 history, the `Referer` header, server and CDN logs, and error reporters all

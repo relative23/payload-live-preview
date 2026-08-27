@@ -86,6 +86,16 @@
         "default": "./dist/payload.cjs"
       }
     },
+    "./server": {
+      "import": {
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
+      },
+      "require": {
+        "types": "./dist/server.d.cts",
+        "default": "./dist/server.cjs"
+      }
+    },
     "./astro/RichText.astro": "./dist/adapters/astro/RichText.astro",
     "./astro/middleware-entry": {
       "import": {

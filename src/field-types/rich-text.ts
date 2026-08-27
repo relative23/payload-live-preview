@@ -16,7 +16,19 @@ import type { FieldRenderer } from '@core/types';
 
 const richTextRenderer: FieldRenderer = {
   name: 'richText',
-  render: markNoWriteCallback((target, value) => {
+  render: markNoWriteCallback((target, value, context) => {
+    // A project renderer, when configured, renders every value — Lexical or
+    // not — and its output passes the sanitizer like everything else here.
+    if (context.renderRichText !== undefined) {
+      target.element.innerHTML = sanitizeHtml(
+        context.renderRichText(value, {
+          fieldName: target.fieldName,
+          element: target.element,
+          locale: context.locale,
+        }),
+      );
+      return;
+    }
     if (isLexicalContent(value)) {
       target.element.innerHTML = lexicalToHtml(value);
       return;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- the 1.x helpers are the subject under test */
 /**
  * Draft-aware preview fetching for initial page loads.
  */

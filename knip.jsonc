@@ -14,6 +14,7 @@
     "src/codegen/cli.ts",
     "src/codegen/astro-plugin.ts",
     "src/payload/index.ts",
+    "src/server/index.ts",
     "src/adapters/astro/index.ts",
     "src/adapters/astro/middleware-entry.ts",
     "src/adapters/nextjs/index.ts",

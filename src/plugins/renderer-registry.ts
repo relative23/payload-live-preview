@@ -8,7 +8,7 @@
  * @module @plugins/renderer-registry
  */
 
-import type { FieldRenderer, FieldType } from '@core/types';
+import type { FieldRenderer, RendererKey } from '@core/types';
 import type { PluginDisposer } from './types';
 
 interface RendererLayer {
@@ -18,7 +18,7 @@ interface RendererLayer {
 export class RendererRegistry {
   readonly #base: Readonly<Record<string, FieldRenderer>>;
   readonly #active: Record<string, FieldRenderer>;
-  readonly #layers = new Map<FieldType, RendererLayer[]>();
+  readonly #layers = new Map<RendererKey, RendererLayer[]>();
 
   constructor(base: Readonly<Record<string, FieldRenderer>>) {
     this.#base = base;
@@ -30,7 +30,7 @@ export class RendererRegistry {
     return this.#active;
   }
 
-  resolve(fieldType: FieldType): FieldRenderer | undefined {
+  resolve(fieldType: RendererKey): FieldRenderer | undefined {
     return this.#active[fieldType];
   }
 

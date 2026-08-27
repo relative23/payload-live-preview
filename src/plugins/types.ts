@@ -15,6 +15,7 @@
 import type { CachedElement, FieldRenderer } from '@core/types';
 import type { EventEmitter } from '@events/emitter';
 import type { EventHandler, LivePreviewEventMap, Unsubscribe } from '@events/types';
+import type { PluginCompatibility } from './compat';
 
 /** Idempotent handle that releases one plugin-owned resource. */
 export type PluginDisposer = () => void;
@@ -121,6 +122,12 @@ export interface PluginContext {
 export interface LivePreviewPlugin {
   readonly name: string;
   readonly version?: string;
+  /**
+   * What the plugin was written for. Checked at registration; a plugin that
+   * declares a runtime range this version does not satisfy, or a protocol
+   * older than the one this runtime speaks, is refused with a log line.
+   */
+  readonly compat?: PluginCompatibility;
   readonly init: (context: PluginContext) => void | Promise<void>;
   readonly destroy?: () => void | Promise<void>;
 }

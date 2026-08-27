@@ -361,22 +361,33 @@ Requirements: the preview page must be able to reach the Payload API with the ed
 Live preview patches the DOM **after** the page has loaded — the initial server render is your job. If you use Payload drafts, fetch draft content only after authorizing the preview request; otherwise editors see stale published content until their first keystroke. `fetchPreviewDocument` / `fetchPreviewGlobal` build the REST query but deliberately do not authenticate it. Their 1.x `draft` default remains `true` for compatibility, so set it explicitly from your verified decision:
 
 ```ts
-// Astro example — in your page/loader code. The middleware example
-// above stored this application-owned, request-scoped authorization.
-import { fetchPreviewDocument } from 'payload-live-preview';
+// src/lib/preview.ts — server-only
+import { definePreview } from 'payload-live-preview/server';
 
-const authorization = Astro.locals.previewAuthorization ?? null;
-const page = await fetchPreviewDocument<Page>({
+export const preview = definePreview({
   serverURL: import.meta.env.PAYLOAD_URL,
-  collection: 'pages',
-  where: { slug: { equals: Astro.params.slug } },
-  draft: authorization !== null, // published for unauthorised/normal traffic
-  depth: 1, // keep equal to mergeDepth!
-  ...(authorization === null ? {} : { headers: authorization.payloadHeaders }),
+  depth: 1, // one number for the initial read and the runtime merge
 });
 ```
 
-`isPreviewRequest()` is intentionally retained as the 1.x compatibility name, but it detects intent only. Query parameters, iframe navigation, and referrers are not credentials. Do not attach a long-lived API key or service token based on its boolean result; the verifier should forward only the minimum request-scoped session material or validate a short-lived, scoped signature.
+```astro
+---
+import { preview } from '../lib/preview';
+
+const result = await preview.fetchDocument<Page>({
+  collection: 'pages',
+  where: { slug: { equals: Astro.params.slug } },
+  authorization: Astro.locals.livePreviewAuthorization ?? null, // draft only with a verified context
+  signal: Astro.request.signal,
+});
+if (!result.ok) return new Response(null, { status: 503 }); // or log result.reason
+const page = result.data;
+---
+```
+
+Spread `preview.runtimeOptions` (`serverURL`, `apiRoute`, `mergeDepth`) into the adapter so the runtime merges at the depth the page was read with. The root-entry `fetchPreviewDocument()` / `fetchPreviewGlobal()` keep their 1.x behaviour (draft by default, `null` on failure) and are deprecated.
+
+`hasPreviewIntent()` (and its deprecated alias `isPreviewRequest()`) detects intent only. Query parameters, iframe navigation, and referrers are not credentials. Do not attach a long-lived API key or service token based on its boolean result; the verifier should forward only the minimum request-scoped session material or validate a short-lived, scoped signature.
 
 ## Data-attribute reference
 
@@ -506,7 +517,7 @@ marker of your own that has nothing to do with preview state.
 
 `text` · `textarea` · `richText` · `html` · `email` · `number` · `checkbox` · `date` · `select` · `radio` · `relationship` · `upload` · `image` · `url` · `array` · `blocks` · `structural-array`
 
-Custom renderers register via the plugin system:
+Custom renderers register via the plugin system (see [docs/renderers.md](docs/renderers.md) for what a renderer receives, namespaced custom keys such as `acme:money`, the `resolveRenderer` and `renderRichText` client options, and the plugin ownership contract):
 
 ```ts
 import { LivePreviewClient } from 'payload-live-preview';
