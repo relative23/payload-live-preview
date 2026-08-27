@@ -22,53 +22,20 @@
  * @module @security/preview-authorization
  */
 
-/**
- * Type-level brand for {@link AuthorizedPreviewContext}. Declared, never
- * defined: it has no runtime value, so no object literal can carry it and no
- * boolean can be cast into it without a deliberate `as`. The runtime check
- * uses a private symbol instead — see {@link isAuthorizedPreviewContext}.
- */
-export declare const AUTHORIZED_PREVIEW_BRAND: unique symbol;
+import {
+  createAuthorizedPreviewContext,
+  isAuthorizedPreviewContext,
+  type AuthorizedPreviewContext,
+  type AuthorizedPreviewScope,
+  type PreviewAuthorizationStrategyName,
+} from '@/types/authorized-preview';
 
-/** Which verification produced a context. */
-export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
-
-/** What a context is bound to. Every field is optional because every strategy binds differently. */
-export interface AuthorizedPreviewScope {
-  /** The site origin the credential was issued for. */
-  readonly audience?: string;
-  /** The request pathname the credential is valid for. */
-  readonly path?: string;
-  /** The locale the credential is valid for. */
-  readonly locale?: string;
-}
-
-/**
- * The verdict of a successful {@link authorizePreviewRequest}.
- *
- * Frozen, branded, and produced only by this module. Carry it, do not rebuild
- * it: `createPreviewBindings`, the draft helpers and the adapters accept it as
- * their `authorization`, and `isAuthorizedPreviewContext()` is how any of them
- * tells a real one from a look-alike.
- */
-export interface AuthorizedPreviewContext {
-  readonly [AUTHORIZED_PREVIEW_BRAND]: true;
-  readonly strategy: PreviewAuthorizationStrategyName;
-  /** The user id, token subject, or whatever the verifier named. */
-  readonly subject: string | undefined;
-  /** When the verification happened, Unix milliseconds. */
-  readonly authorizedAt: number;
-  /** When the credential stops being valid, Unix milliseconds, or `undefined` when the strategy does not know. */
-  readonly expiresAt: number | undefined;
-  readonly scope: AuthorizedPreviewScope;
-  /**
-   * The minimal request material a draft read must forward to Payload —
-   * exactly the one verified cookie for the session strategy; nothing for the
-   * token strategy; whatever the verifier chose to hand over. Never the
-   * whole incoming `Cookie` header.
-   */
-  readonly payloadHeaders: Readonly<Record<string, string>>;
-}
+export {
+  isAuthorizedPreviewContext,
+  type AuthorizedPreviewContext,
+  type AuthorizedPreviewScope,
+  type PreviewAuthorizationStrategyName,
+};
 
 /** Why a request was refused. `'authorized'` is the one non-refusal. */
 export type PreviewAuthorizationOutcome =
@@ -207,8 +174,6 @@ export interface VerifierStrategy {
 export type PreviewAuthorizationStrategy =
   PayloadSessionStrategy | SignedTokenStrategy | VerifierStrategy;
 
-const BRAND = Symbol('payload-live-preview.authorized-preview-context');
-
 const DEFAULT_USERS_SLUG = 'users';
 const DEFAULT_COOKIE_NAME = 'payload-token';
 const DEFAULT_TIMEOUT_MS = 3_000;
@@ -230,34 +195,6 @@ function refused(
   outcome: Exclude<PreviewAuthorizationOutcome, 'authorized'>,
 ): PreviewAuthorization {
   return { authorized: false, outcome, context: null };
-}
-
-function createContext(
-  fields: Omit<AuthorizedPreviewContext, typeof AUTHORIZED_PREVIEW_BRAND>,
-): AuthorizedPreviewContext {
-  const context = Object.freeze({
-    ...fields,
-    scope: Object.freeze({ ...fields.scope }),
-    payloadHeaders: Object.freeze({ ...fields.payloadHeaders }),
-    [BRAND]: true,
-  });
-  // The declared brand has no runtime value; the private symbol above is
-  // what `isAuthorizedPreviewContext` checks. This is the module's one cast.
-  return context as unknown as AuthorizedPreviewContext;
-}
-
-/**
- * Whether `value` was produced by {@link authorizePreviewRequest}. A structural
- * look-alike — `{ authorized: true }`, a copied object, a JSON round trip —
- * is not.
- */
-export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as Record<PropertyKey, unknown>)[BRAND] === true &&
-    Object.isFrozen(value)
-  );
 }
 
 /**
@@ -372,7 +309,7 @@ async function authorizeSession(
   return {
     authorized: true,
     outcome: 'authorized',
-    context: createContext({
+    context: createAuthorizedPreviewContext({
       strategy: 'payload-session',
       subject: user,
       authorizedAt: now(),
@@ -631,7 +568,7 @@ async function authorizeToken(
   return {
     authorized: true,
     outcome: 'authorized',
-    context: createContext({
+    context: createAuthorizedPreviewContext({
       strategy: 'signed-token',
       subject: claims.sub,
       authorizedAt: now,
@@ -664,7 +601,7 @@ async function authorizeVerifier(
   return {
     authorized: true,
     outcome: 'authorized',
-    context: createContext({
+    context: createAuthorizedPreviewContext({
       strategy: 'verifier',
       subject: claims.subject,
       authorizedAt: now,

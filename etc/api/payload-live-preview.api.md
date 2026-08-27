@@ -17,6 +17,33 @@ export interface AnalyticsSnapshot {
 }
 
 // @public
+const AUTHORIZED_PREVIEW_BRAND: unique symbol;
+
+// @public
+export interface AuthorizedPreviewContext {
+    // (undocumented)
+    readonly [AUTHORIZED_PREVIEW_BRAND]: true;
+    readonly authorizedAt: number;
+    readonly expiresAt: number | undefined;
+    readonly payloadHeaders: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly scope: AuthorizedPreviewScope;
+    // (undocumented)
+    readonly strategy: PreviewAuthorizationStrategyName;
+    readonly subject: string | undefined;
+}
+
+// @public
+export interface AuthorizedPreviewScope {
+    readonly audience?: string;
+    readonly locale?: string;
+    readonly path?: string;
+}
+
+// @public
+export function authorizePreviewRequest(request: PreviewAuthorizationRequest, strategy: PreviewAuthorizationStrategy): Promise<PreviewAuthorization>;
+
+// @public
 export function bind<T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions): FieldBindingAttributes;
 
 // @public
@@ -97,6 +124,9 @@ export interface CspDirectiveMerge {
 export const debugPlugin: LivePreviewPlugin;
 
 // @public
+export type DefaultsProfile = 'v1' | 'v2';
+
+// @public
 export function detectInitialLocale(): string;
 
 // @public
@@ -170,6 +200,19 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
 
 // @public
 export type EventHandler<TPayload> = (payload: TPayload) => void | Promise<void>;
+
+// @public
+export type EventSourcePolicy = 'any' | 'parent-or-opener';
+
+// @public
+export type FetchLike = (input: string, init: {
+    readonly headers: Record<string, string>;
+    readonly signal: AbortSignal;
+}) => Promise<{
+    readonly ok: boolean;
+    readonly status: number;
+    json(): Promise<unknown>;
+}>;
 
 // @public
 export function fetchPreviewDocument<T = Record<string, unknown>>(options: FetchPreviewDocumentOptions): Promise<T | null>;
@@ -253,6 +296,9 @@ export function generateInlineScript(config?: InlineScriptConfig): string;
 export function hasCapability(negotiation: ProtocolNegotiation, capability: ProtocolCapability): boolean;
 
 // @public
+export function hasPreviewIntent(request: PreviewRequestLike, options?: PreviewRequestOptions): boolean;
+
+// @public
 export const highlightPlugin: LivePreviewPlugin;
 
 // @public
@@ -268,6 +314,7 @@ export interface InlineScriptConfig {
     readonly disableReferrerDetection?: boolean;
     readonly disableVisibilityGate?: boolean;
     readonly enableA11y?: boolean;
+    readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
     readonly heartbeatMs?: number;
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
@@ -328,6 +375,9 @@ export interface InspectionScheduler {
 }
 
 // @public
+export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext;
+
+// @public
 export function isDevMode(): boolean;
 
 // @public
@@ -345,11 +395,24 @@ export function isInPreviewContext(): boolean;
 // @public
 export function isLexicalContent(value: unknown): value is LexicalRoot;
 
-// @public
+// @public @deprecated (undocumented)
 export function isPreviewRequest(request: PreviewRequestLike, options?: PreviewRequestOptions): boolean;
 
 // @public
 export function isSafeUrl(url: unknown): boolean;
+
+// @public
+export function issuePreviewToken(claims: PreviewTokenClaims, options: IssuePreviewTokenOptions): Promise<string>;
+
+// @public (undocumented)
+export interface IssuePreviewTokenOptions {
+    // (undocumented)
+    readonly crypto?: SubtleCryptoLike;
+    // (undocumented)
+    readonly now?: () => number;
+    // (undocumented)
+    readonly secret: string | Uint8Array;
+}
 
 // @public
 export interface LexicalNode {
@@ -402,7 +465,7 @@ export const LIBRARY_PROTOCOL_VERSION = 4;
 
 // @public
 export class LivePreviewClient {
-    constructor(config?: LivePreviewClientConfig);
+    constructor(rawConfig?: LivePreviewClientConfig);
     destroy(): Promise<void>;
     get destroyed(): boolean;
     get events(): EventEmitter;
@@ -427,11 +490,13 @@ export interface LivePreviewClientConfig {
     readonly autoStart?: boolean;
     readonly debounceMs?: number;
     readonly debug?: boolean;
+    readonly defaults?: DefaultsProfile;
     readonly dependencies?: Readonly<Record<string, readonly string[]>>;
     readonly disableLocalhostMatching?: boolean;
     readonly disableReferrerDetection?: boolean;
     readonly disableVisibilityGate?: boolean;
     readonly enableA11y?: boolean;
+    readonly eventSourcePolicy?: EventSourcePolicy;
     readonly heartbeatMs?: number;
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
@@ -714,6 +779,20 @@ export interface PayloadRelationship<TSlug extends string = string> {
 }
 
 // @public
+export interface PayloadSessionStrategy {
+    readonly cookieName?: string;
+    // (undocumented)
+    readonly fetch?: FetchLike;
+    readonly maxCookieLength?: number;
+    readonly now?: () => number;
+    readonly serverURL: string;
+    readonly timeoutMs?: number;
+    // (undocumented)
+    readonly type: 'payload-session';
+    readonly usersSlug?: string;
+}
+
+// @public
 export interface PluginContext {
     // (undocumented)
     readonly events: PluginEvents;
@@ -748,6 +827,36 @@ export interface PluginEvents extends EventEmitter {
 type Prev<N extends 0 | 1 | 2 | 3> = N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
 
 // @public
+export type PreviewAuthorization = {
+    readonly authorized: true;
+    readonly outcome: 'authorized';
+    readonly context: AuthorizedPreviewContext;
+} | {
+    readonly authorized: false;
+    readonly outcome: Exclude<PreviewAuthorizationOutcome, 'authorized'>;
+    readonly context: null;
+};
+
+// @public
+export type PreviewAuthorizationOutcome = 'authorized' | 'missing-credential' | 'invalid' | 'expired' | 'wrong-audience' | 'wrong-path' | 'wrong-locale' | 'wrong-purpose' | 'replayed' | 'unavailable';
+
+// @public
+export interface PreviewAuthorizationRequest {
+    // (undocumented)
+    readonly headers: {
+        get(name: string): string | null;
+    };
+    // (undocumented)
+    readonly url: string;
+}
+
+// @public (undocumented)
+export type PreviewAuthorizationStrategy = PayloadSessionStrategy | SignedTokenStrategy | VerifierStrategy;
+
+// @public
+export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
+
+// @public
 export interface PreviewBindings {
     readonly authorized: boolean;
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
@@ -755,15 +864,35 @@ export interface PreviewBindings {
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @public (undocumented)
-export interface PreviewBindingsOptions {
+// @public
+export interface PreviewBindingsBooleanOptions extends PreviewBindingsCommonOptions {
+    // (undocumented)
+    readonly authorization?: undefined;
+    // (undocumented)
     readonly authorized: boolean;
-    readonly owner?: string;
 }
+
+// @public (undocumented)
+export interface PreviewBindingsCommonOptions {
+    readonly owner?: string;
+    readonly strict?: boolean;
+}
+
+// @public
+export interface PreviewBindingsContextOptions extends PreviewBindingsCommonOptions {
+    // (undocumented)
+    readonly authorization: AuthorizedPreviewContext | null;
+    // (undocumented)
+    readonly authorized?: undefined;
+}
+
+// @public (undocumented)
+export type PreviewBindingsOptions = PreviewBindingsContextOptions | PreviewBindingsBooleanOptions;
 
 // @public
 export interface PreviewFetchBaseOptions {
     readonly apiRoute?: string;
+    readonly authorization?: AuthorizedPreviewContext | null;
     readonly depth?: number;
     readonly draft?: boolean;
     readonly fetchFn?: typeof fetch;
@@ -793,6 +922,48 @@ export interface PreviewRequestOptions {
 
 // @public
 type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
+
+// @public
+export interface PreviewTokenClaims {
+    readonly audience: string;
+    // (undocumented)
+    readonly locale?: string;
+    readonly path?: string;
+    // (undocumented)
+    readonly purpose?: string;
+    // (undocumented)
+    readonly subject?: string;
+    readonly ttlMs?: number;
+}
+
+// @public
+export interface PreviewTokenReplayStore {
+    // (undocumented)
+    isUsed(id: string): Promise<boolean> | boolean;
+    // (undocumented)
+    markUsed(id: string, expiresAt: number): Promise<void> | void;
+}
+
+// @public
+export type PreviewTokenTransport = {
+    readonly kind: 'query';
+    readonly param?: string;
+} | {
+    readonly kind: 'header';
+    readonly name?: string;
+};
+
+// @public
+export interface PreviewVerifierClaims {
+    // (undocumented)
+    readonly expiresAt?: number;
+    // (undocumented)
+    readonly payloadHeaders?: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly scope?: AuthorizedPreviewScope;
+    // (undocumented)
+    readonly subject?: string;
+}
 
 // @public
 export type PreviewWhere = Readonly<Record<string, unknown>>;
@@ -865,6 +1036,38 @@ export function setCspCrypto(crypto: WebCryptoLike | null): void;
 export function setSanitizerDocument(doc: SanitizerDocument | null): void;
 
 // @public
+export interface SignedTokenStrategy {
+    readonly audience: string;
+    // (undocumented)
+    readonly crypto?: SubtleCryptoLike;
+    readonly locale?: (request: PreviewAuthorizationRequest) => string | undefined;
+    // (undocumented)
+    readonly now?: () => number;
+    readonly purpose?: string;
+    // (undocumented)
+    readonly replay?: PreviewTokenReplayStore;
+    readonly secret: string | Uint8Array;
+    readonly transport?: PreviewTokenTransport;
+    // (undocumented)
+    readonly type: 'signed-token';
+}
+
+// @public
+export interface SubtleCryptoLike {
+    // (undocumented)
+    getRandomValues<T extends Uint8Array>(array: T): T;
+    // (undocumented)
+    readonly subtle: {
+        importKey(format: 'raw', keyData: Uint8Array, algorithm: {
+            readonly name: 'HMAC';
+            readonly hash: 'SHA-256';
+        }, extractable: false, keyUsages: readonly ('sign' | 'verify')[]): Promise<CryptoKey>;
+        sign(algorithm: 'HMAC', key: CryptoKey, data: Uint8Array): Promise<ArrayBuffer>;
+        verify(algorithm: 'HMAC', key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<boolean>;
+    };
+}
+
+// @public
 export type SuppressedBinding = Readonly<Record<string, never>>;
 
 // @public
@@ -872,6 +1075,16 @@ export type Unsubscribe = () => void;
 
 // @public
 export type ValueAt<T, P extends string> = P extends `${infer Head}.${infer Rest}` ? Head extends keyof T ? T[Head] extends readonly (infer U)[] ? ValueAt<U, Rest> : T[Head] extends object ? ValueAt<T[Head], Rest> : unknown : unknown : P extends keyof T ? T[P] : unknown;
+
+// @public
+export interface VerifierStrategy {
+    // (undocumented)
+    readonly now?: () => number;
+    // (undocumented)
+    readonly type: 'verifier';
+    // (undocumented)
+    readonly verify: (request: PreviewAuthorizationRequest) => Promise<PreviewVerifierClaims | null> | PreviewVerifierClaims | null;
+}
 
 // @public
 export const VERSION: string;

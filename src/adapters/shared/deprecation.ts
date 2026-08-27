@@ -24,7 +24,12 @@ export function isDevelopmentProcess(): boolean {
   }
 }
 
-export function warnDeprecatedOnce(key: string, message: string): void {
+/**
+ * Warn once per process, outside production only. Used for deprecations and
+ * for insecure-default notices — the two things a developer should hear
+ * exactly once and a production log should never carry.
+ */
+export function warnOnce(key: string, message: string): void {
   if (!isDevelopmentProcess()) return;
   const holder = globalThis as unknown as Record<string, Set<string> | undefined>;
   const warned = (holder[WARNED_KEY] ??= new Set<string>());
@@ -35,6 +40,10 @@ export function warnDeprecatedOnce(key: string, message: string): void {
   } catch {
     // A console that throws must not break a request.
   }
+}
+
+export function warnDeprecatedOnce(key: string, message: string): void {
+  warnOnce(`deprecated:${key}`, message);
 }
 
 /** Test hook: forget every warning issued so far in this process. */

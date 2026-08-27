@@ -4,6 +4,10 @@
 
 ```ts
 
+import { D } from '../../policy-DAKG-5Pb.js';
+import { P } from '../../preview-request-OtCAmNe2.js';
+import { P as P_2 } from '../../policy-DAKG-5Pb.js';
+
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;
 
@@ -39,12 +43,14 @@ export interface LivePreviewNuxtOptions {
     // (undocumented)
     readonly allowedOrigins?: readonly string[];
     readonly apiRoute?: string;
+    readonly authorizePreview?: (request: P) => P_2 | Promise<P_2>;
     // (undocumented)
     readonly autoInject?: boolean;
     // (undocumented)
     readonly debounceMs?: number;
     // (undocumented)
     readonly debug?: boolean;
+    readonly defaults?: D;
     // (undocumented)
     readonly frameAncestorsExtra?: readonly string[];
     readonly heartbeatMs?: number;
@@ -57,6 +63,7 @@ export interface LivePreviewNuxtOptions {
     readonly scriptSrcExtra?: readonly string[];
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
+    readonly strict?: boolean;
     readonly strictDynamic?: boolean;
 }
 
@@ -66,7 +73,7 @@ interface NitroAppLike {
     readonly hooks: {
         hook(name: 'render:html', fn: (html: RenderHtmlContextLike, context: {
             event: H3EventLike;
-        }) => void): void;
+        }) => void | Promise<void>): void;
     };
 }
 
@@ -86,8 +93,8 @@ export function renderLivePreviewScript(options?: LivePreviewNuxtOptions & {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/nuxt/index.d.ts:94:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/nuxt/index.d.ts:95:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:120:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:121:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

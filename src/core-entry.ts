@@ -91,6 +91,16 @@ export type { ConnectionStatus } from './core/state';
 
 // Typed binding DSL — small enough to live in the core slice
 export { bind, bindByPath, createPreviewBindings } from './dsl';
+export type { DefaultsProfile, EventSourcePolicy } from './core/defaults-profile';
+// The branded verdict `createPreviewBindings({ authorization })` accepts. The
+// producer (`authorizePreviewRequest`) lives on the root entry; the guard is a
+// few lines and belongs wherever the type is accepted.
+export {
+  isAuthorizedPreviewContext,
+  type AuthorizedPreviewContext,
+  type AuthorizedPreviewScope,
+  type PreviewAuthorizationStrategyName,
+} from './types/authorized-preview';
 export type {
   BindOptions,
   FieldBindingAttributes,
@@ -99,6 +109,9 @@ export type {
   OwnerBindingAttributes,
   PreviewBindings,
   PreviewBindingsOptions,
+  PreviewBindingsBooleanOptions,
+  PreviewBindingsCommonOptions,
+  PreviewBindingsContextOptions,
   SuppressedBinding,
   ValueAt,
 } from './dsl';

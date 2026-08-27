@@ -26,7 +26,7 @@ import type { LivePreviewPlugin } from '@plugins/types';
 import { isDevMode, isInPreviewContext } from '@detection/environment';
 import { buildBuiltinRenderers } from '@field-types/index';
 import type { FieldType } from '@core/types';
-import type { LivePreviewClientConfig } from './config';
+import { withProfileDefaults, type LivePreviewClientConfig } from './config';
 import { noopDiagnostic, safeConsoleDebug } from '@core/diagnostics';
 
 export class LivePreviewClient {
@@ -40,7 +40,8 @@ export class LivePreviewClient {
   #destroyed = false;
   #destroyPromise: Promise<void> | null = null;
 
-  constructor(config: LivePreviewClientConfig = {}) {
+  constructor(rawConfig: LivePreviewClientConfig = {}) {
+    const config = withProfileDefaults(rawConfig);
     const debug = config.debug ?? isDevMode();
     this.#log = debug
       ? (...args): void => {
@@ -106,6 +107,9 @@ export class LivePreviewClient {
         ? { scopeBindingsByOwner: config.scopeBindingsByOwner }
         : {}),
       ...(config.skipUnchanged !== undefined ? { skipUnchanged: config.skipUnchanged } : {}),
+      ...(config.eventSourcePolicy !== undefined
+        ? { eventSourcePolicy: config.eventSourcePolicy }
+        : {}),
       ...(config.dependencies !== undefined ? { dependencies: config.dependencies } : {}),
       ...(config.disableVisibilityGate !== undefined
         ? { disableVisibilityGate: config.disableVisibilityGate }

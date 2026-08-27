@@ -60,6 +60,14 @@ export type LivePreviewMiddleware = (
 export const NONCE_LOCALS_KEY = 'livePreviewNonce';
 
 /**
+ * Key on `Astro.locals` carrying the verified `AuthorizedPreviewContext`
+ * when `authorizePreview` authorized this request, and absent otherwise.
+ * Pages pass it to `fetchPreviewDocument({ authorization })` and
+ * `createPreviewBindings({ authorization })`.
+ */
+export const AUTHORIZATION_LOCALS_KEY = 'livePreviewAuthorization';
+
+/**
  * Build the Astro middleware. It generates a nonce for every request (so
  * consumer templates can read `Astro.locals.livePreviewNonce` whether or not
  * this is a preview), and on requests carrying preview intent injects the
@@ -72,13 +80,26 @@ export function createLivePreviewMiddleware(
   const policy = createPreviewPolicy(options);
   return async (context, next) => {
     const nonce = policy.nonce();
-    context.locals[NONCE_LOCALS_KEY] = nonce;
+    if (context.isPrerendered === true) {
+      context.locals[NONCE_LOCALS_KEY] = nonce;
+      return next();
+    }
+    const decision = await policy.decide(context.request, {
+      shouldInject: () => options.shouldInject?.(context.request) ?? true,
+      ...(policy.authorizes
+        ? { authorize: () => options.authorizePreview?.(context.request) }
+        : {}),
+    });
+    // The nonce is decided before rendering so templates can read it from
+    // `Astro.locals`; after a refusal it is withheld, like every other
+    // preview artefact of that response.
+    if (decision.exposeNonce || !decision.isPreview) {
+      context.locals[NONCE_LOCALS_KEY] = nonce;
+    }
+    if (decision.authorization !== null) {
+      context.locals[AUTHORIZATION_LOCALS_KEY] = decision.authorization;
+    }
     const response = await next();
-    if (context.isPrerendered === true) return response;
-    const decision = policy.decide(
-      context.request,
-      () => options.shouldInject?.(context.request) ?? true,
-    );
     if (!decision.isPreview) return response;
     let outResponse = response;
     const contentType = response.headers.get('content-type') ?? '';

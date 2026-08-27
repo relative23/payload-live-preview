@@ -5,6 +5,30 @@
 ```ts
 
 // @public
+const AUTHORIZED_PREVIEW_BRAND: unique symbol;
+
+// @public
+export interface AuthorizedPreviewContext {
+    // (undocumented)
+    readonly [AUTHORIZED_PREVIEW_BRAND]: true;
+    readonly authorizedAt: number;
+    readonly expiresAt: number | undefined;
+    readonly payloadHeaders: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly scope: AuthorizedPreviewScope;
+    // (undocumented)
+    readonly strategy: PreviewAuthorizationStrategyName;
+    readonly subject: string | undefined;
+}
+
+// @public
+export interface AuthorizedPreviewScope {
+    readonly audience?: string;
+    readonly locale?: string;
+    readonly path?: string;
+}
+
+// @public
 export function bind<T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions): FieldBindingAttributes;
 
 // @public
@@ -56,6 +80,9 @@ export const CORE_ENTRY = true;
 
 // @public
 export function createPreviewBindings(options: PreviewBindingsOptions): PreviewBindings;
+
+// @public
+export type DefaultsProfile = 'v1' | 'v2';
 
 // @public
 export function detectInitialLocale(): string;
@@ -111,6 +138,9 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
 
 // @public
 export type EventHandler<TPayload> = (payload: TPayload) => void | Promise<void>;
+
+// @public
+export type EventSourcePolicy = 'any' | 'parent-or-opener';
 
 // @public
 export interface FieldBindingAttributes {
@@ -224,6 +254,9 @@ export interface InspectionScheduler {
 }
 
 // @public
+export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext;
+
+// @public
 export function isDevMode(): boolean;
 
 // @public
@@ -246,7 +279,7 @@ export const LIBRARY_PROTOCOL_VERSION = 4;
 
 // @public
 export class LivePreviewClient {
-    constructor(config?: LivePreviewClientConfig);
+    constructor(rawConfig?: LivePreviewClientConfig);
     destroy(): Promise<void>;
     get destroyed(): boolean;
     get events(): EventEmitter;
@@ -272,11 +305,13 @@ export interface LivePreviewClientConfig {
     readonly autoStart?: boolean;
     readonly debounceMs?: number;
     readonly debug?: boolean;
+    readonly defaults?: DefaultsProfile;
     readonly dependencies?: Readonly<Record<string, readonly string[]>>;
     readonly disableLocalhostMatching?: boolean;
     readonly disableReferrerDetection?: boolean;
     readonly disableVisibilityGate?: boolean;
     readonly enableA11y?: boolean;
+    readonly eventSourcePolicy?: EventSourcePolicy;
     readonly heartbeatMs?: number;
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
@@ -537,6 +572,9 @@ interface PluginEvents extends EventEmitter {
 type Prev<N extends 0 | 1 | 2 | 3> = N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
 
 // @public
+export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
+
+// @public
 export interface PreviewBindings {
     readonly authorized: boolean;
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
@@ -544,11 +582,30 @@ export interface PreviewBindings {
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @public (undocumented)
-export interface PreviewBindingsOptions {
+// @public
+export interface PreviewBindingsBooleanOptions extends PreviewBindingsCommonOptions {
+    // (undocumented)
+    readonly authorization?: undefined;
+    // (undocumented)
     readonly authorized: boolean;
-    readonly owner?: string;
 }
+
+// @public (undocumented)
+export interface PreviewBindingsCommonOptions {
+    readonly owner?: string;
+    readonly strict?: boolean;
+}
+
+// @public
+export interface PreviewBindingsContextOptions extends PreviewBindingsCommonOptions {
+    // (undocumented)
+    readonly authorization: AuthorizedPreviewContext | null;
+    // (undocumented)
+    readonly authorized?: undefined;
+}
+
+// @public (undocumented)
+export type PreviewBindingsOptions = PreviewBindingsContextOptions | PreviewBindingsBooleanOptions;
 
 // Warning: (ae-forgotten-export) The symbol "CAPABILITY_REQUIREMENTS" needs to be exported by the entry point core.d.ts
 //

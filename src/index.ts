@@ -64,6 +64,8 @@ export {
 export type {
   AuthorizedPreviewContext,
   AuthorizedPreviewScope,
+  FetchLike,
+  IssuePreviewTokenOptions,
   PayloadSessionStrategy,
   PreviewAuthorization,
   PreviewAuthorizationOutcome,
@@ -75,8 +77,10 @@ export type {
   PreviewTokenTransport,
   PreviewVerifierClaims,
   SignedTokenStrategy,
+  SubtleCryptoLike,
   VerifierStrategy,
 } from './security/preview-authorization';
+export type { DefaultsProfile, EventSourcePolicy } from './core/defaults-profile';
 
 // Server-side preview-request detection — for hand-rolled middleware
 export {
@@ -173,6 +177,9 @@ export type {
   OwnerBindingAttributes,
   PreviewBindings,
   PreviewBindingsOptions,
+  PreviewBindingsBooleanOptions,
+  PreviewBindingsCommonOptions,
+  PreviewBindingsContextOptions,
   SuppressedBinding,
   ValueAt,
 } from './dsl';

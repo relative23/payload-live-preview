@@ -130,6 +130,13 @@ export interface RuntimeOptions {
    * documents stops sharing a field name between them.
    */
   readonly scopeBindingsByOwner?: boolean;
+  /**
+   * Which windows may post updates: `'any'` that passes the origin check
+   * (default, 1.x), or `'parent-or-opener'` — the admin frames or opens the
+   * page, so its window is the only legitimate sender. ADR 0007, row
+   * "messages must come from parent/opener"; `defaults: 'v2'` sets it.
+   */
+  readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
   /** When true, every update applies regardless of visibility. */
   readonly disableVisibilityGate?: boolean;
   /** Cache-size threshold above which off-screen updates are queued for replay. Default 50. */
@@ -394,6 +401,9 @@ export class LivePreviewRuntime {
         log('LP0501 message rejected:', reason, origin);
       },
       ...(options.validateToken !== undefined ? { validateToken: options.validateToken } : {}),
+      ...(options.eventSourcePolicy !== undefined
+        ? { sourcePolicy: options.eventSourcePolicy }
+        : {}),
     });
     // ConnectionState is deliberately callback-free here. Runtime transitions
     // have trust-boundary ordering requirements (notably timeout unlock before

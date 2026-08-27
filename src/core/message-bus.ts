@@ -63,7 +63,18 @@ export interface MessageHandlers {
    *
    * `reason` is one of `origin`, `shape`, `type`, `token`.
    */
-  readonly onInvalid?: (reason: 'origin' | 'shape' | 'type' | 'token', origin: string) => void;
+  readonly onInvalid?: (
+    reason: 'origin' | 'shape' | 'type' | 'token' | 'source',
+    origin: string,
+  ) => void;
+  /**
+   * Which windows may post updates. `'parent-or-opener'` accepts only the
+   * attached window's parent (when framed) or opener (when popped up) and
+   * refuses every other source with reason `'source'` — a same-origin
+   * sibling frame, or a script on the page itself, cannot then drive the
+   * preview even though its origin passes the allow-list. Default `'any'`.
+   */
+  readonly sourcePolicy?: 'any' | 'parent-or-opener';
   /**
    * Optional preview-token gate. When set, every `payload-live-preview`
    * update message must carry a `previewToken` that this function
@@ -268,6 +279,11 @@ export class MessageBus {
       this.#reportInvalid('origin', origin, generation);
       return;
     }
+    if (!this.#matchesSource(event)) {
+      this.#reportInvalid('source', origin, generation);
+      return;
+    }
+    if (!this.#isCurrentGeneration(generation)) return;
 
     const data: unknown = event.data;
     if (!this.#isCurrentGeneration(generation)) return;
@@ -445,7 +461,7 @@ export class MessageBus {
   }
 
   #reportInvalid(
-    reason: 'origin' | 'shape' | 'type' | 'token',
+    reason: 'origin' | 'shape' | 'type' | 'token' | 'source',
     origin: string,
     generation: number,
   ): void {
@@ -463,6 +479,27 @@ export class MessageBus {
   }
 
   /** Origin policy is a fail-closed trust boundary, including faulty matchers. */
+  /**
+   * Under `'parent-or-opener'`, whether the event came from the attached
+   * window's parent or opener. Reading `event.source` crosses into a possibly
+   * synthetic event, so a throwing accessor counts as a mismatch.
+   */
+  #matchesSource(event: MessageEvent): boolean {
+    if (this.s[BusSlot.Handlers].sourcePolicy !== 'parent-or-opener') return true;
+    const target = this.s[BusSlot.AttachedTarget];
+    if (target === undefined) return false;
+    try {
+      const source = event.source;
+      if (source === null) return false;
+      const parent = target.parent;
+      if (parent !== target && source === parent) return true;
+      const opener: unknown = target.opener;
+      return opener !== null && opener !== undefined && source === opener;
+    } catch {
+      return false;
+    }
+  }
+
   #matchesOrigin(origin: string, generation: number): boolean {
     if (!this.#isCurrentGeneration(generation)) return false;
     try {

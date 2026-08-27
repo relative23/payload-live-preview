@@ -4,10 +4,15 @@
 
 ```ts
 
-import { c as createLivePreviewMiddleware } from '../../middleware-DBzrlNbB.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-DBzrlNbB.js';
-import { a as LivePreviewMiddleware } from '../../middleware-DBzrlNbB.js';
-import { N as NONCE_LOCALS_KEY } from '../../middleware-DBzrlNbB.js';
+import { A as AUTHORIZATION_LOCALS_KEY } from '../../middleware-Bc2awMbu.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-Bc2awMbu.js';
+import { h as hasPreviewIntent } from '../../preview-request-OtCAmNe2.js';
+import { i as isPreviewRequest } from '../../preview-request-OtCAmNe2.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-Bc2awMbu.js';
+import { a as LivePreviewMiddleware } from '../../middleware-Bc2awMbu.js';
+import { N as NONCE_LOCALS_KEY } from '../../middleware-Bc2awMbu.js';
+import { P as PreviewRequestLike } from '../../preview-request-OtCAmNe2.js';
+import { a as PreviewRequestOptions } from '../../preview-request-OtCAmNe2.js';
 
 // @public (undocumented)
 interface AstroConfigSetupContext {
@@ -41,6 +46,8 @@ export interface AstroIntegrationLike {
     readonly name: string;
 }
 
+export { AUTHORIZATION_LOCALS_KEY }
+
 export { createLivePreviewMiddleware }
 
 // @public (undocumented)
@@ -59,8 +66,9 @@ interface DevResponse {
     statusCode: number;
 }
 
-// @public
-export function isPreviewRequest(request: PreviewRequestLike, options?: PreviewRequestOptions): boolean;
+export { hasPreviewIntent }
+
+export { isPreviewRequest }
 
 // @public
 export function livePreview(options?: LivePreviewAstroOptions): AstroIntegrationLike;
@@ -71,27 +79,9 @@ export { LivePreviewMiddleware }
 
 export { NONCE_LOCALS_KEY }
 
-// @public
-export interface PreviewRequestLike {
-    // (undocumented)
-    readonly headers: {
-        get(name: string): string | null;
-    };
-    // (undocumented)
-    readonly url: string;
-}
+export { PreviewRequestLike }
 
-// @public (undocumented)
-export interface PreviewRequestOptions {
-    readonly adminOrigins?: readonly string[];
-    readonly checkFetchDest?: boolean;
-    readonly queryParams?: readonly string[];
-    // Warning: (ae-forgotten-export) The symbol "PreviewSignal" needs to be exported by the entry point index.d.ts
-    readonly signals?: readonly PreviewSignal[];
-}
-
-// @public
-type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
+export { PreviewRequestOptions }
 
 // @public
 export function renderLivePreviewScript(options?: RenderScriptOptions): string;
@@ -142,10 +132,10 @@ interface VitePluginLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/astro/index.d.ts:55:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:55:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:74:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:85:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:57:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:57:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:76:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:87:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

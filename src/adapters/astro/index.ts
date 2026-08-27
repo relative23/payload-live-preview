@@ -8,6 +8,7 @@ export { livePreview, type AstroIntegrationLike } from './integration';
 export {
   createLivePreviewMiddleware,
   NONCE_LOCALS_KEY,
+  AUTHORIZATION_LOCALS_KEY,
   type LivePreviewMiddleware,
 } from './middleware';
 export { renderLivePreviewScript, type RenderScriptOptions } from './component';

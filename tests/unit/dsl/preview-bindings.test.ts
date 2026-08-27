@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createPreviewBindings } from '@dsl/preview-bindings';
+import { authorizePreviewRequest } from '@security/preview-authorization';
 
 interface Homepage {
   heroTitle: string;
@@ -117,5 +118,48 @@ describe('createPreviewBindings — request scoping', () => {
 
     expect(anonymous.bind<Homepage>('heroTitle')).toEqual({});
     expect(editor.bind<Homepage>('heroTitle')).toEqual({ 'data-payload-field': 'heroTitle' });
+  });
+});
+
+describe('createPreviewBindings — authorization context (1.1.0)', () => {
+  async function context() {
+    const result = await authorizePreviewRequest(new Request('https://site.example.com/'), {
+      type: 'verifier',
+      verify: () => ({ subject: 'editor' }),
+    });
+    if (!result.authorized) throw new Error('expected authorization');
+    return result.context;
+  }
+
+  it('emits with a real context and nothing with null', async () => {
+    const authorized = createPreviewBindings({ authorization: await context(), owner: 'pages:1' });
+    expect(authorized.authorized).toBe(true);
+    expect(authorized.bind('title')).toHaveProperty('data-payload-field', 'title');
+    expect(authorized.owner()).toEqual({ 'data-payload-owner': 'pages:1' });
+    const anonymous = createPreviewBindings({ authorization: null, owner: 'pages:1' });
+    expect(anonymous.authorized).toBe(false);
+    expect(anonymous.bind('title')).toEqual({});
+    expect(anonymous.owner()).toEqual({});
+  });
+
+  it('treats a look-alike context as a public response', async () => {
+    const real = await context();
+    for (const fake of [{ ...real }, JSON.parse(JSON.stringify(real)), { authorized: true }]) {
+      const bindings = createPreviewBindings({
+        authorization: fake as unknown as typeof real,
+      });
+      expect(bindings.authorized, JSON.stringify(fake)).toBe(false);
+      expect(bindings.bind('title')).toEqual({});
+    }
+  });
+
+  it('keeps the boolean form through 1.x and refuses it under strict', () => {
+    expect(createPreviewBindings({ authorized: true }).bind('title')).toHaveProperty(
+      'data-payload-field',
+    );
+    expect(() => createPreviewBindings({ authorized: true, strict: true })).toThrow(
+      /authorization/,
+    );
+    expect(() => createPreviewBindings({ authorization: null, strict: true })).not.toThrow();
   });
 });

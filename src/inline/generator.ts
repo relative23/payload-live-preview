@@ -91,6 +91,8 @@ export interface InlineScriptConfig {
    * renderers and `elementUpdate` listeners then stop seeing repeats.
    */
   readonly skipUnchanged?: boolean;
+  /** Which windows may post updates; `'parent-or-opener'` refuses every other source. Default `'any'`. */
+  readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
   /**
    * Retained for 1.x source compatibility, but has no effect here:
    * `generateInlineScript()` returns a script body and creates no tag.
@@ -147,6 +149,7 @@ function buildConfigLiteral(config: InlineScriptConfig): string {
     config.disableLocalhostMatching,
     config.scopeBindingsByOwner,
     config.skipUnchanged,
+    config.eventSourcePolicy,
   ];
   while (compactConfig.length > 0 && compactConfig.at(-1) === undefined) compactConfig.pop();
   // Preserve omitted interior options as sparse JavaScript slots. JSON arrays

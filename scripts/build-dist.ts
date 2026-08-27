@@ -18,7 +18,7 @@ const DIST = resolve(ROOT, 'dist');
 
 /** Public callable names exposed by `payload-live-preview/core`. */
 const CORE_PUBLIC_FUNCTION_NAMES =
-  /^(?:EventEmitter|LivePreviewClient|OriginDetector|bind|bindByPath|buildFrameAncestors|buildScriptSrcWithNonce|createPreviewBindings|detectInitialLocale|escapeHtml|escapeHtmlAttribute|generateCspNonce|hasCapability|initLivePreview|isDevMode|isExternalHttpUrl|isInIframe|isInPopup|isInPreviewContext|isSafeUrl|negotiateProtocol|sanitizeHtml|setCspCrypto|setSanitizerDocument)$/;
+  /^(?:EventEmitter|LivePreviewClient|OriginDetector|bind|bindByPath|buildFrameAncestors|buildScriptSrcWithNonce|createPreviewBindings|isAuthorizedPreviewContext|detectInitialLocale|escapeHtml|escapeHtmlAttribute|generateCspNonce|hasCapability|initLivePreview|isDevMode|isExternalHttpUrl|isInIframe|isInPopup|isInPreviewContext|isSafeUrl|negotiateProtocol|sanitizeHtml|setCspCrypto|setSanitizerDocument)$/;
 
 await rm(DIST, { recursive: true, force: true });
 

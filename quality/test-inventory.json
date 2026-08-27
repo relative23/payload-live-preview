@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 105,
-    "suites": 316,
-    "tests": 1566,
+    "files": 109,
+    "suites": 330,
+    "tests": 1618,
     "benchmarks": 11
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 86,
-      "suites": 285,
-      "tests": 1467,
+      "files": 90,
+      "suites": 299,
+      "tests": 1519,
       "benchmarks": 0
     }
   },
@@ -215,6 +215,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/authorize-preview.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/nextjs.test.ts",
       "group": "unit",
       "suites": 6,
@@ -226,6 +233,13 @@
       "group": "unit",
       "suites": 8,
       "tests": 21,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/policy-authorization.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 20,
       "benchmarks": 0
     },
     {
@@ -341,6 +355,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/defaults-profile.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/diagnostic-codes.test.ts",
       "group": "unit",
       "suites": 4,
@@ -387,6 +408,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/message-bus-source.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -518,8 +546,8 @@
     {
       "path": "tests/unit/dsl/preview-bindings.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 14,
+      "suites": 4,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -651,8 +679,8 @@
     {
       "path": "tests/unit/preview-fetch.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 7,
+      "suites": 3,
+      "tests": 11,
       "benchmarks": 0
     },
     {

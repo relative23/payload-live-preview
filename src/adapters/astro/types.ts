@@ -4,6 +4,9 @@
  * @module @adapters/astro/types
  */
 
+import type { DefaultsProfile } from '@core/defaults-profile';
+import type { PreviewAuthorizationHookResult } from '@adapters/shared/policy';
+
 export interface LivePreviewAstroOptions {
   /**
    * How the integration wires the preview:
@@ -149,4 +152,31 @@ export interface LivePreviewAstroOptions {
    * `false` in 1.x; see the client option of the same name.
    */
   readonly skipUnchanged?: boolean;
+
+  /**
+   * Verify that the request is an authorized preview before anything
+   * privileged is decided. Called only on requests with preview intent.
+   * Return the result of `authorizePreviewRequest()` (or the context it
+   * carries); anything else refuses, and a refusal blocks runtime injection,
+   * CSP changes and nonce exposure regardless of `autoInject` and
+   * `shouldInject`. Without this hook the adapter gates on intent alone, as
+   * it did in 1.0 — announced once per process outside production.
+   * ADR 0006 records the threat model.
+   */
+  readonly authorizePreview?: (
+    request: Request,
+  ) => PreviewAuthorizationHookResult | Promise<PreviewAuthorizationHookResult>;
+
+  /**
+   * Refuse insecure configuration at startup: requires `authorizePreview`,
+   * explicit non-empty `allowedOrigins` (https outside development), and no
+   * referrer trust. Implied by `defaults: 'v2'`.
+   */
+  readonly strict?: boolean;
+
+  /**
+   * `'v2'` applies every 2.0 default that exists as a 1.x option at once —
+   * the readiness table in ADR 0007. Explicit options override the profile.
+   */
+  readonly defaults?: DefaultsProfile;
 }

@@ -3,6 +3,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { fetchPreviewDocument, fetchPreviewGlobal } from '@/preview-fetch';
+import { authorizePreviewRequest } from '@security/preview-authorization';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -123,5 +124,75 @@ describe('fetchPreviewGlobal', () => {
     const url = new URL(fetchFn.mock.calls[0]![0] as string);
     expect(url.pathname).toBe('/api/globals/homepage');
     expect(url.searchParams.get('draft')).toBe('true');
+  });
+});
+
+describe('authorization option (1.1.0)', () => {
+  async function context(payloadHeaders: Record<string, string>) {
+    const result = await authorizePreviewRequest(new Request('https://site.example.com/'), {
+      type: 'verifier',
+      verify: () => ({ payloadHeaders }),
+    });
+    if (!result.authorized) throw new Error('expected authorization');
+    return result.context;
+  }
+  function capture() {
+    const calls: { url: string; headers: Record<string, string> }[] = [];
+    const fetchFn = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      calls.push({ url, headers: { ...(init?.headers as Record<string, string>) } });
+      return Promise.resolve(jsonResponse({ docs: [{ id: 1 }] }));
+    });
+    return { calls, fetchFn: fetchFn as unknown as typeof fetch };
+  }
+
+  it('reads the draft and forwards the context headers when authorized', async () => {
+    const { calls, fetchFn } = capture();
+    await fetchPreviewDocument({
+      serverURL: 'https://cms.example.com',
+      collection: 'pages',
+      authorization: await context({ cookie: 'payload-token=abc' }),
+      fetchFn,
+    });
+    expect(calls[0]?.url).toContain('draft=true');
+    expect(calls[0]?.headers['cookie']).toBe('payload-token=abc');
+  });
+
+  it('reads the published document and forwards nothing for null, whatever draft says', async () => {
+    const { calls, fetchFn } = capture();
+    await fetchPreviewGlobal({
+      serverURL: 'https://cms.example.com',
+      global: 'homepage',
+      authorization: null,
+      draft: true,
+      headers: { 'x-app': 'kept' },
+      fetchFn,
+    });
+    expect(calls[0]?.url).not.toContain('draft=true');
+    expect(calls[0]?.headers['cookie']).toBeUndefined();
+    expect(calls[0]?.headers['x-app']).toBe('kept');
+  });
+
+  it('treats a look-alike context as public', async () => {
+    const { calls, fetchFn } = capture();
+    const real = await context({ cookie: 'payload-token=abc' });
+    await fetchPreviewDocument({
+      serverURL: 'https://cms.example.com',
+      collection: 'pages',
+      authorization: { ...real },
+      fetchFn,
+    });
+    expect(calls[0]?.url).not.toContain('draft=true');
+    expect(calls[0]?.headers['cookie']).toBeUndefined();
+  });
+
+  it('keeps the 1.x default (draft) when no authorization is given', async () => {
+    const { calls, fetchFn } = capture();
+    await fetchPreviewDocument({
+      serverURL: 'https://cms.example.com',
+      collection: 'pages',
+      fetchFn,
+    });
+    expect(calls[0]?.url).toContain('draft=true');
   });
 });

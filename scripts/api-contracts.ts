@@ -40,8 +40,15 @@ export interface ApiReportCheckOptions {
  * Rollup the loader mode touches, exist only to keep `astro` and `vite` as
  * runtime-optional peers, and exporting them would put third-party structural
  * types on this package's surface for no consumer benefit.
+ *
+ * 52 → 51 with the authorized preview context (1.1.0): the `astro` entry's
+ * rollup no longer carries the `PreviewSignal` warning — the alias is
+ * inlined into `PreviewRequestOptions` there — and every type the new
+ * authorization surface references is exported from the entry that
+ * references it (root, `core`, the four adapters), so the new surface adds
+ * no debt. Reviewed against the report diff, not assumed.
  */
-export const FORGOTTEN_EXPORT_BASELINE = 52;
+export const FORGOTTEN_EXPORT_BASELINE = 51;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

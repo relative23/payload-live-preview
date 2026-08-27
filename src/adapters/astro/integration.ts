@@ -191,6 +191,13 @@ function setupMiddlewareMode(ctx: AstroConfigSetupContext, options: LivePreviewA
         'hooks (Astro >= 4). Upgrade Astro or use the default inline mode.',
     );
   }
+  if (options.authorizePreview !== undefined) {
+    throw new Error(
+      "payload-live-preview: `authorizePreview` cannot be used with mode 'middleware' — " +
+        'options are serialized into the build. Compose `createLivePreviewMiddleware()` ' +
+        'in your own `src/middleware.ts` to pass the hook.',
+    );
+  }
   if (options.shouldInject !== undefined) {
     throw new Error(
       "payload-live-preview: `shouldInject` cannot be used with mode 'middleware' — " +

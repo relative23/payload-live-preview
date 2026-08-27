@@ -181,33 +181,23 @@ If draft data or response changes are privileged, use one application-owned serv
 
 ```ts
 // src/middleware.ts
-import { createLivePreviewMiddleware, isPreviewRequest } from 'payload-live-preview/astro';
-import { verifyAppPreviewSession } from './lib/server/preview-auth'; // your server code
+import { createLivePreviewMiddleware } from 'payload-live-preview/astro';
+import { authorizePreviewRequest } from 'payload-live-preview';
 
-const previewMiddleware = createLivePreviewMiddleware({
+export const onRequest = createLivePreviewMiddleware({
   allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+  strict: true,
+  // Runs only on requests with preview intent. A refusal leaves the response
+  // exactly as rendered: no runtime, no CSP change, no nonce in Astro.locals.
+  authorizePreview: (request) =>
+    authorizePreviewRequest(request, {
+      type: 'payload-session',
+      serverURL: import.meta.env.PAYLOAD_URL,
+    }),
 });
-
-export const onRequest = async (context, next) => {
-  const hasPreviewIntent = isPreviewRequest(context.request, {
-    adminOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
-  });
-  const authorization = hasPreviewIntent ? await verifyAppPreviewSession(context.request) : null;
-
-  if (authorization === null) return next();
-
-  // Reuse this request-scoped decision in the page's draft fetch.
-  context.locals.previewAuthorization = authorization;
-  const response = await previewMiddleware(context, next);
-  const headers = new Headers(response.headers);
-  headers.set('cache-control', 'private, no-store');
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-};
 ```
+
+The same verdict gates the page: read `Astro.locals.livePreviewNonce` for your own scripts, and pass the context to `fetchPreviewDocument({ authorization })` and `createPreviewBindings({ authorization })` so draft selection and `data-payload-*` emission follow it. Three strategies exist — `payload-session`, `signed-token` (issued by `issuePreviewToken()` on the Payload side, bound to site, path, locale and a few minutes) and `verifier` (your own function). [ADR 0006](docs/architecture/0006-authorized-preview-context.md) is the threat model.
 
 ### Next.js (App Router)
 

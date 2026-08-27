@@ -133,75 +133,73 @@ authorization. A hand-written `url` callback works identically.
 
 Live preview patches the DOM _after_ the page loads — the initial SSR
 render is still your job. Draft reads require a real server-side
-authorization decision. `isPreviewRequest()` only detects intent; an
+authorization decision. `hasPreviewIntent()` only detects intent; an
 attacker can add its query parameter or load a page in an iframe.
 
-For an SSR project, compose the manual adapter behind application-owned
-authentication. The verifier below is deliberately a local import, not
-a package API: implement it by validating the current user's Payload
-session, or a short-lived signed preview authorization bound to the
-expected audience, route, and expiry. Have it return only the minimum
-request-scoped Payload headers needed by the page fetch.
+Since 1.1.0 the middleware makes that decision itself when you give it
+`authorizePreview`. The hook runs only on requests with preview intent,
+and a refusal leaves the response exactly as rendered: no runtime, no CSP
+change, no nonce in `Astro.locals`. The verified context is put on
+`Astro.locals.livePreviewAuthorization` for the page. `strict: true` makes
+the middleware refuse to start without the hook, without explicit `https`
+admin origins, or with referrer trust — the 2.0 defaults, today.
 
 ```ts
 // src/middleware.ts
-import { createLivePreviewMiddleware, isPreviewRequest } from 'payload-live-preview/astro';
-import { verifyAppPreviewSession } from './lib/server/preview-auth';
+import { createLivePreviewMiddleware } from 'payload-live-preview/astro';
+import { authorizePreviewRequest } from 'payload-live-preview';
 
-const ADMIN = import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN;
-const applyLivePreview = createLivePreviewMiddleware({
-  allowedOrigins: [ADMIN],
+export const onRequest = createLivePreviewMiddleware({
+  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
   serverURL: import.meta.env.PUBLIC_PAYLOAD_URL,
+  strict: true,
+  authorizePreview: (request) =>
+    authorizePreviewRequest(request, {
+      // Forwards exactly one cookie (`payload-token`) to `/api/users/me`.
+      type: 'payload-session',
+      serverURL: import.meta.env.PAYLOAD_URL,
+    }),
 });
-
-export const onRequest = async (context, next) => {
-  const hasPreviewIntent = isPreviewRequest(context.request, {
-    adminOrigins: [ADMIN],
-  });
-  const authorization = hasPreviewIntent ? await verifyAppPreviewSession(context.request) : null;
-
-  // Fail closed: no draft credentials, injection, CSP mutation, or
-  // private-cache response for an unauthorised request.
-  if (authorization === null) return next();
-
-  context.locals.previewAuthorization = authorization;
-  const response = await applyLivePreview(context, next);
-  const headers = new Headers(response.headers);
-  headers.set('cache-control', 'private, no-store');
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-};
 ```
 
-The page reuses that request-scoped result for the draft query instead
-of authorizing again or trusting the intent signal:
+Three strategies exist. `payload-session` is the one above.
+`signed-token` verifies a short-lived HMAC token the Payload side mints
+with `issuePreviewToken()` — bound to this site, this path, the locale and
+a few minutes — which is how a preview works without a cookie crossing
+origins (see the `buildLivePreviewUrl` example in the README). `verifier`
+is your own async function for an SSO or edge-auth setup; it returns
+claims or `null` and receives the same branded context as the others.
+[ADR 0006](architecture/0006-authorized-preview-context.md) records the
+threat model and what each token binding defends against.
+
+The page reuses that request-scoped verdict for the draft query and for
+the binding attributes, instead of authorizing again or trusting the
+intent signal:
 
 ```astro
 ---
-import { fetchPreviewDocument } from 'payload-live-preview';
+import { createPreviewBindings, fetchPreviewDocument } from 'payload-live-preview';
 
-const authorization = Astro.locals.previewAuthorization ?? null;
+const authorization = Astro.locals.livePreviewAuthorization ?? null;
 const page = await fetchPreviewDocument<Page>({
   serverURL: import.meta.env.PAYLOAD_URL,
   collection: 'pages',
   where: { slug: { equals: Astro.params.slug } },
-  draft: authorization !== null, // published for unauthorised/normal traffic
-  depth: 1,                      // keep equal to the integration's mergeDepth
-  ...(authorization === null ? {} : { headers: authorization.payloadHeaders }),
+  authorization, // draft + forwarded session material follow the verdict
+  depth: 1,      // keep equal to the integration's mergeDepth
 });
+const preview = createPreviewBindings({ authorization, owner: `pages:${page.id}` });
 ---
+<h1 {...preview.bind<Page>('title')}>{page.title}</h1>
 ```
 
-`fetchPreviewDocument()` and `fetchPreviewGlobal()` build REST queries;
-they do not authenticate them. Their `draft` option defaults to `true`
-in 1.x for compatibility, so set it explicitly. Never attach a
-long-lived API key or service token merely because
-`isPreviewRequest()` returned `true`. The single verified authorization
-above governs the draft flag, forwarded credentials, cache policy, CSP
-mutation, and runtime injection together.
+Without `authorization` the helpers keep their 1.x behaviour: `draft`
+defaults to `true` and nothing is forwarded — set `draft` explicitly if
+you verify elsewhere. Never attach a long-lived API key or service token
+merely because `hasPreviewIntent()` returned `true`. One verdict governs
+the draft flag, forwarded credentials, attribute emission, CSP mutation,
+and runtime injection together; your own page cache should consume the
+same verdict (`Cache-Control: private, no-store` on authorized responses).
 
 ## Gotchas
 

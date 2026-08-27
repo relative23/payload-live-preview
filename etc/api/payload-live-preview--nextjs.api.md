@@ -4,6 +4,9 @@
 
 ```ts
 
+import { D } from '../../policy-DAKG-5Pb.js';
+import { P } from '../../policy-DAKG-5Pb.js';
+
 // @public
 export function createLivePreviewMiddleware(options?: LivePreviewNextOptions): (request: Request, response: Response) => Promise<Response>;
 
@@ -12,12 +15,14 @@ export interface LivePreviewNextOptions {
     // (undocumented)
     readonly allowedOrigins?: readonly string[];
     readonly apiRoute?: string;
+    readonly authorizePreview?: (request: Request) => P | Promise<P>;
     // (undocumented)
     readonly autoInject?: boolean;
     // (undocumented)
     readonly debounceMs?: number;
     // (undocumented)
     readonly debug?: boolean;
+    readonly defaults?: D;
     // (undocumented)
     readonly frameAncestorsExtra?: readonly string[];
     readonly heartbeatMs?: number;
@@ -31,6 +36,7 @@ export interface LivePreviewNextOptions {
     readonly serverURL?: string;
     readonly shouldInject?: (request: Request) => boolean;
     readonly skipUnchanged?: boolean;
+    readonly strict?: boolean;
     readonly strictDynamic?: boolean;
 }
 
