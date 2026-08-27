@@ -21,6 +21,12 @@
  * @module @core/cache
  */
 
+import {
+  dependencyMapFromBinding,
+  mergeDependencyMaps,
+  parseDependencyList,
+  type DependencyMap,
+} from './dependencies';
 import type { CachedElement, ElementPredicate, FieldType, RendererKey } from './types';
 
 export const FIELD_ATTRIBUTE = 'data-payload-field';
@@ -37,6 +43,9 @@ export const HTML_ATTRIBUTE = 'data-payload-html';
 export const ARRAY_ATTRIBUTE = 'data-payload-array';
 export const STRUCTURAL_ATTRIBUTE = 'data-payload-structural';
 export const OWNER_ATTRIBUTE = 'data-payload-owner';
+export const DEPENDS_ATTRIBUTE = 'data-payload-depends';
+export const STRATEGY_ATTRIBUTE = 'data-payload-strategy';
+export const BOUNDARY_ATTRIBUTE = 'data-payload-boundary';
 export const INPUT_TYPE_ATTRIBUTE = 'type';
 
 /**
@@ -150,6 +159,22 @@ export class ElementCache {
    * are discarded. Returns build statistics so callers can emit
    * cache-refresh events with the durations populated.
    */
+  /**
+   * Source → dependents declared by `data-payload-depends` on cached
+   * bindings, in the shape the runtime's `dependencies` option uses.
+   */
+  dependencyMap(): DependencyMap {
+    const maps: DependencyMap[] = [];
+    for (const bindings of this.#entries.values()) {
+      for (const binding of bindings) {
+        if (binding.dependsOn !== undefined) {
+          maps.push(dependencyMapFromBinding(binding.fieldName, binding.dependsOn));
+        }
+      }
+    }
+    return mergeDependencyMaps(...maps);
+  }
+
   buildFromRoot(root: ParentNode): CacheBuildStats {
     const t0 = performance.now();
     this.clear();
@@ -302,6 +327,8 @@ export class ElementCache {
     const arraySeparator = element.getAttribute(ARRAY_SEPARATOR_ATTRIBUTE);
     const locale = element.getAttribute(LOCALE_ATTRIBUTE);
     const owner = resolveBindingOwner(element);
+    const dependsOn = parseDependencyList(element.getAttribute(DEPENDS_ATTRIBUTE));
+    const strategy = element.getAttribute(STRATEGY_ATTRIBUTE);
 
     const entry: CachedElement = {
       element,
@@ -316,6 +343,9 @@ export class ElementCache {
       ...(arraySeparator !== null ? { arraySeparator } : {}),
       ...(locale !== null && locale.length > 0 ? { locale } : {}),
       ...(owner !== undefined ? { owner } : {}),
+      ...(dependsOn.length > 0 ? { dependsOn } : {}),
+      ...(strategy !== null && strategy.length > 0 ? { strategy } : {}),
+      ...(element.hasAttribute(BOUNDARY_ATTRIBUTE) ? { boundary: true } : {}),
     };
     return entry;
   }

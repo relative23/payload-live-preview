@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 118,
-    "suites": 361,
-    "tests": 1696,
+    "files": 119,
+    "suites": 365,
+    "tests": 1702,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 97,
-      "suites": 325,
-      "tests": 1584,
+      "files": 98,
+      "suites": 329,
+      "tests": 1590,
       "benchmarks": 0
     }
   },
@@ -422,6 +422,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/markup-ergonomics.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 6,
       "benchmarks": 0
     },
     {

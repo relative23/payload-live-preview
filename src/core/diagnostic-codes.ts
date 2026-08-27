@@ -69,6 +69,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   StructuralDuplicateKey: 'LP0405',
   /** Every structural key changed while the length did not; the source generates keys per message. */
   StructuralUnstableKeys: 'LP0406',
+  /** A binding asks for a delivery strategy this release does not have; it is left unchanged. */
+  UnsupportedStrategy: 'LP0407',
 
   /** A message was rejected before it reached the update pipeline. */
   MessageRejected: 'LP0501',

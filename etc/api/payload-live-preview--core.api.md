@@ -61,6 +61,8 @@ export interface CachedElement {
     readonly altField?: string;
     readonly arraySeparator?: string;
     readonly arrayTemplate?: string;
+    readonly boundary?: boolean;
+    readonly dependsOn?: readonly string[];
     readonly element: Element;
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
@@ -69,6 +71,7 @@ export interface CachedElement {
     readonly locale?: string;
     readonly owner?: string;
     readonly srcField?: string;
+    readonly strategy?: string;
     readonly targetAttribute?: string;
 }
 
@@ -103,6 +106,10 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnsafeAttributeWrite: "LP0401";
     readonly TextTargetHasChildren: "LP0402";
     readonly MissingArrayTemplate: "LP0403";
+    readonly StructuralItemUnkeyed: "LP0404";
+    readonly StructuralDuplicateKey: "LP0405";
+    readonly StructuralUnstableKeys: "LP0406";
+    readonly UnsupportedStrategy: "LP0407";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly HandlerThrew: "LP0601";
@@ -691,6 +698,7 @@ export function sanitizeHtml(html: string, options?: SanitizeOptions): string;
 interface SanitizeOptions {
     readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
     readonly additionalAllowedTags?: readonly string[];
+    readonly allowFormControls?: boolean;
 }
 
 // @public

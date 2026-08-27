@@ -71,6 +71,12 @@ export interface CachedElement {
    * populates it for DOM-derived bindings.
    */
   readonly explicitFieldType?: boolean;
+  /** Fields this binding depends on (`data-payload-depends`); a change in any re-applies it under `skipUnchanged`. */
+  readonly dependsOn?: readonly string[];
+  /** `data-payload-strategy`; only `patch` is applied in 1.x, anything else is left for the fragment strategy. */
+  readonly strategy?: string;
+  /** `data-payload-boundary`: an anchor that hides itself while its field is empty. */
+  readonly boundary?: boolean;
   /**
    * Optional target attribute: the value is written to this attribute
    * instead of the element's content (from `data-payload-attribute`,

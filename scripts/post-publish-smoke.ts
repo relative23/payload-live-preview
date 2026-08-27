@@ -57,6 +57,7 @@ export const ENTRY_REACHABILITY = {
   './codegen': 'needs-ts-morph',
   './codegen/astro': 'needs-ts-morph',
   './astro/RichText.astro': 'not-node-importable',
+  './astro/PreviewBoundary.astro': 'not-node-importable',
   './astro/middleware-entry': 'not-node-importable',
 } as const satisfies Readonly<Record<string, 'import' | 'needs-ts-morph' | 'not-node-importable'>>;
 
