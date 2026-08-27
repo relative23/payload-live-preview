@@ -46,6 +46,24 @@ Astro **4 – 7** is the supported peer range; the current real-app browser fixt
 npm install payload-live-preview
 ```
 
+### Package entries
+
+The root import carries everything. The focused entries below ship the same
+code as smaller, self-contained bundles — each with ESM and CommonJS builds,
+its own type declarations, size budget and API report:
+
+| Entry                                                | Contents                                                                                          |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `payload-live-preview`                               | Everything: client, inline script generator, renderers, plugins, adapters' shared helpers.        |
+| `payload-live-preview/core`                          | The client and runtime without the built-in plugin constructors, generator or adapters.           |
+| `payload-live-preview/client`                        | `LivePreviewClient` and `initLivePreview()` alone.                                                |
+| `payload-live-preview/structural`                    | The structural array renderer, the keyed morph (ADR 0008) and the `data-payload-depends` helpers. |
+| `payload-live-preview/lexical`                       | `lexicalToHtml()`, `lexicalToPlainText()`, node and block renderer registries.                    |
+| `payload-live-preview/plugins`                       | `PluginManager`, plugin types and the built-in plugins.                                           |
+| `payload-live-preview/server`                        | `definePreview()` and `authorizePreviewRequest()` for server code.                                |
+| `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | One framework adapter each.                                                                       |
+| `payload-live-preview/codegen`                       | Type generation from a Payload config.                                                            |
+
 ## Configure Payload
 
 Enable live preview in `payload.config.ts` — the `url` callback maps the edited document to the frontend URL shown in the preview iframe. `buildLivePreviewUrl` replaces the usual lookup-table boilerplate:

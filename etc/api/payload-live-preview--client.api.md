@@ -5,58 +5,6 @@
 ```ts
 
 // @public
-const AUTHORIZED_PREVIEW_BRAND: unique symbol;
-
-// @public
-export interface AuthorizedPreviewContext {
-    // (undocumented)
-    readonly [AUTHORIZED_PREVIEW_BRAND]: true;
-    readonly authorizedAt: number;
-    readonly expiresAt: number | undefined;
-    readonly payloadHeaders: Readonly<Record<string, string>>;
-    // (undocumented)
-    readonly scope: AuthorizedPreviewScope;
-    // (undocumented)
-    readonly strategy: PreviewAuthorizationStrategyName;
-    readonly subject: string | undefined;
-}
-
-// @public
-export interface AuthorizedPreviewScope {
-    readonly audience?: string;
-    readonly locale?: string;
-    readonly path?: string;
-}
-
-// @public
-export function bind<T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions): FieldBindingAttributes;
-
-// @public
-export function bindByPath<T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions): FieldBindingAttributes;
-
-// @public (undocumented)
-export interface BindOptions {
-    readonly alt?: string;
-    readonly arrayTemplate?: string;
-    readonly attribute?: string;
-    readonly href?: string;
-    readonly html?: boolean;
-    readonly locale?: string;
-    readonly richtext?: boolean;
-    readonly type?: string;
-}
-
-// @public
-export function buildFrameAncestors(options?: FrameAncestorsOptions): string;
-
-// @public
-export function buildScriptSrcWithNonce(nonce: string, options?: {
-    readonly self?: boolean;
-    readonly extra?: readonly string[];
-    readonly strictDynamic?: boolean;
-}): string;
-
-// @public
 export interface CachedElement {
     readonly altField?: string;
     readonly arraySeparator?: string;
@@ -76,25 +24,13 @@ export interface CachedElement {
 }
 
 // @public
-const CAPABILITY_REQUIREMENTS: Readonly<Record<string, number>>;
-
-// @public
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
-
-// @public
-export const CORE_ENTRY = true;
-
-// @public
-export function createPreviewBindings(options: PreviewBindingsOptions): PreviewBindings;
 
 // @public
 export type CustomRendererKey = `${string}:${string}`;
 
 // @public
 export type DefaultsProfile = 'v1' | 'v2';
-
-// @public
-export function detectInitialLocale(): string;
 
 // @public
 export const DIAGNOSTIC_CODES: Readonly<{
@@ -131,12 +67,6 @@ export const DIAGNOSTIC_CODES: Readonly<{
 export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_CODES];
 
 // @public
-export function escapeHtml(text: string): string;
-
-// @public
-export function escapeHtmlAttribute(value: string): string;
-
-// @public
 export class EventEmitter<TMap extends object = LivePreviewEventMap> {
     emit<E extends keyof TMap>(event: E, payload: TMap[E]): Promise<void>;
     // @internal
@@ -156,38 +86,6 @@ export type EventHandler<TPayload> = (payload: TPayload) => void | Promise<void>
 export type EventSourcePolicy = 'any' | 'parent-or-opener';
 
 // @public
-export interface FieldBindingAttributes {
-    // (undocumented)
-    readonly 'data-payload-alt'?: string;
-    // (undocumented)
-    readonly 'data-payload-array-template'?: string;
-    // (undocumented)
-    readonly 'data-payload-attribute'?: string;
-    // (undocumented)
-    readonly 'data-payload-field': string;
-    // (undocumented)
-    readonly 'data-payload-href'?: string;
-    // (undocumented)
-    readonly 'data-payload-html'?: string;
-    // (undocumented)
-    readonly 'data-payload-locale'?: string;
-    // (undocumented)
-    readonly 'data-payload-richtext'?: string;
-    // (undocumented)
-    readonly 'data-payload-type'?: string;
-}
-
-// @public
-export type FieldName<T> = Extract<keyof T, string>;
-
-// Warning: (ae-forgotten-export) The symbol "Prev" needs to be exported by the entry point core.d.ts
-//
-// @public
-export type FieldPath<T, Depth extends 0 | 1 | 2 | 3 = 3> = Depth extends 0 ? never : T extends readonly (infer U)[] ? FieldPath<U, Prev<Depth>> : T extends object ? {
-    [K in Extract<keyof T, string>]: K | (T[K] extends object ? `${K}.${FieldPath<T[K], Prev<Depth>>}` : never);
-}[Extract<keyof T, string>] : never;
-
-// @public
 export interface FieldRenderer {
     // (undocumented)
     readonly name: RendererKey;
@@ -196,7 +94,7 @@ export interface FieldRenderer {
 }
 
 // @public
-type FieldTransform = (value: unknown, context: {
+export type FieldTransform = (value: unknown, context: {
     readonly fieldName: string;
     readonly element: Element;
     readonly allFields: Record<string, unknown>;
@@ -204,22 +102,6 @@ type FieldTransform = (value: unknown, context: {
 
 // @public
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';
-
-// @public (undocumented)
-export interface FrameAncestorsOptions {
-    // (undocumented)
-    readonly allowNone?: boolean;
-    // (undocumented)
-    readonly origins?: readonly string[];
-    // (undocumented)
-    readonly self?: boolean;
-}
-
-// @public
-export function generateCspNonce(bytes?: number): string;
-
-// @public (undocumented)
-export function hasCapability(negotiation: ProtocolNegotiation, capability: ProtocolCapability): boolean;
 
 // @public
 export function initLivePreview(config?: LivePreviewClientConfig): LivePreviewClient | null;
@@ -274,48 +156,6 @@ export interface InspectionScheduler {
 }
 
 // @public
-export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext;
-
-// @public
-export function isDevMode(): boolean;
-
-// @public
-export function isExternalHttpUrl(url: string): boolean;
-
-// @public
-export function isInIframe(): boolean;
-
-// @public
-export function isInPopup(): boolean;
-
-// @public
-export function isInPreviewContext(): boolean;
-
-// @public
-export function isInsideIsland(element: Element): boolean;
-
-// @public
-export const ISLAND_EVENT = "payload-live-preview:update";
-
-// @public
-export interface IslandUpdateDetail {
-    // (undocumented)
-    readonly fields: Readonly<Record<string, unknown>>;
-    // (undocumented)
-    readonly locale: string | undefined;
-    // (undocumented)
-    readonly receivedAt: number;
-    // (undocumented)
-    readonly revision: number;
-}
-
-// @public
-export function isSafeUrl(url: unknown): boolean;
-
-// @public
-export const LIBRARY_PROTOCOL_VERSION = 4;
-
-// @public
 export class LivePreviewClient {
     constructor(rawConfig?: LivePreviewClientConfig);
     destroy(): Promise<void>;
@@ -331,7 +171,6 @@ export class LivePreviewClient {
     unuse(name: string): Promise<void>;
     // (undocumented)
     get updateCount(): number;
-    // Warning: (ae-forgotten-export) The symbol "LivePreviewPlugin" needs to be exported by the entry point core.d.ts
     use(plugin: LivePreviewPlugin): Promise<void>;
 }
 
@@ -440,12 +279,10 @@ export interface LivePreviewInspection {
 }
 
 // @public
-interface LivePreviewPlugin {
+export interface LivePreviewPlugin {
     readonly compat?: PluginCompatibility;
     // (undocumented)
     readonly destroy?: () => void | Promise<void>;
-    // Warning: (ae-forgotten-export) The symbol "PluginContext" needs to be exported by the entry point core.d.ts
-    //
     // (undocumented)
     readonly init: (context: PluginContext) => void | Promise<void>;
     // (undocumented)
@@ -454,60 +291,14 @@ interface LivePreviewPlugin {
     readonly version?: string;
 }
 
-// @public
-export function negotiateProtocol(theirs: number | undefined): ProtocolNegotiation;
-
-// @public
-export class OriginDetector {
-    // Warning: (ae-forgotten-export) The symbol "OriginDetectorOptions" needs to be exported by the entry point core.d.ts
-    constructor(options?: OriginDetectorOptions);
-    enumerate(): string[];
-    get isProductionUnconfigured(): boolean;
-    get isReferrerOnlyTrust(): boolean;
-    get lockedOrigin(): string | undefined;
-    lockOrigin(origin: string): boolean;
-    matches(origin: string): boolean;
-    get referrerWasAvailable(): boolean;
-    unlockOrigin(): string | undefined;
-}
-
-// @public
-interface OriginDetectorOptions {
-    readonly additionalOrigins?: readonly string[];
-    readonly enableLocalhostMatching?: boolean;
-    readonly enableReferrerDetection?: boolean;
-    readonly forceDevMode?: boolean;
-    readonly referrer?: string;
-}
-
-// @public
-export interface OwnerBindingAttributes {
-    // (undocumented)
-    readonly 'data-payload-owner': string;
-}
-
 // @public (undocumented)
-interface PayloadBlockSchema {
+export interface PayloadBlockSchema {
     // (undocumented)
     readonly [extra: string]: unknown;
     // (undocumented)
     readonly fields: readonly PayloadFieldSchema[];
     // (undocumented)
     readonly slug: string;
-}
-
-// @public
-interface PayloadDocumentEventDetail {
-    // (undocumented)
-    readonly [extra: string]: unknown;
-    // (undocumented)
-    readonly entitySlug: string;
-    // (undocumented)
-    readonly id?: string | number;
-    // (undocumented)
-    readonly operation?: 'create' | 'update';
-    // (undocumented)
-    readonly updatedAt?: string;
 }
 
 // @public
@@ -521,8 +312,6 @@ export interface PayloadFieldSchema {
     readonly admin?: {
         readonly condition?: PayloadFieldCondition;
     };
-    // Warning: (ae-forgotten-export) The symbol "PayloadBlockSchema" needs to be exported by the entry point core.d.ts
-    //
     // (undocumented)
     readonly blocks?: readonly PayloadBlockSchema[];
     // (undocumented)
@@ -561,55 +350,29 @@ export interface PayloadLivePreviewData {
 }
 
 // @public
-export interface PayloadLivePreviewMessage {
-    // (undocumented)
-    readonly collectionSlug?: string;
-    // (undocumented)
-    readonly data?: Record<string, unknown>;
-    // Warning: (ae-forgotten-export) The symbol "PayloadDocumentEventDetail" needs to be exported by the entry point core.d.ts
-    readonly externallyUpdatedRelationship?: PayloadDocumentEventDetail | null;
-    // (undocumented)
-    readonly fieldSchemaJSON?: readonly PayloadFieldSchema[];
-    // (undocumented)
-    readonly globalSlug?: string;
-    // (undocumented)
-    readonly locale?: string;
-    readonly previewToken?: string;
-    readonly protocolVersion?: number;
-    // (undocumented)
-    readonly ready?: boolean;
-    // (undocumented)
-    readonly type: 'payload-live-preview';
-}
-
-// @public
 export interface PluginCompatibility {
     readonly protocol?: number;
     readonly runtime?: string;
 }
 
 // @public
-interface PluginContext {
-    // Warning: (ae-forgotten-export) The symbol "PluginEvents" needs to be exported by the entry point core.d.ts
-    //
+export interface PluginContext {
     // (undocumented)
     readonly events: PluginEvents;
     // (undocumented)
     readonly getConfig: () => Readonly<Record<string, unknown>>;
     // (undocumented)
     readonly log: (...args: unknown[]) => void;
-    // Warning: (ae-forgotten-export) The symbol "PluginDisposer" needs to be exported by the entry point core.d.ts
     readonly registerCleanup?: (cleanup: PluginDisposer) => void;
     readonly registerFieldRenderer: (renderer: FieldRenderer) => void;
-    // Warning: (ae-forgotten-export) The symbol "FieldTransform" needs to be exported by the entry point core.d.ts
     readonly registerTransform: (fieldName: string, transform: FieldTransform) => void;
 }
 
 // @public
-type PluginDisposer = () => void;
+export type PluginDisposer = () => void;
 
 // @public
-interface PluginEvents extends EventEmitter {
+export interface PluginEvents extends EventEmitter {
     readonly emit: <E extends keyof LivePreviewEventMap>(event: E, payload: LivePreviewEventMap[E]) => Promise<void>;
     readonly emitWhile: <E extends keyof LivePreviewEventMap>(event: E, payload: LivePreviewEventMap[E], shouldContinue: () => boolean) => Promise<boolean>;
     readonly eventNames: () => (keyof LivePreviewEventMap)[];
@@ -639,58 +402,6 @@ export interface PluginInspection {
 }
 
 // @public
-type Prev<N extends 0 | 1 | 2 | 3> = N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
-
-// @public
-export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
-
-// @public
-export interface PreviewBindings {
-    readonly authorized: boolean;
-    bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
-    bindByPath: <T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
-    owner: () => OwnerBindingAttributes | SuppressedBinding;
-}
-
-// @public
-export interface PreviewBindingsBooleanOptions extends PreviewBindingsCommonOptions {
-    // (undocumented)
-    readonly authorization?: undefined;
-    // (undocumented)
-    readonly authorized: boolean;
-}
-
-// @public (undocumented)
-export interface PreviewBindingsCommonOptions {
-    readonly owner?: string;
-    readonly strict?: boolean;
-}
-
-// @public
-export interface PreviewBindingsContextOptions extends PreviewBindingsCommonOptions {
-    // (undocumented)
-    readonly authorization: AuthorizedPreviewContext | null;
-    // (undocumented)
-    readonly authorized?: undefined;
-}
-
-// @public (undocumented)
-export type PreviewBindingsOptions = PreviewBindingsContextOptions | PreviewBindingsBooleanOptions;
-
-// Warning: (ae-forgotten-export) The symbol "CAPABILITY_REQUIREMENTS" needs to be exported by the entry point core.d.ts
-//
-// @public (undocumented)
-export type ProtocolCapability = keyof typeof CAPABILITY_REQUIREMENTS;
-
-// @public (undocumented)
-export interface ProtocolNegotiation {
-    readonly capabilities: ReadonlySet<string>;
-    readonly negotiated: number;
-    readonly ours: number;
-    readonly theirs: number | undefined;
-}
-
-// @public
 export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
@@ -708,57 +419,8 @@ export type RichTextRenderer = (value: unknown, context: {
     readonly locale: string | undefined;
 }) => string;
 
-// Warning: (ae-forgotten-export) The symbol "SanitizeOptions" needs to be exported by the entry point core.d.ts
-//
-// @public
-export function sanitizeHtml(html: string, options?: SanitizeOptions): string;
-
-// @public (undocumented)
-interface SanitizeOptions {
-    readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
-    readonly additionalAllowedTags?: readonly string[];
-    readonly allowedDataAttributes?: readonly string[];
-    readonly allowFormControls?: boolean;
-    readonly policy?: SanitizerPolicyMode;
-}
-
-// @public
-export interface SanitizerDocument {
-    // (undocumented)
-    createElement: (tagName: string) => {
-        innerHTML: string;
-        readonly content: ParentNode;
-    };
-}
-
-// @public
-export type SanitizerPolicyMode = 'compat' | 'strict';
-
-// Warning: (ae-forgotten-export) The symbol "WebCryptoLike" needs to be exported by the entry point core.d.ts
-//
-// @public
-export function setCspCrypto(crypto: WebCryptoLike | null): void;
-
-// @public
-export function setSanitizerDocument(doc: SanitizerDocument | null): void;
-
-// @public
-export type SuppressedBinding = Readonly<Record<string, never>>;
-
 // @public
 export type Unsubscribe = () => void;
-
-// @public
-export type ValueAt<T, P extends string> = P extends `${infer Head}.${infer Rest}` ? Head extends keyof T ? T[Head] extends readonly (infer U)[] ? ValueAt<U, Rest> : T[Head] extends object ? ValueAt<T[Head], Rest> : unknown : unknown : P extends keyof T ? T[P] : unknown;
-
-// @public
-export const VERSION: string;
-
-// @public
-interface WebCryptoLike {
-    // (undocumented)
-    getRandomValues: <T extends ArrayBufferView | null>(array: T) => T;
-}
 
 // (No @packageDocumentation comment for this package)
 

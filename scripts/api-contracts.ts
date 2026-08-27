@@ -53,8 +53,13 @@ export interface ApiReportCheckOptions {
  * internal `Prev` helper type. The root entry carries the same warning in
  * this baseline already; exporting a depth-limiter tuple type would put an
  * implementation detail on the surface for no consumer benefit.
+ *
+ * 52 → 50 with the focused entries (1.4.0): `client`, `structural`, `lexical`
+ * and `plugins` re-export every type their signatures reference, so they add
+ * nothing; and `PayloadFieldCondition`, which `PayloadFieldSchema` references
+ * and the root and core entries had left unexported, is now exported by both.
  */
-export const FORGOTTEN_EXPORT_BASELINE = 52;
+export const FORGOTTEN_EXPORT_BASELINE = 50;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

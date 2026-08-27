@@ -1,36 +1,13 @@
 import { defineConfig, type Options } from 'tsup';
 
-export const DUAL_FORMAT_ENTRIES = {
-  index: 'src/index.ts',
-  codegen: 'src/codegen/index.ts',
-  payload: 'src/payload/index.ts',
-} as const;
+import {
+  CORE_ENTRY,
+  DUAL_FORMAT_ENTRIES,
+  ESM_ONLY_ENTRIES,
+  STANDALONE_ENTRIES,
+} from './scripts/package-entries';
 
-/**
- * Built alone: the server entry shares modules with the root entry, and one
- * profile for both would make tsup emit a shared declaration chunk whose file
- * extension differs between ESM and CJS — which the declaration-parity gate
- * rightly refuses. Its own profile keeps `server.d.ts` self-contained.
- */
-export const SERVER_ENTRY = {
-  server: 'src/server/index.ts',
-} as const;
-
-export const CORE_ENTRY = {
-  core: 'src/core-entry.ts',
-} as const;
-
-export const ESM_ONLY_ENTRIES = {
-  'codegen-cli': 'src/codegen/cli.ts',
-  'doctor-cli': 'src/doctor/cli.ts',
-  doctor: 'src/doctor/index.ts',
-  'codegen-astro': 'src/codegen/astro-plugin.ts',
-  'adapters/astro/index': 'src/adapters/astro/index.ts',
-  'adapters/astro/middleware-entry': 'src/adapters/astro/middleware-entry.ts',
-  'adapters/nextjs/index': 'src/adapters/nextjs/index.ts',
-  'adapters/sveltekit/index': 'src/adapters/sveltekit/index.ts',
-  'adapters/nuxt/index': 'src/adapters/nuxt/index.ts',
-} as const;
+export { CORE_ENTRY, DUAL_FORMAT_ENTRIES, ESM_ONLY_ENTRIES, STANDALONE_ENTRIES };
 
 const SHARED_OPTIONS = {
   dts: true,
@@ -73,12 +50,12 @@ export const BUILD_PROFILES: Options[] = [
     entry: DUAL_FORMAT_ENTRIES,
     format: ['esm', 'cjs'],
   },
-  {
+  ...Object.entries(STANDALONE_ENTRIES).map(([name, source]): Options => ({
     ...SHARED_OPTIONS,
-    name: 'server',
-    entry: SERVER_ENTRY,
+    name,
+    entry: { [name]: source },
     format: ['esm', 'cjs'],
-  },
+  })),
   {
     ...SHARED_OPTIONS,
     name: 'core',

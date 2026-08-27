@@ -48,6 +48,14 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
   'server.cjs': { raw: 12_600, gzip: 4_800, brotli: 4_350 },
   'server.js': { raw: 12_450, gzip: 4_720, brotli: 4_260 },
+  'client.cjs': { raw: 93_350, gzip: 30_300, brotli: 26_800 },
+  'client.js': { raw: 93_050, gzip: 30_050, brotli: 26_550 },
+  'structural.cjs': { raw: 19_200, gzip: 7_250, brotli: 6_500 },
+  'structural.js': { raw: 19_050, gzip: 7_200, brotli: 6_450 },
+  'lexical.cjs': { raw: 16_550, gzip: 5_800, brotli: 5_200 },
+  'lexical.js': { raw: 16_500, gzip: 5_750, brotli: 5_150 },
+  'plugins.cjs': { raw: 15_100, gzip: 5_600, brotli: 5_000 },
+  'plugins.js': { raw: 15_000, gzip: 5_600, brotli: 4_950 },
 };
 
 const STABLE_EXPORT_NAMES: Readonly<Record<string, readonly string[]>> = {

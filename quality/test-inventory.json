@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 125,
-    "suites": 377,
-    "tests": 1727,
+    "files": 127,
+    "suites": 379,
+    "tests": 1734,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 102,
-      "suites": 338,
-      "tests": 1609,
+      "files": 104,
+      "suites": 340,
+      "tests": 1616,
       "benchmarks": 0
     }
   },
@@ -621,6 +621,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/entry-surfaces.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/events/emitter.test.ts",
       "group": "unit",
       "suites": 8,
@@ -695,6 +702,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/package-entries.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {

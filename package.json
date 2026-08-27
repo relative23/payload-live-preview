@@ -96,6 +96,46 @@
         "default": "./dist/server.cjs"
       }
     },
+    "./client": {
+      "import": {
+        "types": "./dist/client.d.ts",
+        "default": "./dist/client.js"
+      },
+      "require": {
+        "types": "./dist/client.d.cts",
+        "default": "./dist/client.cjs"
+      }
+    },
+    "./structural": {
+      "import": {
+        "types": "./dist/structural.d.ts",
+        "default": "./dist/structural.js"
+      },
+      "require": {
+        "types": "./dist/structural.d.cts",
+        "default": "./dist/structural.cjs"
+      }
+    },
+    "./lexical": {
+      "import": {
+        "types": "./dist/lexical.d.ts",
+        "default": "./dist/lexical.js"
+      },
+      "require": {
+        "types": "./dist/lexical.d.cts",
+        "default": "./dist/lexical.cjs"
+      }
+    },
+    "./plugins": {
+      "import": {
+        "types": "./dist/plugins.d.ts",
+        "default": "./dist/plugins.js"
+      },
+      "require": {
+        "types": "./dist/plugins.d.cts",
+        "default": "./dist/plugins.cjs"
+      }
+    },
     "./astro/RichText.astro": "./dist/adapters/astro/RichText.astro",
     "./astro/PreviewBoundary.astro": "./dist/adapters/astro/PreviewBoundary.astro",
     "./astro/middleware-entry": {
@@ -184,6 +224,7 @@
     "tsx": "^4.23.12",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.67.0",
+    "vite": "^7.3.6",
     "vitest": "^4.1.10"
   },
   "overrides": {
