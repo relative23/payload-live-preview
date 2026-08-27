@@ -21,7 +21,7 @@
  * @module @core/cache
  */
 
-import type { CachedElement, ElementPredicate, FieldType } from './types';
+import type { CachedElement, ElementPredicate, FieldType, RendererKey } from './types';
 
 export const FIELD_ATTRIBUTE = 'data-payload-field';
 export const TYPE_ATTRIBUTE = 'data-payload-type';
@@ -78,6 +78,13 @@ const OWNER_SELECTOR = `[${OWNER_ATTRIBUTE}]`;
 export function resolveBindingOwner(element: Element): string | undefined {
   const owner = element.closest(OWNER_SELECTOR)?.getAttribute(OWNER_ATTRIBUTE);
   return owner === null || owner === undefined || owner.length === 0 ? undefined : owner;
+}
+
+/** `namespace:name` — a project renderer key; never a typo of a built-in type. */
+const CUSTOM_RENDERER_KEY = /^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$/i;
+
+function isRendererKey(value: string): value is RendererKey {
+  return VALID_FIELD_TYPES.has(value as FieldType) || CUSTOM_RENDERER_KEY.test(value);
 }
 
 const VALID_FIELD_TYPES: ReadonlySet<FieldType> = new Set<FieldType>([
@@ -300,7 +307,7 @@ export class ElementCache {
       element,
       fieldName,
       fieldType,
-      explicitFieldType: explicit !== null && VALID_FIELD_TYPES.has(explicit as FieldType),
+      explicitFieldType: explicit !== null && isRendererKey(explicit),
       ...(targetAttribute !== null && targetAttribute.length > 0 ? { targetAttribute } : {}),
       ...(hrefField !== null && hrefField.length > 0 ? { hrefField } : {}),
       ...(srcField !== null && srcField.length > 0 ? { srcField } : {}),
@@ -319,11 +326,9 @@ export class ElementCache {
  * `data-payload-type` attribute with element-tag heuristics. Falls
  * back to `text`.
  */
-export function resolveFieldType(element: Element): FieldType {
+export function resolveFieldType(element: Element): RendererKey {
   const explicit = element.getAttribute(TYPE_ATTRIBUTE);
-  if (explicit !== null && VALID_FIELD_TYPES.has(explicit as FieldType)) {
-    return explicit as FieldType;
-  }
+  if (explicit !== null && isRendererKey(explicit)) return explicit;
   if (element.hasAttribute(RICH_TEXT_ATTRIBUTE)) return 'richText';
   if (element.hasAttribute(HTML_ATTRIBUTE)) return 'html';
   if (element.hasAttribute(STRUCTURAL_ATTRIBUTE)) return 'structural-array';

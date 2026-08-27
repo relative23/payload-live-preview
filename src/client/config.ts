@@ -4,6 +4,7 @@
  * @module @client/config
  */
 
+import type { CachedElement, FieldRenderer, RendererKey, RichTextRenderer } from '@core/types';
 import {
   runtimeDefaultsFor,
   type DefaultsProfile,
@@ -83,6 +84,20 @@ export interface LivePreviewClientConfig {
   readonly a11yLocale?: string;
   /** Document root, defaults to `document`. */
   readonly root?: Document | Element;
+  /**
+   * Explicit renderer resolution ahead of the registry: return a renderer for
+   * this element, or `undefined` to fall through to registered renderers.
+   * The element is available, so a predicate can look at its attributes.
+   */
+  readonly resolveRenderer?: (
+    fieldType: RendererKey,
+    target: CachedElement,
+  ) => FieldRenderer | undefined;
+  /**
+   * The project's rich-text renderer, shared with SSR so one Lexical document
+   * produces the same markup on both sides. Its output is sanitized.
+   */
+  readonly renderRichText?: RichTextRenderer;
   /** Disable `document.referrer` detection. */
   readonly disableReferrerDetection?: boolean;
   /** Disable the localhost dev-mode pattern matcher. */

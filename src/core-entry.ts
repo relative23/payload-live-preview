@@ -83,6 +83,7 @@ export type {
   InspectionOrigins,
   InspectionProtocol,
   InspectionRevisions,
+  PluginInspection,
   InspectionScheduler,
   LivePreviewInspection,
 } from './core/inspection/types';
@@ -117,7 +118,15 @@ export type {
 } from './dsl';
 
 // Core types
-export type { CachedElement, FieldRenderer, FieldType, RenderContext } from './core/types';
+export type {
+  CachedElement,
+  CustomRendererKey,
+  FieldRenderer,
+  FieldType,
+  RenderContext,
+  RendererKey,
+  RichTextRenderer,
+} from './core/types';
 
 // Payload protocol types
 export type {
@@ -126,3 +135,4 @@ export type {
   PayloadLivePreviewData,
   PayloadLivePreviewMessage,
 } from './types/payload-protocol';
+export type { PluginCompatibility } from './plugins';

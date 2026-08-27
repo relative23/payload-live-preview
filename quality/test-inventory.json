@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 115,
-    "suites": 346,
-    "tests": 1660,
+    "files": 116,
+    "suites": 350,
+    "tests": 1666,
     "benchmarks": 11
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 95,
-      "suites": 312,
-      "tests": 1552,
+      "files": 96,
+      "suites": 316,
+      "tests": 1558,
       "benchmarks": 0
     }
   },
@@ -457,6 +457,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/renderer-api.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 6,
       "benchmarks": 0
     },
     {

@@ -517,7 +517,7 @@ marker of your own that has nothing to do with preview state.
 
 `text` · `textarea` · `richText` · `html` · `email` · `number` · `checkbox` · `date` · `select` · `radio` · `relationship` · `upload` · `image` · `url` · `array` · `blocks` · `structural-array`
 
-Custom renderers register via the plugin system:
+Custom renderers register via the plugin system (see [docs/renderers.md](docs/renderers.md) for what a renderer receives, namespaced custom keys such as `acme:money`, the `resolveRenderer` and `renderRichText` client options, and the plugin ownership contract):
 
 ```ts
 import { LivePreviewClient } from 'payload-live-preview';

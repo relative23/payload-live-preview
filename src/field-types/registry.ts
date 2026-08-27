@@ -1,7 +1,7 @@
 /**
  * Field-renderer registry.
  *
- * Maps a `FieldType` to the function that mutates a DOM element with
+ * Maps a `RendererKey` to the function that mutates a DOM element with
  * the new value. The registry pattern decouples the lifecycle from the
  * concrete renderers, so:
  *
@@ -16,9 +16,9 @@
  * @module @field-types/registry
  */
 
-import type { FieldRenderer, FieldType } from '@core/types';
+import type { FieldRenderer, RendererKey } from '@core/types';
 
-const builtinRenderers = new Map<FieldType, FieldRenderer>();
+const builtinRenderers = new Map<RendererKey, FieldRenderer>();
 
 /**
  * Assemble a fresh renderer map. Defaults are copied first and explicit

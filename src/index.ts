@@ -22,6 +22,7 @@ export type {
   InspectionOrigins,
   InspectionProtocol,
   InspectionRevisions,
+  PluginInspection,
   InspectionScheduler,
   LivePreviewInspection,
 } from './core/inspection/types';
@@ -133,6 +134,7 @@ export {
   type DocumentSavePluginOptions,
   type DocumentSaveStrategy,
   type LivePreviewPlugin,
+  type PluginCompatibility,
   type PluginContext,
   type PluginEvents,
   type PluginDisposer,
@@ -159,7 +161,15 @@ export {
 } from './field-types';
 
 // Core types
-export type { CachedElement, FieldRenderer, FieldType, RenderContext } from './core/types';
+export type {
+  CachedElement,
+  CustomRendererKey,
+  FieldRenderer,
+  FieldType,
+  RenderContext,
+  RendererKey,
+  RichTextRenderer,
+} from './core/types';
 
 // Protocol negotiation
 export {

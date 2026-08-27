@@ -93,7 +93,7 @@ export interface CachedElement {
     readonly element: Element;
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
-    readonly fieldType: FieldType;
+    readonly fieldType: RendererKey;
     readonly hrefField?: string;
     readonly locale?: string;
     readonly owner?: string;
@@ -122,6 +122,9 @@ export interface CspDirectiveMerge {
     // (undocumented)
     readonly value: string;
 }
+
+// @public
+export type CustomRendererKey = `${string}:${string}`;
 
 // @public
 export const debugPlugin: LivePreviewPlugin;
@@ -270,7 +273,7 @@ export type FieldPath<T, Depth extends 0 | 1 | 2 | 3 = 3> = Depth extends 0 ? ne
 // @public
 export interface FieldRenderer {
     // (undocumented)
-    readonly name: FieldType;
+    readonly name: RendererKey;
     // (undocumented)
     render(target: CachedElement, value: unknown, context: RenderContext): void;
 }
@@ -511,6 +514,8 @@ export interface LivePreviewClientConfig {
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     readonly mergeFetch?: typeof fetch;
+    readonly renderRichText?: RichTextRenderer;
+    readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
     readonly root?: Document | Element;
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
@@ -580,6 +585,7 @@ export interface LivePreviewInspection {
     readonly bindings: InspectionBindings;
     // (undocumented)
     readonly origins: InspectionOrigins;
+    readonly plugins: readonly PluginInspection[];
     // (undocumented)
     readonly protocol: InspectionProtocol;
     readonly renderers: readonly string[];
@@ -594,6 +600,7 @@ export interface LivePreviewInspection {
 
 // @public
 export interface LivePreviewPlugin {
+    readonly compat?: PluginCompatibility;
     // (undocumented)
     readonly destroy?: () => void | Promise<void>;
     // (undocumented)
@@ -809,6 +816,12 @@ export interface PayloadSessionStrategy {
 }
 
 // @public
+export interface PluginCompatibility {
+    readonly protocol?: number;
+    readonly runtime?: string;
+}
+
+// @public
 export interface PluginContext {
     // (undocumented)
     readonly events: PluginEvents;
@@ -837,6 +850,21 @@ export interface PluginEvents extends EventEmitter {
     // (undocumented)
     readonly once: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => Unsubscribe;
     readonly removeAllListeners: (event?: keyof LivePreviewEventMap) => void;
+}
+
+// @public
+export interface PluginInspection {
+    // (undocumented)
+    readonly name: string;
+    readonly registrations: {
+        readonly transforms: number;
+        readonly renderers: number;
+        readonly subscriptions: number;
+        readonly cleanups: number;
+    };
+    readonly state: 'initializing' | 'active' | 'tearing-down';
+    // (undocumented)
+    readonly version: string | undefined;
 }
 
 // @public
@@ -1007,8 +1035,19 @@ export function registerBuiltinRenderer(renderer: FieldRenderer): void;
 export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
+    readonly renderRichText?: RichTextRenderer;
     readonly schema: PayloadFieldSchema | undefined;
 }
+
+// @public
+export type RendererKey = FieldType | CustomRendererKey;
+
+// @public
+export type RichTextRenderer = (value: unknown, context: {
+    readonly fieldName: string;
+    readonly element: Element;
+    readonly locale: string | undefined;
+}) => string;
 
 // @public (undocumented)
 interface RuntimeBuildInfo {
@@ -1118,7 +1157,7 @@ export function wrapWithScriptTag(body: string, options?: {
 
 // Warnings were encountered during analysis:
 //
-// dist/index.d.ts:279:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
+// dist/index.d.ts:300:9 - (ae-forgotten-export) The symbol "PayloadFieldCondition" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -25,7 +25,6 @@ import { RendererRegistry } from '@plugins/renderer-registry';
 import type { LivePreviewPlugin } from '@plugins/types';
 import { isDevMode, isInPreviewContext } from '@detection/environment';
 import { buildBuiltinRenderers } from '@field-types/index';
-import type { FieldType } from '@core/types';
 import { withProfileDefaults, type LivePreviewClientConfig } from './config';
 import { noopDiagnostic, safeConsoleDebug } from '@core/diagnostics';
 
@@ -78,7 +77,9 @@ export class LivePreviewClient {
     this.#runtime = new LivePreviewRuntime({
       ...(config.root !== undefined ? { root: config.root } : {}),
       renderers: this.#rendererRegistry.renderers,
-      resolveRenderer: (fieldType: FieldType) => this.#rendererRegistry.resolve(fieldType),
+      resolveRenderer: (fieldType, target) =>
+        config.resolveRenderer?.(fieldType, target) ?? this.#rendererRegistry.resolve(fieldType),
+      ...(config.renderRichText !== undefined ? { renderRichText: config.renderRichText } : {}),
       transformValue: (
         fieldName: string,
         value: unknown,

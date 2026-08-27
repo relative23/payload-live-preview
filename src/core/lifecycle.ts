@@ -26,7 +26,13 @@ import type {
 } from '@/types/payload-protocol';
 import type { EventEmitter } from '@events/emitter';
 import type { MessageRevision, OriginMatcher } from './message-bus';
-import type { CachedElement, FieldRenderer, FieldType, RenderContext } from './types';
+import type {
+  CachedElement,
+  FieldRenderer,
+  RenderContext,
+  RendererKey,
+  RichTextRenderer,
+} from './types';
 import { ElementCache } from './cache';
 import { isBindingInScope, messageOwnerKeys, readDocumentId } from './binding-owner';
 import { ObserverManager } from './observers';
@@ -64,7 +70,12 @@ export interface RuntimeOptions {
   /** Map from field type to renderer. */
   readonly renderers: Readonly<Record<string, FieldRenderer>>;
   /** Resolve the currently active renderer layer for a field type. */
-  readonly resolveRenderer?: (fieldType: FieldType) => FieldRenderer | undefined;
+  readonly resolveRenderer?: (
+    fieldType: RendererKey,
+    target: CachedElement,
+  ) => FieldRenderer | undefined;
+  /** Project rich-text renderer handed to the `richText` renderer through its context. */
+  readonly renderRichText?: RichTextRenderer;
   /**
    * Transform a merged field value while preparing its per-binding scheduler
    * entry. The result is frozen for debounce/replay, then passes through all
@@ -329,12 +340,14 @@ export class LivePreviewRuntime {
    * This runtime class is not exported by a package entry.
    */
   private readonly d: RuntimeDependencies;
+  readonly #renderRichText: RichTextRenderer | undefined;
   private readonly l: RuntimeLifecycleState;
 
   constructor(options: RuntimeOptions) {
     const emitter = options.emitter;
     const renderers = options.renderers;
     const resolveRenderer = options.resolveRenderer ?? ((fieldType) => renderers[fieldType]);
+    this.#renderRichText = options.renderRichText;
     const transformValue = options.transformValue;
     const root =
       options.root ?? (typeof document !== 'undefined' ? document : (null as unknown as Document));
@@ -1364,7 +1377,7 @@ export class LivePreviewRuntime {
     }
     let renderer: FieldRenderer | undefined;
     try {
-      renderer = this.d[RuntimeDependencySlot.ResolveRenderer](resolvedType);
+      renderer = this.d[RuntimeDependencySlot.ResolveRenderer](resolvedType, update.target);
     } catch (err) {
       if (!(
         this.l[RuntimeLifecycleSlot.Started] &&
@@ -1412,6 +1425,7 @@ export class LivePreviewRuntime {
       allFields: update.allFields,
       locale: update.target.locale ?? transaction.locale,
       schema: schemaEntry,
+      ...(this.#renderRichText !== undefined ? { renderRichText: this.#renderRichText } : {}),
     };
     try {
       if (update.target.targetAttribute !== undefined) {
@@ -1620,7 +1634,10 @@ export class LivePreviewRuntime {
 }
 
 /** Resolve explicit binding metadata before schema and tag-name fallbacks. */
-function resolveRuntimeFieldType(target: CachedElement, schemaType: string | undefined): FieldType {
+function resolveRuntimeFieldType(
+  target: CachedElement,
+  schemaType: string | undefined,
+): RendererKey {
   if (target.explicitFieldType) return target.fieldType;
   if (schemaType !== undefined) {
     const mapped = payloadTypeToRenderer(schemaType);
