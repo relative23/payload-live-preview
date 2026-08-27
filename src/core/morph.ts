@@ -173,7 +173,8 @@ function reconcile(candidate: Node, next: Node, options: MorphOptions): Node {
     }
     return morphElement(candidate, next, options);
   }
-  // `sameKind()` admits only element pairs and text pairs here.
+  // Element pairs are handled above; here `candidate` and `next` are a text or
+  // comment pair, updated in place.
   if (candidate.nodeValue !== next.nodeValue) candidate.nodeValue = next.nodeValue;
   return candidate;
 }
@@ -187,7 +188,11 @@ function sameKind(a: Node, b: Node): boolean {
   if (a instanceof Element && b instanceof Element) {
     return a.tagName === b.tagName && a.namespaceURI === b.namespaceURI;
   }
-  return a.nodeType !== Node.COMMENT_NODE;
+  // Text pairs and comment pairs are the same kind: they update in place. A
+  // comment that matched nothing used to make the positional matcher consume
+  // real siblings hunting for it, dropping a whole element (a leading Astro
+  // comment in a route refresh removed the fragment section, LP0805 aside).
+  return true;
 }
 
 function indexKeyed(parent: Element, options: MorphOptions): Map<string, Element> {

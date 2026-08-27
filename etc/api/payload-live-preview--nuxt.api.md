@@ -4,9 +4,9 @@
 
 ```ts
 
-import { D } from '../../policy-Ba9mk0NH.js';
+import { a } from '../../policy-B4DHbtJN.js';
+import { D } from '../../policy-B4DHbtJN.js';
 import { P } from '../../preview-request-OtCAmNe2.js';
-import { P as P_2 } from '../../policy-Ba9mk0NH.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;
@@ -43,7 +43,7 @@ export interface LivePreviewNuxtOptions {
     // (undocumented)
     readonly allowedOrigins?: readonly string[];
     readonly apiRoute?: string;
-    readonly authorizePreview?: (request: P) => P_2 | Promise<P_2>;
+    readonly authorizePreview?: (request: P) => a | Promise<a>;
     // (undocumented)
     readonly autoInject?: boolean;
     // (undocumented)

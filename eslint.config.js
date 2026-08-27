@@ -16,6 +16,7 @@ export default tseslint.config(
       '*.config.js',
       'src/inline/runtime.generated.ts',
       'src/inline/loader.generated.ts',
+      'src/inline/fragment.generated.ts',
     ],
   },
   js.configs.recommended,

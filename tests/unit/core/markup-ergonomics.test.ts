@@ -132,7 +132,7 @@ describe('data-payload-depends with skipUnchanged', () => {
 describe('data-payload-strategy', () => {
   it('leaves a binding with a strategy other than patch alone and says why once', async () => {
     document.body.innerHTML =
-      '<p data-payload-field="title" data-payload-strategy="fragment">old</p><p data-payload-field="subtitle" data-payload-strategy="patch">old</p>';
+      '<p data-payload-field="title" data-payload-strategy="teleport">old</p><p data-payload-field="subtitle" data-payload-strategy="patch">old</p>';
     const warn = vi.fn();
     start({ warn });
     const done = afterUpdate();

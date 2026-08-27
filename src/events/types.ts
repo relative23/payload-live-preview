@@ -10,6 +10,7 @@
  */
 
 import type { PayloadDocumentEventDetail, PayloadLivePreviewData } from '@/types/payload-protocol';
+import type { UpdateSource } from '@core/strategies';
 import type { DiagnosticCode } from '@core/diagnostic-codes';
 
 export interface LivePreviewEventMap {
@@ -46,11 +47,11 @@ export interface LivePreviewEventMap {
     /** When the runtime accepted the message, Unix milliseconds. Optional for 1.x producer compatibility. */
     readonly receivedAt?: number;
     /**
-     * What produced the update. `'patch'` — a postMessage from the admin — is
-     * the only source until fragment strategies arrive; then it names the
-     * strategy. Optional for 1.x producer compatibility.
+     * The strategy that produced the update: `'patch'` (the runtime's DOM
+     * patching), `'fragment'` (a server-rendered boundary) or `'route'` (a
+     * route refresh). Optional for 1.x producer compatibility.
      */
-    readonly source?: 'patch';
+    readonly source?: UpdateSource;
     readonly cancel: () => void;
   };
 
@@ -68,11 +69,11 @@ export interface LivePreviewEventMap {
     /** When the runtime accepted the message, Unix milliseconds. Optional for 1.x producer compatibility. */
     readonly receivedAt?: number;
     /**
-     * What produced the update. `'patch'` — a postMessage from the admin — is
-     * the only source until fragment strategies arrive; then it names the
-     * strategy. Optional for 1.x producer compatibility.
+     * The strategy that produced the update: `'patch'` (the runtime's DOM
+     * patching), `'fragment'` (a server-rendered boundary) or `'route'` (a
+     * route refresh). Optional for 1.x producer compatibility.
      */
-    readonly source?: 'patch';
+    readonly source?: UpdateSource;
   };
 
   /** Fired for each successful, still-current element write. */
@@ -86,11 +87,11 @@ export interface LivePreviewEventMap {
     /** When the runtime accepted the message, Unix milliseconds. Optional for 1.x producer compatibility. */
     readonly receivedAt?: number;
     /**
-     * What produced the update. `'patch'` — a postMessage from the admin — is
-     * the only source until fragment strategies arrive; then it names the
-     * strategy. Optional for 1.x producer compatibility.
+     * The strategy that produced the update: `'patch'` (the runtime's DOM
+     * patching), `'fragment'` (a server-rendered boundary) or `'route'` (a
+     * route refresh). Optional for 1.x producer compatibility.
      */
-    readonly source?: 'patch';
+    readonly source?: UpdateSource;
   };
 
   /** Fired whenever the element cache is rebuilt (initial scan or MutationObserver-triggered). */
@@ -98,6 +99,21 @@ export interface LivePreviewEventMap {
     readonly elementCount: number;
     readonly fieldCount: number;
     readonly durationMs: number;
+  };
+
+  /**
+   * Fired once per fragment boundary and revision: the server rendered it
+   * (`rendered`) or the request failed and the boundary was patched instead
+   * (`failed`, with the LP08xx code).
+   */
+  readonly fragmentRender: {
+    readonly element: Element;
+    readonly id: string;
+    readonly key: string | undefined;
+    readonly status: 'rendered' | 'failed';
+    readonly code?: DiagnosticCode;
+    readonly revision: number;
+    readonly receivedAt: number;
   };
 
   /** Fired when a `payload-document-event` message arrives (document save). */

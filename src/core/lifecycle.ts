@@ -40,6 +40,17 @@ import { MessageBus } from './message-bus';
 import { ConnectionState, HeartbeatTimer } from './state';
 import { DataMerger } from './data-merger';
 import { detectProtocolProfile } from './protocol-profile';
+import { morphElement } from './morph';
+import { KEY_ATTRIBUTE as MORPH_KEY_ATTRIBUTE } from './structural-applier';
+import { trustedHtml } from '@security/trusted-types';
+import {
+  enclosingFragment,
+  resolveStrategy,
+  type FragmentContext,
+  type FragmentStrategy,
+  type RouteStrategy,
+  type StrategyHandlers,
+} from './strategies';
 import { applyAttributeBinding } from './attribute-binding';
 import { UpdateScheduler, type FlushStats, type ScheduledUpdate } from './update-scheduler';
 import type { LivePreviewInspection } from './inspection/types';
@@ -126,6 +137,13 @@ export interface RuntimeOptions {
    * of reopening this option.
    */
   readonly dependencies?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * Strategy handlers beyond the runtime's own patching. `fragment` renders a
+   * `data-payload-fragment` boundary on the server for each revision that
+   * touches it (`payload-live-preview/fragment` provides one). Without a
+   * handler such a boundary is patched like any other markup.
+   */
+  readonly strategies?: StrategyHandlers;
   /** Origins to broadcast `ready` to during the handshake. */
   readonly readyTargets: readonly string[];
   /** Event emitter (per-instance). */
@@ -234,6 +252,10 @@ interface UpdateTransaction {
   readonly receivedAt: number;
   /** Render every bound field even when its value is unchanged (a relationship edit may have changed populated values only). */
   readonly forceRender: boolean;
+  /** Fragment renders still in flight for this revision; completion waits for them. */
+  pendingFragments: number;
+  /** Whether the route was refreshed for this revision; a second request is the loop guard's LP0805. */
+  routeRefreshed: boolean;
   cancelled: boolean;
   /**
    * Terminal state: the revision's scheduled writes reached the DOM. A newer
@@ -267,6 +289,7 @@ const enum RuntimeDependencySlot {
   LockedOrigin,
   SkipUnchanged,
   Dependencies,
+  Strategies,
 }
 
 /** Stable object/function references owned for the complete runtime lifetime. */
@@ -294,6 +317,7 @@ type RuntimeDependencies = readonly [
   lockedOrigin: () => string | undefined,
   skipUnchanged: boolean,
   dependencies: Readonly<Record<string, readonly string[]>>,
+  strategies: StrategyHandlers,
 ];
 
 const enum RuntimeLifecycleSlot {
@@ -316,6 +340,11 @@ const enum RuntimeLifecycleSlot {
   PreviousFieldIdentity,
   CompletedCount,
   ObservedCapabilities,
+  FragmentController,
+  FragmentStats,
+  WarnedFragmentFallback,
+  RouteStats,
+  RouteController,
 }
 
 /** State that changes as the runtime starts, accepts revisions, and stops. */
@@ -339,6 +368,11 @@ type RuntimeLifecycleState = [
   previousFieldIdentity: Map<string, string | undefined> | null,
   completedCount: number,
   observedCapabilities: Set<ProtocolCapability>,
+  fragmentController: AbortController | null,
+  fragmentStats: { rendered: number; failed: number; superseded: number },
+  warnedFragmentFallback: boolean,
+  routeStats: { refreshes: number; failed: number; loopStopped: number },
+  routeController: AbortController | null,
 ];
 
 export class LivePreviewRuntime {
@@ -480,6 +514,7 @@ export class LivePreviewRuntime {
       options.lockedOrigin ?? ((): undefined => undefined),
       options.skipUnchanged === true,
       options.dependencies ?? {},
+      options.strategies ?? {},
     ];
     this.l = [
       undefined,
@@ -501,6 +536,11 @@ export class LivePreviewRuntime {
       null,
       0,
       new Set<ProtocolCapability>(),
+      null,
+      { rendered: 0, failed: 0, superseded: 0 },
+      false,
+      { refreshes: 0, failed: 0, loopStopped: 0 },
+      null,
     ];
   }
 
@@ -670,6 +710,7 @@ export class LivePreviewRuntime {
     this.#runCleanup(() => {
       this.d[RuntimeDependencySlot.Bus].detach();
     });
+    this.#abortFragments();
     this.#runCleanup(() => {
       this.#rootSentinel?.disconnect();
       this.#rootSentinel = null;
@@ -817,6 +858,15 @@ export class LivePreviewRuntime {
         orphanFields: [...this.l[RuntimeLifecycleSlot.WarnedOrphanFields]].sort(),
         ownerScoped: this.d[RuntimeDependencySlot.ScopeBindingsByOwner],
         owners: [...owners].sort(),
+      },
+      route: {
+        handler: this.d[RuntimeDependencySlot.Strategies].route !== undefined,
+        ...this.l[RuntimeLifecycleSlot.RouteStats],
+      },
+      fragments: {
+        handler: this.d[RuntimeDependencySlot.Strategies].fragment !== undefined,
+        inFlight: this.l[RuntimeLifecycleSlot.ActiveUpdate]?.pendingFragments ?? 0,
+        ...this.l[RuntimeLifecycleSlot.FragmentStats],
       },
       scheduler: {
         pending: scheduler.pendingCount,
@@ -970,6 +1020,8 @@ export class LivePreviewRuntime {
       schemaIndex: this.l[RuntimeLifecycleSlot.SchemaIndex],
       receivedAt: Date.now(),
       forceRender: relationshipEdited,
+      pendingFragments: 0,
+      routeRefreshed: false,
       cancelled: false,
       completed: false,
     };
@@ -980,6 +1032,7 @@ export class LivePreviewRuntime {
     // one whose writes already landed simply finished, and counting it would
     // make `superseded` track `accepted` on every fast keystroke.
     const previous = this.l[RuntimeLifecycleSlot.ActiveUpdate];
+    this.#abortFragments();
     if (previous !== null && !previous.completed) {
       this.l[RuntimeLifecycleSlot.SupersededCount] += 1;
     }
@@ -1130,13 +1183,27 @@ export class LivePreviewRuntime {
       this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction;
     const ownerKeys = this.#ownerKeysForUpdate(transaction, data.fields);
     let scheduled = 0;
+    // `#invalidatedDependents` advances per-update state, so compute it once
+    // and share it with the field loop below.
+    const invalidatedSet = this.#invalidatedDependents(data.fields);
+    // The fields this update touches, plus what the dependency registry says
+    // they invalidate, so a boundary depending on a derived field re-renders.
+    const touched = new Set([...Object.keys(data.fields), ...invalidatedSet]);
+    // A revision that touches the route refreshes it first; patches and
+    // fragments are applied once, on the fresh markup, by the re-apply.
+    const route = this.d[RuntimeDependencySlot.Strategies].route;
+    if (
+      route !== undefined &&
+      !transaction.routeRefreshed &&
+      (route.plan(this.d[RuntimeDependencySlot.Root], touched) || this.#hasRouteBinding(touched))
+    ) {
+      void this.#refreshRoute(transaction, data, route);
+      return;
+    }
+    const plan = this.#planFragments(touched);
     // Computed once per update and only when skipping is on: the fields whose
     // change forces dependents to re-apply this time round.
-    let invalidatedSet: ReadonlySet<string> | undefined;
-    const invalidated = (): ReadonlySet<string> => {
-      invalidatedSet ??= this.#invalidatedDependents(data.fields);
-      return invalidatedSet;
-    };
+    const invalidated = (): ReadonlySet<string> => invalidatedSet;
     for (const [fieldName, bindings] of this.d[RuntimeDependencySlot.Cache].entries()) {
       if (!(
         this.l[RuntimeLifecycleSlot.Started] &&
@@ -1146,10 +1213,15 @@ export class LivePreviewRuntime {
       }
       for (const target of bindings) {
         if (ownerKeys !== false && !isBindingInScope(target.owner, ownerKeys)) continue;
-        if (target.strategy !== undefined && target.strategy !== 'patch') {
+        // A binding inside a boundary the server will render is the
+        // boundary's business; it is patched only as the fallback.
+        if (plan?.covers(target.element) === true) continue;
+        const resolved = resolveStrategy(target.element);
+        if (resolved === undefined) {
           this.#warnUnsupportedStrategy(target);
           continue;
         }
+        if (resolved === 'fragment' && plan === null) this.#warnFragmentFallback(target);
         const value = resolveFieldValue(
           data.fields,
           fieldName,
@@ -1205,10 +1277,14 @@ export class LivePreviewRuntime {
       }
     }
     this.#diagnoseOrphanFields(data.fields, transaction.locale, ownerKeys);
+    if (plan !== null && plan.boundaries.length > 0) {
+      transaction.pendingFragments = plan.boundaries.length;
+      void this.#runFragments(transaction, data, plan.boundaries, plan.strategy);
+    }
     // Nothing to flush — every field unbound, out of scope, or unchanged — is
     // still this update reaching its end. Without the mark here the next
     // message would count a finished update as abandoned.
-    if (scheduled === 0 && !transaction.completed) {
+    if (scheduled === 0 && transaction.pendingFragments === 0 && !transaction.completed) {
       transaction.completed = true;
       this.l[RuntimeLifecycleSlot.CompletedCount] += 1;
     }
@@ -1273,12 +1349,261 @@ export class LivePreviewRuntime {
    * symptom to diagnose.
    */
   /** LP0407, once per element: a strategy this release does not have is left alone, not guessed at. */
+  /** The boundaries the fragment strategy owns for this update, or `null` without one. */
+  #planFragments(touched: ReadonlySet<string>): {
+    readonly boundaries: readonly Element[];
+    readonly covers: (element: Element) => boolean;
+    readonly strategy: FragmentStrategy;
+  } | null {
+    const strategy = this.d[RuntimeDependencySlot.Strategies].fragment;
+    if (strategy === undefined) return null;
+    const boundaries = strategy.plan(this.d[RuntimeDependencySlot.Root], touched);
+    const covered = new Set(boundaries);
+    return {
+      boundaries,
+      strategy,
+      covers: (element) => {
+        const boundary = enclosingFragment(element);
+        return boundary !== null && covered.has(boundary);
+      },
+    };
+  }
+
+  /**
+   * Hand the planned boundaries to the strategy with the capabilities it may
+   * use. A newer revision aborts the signal; the strategy reports what it
+   * rendered, failed (and patched) or dropped as superseded.
+   */
+  async #runFragments(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    boundaries: readonly Element[],
+    strategy: FragmentStrategy,
+  ): Promise<void> {
+    const controller = new AbortController();
+    this.l[RuntimeLifecycleSlot.FragmentController] = controller;
+    const { message } = transaction;
+    const isCurrent = (): boolean =>
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction &&
+      !controller.signal.aborted;
+    const emitter = this.d[RuntimeDependencySlot.Emitter];
+    const revision = transaction.identity.revision;
+    const receivedAt = transaction.receivedAt;
+    const context: FragmentContext = {
+      root: this.d[RuntimeDependencySlot.Root],
+      revision,
+      receivedAt,
+      fields: data.fields,
+      locale: transaction.locale,
+      collectionSlug:
+        typeof message.collectionSlug === 'string' ? message.collectionSlug : undefined,
+      globalSlug: typeof message.globalSlug === 'string' ? message.globalSlug : undefined,
+      signal: controller.signal,
+      isCurrent,
+      log: (code, detail) => {
+        this.d[RuntimeDependencySlot.Log]('fragment', code, detail);
+      },
+      morph: (boundary, html) => {
+        this.#morphFragment(boundary, html);
+      },
+      patch: (boundary) => {
+        this.#patchFragmentFallback(transaction, data, boundary);
+      },
+      rendered: (element, id, key) => {
+        transaction.pendingFragments -= 1;
+        void emitter.emitWhile(
+          'fragmentRender',
+          { element, id, key, status: 'rendered', revision, receivedAt },
+          isCurrent,
+        );
+      },
+      failed: (element, id, key, code, reason) => {
+        transaction.pendingFragments -= 1;
+        void emitter.emitWhile(
+          'error',
+          {
+            error: new Error(`fragment "${id}" fell back to patch: ${reason}`),
+            context: 'fragment',
+            code,
+          },
+          isCurrent,
+        );
+        void emitter.emitWhile(
+          'fragmentRender',
+          { element, id, key, status: 'failed', code, revision, receivedAt },
+          isCurrent,
+        );
+      },
+    };
+    const report = await strategy.render(context, boundaries);
+    const stats = this.l[RuntimeLifecycleSlot.FragmentStats];
+    stats.rendered += report.rendered;
+    stats.failed += report.failed;
+    stats.superseded += report.superseded;
+    if (!isCurrent()) return;
+    if (this.l[RuntimeLifecycleSlot.FragmentController] === controller) {
+      this.l[RuntimeLifecycleSlot.FragmentController] = null;
+    }
+    transaction.pendingFragments = 0;
+    if (!transaction.completed && this.d[RuntimeDependencySlot.Scheduler].pendingCount === 0) {
+      transaction.completed = true;
+      this.l[RuntimeLifecycleSlot.CompletedCount] += 1;
+    }
+    if (report.rendered === 0 || emitter.listenerCount('afterUpdate') === 0) return;
+    void emitter.emitWhile(
+      'afterUpdate',
+      {
+        data,
+        updatedCount: report.rendered,
+        durationMs: Date.now() - receivedAt,
+        revision,
+        receivedAt,
+        source: 'fragment',
+      },
+      isCurrent,
+    );
+  }
+
+  /** Whether a touched field is bound to an element the resolver assigns to the route. */
+  #hasRouteBinding(touched: ReadonlySet<string>): boolean {
+    for (const [fieldName, bindings] of this.d[RuntimeDependencySlot.Cache].entries()) {
+      if (!touched.has(fieldName)) continue;
+      if (bindings.some((target) => resolveStrategy(target.element) === 'route')) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Refresh the whole route for this revision, then rescan and re-apply the
+   * revision so the unsaved state lands on the fresh markup. One refresh per
+   * revision: a second request is LP0805 and is refused.
+   */
+  async #refreshRoute(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    strategy: RouteStrategy,
+  ): Promise<void> {
+    const stats = this.l[RuntimeLifecycleSlot.RouteStats];
+    if (transaction.routeRefreshed) {
+      stats.loopStopped += 1;
+      this.d[RuntimeDependencySlot.Log](
+        'route',
+        'LP0805',
+        `revision ${String(transaction.identity.revision)} asked for a second route refresh`,
+      );
+      return;
+    }
+    transaction.routeRefreshed = true;
+    const controller = new AbortController();
+    this.l[RuntimeLifecycleSlot.RouteController] = controller;
+    const isCurrent = (): boolean =>
+      this.l[RuntimeLifecycleSlot.Started] &&
+      this.l[RuntimeLifecycleSlot.ActiveUpdate] === transaction &&
+      !controller.signal.aborted;
+    const outcome = await strategy.refresh({
+      revision: transaction.identity.revision,
+      receivedAt: transaction.receivedAt,
+      signal: controller.signal,
+      isCurrent,
+      log: (code, detail) => {
+        this.d[RuntimeDependencySlot.Log]('route', code, detail);
+      },
+    });
+    if (!isCurrent()) return;
+    if (outcome === 'refreshed') {
+      stats.refreshes += 1;
+      this.#rebuildCache();
+      if (!isCurrent()) return;
+      // Re-apply this revision onto the fresh markup: the route was rendered
+      // from the saved document, the editor's unsaved state goes back on top.
+      this.#scheduleAllFields(transaction, data);
+      if (this.d[RuntimeDependencySlot.Emitter].listenerCount('afterUpdate') > 0) {
+        void this.d[RuntimeDependencySlot.Emitter].emitWhile(
+          'afterUpdate',
+          {
+            data,
+            updatedCount: 1,
+            durationMs: Date.now() - transaction.receivedAt,
+            revision: transaction.identity.revision,
+            receivedAt: transaction.receivedAt,
+            source: 'route',
+          },
+          isCurrent,
+        );
+      }
+      return;
+    }
+    if (outcome === 'failed') stats.failed += 1;
+    // Fall back to patching the route-bound elements from the same revision.
+    this.#scheduleAllFields(transaction, data);
+  }
+
+  /** Morph server-rendered HTML into the boundary, keeping focus and visitor state. */
+  #morphFragment(boundary: Element, html: string): void {
+    const template = boundary.ownerDocument.createElement('template');
+    template.innerHTML = trustedHtml(html);
+    const rendered = boundary.cloneNode(false) as Element;
+    rendered.append(template.content);
+    morphElement(boundary, rendered, { keyAttributes: [MORPH_KEY_ATTRIBUTE] });
+  }
+
+  /** The deterministic fallback: patch the boundary's own bindings from the same revision. */
+  #patchFragmentFallback(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    boundary: Element,
+  ): void {
+    for (const [fieldName, bindings] of this.d[RuntimeDependencySlot.Cache].entries()) {
+      for (const target of bindings) {
+        if (enclosingFragment(target.element) !== boundary) continue;
+        const value = resolveFieldValue(
+          data.fields,
+          fieldName,
+          target.locale ?? transaction.locale,
+          target.locale !== undefined,
+        );
+        if (value === undefined) continue;
+        this.d[RuntimeDependencySlot.Scheduler].schedule({
+          target,
+          value: this.#transformForBinding(target, value, data.fields, () => true),
+          allFields: data.fields,
+          identity: transaction.identity,
+          data,
+        });
+      }
+    }
+  }
+
+  /** A newer revision (or stop) aborts the previous one's fragments and route refresh alike. */
+  #abortFragments(): void {
+    for (const slot of [
+      RuntimeLifecycleSlot.FragmentController,
+      RuntimeLifecycleSlot.RouteController,
+    ] as const) {
+      const controller = this.l[slot];
+      if (controller === null) continue;
+      this.l[slot] = null;
+      controller.abort();
+    }
+  }
+
+  /** LP0806, once: a fragment boundary with no handler is patched instead. */
+  #warnFragmentFallback(target: CachedElement): void {
+    if (this.l[RuntimeLifecycleSlot.WarnedFragmentFallback]) return;
+    this.l[RuntimeLifecycleSlot.WarnedFragmentFallback] = true;
+    this.d[RuntimeDependencySlot.Warn](
+      `[live-preview] LP0806: "${target.fieldName}" asks for the fragment strategy, but no fragment handler is configured; ` +
+        'the boundary is patched instead. Configure `fragments` (payload-live-preview/fragment) to render it on the server.',
+    );
+  }
+
   #warnUnsupportedStrategy(target: CachedElement): void {
     if (this.#warnedStrategy.has(target.element)) return;
     this.#warnedStrategy.add(target.element);
     this.d[RuntimeDependencySlot.Warn](
       `[live-preview] LP0407: "${target.fieldName}" asks for strategy "${String(target.strategy)}"; ` +
-        'only "patch" exists in 1.x, so the element is left unchanged. The fragment strategy arrives in 1.7.0.',
+        'only "patch", "fragment" and "route" exist, so the element is left unchanged.',
     );
   }
 
@@ -1652,7 +1977,7 @@ export class LivePreviewRuntime {
     // The revision's flush ran: terminal state, whether or not it applied a
     // write (every value may have been unchanged, or nothing was bound). A
     // later message now finds a finished update, not an abandoned one.
-    if (!transaction.completed) {
+    if (!transaction.completed && transaction.pendingFragments === 0) {
       transaction.completed = true;
       this.l[RuntimeLifecycleSlot.CompletedCount] += 1;
     }

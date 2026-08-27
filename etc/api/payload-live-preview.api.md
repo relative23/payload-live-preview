@@ -218,6 +218,12 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly AuditUnownedBindings: "LP0706";
     readonly AuditNoBindings: "LP0707";
     readonly AuditNotAPage: "LP0708";
+    readonly FragmentRequestFailed: "LP0801";
+    readonly FragmentResponseInvalid: "LP0802";
+    readonly FragmentUnauthorized: "LP0803";
+    readonly FragmentSuperseded: "LP0804";
+    readonly RouteRefreshLoop: "LP0805";
+    readonly FragmentStrategyUnavailable: "LP0806";
 }>;
 
 // @public
@@ -346,6 +352,47 @@ export type FieldTransform = (value: unknown, context: {
 // @public
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';
 
+// @public
+export interface FragmentContext {
+    // (undocumented)
+    readonly collectionSlug: string | undefined;
+    readonly failed: (boundary: Element, id: string, key: string | undefined, code: DiagnosticCode, reason: string) => void;
+    // (undocumented)
+    readonly fields: Readonly<Record<string, unknown>>;
+    // (undocumented)
+    readonly globalSlug: string | undefined;
+    readonly isCurrent: () => boolean;
+    // (undocumented)
+    readonly locale: string | undefined;
+    readonly log: (code: DiagnosticCode, detail: string) => void;
+    readonly morph: (boundary: Element, html: string) => void;
+    readonly patch: (boundary: Element) => void;
+    // (undocumented)
+    readonly receivedAt: number;
+    readonly rendered: (boundary: Element, id: string, key: string | undefined) => void;
+    // (undocumented)
+    readonly revision: number;
+    // (undocumented)
+    readonly root: ParentNode;
+    readonly signal: AbortSignal;
+}
+
+// @public (undocumented)
+export interface FragmentReport {
+    // (undocumented)
+    readonly failed: number;
+    // (undocumented)
+    readonly rendered: number;
+    // (undocumented)
+    readonly superseded: number;
+}
+
+// @public
+export interface FragmentStrategy {
+    readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => readonly Element[];
+    readonly render: (context: FragmentContext, boundaries: readonly Element[]) => Promise<FragmentReport>;
+}
+
 // @public (undocumented)
 export interface FrameAncestorsOptions {
     // (undocumented)
@@ -385,6 +432,7 @@ export interface InlineScriptConfig {
     readonly disableVisibilityGate?: boolean;
     readonly enableA11y?: boolean;
     readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
+    readonly fragmentEndpoint?: string;
     readonly heartbeatMs?: number;
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
@@ -410,6 +458,19 @@ export interface InspectionBindings {
 }
 
 // @public
+export interface InspectionFragments {
+    // (undocumented)
+    readonly failed: number;
+    readonly handler: boolean;
+    // (undocumented)
+    readonly inFlight: number;
+    // (undocumented)
+    readonly rendered: number;
+    // (undocumented)
+    readonly superseded: number;
+}
+
+// @public
 export interface InspectionOrigins {
     readonly locked: string | undefined;
     readonly trusted: readonly string[];
@@ -432,6 +493,17 @@ export interface InspectionRevisions {
     readonly completed: number;
     readonly skippedUnchanged: number;
     readonly superseded: number;
+}
+
+// @public
+export interface InspectionRoute {
+    // (undocumented)
+    readonly failed: number;
+    // (undocumented)
+    readonly handler: boolean;
+    readonly loopStopped: number;
+    // (undocumented)
+    readonly refreshes: number;
 }
 
 // @public
@@ -600,6 +672,7 @@ export interface LivePreviewClientConfig {
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
+    readonly strategies?: StrategyHandlers;
     readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
     readonly visibilityGateThreshold?: number;
 }
@@ -612,13 +685,13 @@ export interface LivePreviewEventMap {
         readonly durationMs: number;
         readonly revision?: number;
         readonly receivedAt?: number;
-        readonly source?: 'patch';
+        readonly source?: UpdateSource;
     };
     readonly beforeUpdate: {
         readonly data: PayloadLivePreviewData;
         readonly revision?: number;
         readonly receivedAt?: number;
-        readonly source?: 'patch';
+        readonly source?: UpdateSource;
         readonly cancel: () => void;
     };
     readonly cacheRefresh: {
@@ -647,12 +720,21 @@ export interface LivePreviewEventMap {
         readonly nextValue: unknown;
         readonly revision?: number;
         readonly receivedAt?: number;
-        readonly source?: 'patch';
+        readonly source?: UpdateSource;
     };
     readonly error: {
         readonly error: Error;
         readonly context: string;
         readonly code: DiagnosticCode;
+    };
+    readonly fragmentRender: {
+        readonly element: Element;
+        readonly id: string;
+        readonly key: string | undefined;
+        readonly status: 'rendered' | 'failed';
+        readonly code?: DiagnosticCode;
+        readonly revision: number;
+        readonly receivedAt: number;
     };
     readonly init: {
         readonly timestamp: number;
@@ -667,6 +749,7 @@ export interface LivePreviewEventMap {
 export interface LivePreviewInspection {
     // (undocumented)
     readonly bindings: InspectionBindings;
+    readonly fragments: InspectionFragments;
     // (undocumented)
     readonly origins: InspectionOrigins;
     readonly plugins: readonly PluginInspection[];
@@ -675,6 +758,7 @@ export interface LivePreviewInspection {
     readonly renderers: readonly string[];
     // (undocumented)
     readonly revisions: InspectionRevisions;
+    readonly route: InspectionRoute;
     // (undocumented)
     readonly scheduler: InspectionScheduler;
     readonly started: boolean;
@@ -758,7 +842,7 @@ interface PayloadBlockSchema {
 }
 
 // @public
-interface PayloadDocumentEventDetail {
+export interface PayloadDocumentEventDetail {
     // (undocumented)
     readonly [extra: string]: unknown;
     // (undocumented)
@@ -1146,6 +1230,27 @@ export type RichTextRenderer = (value: unknown, context: {
     readonly locale: string | undefined;
 }) => string;
 
+// @public
+export interface RouteContext {
+    // (undocumented)
+    readonly isCurrent: () => boolean;
+    // (undocumented)
+    readonly log: (code: DiagnosticCode, detail: string) => void;
+    // (undocumented)
+    readonly receivedAt: number;
+    // (undocumented)
+    readonly revision: number;
+    readonly signal: AbortSignal;
+}
+
+// @public
+export interface RouteStrategy {
+    // (undocumented)
+    readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
+    // (undocumented)
+    readonly refresh: (context: RouteContext) => Promise<'refreshed' | 'failed' | 'superseded'>;
+}
+
 // @public (undocumented)
 interface RuntimeBuildInfo {
     // (undocumented)
@@ -1216,6 +1321,14 @@ export interface SignedTokenStrategy {
     readonly type: 'signed-token';
 }
 
+// @public (undocumented)
+export interface StrategyHandlers {
+    // (undocumented)
+    readonly fragment?: FragmentStrategy;
+    // (undocumented)
+    readonly route?: RouteStrategy;
+}
+
 // @public
 export interface SubtleCryptoLike {
     // (undocumented)
@@ -1250,6 +1363,9 @@ export interface TrustedHtmlPolicyLike {
 export type Unsubscribe = () => void;
 
 // @public
+export type UpdateSource = 'patch' | 'fragment' | 'route';
+
+// @public
 export type ValueAt<T, P extends string> = P extends `${infer Head}.${infer Rest}` ? Head extends keyof T ? T[Head] extends readonly (infer U)[] ? ValueAt<U, Rest> : T[Head] extends object ? ValueAt<T[Head], Rest> : unknown : unknown : P extends keyof T ? T[P] : unknown;
 
 // @public
@@ -1275,10 +1391,6 @@ interface WebCryptoLike {
 export function wrapWithScriptTag(body: string, options?: {
     nonce?: string;
 }): string;
-
-// Warnings were encountered during analysis:
-//
-// dist/index.d.ts:538:9 - (ae-forgotten-export) The symbol "PayloadDocumentEventDetail" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

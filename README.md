@@ -77,6 +77,7 @@ its own type declarations, size budget and API report:
 | `payload-live-preview/structural`                    | The structural array renderer, the keyed morph (ADR 0008) and the `data-payload-depends` helpers. |
 | `payload-live-preview/lexical`                       | `lexicalToHtml()`, `lexicalToPlainText()`, node and block renderer registries.                    |
 | `payload-live-preview/plugins`                       | `PluginManager`, plugin types and the built-in plugins.                                           |
+| `payload-live-preview/fragment`                      | `createFragmentStrategy()`: the browser half of server-rendered fragment boundaries (ADR 0011).   |
 | `payload-live-preview/server`                        | `definePreview()` and `authorizePreviewRequest()` for server code.                                |
 | `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | One framework adapter each.                                                                       |
 | `payload-live-preview/codegen`                       | Type generation from a Payload config.                                                            |
@@ -426,27 +427,29 @@ Spread `preview.runtimeOptions` (`serverURL`, `apiRoute`, `mergeDepth`) into the
 
 ## Data-attribute reference
 
-| Attribute                      | Purpose                                                                                                                | Example                                            |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `data-payload-field`           | Bind element to a Payload field path                                                                                   | `data-payload-field="hero.title"`                  |
-| `data-payload-type`            | Force a specific renderer                                                                                              | `data-payload-type="image"`                        |
-| `data-payload-attribute`       | Write the value into an attribute instead of content (unsafe attributes and URLs are refused)                          | `data-payload-attribute="datetime"`                |
-| `data-payload-href`            | Read `href` from a sibling field                                                                                       | `data-payload-href="ctaUrl"`                       |
-| `data-payload-src`             | Read `src` from a sibling field                                                                                        | `data-payload-src="hero.url"`                      |
-| `data-payload-alt`             | Read `alt` from a sibling field                                                                                        | `data-payload-alt="hero.alt"`                      |
-| `data-payload-richtext`        | Force Lexical rendering (usually auto-detected)                                                                        | `data-payload-richtext`                            |
-| `data-payload-html`            | Render value as sanitised HTML                                                                                         | `data-payload-html`                                |
-| `data-payload-array`           | Treat value as an array                                                                                                | `data-payload-array`                               |
-| `data-payload-array-template`  | HTML template per array item                                                                                           | `data-payload-array-template="<li>{{title}}</li>"` |
-| `data-payload-array-separator` | Separator for primitive arrays                                                                                         | `data-payload-array-separator=" · "`               |
-| `data-payload-structural`      | Use diff-based structural updates                                                                                      | `data-payload-structural`                          |
-| `data-payload-locale`          | Override locale for this element                                                                                       | `data-payload-locale="de-AT"`                      |
-| `data-payload-owner`           | Document this subtree belongs to (see below)                                                                           | `data-payload-owner="global:homepage"`             |
-| `data-payload-depends`         | Fields whose change re-applies this binding under `skipUnchanged`, e.g. `data-payload-depends="price currency"`        | `data-payload-depends="price"`                     |
-| `data-payload-strategy`        | Delivery strategy; `patch` (the default) is the only one in 1.x — anything else is left alone with `LP0407`            | `data-payload-strategy="patch"`                    |
-| `data-payload-boundary`        | A stable anchor for a possibly-empty field: hidden while empty, shown when filled (`PreviewBoundary.astro` renders it) | `data-payload-boundary hidden`                     |
-| `data-payload-island`          | A hydrated framework root: never patched or morphed into (see docs/renderers.md, islands)                              | `data-payload-island`                              |
-| `data-payload-owned`           | A subtree the site scripts itself: the morph retains it whole                                                          | `data-payload-owned`                               |
+| Attribute                      | Purpose                                                                                                                                                                                                                                     | Example                                            |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `data-payload-field`           | Bind element to a Payload field path                                                                                                                                                                                                        | `data-payload-field="hero.title"`                  |
+| `data-payload-type`            | Force a specific renderer                                                                                                                                                                                                                   | `data-payload-type="image"`                        |
+| `data-payload-attribute`       | Write the value into an attribute instead of content (unsafe attributes and URLs are refused)                                                                                                                                               | `data-payload-attribute="datetime"`                |
+| `data-payload-href`            | Read `href` from a sibling field                                                                                                                                                                                                            | `data-payload-href="ctaUrl"`                       |
+| `data-payload-src`             | Read `src` from a sibling field                                                                                                                                                                                                             | `data-payload-src="hero.url"`                      |
+| `data-payload-alt`             | Read `alt` from a sibling field                                                                                                                                                                                                             | `data-payload-alt="hero.alt"`                      |
+| `data-payload-richtext`        | Force Lexical rendering (usually auto-detected)                                                                                                                                                                                             | `data-payload-richtext`                            |
+| `data-payload-html`            | Render value as sanitised HTML                                                                                                                                                                                                              | `data-payload-html`                                |
+| `data-payload-array`           | Treat value as an array                                                                                                                                                                                                                     | `data-payload-array`                               |
+| `data-payload-array-template`  | HTML template per array item                                                                                                                                                                                                                | `data-payload-array-template="<li>{{title}}</li>"` |
+| `data-payload-array-separator` | Separator for primitive arrays                                                                                                                                                                                                              | `data-payload-array-separator=" · "`               |
+| `data-payload-structural`      | Use diff-based structural updates                                                                                                                                                                                                           | `data-payload-structural`                          |
+| `data-payload-locale`          | Override locale for this element                                                                                                                                                                                                            | `data-payload-locale="de-AT"`                      |
+| `data-payload-owner`           | Document this subtree belongs to (see below)                                                                                                                                                                                                | `data-payload-owner="global:homepage"`             |
+| `data-payload-depends`         | Fields whose change re-applies this binding under `skipUnchanged`, e.g. `data-payload-depends="price currency"`                                                                                                                             | `data-payload-depends="price"`                     |
+| `data-payload-strategy`        | Delivery strategy: `patch` (default), `fragment` (server-rendered boundary) or `route` (whole-route refresh); anything else is left alone with `LP0407`. Without it: inside a fragment boundary → fragment, in `<head>` → route, else patch | `data-payload-strategy="route"`                    |
+| `data-payload-fragment`        | A server-rendered boundary; the value is a registry id the endpoint may render ([docs/hybrid.md](docs/hybrid.md))                                                                                                                           | `data-payload-fragment="hero"`                     |
+| `data-payload-fragment-key`    | Distinguishes several boundaries of one id on a page                                                                                                                                                                                        | `data-payload-fragment-key="a"`                    |
+| `data-payload-boundary`        | A stable anchor for a possibly-empty field: hidden while empty, shown when filled (`PreviewBoundary.astro` renders it)                                                                                                                      | `data-payload-boundary hidden`                     |
+| `data-payload-island`          | A hydrated framework root: never patched or morphed into (see docs/renderers.md, islands)                                                                                                                                                   | `data-payload-island`                              |
+| `data-payload-owned`           | A subtree the site scripts itself: the morph retains it whole                                                                                                                                                                               | `data-payload-owned`                               |
 
 Binding metadata is live: changing any of these attributes (including inferred
 type markers and an input's native `type`) rebuilds the affected cache snapshot
@@ -578,6 +581,22 @@ await client.use({
   },
 });
 ```
+
+## Hybrid preview: fragments
+
+Patching edits what the page already renders. A `data-payload-fragment`
+boundary is rendered by **your server** from the unsaved form state instead —
+conditional sections, derived values, custom blocks, the component's own
+logic — and morphed in with focus and visitor state intact. The runtime posts
+the fields to a same-origin endpoint you build with `createFragmentEndpoint()`
+(Astro; registry of components, the same authorization strategies as the
+page, no code or paths cross the wire), and patches the boundary's own
+bindings if the server cannot render. Opt in per boundary; a page without
+`fragments` carries no fragment client. [docs/hybrid.md](docs/hybrid.md) has
+the markup, the endpoint, the deployment requirements and the abuse model
+(ADR 0011). A binding in `<head>` or one marked `data-payload-strategy="route"`
+refreshes the whole route once per revision instead, with scroll and focus
+kept and the unsaved state re-applied on the fresh markup.
 
 ## Typed bindings and codegen
 
@@ -742,6 +761,8 @@ The snapshot answers the questions that are otherwise guesswork:
 | `protocol.negotiated`                                      | The version both sides share, which caps the capabilities in `protocol.capabilities`.                                                                                                                                                                                                                     |
 | `protocol.observed`                                        | Capabilities seen on the wire rather than granted by version — the stock admin announces no version, so this is how its abilities become known (`locale`, `schema-json`, `document-events`, `relationship-events`, `preview-token`). Each capability declares a fallback; see `CAPABILITY_DOCUMENTATION`. |
 | `protocol.profile`                                         | What the observed capabilities imply: `payload-2` (a schema on the wire; the admin populates relationships itself, so no REST merge), `payload-3` (document or relationship events seen), or `unknown` (treated like 3.x for merging).                                                                    |
+| `fragments`                                                | Server-rendered boundaries: `handler` (a fragment client is configured), `inFlight`, `rendered`, `failed`, `superseded`.                                                                                                                                                                                  |
+| `route`                                                    | Route refreshes: `handler`, `refreshes`, `failed`, `loopStopped` (second requests for one revision, refused with `LP0805`).                                                                                                                                                                               |
 
 This is deliberately not gated to development builds. A snapshot discloses
 nothing that is not already on the page — the trusted origins are inside the
@@ -804,7 +825,13 @@ code does not — so a log filter, an alert rule, or a bug report that names
 | `LP0404` | A structural item has no `id`                            | Give items a stable `id`; without one they pair by position and an insert re-renders every row after it. |
 | `LP0405` | Two structural items share a key                         | Make `id` unique per item; later duplicates pair by position.                                            |
 | `LP0406` | Every structural key changed at once                     | The source generates keys per message; the morph cannot retain nodes across such updates.                |
-| `LP0407` | A binding asks for a strategy this release does not have | Only `patch` exists in 1.x; the element is left unchanged. The fragment strategy arrives in 1.7.0.       |
+| `LP0407` | A binding asks for a strategy this release does not have | Only `patch` and `fragment` exist; the element is left unchanged.                                        |
+| `LP0801` | A fragment request failed                                | Network, timeout or a 5xx from the endpoint; the boundary was patched from the same revision instead.    |
+| `LP0802` | A fragment response was invalid                          | Wrong content type, shape, size or boundary; patched instead.                                            |
+| `LP0803` | The fragment endpoint refused the preview                | 401/403 — the page's authorization did not hold for the endpoint; patched instead.                       |
+| `LP0804` | A late fragment response was discarded                   | It belonged to a superseded revision; nothing was applied.                                               |
+| `LP0805` | A route refresh loop was stopped                         | The same revision asked for a second refresh; the guard refused it.                                      |
+| `LP0806` | A fragment boundary has no fragment client               | Configure `fragments` (the endpoint) to render it on the server; until then it is patched.               |
 | `LP0501` | A message was rejected before the update pipeline        | Reason is one of origin, shape, type, token. Visible with `debug: true`.                                 |
 | `LP0502` | A preview token was rejected                             | Also reported when your `validateToken` throws — a throwing validator fails closed.                      |
 | `LP0601` | A consumer event handler threw                           | Your `on(...)` handler; the runtime continued.                                                           |

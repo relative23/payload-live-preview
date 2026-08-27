@@ -5,6 +5,7 @@ import { generateInlineScript } from '../src/inline/generator';
 import {
   findBudgetViolations,
   INLINE_BUDGET,
+  INLINE_FRAGMENT_BUDGET,
   measureBundle,
   type BundleBudget,
   type BundleMeasurement,
@@ -28,34 +29,36 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // morph (ADR 0008), its diagnostics and the template sanitizer options add
   // ~1.4 KB gzip to the inline runtime and therefore to every adapter bundle. core.* rows: +~200 B gzip for
   // the message bus source policy (eventSourcePolicy), same date.
-  'adapters/astro/index.js': { raw: 95_450, gzip: 30_050, brotli: 26_400 },
-  'adapters/astro/middleware-entry.js': { raw: 91_650, gzip: 28_750, brotli: 25_200 },
-  'adapters/nextjs/index.js': { raw: 91_650, gzip: 28_650, brotli: 25_200 },
-  'adapters/nuxt/index.js': { raw: 91_750, gzip: 28_850, brotli: 25_250 },
-  'adapters/sveltekit/index.js': { raw: 91_300, gzip: 28_650, brotli: 25_100 },
+  'adapters/astro/index.js': { raw: 119_400, gzip: 37_600, brotli: 32_750 },
+  'adapters/astro/middleware-entry.js': { raw: 106_450, gzip: 33_650, brotli: 29_200 },
+  'adapters/nextjs/index.js': { raw: 106_450, gzip: 33_450, brotli: 29_100 },
+  'adapters/nuxt/index.js': { raw: 106_550, gzip: 33_650, brotli: 29_250 },
+  'adapters/sveltekit/index.js': { raw: 106_100, gzip: 33_550, brotli: 29_050 },
   'codegen-astro.js': { raw: 11_400, gzip: 3_700, brotli: 3_350 },
   'codegen-cli.js': { raw: 13_250, gzip: 4_250, brotli: 3_850 },
   'codegen.cjs': { raw: 11_650, gzip: 3_650, brotli: 3_300 },
   'codegen.js': { raw: 11_350, gzip: 3_650, brotli: 3_300 },
   'doctor-cli.js': { raw: 9_700, gzip: 4_000, brotli: 3_450 },
-  'doctor.js': { raw: 8_150, gzip: 3_450, brotli: 2_900 },
-  'core.cjs': { raw: 97_500, gzip: 30_150, brotli: 26_500 },
-  'core.js': { raw: 97_000, gzip: 30_100, brotli: 26_450 },
-  'index.cjs': { raw: 196_000, gzip: 58_450, brotli: 39_450 },
-  'index.js': { raw: 195_450, gzip: 58_750, brotli: 39_450 },
+  'doctor.js': { raw: 8_300, gzip: 3_500, brotli: 3_000 },
+  'core.cjs': { raw: 102_050, gzip: 31_550, brotli: 27_650 },
+  'core.js': { raw: 101_500, gzip: 31_450, brotli: 27_600 },
+  'index.cjs': { raw: 215_300, gzip: 65_750, brotli: 44_950 },
+  'index.js': { raw: 214_700, gzip: 65_750, brotli: 44_950 },
   'payload.cjs': { raw: 950, gzip: 500, brotli: 450 },
   'payload.js': { raw: 900, gzip: 500, brotli: 450 },
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
   'server.cjs': { raw: 11_950, gzip: 4_400, brotli: 4_000 },
   'server.js': { raw: 11_850, gzip: 4_350, brotli: 3_950 },
-  'client.cjs': { raw: 91_900, gzip: 28_150, brotli: 24_850 },
-  'client.js': { raw: 91_850, gzip: 28_150, brotli: 24_800 },
-  'structural.cjs': { raw: 18_500, gzip: 6_550, brotli: 5_900 },
-  'structural.js': { raw: 18_450, gzip: 6_550, brotli: 5_900 },
+  'client.cjs': { raw: 96_400, gzip: 29_550, brotli: 25_950 },
+  'client.js': { raw: 96_350, gzip: 29_500, brotli: 26_000 },
+  'structural.cjs': { raw: 18_650, gzip: 6_650, brotli: 5_950 },
+  'structural.js': { raw: 18_600, gzip: 6_650, brotli: 5_950 },
   'lexical.cjs': { raw: 15_400, gzip: 5_050, brotli: 4_500 },
   'lexical.js': { raw: 15_350, gzip: 5_050, brotli: 4_500 },
-  'plugins.cjs': { raw: 14_650, gzip: 5_350, brotli: 4_750 },
-  'plugins.js': { raw: 14_600, gzip: 5_350, brotli: 4_750 },
+  'plugins.cjs': { raw: 14_850, gzip: 5_450, brotli: 4_800 },
+  'plugins.js': { raw: 14_800, gzip: 5_400, brotli: 4_800 },
+  'fragment.cjs': { raw: 12_200, gzip: 4_650, brotli: 4_100 },
+  'fragment.js': { raw: 12_150, gzip: 4_650, brotli: 4_100 },
 };
 
 const STABLE_EXPORT_NAMES: Readonly<Record<string, readonly string[]>> = {
@@ -256,6 +259,11 @@ async function main(): Promise<void> {
     'default inline script',
     measureBundle(generateInlineScript()),
     INLINE_BUDGET,
+  );
+  failures += printMeasurement(
+    'inline script with fragments',
+    measureBundle(generateInlineScript({ fragmentEndpoint: '/payload/fragment' })),
+    INLINE_FRAGMENT_BUDGET,
   );
   const manifestValue: unknown = JSON.parse(await readFile(PACKAGE_JSON, 'utf8'));
   if (!isRecord(manifestValue)) throw new Error('package.json is not an object');

@@ -9,12 +9,15 @@ export interface BundleMeasurement {
 export type BundleBudget = BundleMeasurement;
 
 /** Exact inline patch-delta and transfer-size ceilings used by the release gate. */
-// Raised 2026-08-27 for `skipUnchanged`: measured +353 gzip on top of the
-// 20 996 before it (plain-JSON identity, option plumbing, dependency
-// invalidation). Opt-in, and the render it avoids costs more per keystroke
-// than these bytes cost per page; a 300-binding rich-text page went from
-// 98 ms to 19 ms per keystroke in the jsdom bench.
-export const INLINE_BUDGET = { raw: 81_750, gzip: 25_350, brotli: 22_300 } as const;
+// Set 2026-08-27 (hybrid): the plain runtime measured 25 986 gzip, +1 050 on
+// the 24 936 before the strategy seam (plan/covers, the capability context a
+// fragment strategy is handed, morph and fallback patch, LP08xx codes). The
+// seam is what lets a page without `fragments` carry no fragment client at
+// all; the client itself is the difference to INLINE_FRAGMENT_BUDGET.
+export const INLINE_BUDGET = { raw: 86_550, gzip: 26_850, brotli: 23_500 } as const;
+// The inline script with the fragment prelude ahead of the runtime (ADR 0011);
+// only a page configured with `fragments` receives it. Measured 2026-08-27.
+export const INLINE_FRAGMENT_BUDGET = { raw: 96_400, gzip: 30_050, brotli: 26_250 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

@@ -21,6 +21,7 @@
 
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from './lifecycle';
+import type { FragmentStrategy, RouteStrategy } from './strategies';
 import { OriginDetector } from '@detection/origin';
 import { setSanitizerPolicy } from '@security/sanitizer';
 import { isInPreviewContext, isInIframe, isInPopup } from '@detection/environment';
@@ -55,9 +56,21 @@ type RuntimeBuildConfig = readonly [
   skipUnchanged?: boolean,
   eventSourcePolicy?: 'any' | 'parent-or-opener',
   sanitizerPolicy?: 'compat' | 'strict',
+  fragmentEndpoint?: string,
 ];
 
 declare const __LIVE_PREVIEW_CONFIG__: RuntimeBuildConfig;
+/**
+ * Left by the fragment prelude the generator emits ahead of the runtime for
+ * pages configured with `fragments` (src/fragment/inline.ts). Looked up by
+ * `typeof`, so a page without the prelude carries nothing of the client.
+ */
+declare const __LIVE_PREVIEW_FRAGMENT__:
+  | {
+      createFragmentStrategy: (options: { endpoint: string }) => FragmentStrategy;
+      createRouteStrategy: () => RouteStrategy;
+    }
+  | undefined;
 
 /**
  * Field renderers built into the inline runtime.
@@ -138,7 +151,19 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     skipUnchanged = false,
     eventSourcePolicy = 'any',
     sanitizerPolicy = 'compat',
+    fragmentEndpoint,
   ] = readBuildConfig();
+  const strategies =
+    typeof __LIVE_PREVIEW_FRAGMENT__ !== 'undefined' &&
+    typeof fragmentEndpoint === 'string' &&
+    fragmentEndpoint.length > 0
+      ? {
+          fragment: __LIVE_PREVIEW_FRAGMENT__.createFragmentStrategy({
+            endpoint: fragmentEndpoint,
+          }),
+          route: __LIVE_PREVIEW_FRAGMENT__.createRouteStrategy(),
+        }
+      : undefined;
   setSanitizerPolicy(sanitizerPolicy);
 
   const detector = new OriginDetector({
@@ -187,6 +212,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     enableA11y,
     scopeBindingsByOwner,
     skipUnchanged,
+    ...(strategies !== undefined ? { strategies } : {}),
     onHeartbeatTimeout: () => {
       detector.unlockOrigin();
     },

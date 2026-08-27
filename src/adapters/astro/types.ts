@@ -160,6 +160,14 @@ export interface LivePreviewAstroOptions {
   readonly scopeBindingsByOwner?: boolean;
   /** Sanitizer policy for rich text and HTML writes: `'compat'` (1.x) or `'strict'` (2.0, implied by `defaults: 'v2'`). */
   readonly sanitizerPolicy?: 'compat' | 'strict';
+  /**
+   * Server-rendered fragment boundaries (ADR 0011). `endpoint` is the
+   * same-origin path of the route that exports `createFragmentEndpoint()`;
+   * with it, the injected runtime carries the fragment client and renders
+   * every `data-payload-fragment` boundary through it. Pages without it get
+   * the plain runtime.
+   */
+  readonly fragments?: { readonly endpoint: string };
 
   /**
    * Verify that the request is an authorized preview before anything

@@ -114,6 +114,7 @@ export class LivePreviewClient {
         ? { eventSourcePolicy: config.eventSourcePolicy }
         : {}),
       ...(config.dependencies !== undefined ? { dependencies: config.dependencies } : {}),
+      ...(config.strategies !== undefined ? { strategies: config.strategies } : {}),
       ...(config.disableVisibilityGate !== undefined
         ? { disableVisibilityGate: config.disableVisibilityGate }
         : {}),

@@ -1,0 +1,26 @@
+---
+/**
+ * The fragment boundary's content: the component logic patching cannot do.
+ * A conditional section (`tagline`), a derived value (word count) and a
+ * custom block list, all rendered by Astro on the server.
+ */
+import type { HeroDocument } from '../document';
+const { title, subtitle, bodyHtml, words, blocks, author, image, editorTools, locale } =
+  Astro.props as HeroDocument;
+---
+
+<h1 data-payload-field="title" data-testid="hero-title" lang={locale}>{title}</h1>
+{subtitle && <p class="lede" data-testid="hero-subtitle">{subtitle}</p>}
+{author && <p data-testid="hero-author">by {author.name}</p>}
+{image && <img data-testid="hero-image" src={image.url} alt={image.alt} />}
+{editorTools && <p data-testid="hero-tools">Editor tools</p>}
+<p data-testid="hero-words">{words} words</p>
+<div data-testid="hero-body" set:html={bodyHtml} />
+<input id="hero-input" data-testid="hero-input" aria-label="Scratch" />
+<ul data-testid="hero-blocks">
+  {blocks.map((block) => (
+    <li data-payload-key={block.id} data-kind={block.kind}>
+      {block.kind === 'quote' ? <blockquote>{block.text}</blockquote> : <span>{block.text}</span>}
+    </li>
+  ))}
+</ul>

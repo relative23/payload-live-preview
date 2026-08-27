@@ -1,0 +1,39 @@
+---
+/**
+ * Host page: frames the hybrid page with a signed preview token for its
+ * route, the way an admin would open it. `?target=` picks the route;
+ * `?unauthorized=1` frames it without a token so the fallback can be shown.
+ */
+import { issuePreviewToken } from 'payload-live-preview/server';
+import { PREVIEW_SECRET, SITE } from '../preview';
+
+export const prerender = false;
+
+const requested = Astro.url.searchParams.get('target') ?? '/';
+const target = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
+const ttl = Number(Astro.url.searchParams.get('ttl') ?? '');
+const token = await issuePreviewToken(
+  {
+    audience: SITE,
+    path: target,
+    subject: 'editor',
+    ...(Number.isFinite(ttl) && ttl > 0 ? { ttlMs: ttl } : {}),
+  },
+  { secret: PREVIEW_SECRET },
+);
+const src = `${target}?preview=true&previewToken=${token}`;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hybrid host</title>
+    <style>
+      html, body { margin: 0; height: 100%; }
+      iframe { width: 800px; height: 600px; border: 0; display: block; }
+    </style>
+  </head>
+  <body>
+    <iframe id="preview" data-testid="preview-frame" title="Preview" src={src}></iframe>
+  </body>
+</html>

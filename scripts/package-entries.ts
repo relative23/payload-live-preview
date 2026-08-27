@@ -27,6 +27,7 @@ export const STANDALONE_ENTRIES = {
   structural: 'src/structural-entry.ts',
   lexical: 'src/lexical-entry.ts',
   plugins: 'src/plugins-entry.ts',
+  fragment: 'src/fragment/index.ts',
 } as const;
 
 /** The lighter runtime entry; built unminified so consumers' bundlers tree-shake it. */

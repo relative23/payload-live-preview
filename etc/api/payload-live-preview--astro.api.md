@@ -4,15 +4,20 @@
 
 ```ts
 
-import { A as AUTHORIZATION_LOCALS_KEY } from '../../middleware-Jq4cUi2q.js';
-import { c as createLivePreviewMiddleware } from '../../middleware-Jq4cUi2q.js';
+import { A } from '../../policy-B4DHbtJN.js';
+import { A as AUTHORIZATION_LOCALS_KEY } from '../../middleware-DIQtCes5.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-DIQtCes5.js';
 import { h as hasPreviewIntent } from '../../preview-request-OtCAmNe2.js';
 import { i as isPreviewRequest } from '../../preview-request-OtCAmNe2.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-Jq4cUi2q.js';
-import { a as LivePreviewMiddleware } from '../../middleware-Jq4cUi2q.js';
-import { N as NONCE_LOCALS_KEY } from '../../middleware-Jq4cUi2q.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-DIQtCes5.js';
+import { a as LivePreviewMiddleware } from '../../middleware-DIQtCes5.js';
+import { N as NONCE_LOCALS_KEY } from '../../middleware-DIQtCes5.js';
+import { P } from '../../policy-B4DHbtJN.js';
 import { P as PreviewRequestLike } from '../../preview-request-OtCAmNe2.js';
 import { a as PreviewRequestOptions } from '../../preview-request-OtCAmNe2.js';
+
+// @public
+export type AstroComponentLike = object;
 
 // @public (undocumented)
 interface AstroConfigSetupContext {
@@ -48,6 +53,11 @@ export interface AstroIntegrationLike {
 
 export { AUTHORIZATION_LOCALS_KEY }
 
+// @public
+export function createFragmentEndpoint(options: FragmentEndpointOptions): (context: {
+    readonly request: Request;
+}) => Promise<Response>;
+
 export { createLivePreviewMiddleware }
 
 // @public (undocumented)
@@ -64,6 +74,56 @@ interface DevResponse {
     setHeader: (name: string, value: string) => void;
     // (undocumented)
     statusCode: number;
+}
+
+// @public (undocumented)
+export interface FragmentEndpointOptions {
+    readonly allowedOrigins?: readonly string[];
+    readonly authorize: P;
+    // (undocumented)
+    readonly limits?: {
+        readonly bodyBytes?: number;
+        readonly timeoutMs?: number;
+    };
+    readonly registry: FragmentRegistry;
+    readonly render?: FragmentRenderer;
+}
+
+// @public (undocumented)
+export type FragmentRegistry = Readonly<Record<string, FragmentRegistryEntry>>;
+
+// @public (undocumented)
+export interface FragmentRegistryEntry<Props extends Record<string, unknown> = Record<string, unknown>> {
+    // (undocumented)
+    readonly component: AstroComponentLike;
+    readonly props: (input: FragmentRenderInput) => Props | Promise<Props>;
+}
+
+// @public
+export type FragmentRenderer = (component: AstroComponentLike, props: Record<string, unknown>, input: FragmentRenderInput) => Promise<string>;
+
+// @public
+export interface FragmentRenderInput {
+    // (undocumented)
+    readonly authorization: A;
+    // (undocumented)
+    readonly collectionSlug: string | undefined;
+    // (undocumented)
+    readonly fields: Readonly<Record<string, unknown>>;
+    // (undocumented)
+    readonly globalSlug: string | undefined;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly key: string | undefined;
+    // (undocumented)
+    readonly locale: string | undefined;
+    // (undocumented)
+    readonly request: Request;
+    // (undocumented)
+    readonly revision: number;
+    // (undocumented)
+    readonly route: string;
 }
 
 export { hasPreviewIntent }

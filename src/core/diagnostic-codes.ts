@@ -104,6 +104,18 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   AuditNoBindings: 'LP0707',
   /** The URL did not return an HTML page, so nothing else can be judged. */
   AuditNotAPage: 'LP0708',
+  /** A fragment request failed (network, timeout, server error); the boundary was patched instead. */
+  FragmentRequestFailed: 'LP0801',
+  /** The fragment response had the wrong content type or shape; the boundary was patched instead. */
+  FragmentResponseInvalid: 'LP0802',
+  /** The fragment endpoint refused the preview (not authorized); the boundary was patched instead. */
+  FragmentUnauthorized: 'LP0803',
+  /** A fragment response arrived for a revision that was already superseded and was discarded. */
+  FragmentSuperseded: 'LP0804',
+  /** A route refresh was requested again for the same revision; the loop guard stopped it. */
+  RouteRefreshLoop: 'LP0805',
+  /** A boundary asks for the fragment strategy but no fragment handler is configured; it is patched. */
+  FragmentStrategyUnavailable: 'LP0806',
 } as const);
 
 /** A diagnostic code, as it appears in log output and on the `error` event. */

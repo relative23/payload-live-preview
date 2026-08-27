@@ -172,6 +172,29 @@ export interface LivePreviewInspection {
    * test.
    */
   readonly plugins: readonly PluginInspection[];
+  /** Server-rendered fragment boundaries: whether a handler exists and what happened to renders. */
+  readonly fragments: InspectionFragments;
+  /** Route refreshes: whether a strategy exists, how many ran, failed, or were stopped by the loop guard. */
+  readonly route: InspectionRoute;
+}
+
+/** The route strategy as `inspect()` reports it. */
+export interface InspectionRoute {
+  readonly handler: boolean;
+  readonly refreshes: number;
+  readonly failed: number;
+  /** Second refresh requests for one revision, refused with LP0805. */
+  readonly loopStopped: number;
+}
+
+/** The fragment strategy as `inspect()` reports it. */
+export interface InspectionFragments {
+  /** Whether a fragment handler is configured; without one, boundaries are patched. */
+  readonly handler: boolean;
+  readonly inFlight: number;
+  readonly rendered: number;
+  readonly failed: number;
+  readonly superseded: number;
 }
 
 /** One plugin as `inspect().plugins` reports it. */

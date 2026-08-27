@@ -2,8 +2,16 @@ import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/te
 
 const isCI = process.env['CI'] === 'true';
 /** The Astro preview app's port; the admin's Live Preview iframe is pointed at it. */
-const previewPort = process.env['PLP_E2E_PORT'] ?? '4173';
+/**
+ * Which frontend the admin's Live Preview iframe points at: the static Astro
+ * fixture (default) or the SSR hybrid fixture (`PLP_REAL_PAYLOAD_TARGET=hybrid`,
+ * fragment and route strategies against the real admin).
+ */
+const target = process.env['PLP_REAL_PAYLOAD_TARGET'] === 'hybrid' ? 'hybrid' : 'astro';
+const previewPort = process.env['PLP_E2E_PORT'] ?? (target === 'hybrid' ? '4177' : '4173');
 const previewURL = `http://localhost:${previewPort}`;
+/** Browsers to run; the hybrid gate wants all three. */
+const browsers = (process.env['PLP_REAL_PAYLOAD_BROWSERS'] ?? 'chromium').split(',');
 
 /**
  * Dedicated config for the full-chain E2E against a REAL Payload server.
@@ -23,6 +31,7 @@ const previewURL = `http://localhost:${previewPort}`;
  */
 const config: PlaywrightTestConfig = {
   testDir: './tests/real-payload',
+  testMatch: target === 'hybrid' ? /hybrid-.*\.spec\.ts$/u : /^(?!.*hybrid-).*\.spec\.ts$/u,
   fullyParallel: false,
   forbidOnly: true,
   // A pass on retry must not hide nondeterminism in the release fixture.
@@ -37,22 +46,33 @@ const config: PlaywrightTestConfig = {
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+  ].filter((project) => browsers.includes(project.name)),
   webServer: [
-    {
-      // Astro 7's `astro dev` daemonizes (the foreground CLI exits after
-      // spawning a background server), which Playwright reads as a
-      // web-server crash. `astro preview` on a static build stays in the
-      // foreground and serves the same runtime-injected HTML, so it's the
-      // reliable choice for a managed web server.
-      command: `npm --prefix examples/astro-payload run build && cd examples/astro-payload && npx astro preview --host --port ${previewPort}`,
-      // Suppress Astro's AI-agent auto-background mode so Playwright owns the
-      // foreground process and can reliably observe and terminate it.
-      env: { ASTRO_PREVIEW_BACKGROUND: '1' },
-      url: `${previewURL}/`,
-      reuseExistingServer: !isCI,
-      timeout: 120_000,
-    },
+    target === 'hybrid'
+      ? {
+          command: `npm --prefix examples/astro-hybrid run build && HOST=127.0.0.1 PORT=${previewPort} node examples/astro-hybrid/dist/server/entry.mjs`,
+          url: `${previewURL}/bench`,
+          reuseExistingServer: !isCI,
+          timeout: 120_000,
+        }
+      : {
+          // Astro 7's `astro dev` daemonizes (the foreground CLI exits after
+          // spawning a background server), which Playwright reads as a
+          // web-server crash. `astro preview` on a static build stays in the
+          // foreground and serves the same runtime-injected HTML, so it's the
+          // reliable choice for a managed web server.
+          command: `npm --prefix examples/astro-payload run build && cd examples/astro-payload && npx astro preview --host --port ${previewPort}`,
+          // Suppress Astro's AI-agent auto-background mode so Playwright owns the
+          // foreground process and can reliably observe and terminate it.
+          env: { ASTRO_PREVIEW_BACKGROUND: '1' },
+          url: `${previewURL}/`,
+          reuseExistingServer: !isCI,
+          timeout: 120_000,
+        },
     {
       // `e2e:serve` regenerates the admin import map before booting so a
       // fresh checkout (where importMap.js is gitignored) still works.

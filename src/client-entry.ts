@@ -38,6 +38,8 @@ export type {
   InspectionScheduler,
   LivePreviewInspection,
   PluginInspection,
+  InspectionFragments,
+  InspectionRoute,
 } from './core/inspection/types';
 export type { ConnectionStatus } from './core/state';
 export type { DefaultsProfile, EventSourcePolicy } from './core/defaults-profile';
@@ -49,3 +51,13 @@ export type {
   PluginEvents,
 } from './plugins/types';
 export type { PluginCompatibility } from './plugins/compat';
+export type {
+  FragmentContext,
+  FragmentReport,
+  FragmentStrategy,
+  RouteContext,
+  RouteStrategy,
+  StrategyHandlers,
+  UpdateSource,
+} from './core/strategies';
+export type { PayloadDocumentEventDetail } from './types/payload-protocol';

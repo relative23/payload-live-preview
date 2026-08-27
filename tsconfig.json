@@ -41,6 +41,7 @@
       "@/*": ["src/*"],
       "@core/*": ["src/core/*"],
       "@security/*": ["src/security/*"],
+      "@fragment/*": ["src/fragment/*"],
       "@lexical/*": ["src/lexical/*"],
       "@schema/*": ["src/schema/*"],
       "@field-types/*": ["src/field-types/*"],

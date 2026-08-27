@@ -136,6 +136,16 @@
         "default": "./dist/plugins.cjs"
       }
     },
+    "./fragment": {
+      "import": {
+        "types": "./dist/fragment.d.ts",
+        "default": "./dist/fragment.js"
+      },
+      "require": {
+        "types": "./dist/fragment.d.cts",
+        "default": "./dist/fragment.cjs"
+      }
+    },
     "./astro/RichText.astro": "./dist/adapters/astro/RichText.astro",
     "./astro/PreviewBoundary.astro": "./dist/adapters/astro/PreviewBoundary.astro",
     "./astro/middleware-entry": {
