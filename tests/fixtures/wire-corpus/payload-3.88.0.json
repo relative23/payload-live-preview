@@ -1,0 +1,174 @@
+{
+  "$comment": "Captured verbatim from a real Payload admin (examples/payload-backend) by tests/real-payload/record-wire-corpus.spec.ts. Do not edit; re-record with PLP_RECORD_CORPUS=1.",
+  "payload": "3.88.0",
+  "capturedAt": "2026-08-27",
+  "adminOrigin": "http://localhost:3001",
+  "messages": [
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Seeded title",
+        "subtitle": "Seeded subtitle",
+        "tags": [
+          {
+            "id": "6a905558c843a04ac3fd9ac6",
+            "label": "alpha"
+          },
+          {
+            "id": "6a905558c843a04ac3fd9ac7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-08-27T15:18:48.899Z",
+        "createdAt": "2026-07-11T20:11:37.034Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-document-event"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Seeded title",
+        "subtitle": "Seeded subtitle",
+        "tags": [
+          {
+            "id": "6a905558c843a04ac3fd9ac6",
+            "label": "alpha"
+          },
+          {
+            "id": "6a905558c843a04ac3fd9ac7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-08-27T15:18:48.899Z",
+        "createdAt": "2026-07-11T20:11:37.034Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title",
+        "subtitle": "Seeded subtitle",
+        "tags": [
+          {
+            "id": "6a905558c843a04ac3fd9ac6",
+            "label": "alpha"
+          },
+          {
+            "id": "6a905558c843a04ac3fd9ac7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-08-27T15:18:48.899Z",
+        "createdAt": "2026-07-11T20:11:37.034Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6a905558c843a04ac3fd9ac6",
+            "label": "alpha"
+          },
+          {
+            "id": "6a905558c843a04ac3fd9ac7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-08-27T15:18:48.899Z",
+        "createdAt": "2026-07-11T20:11:37.034Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-08-27T15:18:48.899Z",
+        "createdAt": "2026-07-11T20:11:37.034Z",
+        "tags": [
+          {
+            "id": "6a905558c843a04ac3fd9ac6",
+            "label": "alpha"
+          },
+          {
+            "id": "6a905558c843a04ac3fd9ac7",
+            "label": "beta"
+          },
+          {
+            "id": "6a90555f8b6424698a685d39"
+          }
+        ]
+      },
+      "externallyUpdatedRelationship": null,
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-08-27T15:18:48.899Z",
+        "createdAt": "2026-07-11T20:11:37.034Z",
+        "tags": [
+          {
+            "id": "6a905558c843a04ac3fd9ac6",
+            "label": "corpus-tag"
+          },
+          {
+            "id": "6a905558c843a04ac3fd9ac7",
+            "label": "beta"
+          },
+          {
+            "id": "6a90555f8b6424698a685d39"
+          }
+        ]
+      },
+      "externallyUpdatedRelationship": null,
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-08-27T15:18:48.899Z",
+        "createdAt": "2026-07-11T20:11:37.034Z",
+        "tags": [
+          {
+            "id": "6a905558c843a04ac3fd9ac6",
+            "label": "corpus-tag"
+          },
+          {
+            "id": "6a905558c843a04ac3fd9ac7",
+            "label": "beta"
+          },
+          {
+            "id": "6a90555f8b6424698a685d39"
+          }
+        ]
+      },
+      "externallyUpdatedRelationship": null,
+      "globalSlug": "homepage"
+    }
+  ]
+}

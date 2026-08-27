@@ -1,6 +1,9 @@
 import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test';
 
 const isCI = process.env['CI'] === 'true';
+/** The Astro preview app's port; the admin's Live Preview iframe is pointed at it. */
+const previewPort = process.env['PLP_E2E_PORT'] ?? '4173';
+const previewURL = `http://localhost:${previewPort}`;
 
 /**
  * Dedicated config for the full-chain E2E against a REAL Payload server.
@@ -42,12 +45,11 @@ const config: PlaywrightTestConfig = {
       // web-server crash. `astro preview` on a static build stays in the
       // foreground and serves the same runtime-injected HTML, so it's the
       // reliable choice for a managed web server.
-      command:
-        'npm --prefix examples/astro-payload run build && npm --prefix examples/astro-payload run preview',
+      command: `npm --prefix examples/astro-payload run build && cd examples/astro-payload && npx astro preview --host --port ${previewPort}`,
       // Suppress Astro's AI-agent auto-background mode so Playwright owns the
       // foreground process and can reliably observe and terminate it.
       env: { ASTRO_PREVIEW_BACKGROUND: '1' },
-      url: 'http://localhost:4173/',
+      url: `${previewURL}/`,
       reuseExistingServer: !isCI,
       timeout: 120_000,
     },
@@ -55,6 +57,7 @@ const config: PlaywrightTestConfig = {
       // `e2e:serve` regenerates the admin import map before booting so a
       // fresh checkout (where importMap.js is gitignored) still works.
       command: 'npm --prefix examples/payload-backend run e2e:serve',
+      env: { FRONTEND_URL: previewURL },
       url: 'http://localhost:3001/admin',
       reuseExistingServer: !isCI,
       // Payload + Next's first cold compile is slow.

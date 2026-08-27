@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 127,
-    "suites": 380,
-    "tests": 1735,
+    "files": 131,
+    "suites": 378,
+    "tests": 1704,
     "benchmarks": 12
   },
   "groups": {
@@ -42,15 +42,15 @@
       "benchmarks": 0
     },
     "integration": {
-      "files": 5,
-      "suites": 8,
-      "tests": 67,
+      "files": 6,
+      "suites": 9,
+      "tests": 72,
       "benchmarks": 0
     },
     "real-payload": {
-      "files": 1,
-      "suites": 1,
-      "tests": 3,
+      "files": 2,
+      "suites": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     "soak": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 104,
-      "suites": 341,
-      "tests": 1617,
+      "files": 106,
+      "suites": 337,
+      "tests": 1580,
       "benchmarks": 0
     }
   },
@@ -215,10 +215,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/integration/wire-corpus.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/real-payload/homepage-live-preview.spec.ts",
       "group": "real-payload",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/real-payload/record-wire-corpus.spec.ts",
+      "group": "real-payload",
+      "suites": 1,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -239,7 +253,7 @@
       "path": "tests/unit/adapters/astro.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 39,
+      "tests": 28,
       "benchmarks": 0
     },
     {
@@ -250,17 +264,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/conformance.test.ts",
+      "group": "unit",
+      "suites": 0,
+      "tests": 0,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/nextjs.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 21,
+      "suites": 3,
+      "tests": 7,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/nuxt.test.ts",
       "group": "unit",
-      "suites": 8,
-      "tests": 21,
+      "suites": 7,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -287,8 +308,8 @@
     {
       "path": "tests/unit/adapters/sveltekit.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 17,
+      "suites": 4,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -485,6 +506,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 27,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/protocol-capabilities.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 8,
       "benchmarks": 0
     },
     {

@@ -78,6 +78,23 @@ stale. Focused, skipped, conditional, todo, and expected-failure declarations
 have a budget of zero. Playwright retries may collect diagnostics, but
 `failOnFlakyTests` prevents a retry from turning a flaky test into a passing gate.
 
+### Contracts that hold several things together
+
+- `tests/unit/adapters/conformance.ts` — one behavioural suite for the four
+  framework adapters (`adapterConformance(harness)`): injection on intent,
+  CSP modes, the one-nonce rule, authorization refusal. A harness is only the
+  framework-specific way to run a request; the per-adapter files keep what is
+  genuinely framework-specific (SvelteKit chunks, sparse Nitro events, Astro
+  prerender and loader mode).
+- `tests/integration/wire-corpus.test.ts` — replays every capture under
+  `tests/fixtures/wire-corpus/` through the real runtime. Record a new Payload
+  version with `PLP_RECORD_CORPUS=1 npm run test:e2e:real-payload` after
+  bumping `examples/payload-backend`; `npm run compat:check` then expects the
+  version in `quality/compat-matrix.json`.
+- `npm run test:treeshake`, `npm run test:edge`, `npm run test:bundle` — the
+  built package as a consumer sees it: one-symbol bundles, a Web-platform-only
+  runtime, and size budgets. All three run inside `npm run build`.
+
 ## Coverage and mutation policy
 
 [quality/coverage-policy.json](../quality/coverage-policy.json) is a ratchet:

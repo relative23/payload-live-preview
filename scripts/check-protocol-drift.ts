@@ -25,7 +25,7 @@
  * soft-fail early warning, `@canary`.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -114,6 +114,33 @@ async function main(): Promise<void> {
       'expected true',
     );
 
+    // 3b. The wire corpus: what real admins posted must still be what the
+    // official client recognises, or the two sides of the protocol drifted.
+    const corpusDir = join(process.cwd(), 'tests', 'fixtures', 'wire-corpus');
+    for (const file of readdirSync(corpusDir)
+      .filter((name) => name.endsWith('.json'))
+      .sort()) {
+      const corpus = JSON.parse(readFileSync(join(corpusDir, file), 'utf8')) as {
+        payload: string;
+        adminOrigin: string;
+        messages: { type: string }[];
+      };
+      for (const [index, message] of corpus.messages.entries()) {
+        const event = { origin: corpus.adminOrigin, data: message };
+        const recognised =
+          message.type === 'payload-document-event'
+            ? client.isDocumentEvent(event, corpus.adminOrigin)
+            : client.isLivePreviewEvent(event, corpus.adminOrigin);
+        assert(
+          `corpus ${corpus.payload} #${String(index)} (${message.type}) is recognised by ${PACKAGE}`,
+          recognised,
+          JSON.stringify(message).slice(0, 120),
+        );
+      }
+      console.log(
+        `[protocol-watch] corpus ${corpus.payload}: ${String(corpus.messages.length)} messages recognised`,
+      );
+    }
     // 4. mergeData's default handler issues the request our DataMerger replicates.
     const calls: { url: string; init: RequestInit }[] = [];
     const realFetch = globalThis.fetch;
