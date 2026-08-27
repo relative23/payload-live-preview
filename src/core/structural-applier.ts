@@ -18,6 +18,7 @@
  */
 
 import { sanitizeHtml, type SanitizeOptions } from '@security/sanitizer';
+import { trustedHtml } from '@security/trusted-types';
 import { interpolateArrayTemplate } from './array-template';
 import { safeStringify } from '@field-types/utils';
 import { diffArray, type ArrayPatch } from '@schema/diff';
@@ -449,7 +450,7 @@ function renderItem(
   const filled = fillTemplate(template, value, index);
   const safe = sanitizeHtml(filled, templateSanitizeOptions(template));
   const host = ownerDocument.createElement('template');
-  host.innerHTML = safe;
+  host.innerHTML = trustedHtml(safe);
   const first = host.content.firstElementChild;
   if (!first) return null;
   const key = readKey(value);

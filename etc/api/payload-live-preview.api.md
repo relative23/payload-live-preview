@@ -339,6 +339,7 @@ export interface InlineScriptConfig {
     readonly mergeDepth?: number;
     // @deprecated
     readonly nonce?: string;
+    readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
@@ -524,6 +525,7 @@ export interface LivePreviewClientConfig {
     readonly renderRichText?: RichTextRenderer;
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
     readonly root?: Document | Element;
+    readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
@@ -1078,7 +1080,9 @@ export function sanitizeHtml(html: string, options?: SanitizeOptions): string;
 interface SanitizeOptions {
     readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
     readonly additionalAllowedTags?: readonly string[];
+    readonly allowedDataAttributes?: readonly string[];
     readonly allowFormControls?: boolean;
+    readonly policy?: SanitizerPolicyMode;
 }
 
 // @public
@@ -1090,6 +1094,9 @@ export interface SanitizerDocument {
     };
 }
 
+// @public
+export type SanitizerPolicyMode = 'compat' | 'strict';
+
 // Warning: (ae-forgotten-export) The symbol "WebCryptoLike" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -1097,6 +1104,12 @@ export function setCspCrypto(crypto: WebCryptoLike | null): void;
 
 // @public
 export function setSanitizerDocument(doc: SanitizerDocument | null): void;
+
+// @public
+export function setSanitizerPolicy(mode: SanitizerPolicyMode): void;
+
+// @public
+export function setTrustedTypesPolicy(policy: TrustedHtmlPolicyLike | null | undefined): void;
 
 // @public
 export interface SignedTokenStrategy {
@@ -1132,6 +1145,18 @@ export interface SubtleCryptoLike {
 
 // @public
 export type SuppressedBinding = Readonly<Record<string, never>>;
+
+// @public (undocumented)
+export const TRUSTED_TYPES_POLICY_NAME = "payload-live-preview";
+
+// @public
+export function trustedHtml(html: string): string;
+
+// @public
+export interface TrustedHtmlPolicyLike {
+    // (undocumented)
+    createHTML(input: string): unknown;
+}
 
 // @public
 export type Unsubscribe = () => void;

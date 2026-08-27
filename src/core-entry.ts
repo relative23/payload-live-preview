@@ -136,3 +136,4 @@ export type {
   PayloadLivePreviewMessage,
 } from './types/payload-protocol';
 export type { PluginCompatibility } from './plugins';
+export type { SanitizerPolicyMode } from './security';

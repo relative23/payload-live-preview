@@ -232,12 +232,14 @@ describe("defaults: 'v2'", () => {
       skipUnchanged: true,
       disableReferrerDetection: true,
       eventSourcePolicy: 'parent-or-opener',
+      sanitizerPolicy: 'strict',
     });
     expect(inlineScriptConfig(options)).toEqual({
       allowedOrigins: [ADMIN],
       skipUnchanged: true,
       disableReferrerDetection: true,
       eventSourcePolicy: 'parent-or-opener',
+      sanitizerPolicy: 'strict',
     });
   });
 

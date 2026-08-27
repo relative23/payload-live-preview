@@ -48,12 +48,17 @@ export {
   isExternalHttpUrl,
   sanitizeHtml,
   setSanitizerDocument,
+  setSanitizerPolicy,
+  setTrustedTypesPolicy,
+  trustedHtml,
+  TRUSTED_TYPES_POLICY_NAME,
   escapeHtml,
   escapeHtmlAttribute,
   type CspDirectiveMerge,
   type FrameAncestorsOptions,
   type SanitizerDocument,
 } from './security';
+export type { SanitizerPolicyMode, TrustedHtmlPolicyLike } from './security';
 
 // Authorized preview context — the one verdict privileged preview decisions
 // are keyed on. See docs/architecture/0006-authorized-preview-context.md.

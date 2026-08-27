@@ -8,6 +8,7 @@
  */
 
 import { escapeHtml, escapeHtmlAttribute } from '@security/escape';
+import { trustedHtml } from '@security/trusted-types';
 import { isSafeUrl } from '@security/url-validator';
 import { markNoWriteCallback } from '@core/internal-outcome';
 import type { FieldRenderer } from '@core/types';
@@ -34,7 +35,7 @@ const uploadRenderer: FieldRenderer = {
       return;
     }
     const label = media.filename !== undefined ? escapeHtml(media.filename) : escapeHtml(url);
-    element.innerHTML = `<a href="${escapeHtmlAttribute(url)}">${label}</a>`;
+    element.innerHTML = trustedHtml(`<a href="${escapeHtmlAttribute(url)}">${label}</a>`);
     return;
   }),
 };

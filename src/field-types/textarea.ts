@@ -8,6 +8,7 @@
  */
 
 import { isLexicalContent, lexicalToPlainText } from '@lexical/render';
+import { trustedHtml } from '@security/trusted-types';
 import { escapeAndLinebreak } from '@security/escape';
 import type { FieldRenderer } from '@core/types';
 import { safeStringify } from './utils';
@@ -21,7 +22,7 @@ const textareaRenderer: FieldRenderer = {
       (element as HTMLInputElement | HTMLTextAreaElement).value = text;
       return;
     }
-    element.innerHTML = escapeAndLinebreak(text);
+    element.innerHTML = trustedHtml(escapeAndLinebreak(text));
   },
 };
 

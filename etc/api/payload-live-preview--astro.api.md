@@ -4,13 +4,13 @@
 
 ```ts
 
-import { A as AUTHORIZATION_LOCALS_KEY } from '../../middleware-C-IlTGy0.js';
-import { c as createLivePreviewMiddleware } from '../../middleware-C-IlTGy0.js';
+import { A as AUTHORIZATION_LOCALS_KEY } from '../../middleware-Jq4cUi2q.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-Jq4cUi2q.js';
 import { h as hasPreviewIntent } from '../../preview-request-OtCAmNe2.js';
 import { i as isPreviewRequest } from '../../preview-request-OtCAmNe2.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-C-IlTGy0.js';
-import { a as LivePreviewMiddleware } from '../../middleware-C-IlTGy0.js';
-import { N as NONCE_LOCALS_KEY } from '../../middleware-C-IlTGy0.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-Jq4cUi2q.js';
+import { a as LivePreviewMiddleware } from '../../middleware-Jq4cUi2q.js';
+import { N as NONCE_LOCALS_KEY } from '../../middleware-Jq4cUi2q.js';
 import { P as PreviewRequestLike } from '../../preview-request-OtCAmNe2.js';
 import { a as PreviewRequestOptions } from '../../preview-request-OtCAmNe2.js';
 

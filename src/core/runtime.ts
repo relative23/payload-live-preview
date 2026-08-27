@@ -22,6 +22,7 @@
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from './lifecycle';
 import { OriginDetector } from '@detection/origin';
+import { setSanitizerPolicy } from '@security/sanitizer';
 import { isInPreviewContext, isInIframe, isInPopup } from '@detection/environment';
 import { bindNavigationLifecycle } from './navigation-lifecycle';
 import { VERSION } from '../version';
@@ -53,6 +54,7 @@ type RuntimeBuildConfig = readonly [
   scopeBindingsByOwner?: boolean,
   skipUnchanged?: boolean,
   eventSourcePolicy?: 'any' | 'parent-or-opener',
+  sanitizerPolicy?: 'compat' | 'strict',
 ];
 
 declare const __LIVE_PREVIEW_CONFIG__: RuntimeBuildConfig;
@@ -119,7 +121,9 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     scopeBindingsByOwner = false,
     skipUnchanged = false,
     eventSourcePolicy = 'any',
+    sanitizerPolicy = 'compat',
   ] = readBuildConfig();
+  setSanitizerPolicy(sanitizerPolicy);
 
   const detector = new OriginDetector({
     additionalOrigins,

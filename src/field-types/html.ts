@@ -9,6 +9,7 @@
  */
 
 import { sanitizeHtml } from '@security/sanitizer';
+import { trustedHtml } from '@security/trusted-types';
 import type { FieldRenderer } from '@core/types';
 import { safeStringify } from './utils';
 
@@ -20,7 +21,7 @@ const htmlRenderer: FieldRenderer = {
       return;
     }
     const html = typeof value === 'string' ? value : safeStringify(value);
-    target.element.innerHTML = sanitizeHtml(html);
+    target.element.innerHTML = trustedHtml(sanitizeHtml(html));
   },
 };
 

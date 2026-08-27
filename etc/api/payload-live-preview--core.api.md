@@ -339,6 +339,7 @@ export interface LivePreviewClientConfig {
     readonly renderRichText?: RichTextRenderer;
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
     readonly root?: Document | Element;
+    readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
@@ -698,7 +699,9 @@ export function sanitizeHtml(html: string, options?: SanitizeOptions): string;
 interface SanitizeOptions {
     readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
     readonly additionalAllowedTags?: readonly string[];
+    readonly allowedDataAttributes?: readonly string[];
     readonly allowFormControls?: boolean;
+    readonly policy?: SanitizerPolicyMode;
 }
 
 // @public
@@ -709,6 +712,9 @@ export interface SanitizerDocument {
         readonly content: ParentNode;
     };
 }
+
+// @public
+export type SanitizerPolicyMode = 'compat' | 'strict';
 
 // Warning: (ae-forgotten-export) The symbol "WebCryptoLike" needs to be exported by the entry point core.d.ts
 //

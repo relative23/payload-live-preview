@@ -21,6 +21,7 @@
  */
 
 import { isLexicalContent, lexicalToPlainText } from '@lexical/render';
+import { trustedHtml } from '@security/trusted-types';
 import { escapeAndLinebreak } from '@security/escape';
 import { safeConsoleWarn } from '@core/diagnostics';
 import { markNoWriteCallback } from '@core/internal-outcome';
@@ -46,7 +47,7 @@ export function createTextRenderer(): FieldRenderer {
         return false;
       }
       if (text.includes('\n') || text.includes('\r')) {
-        element.innerHTML = escapeAndLinebreak(text);
+        element.innerHTML = trustedHtml(escapeAndLinebreak(text));
         return;
       }
       element.textContent = text;

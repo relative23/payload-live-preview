@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 119,
-    "suites": 365,
-    "tests": 1702,
+    "files": 122,
+    "suites": 373,
+    "tests": 1717,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 98,
-      "suites": 329,
-      "tests": 1590,
+      "files": 101,
+      "suites": 337,
+      "tests": 1605,
       "benchmarks": 0
     }
   },
@@ -401,6 +401,13 @@
       "group": "unit",
       "suites": 4,
       "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/islands.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -866,10 +873,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/security/sanitizer-policy.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/security/sanitizer.test.ts",
       "group": "unit",
       "suites": 12,
       "tests": 50,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/trusted-types.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
       "benchmarks": 0
     },
     {

@@ -93,6 +93,8 @@ export interface InlineScriptConfig {
   readonly skipUnchanged?: boolean;
   /** Which windows may post updates; `'parent-or-opener'` refuses every other source. Default `'any'`. */
   readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
+  /** Sanitizer policy for rich text and HTML writes; `'strict'` is the 2.0 default (`defaults: 'v2'`). */
+  readonly sanitizerPolicy?: 'compat' | 'strict';
   /**
    * Retained for 1.x source compatibility, but has no effect here:
    * `generateInlineScript()` returns a script body and creates no tag.
@@ -150,6 +152,7 @@ function buildConfigLiteral(config: InlineScriptConfig): string {
     config.scopeBindingsByOwner,
     config.skipUnchanged,
     config.eventSourcePolicy,
+    config.sanitizerPolicy,
   ];
   while (compactConfig.length > 0 && compactConfig.at(-1) === undefined) compactConfig.pop();
   // Preserve omitted interior options as sparse JavaScript slots. JSON arrays

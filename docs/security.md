@@ -111,6 +111,23 @@ their own HTML:
 - **External `<a>` hardened.** Auto-applies `rel="noopener noreferrer"` and `target="_blank"`.
 - **HTML comments removed.**
 
+**Policies (1.3.0).** `sanitizerPolicy: 'compat'` is the 1.x behaviour:
+`id` and every `data-*` attribute pass. `'strict'` — the 2.0 default,
+set today by `defaults: 'v2'` — strips `id` and `name` (DOM clobbering,
+§5c), strips `data-payload-*` (rich text must never add a binding), and
+passes other `data-*` only when listed in `allowedDataAttributes`. Every
+sanitizer case in the property suite runs under both policies. Item
+templates for structural lists are the one place form controls and custom
+elements are admitted (`allowFormControls`), because they are the page
+author's markup and every interpolated value is escaped first.
+
+**Trusted Types.** Every HTML sink — the sanitizer's own parse and the
+rich-text, html, array, upload, text and structural writes — goes through
+one policy named `payload-live-preview`, created on first use where the
+API exists. A site enforcing `require-trusted-types-for 'script'` lists
+that name in its `trusted-types` directive, or hands its own policy to
+`setTrustedTypesPolicy()`.
+
 ### 4. URL validation
 
 `isSafeUrl` accepts only:
@@ -183,10 +200,10 @@ so a claimed owner cannot reach into another document. Treat
 user-generated Lexical as untrusted for a different reason than XSS: it can
 add bindings.
 
-**What 1.3.0 changes (F-21).** The strict sanitizer policy drops `id` and
-every `data-payload-*` attribute from sanitized output and becomes the 2.0
-default; `data-*` in general stays, because it is inert and widely used for
-styling hooks. That row is on the readiness table in ADR 0007.
+**What 1.3.0 changed (F-21).** `sanitizerPolicy: 'strict'` drops `id`,
+`name` and every `data-payload-*` attribute from sanitized output and passes
+other `data-*` only by explicit list; it is the 2.0 default and is set today
+by `defaults: 'v2'` (ADR 0007, entry 11).
 
 ### 6. Prototype-pollution guard
 
