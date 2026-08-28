@@ -80,6 +80,8 @@ export interface PreviewPolicyOptions {
   readonly debounceMs?: number;
   readonly heartbeatMs?: number;
   readonly skipUnchanged?: boolean;
+  /** Scroll the preview to the field being edited when its value changes. */
+  readonly revealEditedField?: boolean;
   readonly scopeBindingsByOwner?: boolean;
   readonly sanitizerPolicy?: 'compat' | 'strict';
   /** Server-rendered fragment boundaries (ADR 0011): the same-origin endpoint the runtime posts to. */
@@ -155,6 +157,9 @@ export function inlineScriptConfig(
     ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
     ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
     ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
+    ...(options.revealEditedField !== undefined
+      ? { revealEditedField: options.revealEditedField }
+      : {}),
     ...(options.debug !== undefined ? { debug: options.debug } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),

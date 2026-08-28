@@ -11,6 +11,13 @@
  */
 
 export { LivePreviewClient, initLivePreview, type LivePreviewClientConfig } from './client';
+export {
+  createPreviewFocusReporter,
+  reportPreviewFocus,
+  type FocusReportTarget,
+  type PreviewFocusMessage,
+} from './client/preview-focus';
+
 export type {
   CachedElement,
   CustomRendererKey,

@@ -59,6 +59,7 @@ import { VERSION } from '../version';
 import { observeThenableResult } from './thenable';
 import { resolveFieldValue } from './field-value';
 import { valueIdentity } from './value-identity';
+import { FieldRevealer, type RevealWindow } from './reveal';
 import { mergeDependencyMaps } from './dependencies';
 import { dispatchIslandUpdate, isInsideIsland } from './islands';
 import { A11yAnnouncer } from './a11y';
@@ -128,6 +129,8 @@ export interface RuntimeOptions {
    * is new to the cache, or when the value cannot be given an identity.
    */
   readonly skipUnchanged?: boolean;
+  /** Scroll the preview to the field being edited when its value changes. */
+  readonly revealEditedField?: boolean;
   /**
    * Fields whose change must re-apply other bindings even when those
    * bindings' own values did not change: `{ price: ['priceLabel'] }` says a
@@ -290,6 +293,7 @@ const enum RuntimeDependencySlot {
   SkipUnchanged,
   Dependencies,
   Strategies,
+  RevealEditedField,
 }
 
 /** Stable object/function references owned for the complete runtime lifetime. */
@@ -318,6 +322,7 @@ type RuntimeDependencies = readonly [
   skipUnchanged: boolean,
   dependencies: Readonly<Record<string, readonly string[]>>,
   strategies: StrategyHandlers,
+  revealEditedField: boolean,
 ];
 
 const enum RuntimeLifecycleSlot {
@@ -345,6 +350,8 @@ const enum RuntimeLifecycleSlot {
   WarnedFragmentFallback,
   RouteStats,
   RouteController,
+  Revealer,
+  RevealLastValues,
 }
 
 /** State that changes as the runtime starts, accepts revisions, and stops. */
@@ -373,6 +380,8 @@ type RuntimeLifecycleState = [
   warnedFragmentFallback: boolean,
   routeStats: { refreshes: number; failed: number; loopStopped: number },
   routeController: AbortController | null,
+  revealer: FieldRevealer,
+  revealLastValues: Map<string, string | undefined>,
 ];
 
 export class LivePreviewRuntime {
@@ -466,6 +475,9 @@ export class LivePreviewRuntime {
         this.#observe(['document-events']);
         void emitter.emit('documentSave', { timestamp: Date.now() });
       },
+      onFocusField: (field) => {
+        if (this.d[RuntimeDependencySlot.RevealEditedField]) this.#revealField(field);
+      },
       onInvalid: (reason, origin) => {
         if (reason === 'token') {
           const error = new Error(`Preview token rejected (origin: ${origin})`);
@@ -515,6 +527,7 @@ export class LivePreviewRuntime {
       options.skipUnchanged === true,
       options.dependencies ?? {},
       options.strategies ?? {},
+      options.revealEditedField === true,
     ];
     this.l = [
       undefined,
@@ -541,6 +554,8 @@ export class LivePreviewRuntime {
       false,
       { refreshes: 0, failed: 0, loopStopped: 0 },
       null,
+      new FieldRevealer(),
+      new Map<string, string | undefined>(),
     ];
   }
 
@@ -1954,6 +1969,39 @@ export class LivePreviewRuntime {
     return applied;
   }
 
+  /**
+   * Scroll the preview to the field whose value changed this update — where the
+   * editor's cursor is (roadmap 2.0 "reveal the edited section"). The first
+   * message establishes a baseline and never scrolls; afterwards only a field
+   * whose value actually changed is a candidate, and the shared FieldRevealer
+   * scrolls only when that field differs from the last revealed one and is
+   * off-screen, so continuous typing and manual scroll-away are not fought.
+   */
+  #revealChangedFields(fields: Readonly<Record<string, unknown>>): void {
+    if (!this.d[RuntimeDependencySlot.RevealEditedField]) return;
+    const last = this.l[RuntimeLifecycleSlot.RevealLastValues];
+    const baseline = last.size === 0;
+    const changed: string[] = [];
+    for (const [name, value] of Object.entries(fields)) {
+      const id = valueIdentity(value);
+      if (last.get(name) !== id) changed.push(name);
+      last.set(name, id);
+    }
+    if (baseline) return;
+    for (const name of changed) {
+      if (this.#revealField(name) !== 'no-element') break;
+    }
+  }
+
+  /** Reveal one field's bound element; the shared verdict for tier 1 and tier 2. */
+  #revealField(fieldName: string): 'revealed' | 'already-visible' | 'skipped-same' | 'no-element' {
+    const element = this.d[RuntimeDependencySlot.Cache].get(fieldName)?.[0]?.element;
+    if (element === undefined) return 'no-element';
+    const win = element.ownerDocument.defaultView as RevealWindow | null;
+    if (win === null) return 'no-element';
+    return this.l[RuntimeLifecycleSlot.Revealer].reveal(fieldName, element, win);
+  }
+
   #onFlush(stats: FlushStats): void {
     // Before every early return below. A flush that applied nothing is exactly
     // the flush this reports, and the `applied === 0` guard would swallow it.
@@ -1994,6 +2042,8 @@ export class LivePreviewRuntime {
       receivedAt: transaction.receivedAt,
       locale: transaction.locale,
     });
+    if (!isCurrent()) return;
+    this.#revealChangedFields(data.fields);
     if (!isCurrent()) return;
     if (this.d[RuntimeDependencySlot.Emitter].listenerCount('afterUpdate') === 0) {
       return;

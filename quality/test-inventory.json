@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 145,
-    "suites": 395,
-    "tests": 1783,
+    "files": 149,
+    "suites": 403,
+    "tests": 1799,
     "benchmarks": 12
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 14,
+      "files": 15,
       "suites": 22,
-      "tests": 60,
+      "tests": 61,
       "benchmarks": 0
     },
     "integration": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 117,
-      "suites": 350,
-      "tests": 1640,
+      "files": 120,
+      "suites": 358,
+      "tests": 1655,
       "benchmarks": 0
     }
   },
@@ -163,6 +163,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/reveal.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -369,6 +376,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/client/preview-focus.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/codegen/cli.test.ts",
       "group": "unit",
       "suites": 1,
@@ -533,7 +547,7 @@
       "path": "tests/unit/core/message-bus.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 74,
+      "tests": 75,
       "benchmarks": 0
     },
     {
@@ -580,6 +594,20 @@
     },
     {
       "path": "tests/unit/core/renderer-api.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/reveal-lifecycle.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/reveal.test.ts",
       "group": "unit",
       "suites": 4,
       "tests": 6,

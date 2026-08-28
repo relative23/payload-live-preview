@@ -13,6 +13,13 @@ export { VERSION } from './version';
 // High-level client
 export { LivePreviewClient, initLivePreview, type LivePreviewClientConfig } from './client';
 export {
+  createPreviewFocusReporter,
+  reportPreviewFocus,
+  type FocusReportTarget,
+  type PreviewFocusMessage,
+} from './client/preview-focus';
+
+export {
   bindNavigationLifecycle,
   type NavigationLifecycleOptions,
   type NavigationLifecycleTarget,

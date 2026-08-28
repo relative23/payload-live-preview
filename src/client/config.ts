@@ -68,6 +68,12 @@ export interface LivePreviewClientConfig {
    */
   readonly skipUnchanged?: boolean;
   /**
+   * Scroll the preview to the field being edited when its value changes, so the
+   * section under the editor's cursor is always visible. Independent of the
+   * `defaults` profile; off unless set.
+   */
+  readonly revealEditedField?: boolean;
+  /**
    * Fields whose change re-applies other bindings regardless of their own
    * value: `{ price: ['priceLabel'] }`. Used only with `skipUnchanged`.
    */

@@ -59,6 +59,13 @@ export interface MessageHandlers {
   /** Validated document save event. */
   readonly onDocumentEvent: (msg: PayloadDocumentEventMessage, origin: string) => void;
   /**
+   * The admin reports the editor's cursor moved into a field, so the preview
+   * can reveal it. Optional — used only by consumers that wire the focus
+   * reporter into their Payload admin (roadmap 2.0 "reveal the edited section",
+   * tier 2).
+   */
+  readonly onFocusField?: (field: string, origin: string) => void;
+  /**
    * Invoked when a message is rejected. Optional — used by debug logging.
    *
    * `reason` is one of `origin`, `shape`, `type`, `token`.
@@ -324,6 +331,23 @@ export class MessageBus {
         }
         if (!this.#isCurrentGeneration(generation)) return;
         this.#invokeHandler(onDocumentEvent, data, origin);
+        return;
+      }
+      case 'payload-live-preview-focus': {
+        const field = focusFieldOf(data);
+        if (!this.#isCurrentGeneration(generation)) return;
+        if (field === undefined) {
+          this.#reportInvalid('shape', origin, generation);
+          return;
+        }
+        const onFocusField = this.s[BusSlot.Handlers].onFocusField;
+        if (onFocusField === undefined) return;
+        if (!this.#isCurrentGeneration(generation)) return;
+        try {
+          onFocusField(field, origin);
+        } catch {
+          // A consumer handler that throws must not take the bus down.
+        }
         return;
       }
       default:
@@ -602,6 +626,16 @@ function isLivePreviewMessage(value: { type: string }): value is PayloadLivePrev
  * Runtime guard for Payload's document-save notification. Stock Payload
  * sends only the `type`; custom senders may add the optional typed fields.
  */
+/**
+ * The field name from a `payload-live-preview-focus` message, or undefined when
+ * the shape is wrong. The message is `{ type, field: string }`; a non-empty
+ * string field is required.
+ */
+function focusFieldOf(value: { type: string }): string | undefined {
+  const field = (value as Record<string, unknown>)['field'];
+  return typeof field === 'string' && field.length > 0 ? field : undefined;
+}
+
 function isDocumentEventMessage(value: { type: string }): value is PayloadDocumentEventMessage {
   const v = value as Record<string, unknown>;
   if (

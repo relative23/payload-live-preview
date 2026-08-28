@@ -14,10 +14,11 @@ export type BundleBudget = BundleMeasurement;
 // fragment strategy is handed, morph and fallback patch, LP08xx codes). The
 // seam is what lets a page without `fragments` carry no fragment client at
 // all; the client itself is the difference to INLINE_FRAGMENT_BUDGET.
-export const INLINE_BUDGET = { raw: 86_550, gzip: 26_850, brotli: 23_500 } as const;
+export const INLINE_BUDGET = { raw: 86_713, gzip: 26_897, brotli: 23_613 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
-// only a page configured with `fragments` receives it. Measured 2026-08-27.
-export const INLINE_FRAGMENT_BUDGET = { raw: 96_400, gzip: 30_050, brotli: 26_250 } as const;
+// only a page configured with `fragments` receives it. Measured 2026-08-28
+// (grew with the reveal-edited-field runtime).
+export const INLINE_FRAGMENT_BUDGET = { raw: 96_441, gzip: 30_121, brotli: 26_260 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

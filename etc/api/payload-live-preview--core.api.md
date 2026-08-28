@@ -481,6 +481,7 @@ export interface LivePreviewClientConfig {
     readonly mergeFetch?: typeof fetch;
     readonly renderRichText?: RichTextRenderer;
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
+    readonly revealEditedField?: boolean;
     readonly root?: Document | Element;
     readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
