@@ -4,5 +4,26 @@
   "initialVersions": {
     "payload-live-preview": "1.8.1"
   },
-  "changesets": []
+  "changesets": [
+    "adapter-conformance",
+    "adapter-policy-engine",
+    "framework-matrix",
+    "hybrid-fragment",
+    "islands",
+    "keyed-morph",
+    "markup-ergonomics",
+    "migration-tooling",
+    "morph-whitespace",
+    "post-publish-smoke",
+    "preview-authorization",
+    "protocol-capabilities",
+    "renderer-api",
+    "sanitizer-policy",
+    "server-subpath",
+    "skip-unchanged",
+    "topology-entries",
+    "tree-shaking",
+    "v2-defaults",
+    "wire-corpus"
+  ]
 }
