@@ -42,29 +42,35 @@ export default defineConfig({
       // Payload 3.x: re-fetch populated documents so relationship/upload
       // fields render as content, not bare IDs. Set to your Payload URL.
       serverURL: import.meta.env.PUBLIC_PAYLOAD_URL,
+      // Required with serverURL: the relationship population depth (0 for none).
+      mergeDepth: 1,
     }),
   ],
 });
 ```
 
-For `output: 'server'` projects, request-time injection can limit the
-bytes to requests carrying preview intent:
+For `output: 'server'` projects, inject at request time instead: register
+`createLivePreviewMiddleware()` in `src/middleware.ts` as shown in step 5.
+It authorizes each preview request and injects only into authorized
+responses. The integration's `mode: 'middleware'` shorthand serializes its
+options into the build, so it cannot carry the `authorizePreview` hook the
+strict default requires and refuses to build; it runs only with
+`strict: false` (or `defaults: 'v1'`), as intent-only delivery:
 
 ```ts
 livePreview({
   mode: 'middleware',
+  strict: false, // intent-only: the query parameter alone triggers injection
   allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
   serverURL: import.meta.env.PUBLIC_PAYLOAD_URL,
+  mergeDepth: 1,
 });
 ```
 
-The integration's query, iframe-destination, and referer checks are
-client-controlled intent signals. They are useful as a delivery
-optimisation, but they do not authenticate the HTTP request. Likewise,
-`allowedOrigins` protects the browser's `postMessage` channel; it does
-not authorize draft access. If script injection or CSP changes are
-privileged in your application, use the manual, authorization-gated
-middleware composition in step 5 instead of relying on this shorthand.
+The query parameter (and, under `defaults: 'v1'`, the iframe destination
+and referer) is a client-controlled intent signal: a delivery hint, not
+authentication. Likewise, `allowedOrigins` protects the browser's
+`postMessage` channel; it does not authorize draft access.
 
 ## 3. Annotate your markup
 
@@ -140,13 +146,17 @@ render is still your job. Draft reads require a real server-side
 authorization decision. `hasPreviewIntent()` only detects intent; an
 attacker can add its query parameter or load a page in an iframe.
 
-Since 1.1.0 the middleware makes that decision itself when you give it
-`authorizePreview`. The hook runs only on requests with preview intent,
-and a refusal leaves the response exactly as rendered: no runtime, no CSP
-change, no nonce in `Astro.locals`. The verified context is put on
-`Astro.locals.livePreviewAuthorization` for the page. `strict: true` makes
-the middleware refuse to start without the hook, without explicit `https`
-admin origins, or with referrer trust — the 2.0 defaults, today.
+The middleware makes that decision itself through `authorizePreview`. The
+hook runs only on requests with preview intent, and a refusal leaves the
+response exactly as rendered: no runtime, no CSP change, no nonce in
+`Astro.locals`. The verified context is put on
+`Astro.locals.livePreviewAuthorization` for the page, and the hook's verdict
+(`'authorized'`, `'expired'`, `'missing-credential'`, …) on
+`Astro.locals.livePreviewAuthorizationOutcome`. A response the middleware
+changed is sent with `Cache-Control: private, no-store`. By default the
+middleware refuses to start without the hook, without explicit `https` admin
+origins, or with referrer trust; `defaults: 'v1'` opts back into the 1.x
+behaviour for a staged migration.
 
 ```ts
 // src/middleware.ts
@@ -156,7 +166,7 @@ import { authorizePreviewRequest } from 'payload-live-preview';
 export const onRequest = createLivePreviewMiddleware({
   allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
   serverURL: import.meta.env.PUBLIC_PAYLOAD_URL,
-  strict: true,
+  mergeDepth: 1,
   authorizePreview: (request) =>
     authorizePreviewRequest(request, {
       // Forwards exactly one cookie (`payload-token`) to `/api/users/me`.

@@ -1,16 +1,7 @@
 /**
- * Per-instance plugin manager.
- *
- * Every registration receives an isolated resource scope. Event listeners,
- * transforms, renderer layers, and generic cleanups registered through the
- * context are revoked together before the plugin's `destroy()` hook runs.
- * Normal manager mutations are serialized so init, removal, and
- * re-registration cannot expose a partially initialized registration.
- * Mutations requested while an awaited lifecycle hook is pending take a
- * direct transactional path so the hook never waits on a queue entry blocked
- * by itself. Each registration still stages its resources until commit.
- *
- * @module @plugins/manager
+ * Per-instance plugin manager. Mutations run through one call-order queue;
+ * while a queue-held hook is pending, a requested mutation takes the direct
+ * path because that hook may be awaiting it. See ADR 0005.
  */
 
 import type { FieldRenderer } from '@core/types';
@@ -20,22 +11,17 @@ import { VERSION } from '@/version';
 import { incompatibilityOf } from './compat';
 import { isolateDiagnostic } from '@core/diagnostics';
 import { observeThenableResult } from '@core/thenable';
-import { EventEmitter } from '@events/emitter';
-import type { EventHandler, LivePreviewEventMap, Unsubscribe } from '@events/types';
-import type {
-  FieldTransform,
-  LivePreviewPlugin,
-  PluginContext,
-  PluginDisposer,
-  PluginEvents,
-} from './types';
+import type { EventEmitter } from '@events/emitter';
+import { ResourceScope } from './resource-scope';
+import { ScopedPluginEvents } from './scoped-events';
+import type { FieldTransform, LivePreviewPlugin, PluginContext } from './types';
 
 export interface PluginManagerOptions {
   readonly events: EventEmitter;
   readonly config: Readonly<Record<string, unknown>>;
-  /** Add one renderer layer to the host. Retains the established void contract. */
+  /** Add one renderer layer to the host; may return the layer's disposer. */
   readonly registerFieldRenderer: (renderer: FieldRenderer) => void;
-  /** Report transform contract failures to the owning runtime event channel. */
+  /** Receives transform contract failures for the runtime's `error` event. */
   readonly onTransformError?: (error: Error) => unknown;
   readonly log: (...args: unknown[]) => void;
 }
@@ -55,317 +41,14 @@ interface TransformRegistration {
   active: boolean;
 }
 
-interface OwnedSubscription {
-  readonly kind: 'on' | 'once';
-  readonly event: keyof LivePreviewEventMap;
-  readonly handler: EventHandler<unknown>;
-  dispose: Unsubscribe;
-}
-
-type ResourceKind = 'transform' | 'renderer' | 'subscription' | 'cleanup';
-
-interface ScopedResource {
-  readonly kind: ResourceKind;
-  readonly acquire: (() => PluginDisposer | undefined) | undefined;
-  readonly finalize: (() => void) | undefined;
-  cleanup: PluginDisposer | undefined;
-  disposed: boolean;
-}
-
-const noopDisposer: PluginDisposer = () => undefined;
-
-function isPluginDisposer(value: unknown): value is PluginDisposer {
+function isPluginDisposer(value: unknown): value is (() => void) | undefined {
   return typeof value === 'function';
-}
-
-/** Registration-local collection of exact, idempotent cleanup handles. */
-class ResourceScope {
-  readonly #pluginName: string;
-  readonly #log: (...args: unknown[]) => void;
-  // A Set preserves registration order for commit/reverse teardown while
-  // allowing short-lived internal resources (notably once listeners) to leave
-  // the scope immediately instead of accumulating until plugin removal.
-  readonly #resources = new Set<ScopedResource>();
-  #state: 'staging' | 'committing' | 'active' | 'closed' = 'staging';
-
-  constructor(pluginName: string, log: (...args: unknown[]) => void) {
-    this.#pluginName = pluginName;
-    this.#log = log;
-  }
-
-  assertOpen(): void {
-    if (this.#state === 'closed') {
-      throw new Error(`Plugin context for "${this.#pluginName}" is no longer active`);
-    }
-  }
-
-  get active(): boolean {
-    return this.#state === 'active';
-  }
-
-  /** Whether retained facade operations still belong to this registration. */
-  eligible(): boolean {
-    return this.#state !== 'closed';
-  }
-
-  /** Own a resource that the plugin itself already acquired. */
-  own(cleanup: PluginDisposer): PluginDisposer {
-    this.assertOpen();
-    return this.#track({
-      kind: 'cleanup',
-      acquire: undefined,
-      finalize: undefined,
-      cleanup,
-      disposed: false,
-    });
-  }
-
-  /**
-   * Stage a manager-owned resource until init commits. Active contexts acquire
-   * later registrations immediately; retained closed contexts are rejected.
-   */
-  stage(
-    kind: ResourceKind,
-    acquire: () => PluginDisposer | undefined,
-    finalize?: () => void,
-  ): PluginDisposer {
-    this.assertOpen();
-    const resource: ScopedResource = {
-      kind,
-      acquire,
-      finalize,
-      cleanup: undefined,
-      disposed: false,
-    };
-    const dispose = this.#track(resource);
-    if (this.#state === 'active') {
-      try {
-        this.#activate(resource);
-      } catch (error) {
-        this.#dispose(resource);
-        throw error;
-      }
-    }
-    return dispose;
-  }
-
-  /** Atomically publish every context registration after init succeeds. */
-  /** Live resources by kind — what `inspect().plugins` reports. */
-  counts(): Record<ResourceKind, number> {
-    const counts: Record<ResourceKind, number> = {
-      transform: 0,
-      renderer: 0,
-      subscription: 0,
-      cleanup: 0,
-    };
-    // Disposed resources leave the set in `#dispose`, so what is here is live.
-    for (const resource of this.#resources) counts[resource.kind] += 1;
-    return counts;
-  }
-
-  commit(): void {
-    if (this.#state !== 'staging') {
-      throw new Error(`Plugin context for "${this.#pluginName}" cannot be committed`);
-    }
-    this.#state = 'committing';
-    try {
-      for (const resource of this.#resources) this.#activate(resource);
-      this.#state = 'active';
-    } catch (error) {
-      this.close();
-      throw error;
-    }
-  }
-
-  close(): void {
-    if (this.#state === 'closed') return;
-    this.#state = 'closed';
-    for (const resource of [...this.#resources].reverse()) this.#dispose(resource);
-    this.#resources.clear();
-  }
-
-  #track(resource: ScopedResource): PluginDisposer {
-    this.#resources.add(resource);
-    return (): void => {
-      this.#dispose(resource);
-    };
-  }
-
-  #activate(resource: ScopedResource): void {
-    if (resource.disposed || resource.cleanup !== undefined || resource.acquire === undefined) {
-      return;
-    }
-    const cleanup = resource.acquire();
-    resource.cleanup = cleanup ?? noopDisposer;
-  }
-
-  #dispose(resource: ScopedResource): void {
-    if (resource.disposed) return;
-    resource.disposed = true;
-    this.#resources.delete(resource);
-    const cleanup = resource.cleanup;
-    resource.cleanup = undefined;
-    if (cleanup !== undefined) {
-      try {
-        // TypeScript's `void` callback convention still permits a JavaScript
-        // implementation to return a value. View it through an unknown-return
-        // boundary so accidental thenables can be observed without awaiting.
-        const cleanupWithResult: () => unknown = cleanup;
-        const result = cleanupWithResult();
-        if (observeThenableResult(result)) {
-          this.#log(
-            `plugin "${this.#pluginName}" cleanup returned a Promise/thenable; cleanups must be synchronous`,
-          );
-        }
-      } catch (error) {
-        this.#log(`plugin "${this.#pluginName}" cleanup failed:`, error);
-      }
-    }
-    try {
-      resource.finalize?.();
-    } catch (error) {
-      this.#log(`plugin "${this.#pluginName}" cleanup failed:`, error);
-    }
-  }
-}
-
-/** Event facade that wraps handler identity and owns only this scope's handles. */
-class ScopedPluginEvents extends EventEmitter implements PluginEvents {
-  readonly #events: EventEmitter;
-  readonly #scope: ResourceScope;
-  readonly #subscriptions = new Set<OwnedSubscription>();
-
-  constructor(events: EventEmitter, scope: ResourceScope) {
-    super();
-    this.#events = events;
-    this.#scope = scope;
-  }
-
-  override on<E extends keyof LivePreviewEventMap>(
-    event: E,
-    handler: EventHandler<LivePreviewEventMap[E]>,
-  ): Unsubscribe {
-    return this.#subscribe('on', event, handler);
-  }
-
-  override once<E extends keyof LivePreviewEventMap>(
-    event: E,
-    handler: EventHandler<LivePreviewEventMap[E]>,
-  ): Unsubscribe {
-    return this.#subscribe('once', event, handler);
-  }
-
-  override off<E extends keyof LivePreviewEventMap>(
-    event: E,
-    handler: EventHandler<LivePreviewEventMap[E]>,
-  ): void {
-    const untypedHandler = handler as EventHandler<unknown>;
-    for (const subscription of [...this.#subscriptions]) {
-      if (subscription.event === event && subscription.handler === untypedHandler) {
-        subscription.dispose();
-      }
-    }
-  }
-
-  override emit<E extends keyof LivePreviewEventMap>(
-    event: E,
-    payload: LivePreviewEventMap[E],
-  ): Promise<void> {
-    this.#scope.assertOpen();
-    return this.#events.emit(event, payload);
-  }
-
-  override emitWhile<E extends keyof LivePreviewEventMap>(
-    event: E,
-    payload: LivePreviewEventMap[E],
-    shouldContinue: () => boolean,
-  ): Promise<boolean> {
-    this.#scope.assertOpen();
-    return this.#events.emitWhile(event, payload, () => {
-      if (!this.#scope.eligible()) return false;
-      const callerEligible = shouldContinue();
-      // The caller predicate is arbitrary, re-entrant plugin code. It may close
-      // this scope before returning, so eligibility must bracket its invocation.
-      if (!this.#scope.eligible()) return false;
-      return callerEligible;
-    });
-  }
-
-  override listenerCount(event: keyof LivePreviewEventMap): number {
-    let count = 0;
-    for (const subscription of this.#subscriptions) {
-      if (subscription.event === event) count += 1;
-    }
-    return count;
-  }
-
-  override removeAllListeners(event?: keyof LivePreviewEventMap): void {
-    for (const subscription of [...this.#subscriptions]) {
-      if (event === undefined || subscription.event === event) subscription.dispose();
-    }
-  }
-
-  override eventNames(): (keyof LivePreviewEventMap)[] {
-    const names = new Set<keyof LivePreviewEventMap>();
-    for (const subscription of this.#subscriptions) names.add(subscription.event);
-    return [...names];
-  }
-
-  #subscribe<E extends keyof LivePreviewEventMap>(
-    kind: 'on' | 'once',
-    event: E,
-    handler: EventHandler<LivePreviewEventMap[E]>,
-  ): Unsubscribe {
-    this.#scope.assertOpen();
-
-    const untypedHandler = handler as EventHandler<unknown>;
-    const existing = [...this.#subscriptions].find(
-      (subscription) =>
-        subscription.kind === kind &&
-        subscription.event === event &&
-        subscription.handler === untypedHandler,
-    );
-    if (existing !== undefined) return existing.dispose;
-
-    // Each scope gets a distinct wrapper even when two plugins pass the same
-    // handler reference. EventEmitter's Set-based storage can therefore revoke
-    // one plugin without accidentally revoking the other.
-    let dispose = noopDisposer;
-    let subscriptionActive = true;
-    const wrapped: EventHandler<LivePreviewEventMap[E]> = async (payload) => {
-      if (!this.#scope.active || !subscriptionActive) return;
-      // The base emitter removes its once bucket before dispatch. Mirror that
-      // timing in scoped introspection and release ownership before invoking
-      // arbitrary/re-entrant plugin code.
-      if (kind === 'once') dispose();
-      await handler(payload);
-    };
-    const subscription: OwnedSubscription = {
-      kind,
-      event,
-      handler: untypedHandler,
-      dispose: noopDisposer,
-    };
-    dispose = this.#scope.stage(
-      'subscription',
-      () => this.#events[kind](event, wrapped),
-      () => {
-        subscriptionActive = false;
-        this.#subscriptions.delete(subscription);
-      },
-    );
-    subscription.dispose = dispose;
-    this.#subscriptions.add(subscription);
-    return dispose;
-  }
 }
 
 export class PluginManager {
   readonly #events: EventEmitter;
   readonly #config: Readonly<Record<string, unknown>>;
-  // JavaScript preserves an expression callback's actual return even when its
-  // public TypeScript contract is void. The client host uses that internal
-  // channel for exact renderer ownership; other legacy return values are ignored.
+  // The public callback type is void; the client host returns its layer disposer through it.
   readonly #registerRenderer: (renderer: FieldRenderer) => unknown;
   readonly #onTransformError: ((error: Error) => void) | undefined;
   readonly #log: (...args: unknown[]) => void;
@@ -375,7 +58,9 @@ export class PluginManager {
   readonly #destroying = new Set<string>();
   readonly #transforms = new Map<string, TransformRegistration[]>();
   #mutationQueue: Promise<void> = Promise.resolve();
-  #hookDepth = 0;
+  // Hooks awaited by the queue entry in flight. Hooks started on the direct
+  // path never hold the queue, so they must not open it for others.
+  #queuedHooks = 0;
 
   constructor(options: PluginManagerOptions) {
     this.#events = options.events;
@@ -387,46 +72,41 @@ export class PluginManager {
       onTransformError === undefined
         ? undefined
         : isolateDiagnostic((...args: unknown[]): unknown => {
-            const error = args[0];
-            if (!(error instanceof Error)) return undefined;
+            // Private and single-callered: `applyTransforms` normalizes to an
+            // Error before it reports one.
+            const error = args[0] as Error;
             try {
               return onTransformError(error);
             } catch (reportError) {
-              // Preserve the existing best-effort diagnostic for synchronous
-              // reporter failures; the outer isolation also observes rejected
-              // Promises and hostile thenables without changing transform flow.
               this.#log('transform error reporter failed:', reportError);
               return undefined;
             }
           });
   }
 
-  /** Register a plugin transactionally. Concurrent mutations run in call order. */
+  /** Register a plugin transactionally; concurrent mutations run in call order. */
   register(plugin: LivePreviewPlugin): Promise<void> {
-    if (this.#hookDepth > 0) return this.#registerNow(plugin);
-    return this.#enqueue(() => this.#registerNow(plugin));
+    if (this.#queuedHooks > 0) return this.#registerNow(plugin, false);
+    return this.#enqueue(() => this.#registerNow(plugin, true));
   }
 
-  /** Remove one plugin and every resource created by its registration. */
+  /** Remove one plugin and every resource its registration created. */
   unregister(name: string): Promise<void> {
-    if (this.#hookDepth > 0) return this.#unregisterNow(name);
+    if (this.#queuedHooks > 0) return this.#unregisterNow(name, false);
     return this.#enqueue(async () => {
-      await this.#unregisterNow(name);
+      await this.#unregisterNow(name, true);
     });
   }
 
-  /** Destroy every active registration without allowing one failure to strand another. */
+  /** Destroy every registration; one failure never strands another. */
   destroyAll(): Promise<void> {
-    if (this.#hookDepth > 0) return this.#destroyAllNow();
+    if (this.#queuedHooks > 0) return this.#destroyAllNow(false);
     return this.#enqueue(async () => {
-      await this.#destroyAllNow();
+      await this.#destroyAllNow(true);
     });
   }
 
-  /**
-   * Apply active transforms in registration order. A failure stops the chain
-   * and returns the original merged value, never a partially transformed one.
-   */
+  /** Apply active transforms in registration order; a failure returns the original value. */
   applyTransforms(
     fieldName: string,
     value: unknown,
@@ -448,10 +128,8 @@ export class PluginManager {
           allFields: context.allFields,
         });
         const returnedThenable = observeThenableResult(result);
-        // A transform may synchronously cause a newer live-preview message to
-        // be accepted. Observe an invalid Promise to prevent a global
-        // rejection, but do not report it or invoke another plugin for work
-        // that no longer owns the active lifecycle revision.
+        // A transform may synchronously let a newer message in; then its
+        // result belongs to a superseded revision and is not reported.
         if (isCurrent?.() === false) return value;
         if (returnedThenable) {
           throw new TypeError(
@@ -469,12 +147,11 @@ export class PluginManager {
     return result;
   }
 
-  /** Names of currently registered plugins. */
   list(): readonly string[] {
     return [...this.#plugins.keys()];
   }
 
-  /** Every plugin with its state and live registrations — `inspect().plugins`. */
+  /** Every plugin with its state and live registrations (`inspect().plugins`). */
   snapshot(): readonly PluginInspection[] {
     const entries: PluginInspection[] = [];
     const describe = (
@@ -502,9 +179,7 @@ export class PluginManager {
     for (const [name, registration] of this.#plugins) {
       entries.push(describe(name, registration.plugin.version, 'active', registration.scope));
     }
-    // A name with a pending teardown is never in `#plugins`: unregister removes
-    // it before the teardown starts, and register refuses it until the teardown
-    // settles — so every teardown is a plugin on its way out.
+    // A name with a pending teardown left `#plugins` before the teardown began.
     for (const name of this.#teardowns.keys()) {
       entries.push({
         name,
@@ -516,12 +191,11 @@ export class PluginManager {
     return entries;
   }
 
-  /** Test introspection — number of active plugins. */
   get size(): number {
     return this.#plugins.size;
   }
 
-  async #registerNow(plugin: LivePreviewPlugin): Promise<void> {
+  async #registerNow(plugin: LivePreviewPlugin, queued: boolean): Promise<void> {
     if (
       this.#plugins.has(plugin.name) ||
       this.#initializing.has(plugin.name) ||
@@ -533,7 +207,7 @@ export class PluginManager {
 
     const incompatibility = incompatibilityOf(plugin.compat, VERSION, LIBRARY_PROTOCOL_VERSION);
     if (incompatibility !== undefined) {
-      this.#log(`plugin "${plugin.name}" refused: ${incompatibility}`);
+      this.#refuse(plugin.name, incompatibility);
       return;
     }
     const scope = new ResourceScope(plugin.name, this.#log);
@@ -541,7 +215,7 @@ export class PluginManager {
     const initializing: InitializingPluginRegistration = { scope, cancelled: false };
     this.#initializing.set(plugin.name, initializing);
     try {
-      await this.#runHook(() => plugin.init(context));
+      await this.#runHook(() => plugin.init(context), queued);
       if (initializing.cancelled) return;
       scope.commit();
     } catch (error) {
@@ -556,6 +230,17 @@ export class PluginManager {
 
     this.#plugins.set(plugin.name, { plugin, scope });
     this.#log(`plugin "${plugin.name}" registered`);
+  }
+
+  /** A refused plugin is an integration mistake; it reaches the `error` event, not only the log. */
+  #refuse(name: string, reason: string): void {
+    const message = `plugin "${name}" refused: ${reason}`;
+    this.#log(message);
+    void this.#events.emit('error', {
+      error: new Error(message),
+      context: 'plugin',
+      code: 'LP0103',
+    });
   }
 
   #createContext(pluginName: string, scope: ResourceScope): PluginContext {
@@ -595,7 +280,7 @@ export class PluginManager {
     };
   }
 
-  #unregisterNow(name: string): Promise<void> {
+  #unregisterNow(name: string, queued: boolean): Promise<void> {
     const initializing = this.#initializing.get(name);
     if (initializing !== undefined) {
       initializing.cancelled = true;
@@ -605,24 +290,21 @@ export class PluginManager {
 
     const existingTeardown = this.#teardowns.get(name);
     if (existingTeardown !== undefined) {
-      // A destroy hook awaiting unregister(its own name) cannot await the
-      // teardown promise that is awaiting that hook. Its owned resources were
-      // already revoked before destroy began, so redundant removals made while
-      // that hook is active are complete and resolve immediately.
+      // A destroy hook removing its own name cannot await the teardown that
+      // awaits it; its resources are already revoked, so this is complete.
       if (this.#destroying.has(name)) return Promise.resolve();
-      return existingTeardown;
+      return queued ? this.#holdQueue(existingTeardown) : existingTeardown;
     }
     const registration = this.#plugins.get(name);
     if (registration === undefined) return Promise.resolve();
 
-    // Make the registration inactive and revoke its context before invoking
-    // consumer code. A throwing destroy hook therefore cannot retain access.
+    // Revoke before consumer code runs: a throwing destroy keeps no access,
+    // and a same-name registration from inside destroy stays a duplicate.
     this.#plugins.delete(name);
     registration.scope.close();
-    // Publish the in-flight name reservation before entering arbitrary destroy
-    // code. A destroy hook may synchronously try to register the same name; that
-    // attempt must remain a duplicate until this teardown has fully settled.
-    const teardown = Promise.resolve().then(() => this.#destroyPlugin(name, registration.plugin));
+    const teardown = Promise.resolve().then(() =>
+      this.#destroyPlugin(name, registration.plugin, queued),
+    );
     this.#teardowns.set(name, teardown);
     void teardown.then(() => {
       if (this.#teardowns.get(name) === teardown) this.#teardowns.delete(name);
@@ -630,11 +312,11 @@ export class PluginManager {
     return teardown;
   }
 
-  async #destroyPlugin(name: string, plugin: LivePreviewPlugin): Promise<void> {
+  async #destroyPlugin(name: string, plugin: LivePreviewPlugin, queued: boolean): Promise<void> {
     if (plugin.destroy === undefined) return;
     this.#destroying.add(name);
     try {
-      await this.#runHook(() => plugin.destroy?.());
+      await this.#runHook(() => plugin.destroy?.(), queued);
     } catch (error) {
       this.#log(`plugin "${name}" destroy failed:`, error);
     } finally {
@@ -642,28 +324,35 @@ export class PluginManager {
     }
   }
 
-  async #destroyAllNow(): Promise<void> {
+  async #destroyAllNow(queued: boolean): Promise<void> {
     for (const initializing of this.#initializing.values()) {
       initializing.cancelled = true;
       initializing.scope.close();
     }
     const names = [...this.#plugins.keys()];
-    for (const name of names) await this.#unregisterNow(name);
+    for (const name of names) await this.#unregisterNow(name, queued);
   }
 
-  async #runHook(hook: () => void | Promise<void>): Promise<void> {
-    this.#hookDepth += 1;
-    try {
+  async #runHook(hook: () => void | Promise<void>, queued: boolean): Promise<void> {
+    if (!queued) {
       await hook();
+      return;
+    }
+    await this.#holdQueue(Promise.resolve().then(hook));
+  }
+
+  async #holdQueue(pending: Promise<void>): Promise<void> {
+    this.#queuedHooks += 1;
+    try {
+      await pending;
     } finally {
-      this.#hookDepth -= 1;
+      this.#queuedHooks -= 1;
     }
   }
 
   #enqueue(operation: () => void | Promise<void>): Promise<void> {
     const result = this.#mutationQueue.then(operation);
-    // Keep the internal tail usable even if an unexpected manager error
-    // escapes. The caller still receives `result` and can observe the error.
+    // Keep the tail usable after an escaped error; the caller still sees it on `result`.
     this.#mutationQueue = result.catch((error: unknown) => {
       this.#log('plugin manager mutation failed:', error);
     });

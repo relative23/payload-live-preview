@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { requirePreviewFrame } from '../helpers/preview';
 
 /**
  * Per-framework BFCache restore (roadmap 1.9.0). The pagehide/persisted-pageshow
@@ -36,8 +37,7 @@ function registerFramework(framework: Framework): void {
       await page.getByTestId('title-input').fill('before the document hides');
       await expect(title).toHaveText('before the document hides');
 
-      const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
-      if (!frame) throw new Error('preview frame missing');
+      const frame = requirePreviewFrame(page);
 
       // Hide (BFCache freeze): the runtime must release its listener.
       await frame.evaluate(() => {

@@ -1,0 +1,156 @@
+name: Critical Gates
+
+# The release-critical baseline: the complete mutation scope, the 10,000-cycle
+# Node leak gate and the Chromium soak. One definition, called from CI on
+# every push to main and from Deep Quality on its schedule.
+on:
+  workflow_call:
+    inputs:
+      dist-artifact:
+        description: Name of the `dist/` artifact produced by build.yml.
+        required: true
+        type: string
+      soak-duration-ms:
+        description: Browser soak duration in milliseconds.
+        required: false
+        type: string
+        default: '300000'
+
+permissions:
+  contents: read
+
+jobs:
+  critical-mutation:
+    name: Release Critical Mutation Shard ${{ matrix.shard }}/3
+    runs-on: ubuntu-latest
+    # One shard of a scope that runs ~180 min whole; the shards are packed by
+    # file size, so they finish within a few minutes of each other.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npm run build:runtime
+      - name: Mutate this shard of the release-critical runtime scope
+        env:
+          STRYKER_SCOPE: nightly
+          STRYKER_SHARD: ${{ matrix.shard }}/3
+        run: npm run test:mutation
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: critical-mutation-shard-${{ matrix.shard }}-${{ github.sha }}
+          path: |
+            test-results/stryker-nightly-shard${{ matrix.shard }}.json
+            test-results/stryker-nightly-shard${{ matrix.shard }}.html
+          if-no-files-found: error
+          retention-days: 14
+
+  critical-mutation-baseline:
+    name: Release Critical Mutation Baseline
+    needs: critical-mutation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: critical-mutation-shard-*-${{ github.sha }}
+          path: test-results
+          merge-multiple: 'true'
+      # The policy grades one report, so how the work was divided cannot change
+      # the verdict: the merge refuses shards from different configurations and
+      # refuses a file two shards both claim to have mutated.
+      - name: Join the shard reports into one baseline report
+        run: >-
+          npx tsx scripts/merge-mutation-reports.ts
+          --out test-results/stryker-nightly.json
+          test-results/stryker-nightly-shard1.json
+          test-results/stryker-nightly-shard2.json
+          test-results/stryker-nightly-shard3.json
+      - name: Enforce the reviewed critical mutation baseline
+        run: npm run test:mutation:policy
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: critical-mutation-report-${{ github.sha }}
+          path: test-results/stryker-nightly.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  node-leak-soak:
+    name: Release Node Lifecycle Leak Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npm run build:runtime
+      - name: Prove 10,000 lifecycle cycles release owned resources
+        run: npm run test:leak
+
+  browser-soak:
+    name: Release Chromium Update & Heap Soak
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ inputs.dist-artifact }}
+          path: dist
+      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
+      - name: Exercise sustained browser updates against the built runtime
+        env:
+          PLP_SOAK_DURATION_MS: ${{ inputs.soak-duration-ms }}
+        run: npm run test:soak
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: browser-soak-report-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/soak-results.json
+          if-no-files-found: ignore
+          retention-days: 14

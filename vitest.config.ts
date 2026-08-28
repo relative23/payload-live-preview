@@ -7,9 +7,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: false,
-    // Focused tests are never an acceptable local or CI success: the static
-    // test policy catches them before execution and this closes the runner-level
-    // escape hatch as well.
+    // The static test policy catches focused tests; this closes the runner-level hatch.
     allowOnly: false,
     retry: 0,
     reporters: ['default', new ZeroSkipReporter()],
@@ -24,19 +22,12 @@ export default defineConfig({
         'src/index.ts',
         'src/**/index.ts',
         'src/**/types.ts',
-        // Type-only protocol module. `src/types/authorized-preview.ts` carries
-        // the runtime brand check and is measured like any other source file.
+        // Type-only; the runtime brand check lives in authorized-preview.ts and is measured.
         'src/types/payload-protocol.ts',
         'src/inline/runtime.generated.ts',
-        // Build-time tooling, not shipped runtime code. It is exercised
-        // end-to-end (CLI subprocess + ts-morph program tests), but v8
-        // coverage cannot attribute subprocess execution to these files.
-        // The thresholds below police the shipped browser/server runtime.
-        'src/codegen/**',
+        // Exercised only as a subprocess, which v8 coverage cannot attribute back.
+        'src/codegen/cli.ts',
       ],
-      // The checked-in policy is shared with the diff gate. Global thresholds
-      // retain broad pressure while exact critical-file thresholds protect the
-      // security/revision/lifecycle paths at their measured baseline.
       thresholds: {
         ...coveragePolicy.global,
         ...coveragePolicy.criticalFiles,
@@ -46,8 +37,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // Provided by the integration's Vite plugin in a real build; a
-      // fixture here so the middleware entry can be imported and measured.
+      // Provided by the integration's Vite plugin in a real build.
       'virtual:payload-live-preview/options': resolve(
         import.meta.dirname,
         'tests/fixtures/astro-virtual-options.ts',

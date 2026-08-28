@@ -1,0 +1,73 @@
+/**
+ * Sanitizer options for item templates (`data-payload-array-template`,
+ * nested templates). A template is the page author's markup and every
+ * interpolated value is escaped to text before the sanitizer runs, so it may
+ * carry form controls and custom elements the rich-text policy refuses.
+ * Event handlers, `style` and unsafe URLs are still stripped.
+ */
+
+import type { SanitizeOptions } from '@security/sanitizer';
+
+const TEMPLATE_EXTRA_TAGS: readonly string[] = [
+  'input',
+  'textarea',
+  'select',
+  'option',
+  'button',
+  'label',
+  'details',
+  'summary',
+  'dialog',
+  'video',
+  'audio',
+  'progress',
+  'meter',
+];
+
+const TEMPLATE_EXTRA_ATTRIBUTES: readonly string[] = [
+  'type',
+  'name',
+  'placeholder',
+  'open',
+  'disabled',
+  'readonly',
+  'required',
+  'checked',
+  'selected',
+  'value',
+  'min',
+  'max',
+  'step',
+  'rows',
+  'cols',
+  'for',
+  'controls',
+  'muted',
+  'loop',
+  'poster',
+  'src',
+];
+
+const CUSTOM_TAG_PATTERN = /<([a-z][a-z0-9]*(?:-[a-z0-9]+)+)\b/gi;
+const optionsByTemplate = new Map<string, SanitizeOptions>();
+
+/** Options for one template; memoised per template string. */
+export function templateSanitizeOptions(template: string): SanitizeOptions {
+  const cached = optionsByTemplate.get(template);
+  if (cached !== undefined) return cached;
+  const tags = new Set(TEMPLATE_EXTRA_TAGS);
+  for (const match of template.matchAll(CUSTOM_TAG_PATTERN)) {
+    const tag = match[1]?.toLowerCase();
+    if (tag !== undefined) tags.add(tag);
+  }
+  const attributes: Record<string, readonly string[]> = {};
+  for (const tag of tags) attributes[tag] = TEMPLATE_EXTRA_ATTRIBUTES;
+  const options: SanitizeOptions = {
+    additionalAllowedTags: [...tags],
+    additionalAllowedAttributes: attributes,
+    allowFormControls: true,
+    templateMode: true,
+  };
+  optionsByTemplate.set(template, options);
+  return options;
+}

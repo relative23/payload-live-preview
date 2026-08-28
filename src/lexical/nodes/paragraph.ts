@@ -1,17 +1,9 @@
-/**
- * Renderer for Lexical `paragraph` nodes.
- *
- * Honours `direction`, `format` (alignment), and `indent`.
- *
- * @module @lexical/nodes/paragraph
- */
-
 import type { NodeRenderer } from '../registry';
-import { dirAttribute, styleAttribute } from '../utils';
+import { dirAttribute, layoutClassAttribute } from '../utils';
 
 const paragraphRenderer: NodeRenderer = (node, ctx): string => {
   const children = ctx.renderChildren(node.children ?? []);
-  return `<p${dirAttribute(node)}${styleAttribute(node)}>${children}</p>`;
+  return `<p${dirAttribute(node)}${layoutClassAttribute(node)}>${children}</p>`;
 };
 
 export { paragraphRenderer };

@@ -1,35 +1,15 @@
 /**
- * HTML sanitizer.
- *
- * Uses the browser's parser (via `<template>`) for accurate sanitization
- * and walks the resulting DOM tree to:
- *
- *   1. Strip elements not on the allow-list (scripts removed entirely;
- *      others are unwrapped to their text content).
- *   2. Strip every attribute not on the per-tag allow-list, including
- *      every `on*` event handler.
- *   3. Validate `href`, `src`, and `srcset` values via `isSafeUrl`.
- *   4. Force `rel="noopener noreferrer"` on external `<a>` elements.
- *   5. Strip `<style>` and any inline `style` attributes entirely
- *      (CSS-injection vector eliminated).
- *
- * The DOM dependency is intentional — string-only sanitizers are
- * historically brittle. The function throws `SanitizerEnvironmentError`
- * when no DOM is available so callers fail loudly instead of producing
- * unsanitized output.
- *
- * @module @security/sanitizer
+ * HTML sanitizer built on the host parser (`<template>`): allow-listed tags
+ * and attributes, validated URLs, hardened external links, no `style`.
+ * Needs a DOM; string-only sanitizers are historically brittle.
  */
 
 import { trustedHtml } from './trusted-types';
 import { isSafeUrl, isExternalHttpUrl } from './url-validator';
 
-/**
- * HTML elements that pass through sanitization with their content
- * intact. Anything not in this set is unwrapped (text preserved,
- * markup removed) unless it is on the `REMOVE_COMPLETELY` set, in
- * which case it is deleted with its children.
- */
+declare const __INLINE_BUILD__: boolean | undefined;
+
+/** Tags kept with their content. Others are unwrapped unless in `REMOVE_COMPLETELY`. */
 const ALLOWED_TAGS: ReadonlySet<string> = new Set([
   'p',
   'br',
@@ -95,12 +75,7 @@ const ALLOWED_TAGS: ReadonlySet<string> = new Set([
   'col',
 ]);
 
-/**
- * Elements removed entirely (children included). Distinct from the
- * unwrapping fallback because their contents are themselves harmful
- * (script source, CSS, raw HTML, etc.).
- */
-/** Tags `allowFormControls` un-drops for author templates; `form` is deliberately not among them. */
+/** Tags `allowFormControls` re-admits for author templates; `form` is deliberately not one. */
 const FORM_CONTROLS: ReadonlySet<string> = new Set([
   'input',
   'button',
@@ -110,6 +85,7 @@ const FORM_CONTROLS: ReadonlySet<string> = new Set([
   'label',
 ]);
 
+/** Removed with their children: the content itself is the hazard. */
 const REMOVE_COMPLETELY: ReadonlySet<string> = new Set([
   'script',
   'style',
@@ -182,61 +158,70 @@ const ATTR_BY_TAG: Readonly<Record<string, ReadonlySet<string>>> = {
 
 const URL_ATTRIBUTES: ReadonlySet<string> = new Set(['href', 'src', 'cite', 'poster']);
 
-// DOM nodeType values are standardized across realms. Numeric constants keep
-// an injected SSR document independent from a browser-global `Node` constructor.
+// Numeric nodeType constants keep an injected SSR document independent of a
+// browser-global `Node` constructor.
 const ELEMENT_NODE = 1;
 const COMMENT_NODE = 8;
 
-/**
- * Thrown when `sanitizeHtml` is invoked in an environment without a
- * `document` (e.g., server-side rendering). Callers should catch this
- * and either degrade to plain-text rendering or route the work to a
- * deferred client-side render.
- */
+/** Thrown by `sanitizeHtml()` when no `document` is available (SSR without `setSanitizerDocument()`). */
 export class SanitizerEnvironmentError extends Error {
   override readonly name = 'SanitizerEnvironmentError';
 }
 
 /**
- * `'compat'` is the 1.x policy: `id` and every `data-*` attribute pass.
- * `'strict'` is the 2.0 policy, available now: `id` and `name` are stripped
- * (DOM clobbering, docs/security.md §5c), `data-payload-*` is stripped
- * (rich text must not add bindings), and other `data-*` pass only when
- * listed in `allowedDataAttributes`.
+ * `'strict'` (default) strips `id`, `name` and `data-payload-*` and passes
+ * other `data-*` only via `allowedDataAttributes`; `'compat'` keeps them.
  */
 export type SanitizerPolicyMode = 'compat' | 'strict';
 
 export interface SanitizeOptions {
   /** Overrides the module default set by `setSanitizerPolicy()`. */
   readonly policy?: SanitizerPolicyMode;
-  /** `data-*` attributes (full names) that pass under `'strict'`. */
+  /** `data-*` attributes (full names) that pass under `'strict'`; `data-payload-*` never does. */
   readonly allowedDataAttributes?: readonly string[];
   /**
-   * Keep `input`, `button`, `textarea`, `select`, `option` and `label`
-   * instead of dropping them. Only for markup the page author wrote — the
-   * structural item templates — never for CMS content: every interpolated
-   * value is escaped before the sanitizer runs, so these tags can come only
-   * from the template. `form` stays dropped, and so do event handlers,
-   * `style` and unsafe URLs.
+   * Keep `input`, `button`, `textarea`, `select`, `option` and `label` — only
+   * for markup the page author wrote, never for CMS content. `form`,
+   * handlers, `style` and unsafe URLs stay dropped.
    */
   readonly allowFormControls?: boolean;
-  /** Extra tags to allow beyond the built-in list. Lower-case, untrimmed. */
+  /** Extra tags to allow. Lower-case, untrimmed. */
   readonly additionalAllowedTags?: readonly string[];
-  /** Extra per-tag attributes to allow. Tag and attribute names must be lower-case. */
+  /**
+   * Extra per-tag attributes, lower-case. Cannot re-admit handlers, `style`,
+   * or — under `'strict'` — `id`, `name` and `data-payload-*`.
+   */
   readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * The input is a page-author item template, so `'strict'` keeps the
+   * applier's reconciliation attributes (`TEMPLATE_ATTRIBUTES`) and nothing
+   * else — every other `data-payload-*` is still stripped, so a template can
+   * never add a binding.
+   */
+  readonly templateMode?: boolean;
 }
+
+/** What `templateMode` keeps under `'strict'`. */
+const TEMPLATE_ATTRIBUTES: ReadonlySet<string> = new Set([
+  'id',
+  'name',
+  'data-payload-key',
+  'data-payload-nested-key',
+  'data-payload-nested-template',
+]);
 
 interface ResolvedPolicy {
   readonly allowedTags: ReadonlySet<string>;
   readonly allowFormControls: boolean;
+  readonly templateMode: boolean;
   readonly mode: SanitizerPolicyMode;
   readonly allowedData: ReadonlySet<string>;
   readonly attrByTag: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
-let defaultMode: SanitizerPolicyMode = 'compat';
+let defaultMode: SanitizerPolicyMode = 'strict';
 
-/** Set the policy every `sanitizeHtml()` call without an explicit `policy` uses. The runtime sets it from `sanitizerPolicy`. */
+/** Set the policy for calls without an explicit `policy`. The runtime sets it from `sanitizerPolicy`. */
 export function setSanitizerPolicy(mode: SanitizerPolicyMode): void {
   defaultMode = mode;
 }
@@ -249,6 +234,7 @@ function resolvePolicy(options: SanitizeOptions | undefined): ResolvedPolicy {
       allowedTags: ALLOWED_TAGS,
       attrByTag: attrMap,
       allowFormControls: false,
+      templateMode: false,
       mode: defaultMode,
       allowedData: new Set(),
     };
@@ -268,16 +254,13 @@ function resolvePolicy(options: SanitizeOptions | undefined): ResolvedPolicy {
     allowedTags: allowed,
     attrByTag: attrMap,
     allowFormControls: options.allowFormControls === true,
+    templateMode: options.templateMode === true,
     mode: options.policy ?? defaultMode,
     allowedData: new Set((options.allowedDataAttributes ?? []).map((name) => name.toLowerCase())),
   };
 }
 
-/**
- * Minimal `Document`-shaped surface the sanitizer needs. Any DOM
- * implementation (browser, jsdom, linkedom, happy-dom, parse5 + a
- * thin adapter) that produces `<template>`-style elements works.
- */
+/** The `Document` surface the sanitizer needs; jsdom, linkedom and happy-dom all provide it. */
 export interface SanitizerDocument {
   createElement: (tagName: string) => {
     innerHTML: string;
@@ -287,50 +270,19 @@ export interface SanitizerDocument {
 
 let documentOverride: SanitizerDocument | undefined;
 
-/**
- * Inject a `Document` implementation for the sanitizer to use when
- * `globalThis.document` is unavailable.
- *
- * Server-side renderers (Node, Bun, Deno without DOM globals) can wire
- * this up once at startup with any of the popular pure-JS DOM
- * libraries:
- *
- *   ```ts
- *   // linkedom — recommended (smallest, fastest)
- *   import { parseHTML } from 'linkedom';
- *   import { setSanitizerDocument } from 'payload-live-preview';
- *   const { document } = parseHTML('<!doctype html><html><body></body></html>');
- *   setSanitizerDocument(document);
- *   ```
- *
- *   ```ts
- *   // jsdom — heavier, but already in many SSR pipelines
- *   import { JSDOM } from 'jsdom';
- *   setSanitizerDocument(new JSDOM().window.document);
- *   ```
- *
- * Pass `null` to clear a previous override (mostly useful for tests).
- */
+/** Supply a `Document` for SSR, e.g. linkedom's `parseHTML(...).document`; `null` clears it. */
 export function setSanitizerDocument(doc: SanitizerDocument | null): void {
   documentOverride = doc ?? undefined;
 }
 
 /**
- * Sanitize `html` and return safe HTML.
- *
- * The function never returns `undefined`/`null`. On malformed input the
- * browser parser silently recovers and the sanitizer continues from
- * the recovered tree.
+ * Sanitize `html`; malformed input is recovered by the parser first.
  *
  * @throws {SanitizerEnvironmentError} when no DOM is available.
  */
 export function sanitizeHtml(html: string, options?: SanitizeOptions): string {
   const doc = resolveDocument();
-  if (!doc) {
-    throw new SanitizerEnvironmentError(
-      'sanitizeHtml needs a DOM; provide one with setSanitizerDocument() during SSR.',
-    );
-  }
+  if (!doc) throw environmentError();
   if (html === '') return '';
 
   const policy = resolvePolicy(options);
@@ -341,26 +293,33 @@ export function sanitizeHtml(html: string, options?: SanitizeOptions): string {
   return template.innerHTML;
 }
 
+// Read the define at each branch rather than through a helper: a bundler
+// folds the substituted literal in place, but will not inline a call, and the
+// SSR-only class and override must not reach the browser runtime.
+function environmentError(): Error {
+  if (typeof __INLINE_BUILD__ !== 'undefined' && __INLINE_BUILD__) {
+    return new Error('sanitizeHtml needs a DOM');
+  }
+  return new SanitizerEnvironmentError(
+    'sanitizeHtml needs a DOM; provide one with setSanitizerDocument() during SSR.',
+  );
+}
+
 function resolveDocument(): SanitizerDocument | undefined {
-  if (documentOverride) return documentOverride;
+  if (typeof __INLINE_BUILD__ === 'undefined' || !__INLINE_BUILD__) {
+    if (documentOverride) return documentOverride;
+  }
   if (typeof document === 'undefined') return undefined;
   return document;
 }
 
-/**
- * Whether `sanitizeHtml` currently has a DOM to work with — either the
- * global `document` or an override injected via `setSanitizerDocument`.
- * Callers that treat sanitization as an optional defence-in-depth layer
- * (e.g. `lexicalToHtml` during SSR) use this to decide whether the
- * backstop is available instead of probing the `document` global
- * directly, which would ignore the override.
- */
+/** Whether a DOM is available — the global or an injected one — for callers that treat sanitizing as optional. */
 export function hasSanitizerDocument(): boolean {
   return resolveDocument() !== undefined;
 }
 
 function sanitizeFragment(node: ParentNode, policy: ResolvedPolicy): void {
-  // Iterate over a snapshot — we mutate children during the walk.
+  // Snapshot: children are mutated during the walk.
   for (const child of Array.from(node.childNodes)) {
     if (child.nodeType === ELEMENT_NODE) {
       sanitizeElement(child as Element, policy);
@@ -379,7 +338,6 @@ function sanitizeElement(element: Element, policy: ResolvedPolicy): void {
   }
 
   if (!policy.allowedTags.has(tag)) {
-    // Unwrap: replace element with its sanitized children.
     sanitizeFragment(element, policy);
     const parent = element.parentNode;
     if (parent) {
@@ -390,10 +348,7 @@ function sanitizeElement(element: Element, policy: ResolvedPolicy): void {
   }
 
   sanitizeAttributes(element, tag, policy);
-
-  // Apply rel hardening to external links after attribute sanitization.
   if (tag === 'a') hardenAnchor(element);
-
   sanitizeFragment(element, policy);
 }
 
@@ -402,23 +357,14 @@ function sanitizeAttributes(element: Element, tag: string, policy: ResolvedPolic
 
   for (const attr of Array.from(element.attributes)) {
     const name = attr.name.toLowerCase();
-
-    // Strip every event-handler attribute.
-    if (name.startsWith('on')) {
+    if (name.startsWith('on') || name === 'style') {
       element.removeAttribute(attr.name);
       continue;
     }
-    // Strip every style attribute — CSS-injection vector.
-    if (name === 'style') {
-      element.removeAttribute(attr.name);
-      continue;
-    }
-    // Allow global, ARIA, and data-* attributes universally. They can
-    // carry arbitrary strings but no executable sinks (event handlers
-    // and `style` were already stripped above).
     if (policy.mode === 'strict') {
-      // DOM clobbering and binding injection (docs/security.md §5c): no `id`,
-      // no `name`, no `data-payload-*`, other `data-*` only by explicit list.
+      if (policy.templateMode && TEMPLATE_ATTRIBUTES.has(name)) continue;
+      // DOM clobbering and binding injection (docs/security.md §5c). Checked
+      // before the allow-list so an extension cannot re-admit them.
       if (name === 'id' || name === 'name' || name.startsWith(BINDING_DATA_PREFIX)) {
         element.removeAttribute(attr.name);
         continue;
@@ -447,20 +393,11 @@ function sanitizeAttributes(element: Element, tag: string, policy: ResolvedPolic
   }
 }
 
-/**
- * Validate every candidate URL inside a `srcset` value. The attribute
- * holds a comma-separated list of `<url> [<descriptor>]` pairs; each
- * URL must individually pass `isSafeUrl`. Rejecting the whole
- * attribute on any bad candidate is deliberate — partial rewriting
- * would silently change rendering semantics.
- */
+/** Every `srcset` candidate must pass; partial rewriting would silently change what renders. */
 function isSafeSrcset(value: string): boolean {
-  const candidates = value.split(',');
-  for (const candidate of candidates) {
+  for (const candidate of value.split(',')) {
     const trimmed = candidate.trim();
     if (trimmed.length === 0) continue;
-    // `trimmed` is non-empty. Only the URL prefix before the first descriptor
-    // separator is needed; slicing avoids manufacturing an optional array item.
     const descriptorStart = trimmed.search(/\s/);
     const url = descriptorStart === -1 ? trimmed : trimmed.slice(0, descriptorStart);
     if (!isSafeUrl(url)) return false;
@@ -475,9 +412,7 @@ function hardenAnchor(anchor: Element): void {
   if (!anchor.hasAttribute('target')) anchor.setAttribute('target', '_blank');
 }
 
-/**
- * Built-in allow-lists, exposed for documentation and tests.
- */
+/** The built-in allow-lists, for documentation and tests. */
 export const SANITIZER_POLICY = Object.freeze({
   allowedTags: ALLOWED_TAGS,
   removeCompletely: REMOVE_COMPLETELY,

@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { lookup, register, registeredTypes } from '@lexical/registry';
-// side-effect import so the registry is populated when this test runs
 import { lexicalToHtml } from '@lexical/render';
 
 describe('Lexical registry', () => {
@@ -32,6 +31,10 @@ describe('Lexical registry', () => {
       'upload',
       'relationship',
       'block',
+      'inlineBlock',
+      'table',
+      'tablerow',
+      'tablecell',
     ]) {
       expect(types).toContain(required);
     }

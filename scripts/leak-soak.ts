@@ -24,7 +24,6 @@ const cycles =
     : process.argv.includes('--quick')
       ? QUICK_CYCLES
       : DEFAULT_CYCLES;
-const enforceHeapBudget = cycles >= DEFAULT_CYCLES;
 
 if (typeof globalThis.gc !== 'function') {
   throw new Error('leak soak requires Node --expose-gc');
@@ -260,19 +259,19 @@ assert.deepEqual(finalResources, {
 
 const finalHeap = await collectHeap();
 const retainedBytes = finalHeap - baselineHeap;
-if (enforceHeapBudget) {
-  assert.ok(
-    updateRetainedBytes < MAX_RETAINED_BYTES,
-    `long-session retained heap drift ${String(updateRetainedBytes)} B exceeds ${String(MAX_RETAINED_BYTES)} B`,
-  );
-  assert.ok(
-    retainedBytes < MAX_RETAINED_BYTES,
-    `post-destroy retained heap drift ${String(retainedBytes)} B exceeds ${String(MAX_RETAINED_BYTES)} B`,
-  );
-}
+// The budget is an absolute retained-byte ceiling, not a per-cycle rate, so a
+// shorter run can only make it easier to meet: enforce it at every cycle count.
+assert.ok(
+  updateRetainedBytes < MAX_RETAINED_BYTES,
+  `long-session retained heap drift ${String(updateRetainedBytes)} B exceeds ${String(MAX_RETAINED_BYTES)} B`,
+);
+assert.ok(
+  retainedBytes < MAX_RETAINED_BYTES,
+  `post-destroy retained heap drift ${String(retainedBytes)} B exceeds ${String(MAX_RETAINED_BYTES)} B`,
+);
 
 process.stdout.write(
-  `${JSON.stringify({ cycles, baselineHeap, updateBaselineHeap, updateFinalHeap, updateRetainedBytes, finalHeap, retainedBytes, heapBudgetEnforced: enforceHeapBudget, resources: finalResources })}\n`,
+  `${JSON.stringify({ cycles, baselineHeap, updateBaselineHeap, updateFinalHeap, updateRetainedBytes, finalHeap, retainedBytes, heapBudgetEnforced: true, resources: finalResources })}\n`,
 );
 
 dom.window.close();

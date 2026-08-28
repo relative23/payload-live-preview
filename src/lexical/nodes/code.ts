@@ -1,29 +1,21 @@
-/**
- * Renderer for Lexical `code` (block-level fenced code) and inline
- * `code-highlight` nodes.
- *
- * Block code: `<pre><code class="language-...">` (language sanitised).
- * Inline highlight tokens: `<code class="...">`.
- *
- * @module @lexical/nodes/code
- */
+/** `code` (fenced block) and `code-highlight` (token span) renderers. */
 
 import { escapeHtml } from '@security/escape';
 import type { NodeRenderer } from '../registry';
 import type { LexicalNode } from '../types';
+import { sanitizeIdent } from '../value-shapes';
 
 const codeRenderer: NodeRenderer = (node): string => {
-  const language = sanitizeLangClass(typeof node['language'] === 'string' ? node['language'] : '');
-  const inner = extractText(node);
+  const language = sanitizeIdent(typeof node['language'] === 'string' ? node['language'] : '');
   const langClass = language === '' ? '' : ` class="language-${language}"`;
-  return `<pre><code${langClass}>${escapeHtml(inner)}</code></pre>`;
+  return `<pre><code${langClass}>${escapeHtml(extractText(node))}</code></pre>`;
 };
 
 const codeHighlightRenderer: NodeRenderer = (node): string => {
   const text = typeof node.text === 'string' ? node.text : '';
   const highlight =
     typeof node['highlightType'] === 'string'
-      ? ` class="token-${sanitizeLangClass(node['highlightType'])}"`
+      ? ` class="token-${sanitizeIdent(node['highlightType'])}"`
       : '';
   return `<span${highlight}>${escapeHtml(text)}</span>`;
 };
@@ -36,8 +28,4 @@ function extractText(node: LexicalNode): string {
   let out = '';
   for (const child of node.children) out += extractText(child);
   return out;
-}
-
-function sanitizeLangClass(value: string): string {
-  return value.replace(/[^a-zA-Z0-9_-]/g, '');
 }

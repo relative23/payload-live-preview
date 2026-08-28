@@ -1,37 +1,13 @@
-/**
- * Block-renderer sub-registry.
- *
- * Payload's BlocksFeature emits Lexical `block` nodes with a
- * `blockType` slug. The default `block`-node renderer (in
- * `../nodes/block.ts`) only emits a generic
- * `<div data-block-type="…">` — useful as a hook, but unhelpful when
- * the consumer wants out-of-the-box rendering for common block types.
- *
- * This registry maps `blockType` → renderer. Default renderers ship
- * for the most common Payload block patterns (callout, image,
- * video, code, cta). Custom slugs override defaults via
- * `registerBlockRenderer(slug, renderer)`.
- *
- * @module @lexical/blocks/registry
- */
+/** Block-renderer registry keyed by Payload block slug; consulted by the `block` and `inlineBlock` nodes. */
 
 import type { LexicalNode } from '../types';
 
-/**
- * Context passed to a block renderer. Includes the recursive
- * `renderChildren` function so blocks that house nested Lexical
- * content can delegate back to the main renderer.
- */
 export interface BlockRenderContext {
-  /** Renders a list of Lexical children to HTML. */
+  /** Render nested Lexical content through the node registry. */
   readonly renderChildren: (children: readonly LexicalNode[]) => string;
 }
 
-/**
- * Renderer signature. Receives the block node *and* its already-read
- * `fields` payload (the parser pulls these out so individual block
- * renderers don't have to reach into `node['fields']` themselves).
- */
+/** Receives the block's `fields` (with `blockType`) and returns HTML. */
 export type BlockRenderer = (
   fields: Record<string, unknown>,
   context: BlockRenderContext,
@@ -44,12 +20,10 @@ export function registerBlockRenderer(blockType: string, renderer: BlockRenderer
   registry.set(blockType, renderer);
 }
 
-/** Look up the renderer for `blockType`, or `undefined`. */
 export function lookupBlockRenderer(blockType: string): BlockRenderer | undefined {
   return registry.get(blockType);
 }
 
-/** Snapshot of registered block types — useful for diagnostics. */
 export function registeredBlockTypes(): readonly string[] {
   return [...registry.keys()];
 }

@@ -4,46 +4,15 @@
 
 ```ts
 
-import { a } from '../../policy-B4DHbtJN.js';
-import { D } from '../../policy-B4DHbtJN.js';
+import { b as PreviewAdapterOptions } from '../../options-THBxzyil.js';
 
 // @public
 export function createLivePreviewMiddleware(options?: LivePreviewNextOptions): (request: Request, response: Response) => Promise<Response>;
 
 // @public
-export interface LivePreviewNextOptions {
-    // (undocumented)
-    readonly allowedOrigins?: readonly string[];
-    readonly apiRoute?: string;
-    readonly authorizePreview?: (request: Request) => a | Promise<a>;
-    // (undocumented)
-    readonly autoInject?: boolean;
-    // (undocumented)
-    readonly debounceMs?: number;
-    // (undocumented)
-    readonly debug?: boolean;
-    readonly defaults?: D;
-    // (undocumented)
-    readonly frameAncestorsExtra?: readonly string[];
-    readonly heartbeatMs?: number;
-    readonly inject?: 'preview-only' | 'always';
-    readonly manageCsp?: boolean | 'frame-ancestors' | 'full';
-    readonly mergeDepth?: number;
-    readonly previewQueryParams?: readonly string[];
-    readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
-    readonly sanitizerPolicy?: 'compat' | 'strict';
-    readonly scopeBindingsByOwner?: boolean;
-    // (undocumented)
-    readonly scriptSrcExtra?: readonly string[];
-    readonly serverURL?: string;
-    readonly shouldInject?: (request: Request) => boolean;
-    readonly skipUnchanged?: boolean;
-    readonly strict?: boolean;
-    readonly strictDynamic?: boolean;
-}
+export type LivePreviewNextOptions = PreviewAdapterOptions;
 
-// @public (undocumented)
-export type NextMiddleware = (request: Request) => Promise<Response | undefined>;
+export { PreviewAdapterOptions }
 
 // @public
 export function renderLivePreviewScript(options?: LivePreviewNextOptions & {

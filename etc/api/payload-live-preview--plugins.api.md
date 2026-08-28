@@ -27,11 +27,13 @@ export interface CachedElement {
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
     readonly fieldType: RendererKey;
+    readonly fragmentBoundary?: Element;
     readonly hrefField?: string;
     readonly locale?: string;
     readonly owner?: string;
     readonly srcField?: string;
     readonly strategy?: string;
+    readonly strategyKind?: UpdateSource | 'unknown';
     readonly targetAttribute?: string;
 }
 
@@ -50,6 +52,7 @@ export const debugPlugin: LivePreviewPlugin;
 export const DIAGNOSTIC_CODES: Readonly<{
     readonly NoTrustedOrigin: "LP0101";
     readonly ReferrerOnlyTrust: "LP0102";
+    readonly PluginIncompatible: "LP0103";
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly VisibilityGateDeferred: "LP0301";
@@ -82,6 +85,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RouteRefreshLoop: "LP0805";
     readonly FragmentStrategyUnavailable: "LP0806";
     readonly V2ReadinessGap: "LP0709";
+    readonly RuntimeOnPublicPage: "LP0710";
 }>;
 
 // @public
@@ -92,7 +96,7 @@ export type DocumentSaveHandler = {
     bivarianceHack(signal?: AbortSignal): void | Promise<void>;
 }['bivarianceHack'];
 
-// @public
+// @public (undocumented)
 export function documentSavePlugin(options?: DocumentSavePluginOptions): LivePreviewPlugin;
 
 // @public (undocumented)
@@ -114,8 +118,11 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
     emitWhile<E extends keyof TMap>(event: E, payload: TMap[E], shouldContinue: () => boolean): Promise<boolean>;
     eventNames(): (keyof TMap)[];
     listenerCount(event: keyof TMap): number;
+    // (undocumented)
     off<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): void;
+    // (undocumented)
     on<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): Unsubscribe;
+    // (undocumented)
     once<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): Unsubscribe;
     removeAllListeners(event?: keyof TMap): void;
 }
@@ -303,7 +310,7 @@ export interface PluginCompatibility {
     readonly runtime?: string;
 }
 
-// @public
+// @public (undocumented)
 export interface PluginContext {
     // (undocumented)
     readonly events: PluginEvents;
@@ -320,10 +327,12 @@ export interface PluginContext {
 export type PluginDisposer = () => void;
 
 // @public
-export interface PluginEvents extends EventEmitter {
+export interface PluginEvents {
     readonly emit: <E extends keyof LivePreviewEventMap>(event: E, payload: LivePreviewEventMap[E]) => Promise<void>;
     readonly emitWhile: <E extends keyof LivePreviewEventMap>(event: E, payload: LivePreviewEventMap[E], shouldContinue: () => boolean) => Promise<boolean>;
+    // (undocumented)
     readonly eventNames: () => (keyof LivePreviewEventMap)[];
+    // (undocumented)
     readonly listenerCount: (event: keyof LivePreviewEventMap) => number;
     // (undocumented)
     readonly off: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => void;
@@ -331,6 +340,7 @@ export interface PluginEvents extends EventEmitter {
     readonly on: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => Unsubscribe;
     // (undocumented)
     readonly once: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => Unsubscribe;
+    // (undocumented)
     readonly removeAllListeners: (event?: keyof LivePreviewEventMap) => void;
 }
 
@@ -357,8 +367,10 @@ export class PluginManager {
         readonly allFields: Record<string, unknown>;
     }, isCurrent?: () => boolean): unknown;
     destroyAll(): Promise<void>;
+    // (undocumented)
     list(): readonly string[];
     register(plugin: LivePreviewPlugin): Promise<void>;
+    // (undocumented)
     get size(): number;
     snapshot(): readonly PluginInspection[];
     unregister(name: string): Promise<void>;
@@ -394,7 +406,7 @@ export type RichTextRenderer = (value: unknown, context: {
     readonly locale: string | undefined;
 }) => string;
 
-// @public
+// @public (undocumented)
 export type Unsubscribe = () => void;
 
 // @public

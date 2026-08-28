@@ -1,9 +1,5 @@
 /**
- * payload-live-preview
- *
- * State-of-the-art, framework-agnostic, schema-driven live preview for Payload CMS.
- *
- * Public entry — re-exports the stable surface.
+ * payload-live-preview — the root entry. Every export here is public API.
  *
  * @packageDocumentation
  */
@@ -79,8 +75,7 @@ export {
 } from './security';
 export type { SanitizerPolicyMode, TrustedHtmlPolicyLike } from './security';
 
-// Authorized preview context — the one verdict privileged preview decisions
-// are keyed on. See docs/architecture/0006-authorized-preview-context.md.
+// Authorized preview context (ADR 0006)
 export {
   authorizePreviewRequest,
   isAuthorizedPreviewContext,
@@ -219,5 +214,5 @@ export type {
   PayloadLivePreviewMessage,
 } from './types/payload-protocol';
 
-// Island interoperability — the bridge event and the boundary test (docs/renderers.md, islands).
+// Island interoperability (docs/renderers.md)
 export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/islands';

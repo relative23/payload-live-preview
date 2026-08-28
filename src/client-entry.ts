@@ -1,13 +1,7 @@
 /**
- * `payload-live-preview/client` — the client alone.
- *
- * `LivePreviewClient` and `initLivePreview()` with the built-in renderers,
- * for a page that wires the client itself and wants neither the inline
- * script generator nor the framework adapters in its bundle. The types its
- * configuration and inspection surfaces mention are re-exported so the
- * declaration is self-contained.
- *
- * @module payload-live-preview/client
+ * `payload-live-preview/client` — the client alone, with the built-in
+ * renderers, for a page that wires it itself and wants neither the inline
+ * generator nor the adapters in its bundle.
  */
 
 export { LivePreviewClient, initLivePreview, type LivePreviewClientConfig } from './client';

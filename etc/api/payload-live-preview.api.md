@@ -36,6 +36,7 @@ export interface AuthorizedPreviewContext {
 // @public
 export interface AuthorizedPreviewScope {
     readonly audience?: string;
+    // (undocumented)
     readonly locale?: string;
     readonly path?: string;
 }
@@ -96,11 +97,13 @@ export interface CachedElement {
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
     readonly fieldType: RendererKey;
+    readonly fragmentBoundary?: Element;
     readonly hrefField?: string;
     readonly locale?: string;
     readonly owner?: string;
     readonly srcField?: string;
     readonly strategy?: string;
+    readonly strategyKind?: UpdateSource | 'unknown';
     readonly targetAttribute?: string;
 }
 
@@ -196,6 +199,7 @@ export function detectProtocolProfile(observed: ReadonlySet<ProtocolCapability>)
 export const DIAGNOSTIC_CODES: Readonly<{
     readonly NoTrustedOrigin: "LP0101";
     readonly ReferrerOnlyTrust: "LP0102";
+    readonly PluginIncompatible: "LP0103";
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly VisibilityGateDeferred: "LP0301";
@@ -228,6 +232,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RouteRefreshLoop: "LP0805";
     readonly FragmentStrategyUnavailable: "LP0806";
     readonly V2ReadinessGap: "LP0709";
+    readonly RuntimeOnPublicPage: "LP0710";
 }>;
 
 // @public
@@ -238,7 +243,7 @@ export type DocumentSaveHandler = {
     bivarianceHack(signal?: AbortSignal): void | Promise<void>;
 }['bivarianceHack'];
 
-// @public
+// @public (undocumented)
 export function documentSavePlugin(options?: DocumentSavePluginOptions): LivePreviewPlugin;
 
 // @public (undocumented)
@@ -266,8 +271,11 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
     emitWhile<E extends keyof TMap>(event: E, payload: TMap[E], shouldContinue: () => boolean): Promise<boolean>;
     eventNames(): (keyof TMap)[];
     listenerCount(event: keyof TMap): number;
+    // (undocumented)
     off<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): void;
+    // (undocumented)
     on<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): Unsubscribe;
+    // (undocumented)
     once<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): Unsubscribe;
     removeAllListeners(event?: keyof TMap): void;
 }
@@ -419,6 +427,7 @@ export interface InlineScriptConfig {
     readonly apiRoute?: string;
     readonly debounceMs?: number;
     readonly debug?: boolean;
+    readonly defaults?: DefaultsProfile;
     readonly disableLocalhostMatching?: boolean;
     readonly disableReferrerDetection?: boolean;
     readonly disableVisibilityGate?: boolean;
@@ -428,8 +437,6 @@ export interface InlineScriptConfig {
     readonly heartbeatMs?: number;
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
-    // @deprecated
-    readonly nonce?: string;
     readonly revealEditedField?: boolean;
     readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
@@ -444,7 +451,6 @@ export interface InspectionBindings {
     readonly elements: number;
     readonly fieldNames: readonly string[];
     readonly fields: number;
-    // (undocumented)
     readonly orphanFields: readonly string[];
     readonly owners: readonly string[];
     readonly ownerScoped: boolean;
@@ -525,7 +531,7 @@ export function isExternalHttpUrl(url: string): boolean;
 // @public
 export function isInIframe(): boolean;
 
-// @public
+// @public (undocumented)
 export function isInPopup(): boolean;
 
 // @public
@@ -537,7 +543,7 @@ export function isInsideIsland(element: Element): boolean;
 // @public
 export const ISLAND_EVENT = "payload-live-preview:update";
 
-// @public
+// @public (undocumented)
 export interface IslandUpdateDetail {
     // (undocumented)
     readonly fields: Readonly<Record<string, unknown>>;
@@ -549,7 +555,7 @@ export interface IslandUpdateDetail {
     readonly revision: number;
 }
 
-// @public
+// @public (undocumented)
 export function isLexicalContent(value: unknown): value is LexicalRoot;
 
 // @public
@@ -568,7 +574,7 @@ export interface IssuePreviewTokenOptions {
     readonly secret: string | Uint8Array;
 }
 
-// @public
+// @public (undocumented)
 export interface LexicalNode {
     // (undocumented)
     readonly [extra: string]: unknown;
@@ -593,7 +599,7 @@ interface LexicalRenderOptions {
     readonly sanitize?: boolean;
 }
 
-// @public
+// @public (undocumented)
 export interface LexicalRoot {
     // (undocumented)
     readonly root: {
@@ -622,17 +628,20 @@ export class LivePreviewClient {
     constructor(rawConfig?: LivePreviewClientConfig);
     destroy(): Promise<void>;
     get destroyed(): boolean;
+    // (undocumented)
     get events(): EventEmitter;
     inspect(): LivePreviewInspection;
     get plugins(): readonly string[];
+    // (undocumented)
     refreshCache(): void;
     resume(): boolean;
     start(): boolean;
+    // (undocumented)
     get status(): 'disconnected' | 'connecting' | 'connected';
     suspend(): boolean;
     unuse(name: string): Promise<void>;
-    // (undocumented)
     get updateCount(): number;
+    // (undocumented)
     use(plugin: LivePreviewPlugin): Promise<void>;
 }
 
@@ -800,6 +809,7 @@ export class OriginDetector {
     enumerate(): string[];
     get isProductionUnconfigured(): boolean;
     get isReferrerOnlyTrust(): boolean;
+    // (undocumented)
     get lockedOrigin(): string | undefined;
     lockOrigin(origin: string): boolean;
     matches(origin: string): boolean;
@@ -903,7 +913,6 @@ export interface PayloadLivePreviewMessage {
     // (undocumented)
     readonly data?: Record<string, unknown>;
     readonly externallyUpdatedRelationship?: PayloadDocumentEventDetail | null;
-    // (undocumented)
     readonly fieldSchemaJSON?: readonly PayloadFieldSchema[];
     // (undocumented)
     readonly globalSlug?: string;
@@ -959,7 +968,7 @@ export interface PayloadRelationship<TSlug extends string = string> {
     readonly url?: string;
 }
 
-// @public
+// @public (undocumented)
 export interface PayloadSessionStrategy {
     readonly cookieName?: string;
     // (undocumented)
@@ -979,7 +988,7 @@ export interface PluginCompatibility {
     readonly runtime?: string;
 }
 
-// @public
+// @public (undocumented)
 export interface PluginContext {
     // (undocumented)
     readonly events: PluginEvents;
@@ -996,10 +1005,12 @@ export interface PluginContext {
 export type PluginDisposer = () => void;
 
 // @public
-export interface PluginEvents extends EventEmitter {
+export interface PluginEvents {
     readonly emit: <E extends keyof LivePreviewEventMap>(event: E, payload: LivePreviewEventMap[E]) => Promise<void>;
     readonly emitWhile: <E extends keyof LivePreviewEventMap>(event: E, payload: LivePreviewEventMap[E], shouldContinue: () => boolean) => Promise<boolean>;
+    // (undocumented)
     readonly eventNames: () => (keyof LivePreviewEventMap)[];
+    // (undocumented)
     readonly listenerCount: (event: keyof LivePreviewEventMap) => number;
     // (undocumented)
     readonly off: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => void;
@@ -1007,6 +1018,7 @@ export interface PluginEvents extends EventEmitter {
     readonly on: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => Unsubscribe;
     // (undocumented)
     readonly once: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => Unsubscribe;
+    // (undocumented)
     readonly removeAllListeners: (event?: keyof LivePreviewEventMap) => void;
 }
 
@@ -1025,7 +1037,7 @@ export interface PluginInspection {
     readonly version: string | undefined;
 }
 
-// @public
+// @public (undocumented)
 type Prev<N extends 0 | 1 | 2 | 3> = N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
 
 // @public
@@ -1055,11 +1067,12 @@ export interface PreviewAuthorizationRequest {
 // @public (undocumented)
 export type PreviewAuthorizationStrategy = PayloadSessionStrategy | SignedTokenStrategy | VerifierStrategy;
 
-// @public
+// @public (undocumented)
 export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
 
 // @public
 export interface PreviewBindings {
+    // (undocumented)
     readonly authorized: boolean;
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
     bindByPath: <T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
@@ -1077,7 +1090,7 @@ export interface PreviewBindingsOptions extends PreviewBindingsCommonOptions {
     readonly authorization: AuthorizedPreviewContext | null;
 }
 
-// @public
+// @public (undocumented)
 export interface PreviewFocusMessage {
     // (undocumented)
     readonly field: string;
@@ -1098,7 +1111,6 @@ export interface PreviewRequestLike {
 // @public (undocumented)
 export interface PreviewRequestOptions {
     readonly adminOrigins?: readonly string[];
-    readonly checkFetchDest?: boolean;
     readonly queryParams?: readonly string[];
     // Warning: (ae-forgotten-export) The symbol "PreviewSignal" needs to be exported by the entry point index.d.ts
     readonly signals?: readonly PreviewSignal[];
@@ -1234,7 +1246,7 @@ interface RuntimeBuildInfo {
 
 // Warning: (ae-forgotten-export) The symbol "RuntimeBuildInfo" needs to be exported by the entry point index.d.ts
 //
-// @public
+// @public (undocumented)
 export function runtimeBuildInfo(): RuntimeBuildInfo;
 
 // Warning: (ae-forgotten-export) The symbol "SanitizeOptions" needs to be exported by the entry point index.d.ts
@@ -1249,6 +1261,7 @@ interface SanitizeOptions {
     readonly allowedDataAttributes?: readonly string[];
     readonly allowFormControls?: boolean;
     readonly policy?: SanitizerPolicyMode;
+    readonly templateMode?: boolean;
 }
 
 // @public
@@ -1277,7 +1290,7 @@ export function setSanitizerPolicy(mode: SanitizerPolicyMode): void;
 // @public
 export function setTrustedTypesPolicy(policy: TrustedHtmlPolicyLike | null | undefined): void;
 
-// @public
+// @public (undocumented)
 export interface SignedTokenStrategy {
     readonly audience: string;
     // (undocumented)
@@ -1332,7 +1345,7 @@ export interface TrustedHtmlPolicyLike {
     createHTML(input: string): unknown;
 }
 
-// @public
+// @public (undocumented)
 export type Unsubscribe = () => void;
 
 // @public

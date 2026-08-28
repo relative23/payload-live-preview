@@ -1,25 +1,13 @@
 /**
- * Plugin compatibility metadata (roadmap 1.2.0).
- *
- * A plugin may declare the runtime versions and the protocol version it was
- * written against. The manager checks the declaration at registration and
- * refuses a plugin that does not fit, with a log line that names both sides
- * — a plugin that silently registers into a runtime it was never tested with
- * is how "works on my machine" reaches production.
- *
- * The range grammar is the subset of semver ranges a plugin author actually
- * writes: `*`, `1.2.3`, `^1.2.3`, `~1.2.3`, `>=1.2.3`, `>1.2.3`, `<2.0.0`,
- * `<=1.9.9`, space-joined conjunctions, `||`-joined alternatives. Prerelease
- * tags are ignored for the comparison; no dependency is pulled in for this.
- *
- * @module @plugins/compat
+ * Plugin compatibility claims. The range grammar is the subset a plugin
+ * author writes (`*`, `1.2.3`, `^`, `~`, `>=`, `>`, `<`, `<=`, space-joined
+ * conjunctions, `||` alternatives); prerelease tags are ignored.
  */
 
-/** What a plugin declares it was written for. Both fields are optional; absent means "no claim". */
 export interface PluginCompatibility {
-  /** A semver range the runtime's `VERSION` must satisfy, e.g. `^1.2.0`. */
+  /** A semver range the runtime's `VERSION` must satisfy, e.g. `>=2.0.0`. */
   readonly runtime?: string;
-  /** The highest postMessage protocol version the plugin understands; the runtime's must not exceed it. */
+  /** The highest postMessage protocol version the plugin understands. */
   readonly protocol?: number;
 }
 
@@ -70,10 +58,7 @@ function satisfiesComparator(version: Version, comparator: string): boolean {
   }
 }
 
-/**
- * Whether `version` satisfies `range`. An unparsable version or range never
- * satisfies: a refusal is the safe answer when the claim cannot be read.
- */
+/** Whether `version` satisfies `range`; anything unparsable never satisfies. */
 export function satisfiesRange(version: string, range: string): boolean {
   const parsed = parseVersion(version);
   if (parsed === undefined) return false;

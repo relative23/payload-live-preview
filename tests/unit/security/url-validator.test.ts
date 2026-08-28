@@ -29,6 +29,8 @@ describe('isSafeUrl — denied forms', () => {
     'jAvAsCrIpT:alert(1)',
     ' javascript:alert(1)',
     '\tjavascript:alert(1)',
+    'java\tscript:alert(1)',
+    'java\nscript:alert(1)',
     'data:text/html,<script>',
     'Data:text/html,<script>',
     'vbscript:msgbox()',
@@ -40,11 +42,8 @@ describe('isSafeUrl — denied forms', () => {
     expect(isSafeUrl(input)).toBe(false);
   });
 
-  it('returns false for empty string (security tightening from legacy behavior)', () => {
+  it('returns false for empty and whitespace-only input', () => {
     expect(isSafeUrl('')).toBe(false);
-  });
-
-  it('returns false for whitespace-only input', () => {
     expect(isSafeUrl('   ')).toBe(false);
   });
 
@@ -55,12 +54,24 @@ describe('isSafeUrl — denied forms', () => {
     },
   );
 
-  it('returns false for unknown custom schemes', () => {
+  it('returns false for unknown custom schemes and ftp:', () => {
     expect(isSafeUrl('myapp://foo')).toBe(false);
-  });
-
-  it('returns false for ftp:', () => {
     expect(isSafeUrl('ftp://example.com')).toBe(false);
+  });
+});
+
+describe('backslash forms the URL parser resolves to another origin', () => {
+  it.each([['/\\evil.com'], ['\\\\evil.com'], ['\\/evil.com'], ['/\t\\evil.com'], ['///evil.com']])(
+    '%j is protocol-relative: safe as http(s), but external',
+    (input) => {
+      expect(isSafeUrl(input)).toBe(true);
+      expect(isExternalHttpUrl(input)).toBe(true);
+    },
+  );
+
+  it('a single backslash inside a path stays same-origin', () => {
+    expect(isSafeUrl('/a\\b')).toBe(true);
+    expect(isExternalHttpUrl('/a\\b')).toBe(false);
   });
 });
 
@@ -69,8 +80,6 @@ describe('isExternalHttpUrl', () => {
     ['https://example.com', true],
     ['http://example.com', true],
     ['HTTPS://EXAMPLE.COM', true],
-    // Protocol-relative URLs resolve to another origin and need the
-    // same noopener hardening as absolute ones.
     ['//evil.example/path', true],
     ['/relative', false],
     ['mailto:foo@example.com', false],
@@ -84,10 +93,6 @@ describe('isExternalHttpUrl', () => {
 
 describe('SAFE_URL_PROTOCOLS', () => {
   it('contains exactly the four expected protocols', () => {
-    expect(SAFE_URL_PROTOCOLS.size).toBe(4);
-    expect(SAFE_URL_PROTOCOLS.has('http:')).toBe(true);
-    expect(SAFE_URL_PROTOCOLS.has('https:')).toBe(true);
-    expect(SAFE_URL_PROTOCOLS.has('mailto:')).toBe(true);
-    expect(SAFE_URL_PROTOCOLS.has('tel:')).toBe(true);
+    expect([...SAFE_URL_PROTOCOLS]).toEqual(['http:', 'https:', 'mailto:', 'tel:']);
   });
 });

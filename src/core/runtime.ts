@@ -1,24 +1,12 @@
 /**
- * Inline runtime entry point.
- *
- * This file is the *single source of truth* for the JavaScript that
- * gets injected into preview pages. `scripts/build-runtime.ts` bundles
- * this entry into an IIFE and bakes the minified output into
- * `src/inline/runtime.generated.ts`. The high-level client uses the
- * same module via direct import.
- *
- * Both paths share:
- *   - `LivePreviewRuntime` (lifecycle orchestration)
- *   - `OriginDetector` (handshake-aware origin matcher)
- *   - The complete security stack from `@security`
- *
- * Differences live exclusively in the *wiring*:
- *   - The inline runtime auto-starts and exposes `window.__livePreview`.
- *   - The high-level client gives consumers programmatic control.
- *
- * @module @core/runtime
+ * The inline runtime's entry point: read the baked configuration, decide
+ * whether this window is a preview at all, and wire the runtime to a small
+ * `window.__livePreview` API. `scripts/build-runtime.ts` bundles this file
+ * into the IIFE that adapters inject; the programmatic client imports
+ * `bootstrapInlineRuntime` and calls it itself.
  */
 
+import { type INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/types/inline-config';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from './lifecycle';
 import type { FragmentStrategy, RouteStrategy } from './strategies';
@@ -31,41 +19,14 @@ import type { LivePreviewInspection } from './inspection/types';
 import type { FieldRenderer } from './types';
 import { safeConsoleDebug, safeConsoleWarn } from './diagnostics';
 
-/**
- * Build-time configuration baked into the inline IIFE.
- *
- * Defaults come from `scripts/build-runtime.ts` and `inline/generator.ts`.
- * Consumers override them through `generateInlineScript()` options.
- */
-/** Compact private wire format shared only with `src/inline/generator.ts`. */
-type RuntimeBuildConfig = readonly [
-  additionalOrigins?: readonly string[],
-  serverURL?: string,
-  apiRoute?: string,
-  mergeDepth?: number,
-  debug?: boolean,
-  debounceMs?: number,
-  enableA11y?: boolean,
-  heartbeatMs?: number,
-  disableVisibilityGate?: boolean,
-  visibilityGateThreshold?: number,
-  intersectionRootMargin?: string,
-  disableReferrerDetection?: boolean,
-  disableLocalhostMatching?: boolean,
-  scopeBindingsByOwner?: boolean,
-  skipUnchanged?: boolean,
-  eventSourcePolicy?: 'any' | 'parent-or-opener',
-  sanitizerPolicy?: 'compat' | 'strict',
-  fragmentEndpoint?: string,
-  revealEditedField?: boolean,
-];
+/** Positional wire format, derived from the key table `src/inline/generator.ts` writes. */
+type ConfigTupleOf<K extends readonly (keyof InlineScriptConfig)[]> = {
+  readonly [I in keyof K]?: InlineScriptConfig[K[I]];
+};
+type RuntimeBuildConfig = ConfigTupleOf<typeof INLINE_CONFIG_KEYS>;
 
 declare const __LIVE_PREVIEW_CONFIG__: RuntimeBuildConfig;
-/**
- * Left by the fragment prelude the generator emits ahead of the runtime for
- * pages configured with `fragments` (src/fragment/inline.ts). Looked up by
- * `typeof`, so a page without the prelude carries nothing of the client.
- */
+/** Left by the fragment prelude; looked up by `typeof` so a page without it carries none of that client. */
 declare const __LIVE_PREVIEW_FRAGMENT__:
   | {
       createFragmentStrategy: (options: { endpoint: string }) => FragmentStrategy;
@@ -73,59 +34,30 @@ declare const __LIVE_PREVIEW_FRAGMENT__:
     }
   | undefined;
 
-/**
- * Field renderers built into the inline runtime.
- *
- * `buildBuiltinRenderers` from the field-types barrel returns the
- * frozen renderer map after assembling every concrete renderer via
- * explicit named imports — robust against `sideEffects: false`.
- */
 import { buildBuiltinRenderers } from '@field-types/index';
 
-/**
- * Public global API exposed on `window.__livePreview` by the inline
- * runtime. The shape is deliberately small — anything more sophisticated
- * belongs in the high-level client.
- */
+/** The small API on `window.__livePreview`; anything richer belongs in the client. */
 export interface LivePreviewGlobalApi {
-  /**
-   * The build configuration this instance was created from. An inline script
-   * that runs again with a different one hands over to a new instance (F-36).
-   */
+  /** The configuration this instance was built from; a different one triggers a handover. */
   readonly configSignature?: string;
   readonly destroy: () => void;
   readonly refresh: () => void;
   readonly enumerateOrigins: () => readonly string[];
-  /**
-   * Point-in-time read of runtime state, for diagnosing a preview that is not
-   * updating. Reachable from the browser console as
-   * `__livePreview.inspect()`, which is the point: an adapter user has no
-   * client object to call a method on, and the failures worth diagnosing
-   * happen on a deployed page rather than in a test.
-   */
+  /** Reachable from the console as `__livePreview.inspect()` — an adapter user has no client object. */
   readonly inspect: () => LivePreviewInspection;
   readonly version: string;
 }
 
-/**
- * Bootstrap the inline runtime. The function bails out (returning
- * `undefined`) when the current window is not a preview context. That
- * is intentional: top-level navigation should never instantiate the
- * preview, even if the script tag accidentally loads there.
- */
+/** Returns `undefined` outside a preview context: a top-level visit must never start the runtime. */
 export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
   if (typeof window === 'undefined') return undefined;
   if (!isInPreviewContext()) return undefined;
 
-  // Double-injection guard: when the script is embedded twice (e.g. the
-  // Astro integration AND the middleware both inject it), the first
-  // instance wins and the second becomes a no-op.
+  // A second bootstrap is either a double injection or a soft navigation that
+  // re-ran the script. Same configuration: the running instance stays and
+  // rescans. Different: hand over, replacement first, so a message in between
+  // still reaches one of them.
   const existing = (window as { __livePreview?: LivePreviewGlobalApi }).__livePreview;
-  // A second bootstrap on the same page is a soft navigation whose new document
-  // re-ran the inline script. Same configuration: the running instance stays
-  // and rescans. Different configuration (another serverURL, another origin
-  // list): hand over — the replacement starts first, the old one is destroyed
-  // second, so a message arriving in between reaches at least one of them.
   const signature = JSON.stringify(readBuildConfig());
   if (existing !== undefined) {
     if (existing.configSignature === undefined || existing.configSignature === signature) {
@@ -176,7 +108,8 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
 
   if (detector.isProductionUnconfigured) {
     safeConsoleWarn(
-      '[live-preview] LP0101: No trusted origin. Set PAYLOAD_ADMIN_ORIGIN or pass allowedOrigins to generateInlineScript().',
+      '[live-preview] LP0101: No trusted origin. Pass allowedOrigins to generateInlineScript() ' +
+        '(or to the adapter) — the runtime reads no environment variable in the browser.',
     );
   } else if (detector.isReferrerOnlyTrust) {
     safeConsoleWarn(
@@ -192,11 +125,9 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     renderers,
     originMatcher: (origin) => detector.matches(origin),
     lockedOrigin: () => detector.lockedOrigin,
-    readyTargets: detector.enumerate(),
+    readyTargets: () => detector.enumerate(),
     emitter,
     eventSourcePolicy,
-    // Guard on typeof — a config literal baked by an older generator
-    // (or a hand-written one in tests) may not carry the merge fields.
     ...(serverURL !== ''
       ? {
           dataMerge: {
@@ -228,25 +159,18 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
       : {}),
   });
 
-  // On the first accepted data-bearing update, `connect` locks the detector
-  // to that origin so every subsequent message must match it exactly.
+  // The first accepted update locks the detector to that origin.
   emitter.on('connect', (e) => {
     detector.lockOrigin(e.origin);
   });
 
   runtime.start();
-  // Handover (F-36): the replacement is live before the previous instance goes.
+  // The replacement is live before the previous instance goes.
   existing?.destroy();
 
-  // Own the document lifecycle here rather than leaving it to each adapter.
-  // A back/forward-cache restore does not re-run this script, so without it an
-  // inline runtime returns bound to a document the browser froze and thawed and
-  // silently stops updating. Every adapter injects this entry, so binding it
-  // here is what makes the behaviour reachable at all — the programmatic client
-  // exposes `bindNavigationLifecycle` for consumers that start it themselves.
-  //
-  // Soft navigation is deliberately not bound: only the host knows which event
-  // its router fires, and guessing would rebuild the cache on the wrong one.
+  // Every adapter injects this entry, so owning the lifecycle here is what makes
+  // bfcache recovery reachable at all. Soft navigation stays unbound: only the
+  // host knows which event its router fires.
   const unbindLifecycle = bindNavigationLifecycle({
     suspend: () => runtime.suspend(),
     resume: () => runtime.start(),
@@ -261,9 +185,8 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     destroy: () => {
       unbindLifecycle();
       runtime.destroy();
-      // Clear the global handle so a later bootstrap starts a fresh
-      // runtime instead of returning this now-dead API. The property is
-      // defined `configurable: true` precisely so it can be removed here.
+      // Clear the handle so a later bootstrap starts fresh instead of
+      // returning this dead API; the property is `configurable` for this.
       const w = window as { __livePreview?: LivePreviewGlobalApi };
       if (w.__livePreview === api) delete w.__livePreview;
     },
@@ -281,9 +204,8 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
       configurable: true,
     });
   } catch (error) {
-    // Starting the runtime and publishing its owner handle are one bootstrap
-    // transaction. A hostile/pre-existing global descriptor must not leave an
-    // unreachable runtime listening, observing, or retrying in the background.
+    // Starting and publishing are one transaction: a pre-existing global
+    // descriptor must not leave an unreachable runtime listening.
     unbindLifecycle();
     runtime.destroy();
     throw error;
@@ -296,13 +218,11 @@ function readBuildConfig(): RuntimeBuildConfig {
   return typeof __LIVE_PREVIEW_CONFIG__ === 'undefined' ? [] : __LIVE_PREVIEW_CONFIG__;
 }
 
-// Auto-start when this module is executed as the inline IIFE.
-// The build step ensures this entry is the IIFE root; the high-level
-// client imports `bootstrapInlineRuntime` directly and calls it
-// explicitly.
+// Auto-start only in the inline build; the client calls the bootstrap itself.
+// The define is read at the branch: assigned to a variable first, esbuild
+// substitutes it but no longer folds the branch away.
 declare const __INLINE_BUILD__: boolean | undefined;
-const inlineBuild: boolean = typeof __INLINE_BUILD__ === 'undefined' ? false : __INLINE_BUILD__;
-if (inlineBuild) {
+if (typeof __INLINE_BUILD__ !== 'undefined' && __INLINE_BUILD__) {
   void bootstrapInlineRuntime();
 }
 

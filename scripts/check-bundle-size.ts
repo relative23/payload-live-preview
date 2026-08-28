@@ -10,6 +10,7 @@ import {
   type BundleBudget,
   type BundleMeasurement,
 } from './bundle-budgets';
+import { improvementNotice } from './size-budget-notice';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(ROOT, 'dist');
@@ -29,37 +30,39 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // morph (ADR 0008), its diagnostics and the template sanitizer options add
   // ~1.4 KB gzip to the inline runtime and therefore to every adapter bundle. core.* rows: +~200 B gzip for
   // the message bus source policy (eventSourcePolicy), same date.
-  'adapters/astro/index.js': { raw: 120_950, gzip: 38_100, brotli: 33_150 },
-  'adapters/astro/middleware-entry.js': { raw: 108_350, gzip: 34_300, brotli: 29_750 },
-  'adapters/nextjs/index.js': { raw: 108_350, gzip: 34_150, brotli: 29_750 },
-  'adapters/nuxt/index.js': { raw: 108_450, gzip: 34_350, brotli: 29_700 },
-  'adapters/sveltekit/index.js': { raw: 108_000, gzip: 34_200, brotli: 29_600 },
-  'codegen-astro.js': { raw: 11_400, gzip: 3_700, brotli: 3_350 },
-  'codegen-cli.js': { raw: 13_250, gzip: 4_250, brotli: 3_850 },
-  'codegen.cjs': { raw: 11_650, gzip: 3_650, brotli: 3_300 },
-  'codegen.js': { raw: 11_350, gzip: 3_650, brotli: 3_300 },
-  'doctor-cli.js': { raw: 16_950, gzip: 6_650, brotli: 5_800 },
-  'doctor.js': { raw: 10_400, gzip: 4_300, brotli: 3_700 },
-  'migrate.js': { raw: 2_150, gzip: 1_050, brotli: 900 },
-  'core.cjs': { raw: 103_550, gzip: 32_100, brotli: 28_200 },
-  'core.js': { raw: 103_000, gzip: 32_000, brotli: 28_050 },
-  'index.cjs': { raw: 215_950, gzip: 66_250, brotli: 45_050 },
-  'index.js': { raw: 215_350, gzip: 66_300, brotli: 45_050 },
-  'payload.cjs': { raw: 950, gzip: 500, brotli: 450 },
-  'payload.js': { raw: 900, gzip: 500, brotli: 450 },
+  'adapters/astro/index.js': { raw: 129_850, gzip: 41_150, brotli: 36_000 },
+  'adapters/astro/middleware-entry.js': { raw: 116_850, gzip: 37_150, brotli: 32_400 },
+  'adapters/nextjs/index.js': { raw: 116_650, gzip: 37_050, brotli: 32_300 },
+  'adapters/nuxt/index.js': { raw: 117_350, gzip: 37_400, brotli: 32_500 },
+  'adapters/sveltekit/index.js': { raw: 116_450, gzip: 37_050, brotli: 32_300 },
+  'codegen-astro.js': { raw: 12_950, gzip: 4_550, brotli: 4_100 },
+  'codegen-cli.js': { raw: 14_550, gzip: 5_000, brotli: 4_500 },
+  'codegen.cjs': { raw: 12_450, gzip: 4_250, brotli: 3_860 },
+  'codegen.js': { raw: 12_300, gzip: 4_250, brotli: 3_850 },
+  'doctor-cli.js': { raw: 31_850, gzip: 11_900, brotli: 10_500 },
+  'doctor.js': { raw: 13_100, gzip: 5_500, brotli: 4_750 },
+  'migrate.js': { raw: 12_300, gzip: 4_600, brotli: 4_100 },
+  'core.cjs': { raw: 111_600, gzip: 34_950, brotli: 30_400 },
+  'core.js': { raw: 111_100, gzip: 34_900, brotli: 30_400 },
+  'index.cjs': { raw: 231_700, gzip: 71_800, brotli: 46_800 },
+  'index.js': { raw: 231_150, gzip: 71_950, brotli: 46_850 },
+  // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
+  // 50-byte step is 5 % of the artifact, which stops being a budget.
+  'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
+  'payload.js': { raw: 1_080, gzip: 575, brotli: 515 },
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
-  'server.cjs': { raw: 11_700, gzip: 4_300, brotli: 3_900 },
-  'server.js': { raw: 11_600, gzip: 4_300, brotli: 3_900 },
-  'client.cjs': { raw: 98_400, gzip: 30_250, brotli: 26_550 },
-  'client.js': { raw: 98_350, gzip: 30_250, brotli: 26_550 },
-  'structural.cjs': { raw: 18_700, gzip: 6_650, brotli: 6_000 },
-  'structural.js': { raw: 18_650, gzip: 6_650, brotli: 6_000 },
-  'lexical.cjs': { raw: 15_400, gzip: 5_050, brotli: 4_500 },
-  'lexical.js': { raw: 15_350, gzip: 5_050, brotli: 4_500 },
-  'plugins.cjs': { raw: 14_850, gzip: 5_450, brotli: 4_850 },
-  'plugins.js': { raw: 14_800, gzip: 5_450, brotli: 4_800 },
-  'fragment.cjs': { raw: 12_250, gzip: 4_650, brotli: 4_100 },
-  'fragment.js': { raw: 12_200, gzip: 4_650, brotli: 4_100 },
+  'server.cjs': { raw: 11_850, gzip: 4_350, brotli: 3_950 },
+  'server.js': { raw: 11_750, gzip: 4_350, brotli: 3_950 },
+  'client.cjs': { raw: 106_550, gzip: 33_200, brotli: 28_900 },
+  'client.js': { raw: 106_450, gzip: 33_150, brotli: 28_950 },
+  'structural.cjs': { raw: 18_550, gzip: 6_500, brotli: 5_850 },
+  'structural.js': { raw: 18_500, gzip: 6_500, brotli: 5_900 },
+  'lexical.cjs': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
+  'lexical.js': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
+  'plugins.cjs': { raw: 15_550, gzip: 5_650, brotli: 5_000 },
+  'plugins.js': { raw: 15_550, gzip: 5_650, brotli: 5_000 },
+  'fragment.cjs': { raw: 13_950, gzip: 5_350, brotli: 4_700 },
+  'fragment.js': { raw: 13_850, gzip: 5_300, brotli: 4_700 },
 };
 
 const STABLE_EXPORT_NAMES: Readonly<Record<string, readonly string[]>> = {
@@ -251,6 +254,10 @@ function printMeasurement(
     console.error(
       `  ${violation.metric}: ${String(violation.actual)} > ${String(violation.limit)} byte budget`,
     );
+  }
+  for (const metric of ['raw', 'gzip', 'brotli'] as const) {
+    const notice = improvementNotice(name, measurement[metric], budget[metric], metric);
+    if (notice !== undefined) console.log(notice);
   }
   return violations.length;
 }

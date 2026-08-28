@@ -43,7 +43,7 @@ Anything that subscribes to a global (window event, IntersectionObserver, Mutati
 2. Have a matching unit test that calls the teardown and asserts the underlying handle has been released.
 3. Be idempotent — `destroy()` called twice must not throw, and must not double-detach.
 
-Reference: `tests/unit/core/observers.test.ts`, `tests/unit/core/state.test.ts`, `tests/unit/core/message-bus.test.ts` exercise these patterns.
+Reference: `tests/unit/core/observers-lifecycle.test.ts`, `tests/unit/core/state.test.ts` and the `message-bus-*.test.ts` suites exercise these patterns.
 
 ### 3. Bounded caches
 

@@ -114,8 +114,23 @@ Run the tooling first:
 ```bash
 npx pll migrate ./src            # dry-run: shows the renames it would make
 npx pll migrate ./src --write    # apply them
+npx pll migrate ./src --only rename-is-preview-request   # one codemod
 npx pll doctor https://your-site/page --admin https://cms --v2
 ```
+
+`pll migrate` needs `ts-morph` — an optional peer, so run `npm i -D ts-morph`
+if you do not already have it. It
+rewrites only names a file binds from `payload-live-preview`, so an
+`isPreviewRequest` of your own is left alone. Anything it cannot rewrite
+safely — an object shorthand, a re-export, a call whose options are not a
+literal — is listed as `file:line` and that file is left untouched. Exit codes:
+`0` nothing needs a human, `1` usage error or missing `ts-morph`, `3` at least
+one file needs manual attention. `.astro`, `.vue` and `.svelte` files are
+rewritten in their script blocks only.
+
+`pll doctor` exits `0` with no error-level findings, `1` if the URL could not be
+fetched, and `2` on any error-level finding. It reports redirects rather than
+following them, so probe the final URL.
 
 Then adopt the rows. Each is a readiness-table entry (ADR 0007):
 

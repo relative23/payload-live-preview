@@ -1,16 +1,9 @@
 /**
- * Update strategies (roadmap 1.6.0 / 1.7.0): how a bound region is brought
- * up to date. `patch` is the runtime's own DOM patching; `fragment` asks a
- * server to render a component boundary from the unsaved form state and
- * morphs the result in; `route` refreshes the whole route.
- *
- * The core carries only the seam below — which boundaries a strategy owns
- * for a revision, and the capabilities it may use (morph, fallback patch,
- * events) — so a patch-only page pays for the seam and nothing else. The
- * orchestration (requests, dedupe, timeouts, error mapping) lives in
- * `payload-live-preview/fragment`.
- *
- * @module @core/strategies
+ * How a bound region is brought up to date: the runtime patches it, a server
+ * renders a `data-payload-fragment` boundary from the unsaved form state, or
+ * the whole route refreshes. Core carries only the seam — which boundaries a
+ * strategy owns and what it may do — so a patch-only page pays for nothing
+ * more; the orchestration lives in `payload-live-preview/fragment`.
  */
 import type { DiagnosticCode } from './diagnostic-codes';
 
@@ -84,10 +77,9 @@ export interface RouteContext {
 }
 
 /**
- * A route strategy: whether a revision needs the whole route re-rendered
- * (head, layout, route params, providers), and how to refresh it in place.
- * After a refresh the runtime rescans and re-applies the revision, so the
- * unsaved state lands on the freshly rendered markup.
+ * Whether a revision needs the whole route re-rendered, and how. After a
+ * refresh the runtime rescans and re-applies the revision, so the unsaved
+ * state lands on the fresh markup.
  */
 export interface RouteStrategy {
   readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
@@ -102,11 +94,9 @@ export interface StrategyHandlers {
 const STRATEGY_ATTRIBUTE = 'data-payload-strategy';
 
 /**
- * The strategy a bound element gets: explicit `data-payload-strategy` first;
- * otherwise a binding inside a fragment boundary belongs to the fragment, a
- * binding in `<head>` (title, meta) belongs to the route, and everything
- * else is patched. Unknown explicit values resolve to `undefined` so the
- * caller can say so (LP0407).
+ * Explicit `data-payload-strategy` wins; otherwise a binding inside a fragment
+ * boundary belongs to the fragment, one in `<head>` to the route, the rest is
+ * patched. An unknown explicit value resolves to `undefined` (LP0407).
  */
 export function resolveStrategy(element: Element): UpdateSource | undefined {
   const explicit = element.getAttribute(STRATEGY_ATTRIBUTE);

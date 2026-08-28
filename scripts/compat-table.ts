@@ -1,19 +1,12 @@
 /**
- * The README compatibility table, generated from `quality/compat-matrix.json`
- * and validated against what CI runs (roadmap 1.4.0).
- *
- * - `--write` renders the table into the README between its markers.
- * - `--check` fails when the README block differs from the rendering, when a
- *   lockfile-sourced version differs from the fixture's lockfile, when the
- *   Node matrix differs from the workflow, or when the Astro majors differ
- *   from the workflow's matrix job — so a hand edit, or a fixture upgrade
- *   without a matrix update, fails the build.
- *
- * @module scripts/compat-table
+ * The README compatibility table, rendered from `quality/compat-matrix.json`
+ * and held against the fixture lockfiles and the CI matrices.
+ * `--write` updates the README block; `--check` fails on any drift.
  */
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { matrixValues, parseWorkflow } from './workflow-contracts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MATRIX = resolve(ROOT, 'quality/compat-matrix.json');
@@ -83,15 +76,9 @@ async function lockfileVersion(fixture: string, name: string): Promise<string | 
   return lock.packages?.[`node_modules/${name}`]?.version;
 }
 
-function workflowList(workflow: string, key: string): readonly string[] {
-  const match = new RegExp(`^\\s*${key}: \\[([^\\]]*)\\]`, 'mu').exec(workflow);
-  if (match?.[1] === undefined) return [];
-  return match[1].split(',').map((item) => item.trim());
-}
-
 async function validate(matrix: Matrix): Promise<readonly string[]> {
   const problems: string[] = [];
-  const workflow = await readFile(WORKFLOW, 'utf8');
+  const workflow = parseWorkflow(await readFile(WORKFLOW, 'utf8'));
   for (const framework of matrix.frameworks) {
     for (const entry of framework.tested) {
       if (entry.source === 'lockfile') {
@@ -109,7 +96,7 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
       .find((framework) => framework.package === 'astro')
       ?.tested.filter((entry) => entry.source === 'astro-matrix')
       .map((entry) => String(entry.major)) ?? [];
-  const workflowAstro = workflowList(workflow, 'astro');
+  const workflowAstro = matrixValues(workflow, 'astro-matrix', 'astro').map(String);
   if (astroMajors.join(',') !== workflowAstro.join(',')) {
     problems.push(
       `Astro matrix: file lists [${astroMajors.join(', ')}], workflow runs [${workflowAstro.join(', ')}]`,
@@ -128,7 +115,7 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
       `Payload corpus: files cover [${corpusVersions.join(', ')}], matrix lists [${listedCorpus.join(', ')}]`,
     );
   }
-  const workflowNode = workflowList(workflow, 'node');
+  const workflowNode = matrixValues(workflow, 'unit', 'node').map(String);
   if (matrix.node.tested.map(String).join(',') !== workflowNode.join(',')) {
     problems.push(
       `Node matrix: file lists [${matrix.node.tested.join(', ')}], workflow runs [${workflowNode.join(', ')}]`,
@@ -137,11 +124,7 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
   return problems;
 }
 
-/**
- * Prettier re-pads Markdown table cells and separators after `--write`, so
- * the comparison ignores cell padding and dash-run length — content, not
- * alignment, is what must agree.
- */
+// Prettier re-pads table cells after `--write`; compare content, not alignment.
 function normalize(text: string): string {
   return text
     .split('\n')

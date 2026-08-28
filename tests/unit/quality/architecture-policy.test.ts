@@ -3,10 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  findArchitectureViolations,
   readArchitectureModules,
   type ArchitectureModule,
-} from '../../../scripts/architecture-policy';
+} from '../../../scripts/architecture-graph';
+import { findArchitectureViolations } from '../../../scripts/architecture-rules';
 
 const dependency = (target: string) => ({ specifier: target, target, kind: 'runtime' as const });
 

@@ -14,6 +14,7 @@
  */
 
 import { expect, test, type Frame, type Page } from '@playwright/test';
+import { post, waitForPreviewFrame } from '../helpers/preview';
 
 interface Snapshot {
   started: boolean;
@@ -26,10 +27,6 @@ interface Snapshot {
     lastFlush?: { applied: number; deferred: number; appliedFields?: string[] };
   };
   revisions: { accepted: number };
-}
-
-function previewFrame(page: Page): Frame | undefined {
-  return page.frames().find((candidate) => candidate !== page.mainFrame());
 }
 
 /** The handle is absent until the runtime has booted, so this may be undefined. */
@@ -46,46 +43,15 @@ async function snapshot(frame: Frame): Promise<Snapshot> {
   return value;
 }
 
-async function openScenario(page: Page, count: number): Promise<Frame> {
-  const path = `/scenario/${String(count)}/`;
+/**
+ * The host picks the target on the client and assigns the frame's src, so the
+ * frame is attached a moment after navigation. Waiting for the one that points
+ * at this scenario keeps "a frame exists" and "the right page is framed" apart.
+ */
+async function openScenario(page: Page, scenario: string): Promise<Frame> {
+  const path = `/scenario/${scenario}/`;
   await page.goto(`/bench?target=${path}`);
-  // The host picks the target on the client and assigns the frame's src, so
-  // the frame is attached a moment after navigation. Wait for the one that
-  // points at this scenario rather than grabbing the first non-main frame —
-  // "a frame exists" and "the right page is framed" are different facts, and
-  // the earlier version of this helper conflated them.
-  await expect
-    .poll(() => previewFrame(page)?.url().endsWith(path) ?? false, { timeout: 15_000 })
-    .toBe(true);
-  const frame = previewFrame(page);
-  if (!frame) throw new Error('preview frame missing');
-  await expect
-    .poll(async () => (await inspect(frame))?.started ?? false, { timeout: 15_000 })
-    .toBe(true);
-  return frame;
-}
-
-/** Post one update into the frame, the way the Admin would. */
-async function sendUpdate(page: Page, data: Record<string, unknown>): Promise<void> {
-  await page.evaluate((payload) => {
-    const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-    if (frame?.contentWindow == null) throw new Error('preview frame is unavailable');
-    frame.contentWindow.postMessage(
-      { type: 'payload-live-preview', data: payload },
-      window.location.origin,
-    );
-  }, data);
-}
-
-/** Open a named scenario page (array/richtext) in the bench frame. */
-async function openNamedScenario(page: Page, name: string): Promise<Frame> {
-  const path = `/scenario/${name}/`;
-  await page.goto(`/bench?target=${path}`);
-  await expect
-    .poll(() => previewFrame(page)?.url().endsWith(path) ?? false, { timeout: 15_000 })
-    .toBe(true);
-  const frame = previewFrame(page);
-  if (!frame) throw new Error('preview frame missing');
+  const frame = await waitForPreviewFrame(page, path);
   await expect
     .poll(async () => (await inspect(frame))?.started ?? false, { timeout: 15_000 })
     .toBe(true);
@@ -102,7 +68,7 @@ function registerScenario(count: number): void {
     test('binds every field, updates a visible one, and honours the gate for an off-screen one', async ({
       page,
     }) => {
-      const frame = await openScenario(page, count);
+      const frame = await openScenario(page, String(count));
       const first = frame.locator('[data-payload-field="f0"]');
       const lastName = `f${String(count - 1)}`;
       const last = frame.locator(`[data-payload-field="${lastName}"]`);
@@ -114,7 +80,7 @@ function registerScenario(count: number): void {
         count > before.scheduler.visibilityGateThreshold,
       );
 
-      await sendUpdate(page, { f0: 'top changed', [lastName]: 'bottom changed' });
+      await post(page, { f0: 'top changed', [lastName]: 'bottom changed' });
       await expect(first).toHaveText('top changed');
 
       const after = await snapshot(frame);
@@ -150,7 +116,7 @@ test('5,000 bindings: a burst of updates leaves the newest value on screen and n
 }) => {
   // The soak proves latest-write on one field over time; this proves it across
   // a page whose cache is large enough that a flush is real work.
-  const frame = await openScenario(page, 5_000);
+  const frame = await openScenario(page, '5000');
   const first = frame.locator('[data-payload-field="f0"]');
 
   await page.evaluate(() => {
@@ -169,7 +135,7 @@ test('5,000 bindings: a burst of updates leaves the newest value on screen and n
 });
 
 test('a large keyed array reorders and relabels under one message', async ({ page }) => {
-  const frame = await openNamedScenario(page, 'array');
+  const frame = await openScenario(page, 'array');
   const rows = frame.locator('[data-testid="rows"] > li');
   const count = Number(
     await frame.locator('[data-testid="rows"]').getAttribute('data-scenario-count'),
@@ -188,7 +154,7 @@ test('a large keyed array reorders and relabels under one message', async ({ pag
       title: `Row ${String(index + 1)}`,
     })),
   ];
-  await sendUpdate(page, { rows: next });
+  await post(page, { rows: next });
 
   await expect(rows.first().locator('.t')).toHaveText('Moved to top');
   await expect(rows.nth(1).locator('.t')).toHaveText('Row 0 renamed');
@@ -197,7 +163,7 @@ test('a large keyed array reorders and relabels under one message', async ({ pag
 });
 
 test('a large rich-text document renders to HTML on a preview message', async ({ page }) => {
-  const frame = await openNamedScenario(page, 'richtext');
+  const frame = await openScenario(page, 'richtext');
   const body = frame.locator('[data-testid="body"]');
   const paragraphs = Number(await body.getAttribute('data-scenario-paragraphs'));
   expect(paragraphs).toBeGreaterThan(100);
@@ -216,7 +182,7 @@ test('a large rich-text document renders to HTML on a preview message', async ({
       version: 1,
     },
   };
-  await sendUpdate(page, { body: doc });
+  await post(page, { body: doc });
 
   await expect(body.locator('p')).toHaveCount(paragraphs);
   await expect(body.locator('p').first()).toHaveText('Paragraph 0');

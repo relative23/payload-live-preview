@@ -171,6 +171,36 @@ removing it is a 2.0 change. Outside production a development warning names
 the gap once per process. `strict: true` turns the warning into a
 configuration error.
 
+### 5a. 2.0 addendum
+
+- `strict` is the default; the intent-only path exists only under
+  `defaults: 'v1'`. The referrer check reads the _resolved_ signals, so
+  `{ strict: true, defaults: 'v1' }` is refused unless `previewSignals`
+  drops `'referer'`.
+- `previewIntentFor` treats `inject: 'always'` as intent on every request,
+  which means the hook runs on every request; it never bypasses the gate.
+- A hook that throws is the `'unavailable'` refusal — except a
+  `PreviewConfigurationError` from `authorizePreviewRequest()` (short secret,
+  malformed cookie name, relative `serverURL`), which the policy re-throws so
+  a broken deployment fails on its first preview request rather than serving
+  public pages quietly. A policy created with `authorizePreview` refuses to
+  decide without the bound hook; that is a programming error, not a refusal.
+- A response the adapter changed — runtime injected or CSP merged — carries
+  `Cache-Control: private, no-store` (unless `no-store` is already there) and
+  `Vary: Cookie`, closing asset 4 on the package side. Responses with no body
+  (204/304/HEAD) and bodies without a `<head>` are passed through untouched;
+  a rewritten body drops `content-length`, `content-encoding` and `etag`.
+- The nonce is generated once per request inside the adapter and handed to
+  the script tag and the header from the same closure; it never travels
+  through a response header an upstream could set.
+- A CSP header value with several comma-separated policies has the preview
+  directives merged into each one: a browser enforces every policy, so a
+  consumer's `frame-ancestors 'none'` in the first would keep blocking while
+  only the last was widened.
+- Astro, SvelteKit and Nuxt publish the hook's outcome as
+  `livePreviewAuthorizationOutcome` next to the context; Nuxt's server
+  handler decides before the Vue app renders so pages can read both.
+
 ## Consequences
 
 - One verification per request, at the adapter, feeds every privileged

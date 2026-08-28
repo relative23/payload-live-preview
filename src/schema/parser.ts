@@ -1,28 +1,11 @@
 /**
- * Schema parser.
- *
- * Validates and normalises the `fieldSchemaJSON` Payload sends along
- * with every live-preview message. The runtime uses the parsed schema
- * to auto-resolve field types (no DOM annotation needed for
- * type detection) and to drive the structural diff for arrays/blocks.
- *
- * The parser is **defensive**: schema entries that fail validation are
- * dropped silently rather than throwing. Payload's schema format is
- * stable, but a mismatch between Payload's version and ours must never
- * crash the preview.
- *
- * @module @schema/parser
+ * Validates the `fieldSchemaJSON` the admin sends. Entries that fail
+ * validation are dropped, never thrown: a Payload/runtime version mismatch
+ * must not take the preview down.
  */
 
 import type { PayloadBlockSchema, PayloadFieldSchema } from '@/types/payload-protocol';
 
-/**
- * Parse a raw schema array.
- *
- * Accepts the JSON-decoded value from Payload's `fieldSchemaJSON`.
- * Returns an array of validated schemas with `unknown` extras stripped
- * back to a plain `Record<string, unknown>` shape.
- */
 export function parseFieldSchema(raw: unknown): readonly PayloadFieldSchema[] {
   if (!Array.isArray(raw)) return [];
   const out: PayloadFieldSchema[] = [];

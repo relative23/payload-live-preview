@@ -1,6 +1,13 @@
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
-import { generateInlineScript, wrapWithScriptTag, runtimeBuildInfo } from '@inline/generator';
+import {
+  generateInlineScript,
+  generateLoaderScript,
+  wrapWithScriptTag,
+  runtimeBuildInfo,
+  type InlineScriptConfig,
+} from '@inline/generator';
+import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 
 class InlineIntersectionObserver implements IntersectionObserver {
   readonly root: Element | Document | null = null;
@@ -89,11 +96,67 @@ describe('generateInlineScript', () => {
     expect(generateInlineScript()).not.toContain('var __LIVE_PREVIEW_FRAGMENT__=');
   });
 
-  it('retains the deprecated nonce config as a no-op for 1.x compatibility', () => {
-    const withoutNonce = generateInlineScript();
-    const withNonce = generateInlineScript({ nonce: 'abc123' });
+  it('ships no diagnostic-code table in the prelude, only the codes the fragment client reports', () => {
+    const prelude = generateInlineScript({ fragmentEndpoint: '/payload/fragment' }).split('\n')[1];
+    // The prelude re-exports DIAGNOSTIC_CODES through the fragment barrel, so
+    // only tree-shaking keeps the frozen table — a full kilobyte, doctor codes
+    // included — out of every fragment-enabled page.
+    expect(prelude).toContain('__LIVE_PREVIEW_FRAGMENT__');
+    expect(new Set(prelude?.match(/LP0[0-9]{3}/gu) ?? [])).toEqual(
+      new Set(['LP0801', 'LP0802', 'LP0803', 'LP0804', 'LP0805']),
+    );
+  });
 
-    expect(withNonce).toBe(withoutNonce);
+  it('no longer accepts the 1.x nonce option; the nonce belongs to wrapWithScriptTag', () => {
+    // @ts-expect-error -- removed in 2.0 (ADR 0007 §2); ignored at runtime.
+    const withNonce = generateInlineScript({ nonce: 'abc123' });
+    expect(withNonce).toBe(generateInlineScript());
+  });
+
+  it('refuses serverURL without mergeDepth under the 2.0 defaults, like the client and the adapters', () => {
+    expect(() => generateInlineScript({ serverURL: 'https://cms.example.com' })).toThrow(
+      /mergeDepth/u,
+    );
+    expect(() =>
+      generateLoaderScript({ serverURL: 'https://cms.example.com' }, { runtimeSrc: '/x.js' }),
+    ).toThrow(/mergeDepth/u);
+    const v1 = generatedConfig(
+      generateInlineScript({ serverURL: 'https://cms.example.com', defaults: 'v1' }),
+    );
+    // `defaults` is not a wire slot: the runtime's own defaults stay the v2 rows.
+    expect(v1).toHaveLength(2);
+    expect(v1[1]).toBe('https://cms.example.com');
+  });
+
+  it('treats null like an omitted option', () => {
+    const nullish = {
+      serverURL: null,
+      debounceMs: null,
+      debug: true,
+    } as unknown as InlineScriptConfig;
+    const config = generatedConfig(generateInlineScript(nullish));
+    expect(config).toHaveLength(5);
+    expect(config.slice(0, 4).every((value) => value === undefined)).toBe(true);
+    expect(config[4]).toBe(true);
+    expect(generateInlineScript(nullish).split('\n', 1)[0]).not.toContain('null');
+    expect(() =>
+      generateInlineScript({
+        serverURL: 'https://cms.example.com',
+        mergeDepth: null,
+      } as unknown as InlineScriptConfig),
+    ).toThrow(/mergeDepth/u);
+  });
+
+  it('writes the slots in INLINE_CONFIG_KEYS order, the one table the runtime destructures', () => {
+    expect(INLINE_CONFIG_KEYS).toHaveLength(19);
+    expect(INLINE_CONFIG_KEYS.indexOf('fragmentEndpoint')).toBe(17);
+    expect(INLINE_CONFIG_KEYS.indexOf('revealEditedField')).toBe(18);
+    const every = Object.fromEntries(
+      INLINE_CONFIG_KEYS.map((key, index) => [key, `slot-${String(index)}`]),
+    ) as unknown as InlineScriptConfig;
+    expect(generatedConfig(generateInlineScript({ ...every, mergeDepth: 1 }))).toEqual(
+      INLINE_CONFIG_KEYS.map((key, index) => (key === 'mergeDepth' ? 1 : `slot-${String(index)}`)),
+    );
   });
 
   it('serializes explicit falsy overrides instead of dropping them', () => {

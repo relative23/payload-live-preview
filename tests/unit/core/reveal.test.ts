@@ -38,6 +38,15 @@ describe('prefersReducedMotion', () => {
     expect(prefersReducedMotion(win({ matchMedia: () => ({ matches: true }) }))).toBe(true);
     expect(prefersReducedMotion(win({ matchMedia: () => ({ matches: false }) }))).toBe(false);
     expect(prefersReducedMotion(win())).toBe(false); // no matchMedia
+    expect(
+      prefersReducedMotion(
+        win({
+          matchMedia: () => {
+            throw new Error('matchMedia unavailable');
+          },
+        }),
+      ),
+    ).toBe(false);
   });
 });
 

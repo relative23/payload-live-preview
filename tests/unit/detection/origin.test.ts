@@ -1,5 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { OriginDetector, isLocalhostOrigin, normaliseOrigin } from '@detection/origin';
+import { OriginDetector, normaliseOrigin } from '@detection/origin';
+
+const PRODUCTION = { enableReferrerDetection: false, forceDevMode: false } as const;
+
+function fakeIframe(): void {
+  Object.defineProperty(window, 'top', {
+    get: () => {
+      throw new Error('cross-origin');
+    },
+    configurable: true,
+  });
+}
 
 describe('normaliseOrigin', () => {
   it.each([
@@ -24,35 +35,11 @@ describe('normaliseOrigin', () => {
   });
 });
 
-describe('isLocalhostOrigin', () => {
-  it.each([
-    'http://localhost',
-    'http://localhost:3000',
-    'https://localhost:443',
-    'http://127.0.0.1',
-    'http://127.0.0.1:8080',
-    'HTTP://LOCALHOST:1234',
-  ])('matches %s', (input) => {
-    expect(isLocalhostOrigin(input)).toBe(true);
-  });
-
-  it.each([
-    'https://example.com',
-    'http://localhost.evil.com',
-    'http://127.0.0.2',
-    '',
-    'localhost:3000',
-  ])('does not match %s', (input) => {
-    expect(isLocalhostOrigin(input)).toBe(false);
-  });
-});
-
 describe('OriginDetector — explicit origins', () => {
   it('trusts explicit origins', () => {
     const detector = new OriginDetector({
       additionalOrigins: ['https://admin.example.com'],
-      enableReferrerDetection: false,
-      forceDevMode: false,
+      ...PRODUCTION,
     });
     expect(detector.matches('https://admin.example.com')).toBe(true);
     expect(detector.matches('https://evil.example.com')).toBe(false);
@@ -61,8 +48,7 @@ describe('OriginDetector — explicit origins', () => {
   it('normalises explicit origins', () => {
     const detector = new OriginDetector({
       additionalOrigins: ['  https://Admin.Example.COM/path  '],
-      enableReferrerDetection: false,
-      forceDevMode: false,
+      ...PRODUCTION,
     });
     expect(detector.matches('https://admin.example.com')).toBe(true);
   });
@@ -70,8 +56,7 @@ describe('OriginDetector — explicit origins', () => {
   it('ignores invalid explicit origins', () => {
     const detector = new OriginDetector({
       additionalOrigins: ['not-a-url', '', 'mailto:foo@example.com'],
-      enableReferrerDetection: false,
-      forceDevMode: false,
+      ...PRODUCTION,
     });
     expect(detector.matches('https://example.com')).toBe(false);
   });
@@ -79,11 +64,21 @@ describe('OriginDetector — explicit origins', () => {
   it('rejects empty origin and "null"', () => {
     const detector = new OriginDetector({
       additionalOrigins: ['https://admin.example.com'],
-      enableReferrerDetection: false,
-      forceDevMode: false,
+      ...PRODUCTION,
     });
     expect(detector.matches('')).toBe(false);
     expect(detector.matches('null')).toBe(false);
+  });
+
+  it('does not read PAYLOAD_ADMIN_ORIGIN from the environment: a browser bundle never could', () => {
+    process.env['PAYLOAD_ADMIN_ORIGIN'] = 'https://env.example.com';
+    try {
+      const detector = new OriginDetector(PRODUCTION);
+      expect(detector.matches('https://env.example.com')).toBe(false);
+      expect(detector.enumerate()).toEqual([]);
+    } finally {
+      delete process.env['PAYLOAD_ADMIN_ORIGIN'];
+    }
   });
 });
 
@@ -109,8 +104,7 @@ describe('OriginDetector — referrer detection', () => {
   it('disabling referrer detection prevents matching', () => {
     const detector = new OriginDetector({
       referrer: 'https://admin.example.com/preview',
-      enableReferrerDetection: false,
-      forceDevMode: false,
+      ...PRODUCTION,
     });
     expect(detector.matches('https://admin.example.com')).toBe(false);
   });
@@ -123,10 +117,7 @@ describe('OriginDetector — referrer detection', () => {
   });
 
   it('referrer is a fallback, NOT a union member: explicit origins pin the allow-list', () => {
-    // When the consumer pins the admin origin explicitly, a foreign
-    // embedder (whose origin lands in document.referrer) must NOT be
-    // trusted — otherwise any site iframing the page could post
-    // updates despite the explicit configuration.
+    // document.referrer names whoever framed the page — in an attack, the attacker.
     const detector = new OriginDetector({
       additionalOrigins: ['https://admin.example.com'],
       referrer: 'https://attacker.example/framing-page',
@@ -137,18 +128,55 @@ describe('OriginDetector — referrer detection', () => {
     expect(detector.matches('https://attacker.example')).toBe(false);
     expect(detector.enumerate()).not.toContain('https://attacker.example');
   });
+
+  it('isReferrerOnlyTrust is true exactly when the referrer is the only source', () => {
+    const only = new OriginDetector({
+      referrer: 'https://admin.example.com',
+      enableReferrerDetection: true,
+      forceDevMode: false,
+    });
+    expect(only.isReferrerOnlyTrust).toBe(true);
+    const pinned = new OriginDetector({
+      additionalOrigins: ['https://admin.example.com'],
+      referrer: 'https://admin.example.com',
+      enableReferrerDetection: true,
+      forceDevMode: false,
+    });
+    expect(pinned.isReferrerOnlyTrust).toBe(false);
+    const dev = new OriginDetector({
+      referrer: 'https://admin.example.com',
+      enableReferrerDetection: true,
+      forceDevMode: true,
+    });
+    expect(dev.isReferrerOnlyTrust).toBe(false);
+    const none = new OriginDetector({ referrer: '', forceDevMode: false });
+    expect(none.isReferrerOnlyTrust).toBe(false);
+  });
 });
 
 describe('OriginDetector — localhost pattern', () => {
-  it('accepts any localhost port in dev mode', () => {
+  it.each([
+    'http://localhost',
+    'http://localhost:3000',
+    'https://localhost:443',
+    'http://127.0.0.1',
+    'http://127.0.0.1:8080',
+    'HTTP://LOCALHOST:1234',
+  ])('accepts %s in dev mode', (origin) => {
     const detector = new OriginDetector({ forceDevMode: true, enableReferrerDetection: false });
-    expect(detector.matches('http://localhost:3000')).toBe(true);
-    expect(detector.matches('http://localhost:54321')).toBe(true);
-    expect(detector.matches('http://127.0.0.1:9999')).toBe(true);
+    expect(detector.matches(origin)).toBe(true);
   });
 
+  it.each(['https://example.com', 'http://localhost.evil.com', 'http://127.0.0.2'])(
+    'rejects %s even in dev mode',
+    (origin) => {
+      const detector = new OriginDetector({ forceDevMode: true, enableReferrerDetection: false });
+      expect(detector.matches(origin)).toBe(false);
+    },
+  );
+
   it('rejects localhost in production mode', () => {
-    const detector = new OriginDetector({ forceDevMode: false, enableReferrerDetection: false });
+    const detector = new OriginDetector(PRODUCTION);
     expect(detector.matches('http://localhost:3000')).toBe(false);
   });
 
@@ -163,12 +191,11 @@ describe('OriginDetector — localhost pattern', () => {
 });
 
 describe('OriginDetector — lock', () => {
+  const two = (): OriginDetector =>
+    new OriginDetector({ additionalOrigins: ['https://a.com', 'https://b.com'], ...PRODUCTION });
+
   it('lockOrigin narrows the trusted set to one entry', () => {
-    const detector = new OriginDetector({
-      additionalOrigins: ['https://a.com', 'https://b.com'],
-      enableReferrerDetection: false,
-      forceDevMode: false,
-    });
+    const detector = two();
     expect(detector.lockOrigin('https://a.com')).toBe(true);
     expect(detector.lockedOrigin).toBe('https://a.com');
     expect(detector.matches('https://a.com')).toBe(true);
@@ -176,64 +203,41 @@ describe('OriginDetector — lock', () => {
   });
 
   it('lockOrigin refuses to lock an origin that is not currently trusted', () => {
-    const detector = new OriginDetector({
-      additionalOrigins: ['https://a.com'],
-      enableReferrerDetection: false,
-      forceDevMode: false,
-    });
+    const detector = two();
     expect(detector.lockOrigin('https://evil.com')).toBe(false);
     expect(detector.lockedOrigin).toBeUndefined();
   });
 
-  it('unlockOrigin returns the previously-locked origin', () => {
-    const detector = new OriginDetector({
-      additionalOrigins: ['https://a.com'],
-      enableReferrerDetection: false,
-      forceDevMode: false,
-    });
+  it('unlockOrigin returns the previously-locked origin, or undefined', () => {
+    const detector = two();
+    expect(detector.unlockOrigin()).toBeUndefined();
     detector.lockOrigin('https://a.com');
     expect(detector.unlockOrigin()).toBe('https://a.com');
     expect(detector.lockedOrigin).toBeUndefined();
   });
 
-  it('unlockOrigin returns undefined when nothing was locked', () => {
-    const detector = new OriginDetector({
-      additionalOrigins: ['https://a.com'],
-      enableReferrerDetection: false,
-      forceDevMode: false,
-    });
-    expect(detector.unlockOrigin()).toBeUndefined();
-  });
-
-  it('after unlock, other allow-listed origins match again', () => {
-    const detector = new OriginDetector({
-      additionalOrigins: ['https://a.com', 'https://b.com'],
-      enableReferrerDetection: false,
-      forceDevMode: false,
-    });
+  it('lock → unlock → re-lock: every allow-listed origin is trusted again in between and the new lock holds', () => {
+    const detector = two();
     detector.lockOrigin('https://a.com');
     expect(detector.matches('https://b.com')).toBe(false);
     detector.unlockOrigin();
     expect(detector.matches('https://b.com')).toBe(true);
     expect(detector.matches('https://a.com')).toBe(true);
+    expect(detector.enumerate()).toEqual(['https://a.com', 'https://b.com']);
+    expect(detector.lockOrigin('https://b.com')).toBe(true);
+    expect(detector.matches('https://a.com')).toBe(false);
+    expect(detector.enumerate()).toEqual(['https://b.com']);
   });
 });
 
 describe('OriginDetector — enumerate', () => {
   it('returns every trusted origin pre-lock', () => {
-    const detector = new OriginDetector({
-      additionalOrigins: ['https://a.com'],
-      enableReferrerDetection: false,
-      forceDevMode: false,
-    });
+    const detector = new OriginDetector({ additionalOrigins: ['https://a.com'], ...PRODUCTION });
     expect(detector.enumerate()).toContain('https://a.com');
   });
 
   it('expands localhost pattern to handshake ports in dev mode', () => {
-    const detector = new OriginDetector({
-      enableReferrerDetection: false,
-      forceDevMode: true,
-    });
+    const detector = new OriginDetector({ enableReferrerDetection: false, forceDevMode: true });
     const enumerated = detector.enumerate();
     expect(enumerated).toContain('http://localhost:3000');
     expect(enumerated).toContain('http://localhost:5173');
@@ -252,18 +256,34 @@ describe('OriginDetector — enumerate', () => {
 });
 
 describe('OriginDetector — isProductionUnconfigured', () => {
+  let top: PropertyDescriptor | undefined;
   beforeEach(() => {
-    Object.defineProperty(window, 'top', { value: window.top, configurable: true });
+    top = Object.getOwnPropertyDescriptor(window, 'top');
   });
   afterEach(() => {
-    Object.defineProperty(window, 'top', { value: window, configurable: true });
+    if (top !== undefined) Object.defineProperty(window, 'top', top);
   });
 
   it('returns false when outside an iframe', () => {
-    const detector = new OriginDetector({
-      enableReferrerDetection: false,
-      forceDevMode: false,
-    });
+    const detector = new OriginDetector(PRODUCTION);
     expect(detector.isProductionUnconfigured).toBe(false);
+  });
+
+  it('returns true inside an iframe with no explicit origin, no referrer and no dev mode', () => {
+    fakeIframe();
+    const detector = new OriginDetector({ referrer: '', ...PRODUCTION });
+    expect(detector.isProductionUnconfigured).toBe(true);
+  });
+
+  it.each([
+    ['an explicit origin', { additionalOrigins: ['https://a.com'], ...PRODUCTION }],
+    [
+      'a referrer',
+      { referrer: 'https://a.com', enableReferrerDetection: true, forceDevMode: false },
+    ],
+    ['dev mode', { referrer: '', enableReferrerDetection: false, forceDevMode: true }],
+  ])('returns false inside an iframe with %s', (_label, options) => {
+    fakeIframe();
+    expect(new OriginDetector(options).isProductionUnconfigured).toBe(false);
   });
 });

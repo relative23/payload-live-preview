@@ -27,6 +27,7 @@ const TRUSTED = 'https://admin.example.com';
 let emitter: EventEmitter;
 let runtime: LivePreviewRuntime | undefined;
 const logs: string[] = [];
+const routeCounts: number[] = [];
 const textRenderer: FieldRenderer = {
   name: 'text',
   render(target, value) {
@@ -46,6 +47,7 @@ function afterUpdates(sources: readonly string[]): Promise<void> {
     const seen = new Set<string>();
     emitter.on('afterUpdate', (event) => {
       seen.add(String(event.source));
+      if (event.source === 'route') routeCounts.push(event.updatedCount);
       if (sources.every((source) => seen.has(source))) resolve();
     });
   });
@@ -94,6 +96,7 @@ beforeEach(() => {
   globalThis.IntersectionObserver = IO;
   emitter = new EventEmitter();
   logs.length = 0;
+  routeCounts.length = 0;
   document.head.innerHTML = '<title data-payload-field="title">Saved title</title>';
   document.body.innerHTML =
     '<p data-testid="layout">server render #0</p><h1 data-payload-field="title">Saved title</h1><p data-payload-field="footer">Old</p>';
@@ -135,6 +138,10 @@ describe('route strategy', () => {
       failed: 0,
       loopStopped: 0,
     });
+    // The refresh re-rendered the whole route, so it reports every binding now
+    // on the page — not the constant 1 it used to claim.
+    expect(routeCounts).toEqual([rt.cache.elementCount]);
+    expect(rt.cache.elementCount).toBeGreaterThan(1);
   });
 
   it('does not refresh for a revision that touches no route-bound field', async () => {

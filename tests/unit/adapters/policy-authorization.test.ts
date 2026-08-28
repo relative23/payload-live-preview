@@ -6,18 +6,14 @@ import {
   resolvePolicyOptions,
   type PreviewAuthorizationHookResult,
 } from '@adapters/shared/policy';
-import { resetDeprecationWarnings } from '@adapters/shared/deprecation';
+import { resetDevWarnings } from '@adapters/shared/dev-warning';
 import {
   authorizePreviewRequest,
+  PreviewConfigurationError,
   type AuthorizedPreviewContext,
 } from '@security/preview-authorization';
 
-/**
- * The authorization step of the shared policy (ADR 0006 §5): what a
- * refusal blocks, what a look-alike is worth, what `strict` refuses to run
- * with, and what `defaults: 'v2'` sets. The adapters' own suites prove the
- * plumbing; this proves the decision.
- */
+/** The authorization step of the shared policy (ADR 0006 §5), and what the profiles set. */
 
 const ADMIN = 'https://admin.example.com';
 const INTENT = 'https://site.example.com/page?preview=true';
@@ -38,7 +34,7 @@ async function realContext(): Promise<AuthorizedPreviewContext> {
 const env = process.env['NODE_ENV'];
 beforeEach(() => {
   process.env['NODE_ENV'] = 'development';
-  resetDeprecationWarnings();
+  resetDevWarnings();
 });
 afterEach(() => {
   process.env['NODE_ENV'] = env;
@@ -47,6 +43,7 @@ afterEach(() => {
 
 describe('decide — with an authorizePreview hook', () => {
   const options = { allowedOrigins: [ADMIN], authorizePreview: () => null };
+  const refuse = { authorize: () => null };
 
   it('never runs the hook without intent', async () => {
     const authorize = vi.fn<() => PreviewAuthorizationHookResult>(() => null);
@@ -124,6 +121,29 @@ describe('decide — with an authorizePreview hook', () => {
     expect(decision).toMatchObject({ outcome: 'unavailable', inject: false, cspMode: false });
   });
 
+  it('re-throws a PreviewConfigurationError so a misconfigured strategy is loud', async () => {
+    await expect(
+      createPreviewPolicy(options).decide(request(INTENT), {
+        authorize: () => Promise.reject(new PreviewConfigurationError('secret too short')),
+      }),
+    ).rejects.toThrow(PreviewConfigurationError);
+    // A copy of the class from another bundle is recognised by name.
+    const foreign = Object.assign(new Error('bad cookie name'), {
+      name: 'PreviewConfigurationError',
+    });
+    await expect(
+      createPreviewPolicy(options).decide(request(INTENT), {
+        authorize: () => Promise.reject(foreign),
+      }),
+    ).rejects.toBe(foreign);
+  });
+
+  it('throws when the hook is configured but not bound to the request', async () => {
+    await expect(createPreviewPolicy(options).decide(request(INTENT))).rejects.toThrow(
+      /authorize/u,
+    );
+  });
+
   it('still lets shouldInject veto injection, and only injection, once authorized', async () => {
     const context = await realContext();
     const decision = await createPreviewPolicy(options).decide(request(INTENT), {
@@ -139,9 +159,18 @@ describe('decide — with an authorizePreview hook', () => {
     expect(createPreviewPolicy(options).authorizes).toBe(true);
     expect(createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] }).authorizes).toBe(false);
   });
+
+  it('under the default profile an iframe fetch destination alone is not intent', async () => {
+    const policy = createPreviewPolicy(options);
+    const framed = new Request('https://site.example.com/', {
+      headers: { 'sec-fetch-dest': 'iframe' },
+    });
+    expect((await policy.decide(framed, refuse)).isPreview).toBe(false);
+    expect((await policy.decide(request(INTENT), refuse)).isPreview).toBe(true);
+  });
 });
 
-describe('decide — without a hook (1.x behaviour)', () => {
+describe("decide — without a hook (defaults: 'v1')", () => {
   it('keeps gating on intent and exposes the nonce, and says so once per process', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
@@ -199,6 +228,15 @@ describe('strict', () => {
     ).not.toThrow();
   });
 
+  it('refuses an admin origin that is not a URL at all', () => {
+    // Unparseable is not https, and strict mode may not fall through to "fine".
+    process.env['NODE_ENV'] = 'production';
+    expect(() =>
+      assertStrictConfiguration({ authorizePreview: hook, allowedOrigins: ['admin.local'] }),
+    ).toThrow(/https/);
+    process.env['NODE_ENV'] = 'development';
+  });
+
   it('refuses explicit referrer trust', () => {
     expect(() =>
       createPreviewPolicy({
@@ -210,6 +248,17 @@ describe('strict', () => {
     ).toThrow(/referer/);
   });
 
+  it("refuses the referrer trust the 'v1' profile fills in, unless the signals are narrowed", () => {
+    const base = {
+      strict: true,
+      defaults: 'v1',
+      authorizePreview: hook,
+      allowedOrigins: [ADMIN],
+    } as const;
+    expect(() => createPreviewPolicy(base)).toThrow(/referer/);
+    expect(() => createPreviewPolicy({ ...base, previewSignals: ['query'] })).not.toThrow();
+  });
+
   it('starts with a complete configuration and does not warn', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(() =>
@@ -219,21 +268,12 @@ describe('strict', () => {
   });
 });
 
-describe("defaults: 'v2'", () => {
-  it('implies strict and query-only intent, and flips the runtime rows into the inline config', () => {
-    const options = {
-      defaults: 'v2',
-      authorizePreview: () => null,
-      allowedOrigins: [ADMIN],
-    } as const;
-    // 2.0: the inline runtime defaults to the v2 rows, so resolve reports the
-    // adapter-side decisions and leaves the runtime rows undefined (nothing to
-    // override), and the inline config carries only the origins.
-    expect(resolvePolicyOptions(options)).toEqual({
-      strict: true,
-      previewSignals: ['query'],
-    });
+describe('profiles and runtime rows', () => {
+  it('the default profile is strict and query-only, and writes no override rows', () => {
+    const options = { authorizePreview: () => null, allowedOrigins: [ADMIN] } as const;
+    expect(resolvePolicyOptions(options)).toEqual({ strict: true, previewSignals: ['query'] });
     expect(inlineScriptConfig(options)).toEqual({ allowedOrigins: [ADMIN] });
+    expect(inlineScriptConfig({})).toEqual({});
   });
 
   it('lets explicit options win over the profile', () => {
@@ -248,28 +288,11 @@ describe("defaults: 'v2'", () => {
     expect(resolved.skipUnchanged).toBe(false);
   });
 
-  it("under 'v2' an iframe fetch destination alone is no longer intent", async () => {
-    const policy = createPreviewPolicy({
-      defaults: 'v2',
-      authorizePreview: () => null,
-      allowedOrigins: [ADMIN],
-    });
-    const framed = new Request('https://site.example.com/', {
-      headers: { 'sec-fetch-dest': 'iframe' },
-    });
-    expect((await policy.decide(framed)).isPreview).toBe(false);
-    expect((await policy.decide(request(INTENT))).isPreview).toBe(true);
-  });
-
-  it('2.0: an unset profile is v2 (strict, query-only) and needs no override rows', () => {
-    // The inline runtime defaults to the v2 rows, so a default config writes none.
-    expect(inlineScriptConfig({})).toEqual({});
-    expect(resolvePolicyOptions({}).strict).toBe(true);
-    expect(resolvePolicyOptions({}).previewSignals).toEqual(['query']);
-  });
-
   it("an explicit 'v1' writes the override rows the v2 runtime would not use", () => {
     expect(inlineScriptConfig({ defaults: 'v1' })).toEqual({
+      // Carried through so the generator accepts an omitted `mergeDepth`; it
+      // is not a wire slot.
+      defaults: 'v1',
       skipUnchanged: false,
       disableReferrerDetection: false,
       eventSourcePolicy: 'any',
@@ -282,26 +305,45 @@ describe("defaults: 'v2'", () => {
       'referer',
     ]);
   });
-  it('2.0: serverURL without mergeDepth is refused, and defaults: v1 keeps the old behaviour', () => {
-    expect(() =>
-      createPreviewPolicy({
-        authorizePreview: () => null,
-        allowedOrigins: [ADMIN],
-        serverURL: 'https://cms.example.com',
+
+  it('forwards the individual runtime rows without downgrading the whole profile', () => {
+    expect(
+      inlineScriptConfig({
+        eventSourcePolicy: 'any',
+        disableReferrerDetection: false,
+        disableLocalhostMatching: true,
       }),
-    ).toThrow(/mergeDepth/);
-    // Explicit depth is fine.
+    ).toEqual({
+      eventSourcePolicy: 'any',
+      disableReferrerDetection: false,
+      disableLocalhostMatching: true,
+    });
+    expect(
+      inlineScriptConfig({ defaults: 'v1', eventSourcePolicy: 'parent-or-opener' }),
+    ).toMatchObject({ eventSourcePolicy: 'parent-or-opener', disableReferrerDetection: false });
+  });
+
+  it('serverURL without mergeDepth is refused at construction and in the inline config', () => {
+    const base = { authorizePreview: () => null, allowedOrigins: [ADMIN] };
+    expect(() => createPreviewPolicy({ ...base, serverURL: 'https://cms.example.com' })).toThrow(
+      /mergeDepth/,
+    );
+    expect(() => inlineScriptConfig({ serverURL: 'https://cms.example.com' })).toThrow(
+      /mergeDepth/,
+    );
     expect(() =>
-      createPreviewPolicy({
-        authorizePreview: () => null,
-        allowedOrigins: [ADMIN],
-        serverURL: 'https://cms.example.com',
-        mergeDepth: 0,
-      }),
+      createPreviewPolicy({ ...base, serverURL: 'https://cms.example.com', mergeDepth: 0 }),
     ).not.toThrow();
-    // v1 keeps the 1.x default (no throw).
     expect(() =>
-      createPreviewPolicy({ defaults: 'v1', serverURL: 'https://cms.example.com' }),
+      inlineScriptConfig({ defaults: 'v1', serverURL: 'https://cms.example.com' }),
+    ).not.toThrow();
+    // The generator repeats the check, so the profile has to reach it too.
+    expect(() =>
+      createPreviewPolicy({
+        ...base,
+        defaults: 'v1',
+        serverURL: 'https://cms.example.com',
+      }).scriptTag('n0nce'),
     ).not.toThrow();
   });
 });

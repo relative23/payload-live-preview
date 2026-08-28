@@ -1,77 +1,67 @@
 /**
- * `image` field renderer.
- *
- * For `<img>` elements: set `src`/`alt` from the value (which may be a
- * Payload media object or a plain URL string).
- *
- * For other elements: set the CSS `background-image` with CSS-escaped
- * URL — combined with `isSafeUrl()` this eliminates the CSS-injection
- * vector and lets consumers style hero sections with background images.
- *
- * @module @field-types/image
+ * `image` renderer: `src`/`alt`/`srcset` on an `<img>`, a CSS background on
+ * anything else. The value is a media object, a URL string, or resolved from
+ * the `data-payload-src` / `data-payload-alt` sibling fields.
  */
 
 import { escapeCssUrl } from '@security/escape';
-import { isSafeUrl } from '@security/url-validator';
 import { resolveFieldValue } from '@core/field-value';
 import { markNoWriteCallback } from '@core/internal-outcome';
-import type { FieldRenderer } from '@core/types';
-import type { PayloadMedia } from './types';
+import type { CachedElement, FieldRenderer, RenderContext } from '@core/types';
+import { readMedia, type MediaShape } from '@lexical/value-shapes';
+import { clearImage, writeImage } from './media';
+import { acceptUrl } from './unsafe-url';
+import { isEmptyValue } from './utils';
 
 const imageRenderer: FieldRenderer = {
   name: 'image',
   render: /* @__PURE__ */ markNoWriteCallback((target, value, context) => {
     const element = target.element;
-    const media = readMedia(value);
+    if (isEmptyValue(value)) {
+      clear(element);
+      return;
+    }
     const preferLocale = target.locale !== undefined;
-    const url = pickUrl(
-      media,
-      value,
-      target.srcField,
-      context.allFields,
-      context.locale,
-      preferLocale,
-    );
-    if (url === undefined) return false;
+    const { media, candidate } = pickSource(target, value, context, preferLocale);
+    const outcome = acceptUrl(element, target.fieldName, candidate);
+    if (outcome.kind === 'none') return false;
+    if (outcome.kind === 'unsafe') {
+      clear(element);
+      return;
+    }
     if (element.tagName === 'IMG') {
       const img = element as HTMLImageElement;
-      img.src = url;
+      writeImage(img, outcome.url, media);
       const alt = pickAlt(media, target.altField, context.allFields, context.locale, preferLocale);
       if (alt !== undefined) img.alt = alt;
       return;
     }
-    (element as HTMLElement).style.backgroundImage = `url('${escapeCssUrl(url)}')`;
+    (element as HTMLElement).style.backgroundImage = `url('${escapeCssUrl(outcome.url)}')`;
     return;
   }),
 };
 
-function readMedia(value: unknown): PayloadMedia | undefined {
-  if (typeof value !== 'object' || value === null) return undefined;
-  return value;
+function clear(element: Element): void {
+  if (element.tagName === 'IMG') clearImage(element as HTMLImageElement);
+  else (element as HTMLElement).style.backgroundImage = '';
 }
 
-function pickUrl(
-  media: PayloadMedia | undefined,
+function pickSource(
+  target: CachedElement,
   value: unknown,
-  srcField: string | undefined,
-  allFields: Record<string, unknown>,
-  locale: string | undefined,
+  context: RenderContext,
   preferLocale: boolean,
-): string | undefined {
-  if (srcField !== undefined && srcField.length > 0) {
-    const sibling = resolveFieldValue(allFields, srcField, locale, preferLocale);
-    if (typeof sibling === 'string' && isSafeUrl(sibling)) return sibling;
-    const siblingMedia = readMedia(sibling);
-    if (siblingMedia?.url !== undefined && isSafeUrl(siblingMedia.url)) return siblingMedia.url;
-    return undefined;
-  }
-  if (media?.url !== undefined && isSafeUrl(media.url)) return media.url;
-  if (typeof value === 'string' && isSafeUrl(value)) return value;
-  return undefined;
+): { readonly media: MediaShape | undefined; readonly candidate: unknown } {
+  const source =
+    target.srcField !== undefined && target.srcField.length > 0
+      ? resolveFieldValue(context.allFields, target.srcField, context.locale, preferLocale)
+      : value;
+  const media = readMedia(source);
+  return { media, candidate: media === undefined ? source : media.url };
 }
 
 function pickAlt(
-  media: PayloadMedia | undefined,
+  media: MediaShape | undefined,
   altField: string | undefined,
   allFields: Record<string, unknown>,
   locale: string | undefined,
@@ -79,11 +69,9 @@ function pickAlt(
 ): string | undefined {
   if (altField !== undefined && altField.length > 0) {
     const sibling = resolveFieldValue(allFields, altField, locale, preferLocale);
-    if (typeof sibling === 'string') return sibling;
-    return undefined;
+    return typeof sibling === 'string' ? sibling : undefined;
   }
-  if (media?.alt !== undefined) return media.alt;
-  return undefined;
+  return media?.alt;
 }
 
 export { imageRenderer };

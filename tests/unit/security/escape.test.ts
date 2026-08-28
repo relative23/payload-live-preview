@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { escapeHtml, escapeCssUrl, escapeAndLinebreak } from '@security/escape';
+import {
+  escapeHtml,
+  escapeHtmlAttribute,
+  escapeCssUrl,
+  escapeAndLinebreak,
+} from '@security/escape';
 
 describe('escapeHtml', () => {
   it.each([
@@ -19,18 +24,41 @@ describe('escapeHtml', () => {
     expect(escapeHtml('<<>>')).toBe('&lt;&lt;&gt;&gt;');
   });
 
-  it('handles unicode escape sequences', () => {
-    expect(escapeHtml('<script>')).toBe('&lt;script&gt;');
-  });
-
   it('handles very long strings without truncation', () => {
-    const input = '<'.repeat(10_000);
-    const result = escapeHtml(input);
-    expect(result).toBe('&lt;'.repeat(10_000));
+    expect(escapeHtml('<'.repeat(10_000))).toBe('&lt;'.repeat(10_000));
   });
 
   it('does not re-escape already escaped entities', () => {
     expect(escapeHtml('&amp;')).toBe('&amp;amp;');
+  });
+
+  it('does not coerce non-strings — the docs say to String() them first', () => {
+    expect(() => escapeHtml(123 as unknown as string)).toThrow(TypeError);
+  });
+});
+
+describe('escapeHtmlAttribute', () => {
+  it.each([
+    ['a"b', 'a&quot;b'],
+    ["a'b", 'a&#x27;b'],
+    ['a<b>c', 'a&lt;b&gt;c'],
+    ['a&b', 'a&amp;b'],
+    ['', ''],
+  ])('escapes %j so it cannot close a quoted attribute', (input, expected) => {
+    expect(escapeHtmlAttribute(input)).toBe(expected);
+  });
+
+  it('leaves URL characters alone', () => {
+    const url = 'https://example.com/a/b?x=1&y=2#frag=`';
+    expect(escapeHtmlAttribute(url)).toBe('https://example.com/a/b?x=1&amp;y=2#frag=`');
+  });
+
+  it('does not block dangerous schemes — that is isSafeUrl()', () => {
+    expect(escapeHtmlAttribute('javascript:alert(1)')).toBe('javascript:alert(1)');
+  });
+
+  it('escapes each occurrence', () => {
+    expect(escapeHtmlAttribute('""')).toBe('&quot;&quot;');
   });
 });
 

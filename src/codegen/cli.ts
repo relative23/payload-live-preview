@@ -1,20 +1,9 @@
 #!/usr/bin/env node
 /**
- * `pll-codegen` CLI — runs the type generator from the command line.
- *
- *   npx pll-codegen \
- *     --config backend/src/payload.config.ts \
- *     --out frontend/src/payload-types.ts
- *
- * Exit codes:
- *   0 — generation succeeded (warnings ok)
- *   1 — fatal error (config not found, parse error)
- *   2 — generation produced zero globals AND zero collections —
- *       almost certainly a configuration mismatch
- *
- * @module @codegen/cli
+ * `pll-codegen --config <path> --out <path>`. Exit codes: 0 generated
+ * (warnings allowed), 1 fatal error, 2 nothing found — the output is left
+ * untouched, since an empty schema almost always means a wrong config path.
  */
-
 import { generateTypes } from './index';
 
 interface ParsedArgs {
@@ -37,49 +26,27 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
   };
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
-    if (token === '-h' || token === '--help') {
-      parsed.showHelp = true;
-      continue;
-    }
-    if (token === '-q' || token === '--quiet') {
-      parsed.quiet = true;
-      continue;
-    }
-    if (token === '--config' || token === '-c') {
+    if (token === undefined) continue;
+    if (token === '-h' || token === '--help') parsed.showHelp = true;
+    else if (token === '-q' || token === '--quiet') parsed.quiet = true;
+    else if (token === '--config' || token === '-c') {
       parsed.configPath = argv[i + 1];
       i += 1;
-      continue;
-    }
-    if (token === '--out' || token === '-o') {
+    } else if (token === '--out' || token === '-o') {
       parsed.outFile = argv[i + 1];
       i += 1;
-      continue;
-    }
-    if (token === '--inventory') {
+    } else if (token === '--inventory') {
       parsed.inventoryFile = argv[i + 1];
       i += 1;
-      continue;
-    }
-    if (token === '--tsconfig') {
+    } else if (token === '--tsconfig') {
       parsed.tsConfigFilePath = argv[i + 1];
       i += 1;
-      continue;
-    }
-    if (token?.startsWith('--config=')) {
-      parsed.configPath = token.slice('--config='.length);
-      continue;
-    }
-    if (token?.startsWith('--out=')) {
-      parsed.outFile = token.slice('--out='.length);
-      continue;
-    }
-    if (token?.startsWith('--inventory=')) {
+    } else if (token.startsWith('--config=')) parsed.configPath = token.slice('--config='.length);
+    else if (token.startsWith('--out=')) parsed.outFile = token.slice('--out='.length);
+    else if (token.startsWith('--inventory=')) {
       parsed.inventoryFile = token.slice('--inventory='.length);
-      continue;
-    }
-    if (token?.startsWith('--tsconfig=')) {
+    } else if (token.startsWith('--tsconfig=')) {
       parsed.tsConfigFilePath = token.slice('--tsconfig='.length);
-      continue;
     }
   }
   return parsed;
@@ -93,9 +60,15 @@ Usage:
 Options:
   -c, --config <path>   Path to payload.config.ts (required)
   -o, --out <path>      Output file for generated types (required)
+      --inventory <path> Also write the preview inventory (JSON) here
       --tsconfig <path> Use this tsconfig for cross-file import resolution
   -q, --quiet           Suppress non-error logging
   -h, --help            Show this help
+
+Exit codes:
+  0  types written (warnings, if any, on stderr)
+  1  fatal error
+  2  no globals or collections found; nothing was written
 
 Examples:
   pll-codegen --config backend/src/payload.config.ts --out frontend/src/payload-types.ts
@@ -108,7 +81,7 @@ export async function run(argv: readonly string[]): Promise<number> {
     process.stdout.write(HELP_TEXT);
     return 0;
   }
-  if (!args.configPath || !args.outFile) {
+  if (args.configPath === undefined || args.outFile === undefined) {
     process.stderr.write(
       'pll-codegen: --config and --out are required. Try `pll-codegen --help`.\n',
     );
@@ -121,48 +94,52 @@ export async function run(argv: readonly string[]): Promise<number> {
       ...(args.inventoryFile !== undefined ? { inventoryFile: args.inventoryFile } : {}),
       ...(args.tsConfigFilePath !== undefined ? { tsConfigFilePath: args.tsConfigFilePath } : {}),
     });
-    const slugCount = result.schema.globals.length + result.schema.collections.length;
-    if (!args.quiet) {
+    const { globals, collections } = result.schema;
+    const slugCount = globals.length + collections.length;
+    if (!args.quiet && result.outFile !== undefined) {
       process.stdout.write(
-        `pll-codegen: wrote ${result.outFile} ` +
-          `(${result.schema.globals.length} globals, ${result.schema.collections.length} collections)\n`,
+        `pll-codegen: wrote ${result.outFile} (${String(globals.length)} globals, ${String(collections.length)} collections)\n`,
       );
-      if (result.inventoryFile !== undefined) {
-        const fieldCount = [...result.inventory.globals, ...result.inventory.collections].reduce(
-          (total, entry) => total + entry.fields.length,
-          0,
-        );
-        process.stdout.write(
-          `pll-codegen: wrote ${result.inventoryFile} (${String(fieldCount)} addressable fields)\n`,
-        );
-      }
+    }
+    if (!args.quiet && result.inventoryFile !== undefined) {
+      const fieldCount = [...result.inventory.globals, ...result.inventory.collections].reduce(
+        (total, entry) => total + entry.fields.length,
+        0,
+      );
+      process.stdout.write(
+        `pll-codegen: wrote ${result.inventoryFile} (${String(fieldCount)} addressable fields)\n`,
+      );
+    }
+    if (!args.quiet || slugCount === 0) {
       for (const diagnostic of result.diagnostics) {
         process.stderr.write(`  warning: ${diagnostic}\n`);
       }
     }
     if (slugCount === 0) {
       process.stderr.write(
-        'pll-codegen: no globals or collections found — check that the config path is correct.\n',
+        'pll-codegen: no globals or collections found; nothing was written. Check that the config path is correct.\n',
       );
       return 2;
     }
     return 0;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`pll-codegen: ${message}\n`);
+  } catch (error) {
+    process.stderr.write(
+      `pll-codegen: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
     return 1;
   }
 }
 
-function isCliInvocation(): boolean {
+/** Matches the entry's basename only, so a project path containing `pll-codegen` never runs this on import. */
+export function isCliInvocation(argv: readonly (string | undefined)[] = process.argv): boolean {
   if (typeof process === 'undefined') return false;
-  const entry = process.argv[1];
-  if (!entry) return false;
-  return entry.includes('pll-codegen') || entry.includes('codegen-cli');
+  const entry = argv[1];
+  if (entry === undefined || entry === '') return false;
+  const name = entry.split(/[\\/]/u).pop() ?? '';
+  return name === 'pll-codegen' || name === 'pll-codegen.cmd' || name.startsWith('codegen-cli');
 }
 
 if (isCliInvocation()) {
-  // Direct invocation via the bin shim — run and exit with the code.
   void run(process.argv.slice(2)).then((code) => {
     process.exit(code);
   });

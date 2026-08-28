@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { findStrykerVitestConfigViolations } from '../../../scripts/runner-config-policy';
 import {
-  analyzeTestSource,
   buildTestInventory,
-  findStrykerVitestConfigViolations,
   groupForFile,
   serializeTestInventory,
 } from '../../../scripts/test-policy';
+import { analyzeTestSource } from '../../../scripts/test-policy-scanner';
 
 const ROOT = resolve(import.meta.dirname, '../../..');
 
@@ -107,6 +107,38 @@ describe('test policy', () => {
       'conditional-registration',
     ]);
     expect(analyzeTestSource('fixture.test.ts', source).declarations).toHaveLength(5);
+  });
+
+  it('rejects declarations registered from a forEach/map/flatMap callback over a dynamic receiver', () => {
+    const source = `
+      import { it } from 'vitest';
+      const cases = loadCases();
+      cases.filter((c) => c.enabled).forEach((c) => it(c.name, () => {}));
+      cases.map((c) => it(c.name, () => {}));
+      Object.keys(cases).flatMap((c) => it(c, () => {}));
+      let mutable = [1, 2];
+      mutable.forEach((value) => it(String(value), () => {}));
+    `;
+
+    expect(
+      analyzeTestSource('fixture.test.ts', source).violations.map(({ modifier }) => modifier),
+    ).toEqual([
+      'conditional-registration',
+      'conditional-registration',
+      'conditional-registration',
+      'conditional-registration',
+    ]);
+  });
+
+  it('accepts iteration over a receiver that is provably a non-empty local array literal', () => {
+    const source = `
+      import { it } from 'vitest';
+      const NAMES = ['p', 'q'] as const;
+      ['p', 'q'].forEach((name) => it(name, () => {}));
+      NAMES.map((name) => it(name, () => {}));
+    `;
+
+    expect(analyzeTestSource('fixture.test.ts', source).violations).toEqual([]);
   });
 
   it('does not count empty or dynamic each/for tables as executable declarations', () => {

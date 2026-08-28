@@ -1,13 +1,9 @@
 import { observeThenableResult } from './thenable';
 
 /**
- * Consumer diagnostics are best-effort observability, never control flow.
- *
- * Logger callbacks are arbitrary application code: they may throw, return a
- * rejected Promise, or expose a hostile thenable. This wrapper contains every
- * one of those outcomes while keeping invocation synchronous for ordinary
- * loggers. Callers can therefore report a failure without weakening the
- * lifecycle, merge-fallback, renderer, or teardown guarantee being reported.
+ * Diagnostics are observability, never control flow: a consumer logger may
+ * throw or return a rejected thenable, and reporting a failure must not become
+ * a second failure. Invocation stays synchronous for ordinary loggers.
  */
 export function isolateDiagnostic(
   diagnostic: (...args: unknown[]) => unknown,
@@ -26,8 +22,8 @@ export function noopDiagnostic(): void {
   // Intentionally empty.
 }
 
-// Property access, invocation, and thenable inspection all happen inside the
-// wrapper, so missing/hostile console implementations cannot escape.
+// Access, invocation and thenable inspection all happen inside the wrapper, so
+// a missing or hostile console cannot escape.
 export const safeConsoleError = isolateDiagnostic((...args) =>
   (console.error as (...values: unknown[]) => unknown)(...args),
 );

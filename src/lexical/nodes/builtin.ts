@@ -9,14 +9,11 @@ import { codeRenderer, codeHighlightRenderer } from './code';
 import { linebreakRenderer, horizontalRuleRenderer, tabRenderer } from './linebreak';
 import { uploadRenderer } from './upload';
 import { relationshipRenderer } from './relationship';
-import { blockRenderer } from './block';
+import { blockRenderer, inlineBlockRenderer } from './block';
+import { tableCellRenderer, tableRenderer, tableRowRenderer } from './table';
 
-/**
- * The built-in node renderers, as a plain table rather than `register()`
- * calls at import time. A table is pure for a bundler: a consumer that never
- * renders Lexical content does not carry these renderers, and one that does
- * finds every built-in type resolvable through `lookup()` before any render.
- */
+// A value table instead of `register()` calls at import time: a consumer that
+// never renders Lexical content must not carry these under `sideEffects: false`.
 export const BUILTIN_NODE_RENDERERS: Readonly<Record<string, NodeRenderer>> = {
   text: textRenderer,
   paragraph: paragraphRenderer,
@@ -34,4 +31,8 @@ export const BUILTIN_NODE_RENDERERS: Readonly<Record<string, NodeRenderer>> = {
   upload: uploadRenderer,
   relationship: relationshipRenderer,
   block: blockRenderer,
+  inlineBlock: inlineBlockRenderer,
+  table: tableRenderer,
+  tablerow: tableRowRenderer,
+  tablecell: tableCellRenderer,
 };

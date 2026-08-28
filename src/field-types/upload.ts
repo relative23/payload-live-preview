@@ -1,48 +1,55 @@
-/**
- * `upload` field renderer.
- *
- * Treats the value like an image upload when bound to an `<img>` element,
- * otherwise renders a download-style anchor with the filename.
- *
- * @module @field-types/upload
- */
+/** `upload` renderer: an image on `<img>`, a download link on `<a>`, an injected link elsewhere. */
 
 import { escapeHtml, escapeHtmlAttribute } from '@security/escape';
 import { trustedHtml } from '@security/trusted-types';
-import { isSafeUrl } from '@security/url-validator';
 import { markNoWriteCallback } from '@core/internal-outcome';
 import type { FieldRenderer } from '@core/types';
-import type { PayloadMedia } from './types';
+import { readMedia } from '@lexical/value-shapes';
+import { clearImage, writeImage } from './media';
+import { acceptUrl } from './unsafe-url';
+import { isEmptyValue } from './utils';
 
 const uploadRenderer: FieldRenderer = {
   name: 'upload',
   render: /* @__PURE__ */ markNoWriteCallback((target, value) => {
     const element = target.element;
+    if (isEmptyValue(value)) {
+      clear(element);
+      return;
+    }
     const media = readMedia(value);
     if (media === undefined) return false;
-    const url = media.url;
-    if (typeof url !== 'string' || !isSafeUrl(url)) return false;
+    const outcome = acceptUrl(element, target.fieldName, media.url);
+    if (outcome.kind === 'none') return false;
+    if (outcome.kind === 'unsafe') {
+      clear(element);
+      return;
+    }
+    const url = outcome.url;
     if (element.tagName === 'IMG') {
       const img = element as HTMLImageElement;
-      img.src = url;
+      writeImage(img, url, media);
       if (media.alt !== undefined) img.alt = media.alt;
       return;
     }
     if (element.tagName === 'A') {
-      const anchor = element as HTMLAnchorElement;
-      anchor.href = url;
-      anchor.textContent = media.filename ?? url;
+      element.setAttribute('href', url);
+      element.textContent = media.filename ?? url;
       return;
     }
-    const label = media.filename !== undefined ? escapeHtml(media.filename) : escapeHtml(url);
+    const label = escapeHtml(media.filename ?? url);
     element.innerHTML = trustedHtml(`<a href="${escapeHtmlAttribute(url)}">${label}</a>`);
     return;
   }),
 };
 
-function readMedia(value: unknown): PayloadMedia | undefined {
-  if (typeof value !== 'object' || value === null) return undefined;
-  return value;
+function clear(element: Element): void {
+  if (element.tagName === 'IMG') {
+    clearImage(element as HTMLImageElement);
+    return;
+  }
+  element.removeAttribute('href');
+  element.textContent = '';
 }
 
 export { uploadRenderer };

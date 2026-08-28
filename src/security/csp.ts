@@ -1,80 +1,32 @@
 /**
- * Content-Security-Policy helpers.
- *
- * Two responsibilities:
- *
- *   1. Generate cryptographic nonces so consumers can opt into a strict
- *      `script-src 'nonce-...'` policy and avoid `'unsafe-inline'`.
- *   2. Build the `frame-ancestors` directive value, restricting which
- *      origins may embed the preview page in an iframe.
- *
- * Both functions are isomorphic — they work in browsers, Node, and
- * edge runtimes that expose Web Crypto via `globalThis.crypto`.
- *
- * @module @security/csp
+ * Content-Security-Policy helpers: nonce generation, directive builders and
+ * the header merge every adapter uses. Isomorphic; needs only Web Crypto.
  */
 
-/**
- * Default byte-length for nonces. 16 bytes → 22 base64url characters,
- * which exceeds the 128-bit entropy threshold recommended by OWASP.
- */
 const DEFAULT_NONCE_BYTES = 16;
 
 /** CSP3's exact whitespace set: HTAB, LF, FF, CR, and SPACE. */
 const CSP_ASCII_WHITESPACE = /[\t\n\f\r ]+/;
 const CSP_EDGE_ASCII_WHITESPACE = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
 
-/** CSP names are ASCII strings; Unicode case folding must not create directives. */
+/** CSP names are ASCII; Unicode case folding must not create directives. */
 function asciiLowercase(value: string): string {
   return value.replace(/[A-Z]/g, (character) => character.toLowerCase());
 }
 
-/**
- * Minimal Web-Crypto surface area we actually call. The full `Crypto`
- * type drags in browser-only declarations that don't typecheck cleanly
- * against Node's `webcrypto` shape — this narrower interface accepts
- * both without an unsafe cast.
- */
+/** The one Web Crypto method this module calls; accepts Node's `webcrypto` without a cast. */
 interface WebCryptoLike {
   getRandomValues: <T extends ArrayBufferView | null>(array: T) => T;
 }
 
 let cryptoOverride: WebCryptoLike | undefined;
 
-/**
- * Inject a Web Crypto implementation to use when `globalThis.crypto`
- * is unavailable.
- *
- * Node.js exposed `globalThis.crypto` globally starting with v19. On
- * Node 18 (still LTS at time of writing) consumers can flip the
- * `--experimental-global-webcrypto` flag *or* call this function once
- * at startup:
- *
- *   ```ts
- *   import { webcrypto } from 'node:crypto';
- *   import { setCspCrypto } from 'payload-live-preview';
- *   setCspCrypto(webcrypto as { getRandomValues: typeof webcrypto.getRandomValues });
- *   ```
- *
- * Browser bundles never need to call this — `globalThis.crypto` is
- * always present there, and the override only matters when the global
- * is missing.
- *
- * Pass `null` to clear a previous override (mostly useful for tests).
- */
+/** Supply a Web Crypto implementation for runtimes without `globalThis.crypto`; `null` clears it. */
 export function setCspCrypto(crypto: WebCryptoLike | null): void {
   cryptoOverride = crypto ?? undefined;
 }
 
-/**
- * Generate a base64url-encoded cryptographic nonce.
- *
- * Uses `crypto.getRandomValues` everywhere — falls back to throwing
- * if no Web Crypto implementation is available, because a predictable
- * nonce would silently defeat the entire CSP.
- *
- * @param bytes Number of random bytes (defaults to 16 → 128-bit entropy).
- */
+/** A base64url nonce of `bytes` random bytes (default 16); throws without Web Crypto, since a predictable nonce silently defeats the CSP. */
 export function generateCspNonce(bytes: number = DEFAULT_NONCE_BYTES): string {
   if (!Number.isInteger(bytes) || bytes < 8) {
     throw new RangeError(`generateCspNonce: bytes must be an integer >= 8, got ${String(bytes)}`);
@@ -106,13 +58,7 @@ function base64UrlEncode(bytes: Uint8Array): string {
   return base64.replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 }
 
-/**
- * Sources allowed in the `frame-ancestors` directive.
- *
- * Conceptually a union of `'self'`, `'none'`, or an explicit origin
- * string. TypeScript collapses literal-vs-string unions, so we expose
- * a `string` alias and document the special values.
- */
+/** A `frame-ancestors` source: `'self'`, `'none'`, or an origin. */
 export type FrameAncestorSource = string;
 
 export interface FrameAncestorsOptions {
@@ -121,17 +67,7 @@ export interface FrameAncestorsOptions {
   readonly allowNone?: boolean;
 }
 
-/**
- * Build the value for `frame-ancestors` in a `Content-Security-Policy`
- * header.
- *
- * Returns `'none'` if `allowNone: true` and no other sources are
- * provided. Otherwise concatenates `'self'` (if requested) with the
- * given origins, deduplicating and trimming entries.
- *
- * @example
- *   `frame-ancestors ${buildFrameAncestors({ self: true, origins: [adminUrl] })}`
- */
+/** The `frame-ancestors` value: `'self'` and the origins, deduplicated; `'none'` when empty. */
 export function buildFrameAncestors(options: FrameAncestorsOptions = {}): string {
   const { self = true, origins = [], allowNone = false } = options;
   const seen = new Set<string>();
@@ -151,14 +87,9 @@ export function buildFrameAncestors(options: FrameAncestorsOptions = {}): string
 }
 
 /**
- * Build a `script-src` value that permits a single nonce plus optional
- * extra sources.
- *
- * `'strict-dynamic'` is **opt-in**: under CSP 3 it makes browsers
- * ignore `'self'` and every host source in the directive, so any
- * parser-inserted script without a nonce (framework hydration scripts,
- * consumer `<script>` tags) would be blocked. Only enable it when every
- * script on the page carries the nonce.
+ * A `script-src` value permitting one nonce plus optional extra sources.
+ * `'strict-dynamic'` is opt-in: it makes CSP 3 browsers ignore `'self'` and
+ * host sources, so every script on the page must then carry the nonce.
  */
 export function buildScriptSrcWithNonce(
   nonce: string,
@@ -181,30 +112,28 @@ export function buildScriptSrcWithNonce(
   return parts.join(' ');
 }
 
-/**
- * How a directive is merged into an existing CSP header value.
- *
- *   - `union` (default) — the new sources are added to the existing
- *     directive's sources (deduplicated). An existing `'none'` is
- *     dropped when real sources are added, since `'none'` may not be
- *     combined with other sources.
- *   - `replace` — the new value overwrites the existing directive.
- */
+/** `union` (default) adds sources to an existing directive; `replace` overwrites it. */
 export interface CspDirectiveMerge {
   readonly value: string;
   readonly mode?: 'union' | 'replace';
 }
 
 /**
- * Merge directives into an existing `Content-Security-Policy` header
- * value without clobbering what a consumer (or another middleware)
- * already configured. Directives not mentioned in `additions` pass
- * through untouched; new directives are appended. Existing policy parsing
- * follows CSP3's ASCII-whitespace and first-duplicate-wins rules.
- *
- * This is the single CSP-merge implementation shared by every adapter.
+ * Merge directives into an existing `Content-Security-Policy` header value.
+ * Commas separate policies (that is how `Headers.get()` joins repeated
+ * headers); each is merged, because a browser enforces every policy and
+ * widening only the last would leave the others blocking.
  */
 export function mergeCspHeader(
+  existing: string,
+  additions: Readonly<Record<string, string | CspDirectiveMerge>>,
+): string {
+  const policies = existing.split(',').filter((policy) => policy.trim().length > 0);
+  if (policies.length === 0) return mergeCspPolicy('', additions);
+  return policies.map((policy) => mergeCspPolicy(policy, additions)).join(', ');
+}
+
+function mergeCspPolicy(
   existing: string,
   additions: Readonly<Record<string, string | CspDirectiveMerge>>,
 ): string {
@@ -214,12 +143,9 @@ export function mergeCspHeader(
     if (trimmed.length === 0) continue;
     const whitespaceIndex = trimmed.search(CSP_ASCII_WHITESPACE);
     const name = asciiLowercase(whitespaceIndex < 0 ? trimmed : trimmed.slice(0, whitespaceIndex));
-
-    // CSP3 §2.2.1 is first-wins: a user agent ignores every later
-    // case-insensitive duplicate. Mirroring that rule before merging prevents a
-    // later, looser duplicate from becoming the policy we serialize.
+    // CSP3 §2.2.1: a user agent ignores later duplicates, so a looser
+    // duplicate must not become the policy that is serialized.
     if (directives.has(name)) continue;
-
     const value =
       whitespaceIndex < 0
         ? ''

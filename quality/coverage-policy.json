@@ -7,6 +7,26 @@
     "statements": 92
   },
   "criticalFiles": {
+    "src/adapters/shared/policy.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 94
+    },
+    "src/adapters/shared/preview-request.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/adapters/shared/response.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 97
+    },
+    "src/core/array-template.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/attribute-binding.ts": {
       "lines": 100,
       "functions": 100,
@@ -16,6 +36,11 @@
       "lines": 100,
       "functions": 100,
       "branches": 100
+    },
+    "src/core/binding-writer.ts": {
+      "lines": 96,
+      "functions": 100,
+      "branches": 90
     },
     "src/core/cache.ts": {
       "lines": 96,
@@ -27,10 +52,35 @@
       "functions": 100,
       "branches": 87
     },
+    "src/core/dependencies.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/field-changes.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/inspection/snapshot.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/intl-cache.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 92
+    },
+    "src/core/islands.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/lifecycle.ts": {
-      "lines": 90,
-      "functions": 95,
-      "branches": 82
+      "lines": 100,
+      "functions": 100,
+      "branches": 90
     },
     "src/core/loader.ts": {
       "lines": 100,
@@ -42,8 +92,83 @@
       "functions": 100,
       "branches": 92
     },
+    "src/core/message-guards.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 95
+    },
+    "src/core/morph.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 97
+    },
+    "src/core/navigation-lifecycle.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/observers.ts": {
       "lines": 96,
+      "functions": 100,
+      "branches": 91
+    },
+    "src/core/orphan-diagnostics.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 95
+    },
+    "src/core/protocol-tracker.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 83
+    },
+    "src/core/protocol-version.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/reveal.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/runtime-state.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 95
+    },
+    "src/core/runtime.ts": {
+      "lines": 96,
+      "functions": 93,
+      "branches": 90
+    },
+    "src/core/state.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/strategies.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/strategy-runner.ts": {
+      "lines": 88,
+      "functions": 90,
+      "branches": 75
+    },
+    "src/core/structural-applier.ts": {
+      "lines": 99,
+      "functions": 100,
+      "branches": 93
+    },
+    "src/core/template-sanitize.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 75
+    },
+    "src/core/update-pipeline.ts": {
+      "lines": 98,
       "functions": 100,
       "branches": 91
     },
@@ -52,25 +177,95 @@
       "functions": 96,
       "branches": 93
     },
+    "src/core/value-identity.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/detection/environment.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/detection/locale.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/detection/origin.ts": {
       "lines": 93,
       "functions": 100,
       "branches": 89
     },
+    "src/events/emitter.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 94
+    },
+    "src/fragment/boundary.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 81
+    },
+    "src/fragment/gate.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/fragment/handler.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 86
+    },
+    "src/fragment/route.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 88
+    },
     "src/plugins/manager.ts": {
-      "lines": 98,
+      "lines": 99,
       "functions": 98,
       "branches": 87
+    },
+    "src/plugins/resource-scope.ts": {
+      "lines": 96,
+      "functions": 100,
+      "branches": 90
+    },
+    "src/plugins/scoped-events.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 88
     },
     "src/security/csp.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 98
     },
+    "src/security/preview-authorization.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/security/preview-session.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 96
+    },
+    "src/security/preview-token.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 96
+    },
     "src/security/sanitizer.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 96
+    },
+    "src/security/trusted-types.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 92
     },
     "src/security/url-validator.ts": {
       "lines": 100,
@@ -85,9 +280,8 @@
       "src/**/*.d.ts",
       "src/**/index.ts",
       "src/**/types.ts",
-      "src/adapters/**",
       "src/client/config.ts",
-      "src/codegen/**",
+      "src/codegen/cli.ts",
       "src/index.ts",
       "src/inline/runtime.generated.ts"
     ]

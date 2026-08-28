@@ -280,3 +280,34 @@ describe('mergeCspHeader', () => {
     expect(merged).toBe('sandbox; upgrade-insecure-requests');
   });
 });
+
+describe('mergeCspHeader — several policies in one header value', () => {
+  // `Headers.get()` joins repeated headers with `, `; a browser enforces every
+  // policy, so the additions must reach each one.
+  it('merges the additions into every comma-separated policy', () => {
+    const merged = mergeCspHeader("frame-ancestors 'none', default-src 'self'", {
+      'frame-ancestors': "'self' https://admin.example.com",
+    });
+    expect(merged).toBe(
+      "frame-ancestors 'self' https://admin.example.com, " +
+        "default-src 'self'; frame-ancestors 'self' https://admin.example.com",
+    );
+  });
+
+  it("adds the script-src nonce of 'full' mode to each policy", () => {
+    const merged = mergeCspHeader("script-src 'self',img-src *", {
+      'script-src': "'self' 'nonce-abc'",
+    });
+    expect(merged).toBe("script-src 'self' 'nonce-abc', img-src *; script-src 'self' 'nonce-abc'");
+  });
+
+  it('drops empty policies and keeps the single-policy path unchanged', () => {
+    expect(mergeCspHeader("default-src 'self', , ", { 'img-src': '*' })).toBe(
+      "default-src 'self'; img-src *",
+    );
+    expect(mergeCspHeader("default-src 'self'", { 'img-src': '*' })).toBe(
+      "default-src 'self'; img-src *",
+    );
+    expect(mergeCspHeader('', { 'img-src': '*' })).toBe('img-src *');
+  });
+});

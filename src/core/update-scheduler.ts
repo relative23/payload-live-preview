@@ -1,90 +1,47 @@
 /**
- * Update scheduler — debounce + RAF batching + offscreen replay.
- *
- * The scheduler is the heart of the update pipeline:
- *
- *   1. Incoming updates are debounced. Rapid typing in the admin
- *      panel collapses into a single DOM write per debounce window.
- *   2. After the debounce, the actual writes run inside
- *      `requestAnimationFrame` so they batch with the browser's
- *      paint cycle.
- *   3. Elements that are not currently within the viewport are not
- *      written — their *latest* value is stored in a per-element
- *      replay buffer. When the element becomes visible, the buffered
- *      value is applied. This fixes the stale-offscreen-content bug
- *      from the legacy implementation.
- *
- * The scheduler does not touch the DOM directly. It calls an injected
- * `applyUpdate(target, value)` function so renderer dispatch lives
- * outside this module, keeping the scheduler dependency-free and
- * easily testable.
- *
- * @module @core/update-scheduler
+ * Debounce, frame batching and off-screen replay for scheduled writes. The
+ * scheduler never touches the DOM; the injected `apply` callback does.
  */
 
-import type { CachedElement } from './types';
-import type { MessageRevision } from './message-bus';
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { usesNoWriteOutcome } from './internal-outcome';
+import type { MessageRevision } from './message-bus';
+import type { CachedElement } from './types';
 
 export interface ScheduledUpdate {
   readonly target: CachedElement;
   readonly value: unknown;
   readonly allFields: Record<string, unknown>;
-  /** Lifecycle identity. Runtime-produced entries always include this. */
+  /** Revision identity; runtime-produced entries always carry one. */
   readonly identity?: MessageRevision | undefined;
-  /** Stable merged-or-fallback snapshot associated with `identity`. */
   readonly data?: PayloadLivePreviewData | undefined;
+  /** `valueIdentity(value)`, computed once by the pipeline for skip and reveal. */
+  readonly valueIdentity?: string | undefined;
 }
 
-/**
- * Function the scheduler invokes to apply a single update.
- *
- * Renderer dispatch and any sanitization happens inside this callback;
- * the scheduler is intentionally ignorant of field types.
- */
 export type ApplyUpdate = (update: ScheduledUpdate) => void;
 
 export interface UpdateSchedulerOptions {
-  /** Debounce window in ms. Default: 50. */
+  /** Debounce window in ms. Default 50. */
   readonly debounceMs?: number;
-  /**
-   * Visibility predicate. The scheduler defers updates for elements
-   * that return `false` here, replaying them when the host signals
-   * visibility via `notifyVisible()`.
-   */
+  /** Longest a flush may be postponed by continuous scheduling. Default `4 * debounceMs`. */
+  readonly maxWaitMs?: number;
+  /** Deferred writes replay when the host reports the element visible via `notifyVisible()`. */
   readonly isVisible: (element: Element) => boolean;
-  /**
-   * `true` to skip the visibility optimization (apply every update
-   * immediately regardless of viewport). Useful for tests and for
-   * pages with few bindings. Default: `false`.
-   */
+  /** Apply every write immediately regardless of visibility. Default `false`. */
   readonly disableVisibilityGate?: boolean;
-  /** Threshold (in cached elements) above which the gate activates. Default: 50. */
+  /** Cached-element count above which the gate activates. Default 50. */
   readonly visibilityGateThreshold?: number;
-  /** Function returning the current cache size (used by the threshold). */
   readonly getCacheSize: () => number;
-  /** Hook fired after every flush. Used by tests + analytics. */
   readonly onFlush?: (stats: FlushStats) => void;
-  /**
-   * Function used to schedule the actual DOM-write callback. Defaults
-   * to `requestAnimationFrame` when available. Tests inject a synchronous
-   * stand-in.
-   */
+  /** Frame scheduler; defaults to `requestAnimationFrame`. Tests inject a synchronous one. */
   readonly scheduleFrame?: (callback: FrameRequestCallback) => number;
-  /** Counterpart to `scheduleFrame` for cancellation. */
   readonly cancelFrame?: (handle: number) => void;
 }
 
 export interface FlushStats {
   readonly applied: number;
-  /**
-   * Field names this flush actually applied, in application order.
-   *
-   * `applied` alone cannot distinguish "the field was written" from "the
-   * field was never scheduled": a flush that applies three entries and a
-   * binding that stays stale are consistent with either. The names settle it.
-   */
+  /** Field names applied, in order; `applied` alone cannot say which binding stayed stale. */
   readonly appliedFields: readonly string[];
   readonly deferred: number;
   readonly durationMs: number;
@@ -93,193 +50,129 @@ export interface FlushStats {
 }
 
 const DEFAULT_DEBOUNCE_MS = 50;
-/**
- * Binding count above which the gate starts deferring offscreen writes.
- *
- * Exported so `pll doctor`'s test can prove its own copy of this number has
- * not drifted. The audit runs outside the runtime bundle and restates the
- * value rather than importing it.
- */
+/** Exported so `pll doctor` can prove its own copy of the number has not drifted. */
 export const DEFAULT_VISIBILITY_THRESHOLD = 50;
 
-/**
- * Buffer entry — one per (field, element) pair. The latest write
- * supersedes any pending one.
- */
 interface BufferEntry {
   target: CachedElement;
   value: unknown;
   allFields: Record<string, unknown>;
   identity: MessageRevision | undefined;
   data: PayloadLivePreviewData | undefined;
+  valueIdentity: string | undefined;
 }
-
-const enum SchedulerSlot {
-  Apply,
-  DebounceMs,
-  IsVisible,
-  GateThreshold,
-  GateDisabled,
-  GetCacheSize,
-  OnFlush,
-  ScheduleFrame,
-  CancelFrame,
-  Pending,
-  Replay,
-  ActiveFlushes,
-  DebounceTimer,
-  DebounceToken,
-  FrameHandle,
-  FrameToken,
-  ActiveIdentity,
-  ActiveRevisionCancelled,
-}
-
-/**
- * One TS-private state record avoids emitting ES2020 private-field scaffolding.
- * Named tuple slots keep the source readable while compiling to compact numeric
- * access; this internal class and its tuple never cross the package boundary.
- */
-type SchedulerState = [
-  apply: ApplyUpdate,
-  debounceMs: number,
-  isVisible: (element: Element) => boolean,
-  gateThreshold: number,
-  gateDisabled: boolean,
-  getCacheSize: () => number,
-  onFlush: ((stats: FlushStats) => void) | undefined,
-  scheduleFrame: (callback: FrameRequestCallback) => number,
-  cancelFrame: (handle: number) => void,
-  pending: Map<Element, BufferEntry>,
-  replay: Map<Element, BufferEntry>,
-  activeFlushes: Set<Map<Element, BufferEntry>>,
-  debounceTimer: ReturnType<typeof setTimeout> | null,
-  debounceToken: number,
-  frameHandle: number | null,
-  frameToken: number,
-  activeIdentity: MessageRevision | null,
-  activeRevisionCancelled: boolean,
-];
 
 export class UpdateScheduler {
-  private readonly s: SchedulerState;
+  private readonly apply: ApplyUpdate;
+  private readonly debounceMs: number;
+  private readonly maxWaitMs: number;
+  private readonly isVisible: (element: Element) => boolean;
+  private readonly gateThresholdValue: number;
+  private readonly gateDisabled: boolean;
+  private readonly getCacheSize: () => number;
+  private readonly onFlush: ((stats: FlushStats) => void) | undefined;
+  private readonly scheduleFrame: (callback: FrameRequestCallback) => number;
+  private readonly cancelFrame: (handle: number) => void;
+  private pending = new Map<Element, BufferEntry>();
+  private readonly replay = new Map<Element, BufferEntry>();
+  private readonly activeFlushes = new Set<Map<Element, BufferEntry>>();
+  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private debounceToken = 0;
+  private deadlineTimer: ReturnType<typeof setTimeout> | null = null;
+  private frameHandle: number | null = null;
+  private frameToken = 0;
+  private activeIdentity: MessageRevision | null = null;
+  private activeRevisionCancelled = false;
 
   constructor(apply: ApplyUpdate, options: UpdateSchedulerOptions) {
-    const scheduleFrame =
+    this.apply = apply;
+    this.debounceMs = options.debounceMs ?? DEFAULT_DEBOUNCE_MS;
+    this.maxWaitMs = options.maxWaitMs ?? this.debounceMs * 4;
+    this.isVisible = options.isVisible;
+    this.gateThresholdValue = options.visibilityGateThreshold ?? DEFAULT_VISIBILITY_THRESHOLD;
+    this.gateDisabled = options.disableVisibilityGate ?? false;
+    this.getCacheSize = options.getCacheSize;
+    this.onFlush = options.onFlush;
+    this.scheduleFrame =
       options.scheduleFrame ??
       (typeof requestAnimationFrame === 'function'
         ? requestAnimationFrame.bind(globalThis)
-        : (cb) => {
-            return setTimeout(() => {
-              cb(performance.now());
-            }, 0) as unknown as number;
-          });
-    const cancelFrame =
+        : (callback) =>
+            setTimeout(() => {
+              callback(performance.now());
+            }, 0) as unknown as number);
+    this.cancelFrame =
       options.cancelFrame ??
       (typeof cancelAnimationFrame === 'function'
         ? cancelAnimationFrame.bind(globalThis)
         : (handle) => {
             clearTimeout(handle as unknown as ReturnType<typeof setTimeout>);
           });
-    this.s = [
-      apply,
-      options.debounceMs ?? DEFAULT_DEBOUNCE_MS,
-      options.isVisible,
-      options.visibilityGateThreshold ?? DEFAULT_VISIBILITY_THRESHOLD,
-      options.disableVisibilityGate ?? false,
-      options.getCacheSize,
-      options.onFlush,
-      scheduleFrame,
-      cancelFrame,
-      new Map(),
-      new Map(),
-      new Set(),
-      null,
-      0,
-      null,
-      0,
-      null,
-      false,
-    ];
   }
 
-  /**
-   * Queue an update. The same `(element)` pair is coalesced — only the
-   * most-recent value survives until the next flush.
-   */
+  /** Queue a write; a later write for the same element replaces it until the flush. */
   schedule(update: ScheduledUpdate): void {
     if (update.identity !== undefined) {
-      if (this.s[SchedulerSlot.ActiveRevisionCancelled]) return;
-      if (!sameIdentity(update.identity, this.s[SchedulerSlot.ActiveIdentity])) return;
+      if (this.activeRevisionCancelled) return;
+      if (!sameIdentity(update.identity, this.activeIdentity)) return;
     }
-    const pending = this.s[SchedulerSlot.Pending];
-    const existing = pending.get(update.target.element);
+    const existing = this.pending.get(update.target.element);
     if (existing) {
       existing.value = update.value;
       existing.allFields = update.allFields;
       existing.identity = update.identity;
       existing.data = update.data;
+      existing.valueIdentity = update.valueIdentity;
     } else {
-      pending.set(update.target.element, {
-        ...update,
-        // BufferEntry makes these keys explicit so coalescing can overwrite
-        // them deterministically even when an older entry had a value.
+      this.pending.set(update.target.element, {
+        target: update.target,
+        value: update.value,
+        allFields: update.allFields,
         identity: update.identity,
         data: update.data,
+        valueIdentity: update.valueIdentity,
       });
     }
-    this.#armDebounce();
+    this.armDebounce();
   }
 
   /**
-   * Make `identity` the sole revision allowed to schedule, flush, or replay.
-   * Advancing is intentionally destructive even when the new revision is later
-   * cancelled: accepting newer work must never revive an older DOM state.
+   * Make `identity` the sole revision allowed to schedule, flush or replay.
+   * Older buffered work is dropped even if the new revision is later cancelled.
    */
   acceptRevision(identity: MessageRevision): void {
-    const activeIdentity = this.s[SchedulerSlot.ActiveIdentity];
-    if (sameIdentity(identity, activeIdentity)) return;
-    if (activeIdentity !== null && compareIdentity(identity, activeIdentity) < 0) {
-      return;
-    }
-    this.#cancelScheduledWork();
-    this.#clearWork();
-    this.s[SchedulerSlot.ActiveIdentity] = identity;
-    this.s[SchedulerSlot.ActiveRevisionCancelled] = false;
+    if (sameIdentity(identity, this.activeIdentity)) return;
+    if (this.activeIdentity !== null && compareIdentity(identity, this.activeIdentity) < 0) return;
+    this.cancelScheduledWork();
+    this.clearWork();
+    this.activeIdentity = identity;
+    this.activeRevisionCancelled = false;
   }
 
   /** Cancel buffered work for exactly one revision without reviving its predecessor. */
   cancelRevision(identity: MessageRevision): void {
-    if (!sameIdentity(identity, this.s[SchedulerSlot.ActiveIdentity])) return;
-    this.#cancelScheduledWork();
-    this.#clearWork();
-    this.s[SchedulerSlot.ActiveRevisionCancelled] = true;
+    if (!sameIdentity(identity, this.activeIdentity)) return;
+    this.cancelScheduledWork();
+    this.clearWork();
+    this.activeRevisionCancelled = true;
   }
 
-  /**
-   * Flush every pending write immediately, bypassing the debounce.
-   * Useful for tests and explicit host-controlled flushing. `destroy()`
-   * deliberately discards buffered work instead of draining it.
-   */
+  /** Flush immediately, bypassing the debounce. */
   flushNow(): FlushStats {
-    this.#cancelScheduledWork();
-    return this.#flush();
+    this.cancelScheduledWork();
+    return this.flush();
   }
 
-  /**
-   * Signal that an element has become visible. Any buffered value for
-   * that element is applied immediately.
-   */
+  /** Apply the buffered value for an element that scrolled into view. */
   notifyVisible(element: Element): void {
-    const replay = this.s[SchedulerSlot.Replay];
-    const entry = replay.get(element);
+    const entry = this.replay.get(element);
     if (!entry) return;
-    replay.delete(element);
-    if (!this.#isCurrent(entry)) return;
+    this.replay.delete(element);
+    if (!this.isCurrent(entry)) return;
     const t0 = performance.now();
-    const applied = this.#didApply(entry) ? 1 : 0;
-    this.s[SchedulerSlot.OnFlush]?.(
-      this.#statsFor(
+    const applied = this.didApply(entry) ? 1 : 0;
+    this.onFlush?.(
+      this.statsFor(
         entry,
         applied,
         0,
@@ -290,193 +183,159 @@ export class UpdateScheduler {
   }
 
   /**
-   * Reconcile buffered work with a freshly rebuilt cache entry.
-   *
-   * A full cache scan deliberately creates new `CachedElement` snapshots. Work
-   * for the same element + field binding survives, but must point at that fresh
-   * snapshot so changed renderer/attribute/locale metadata is respected. A
-   * field-name change is a different binding and therefore discards the stale
-   * work rather than applying it under a new identity.
+   * Point buffered work at a rebuilt cache entry for the same element and
+   * field. A different field or locale is a different binding: drop the work.
    */
   retarget(target: CachedElement): void {
-    this.#retargetBuffer(this.s[SchedulerSlot.Pending], target);
-    this.#retargetBuffer(this.s[SchedulerSlot.Replay], target);
-    for (const flush of this.s[SchedulerSlot.ActiveFlushes]) {
-      this.#retargetBuffer(flush, target);
-    }
+    this.retargetBuffer(this.pending, target);
+    this.retargetBuffer(this.replay, target);
+    for (const flush of this.activeFlushes) this.retargetBuffer(flush, target);
   }
 
-  /**
-   * Discard any replay state for an element. Called when the element
-   * leaves the cache.
-   */
   forget(element: Element): void {
-    this.s[SchedulerSlot.Pending].delete(element);
-    this.s[SchedulerSlot.Replay].delete(element);
-    for (const flush of this.s[SchedulerSlot.ActiveFlushes]) flush.delete(element);
+    this.pending.delete(element);
+    this.replay.delete(element);
+    for (const flush of this.activeFlushes) flush.delete(element);
   }
 
-  /** Cancel timers and drop buffered state. */
+  /** Cancel timers and drop buffered state without draining it. */
   destroy(): void {
-    this.#cancelScheduledWork();
-    this.#clearWork();
-    this.s[SchedulerSlot.ActiveIdentity] = null;
-    this.s[SchedulerSlot.ActiveRevisionCancelled] = false;
+    this.cancelScheduledWork();
+    this.clearWork();
+    this.activeIdentity = null;
+    this.activeRevisionCancelled = false;
   }
 
-  /** Test introspection: number of pending writes. */
   get pendingCount(): number {
-    return this.s[SchedulerSlot.Pending].size;
+    return this.pending.size;
   }
 
-  /** Test introspection: number of buffered offscreen replays. */
   get replayCount(): number {
-    return this.s[SchedulerSlot.Replay].size;
+    return this.replay.size;
   }
 
-  /** Binding count above which the visibility gate starts deferring writes. */
   get gateThreshold(): number {
-    return this.s[SchedulerSlot.GateThreshold];
+    return this.gateThresholdValue;
   }
 
-  /**
-   * Whether the gate is deferring right now. Mirrors the condition in
-   * `#flush()` so a diagnostic read cannot drift from the real decision.
-   */
   get gateActive(): boolean {
-    return (
-      !this.s[SchedulerSlot.GateDisabled] &&
-      this.s[SchedulerSlot.GetCacheSize]() > this.s[SchedulerSlot.GateThreshold]
-    );
+    return !this.gateDisabled && this.getCacheSize() > this.gateThresholdValue;
   }
 
-  #armDebounce(): void {
-    const token = (this.s[SchedulerSlot.DebounceToken] += 1);
-    const timer = this.s[SchedulerSlot.DebounceTimer];
-    this.s[SchedulerSlot.DebounceTimer] = null;
+  private armDebounce(): void {
+    const token = (this.debounceToken += 1);
+    const timer = this.debounceTimer;
+    this.debounceTimer = null;
     if (timer !== null) clearTimeout(timer);
-    // Clearing a host timer is an external boundary. A re-entrant schedule
-    // owns a newer token and must not be replaced by this older stack.
-    if (this.s[SchedulerSlot.DebounceToken] !== token) return;
-    const nextTimer = setTimeout(() => {
-      if (this.s[SchedulerSlot.DebounceToken] !== token) return;
-      this.s[SchedulerSlot.DebounceTimer] = null;
-      this.#requestFrame();
-    }, this.s[SchedulerSlot.DebounceMs]);
-    if (this.s[SchedulerSlot.DebounceToken] === token) {
-      this.s[SchedulerSlot.DebounceTimer] = nextTimer;
+    // clearTimeout is a host boundary; a reentrant schedule owns a newer token.
+    if (this.debounceToken !== token) return;
+    const next = setTimeout(() => {
+      if (this.debounceToken !== token) return;
+      this.debounceTimer = null;
+      this.requestFrame();
+    }, this.debounceMs);
+    if (this.debounceToken === token) this.debounceTimer = next;
+    // Continuous scheduling (key repeat) must not postpone the flush forever.
+    if (this.deadlineTimer === null && this.maxWaitMs > this.debounceMs) {
+      this.deadlineTimer = setTimeout(() => {
+        this.deadlineTimer = null;
+        if (this.pending.size > 0) this.requestFrame();
+      }, this.maxWaitMs);
     }
   }
 
-  #requestFrame(): void {
-    const token = (this.s[SchedulerSlot.FrameToken] += 1);
-    const handle = this.s[SchedulerSlot.FrameHandle];
-    this.s[SchedulerSlot.FrameHandle] = null;
-    if (handle !== null) this.s[SchedulerSlot.CancelFrame](handle);
-    if (this.s[SchedulerSlot.FrameToken] !== token) return;
-    // Test/SSR schedulers may invoke the callback before returning a handle.
-    // Never publish that already-completed handle as cancellable work.
+  private requestFrame(): void {
+    const token = (this.frameToken += 1);
+    const handle = this.frameHandle;
+    this.frameHandle = null;
+    if (handle !== null) this.cancelFrame(handle);
+    if (this.frameToken !== token) return;
     let completed = false;
-    const nextHandle = this.s[SchedulerSlot.ScheduleFrame](() => {
-      if (this.s[SchedulerSlot.FrameToken] !== token) return;
+    const next = this.scheduleFrame(() => {
+      if (this.frameToken !== token) return;
       completed = true;
-      this.s[SchedulerSlot.FrameHandle] = null;
-      this.#flush();
+      this.frameHandle = null;
+      this.flush();
     });
-    // The injected scheduler can execute the callback synchronously, which
-    // TypeScript's local control-flow analysis cannot observe.
+    // An injected scheduler may run the callback synchronously; never publish a spent handle.
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!completed && this.s[SchedulerSlot.FrameToken] === token) {
-      this.s[SchedulerSlot.FrameHandle] = nextHandle;
-    }
+    if (!completed && this.frameToken === token) this.frameHandle = next;
   }
 
-  #flush(): FlushStats {
+  private flush(): FlushStats {
     const t0 = performance.now();
-    const gateActive =
-      !this.s[SchedulerSlot.GateDisabled] &&
-      this.s[SchedulerSlot.GetCacheSize]() > this.s[SchedulerSlot.GateThreshold];
-    const pending = this.s[SchedulerSlot.Pending];
-    this.s[SchedulerSlot.Pending] = new Map();
-
+    this.clearDeadline();
+    const gateActive = this.gateActive;
+    const pending = this.pending;
+    this.pending = new Map();
     let applied = 0;
     const appliedFields: string[] = [];
     let deferred = 0;
     let batchEntry: BufferEntry | undefined;
-    this.s[SchedulerSlot.ActiveFlushes].add(pending);
+    this.activeFlushes.add(pending);
     try {
       for (const entry of pending.values()) {
-        if (!this.#isCurrent(entry)) continue;
-        const visible = !gateActive || this.s[SchedulerSlot.IsVisible](entry.target.element);
-        // Visibility is an injected consumer callback and may accept/cancel a
-        // revision synchronously. Re-check before publishing replay or writes.
-        if (!this.#isCurrent(entry)) continue;
+        if (!this.isCurrent(entry)) continue;
+        const visible = !gateActive || this.isVisible(entry.target.element);
+        // The visibility callback is consumer code and may change the revision.
+        if (!this.isCurrent(entry)) continue;
         batchEntry ??= entry;
         if (!visible) {
-          this.s[SchedulerSlot.Replay].set(entry.target.element, entry);
+          this.replay.set(entry.target.element, entry);
           deferred += 1;
           continue;
         }
-        // A visible write for this element supersedes any older replay entry,
-        // including legacy/unversioned callers of the scheduler.
-        this.s[SchedulerSlot.Replay].delete(entry.target.element);
-        if (this.#didApply(entry)) {
+        this.replay.delete(entry.target.element);
+        if (this.didApply(entry)) {
           applied += 1;
           appliedFields.push(entry.target.fieldName);
         }
       }
     } finally {
-      this.s[SchedulerSlot.ActiveFlushes].delete(pending);
+      this.activeFlushes.delete(pending);
     }
-    const stats = this.#statsFor(
+    const stats = this.statsFor(
       batchEntry,
       applied,
       deferred,
       performance.now() - t0,
       appliedFields,
     );
-    this.s[SchedulerSlot.OnFlush]?.(stats);
+    this.onFlush?.(stats);
     return stats;
   }
 
-  #isCurrent(entry: BufferEntry): boolean {
+  private isCurrent(entry: BufferEntry): boolean {
     return (
       entry.identity === undefined ||
-      (!this.s[SchedulerSlot.ActiveRevisionCancelled] &&
-        sameIdentity(entry.identity, this.s[SchedulerSlot.ActiveIdentity]))
+      (!this.activeRevisionCancelled && sameIdentity(entry.identity, this.activeIdentity))
     );
   }
 
-  #didApply(entry: BufferEntry): boolean {
-    // The public callback remains `void`; only a package-owned callback marked
-    // by the runtime may reserve exact false as a rejected/no-write result.
-    const apply = this.s[SchedulerSlot.Apply];
+  private didApply(entry: BufferEntry): boolean {
+    // Only a runtime-marked callback may report exact `false` as "no write".
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-    const outcome: unknown = apply(entry);
-    return outcome !== false || !usesNoWriteOutcome(apply);
+    const outcome: unknown = this.apply(entry);
+    return outcome !== false || !usesNoWriteOutcome(this.apply);
   }
 
-  #retargetBuffer(buffer: Map<Element, BufferEntry>, target: CachedElement): void {
+  private retargetBuffer(buffer: Map<Element, BufferEntry>, target: CachedElement): void {
     const entry = buffer.get(target.element);
     if (entry === undefined) return;
     if (entry.target.fieldName !== target.fieldName || entry.target.locale !== target.locale) {
-      // Locale selects the value before scheduling and can also affect plugin
-      // transforms. Retargeting only the metadata would pair a value prepared
-      // for the old locale with the new locale. Discard that work; a later
-      // revision can prepare the new binding coherently.
       buffer.delete(target.element);
       return;
     }
     entry.target = target;
   }
 
-  #clearWork(): void {
-    this.s[SchedulerSlot.Pending].clear();
-    this.s[SchedulerSlot.Replay].clear();
-    for (const flush of this.s[SchedulerSlot.ActiveFlushes]) flush.clear();
+  private clearWork(): void {
+    this.pending.clear();
+    this.replay.clear();
+    for (const flush of this.activeFlushes) flush.clear();
   }
 
-  #statsFor(
+  private statsFor(
     entry: BufferEntry | undefined,
     applied: number,
     deferred: number,
@@ -493,18 +352,24 @@ export class UpdateScheduler {
     };
   }
 
-  #cancelScheduledWork(): void {
-    const debounceTimer = this.s[SchedulerSlot.DebounceTimer];
-    const frameHandle = this.s[SchedulerSlot.FrameHandle];
-    // Revoke both ownership tokens and handles before calling cancellation
-    // hooks. Ineffectively-cancelled callbacks remain inert; re-entrant newer
-    // work published by a hook is not clobbered by this older cleanup stack.
-    this.s[SchedulerSlot.DebounceToken] += 1;
-    this.s[SchedulerSlot.FrameToken] += 1;
-    this.s[SchedulerSlot.DebounceTimer] = null;
-    this.s[SchedulerSlot.FrameHandle] = null;
+  private clearDeadline(): void {
+    if (this.deadlineTimer === null) return;
+    clearTimeout(this.deadlineTimer);
+    this.deadlineTimer = null;
+  }
+
+  private cancelScheduledWork(): void {
+    const debounceTimer = this.debounceTimer;
+    const frameHandle = this.frameHandle;
+    // Revoke tokens before calling host cancellation, so a hook that
+    // schedules newer work is not clobbered by this older cleanup.
+    this.debounceToken += 1;
+    this.frameToken += 1;
+    this.debounceTimer = null;
+    this.frameHandle = null;
+    this.clearDeadline();
     if (debounceTimer !== null) clearTimeout(debounceTimer);
-    if (frameHandle !== null) this.s[SchedulerSlot.CancelFrame](frameHandle);
+    if (frameHandle !== null) this.cancelFrame(frameHandle);
   }
 }
 

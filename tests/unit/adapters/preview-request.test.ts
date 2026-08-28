@@ -1,6 +1,3 @@
-/**
- * Server-side preview-request detection shared by every adapter.
- */
 import { describe, expect, it } from 'vitest';
 import { hasPreviewIntent } from '@adapters/shared/preview-request';
 
@@ -21,7 +18,7 @@ describe('hasPreviewIntent', () => {
       headers: { 'sec-fetch-dest': 'iframe' },
     });
     expect(hasPreviewIntent(request)).toBe(true);
-    expect(hasPreviewIntent(request, { checkFetchDest: false })).toBe(false);
+    expect(hasPreviewIntent(request, { signals: ['query', 'referer'] })).toBe(false);
   });
 
   it('matches referers against admin origins', () => {

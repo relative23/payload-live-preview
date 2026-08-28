@@ -1,26 +1,7 @@
 /**
- * `payload-live-preview/server` — the privileged, server-only surface.
- *
- * Everything here runs where a secret or a session may be handled: the
- * initial draft read, token issuance and verification, the binding helpers
- * that decide whether markup discloses the content model. None of it is
- * reachable from a browser bundle; the architecture policy lists `server`
- * among the server-only domains, so a client, runtime or adapter module that
- * imported it would fail the build.
- *
- * `definePreview()` is the one configuration: the Payload origin, the API
- * route and **one depth** shared by the initial fetch and the runtime's
- * merge, so the two can no longer drift apart (`?? 1` in two places was how
- * they did). Reads take the authorization verdict as their explicit input —
- * a draft is fetched only with a context produced by
- * `authorizePreviewRequest()`, never by default — and report failure as a
- * typed result unless asked to throw.
- *
- * The root-entry helpers `fetchPreviewDocument()` / `fetchPreviewGlobal()`
- * keep their 1.x behaviour (draft by default, `null` on any failure) and are
- * deprecated in favour of this module (ADR 0007, entries 9 and 10).
- *
- * @module @server
+ * `payload-live-preview/server` — the privileged surface: the initial draft
+ * read, token issuance and verification, and the gated binding helpers. The
+ * architecture policy keeps it out of every browser bundle.
  */
 
 import {
@@ -71,10 +52,18 @@ export type {
   ValueAt,
 } from '@dsl/index';
 
-/** A `fetch`-compatible function. Injectable for tests and for runtimes that wrap `fetch`. */
+/**
+ * A `fetch`-compatible function. The read forwards a session cookie, so it is
+ * `cache: 'no-store'` (never a framework data cache) and `redirect: 'error'`.
+ */
 export type PreviewFetchFunction = (
   input: string,
-  init: { readonly headers: Record<string, string>; readonly signal: AbortSignal },
+  init: {
+    readonly headers: Record<string, string>;
+    readonly signal: AbortSignal;
+    readonly cache: 'no-store';
+    readonly redirect: 'error';
+  },
 ) => Promise<{
   readonly ok: boolean;
   readonly status: number;
@@ -105,15 +94,9 @@ export interface PreviewServerConfig {
   readonly serverURL: string;
   /** REST route prefix. Default `/api`. */
   readonly apiRoute?: string;
-  /**
-   * Population depth for the initial read **and** for `mergeDepth` in the
-   * runtime options this config produces. Required: Payload's own default is
-   * `0`, this package's runtime default has been `1`, and a page that
-   * renders populated relations needs the number written down once, where
-   * both readers see it.
-   */
+  /** Population depth for the read and for the runtime's `mergeDepth`. Required so the two cannot drift. */
   readonly depth: number;
-  /** Upper bound for one read, including a slow Payload. Default 5000 ms. */
+  /** Upper bound for one read. Default 5000 ms. */
   readonly timeoutMs?: number;
   readonly fetch?: PreviewFetchFunction;
   /** Observe every read and failure — for logs and metrics, not for control flow. */
@@ -129,7 +112,7 @@ export type PreviewFetchResult<T> =
       readonly ok: true;
       /** The document, or `null` when the query matched nothing. */
       readonly data: T | null;
-      /** Whether the draft version was requested — `true` exactly when `authorization` was a real context. */
+      /** Whether the draft was requested — `true` exactly when `authorization` was a real context. */
       readonly draft: boolean;
       readonly status: number;
     }
@@ -155,9 +138,7 @@ export class PreviewFetchError extends Error {
   ) {
     super(
       `payload-live-preview: preview read failed (${reason}${status === undefined ? '' : ` ${String(status)}`}) for ${url}`,
-      {
-        cause,
-      },
+      { cause },
     );
     this.name = 'PreviewFetchError';
     this.reason = reason;
@@ -166,19 +147,22 @@ export class PreviewFetchError extends Error {
   }
 }
 
-/** A `where` tree in Payload's REST query shape, e.g. `{ slug: { equals: 'about' } }`. */
+/** A scalar operand of a `where` operator; `null` is sent as the literal `null`. */
+export type PreviewWhereValue = string | number | boolean | null | readonly (string | number)[];
+
+/**
+ * A `where` tree in Payload's REST query shape: `{ slug: { equals: 'about' } }`,
+ * `{ or: [{ … }, { … }] }`. Arrays of trees are indexed (`where[or][0][…]`).
+ */
 export interface PreviewWhere {
-  readonly [key: string]: PreviewWhere | string | number | boolean | readonly (string | number)[];
+  readonly [key: string]: PreviewWhere | readonly PreviewWhere[] | PreviewWhereValue;
 }
 
 /** Options every read shares; `fetchDocument` and `fetchGlobal` add their target. */
 export interface PreviewReadOptions {
   /**
-   * The verdict from `authorizePreviewRequest()`, or `null` for a public
-   * request. Required: it is the explicit draft decision. A real context
-   * reads the draft and forwards the context's `payloadHeaders`; anything
-   * else — `null`, a copied object, a JSON round trip — reads the published
-   * document with no forwarded material.
+   * The verdict from `authorizePreviewRequest()`. Only a real context reads the
+   * draft; `null`, a copy or a JSON round trip reads the published document.
    */
   readonly authorization: AuthorizedPreviewContext | null;
   readonly locale?: string;
@@ -223,10 +207,7 @@ export interface PreviewServer {
 const DEFAULT_TIMEOUT_MS = 5_000;
 const MIN_TIMEOUT_MS = 250;
 
-/**
- * Bind the Payload origin, route and depth once; read documents and globals
- * with an explicit authorization verdict.
- */
+/** Bind origin, route and depth once; read documents and globals with an explicit authorization verdict. */
 export function definePreview(config: PreviewServerConfig): PreviewServer {
   const serverURL = normalizeServerURL(config.serverURL);
   const route = config.apiRoute ?? '/api';
@@ -286,6 +267,8 @@ export function definePreview(config: PreviewServerConfig): PreviewServer {
           ...(context?.payloadHeaders ?? {}),
         },
         signal,
+        cache: 'no-store',
+        redirect: 'error',
       });
     } catch (cause) {
       return finish({
@@ -377,17 +360,29 @@ function failureReason(
   return 'network';
 }
 
-function appendWhere(query: URLSearchParams, node: PreviewWhere, path: string[]): void {
+function isWhereTree(value: unknown): value is PreviewWhere {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function queryName(path: readonly string[]): string {
+  return path.map((segment, index) => (index === 0 ? segment : `[${segment}]`)).join('');
+}
+
+function appendWhere(query: URLSearchParams, node: PreviewWhere, path: readonly string[]): void {
   for (const [key, value] of Object.entries(node)) {
     const nextPath = [...path, key];
-    if (typeof value === 'object' && !Array.isArray(value)) {
-      // `Array.isArray` does not narrow a readonly array away; the cast says what the guard proved.
-      appendWhere(query, value as PreviewWhere, nextPath);
-      continue;
+    if (isWhereTree(value)) {
+      appendWhere(query, value, nextPath);
+    } else if (Array.isArray(value) && value.some(isWhereTree)) {
+      // `or` / `and`: Payload's query parser turns bracketed indices back into an array.
+      (value as readonly PreviewWhere[]).forEach((branch, index) => {
+        appendWhere(query, branch, [...nextPath, String(index)]);
+      });
+    } else if (Array.isArray(value)) {
+      query.set(queryName(nextPath), (value as readonly (string | number)[]).map(String).join(','));
+    } else {
+      // Only `null` is still an object here; Payload's query sanitizers read the literal back.
+      query.set(queryName(nextPath), typeof value === 'object' ? 'null' : String(value));
     }
-    const name = nextPath
-      .map((segment, index) => (index === 0 ? segment : `[${segment}]`))
-      .join('');
-    query.set(name, Array.isArray(value) ? value.map(String).join(',') : String(value));
   }
 }

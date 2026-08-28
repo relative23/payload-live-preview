@@ -1,0 +1,63 @@
+name: Build
+
+# Called by CI and Deep Quality. Builds once per commit, runs the bundle,
+# tree-shaking and edge gates inside `npm run build`, and publishes two
+# artifacts: `dist-<sha>` for the browser jobs and the exact release candidate
+# the Release workflow later publishes byte-for-byte.
+on:
+  workflow_call: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - name: Derive reproducible source date from the tested commit
+        id: source_date
+        env:
+          TESTED_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$TESTED_SHA"
+          epoch=$(git show -s --format=%ct "$TESTED_SHA")
+          case "$epoch" in
+            ''|*[!0-9]*) echo "invalid commit timestamp"; exit 1 ;;
+          esac
+          echo "epoch=$epoch" >> "$GITHUB_OUTPUT"
+      - name: Build reproducible release candidate
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
+        run: npm run build
+      - name: Verify and persist the exact package artifact
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
+          TESTED_SHA: ${{ github.sha }}
+        run: npm run test:package -- --artifact-dir release-artifact --source-commit "$TESTED_SHA"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-candidate-${{ github.sha }}
+          path: |
+            release-artifact/*.tgz
+            release-artifact/package-artifact.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

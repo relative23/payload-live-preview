@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ModuleKind, ScriptTarget, transpileModule } from 'typescript';
 import rawCoveragePolicy from '../quality/coverage-policy.json' with { type: 'json' };
 
 export interface CoverageThresholds {
@@ -99,7 +100,6 @@ export function parseChangedLines(diff: string): ReadonlyMap<string, ReadonlySet
       changed.set(path, lines);
       nextNewLine += 1;
     } else if (!line.startsWith('-') && !line.startsWith('\\ No newline')) {
-      // Context line: present in the new file but not part of changed coverage.
       nextNewLine += 1;
     }
   }
@@ -139,6 +139,53 @@ export function matchesPolicyGlob(path: string, glob: string): boolean {
     else expression += character.replace(/[|\\{}()[\]^$+?.]/gu, '\\$&');
   }
   return new RegExp(`${expression}$`, 'u').test(path);
+}
+
+/**
+ * Whether every path `narrow` can match is also matched by `broad`, decided
+ * on a representative path; a `**` in `narrow` against a single `*` in
+ * `broad` is conservatively not covered.
+ */
+export function globCovers(broad: string, narrow: string): boolean {
+  const sample = narrow.replaceAll('**', 'zz/zz').replaceAll('*', 'zz').replaceAll('?', 'z');
+  return matchesPolicyGlob(sample, broad);
+}
+
+/**
+ * Whether a module contributes any JavaScript. A file that declares only types
+ * transpiles to nothing, so no coverage tool can report it and demanding a
+ * report from it says nothing about how well it is tested.
+ */
+export function emitsJavaScript(source: string): boolean {
+  const { outputText } = transpileModule(source, {
+    compilerOptions: {
+      module: ModuleKind.ESNext,
+      target: ScriptTarget.ESNext,
+      // Comments survive transpilation and would read as emitted code.
+      removeComments: true,
+    },
+  });
+  return outputText.replaceAll(/export\s*\{\s*\};?/gu, '').trim().length > 0;
+}
+
+/** Drops declaration-only modules, so "absent from the LCOV report" keeps meaning untested code. */
+async function withoutDeclarationOnlyModules(
+  changedLines: ReadonlyMap<string, ReadonlySet<number>>,
+  repositoryRoot: string,
+): Promise<Map<string, ReadonlySet<number>>> {
+  const kept = new Map<string, ReadonlySet<number>>();
+  for (const [path, lines] of changedLines) {
+    let source: string;
+    try {
+      source = await readFile(resolve(repositoryRoot, path), 'utf8');
+    } catch {
+      // Unreadable is not something this gate may excuse.
+      kept.set(path, lines);
+      continue;
+    }
+    if (emitsJavaScript(source)) kept.set(path, lines);
+  }
+  return kept;
 }
 
 export function evaluateDiffCoverage(
@@ -201,6 +248,7 @@ export function evaluateDiffCoverage(
   };
 }
 
+/** Thresholds only ratchet up; an ignore pattern may only be removed or narrowed. */
 export function findCoveragePolicyRegressions(
   current: CoveragePolicy,
   previous: CoveragePolicy,
@@ -215,9 +263,8 @@ export function findCoveragePolicyRegressions(
   if (current.diff.criticalLines < previous.diff.criticalLines) {
     regressions.push('diff.criticalLines was lowered');
   }
-  const previousIgnored = new Set(previous.diff.ignored);
   for (const pattern of current.diff.ignored) {
-    if (!previousIgnored.has(pattern)) {
+    if (!previous.diff.ignored.some((broad) => globCovers(broad, pattern))) {
       regressions.push(`diff ignored pattern was added: ${pattern}`);
     }
   }
@@ -271,8 +318,6 @@ function resolveComparisonBase(repositoryRoot: string, requestedBase: string | u
         'coverage diff base is required in CI; pass --base <ref> or COVERAGE_BASE_REF',
       );
     }
-    // Local runs audit staged and unstaged changes against the checked-out
-    // commit. CI must always supply the reviewed PR/base SHA explicitly.
     return 'HEAD';
   }
   try {
@@ -298,8 +343,6 @@ async function readUntrackedSourceLines(
   const lineCounts = new Map<string, number>();
   for (const path of files) {
     const source = await readFile(resolve(repositoryRoot, path), 'utf8');
-    // Empty files have no changed executable line; a non-empty final line
-    // counts even when the source does not end with a newline.
     const lines =
       source.length === 0 ? 0 : source.split('\n').length - (source.endsWith('\n') ? 1 : 0);
     lineCounts.set(path.replaceAll('\\', '/'), lines);
@@ -312,9 +355,7 @@ async function main(): Promise<void> {
   const requestedBase = readArgument('--base') ?? process.env['COVERAGE_BASE_REF'];
   const base = resolveComparisonBase(repositoryRoot, requestedBase);
   const lcovPath = resolve(repositoryRoot, readArgument('--lcov') ?? 'coverage/lcov.info');
-  // Comparing the merge base to the working tree includes committed PR changes,
-  // index changes and tracked local edits. Untracked source files are added
-  // explicitly below because Git diff intentionally omits them.
+  // Git diff omits untracked files, so they are added explicitly below.
   const diff = gitOutput(repositoryRoot, [
     'diff',
     '--unified=0',
@@ -329,7 +370,10 @@ async function main(): Promise<void> {
     await readUntrackedSourceLines(repositoryRoot),
   );
   const lcov = parseLcov(await readFile(lcovPath, 'utf8'), repositoryRoot);
-  const result = evaluateDiffCoverage(lcov, changedLines);
+  const result = evaluateDiffCoverage(
+    lcov,
+    await withoutDeclarationOnlyModules(changedLines, repositoryRoot),
+  );
   const previous = readPreviousPolicy(base);
   const regressions =
     previous === undefined ? [] : findCoveragePolicyRegressions(COVERAGE_POLICY, previous);

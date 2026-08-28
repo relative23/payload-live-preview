@@ -1,11 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  evaluateMutationReport,
-  summarizeMutationReport,
-  type MutationPolicy,
-} from '../../../scripts/mutation-policy';
+import { evaluateMutationReport, type MutationPolicy } from '../../../scripts/mutation-policy';
+import { summarizeMutationReport } from '../../../scripts/mutation-report';
 
 type Status =
   'CompileError' | 'Ignored' | 'Killed' | 'NoCoverage' | 'RuntimeError' | 'Survived' | 'Timeout';
@@ -375,5 +372,41 @@ describe('nightly mutation policy', () => {
         }),
       ).violations,
     ).toEqual(['[improvement] total mutants decreased from 8 to 5; ratchet the policy']);
+  });
+});
+
+describe('stale mutation reports', () => {
+  const sources = (): Map<string, string> =>
+    new Map([
+      ['src/core/cache.ts', ''],
+      ['src/security/csp.ts', ''],
+    ]);
+
+  it('accepts a report whose mutated sources match the working tree', () => {
+    expect(evaluateMutationReport(report(), policy(), sources()).violations).toEqual([]);
+  });
+
+  it('refuses a report mutated from a different source than the working tree', () => {
+    const tree = sources();
+    tree.set('src/core/cache.ts', 'export const changedSinceTheRun = true;\n');
+    expect(evaluateMutationReport(report(), policy(), tree).violations).toEqual([
+      '[stale] src/core/cache.ts differs from the source the report mutated; rerun the mutation suite',
+    ]);
+  });
+
+  it('refuses a report for a file the working tree no longer has', () => {
+    const tree = sources();
+    tree.delete('src/security/csp.ts');
+    expect(evaluateMutationReport(report(), policy(), tree).violations).toEqual([
+      '[stale] src/security/csp.ts is not readable in this working tree',
+    ]);
+  });
+
+  it('compares sources independently of line endings', () => {
+    const fabricated = report() as { files: Record<string, { source: string }> };
+    fabricated.files['src/core/cache.ts']!.source = 'a\r\nb\n';
+    const tree = sources();
+    tree.set('src/core/cache.ts', 'a\nb\n');
+    expect(evaluateMutationReport(fabricated, policy(), tree).violations).toEqual([]);
   });
 });

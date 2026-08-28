@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { formatReport, runDoctor, type DoctorFetch } from '@doctor/index';
 import { isCliInvocation, run } from '@doctor/cli';
+import { ADMIN, RUNTIME } from './fixtures';
 
-const RUNTIME = '<script>var __LIVE_PREVIEW_CONFIG__=[["https://cms.example.com"]];</script>';
-const ADMIN = 'https://cms.example.com';
+const BOUND = `${RUNTIME}<h1 data-payload-field="title">t</h1>`;
+const CSP = { 'content-security-policy': `frame-ancestors 'self' ${ADMIN}` };
 
 /** Answers each probe according to the headers it carried. */
 function serverFetch(
@@ -23,43 +24,36 @@ function serverFetch(
   return { fetchImpl, calls };
 }
 
+let out: string;
+let err: string;
+beforeEach(() => {
+  out = '';
+  err = '';
+  vi.spyOn(process.stdout, 'write').mockImplementation((chunk: string | Uint8Array) => {
+    out += String(chunk);
+    return true;
+  });
+  vi.spyOn(process.stderr, 'write').mockImplementation((chunk: string | Uint8Array) => {
+    err += String(chunk);
+    return true;
+  });
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('runDoctor probing', () => {
   it('asks for the page twice, once as a visitor and once as the admin iframe', async () => {
-    const { fetchImpl, calls } = serverFetch({
-      publicBody: '<h1>t</h1>',
-      previewBody: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
-    });
+    const { fetchImpl, calls } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND });
     await runDoctor({ url: 'https://example.com/', fetchImpl });
-
     expect(calls).toHaveLength(2);
     expect(calls[0]?.['Sec-Fetch-Dest']).toBe('document');
     expect(calls[1]?.['Sec-Fetch-Dest']).toBe('iframe');
   });
 
-  it('sends no referer on the visitor probe, because that is itself a preview signal', async () => {
-    const { fetchImpl, calls } = serverFetch({
-      publicBody: '<h1>t</h1>',
-      previewBody: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
-    });
-    await runDoctor({ url: 'https://example.com/', adminOrigin: ADMIN, fetchImpl });
-
-    expect(calls[0]?.['Referer']).toBeUndefined();
-    expect(calls[1]?.['Referer']).toBe(`${ADMIN}/`);
-  });
-
   it('reaches a verdict from the two responses', async () => {
-    const { fetchImpl } = serverFetch(
-      {
-        publicBody: '<h1>t</h1>',
-        previewBody: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
-      },
-      { 'content-security-policy': `frame-ancestors 'self' ${ADMIN}` },
-    );
-    const report = await runDoctor({
-      url: 'https://example.com/',
-      adminOrigin: ADMIN,
-      fetchImpl,
-    });
+    const { fetchImpl } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND }, CSP);
+    const report = await runDoctor({ url: 'https://example.com/', adminOrigin: ADMIN, fetchImpl });
     expect(report.findings).toEqual([]);
     expect(report.url).toBe('https://example.com/');
   });
@@ -109,213 +103,119 @@ describe('formatReport', () => {
   });
 });
 
-describe('pll CLI', () => {
-  function captureStdout(): { text: () => string; restore: () => void } {
-    let buffer = '';
-    const spy = vi
-      .spyOn(process.stdout, 'write')
-      .mockImplementation((chunk: string | Uint8Array) => {
-        buffer += String(chunk);
-        return true;
-      });
-    return {
-      text: () => buffer,
-      restore: () => {
-        spy.mockRestore();
-      },
-    };
-  }
-
-  function captureStderr(): { text: () => string; restore: () => void } {
-    let buffer = '';
-    const spy = vi
-      .spyOn(process.stderr, 'write')
-      .mockImplementation((chunk: string | Uint8Array) => {
-        buffer += String(chunk);
-        return true;
-      });
-    return {
-      text: () => buffer,
-      restore: () => {
-        spy.mockRestore();
-      },
-    };
-  }
-
-  it('prints help and succeeds for --help', async () => {
-    const out = captureStdout();
-    const code = await run(['--help']);
-    out.restore();
-    expect(code).toBe(0);
-    expect(out.text()).toContain('pll doctor');
+describe('pll CLI arguments', () => {
+  it('prints help and succeeds for --help, fails with no command at all', async () => {
+    expect(await run(['--help'])).toBe(0);
+    expect(out).toContain('pll doctor');
+    expect(await run([])).toBe(1);
   });
 
-  it('prints help and fails when invoked with no command at all', async () => {
-    const out = captureStdout();
-    const code = await run([]);
-    out.restore();
-    // Usage error rather than success: the caller asked for nothing.
-    expect(code).toBe(1);
-  });
-
-  it('rejects an unknown subcommand', async () => {
-    const err = captureStderr();
-    const code = await run(['diagnose']);
-    err.restore();
-    expect(code).toBe(1);
-    expect(err.text()).toContain('unknown command "diagnose"');
-  });
-
-  it('rejects an unknown option instead of ignoring it', async () => {
-    const err = captureStderr();
-    const code = await run(['doctor', 'https://example.com/', '--deep']);
-    err.restore();
-    expect(code).toBe(1);
-    expect(err.text()).toContain('--deep');
-  });
-
-  it('requires a URL', async () => {
-    const err = captureStderr();
-    const code = await run(['doctor']);
-    err.restore();
-    expect(code).toBe(1);
-    expect(err.text()).toContain('a URL is required');
+  it('rejects an unknown subcommand, an unknown option and a missing URL', async () => {
+    expect(await run(['diagnose'])).toBe(1);
+    expect(err).toContain('unknown command "diagnose"');
+    expect(await run(['doctor', 'https://example.com/', '--deep'])).toBe(1);
+    expect(err).toContain('--deep');
+    expect(await run(['doctor'])).toBe(1);
+    expect(err).toContain('a URL is required');
   });
 
   it('prints the doctor help for `doctor --help`', async () => {
-    const out = captureStdout();
-    const code = await run(['doctor', '--help']);
-    out.restore();
-    expect(code).toBe(0);
-    expect(out.text()).toContain('--admin');
+    expect(await run(['doctor', '--help'])).toBe(0);
+    expect(out).toContain('--admin');
   });
 
+  it('rejects an --admin that is not an absolute URL before probing anything', async () => {
+    const { fetchImpl, calls } = serverFetch({ publicBody: '', previewBody: '' });
+    expect(
+      await run(['doctor', 'https://example.com/', '--admin', 'cms.example.com'], fetchImpl),
+    ).toBe(1);
+    expect(err).toContain('--admin must be an absolute URL');
+    expect(calls).toEqual([]);
+  });
+});
+
+describe('pll doctor output', () => {
   it('prints a clean text report and exits 0 for a healthy deployment', async () => {
-    const { fetchImpl } = serverFetch(
-      {
-        publicBody: '<h1>t</h1>',
-        previewBody: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
-      },
-      { 'content-security-policy': `frame-ancestors 'self' ${ADMIN}` },
-    );
-    const out = captureStdout();
-    const code = await run(['doctor', 'https://example.com/', '--admin', ADMIN], fetchImpl);
-    out.restore();
-    expect(code).toBe(0);
-    expect(out.text()).toContain('No findings');
+    const { fetchImpl } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND }, CSP);
+    expect(await run(['doctor', 'https://example.com/', '--admin', ADMIN], fetchImpl)).toBe(0);
+    expect(out).toContain('No findings');
   });
 
   it('accepts --admin=<origin> as well as --admin <origin>', async () => {
     const { fetchImpl } = serverFetch(
-      {
-        publicBody: '<h1>t</h1>',
-        previewBody: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
-      },
+      { publicBody: '<h1>t</h1>', previewBody: BOUND },
       { 'content-security-policy': "frame-ancestors 'self'" },
     );
-    const out = captureStdout();
-    const code = await run(['doctor', 'https://example.com/', `--admin=${ADMIN}`], fetchImpl);
-    out.restore();
-    // The policy excludes the admin origin, which is an error — proving the
-    // joined form reached the check rather than being dropped.
-    expect(code).toBe(2);
-    expect(out.text()).toContain('LP0702');
+    expect(await run(['doctor', 'https://example.com/', `--admin=${ADMIN}`], fetchImpl)).toBe(2);
+    expect(out).toContain('LP0702');
   });
 
   it('emits JSON for --json and exits 2 on an error-level finding', async () => {
-    // X-Frame-Options: DENY is unconditionally fatal, unlike a missing inline
-    // runtime, which a consumer starting the client themselves would produce.
     const { fetchImpl } = serverFetch(
-      {
-        publicBody: '<h1>t</h1>',
-        previewBody: `${RUNTIME}<h1 data-payload-field="title">t</h1>`,
-      },
+      { publicBody: '<h1>t</h1>', previewBody: BOUND },
       { 'content-security-policy': `frame-ancestors ${ADMIN}`, 'x-frame-options': 'DENY' },
     );
-    const out = captureStdout();
-    const code = await run(['doctor', 'https://example.com/', '--json'], fetchImpl);
-    out.restore();
-    expect(code).toBe(2);
-    const parsed = JSON.parse(out.text()) as { findings: { code: string }[]; errors: number };
+    expect(await run(['doctor', 'https://example.com/', '--json'], fetchImpl)).toBe(2);
+    const parsed = JSON.parse(out) as { findings: { code: string }[]; errors: number };
     expect(parsed.errors).toBe(1);
     expect(parsed.findings[0]?.code).toBe('LP0703');
   });
 
+  it('threads --v2 into the report as LP0709 readiness findings', async () => {
+    const { fetchImpl } = serverFetch({ publicBody: '<h1>Title</h1>', previewBody: BOUND });
+    expect(await run(['doctor', 'https://example.com/', '--v2', '--json'], fetchImpl)).toBe(0);
+    expect(out).toContain('LP0709');
+  });
+});
+
+describe('pll doctor failures', () => {
   it('reports an unreachable URL as a usage-level failure, not a finding', async () => {
-    const err = captureStderr();
-    const code = await run(['doctor', 'http://127.0.0.1:1/']);
-    err.restore();
-    expect(code).toBe(1);
-    expect(err.text()).toContain('could not probe');
+    expect(await run(['doctor', 'http://127.0.0.1:1/'])).toBe(1);
+    expect(err).toContain('could not probe');
+  });
+
+  it('names the cause of a fetch failure', async () => {
+    const failing: DoctorFetch = () =>
+      Promise.reject(
+        new TypeError('fetch failed', { cause: new Error('self-signed certificate') }),
+      );
+    expect(await run(['doctor', 'https://example.com/'], failing)).toBe(1);
+    expect(err).toContain('fetch failed (self-signed certificate)');
+  });
+
+  it('still emits a JSON document for --json when the probe fails', async () => {
+    const failing: DoctorFetch = () =>
+      Promise.reject(new Error('getaddrinfo ENOTFOUND example.com'));
+    expect(await run(['doctor', 'https://example.com/', '--json'], failing)).toBe(1);
+    expect(err).toBe('');
+    expect(JSON.parse(out)).toEqual({
+      url: 'https://example.com/',
+      error: 'getaddrinfo ENOTFOUND example.com',
+    });
+  });
+
+  it('reports a usable message for a rejection that is not an Error', async () => {
+    expect(
+      await run(['doctor', 'https://example.com/'], () =>
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- a non-Error rejection is the case under test
+        Promise.reject('socket hang up'),
+      ),
+    ).toBe(1);
+    expect(err).toContain('socket hang up');
   });
 });
 
 describe('deciding whether this module was run or imported', () => {
-  // The first version matched `includes('pll')` against the whole path, which
-  // would auto-run the CLI on import for any project living in a directory
-  // whose name happens to contain those three letters.
   it('accepts the bin shim by basename', () => {
     expect(isCliInvocation([undefined, '/x/node_modules/.bin/pll'])).toBe(true);
     expect(isCliInvocation([undefined, 'C:\\x\\node_modules\\.bin\\pll.cmd'])).toBe(true);
     expect(isCliInvocation([undefined, '/x/dist/doctor-cli.js'])).toBe(true);
   });
 
-  it('refuses a path that merely contains the letters', () => {
+  it('refuses a path that merely contains the letters, or no entry at all', () => {
     expect(isCliInvocation([undefined, '/home/dev/pll-site/scripts/build.js'])).toBe(false);
     expect(isCliInvocation([undefined, '/opt/apollo/server.js'])).toBe(false);
-  });
-
-  it('refuses a missing or empty entry', () => {
     expect(isCliInvocation([undefined, undefined])).toBe(false);
     expect(isCliInvocation([undefined, ''])).toBe(false);
-  });
-});
-
-describe('failures that are not Error instances', () => {
-  it('still reports a usable message instead of [object Object]', async () => {
-    const err = captureStderrOutside();
-    const code = await run(['doctor', 'https://example.com/'], () => {
-      // A fetch implementation is consumer-supplied in principle; nothing
-      // guarantees it rejects with an Error.
-      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- deliberate
-      return Promise.reject('socket hang up');
-    });
-    err.restore();
-    expect(code).toBe(1);
-    expect(err.text()).toContain('socket hang up');
-  });
-});
-
-function captureStderrOutside(): { text: () => string; restore: () => void } {
-  let buffer = '';
-  const spy = vi.spyOn(process.stderr, 'write').mockImplementation((chunk: string | Uint8Array) => {
-    buffer += String(chunk);
-    return true;
-  });
-  return {
-    text: () => buffer,
-    restore: () => {
-      spy.mockRestore();
-    },
-  };
-}
-
-describe('pll doctor --v2', () => {
-  it('threads the --v2 flag into the report as LP0709 readiness findings', async () => {
-    const { fetchImpl } = serverFetch({
-      publicBody: '<h1>Title</h1>',
-      previewBody: `${RUNTIME}<h1 data-payload-field="title">Title</h1>`,
-    });
-    const out: string[] = [];
-    const write = vi
-      .spyOn(process.stdout, 'write')
-      .mockImplementation((chunk: string | Uint8Array) => {
-        out.push(String(chunk));
-        return true;
-      });
-    const code = await run(['doctor', 'https://example.com/', '--v2', '--json'], fetchImpl);
-    write.mockRestore();
-    expect(code).toBe(0);
-    expect(out.join('')).toContain('LP0709');
   });
 });

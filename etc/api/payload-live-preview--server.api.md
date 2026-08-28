@@ -24,6 +24,7 @@ export interface AuthorizedPreviewContext {
 // @public
 export interface AuthorizedPreviewScope {
     readonly audience?: string;
+    // (undocumented)
     readonly locale?: string;
     readonly path?: string;
 }
@@ -125,7 +126,7 @@ export interface OwnerBindingAttributes {
     readonly 'data-payload-owner': string;
 }
 
-// @public
+// @public (undocumented)
 export interface PayloadSessionStrategy {
     readonly cookieName?: string;
     // (undocumented)
@@ -139,7 +140,7 @@ export interface PayloadSessionStrategy {
     readonly usersSlug?: string;
 }
 
-// @public
+// @public (undocumented)
 type Prev<N extends 0 | 1 | 2 | 3> = N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
 
 // @public
@@ -169,11 +170,12 @@ export interface PreviewAuthorizationRequest {
 // @public (undocumented)
 export type PreviewAuthorizationStrategy = PayloadSessionStrategy | SignedTokenStrategy | VerifierStrategy;
 
-// @public
+// @public (undocumented)
 export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
 
 // @public
 export interface PreviewBindings {
+    // (undocumented)
     readonly authorized: boolean;
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
     bindByPath: <T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
@@ -225,6 +227,8 @@ export type PreviewFetchFailureReason = 'http' | 'network' | 'timeout' | 'aborte
 export type PreviewFetchFunction = (input: string, init: {
     readonly headers: Record<string, string>;
     readonly signal: AbortSignal;
+    readonly cache: 'no-store';
+    readonly redirect: 'error';
 }) => Promise<{
     readonly ok: boolean;
     readonly status: number;
@@ -268,7 +272,6 @@ export interface PreviewRequestLike {
 // @public (undocumented)
 export interface PreviewRequestOptions {
     readonly adminOrigins?: readonly string[];
-    readonly checkFetchDest?: boolean;
     readonly queryParams?: readonly string[];
     readonly signals?: readonly PreviewSignal[];
 }
@@ -353,8 +356,11 @@ export interface PreviewVerifierClaims {
 // @public
 export interface PreviewWhere {
     // (undocumented)
-    readonly [key: string]: PreviewWhere | string | number | boolean | readonly (string | number)[];
+    readonly [key: string]: PreviewWhere | readonly PreviewWhere[] | PreviewWhereValue;
 }
+
+// @public
+export type PreviewWhereValue = string | number | boolean | null | readonly (string | number)[];
 
 // @public (undocumented)
 export interface ReadDocumentOptions extends PreviewReadOptions {
@@ -370,7 +376,7 @@ export interface ReadGlobalOptions extends PreviewReadOptions {
     readonly global: string;
 }
 
-// @public
+// @public (undocumented)
 export interface SignedTokenStrategy {
     readonly audience: string;
     // (undocumented)

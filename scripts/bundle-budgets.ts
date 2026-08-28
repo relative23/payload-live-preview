@@ -8,17 +8,25 @@ export interface BundleMeasurement {
 
 export type BundleBudget = BundleMeasurement;
 
-/** Exact inline patch-delta and transfer-size ceilings used by the release gate. */
-// Set 2026-08-27 (hybrid): the plain runtime measured 25 986 gzip, +1 050 on
-// the 24 936 before the strategy seam (plan/covers, the capability context a
-// fragment strategy is handed, morph and fallback patch, LP08xx codes). The
-// seam is what lets a page without `fragments` carry no fragment client at
-// all; the client itself is the difference to INLINE_FRAGMENT_BUDGET.
-export const INLINE_BUDGET = { raw: 86_713, gzip: 26_897, brotli: 23_613 } as const;
+/** Exact inline transfer-size ceilings used by the release gate. */
+// Set 2026-08-28 after the 2.0 correctness pass: 26 910 → 28 736 gzip. The
+// +1 745 is new behaviour, not slack — Payload 3.x link/table/inline-block
+// rendering, class-based Lexical output, `mailto:` and responsive-image
+// writes, local-time date inputs, one value contract across the renderers,
+// the morph's focus and selection restore, and the scheduler's flush deadline.
+// A page without `fragments` still carries no fragment client at all; that
+// client is the difference to INLINE_FRAGMENT_BUDGET.
+//
+// Raised again the same day: 28 736 → 28 923 gzip. The +187 buys the reveal's
+// identity ledger, which lets a field the server re-renders be recognised as
+// the edited one, the binding-level reveal that picks the edited document's
+// element when a page previews several, and a rejection boundary around the
+// update pipeline so an unexpected throw is logged instead of escaping.
+export const INLINE_BUDGET = { raw: 92_912, gzip: 28_923, brotli: 25_670 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
-// only a page configured with `fragments` receives it. Measured 2026-08-28
-// (grew with the reveal-edited-field runtime).
-export const INLINE_FRAGMENT_BUDGET = { raw: 96_441, gzip: 30_121, brotli: 26_260 } as const;
+// only a page configured with `fragments` receives it. The prelude itself grew
+// by the bounded streaming reader that replaced an unbounded `response.text()`.
+export const INLINE_FRAGMENT_BUDGET = { raw: 104_340, gzip: 32_693, brotli: 28_833 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

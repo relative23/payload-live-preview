@@ -1,12 +1,8 @@
 /**
- * Internal no-write outcome ownership.
- *
- * Public 1.x callbacks deliberately return `void`; JavaScript implementations
- * may nevertheless return arbitrary values. Only callbacks registered through
- * this module may reserve exact `false` as a no-write sentinel. This prevents a
- * custom callback's incidental boolean result from changing lifecycle counts.
- *
- * @module @core/internal-outcome
+ * Public renderer callbacks return `void`, but a JavaScript implementation may
+ * return anything. Only callbacks marked here may reserve exact `false` as
+ * "no write", so a custom renderer's incidental boolean cannot change the
+ * lifecycle's applied counts.
  */
 
 type Callback = (...args: never[]) => unknown;

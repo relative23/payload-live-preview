@@ -29,14 +29,38 @@ whatever a retained node carries — listeners, `value`, `scrollTop`,
 playback, an open disclosure — survives because the node does. A node the
 morph cannot retain is replaced, and its state is lost the way it always was.
 
+Retention keeps a node's _state_, but a keyed **move** is still a remove and
+re-insert, which blurs a focused element and drops its selection. The morph
+therefore captures the active element inside the subtree before editing and
+restores focus and selection afterwards if it was reinserted; editing in
+place, the common case, never reaches that path.
+
 ### 2. Compatibility is structural, not semantic
 
 Two elements are compatible when they have the same tag name and namespace
 and neither is a boundary (§4). Keys decide the pairing of children:
 `data-payload-key` on item roots and `data-payload-nested-key` on nested
 slots; unkeyed children pair positionally within their parent. A keyed child
-never pairs with an unkeyed one. Text nodes pair positionally and are updated
-in place when their data differs; comments are replaced, not compared.
+never pairs with an unkeyed one.
+
+An attribute counts as a key only when it carries a **non-empty value**. A
+boolean marker such as `data-payload-island` is present on every sibling with
+the same (empty) value, so treating it as a key made every sibling share one
+key and all but the first lose their identity on each update. Such markers
+therefore pair positionally, like any other unkeyed child.
+
+Text and comment nodes pair positionally within their kind and are updated in
+place when their data differs; a text node is never rewritten into a comment
+or the reverse.
+
+Positional pairing **never consumes a live node of another kind**. When the
+rendered markup begins with a comment or an indentation text node that the
+live tree does not have — the ordinary case when one side is compact and the
+other is not, or when SSR hydration markers exist on one side only — the
+rendered node is inserted and the live elements keep their identity. The same
+holds when a rendered element is an insertion: if the _following_ rendered
+node pairs with the live candidate, the live one is kept for it rather than
+replaced. A tag change replaces exactly the one live element it applies to.
 
 ### 3. Attributes: the CMS controls only what the template names
 
@@ -79,7 +103,10 @@ would.
   positional pairing is what makes an insert at the top re-render every row.
 - **Duplicate** — two items with the same key: the second and later ones
   pair positionally, and the container warns once (`LP0405`). The morph does
-  not guess which duplicate the author meant.
+  not guess which duplicate the author meant, and it does not mutate the live
+  DOM to disambiguate: the duplicates keep their key attributes and are simply
+  not in the key index. (Stripping the attribute from later duplicates, as an
+  earlier implementation did, removed markers the page itself relies on.)
 - **Unstable** — every key changed while the length did not: the update is
   treated as a full replacement (every item re-rendered), and the container
   warns once (`LP0406`) that the source generates keys per message. Unstable

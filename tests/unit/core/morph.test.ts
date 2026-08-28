@@ -118,7 +118,7 @@ describe('children', () => {
     expect(live.children).toHaveLength(1);
   });
 
-  it('degrades later duplicates to positional pairing and reports the key once', () => {
+  it('pairs later duplicates positionally without touching their attributes and reports the key once', () => {
     const onDuplicateKey = vi.fn();
     const live = el(`<ul><li ${KEY}="a">first</li><li ${KEY}="a">second</li></ul>`);
     const [first, second] = Array.from(live.children);
@@ -128,8 +128,87 @@ describe('children', () => {
     });
     expect(onDuplicateKey).toHaveBeenCalledWith(live, 'a');
     expect(first?.textContent).toBe('FIRST');
-    expect(live.children[1]).not.toBe(second);
-    expect(live.children[1]?.textContent).toBe('SECOND');
+    expect(live.children[1]).toBe(second);
+    expect(second?.getAttribute(KEY)).toBe('a');
+    expect(second?.textContent).toBe('SECOND');
+  });
+
+  it('does not treat an empty-valued key attribute as a key', () => {
+    const live = el(
+      '<div><div data-payload-island><input value="a"></div><div data-payload-island>B</div></div>',
+    );
+    const [a, b] = Array.from(live.children);
+    (a!.firstElementChild as HTMLInputElement).value = 'typed';
+    morphElement(
+      live,
+      el('<div><div data-payload-island><input></div><div data-payload-island>B!</div></div>'),
+      { keyAttributes: ['data-payload-island'] },
+    );
+    expect(live.children[0]).toBe(a);
+    expect(live.children[1]).toBe(b);
+    expect(b?.hasAttribute('data-payload-island')).toBe(true);
+    expect((a!.firstElementChild as HTMLInputElement).value).toBe('typed');
+  });
+
+  it('inserts a leading comment or whitespace without consuming the live elements', () => {
+    const live = el('<section><p>one</p><p>two</p></section>');
+    const [p1, p2] = Array.from(live.children);
+    morphElement(live, el('<section><!-- c --><p>one!</p><p>two!</p></section>'), options);
+    expect(live.children[0]).toBe(p1);
+    expect(live.children[1]).toBe(p2);
+    expect(live.innerHTML).toBe('<!-- c --><p>one!</p><p>two!</p>');
+
+    const spaced = el('<section><p>one</p><p>two</p></section>');
+    const [s1, s2] = Array.from(spaced.children);
+    morphElement(spaced, el('<section>\n  <p>uno</p><p>dos</p></section>'), options);
+    expect(spaced.children[0]).toBe(s1);
+    expect(spaced.children[1]).toBe(s2);
+  });
+
+  it('treats an inserted element as an insertion when the following node pairs with the live one', () => {
+    const live = el('<div><p>a</p><span>b</span></div>');
+    const [p, span] = Array.from(live.children);
+    morphElement(live, el('<div><h2>title</h2><p>a!</p><span>b!</span></div>'), options);
+    expect(live.children[0]?.tagName).toBe('H2');
+    expect(live.children[1]).toBe(p);
+    expect(live.children[2]).toBe(span);
+  });
+
+  it('replaces exactly one live element on a tag change and keeps pairing the rest', () => {
+    const live = el('<div><p>a</p><span>b</span><em>c</em></div>');
+    const [, span, em] = Array.from(live.children);
+    morphElement(live, el('<div><h2>a</h2><span>b!</span><em>c!</em></div>'), options);
+    expect(live.children[0]?.tagName).toBe('H2');
+    expect(live.children[1]).toBe(span);
+    expect(live.children[2]).toBe(em);
+  });
+
+  it('never rewrites a text node into a comment or back', () => {
+    const live = el('<p>text</p>');
+    morphElement(live, el('<p><!-- note --></p>'), options);
+    expect(live.firstChild?.nodeType).toBe(Node.COMMENT_NODE);
+    expect(live.textContent).toBe('');
+  });
+
+  it('restores focus and selection on an input inside a keyed item that moved', () => {
+    document.body.innerHTML = '';
+    const live = el(
+      `<ul><li ${KEY}="a"><input value="x"></li><li ${KEY}="b"><input value="y"></li></ul>`,
+    );
+    document.body.append(live);
+    const input = live.querySelectorAll('input')[1]!;
+    input.value = 'moved';
+    input.focus();
+    input.setSelectionRange(1, 3);
+    morphElement(
+      live,
+      el(`<ul><li ${KEY}="b"><input></li><li ${KEY}="a"><input></li></ul>`),
+      options,
+    );
+    expect(live.firstElementChild?.getAttribute(KEY)).toBe('b');
+    expect(document.activeElement).toBe(input);
+    expect(input.value).toBe('moved');
+    expect([input.selectionStart, input.selectionEnd]).toEqual([1, 3]);
   });
 });
 

@@ -1,22 +1,11 @@
 /**
- * Reveal the bound element for the field being edited, so the preview always
- * shows the section under the editor's cursor without the user scrolling to
- * find it (roadmap 2.0 "reveal the edited section"). Two callers share this:
- * the lifecycle reveals the field whose value just changed (typing), and the
- * message bus reveals a field the admin reports the cursor moved into.
- *
- * The logic is deliberately conservative — it only scrolls when the target is
- * off-screen and only when the edited field actually changed since the last
- * reveal, so continuous typing in one field never re-scrolls and a deliberate
- * manual scroll-away is not fought. It honours `prefers-reduced-motion`.
- *
- * Pure and DOM-injected (element + window passed in) so it unit-tests without
- * a live browser.
- *
- * @module @core/reveal
+ * Scroll the edited field's bound element into view. Deliberately quiet: only
+ * when the target is off-screen and only when the edited field changed since
+ * the last reveal, so continuous typing never re-scrolls and a deliberate
+ * scroll-away is not fought. Honours `prefers-reduced-motion`.
  */
 
-/** The slice of `Window` this module reads — kept minimal for testability. */
+/** The slice of `Window` this reads, so it tests without a browser. */
 export interface RevealWindow {
   readonly innerHeight: number;
   readonly innerWidth: number;
@@ -46,12 +35,7 @@ export function prefersReducedMotion(win: RevealWindow): boolean {
   }
 }
 
-/**
- * Whether `element` is at least partially within the viewport. A fully
- * off-screen element (above, below, or beside) returns false; anything with a
- * visible sliver returns true, so we never scroll an element the user can
- * already see.
- */
+/** A visible sliver counts: an element the editor can already see is never scrolled to. */
 export function isInViewport(element: RevealElement, win: RevealWindow): boolean {
   const rect = element.getBoundingClientRect();
   const vertically = rect.bottom > 0 && rect.top < win.innerHeight;
@@ -59,7 +43,7 @@ export function isInViewport(element: RevealElement, win: RevealWindow): boolean
   return vertically && horizontally;
 }
 
-/** Outcome of a reveal attempt, for the caller's diagnostics/telemetry. */
+/** Outcome of a reveal attempt, for the caller's diagnostics. */
 export type RevealOutcome = 'revealed' | 'already-visible';
 
 /** Scroll `element` into view only when it is off-screen. */
@@ -72,20 +56,11 @@ export function revealElement(element: RevealElement, win: RevealWindow): Reveal
   return 'revealed';
 }
 
-/**
- * Tracks the last field revealed so the same field is not scrolled to on every
- * keystroke — a reveal fires only when the edited field *changes*. That is what
- * keeps it from fighting a manual scroll: typing on in one field, or scrolling
- * away while editing it, never re-centres; moving to a different field does.
- */
+/** Remembers the last field revealed, so only a change of field scrolls again. */
 export class FieldRevealer {
   #lastField: string | undefined;
 
-  /**
-   * Reveal `element` for `fieldName` unless it is the field already revealed.
-   * Returns what happened: `skipped-same` when the field is unchanged since the
-   * last reveal, otherwise the underlying viewport outcome.
-   */
+  /** `skipped-same` when this is still the field last revealed. */
   reveal(
     fieldName: string,
     element: RevealElement,
@@ -96,7 +71,7 @@ export class FieldRevealer {
     return revealElement(element, win);
   }
 
-  /** Forget the last field — e.g. after a navigation that rebuilt the page. */
+  /** Forget the last field, after a navigation that rebuilt the page. */
   reset(): void {
     this.#lastField = undefined;
   }

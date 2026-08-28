@@ -24,6 +24,7 @@ export interface AuthorizedPreviewContext {
 // @public
 export interface AuthorizedPreviewScope {
     readonly audience?: string;
+    // (undocumented)
     readonly locale?: string;
     readonly path?: string;
 }
@@ -67,11 +68,13 @@ export interface CachedElement {
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
     readonly fieldType: RendererKey;
+    readonly fragmentBoundary?: Element;
     readonly hrefField?: string;
     readonly locale?: string;
     readonly owner?: string;
     readonly srcField?: string;
     readonly strategy?: string;
+    readonly strategyKind?: UpdateSource | 'unknown';
     readonly targetAttribute?: string;
 }
 
@@ -151,6 +154,7 @@ export function detectProtocolProfile(observed: ReadonlySet<ProtocolCapability>)
 export const DIAGNOSTIC_CODES: Readonly<{
     readonly NoTrustedOrigin: "LP0101";
     readonly ReferrerOnlyTrust: "LP0102";
+    readonly PluginIncompatible: "LP0103";
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly VisibilityGateDeferred: "LP0301";
@@ -183,6 +187,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RouteRefreshLoop: "LP0805";
     readonly FragmentStrategyUnavailable: "LP0806";
     readonly V2ReadinessGap: "LP0709";
+    readonly RuntimeOnPublicPage: "LP0710";
 }>;
 
 // @public
@@ -201,8 +206,11 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
     emitWhile<E extends keyof TMap>(event: E, payload: TMap[E], shouldContinue: () => boolean): Promise<boolean>;
     eventNames(): (keyof TMap)[];
     listenerCount(event: keyof TMap): number;
+    // (undocumented)
     off<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): void;
+    // (undocumented)
     on<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): Unsubscribe;
+    // (undocumented)
     once<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): Unsubscribe;
     removeAllListeners(event?: keyof TMap): void;
 }
@@ -329,7 +337,6 @@ export interface InspectionBindings {
     readonly elements: number;
     readonly fieldNames: readonly string[];
     readonly fields: number;
-    // (undocumented)
     readonly orphanFields: readonly string[];
     readonly owners: readonly string[];
     readonly ownerScoped: boolean;
@@ -410,7 +417,7 @@ export function isExternalHttpUrl(url: string): boolean;
 // @public
 export function isInIframe(): boolean;
 
-// @public
+// @public (undocumented)
 export function isInPopup(): boolean;
 
 // @public
@@ -422,7 +429,7 @@ export function isInsideIsland(element: Element): boolean;
 // @public
 export const ISLAND_EVENT = "payload-live-preview:update";
 
-// @public
+// @public (undocumented)
 export interface IslandUpdateDetail {
     // (undocumented)
     readonly fields: Readonly<Record<string, unknown>>;
@@ -445,18 +452,22 @@ export class LivePreviewClient {
     constructor(rawConfig?: LivePreviewClientConfig);
     destroy(): Promise<void>;
     get destroyed(): boolean;
+    // (undocumented)
     get events(): EventEmitter;
     inspect(): LivePreviewInspection;
     get plugins(): readonly string[];
+    // (undocumented)
     refreshCache(): void;
     resume(): boolean;
     start(): boolean;
+    // (undocumented)
     get status(): 'disconnected' | 'connecting' | 'connected';
     suspend(): boolean;
     unuse(name: string): Promise<void>;
-    // (undocumented)
     get updateCount(): number;
     // Warning: (ae-forgotten-export) The symbol "LivePreviewPlugin" needs to be exported by the entry point core.d.ts
+    //
+    // (undocumented)
     use(plugin: LivePreviewPlugin): Promise<void>;
 }
 
@@ -606,6 +617,7 @@ export class OriginDetector {
     enumerate(): string[];
     get isProductionUnconfigured(): boolean;
     get isReferrerOnlyTrust(): boolean;
+    // (undocumented)
     get lockedOrigin(): string | undefined;
     lockOrigin(origin: string): boolean;
     matches(origin: string): boolean;
@@ -709,7 +721,6 @@ export interface PayloadLivePreviewMessage {
     // (undocumented)
     readonly data?: Record<string, unknown>;
     readonly externallyUpdatedRelationship?: PayloadDocumentEventDetail | null;
-    // (undocumented)
     readonly fieldSchemaJSON?: readonly PayloadFieldSchema[];
     // (undocumented)
     readonly globalSlug?: string;
@@ -729,7 +740,7 @@ export interface PluginCompatibility {
     readonly runtime?: string;
 }
 
-// @public
+// @public (undocumented)
 interface PluginContext {
     // Warning: (ae-forgotten-export) The symbol "PluginEvents" needs to be exported by the entry point core.d.ts
     //
@@ -750,10 +761,12 @@ interface PluginContext {
 type PluginDisposer = () => void;
 
 // @public
-interface PluginEvents extends EventEmitter {
+interface PluginEvents {
     readonly emit: <E extends keyof LivePreviewEventMap>(event: E, payload: LivePreviewEventMap[E]) => Promise<void>;
     readonly emitWhile: <E extends keyof LivePreviewEventMap>(event: E, payload: LivePreviewEventMap[E], shouldContinue: () => boolean) => Promise<boolean>;
+    // (undocumented)
     readonly eventNames: () => (keyof LivePreviewEventMap)[];
+    // (undocumented)
     readonly listenerCount: (event: keyof LivePreviewEventMap) => number;
     // (undocumented)
     readonly off: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => void;
@@ -761,6 +774,7 @@ interface PluginEvents extends EventEmitter {
     readonly on: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => Unsubscribe;
     // (undocumented)
     readonly once: <E extends keyof LivePreviewEventMap>(event: E, handler: EventHandler<LivePreviewEventMap[E]>) => Unsubscribe;
+    // (undocumented)
     readonly removeAllListeners: (event?: keyof LivePreviewEventMap) => void;
 }
 
@@ -779,14 +793,15 @@ export interface PluginInspection {
     readonly version: string | undefined;
 }
 
-// @public
+// @public (undocumented)
 type Prev<N extends 0 | 1 | 2 | 3> = N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
 
-// @public
+// @public (undocumented)
 export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
 
 // @public
 export interface PreviewBindings {
+    // (undocumented)
     readonly authorized: boolean;
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
     bindByPath: <T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
@@ -882,6 +897,7 @@ interface SanitizeOptions {
     readonly allowedDataAttributes?: readonly string[];
     readonly allowFormControls?: boolean;
     readonly policy?: SanitizerPolicyMode;
+    readonly templateMode?: boolean;
 }
 
 // @public
@@ -915,7 +931,7 @@ export interface StrategyHandlers {
 // @public
 export type SuppressedBinding = Readonly<Record<string, never>>;
 
-// @public
+// @public (undocumented)
 export type Unsubscribe = () => void;
 
 // @public
