@@ -1,0 +1,13 @@
+{
+  "name": "payload-live-preview-example-pure-html",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node serve.mjs",
+    "start": "node build.mjs && PORT=4180 node serve.mjs"
+  },
+  "dependencies": {
+    "payload-live-preview": "file:../.."
+  }
+}

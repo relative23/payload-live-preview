@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 151,
+    "files": 155,
     "suites": 403,
-    "tests": 1801,
+    "tests": 1811,
     "benchmarks": 12
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 17,
+      "files": 21,
       "suites": 22,
-      "tests": 63,
+      "tests": 71,
       "benchmarks": 0
     },
     "integration": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 120,
       "suites": 358,
-      "tests": 1655,
+      "tests": 1657,
       "benchmarks": 0
     }
   },
@@ -166,6 +166,20 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/reveal-astro-inline.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/reveal-astro-middleware.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/reveal-nextjs.spec.ts",
       "group": "e2e",
       "suites": 0,
@@ -177,6 +191,20 @@
       "group": "e2e",
       "suites": 0,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/reveal-pure-html.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/reveal-vanilla-client.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -302,7 +330,7 @@
       "path": "tests/unit/adapters/astro.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 28,
+      "tests": 30,
       "benchmarks": 0
     },
     {

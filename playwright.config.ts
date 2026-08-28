@@ -12,7 +12,10 @@ const astroPort = process.env['PLP_E2E_PORT'] ?? '4173';
  * installs only the Astro fixture (the Astro matrix). Default: all four.
  */
 const servers = new Set(
-  (process.env['PLP_E2E_SERVERS'] ?? 'astro,nextjs,sveltekit,nuxt,hybrid').split(','),
+  (
+    process.env['PLP_E2E_SERVERS'] ??
+    'astro,nextjs,sveltekit,nuxt,hybrid,pure-html,vanilla-client,astro-inline,astro-middleware'
+  ).split(','),
 );
 
 const config: PlaywrightTestConfig = {
@@ -80,6 +83,51 @@ const config: PlaywrightTestConfig = {
       // Nuxt compiles the Nitro server and the client bundle on first
       // request; a cold CI cache makes that as slow as Next's.
       timeout: 120_000,
+    },
+    {
+      // The Astro adapter's middleware delivery (mode:'middleware'): SSR runtime
+      // injection at request time via the integration-registered middleware,
+      // gated on preview intent. Intent-only (defaults:'v1'); the authorized
+      // paths are covered by SvelteKit and astro-hybrid.
+      name: 'astro-middleware',
+      command:
+        'npm --prefix examples/astro-middleware run build && npm --prefix examples/astro-middleware run start',
+      url: 'http://localhost:4183/?preview=true',
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+    {
+      // The Astro adapter's inline delivery (mode:'inline'): the runtime baked
+      // into every page. astro-payload covers the loader branch; this is the
+      // browser coverage for the inline branch, otherwise only unit-tested.
+      name: 'astro-inline',
+      command:
+        'npm --prefix examples/astro-inline run build && cd examples/astro-inline && npx astro preview --host --port 4182',
+      env: { ASTRO_PREVIEW_BACKGROUND: '1' },
+      url: 'http://localhost:4182/admin/',
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+    {
+      // The npm-import path: a bundled SPA calling initLivePreview() from the
+      // package's /client entry. Every JS-framework SPA (Remix, Solid, Vue,
+      // Svelte, Qwik) reduces to this same call, so it stands in for all of them.
+      name: 'vanilla-client',
+      command: 'npm --prefix examples/vanilla-client run start',
+      url: 'http://localhost:4181/admin.html',
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      // Zero-framework baseline: a plain static HTML page carrying the inline
+      // runtime baked by generateInlineScript(), served by a dependency-free
+      // static server. If preview works here it works on any page that can
+      // hold a <script> — the universal floor beneath every adapter.
+      name: 'pure-html',
+      command: 'npm --prefix examples/pure-html run start',
+      url: 'http://localhost:4180/admin.html',
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
     },
     {
       name: 'hybrid',
