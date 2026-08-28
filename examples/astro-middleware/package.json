@@ -1,0 +1,21 @@
+{
+  "name": "payload-live-preview-example-astro-middleware",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.16.0",
+  "scripts": {
+    "build": "astro build",
+    "start": "HOST=127.0.0.1 PORT=4183 node ./dist/server/entry.mjs",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "payload-live-preview": "file:../..",
+    "astro": "^7.2.1",
+    "@astrojs/node": "latest"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": false
+  }
+}

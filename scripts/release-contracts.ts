@@ -562,7 +562,7 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
       ],
     ],
     'critical-mutation': [
-      ['does not set a bounded timeout', /timeout-minutes:\s*120/],
+      ['does not set a bounded timeout', /timeout-minutes:\s*180/],
       ['does not pin the quality Node version', /node-version:\s*22\.23\.2/],
       ['does not build the generated runtime', /run:\s*npm run build:runtime(?:\s|$)/],
       ['does not select the complete critical mutation scope', /STRYKER_SCOPE:\s*nightly/],

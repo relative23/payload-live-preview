@@ -1,16 +1,15 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
 
 /**
- * Reveal the edited section (roadmap 2.0), in a real browser. The reveal
- * fixture puts `footer` below a 2,200px spacer — off-screen on load. Editing
- * it must scroll it into view; the pure guards (off-screen only, reduced
- * motion, field-change dedupe) are unit-tested, this proves the actual
- * scrollIntoView + layout in Chromium/Firefox/WebKit.
+ * The Astro adapter's *inline* delivery (mode:'inline'): the runtime is baked
+ * into every built page via injectScript('head-inline'). astro-payload covers
+ * the 'loader' branch in a browser; this covers 'inline', which was otherwise
+ * only unit-tested — patch and reveal, on a real static Astro build.
  */
 
+const ORIGIN = 'http://localhost:4182';
+
 function previewFrame(page: Page): Frame | undefined {
-  // The preview is the only child frame; the bench is the main frame (and its
-  // URL also contains '/reveal/' in the query, so match by frame identity).
   return page.frames().find((frame) => frame !== page.mainFrame());
 }
 
@@ -24,7 +23,15 @@ async function sendUpdate(page: Page, data: Record<string, unknown>): Promise<vo
   }, data);
 }
 
-/** Whether the element with the given test id is within the iframe viewport. */
+async function started(frame: Frame): Promise<boolean> {
+  return frame.evaluate(
+    () =>
+      (
+        window as Window & { __livePreview?: { inspect(): { started: boolean } } }
+      ).__livePreview?.inspect().started ?? false,
+  );
+}
+
 async function footerInView(frame: Frame): Promise<boolean> {
   return frame.evaluate(() => {
     const el = document.querySelector('[data-testid="footer"]');
@@ -34,28 +41,29 @@ async function footerInView(frame: Frame): Promise<boolean> {
   });
 }
 
-test('editing an off-screen field scrolls it into view', async ({ page }) => {
-  await page.goto('/bench?target=/reveal/');
+test('patches a bound field (Astro inline mode)', async ({ page }) => {
+  await page.goto(`${ORIGIN}/admin/?target=/`);
+  await expect.poll(() => previewFrame(page)?.url() ?? '', { timeout: 15_000 }).toContain(ORIGIN);
+  const frame = previewFrame(page);
+  if (!frame) throw new Error('preview frame missing');
+  await expect.poll(() => started(frame), { timeout: 15_000 }).toBe(true);
+
+  await sendUpdate(page, { title: 'Live from Astro inline', subtitle: 'sub' });
+  await expect(page.frameLocator('[data-testid="preview-frame"]').getByTestId('title')).toHaveText(
+    'Live from Astro inline',
+  );
+});
+
+test('reveals an off-screen field on edit (Astro inline mode)', async ({ page }) => {
+  await page.goto(`${ORIGIN}/admin/?target=/reveal/`);
   await expect
     .poll(() => previewFrame(page)?.url().endsWith('/reveal/') ?? false, { timeout: 15_000 })
     .toBe(true);
   const frame = previewFrame(page);
   if (!frame) throw new Error('preview frame missing');
-  await expect
-    .poll(
-      () =>
-        frame.evaluate(
-          () =>
-            (
-              window as Window & { __livePreview?: { inspect(): { started: boolean } } }
-            ).__livePreview?.inspect().started ?? false,
-        ),
-      { timeout: 15_000 },
-    )
-    .toBe(true);
+  await expect.poll(() => started(frame), { timeout: 15_000 }).toBe(true);
 
   const footer = page.frameLocator('[data-testid="preview-frame"]').getByTestId('footer');
-
   // WebKit can drop the first postMessage after the runtime starts; retry the
   // post until the baseline is applied. Confirming it before the edit also stops
   // the two messages from coalescing inside the debounce window (which would be

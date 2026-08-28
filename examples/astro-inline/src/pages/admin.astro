@@ -1,0 +1,17 @@
+---
+// Mock admin: frames ?target= and exposes the preview-frame test id. The inline
+// runtime is baked here too, but top-level nav is not a preview context so it
+// bails — only the framed target starts.
+---
+<html lang="en">
+  <head><meta charset="utf-8" /><title>Mock admin</title></head>
+  <body style="margin:0">
+    <iframe id="preview" data-testid="preview-frame" title="Live preview"
+            style="width:100%;height:600px;border:0"></iframe>
+    <script is:inline>
+      const requested = new URLSearchParams(location.search).get('target') || '/';
+      const target = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
+      document.getElementById('preview').src = target;
+    </script>
+  </body>
+</html>

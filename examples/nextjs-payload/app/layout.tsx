@@ -15,6 +15,8 @@ const previewScript = generateInlineScript({
   allowedOrigins: ['http://localhost:4174'],
   debug: true,
   debounceMs: 25,
+  // Reveal the edited section — exercised by reveal-nextjs.spec.ts.
+  revealEditedField: true,
 });
 
 const styles = `

@@ -1,0 +1,20 @@
+{
+  "name": "payload-live-preview-example-astro-inline",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.16.0",
+  "scripts": {
+    "build": "astro build",
+    "preview": "astro preview --host --port 4182",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "payload-live-preview": "file:../..",
+    "astro": "^7.2.1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": false
+  }
+}

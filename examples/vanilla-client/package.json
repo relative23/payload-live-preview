@@ -1,0 +1,16 @@
+{
+  "name": "payload-live-preview-example-vanilla-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node serve.mjs",
+    "start": "node build.mjs && PORT=4181 node serve.mjs"
+  },
+  "dependencies": {
+    "payload-live-preview": "file:../.."
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

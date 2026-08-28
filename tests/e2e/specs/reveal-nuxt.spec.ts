@@ -1,30 +1,27 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
 
 /**
- * Reveal the edited section (roadmap 2.0), in a real browser. The reveal
- * fixture puts `footer` below a 2,200px spacer — off-screen on load. Editing
- * it must scroll it into view; the pure guards (off-screen only, reduced
- * motion, field-change dedupe) are unit-tested, this proves the actual
- * scrollIntoView + layout in Chromium/Firefox/WebKit.
+ * Reveal the edited section through the nuxt adapter — real-browser proof the
+ * feature is framework-agnostic (identical reveal runtime, nuxt injection).
+ * `/reveal` puts `footer` below a 2,200px spacer; editing it scrolls it in.
  */
 
+const ADMIN = 'http://localhost:4176/admin.html';
+
 function previewFrame(page: Page): Frame | undefined {
-  // The preview is the only child frame; the bench is the main frame (and its
-  // URL also contains '/reveal/' in the query, so match by frame identity).
-  return page.frames().find((frame) => frame !== page.mainFrame());
+  return page.frames().find((frame) => frame.url().endsWith('/reveal'));
 }
 
 async function sendUpdate(page: Page, data: Record<string, unknown>): Promise<void> {
   await page.evaluate((payload) => {
-    const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-    frame?.contentWindow?.postMessage(
+    const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
+    iframe?.contentWindow?.postMessage(
       { type: 'payload-live-preview', data: payload },
       window.location.origin,
     );
   }, data);
 }
 
-/** Whether the element with the given test id is within the iframe viewport. */
 async function footerInView(frame: Frame): Promise<boolean> {
   return frame.evaluate(() => {
     const el = document.querySelector('[data-testid="footer"]');
@@ -34,10 +31,14 @@ async function footerInView(frame: Frame): Promise<boolean> {
   });
 }
 
-test('editing an off-screen field scrolls it into view', async ({ page }) => {
-  await page.goto('/bench?target=/reveal/');
+test('editing an off-screen field scrolls it into view (nuxt adapter)', async ({ page }) => {
+  await page.goto(ADMIN);
+  await page.evaluate(() => {
+    const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
+    if (iframe) iframe.src = '/reveal';
+  });
   await expect
-    .poll(() => previewFrame(page)?.url().endsWith('/reveal/') ?? false, { timeout: 15_000 })
+    .poll(() => previewFrame(page)?.url().endsWith('/reveal') ?? false, { timeout: 15_000 })
     .toBe(true);
   const frame = previewFrame(page);
   if (!frame) throw new Error('preview frame missing');
@@ -54,8 +55,10 @@ test('editing an off-screen field scrolls it into view', async ({ page }) => {
     )
     .toBe(true);
 
-  const footer = page.frameLocator('[data-testid="preview-frame"]').getByTestId('footer');
+  // Let SPA hydration settle so an applied value is not reverted by a re-render.
+  await page.waitForTimeout(800);
 
+  const footer = page.frameLocator('[data-testid="preview-frame"]').getByTestId('footer');
   // WebKit can drop the first postMessage after the runtime starts; retry the
   // post until the baseline is applied. Confirming it before the edit also stops
   // the two messages from coalescing inside the debounce window (which would be
