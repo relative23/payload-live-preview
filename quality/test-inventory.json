@@ -19,7 +19,7 @@
   "totals": {
     "files": 236,
     "suites": 507,
-    "tests": 2122,
+    "tests": 2123,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 198,
       "suites": 454,
-      "tests": 1971,
+      "tests": 1972,
       "benchmarks": 0
     }
   },
@@ -1527,7 +1527,7 @@
       "path": "tests/unit/quality/mutation-policy.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 18,
+      "tests": 19,
       "benchmarks": 0
     },
     {

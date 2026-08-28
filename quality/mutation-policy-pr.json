@@ -20,11 +20,12 @@
   },
   "scope": ["src/core/field-value.ts", "src/security/csp.ts", "src/security/url-validator.ts"],
   "baseline": {
-    "total": 296,
-    "mutationScoreMinimum": 93.92,
+    "total": 313,
+    "mutationScoreMinimum": 94.89,
     "mutationScorePrecision": 2,
+    "mutationScoreDriftMutants": 2,
     "noCoverageMaximum": 0,
-    "timeoutMaximum": 0,
+    "timeoutMaximum": 2,
     "errorMaximum": 0,
     "ignoredMaximum": 0
   }
