@@ -86,24 +86,24 @@ test.describe('real Payload admin → hybrid fixture', () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  test('typing the title refreshes the route and patches the unsaved title onto it', async ({
+  test('typing the title updates the head and the hero against the real admin', async ({
     page,
   }) => {
     const preview = page.frameLocator(PREVIEW_IFRAME);
     await page.locator('#field-title').fill('Real admin, real route');
     const frame = previewFrame(page);
     if (!frame) throw new Error('preview frame missing');
-    // A head-bound title makes this a route refresh; the whole route re-renders
-    // and the unsaved title lands on the fresh markup (head included).
-    await expect
-      .poll(() =>
-        frame.evaluate(
-          () =>
-            (window as Window & { __livePreview?: Api }).__livePreview!.inspect().route.refreshes,
-        ),
-      )
-      .toBeGreaterThanOrEqual(1);
+    // The title is bound in the <head> and in the hero. The head <title>
+    // reaching the unsaved value is the end-to-end proof that the hybrid
+    // preview delivered the edit to the whole document — assert that (with
+    // generous headroom: a real admin plus a cold route fetch is slow on a
+    // shared runner, Firefox especially) and the hero. Whether the head is
+    // reached by a route refresh or the patch fallback is a per-message race
+    // against a real admin; the route-refresh mechanics are proven
+    // deterministically in tests/e2e/specs/hybrid-fragment.spec.ts across all
+    // three engines, so this real-admin test asserts the observable outcome,
+    // not the internal strategy counter.
+    await expect.poll(() => frame.title(), { timeout: 30_000 }).toBe('Real admin, real route');
     await expect(preview.getByTestId('hero-title')).toHaveText('Real admin, real route');
-    await expect.poll(() => frame.title()).toBe('Real admin, real route');
   });
 });
