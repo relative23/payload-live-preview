@@ -7,6 +7,7 @@ import {
   publishCertifiedArtifact,
   registryArtifactAction,
   releaseTagForVersion,
+  distTagForVersion,
 } from '../../scripts/publish-artifact';
 
 describe('exact artifact publisher', () => {
@@ -82,7 +83,7 @@ describe('exact artifact publisher', () => {
 
   it('passes the verified tgz directly to npm with lifecycle scripts disabled and provenance on', () => {
     const tarball = '/tmp/release/payload-live-preview-1.0.4.tgz';
-    expect(exactPublishArguments(tarball)).toEqual([
+    expect(exactPublishArguments(tarball, 'latest')).toEqual([
       'publish',
       tarball,
       '--ignore-scripts',
@@ -97,10 +98,27 @@ describe('exact artifact publisher', () => {
     ]);
   });
 
-  it('keeps stable Changesets tag naming and fails closed for prereleases', () => {
+  it('tags stable and prerelease git releases, and refuses a non-version', () => {
     expect(releaseTagForVersion('1.0.4')).toBe('v1.0.4');
-    expect(() => releaseTagForVersion('2.0.0-beta.1')).toThrow(/prerelease/u);
+    expect(releaseTagForVersion('2.0.0-beta.1')).toBe('v2.0.0-beta.1');
     expect(() => releaseTagForVersion('latest')).toThrow(/version/u);
+  });
+
+  it('routes a prerelease to its own npm dist-tag and never to latest', () => {
+    expect(distTagForVersion('1.0.4')).toBe('latest');
+    expect(distTagForVersion('2.0.0')).toBe('latest');
+    expect(distTagForVersion('2.0.0-beta.0')).toBe('beta');
+    expect(distTagForVersion('2.0.0-rc.3')).toBe('rc');
+    expect(() => distTagForVersion('not-a-version')).toThrow(/version/u);
+  });
+
+  it('publishes a prerelease archive under its label tag', () => {
+    const args = exactPublishArguments(
+      '/tmp/x-2.0.0-beta.0.tgz',
+      distTagForVersion('2.0.0-beta.0'),
+    );
+    const tagIndex = args.indexOf('--tag');
+    expect(args[tagIndex + 1]).toBe('beta');
   });
 });
 

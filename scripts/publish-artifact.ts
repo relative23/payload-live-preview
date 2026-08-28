@@ -19,6 +19,10 @@ import { sanitizeNpmScriptEnvironment } from './release-contracts';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const NPM_REGISTRY = 'https://registry.npmjs.org';
 const STABLE_SEMVER_PATTERN = /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/u;
+// A changesets prerelease: `X.Y.Z-<label>.<n>` (e.g. `2.0.0-beta.0`). The
+// label becomes the npm dist-tag, so a prerelease never lands on `latest`.
+const PRERELEASE_SEMVER_PATTERN =
+  /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)-([a-z][a-z0-9]*)\.(?:0|[1-9][0-9]*)$/u;
 
 interface CommandResult {
   readonly stdout: string;
@@ -137,7 +141,7 @@ function detail(result: CommandResult): string {
   return output.length > 2_000 ? output.slice(-2_000) : output;
 }
 
-export function exactPublishArguments(tarball: string): readonly string[] {
+export function exactPublishArguments(tarball: string, distTag: string): readonly string[] {
   return [
     'publish',
     tarball,
@@ -146,7 +150,7 @@ export function exactPublishArguments(tarball: string): readonly string[] {
     '--access',
     'public',
     '--tag',
-    'latest',
+    distTag,
     '--registry',
     NPM_REGISTRY,
     '--json',
@@ -178,11 +182,23 @@ export async function publishCertifiedArtifact(
   return action === 'publish' ? 'published' : 'reconciled';
 }
 
+/**
+ * The npm dist-tag for a version: `latest` for a stable release, and the
+ * prerelease label (`beta`, `rc`, …) for a prerelease, so a `2.0.0-beta.0`
+ * publishes under `beta` and `npm install <pkg>` keeps resolving the stable
+ * `latest`. Any version that is neither shape is refused (fail-closed).
+ */
+export function distTagForVersion(version: string): string {
+  if (STABLE_SEMVER_PATTERN.test(version)) return 'latest';
+  const prerelease = PRERELEASE_SEMVER_PATTERN.exec(version);
+  if (prerelease === null) throw new Error(`invalid package version: ${version}`);
+  return prerelease[1] ?? 'next';
+}
+
 export function releaseTagForVersion(version: string): string {
-  if (version.includes('-')) {
-    throw new Error('prerelease publishing requires an explicit non-latest npm dist-tag policy');
+  if (!STABLE_SEMVER_PATTERN.test(version) && !PRERELEASE_SEMVER_PATTERN.test(version)) {
+    throw new Error(`invalid package version: ${version}`);
   }
-  if (!STABLE_SEMVER_PATTERN.test(version)) throw new Error(`invalid package version: ${version}`);
   return `v${version}`;
 }
 
@@ -355,9 +371,10 @@ async function main(): Promise<void> {
     throw new Error('repository package identity/toolchain is malformed');
   }
   const npmVersion = packageManager.slice('npm@'.length);
-  // npm publish defaults to `latest`. Prereleases stay fail-closed until this
-  // release path has an explicit, reviewed non-latest dist-tag policy.
-  releaseTagForVersion(version);
+  // Derive (and validate) the npm dist-tag: `latest` for a stable release,
+  // the prerelease label (e.g. `beta`) for a prerelease. Fail-closed on any
+  // other shape.
+  const distTag = distTagForVersion(version);
   const actualNpm = run('npm', ['--version']);
   if (actualNpm.status !== 0 || actualNpm.stdout.trim() !== npmVersion) {
     throw new Error(`release requires npm ${npmVersion}:\n${detail(actualNpm)}`);
@@ -392,7 +409,7 @@ async function main(): Promise<void> {
   const outcome = await publishCertifiedArtifact(evidence.integrity, {
     readRegistryState: () => readRegistryState(name, version),
     publishExactArchive: () => {
-      const published = run('npm', exactPublishArguments(tarball));
+      const published = run('npm', exactPublishArguments(tarball, distTag));
       if (published.status !== 0) {
         throw new Error(`publishing the exact CI archive failed:\n${detail(published)}`);
       }

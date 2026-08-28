@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "payload-live-preview": "1.8.1"
+  },
+  "changesets": []
+}
