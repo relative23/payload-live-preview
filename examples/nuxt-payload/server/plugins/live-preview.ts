@@ -18,6 +18,7 @@ export default defineNitroPlugin(
     allowedOrigins: ['http://localhost:4176'],
     debug: true,
     debounceMs: 25,
+    revealEditedField: true,
     // Staged on the 1.x profile: this fixture exercises the runtime mechanics.
     // The v2 defaults with a real authorized context are shown by the SvelteKit
     // fixture (defaults: 'v2' + authorizePreview) and the real-payload suites.

@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 149,
+    "files": 151,
     "suites": 403,
-    "tests": 1799,
+    "tests": 1801,
     "benchmarks": 12
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 15,
+      "files": 17,
       "suites": 22,
-      "tests": 61,
+      "tests": 63,
       "benchmarks": 0
     },
     "integration": {
@@ -163,6 +163,20 @@
       "group": "e2e",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/reveal-nextjs.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/reveal-nuxt.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 1,
       "benchmarks": 0
     },
     {

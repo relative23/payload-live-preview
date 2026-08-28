@@ -21,6 +21,10 @@ export const handle = livePreviewHandle({
   allowedOrigins: ['http://localhost:4175'],
   debug: true,
   debounceMs: 25,
+  // Reveal the edited section. This fixture is the v2/strict showcase
+  // (query-only intent + token), so a browser reveal E2E lives on the astro,
+  // nextjs and nuxt fixtures instead; the runtime here is identical.
+  revealEditedField: true,
   // Two documents may share a field name on one page (`/owners`); an update
   // names its document and patches only that one.
   scopeBindingsByOwner: true,
