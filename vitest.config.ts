@@ -3,10 +3,28 @@ import { resolve } from 'node:path';
 import coveragePolicy from './quality/coverage-policy.json' with { type: 'json' };
 import { ZeroSkipReporter } from './scripts/zero-skip-reporter';
 
+/**
+ * `PLP_PROPERTY_RUNS` multiplies the cases every property explores, so the
+ * deadline has to grow with it. Without this the scheduled exploration fails on
+ * the clock rather than on a counterexample: the sanitizer property needs ~2.5 s
+ * for 10,000 cases here and more than the 5 s default on a slower runner, which
+ * is a property of the machine and says nothing about the code.
+ */
+function propertyExplorationTimeout(): number | undefined {
+  const raw = process.env['PLP_PROPERTY_RUNS'];
+  if (raw === undefined || !/^\d+$/.test(raw)) return undefined;
+  const runs = Number(raw);
+  if (!Number.isSafeInteger(runs) || runs <= 100) return undefined;
+  return Math.min(600_000, 5_000 * Math.ceil(runs / 100));
+}
+
+const explorationTimeout = propertyExplorationTimeout();
+
 export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: false,
+    ...(explorationTimeout === undefined ? {} : { testTimeout: explorationTimeout }),
     // The static test policy catches focused tests; this closes the runner-level hatch.
     allowOnly: false,
     retry: 0,
