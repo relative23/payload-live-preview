@@ -145,7 +145,10 @@ jobs:
     name: Release Critical Mutation Baseline
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    # The full nightly mutation scope runs ~117 min and was set against a 120 min
+    # limit, so it was cancelled ~30% of runs (and blocked releases, since Release
+    # gates on CI success). 180 gives real headroom without approaching the 6 h cap.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -249,11 +252,19 @@ jobs:
       - run: npm ci --no-audit --no-fund --prefix examples/sveltekit-payload
       - run: npm ci --no-audit --no-fund --prefix examples/nuxt-payload
       - run: npm ci --no-audit --no-fund --prefix examples/astro-hybrid
+      - run: npm ci --no-audit --no-fund --prefix examples/pure-html
+      - run: npm ci --no-audit --no-fund --prefix examples/vanilla-client
+      - run: npm ci --no-audit --no-fund --prefix examples/astro-inline
+      - run: npm ci --no-audit --no-fund --prefix examples/astro-middleware
       - run: npm audit --audit-level=high --prefix examples/astro-payload
       - run: npm audit --audit-level=high --prefix examples/nextjs-payload
       - run: npm audit --audit-level=high --prefix examples/sveltekit-payload
       - run: npm audit --audit-level=high --prefix examples/nuxt-payload
       - run: npm audit --audit-level=high --prefix examples/astro-hybrid
+      - run: npm audit --audit-level=high --prefix examples/pure-html
+      - run: npm audit --audit-level=high --prefix examples/vanilla-client
+      - run: npm audit --audit-level=high --prefix examples/astro-inline
+      - run: npm audit --audit-level=high --prefix examples/astro-middleware
       - run: npx playwright test --project=${{ matrix.browser }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
