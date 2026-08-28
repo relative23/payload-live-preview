@@ -61,8 +61,14 @@ test('reveals an off-screen field on edit (/client import)', async ({ page }) =>
   await expect.poll(() => started(frame), { timeout: 15_000 }).toBe(true);
 
   const footer = page.frameLocator('[data-testid="preview-frame"]').getByTestId('footer');
-  await post(page, { heroTitle: 'Top', footer: 'baseline footer' });
-  await expect(footer).toHaveText('baseline footer');
+  // WebKit can drop the first postMessage after the runtime starts; retry the
+  // post until the baseline is applied. Confirming it before the edit also stops
+  // the two messages from coalescing inside the debounce window (which would be
+  // treated as a single baseline and never scroll).
+  await expect(async () => {
+    await post(page, { heroTitle: 'Top', footer: 'baseline footer' });
+    await expect(footer).toHaveText('baseline footer', { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
   expect(
     await frame.evaluate(() => {
       const r = document.querySelector('[data-testid="footer"]')!.getBoundingClientRect();
@@ -71,8 +77,10 @@ test('reveals an off-screen field on edit (/client import)', async ({ page }) =>
     'footer starts below the fold',
   ).toBe(false);
 
-  await post(page, { heroTitle: 'Top', footer: 'edited footer' });
-  await expect(footer).toHaveText('edited footer');
+  await expect(async () => {
+    await post(page, { heroTitle: 'Top', footer: 'edited footer' });
+    await expect(footer).toHaveText('edited footer', { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
   await expect
     .poll(
       () =>
