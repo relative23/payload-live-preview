@@ -776,7 +776,7 @@ async function main(): Promise<void> {
     );
 
     const esmRuntimeExports: Readonly<Record<string, readonly string[]>> = {
-      [packageSpecifier(packageName, '.')]: ['LivePreviewClient', 'generateInlineScript'],
+      [packageSpecifier(packageName, '.')]: ['LivePreviewClient', 'createPreviewFocusReporter'],
       [packageSpecifier(packageName, './core')]: ['EventEmitter', 'initLivePreview'],
       [packageSpecifier(packageName, './astro')]: ['livePreview', 'createLivePreviewMiddleware'],
       [packageSpecifier(packageName, './nextjs')]: ['createLivePreviewMiddleware'],
@@ -784,7 +784,10 @@ async function main(): Promise<void> {
       [packageSpecifier(packageName, './nuxt')]: ['livePreviewNitroPlugin'],
       [packageSpecifier(packageName, './payload')]: ['buildLivePreviewUrl'],
       [packageSpecifier(packageName, './server')]: ['definePreview', 'authorizePreviewRequest'],
-      [packageSpecifier(packageName, './client')]: ['LivePreviewClient', 'initLivePreview'],
+      [packageSpecifier(packageName, './client')]: [
+        'LivePreviewClient',
+        'createPreviewFocusReporter',
+      ],
       [packageSpecifier(packageName, './structural')]: [
         'createStructuralArrayRenderer',
         'morphElement',
@@ -838,11 +841,14 @@ async function main(): Promise<void> {
         '--input-type=commonjs',
         '--eval',
         `const expected = ${JSON.stringify({
-          [packageSpecifier(packageName, '.')]: ['LivePreviewClient', 'generateInlineScript'],
+          [packageSpecifier(packageName, '.')]: ['LivePreviewClient', 'createPreviewFocusReporter'],
           [packageSpecifier(packageName, './core')]: ['EventEmitter', 'initLivePreview'],
           [packageSpecifier(packageName, './payload')]: ['buildLivePreviewUrl'],
           [packageSpecifier(packageName, './server')]: ['definePreview', 'authorizePreviewRequest'],
-          [packageSpecifier(packageName, './client')]: ['LivePreviewClient', 'initLivePreview'],
+          [packageSpecifier(packageName, './client')]: [
+            'LivePreviewClient',
+            'createPreviewFocusReporter',
+          ],
           [packageSpecifier(packageName, './structural')]: [
             'createStructuralArrayRenderer',
             'morphElement',

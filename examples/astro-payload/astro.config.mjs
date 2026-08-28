@@ -22,6 +22,8 @@ export default defineConfig({
       // the inline *runtime* is still driven end to end by the Next, SvelteKit
       // and Nuxt fixtures, so nothing is left unexercised by the switch.
       mode: 'loader',
+      // Exercises the reveal-edited-field browser path (reveal.spec.ts).
+      revealEditedField: true,
       allowedOrigins: ['http://localhost:4173', 'http://127.0.0.1:4173', 'http://localhost:3001'],
       debug: true,
       debounceMs: 25,

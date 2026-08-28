@@ -124,6 +124,9 @@ export class LivePreviewClient {
         ? { scopeBindingsByOwner: config.scopeBindingsByOwner }
         : {}),
       ...(config.skipUnchanged !== undefined ? { skipUnchanged: config.skipUnchanged } : {}),
+      ...(config.revealEditedField !== undefined
+        ? { revealEditedField: config.revealEditedField }
+        : {}),
       ...(config.eventSourcePolicy !== undefined
         ? { eventSourcePolicy: config.eventSourcePolicy }
         : {}),

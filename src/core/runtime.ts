@@ -57,6 +57,7 @@ type RuntimeBuildConfig = readonly [
   eventSourcePolicy?: 'any' | 'parent-or-opener',
   sanitizerPolicy?: 'compat' | 'strict',
   fragmentEndpoint?: string,
+  revealEditedField?: boolean,
 ];
 
 declare const __LIVE_PREVIEW_CONFIG__: RuntimeBuildConfig;
@@ -152,6 +153,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     eventSourcePolicy = 'parent-or-opener',
     sanitizerPolicy = 'strict',
     fragmentEndpoint,
+    revealEditedField = false,
   ] = readBuildConfig();
   const strategies =
     typeof __LIVE_PREVIEW_FRAGMENT__ !== 'undefined' &&
@@ -212,6 +214,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     enableA11y,
     scopeBindingsByOwner,
     skipUnchanged,
+    revealEditedField,
     ...(strategies !== undefined ? { strategies } : {}),
     onHeartbeatTimeout: () => {
       detector.unlockOrigin();

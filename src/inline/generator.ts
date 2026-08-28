@@ -92,6 +92,8 @@ export interface InlineScriptConfig {
    * renderers and `elementUpdate` listeners then stop seeing repeats.
    */
   readonly skipUnchanged?: boolean;
+  /** Scroll the preview to the field being edited when its value changes. */
+  readonly revealEditedField?: boolean;
   /** Which windows may post updates; `'parent-or-opener'` refuses every other source. Default `'any'`. */
   readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
   /** Sanitizer policy for rich text and HTML writes; `'strict'` is the 2.0 default (`defaults: 'v2'`). */
@@ -167,6 +169,7 @@ function buildConfigLiteral(config: InlineScriptConfig): string {
     config.eventSourcePolicy,
     config.sanitizerPolicy,
     config.fragmentEndpoint,
+    config.revealEditedField,
   ];
   while (compactConfig.length > 0 && compactConfig.at(-1) === undefined) compactConfig.pop();
   // Preserve omitted interior options as sparse JavaScript slots. JSON arrays

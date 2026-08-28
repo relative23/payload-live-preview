@@ -167,6 +167,9 @@ export function createAnalyticsPlugin(): LivePreviewPlugin & {
 export function createPreviewBindings(options: PreviewBindingsOptions): PreviewBindings;
 
 // @public
+export function createPreviewFocusReporter(resolveTarget: () => FocusReportTarget | null | undefined, targetOrigin: string): (field: string) => void;
+
+// @public
 export interface CspDirectiveMerge {
     // (undocumented)
     readonly mode?: 'union' | 'replace';
@@ -336,6 +339,12 @@ export type FieldTransform = (value: unknown, context: {
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';
 
 // @public
+export interface FocusReportTarget {
+    // (undocumented)
+    postMessage: (message: unknown, targetOrigin: string) => void;
+}
+
+// @public
 export interface FragmentContext {
     // (undocumented)
     readonly collectionSlug: string | undefined;
@@ -421,6 +430,7 @@ export interface InlineScriptConfig {
     readonly mergeDepth?: number;
     // @deprecated
     readonly nonce?: string;
+    readonly revealEditedField?: boolean;
     readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
@@ -647,6 +657,7 @@ export interface LivePreviewClientConfig {
     readonly mergeFetch?: typeof fetch;
     readonly renderRichText?: RichTextRenderer;
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
+    readonly revealEditedField?: boolean;
     readonly root?: Document | Element;
     readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
@@ -1067,6 +1078,14 @@ export interface PreviewBindingsOptions extends PreviewBindingsCommonOptions {
 }
 
 // @public
+export interface PreviewFocusMessage {
+    // (undocumented)
+    readonly field: string;
+    // (undocumented)
+    readonly type: 'payload-live-preview-focus';
+}
+
+// @public
 export interface PreviewRequestLike {
     // (undocumented)
     readonly headers: {
@@ -1173,6 +1192,9 @@ export interface RenderContext {
 
 // @public
 export type RendererKey = FieldType | CustomRendererKey;
+
+// @public
+export function reportPreviewFocus(target: FocusReportTarget, field: string, targetOrigin: string): void;
 
 // @public
 export type RichTextRenderer = (value: unknown, context: {

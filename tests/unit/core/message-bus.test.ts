@@ -944,6 +944,29 @@ describe('MessageBus — receive', () => {
       revision: 3,
     });
   });
+
+  it('reveals a focused field and rejects a focus message with no field', () => {
+    const onFocusField = vi.fn<NonNullable<BusHandlers['onFocusField']>>();
+    bus.detach();
+    bus = new MessageBus((origin) => origin === TRUSTED, {
+      onUpdate,
+      onDocumentEvent,
+      onInvalid,
+      onFocusField,
+    });
+    bus.attach();
+
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview-focus', field: 'heroTitle' }, TRUSTED),
+    );
+    expect(onFocusField).toHaveBeenCalledWith('heroTitle', TRUSTED);
+
+    onInvalid.mockClear();
+    window.dispatchEvent(makeMessage({ type: 'payload-live-preview-focus' }, TRUSTED));
+    expect(onInvalid).toHaveBeenCalledWith('shape', TRUSTED);
+    window.dispatchEvent(makeMessage({ type: 'payload-live-preview-focus', field: '' }, TRUSTED));
+    expect(onFocusField).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('MessageBus — token validation', () => {

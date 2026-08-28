@@ -27,6 +27,9 @@ export interface CachedElement {
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
 // @public
+export function createPreviewFocusReporter(resolveTarget: () => FocusReportTarget | null | undefined, targetOrigin: string): (field: string) => void;
+
+// @public
 export type CustomRendererKey = `${string}:${string}`;
 
 // @public
@@ -109,6 +112,12 @@ export type FieldTransform = (value: unknown, context: {
 
 // @public
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';
+
+// @public
+export interface FocusReportTarget {
+    // (undocumented)
+    postMessage: (message: unknown, targetOrigin: string) => void;
+}
 
 // @public
 export interface FragmentContext {
@@ -269,6 +278,7 @@ export interface LivePreviewClientConfig {
     readonly mergeFetch?: typeof fetch;
     readonly renderRichText?: RichTextRenderer;
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
+    readonly revealEditedField?: boolean;
     readonly root?: Document | Element;
     readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
@@ -506,6 +516,14 @@ export interface PluginInspection {
 }
 
 // @public
+export interface PreviewFocusMessage {
+    // (undocumented)
+    readonly field: string;
+    // (undocumented)
+    readonly type: 'payload-live-preview-focus';
+}
+
+// @public
 export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
@@ -515,6 +533,9 @@ export interface RenderContext {
 
 // @public
 export type RendererKey = FieldType | CustomRendererKey;
+
+// @public
+export function reportPreviewFocus(target: FocusReportTarget, field: string, targetOrigin: string): void;
 
 // @public
 export type RichTextRenderer = (value: unknown, context: {
