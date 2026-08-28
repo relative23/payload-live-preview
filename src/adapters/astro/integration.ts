@@ -205,6 +205,25 @@ function setupMiddlewareMode(ctx: AstroConfigSetupContext, options: LivePreviewA
         'or register createLivePreviewMiddleware() manually in src/middleware.ts.',
     );
   }
+  // The 2.0 strict default demands that request-time injection be gated on a
+  // verified context via `authorizePreview` — but middleware mode serializes
+  // its options into the build and cannot carry a function, and the guard above
+  // forbids passing one. The two requirements are mutually exclusive, so a bare
+  // `livePreview({ mode: 'middleware' })` would build cleanly and then 500 on
+  // every preview request (with the strict error contradicting the guard above).
+  // Fail fast here, naming the two coherent resolutions.
+  const willBeStrict = options.strict ?? options.defaults !== 'v1';
+  if (willBeStrict) {
+    throw new Error(
+      "payload-live-preview: mode 'middleware' cannot satisfy the 2.0 strict default — it " +
+        'serializes its options into the build, so it cannot carry the `authorizePreview` ' +
+        'function strict mode requires. Either register ' +
+        '`createLivePreviewMiddleware({ authorizePreview, ... })` yourself in src/middleware.ts ' +
+        '(recommended: response changes stay gated on a verified context), or pass ' +
+        "`defaults: 'v1'` (or `strict: false`) to run intent-only middleware " +
+        '(ADR 0006 explains why intent is not authorization).',
+    );
+  }
 
   // Everything except functions serializes cleanly.
   const { mode: _mode, shouldInject: _shouldInject, ...serializable } = options;

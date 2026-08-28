@@ -17,5 +17,14 @@ helpers (use `definePreview()` from `payload-live-preview/server`), and the
 `createPreviewBindings({ authorized: boolean })` form (use
 `{ authorization }` from `authorizePreviewRequest()`).
 
+Under the strict default, the Astro integration's `mode: 'middleware'` now
+fails fast at build time when it cannot be made secure: it serializes its
+options into the build, so it cannot carry the `authorizePreview` function
+strict mode requires. Previously this combination built cleanly and then
+returned 500 on every preview request. Register
+`createLivePreviewMiddleware({ authorizePreview })` yourself in
+`src/middleware.ts`, or pass `defaults: 'v1'` / `strict: false` for
+intent-only middleware.
+
 Run `pll migrate` to rewrite the renamed and moved APIs, and `pll doctor --v2`
 to audit a served page against the new defaults. See docs/migration.md.

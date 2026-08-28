@@ -287,6 +287,35 @@ describe('livePreview integration — middleware mode', () => {
     const source = plugin.load!(plugin.resolveId!('virtual:payload-live-preview/options')!)!;
     expect(source).not.toContain('</script>');
   });
+
+  it("fails fast for mode:'middleware' under the 2.0 strict default (no defaults)", () => {
+    const ctx = makeSetupContext();
+    // The natural, minimal middleware config: strict is the 2.0 default, but
+    // middleware mode cannot carry authorizePreview. Rather than build cleanly
+    // and 500 on every preview request, it must refuse at config:setup and name
+    // the resolutions.
+    const integration = livePreview({
+      mode: 'middleware',
+      allowedOrigins: ['https://admin.example.com'],
+    });
+    expect(() => {
+      integration.hooks['astro:config:setup'](ctx);
+    }).toThrow(/strict default/);
+    expect(ctx.addMiddleware).not.toHaveBeenCalled();
+  });
+
+  it("allows mode:'middleware' with strict: false (intent-only opt-out)", () => {
+    const ctx = makeSetupContext();
+    const integration = livePreview({
+      mode: 'middleware',
+      strict: false,
+      allowedOrigins: ['https://admin.example.com'],
+    });
+    expect(() => {
+      integration.hooks['astro:config:setup'](ctx);
+    }).not.toThrow();
+    expect(ctx.addMiddleware).toHaveBeenCalled();
+  });
 });
 
 describe('livePreview integration — loader mode', () => {
