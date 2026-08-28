@@ -828,6 +828,22 @@ export function findReleaseWorkflowViolations(
     );
   }
 
+  // The publish decision must come BEFORE the changesets/version-PR branch: in
+  // Changesets pre-release mode the changeset files are retained through the
+  // prerelease line, so a gate that keyed version_pr on their mere presence
+  // would never publish a prerelease. Lock the order so a bumped-but-unpublished
+  // version publishes even with changeset files present.
+  if (
+    !has(
+      gate,
+      /if \[ ["']\$published["'] != ["']\$version["'] \]; then\s+publish=true\s+elif \[ ["']\$changesets["'] = ["']true["'] \]; then\s+version_pr=true/,
+    )
+  ) {
+    violations.push(
+      'release gate does not publish an unpublished version before opening a Version PR (breaks prerelease publishing)',
+    );
+  }
+
   for (const name of ['gate', 'version', 'publish'] as const) {
     const block = jobBlock(releaseWorkflow, name);
     if (block === undefined) {

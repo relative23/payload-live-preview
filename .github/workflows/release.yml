@@ -99,10 +99,18 @@ jobs:
 
           version_pr=false
           publish=false
-          if [ "$changesets" = "true" ]; then
-            version_pr=true
-          elif [ "$published" != "$version" ]; then
+          # Publish an unpublished version before considering a Version PR. In
+          # Changesets pre-release mode the changeset files are retained through
+          # the whole prerelease line, so keying version_pr on their mere
+          # presence would never publish a prerelease. The registry lacking the
+          # current version is the publish signal in both normal and pre mode
+          # (a merged Version PR leaves package.json ahead of the registry);
+          # retained changesets only mean "open the next Version PR" once the
+          # current version is already published.
+          if [ "$published" != "$version" ]; then
             publish=true
+          elif [ "$changesets" = "true" ]; then
+            version_pr=true
           else
             # A package may have reached npm before tag/release creation failed.
             # Re-enter the exact-artifact publisher only to reconcile that state.
