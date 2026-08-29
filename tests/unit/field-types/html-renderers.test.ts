@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { setSanitizerPolicy } from '@security/sanitizer';
+import { registerBlockRenderer } from '@lexical/blocks/registry';
 import type { RichTextRenderer } from '@core/types';
 import { emptyContext, makeTarget, rendererNamed } from './helpers';
 
@@ -48,6 +49,62 @@ describe('richText renderer', () => {
     el.innerHTML = '<p>kept</p>';
     expect(rendererNamed('richText').render(makeTarget(el), 42, emptyContext())).toBe(false);
     expect(el.innerHTML).toBe('<p>kept</p>');
+  });
+
+  // A block renderer is a project's own code, and nothing here can see whether
+  // it escaped the fields it interpolated. `lexicalToHtml` sanitises its own
+  // output, which is what keeps that from reaching the page; this pins it at
+  // the sink, where the guarantee has to hold.
+  it('sanitises what a custom block renderer returns', () => {
+    registerBlockRenderer('unescaped-block', (fields) => `<p>${String(fields['text'])}</p>`);
+    const el = document.createElement('div');
+    rendererNamed('richText').render(
+      makeTarget(el),
+      {
+        root: {
+          children: [
+            {
+              type: 'block',
+              fields: { blockType: 'unescaped-block', text: '<img src=x onerror=alert(1)>' },
+            },
+          ],
+        },
+      },
+      emptyContext(),
+    );
+    expect(el.innerHTML).not.toContain('onerror');
+    expect(el.querySelector('img')?.hasAttribute('onerror') ?? false).toBe(false);
+  });
+
+  it('leaves the built-in Lexical output untouched', () => {
+    const el = document.createElement('div');
+    rendererNamed('richText').render(
+      makeTarget(el),
+      {
+        root: {
+          children: [
+            { type: 'heading', tag: 'h2', children: [{ type: 'text', text: 'Title' }] },
+            {
+              type: 'paragraph',
+              format: 'center',
+              children: [
+                { type: 'text', text: 'bold', format: 1 },
+                {
+                  type: 'link',
+                  fields: { url: '/p' },
+                  children: [{ type: 'text', text: 'link' }],
+                },
+              ],
+            },
+          ],
+        },
+      },
+      emptyContext(),
+    );
+    expect(el.innerHTML).toContain('<h2>Title</h2>');
+    expect(el.innerHTML).toContain('<strong>bold</strong>');
+    expect(el.innerHTML).toContain('href="/p"');
+    expect(el.innerHTML).toContain('lp-align-center');
   });
 });
 
