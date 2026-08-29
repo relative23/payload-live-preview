@@ -69,9 +69,9 @@ Correctness and hardening pass over the whole package before 2.0.
   need through the new `templateMode` option.
 - Lexical output uses classes instead of data attributes, which the strict
   policy strips: `lp-block--<slug>`, `lp-inline-block--<slug>`,
-  `lp-relation--<slug>`, `lp-callout--<importance>`, and `lp-align-*` /
-  `lp-indent-*` in place of an inline `style`. Block fields are no longer
-  serialised into attributes.
+  `lp-relation--<slug>`, `lp-block-<kind>` for the built-in blocks (callout,
+  image, video, code, cta), and `lp-align-*` / `lp-indent-*` in place of an
+  inline `style`. Block fields are no longer serialised into attributes.
 - `email` is its own renderer and writes a `mailto:` URL; it was an alias of
   `url`, which turned an address into a relative link.
 - One value contract for every renderer: an empty value or an unsafe URL clears
