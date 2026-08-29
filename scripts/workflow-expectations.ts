@@ -6,6 +6,7 @@ import {
   BUILD_RUNTIME,
   NPM_CI,
   NPM_VERSION,
+  READ_ONLY,
   SETUP,
   SETUP_NODE,
   sourceDate,
@@ -163,6 +164,7 @@ const CODSPEED: WorkflowSpec = {
 
 const PROTOCOL_WATCH: WorkflowSpec = {
   name: 'Protocol Watch',
+  permissions: READ_ONLY,
   jobs: {
     'protocol-watch': {
       continueOnError: '${{ matrix.soft-fail }}',
