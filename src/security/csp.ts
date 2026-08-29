@@ -7,7 +7,29 @@ const DEFAULT_NONCE_BYTES = 16;
 
 /** CSP3's exact whitespace set: HTAB, LF, FF, CR, and SPACE. */
 const CSP_ASCII_WHITESPACE = /[\t\n\f\r ]+/;
-const CSP_EDGE_ASCII_WHITESPACE = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
+
+/** Reads one code unit; an index past the end yields NaN, which matches nothing. */
+function isCspWhitespace(value: string, index: number): boolean {
+  const code = value.charCodeAt(index);
+  return code === 9 || code === 10 || code === 12 || code === 13 || code === 32;
+}
+
+/**
+ * Trim CSP whitespace by scanning from both ends.
+ *
+ * The obvious `/^\s+|\s+$/` is superlinear by construction: for a long run the
+ * trailing alternative is retried at every position. V8 happens to optimise the
+ * shape away, but this header can come from a consumer's own response and this
+ * module runs in every engine, so the guarantee has to come from the algorithm
+ * rather than from one engine's optimiser.
+ */
+function trimCspWhitespace(value: string): string {
+  let start = 0;
+  let end = value.length;
+  while (start < end && isCspWhitespace(value, start)) start += 1;
+  while (end > start && isCspWhitespace(value, end - 1)) end -= 1;
+  return start === 0 && end === value.length ? value : value.slice(start, end);
+}
 
 /** CSP names are ASCII; Unicode case folding must not create directives. */
 function asciiLowercase(value: string): string {
@@ -139,17 +161,14 @@ function mergeCspPolicy(
 ): string {
   const directives = new Map<string, string>();
   for (const part of existing.split(';')) {
-    const trimmed = part.replace(CSP_EDGE_ASCII_WHITESPACE, '');
+    const trimmed = trimCspWhitespace(part);
     if (trimmed.length === 0) continue;
     const whitespaceIndex = trimmed.search(CSP_ASCII_WHITESPACE);
     const name = asciiLowercase(whitespaceIndex < 0 ? trimmed : trimmed.slice(0, whitespaceIndex));
     // CSP3 §2.2.1: a user agent ignores later duplicates, so a looser
     // duplicate must not become the policy that is serialized.
     if (directives.has(name)) continue;
-    const value =
-      whitespaceIndex < 0
-        ? ''
-        : trimmed.slice(whitespaceIndex).replace(CSP_EDGE_ASCII_WHITESPACE, '');
+    const value = whitespaceIndex < 0 ? '' : trimCspWhitespace(trimmed.slice(whitespaceIndex));
     directives.set(name, value);
   }
 

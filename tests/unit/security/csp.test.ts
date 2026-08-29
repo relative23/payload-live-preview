@@ -311,3 +311,19 @@ describe('mergeCspHeader — several policies in one header value', () => {
     expect(mergeCspHeader('', { 'img-src': '*' })).toBe('img-src *');
   });
 });
+
+describe('CSP whitespace handling stays linear', () => {
+  it('trims a pathological run in milliseconds, not minutes', () => {
+    // The obvious `/^\s+|\s+$/` is superlinear by construction: for a long run
+    // the trailing alternative is retried at every position. V8 optimises that
+    // shape away today, but this header can come from a consumer's response and
+    // the module runs in every engine — so the bound has to hold regardless.
+    // Linear is milliseconds here; a reintroduced regex trim is minutes, which
+    // is why a loose ceiling is a stable assertion rather than a flaky one.
+    const header = `script-src ${'\t'.repeat(200_000)}'self'`;
+    const started = performance.now();
+    const merged = mergeCspHeader(header, { 'frame-ancestors': "'self'" });
+    expect(performance.now() - started).toBeLessThan(2_000);
+    expect(merged).toContain('frame-ancestors');
+  });
+});

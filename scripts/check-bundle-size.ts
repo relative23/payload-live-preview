@@ -33,7 +33,7 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'adapters/astro/index.js': { raw: 129_850, gzip: 41_150, brotli: 36_000 },
   'adapters/astro/middleware-entry.js': { raw: 116_850, gzip: 37_150, brotli: 32_400 },
   'adapters/nextjs/index.js': { raw: 116_650, gzip: 37_050, brotli: 32_300 },
-  'adapters/nuxt/index.js': { raw: 117_350, gzip: 37_400, brotli: 32_500 },
+  'adapters/nuxt/index.js': { raw: 117_350, gzip: 37_400, brotli: 32_600 },
   'adapters/sveltekit/index.js': { raw: 116_450, gzip: 37_050, brotli: 32_300 },
   'codegen-astro.js': { raw: 12_950, gzip: 4_550, brotli: 4_100 },
   'codegen-cli.js': { raw: 14_550, gzip: 5_000, brotli: 4_500 },
