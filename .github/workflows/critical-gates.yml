@@ -21,18 +21,19 @@ permissions:
 
 jobs:
   critical-mutation:
-    name: Release Critical Mutation Shard ${{ matrix.shard }}/5
+    name: Release Critical Mutation Shard ${{ matrix.shard }}/6
     runs-on: ubuntu-latest
-    # One fifth of a scope that runs ~250 min whole on these runners. Packed by
-    # measured test executions, so the heaviest shard carries ~20 % and lands
-    # near 50 minutes; three size-packed shards ran past this cap.
+    # One sixth of a scope that runs ~250 min whole on these runners. Packed by
+    # measured test time, so the heaviest shard carries 16.7 % and lands near 42
+    # minutes. Earlier splits ran past this cap: three packed by file size, then
+    # five packed by test count, which hid 25 % of the time in a 20 % shard.
     timeout-minutes: 90
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -46,7 +47,7 @@ jobs:
       - name: Mutate this shard of the release-critical runtime scope
         env:
           STRYKER_SCOPE: nightly
-          STRYKER_SHARD: ${{ matrix.shard }}/5
+          STRYKER_SHARD: ${{ matrix.shard }}/6
         run: npm run test:mutation
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
@@ -91,6 +92,7 @@ jobs:
           test-results/stryker-nightly-shard3.json
           test-results/stryker-nightly-shard4.json
           test-results/stryker-nightly-shard5.json
+          test-results/stryker-nightly-shard6.json
       - name: Enforce the reviewed critical mutation baseline
         run: npm run test:mutation:policy
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

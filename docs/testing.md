@@ -49,13 +49,13 @@ the fragment strategies:
 STRYKER_SCOPE=nightly npm run test:mutation
 ```
 
-That scope is too large for one CI job, so the workflow runs it in three shards
-and grades the joined report:
+That scope is too large for one CI job — about 250 minutes on a GitHub runner —
+so the workflow runs it in six shards and grades the joined report:
 
 ```sh
-STRYKER_SCOPE=nightly STRYKER_SHARD=1/3 npm run test:mutation   # …2/3, 3/3
+STRYKER_SCOPE=nightly STRYKER_SHARD=1/6 npm run test:mutation   # …2/6 … 6/6
 npx tsx scripts/merge-mutation-reports.ts --out test-results/stryker-nightly.json \
-  test-results/stryker-nightly-shard{1,2,3}.json
+  test-results/stryker-nightly-shard{1,2,3,4,5,6}.json
 npm run test:mutation:policy
 ```
 
@@ -63,16 +63,19 @@ The merge refuses reports from different configurations, or a file two shards
 both claim. Adding a file to `criticalFiles` therefore widens the mutation scope
 as well — that is deliberate, and the reason the two live in one place.
 
-The shards are packed by measured work, not by file size: a shard's wall time is
-the test executions it performs, and across this scope those range from 0.07 to
-5.78 per byte. Refresh the weights from the same report that sets the baseline:
+The shards are packed by measured test time. Two cheaper proxies were tried and
+both put a shard past its cap: file size is off by a factor of eighty across this
+scope, and counting test executions still hid 25 % of the time in a shard
+nominally carrying 20 %. Refresh the weights from the same report that sets the
+baseline, priced with the suite's own durations:
 
 ```sh
-npx tsx scripts/mutation-shard-weights.ts --report test-results/stryker-nightly.json
+npx vitest run --reporter=json --outputFile=test-results/vitest-durations.json
+npx tsx scripts/mutation-shard-weights.ts --durations test-results/vitest-durations.json
 ```
 
-Stale weights only unbalance the shards; missing ones fall back to file size.
-Neither changes the verdict, which is graded on the merged report.
+Stale weights only unbalance the shards, and missing ones fall back to counting
+executions. Neither changes the verdict, which is graded on the merged report.
 
 `npm run api:update` is intentionally not a routine formatter. It rebuilds and
 repacks the project, regenerates API Extractor reports from the installed archive,

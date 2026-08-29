@@ -34,7 +34,9 @@ describe('nightly mutation sharding', () => {
     const full = await mutateList();
     // Sequential on purpose: each call sets the environment the config reads.
     const shards: (readonly string[])[] = [];
-    for (const shard of ['1/5', '2/5', '3/5', '4/5', '5/5']) shards.push(await mutateList(shard));
+    for (const shard of ['1/6', '2/6', '3/6', '4/6', '5/6', '6/6']) {
+      shards.push(await mutateList(shard));
+    }
     const union = shards.flat();
 
     expect(new Set(union).size).toBe(union.length);
@@ -52,7 +54,9 @@ describe('nightly mutation sharding', () => {
     ) as { weights: Record<string, number> };
     // Sequential on purpose: each call sets the environment the config reads.
     const shards: (readonly string[])[] = [];
-    for (const shard of ['1/5', '2/5', '3/5', '4/5', '5/5']) shards.push(await mutateList(shard));
+    for (const shard of ['1/6', '2/6', '3/6', '4/6', '5/6', '6/6']) {
+      shards.push(await mutateList(shard));
+    }
     const loads = shards.map((files) =>
       files.reduce((total, file) => total + (recorded.weights[file] ?? 0), 0),
     );
