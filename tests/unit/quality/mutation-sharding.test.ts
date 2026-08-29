@@ -1,8 +1,9 @@
-import { statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mergeMutationReports } from '../../../scripts/merge-mutation-reports';
+import { shardWeightsFrom } from '../../../scripts/mutation-shard-weights';
 
 /**
  * Sharding may divide the work, never the verdict. Every mutated file has to
@@ -31,24 +32,44 @@ afterEach(() => {
 describe('nightly mutation sharding', () => {
   it('splits the scope into disjoint shards that together are the whole scope', async () => {
     const full = await mutateList();
-    const shards = [await mutateList('1/3'), await mutateList('2/3'), await mutateList('3/3')];
+    // Sequential on purpose: each call sets the environment the config reads.
+    const shards: (readonly string[])[] = [];
+    for (const shard of ['1/5', '2/5', '3/5', '4/5', '5/5']) shards.push(await mutateList(shard));
     const union = shards.flat();
 
     expect(new Set(union).size).toBe(union.length);
     expect([...union].sort()).toEqual([...full].sort());
   });
 
-  it('balances the shards, so the job is not as slow as its worst split', async () => {
-    const shards = [await mutateList('1/3'), await mutateList('2/3'), await mutateList('3/3')];
-    const weights = shards.map((files) =>
-      files.reduce(
-        (total, file) => total + statSync(resolve(import.meta.dirname, '../../../', file)).size,
-        0,
+  it('balances the shards by measured work, so the job is not as slow as its worst split', async () => {
+    // File size was the first attempt and produced a 35/36/18 split, which ran
+    // one shard past a 90-minute cap while another finished in 61 minutes.
+    const recorded = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, '../../../quality/mutation-shard-weights.json'),
+        'utf8',
       ),
+    ) as { weights: Record<string, number> };
+    // Sequential on purpose: each call sets the environment the config reads.
+    const shards: (readonly string[])[] = [];
+    for (const shard of ['1/5', '2/5', '3/5', '4/5', '5/5']) shards.push(await mutateList(shard));
+    const loads = shards.map((files) =>
+      files.reduce((total, file) => total + (recorded.weights[file] ?? 0), 0),
     );
-    const spread = Math.max(...weights) - Math.min(...weights);
-    // Bytes are a proxy for work; a tenth of the average is a generous ceiling.
-    expect(spread).toBeLessThan(weights.reduce((a, b) => a + b, 0) / weights.length / 10);
+    const spread = Math.max(...loads) - Math.min(...loads);
+    expect(spread).toBeLessThan(loads.reduce((a, b) => a + b, 0) / loads.length / 100);
+  });
+
+  it('weighs every file in the scope, so none silently falls back to its size', async () => {
+    const recorded = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, '../../../quality/mutation-shard-weights.json'),
+        'utf8',
+      ),
+    ) as { weights: Record<string, number> };
+    for (const file of await mutateList()) {
+      expect(recorded.weights[file], file).toBeGreaterThan(0);
+    }
   });
 
   it('is the unsharded scope when no shard is named', async () => {
@@ -145,5 +166,30 @@ describe('merging shard reports', () => {
 
   it('refuses an empty set of shards rather than reporting a clean run', () => {
     expect(() => mergeMutationReports([])).toThrow(/no shard reports/u);
+  });
+});
+
+describe('shard weights', () => {
+  it('weighs a file by the test executions its mutants cost', () => {
+    const { weights } = shardWeightsFrom({
+      files: {
+        'a.ts': { mutants: [{ coveredBy: ['t1', 't2'] }, { coveredBy: ['t1'] }] },
+        'b.ts': { mutants: [{ coveredBy: ['t1', 't2', 't3'] }] },
+      },
+    });
+    expect(weights).toEqual({ 'a.ts': 3, 'b.ts': 3 });
+  });
+
+  it('keeps a file no test covers sortable rather than weightless', () => {
+    const { weights } = shardWeightsFrom({
+      files: { 'a.ts': { mutants: [{}, { coveredBy: [] }] } },
+    });
+    expect(weights).toEqual({ 'a.ts': 1 });
+  });
+
+  it('refuses a report it cannot read weights from', () => {
+    expect(() => shardWeightsFrom(null)).toThrow(/not an object/u);
+    expect(() => shardWeightsFrom({})).toThrow(/no files map/u);
+    expect(() => shardWeightsFrom({ files: { 'a.ts': {} } })).toThrow(/no mutants/u);
   });
 });

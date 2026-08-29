@@ -59,10 +59,20 @@ npx tsx scripts/merge-mutation-reports.ts --out test-results/stryker-nightly.jso
 npm run test:mutation:policy
 ```
 
-The shards are packed by file size, so they finish together, and the merge
-refuses reports from different configurations or a file two shards both claim.
-Adding a file to `criticalFiles` therefore widens the mutation scope as well —
-that is deliberate, and the reason the two live in one place.
+The merge refuses reports from different configurations, or a file two shards
+both claim. Adding a file to `criticalFiles` therefore widens the mutation scope
+as well — that is deliberate, and the reason the two live in one place.
+
+The shards are packed by measured work, not by file size: a shard's wall time is
+the test executions it performs, and across this scope those range from 0.07 to
+5.78 per byte. Refresh the weights from the same report that sets the baseline:
+
+```sh
+npx tsx scripts/mutation-shard-weights.ts --report test-results/stryker-nightly.json
+```
+
+Stale weights only unbalance the shards; missing ones fall back to file size.
+Neither changes the verdict, which is graded on the merged report.
 
 `npm run api:update` is intentionally not a routine formatter. It rebuilds and
 repacks the project, regenerates API Extractor reports from the installed archive,

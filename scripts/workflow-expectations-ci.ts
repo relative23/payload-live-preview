@@ -232,13 +232,13 @@ export const CRITICAL_GATES: WorkflowSpec = {
     'critical-mutation': {
       timeoutMinutes: 90,
       permissions: READ_ONLY,
-      matrix: { shard: [1, 2, 3] },
+      matrix: { shard: [1, 2, 3, 4, 5] },
       steps: [
         ...PINNED_SETUP,
         BUILD_RUNTIME,
         {
           run: 'npm run test:mutation',
-          env: { STRYKER_SCOPE: 'nightly', STRYKER_SHARD: '${{ matrix.shard }}/3' },
+          env: { STRYKER_SCOPE: 'nightly', STRYKER_SHARD: '${{ matrix.shard }}/5' },
         },
       ],
     },
@@ -260,7 +260,8 @@ export const CRITICAL_GATES: WorkflowSpec = {
           run:
             'npx tsx scripts/merge-mutation-reports.ts --out test-results/stryker-nightly.json ' +
             'test-results/stryker-nightly-shard1.json test-results/stryker-nightly-shard2.json ' +
-            'test-results/stryker-nightly-shard3.json',
+            'test-results/stryker-nightly-shard3.json test-results/stryker-nightly-shard4.json ' +
+            'test-results/stryker-nightly-shard5.json',
         },
         { run: 'npm run test:mutation:policy' },
       ],

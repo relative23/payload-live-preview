@@ -20,9 +20,13 @@ if (scope !== 'pr' && scope !== 'nightly') {
  * job; the shards are merged back into one report before the policy grades it,
  * so the verdict does not depend on how the work was divided.
  *
- * Files are packed largest-first onto the currently smallest shard: a shard is
- * only as fast as its slowest file, and an even split by index would put the
- * two biggest modules in the same one often enough to matter.
+ * Files are packed heaviest-first onto the currently lightest shard, weighted by
+ * how many test executions each file actually costs — the sum of `coveredBy`
+ * over its mutants, recorded in `quality/mutation-shard-weights.json` from the
+ * last full report. File size was the first attempt and is a poor stand-in: it
+ * ranges from 0.07 to 5.78 test executions per byte across this scope, so a
+ * size-balanced split ran 61 minutes in one shard and past 90 in another.
+ * Without the file, size is the fallback, which is still better than nothing.
  */
 function parseShard(value) {
   if (value === undefined || value === '') return undefined;
@@ -36,12 +40,26 @@ function parseShard(value) {
   return { index, total };
 }
 
+function readRecordedWeights() {
+  try {
+    const parsed = JSON.parse(
+      readFileSync(join(root, 'quality/mutation-shard-weights.json'), 'utf8'),
+    );
+    return parsed.weights ?? {};
+  } catch {
+    return {};
+  }
+}
+
 function shardOf(files, shard) {
   if (shard === undefined || shard.total === 1) return files;
-  // Relative to the working directory, the way Stryker itself reads `mutate`.
+  const recorded = readRecordedWeights();
   const weighed = [...files]
     .map((file) => {
+      const measured = recorded[file];
+      if (typeof measured === 'number' && measured > 0) return { file, weight: measured };
       try {
+        // Relative to the working directory, the way Stryker reads `mutate`.
         return { file, weight: statSync(join(root, file)).size };
       } catch {
         // A scope entry naming a file that is gone would otherwise fail here
