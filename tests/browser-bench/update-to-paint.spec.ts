@@ -180,6 +180,10 @@ function registerScenario(count: number): void {
       await expect(first).toHaveText(value);
     }
 
+    // The same boundary at the other end: the last sample of the measured run
+    // lands a frame after its text, so collecting without draining first counts
+    // one too few. Both edges of the window need the same treatment.
+    await drainFrames(frame);
     const samples = (await collect(frame)).slice(warm);
     expect(samples.length, 'every sample produced a measurement').toBe(SAMPLES);
     expect(errors).toEqual([]);
