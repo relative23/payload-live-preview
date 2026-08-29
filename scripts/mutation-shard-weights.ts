@@ -91,8 +91,10 @@ export function shardWeightsFrom(
         total += (name === undefined ? undefined : durations.get(name)) ?? 0;
       }
     }
-    // A file no test covers still costs a scheduling slot; one keeps it sortable.
-    weights[path] = Math.max(1, total);
+    // Rounded: these are a packing hint, and fractional milliseconds would only
+    // churn the committed file. A file no test covers still costs a scheduling
+    // slot, so one is the floor.
+    weights[path] = Math.max(1, Math.round(total));
   }
   return {
     schemaVersion: 1,
