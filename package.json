@@ -199,7 +199,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:diff": "tsx scripts/coverage-policy.ts",
     "test:policy": "tsx scripts/test-policy.ts",
-    "test:architecture": "tsx scripts/architecture-policy.ts && tsx scripts/workflow-contracts.ts && knip --no-progress --treat-config-hints-as-errors",
+    "test:architecture": "tsx scripts/architecture-policy.ts && tsx scripts/workflow-contracts.ts && tsx scripts/docs-contracts.ts && knip --no-progress --treat-config-hints-as-errors",
     "test:property": "vitest run tests/unit/property",
     "test:mutation": "stryker run stryker.config.js",
     "test:mutation:policy:pr": "tsx scripts/mutation-policy.ts --policy quality/mutation-policy-pr.json --report test-results/stryker-pr.json",
@@ -216,7 +216,8 @@
     "prepublishOnly": "npm run build && npm run check && npm run format:check && npm run test:package",
     "changeset": "changeset",
     "version": "changeset version && tsx scripts/sync-lockfile-metadata.ts",
-    "release": "tsx scripts/publish-artifact.ts"
+    "release": "tsx scripts/publish-artifact.ts",
+    "test:docs": "tsx scripts/docs-contracts.ts"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

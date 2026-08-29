@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 236,
-    "suites": 508,
-    "tests": 2127,
+    "files": 237,
+    "suites": 510,
+    "tests": 2133,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 198,
-      "suites": 455,
-      "tests": 1976,
+      "files": 199,
+      "suites": 457,
+      "tests": 1982,
       "benchmarks": 0
     }
   },
@@ -1521,6 +1521,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/docs-contracts.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
       "benchmarks": 0
     },
     {

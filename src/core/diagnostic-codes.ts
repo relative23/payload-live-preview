@@ -59,6 +59,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   TransformThrew: 'LP0602',
   /** A renderer threw while writing a value. */
   RendererThrew: 'LP0603',
+  // LP0604 is reserved and unassigned; codes are never reused or renumbered.
   /** Runtime startup failed. */
   StartupFailed: 'LP0605',
   /** Sending the ready handshake failed. */
