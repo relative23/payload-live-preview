@@ -33,6 +33,7 @@
     "fsevents@2.3.3": false
   },
   "overrides": {
-    "dompurify": "3.4.13"
+    "dompurify": "3.4.13",
+    "esbuild": "^0.25.0"
   }
 }
