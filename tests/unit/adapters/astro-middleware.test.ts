@@ -136,8 +136,10 @@ describe('createLivePreviewMiddleware', () => {
 describe('renderLivePreviewScript', () => {
   it('returns a complete <script> tag', () => {
     const html = renderLivePreviewScript({ allowedOrigins: [ADMIN] });
-    expect(html).toMatch(/^<script>/);
-    expect(html).toMatch(/<\/script>$/);
+    // String comparison, not a pattern: the generator emits exactly this casing,
+    // and a regex here reads like a tag filter that forgot about `<SCRIPT>`.
+    expect(html.startsWith('<script>')).toBe(true);
+    expect(html.endsWith('</script>')).toBe(true);
     expect(html).toContain('admin.example.com');
   });
 

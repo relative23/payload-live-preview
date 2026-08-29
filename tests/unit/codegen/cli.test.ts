@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,8 +7,10 @@ import { run } from '@/codegen/cli';
 let workDir: string;
 
 beforeEach(async () => {
-  workDir = join(tmpdir(), `pll-cli-${Math.random().toString(36).slice(2)}`);
-  await mkdir(workDir, { recursive: true });
+  // `mkdtemp` creates the directory atomically with a name nobody can predict.
+  // Composing one from `Math.random()` and creating it afterwards leaves a
+  // window in which another process can occupy the path.
+  workDir = await mkdtemp(join(tmpdir(), 'pll-cli-'));
 });
 
 afterEach(async () => {
