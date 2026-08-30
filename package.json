@@ -182,6 +182,7 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
+    "check:fixtures": "tsx scripts/check-fixture-freshness.ts",
     "test:e2e:real-payload": "playwright test --config playwright.real-payload.config.ts",
     "test:a11y": "playwright test tests/e2e/specs/accessibility.spec.ts",
     "test:soak": "playwright test --config playwright.soak.config.ts",
