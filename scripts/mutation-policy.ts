@@ -93,9 +93,13 @@ function compareRatchetedMaximum(
  * Two of those runs settle what the count means. Between them 61 mutants moved
  * from killed to timeout while `killed + timeout` stayed at 5755, `survived` at
  * 1259 and `noCoverage` at 85 — not one mutant changed its verdict, only the
- * mechanism that caught it. The score covers `killed + timeout` already, so it
- * is the gate that carries correctness here; this ceiling can only catch a
- * regime change, and is set wide enough to do that without firing on load.
+ * mechanism that caught it. A fourth run then moved 32 mutants the other way,
+ * from `survived` to `timeout`, which raised the score to 81.52 without a line
+ * of source changing: a timeout counts as detected, so a slow runner flatters
+ * the figure. The score is therefore load-sensitive in both directions, and the
+ * drift band has to cover that spread rather than pretend it away. This ceiling
+ * can only catch a regime change, and is set wide enough to do that without
+ * firing on load.
  * Failing because *fewer* mutants timed out would only teach the next reader to
  * edit the number. A slowdown still fails: timeouts above the ceiling
  * are a regression, and a timeout counts as detected, so the score is unaffected
