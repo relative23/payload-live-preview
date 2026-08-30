@@ -4,6 +4,16 @@
  * interpolated value is escaped to text before the sanitizer runs, so it may
  * carry form controls and custom elements the rich-text policy refuses.
  * Event handlers, `style` and unsafe URLs are still stripped.
+ *
+ * Some entries below are already admitted by the sanitizer through another
+ * route — `video` and `audio` by the tag allow-list, `select` by
+ * `allowFormControls`, `name` by `templateMode`, and `controls`, `muted`,
+ * `loop`, `poster` and `src` by the per-tag attribute map. They are kept
+ * because this list states what a template may contain, and an allow-list
+ * that depends on a second list staying unchanged is the more fragile of the
+ * two arrangements. Mutating those entries changes nothing observable, so
+ * they survive mutation testing by construction; the behaviour they describe
+ * is pinned in `tests/unit/core/template-sanitize.test.ts` instead.
  */
 
 import type { SanitizeOptions } from '@security/sanitizer';
