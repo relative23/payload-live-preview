@@ -88,10 +88,16 @@ function compareRatchetedMaximum(
  * of the machine instead of the tests. Stryker reports a timeout when a mutant's
  * run does not finish in `timeoutMS`; a loaded runner produces one where a quiet
  * one produces none, and the nightly figure is the sum over six shards on six
- * runners. Three measurements of an unchanged tree gave 25, 35 and 46, so the
- * ceiling carries headroom over that spread rather than tracking the last run;
- * a systemic hang shows up in the hundreds. Failing because *fewer* mutants
- * timed out would only teach the next reader to edit the number. A slowdown still fails: timeouts above the ceiling
+ * runners. Four measurements of a byte-identical tree gave 25, 35, 46 and 107.
+ *
+ * Two of those runs settle what the count means. Between them 61 mutants moved
+ * from killed to timeout while `killed + timeout` stayed at 5755, `survived` at
+ * 1259 and `noCoverage` at 85 — not one mutant changed its verdict, only the
+ * mechanism that caught it. The score covers `killed + timeout` already, so it
+ * is the gate that carries correctness here; this ceiling can only catch a
+ * regime change, and is set wide enough to do that without firing on load.
+ * Failing because *fewer* mutants timed out would only teach the next reader to
+ * edit the number. A slowdown still fails: timeouts above the ceiling
  * are a regression, and a timeout counts as detected, so the score is unaffected
  * either way.
  */

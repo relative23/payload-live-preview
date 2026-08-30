@@ -77,11 +77,11 @@
   ],
   "baseline": {
     "total": 7099,
-    "mutationScoreMinimum": 81.05,
+    "mutationScoreMinimum": 81.07,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 15,
     "noCoverageMaximum": 85,
-    "timeoutMaximum": 70,
+    "timeoutMaximum": 250,
     "errorMaximum": 0,
     "ignoredMaximum": 0
   }
