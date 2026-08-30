@@ -17,8 +17,9 @@ refused is not remembered, so the next identical message applies it.
 their own value did — `{ price: ['priceLabel'] }`. It is consulted only with
 `skipUnchanged`.
 
-Off by default in 1.x: renderers and `elementUpdate` listeners stop seeing
-repeats, which is observable. `inspect().revisions.skippedUnchanged` counts the
+On under the 2.0 defaults: renderers and `elementUpdate` listeners stop seeing
+repeats, which is observable, so `defaults: 'v1'` or `skipUnchanged: false`
+restores the 1.x behaviour. `inspect().revisions.skippedUnchanged` counts the
 skips. Available on the client, the inline runtime and every adapter.
 
 Measured on a 300-binding page with one changed field per keystroke (jsdom):
