@@ -227,10 +227,10 @@ export const CRITICAL_GATES: WorkflowSpec = {
   permissions: READ_ONLY,
   jobs: {
     // The scope outgrew a single job. Each shard mutates a disjoint part and
-    // the baseline job grades the three reports joined back into one, so the
+    // the baseline job grades the six reports joined back into one, so the
     // verdict stays a property of the scope rather than of the split.
     'critical-mutation': {
-      timeoutMinutes: 90,
+      timeoutMinutes: 150,
       permissions: READ_ONLY,
       matrix: { shard: [1, 2, 3, 4, 5, 6] },
       steps: [

@@ -23,11 +23,17 @@ jobs:
   critical-mutation:
     name: Release Critical Mutation Shard ${{ matrix.shard }}/6
     runs-on: ubuntu-latest
-    # One sixth of a scope that runs ~250 min whole on these runners. Packed by
-    # measured test time, so the heaviest shard carries 16.7 % and lands near 42
-    # minutes. Earlier splits ran past this cap: three packed by file size, then
-    # five packed by test count, which hid 25 % of the time in a 20 % shard.
-    timeout-minutes: 90
+    # One sixth of a scope that runs ~250 min whole on these runners, packed by
+    # measured test time. Earlier splits ran worse: three packed by file size,
+    # then five packed by test count, which hid 25 % of the time in a 20 % shard.
+    #
+    # Balanced weights are not balanced minutes. Shards carrying an equal modelled
+    # share still measured 22 to 55 minutes in one run, because a mutant that times
+    # out costs the full timeoutMS whatever its tests normally cost, and a loaded
+    # runner produces more of them. Pricing timeouts into the weights was tried and
+    # did not predict wall time any better. So the cap carries headroom instead: a
+    # shard once reached 79 % at 90 minutes, which extrapolates to about 114.
+    timeout-minutes: 150
     permissions:
       contents: read
     strategy:
