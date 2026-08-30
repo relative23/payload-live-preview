@@ -216,6 +216,8 @@ export default defineConfig({
       allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
       // Payload 3.x: populate relationship/upload fields via REST merge
       serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
+      // Required alongside serverURL: the population depth, 0 for none.
+      mergeDepth: 1,
     }),
   ],
 });
@@ -271,6 +273,7 @@ livePreview({
   mode: 'middleware',
   allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
   serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
+  mergeDepth: 1,
 }),
 ```
 
@@ -311,6 +314,7 @@ import { generateInlineScript } from 'payload-live-preview';
 const previewScript = generateInlineScript({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
   serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
+  mergeDepth: 1,
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -350,6 +354,7 @@ import { livePreviewHandle } from 'payload-live-preview/sveltekit';
 export const handle = livePreviewHandle({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
   serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
+  mergeDepth: 1,
 });
 ```
 
@@ -365,6 +370,7 @@ export default defineNitroPlugin(
   livePreviewNitroPlugin({
     allowedOrigins: [process.env.NUXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
     serverURL: process.env.NUXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+    mergeDepth: 1,
   }),
 );
 ```
@@ -380,6 +386,7 @@ import { generateInlineScript, wrapWithScriptTag } from 'payload-live-preview';
 const script = generateInlineScript({
   allowedOrigins: ['https://admin.example.com'],
   serverURL: 'https://admin.example.com',
+  mergeDepth: 1,
 });
 // Inject via `<script>${script}</script>` — or wrapWithScriptTag(script, { nonce }).
 ```

@@ -102,6 +102,43 @@ async function docFiles(): Promise<string[]> {
   return files;
 }
 
+/**
+ * Entry points whose options carry a `serverURL`. Under the 2.0 defaults that
+ * option requires an explicit `mergeDepth`, so a snippet showing one without
+ * the other documents a setup that throws on first build. Every framework
+ * quickstart did exactly that until this rule existed, because no fixture
+ * passes `serverURL` and nothing else reads the snippets.
+ *
+ * `authorizePreviewRequest` also takes a `serverURL` — the Payload server a
+ * session is checked against, unrelated to the REST merge — so a block using it
+ * is left alone.
+ */
+const SETUP_CALLS = [
+  'livePreview(',
+  'createLivePreviewMiddleware(',
+  'generateInlineScript(',
+  'livePreviewHandle(',
+  'livePreviewNitroPlugin(',
+  'defineLivePreviewServerHandler(',
+] as const;
+
+export function setupSnippetViolations(text: string, file: string): string[] {
+  const violations: string[] = [];
+  const blocks = text.matchAll(/```[a-z]*\n([\s\S]*?)```/gu);
+  for (const block of blocks) {
+    const body = block[1] ?? '';
+    if (!SETUP_CALLS.some((call) => body.includes(call))) continue;
+    if (!body.includes('serverURL')) continue;
+    if (body.includes('authorizePreviewRequest(')) continue;
+    if (body.includes('mergeDepth') || body.includes('defaults:')) continue;
+    const line = text.slice(0, block.index).split('\n').length;
+    violations.push(
+      `${file}:${String(line)} setup snippet passes serverURL without mergeDepth or defaults`,
+    );
+  }
+  return violations;
+}
+
 async function main(): Promise<void> {
   const pkg = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
     exports: Record<string, unknown>;
@@ -128,12 +165,16 @@ async function main(): Promise<void> {
   };
 
   const violations: string[] = [];
-  for (const file of await docFiles()) {
+  // The README carries the quickstarts, so it is checked with the rest.
+  const files = [...(await docFiles()), resolve(ROOT, 'README.md')];
+  for (const file of files) {
     const text = await readFile(file, 'utf8');
-    for (const ref of referencesIn(text, relative(ROOT, file))) {
+    const name = relative(ROOT, file);
+    for (const ref of referencesIn(text, name)) {
       if (isKnownName(ref.name, known[ref.kind])) continue;
       violations.push(`${ref.file}:${String(ref.line)} unknown ${ref.kind} "${ref.name}"`);
     }
+    violations.push(...setupSnippetViolations(text, name));
   }
 
   if (violations.length > 0) {
