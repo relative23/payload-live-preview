@@ -101,11 +101,20 @@ export default {
   },
   coverageAnalysis: 'perTest',
   concurrency: 4,
-  // Raised from 10s: the fragment/route and dual-mode suites (event-driven,
-  // with real debounce/afterUpdate waits) are `related` to field-value.ts
-  // through the lifecycle, so a borderline field-value mutant can run long on
-  // a shared CI runner and be miscounted as a timeout rather than killed.
-  timeoutMS: 20_000,
+  // Raised from 10s, then from 20s. The fragment/route and dual-mode suites
+  // (event-driven, with real debounce/afterUpdate waits) are `related` to
+  // field-value.ts through the lifecycle, so a borderline mutant runs long on a
+  // shared runner and is recorded as a timeout rather than by its verdict.
+  //
+  // At 20s that was not an edge case: comparing a CI run against the same
+  // commit measured locally, 19 of the 21 timeouts in sanitizer.ts were mutants
+  // the tests kill outright, and 32 in template-sanitize.ts flipped between
+  // survived and timeout from load alone — worth 0.45 points of mutation score
+  // on an unchanged tree, since a timeout counts as detected. 60s leaves the
+  // verdict to the assertions and keeps the clock for the mutants that really
+  // do not terminate. It costs those mutants three times as long, about four
+  // minutes per shard against a 150-minute cap.
+  timeoutMS: 60_000,
   cleanTempDir: 'always',
   // CI and baselines are full runs. Local repeat runs can opt into the cache.
   incremental: process.env['STRYKER_INCREMENTAL'] === '1',
