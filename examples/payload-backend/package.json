@@ -27,7 +27,6 @@
     "typescript": "^5.7.0"
   },
   "allowScripts": {
-    "esbuild@0.18.20": true,
     "esbuild@0.25.12": true,
     "esbuild@0.28.2": true,
     "fsevents@2.3.3": false
