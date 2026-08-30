@@ -138,6 +138,49 @@ describe('package artifact manifest', () => {
     },
   );
 
+  // npm 11 and earlier report an array of packages; npm 12 reports an object
+  // keyed by package name. Same entries, so the parser takes either.
+  it.each([
+    ['npm 11 array', false],
+    ['npm 12 object', true],
+  ])('reads the pack report from %s', (_label, keyed) => {
+    const entry = {
+      filename: EVIDENCE.filename,
+      name: EVIDENCE.name,
+      version: EVIDENCE.version,
+      size: EVIDENCE.size,
+      unpackedSize: EVIDENCE.unpackedSize,
+      shasum: EVIDENCE.sha1,
+      integrity: EVIDENCE.integrity,
+      files: [{ path: 'package.json', size: 1, mode: 0o644 }],
+    };
+    const report = parseNpmPackReport(
+      JSON.stringify(keyed ? { [EVIDENCE.name]: entry } : [entry]),
+    );
+    expect(report.filename).toBe(EVIDENCE.filename);
+    expect(report.version).toBe(EVIDENCE.version);
+    expect(report.files.map((file) => file.path)).toEqual(['package.json']);
+  });
+
+  it('refuses a report carrying more than one package, in either shape', () => {
+    const entry = {
+      filename: EVIDENCE.filename,
+      name: EVIDENCE.name,
+      version: EVIDENCE.version,
+      size: EVIDENCE.size,
+      unpackedSize: EVIDENCE.unpackedSize,
+      shasum: EVIDENCE.sha1,
+      integrity: EVIDENCE.integrity,
+      files: [{ path: 'package.json', size: 1, mode: 0o644 }],
+    };
+    expect(() => parseNpmPackReport(JSON.stringify({ a: entry, b: entry }))).toThrow(
+      /unexpected JSON report/u,
+    );
+    expect(() => parseNpmPackReport(JSON.stringify([entry, entry]))).toThrow(
+      /unexpected JSON report/u,
+    );
+  });
+
   it('rejects duplicate inventory entries before an archive can be certified', () => {
     expect(() =>
       parseNpmPackReport(

@@ -19,7 +19,7 @@
   "totals": {
     "files": 239,
     "suites": 516,
-    "tests": 2153,
+    "tests": 2155,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 201,
       "suites": 463,
-      "tests": 2002,
+      "tests": 2004,
       "benchmarks": 0
     }
   },
@@ -1352,7 +1352,7 @@
       "path": "tests/unit/package-artifact.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 9,
+      "tests": 11,
       "benchmarks": 0
     },
     {

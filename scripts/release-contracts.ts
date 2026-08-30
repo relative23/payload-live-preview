@@ -48,7 +48,7 @@ export const PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS = [
   '--no-save',
 ] as const;
 
-const REVIEWED_PACKAGE_MANAGER = 'npm@11.16.0';
+const REVIEWED_PACKAGE_MANAGER = 'npm@12.0.2';
 
 export interface MaintainerInstallPolicyProfile {
   readonly label: string;

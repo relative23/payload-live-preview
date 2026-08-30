@@ -203,7 +203,7 @@ describe('maintainer install-script policy contract', () => {
     };
 
     expect(findMaintainerInstallPolicyViolations({ ...input, manifest }, profile)).toContain(
-      `${profile.label}: packageManager must be npm@11.16.0`,
+      `${profile.label}: packageManager must be npm@12.0.2`,
     );
   });
 
