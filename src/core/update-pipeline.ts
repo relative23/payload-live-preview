@@ -85,6 +85,7 @@ export class UpdatePipeline {
       touched: new Set(),
       invalidated: new Set(),
       revealTarget: undefined,
+      revealIdentities: [],
       pendingFragments: 0,
       routeRefreshed: false,
       cancelled: false,
@@ -229,6 +230,10 @@ export class UpdatePipeline {
           state.absentFields.add(fieldName);
           continue;
         }
+        // Noted before `skipUnchanged` can skip the write: the reveal ledger is
+        // its own record, and a binding whose write is unchanged since the last
+        // one that landed may still be the field whose reveal was superseded.
+        this.noteRevealCandidate(transaction, target, value);
         if (!isCurrent()) return;
         const transformed = this.transformForBinding(target, value, data.fields, isCurrent);
         if (!isCurrent()) return;
@@ -249,7 +254,6 @@ export class UpdatePipeline {
           state.skippedUnchangedCount += 1;
           continue;
         }
-        this.noteRevealCandidate(transaction, target, value);
         const update: ScheduledUpdate = {
           target,
           value: transformed,
@@ -272,8 +276,12 @@ export class UpdatePipeline {
       transaction.pendingFragments = plan.boundaries.length;
       void this.strategies.runFragments(transaction, data, plan);
     }
-    // Nothing to flush is still this revision reaching its end.
-    if (scheduled === 0 && transaction.pendingFragments === 0) state.complete(transaction);
+    // Nothing to flush is still this revision reaching its end — and its reveal
+    // point: every write may be unchanged while the reveal is still owed.
+    if (scheduled === 0 && transaction.pendingFragments === 0) {
+      state.complete(transaction);
+      this.revealPending(transaction);
+    }
   }
 
   private rawValue(
@@ -311,9 +319,14 @@ export class UpdatePipeline {
     if (identity === undefined) return;
     const key = `${target.owner ?? ''}\u0000${target.locale ?? ''}\u0000${target.fieldName}`;
     const seen = state.seenFieldIdentity.get(key);
-    state.seenFieldIdentity.set(key, identity);
-    if (seen === undefined || seen === identity || transaction.revealTarget !== undefined) return;
-    transaction.revealTarget = target;
+    if (seen === undefined) {
+      // A baseline is recorded at once: nothing is owed for it.
+      state.seenFieldIdentity.set(key, identity);
+      return;
+    }
+    if (seen === identity) return;
+    transaction.revealIdentities.push([key, identity]);
+    transaction.revealTarget ??= target;
   }
 
   /** Owner keys this update may address; `false` when scoping is off, `null` when the message names no document. */
@@ -428,6 +441,12 @@ export class UpdatePipeline {
    * given field, and a fragment-rendered element is in place only afterwards.
    */
   revealPending(transaction: UpdateTransaction): void {
+    // This revision reached its reveal point, so what it saw is now what the
+    // ledger shows — whether or not the scroll below has anything to do.
+    for (const [key, identity] of transaction.revealIdentities) {
+      this.state.seenFieldIdentity.set(key, identity);
+    }
+    transaction.revealIdentities = [];
     const target = transaction.revealTarget;
     if (target === undefined) return;
     transaction.revealTarget = undefined;

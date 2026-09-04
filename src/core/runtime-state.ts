@@ -40,6 +40,13 @@ export interface UpdateTransaction {
    * field names, and only this one belongs to the edited document.
    */
   revealTarget: CachedElement | undefined;
+  /**
+   * Identities the reveal ledger will record once this revision reaches its
+   * reveal point — not before. A revision superseded on the way there never
+   * revealed, so the ledger must still show the previous value: the message
+   * that supersedes it is then the one that owes the reveal.
+   */
+  revealIdentities: [key: string, identity: string][];
   pendingFragments: number;
   routeRefreshed: boolean;
   cancelled: boolean;

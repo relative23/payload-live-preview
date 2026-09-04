@@ -227,6 +227,24 @@ describe('reveal', () => {
     expect(scrolled).toEqual(['title']);
   });
 
+  it('still reveals an edit when an identical re-send supersedes the transaction that noted it', async () => {
+    document.body.innerHTML =
+      '<p data-payload-field="title">old</p><p data-payload-field="footer">old</p>';
+    start({ revealEditedField: true, skipUnchanged: true });
+    await update({ title: 't', footer: 'b' });
+    expect(scrolled).toEqual([]);
+    // The admin re-sends when a write takes longer than it waits, and the
+    // re-send supersedes the message that noted the reveal before that reveal
+    // ran. The edit still landed; the reveal it owes must land too.
+    post({ title: 't', footer: 'e' }, { extra: { globalSlug: 'home' } });
+    // One task later: the first message has scheduled its writes and noted the
+    // reveal, but the debounced flush that would run it has not fired yet.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    post({ title: 't', footer: 'e' }, { extra: { globalSlug: 'home' } });
+    await settled();
+    expect(scrolled).toEqual(['footer']);
+  });
+
   it('treats an element new to the page as baseline, not as an edit', async () => {
     start({ revealEditedField: true });
     await update({ title: 'a', footer: 'b' });

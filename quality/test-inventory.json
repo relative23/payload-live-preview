@@ -19,7 +19,7 @@
   "totals": {
     "files": 239,
     "suites": 516,
-    "tests": 2160,
+    "tests": 2161,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 201,
       "suites": 463,
-      "tests": 2009,
+      "tests": 2010,
       "benchmarks": 0
     }
   },
@@ -988,7 +988,7 @@
       "path": "tests/unit/core/update-pipeline.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 11,
+      "tests": 12,
       "benchmarks": 0
     },
     {
