@@ -66,8 +66,14 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - name: Use repository npm version
-        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      # The pinned npm exists for reproducible packaging, and that is enforced
+      # on the pinned Node elsewhere. Here the point is the opposite: does the
+      # package work on each Node it claims? npm 12 needs Node 22.22+, so the
+      # oldest supported Node keeps its bundled npm — which is also the npm a
+      # consumer on that version actually has. Only an engine mismatch falls
+      # back; any other install failure still fails the job.
+      - name: Use the repository npm version where this Node supports it
+        run: node scripts/use-repository-npm.mjs
       - run: npm ci
       - run: npm run build:runtime
       - run: npm run test:unit

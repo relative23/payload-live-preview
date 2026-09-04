@@ -11,6 +11,7 @@ import {
   MAIN_PUSH,
   NPM_CI,
   NPM_VERSION,
+  MATRIX_SETUP,
   PINNED_SETUP,
   SETUP_NODE,
   READ_ONLY,
@@ -55,7 +56,7 @@ export const CI: WorkflowSpec = {
     unit: {
       matrix: { node: [20, 22, 24, 26] },
       steps: [
-        ...SETUP,
+        ...MATRIX_SETUP,
         BUILD_RUNTIME,
         { run: 'npm run test:unit' },
         { run: 'npm run test:integration' },
