@@ -1,5 +1,6 @@
 import {
   LivePreviewClient,
+  authorizePreviewRequest,
   bind,
   generateInlineScript,
   type FieldRenderer,
@@ -22,6 +23,7 @@ import {
   type LivePreviewNuxtOptions,
 } from 'payload-live-preview/nuxt';
 import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { definePreview } from 'payload-live-preview/server';
 import {
   livePreviewHandle,
   type LivePreviewSvelteKitOptions,
@@ -77,3 +79,29 @@ const publicValues = [
 
 unsubscribe();
 void publicValues;
+
+// The documented authorization flow crosses entry boundaries twice: the root
+// barrel produces the context, an adapter hook consumes it, and the server
+// entry's draft read consumes it again. Each published entry carries its own
+// declaration file, so a nominal type that is declared per file — a
+// `unique symbol` brand, say — makes these three entries mutually
+// incompatible while every entry type-checks perfectly on its own.
+const crossEntryOptions: LivePreviewNextOptions = {
+  authorizePreview: (request) =>
+    authorizePreviewRequest(request, {
+      type: 'verifier',
+      verify: () => ({ subject: 'editor' }),
+    }),
+};
+
+async function crossEntryDraftRead(request: Request): Promise<unknown> {
+  const verdict = await authorizePreviewRequest(request, {
+    type: 'verifier',
+    verify: () => ({ subject: 'editor' }),
+  });
+  if (!verdict.authorized) return null;
+  const preview = definePreview({ serverURL: 'https://admin.example.test', depth: 1 });
+  return preview.fetchDocument({ collection: 'pages', authorization: verdict.context });
+}
+
+export { crossEntryOptions, crossEntryDraftRead };

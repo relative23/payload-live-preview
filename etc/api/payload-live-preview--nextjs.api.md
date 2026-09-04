@@ -4,7 +4,7 @@
 
 ```ts
 
-import { b as PreviewAdapterOptions } from '../../options-THBxzyil.js';
+import { b as PreviewAdapterOptions } from '../../options-CEzzfHJu.js';
 
 // @public
 export function createLivePreviewMiddleware(options?: LivePreviewNextOptions): (request: Request, response: Response) => Promise<Response>;

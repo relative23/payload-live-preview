@@ -3,8 +3,27 @@
  * so producer and consumers recognise the same context. See ADR 0006.
  */
 
-/** Declared, never defined: no literal can carry it and no boolean can be cast into it. */
-export declare const AUTHORIZED_PREVIEW_BRAND: unique symbol;
+/**
+ * The brand key, in the type and on the object.
+ *
+ * This was a `unique symbol` until 2026-08-30. A `unique symbol` is nominal per
+ * *declaration*, and the published entries each carry their own declaration
+ * file — so `AuthorizedPreviewContext` from the root barrel was a different
+ * type from the one in `./server` or in an adapter, and the documented flow
+ * (authorize once, hand the context to the adapter hook and to the draft read)
+ * did not type-check in any combination a consumer can write.
+ *
+ * That is the same trap the runtime brand below already avoids by using
+ * `Symbol.for` rather than `Symbol()`; the lesson simply had not reached the
+ * type. A shared string literal is identical in every bundle for the same
+ * reason a registry symbol is.
+ *
+ * It is not what makes a context trustworthy. `isAuthorizedPreviewContext`
+ * decides that, on the registry symbol and on `Object.isFrozen`, and every
+ * consumption point calls it — the adapter policy, the draft read and the
+ * binding emitter. Writing this key by hand buys nothing.
+ */
+export const AUTHORIZED_PREVIEW_BRAND_KEY = 'payload-live-preview.authorized-preview-context';
 
 export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
 
@@ -19,7 +38,7 @@ export interface AuthorizedPreviewScope {
 
 /** The verdict of a successful `authorizePreviewRequest()`: frozen, branded, produced only there. Carry it, do not rebuild it. */
 export interface AuthorizedPreviewContext {
-  readonly [AUTHORIZED_PREVIEW_BRAND]: true;
+  readonly [AUTHORIZED_PREVIEW_BRAND_KEY]: true;
   readonly strategy: PreviewAuthorizationStrategyName;
   /** The user id, token subject, or whatever the verifier named. */
   readonly subject: string | undefined;
@@ -34,7 +53,6 @@ export interface AuthorizedPreviewContext {
 
 // A registry symbol: entries are separate bundles, and a per-bundle `Symbol()`
 // would refuse the other's contexts in the package while unit tests passed.
-export const AUTHORIZED_PREVIEW_BRAND_KEY = 'payload-live-preview.authorized-preview-context';
 const BRAND = Symbol.for(AUTHORIZED_PREVIEW_BRAND_KEY);
 
 /** Whether `value` was produced by `authorizePreviewRequest()`; a copy or JSON round trip is not. */
@@ -49,13 +67,15 @@ export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedP
 
 /** Internal: the one place a context is made. */
 export function createAuthorizedPreviewContext(
-  fields: Omit<AuthorizedPreviewContext, typeof AUTHORIZED_PREVIEW_BRAND>,
+  fields: Omit<AuthorizedPreviewContext, typeof AUTHORIZED_PREVIEW_BRAND_KEY>,
 ): AuthorizedPreviewContext {
   const context = Object.freeze({
     ...fields,
     scope: Object.freeze({ ...fields.scope }),
     payloadHeaders: Object.freeze({ ...fields.payloadHeaders }),
     [BRAND]: true,
+    [AUTHORIZED_PREVIEW_BRAND_KEY]: true,
   });
-  return context as unknown as AuthorizedPreviewContext;
+  // No cast: the frozen object carries the brand key the interface declares.
+  return context;
 }

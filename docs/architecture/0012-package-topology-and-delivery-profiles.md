@@ -9,7 +9,7 @@ this as the last of the five decision records it required.
 The package resolves to 20 export entries and reaches a page three different
 ways. Until this record, which entry may import which was a property of
 `scripts/architecture-rules.ts` and of whoever last read it. That is enough to
-keep the tree correct and not enough to say *why* a boundary exists, which is
+keep the tree correct and not enough to say _why_ a boundary exists, which is
 what a reviewer needs when an import looks convenient.
 
 Three questions kept recurring and are settled below: what may a browser bundle
@@ -41,7 +41,7 @@ people into duplicating types.
 
 ### 2. The boundary is a graph rule, not a convention
 
-`FORBIDDEN_RUNTIME_DOMAINS` additionally forbids *upward* imports — the client
+`FORBIDDEN_RUNTIME_DOMAINS` additionally forbids _upward_ imports — the client
 may not reach into `adapters`, `codegen`, `inline` or `payload`, and so on — so
 the low-level runtime and security modules cannot acquire a dependency on the
 layers built above them. Cycles are rejected in the same pass. A violation fails
@@ -69,7 +69,7 @@ drop an unused entry rather than merely not call it.
 
 ### 5. A peer dependency is allowed only where it is optional
 
-`astro` and `ts-morph` are both declared optional. `ts-morph` is needed to *run*
+`astro` and `ts-morph` are both declared optional. `ts-morph` is needed to _run_
 `pll migrate`, not to import `./migrate`'s types — which is why `Codemod`
 describes a codemod without its `apply`. An entry that made a peer mandatory
 would tax every consumer for a feature most never use, so it is not done.
@@ -82,6 +82,6 @@ would tax every consumer for a feature most never use, so it is not done.
 - Moving a module between groups is a visible event: it changes an API report,
   the architecture verdict, or both.
 - The rules are structural, so they hold for code nobody re-reads. What they
-  cannot check is whether an entry *earns* its place; that stays a review
+  cannot check is whether an entry _earns_ its place; that stays a review
   question, and adding an entry is the one topology change this record asks to
   be argued rather than merely tested.

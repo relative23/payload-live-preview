@@ -75,9 +75,7 @@ function main(): void {
   const installed = results.filter((result) => result.state !== 'absent');
 
   if (stale.length === 0) {
-    console.log(
-      `[fixtures] ${String(installed.length)} fixture(s) carry the current build.`,
-    );
+    console.log(`[fixtures] ${String(installed.length)} fixture(s) carry the current build.`);
     return;
   }
   console.error(

@@ -154,9 +154,7 @@ describe('package artifact manifest', () => {
       integrity: EVIDENCE.integrity,
       files: [{ path: 'package.json', size: 1, mode: 0o644 }],
     };
-    const report = parseNpmPackReport(
-      JSON.stringify(keyed ? { [EVIDENCE.name]: entry } : [entry]),
-    );
+    const report = parseNpmPackReport(JSON.stringify(keyed ? { [EVIDENCE.name]: entry } : [entry]));
     expect(report.filename).toBe(EVIDENCE.filename);
     expect(report.version).toBe(EVIDENCE.version);
     expect(report.files.map((file) => file.path)).toEqual(['package.json']);

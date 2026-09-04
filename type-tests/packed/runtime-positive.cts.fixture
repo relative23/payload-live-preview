@@ -1,5 +1,6 @@
 import {
   LivePreviewClient,
+  authorizePreviewRequest,
   bind,
   generateInlineScript,
   type FieldRenderer,
@@ -7,6 +8,7 @@ import {
 } from 'payload-live-preview';
 import { EventEmitter, initLivePreview } from 'payload-live-preview/core';
 import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { definePreview } from 'payload-live-preview/server';
 
 const client = new LivePreviewClient({ autoStart: false });
 const unsubscribe = client.events.once('disconnect', ({ reason }) => {
@@ -33,3 +35,21 @@ const publicValues = [
 
 unsubscribe();
 void publicValues;
+
+// The documented authorization flow crosses an entry boundary: the root barrel
+// produces the context and the server entry's draft read consumes it. Each
+// published entry carries its own declaration file, so a nominal type declared
+// per file — a `unique symbol` brand, say — makes the two mutually
+// incompatible while each entry type-checks perfectly on its own. The adapters
+// are ESM-only, so their half of this contract lives in the .mts fixture.
+async function crossEntryDraftRead(request: Request): Promise<unknown> {
+  const verdict = await authorizePreviewRequest(request, {
+    type: 'verifier',
+    verify: () => ({ subject: 'editor' }),
+  });
+  if (!verdict.authorized) return null;
+  const preview = definePreview({ serverURL: 'https://admin.example.test', depth: 1 });
+  return preview.fetchDocument({ collection: 'pages', authorization: verdict.context });
+}
+
+export { crossEntryDraftRead };

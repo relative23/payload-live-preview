@@ -106,7 +106,10 @@ describe('custom elements come from the template itself', () => {
   });
 
   it('admits a custom element with several hyphens, case-insensitively', () => {
-    const html = clean('<div><My-Fancy-Widget>a</My-Fancy-Widget></div>', '<li><My-Fancy-Widget/></li>');
+    const html = clean(
+      '<div><My-Fancy-Widget>a</My-Fancy-Widget></div>',
+      '<li><My-Fancy-Widget/></li>',
+    );
     expect(html).toContain('<my-fancy-widget');
   });
 });

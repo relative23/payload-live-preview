@@ -4,8 +4,8 @@
 
 ```ts
 
-import { c } from '../../options-THBxzyil.js';
-import { b as PreviewAdapterOptions } from '../../options-THBxzyil.js';
+import { c } from '../../options-CEzzfHJu.js';
+import { b as PreviewAdapterOptions } from '../../options-CEzzfHJu.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;

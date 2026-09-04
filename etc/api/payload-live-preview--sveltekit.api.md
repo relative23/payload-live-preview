@@ -4,7 +4,7 @@
 
 ```ts
 
-import { b as PreviewAdapterOptions } from '../../options-THBxzyil.js';
+import { b as PreviewAdapterOptions } from '../../options-CEzzfHJu.js';
 
 // @public
 export function livePreviewHandle(options?: LivePreviewSvelteKitOptions): SvelteKitHandle;

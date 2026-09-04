@@ -112,7 +112,10 @@ describe('HTML sink inventory', () => {
 
   it('every write goes through the Trusted Types policy', () => {
     const bare = sinks.filter((sink) => !sink.expression.startsWith('trustedHtml('));
-    expect(bare.map((sink) => sink.key), 'assign trustedHtml(...) so the page keeps working under a Trusted Types CSP').toEqual([]);
+    expect(
+      bare.map((sink) => sink.key),
+      'assign trustedHtml(...) so the page keeps working under a Trusted Types CSP',
+    ).toEqual([]);
   });
 
   it('only a template is fed markup this package did not check', () => {
@@ -122,7 +125,7 @@ describe('HTML sink inventory', () => {
     for (const [key] of raw) {
       const source = readFileSync(resolve(ROOT, key.slice(0, key.indexOf('::'))), 'utf8');
       expect(source, `${key} must parse into a template, not a live element`).toContain(
-        'createElement(\'template\')',
+        "createElement('template')",
       );
     }
   });

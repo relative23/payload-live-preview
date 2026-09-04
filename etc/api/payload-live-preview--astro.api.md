@@ -4,16 +4,16 @@
 
 ```ts
 
-import { A } from '../../options-THBxzyil.js';
-import { a } from '../../options-THBxzyil.js';
-import { c as createLivePreviewMiddleware } from '../../middleware-SpLmTaUX.js';
-import { h as hasPreviewIntent } from '../../options-THBxzyil.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-SpLmTaUX.js';
-import { a as LivePreviewMiddleware } from '../../middleware-SpLmTaUX.js';
-import { P } from '../../options-THBxzyil.js';
-import { b as PreviewAdapterOptions } from '../../options-THBxzyil.js';
-import { c as PreviewRequestLike } from '../../options-THBxzyil.js';
-import { d as PreviewRequestOptions } from '../../options-THBxzyil.js';
+import { A } from '../../options-CEzzfHJu.js';
+import { a } from '../../options-CEzzfHJu.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-CEPsY1P7.js';
+import { h as hasPreviewIntent } from '../../options-CEzzfHJu.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-CEPsY1P7.js';
+import { a as LivePreviewMiddleware } from '../../middleware-CEPsY1P7.js';
+import { P } from '../../options-CEzzfHJu.js';
+import { b as PreviewAdapterOptions } from '../../options-CEzzfHJu.js';
+import { c as PreviewRequestLike } from '../../options-CEzzfHJu.js';
+import { d as PreviewRequestOptions } from '../../options-CEzzfHJu.js';
 
 // @public
 export type AstroComponentLike = object;

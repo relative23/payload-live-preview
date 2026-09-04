@@ -17,12 +17,12 @@ export interface AnalyticsSnapshot {
 }
 
 // @public
-const AUTHORIZED_PREVIEW_BRAND: unique symbol;
+export const AUTHORIZED_PREVIEW_BRAND_KEY = "payload-live-preview.authorized-preview-context";
 
 // @public
 export interface AuthorizedPreviewContext {
     // (undocumented)
-    readonly [AUTHORIZED_PREVIEW_BRAND]: true;
+    readonly [AUTHORIZED_PREVIEW_BRAND_KEY]: true;
     readonly authorizedAt: number;
     readonly expiresAt: number | undefined;
     readonly payloadHeaders: Readonly<Record<string, string>>;
