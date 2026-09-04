@@ -19,7 +19,7 @@
   "totals": {
     "files": 239,
     "suites": 516,
-    "tests": 2158,
+    "tests": 2160,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 201,
       "suites": 463,
-      "tests": 2007,
+      "tests": 2009,
       "benchmarks": 0
     }
   },
@@ -1058,7 +1058,7 @@
       "path": "tests/unit/doctor/analyze-bindings.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 10,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -1317,7 +1317,7 @@
       "path": "tests/unit/migrate/migrate-source.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {

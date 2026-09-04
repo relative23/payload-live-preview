@@ -49,6 +49,19 @@ describe('the real inline runtime is not markup', () => {
     const stuffed = `${REAL_RUNTIME}<style>${'[data-payload-field="s"]{}'.repeat(5)}</style>${many.join('')}`;
     expect(codes(withPreview(stuffed, CSP))).not.toContain('LP0705');
   });
+
+  it('still drops a script whose end tag carries junk, and one that only appears once its neighbour is gone', () => {
+    // Browsers close a script on `</script` whatever follows, and a body may
+    // hide a block inside another so that one pass of stripping exposes it.
+    // Both would otherwise leave the runtime's own message counted as bindings.
+    const junkEndTag = `<script>${'data-payload-field= '.repeat(60)}</script foo>`;
+    const nested = `<scr<script></script>ipt>${'data-payload-field= '.repeat(60)}</script>`;
+    for (const body of [junkEndTag, nested]) {
+      expect(
+        codes(withPreview(`${body}<h1 data-payload-field="title">Title</h1>`, CSP)),
+      ).not.toContain('LP0705');
+    }
+  });
 });
 
 describe('what the public response gives away', () => {

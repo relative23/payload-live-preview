@@ -82,6 +82,17 @@ describe('migrateSource', () => {
     );
   });
 
+  it('closes a component script on an end tag that carries junk before its >', () => {
+    // Browsers close on `</script` whatever follows; the extractor must agree,
+    // or the template after it would be treated as script.
+    const svelte =
+      '<script lang="ts">\n  import { isPreviewRequest } from \'payload-live-preview\';\n' +
+      '  const p = isPreviewRequest(data.request);\n</script foo>\n<h1>{p}</h1>\n';
+    const migrated = migrateSource(svelte, { fileName: 'Page.svelte' }).output;
+    expect(migrated).toContain('const p = hasPreviewIntent(data.request);');
+    expect(migrated).toContain('</script foo>\n<h1>{p}</h1>');
+  });
+
   it('parses JSX in .tsx and .jsx files', () => {
     const src =
       "import { isPreviewRequest } from 'payload-live-preview';\nexport const Flag = ({ req }) => <span data-preview={isPreviewRequest(req)}>x</span>;\n";

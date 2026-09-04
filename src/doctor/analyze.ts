@@ -22,12 +22,25 @@ const OWNER_ATTRIBUTE = /\bdata-payload-owner\s*=/gu;
 /** Mirrors the scheduler default; the audit must not import the runtime. */
 const DEFAULT_VISIBILITY_GATE_THRESHOLD = 50;
 const LEVEL_ORDER = { error: 0, warning: 1, info: 2 } as const;
+// An end tag may carry junk before its `>`; browsers still close on it, so the
+// pattern must too, or a `</script foo>` would leave the script body counted.
 const NON_MARKUP =
-  /<script\b[^>]*>[\s\S]*?<\/script\s*>|<style\b[^>]*>[\s\S]*?<\/style\s*>|<!--[\s\S]*?-->/giu;
+  /<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>|<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>|<!--[\s\S]*?-->/giu;
 
-/** The runtime's own source spells `data-payload-field=` in a message, so scripts must not be counted. */
+/**
+ * The runtime's own source spells `data-payload-field=` in a message, so
+ * scripts must not be counted. This is a counter's view of the page, not a
+ * sanitiser — nothing here is rendered — but it strips to a fixed point all
+ * the same, so a block that only appears once its neighbour is gone is still
+ * removed rather than counted.
+ */
 function visibleMarkup(body: string): string {
-  return body.replace(NON_MARKUP, '');
+  let markup = body;
+  for (;;) {
+    const stripped = markup.replace(NON_MARKUP, '');
+    if (stripped === markup) return markup;
+    markup = stripped;
+  }
 }
 
 function count(haystack: string, pattern: RegExp): number {

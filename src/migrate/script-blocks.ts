@@ -20,7 +20,10 @@ const WHOLE_FILE: Readonly<Record<string, ScriptKind>> = {
 };
 const COMPONENT_EXTENSIONS = new Set(['.astro', '.vue', '.svelte']);
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---/u;
-const SCRIPT_TAG = /<script(?:\s[^>]*)?>([\s\S]*?)<\/script\s*>/giu;
+// Browsers close a script on `</script` followed by anything up to `>`, so the
+// end tag must accept that too, or a stray `</script foo>` would swallow the
+// rest of the file into one block.
+const SCRIPT_TAG = /<script(?:\s[^>]*)?>([\s\S]*?)<\/script\b[^>]*>/giu;
 
 export function scriptBlocks(source: string, fileName: string): readonly ScriptBlock[] {
   const extension = extname(fileName).toLowerCase();
