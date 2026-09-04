@@ -1,22 +1,9 @@
 /**
- * Document ownership for bindings.
- *
- * A field name alone cannot identify a binding on a page that previews more
- * than one document. `title` may belong to the page global, to shared SEO
- * metadata, and to every card of a collection at the same time, and an update
- * for any one of them would otherwise reach all three.
- *
- * An owner marker names the document a subtree belongs to. Payload already
- * sends the identity of the edited document on every message, so scoping needs
- * no additional consumer configuration beyond the markers themselves.
- *
- * The grammar is deliberately small and comparable as a plain string:
- *
- *   - `global:<slug>`
- *   - `collection:<slug>`
- *   - `collection:<slug>:<id>`
- *
- * @module @core/binding-owner
+ * Document ownership for bindings. A field name alone cannot identify a
+ * binding on a page that previews several documents — `title` may belong to a
+ * global, to shared SEO metadata and to every card at once. An owner marker
+ * names the document a subtree belongs to, as a plain comparable string:
+ * `global:<slug>`, `collection:<slug>`, `collection:<slug>:<id>`.
  */
 
 /** Identity of the document an incoming message describes. */
@@ -32,12 +19,7 @@ export function globalOwnerKey(slug: string): string {
   return `global:${slug}`;
 }
 
-/**
- * Owner key naming a collection, optionally narrowed to one document.
- *
- * A marker without an id claims every document of that collection, which is
- * the right granularity for a page that renders exactly one of them.
- */
+/** Owner key for a collection; without an id it claims every document of it. */
 export function collectionOwnerKey(slug: string, documentId?: string): string {
   return documentId === undefined || documentId === ''
     ? `collection:${slug}`
@@ -49,16 +31,10 @@ function nonEmpty(value: string | undefined): value is string {
 }
 
 /**
- * Owner keys the given message is allowed to address.
- *
- * Returns `null` when the message carries no usable document identity. That is
- * not the same as "addresses nothing": the caller decides, and the runtime
- * treats it as fail-closed rather than guessing an owner.
- *
- * A collection message addresses both the collection-wide key and — when the
- * document id is known — its exact document key. A marker that names an id is
- * therefore unreachable while the id is unknown, which is intentional: an
- * unproven identity must not satisfy an exact claim.
+ * Owner keys this message may address, or `null` when it carries no usable
+ * identity — the runtime treats that as fail-closed rather than guessing. A
+ * marker naming an id stays unreachable while the id is unknown: an unproven
+ * identity must not satisfy an exact claim.
  */
 export function messageOwnerKeys(identity: MessageDocumentIdentity): readonly string[] | null {
   if (nonEmpty(identity.globalSlug)) return [globalOwnerKey(identity.globalSlug)];
@@ -69,13 +45,7 @@ export function messageOwnerKeys(identity: MessageDocumentIdentity): readonly st
     : [collectionKey];
 }
 
-/**
- * Whether a binding may receive an update addressed to `keys`.
- *
- * An unowned binding is out of scope whenever scoping is active. Ownership is
- * opt-in precisely so that this stays a deliberate, verifiable claim rather
- * than a default that silently downgrades to "matches everything".
- */
+/** Whether a binding may receive an update addressed to `keys`; an unowned binding never may. */
 export function isBindingInScope(
   owner: string | undefined,
   keys: readonly string[] | null,
@@ -84,12 +54,7 @@ export function isBindingInScope(
   return keys.includes(owner);
 }
 
-/**
- * Read a document id out of an already-resolved field payload.
- *
- * Payload sends the primary key alongside the edited values. Only scalars are
- * accepted; anything else leaves the identity unproven.
- */
+/** The document id Payload sends alongside the edited values; only scalars prove an identity. */
 export function readDocumentId(fields: Record<string, unknown>): string | undefined {
   const id: unknown = fields['id'];
   if (typeof id === 'string' && id.length > 0) return id;

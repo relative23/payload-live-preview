@@ -1,11 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  evaluateMutationReport,
-  summarizeMutationReport,
-  type MutationPolicy,
-} from '../../../scripts/mutation-policy';
+import { evaluateMutationReport, type MutationPolicy } from '../../../scripts/mutation-policy';
+import { summarizeMutationReport } from '../../../scripts/mutation-report';
 
 type Status =
   'CompileError' | 'Ignored' | 'Killed' | 'NoCoverage' | 'RuntimeError' | 'Survived' | 'Timeout';
@@ -129,11 +126,13 @@ describe('nightly mutation policy', () => {
       },
       scope: ['src/core/field-value.ts', 'src/security/csp.ts', 'src/security/url-validator.ts'],
       baseline: {
-        total: 296,
-        mutationScoreMinimum: 93.92,
+        total: 347,
+        mutationScoreMinimum: 93.66,
         mutationScorePrecision: 2,
+        // One timeout on a loaded runner moves the score by one mutant.
+        mutationScoreDriftMutants: 2,
         noCoverageMaximum: 0,
-        timeoutMaximum: 0,
+        timeoutMaximum: 2,
         errorMaximum: 0,
         ignoredMaximum: 0,
       },
@@ -304,12 +303,39 @@ describe('nightly mutation policy', () => {
       'src/security/csp.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
     });
 
-    expect(evaluateMutationReport(improved, policy()).violations).toEqual([
+    const result = evaluateMutationReport(improved, policy());
+
+    expect(result.violations).toEqual([
       '[improvement] mutation score 87.5 exceeds reviewed minimum 71.4286; ratchet the policy',
       '[improvement] no-coverage mutants improved from 1 to 0; ratchet the policy',
-      '[improvement] timeout mutants improved from 1 to 0; ratchet the policy',
       '[improvement] error mutants improved from 1 to 0; ratchet the policy',
     ]);
+    // Timeouts are the exception: see below.
+    expect(result.notices).toContain(
+      '[drift] timeout mutants 0 is below the reviewed ceiling 1; ' +
+        'expected for a machine-dependent count, worth lowering if it persists',
+    );
+  });
+
+  it('treats the timeout count as a ceiling, because it measures the machine', () => {
+    // A loaded runner times a mutant out where a quiet one kills it, and the
+    // nightly figure is the sum over three shards on three runners. A run that
+    // times out *less* must not be the thing that stops a release; one that
+    // times out more still is, and the score is unaffected either way because
+    // Stryker counts a timeout as detected.
+    const quiet = report({
+      'src/core/cache.ts': ['Killed', 'Survived', 'NoCoverage', 'RuntimeError'],
+      'src/security/csp.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
+    });
+    expect(
+      evaluateMutationReport(quiet, policy({ timeoutMaximum: 3 })).violations.filter((v) =>
+        v.includes('timeout'),
+      ),
+    ).toEqual([]);
+
+    expect(evaluateMutationReport(report(), policy({ timeoutMaximum: 0 })).violations).toContain(
+      '[regression] timeout mutants 1 exceed reviewed maximum 0',
+    );
   });
 
   it('reports score drift inside the noise band without failing the run', () => {
@@ -375,5 +401,41 @@ describe('nightly mutation policy', () => {
         }),
       ).violations,
     ).toEqual(['[improvement] total mutants decreased from 8 to 5; ratchet the policy']);
+  });
+});
+
+describe('stale mutation reports', () => {
+  const sources = (): Map<string, string> =>
+    new Map([
+      ['src/core/cache.ts', ''],
+      ['src/security/csp.ts', ''],
+    ]);
+
+  it('accepts a report whose mutated sources match the working tree', () => {
+    expect(evaluateMutationReport(report(), policy(), sources()).violations).toEqual([]);
+  });
+
+  it('refuses a report mutated from a different source than the working tree', () => {
+    const tree = sources();
+    tree.set('src/core/cache.ts', 'export const changedSinceTheRun = true;\n');
+    expect(evaluateMutationReport(report(), policy(), tree).violations).toEqual([
+      '[stale] src/core/cache.ts differs from the source the report mutated; rerun the mutation suite',
+    ]);
+  });
+
+  it('refuses a report for a file the working tree no longer has', () => {
+    const tree = sources();
+    tree.delete('src/security/csp.ts');
+    expect(evaluateMutationReport(report(), policy(), tree).violations).toEqual([
+      '[stale] src/security/csp.ts is not readable in this working tree',
+    ]);
+  });
+
+  it('compares sources independently of line endings', () => {
+    const fabricated = report() as { files: Record<string, { source: string }> };
+    fabricated.files['src/core/cache.ts']!.source = 'a\r\nb\n';
+    const tree = sources();
+    tree.set('src/core/cache.ts', 'a\nb\n');
+    expect(evaluateMutationReport(fabricated, policy(), tree).violations).toEqual([]);
   });
 });

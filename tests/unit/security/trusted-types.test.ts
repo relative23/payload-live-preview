@@ -9,13 +9,6 @@ import { sanitizeHtml } from '@security/sanitizer';
 import { buildBuiltinRenderers } from '@field-types/index';
 import type { CachedElement, RenderContext } from '@core/types';
 
-/**
- * Trusted Types (roadmap 1.3.0): under enforcement every HTML sink must
- * receive a `TrustedHTML`. The package creates one policy on first use and
- * routes every sink through it; a site may hand in its own; without the API
- * strings pass through.
- */
-
 class FakeTrustedHTML {
   constructor(readonly value: string) {}
   toString(): string {
@@ -76,8 +69,7 @@ describe('sinks under an enforcing policy', () => {
     installFakeApi();
     const createHTML = vi.fn((input: string) => new FakeTrustedHTML(input));
     setTrustedTypesPolicy({ createHTML });
-    // jsdom accepts an object with toString() for innerHTML, which is what an
-    // enforcing browser does with a real TrustedHTML.
+    // jsdom stringifies an innerHTML object the way an enforcing browser does a TrustedHTML.
     expect(sanitizeHtml('<b>x</b><script>y()</script>')).toBe('<b>x</b>');
     expect(createHTML).toHaveBeenCalledWith('<b>x</b><script>y()</script>');
     const renderers = buildBuiltinRenderers();

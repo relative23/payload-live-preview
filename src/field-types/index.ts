@@ -1,20 +1,11 @@
-/**
- * Public barrel for built-in field renderers.
- *
- * Each renderer is imported as a named binding (not a side-effect)
- * and assembled into the registry through `buildBuiltinRenderers`.
- * The bundler keeps every reference reachable, so the registry is
- * fully populated at runtime even under `sideEffects: false`.
- *
- * @module @field-types
- */
+/** Built-in field renderers, assembled as values so `sideEffects: false` bundlers keep them all. */
 
 import type { FieldRenderer } from '@core/types';
 import { createTextRenderer } from './text';
-import { textareaRenderer } from './textarea';
 import { richTextRenderer } from './rich-text';
 import { htmlRenderer } from './html';
 import { urlRenderer } from './url';
+import { emailRenderer } from './email';
 import { imageRenderer } from './image';
 import { uploadRenderer } from './upload';
 import { relationshipRenderer } from './relationship';
@@ -30,27 +21,15 @@ import {
   __resetBuiltinRenderersForTests,
 } from './registry';
 
-/**
- * The stateless built-in renderers, shared safely across instances. Text and
- * structural-array renderers are intentionally NOT here: both own per-client
- * warning/diff state and are constructed fresh per build (below).
- */
-
-/**
- * Built-in renderer map. Called once per client/runtime; the
- * `structural-array` renderer gets a fresh instance with its own diff
- * state so nothing is shared between concurrent clients.
- */
+/** One renderer map per client; the stateful text and structural renderers are created fresh each call. */
 export function buildBuiltinRenderers(): Readonly<Record<string, FieldRenderer>> {
-  // Built here, not at module level: the object spreads are not provably pure
-  // for a bundler, and a table at module scope would pin every renderer into a
-  // consumer that imports an unrelated symbol from the root barrel.
+  // Built per call: a module-level table would pin every renderer into any
+  // consumer importing an unrelated symbol from the root barrel.
   const stateless: readonly FieldRenderer[] = [
-    textareaRenderer,
     richTextRenderer,
     htmlRenderer,
     urlRenderer,
-    { ...urlRenderer, name: 'email' },
+    emailRenderer,
     imageRenderer,
     uploadRenderer,
     relationshipRenderer,
@@ -63,7 +42,12 @@ export function buildBuiltinRenderers(): Readonly<Record<string, FieldRenderer>>
     { ...arrayRenderer, name: 'blocks' },
   ];
 
-  return buildRegistry([createTextRenderer(), ...stateless, createStructuralArrayRenderer()]);
+  return buildRegistry([
+    createTextRenderer('text'),
+    createTextRenderer('textarea'),
+    ...stateless,
+    createStructuralArrayRenderer(),
+  ]);
 }
 
 export { registerBuiltinRenderer, __resetBuiltinRenderersForTests };

@@ -12,9 +12,12 @@ export function buildLivePreviewUrl(options: BuildLivePreviewUrlNullableOptions)
 
 // @public
 export interface BuildLivePreviewUrlNullableOptions {
+    // (undocumented)
     readonly baseUrl: string;
+    // (undocumented)
     readonly collections?: Readonly<Record<string, NullablePathResolver>>;
     readonly fallback?: string | null;
+    // (undocumented)
     readonly globals?: Readonly<Record<string, NullablePathResolver>>;
     readonly previewParam?: string | null;
 }

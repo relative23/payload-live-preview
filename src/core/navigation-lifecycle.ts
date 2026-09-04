@@ -1,21 +1,8 @@
 /**
- * Document-lifecycle owner for the live-preview client.
- *
- * The runtime learns about messages, not about navigation. Two browser
- * behaviours make that gap visible, and both are silent:
- *
- *   - A **back/forward-cache restore** does not re-run module scripts. A client
- *     that stays attached across `pagehide` comes back bound to a document the
- *     browser froze and thawed, and simply stops updating.
- *   - A **soft navigation** replaces page content without a new document. The
- *     bindings the cache holds are gone, and nothing tells the runtime.
- *
- * This binds both to `suspend()`/`resume()`/`refreshCache()` in one place, so a
- * consumer that uses no framework adapter can own the lifecycle with one call
- * instead of re-deriving it — which is what every integration has had to do so
- * far.
- *
- * @module @core/navigation-lifecycle
+ * Binds the document lifecycle the runtime cannot see: a back/forward-cache
+ * restore re-runs no scripts, so a client that stayed attached comes back
+ * bound to a frozen document and quietly stops updating; a soft navigation
+ * replaces the content the binding cache describes. Both are silent failures.
  */
 
 /** The part of the client this owner drives. */
@@ -26,31 +13,18 @@ export interface NavigationLifecycleTarget {
 }
 
 export interface NavigationLifecycleOptions {
-  /**
-   * Event target for `pagehide`/`pageshow`. Defaults to `window`.
-   *
-   * These fire on the window, not the document, and only there — binding them
-   * anywhere else silently never fires.
-   */
+  /** Where `pagehide`/`pageshow` fire; they exist only on the window. Defaults to `window`. */
   readonly windowTarget?: EventTarget;
-  /**
-   * Event target for soft-navigation events. Defaults to `document`.
-   */
+  /** Event target for soft-navigation events. Defaults to `document`. */
   readonly documentTarget?: EventTarget;
   /**
-   * Soft-navigation events after which the DOM has been replaced and the
-   * binding cache has to be rebuilt — for example `astro:page-load`.
-   *
-   * Empty by default: the package cannot know which framework is present, and
-   * guessing would either miss the event or rebuild on an unrelated one.
+   * Events after which the DOM was replaced and the cache must be rebuilt, e.g.
+   * `astro:page-load`. Empty by default: only the host knows which its router fires.
    */
   readonly softNavigationEvents?: readonly string[];
 }
 
-/**
- * Bind the document lifecycle. Returns an unbind function; calling it twice is
- * harmless.
- */
+/** Returns an unbind function; calling it twice is harmless. */
 export function bindNavigationLifecycle(
   target: NavigationLifecycleTarget,
   options: NavigationLifecycleOptions = {},
@@ -64,9 +38,7 @@ export function bindNavigationLifecycle(
     target.suspend();
   };
   const onPageShow = (event: Event): void => {
-    // Only a *persisted* restore needs reacquiring. An ordinary load already
-    // ran the module scripts, and resuming there would rebuild a cache the
-    // startup just built.
+    // Only a persisted restore needs reacquiring; an ordinary load already started.
     if ((event as Event & { readonly persisted?: boolean }).persisted === true) {
       target.resume();
     }

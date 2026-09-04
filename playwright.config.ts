@@ -20,6 +20,13 @@ const servers = new Set(
 
 const config: PlaywrightTestConfig = {
   testDir: './tests/e2e/specs',
+  // Playwright empties its output directory before every run, and by default
+  // that directory is test-results/ — where Stryker, the soak and the bench
+  // also write their reports. An E2E run after a mutation run deleted the
+  // mutation report before anyone read it. Each Playwright config now empties
+  // only its own subfolder. CI is unaffected: those jobs run on separate
+  // runners and upload playwright-report/.
+  outputDir: 'test-results/playwright',
   fullyParallel: true,
   forbidOnly: true,
   // Retries collect diagnostics, but a test that needed one is still a failed
@@ -33,6 +40,14 @@ const config: PlaywrightTestConfig = {
     baseURL: `http://localhost:${astroPort}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // The suite asserts where things end up, not how they get there. The
+    // reveal scrolls smoothly unless the page prefers reduced motion, and a
+    // smooth scroll on a loaded runner is an animation the browser may
+    // throttle — Firefox once took longer than the 5 s the reveal spec waits,
+    // passed on retry, and the runtime test policy rightly refuses a pass that
+    // needed one. Reduced motion makes the reveal instant; which behaviour it
+    // picks is asserted in tests/unit/core/reveal.test.ts.
+    contextOptions: { reducedMotion: 'reduce' },
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   addUntrackedChangedLines,
   COVERAGE_POLICY,
+  emitsJavaScript,
+  neverInstrumented,
   evaluateDiffCoverage,
   findCoveragePolicyRegressions,
+  globCovers,
   matchesPolicyGlob,
   parseChangedLines,
   parseLcov,
@@ -92,7 +95,12 @@ end_of_record
       ['src/core/runtime.ts', new Set(Array.from({ length: 10 }, (_, index) => index + 1))],
     ]);
 
-    const passing = evaluateDiffCoverage(lcov, changed);
+    // Which file is critical is pinned here rather than read from the shipped
+    // policy: this asserts the two budgets, not the current critical scope.
+    const policy = clonePolicy() as { criticalFiles: Record<string, unknown> } & CoveragePolicy;
+    policy.criticalFiles = { 'src/core/cache.ts': { lines: 96, functions: 100, branches: 95 } };
+
+    const passing = evaluateDiffCoverage(lcov, changed, policy);
     expect(passing.percentage).toBeCloseTo(93.33, 2);
     expect(passing.criticalPercentage).toBe(95);
     expect(passing.violations).toEqual([]);
@@ -108,6 +116,7 @@ end_of_record
         new Map([
           ['src/core/cache.ts', new Set(Array.from({ length: 20 }, (_, index) => index + 1))],
         ]),
+        policy,
       ).violations,
     ).toEqual(['critical changed-line coverage 90.00% is below 95%']);
   });
@@ -116,6 +125,26 @@ end_of_record
     expect(
       evaluateDiffCoverage(new Map(), new Map([['src/core/runtime.ts', new Set([1])]])).violations,
     ).toEqual(['src/core/runtime.ts is changed but absent from the LCOV report']);
+  });
+
+  it('tells a declaration-only module from one that emits code', () => {
+    expect(
+      emitsJavaScript('export interface A { readonly b: string }\nexport type C = A | null;'),
+    ).toBe(false);
+    // Only a comment survives the transpile, which is not code.
+    expect(emitsJavaScript('/** Just documentation. */\nexport type A = string;')).toBe(false);
+    expect(emitsJavaScript('export const a = 1;')).toBe(true);
+    expect(emitsJavaScript('export enum A { b }')).toBe(true);
+  });
+
+  it('names the file types vitest never executes, and nothing else', () => {
+    // A changed Astro component has no LCOV entry by construction: Astro
+    // compiles it and the browser suite exercises it. Demanding one would fail
+    // a documentation edit, which is what surfaced this.
+    expect(neverInstrumented('src/adapters/astro/RichText.astro')).toBe(true);
+    expect(neverInstrumented('src/adapters/astro/PreviewBoundary.astro')).toBe(true);
+    expect(neverInstrumented('src/adapters/astro/index.ts')).toBe(false);
+    expect(neverInstrumented('src/core/astro.ts')).toBe(false);
   });
 
   it('matches the narrow coverage exclusions without hiding neighbouring source', () => {
@@ -158,5 +187,36 @@ end_of_record
     } & CoveragePolicy;
     tightened.diff.ignored = tightened.diff.ignored.slice(1);
     expect(findCoveragePolicyRegressions(tightened, previous)).toEqual([]);
+  });
+
+  it('accepts narrowing an exclusion to files it already covered', () => {
+    const previous = clonePolicy() as { diff: { ignored: string[] } } & CoveragePolicy;
+    previous.diff.ignored = ['src/**/index.ts', 'src/codegen/**'];
+    const narrowed = clonePolicy() as { diff: { ignored: string[] } } & CoveragePolicy;
+    narrowed.diff.ignored = ['src/**/index.ts', 'src/codegen/cli.ts', 'src/codegen/*.plugin.ts'];
+    expect(findCoveragePolicyRegressions(narrowed, previous)).toEqual([]);
+
+    const widened = clonePolicy() as { diff: { ignored: string[] } } & CoveragePolicy;
+    widened.diff.ignored = ['src/**/index.ts', 'src/codegen/**', 'src/core/cli.ts'];
+    expect(findCoveragePolicyRegressions(widened, previous)).toEqual([
+      'diff ignored pattern was added: src/core/cli.ts',
+    ]);
+  });
+
+  it('decides glob coverage on a representative path', () => {
+    expect(globCovers('src/codegen/**', 'src/codegen/cli.ts')).toBe(true);
+    expect(globCovers('src/codegen/**', 'src/codegen/nested/*.ts')).toBe(true);
+    expect(globCovers('src/codegen/*', 'src/codegen/**')).toBe(false);
+    expect(globCovers('src/adapters/**', 'src/codegen/cli.ts')).toBe(false);
+  });
+
+  it('keeps the adapters and the codegen library under the diff gate', () => {
+    const ignored = COVERAGE_POLICY.diff.ignored;
+    const uncovered = (path: string) => ignored.some((glob) => matchesPolicyGlob(path, glob));
+    expect(uncovered('src/adapters/nuxt/adapter.ts')).toBe(false);
+    expect(uncovered('src/codegen/generate.ts')).toBe(false);
+    // Only the CLI runs as a subprocess; the Astro plugin has direct tests.
+    expect(uncovered('src/codegen/cli.ts')).toBe(true);
+    expect(uncovered('src/codegen/astro-plugin.ts')).toBe(false);
   });
 });

@@ -114,8 +114,23 @@ Run the tooling first:
 ```bash
 npx pll migrate ./src            # dry-run: shows the renames it would make
 npx pll migrate ./src --write    # apply them
+npx pll migrate ./src --only rename-is-preview-request   # one codemod
 npx pll doctor https://your-site/page --admin https://cms --v2
 ```
+
+`pll migrate` needs `ts-morph` — an optional peer, so run `npm i -D ts-morph`
+if you do not already have it. It
+rewrites only names a file binds from `payload-live-preview`, so an
+`isPreviewRequest` of your own is left alone. Anything it cannot rewrite
+safely — an object shorthand, a re-export, a call whose options are not a
+literal — is listed as `file:line` and that file is left untouched. Exit codes:
+`0` nothing needs a human, `1` usage error or missing `ts-morph`, `3` at least
+one file needs manual attention. `.astro`, `.vue` and `.svelte` files are
+rewritten in their script blocks only.
+
+`pll doctor` exits `0` with no error-level findings, `1` if the URL could not be
+fetched, and `2` on any error-level finding. It reports redirects rather than
+following them, so probe the final URL.
 
 Then adopt the rows. Each is a readiness-table entry (ADR 0007):
 
@@ -160,3 +175,56 @@ const doc = await preview.fetchDocument({ slug, authorization });
 
 The runtime keeps warning, once per process outside production, for every
 renamed or moved API until 2.0 removes it.
+
+### Changes nothing warns about
+
+The rows above announce themselves: a refused preview, a missing binding, a
+`pll doctor` finding. These do not. Each one changes output that used to be
+correct, so nothing errors and nothing logs — walk this list once against your
+own site.
+
+**Rich text markup is classes now, not data attributes.** The strict sanitizer
+strips `data-*`, so the Lexical renderer emits classes instead:
+
+| Was                                    | Is                                                      |
+| -------------------------------------- | ------------------------------------------------------- |
+| `data-block-type="hero"`               | `class="lp-block lp-block--hero"`                       |
+| inline block attributes                | `class="lp-inline-block lp-inline-block--<slug>"`       |
+| relationship attributes                | `class="lp-relation lp-relation--<slug>"`               |
+| the built-in blocks                    | `lp-block-callout`, `-image`, `-video`, `-code`, `-cta` |
+| inline `style` for alignment or indent | `class="lp-align-<align> lp-indent-<n>"`                |
+
+Block fields are no longer serialised into attributes at all. **Any CSS or
+query selector aimed at the old attributes stops matching, silently.** Grep your
+styles and your tests for `data-block-type`, `data-payload-` and any attribute
+selector on rich-text output before you upgrade. `docs/renderers.md` lists the
+full class vocabulary.
+
+**An empty value now clears its binding.** Every renderer follows one contract:
+an empty value, or a URL the sanitizer refuses, clears the element and counts as
+a write, where 1.x left the previous link, text or image in place. A field the
+editor empties now empties on the page. `<img>` writes rebuild or remove
+`srcset` and `sizes` with the `src`.
+
+**`email` is its own renderer.** It was an alias of `url`, which turned
+`someone@example.com` into a relative link. It writes a `mailto:` URL now. If
+you bound an address with `data-payload-type="url"` to work around that, drop
+the override.
+
+**Date inputs get local time.** `date` and `datetime-local` inputs receive the
+value in the visitor's time zone, because that is what those inputs mean. Other
+elements still get the ISO instant. A test asserting a UTC string in an input
+needs updating; a page that displayed the raw value now shows local time.
+
+**`generateInlineScript({ serverURL })` requires `mergeDepth`.** The client and
+the adapters already did; the inline generator was the last one guessing. Pass
+the same depth your Payload queries use, or populated relationships degrade to
+IDs after the first edit.
+
+**Two removals.** The `NextMiddleware` type is gone — use
+`PreviewAdapterOptions` from `payload-live-preview/nextjs`. The `checkFetchDest`
+option is gone with it; `previewSignals` decides which signals count, and
+`'fetch-dest'` is one of them.
+
+If you consume `payload-live-preview/migrate` as a library, `Codemod` no longer
+carries `apply`, so importing its types no longer drags in `ts-morph`.

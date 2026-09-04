@@ -1,11 +1,7 @@
 /**
- * `payload-live-preview/plugins` — the plugin system on its own.
- *
- * `PluginManager`, the plugin contract and the built-in plugins, for plugin
- * authors and for a page that composes its own client. The types the plugin
- * context mentions are re-exported so the declaration is self-contained.
- *
- * @module payload-live-preview/plugins
+ * `payload-live-preview/plugins`: the plugin manager, contract and built-in
+ * plugins on their own. The types the context mentions are re-exported so the
+ * declaration is self-contained.
  */
 
 export * from './plugins';

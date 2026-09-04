@@ -1,42 +1,33 @@
 /**
- * `array` / `blocks` field renderer.
- *
- * Supports two modes:
- *
- *   1. **Template mode** (consumer sets `data-payload-array-template`):
- *      each array item is interpolated into the template. Placeholders
- *      are `{{key}}` for object fields, `{{value}}` for primitives,
- *      and `{{index}}` for the loop counter. All replacements go
- *      through `escapeHtml`.
- *
- *   2. **Separator mode** (no template): primitives are joined by
- *      `data-payload-array-separator` (default `", "`). Object items
- *      are serialised via `JSON.stringify` so the consumer sees the
- *      raw data instead of `[object Object]`.
- *
- * @module @field-types/array
+ * `array` / `blocks` renderer. With `data-payload-array-template` each item
+ * is interpolated into the template (`{{key}}`, `{{value}}`, `{{index}}`);
+ * without one, items are joined by `data-payload-array-separator`.
  */
 
 import { sanitizeHtml } from '@security/sanitizer';
 import { trustedHtml } from '@security/trusted-types';
 import { interpolateArrayTemplate } from '@core/array-template';
 import { markNoWriteCallback } from '@core/internal-outcome';
+import { templateSanitizeOptions } from '@core/template-sanitize';
 import type { FieldRenderer } from '@core/types';
-import { safeStringify } from './utils';
+import { isEmptyValue, safeStringify } from './utils';
 
 const arrayRenderer: FieldRenderer = {
   name: 'array',
   render: /* @__PURE__ */ markNoWriteCallback((target, value) => {
     const element = target.element;
+    if (isEmptyValue(value)) {
+      element.textContent = '';
+      return;
+    }
     if (!Array.isArray(value)) return false;
     const template = target.arrayTemplate;
     if (template !== undefined && template.length > 0) {
       const html = renderTemplate(template, value);
-      element.innerHTML = trustedHtml(sanitizeHtml(html));
+      element.innerHTML = trustedHtml(sanitizeHtml(html, templateSanitizeOptions(template)));
       return;
     }
-    const separator = target.arraySeparator ?? ', ';
-    element.textContent = value.map(stringify).join(separator);
+    element.textContent = value.map(safeStringify).join(target.arraySeparator ?? ', ');
     return;
   }),
 };
@@ -44,17 +35,9 @@ const arrayRenderer: FieldRenderer = {
 function renderTemplate(template: string, items: readonly unknown[]): string {
   let out = '';
   for (let i = 0; i < items.length; i += 1) {
-    out += interpolate(template, items[i], i);
+    out += interpolateArrayTemplate(template, items[i], i, safeStringify);
   }
   return out;
-}
-
-function interpolate(template: string, item: unknown, index: number): string {
-  return interpolateArrayTemplate(template, item, index, safeStringify);
-}
-
-function stringify(value: unknown): string {
-  return safeStringify(value);
 }
 
 export { arrayRenderer };

@@ -22,6 +22,9 @@ When a field's value changes, the preview scrolls that field's bound element
 component, no protocol change — because "the field whose value changed" is where
 the cursor is.
 
+Nested paths work the same way: a binding on `hero.title` or on a field inside
+a block or array is found by its bound path, not only by a top-level field name.
+
 It is deliberately quiet:
 
 - It scrolls only when the target is **off-screen** — a field you can already
@@ -30,9 +33,15 @@ It is deliberately quiet:
   never re-scrolls, and scrolling away from the field you're editing is not
   fought.
 - It honours **`prefers-reduced-motion`** (no smooth-scroll animation then).
-- The first message is a **baseline** — the initial document load never scrolls.
-- Under owner scoping and the hybrid fragment/route strategies it targets the
-  correct bound element, after the render.
+- The first message is a **baseline** — the initial document load never scrolls,
+  and neither does a binding that has just appeared on the page.
+- A value too large or too complex to compare (over 64 KB, or cyclic) never
+  claims to have changed, so it cannot take the reveal from a field that did.
+- It runs **after** the writes land, so the fragment and route strategies
+  scroll to the element they just rendered, not to the one they replaced.
+- On a page previewing **several documents**, it scrolls to the binding owned by
+  the document being edited, even when another document on the page binds the
+  same field name.
 
 ## Tier 2 — follow the cursor even without typing (opt-in admin helper)
 

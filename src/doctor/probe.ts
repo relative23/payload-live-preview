@@ -1,13 +1,6 @@
 /**
- * Fetching and rendering for `pll doctor`.
- *
- * Deliberately not the barrel: index files are excluded from the coverage
- * report, and this file holds the only code in the audit that touches the
- * network and the only place response headers are normalised — precisely the
- * parts whose silent failure would make every header check report a false
- * finding. Living here, they are measured like everything else.
- *
- * @module @doctor/probe
+ * Fetching for `pll doctor`: the two probes, and the default fetch that talks
+ * to a real server. Not in the barrel so it stays in the coverage report.
  */
 import { analyzeProbe } from './analyze';
 import type { DoctorReport, DoctorResponse } from './types';
@@ -22,20 +15,22 @@ export interface RunDoctorOptions {
   readonly url: string;
   /** Admin origin the preview is meant to be embedded from, when known. */
   readonly adminOrigin?: string | undefined;
-  /** Defaults to `globalThis.fetch`. */
+  /** Defaults to a fetch built on `globalThis.fetch`. */
   readonly fetchImpl?: DoctorFetch | undefined;
-  /** Also check the served page against the 2.0 readiness table (`pll doctor --v2`). */
+  /** Also check the served page against the 2.0 readiness table. */
   readonly v2?: boolean;
 }
 
-/**
- * Normalise header names to lowercase.
- *
- * Exported because every header check downstream reads a lowercase key: if
- * this were wrong, `content-security-policy` and `x-frame-options` would both
- * read as absent and the audit would invent findings rather than report them.
- * A silent failure of exactly that shape is worth a test of its own.
- */
+export const DEFAULT_TIMEOUT_MS = 15_000;
+export const MAX_BODY_BYTES = 10 * 1024 * 1024;
+
+export interface DefaultFetchOptions {
+  readonly fetchFn?: typeof fetch;
+  readonly timeoutMs?: number;
+  readonly maxBodyBytes?: number;
+}
+
+/** Header names lowercased; every check downstream reads a lowercase key. */
 export function lowercaseHeaders(headers: Headers): Record<string, string> {
   const out: Record<string, string> = {};
   headers.forEach((value, key) => {
@@ -44,44 +39,94 @@ export function lowercaseHeaders(headers: Headers): Record<string, string> {
   return out;
 }
 
-const defaultFetch: DoctorFetch = async (url, init) => {
-  const response = await fetch(url, { headers: init.headers, redirect: 'follow' });
-  return {
-    status: response.status,
-    headers: lowercaseHeaders(response.headers),
-    body: await response.text(),
+/** The error's message plus its cause's, which is where undici puts `self-signed certificate` and friends. */
+export function describeFailure(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const cause = error.cause;
+  if (cause instanceof Error && cause.message !== '' && !error.message.includes(cause.message)) {
+    return `${error.message} (${cause.message})`;
+  }
+  return error.message;
+}
+
+async function readBody(response: Response, limit: number): Promise<string> {
+  const reader = response.body?.getReader();
+  if (reader === undefined) return response.text();
+  const decoder = new TextDecoder();
+  let received = 0;
+  let text = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > limit) {
+      await reader.cancel();
+      throw new Error(
+        `the response body exceeds ${String(limit)} bytes, which is not a page the audit can judge`,
+      );
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  return text + decoder.decode();
+}
+
+/** Redirects are reported, not followed; a hanging origin is abandoned; a runaway body is refused. */
+export function createDefaultFetch(options: DefaultFetchOptions = {}): DoctorFetch {
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const limit = options.maxBodyBytes ?? MAX_BODY_BYTES;
+  return async (url, init) => {
+    const fetchFn = options.fetchFn ?? globalThis.fetch;
+    let response: Response;
+    try {
+      response = await fetchFn(url, {
+        headers: init.headers,
+        redirect: 'manual',
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new Error(`no response within ${String(timeoutMs / 1000)} s`, { cause: error });
+      }
+      throw error;
+    }
+    return {
+      status: response.status,
+      headers: lowercaseHeaders(response.headers),
+      body: await readBody(response, limit),
+    };
   };
-};
+}
 
-/**
- * Fetch the URL twice — as a visitor and as the admin's iframe — and audit the
- * difference.
- */
+/** The referer the admin's iframe would send: the origin (or the given admin path) with one slash. */
+export function previewReferer(adminOrigin: string): string {
+  try {
+    return new URL(adminOrigin).href;
+  } catch {
+    return `${adminOrigin.replace(/\/+$/u, '')}/`;
+  }
+}
+
+/** Fetch the URL twice — as a visitor and as the admin's iframe — and audit the difference. */
 export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport> {
-  const fetchImpl = options.fetchImpl ?? defaultFetch;
-
+  const fetchImpl = options.fetchImpl ?? createDefaultFetch();
+  // No referer on the visitor probe: an admin referer is itself a preview signal.
   const publicResponse = await fetchImpl(options.url, {
     headers: {
-      // A plain top-level navigation. Deliberately no referer: an admin
-      // referer is itself a preview signal, which would defeat the comparison.
       Accept: 'text/html',
       'Sec-Fetch-Dest': 'document',
       'Sec-Fetch-Mode': 'navigate',
     },
   });
-
   const previewResponse = await fetchImpl(options.url, {
     headers: {
       Accept: 'text/html',
-      // What the admin's iframe sends. This is the signal `'preview-only'`
-      // injection keys on, so it is the honest way to ask for the preview
-      // variant of the page.
       'Sec-Fetch-Dest': 'iframe',
       'Sec-Fetch-Mode': 'navigate',
-      ...(options.adminOrigin !== undefined ? { Referer: `${options.adminOrigin}/` } : {}),
+      ...(options.adminOrigin === undefined
+        ? {}
+        : { Referer: previewReferer(options.adminOrigin) }),
     },
   });
-
   return analyzeProbe(
     { publicResponse, previewResponse },
     {
@@ -90,24 +135,4 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
       ...(options.v2 === true ? { v2: true } : {}),
     },
   );
-}
-
-const LEVEL_LABEL = { error: 'ERROR', warning: 'WARN ', info: 'INFO ' } as const;
-
-/** Render a report for a terminal. */
-export function formatReport(report: DoctorReport): string {
-  const lines: string[] = [`pll doctor — ${report.url}`, ''];
-  if (report.findings.length === 0) {
-    lines.push('No findings. The preview response carries the runtime, a frame-ancestors');
-    lines.push('policy, and bindings; the public response carries none of them.', '');
-    return lines.join('\n');
-  }
-  for (const finding of report.findings) {
-    lines.push(`${LEVEL_LABEL[finding.level]} ${finding.code}  ${finding.title}`);
-    lines.push(`      ${finding.detail}`);
-    if (finding.remedy !== '') lines.push(`      → ${finding.remedy}`);
-    lines.push('');
-  }
-  lines.push(`${String(report.errors)} error(s), ${String(report.warnings)} warning(s).`, '');
-  return lines.join('\n');
 }

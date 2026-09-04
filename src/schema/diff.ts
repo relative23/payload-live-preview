@@ -1,20 +1,6 @@
 /**
- * Structural diff for arrays and blocks.
- *
- * Compares the previous and next data shapes for an array field and
- * produces a minimal patch describing what changed:
- *
- *   - `insert`  → an item was inserted at index `i`
- *   - `remove`  → an item was removed at index `i`
- *   - `move`    → an item moved from `from` to `to`
- *   - `update`  → an item at index `i` had its scalar fields change
- *   - `replace` → an item's block-type changed; treat as remove + insert
- *
- * The diff is *id-keyed* when items carry an `id` field (Payload's
- * default) — that lets us detect moves reliably. Without ids we fall
- * back to a positional diff.
- *
- * @module @schema/diff
+ * Structural diff for array and blocks fields. Items with an `id` are keyed
+ * (moves are detected); without ids the diff is positional.
  */
 
 export type ArrayPatch =
@@ -34,9 +20,6 @@ export type ArrayPatch =
       readonly value: unknown;
     };
 
-/**
- * Identify items by their `id` field when present.
- */
 function getId(item: unknown): string | number | undefined {
   if (typeof item !== 'object' || item === null) return undefined;
   const id = (item as Record<string, unknown>)['id'];
@@ -50,14 +33,7 @@ function getBlockType(item: unknown): string | undefined {
   return typeof blockType === 'string' ? blockType : undefined;
 }
 
-/**
- * Compute the patch transforming `prev` into `next`.
- *
- * - When items have stable `id` values, moves and updates are
- *   detected accurately.
- * - When ids are absent, the diff is positional (replacement-only),
- *   which still keeps the host consistent but cannot animate moves.
- */
+/** Patches that turn `prev` into `next`; a changed `blockType` is a `replace`, never an `update`. */
 export function diffArray(
   prev: readonly unknown[],
   next: readonly unknown[],
@@ -130,6 +106,8 @@ function diffByPosition(prev: readonly unknown[], next: readonly unknown[]): rea
   return patches;
 }
 
+// Shallow on purpose: any nested reference change is an update, and the
+// renderer reconciles deeper differences itself.
 function shallowEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
@@ -139,8 +117,6 @@ function shallowEqual(a: unknown, b: unknown): boolean {
   const bKeys = Object.keys(bRec);
   if (aKeys.length !== bKeys.length) return false;
   for (const key of aKeys) {
-    // Any reference difference triggers an update. Deep equality is
-    // intentionally avoided — the renderer reconciles deeper diffs.
     if (!Object.is(aRec[key], bRec[key])) return false;
   }
   return true;

@@ -1,16 +1,6 @@
-/**
- * Shared helpers for field renderers.
- *
- * @module @field-types/utils
- */
+/** Value coercion shared by the field renderers. */
 
-/**
- * Coerce an unknown value to a safe display string.
- *
- * Primitives render as their natural representation. Objects render
- * as their JSON form — never as the default `[object Object]`. `null`
- * and `undefined` collapse to the empty string.
- */
+/** Display string for any value: primitives as-is, objects as JSON, `null`/`undefined` as `''`. */
 export function safeStringify(value: unknown): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'string') return value;
@@ -22,4 +12,9 @@ export function safeStringify(value: unknown): string {
   } catch {
     return '';
   }
+}
+
+/** The three values every renderer treats as "clear" (docs/renderers.md, value semantics). */
+export function isEmptyValue(value: unknown): value is null | undefined | '' {
+  return value === null || value === undefined || value === '';
 }

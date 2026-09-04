@@ -216,6 +216,8 @@ export default defineConfig({
       allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
       // Payload 3.x: populate relationship/upload fields via REST merge
       serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
+      // Required alongside serverURL: the population depth, 0 for none.
+      mergeDepth: 1,
     }),
   ],
 });
@@ -265,12 +267,14 @@ The trade is one extra request the first time an editor opens a preview.
 Under a strict CSP, the asset itself is unremarkable: a same-origin script with an `integrity` attribute, needing no `'unsafe-inline'`. The bootstrap does need covering, though — a static build has no request, so there is no per-request nonce to attach and Astro emits it as a plain inline `<script>`. Its content is deterministic for a given package version and configuration, so the practical answer is a `'sha256-…'` source expression rather than `'unsafe-inline'`. `mode: 'middleware'` is the option that can carry a real nonce, because there a request exists to derive one from.
 
 For SSR projects (`output: 'server'`), request-time injection can limit the bytes to requests carrying preview intent:
+continue
 
 ```ts
 livePreview({
   mode: 'middleware',
   allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
   serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
+  mergeDepth: 1,
 }),
 ```
 
@@ -311,6 +315,7 @@ import { generateInlineScript } from 'payload-live-preview';
 const previewScript = generateInlineScript({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
   serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
+  mergeDepth: 1,
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -329,10 +334,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 // middleware.ts — frame-ancestors on requests carrying preview intent
 import { NextResponse, type NextRequest } from 'next/server';
 import { createLivePreviewMiddleware } from 'payload-live-preview/nextjs';
+import { authorizePreviewRequest } from 'payload-live-preview';
 
 const livePreview = createLivePreviewMiddleware({
   allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
   autoInject: false,
+  // Required under the 2.0 defaults: `strict` is on, and without this hook the
+  // adapter refuses rather than gating a response on client-controlled intent.
+  authorizePreview: (request) =>
+    authorizePreviewRequest(request, {
+      type: 'payload-session',
+      serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
+    }),
 });
 
 export async function middleware(request: NextRequest) {
@@ -346,25 +359,45 @@ A static build cannot make a request-time authorization decision, so the inline 
 
 ```ts
 // src/hooks.server.ts
+import { env } from '$env/dynamic/private';
 import { livePreviewHandle } from 'payload-live-preview/sveltekit';
+import { authorizePreviewRequest } from 'payload-live-preview';
+const adminOrigin = env.PAYLOAD_ADMIN_ORIGIN ?? '';
 export const handle = livePreviewHandle({
-  allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
-  serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
+  allowedOrigins: [adminOrigin],
+  serverURL: adminOrigin,
+  mergeDepth: 1,
+  // Required under the 2.0 defaults; without it the handle refuses and every
+  // route, not only the preview, fails.
+  authorizePreview: (request) =>
+    authorizePreviewRequest(request, { type: 'payload-session', serverURL: adminOrigin }),
 });
 ```
 
+`$env/dynamic/private` rather than `process.env`: a SvelteKit project carries no
+Node globals in its types unless it adds `@types/node`, so the `process.env`
+form does not type-check in a fresh one.
+
 This shorthand performs intent-gated delivery, not authentication. For protected preview responses, wrap it and invoke it only after an application-owned server verifier succeeds; reuse that authorization for draft data and cache policy.
 
-### Nuxt 3
+### Nuxt
 
 ```ts
 // server/plugins/live-preview.ts
 import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';
+import { authorizePreviewRequest } from 'payload-live-preview';
 
 export default defineNitroPlugin(
   livePreviewNitroPlugin({
     allowedOrigins: [process.env.NUXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
     serverURL: process.env.NUXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+    mergeDepth: 1,
+    // Required under the 2.0 defaults; without it the plugin refuses.
+    authorizePreview: (request) =>
+      authorizePreviewRequest(request, {
+        type: 'payload-session',
+        serverURL: process.env.NUXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+      }),
   }),
 );
 ```
@@ -380,6 +413,7 @@ import { generateInlineScript, wrapWithScriptTag } from 'payload-live-preview';
 const script = generateInlineScript({
   allowedOrigins: ['https://admin.example.com'],
   serverURL: 'https://admin.example.com',
+  mergeDepth: 1,
 });
 // Inject via `<script>${script}</script>` — or wrapWithScriptTag(script, { nonce }).
 ```
@@ -450,6 +484,28 @@ Spread `preview.runtimeOptions` (`serverURL`, `apiRoute`, `mergeDepth`) into the
 | `data-payload-boundary`        | A stable anchor for a possibly-empty field: hidden while empty, shown when filled (`PreviewBoundary.astro` renders it)                                                                                                                      | `data-payload-boundary hidden`                     |
 | `data-payload-island`          | A hydrated framework root: never patched or morphed into (see docs/renderers.md, islands)                                                                                                                                                   | `data-payload-island`                              |
 | `data-payload-owned`           | A subtree the site scripts itself: the morph retains it whole                                                                                                                                                                               | `data-payload-owned`                               |
+
+The `{{field}}` mustache in `data-payload-array-template` is read by this
+package, not by your framework — but Svelte reads `{...}` and Vue reads
+`{{ ... }}` as their own interpolation, so writing the template inline in a
+`.svelte` or `.vue` file is a compile error or a silently empty value. Bind it
+as a string instead:
+
+```svelte
+<script lang="ts">
+  const template = '<li><a data-payload-href="url">{{title}}</a></li>';
+</script>
+<ul data-payload-field="posts" data-payload-array-template={template}></ul>
+```
+
+```vue
+<script setup lang="ts">
+const template = '<li><a data-payload-href="url">{{title}}</a></li>';
+</script>
+<template>
+  <ul data-payload-field="posts" :data-payload-array-template="template"></ul>
+</template>
+```
 
 Binding metadata is live: changing any of these attributes (including inferred
 type markers and an input's native `type`) rebuilds the affected cache snapshot

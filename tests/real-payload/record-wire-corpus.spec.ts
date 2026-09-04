@@ -47,6 +47,11 @@ test.describe('wire corpus', () => {
     await page.addInitScript(() => {
       const w = window as Window & { __wireCorpus?: Captured[] };
       w.__wireCorpus = [];
+      // Deliberately unfiltered, and not a trust boundary: this listener is a
+      // recorder. It captures what the real admin puts on the wire, and the
+      // origin is part of the record rather than a condition for keeping it —
+      // filtering here would discard the very evidence the corpus exists for.
+      // The runtime's own listener does check the origin; that is `message-bus`.
       window.addEventListener('message', (event) => {
         w.__wireCorpus?.push({ origin: event.origin, data: event.data as unknown });
       });

@@ -1,24 +1,9 @@
 /**
- * Shared Intl formatter cache.
- *
- * Constructing `Intl.NumberFormat` / `Intl.DateTimeFormat` per call is
- * surprisingly expensive in tight loops — V8 cannot fully optimise them
- * because the locale → ICU resolution happens behind a `try { … }`.
- * On benchmark traces from the structural-array renderer, formatter
- * construction can dominate render time for arrays of 50+ numeric or
- * date fields.
- *
- * This module memoises formatters by a `(locale, options)` key. The
- * cache is module-scoped — formatters are pure functions of their key,
- * so the same `Intl.NumberFormat('de-DE')` instance is safe to share
- * across every consumer of the library on the page.
- *
- * A bounded LRU keeps the cache from growing without limit when a
- * page renders a wide variety of locales (admin tools, language
- * switchers). The default limit (64) is generous for normal sites and
- * tight enough that any leak would be visible in dev tools.
- *
- * @module @core/intl-cache
+ * Memoised `Intl` formatters, keyed by locale and options. Constructing them
+ * per call dominates render time for arrays of many numeric or date fields,
+ * and a formatter is a pure function of its key, so one instance is safe to
+ * share across the page. Bounded so a language switcher cannot grow it without
+ * limit.
  */
 
 const NUMBER_CACHE = new Map<string, Intl.NumberFormat>();
@@ -45,7 +30,7 @@ export function setIntlCacheLimit(limit: number): number {
   return previous;
 }
 
-/** Read-only telemetry — useful for tests and dev observability. */
+/** Cache occupancy, for tests and dev observability. */
 export function intlCacheSize(): { readonly numbers: number; readonly dates: number } {
   return { numbers: NUMBER_CACHE.size, dates: DATE_CACHE.size };
 }
@@ -57,7 +42,6 @@ export function getNumberFormat(
   const key = buildKey(locale, options);
   const cached = NUMBER_CACHE.get(key);
   if (cached !== undefined) {
-    // Touch → mark as MRU.
     NUMBER_CACHE.delete(key);
     NUMBER_CACHE.set(key, cached);
     return cached;
@@ -86,12 +70,8 @@ export function getDateTimeFormat(
 }
 
 function buildKey(locale: string | undefined, options: unknown): string {
-  // `locale` first so the cache stays human-readable in dev tools.
-  // `options` is JSON-encoded with a stable key order so equivalent
-  // option objects hit the same slot regardless of authoring style.
-  // An options object that stringifies to `{}` (all values undefined,
-  // or genuinely empty) collapses to no suffix so it shares the same
-  // cache slot as a bare call.
+  // Stable key order so equivalent option objects share a slot, and an empty
+  // one collapses to the bare-locale key.
   const localePart = locale ?? '';
   if (options === undefined || options === null) return localePart;
   const serialised = stableStringify(options);

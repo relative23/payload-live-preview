@@ -143,6 +143,37 @@ both the field's locale-suffixed value and renderer locale independently for eac
 binding; sibling `href`/`src`/`alt` paths use the same prototype-safe dotted-path
 resolver as primary fields.
 
+### 4a. One changed set per revision, computed once
+
+Every message carries the whole document, so "what changed" is not what the
+message names — it is the diff against the previous message. That diff is
+computed once, when the revision is accepted, and is the single input to
+everything downstream: which fields a fragment or route strategy is asked to
+plan for, which dependents `dependencies` invalidates, which bindings
+`skipUnchanged` may skip, and which field the reveal option scrolls to.
+
+Each of those had grown its own notion of "changed" and they disagreed. The
+strategies were handed `Object.keys(data.fields)` — the whole document on every
+keystroke — so a page with fragments re-rendered every boundary server-side per
+keystroke and asked for a route refresh, which the loop guard then reported as
+a failure. Meanwhile the dependency diff advanced its own snapshot as a side
+effect, so calling it twice for one revision (which the route path does)
+returned an empty set the second time and silently dropped every dependent.
+
+A revision therefore carries `touched` (changed ∪ invalidated) and
+`invalidated`, and the identity of each value is computed once and travels with
+the scheduled write instead of being recomputed per consumer.
+
+### 4b. A route refresh invalidates what "last applied" means
+
+`skipUnchanged` remembers the identity of the value each element last applied.
+A route refresh re-renders the page from the _saved_ document while keeping the
+live nodes, so those elements now show saved values under identities that claim
+the unsaved ones. The re-apply that follows the refresh would then skip every
+field except the one just edited, reverting the editor's other unsaved changes.
+The refresh therefore drops that memory wholesale; the same applies to any
+morph the runtime itself performs.
+
 ### 5. Cancellation is revision-local and terminal
 
 `beforeUpdate` handlers continue to run sequentially in registration order. The

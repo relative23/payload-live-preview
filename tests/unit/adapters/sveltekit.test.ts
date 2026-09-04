@@ -1,15 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { livePreviewHandle } from '@adapters/sveltekit/index';
 
-/**
- * The SvelteKit adapter had no unit tests. Its browser fixture proves the
- * happy path; these cover the branches around it — a non-HTML response, an
- * existing CSP, the nonce contract that consumer load functions read.
- *
- * SvelteKit injects through `transformPageChunk` rather than by rewriting a
- * finished body, so the fake `resolve` below applies the transform the way the
- * framework does: chunk by chunk.
- */
+/** The fake `resolve` applies `transformPageChunk` the way SvelteKit does: chunk by chunk, `|| ''`. */
 
 const ADMIN = 'https://admin.example.com';
 
@@ -17,14 +9,19 @@ interface ResolveOptions {
   transformPageChunk?: (input: { html: string; done: boolean }) => string | undefined;
 }
 
-/** A `resolve` that streams `chunks` through whatever transform it is given. */
+function applyChunk(transform: ResolveOptions['transformPageChunk'], html: string, done: boolean) {
+  if (transform === undefined) return html;
+  const transformed = transform({ html, done });
+  return transformed === undefined || transformed === '' ? '' : transformed;
+}
+
 function makeResolve(
   chunks: readonly string[],
   init: ResponseInit = { headers: { 'content-type': 'text/html' } },
 ) {
   return vi.fn(async (_event: unknown, opts: ResolveOptions = {}) => {
     const out = chunks
-      .map((html, i) => opts.transformPageChunk?.({ html, done: i === chunks.length - 1 }) ?? html)
+      .map((html, i) => applyChunk(opts.transformPageChunk, html, i === chunks.length - 1))
       .join('');
     return Promise.resolve(new Response(out, init));
   });
@@ -38,12 +35,9 @@ const PAGE = '<html><head></head><body>hi</body></html>';
 
 describe('livePreviewHandle — the nonce contract', () => {
   it('writes a nonce to locals on every request, preview or not', async () => {
-    // Consumer load functions read this to nonce their own scripts; it must be
-    // there even when nothing is injected, or their CSP breaks on plain pages.
     const handle = livePreviewHandle({ defaults: 'v1', allowedOrigins: [ADMIN] });
     const plain = event();
     await handle({ event: plain, resolve: makeResolve([PAGE]) });
-
     expect(typeof plain.locals['livePreviewNonce']).toBe('string');
     expect(plain.locals['livePreviewNonce']).not.toBe('');
   });
@@ -54,34 +48,37 @@ describe('livePreviewHandle — the nonce contract', () => {
     const b = event();
     await handle({ event: a, resolve: makeResolve([PAGE]) });
     await handle({ event: b, resolve: makeResolve([PAGE]) });
-
     expect(a.locals['livePreviewNonce']).not.toBe(b.locals['livePreviewNonce']);
   });
 });
 
 describe('livePreviewHandle — when it injects', () => {
   it('injects exactly once when the page arrives as several chunks', async () => {
-    // transformPageChunk is called per chunk. Injecting on each would give the
-    // page as many runtimes as it has chunks, and streaming is SvelteKit's
-    // normal mode — a fixture serving one chunk would never reveal it.
     const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<html><head>', '</head><body>', 'hi</body></html>']),
     });
     const html = await response.text();
-    // Count tags, not identifier occurrences: one injected script mentions
-    // __LIVE_PREVIEW_CONFIG__ three times — the declaration plus the two reads
-    // in the runtime body — so counting those would report three injections
-    // for one.
+    // Count tags: one injected script mentions __LIVE_PREVIEW_CONFIG__ three times.
     expect(html.split('<script').length - 1).toBe(1);
     expect(html).toContain('__LIVE_PREVIEW_CONFIG__');
+  });
+
+  it('inserts after <meta charset> so the encoding stays inside the prescan window', async () => {
+    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
+      event: event(),
+      resolve: makeResolve(['<html><head><meta charset="utf-8" /><title>t</title></head></html>']),
+    });
+    const html = await response.text();
+    expect(html.indexOf('<meta charset')).toBeLessThan(html.indexOf('<script'));
+    expect(html.indexOf('<script')).toBeLessThan(html.indexOf('<title>'));
   });
 });
 
 describe('livePreviewHandle — chunks it must leave alone', () => {
-  it('returns a chunk without a <head> unchanged', async () => {
-    // Every streamed chunk after the first has no head. The transform must
-    // decline them rather than rewrite them.
+  it('returns a chunk without a <head> unchanged, never as the empty string', async () => {
+    // Every streamed chunk after the first has no head; SvelteKit turns a
+    // falsy return into '', which would blank the rest of the page.
     const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<div>fragment only</div>']),
@@ -89,20 +86,19 @@ describe('livePreviewHandle — chunks it must leave alone', () => {
     expect(await response.text()).toBe('<div>fragment only</div>');
   });
 
-  it('injects into the head chunk and no other', async () => {
+  it('keeps every later chunk of a streamed page', async () => {
     const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<html><head></head>', '<body>a</body>', '</html>']),
     });
     const html = await response.text();
-
     expect(html.split('<script').length - 1).toBe(1);
     expect(html.indexOf('<script')).toBeLessThan(html.indexOf('<body>'));
+    expect(html.endsWith('<body>a</body></html>')).toBe(true);
   });
 });
 
 describe('livePreviewHandle — a runtime that refuses header mutation', () => {
-  /** Adapter responses can arrive with an immutable header guard. */
   function frozen(chunks: readonly string[]) {
     return vi.fn(async (_event: unknown, _opts: ResolveOptions = {}) => {
       const response = new Response(chunks.join(''), {
@@ -122,12 +118,9 @@ describe('livePreviewHandle — a runtime that refuses header mutation', () => {
       defaults: 'v1',
       inject: 'always',
       allowedOrigins: [ADMIN],
-    })({
-      event: event(),
-      resolve: frozen(['<p>body</p>']),
-    });
-
+    })({ event: event(), resolve: frozen(['<p>body</p>']) });
     expect(response.headers.get('content-security-policy')).toContain('frame-ancestors');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(await response.text()).toBe('<p>body</p>');
   });
 });

@@ -1,68 +1,35 @@
-/**
- * Lexical node-renderer registry.
- *
- * Each Payload Lexical node type maps to one renderer module under
- * `./nodes/`. The registry pattern keeps each node's logic in its own
- * file (clean separation of concerns) and lets consumers register
- * custom renderers via the plugin system without touching this module.
- *
- * @module @lexical/registry
- */
+/** Node-renderer registry: consumer registrations layered over the built-in table. */
 
 import type { LexicalNode } from './types';
 import { BUILTIN_NODE_RENDERERS } from './nodes/builtin';
 
-/**
- * Context passed to node renderers. Includes the recursive renderer
- * for children and the `alignment` resolver so block-level nodes can
- * apply paragraph/heading alignment uniformly.
- */
 export interface RenderNodeContext {
-  /**
-   * Render an arbitrary list of children. Handles whitespace, falls
-   * through to text renderers, and honours the registry. Renderers
-   * call this to render their own descendants.
-   */
+  /** Render child nodes through the registry. */
   readonly renderChildren: (children: readonly LexicalNode[]) => string;
-  /**
-   * Resolve the textual alignment for a block-level node. Returns
-   * `undefined` when no alignment is specified.
-   */
+  /** Text alignment of a block node, or `undefined`. */
   readonly resolveAlignment: (node: LexicalNode) => string | undefined;
-  /**
-   * Resolve the indent count for a node. Used to build inline indent
-   * styles for paragraphs and list items.
-   */
+  /** Indent level of a node, `0` when none. */
   readonly resolveIndent: (node: LexicalNode) => number;
 }
 
-/** Renderer signature: `(node, ctx) => htmlString`. */
 export type NodeRenderer = (node: LexicalNode, context: RenderNodeContext) => string;
 
-/**
- * Mutable registry. Built-in node renderers populate the map at
- * import time; consumer code may extend it via `register`.
- */
 const registry = new Map<string, NodeRenderer>();
 
-/**
- * Register or replace the renderer for `type`.
- */
+/** Register or replace the renderer for `type`. */
 export function register(type: string, renderer: NodeRenderer): void {
   registry.set(type, renderer);
 }
 
-/** Look up the renderer for `type`, or `undefined`. */
 export function lookup(type: string): NodeRenderer | undefined {
   return registry.get(type) ?? BUILTIN_NODE_RENDERERS[type];
 }
 
-/** Snapshot of registered node types. Useful for diagnostics. */
 export function registeredTypes(): readonly string[] {
   return [...new Set([...Object.keys(BUILTIN_NODE_RENDERERS), ...registry.keys()])];
 }
 
-/** Test-only helper: clear the registry. */
+/** Test-only: drop consumer registrations. */
 export function __resetForTests(): void {
   registry.clear();
 }

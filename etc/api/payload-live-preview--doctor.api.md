@@ -4,19 +4,18 @@
 
 ```ts
 
-import { e as DIAGNOSTIC_CODES } from './probe-Bz_2Q7_W.js';
-import { f as DiagnosticCode } from './probe-Bz_2Q7_W.js';
-import { b as DoctorContext } from './probe-Bz_2Q7_W.js';
-import { D as DoctorFetch } from './probe-Bz_2Q7_W.js';
-import { d as DoctorFinding } from './probe-Bz_2Q7_W.js';
-import { g as DoctorLevel } from './probe-Bz_2Q7_W.js';
-import { a as DoctorProbe } from './probe-Bz_2Q7_W.js';
-import { c as DoctorReport } from './probe-Bz_2Q7_W.js';
-import { h as DoctorResponse } from './probe-Bz_2Q7_W.js';
-import { i as formatReport } from './probe-Bz_2Q7_W.js';
-import { l as lowercaseHeaders } from './probe-Bz_2Q7_W.js';
-import { r as runDoctor } from './probe-Bz_2Q7_W.js';
-import { R as RunDoctorOptions } from './probe-Bz_2Q7_W.js';
+import { e as DIAGNOSTIC_CODES } from './probe-CYtvj_Lm.js';
+import { f as DiagnosticCode } from './probe-CYtvj_Lm.js';
+import { b as DoctorContext } from './probe-CYtvj_Lm.js';
+import { D as DoctorFetch } from './probe-CYtvj_Lm.js';
+import { d as DoctorFinding } from './probe-CYtvj_Lm.js';
+import { g as DoctorLevel } from './probe-CYtvj_Lm.js';
+import { a as DoctorProbe } from './probe-CYtvj_Lm.js';
+import { c as DoctorReport } from './probe-CYtvj_Lm.js';
+import { h as DoctorResponse } from './probe-CYtvj_Lm.js';
+import { l as lowercaseHeaders } from './probe-CYtvj_Lm.js';
+import { r as runDoctor } from './probe-CYtvj_Lm.js';
+import { R as RunDoctorOptions } from './probe-CYtvj_Lm.js';
 
 // @public
 export function analyzeProbe(probe: DoctorProbe, context: DoctorContext & {
@@ -44,7 +43,8 @@ export { DoctorReport }
 
 export { DoctorResponse }
 
-export { formatReport }
+// @public
+export function formatReport(report: DoctorReport): string;
 
 export { lowercaseHeaders }
 

@@ -67,10 +67,8 @@ async function buildRuntime(): Promise<string> {
     // these globals as identifiers, not literal-replace them.
     define: {
       'process.env.NODE_ENV': '"production"',
-      // Statically disables the `new Function('import.meta…')` probe —
-      // inline classic scripts can never have import.meta, and the
-      // probe counts as eval under a strict CSP.
-      __INLINE_RUNTIME_BUILD__: 'true',
+      // Read at the branch in src/**; folding it drops the code an inline
+      // classic script must never carry (eval-shaped probes, compat paths).
       __INLINE_BUILD__: 'true',
     },
     tsconfig: resolve(ROOT, 'tsconfig.json'),
@@ -142,7 +140,7 @@ async function buildFragmentPrelude(): Promise<string> {
     legalComments: 'none',
     treeShaking: true,
     logLevel: 'silent',
-    define: { 'process.env.NODE_ENV': '"production"', __INLINE_RUNTIME_BUILD__: 'true' },
+    define: { 'process.env.NODE_ENV': '"production"' },
     tsconfig: resolve(ROOT, 'tsconfig.json'),
   });
   const file = result.outputFiles[0];
@@ -162,10 +160,7 @@ async function buildLoader(): Promise<string> {
     legalComments: 'none',
     treeShaking: true,
     logLevel: 'silent',
-    define: {
-      'process.env.NODE_ENV': '"production"',
-      __INLINE_RUNTIME_BUILD__: 'true',
-    },
+    define: { 'process.env.NODE_ENV': '"production"' },
     tsconfig: resolve(ROOT, 'tsconfig.json'),
   });
   const file = result.outputFiles[0];

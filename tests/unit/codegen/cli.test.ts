@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,8 +7,10 @@ import { run } from '@/codegen/cli';
 let workDir: string;
 
 beforeEach(async () => {
-  workDir = join(tmpdir(), `pll-cli-${Math.random().toString(36).slice(2)}`);
-  await mkdir(workDir, { recursive: true });
+  // `mkdtemp` creates the directory atomically with a name nobody can predict.
+  // Composing one from `Math.random()` and creating it afterwards leaves a
+  // window in which another process can occupy the path.
+  workDir = await mkdtemp(join(tmpdir(), 'pll-cli-'));
 });
 
 afterEach(async () => {
@@ -156,9 +158,10 @@ describe('pll-codegen CLI', () => {
     }
   });
 
-  it('returns 2 when no globals or collections are found', async () => {
+  it('returns 2 when no globals or collections are found, leaving the types file as it was', async () => {
     const configPath = await writeConfig(`export default { globals: [], collections: [] };`);
     const outPath = join(workDir, 'empty.ts');
+    await writeFile(outPath, '// the types someone is still importing\n', 'utf8');
     const { stderrSpy, restore } = captureStdio();
     try {
       const code = await run(['--config', configPath, '--out', outPath]);
@@ -168,5 +171,36 @@ describe('pll-codegen CLI', () => {
     } finally {
       restore();
     }
+    expect(await readFile(outPath, 'utf8')).toBe('// the types someone is still importing\n');
+  });
+
+  it('does not replace the types with an empty file when --config is mistyped', async () => {
+    await writeConfig(`
+      export default {
+        collections: [{ slug: 'posts', fields: [{ name: 'title', type: 'text' }] }],
+      };
+    `);
+    const outPath = join(workDir, 'payload-types.ts');
+    const inventoryPath = join(workDir, 'inventory.json');
+    await writeFile(outPath, 'export interface Posts { title?: string }\n', 'utf8');
+    const { stderrSpy, restore } = captureStdio();
+    try {
+      const code = await run([
+        '--config',
+        join(workDir, 'paylod.config.ts'),
+        '--out',
+        outPath,
+        '--inventory',
+        inventoryPath,
+      ]);
+      expect(code).toBe(2);
+      const stderr = stderrSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(stderr).toContain('Could not open');
+      expect(stderr).toContain('Nothing written');
+    } finally {
+      restore();
+    }
+    expect(await readFile(outPath, 'utf8')).toBe('export interface Posts { title?: string }\n');
+    await expect(readFile(inventoryPath, 'utf8')).rejects.toThrow();
   });
 });

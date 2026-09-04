@@ -1,11 +1,26 @@
 <!doctype html>
 <!-- Mock admin: frames a target and posts payload-live-preview messages, the
      exact protocol a real Payload admin uses. ?target= chooses the framed page. -->
-<html lang="en"><head><meta charset="utf-8"><title>Mock admin</title></head><body>
-  <iframe id="preview" data-testid="preview-frame" title="Live preview" style="width:100%;height:600px;border:0"></iframe>
-  <script>
-    const requested = new URLSearchParams(location.search).get('target') || '/index.html';
-    const target = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/index.html';
-    document.getElementById('preview').src = target;
-  </script>
-</body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mock admin</title>
+  </head>
+  <body>
+    <iframe
+      id="preview"
+      data-testid="preview-frame"
+      title="Live preview"
+      style="width: 100%; height: 600px; border: 0"
+    ></iframe>
+    <script>
+      // The framed page comes out of this list, never out of the query: the
+      // parameter only selects an entry. A mock admin is the first integration a
+      // reader copies, so it models the check a real one needs — and there is no
+      // path for a crafted `?target=` to reach `src` at all.
+      const PAGES = ['/index.html', '/reveal.html'];
+      const requested = new URLSearchParams(location.search).get('target');
+      document.getElementById('preview').src = PAGES.find((page) => page === requested) ?? PAGES[0];
+    </script>
+  </body>
+</html>

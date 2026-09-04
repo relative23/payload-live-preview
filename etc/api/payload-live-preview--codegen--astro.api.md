@@ -4,7 +4,7 @@
 
 ```ts
 
-// @public
+// @public (undocumented)
 export interface AstroCodegenOptions {
     readonly configPath: string;
     readonly outPath: string;
@@ -19,6 +19,9 @@ interface AstroIntegration {
         readonly 'astro:config:setup'?: (params: {
             readonly command: string;
             readonly logger?: AstroLogger;
+            readonly config?: {
+                readonly root?: URL | string;
+            };
         }) => Promise<void> | void;
         readonly 'astro:server:start'?: () => void;
         readonly 'astro:build:start'?: () => Promise<void> | void;
@@ -44,7 +47,7 @@ export function livePreviewCodegen(options: AstroCodegenOptions): AstroIntegrati
 
 // Warnings were encountered during analysis:
 //
-// dist/codegen-astro.d.ts:46:13 - (ae-forgotten-export) The symbol "AstroLogger" needs to be exported by the entry point codegen-astro.d.ts
+// dist/codegen-astro.d.ts:21:13 - (ae-forgotten-export) The symbol "AstroLogger" needs to be exported by the entry point codegen-astro.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -13,6 +13,8 @@
   <section {...data.a.owner} data-testid="doc-a">
     <h1 {...data.a.title}>Title of A</h1>
   </section>
+  <!-- Puts B below the fold, so a reveal has somewhere to scroll to. -->
+  <div style="height: 2200px" aria-hidden="true"></div>
   <section {...data.b.owner} data-testid="doc-b">
     <h1 {...data.b.title}>Title of B</h1>
   </section>

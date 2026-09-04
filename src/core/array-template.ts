@@ -1,12 +1,8 @@
 /**
- * Interpolate one array-item template in a single pass.
- *
- * A replacement value is data, not another template. Running one `replace()`
- * per object key would interpret `{{index}}` or `{{otherField}}` text introduced
- * by an earlier value as template syntax. Matching only the original template
- * tokens keeps CMS values literal and also avoids String.replace `$` semantics.
- *
- * @module @core/array-template
+ * Interpolate one array-item template in a single pass. A replacement value is
+ * data, not template syntax: one `replace()` per key would re-interpret
+ * `{{index}}` text that an earlier value introduced, and would apply
+ * `String.replace`'s `$` semantics to CMS content.
  */
 
 import { escapeHtml } from '@security/escape';

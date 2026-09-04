@@ -1,4 +1,5 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
+import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 /**
  * Island interoperability (roadmap 1.3.0): a binding inside a hydrated
@@ -8,41 +9,13 @@ import { expect, test, type Frame, type Page } from '@playwright/test';
  */
 
 const PATH = '/island/';
-
-function previewFrame(page: Page): Frame | undefined {
-  return page.frames().find((candidate) => candidate !== page.mainFrame());
-}
+const OWNER = { globalSlug: 'homepage' };
 
 async function open(page: Page): Promise<Frame> {
   await page.goto(`/bench?target=${PATH}`);
-  await expect
-    .poll(() => previewFrame(page)?.url().endsWith(PATH) ?? false, { timeout: 15_000 })
-    .toBe(true);
-  const frame = previewFrame(page);
-  if (!frame) throw new Error('preview frame missing');
-  await expect
-    .poll(
-      async () =>
-        (await frame.evaluate(
-          () =>
-            (
-              window as Window & { __livePreview?: { inspect: () => { started: boolean } } }
-            ).__livePreview?.inspect().started,
-        )) ?? false,
-      { timeout: 15_000 },
-    )
-    .toBe(true);
+  const frame = await waitForPreviewFrame(page, PATH);
+  await waitForStarted(frame);
   return frame;
-}
-
-async function post(page: Page, fields: Record<string, unknown>): Promise<void> {
-  await page.evaluate((data) => {
-    const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-    frame?.contentWindow?.postMessage(
-      { type: 'payload-live-preview', data, globalSlug: 'homepage' },
-      window.location.origin,
-    );
-  }, fields);
 }
 
 test.describe('island bridge', () => {
@@ -50,12 +23,12 @@ test.describe('island bridge', () => {
     page,
   }) => {
     const frame = await open(page);
-    await post(page, { title: 'First' });
+    await post(page, { title: 'First' }, OWNER);
     await expect(frame.getByTestId('outside')).toHaveText('First');
     await expect(frame.getByTestId('inside')).toHaveText('island: First');
     await expect(frame.getByTestId('renders')).toHaveText('1');
 
-    await post(page, { title: 'Second' });
+    await post(page, { title: 'Second' }, OWNER);
     await expect(frame.getByTestId('outside')).toHaveText('Second');
     await expect(frame.getByTestId('inside')).toHaveText('island: Second');
     await expect(frame.getByTestId('renders')).toHaveText('2');

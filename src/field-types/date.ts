@@ -1,49 +1,40 @@
 /**
- * `date` field renderer.
- *
- * Uses `Intl.DateTimeFormat` with the active locale (defaults to
- * `navigator.language`, never the legacy hard-coded `'de'`). Recognises
- * `<time>` elements and updates their `datetime` attribute for SEO and
- * accessibility.
- *
- * @module @field-types/date
+ * `date` renderer. `<time>` gets an ISO `datetime` plus a localised label;
+ * date inputs get the value in the visitor's local time zone, because that is
+ * what the control displays.
  */
 
 import { detectInitialLocale } from '@detection/locale';
 import { getDateTimeFormat } from '@core/intl-cache';
 import type { FieldRenderer, RenderContext } from '@core/types';
-import { safeStringify } from './utils';
+import { isEmptyValue, safeStringify } from './utils';
 
 const dateRenderer: FieldRenderer = {
   name: 'date',
   render(target, value, context) {
     const element = target.element;
-    if (value === null || value === undefined || value === '') {
-      if (element.tagName === 'INPUT') {
-        (element as HTMLInputElement).value = '';
-      } else if (element.tagName === 'TIME') {
+    if (isEmptyValue(value)) {
+      if (element.tagName === 'INPUT') (element as HTMLInputElement).value = '';
+      else {
         element.removeAttribute('datetime');
-        element.textContent = '';
-      } else {
         element.textContent = '';
       }
       return;
     }
-    const iso = typeof value === 'string' ? value : safeStringify(value);
-    const date = new Date(iso);
-    const isValid = !Number.isNaN(date.getTime());
+    const raw = typeof value === 'number' ? value : safeStringify(value);
+    const date = new Date(raw);
+    const valid = !Number.isNaN(date.getTime());
+    const fallback = String(raw);
     if (element.tagName === 'INPUT') {
-      (element as HTMLInputElement).value = isValid
-        ? toIsoForInput((element as HTMLInputElement).type, date)
-        : iso;
+      (element as HTMLInputElement).value = valid
+        ? formatForInput((element as HTMLInputElement).type, date)
+        : fallback;
       return;
     }
     if (element.tagName === 'TIME') {
-      element.setAttribute('datetime', isValid ? date.toISOString() : iso);
-      element.textContent = isValid ? formatDate(date, context) : iso;
-      return;
+      element.setAttribute('datetime', valid ? date.toISOString() : fallback);
     }
-    element.textContent = isValid ? formatDate(date, context) : iso;
+    element.textContent = valid ? formatDate(date, context) : fallback;
   },
 };
 
@@ -56,10 +47,18 @@ function formatDate(date: Date, context: RenderContext): string {
   }
 }
 
-function toIsoForInput(type: string, date: Date): string {
-  if (type === 'date') return date.toISOString().slice(0, 10);
-  if (type === 'datetime-local') return date.toISOString().slice(0, 16);
+/** Value for `<input type="date|datetime-local|time">` in local time; other inputs get the ISO instant. */
+export function formatForInput(type: string, date: Date): string {
+  const day = `${String(date.getFullYear()).padStart(4, '0')}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const clock = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  if (type === 'date') return day;
+  if (type === 'datetime-local') return `${day}T${clock}`;
+  if (type === 'time') return clock;
   return date.toISOString();
+}
+
+function pad(value: number): string {
+  return String(value).padStart(2, '0');
 }
 
 export { dateRenderer };

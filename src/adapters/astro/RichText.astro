@@ -28,6 +28,12 @@
  * imported by your page before this component renders. Registrations
  * are module/realm-local and do not automatically configure the
  * prebuilt inline runtime.
+ *
+ * Their output is yours to escape here. The built-in renderers escape
+ * every value they interpolate, but the sanitizer that would catch a
+ * custom renderer's mistake needs a DOM, and there is none during SSR
+ * unless the project supplied one with `setSanitizerDocument()`. See
+ * docs/security.md §3.
  */
 // Self-referencing import so the shipped copy in dist/ resolves
 // through the package exports map in consumer projects.

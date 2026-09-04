@@ -1,8 +1,4 @@
-/**
- * Shared shapes for the field-type renderers.
- *
- * @module @field-types/types
- */
+/** Populated value shapes the field renderers read. */
 
 export interface PayloadMedia {
   readonly id?: string | number;
@@ -17,13 +13,7 @@ export interface PayloadMedia {
   >;
 }
 
-/**
- * Generic relationship payload. The optional `TSlug` parameter is a
- * phantom marker that codegen uses to record the target collection(s)
- * without changing the runtime shape — `PayloadRelationship<'users'>`
- * and `PayloadRelationship<'users' | 'authors'>` behave identically at
- * runtime but carry different types at compile time.
- */
+/** `TSlug` is a phantom marker codegen uses to record the target collection; the runtime shape is identical. */
 export interface PayloadRelationship<TSlug extends string = string> {
   readonly id?: string | number;
   readonly title?: string;

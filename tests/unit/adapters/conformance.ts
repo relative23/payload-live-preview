@@ -3,13 +3,8 @@ import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import { authorizePreviewRequest } from '@security/preview-authorization';
 
 /**
- * One behavioural suite for the four framework adapters (roadmap 1.8.0).
- *
- * Each adapter is a thin translation around the shared preview policy, so
- * what it must do is the same everywhere: inject only on preview intent,
- * manage CSP as configured, expose one nonce that the tag and the header
- * agree on, and stop at an authorization refusal. A harness supplies the
- * framework-specific way to run a request; the cases are written once.
+ * One behavioural suite for the four adapters. A harness supplies only the
+ * framework-specific way to run a request; every expectation lives here.
  */
 
 export const ADMIN = 'https://admin.example.com';
@@ -22,21 +17,23 @@ export interface ConformanceRequest {
   readonly headers?: Record<string, string>;
   /** Content type of the response the adapter sees; default `text/html`. */
   readonly contentType?: string;
-  /** A CSP header the response already carries. */
-  readonly existingCsp?: string;
+  /** Headers the response already carries. */
+  readonly responseHeaders?: Record<string, string>;
 }
 
 export interface ConformanceOutcome {
   /** The HTML the client would receive (for Nuxt: the head the hook produced). */
   readonly body: string;
-  /** The `content-security-policy` header as written, or `null`. */
-  readonly csp: string | null;
-  /** The nonce the adapter hands to templates (locals/context), when it has one. */
-  readonly nonce: string | undefined;
+  /** Response headers as written; `null` when absent. */
+  readonly header: (name: string) => string | null;
+  /** What the adapter published for templates (`locals` / `event.context`). */
+  readonly locals: Record<string, unknown>;
 }
 
 export interface ConformanceHarness {
   readonly name: string;
+  /** Whether the framework has a `locals`-like surface for templates. */
+  readonly exposesLocals: boolean;
   readonly run: (
     options: Record<string, unknown>,
     request: ConformanceRequest,
@@ -51,15 +48,29 @@ function tagNonce(body: string): string | undefined {
   return /<script[^>]*\snonce="([^"]+)"/u.exec(body)?.[1];
 }
 
+async function authorized(): Promise<AuthorizedPreviewContext> {
+  const result = await authorizePreviewRequest(new Request(INTENT), {
+    type: 'verifier',
+    verify: () => ({ subject: 'editor' }),
+  });
+  if (!result.authorized) throw new Error('expected authorization');
+  return result.context;
+}
+
 export function adapterConformance(harness: ConformanceHarness): void {
   const run = (options: Record<string, unknown>, request: ConformanceRequest) =>
+    harness.run({ allowedOrigins: [ADMIN], defaults: 'v1', ...options }, request);
+  const runDefault = (options: Record<string, unknown>, request: ConformanceRequest) =>
     harness.run({ allowedOrigins: [ADMIN], ...options }, request);
+  const csp = (out: ConformanceOutcome) => out.header('content-security-policy');
 
   describe(`${harness.name} — conformance: when it injects`, () => {
-    it('leaves an ordinary request untouched: no script, no CSP', async () => {
+    it('leaves an ordinary request untouched: no script, no CSP, no cache headers', async () => {
       const out = await run({}, { url: PLAIN });
       expect(out.body).not.toContain(MARKER);
-      expect(out.csp).toBeNull();
+      expect(csp(out)).toBeNull();
+      expect(out.header('cache-control')).toBeNull();
+      expect(out.header('vary')).toBeNull();
     });
     it('injects for a query-parameter intent signal', async () => {
       const out = await run({}, { url: INTENT });
@@ -84,7 +95,7 @@ export function adapterConformance(harness: ConformanceHarness): void {
     it('honours autoInject: false while still managing CSP', async () => {
       const out = await run({ autoInject: false }, { url: INTENT });
       expect(out.body).not.toContain(MARKER);
-      expect(out.csp).toContain('frame-ancestors');
+      expect(csp(out)).toContain('frame-ancestors');
     });
     it('honours a shouldInject predicate and passes it the request', async () => {
       const shouldInject = vi.fn((request: { url: string }) => request.url.includes('/page'));
@@ -103,68 +114,135 @@ export function adapterConformance(harness: ConformanceHarness): void {
   describe(`${harness.name} — conformance: CSP`, () => {
     it('adds frame-ancestors for the configured admin origin', async () => {
       const out = await run({}, { url: INTENT });
-      expect(out.csp).toContain(`frame-ancestors 'self' ${ADMIN}`);
+      expect(csp(out)).toContain(`frame-ancestors 'self' ${ADMIN}`);
     });
     it('manages only frame-ancestors by default, leaving script-src alone', async () => {
       const out = await run({}, { url: INTENT });
-      expect(out.csp).not.toContain('script-src');
+      expect(csp(out)).not.toContain('script-src');
     });
     it('keeps the directives an existing policy already declared', async () => {
-      const out = await run({}, { url: INTENT, existingCsp: "default-src 'self'; img-src *" });
-      expect(out.csp).toContain("default-src 'self'");
-      expect(out.csp).toContain('img-src *');
-      expect(out.csp).toContain('frame-ancestors');
+      const out = await run(
+        {},
+        {
+          url: INTENT,
+          responseHeaders: { 'content-security-policy': "default-src 'self'; img-src *" },
+        },
+      );
+      expect(csp(out)).toContain("default-src 'self'");
+      expect(csp(out)).toContain('img-src *');
+      expect(csp(out)).toContain('frame-ancestors');
+    });
+    it('widens every policy of a comma-joined multi-policy header', async () => {
+      const out = await run(
+        {},
+        {
+          url: INTENT,
+          responseHeaders: {
+            'content-security-policy': "frame-ancestors 'none', default-src 'self'",
+          },
+        },
+      );
+      expect(csp(out)).toBe(
+        `frame-ancestors 'self' ${ADMIN}, default-src 'self'; frame-ancestors 'self' ${ADMIN}`,
+      );
     });
     it('does not touch CSP when manageCsp is false', async () => {
       const out = await run({ manageCsp: false }, { url: INTENT });
       expect(out.body).toContain(MARKER);
-      expect(out.csp).toBeNull();
+      expect(csp(out)).toBeNull();
     });
     it('leaves CSP untouched on a request with no preview intent', async () => {
-      const out = await run({}, { url: PLAIN, existingCsp: "default-src 'self'" });
-      expect(out.csp === null || out.csp === "default-src 'self'").toBe(true);
+      const out = await run(
+        {},
+        { url: PLAIN, responseHeaders: { 'content-security-policy': "default-src 'self'" } },
+      );
+      expect(csp(out) === null || csp(out) === "default-src 'self'").toBe(true);
     });
     it("in 'full' mode, the tag nonce, the script-src nonce and the exposed nonce are one value", async () => {
       const out = await run({ manageCsp: 'full' }, { url: INTENT });
       const nonce = tagNonce(out.body);
       expect(nonce).toBeTruthy();
-      expect(out.csp).toMatch(/script-src\s+'self' 'nonce-[A-Za-z0-9_-]+'/u);
-      expect(out.csp).toContain(`'nonce-${String(nonce)}'`);
-      if (out.nonce !== undefined) expect(out.nonce).toBe(nonce);
+      expect(csp(out)).toMatch(/script-src\s+'self' 'nonce-[A-Za-z0-9_-]+'/u);
+      expect(csp(out)).toContain(`'nonce-${String(nonce)}'`);
+      if (harness.exposesLocals) expect(out.locals['livePreviewNonce']).toBe(nonce);
     });
     it("in 'full' mode, adds strict-dynamic only when asked", async () => {
       const plain = await run({ manageCsp: 'full' }, { url: INTENT });
-      expect(plain.csp).not.toContain("'strict-dynamic'");
+      expect(csp(plain)).not.toContain("'strict-dynamic'");
+    });
+  });
+
+  describe(`${harness.name} — conformance: cache headers on a changed response`, () => {
+    it('marks an injected response private and no-store, varying on Cookie', async () => {
+      const out = await run({}, { url: INTENT });
+      expect(out.header('cache-control')).toBe('private, no-store');
+      expect(out.header('vary')).toBe('Cookie');
+    });
+    it('does the same when only CSP changed', async () => {
+      const out = await run({ autoInject: false }, { url: INTENT });
+      expect(out.header('cache-control')).toBe('private, no-store');
+    });
+    it('keeps an existing no-store directive and appends Cookie to an existing Vary', async () => {
+      const out = await run(
+        {},
+        {
+          url: INTENT,
+          responseHeaders: { 'cache-control': 'no-store, max-age=0', vary: 'Accept-Encoding' },
+        },
+      );
+      expect(out.header('cache-control')).toBe('no-store, max-age=0');
+      expect(out.header('vary')).toBe('Accept-Encoding, Cookie');
+    });
+    it('does not list Cookie twice', async () => {
+      const out = await run({}, { url: INTENT, responseHeaders: { vary: 'cookie' } });
+      expect(out.header('vary')).toBe('cookie');
     });
   });
 
   describe(`${harness.name} — conformance: authorization`, () => {
-    let context: AuthorizedPreviewContext;
-    async function authorized(): Promise<AuthorizedPreviewContext> {
-      const result = await authorizePreviewRequest(new Request(INTENT), {
-        type: 'verifier',
-        verify: () => ({ subject: 'editor' }),
-      });
-      if (!result.authorized) throw new Error('expected authorization');
-      context = result.context;
-      return context;
-    }
     it('a refused authorization injects nothing, writes no CSP and exposes no nonce', async () => {
       const out = await run({ authorizePreview: () => null }, { url: INTENT });
       expect(out.body).not.toContain(MARKER);
-      expect(out.csp).toBeNull();
-      expect(out.nonce).toBeUndefined();
+      expect(csp(out)).toBeNull();
+      expect(out.header('cache-control')).toBeNull();
+      expect(out.locals['livePreviewNonce']).toBeUndefined();
+    });
+    it('publishes the outcome for templates where the framework has locals', async () => {
+      const out = await run({ authorizePreview: () => null }, { url: INTENT });
+      expect(out.locals['livePreviewAuthorizationOutcome']).toBe(
+        harness.exposesLocals ? 'invalid' : undefined,
+      );
     });
     it('an authorized preview injects and manages CSP', async () => {
       const ctx = await authorized();
       const out = await run({ authorizePreview: () => ctx }, { url: INTENT });
       expect(out.body).toContain(MARKER);
-      expect(out.csp).toContain('frame-ancestors');
+      expect(csp(out)).toContain('frame-ancestors');
+      expect(out.locals['livePreviewAuthorization']).toBe(harness.exposesLocals ? ctx : undefined);
     });
     it('authorization is consulted only once intent is established', async () => {
       const authorizePreview = vi.fn(() => null);
       await run({ authorizePreview }, { url: PLAIN });
       expect(authorizePreview).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(`${harness.name} — conformance: shipped defaults`, () => {
+    it('refuses to construct without authorizePreview', async () => {
+      await expect(runDefault({}, { url: INTENT })).rejects.toThrow(/authorizePreview/u);
+    });
+    it('an iframe load alone is not intent', async () => {
+      const authorizePreview = vi.fn(() => null);
+      const out = await runDefault({ authorizePreview }, { url: PLAIN, headers: IFRAME });
+      expect(out.body).not.toContain(MARKER);
+      expect(authorizePreview).not.toHaveBeenCalled();
+    });
+    it('an authorized preview injects, manages CSP and is uncacheable', async () => {
+      const ctx = await authorized();
+      const out = await runDefault({ authorizePreview: () => ctx }, { url: INTENT });
+      expect(out.body).toContain(MARKER);
+      expect(csp(out)).toContain(`frame-ancestors 'self' ${ADMIN}`);
+      expect(out.header('cache-control')).toBe('private, no-store');
     });
   });
 }

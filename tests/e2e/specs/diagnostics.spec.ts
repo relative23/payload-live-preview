@@ -13,13 +13,7 @@
  * way a person debugging would.
  */
 import { expect, test, type Page } from '@playwright/test';
-
-/** The preview iframe: the only frame that is not the admin page itself. */
-function previewFrame(page: Page) {
-  const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
-  if (!frame) throw new Error('preview frame missing');
-  return frame;
-}
+import { post, requirePreviewFrame } from '../helpers/preview';
 
 interface Snapshot {
   version: string;
@@ -46,7 +40,7 @@ interface Snapshot {
 }
 
 async function inspect(page: Page): Promise<Snapshot> {
-  return (await previewFrame(page).evaluate(() =>
+  return (await requirePreviewFrame(page).evaluate(() =>
     (window as Window & { __livePreview?: { inspect: () => unknown } }).__livePreview?.inspect(),
   )) as Snapshot;
 }
@@ -103,7 +97,7 @@ test.describe('inspect() on the handle an adapter injects', () => {
     // Read once, edit, read again: the first object must still describe the
     // moment it was taken. A live view into runtime state would be a trap for
     // anyone capturing it in a failure report.
-    const both = await previewFrame(page).evaluate(() => {
+    const both = await requirePreviewFrame(page).evaluate(() => {
       const api = (window as Window & { __livePreview?: { inspect: () => unknown } }).__livePreview;
       return { first: JSON.stringify(api?.inspect()) };
     });
@@ -138,13 +132,7 @@ test.describe('diagnostic codes reach the browser console', () => {
     // Post a field the page has no anchor for, the way the admin would — from
     // the parent window into the iframe, so the v2 parent-or-opener source
     // policy accepts it (a self-post would be dropped, correctly).
-    await page.evaluate(() => {
-      const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-      iframe?.contentWindow?.postMessage(
-        { type: 'payload-live-preview', data: { thisFieldHasNoAnchor: 'x' } },
-        window.location.origin,
-      );
-    });
+    await post(page, { thisFieldHasNoAnchor: 'x' });
 
     await expect
       .poll(() => warnings.some((line) => line.includes('LP0201')), {

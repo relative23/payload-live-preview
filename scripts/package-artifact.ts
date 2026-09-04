@@ -124,13 +124,27 @@ function parseFiles(value: unknown): readonly PackageArtifactFile[] {
   return files;
 }
 
-/** Parse the one-package JSON contract produced by npm pack. */
-export function parseNpmPackReport(output: string): NpmPackReport {
-  const parsed: unknown = JSON.parse(output);
-  if (!Array.isArray(parsed) || parsed.length !== 1 || !isRecord(parsed[0])) {
+/**
+ * The single package entry, whichever shape npm reported it in: 11 and earlier
+ * emit an array of packages, 12 an object keyed by package name. The entries
+ * themselves are identical, so the shape is all that has to be reconciled.
+ */
+function singlePackageEntry(parsed: unknown): Record<string, unknown> {
+  const entries: unknown[] = Array.isArray(parsed)
+    ? parsed
+    : isRecord(parsed)
+      ? Object.values(parsed)
+      : [];
+  const [entry] = entries;
+  if (entries.length !== 1 || !isRecord(entry)) {
     throw new Error('npm pack returned an unexpected JSON report');
   }
-  const report = parsed[0];
+  return entry;
+}
+
+/** Parse the one-package JSON contract produced by npm pack. */
+export function parseNpmPackReport(output: string): NpmPackReport {
+  const report = singlePackageEntry(JSON.parse(output));
   return {
     filename: requiredString(report, 'filename', 'npm pack report'),
     name: requiredString(report, 'name', 'npm pack report'),

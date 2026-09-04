@@ -1,21 +1,17 @@
 /**
- * The fragment wire protocol (ADR 0011): what the browser posts to a
- * fragment endpoint and what the endpoint answers. Both sides validate the
- * shape; the client never sends code, paths or templates, and the server
- * never renders anything that is not in its registry.
- *
- * @module @/types/fragment-protocol
+ * The fragment wire protocol: what the browser posts to a fragment endpoint
+ * and what it answers. Both sides validate the shape; nothing on the wire
+ * names code, paths or templates. See ADR 0011.
  */
 
 /** Bumped when the request or response shape changes incompatibly. */
 export const FRAGMENT_PROTOCOL_VERSION = 1;
-/** Carried on every request and response. */
 export const FRAGMENT_VERSION_HEADER = 'x-payload-fragment-version';
 
 export interface FragmentRequestBody {
   /** Registry id of the boundary (`data-payload-fragment`). */
   readonly fragment: string;
-  /** `data-payload-fragment-key`, when the page has several boundaries of one id. */
+  /** `data-payload-fragment-key`, when several boundaries share one id. */
   readonly key?: string;
   /** The page route the boundary belongs to; authorization is bound to it. */
   readonly route: string;
@@ -25,7 +21,7 @@ export interface FragmentRequestBody {
   readonly locale?: string;
   readonly collectionSlug?: string;
   readonly globalSlug?: string;
-  /** The unsaved form state as the admin posted it (after the runtime's merge). */
+  /** The unsaved form state as the admin posted it, after the runtime's merge. */
   readonly fields: Readonly<Record<string, unknown>>;
 }
 

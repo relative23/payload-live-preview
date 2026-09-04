@@ -1,4 +1,5 @@
 import { expect, test, type FrameLocator, type Page } from '@playwright/test';
+import { post } from '../helpers/preview';
 
 /**
  * Roadmap 1.1.0 acceptance gate: "A page rendering two documents that share
@@ -38,16 +39,6 @@ async function openOwners(page: Page): Promise<FrameLocator> {
   return frame;
 }
 
-async function post(page: Page, message: Record<string, unknown>): Promise<void> {
-  await page.evaluate(
-    ({ m, origin }) => {
-      const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-      frame?.contentWindow?.postMessage({ type: 'payload-live-preview', ...m }, origin);
-    },
-    { m: message, origin: APP },
-  );
-}
-
 test.describe('owner scoping — two documents, one field name', () => {
   test('an update naming document a patches a and leaves b alone, and vice versa', async ({
     page,
@@ -58,11 +49,11 @@ test.describe('owner scoping — two documents, one field name', () => {
     await expect(a).toHaveText('Title of A');
     await expect(b).toHaveText('Title of B');
 
-    await post(page, { data: { title: 'A, edited' }, globalSlug: 'a' });
+    await post(page, { title: 'A, edited' }, { globalSlug: 'a', targetOrigin: APP });
     await expect(a).toHaveText('A, edited');
     await expect(b).toHaveText('Title of B');
 
-    await post(page, { data: { title: 'B, edited' }, globalSlug: 'b' });
+    await post(page, { title: 'B, edited' }, { globalSlug: 'b', targetOrigin: APP });
     await expect(b).toHaveText('B, edited');
     await expect(a).toHaveText('A, edited');
   });
@@ -71,11 +62,42 @@ test.describe('owner scoping — two documents, one field name', () => {
     const frame = await openOwners(page);
     const a = frame.getByTestId('doc-a').locator('[data-payload-field="title"]');
     const b = frame.getByTestId('doc-b').locator('[data-payload-field="title"]');
-    await post(page, { data: { title: 'nobody asked' } });
+    await post(page, { title: 'nobody asked' }, { targetOrigin: APP });
     // Give the runtime more than a debounce window to prove it stayed quiet.
     await page.waitForTimeout(200);
     await expect(a).toHaveText('Title of A');
     await expect(b).toHaveText('Title of B');
+  });
+
+  test('reveals the edited document, not the first element with that field name', async ({
+    page,
+  }) => {
+    const frame = await openOwners(page);
+    const inView = async (testId: string): Promise<boolean> =>
+      frame
+        .getByTestId(testId)
+        .evaluate(
+          (element) =>
+            element.getBoundingClientRect().top < window.innerHeight &&
+            element.getBoundingClientRect().bottom > 0,
+        );
+
+    expect(await inView('doc-a'), 'A starts above the fold').toBe(true);
+    expect(await inView('doc-b'), 'B starts below it').toBe(false);
+
+    // First message is the baseline for B; the second is the edit that reveals.
+    await post(page, { title: 'B, first' }, { globalSlug: 'b', targetOrigin: APP });
+    await expect(frame.getByTestId('doc-b').locator('[data-payload-field="title"]')).toHaveText(
+      'B, first',
+    );
+    expect(await inView('doc-b'), 'the baseline does not scroll').toBe(false);
+
+    await post(page, { title: 'B, edited' }, { globalSlug: 'b', targetOrigin: APP });
+    await expect(frame.getByTestId('doc-b').locator('[data-payload-field="title"]')).toHaveText(
+      'B, edited',
+    );
+    // Both documents bind `title`; revealing A's copy would leave B off-screen.
+    await expect.poll(() => inView('doc-b'), { timeout: 5_000 }).toBe(true);
   });
 
   test('without authorization the page carries neither owner nor field attributes', async ({

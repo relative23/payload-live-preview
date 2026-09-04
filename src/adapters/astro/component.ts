@@ -1,46 +1,17 @@
 /**
- * Helpers for embedding the live preview manually in `.astro` templates.
- *
- * Most consumers should prefer the `livePreview()` integration which
- * auto-injects the script. This module exists for advanced cases where
- * the script needs to live inside a specific layout or behind a
- * conditional.
- *
- * Usage in a `.astro` file:
- *
- * ```astro
- * ---
- * import { renderLivePreviewScript } from 'payload-live-preview/astro';
- * const script = renderLivePreviewScript({
- *   allowedOrigins: ['https://admin.example.com'],
- *   nonce: Astro.locals.livePreviewNonce,
- * });
- * ---
- * <Fragment set:html={script} />
- * ```
- *
- * @module @adapters/astro/component
+ * Manual embedding for `.astro` templates, for the cases the integration's
+ * automatic injection does not fit (one layout, a conditional).
  */
 
-import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
+import { renderScriptTag } from '@adapters/shared/response';
 import type { LivePreviewAstroOptions } from './types';
-import { inlineScriptConfig } from '@adapters/shared/policy';
 
 export interface RenderScriptOptions extends LivePreviewAstroOptions {
-  /**
-   * CSP nonce to set on the `<script>` tag. Read from
-   * `Astro.locals.livePreviewNonce` after registering the live-preview
-   * middleware.
-   */
+  /** CSP nonce for the tag; read it from `Astro.locals.livePreviewNonce`. */
   readonly nonce?: string;
 }
 
-/**
- * Render the full `<script>` tag (wrapped with attributes) for embedding
- * in a `.astro` layout. The result is a single string suitable for
- * `set:html={…}`.
- */
+/** The complete `<script>` tag, for `<Fragment set:html={renderLivePreviewScript(...)} />`. */
 export function renderLivePreviewScript(options: RenderScriptOptions = {}): string {
-  const body = generateInlineScript(inlineScriptConfig(options));
-  return wrapWithScriptTag(body, options.nonce !== undefined ? { nonce: options.nonce } : {});
+  return renderScriptTag(options);
 }

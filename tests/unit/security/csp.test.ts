@@ -52,6 +52,10 @@ describe('generateCspNonce', () => {
     delete globalThis.crypto;
     try {
       expect(() => generateCspNonce()).toThrow(/Web Crypto is unavailable/);
+      // The remedy is the part a reader needs; a message that names the
+      // problem and swallows the fix is what the mutant left behind.
+      expect(() => generateCspNonce()).toThrow(/setCspCrypto\(webcrypto\)/);
+      expect(() => generateCspNonce()).toThrow(/--experimental-global-webcrypto/);
     } finally {
       globalThis.crypto = original;
     }
@@ -194,6 +198,35 @@ describe('buildScriptSrcWithNonce', () => {
 });
 
 describe('mergeCspHeader', () => {
+  // The whitespace table below puts each character between the name and the
+  // value, which the split regex handles. Around a directive it is the trim's
+  // job — a policy that survives `;` splitting carries exactly that — and each
+  // character has to be tried there too, or one of them can quietly stop
+  // counting. Leading-only and trailing-only tell the two ends of the trim
+  // apart: a shortcut that returns the input untouched passes when both ends
+  // are dirty and fails only when one is clean.
+  it.each([
+    ['horizontal tab', '\t'],
+    ['line feed', '\n'],
+    ['form feed', '\f'],
+    ['carriage return', '\r'],
+    ['space', ' '],
+  ])('trims %s around a directive, not only between name and value', (_name, ws) => {
+    const canonical = mergeCspHeader("default-src 'self'", {});
+    expect(canonical).toBe("default-src 'self'");
+    expect(mergeCspHeader(`${ws}${ws}default-src 'self'${ws}${ws}`, {})).toBe(canonical);
+    expect(mergeCspHeader(`${ws}default-src 'self'`, {})).toBe(canonical);
+    expect(mergeCspHeader(`default-src 'self'${ws}`, {})).toBe(canonical);
+  });
+
+  it('replaces an existing value under mode replace instead of merging into it', () => {
+    const merged = mergeCspHeader('img-src https://old.example', {
+      'img-src': { value: 'https://new.example', mode: 'replace' },
+    });
+    expect(merged).toContain('https://new.example');
+    expect(merged).not.toContain('https://old.example');
+  });
+
   it.each([
     ['horizontal tab', '\t'],
     ['line feed', '\n'],
@@ -278,5 +311,52 @@ describe('mergeCspHeader', () => {
     );
 
     expect(merged).toBe('sandbox; upgrade-insecure-requests');
+  });
+});
+
+describe('mergeCspHeader — several policies in one header value', () => {
+  // `Headers.get()` joins repeated headers with `, `; a browser enforces every
+  // policy, so the additions must reach each one.
+  it('merges the additions into every comma-separated policy', () => {
+    const merged = mergeCspHeader("frame-ancestors 'none', default-src 'self'", {
+      'frame-ancestors': "'self' https://admin.example.com",
+    });
+    expect(merged).toBe(
+      "frame-ancestors 'self' https://admin.example.com, " +
+        "default-src 'self'; frame-ancestors 'self' https://admin.example.com",
+    );
+  });
+
+  it("adds the script-src nonce of 'full' mode to each policy", () => {
+    const merged = mergeCspHeader("script-src 'self',img-src *", {
+      'script-src': "'self' 'nonce-abc'",
+    });
+    expect(merged).toBe("script-src 'self' 'nonce-abc', img-src *; script-src 'self' 'nonce-abc'");
+  });
+
+  it('drops empty policies and keeps the single-policy path unchanged', () => {
+    expect(mergeCspHeader("default-src 'self', , ", { 'img-src': '*' })).toBe(
+      "default-src 'self'; img-src *",
+    );
+    expect(mergeCspHeader("default-src 'self'", { 'img-src': '*' })).toBe(
+      "default-src 'self'; img-src *",
+    );
+    expect(mergeCspHeader('', { 'img-src': '*' })).toBe('img-src *');
+  });
+});
+
+describe('CSP whitespace handling stays linear', () => {
+  it('trims a pathological run in milliseconds, not minutes', () => {
+    // The obvious `/^\s+|\s+$/` is superlinear by construction: for a long run
+    // the trailing alternative is retried at every position. V8 optimises that
+    // shape away today, but this header can come from a consumer's response and
+    // the module runs in every engine — so the bound has to hold regardless.
+    // Linear is milliseconds here; a reintroduced regex trim is minutes, which
+    // is why a loose ceiling is a stable assertion rather than a flaky one.
+    const header = `script-src ${'\t'.repeat(200_000)}'self'`;
+    const started = performance.now();
+    const merged = mergeCspHeader(header, { 'frame-ancestors': "'self'" });
+    expect(performance.now() - started).toBeLessThan(2_000);
+    expect(merged).toContain('frame-ancestors');
   });
 });

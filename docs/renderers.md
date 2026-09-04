@@ -1,8 +1,7 @@
 # Renderers, transforms and plugins
 
-What a renderer receives, how it is chosen, and what a plugin owns. This is
-the extension surface as of 1.2.0; the roadmap calls it the point where
-customisation stops being a convention and becomes a contract.
+What a renderer receives, how it is chosen, what it writes, and what a plugin
+owns.
 
 ## What a renderer receives: raw, populated, transformed
 
@@ -52,7 +51,7 @@ element falls back to the heuristics as it always has. Keys match
 ```ts
 client.use({
   name: 'acme-renderers',
-  compat: { runtime: '^1.2.0' },
+  compat: { runtime: '>=1.2.0' },
   init(ctx) {
     ctx.registerFieldRenderer({
       name: 'acme:money',
@@ -63,6 +62,85 @@ client.use({
   },
 });
 ```
+
+## Value semantics: one contract for every renderer
+
+Every built-in renderer answers the same three questions the same way. The
+rule that matters most: **a clear is a write.** An emptied field counts in
+`updatedCount` and fires `afterUpdate`, because "the value went away" is a
+change the page must show, not a message to ignore.
+
+| Value                                                                       | Every renderer does                                                          |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `null`, `undefined`, `''`                                                   | Clears the element and counts as a write                                     |
+| An unsafe URL (fails `isSafeUrl`)                                           | Clears the URL attribute, warns `LP0401` once per element, counts as a write |
+| A value with no usable URL (media object without `url`, a bare relation id) | Leaves the element untouched and counts as **no** write                      |
+
+What "clears" means per renderer:
+
+| Renderer                                                   | Cleared                                                            |
+| ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| `url`, `email`                                             | `removeAttribute('href')`, text emptied; on an input, `value = ''` |
+| `relationship`                                             | `removeAttribute('href')`, text emptied                            |
+| `image`, `upload` on `<img>`                               | `src`, `srcset` and `sizes` all removed                            |
+| `image` on any other element                               | `background-image` emptied                                         |
+| `upload` on `<a>` or a block                               | `href` removed, text emptied                                       |
+| `richText`, `html`, `array`                                | `innerHTML` emptied                                                |
+| `structural-array`                                         | Every keyed item removed                                           |
+| `text`, `textarea`, `number`, `date`, `select`, `checkbox` | The control reset (`value = ''`, `checked = false`)                |
+
+`tests/unit/field-types/value-semantics.test.ts` pins the table renderer by
+renderer, under an explicit sanitizer policy.
+
+### Responsive images
+
+Setting `src` alone leaves a server-rendered `srcset` winning, so the
+`<img>` never changes. `image` and `upload` therefore rebuild the whole set:
+each `PayloadMedia.sizes` entry with a `url` and a numeric `width` becomes a
+candidate (checked with `isSafeUrl`, commas and spaces percent-encoded), and
+the base `url`/`width` is appended. Media with no usable `sizes` removes
+`srcset` **and** `sizes`. An author-written `sizes` layout hint survives a
+rebuild — it describes the layout, not the media.
+
+### Email
+
+`email` is its own renderer, not an alias of `url`. A value with no scheme
+that contains `@` becomes `mailto:jane@example.com`; a value that already
+carries a scheme is used as written.
+
+## Class hooks the renderers emit
+
+The 2.0 sanitizer strips `data-*` and `style` under both policies, so the
+Lexical renderers express everything through classes. Nothing is
+JSON-serialised into an attribute. Style these, or replace the node with
+`registerLexicalNode` / `registerBlockRenderer`.
+
+| Class                                                               | Emitted by                                                                                |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `lp-block`, `lp-block--<slug>`                                      | A `block` node with no registered renderer (`<div>`)                                      |
+| `lp-inline-block`, `lp-inline-block--<slug>`                        | An `inlineBlock` node with no registered renderer (`<span>`)                              |
+| `lp-relation`, `lp-relation--<collection>`                          | A `relationship` node (`<a>` when the populated document has a safe `url`, else `<span>`) |
+| `lp-align-left\|center\|right\|justify\|start\|end`                 | Any block node with an alignment                                                          |
+| `lp-indent-<n>`                                                     | Any block node with `indent > 0`                                                          |
+| `lp-block-callout`, `lp-block-callout--<importance>`                | `registerDefaultBlocks()`'s callout                                                       |
+| `lp-block-image`, `lp-block-video`, `lp-block-code`, `lp-block-cta` | The other default blocks                                                                  |
+| `language-<lang>`                                                   | A `code` node, on the inner `<code>`                                                      |
+
+`<slug>`, `<collection>` and `<lang>` are reduced to `[a-z0-9_-]`: every
+other character becomes `-`, so a slug can never escape the class attribute.
+
+Alignment and indent are classes, not inline CSS — the sanitizer removes
+`style` under both policies, so a `style="text-align:center"` would never
+reach the page. `resolveAlignment(node)` and `resolveIndent(node)` stay
+public for a custom node renderer that wants the same values.
+
+### The sanitizer adds `target="_blank"` itself
+
+An anchor whose `href` is an external `http(s)` URL leaves the sanitizer with
+`rel="noopener noreferrer"`, and with `target="_blank"` unless the markup
+already set a `target`. This applies to every sanitised write — a CMS link
+inside rich text, a plugin renderer's HTML, an array template — so a link
+that must open in the same tab needs an explicit `target="_self"`.
 
 ## `renderRichText`: one renderer for SSR and preview
 
@@ -96,9 +174,20 @@ option.
 In the browser the runtime sanitizes the whole rendered document, so a
 custom node cannot introduce a script or an event handler however it is
 written. On the server `lexicalToHtml` sanitizes when a sanitizer document
-was set (`setSanitizerDocument()` with linkedom or jsdom); without one the
-built-in nodes escape their own output and custom nodes are responsible for
-theirs — see [security.md](security.md) §3.
+was set (`setSanitizerDocument()` with linkedom or jsdom); **without one it
+returns the HTML as rendered and warns once**, because silently unsanitised
+output is the worse failure. The built-in nodes escape their own output;
+custom nodes are responsible for theirs — see [security.md](security.md) §3.
+Pass `{ sanitize: false }` when the caller sanitizes downstream itself; that
+opts out of the warning too.
+
+The built-in nodes read the shapes `@payloadcms/richtext-lexical` actually
+serialises, not vanilla Lexical's: a link is
+`{ type: 'link', fields: { linkType, url, newTab, doc } }` (an `internal`
+link needs `doc.value` populated to have a URL at all — a bare id renders the
+link text only), and `block`, `inlineBlock`, `table`, `tablerow` and
+`tablecell` all have renderers, so a table stays a table instead of
+collapsing into its text.
 
 ## Transforms are synchronous — by decision
 
@@ -135,13 +224,26 @@ A plugin owns what it registers, and only for as long as it is registered:
   the plugin is not listed.
 - **Async destroy.** `destroy()` may return a promise; `unuse()` resolves
   after it, and the plugin's registrations are already released when it runs.
-- **Compatibility.** `compat: { runtime: '^1.2.0', protocol: 4 }` is checked
-  at registration; a plugin that does not fit is refused with a log line
-  naming both sides.
+- **Compatibility.** `compat: { runtime: '>=1.2.0', protocol: 4 }` is checked
+  at registration; a plugin that does not fit is refused, logged, and
+  reported on the client's `error` event with `code: 'LP0103'` and
+  `context: 'plugin'`, so a refusal is visible without reading the console.
+  Write an open range: a caret range pinned to a 1.x version (`^1.2.0`) is
+  refused by the 2.0 runtime, which is almost never what the author meant.
 - **Observable.** `client.inspect().plugins` lists each plugin with its
   state and live registrations by kind, so "teardown is complete" is a
   snapshot fact. `tests/unit/plugins/ownership-contract.test.ts` pins that
   300 register/unregister cycles return every count to its baseline.
+
+### `documentSave`: the `revalidate` endpoint authorises itself
+
+The `'revalidate'` strategy POSTs `{ source: 'payload-live-preview' }` to
+`revalidateUrl` (default `/api/revalidate`) as a plain `fetch` from the
+preview page. Cookies travel with it and **there is no CSRF token**; a bearer
+secret in `revalidateHeaders` would sit in page JavaScript where any visitor
+can read it. The endpoint must authorise on its own — an admin session
+cookie, a same-origin check, or both — and must be safe to call repeatedly
+from a browser that is already framed by the CMS.
 
 ## Islands
 

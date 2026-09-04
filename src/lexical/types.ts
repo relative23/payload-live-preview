@@ -1,20 +1,9 @@
 /**
- * Public Lexical node types.
- *
- * Mirrors the shape Payload's Lexical serializer emits in
- * `fields.<richTextField>` payloads. We only require the discriminator
- * `type` field and the optional `children` array — every other
- * property is opaque and forwarded as-is to the renderer that handles
- * the node type.
- *
- * @module @lexical/types
+ * Lexical document types. Only `type` and `children` are required; every
+ * other property is forwarded opaquely to the renderer for that node type.
  */
 
-/**
- * Bitmask of Lexical text-format flags.
- *
- * Multiple flags can be combined: `BOLD | ITALIC = 3`.
- */
+/** Lexical text-format bitmask; flags combine (`BOLD | ITALIC === 3`). */
 export const TextFormat = {
   BOLD: 1,
   ITALIC: 2,
@@ -26,10 +15,6 @@ export const TextFormat = {
   HIGHLIGHT: 128,
 } as const;
 
-/**
- * Generic Lexical node. Concrete renderers consume specific subtypes
- * through narrow type guards in their own modules.
- */
 export interface LexicalNode {
   readonly type: string;
   readonly version?: number;
@@ -41,9 +26,6 @@ export interface LexicalNode {
   readonly [extra: string]: unknown;
 }
 
-/**
- * Root of a Lexical document.
- */
 export interface LexicalRoot {
   readonly root: {
     readonly type?: string;

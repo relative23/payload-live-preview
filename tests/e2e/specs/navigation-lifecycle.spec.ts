@@ -15,6 +15,7 @@
  * raised the way the browser raises it.
  */
 import { expect, test } from '@playwright/test';
+import { requirePreviewFrame } from '../helpers/preview';
 
 const FROZEN = 'typed while the document was away';
 const RESTORED = 'typed after the restore';
@@ -31,8 +32,7 @@ test.describe('live preview — document lifecycle', () => {
     await page.getByTestId('title-input').fill('before the document hides');
     await expect(title).toHaveText('before the document hides');
 
-    const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
-    if (!frame) throw new Error('preview frame missing');
+    const frame = requirePreviewFrame(page);
 
     await frame.evaluate(() => {
       window.dispatchEvent(new Event('pagehide'));
@@ -61,8 +61,7 @@ test.describe('live preview — document lifecycle', () => {
     const title = preview.locator('[data-payload-field="title"]');
     await expect(title).toBeVisible();
 
-    const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
-    if (!frame) throw new Error('preview frame missing');
+    const frame = requirePreviewFrame(page);
     await frame.evaluate(() => {
       window.dispatchEvent(new Event('pageshow'));
     });

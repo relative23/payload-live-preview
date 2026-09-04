@@ -12,10 +12,10 @@ export interface BlockRenderContext {
 // @public
 export type BlockRenderer = (fields: Record<string, unknown>, context: BlockRenderContext) => string;
 
-// @public
+// @public (undocumented)
 export function isLexicalContent(value: unknown): value is LexicalRoot;
 
-// @public
+// @public (undocumented)
 export interface LexicalNode {
     // (undocumented)
     readonly [extra: string]: unknown;
@@ -40,7 +40,7 @@ export interface LexicalRenderOptions {
     readonly sanitize?: boolean;
 }
 
-// @public
+// @public (undocumented)
 export interface LexicalRoot {
     // (undocumented)
     readonly root: {
@@ -59,13 +59,13 @@ export function lexicalToHtml(content: LexicalRoot, options?: LexicalRenderOptio
 // @public
 export function lexicalToPlainText(content: LexicalRoot): string;
 
-// @public
+// @public (undocumented)
 export function lookupBlockRenderer(blockType: string): BlockRenderer | undefined;
 
-// @public
+// @public (undocumented)
 export function lookupLexicalNode(type: string): NodeRenderer | undefined;
 
-// @public
+// @public (undocumented)
 export type NodeRenderer = (node: LexicalNode, context: RenderNodeContext) => string;
 
 // @public
@@ -74,7 +74,7 @@ export function registerBlockRenderer(blockType: string, renderer: BlockRenderer
 // @public
 export function registerDefaultBlocks(): void;
 
-// @public
+// @public (undocumented)
 export function registeredBlockTypes(): readonly string[];
 
 // @public

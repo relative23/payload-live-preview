@@ -1,35 +1,11 @@
 /**
- * Typed binding helpers — emit the `data-payload-field` attribute pair
- * that the live-preview runtime reads, with compile-time validation
- * of the field name.
- *
- * Two forms are exposed:
- *
- *   - **`bind<Schema>('heroTitle')`** — string-literal form. Lightest
- *     possible runtime (no Proxy), but a rename in the IDE does NOT
- *     follow into the string.
- *   - **`bindByPath<Schema>(s => s.heroTitle)`** — proxy form. The
- *     callback walks a Proxy that records the access path, returning
- *     the same shape as `bind` so the two are interchangeable. Slightly
- *     heavier runtime, but rename-safe and discourages typos.
- *
- * Both helpers also accept a richer return — `bind('image', 'src')` —
- * to bind an attribute other than the default `data-payload-field`,
- * matching the cache resolver's `data-payload-attribute` flow.
- *
- * @module @dsl/bind
+ * Typed helpers emitting the `data-payload-*` attributes the runtime reads.
+ * `bindByPath` records the path through a Proxy, so a rename follows.
  */
 
 import type { FieldName } from './paths';
 
-/**
- * Shape returned by every binding helper — a spreadable HTML attribute
- * record. Astro / JSX / Svelte all accept this style directly:
- *
- *   ```astro
- *   <h1 {...bind<Homepage>('heroTitle')}>{data.heroTitle}</h1>
- *   ```
- */
+/** A spreadable attribute record: `<h1 {...bind<Homepage>('heroTitle')}>`. */
 export interface FieldBindingAttributes {
   readonly 'data-payload-field': string;
   readonly 'data-payload-attribute'?: string;
@@ -43,46 +19,25 @@ export interface FieldBindingAttributes {
 }
 
 export interface BindOptions {
-  /** Override the bound attribute (e.g., `'src'` for `<img>`). Default: textContent. */
+  /** Attribute to write instead of the text content, e.g. `'src'` for `<img>`. */
   readonly attribute?: string;
-  /** Explicit field-type override — bypasses schema detection. */
+  /** Explicit field type, bypassing schema detection. */
   readonly type?: string;
-  /**
-   * Mark the binding as Lexical rich text. Usually detected automatically;
-   * set it where the initial render is empty and there is nothing to detect.
-   */
+  /** Mark the binding as Lexical rich text; needed only when the initial render is empty. */
   readonly richtext?: boolean;
   /** Render the value as sanitised HTML rather than text. */
   readonly html?: boolean;
   /** Lock this element to one locale, overriding the message locale. */
   readonly locale?: string;
-  /** Field whose value becomes the image `alt` — emitted as `data-payload-alt`. */
+  /** Field whose value becomes the image `alt`. */
   readonly alt?: string;
-  /** Field whose value becomes the link `href` — emitted as `data-payload-href`. */
+  /** Field whose value becomes the link `href`. */
   readonly href?: string;
-  /**
-   * Markup for each array item, with the double-brace `value` placeholder
-   * substituted per item — emitted as `data-payload-array-template`.
-   */
+  /** Markup per array item with `{{value}}` placeholders. */
   readonly arrayTemplate?: string;
 }
 
-/**
- * String-literal binding helper.
- *
- *   ```ts
- *   import { bind } from 'payload-live-preview';
- *   import type { Homepage } from './payload-types';
- *
- *   <h1 {...bind<Homepage>('heroTitle')}>{data.heroTitle}</h1>
- *   <img {...bind<Homepage>('heroImage', { attribute: 'src' })} />
- *   ```
- *
- * The generic `T` is the schema interface emitted by `pll-codegen`.
- * `field` is constrained to `keyof T` so misspellings fail at compile
- * time. When `T` is omitted, the helper accepts any string — useful
- * for incremental adoption.
- */
+/** `bind<Homepage>('heroTitle')`; without `T` any string is accepted. */
 export function bind<T = Record<string, unknown>>(
   field: FieldName<T>,
   options?: BindOptions,
@@ -90,20 +45,7 @@ export function bind<T = Record<string, unknown>>(
   return buildAttributes(field, options);
 }
 
-/**
- * Proxy-path binding helper.
- *
- *   ```ts
- *   <h1 {...bindByPath<Homepage>(d => d.heroTitle)}>{data.heroTitle}</h1>
- *   ```
- *
- * The picker is invoked once with a recording Proxy; the recorded path
- * is joined with `.` and emitted as the binding name. Property access
- * on nested objects and arrays both work — `d => d.slides[0].title`
- * becomes `slides.title` (array indices are normalised away because the
- * runtime resolves bindings against schema, not against positional
- * indices).
- */
+/** `bindByPath<Homepage>(d => d.slides[0].title)` → `slides.title`; array indices are dropped because bindings resolve against the schema. */
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function bindByPath<T = Record<string, unknown>>(
   picker: (data: T) => unknown,
@@ -122,8 +64,6 @@ function buildAttributes(field: string, options: BindOptions | undefined): Field
   if (field.length === 0) {
     throw new Error('bind: field name must be a non-empty string');
   }
-  // A binding is one unit: the field and every companion that describes it are
-  // built together so a caller cannot emit half of one.
   const attrs: {
     'data-payload-field': string;
     'data-payload-attribute'?: string;
@@ -156,7 +96,6 @@ function recordPath(picker: (data: never) => unknown): string[] {
     {
       get(_target, prop: string | symbol): unknown {
         if (typeof prop === 'symbol') return undefined;
-        // Arrays surface numeric indices when iterated — skip those.
         if (/^\d+$/.test(prop)) return proxy;
         path.push(prop);
         return proxy;
@@ -166,9 +105,7 @@ function recordPath(picker: (data: never) => unknown): string[] {
   try {
     picker(proxy as never);
   } catch {
-    // Pickers can throw when they attempt math/JSX on the proxy. We
-    // still keep whatever path was recorded up to that point — that's
-    // typically the binding the user intended.
+    // A picker doing math or JSX on the proxy throws after recording the path it meant.
   }
   return path;
 }

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { detectInitialLocale } from '@detection/locale';
 
 describe('detectInitialLocale', () => {
@@ -24,5 +24,20 @@ describe('detectInitialLocale', () => {
     const result = detectInitialLocale();
     expect(typeof result).toBe('string');
     expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('falls back to English when the navigator names no usable language', () => {
+    vi.stubGlobal('navigator', { language: '' });
+    expect(detectInitialLocale()).toBe('en');
+    vi.stubGlobal('navigator', { language: 42 });
+    expect(detectInitialLocale()).toBe('en');
+    vi.unstubAllGlobals();
+  });
+
+  it('answers off the browser, where there is neither document nor navigator', () => {
+    vi.stubGlobal('document', undefined);
+    vi.stubGlobal('navigator', undefined);
+    expect(detectInitialLocale()).toBe('en');
+    vi.unstubAllGlobals();
   });
 });

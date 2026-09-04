@@ -23,16 +23,28 @@ function sourceFiles(directory: string, found: string[] = []): string[] {
 }
 
 /** Codes as they are actually written at reporting sites, by file. */
+/**
+ * Codes each source file reports, whether written as a literal or through the
+ * registry — referencing `DIAGNOSTIC_CODES.X` is the better style and must
+ * count as an emitter just the same.
+ */
 function emittedCodes(): Map<string, Set<string>> {
   const byFile = new Map<string, Set<string>>();
   for (const path of sourceFiles(SRC)) {
     if (path.endsWith('diagnostic-codes.ts')) continue;
-    const matches = readFileSync(path, 'utf8').match(/LP\d{4}/gu);
-    if (matches === null) continue;
-    byFile.set(relative(SRC, path), new Set(matches));
+    const source = readFileSync(path, 'utf8');
+    const codes = new Set<string>(source.match(/LP\d{4}/gu) ?? []);
+    for (const [, name] of source.matchAll(/DIAGNOSTIC_CODES\.([A-Za-z]+)/gu)) {
+      const code = name === undefined ? undefined : NAMED_CODES.get(name);
+      if (code !== undefined) codes.add(code);
+    }
+    if (codes.size === 0) continue;
+    byFile.set(relative(SRC, path), codes);
   }
   return byFile;
 }
+
+const NAMED_CODES = new Map<string, string>(Object.entries(DIAGNOSTIC_CODES));
 
 const REGISTERED = new Set<string>(Object.values(DIAGNOSTIC_CODES));
 

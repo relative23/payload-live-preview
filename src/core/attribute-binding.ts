@@ -1,20 +1,8 @@
 /**
- * Policed attribute writes for `data-payload-attribute` bindings.
- *
- * The binding writes an incoming CMS value into an arbitrary attribute
- * (`<img data-payload-field="hero" data-payload-attribute="src">`,
- * `<time ... data-payload-attribute="datetime">`). Because the value is
- * remote-controlled, the write path enforces:
- *
- *   - no event handlers (`on*`), no `style`, no `srcdoc`,
- *     no `formaction`/`form`, no `id`/`name` (DOM clobbering);
- *   - URL-bearing attributes (`href`, `src`, `poster`, `cite`,
- *     `action`, `xlink:href`) must pass `isSafeUrl`;
- *   - `srcset` is refused outright (multi-URL syntax — bind `src`
- *     instead);
- *   - non-scalar values are refused.
- *
- * @module @core/attribute-binding
+ * Policed writes for `data-payload-attribute` bindings. The value is
+ * remote-controlled, so event handlers, `style`, `srcdoc`, `formaction`/`form`,
+ * `id`/`name` (DOM clobbering) and `srcset` (multi-URL syntax) are refused,
+ * URL-bearing attributes must pass `isSafeUrl`, and non-scalars never write.
  */
 
 import { isSafeUrl } from '@security/url-validator';
@@ -43,11 +31,7 @@ const URL_ATTRIBUTES: ReadonlySet<string> = new Set([
 
 export type AttributeApplyResult = 'applied' | 'blocked';
 
-/**
- * Write `value` to `attribute` on `element`, subject to the policy in
- * the module docblock. Returns `'blocked'` (without touching the DOM)
- * when the write is refused.
- */
+/** Returns `'blocked'` without touching the DOM when the write is refused. */
 export function applyAttributeBinding(
   element: Element,
   attribute: string,

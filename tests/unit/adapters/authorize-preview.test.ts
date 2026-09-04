@@ -3,19 +3,14 @@ import { createLivePreviewMiddleware as nextMiddleware } from '@adapters/nextjs/
 import { livePreviewHandle } from '@adapters/sveltekit/adapter';
 import { livePreviewNitroPlugin } from '@adapters/nuxt/adapter';
 import { createLivePreviewMiddleware as astroMiddleware } from '@adapters/astro/middleware';
-import { resetDeprecationWarnings } from '@adapters/shared/deprecation';
+import { resetDevWarnings } from '@adapters/shared/dev-warning';
 import {
   authorizePreviewRequest,
+  PreviewConfigurationError,
   type AuthorizedPreviewContext,
 } from '@security/preview-authorization';
 
-/**
- * ADR 0006 acceptance gate, per adapter: "No adapter can alter CSP or
- * inject bytes after authorization returns false." Each adapter is driven
- * through its public entry with the same two hooks — one that refuses, one
- * that authorizes — and the response is inspected for every artefact the
- * gate covers: script bytes, CSP header, and the nonce handed to templates.
- */
+/** ADR 0006 gate, per adapter: nothing changes after authorization returns false. */
 
 const ADMIN = 'https://admin.example.com';
 const PAGE = '<html><head></head><body>hi</body></html>';
@@ -27,7 +22,7 @@ const allow = vi.fn(() => context);
 
 beforeEach(async () => {
   process.env['NODE_ENV'] = 'development';
-  resetDeprecationWarnings();
+  resetDevWarnings();
   refuse.mockClear();
   allow.mockClear();
   const result = await authorizePreviewRequest(new Request(INTENT), {
@@ -50,16 +45,22 @@ describe('Next.js', () => {
     const response = await middleware(new Request(INTENT), html());
     expect(await response.text()).toBe(PAGE);
     expect(response.headers.get('content-security-policy')).toBeNull();
-    expect(response.headers.get('x-live-preview-nonce')).toBeNull();
+    expect(response.headers.get('cache-control')).toBeNull();
     expect(refuse).toHaveBeenCalledOnce();
   });
 
-  it('injects, sets CSP and exposes the nonce once authorized', async () => {
-    const middleware = nextMiddleware({ allowedOrigins: [ADMIN], authorizePreview: allow });
+  it('injects and sets CSP once authorized, with one nonce for tag and header', async () => {
+    const middleware = nextMiddleware({
+      allowedOrigins: [ADMIN],
+      authorizePreview: allow,
+      manageCsp: 'full',
+    });
     const response = await middleware(new Request(INTENT), html());
-    expect(await response.text()).toContain('__LIVE_PREVIEW_CONFIG__');
-    expect(response.headers.get('content-security-policy')).toContain('frame-ancestors');
-    expect(response.headers.get('x-live-preview-nonce')).not.toBeNull();
+    const body = await response.text();
+    const nonce = /nonce="([^"]+)"/u.exec(body)?.[1];
+    expect(body).toContain('__LIVE_PREVIEW_CONFIG__');
+    expect(response.headers.get('content-security-policy')).toContain(`'nonce-${String(nonce)}'`);
+    expect(response.headers.get('x-live-preview-nonce')).toBeNull();
   });
 
   it('never calls the hook for a request without intent', async () => {
@@ -77,12 +78,11 @@ describe('SvelteKit', () => {
         opts: {
           transformPageChunk?: (c: { html: string; done: boolean }) => string | undefined;
         } = {},
-      ) =>
-        Promise.resolve(
-          new Response(opts.transformPageChunk?.({ html: PAGE, done: true }) ?? PAGE, {
-            headers: { 'content-type': 'text/html' },
-          }),
-        ),
+      ) => {
+        const transformed = opts.transformPageChunk?.({ html: PAGE, done: true });
+        const body = opts.transformPageChunk === undefined ? PAGE : (transformed ?? '');
+        return Promise.resolve(new Response(body, { headers: { 'content-type': 'text/html' } }));
+      },
     );
   }
 
@@ -93,6 +93,7 @@ describe('SvelteKit', () => {
     expect(await response.text()).toBe(PAGE);
     expect(response.headers.get('content-security-policy')).toBeNull();
     expect(event.locals['livePreviewNonce']).toBeUndefined();
+    expect(event.locals['livePreviewAuthorizationOutcome']).toBe('invalid');
   });
 
   it('injects, sets CSP and exposes the nonce once authorized', async () => {
@@ -104,6 +105,7 @@ describe('SvelteKit', () => {
     expect(body).toContain(`nonce="${String(event.locals['livePreviewNonce'])}"`);
     expect(response.headers.get('content-security-policy')).toContain('frame-ancestors');
     expect(event.locals['livePreviewAuthorization']).toBe(context);
+    expect(event.locals['livePreviewAuthorizationOutcome']).toBe('authorized');
   });
 
   it('still exposes the nonce to ordinary requests, which never asked for a preview', async () => {
@@ -114,6 +116,7 @@ describe('SvelteKit', () => {
     };
     await handle({ event, resolve: resolve() });
     expect(typeof event.locals['livePreviewNonce']).toBe('string');
+    expect(event.locals['livePreviewAuthorizationOutcome']).toBeUndefined();
     expect(refuse).not.toHaveBeenCalled();
   });
 });
@@ -130,6 +133,7 @@ describe('Astro', () => {
     expect(response.headers.get('content-security-policy')).toBeNull();
     expect(locals['livePreviewNonce']).toBeUndefined();
     expect(locals['livePreviewAuthorization']).toBeUndefined();
+    expect(locals['livePreviewAuthorizationOutcome']).toBe('invalid');
   });
 
   it('decides before rendering, so the page sees the nonce it is injected with', async () => {
@@ -152,6 +156,21 @@ describe('Astro', () => {
     await middleware({ request: new Request(INTENT), locals, isPrerendered: true }, next);
     expect(refuse).not.toHaveBeenCalled();
     expect(typeof locals['livePreviewNonce']).toBe('string');
+  });
+
+  it('re-throws a strategy configuration error instead of serving the page as refused', async () => {
+    const middleware = astroMiddleware({
+      allowedOrigins: [ADMIN],
+      authorizePreview: (request) =>
+        authorizePreviewRequest(request, {
+          type: 'signed-token',
+          secret: 'short',
+          audience: 'https://site.example.com',
+        }),
+    });
+    await expect(middleware({ request: new Request(INTENT), locals: {} }, next)).rejects.toThrow(
+      PreviewConfigurationError,
+    );
   });
 });
 
@@ -213,6 +232,7 @@ describe('Nuxt', () => {
     expect(head).toEqual([]);
     expect(headers['content-security-policy']).toBeUndefined();
     expect(ev.context['livePreviewNonce']).toBeUndefined();
+    expect(ev.context['livePreviewAuthorizationOutcome']).toBe('invalid');
     expect(refuse).toHaveBeenCalledOnce();
   });
 

@@ -1,25 +1,6 @@
 /**
- * Per-instance, type-safe event emitter.
- *
- * Replaces the legacy module-level singleton. Each `LivePreviewClient`
- * instantiates its own emitter so that calling `destroy()` on one
- * instance cannot clobber listeners attached to another.
- *
- * Design notes:
- *
- *   - Generic over an event map type. The default `LivePreviewEventMap`
- *     captures every event this library emits, but the implementation
- *     is reusable for any map.
- *   - Handlers may be `async`. They are awaited sequentially in
- *     registration order. This is intentional: `beforeUpdate.cancel()`
- *     and similar synchronization rely on stable ordering.
- *   - Errors thrown by one handler are logged via `console.error` and
- *     do not prevent later handlers from running.
- *   - `once()` semantics: registered into a separate map; the entire
- *     snapshot for an event is claimed immediately before its dispatch,
- *     and remains consumed even if individual handlers throw.
- *
- * @module @events/emitter
+ * Per-instance typed emitter: handlers run sequentially in registration order,
+ * may be async, and a throwing one is logged and isolated. See ADR 0002.
  */
 
 import type { EventHandler, LivePreviewEventMap, Unsubscribe } from './types';
@@ -27,61 +8,34 @@ import { safeConsoleError } from '@core/diagnostics';
 
 type AnyHandler = EventHandler<unknown>;
 
-// The constraint `object` (not `Record<string, unknown>`) accommodates
-// interfaces with readonly properties and exact-optional fields without
-// forcing consumers to weaken their type definitions.
+// `object`, not `Record<string, unknown>`: interfaces with readonly and
+// exact-optional properties must be usable as maps.
 export class EventEmitter<TMap extends object = LivePreviewEventMap> {
   readonly #regular = new Map<keyof TMap, Set<AnyHandler>>();
   readonly #once = new Map<keyof TMap, Set<AnyHandler>>();
 
-  /**
-   * Subscribe `handler` to `event`. Returns an unsubscribe function;
-   * call it to remove the handler. The handler is invoked for every
-   * subsequent emit until unsubscribed.
-   */
   on<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): Unsubscribe {
     return this.#register(this.#regular, event, handler as AnyHandler);
   }
 
-  /**
-   * Subscribe `handler` for a single emit. After the first dispatch,
-   * the handler is removed automatically.
-   */
   once<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): Unsubscribe {
     return this.#register(this.#once, event, handler as AnyHandler);
   }
 
-  /**
-   * Remove `handler` from `event`. Works for both `on`- and
-   * `once`-registered handlers. No-op when the handler isn't registered.
-   */
   off<E extends keyof TMap>(event: E, handler: EventHandler<TMap[E]>): void {
     this.#remove(this.#regular, event, handler as AnyHandler);
     this.#remove(this.#once, event, handler as AnyHandler);
   }
 
-  /**
-   * Dispatch `payload` to every handler registered for `event`.
-   *
-   * Handlers run sequentially in registration order — regular ones
-   * first, then `once` handlers. Async handlers are awaited. Synchronous
-   * exceptions are caught, logged, and isolated to the offending handler.
-   */
+  /** Dispatch to every handler: regular ones first, then `once` handlers. */
   async emit<E extends keyof TMap>(event: E, payload: TMap[E]): Promise<void> {
     await this.#emitSequential(event, payload);
   }
 
   /**
-   * Lifecycle-only guarded dispatch. The predicate is checked before and after
-   * every handler so an async boundary cannot let an obsolete transaction run
-   * later callbacks. `emit()` intentionally keeps its established behaviour.
-   *
-   * Once-handlers are claimed only when dispatch reaches the once phase. Once
-   * claimed, the whole snapshot remains consumed even if the predicate changes
-   * while one of its handlers is awaiting, matching normal once semantics.
-   *
+   * Dispatch while `shouldContinue()` holds — checked around every handler, so
+   * an obsolete transaction cannot resume across an await.
    * @internal
-   * @returns `true` when the complete handler sequence ran while eligible.
    */
   async emitWhile<E extends keyof TMap>(
     event: E,
@@ -120,21 +74,12 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
     return eligible();
   }
 
-  /**
-   * Number of handlers currently registered for `event`.
-   * Sum of `on` and `once` registrations.
-   */
+  /** Registered handlers for `event`, `on` and `once` together. */
   listenerCount(event: keyof TMap): number {
     return (this.#regular.get(event)?.size ?? 0) + (this.#once.get(event)?.size ?? 0);
   }
 
-  /**
-   * Remove every handler. Pass an event name to limit the removal to
-   * one event; omit it to clear every event on this emitter.
-   *
-   * Crucially this only affects the current instance — there is no
-   * shared global state.
-   */
+  /** Remove every handler, or only those of `event`. */
   removeAllListeners(event?: keyof TMap): void {
     if (event === undefined) {
       this.#regular.clear();
@@ -145,10 +90,7 @@ export class EventEmitter<TMap extends object = LivePreviewEventMap> {
     this.#once.delete(event);
   }
 
-  /**
-   * Snapshot of all event names that currently have at least one
-   * registered handler. Useful for debugging.
-   */
+  /** Event names with at least one handler. */
   eventNames(): (keyof TMap)[] {
     const names = new Set<keyof TMap>();
     for (const key of this.#regular.keys()) names.add(key);

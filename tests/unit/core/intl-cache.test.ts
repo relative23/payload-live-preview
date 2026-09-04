@@ -94,6 +94,42 @@ describe('intl-cache — LRU bound', () => {
   });
 });
 
+describe('intl-cache — option shapes the key builder has to survive', () => {
+  it('keys an array-valued option by its contents, not by identity', () => {
+    // `Intl` takes arrays for some options; two equal arrays are one entry.
+    const first = getDateTimeFormat('en-US', { fractionalSecondDigits: 2, era: 'short' });
+    const second = getDateTimeFormat('en-US', { era: 'short', fractionalSecondDigits: 2 });
+    expect(second).toBe(first);
+    expect(intlCacheSize().dates).toBe(1);
+  });
+
+  it('collapses an empty or absent option object onto the bare locale', () => {
+    const bare = getNumberFormat('en-US');
+    expect(getNumberFormat('en-US', {})).toBe(bare);
+    expect(getNumberFormat('en-US', undefined)).toBe(bare);
+    expect(intlCacheSize().numbers).toBe(1);
+  });
+
+  it('keys nested and array-valued options structurally', () => {
+    const options = { numberingSystem: 'latn' } as const;
+    const nested = getNumberFormat('en-US', options);
+    expect(getNumberFormat('en-US', { ...options })).toBe(nested);
+  });
+
+  it('keys an option value that is an array by its contents', () => {
+    // No `Intl` option is declared as an array today, so this is deliberately
+    // off-type: the key builder must serialise whatever object it is handed,
+    // or a future array-valued option would silently share one cache slot.
+    const withArray = (value: readonly unknown[]): Intl.NumberFormatOptions =>
+      ({ scale: value }) as unknown as Intl.NumberFormatOptions;
+
+    const first = getNumberFormat('en-US', withArray([1, 2]));
+    expect(getNumberFormat('en-US', withArray([1, 2]))).toBe(first);
+    expect(getNumberFormat('en-US', withArray([2, 1]))).not.toBe(first);
+    expect(getNumberFormat('en-US', withArray([[1], { a: 2 }]))).not.toBe(first);
+  });
+});
+
 describe('intl-cache — telemetry', () => {
   it('reports per-formatter sizes independently', () => {
     expect(intlCacheSize()).toEqual({ numbers: 0, dates: 0 });

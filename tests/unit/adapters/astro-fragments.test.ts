@@ -2,12 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createFragmentEndpoint, type FragmentRegistry } from '@adapters/astro/fragments';
 import { issuePreviewToken } from '@security/preview-authorization';
 
-/**
- * ADR 0011's abuse model, verified: the endpoint renders only registered
- * boundaries, only for an authorized preview bound to the page route, only
- * from a same-origin JSON POST within limits — and says nothing useful when
- * it refuses.
- */
+/** ADR 0011's abuse model: registered boundaries only, authorized and same-origin only, refusals say nothing. */
 
 const SITE = 'https://site.example.com';
 const SECRET = 'fragment-endpoint-secret-that-is-long-enough-1234';

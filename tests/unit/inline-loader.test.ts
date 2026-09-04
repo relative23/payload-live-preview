@@ -65,7 +65,11 @@ describe('generateLoaderScript — substitution', () => {
 
   it('carries the configuration but not the runtime', () => {
     const script = generateLoaderScript(
-      { allowedOrigins: ['https://cms.example.com'], serverURL: 'https://cms.example.com' },
+      {
+        allowedOrigins: ['https://cms.example.com'],
+        serverURL: 'https://cms.example.com',
+        mergeDepth: 1,
+      },
       TARGET,
     );
     expect(script).toContain('__LIVE_PREVIEW_CONFIG__');
@@ -145,7 +149,11 @@ describe('generateLoaderScript — what the browser does with it', () => {
 describe('the asset stays free of deployment secrets', () => {
   it('keeps every configured value in the inline body, never in the URL', () => {
     const script = generateLoaderScript(
-      { allowedOrigins: ['https://cms.example.com'], serverURL: 'https://cms.example.com' },
+      {
+        allowedOrigins: ['https://cms.example.com'],
+        serverURL: 'https://cms.example.com',
+        mergeDepth: 1,
+      },
       TARGET,
     );
     // The asset URL is the caller's hashed path and must carry no options:

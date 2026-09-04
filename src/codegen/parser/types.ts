@@ -1,31 +1,21 @@
 /**
- * Internal schema representation used by the codegen pipeline.
- *
- * Decoupled from `PayloadFieldSchema` (the runtime shape that arrives
- * via postMessage) because:
- *
- *   1. Static analysis sees richer information — block definitions,
- *      relationship targets, hasMany — that the runtime shape may not
- *      always carry.
- *   2. The emit phase wants ergonomic structures (TypeScript-like
- *      type references) that the runtime never needs.
- *
- * @module @codegen/parser/types
+ * The schema as static analysis sees it: richer than the runtime's
+ * `PayloadFieldSchema` (block definitions, relationship targets, hasMany) and
+ * shaped for the emitter.
  */
 
 export interface ExtractedSchema {
   readonly globals: readonly ExtractedSlug[];
   readonly collections: readonly ExtractedSlug[];
-  /** Diagnostics produced during extraction. Soft warnings only. */
+  /** What the extractor could not resolve. Every entry is a gap in the output. */
   readonly diagnostics: readonly string[];
 }
 
 export interface ExtractedSlug {
   /** The Payload slug (`'homepage'`, `'posts'`, …). */
   readonly slug: string;
-  /** PascalCase type name (`'Homepage'`, `'Post'`, …). */
+  /** PascalCase type name (`'Homepage'`, `'Posts'`, …). */
   readonly typeName: string;
-  /** Fully-resolved field tree. */
   readonly fields: readonly ExtractedField[];
 }
 
@@ -47,8 +37,9 @@ interface ExtractedFieldBase {
 
 export interface ExtractedScalarField extends ExtractedFieldBase {
   readonly kind: 'scalar';
-  readonly typeRef:
-    'string' | 'number' | 'boolean' | 'Date' | 'unknown' /* code / point / ui / fallback */;
+  readonly typeRef: 'string' | 'number' | 'boolean' | 'Date' | '[number, number]' | 'unknown';
+  /** `text` and `number` fields may hold several values. */
+  readonly hasMany?: boolean;
 }
 
 export interface ExtractedArrayField extends ExtractedFieldBase {
@@ -81,12 +72,14 @@ export interface ExtractedRelationshipField extends ExtractedFieldBase {
 export interface ExtractedUploadField extends ExtractedFieldBase {
   readonly kind: 'upload';
   readonly target: string;
+  readonly hasMany?: boolean;
 }
 
 export interface ExtractedJsonField extends ExtractedFieldBase {
   readonly kind: 'json';
 }
 
+/** `select` and `radio`; a radio never has many. */
 export interface ExtractedSelectField extends ExtractedFieldBase {
   readonly kind: 'select';
   readonly options: readonly string[];

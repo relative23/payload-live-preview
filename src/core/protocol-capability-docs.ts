@@ -1,10 +1,7 @@
 /**
- * What each protocol capability gates, and the fallback without it — the
- * "degrades by declaration" half of ADR 0010, kept apart from the rules the
- * inline runtime ships. Consumers can read it for diagnostics; the unit
- * tests refuse a capability without an entry here.
- *
- * @module @core/protocol-capability-docs
+ * What each capability tells the runtime, for `inspect()` and consumer
+ * diagnostics. Kept out of the runtime module so the inline bundle ships the
+ * rules and not this prose. See ADR 0010.
  */
 import type { ProtocolCapability } from './protocol-version';
 

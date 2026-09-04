@@ -1,11 +1,7 @@
 /**
- * Per-client renderer layers.
- *
- * Built-ins form the immutable base. Plugin registrations add removable
- * layers per field type; the newest active layer wins. Removing a layer by
- * identity leaves unrelated types and newer layers untouched.
- *
- * @module @plugins/renderer-registry
+ * Per-client renderer layers: built-ins are the base, plugin registrations
+ * stack above per field type, and removing a layer by identity reveals the
+ * one beneath. See ADR 0005.
  */
 
 import type { FieldRenderer, RendererKey } from '@core/types';
@@ -25,7 +21,7 @@ export class RendererRegistry {
     this.#active = { ...base };
   }
 
-  /** Stable live map retained for the legacy runtime renderer option. */
+  /** Stable live map, retained for the runtime's `renderers` option. */
   get renderers(): Readonly<Record<string, FieldRenderer>> {
     return this.#active;
   }

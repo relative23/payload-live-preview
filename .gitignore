@@ -5,8 +5,10 @@ node_modules/
 dist/
 *.tgz
 
-# Generated runtime artifact (committed elsewhere; rebuilt on install)
+# Generated runtime artifacts; `npm run build:runtime` regenerates them.
 src/inline/runtime.generated.ts
+src/inline/loader.generated.ts
+src/inline/fragment.generated.ts
 
 # IDE
 .idea/
@@ -44,3 +46,6 @@ test-results/
 # Written by `next dev` (Next.js 16) into the fixtures; not part of the examples.
 examples/*/AGENTS.md
 examples/*/CLAUDE.md
+
+# SvelteKit regenerates this on `dev` and `build`; tracking it only churned diffs.
+examples/*/.svelte-kit/

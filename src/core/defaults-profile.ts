@@ -1,31 +1,18 @@
 /**
- * The `defaults: 'v2'` profile: every 2.0 default that already exists as a
- * 1.x option, applied at once.
- *
- * ADR 0007 fixes the rule — the profile is one switch, individual options
- * override it, and a test asserts the profile assigns every readiness row
- * that has an option, so a row added later cannot be forgotten. The rows are
- * listed here by name so that test reads the same table this module applies.
- *
- * Adapters and the client runtime both consume this: the adapter rows shape
- * the request decision and the inline configuration, the runtime rows shape
- * the browser side. A row lives in exactly one of the two.
- *
- * @module @core/defaults-profile
+ * The two defaults profiles, row by row. 2.0 ships `v2`; `defaults: 'v1'` opts
+ * back into the 1.x table for a staged migration. Each row belongs to exactly
+ * one side — the adapter's request decision or the browser runtime — and a
+ * test asserts the profile assigns every readiness row that has an option, so
+ * a row added later cannot be forgotten. See ADR 0007.
  */
 
-/** `'v1'` is today's behaviour; `'v2'` is what 2.0 will make the default. */
+/** `'v2'` is the 2.0 default; `'v1'` is the 1.x table. */
 export type DefaultsProfile = 'v1' | 'v2';
 
 /** How the runtime decides which windows may post updates. */
 export type EventSourcePolicy = 'any' | 'parent-or-opener';
 
-/**
- * Readiness-table rows that are options in this release, keyed by the option
- * they set. Rows the table lists without an option yet (draft helpers on the
- * server subpath, merge depth, sanitizer policy, closed barrels) join here
- * in the release that adds the option.
- */
+/** Readiness rows that are options, keyed by the option they set. */
 export const READINESS_ROWS = Object.freeze({
   strict: 'production response changes require an authorized context',
   previewSignals: 'query-only intent signal',
@@ -61,7 +48,7 @@ export const V2_RUNTIME_DEFAULTS: RuntimeProfileDefaults = Object.freeze({
   sanitizerPolicy: 'strict',
 });
 
-/** Today's defaults, spelled out so the two profiles are comparable row by row. */
+/** The 1.x table, spelled out so the profiles compare row by row. */
 export const V1_ADAPTER_DEFAULTS: AdapterProfileDefaults = Object.freeze({
   strict: false,
   previewSignals: Object.freeze(['query', 'fetch-dest', 'referer'] as const),
@@ -74,11 +61,7 @@ export const V1_RUNTIME_DEFAULTS: RuntimeProfileDefaults = Object.freeze({
   sanitizerPolicy: 'compat',
 });
 
-/**
- * 2.0: the default profile is `v2`. Only an explicit `defaults: 'v1'` opts
- * back into the 1.x table (kept for one 2.x line so a consumer can stage the
- * migration). Every readiness row ships at its hardened value out of the box.
- */
+/** Only an explicit `'v1'` opts out; everything else gets the hardened rows. */
 export function adapterDefaultsFor(profile: DefaultsProfile | undefined): AdapterProfileDefaults {
   return profile === 'v1' ? V1_ADAPTER_DEFAULTS : V2_ADAPTER_DEFAULTS;
 }

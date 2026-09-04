@@ -1,4 +1,5 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
+import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 /**
  * The fragment strategy against the SSR fixture (`examples/astro-hybrid`,
@@ -11,10 +12,7 @@ import { expect, test, type Frame, type Page } from '@playwright/test';
  */
 
 const APP = 'http://localhost:4177';
-
-function previewFrame(page: Page): Frame | undefined {
-  return page.frames().find((candidate) => candidate !== page.mainFrame());
-}
+const OWNER = { globalSlug: 'home' };
 
 interface FragmentStats {
   handler: boolean;
@@ -34,31 +32,9 @@ interface Api {
 
 async function open(page: Page, query = ''): Promise<Frame> {
   await page.goto(`${APP}/bench${query}`);
-  await expect
-    .poll(() => previewFrame(page)?.url().includes('preview=true') ?? false, { timeout: 15_000 })
-    .toBe(true);
-  const frame = previewFrame(page);
-  if (!frame) throw new Error('preview frame missing');
-  await expect
-    .poll(
-      () =>
-        frame.evaluate(
-          () => (window as Window & { __livePreview?: Api }).__livePreview?.inspect().started,
-        ),
-      { timeout: 15_000 },
-    )
-    .toBe(true);
+  const frame = await waitForPreviewFrame(page, 'preview=true');
+  await waitForStarted(frame);
   return frame;
-}
-
-async function post(page: Page, fields: Record<string, unknown>): Promise<void> {
-  await page.evaluate((data) => {
-    const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-    frame?.contentWindow?.postMessage(
-      { type: 'payload-live-preview', data, globalSlug: 'home' },
-      window.location.origin,
-    );
-  }, fields);
 }
 
 async function route(frame: Frame): Promise<RouteStats> {
@@ -81,16 +57,20 @@ test.describe('hybrid fragment preview', () => {
     expect((await fragments(frame)).handler).toBe(true);
     await expect(frame.getByTestId('hero-subtitle')).toHaveCount(0);
 
-    await post(page, {
-      title: 'With subtitle',
-      subtitle: 'Rendered on the server',
-      body: 'one two',
-    });
+    await post(
+      page,
+      {
+        title: 'With subtitle',
+        subtitle: 'Rendered on the server',
+        body: 'one two',
+      },
+      OWNER,
+    );
     await expect(frame.getByTestId('hero-subtitle')).toHaveText('Rendered on the server');
     await expect(frame.getByTestId('hero-title')).toHaveText('With subtitle');
     await expect(frame.getByTestId('hero-words')).toHaveText('2 words');
 
-    await post(page, { title: 'Without subtitle', subtitle: '', body: 'one two three' });
+    await post(page, { title: 'Without subtitle', subtitle: '', body: 'one two three' }, OWNER);
     await expect(frame.getByTestId('hero-subtitle')).toHaveCount(0);
     await expect(frame.getByTestId('hero-words')).toHaveText('3 words');
     expect((await fragments(frame)).rendered).toBe(2);
@@ -130,12 +110,16 @@ test.describe('hybrid fragment preview', () => {
     page,
   }) => {
     const frame = await open(page);
-    await post(page, {
-      title: 'Populated',
-      body: 'a',
-      author: { name: 'Grace Hopper' },
-      image: { url: '/media/new.png', alt: 'New image' },
-    });
+    await post(
+      page,
+      {
+        title: 'Populated',
+        body: 'a',
+        author: { name: 'Grace Hopper' },
+        image: { url: '/media/new.png', alt: 'New image' },
+      },
+      OWNER,
+    );
     await expect(frame.getByTestId('hero-author')).toHaveText('by Grace Hopper');
     await expect(frame.getByTestId('hero-image')).toHaveAttribute('src', '/media/new.png');
     await expect(frame.getByTestId('hero-tools')).toBeVisible();
@@ -182,18 +166,22 @@ test.describe('hybrid fragment preview', () => {
     page,
   }) => {
     const frame = await open(page);
-    await post(page, {
-      title: 'Lexical',
-      body: {
-        root: {
-          type: 'root',
-          children: [
-            { type: 'paragraph', children: [{ type: 'text', text: 'Intro words' }] },
-            { type: 'callout', text: 'Rendered by the site’s own node renderer' },
-          ],
+    await post(
+      page,
+      {
+        title: 'Lexical',
+        body: {
+          root: {
+            type: 'root',
+            children: [
+              { type: 'paragraph', children: [{ type: 'text', text: 'Intro words' }] },
+              { type: 'callout', text: 'Rendered by the site’s own node renderer' },
+            ],
+          },
         },
       },
-    });
+      OWNER,
+    );
     await expect(frame.getByTestId('callout')).toHaveText(
       'Rendered by the site’s own node renderer',
     );
@@ -208,7 +196,7 @@ test.describe('hybrid fragment preview', () => {
     await input.click();
     await input.fill('half typed');
     // Body-only: a pure fragment render, so this isolates fragment focus survival.
-    await post(page, { body: 'a b c d' });
+    await post(page, { body: 'a b c d' }, OWNER);
     await expect(frame.getByTestId('hero-words')).toHaveText('4 words');
     const state = await frame.evaluate(() => {
       const el = document.activeElement as HTMLInputElement | null;
@@ -221,8 +209,8 @@ test.describe('hybrid fragment preview', () => {
     page,
   }) => {
     const frame = await open(page);
-    await post(page, { body: 'slow:1500 a', footer: 'Footer A' });
-    await post(page, { body: 'b b', footer: 'Footer B' });
+    await post(page, { body: 'slow:1500 a', footer: 'Footer A' }, OWNER);
+    await post(page, { body: 'b b', footer: 'Footer B' }, OWNER);
     await expect(frame.getByTestId('footer')).toHaveText('Footer B');
     await page.waitForTimeout(2_000);
     await expect(frame.getByTestId('hero-words')).toHaveText('2 words');
@@ -238,7 +226,7 @@ test.describe('hybrid fragment preview', () => {
     // every request anew, so an expired token means fallback, not stale HTML.
     const frame = await open(page, '?ttl=1500');
     await page.waitForTimeout(2_000);
-    await post(page, { title: 'Patched only', subtitle: 'Must not appear', body: 'x y z' });
+    await post(page, { title: 'Patched only', subtitle: 'Must not appear', body: 'x y z' }, OWNER);
     await expect(frame.getByTestId('hero-title')).toHaveText('Patched only');
     await expect(frame.getByTestId('hero-subtitle')).toHaveCount(0);
     await expect(frame.getByTestId('hero-words')).toHaveText('3 words');
@@ -255,7 +243,7 @@ test.describe('hybrid fragment preview', () => {
     await frame.evaluate(() => {
       window.scrollTo(0, 600);
     });
-    await post(page, { title: 'Route refreshed title' });
+    await post(page, { title: 'Route refreshed title' }, OWNER);
     await expect.poll(async () => (await route(frame)).refreshes).toBe(1);
     await expect(frame.getByTestId('route-stamp')).not.toHaveText(stampBefore ?? '');
     await expect.poll(() => frame.title()).toBe('Route refreshed title');
@@ -270,9 +258,9 @@ test.describe('hybrid fragment preview', () => {
     page,
   }) => {
     const frame = await open(page);
-    await post(page, { title: 'One', body: 'x' });
+    await post(page, { title: 'One', body: 'x' }, OWNER);
     await expect.poll(async () => (await route(frame)).refreshes).toBe(1);
-    await post(page, { title: 'Two', body: 'x' });
+    await post(page, { title: 'Two', body: 'x' }, OWNER);
     await expect.poll(() => frame.title()).toBe('Two');
     await expect(frame.getByTestId('hero-title')).toHaveText('Two');
     const stats = await route(frame);
@@ -284,7 +272,7 @@ test.describe('hybrid fragment preview', () => {
     page,
   }) => {
     const frame = await open(page);
-    await post(page, { title: 'Shared update', body: 'a' });
+    await post(page, { title: 'Shared update', body: 'a' }, OWNER);
     await expect(frame.getByTestId('island-inside')).toHaveText('island: Shared update');
     await expect(frame.getByTestId('island-renders')).toHaveText('1');
     await expect(frame.getByTestId('hero-title')).toHaveText('Shared update');

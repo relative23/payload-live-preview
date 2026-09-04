@@ -5,6 +5,7 @@ import {
   extractCookie,
   isAuthorizedPreviewContext,
   issuePreviewToken,
+  PreviewConfigurationError,
   type FetchLike,
   type PayloadSessionStrategy,
   type PreviewAuthorizationRequest,
@@ -12,11 +13,7 @@ import {
   type SubtleCryptoLike,
 } from '@security/preview-authorization';
 
-/**
- * ADR 0006 made executable. Every refusal outcome the record names has a
- * test that produces it, and the one success path proves the context is the
- * branded, frozen object the gates check for.
- */
+/** ADR 0006 made executable: every refusal outcome, and the one branded success path. */
 
 const crypto = webcrypto as unknown as SubtleCryptoLike;
 const SITE = 'https://www.example.com';
@@ -152,16 +149,28 @@ describe('payload-session strategy', () => {
     ).toBe(true);
   });
 
-  it('refuses a session the server reports as already expired', async () => {
+  it.each([
+    ['seconds', NOW / 1000 - 1],
+    ['milliseconds', NOW - 1],
+  ])('refuses a session whose exp (in %s) has passed', async (_unit, exp) => {
     const withCookie = request(`${SITE}/`, { cookie: 'payload-token=x' });
     const result = await authorizePreviewRequest(withCookie, {
       ...base,
-      fetch: fetchReturning(200, { user: { id: 1 }, exp: NOW / 1000 - 1 }),
+      fetch: fetchReturning(200, { user: { id: 1 }, exp }),
     });
     expect(result.outcome).toBe('expired');
   });
 
-  it('raises configuration errors loudly instead of refusing quietly', async () => {
+  it('accepts a future exp in either unit and normalises it to milliseconds', async () => {
+    const withCookie = request(`${SITE}/`, { cookie: 'payload-token=x' });
+    const inMs = await authorizePreviewRequest(withCookie, {
+      ...base,
+      fetch: fetchReturning(200, { user: { id: 1 }, exp: NOW + 5_000 }),
+    });
+    expect(inMs.authorized && inMs.context.expiresAt).toBe(NOW + 5_000);
+  });
+
+  it('raises configuration errors as PreviewConfigurationError instead of refusing quietly', async () => {
     const withCookie = request(`${SITE}/`, { cookie: 'payload-token=x' });
     await expect(
       authorizePreviewRequest(withCookie, {
@@ -169,7 +178,7 @@ describe('payload-session strategy', () => {
         cookieName: 'bad name',
         fetch: fetchReturning(200, {}),
       }),
-    ).rejects.toThrow(/cookie name/);
+    ).rejects.toThrow(PreviewConfigurationError);
     await expect(
       authorizePreviewRequest(withCookie, {
         ...base,
@@ -321,7 +330,7 @@ describe('signed-token strategy', () => {
     ).rejects.toThrow(/32 bytes/);
     await expect(
       authorizePreviewRequest(request(`${SITE}/page`), { ...strategy, secret: 'short' }),
-    ).rejects.toThrow(/32 bytes/);
+    ).rejects.toThrow(PreviewConfigurationError);
   });
 
   it('reports a missing crypto implementation as unavailable, never as authorized', async () => {

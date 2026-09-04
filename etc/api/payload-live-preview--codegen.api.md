@@ -12,7 +12,7 @@ export function buildPreviewInventory(schema: ExtractedSchema): PreviewInventory
 // @public
 export function checkPreviewBindings(inventory: PreviewInventory, bindings: readonly PreviewBindingReference[], options?: PreviewCoverageOptions): readonly string[];
 
-// @public
+// @public (undocumented)
 interface EmitOptions {
     readonly header?: string;
     readonly markLocalizedAsDeprecated?: boolean;
@@ -101,10 +101,11 @@ interface ExtractedRelationshipField extends ExtractedFieldBase {
 
 // @public (undocumented)
 interface ExtractedScalarField extends ExtractedFieldBase {
+    readonly hasMany?: boolean;
     // (undocumented)
     readonly kind: 'scalar';
     // (undocumented)
-    readonly typeRef: 'string' | 'number' | 'boolean' | 'Date' | 'unknown';
+    readonly typeRef: 'string' | 'number' | 'boolean' | 'Date' | '[number, number]' | 'unknown';
 }
 
 // @public
@@ -116,7 +117,7 @@ export interface ExtractedSchema {
     readonly globals: readonly ExtractedSlug[];
 }
 
-// @public (undocumented)
+// @public
 interface ExtractedSelectField extends ExtractedFieldBase {
     // (undocumented)
     readonly hasMany: boolean;
@@ -128,6 +129,7 @@ interface ExtractedSelectField extends ExtractedFieldBase {
 
 // @public (undocumented)
 export interface ExtractedSlug {
+    // (undocumented)
     readonly fields: readonly ExtractedField[];
     readonly slug: string;
     readonly typeName: string;
@@ -135,6 +137,8 @@ export interface ExtractedSlug {
 
 // @public (undocumented)
 interface ExtractedUploadField extends ExtractedFieldBase {
+    // (undocumented)
+    readonly hasMany?: boolean;
     // (undocumented)
     readonly kind: 'upload';
     // (undocumented)
@@ -153,10 +157,10 @@ interface ExtractSchemaOptions {
     readonly tsConfigFilePath?: string;
 }
 
-// @public (undocumented)
+// @public
 export function generateTypes(options: GenerateTypesOptions): Promise<GenerateTypesResult>;
 
-// @public
+// @public (undocumented)
 export interface GenerateTypesOptions extends Pick<ExtractSchemaOptions, 'configPath' | 'project' | 'tsConfigFilePath'>, EmitOptions {
     readonly cwd?: string;
     readonly inventoryFile?: string;
@@ -167,12 +171,10 @@ export interface GenerateTypesOptions extends Pick<ExtractSchemaOptions, 'config
 export interface GenerateTypesResult {
     // (undocumented)
     readonly code: string;
-    // (undocumented)
     readonly diagnostics: readonly string[];
     readonly inventory: PreviewInventory;
     // (undocumented)
     readonly inventoryFile?: string;
-    // (undocumented)
     readonly outFile?: string;
     // (undocumented)
     readonly schema: ExtractedSchema;
