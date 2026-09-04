@@ -29,12 +29,14 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // from the `types` leaf for exactly that reason. 2026-08-27 (1.3.0): the keyed
   // morph (ADR 0008), its diagnostics and the template sanitizer options add
   // ~1.4 KB gzip to the inline runtime and therefore to every adapter bundle. core.* rows: +~200 B gzip for
-  // the message bus source policy (eventSourcePolicy), same date.
+  // the message bus source policy (eventSourcePolicy), same date. 2026-09-04:
+  // +~45 B gzip in every adapter that embeds the runtime, for the reveal ledger
+  // fix recorded in bundle-budgets.ts.
   'adapters/astro/index.js': { raw: 129_850, gzip: 41_150, brotli: 36_000 },
-  'adapters/astro/middleware-entry.js': { raw: 116_850, gzip: 37_150, brotli: 32_400 },
-  'adapters/nextjs/index.js': { raw: 116_650, gzip: 37_050, brotli: 32_300 },
-  'adapters/nuxt/index.js': { raw: 117_350, gzip: 37_400, brotli: 32_600 },
-  'adapters/sveltekit/index.js': { raw: 116_450, gzip: 37_050, brotli: 32_300 },
+  'adapters/astro/middleware-entry.js': { raw: 117_000, gzip: 37_200, brotli: 32_450 },
+  'adapters/nextjs/index.js': { raw: 116_800, gzip: 37_100, brotli: 32_350 },
+  'adapters/nuxt/index.js': { raw: 117_450, gzip: 37_400, brotli: 32_550 },
+  'adapters/sveltekit/index.js': { raw: 116_550, gzip: 37_050, brotli: 32_350 },
   'codegen-astro.js': { raw: 12_950, gzip: 4_550, brotli: 4_100 },
   'codegen-cli.js': { raw: 14_550, gzip: 5_000, brotli: 4_500 },
   'codegen.cjs': { raw: 12_450, gzip: 4_250, brotli: 3_860 },

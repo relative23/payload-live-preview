@@ -22,11 +22,17 @@ export type BundleBudget = BundleMeasurement;
 // the edited one, the binding-level reveal that picks the edited document's
 // element when a page previews several, and a rejection boundary around the
 // update pipeline so an unexpected throw is logged instead of escaping.
-export const INLINE_BUDGET = { raw: 92_912, gzip: 28_923, brotli: 25_670 } as const;
+//
+// Raised 2026-09-04: 28 923 → 28 966 gzip. The +43 makes the reveal ledger
+// record what a revision revealed rather than what it saw, so a message that
+// supersedes one before its reveal point still owes — and pays — the reveal.
+// A slow first reveal caused the admin to re-send, and the re-send cancelled
+// the only reveal there was; Firefox in CI reproduced it one run in seven.
+export const INLINE_BUDGET = { raw: 93_073, gzip: 28_966, brotli: 25_760 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
-export const INLINE_FRAGMENT_BUDGET = { raw: 104_340, gzip: 32_693, brotli: 28_833 } as const;
+export const INLINE_FRAGMENT_BUDGET = { raw: 104_501, gzip: 32_738, brotli: 28_868 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;
