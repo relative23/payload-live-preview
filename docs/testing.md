@@ -7,11 +7,19 @@ to its failure mode.
 
 ## Local commands
 
-After `npm ci`, generate the ignored inline runtime once:
+After `npm ci`, generate the ignored inline runtime files
+(`src/inline/runtime.generated.ts`, `loader.generated.ts`,
+`fragment.generated.ts`) once:
 
 ```sh
 npm run build:runtime
 ```
+
+`npm test` regenerates them through its `pretest` hook. The narrower scripts
+(`npm run test:unit`, `test:integration`, `typecheck`) do not — npm runs a
+`pre` hook only for the script that shares its name — so run `build:runtime`
+yourself after pulling a change to `src/core/runtime.ts`. Every CI job that
+type-checks or runs tests runs it explicitly for the same reason.
 
 The common maintainer commands are:
 
@@ -29,6 +37,45 @@ The common maintainer commands are:
 | `npm run test:leak`             | 10,000 awaited updates, forced-GC heap, and exact resource ownership      |
 | `npm run test:soak`             | Built-runtime Chromium update/heap soak                                   |
 | `npm run test:bench:codspeed`   | Versioned CPU/allocation trend inputs                                     |
+
+### The nightly mutation scope
+
+`npm run test:mutation` mutates the small PR profile. The release-critical scope
+is every file with a per-file coverage baseline (`quality/coverage-policy.json`),
+which is the runtime core, the security modules, the shared adapter policy and
+the fragment strategies:
+
+```sh
+STRYKER_SCOPE=nightly npm run test:mutation
+```
+
+That scope is too large for one CI job — about 250 minutes on a GitHub runner —
+so the workflow runs it in six shards and grades the joined report:
+
+```sh
+STRYKER_SCOPE=nightly STRYKER_SHARD=1/6 npm run test:mutation   # …2/6 … 6/6
+npx tsx scripts/merge-mutation-reports.ts --out test-results/stryker-nightly.json \
+  test-results/stryker-nightly-shard{1,2,3,4,5,6}.json
+npm run test:mutation:policy
+```
+
+The merge refuses reports from different configurations, or a file two shards
+both claim. Adding a file to `criticalFiles` therefore widens the mutation scope
+as well — that is deliberate, and the reason the two live in one place.
+
+The shards are packed by measured test time. Two cheaper proxies were tried and
+both put a shard past its cap: file size is off by a factor of eighty across this
+scope, and counting test executions still hid 25 % of the time in a shard
+nominally carrying 20 %. Refresh the weights from the same report that sets the
+baseline, priced with the suite's own durations:
+
+```sh
+npx vitest run --reporter=json --outputFile=test-results/vitest-durations.json
+npx tsx scripts/mutation-shard-weights.ts --durations test-results/vitest-durations.json
+```
+
+Stale weights only unbalance the shards, and missing ones fall back to counting
+executions. Neither changes the verdict, which is graded on the merged report.
 
 `npm run api:update` is intentionally not a routine formatter. It rebuilds and
 repacks the project, regenerates API Extractor reports from the installed archive,

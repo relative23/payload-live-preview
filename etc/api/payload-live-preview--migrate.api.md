@@ -4,11 +4,11 @@
 
 ```ts
 
-// @public (undocumented)
+// @public
 export interface Codemod {
-    readonly apply: (source: string) => string;
     readonly id: string;
     readonly ledgerEntry: number;
+    // (undocumented)
     readonly summary: string;
 }
 
@@ -16,6 +16,7 @@ export interface Codemod {
 export interface CodemodConflict {
     // (undocumented)
     readonly codemod: string;
+    readonly line?: number;
     // (undocumented)
     readonly reason: string;
 }
@@ -23,11 +24,28 @@ export interface CodemodConflict {
 // @public
 export interface CodemodEdit {
     // (undocumented)
+    readonly codemod: string;
+    readonly count: number;
+    // (undocumented)
+    readonly lines: readonly CodemodLineEdit[];
+}
+
+// @public
+export interface CodemodLineEdit {
+    // (undocumented)
     readonly after: string;
     // (undocumented)
     readonly before: string;
     // (undocumented)
-    readonly codemod: string;
+    readonly line: number;
+}
+
+// @public
+export interface CodemodPlan {
+    // (undocumented)
+    readonly conflicts: readonly CodemodConflict[];
+    // (undocumented)
+    readonly edits: readonly TextEdit[];
 }
 
 // @public
@@ -37,13 +55,33 @@ export const CODEMODS: readonly Codemod[];
 export function importsThisPackage(source: string): boolean;
 
 // @public
-export function migrateSource(source: string, options?: {
+export function migrateSource(source: string, options?: MigrateSourceOptions): MigrateSourceResult;
+
+// @public (undocumented)
+export interface MigrateSourceOptions {
+    readonly fileName?: string;
     readonly only?: readonly string[];
-}): {
-    readonly output: string;
-    readonly edits: readonly CodemodEdit[];
+}
+
+// @public (undocumented)
+export interface MigrateSourceResult {
+    // (undocumented)
     readonly conflicts: readonly CodemodConflict[];
-};
+    // (undocumented)
+    readonly edits: readonly CodemodEdit[];
+    // (undocumented)
+    readonly output: string;
+}
+
+// @public
+export interface TextEdit {
+    // (undocumented)
+    readonly end: number;
+    // (undocumented)
+    readonly start: number;
+    // (undocumented)
+    readonly text: string;
+}
 
 // (No @packageDocumentation comment for this package)
 

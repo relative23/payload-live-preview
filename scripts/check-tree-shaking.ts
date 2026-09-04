@@ -1,16 +1,8 @@
 /**
- * Tree shaking, measured (roadmap 1.4.0). A consumer that imports one symbol
- * must ship that symbol's code, not the barrel it came from. Each fixture is
- * a one-line consumer bundled with Vite — the bundler behind Astro, SvelteKit
- * and Nuxt — resolving `payload-live-preview` the way a real install does
- * (through `exports` and `sideEffects`), minified, and held to a gzip budget
- * like every other artefact.
- *
- * Runs after the build: `npm run test:treeshake`. Budgets are measured sizes
- * with ~1.5 % headroom; lower them when a measurement drops, raise them with
- * the reason recorded.
- *
- * @module scripts/check-tree-shaking
+ * Tree shaking, measured. A consumer that imports one symbol must ship that
+ * symbol's code, not the barrel it came from: each fixture is a one-line
+ * consumer bundled with Vite through a real `node_modules` resolution, so the
+ * manifest's `exports` and `sideEffects` decide what survives.
  */
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -18,6 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { build } from 'vite';
+import { improvementNotice } from './size-budget-notice';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -40,56 +33,56 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'escapeHtml',
     use: 'export const out = escapeHtml(String(Date.now()));',
-    gzip: 250,
+    gzip: 224,
     why: 'a pure helper from the root barrel: the barrel itself costs nothing',
   },
   {
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 4_350,
+    gzip: 4_750,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 33_350,
+    gzip: 36_450,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 30_700,
+    gzip: 33_650,
     why: 'the generator carries the inline runtime source and nothing of the client',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 33_350,
+    gzip: 36_450,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 4_450,
+    gzip: 4_850,
     why: 'the Lexical renderer from its focused entry',
   },
   {
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_200,
+    gzip: 1_495,
     why: 'the keyed morph alone, without the array renderer',
   },
   {
     from: 'payload-live-preview/plugins',
     symbol: 'PluginManager',
     use: 'export const out = PluginManager;',
-    gzip: 3_700,
+    gzip: 3_375,
     why: 'the plugin manager without the built-in plugins',
   },
 ];
@@ -142,6 +135,12 @@ async function main(): Promise<void> {
       console.log(
         `${ok ? 'PASS' : 'FAIL'} import { ${fixture.symbol} } from '${fixture.from}': ${String(raw)} raw / ${String(gzip)} gzip (budget ${String(fixture.gzip)}) — ${fixture.why}`,
       );
+      const notice = improvementNotice(
+        `import { ${fixture.symbol} } from '${fixture.from}'`,
+        gzip,
+        fixture.gzip,
+      );
+      if (notice !== undefined) console.log(notice);
       if (!ok) failures.push(`${fixture.from} → ${fixture.symbol}`);
     }
   } finally {

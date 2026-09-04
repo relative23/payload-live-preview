@@ -1,22 +1,10 @@
 /**
- * Protocol negotiation and capabilities (roadmap 1.8.0).
- *
- * A capability names one behaviour the runtime branches on. It is enabled
- * either by the negotiated protocol version — for what this library and a
- * peer that announces a version agree on — or by observation: the stock
- * Payload admin announces no version, so what it can do is read off the
- * messages it actually sends (a schema, a locale, a document event). Each
- * capability declares the fallback the runtime takes without it, so a
- * Payload that lacks one degrades by declaration rather than by exception.
- *
- * @module @core/protocol-version
+ * Protocol negotiation. A capability is granted either by the version a peer
+ * announces or by observation, since the stock Payload admin announces none:
+ * what it can do is read off the messages it sends. See ADR 0010.
  */
 
-/**
- * Bumps only when THIS library's understanding of the wire format changes.
- * The stock Payload admin never sends a version; `theirs` stays undefined
- * for it and its capabilities are observed instead.
- */
+/** Bumped only when this library's understanding of the wire format changes. */
 export const LIBRARY_PROTOCOL_VERSION = 4;
 
 /** How a capability becomes active. */
@@ -25,20 +13,12 @@ export type CapabilitySource = 'version' | 'observed';
 export interface CapabilityDeclaration {
   /** Enabled once the negotiated version reaches this (for announced peers). */
   readonly since: number;
-  /**
-   * Enabled once a message shows the feature (for peers that announce no
-   * version). Absent for capabilities only a version can grant.
-   */
+  /** The wire signal that grants this capability to a peer announcing no version. */
   readonly observed?:
     'schema' | 'locale' | 'preview-token' | 'document-event' | 'relationship-event';
 }
 
-/**
- * What activates each capability. What it gates and what the runtime does
- * without it is documented next to it in `CAPABILITY_DOCUMENTATION`
- * (`@core/protocol-capability-docs`), kept out of this module so the inline
- * runtime carries the rules and not the prose.
- */
+/** What activates each capability; the prose lives in `CAPABILITY_DOCUMENTATION`. */
 export const CAPABILITY_DECLARATIONS = {
   basic: { since: 1 },
   'schema-json': { since: 2, observed: 'schema' },
@@ -70,11 +50,7 @@ export interface ProtocolNegotiation {
   readonly observed: ReadonlySet<ProtocolCapability>;
 }
 
-/**
- * Negotiate from an announced version and the capabilities observed so far.
- * Deterministic and side-effect free; the runtime re-runs it whenever
- * either input changes.
- */
+/** Deterministic; the runtime re-runs it whenever either input changes. */
 export function negotiateProtocol(
   theirs: number | undefined,
   observed: Iterable<ProtocolCapability> = [],

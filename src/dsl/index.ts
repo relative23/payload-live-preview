@@ -1,9 +1,3 @@
-/**
- * Public DSL barrel.
- *
- * @module @dsl
- */
-
 export { bind, bindByPath, type BindOptions, type FieldBindingAttributes } from './bind';
 export {
   createPreviewBindings,

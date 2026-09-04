@@ -1,27 +1,7 @@
 /**
- * Preview inventory — which schema fields a binding can actually address.
- *
- * A live-preview integration has two halves that must agree: the Payload schema
- * and the markup that binds it. Nothing has verified the agreement, so every
- * consumer that cared has built its own inventory and its own scanner, and
- * re-derived a path convention this package already owns.
- *
- * The convention is not obvious, which is the point of publishing it rather
- * than documenting it:
- *
- *   - `tabs`, `row` and `collapsible` contribute **no** path segment. The
- *     parser marks unnamed ones with a `__structural` sentinel; emitting it
- *     would produce `__structural.title` for a field the runtime resolves as
- *     `title`.
- *   - a `group` contributes its name (`hero.title`),
- *   - an `array` addresses its items through `.*` (`slides.*.title`),
- *   - a `blocks` field addresses each block through `.*.<slug>`.
- *
- * That is `@schema/walker`'s rule, deliberately: bindings are matched against
- * it at runtime, so an inventory using any other spelling would be wrong in the
- * one place it is supposed to help.
- *
- * @module @codegen/inventory
+ * Which schema fields a binding can address, spelled the way the runtime
+ * resolves them. Paths follow `@schema/walker` exactly — bindings are matched
+ * against that rule at runtime, so any other spelling would be wrong here.
  */
 
 import type { ExtractedField, ExtractedSchema, ExtractedSlug } from './parser/types';
@@ -104,22 +84,11 @@ export interface PreviewBindingReference {
 }
 
 export interface PreviewCoverageOptions {
-  /**
-   * Report schema fields that no binding addresses. Off by default: a page is
-   * allowed to render a subset, and most consumers want the unknown-binding
-   * half first.
-   */
+  /** Also report schema fields no binding addresses; off, since a page may render a subset. */
   readonly reportUnbound?: boolean;
 }
 
-/**
- * Cross-check bindings against the inventory.
- *
- * Extraction stays with the consumer — resolving `bind('x')` in Astro, JSX or
- * Svelte markup is framework work this package cannot do generically. What it
- * can do is own the answer to "is that a real, addressable field", which is the
- * half that drifts silently when a schema is renamed.
- */
+/** Cross-check bindings the consumer extracted against the inventory. */
 export function checkPreviewBindings(
   inventory: PreviewInventory,
   bindings: readonly PreviewBindingReference[],

@@ -1,8 +1,4 @@
-/**
- * Public Lexical barrel.
- *
- * @module @lexical
- */
+/** Public Lexical surface: the renderer plus the node and block registries. */
 
 export {
   isLexicalContent,

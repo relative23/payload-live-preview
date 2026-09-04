@@ -1,12 +1,4 @@
-/**
- * Renderer for Lexical `text` nodes.
- *
- * Applies every standard format flag in a stable order so identical
- * inputs always produce identical output (important for snapshot tests
- * and tree-diff workflows).
- *
- * @module @lexical/nodes/text
- */
+/** `text` renderer. Format flags wrap in a fixed order so equal input gives byte-equal output. */
 
 import { escapeHtml } from '@security/escape';
 import type { LexicalNode } from '../types';

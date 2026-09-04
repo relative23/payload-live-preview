@@ -8,7 +8,6 @@
     // Intentional source-level barrels used by path-alias consumers and
     // maintainer tooling even though the package manifest exposes dedicated
     // compiled entries instead of these exact source files.
-    "src/core/index.ts",
     "src/inline/index.ts",
     "src/codegen/index.ts",
     "src/codegen/cli.ts",

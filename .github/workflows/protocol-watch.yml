@@ -11,6 +11,11 @@ on:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
+# Read-only: the watch installs a published package and compares its wire
+# shape. Nothing here writes to the repository.
+permissions:
+  contents: read
+
 jobs:
   protocol-watch:
     name: Wire-format invariants (${{ matrix.dist-tag }})

@@ -1,162 +1,142 @@
 /**
- * Codemods for the 1.x → 2.0 renames and moves (roadmap 1.9.0; ADR 0007 is
- * the ledger this mirrors). Each codemod is a pure source-to-source
- * transform with a stable id, applied by `migrateSource()`; `runMigrate()`
- * walks files and reports or writes the edits. Text-based on purpose: it
- * runs without a TypeScript program, so a consumer can migrate a mixed
- * repo (`.ts`, `.astro`, `.svelte`, `.vue`, `.mjs`) with no build step.
- *
- * A codemod only ever touches this package's own API surface — imports from
- * `payload-live-preview*` and the names those imports bind — so it cannot
- * rewrite an unrelated `isPreviewRequest` of the consumer's own.
- *
- * @module payload-live-preview/migrate
+ * `pll migrate`: the 1.x → 2.0 codemods and the driver that applies them to one
+ * source string. Rewrites are planned on the AST (ts-morph) so only names the
+ * package binds are touched; see ADR 0007.
  */
+import { applyTextEdits, parseScript } from './ast';
+import { moveFetchPreviewHelpers } from './codemods/move-fetch-preview-helpers';
+import { renameBindingsAuthorizedOption } from './codemods/rename-bindings-authorized-option';
+import { renameIsPreviewRequest } from './codemods/rename-is-preview-request';
+import { scriptBlocks } from './script-blocks';
+import type {
+  Codemod,
+  CodemodConflict,
+  CodemodEdit,
+  CodemodImplementation,
+  CodemodLineEdit,
+} from './types';
 
-/** One rewrite a codemod made, for the report. */
-export interface CodemodEdit {
-  readonly codemod: string;
-  readonly before: string;
-  readonly after: string;
-}
+export type {
+  Codemod,
+  CodemodConflict,
+  CodemodEdit,
+  CodemodLineEdit,
+  CodemodPlan,
+  TextEdit,
+} from './types';
 
-export interface Codemod {
-  /** Stable id, e.g. `rename-is-preview-request` (ADR 0007 entry). */
-  readonly id: string;
-  /** One line: what it changes and to what. */
-  readonly summary: string;
-  /** The ledger entry it implements. */
-  readonly ledgerEntry: number;
-  /** Rewrite the source; return the same string when nothing matched. */
-  readonly apply: (source: string) => string;
-}
+const PACKAGE_REFERENCE =
+  /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)['"]payload-live-preview(?:\/[^'"]*)?['"]/u;
 
-const PACKAGE = 'payload-live-preview';
-
-/** Whether the source imports anything from this package (any subpath). */
+/** Whether the source names the package in an `import`, `import()` or `require()`. */
 export function importsThisPackage(source: string): boolean {
-  return new RegExp(`from\\s*['"]${PACKAGE}(?:/[a-z-/.]+)?['"]`, 'u').test(source);
+  return PACKAGE_REFERENCE.test(source);
 }
 
-/** Replace `name(` call sites, and the name in an import list, with `replacement`. */
-function renameIdentifier(source: string, name: string, replacement: string): string {
-  const wordBoundary = new RegExp(`(?<![\\w.])${name}(?![\\w])`, 'gu');
-  return source.replace(wordBoundary, replacement);
-}
-
-/**
- * Whether the module already binds `name` as its own declaration or import —
- * a function, const/let/var, class, or a named import. A rename into a name
- * the module already uses would collide (or, for a same-named wrapper, recurse),
- * so a codemod that would do that must skip the file and report it instead.
- */
-function alreadyBinds(source: string, name: string): boolean {
-  const decl = new RegExp(
-    `(?:function|const|let|var|class)\\s+${name}\\b|\\b${name}\\s+as\\b|\\bas\\s+${name}\\b|\\{[^}]*\\b${name}\\b[^}]*\\}\\s*from`,
-    'u',
-  );
-  return decl.test(source);
-}
-
-/**
- * The codemods, in the order they should run. Each is idempotent: applying it
- * twice is the same as applying it once.
- */
-export const CODEMODS: readonly Codemod[] = [
-  {
-    id: 'rename-is-preview-request',
-    summary: '`isPreviewRequest()` → `hasPreviewIntent()` (same signature)',
-    ledgerEntry: 1,
-    apply: (source) => {
-      if (!importsThisPackage(source) || !/\bisPreviewRequest\b/u.test(source)) return source;
-      // The module already has a `hasPreviewIntent` of its own (commonly a
-      // wrapper around the import). Renaming into it would collide or recurse,
-      // so leave the file for a human — the runner reports it as a conflict.
-      if (alreadyBinds(source, 'hasPreviewIntent')) return source;
-      return renameIdentifier(source, 'isPreviewRequest', 'hasPreviewIntent');
-    },
-  },
-  {
-    id: 'rename-bindings-authorized-option',
-    summary: '`createPreviewBindings({ authorized })` → `{ authorization }`',
-    ledgerEntry: 7,
-    apply: (source) => {
-      if (!importsThisPackage(source)) return source;
-      // Only inside a createPreviewBindings(...) call, and only the option key.
-      return source.replace(
-        /(createPreviewBindings\s*\(\s*\{[^}]*?)\bauthorized\b(\s*:)/gu,
-        '$1authorization$2',
-      );
-    },
-  },
-  {
-    id: 'move-fetch-preview-helpers',
-    summary:
-      '`fetchPreviewDocument`/`fetchPreviewGlobal` from the root → `definePreview().fetchDocument`/`.fetchGlobal` (payload-live-preview/server)',
-    ledgerEntry: 9,
-    apply: (source) => {
-      if (!importsThisPackage(source)) return source;
-      let next = source;
-      // The import specifiers become definePreview from the server subpath.
-      next = next.replace(
-        /import\s*\{([^}]*)\}\s*from\s*['"]payload-live-preview['"]/gu,
-        (match, names: string) => {
-          if (!/fetchPreview(Document|Global)/u.test(names)) return match;
-          const kept = names
-            .split(',')
-            .map((part) => part.trim())
-            .filter((part) => part.length > 0 && !/^fetchPreview(Document|Global)$/u.test(part));
-          const rewritten =
-            kept.length > 0 ? `import { ${kept.join(', ')} } from 'payload-live-preview';\n` : '';
-          return `${rewritten}import { definePreview } from 'payload-live-preview/server'`;
-        },
-      );
-      return next;
-    },
-  },
+const IMPLEMENTATIONS: readonly CodemodImplementation[] = [
+  renameIsPreviewRequest,
+  renameBindingsAuthorizedOption,
+  moveFetchPreviewHelpers,
 ];
 
-/** A removed API a codemod could not rewrite automatically, and why. */
-export interface CodemodConflict {
-  readonly codemod: string;
-  readonly reason: string;
+/**
+ * The codemods in the order they run. Each is idempotent. Metadata only: the
+ * rewrite is internal, so importing this entry's types does not require
+ * `ts-morph`, which is needed only to run `pll migrate`.
+ */
+export const CODEMODS: readonly Codemod[] = IMPLEMENTATIONS;
+
+export interface MigrateSourceOptions {
+  /** Restrict to these codemod ids. */
+  readonly only?: readonly string[];
+  /**
+   * Decides how the source is parsed: `.astro`, `.vue` and `.svelte` by script
+   * block, JSX by extension. Defaults to a `.ts` module.
+   */
+  readonly fileName?: string;
 }
 
-/** Removed names a codemod could not rewrite because the module already binds the target. */
-function conflictsIn(source: string): CodemodConflict[] {
-  const conflicts: CodemodConflict[] = [];
-  if (
-    importsThisPackage(source) &&
-    /\bisPreviewRequest\b/u.test(source) &&
-    alreadyBinds(source, 'hasPreviewIntent')
-  ) {
-    conflicts.push({
-      codemod: 'rename-is-preview-request',
-      reason:
-        'isPreviewRequest was removed but this module already binds hasPreviewIntent; ' +
-        'rename your local hasPreviewIntent (or drop the wrapper and import the package’s directly).',
-    });
-  }
-  return conflicts;
-}
-
-/** Apply every codemod (or a chosen subset) to one source string. */
-export function migrateSource(
-  source: string,
-  options: { readonly only?: readonly string[] } = {},
-): {
+export interface MigrateSourceResult {
   readonly output: string;
   readonly edits: readonly CodemodEdit[];
   readonly conflicts: readonly CodemodConflict[];
-} {
-  const chosen =
-    options.only === undefined ? CODEMODS : CODEMODS.filter((c) => options.only?.includes(c.id));
-  let output = source;
-  const edits: CodemodEdit[] = [];
-  for (const codemod of chosen) {
-    const before = output;
-    output = codemod.apply(output);
-    if (output !== before) edits.push({ codemod: codemod.id, before, after: output });
+}
+
+function lineNumberAt(source: string, offset: number): number {
+  let line = 1;
+  for (let index = 0; index < offset; index += 1) if (source[index] === '\n') line += 1;
+  return line;
+}
+
+/** The changed lines between two versions, trimmed to the differing middle. */
+function lineEdits(before: string, after: string, firstLine: number): CodemodLineEdit[] {
+  const oldLines = before.split('\n');
+  const newLines = after.split('\n');
+  let prefix = 0;
+  while (
+    prefix < oldLines.length &&
+    prefix < newLines.length &&
+    oldLines[prefix] === newLines[prefix]
+  ) {
+    prefix += 1;
   }
-  return { output, edits, conflicts: conflictsIn(output) };
+  let suffix = 0;
+  while (
+    suffix < oldLines.length - prefix &&
+    suffix < newLines.length - prefix &&
+    oldLines[oldLines.length - 1 - suffix] === newLines[newLines.length - 1 - suffix]
+  ) {
+    suffix += 1;
+  }
+  const oldMiddle = oldLines.slice(prefix, oldLines.length - suffix);
+  const newMiddle = newLines.slice(prefix, newLines.length - suffix);
+  const changed: CodemodLineEdit[] = [];
+  for (let index = 0; index < Math.max(oldMiddle.length, newMiddle.length); index += 1) {
+    const before = oldMiddle[index] ?? '';
+    const after = newMiddle[index] ?? '';
+    if (before !== after) changed.push({ line: firstLine + prefix + index, before, after });
+  }
+  return changed;
+}
+
+/** Apply every codemod (or the chosen subset) to one source string. */
+export function migrateSource(
+  source: string,
+  options: MigrateSourceOptions = {},
+): MigrateSourceResult {
+  const chosen =
+    options.only === undefined
+      ? IMPLEMENTATIONS
+      : IMPLEMENTATIONS.filter((codemod) => options.only?.includes(codemod.id));
+  if (chosen.length === 0 || !importsThisPackage(source)) {
+    return { output: source, edits: [], conflicts: [] };
+  }
+  const byCodemod = new Map<string, CodemodLineEdit[]>();
+  const conflicts: CodemodConflict[] = [];
+  let output = '';
+  let cursor = 0;
+  for (const block of scriptBlocks(source, options.fileName ?? 'source.ts')) {
+    output += source.slice(cursor, block.start);
+    const firstLine = lineNumberAt(source, block.start);
+    let text = source.slice(block.start, block.end);
+    for (const codemod of chosen) {
+      const plan = codemod.apply(parseScript(text, block.kind));
+      for (const item of plan.conflicts) {
+        conflicts.push(
+          item.line === undefined ? item : { ...item, line: item.line + firstLine - 1 },
+        );
+      }
+      if (plan.edits.length === 0) continue;
+      const next = applyTextEdits(text, plan.edits);
+      const lines = byCodemod.get(codemod.id) ?? [];
+      lines.push(...lineEdits(text, next, firstLine));
+      byCodemod.set(codemod.id, lines);
+      text = next;
+    }
+    output += text;
+    cursor = block.end;
+  }
+  output += source.slice(cursor);
+  const edits = [...byCodemod].map(([codemod, lines]) => ({ codemod, count: lines.length, lines }));
+  return { output, edits, conflicts };
 }

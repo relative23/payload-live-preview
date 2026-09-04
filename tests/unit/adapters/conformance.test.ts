@@ -1,9 +1,9 @@
-import { beforeEach } from 'vitest';
+import { beforeEach, describe } from 'vitest';
 import { createLivePreviewMiddleware as nextMiddleware } from '@adapters/nextjs/adapter';
 import { livePreviewHandle } from '@adapters/sveltekit/adapter';
 import { livePreviewNitroPlugin } from '@adapters/nuxt/adapter';
 import { createLivePreviewMiddleware as astroMiddleware } from '@adapters/astro/middleware';
-import { resetDeprecationWarnings } from '@adapters/shared/deprecation';
+import { resetDevWarnings } from '@adapters/shared/dev-warning';
 import {
   adapterConformance,
   PAGE,
@@ -11,14 +11,8 @@ import {
   type ConformanceRequest,
 } from './conformance';
 
-/**
- * The four adapters through one behavioural suite. Each harness is only the
- * framework-specific way of handing the adapter a request and reading back
- * the response, header and nonce; every expectation lives in `conformance.ts`.
- */
-
 beforeEach(() => {
-  resetDeprecationWarnings();
+  resetDevWarnings();
 });
 
 function toRequest(request: ConformanceRequest): Request {
@@ -28,37 +22,32 @@ function toRequest(request: ConformanceRequest): Request {
   );
 }
 
-function response(request: ConformanceRequest): Response {
-  const headers: Record<string, string> = {
+function responseHeaders(request: ConformanceRequest): Record<string, string> {
+  return {
     'content-type': request.contentType ?? 'text/html; charset=utf-8',
+    ...request.responseHeaders,
   };
-  if (request.existingCsp !== undefined) headers['content-security-policy'] = request.existingCsp;
-  return new Response(PAGE, { headers });
 }
 
 const nextjs: ConformanceHarness = {
   name: 'Next.js',
+  exposesLocals: false,
   async run(options, request) {
-    const opts = { defaults: 'v1' as const, ...options };
-    const middleware = nextMiddleware(opts);
-    const result = await middleware(toRequest(request), response(request));
-    return {
-      body: await result.text(),
-      csp: result.headers.get('content-security-policy'),
-      nonce: undefined,
-    };
+    const middleware = nextMiddleware(options);
+    const result = await middleware(
+      toRequest(request),
+      new Response(PAGE, { headers: responseHeaders(request) }),
+    );
+    return { body: await result.text(), header: (name) => result.headers.get(name), locals: {} };
   },
 };
 
 const sveltekit: ConformanceHarness = {
   name: 'SvelteKit',
+  exposesLocals: true,
   async run(options, request) {
-    const opts = { defaults: 'v1' as const, ...options };
-    const handle = livePreviewHandle(opts);
-    const event = {
-      request: toRequest(request),
-      locals: {} as Record<string, unknown>,
-    };
+    const handle = livePreviewHandle(options);
+    const event = { request: toRequest(request), locals: {} as Record<string, unknown> };
     const resolve = (
       _event: unknown,
       opts: {
@@ -66,32 +55,33 @@ const sveltekit: ConformanceHarness = {
       } = {},
     ) => {
       const html = request.contentType === undefined || request.contentType.includes('html');
-      const body = html ? (opts.transformPageChunk?.({ html: PAGE, done: true }) ?? PAGE) : PAGE;
-      return Promise.resolve(new Response(body, { headers: response(request).headers }));
+      let body = PAGE;
+      if (html && opts.transformPageChunk !== undefined) {
+        // SvelteKit: `(await transformPageChunk(...)) || ''` — a falsy chunk becomes empty.
+        const transformed = opts.transformPageChunk({ html: PAGE, done: true });
+        body = transformed === undefined || transformed === '' ? '' : transformed;
+      }
+      return Promise.resolve(new Response(body, { headers: responseHeaders(request) }));
     };
     const result = await handle({ event, resolve });
     return {
       body: await result.text(),
-      csp: result.headers.get('content-security-policy'),
-      nonce: event.locals['livePreviewNonce'] as string | undefined,
+      header: (name) => result.headers.get(name),
+      locals: event.locals,
     };
   },
 };
 
 const astro: ConformanceHarness = {
   name: 'Astro',
+  exposesLocals: true,
   async run(options, request) {
-    const opts = { defaults: 'v1' as const, ...options };
-    const middleware = astroMiddleware(opts);
+    const middleware = astroMiddleware(options);
     const locals: Record<string, unknown> = {};
     const result = await middleware({ request: toRequest(request), locals }, () =>
-      Promise.resolve(response(request)),
+      Promise.resolve(new Response(PAGE, { headers: responseHeaders(request) })),
     );
-    return {
-      body: await result.text(),
-      csp: result.headers.get('content-security-policy'),
-      nonce: locals['livePreviewNonce'] as string | undefined,
-    };
+    return { body: await result.text(), header: (name) => result.headers.get(name), locals };
   },
 };
 
@@ -109,15 +99,15 @@ interface NitroEvent {
 
 const nuxt: ConformanceHarness = {
   name: 'Nuxt',
+  exposesLocals: true,
   async run(options, request) {
-    // Nitro fires render:html only for HTML renders; a non-HTML response never
-    // reaches the plugin, which is what an empty head models here.
+    // Nitro fires render:html only for HTML renders; an empty head models a non-HTML response.
     if (request.contentType !== undefined && !request.contentType.includes('html')) {
-      return { body: '', csp: null, nonce: undefined };
+      return { body: '', header: () => null, locals: {} };
     }
     let hook:
       ((h: { head: string[] }, c: { event: NitroEvent }) => void | Promise<void>) | undefined;
-    livePreviewNitroPlugin({ defaults: 'v1' as const, ...options })({
+    livePreviewNitroPlugin(options)({
       hooks: {
         hook(_name: 'render:html', fn: NonNullable<typeof hook>) {
           hook = fn;
@@ -125,7 +115,9 @@ const nuxt: ConformanceHarness = {
       },
     });
     const written: Record<string, string> = {};
-    if (request.existingCsp !== undefined) written['content-security-policy'] = request.existingCsp;
+    for (const [name, value] of Object.entries(request.responseHeaders ?? {})) {
+      written[name.toLowerCase()] = value;
+    }
     const url = new URL(request.url);
     const event: NitroEvent = {
       path: `${url.pathname}${url.search}`,
@@ -147,10 +139,12 @@ const nuxt: ConformanceHarness = {
     await hook?.({ head }, { event });
     return {
       body: head.join(''),
-      csp: written['content-security-policy'] ?? null,
-      nonce: event.context['livePreviewNonce'] as string | undefined,
+      header: (name) => written[name.toLowerCase()] ?? null,
+      locals: event.context,
     };
   },
 };
 
-for (const harness of [nextjs, sveltekit, astro, nuxt]) adapterConformance(harness);
+describe.each([nextjs, sveltekit, astro, nuxt])('$name', (harness) => {
+  adapterConformance(harness);
+});

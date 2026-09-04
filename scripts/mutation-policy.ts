@@ -3,19 +3,19 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const TERMINAL_STATUSES = new Set([
-  'CompileError',
-  'Ignored',
-  'Killed',
-  'NoCoverage',
-  'RuntimeError',
-  'Survived',
-  'Timeout',
-]);
+import {
+  formatList,
+  normalizePath,
+  normalizeSource,
+  parseMutationReport,
+  sameStrings,
+  sortedUniquePaths,
+  summarizeParsedReport,
+  type MutationSummary,
+  type ParsedMutationReport,
+} from './mutation-report';
 
 export interface MutationPolicy {
-  /** Parsed from JSON and validated at runtime before any baseline comparison. */
   readonly schemaVersion: number;
   readonly profile: string;
   readonly report: {
@@ -37,27 +37,12 @@ export interface MutationPolicy {
   };
   readonly scope: readonly string[];
   readonly baseline: {
-    /** Any change requires review so scope growth and code reduction stay explicit. */
     readonly total: number;
-    /** Equal to the reviewed rounded baseline; an increase must be ratcheted explicitly. */
     readonly mutationScoreMinimum: number;
     readonly mutationScorePrecision: number;
     /**
-     * How many flipped mutants count as measurement noise rather than a change
-     * in quality.
-     *
-     * The score is a ratio over thousands of mutants, and a single one that
-     * survives on one machine and dies on another moves the second decimal.
-     * Comparing it exactly therefore demands a reproducibility the measurement
-     * does not have, and turns scheduling luck into a red release.
-     *
-     * Drift inside this many mutants is *reported and not failed*: it stays
-     * visible for diagnosis — which is how five untested guards were found —
-     * without the build going red over it. Beyond it, a lower score is still a
-     * regression and a higher one still demands a ratchet, so the band buys
-     * tolerance for noise, not for erosion.
-     *
-     * Omitted means zero: exact comparison, the behaviour before this existed.
+     * Flipped mutants that count as measurement noise: drift inside the band
+     * is reported, not failed. Omitted means an exact comparison.
      */
     readonly mutationScoreDriftMutants?: number;
     readonly noCoverageMaximum: number;
@@ -67,212 +52,15 @@ export interface MutationPolicy {
   };
 }
 
-export interface MutationSummary {
-  readonly total: number;
-  readonly killed: number;
-  readonly survived: number;
-  readonly noCoverage: number;
-  readonly timeout: number;
-  readonly errors: number;
-  readonly ignored: number;
-  readonly mutationScore: number;
-}
-
 export interface MutationPolicyResult {
   readonly summary: MutationSummary;
   readonly violations: readonly string[];
-  /**
-   * Deviations that are reported but do not fail the run — currently score
-   * drift inside `mutationScoreDriftMutants`. Never silently dropped: a
-   * notice nobody prints is the erosion this band was supposed to avoid.
-   */
+  /** Deviations that are printed but do not fail the run. */
   readonly notices: readonly string[];
 }
 
-interface ParsedMutationReport {
-  readonly schemaVersion: string;
-  readonly frameworkName: string;
-  readonly frameworkVersion: string;
-  readonly configFile: string;
-  readonly configuredScope: readonly string[];
-  readonly testRunner: string;
-  readonly vitestConfigFile: string;
-  readonly vitestRelated: boolean;
-  readonly coverageAnalysis: string;
-  readonly incremental: boolean;
-  readonly thresholds: {
-    readonly high: number;
-    readonly low: number;
-    readonly break: number | null;
-  };
-  readonly excludedMutations: readonly unknown[];
-  readonly ignorers: readonly unknown[];
-  readonly fileStatuses: ReadonlyMap<string, readonly string[]>;
-}
-
-function record(value: unknown, label: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new TypeError(`${label} must be an object`);
-  }
-  return value as Record<string, unknown>;
-}
-
-function stringValue(value: unknown, label: string): string {
-  if (typeof value !== 'string') throw new TypeError(`${label} must be a string`);
-  return value;
-}
-
-function booleanValue(value: unknown, label: string): boolean {
-  if (typeof value !== 'boolean') throw new TypeError(`${label} must be a boolean`);
-  return value;
-}
-
-function numberValue(value: unknown, label: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new TypeError(`${label} must be a finite number`);
-  }
-  return value;
-}
-
-function arrayValue(value: unknown, label: string): readonly unknown[] {
-  if (!Array.isArray(value)) throw new TypeError(`${label} must be an array`);
-  return value;
-}
-
-function stringArray(value: unknown, label: string): readonly string[] {
-  return arrayValue(value, label).map((entry, index) =>
-    stringValue(entry, `${label}[${String(index)}]`),
-  );
-}
-
-function normalizePath(path: string): string {
-  return path.replaceAll('\\', '/').replace(/^\.\//u, '');
-}
-
-function sortedUniquePaths(paths: readonly string[], label: string): readonly string[] {
-  const normalized = paths.map(normalizePath);
-  const unique = new Set(normalized);
-  if (unique.size !== normalized.length) throw new Error(`${label} contains duplicate paths`);
-  return [...unique].sort((left, right) => left.localeCompare(right));
-}
-
-function sameStrings(left: readonly string[], right: readonly string[]): boolean {
-  return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-
-function formatList(values: readonly string[]): string {
-  return `[${values.join(', ')}]`;
-}
-
-function parseMutationReport(input: unknown): ParsedMutationReport {
-  const report = record(input, 'mutation report');
-  const framework = record(report['framework'], 'mutation report.framework');
-  const config = record(report['config'], 'mutation report.config');
-  const vitest = record(config['vitest'], 'mutation report.config.vitest');
-  const mutator = record(config['mutator'], 'mutation report.config.mutator');
-  const thresholds = record(config['thresholds'], 'mutation report.config.thresholds');
-  const files = record(report['files'], 'mutation report.files');
-  const fileStatuses = new Map<string, readonly string[]>();
-
-  for (const [rawPath, rawFile] of Object.entries(files)) {
-    const path = normalizePath(rawPath);
-    if (fileStatuses.has(path)) throw new Error(`mutation report has duplicate file ${path}`);
-    const file = record(rawFile, `mutation report.files[${rawPath}]`);
-    const mutants = arrayValue(file['mutants'], `mutation report.files[${rawPath}].mutants`);
-    const statuses = mutants.map((rawMutant, index) => {
-      const mutant = record(
-        rawMutant,
-        `mutation report.files[${rawPath}].mutants[${String(index)}]`,
-      );
-      return stringValue(
-        mutant['status'],
-        `mutation report.files[${rawPath}].mutants[${String(index)}].status`,
-      );
-    });
-    fileStatuses.set(path, statuses);
-  }
-
-  return {
-    schemaVersion: stringValue(report['schemaVersion'], 'mutation report.schemaVersion'),
-    frameworkName: stringValue(framework['name'], 'mutation report.framework.name'),
-    frameworkVersion: stringValue(framework['version'], 'mutation report.framework.version'),
-    configFile: stringValue(config['configFile'], 'mutation report.config.configFile'),
-    configuredScope: stringArray(config['mutate'], 'mutation report.config.mutate'),
-    testRunner: stringValue(config['testRunner'], 'mutation report.config.testRunner'),
-    vitestConfigFile: stringValue(vitest['configFile'], 'mutation report.config.vitest.configFile'),
-    vitestRelated: booleanValue(vitest['related'], 'mutation report.config.vitest.related'),
-    coverageAnalysis: stringValue(
-      config['coverageAnalysis'],
-      'mutation report.config.coverageAnalysis',
-    ),
-    incremental: booleanValue(config['incremental'], 'mutation report.config.incremental'),
-    thresholds: {
-      high: numberValue(thresholds['high'], 'mutation report.config.thresholds.high'),
-      low: numberValue(thresholds['low'], 'mutation report.config.thresholds.low'),
-      break:
-        thresholds['break'] === null
-          ? null
-          : numberValue(thresholds['break'], 'mutation report.config.thresholds.break'),
-    },
-    excludedMutations: arrayValue(
-      mutator['excludedMutations'],
-      'mutation report.config.mutator.excludedMutations',
-    ),
-    ignorers: arrayValue(config['ignorers'], 'mutation report.config.ignorers'),
-    fileStatuses,
-  };
-}
-
-function summarizeParsedReport(report: ParsedMutationReport): MutationSummary {
-  const counts = {
-    killed: 0,
-    survived: 0,
-    noCoverage: 0,
-    timeout: 0,
-    errors: 0,
-    ignored: 0,
-  };
-
-  for (const statuses of report.fileStatuses.values()) {
-    for (const status of statuses) {
-      if (!TERMINAL_STATUSES.has(status)) {
-        throw new Error(
-          `unsupported mutant status ${status}; report is incomplete or incompatible`,
-        );
-      }
-      switch (status) {
-        case 'Killed':
-          counts.killed += 1;
-          break;
-        case 'Survived':
-          counts.survived += 1;
-          break;
-        case 'NoCoverage':
-          counts.noCoverage += 1;
-          break;
-        case 'Timeout':
-          counts.timeout += 1;
-          break;
-        case 'CompileError':
-        case 'RuntimeError':
-          counts.errors += 1;
-          break;
-        case 'Ignored':
-          counts.ignored += 1;
-          break;
-      }
-    }
-  }
-
-  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-  const scored = counts.killed + counts.timeout + counts.survived + counts.noCoverage;
-  const mutationScore = scored === 0 ? 100 : ((counts.killed + counts.timeout) / scored) * 100;
-  return { total, ...counts, mutationScore };
-}
-
-export function summarizeMutationReport(input: unknown): MutationSummary {
-  return summarizeParsedReport(parseMutationReport(input));
-}
+/** The mutated source per file, used to refuse a report from another working tree. */
+export type MutatedSources = ReadonlyMap<string, string>;
 
 function rounded(value: number, precision: number): number {
   return Number(value.toFixed(precision));
@@ -295,23 +83,57 @@ function compareRatchetedMaximum(
   }
 }
 
-export function evaluateMutationReport(
-  input: unknown,
-  policy: MutationPolicy,
-): MutationPolicyResult {
-  const report = parseMutationReport(input);
-  const summary = summarizeParsedReport(report);
-  const violations: string[] = [];
-  const notices: string[] = [];
-
-  if (policy.schemaVersion !== 1) {
+/**
+ * A ceiling rather than an exact ratchet, for the one count that is a property
+ * of the machine instead of the tests. Stryker reports a timeout when a mutant's
+ * run does not finish in `timeoutMS`; a loaded runner produces one where a quiet
+ * one produces none, and the nightly figure is the sum over six shards on six
+ * runners. Four measurements of a byte-identical tree gave 25, 35, 46 and 107.
+ *
+ * Two of those runs settle what the count means. Between them 61 mutants moved
+ * from killed to timeout while `killed + timeout` stayed at 5755, `survived` at
+ * 1259 and `noCoverage` at 85 — not one mutant changed its verdict, only the
+ * mechanism that caught it. A fourth run then moved 32 mutants the other way,
+ * from `survived` to `timeout`, which raised the score to 81.52 without a line
+ * of source changing: a timeout counts as detected, so a slow runner flatters
+ * the figure. The score is therefore load-sensitive in both directions, and the
+ * drift band has to cover that spread rather than pretend it away.
+ *
+ * That spread came from a 20-second timeout leaving borderline mutants to the
+ * clock. At 60 seconds the assertions decide, and two runs of the same tree
+ * both reported exactly 25 — the mutants that genuinely never terminate. The
+ * ceiling is set from that with room for a slow runner, and can only catch a
+ * regime change, which is all it is for.
+ * Failing because *fewer* mutants timed out would only teach the next reader to
+ * edit the number. A slowdown still fails: timeouts above the ceiling
+ * are a regression, and a timeout counts as detected, so the score is unaffected
+ * either way.
+ */
+function compareCeiling(
+  violations: string[],
+  notices: string[],
+  label: string,
+  observed: number,
+  ceiling: number,
+): void {
+  if (observed > ceiling) {
     violations.push(
-      `[policy] unsupported policy schemaVersion ${String(policy.schemaVersion)}; expected 1`,
+      `[regression] ${label} ${String(observed)} exceed reviewed maximum ${String(ceiling)}`,
+    );
+  } else if (observed < ceiling) {
+    notices.push(
+      `[drift] ${label} ${String(observed)} is below the reviewed ceiling ${String(ceiling)}; ` +
+        'expected for a machine-dependent count, worth lowering if it persists',
     );
   }
-  if (policy.profile !== 'pr-critical' && policy.profile !== 'nightly-critical') {
-    violations.push(`[policy] unsupported mutation profile ${policy.profile}`);
-  }
+}
+
+function findProfileViolations(
+  report: ParsedMutationReport,
+  policy: MutationPolicy,
+  sources: MutatedSources | undefined,
+): string[] {
+  const violations: string[] = [];
   const expectedScope = sortedUniquePaths(policy.scope, 'mutation policy scope');
   const configuredScope = sortedUniquePaths(report.configuredScope, 'configured mutation scope');
   const reportedScope = sortedUniquePaths([...report.fileStatuses.keys()], 'reported file scope');
@@ -347,6 +169,18 @@ export function evaluateMutationReport(
   for (const [path, statuses] of report.fileStatuses) {
     if (statuses.length === 0) violations.push(`[profile] ${path} contains no mutants`);
   }
+  for (const [path, source] of report.fileSources) {
+    const current = sources?.get(path);
+    if (current === undefined) {
+      if (sources !== undefined) {
+        violations.push(`[stale] ${path} is not readable in this working tree`);
+      }
+    } else if (normalizeSource(current) !== normalizeSource(source)) {
+      violations.push(
+        `[stale] ${path} differs from the source the report mutated; rerun the mutation suite`,
+      );
+    }
+  }
   if (report.testRunner !== policy.report.testRunner) {
     violations.push(
       `[profile] test runner differs: expected ${policy.report.testRunner}, got ${report.testRunner}`,
@@ -381,9 +215,34 @@ export function evaluateMutationReport(
     violations.push('[profile] excluded mutations are not allowed');
   }
   if (report.ignorers.length > 0) violations.push('[profile] mutation ignorers are not allowed');
+  return violations;
+}
 
-  // A mismatched/partial profile is not comparable to the baseline. Avoid
-  // presenting numeric changes from it as either quality regressions or gains.
+/**
+ * `sources` is the working tree the report is judged against; a report whose
+ * mutated source differs from it describes some other code and is refused.
+ */
+export function evaluateMutationReport(
+  input: unknown,
+  policy: MutationPolicy,
+  sources?: MutatedSources,
+): MutationPolicyResult {
+  const report = parseMutationReport(input);
+  const summary = summarizeParsedReport(report);
+  const violations: string[] = [];
+  const notices: string[] = [];
+
+  if (policy.schemaVersion !== 1) {
+    violations.push(
+      `[policy] unsupported policy schemaVersion ${String(policy.schemaVersion)}; expected 1`,
+    );
+  }
+  if (policy.profile !== 'pr-critical' && policy.profile !== 'nightly-critical') {
+    violations.push(`[policy] unsupported mutation profile ${policy.profile}`);
+  }
+  violations.push(...findProfileViolations(report, policy, sources));
+  // A mismatched profile is not comparable to the baseline; do not present
+  // its numbers as regressions or gains.
   if (violations.length > 0) return { summary, violations, notices };
 
   const baseline = policy.baseline;
@@ -398,15 +257,9 @@ export function evaluateMutationReport(
   }
 
   const score = rounded(summary.mutationScore, baseline.mutationScorePrecision);
-  // The band is stated in mutants and converted here, so the policy does not
-  // have to be re-derived whenever the mutation surface changes size.
   const driftMutants = baseline.mutationScoreDriftMutants ?? 0;
-  // Both sides of the comparison are rounded to `mutationScorePrecision`, so a
-  // drift worth 0.0265 points can present as a 0.03 step. The band therefore
-  // carries one rounding step on top of the mutants it allows; without it the
-  // band is narrower than the granularity it is compared at, and a single
-  // flipped mutant still fails. Zero stays exactly zero, so a policy that
-  // declares no band keeps comparing exactly.
+  // Both sides are rounded to the policy precision, so the band carries one
+  // rounding step on top of the mutants it allows; zero stays exact.
   const tolerance =
     driftMutants > 0 && summary.total > 0
       ? (driftMutants / summary.total) * 100 + Math.pow(10, -baseline.mutationScorePrecision)
@@ -432,10 +285,26 @@ export function evaluateMutationReport(
     summary.noCoverage,
     baseline.noCoverageMaximum,
   );
-  compareRatchetedMaximum(violations, 'timeout mutants', summary.timeout, baseline.timeoutMaximum);
+  compareCeiling(violations, notices, 'timeout mutants', summary.timeout, baseline.timeoutMaximum);
   compareRatchetedMaximum(violations, 'error mutants', summary.errors, baseline.errorMaximum);
   compareRatchetedMaximum(violations, 'ignored mutants', summary.ignored, baseline.ignoredMaximum);
   return { summary, violations, notices };
+}
+
+/** Read every scoped source from the working tree; unreadable files stay absent. */
+export async function readMutatedSources(
+  repositoryRoot: string,
+  scope: readonly string[],
+): Promise<MutatedSources> {
+  const sources = new Map<string, string>();
+  for (const path of scope) {
+    try {
+      sources.set(normalizePath(path), await readFile(resolve(repositoryRoot, path), 'utf8'));
+    } catch {
+      // Reported by the [stale] check as "not readable".
+    }
+  }
+  return sources;
 }
 
 function readArgument(name: string, fallback: string): string {
@@ -464,9 +333,9 @@ async function main(): Promise<void> {
   );
   const policy = JSON.parse(await readFile(policyPath, 'utf8')) as MutationPolicy;
   const report: unknown = JSON.parse(await readFile(reportPath, 'utf8'));
-  const result = evaluateMutationReport(report, policy);
-  // Before the throw: a drift that only prints on success would be invisible
-  // exactly when a regression is also present, which is when it matters most.
+  const sources = await readMutatedSources(repositoryRoot, policy.scope);
+  const result = evaluateMutationReport(report, policy, sources);
+  // Printed before the throw so a drift stays visible next to a regression.
   for (const notice of result.notices) console.warn(notice);
   if (result.violations.length > 0) {
     throw new Error(

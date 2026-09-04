@@ -1,8 +1,4 @@
-/**
- * Public plugin barrel.
- *
- * @module @plugins
- */
+/** Public plugin surface: the manager, the plugin contract and the built-in plugins. */
 
 export { PluginManager, type PluginManagerOptions } from './manager';
 export {

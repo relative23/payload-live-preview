@@ -58,3 +58,18 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 10  | 1.2.0   | default | `mergeDepth ?? 1` in the runtime and `depth ?? 1` in the fetch helpers, independently                     | `definePreview({ depth })` is required and feeds both; the 2.0 runtime default (`0` or explicit) is decided from measured consumer depths, not yet flipped by `'v2'`                       | merge depth `0` or explicit                               | add `depth` to `definePreview`; spread `runtimeOptions` into the adapter                                      |
 | 11  | 1.3.0   | default | sanitizer `'compat'`: `id` and every `data-*` pass                                                        | `sanitizerPolicy: 'strict'` under `'v2'`: `id`, `name` and `data-payload-*` stripped, other `data-*` by `allowedDataAttributes`; Trusted Types policy `payload-live-preview` at every sink | hardened sanitizer `id`/`data-*` policy                   | add `sanitizerPolicy: 'compat'` where rich text relies on `id` or `data-*`; list the CSP `trusted-types` name |
 | 12  | 1.4.0   | range   | Astro peer `>=4.0.0 <8.0.0`, with 4, 5, 6 and 7 each run in CI (ADR 0009)                                 | unchanged under `'v2'`; 2.0 narrows the range to the majors the CI matrix still runs at release time                                                                                       | the tested majors only                                    | upgrade Astro to a major in the compatibility table before 2.0                                                |
+
+## Addendum — what `pll migrate` automates
+
+Three ledger entries have codemods: 1 (`rename-is-preview-request`), 7
+(`rename-bindings-authorized-option`) and 9 (`move-fetch-preview-helpers`).
+The rest are "flag it", not "rewrite it": their new form needs a value only the
+consumer has (an authorization verdict, a considered `depth`), so the tool would
+have to invent one.
+
+The codemods plan their rewrites on the AST (ts-morph) and touch only names a
+file binds from `payload-live-preview`, by `import`, `require()` or `import()`.
+A consumer's own `isPreviewRequest` is therefore left alone. Where a rewrite
+would be visible outside the file — an object shorthand, a re-export, a call
+whose options are not a literal — the codemod reports `file:line` and changes
+nothing in that file, and the CLI exits `3`.

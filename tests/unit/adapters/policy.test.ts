@@ -8,12 +8,7 @@ import {
   normalizeCspMode,
 } from '@adapters/shared/policy';
 
-/**
- * The policy is the one copy of what four adapters used to decide each on
- * their own. Its contract is therefore the contract the adapter tests already
- * pin from the outside; these tests pin it from the inside, per decision, so
- * a change here is caught by name rather than by four framework fixtures.
- */
+/** The shared policy's decisions, pinned by name rather than through four framework fixtures. */
 
 const ADMIN = 'https://admin.example.com';
 
@@ -22,11 +17,10 @@ function request(url = 'https://site.example.com/', headers: Record<string, stri
 }
 
 describe('previewIntentFor', () => {
-  it('2.0 default is query-only: an iframe destination or admin referer is not intent', () => {
+  it('the default is query-only: an iframe destination or admin referer is not intent', () => {
     const options = { allowedOrigins: [ADMIN] };
     expect(previewIntentFor(request(), options)).toBe(false);
     expect(previewIntentFor(request('https://site.example.com/?preview=true'), options)).toBe(true);
-    // Under the v2 default only the query signal counts; iframe and referer do not.
     expect(
       previewIntentFor(
         request('https://site.example.com/', { 'sec-fetch-dest': 'iframe' }),
@@ -41,7 +35,7 @@ describe('previewIntentFor', () => {
     ).toBe(false);
   });
 
-  it('the broad 1.x signal set is opt-in via previewSignals or defaults: v1', () => {
+  it('the broad signal set is opt-in via previewSignals or defaults: v1', () => {
     const broad = {
       allowedOrigins: [ADMIN],
       previewSignals: ['query', 'fetch-dest', 'referer'] as const,
@@ -77,7 +71,7 @@ describe('previewIntentFor', () => {
 });
 
 describe('normalizeCspMode', () => {
-  it('reads unset and true as frame-ancestors only, the way every adapter always has', () => {
+  it('reads unset and true as frame-ancestors only', () => {
     expect(normalizeCspMode(undefined)).toBe('frame-ancestors');
     expect(normalizeCspMode(true)).toBe('frame-ancestors');
     expect(normalizeCspMode('frame-ancestors')).toBe('frame-ancestors');
@@ -96,8 +90,9 @@ describe('inlineScriptConfig', () => {
   });
 
   it('does not forward adapter-only options into the runtime config', () => {
-    const config = inlineScriptConfig({ inject: 'always', manageCsp: 'full', autoInject: false });
-    expect(config).toEqual({});
+    expect(inlineScriptConfig({ inject: 'always', manageCsp: 'full', autoInject: false })).toEqual(
+      {},
+    );
   });
 });
 
@@ -131,16 +126,38 @@ describe('buildPreviewCsp', () => {
 });
 
 describe('injectIntoHead', () => {
+  const TAG = '<script>x</script>';
+
   it('inserts the tag right after the opening head tag, attributes included', () => {
-    const out = injectIntoHead(
-      '<html><head lang="en"><title>t</title></head></html>',
-      '<script>x</script>',
+    expect(injectIntoHead('<html><head lang="en"><title>t</title></head></html>', TAG)).toBe(
+      '<html><head lang="en"><script>x</script><title>t</title></head></html>',
     );
-    expect(out).toBe('<html><head lang="en"><script>x</script><title>t</title></head></html>');
+  });
+
+  it.each([
+    ['<meta charset="utf-8">'],
+    ['<meta charset=utf-8>'],
+    ['<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'],
+    ['<META CHARSET="UTF-8" />'],
+  ])('inserts after the encoding declaration %s so it stays in the 1024-byte prescan', (meta) => {
+    expect(injectIntoHead(`<html><head>${meta}<title>t</title></head></html>`, TAG)).toBe(
+      `<html><head>${meta}${TAG}<title>t</title></head></html>`,
+    );
+  });
+
+  it('ignores a charset meta outside the head and other meta tags', () => {
+    expect(
+      injectIntoHead(
+        '<html><head><meta name="viewport" content="x"></head><meta charset="utf-8"></html>',
+        TAG,
+      ),
+    ).toBe(
+      '<html><head><script>x</script><meta name="viewport" content="x"></head><meta charset="utf-8"></html>',
+    );
   });
 
   it('declines a document without a head, so a fragment is never prepended to', () => {
-    expect(injectIntoHead('<div>fragment</div>', '<script>x</script>')).toBeUndefined();
+    expect(injectIntoHead('<div>fragment</div>', TAG)).toBeUndefined();
   });
 });
 
@@ -169,9 +186,6 @@ describe('createPreviewPolicy — decisions', () => {
   });
 
   it("lets the adapter's content filter veto injection but never CSP", async () => {
-    // shouldInject is a route filter, not an authorization boundary — the
-    // split F-09 describes. It stays true here on purpose until 1.1.0 gates
-    // every mutation on a verified context.
     const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     const decision = await policy.decide(request('https://site.example.com/?preview=true'), {
       shouldInject: () => false,
@@ -181,7 +195,6 @@ describe('createPreviewPolicy — decisions', () => {
   });
 
   it('consults the content filter only once intent is established', async () => {
-    // A consumer's filter must not start running on every ordinary request.
     let calls = 0;
     const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     const shouldInject = (): boolean => {
@@ -218,7 +231,6 @@ describe('createPreviewPolicy — artefacts', () => {
     const b = policy.scriptTag('n2');
     expect(a).toContain('nonce="n1"');
     expect(b).toContain('nonce="n2"');
-    // Same body, different nonce: the body depends on the options only.
     expect(a.replace('n1', '')).toBe(b.replace('n2', ''));
     expect(a).toContain('__LIVE_PREVIEW_CONFIG__');
   });
@@ -228,7 +240,7 @@ describe('createPreviewPolicy — artefacts', () => {
     expect(policy.nonce()).not.toBe(policy.nonce());
   });
 
-  it('routes csp() through the same builder the adapters used to carry', () => {
+  it('routes csp() through the same builder', () => {
     const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     expect(policy.csp('', 'n', 'frame-ancestors')).toBe(
       buildPreviewCsp({ allowedOrigins: [ADMIN] }, 'n', '', 'frame-ancestors'),

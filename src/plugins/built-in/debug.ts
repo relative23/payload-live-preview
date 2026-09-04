@@ -1,8 +1,4 @@
-/**
- * `debug` plugin — logs every lifecycle event via the plugin context.
- *
- * @module @plugins/built-in/debug
- */
+/** `debug` plugin: logs every lifecycle event through the plugin context. */
 
 import type { LivePreviewPlugin } from '../types';
 

@@ -3,8 +3,6 @@
  * gates can read them without loading tsup. `tsup.config.ts` turns them into
  * build profiles; `tests/unit/package-entries.test.ts` holds them against the
  * manifest's `exports` map.
- *
- * @module scripts/package-entries
  */
 
 /** Entries built as ESM and CommonJS in one profile. */
@@ -15,8 +13,8 @@ export const DUAL_FORMAT_ENTRIES = {
 } as const;
 
 /**
- * Focused public entries (roadmap 1.4.0, package topology). Each is built
- * alone: they share modules with the root entry, and one profile for several
+ * Focused public entries. Each is built alone: they share modules with the
+ * root entry, and one profile for several
  * of them would make tsup emit a shared declaration chunk whose file the
  * declaration-parity gate rightly refuses. One profile per entry keeps every
  * `<entry>.d.ts` self-contained.

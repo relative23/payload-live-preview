@@ -7,6 +7,13 @@ const durationMs =
 
 const config: PlaywrightTestConfig = {
   testDir: './tests/soak',
+  // Playwright empties its output directory before every run, and by default
+  // that directory is test-results/ — where Stryker, the soak and the bench
+  // also write their reports. An E2E run after a mutation run deleted the
+  // mutation report before anyone read it. Each Playwright config now empties
+  // only its own subfolder. CI is unaffected: those jobs run on separate
+  // runners and upload playwright-report/.
+  outputDir: 'test-results/playwright-soak',
   fullyParallel: false,
   forbidOnly: true,
   failOnFlakyTests: true,

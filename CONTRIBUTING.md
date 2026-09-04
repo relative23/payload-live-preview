@@ -12,7 +12,7 @@ git clone https://github.com/relative23/payload-live-preview.git
 cd payload-live-preview
 npm install --global "$(node -p "require('./package.json').packageManager")"
 npm ci
-npm run build:runtime   # required before typecheck (generates src/inline/runtime.generated.ts)
+npm run build:runtime   # required before typecheck (generates the src/inline/*.generated.ts files)
 npm run check           # typecheck + lint + unit/integration tests
 ```
 
@@ -39,18 +39,26 @@ npm run test:e2e
 
 ## The single-source runtime
 
-The browser runtime lives in `src/core/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into `src/inline/runtime.generated.ts`, which is what adapters inline into pages.
+The browser runtime lives in `src/core/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into three files that adapters inline into pages:
 
-If you touch `src/core/runtime.ts` or anything it imports, regenerate the baked copy:
+- `src/inline/runtime.generated.ts`
+- `src/inline/loader.generated.ts`
+- `src/inline/fragment.generated.ts`
+
+If you touch `src/core/runtime.ts` or anything it imports, regenerate them:
 
 ```sh
 npm run build:runtime
 ```
 
-The generated file is intentionally gitignored and remains local. Do not stage it;
-`npm run build:runtime` and `npm run build` regenerate it, and the completed build
-embeds it in the published artifacts. Consumer installation deliberately runs no
-package lifecycle build: published archives already contain the reviewed output.
+All three are build outputs and all three are gitignored. Do not stage them: a
+committed copy drifts from its source the moment somebody edits the runtime
+without rebuilding, and a stale one is indistinguishable from a reviewed one in
+a diff. `npm run build:runtime` and `npm run build` regenerate them, `pretest`
+regenerates them before `npm test`, and every CI job that type-checks or runs
+tests regenerates them first. The completed build embeds them in the published
+artifacts; consumer installation deliberately runs no package lifecycle build,
+because published archives already contain the reviewed output.
 
 ## Changesets
 

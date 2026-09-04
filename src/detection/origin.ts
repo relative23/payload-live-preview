@@ -1,50 +1,27 @@
 /**
- * Origin detection and matching.
- *
- * Builds the set of trusted Payload admin origins and exposes a fast
- * matcher used by the message bus. Three sources, in precedence order:
- *
- *   1. Explicit origins passed via configuration. Always trusted.
- *   2. `document.referrer` — **only when no explicit origins are
- *      configured**. The browser writes the embedder's origin here
- *      when the iframe loads; using it as a fallback gives a
- *      zero-config path, but it must never widen an explicit
- *      allow-list (the referrer is whoever framed the page, which in
- *      an attack is the attacker).
- *   3. Localhost pattern (any port on `localhost` / `127.0.0.1`),
- *      enabled when development mode is detected. Replaces the
- *      legacy hand-rolled port list.
- *
- * Once the parent's origin is confirmed by an accepted data-bearing
- * update, callers can call `lockOrigin()` to drop every other candidate,
- * making subsequent matches exact. A data-less `ready` handshake does
- * not lock the detector.
- *
- * @module @detection/origin
+ * Which admin origins the runtime trusts: explicit ones always, the
+ * `document.referrer` origin only when none is configured, any localhost port
+ * in development. See docs/security.md §1.
  */
 
-import { getEnvVar, isDevMode, isInIframe } from './environment';
+import { isDevMode, isInIframe } from './environment';
 
 const LOCALHOST_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i;
 const VALID_ORIGIN_PATTERN = /^https?:\/\/[^/?#\s]+$/i;
 
-const ENV_VAR_NAMES = [
-  'PAYLOAD_ADMIN_ORIGIN',
-  'PUBLIC_PAYLOAD_ADMIN_ORIGIN',
-  'NEXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN',
-] as const;
+/** Ports the handshake broadcasts to when the localhost pattern is on; matching itself is unrestricted. */
+const LOCALHOST_HANDSHAKE_PORTS: readonly number[] = [
+  3000, 3001, 3333, 4000, 4321, 5000, 5173, 5174, 8000, 8080, 8888, 9000,
+];
 
 export interface OriginDetectorOptions {
-  /** Explicit additional origins to trust. Always allowed. */
+  /** Explicit origins to trust. Always allowed. */
   readonly additionalOrigins?: readonly string[];
-  /** Set to `false` to opt out of `document.referrer` detection. */
+  /** Set to `false` to ignore `document.referrer`. */
   readonly enableReferrerDetection?: boolean;
-  /** Set to `false` to opt out of localhost-pattern matching. */
+  /** Set to `false` to ignore the localhost pattern even in development. */
   readonly enableLocalhostMatching?: boolean;
-  /**
-   * Override the dev-mode detection. When `undefined`, dev mode is
-   * inferred from the runtime (see `isDevMode`).
-   */
+  /** Override dev-mode detection. */
   readonly forceDevMode?: boolean;
   /** Override `document.referrer` for tests. */
   readonly referrer?: string;
@@ -66,14 +43,7 @@ type OriginState = [
   lockedOrigin: string | undefined,
 ];
 
-/**
- * Holds the resolved origin policy and exposes a matcher.
- *
- * The detector is stateful: it starts with the union of all candidate
- * sources, then narrows down to a single, verified origin once the
- * lifecycle calls `lockOrigin()` for its first accepted data-bearing
- * update.
- */
+/** The trusted-origin policy: the union of the candidate sources, narrowed to one by `lockOrigin()`. */
 export class OriginDetector {
   readonly #state: OriginState;
 
@@ -83,17 +53,8 @@ export class OriginDetector {
       const normalised = normaliseOrigin(origin);
       if (normalised !== undefined) explicit.add(normalised);
     }
-    for (const envName of ENV_VAR_NAMES) {
-      const value = getEnvVar(envName);
-      if (value === undefined) continue;
-      for (const raw of value.split(',')) {
-        const normalised = normaliseOrigin(raw);
-        if (normalised !== undefined) explicit.add(normalised);
-      }
-    }
-    const useReferrer = options.enableReferrerDetection ?? true;
     let referrerOrigin: string | undefined;
-    if (useReferrer) {
+    if (options.enableReferrerDetection ?? true) {
       const referrer =
         options.referrer ?? (typeof document !== 'undefined' ? document.referrer : '');
       if (referrer.length > 0) {
@@ -101,7 +62,7 @@ export class OriginDetector {
           const origin = new URL(referrer).origin;
           if (origin && origin !== 'null') referrerOrigin = origin;
         } catch {
-          // ignore — referrer is opaque
+          // opaque referrer
         }
       }
     }
@@ -116,25 +77,14 @@ export class OriginDetector {
     ];
   }
 
-  /**
-   * Returns `true` when `origin` is trusted under the current policy.
-   *
-   * If an origin has been locked, only that exact value matches.
-   * Otherwise explicit origins and (in dev mode) localhost-pattern
-   * matches are accepted. The referrer-derived origin is a **fallback,
-   * not a union member**: it only counts when NO explicit origins are
-   * configured. `document.referrer` always names whoever actually
-   * framed the page — if it were unioned with the explicit list, any
-   * site embedding the page in an iframe would become a trusted
-   * postMessage sender despite the consumer having pinned the admin
-   * origin explicitly.
-   */
+  /** Whether `origin` is trusted: the locked origin alone once locked, otherwise the policy above. */
   matches(origin: string): boolean {
     if (origin.length === 0 || origin === 'null') return false;
     if (this.#state[OriginSlot.LockedOrigin] !== undefined) {
       return origin === this.#state[OriginSlot.LockedOrigin];
     }
     if (this.#state[OriginSlot.ExplicitOrigins].has(origin)) return true;
+    // The referrer is a fallback, not a union member: any embedder lands there.
     if (
       this.#state[OriginSlot.ExplicitOrigins].size === 0 &&
       this.#state[OriginSlot.ReferrerOrigin] !== undefined &&
@@ -146,54 +96,30 @@ export class OriginDetector {
     return false;
   }
 
-  /**
-   * Narrow the trusted set to a single origin after an accepted
-   * data-bearing update. Subsequent calls to `matches()` only allow
-   * `origin`.
-   *
-   * Returns `true` if locking succeeded; `false` if the candidate is
-   * not currently considered trusted (which would defeat the purpose
-   * of locking).
-   */
+  /** Narrow trust to `origin`; refused (`false`) when it is not currently trusted. */
   lockOrigin(origin: string): boolean {
     if (!this.matches(origin)) return false;
     this.#state[OriginSlot.LockedOrigin] = origin;
     return true;
   }
 
-  /**
-   * Release the origin lock so any allow-listed origin is trusted
-   * again until the next accepted data-bearing update. The lifecycle
-   * calls this on heartbeat timeout — after the trusted parent disappears,
-   * a different (still-allowed) origin should be free to reconnect.
-   *
-   * Returns the previously-locked origin, or `undefined` when nothing
-   * was locked.
-   */
+  /** Release the lock (heartbeat timeout) so another allow-listed origin may reconnect. Returns the previous lock. */
   unlockOrigin(): string | undefined {
     const previous = this.#state[OriginSlot.LockedOrigin];
     this.#state[OriginSlot.LockedOrigin] = undefined;
     return previous;
   }
 
-  /** The currently locked origin, or `undefined`. */
   get lockedOrigin(): string | undefined {
     return this.#state[OriginSlot.LockedOrigin];
   }
 
-  /**
-   * Snapshot of every origin currently allowed by the policy. Used by
-   * the message bus to broadcast `ready` messages.
-   *
-   * Localhost pattern matches are expanded into the common dev ports
-   * so the handshake can find a Payload running on its usual port.
-   */
+  /** Every origin the `ready` handshake is broadcast to; the localhost pattern expands to the common dev ports. */
   enumerate(): string[] {
     if (this.#state[OriginSlot.LockedOrigin] !== undefined) {
       return [this.#state[OriginSlot.LockedOrigin]];
     }
     const result = new Set<string>(this.#state[OriginSlot.ExplicitOrigins]);
-    // Referrer is a zero-config fallback only — mirroring matches().
     if (
       this.#state[OriginSlot.ExplicitOrigins].size === 0 &&
       this.#state[OriginSlot.ReferrerOrigin] !== undefined
@@ -209,21 +135,12 @@ export class OriginDetector {
     return [...result];
   }
 
-  /**
-   * Reports whether `document.referrer` contributed at least one
-   * origin. Useful for surfacing a console warning when running in
-   * production without an explicit origin and the referrer is absent
-   * (because of a `Referrer-Policy: no-referrer` header).
-   */
+  /** Whether `document.referrer` contributed an origin (absent under `Referrer-Policy: no-referrer`). */
   get referrerWasAvailable(): boolean {
     return this.#state[OriginSlot.ReferrerWasAvailable];
   }
 
-  /**
-   * Indicates whether the detector is operating in a "production-without-
-   * explicit-origin" configuration. When `true`, the host should log a
-   * loud warning — silent connection failure is the worst outcome.
-   */
+  /** Framed, outside development, with no trusted origin at all: the host should warn (LP0101). */
   get isProductionUnconfigured(): boolean {
     if (!isInIframe()) return false;
     if (this.#state[OriginSlot.ExplicitOrigins].size > 0) return false;
@@ -232,15 +149,7 @@ export class OriginDetector {
     return true;
   }
 
-  /**
-   * `true` when the referrer is the ONLY trust source (no explicit
-   * origins, no localhost matching). In that mode any site that frames
-   * the page becomes a trusted postMessage sender — `document.referrer`
-   * always names the actual embedder. Content is still sanitized, but
-   * the origin allow-list no longer restricts who may drive it. Hosts
-   * should surface a warning suggesting explicit `allowedOrigins` and
-   * a `frame-ancestors` policy in production.
-   */
+  /** The referrer is the only trust source, so any framing site may drive the preview (LP0102). */
   get isReferrerOnlyTrust(): boolean {
     if (this.#state[OriginSlot.ExplicitOrigins].size > 0) return false;
     if (this.#state[OriginSlot.AllowLocalhost]) return false;
@@ -248,19 +157,7 @@ export class OriginDetector {
   }
 }
 
-/**
- * Common ports the inline runtime tries when broadcasting `ready` to
- * a localhost Payload admin. The detection itself uses a pattern, but
- * the handshake needs concrete targets.
- */
-const LOCALHOST_HANDSHAKE_PORTS: readonly number[] = [
-  3000, 3001, 3333, 4000, 4321, 5000, 5173, 5174, 8000, 8080, 8888, 9000,
-];
-
-/**
- * Validate and canonicalise an origin string. Returns `undefined` for
- * inputs that are not absolute `http(s)://host[:port]` origins.
- */
+/** The canonical `http(s)://host[:port]` form of `value`, or `undefined` when it is not one. */
 export function normaliseOrigin(value: string): string | undefined {
   const trimmed = value.trim();
   if (trimmed.length === 0) return undefined;
@@ -272,14 +169,4 @@ export function normaliseOrigin(value: string): string | undefined {
   } catch {
     return undefined;
   }
-}
-
-/**
- * Pure-functional check used in inline scripts where instantiating a
- * full `OriginDetector` is overkill. The exported helper is also handy
- * for tests and for consumers that want to mimic the matcher policy
- * without holding state.
- */
-export function isLocalhostOrigin(origin: string): boolean {
-  return LOCALHOST_PATTERN.test(origin);
 }

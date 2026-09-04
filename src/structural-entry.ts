@@ -1,14 +1,7 @@
 /**
- * `payload-live-preview/structural` — the keyed list machinery on its own.
- *
- * The structural array renderer patches a bound list item by item and keeps
- * visitor state (focus, typed values, open `<details>`, custom-element
- * internals) through a keyed morph (ADR 0008). A project that renders lists
- * itself — a framework island, a table component — can use the same morph
- * and boundary rules instead of re-implementing them, without pulling the
- * runtime, the Lexical renderer or the built-in plugins into its bundle.
- *
- * @module payload-live-preview/structural
+ * `payload-live-preview/structural`: the keyed morph and the structural array
+ * renderer on their own (ADR 0008), for a project that renders lists itself
+ * and wants the same boundary rules without the runtime or Lexical.
  */
 
 export { createStructuralArrayRenderer } from './field-types/structural-array';
@@ -50,3 +43,5 @@ export type {
   PayloadLivePreviewData,
 } from './types/payload-protocol';
 export type { ArrayPatch } from './schema/diff';
+// `CachedElement.strategyKind` is typed with it, so this entry must name it too.
+export type { UpdateSource } from './core/strategies';

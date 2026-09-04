@@ -1,17 +1,8 @@
-/**
- * Renderer for Lexical `list` and `listitem` nodes.
- *
- * Recognises three list types:
- *   - `bullet` → `<ul>`
- *   - `number` → `<ol>` (forwards `start` and `reversed` when present)
- *   - `check`  → `<ul role="list">` with `aria-checked` per item
- *
- * @module @lexical/nodes/list
- */
+/** `list` / `listitem` renderers: `bullet` → `<ul>`, `number` → `<ol>`, `check` → `<ul role="list">` with `aria-checked` items. */
 
 import { escapeHtml } from '@security/escape';
 import type { NodeRenderer } from '../registry';
-import { dirAttribute, styleAttribute } from '../utils';
+import { dirAttribute, layoutClassAttribute } from '../utils';
 
 const listRenderer: NodeRenderer = (node, ctx): string => {
   const listType = typeof node['listType'] === 'string' ? node['listType'] : 'bullet';
@@ -22,18 +13,18 @@ const listRenderer: NodeRenderer = (node, ctx): string => {
       : '';
   const checkAttr = listType === 'check' ? ' role="list"' : '';
   const children = ctx.renderChildren(node.children ?? []);
-  return `<${tag}${dirAttribute(node)}${styleAttribute(node)}${startAttr}${checkAttr}>${children}</${tag}>`;
+  return `<${tag}${dirAttribute(node)}${layoutClassAttribute(node)}${startAttr}${checkAttr}>${children}</${tag}>`;
 };
 
 const listItemRenderer: NodeRenderer = (node, ctx): string => {
   const children = ctx.renderChildren(node.children ?? []);
   if (typeof node['checked'] === 'boolean') {
     const state = node['checked'] ? 'true' : 'false';
-    return `<li role="checkbox" aria-checked="${state}"${styleAttribute(node)}>${children}</li>`;
+    return `<li role="checkbox" aria-checked="${state}"${layoutClassAttribute(node)}>${children}</li>`;
   }
   const valueAttr =
     typeof node['value'] === 'number' ? ` value="${escapeHtml(String(node['value']))}"` : '';
-  return `<li${dirAttribute(node)}${styleAttribute(node)}${valueAttr}>${children}</li>`;
+  return `<li${dirAttribute(node)}${layoutClassAttribute(node)}${valueAttr}>${children}</li>`;
 };
 
 export { listRenderer, listItemRenderer };

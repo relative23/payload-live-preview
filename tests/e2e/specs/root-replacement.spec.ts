@@ -1,4 +1,5 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
+import { post, started, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 /**
  * Root replacement and client handover (F-36, roadmap 1.4.0). Proven in the
@@ -15,6 +16,7 @@ import { expect, test, type Frame, type Page } from '@playwright/test';
 
 const PATH = '/island/';
 const HANDOVER_ORIGIN = 'https://handover.example';
+const OWNER = { globalSlug: 'homepage' };
 
 interface Api {
   inspect: () => { started: boolean; bindings: { elements: number } };
@@ -23,33 +25,11 @@ interface Api {
 }
 type PreviewWindow = Window & { __livePreview?: Api; __first?: Api; __reran?: number };
 
-function previewFrame(page: Page): Frame | undefined {
-  return page.frames().find((candidate) => candidate !== page.mainFrame());
-}
-
-async function started(frame: Frame): Promise<boolean> {
-  return frame.evaluate(() => (window as PreviewWindow).__livePreview?.inspect().started ?? false);
-}
-
 async function open(page: Page): Promise<Frame> {
   await page.goto(`/bench?target=${PATH}`);
-  await expect
-    .poll(() => previewFrame(page)?.url().endsWith(PATH) ?? false, { timeout: 15_000 })
-    .toBe(true);
-  const frame = previewFrame(page);
-  if (!frame) throw new Error('preview frame missing');
-  await expect.poll(() => started(frame), { timeout: 15_000 }).toBe(true);
+  const frame = await waitForPreviewFrame(page, PATH);
+  await waitForStarted(frame);
   return frame;
-}
-
-async function post(page: Page, fields: Record<string, unknown>): Promise<void> {
-  await page.evaluate((data) => {
-    const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-    frame?.contentWindow?.postMessage(
-      { type: 'payload-live-preview', data, globalSlug: 'homepage' },
-      window.location.origin,
-    );
-  }, fields);
 }
 
 /**
@@ -98,7 +78,7 @@ async function rerunInlineScript(frame: Frame, origin?: string): Promise<void> {
 test.describe('root replacement and handover', () => {
   test('bindings in a replaced document.body are patched', async ({ page }) => {
     const frame = await open(page);
-    await post(page, { title: 'Before' });
+    await post(page, { title: 'Before' }, OWNER);
     await expect(frame.getByTestId('outside')).toHaveText('Before');
 
     await frame.evaluate(() => {
@@ -114,7 +94,7 @@ test.describe('root replacement and handover', () => {
       )
       .toBe(2);
 
-    await post(page, { title: 'After the swap', lede: 'Still live' });
+    await post(page, { title: 'After the swap', lede: 'Still live' }, OWNER);
     await expect(frame.getByTestId('swapped')).toHaveText('After the swap');
     await expect(frame.getByTestId('lede')).toHaveText('Still live');
     expect(await started(frame)).toBe(true);
@@ -154,7 +134,7 @@ test.describe('root replacement and handover', () => {
     expect(state.signatureChanged).toBe(true);
     expect(state.origins).toContain(HANDOVER_ORIGIN);
 
-    await post(page, { title: 'After handover' });
+    await post(page, { title: 'After handover' }, OWNER);
     await expect(frame.getByTestId('outside')).toHaveText('After handover');
     await expect(frame.getByTestId('inside')).toHaveText('island: After handover');
   });

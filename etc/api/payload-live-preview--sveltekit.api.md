@@ -4,43 +4,15 @@
 
 ```ts
 
-import { a } from '../../policy-B4DHbtJN.js';
-import { D } from '../../policy-B4DHbtJN.js';
+import { b as PreviewAdapterOptions } from '../../options-CEzzfHJu.js';
 
 // @public
 export function livePreviewHandle(options?: LivePreviewSvelteKitOptions): SvelteKitHandle;
 
 // @public
-export interface LivePreviewSvelteKitOptions {
-    // (undocumented)
-    readonly allowedOrigins?: readonly string[];
-    readonly apiRoute?: string;
-    readonly authorizePreview?: (request: Request) => a | Promise<a>;
-    // (undocumented)
-    readonly autoInject?: boolean;
-    // (undocumented)
-    readonly debounceMs?: number;
-    // (undocumented)
-    readonly debug?: boolean;
-    readonly defaults?: D;
-    // (undocumented)
-    readonly frameAncestorsExtra?: readonly string[];
-    readonly heartbeatMs?: number;
-    readonly inject?: 'preview-only' | 'always';
-    readonly manageCsp?: boolean | 'frame-ancestors' | 'full';
-    readonly mergeDepth?: number;
-    readonly previewQueryParams?: readonly string[];
-    readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
-    readonly sanitizerPolicy?: 'compat' | 'strict';
-    readonly scopeBindingsByOwner?: boolean;
-    // (undocumented)
-    readonly scriptSrcExtra?: readonly string[];
-    readonly serverURL?: string;
-    readonly shouldInject?: (request: Request) => boolean;
-    readonly skipUnchanged?: boolean;
-    readonly strict?: boolean;
-    readonly strictDynamic?: boolean;
-}
+export type LivePreviewSvelteKitOptions = PreviewAdapterOptions;
+
+export { PreviewAdapterOptions }
 
 // @public (undocumented)
 interface ResolveOptions {
@@ -72,8 +44,8 @@ type SvelteKitResolve = (event: SvelteKitRequestEvent, opts?: ResolveOptions) =>
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/sveltekit/index.d.ts:112:5 - (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
-// dist/adapters/sveltekit/index.d.ts:113:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:21:5 - (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:22:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

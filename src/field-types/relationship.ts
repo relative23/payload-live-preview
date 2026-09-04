@@ -1,53 +1,32 @@
-/**
- * `relationship` field renderer.
- *
- * Renders the relation's `title` / `name` / `slug` / `id` (in that
- * order of preference). When the bound element is an `<a>` and the
- * value carries a `url`, the anchor's `href` is updated.
- *
- * Has-many relationships render the labels joined by ", ".
- *
- * @module @field-types/relationship
- */
+/** `relationship` renderer: the relation's label as text; on an `<a>` a populated `url` becomes `href`. */
 
-import { isSafeUrl } from '@security/url-validator';
 import type { FieldRenderer } from '@core/types';
-import type { PayloadRelationship } from './types';
-import { safeStringify } from './utils';
+import { asRecord, pickRelationLabel, type RelationShape } from '@lexical/value-shapes';
+import { acceptUrl } from './unsafe-url';
+import { isEmptyValue, safeStringify } from './utils';
 
 const relationshipRenderer: FieldRenderer = {
   name: 'relationship',
   render(target, value) {
     const element = target.element;
-    const labels = collectLabels(value);
-    const text = labels.join(', ');
-    if (element.tagName === 'A' && !Array.isArray(value)) {
-      const anchor = element as HTMLAnchorElement;
-      const url = (value as PayloadRelationship | null)?.url;
-      if (typeof url === 'string' && isSafeUrl(url)) anchor.href = url;
-      anchor.textContent = text;
+    if (isEmptyValue(value)) {
+      element.removeAttribute('href');
+      element.textContent = '';
       return;
     }
-    element.textContent = text;
+    if (element.tagName === 'A' && !Array.isArray(value)) {
+      const outcome = acceptUrl(element, target.fieldName, asRecord(value)?.['url']);
+      if (outcome.kind === 'safe') element.setAttribute('href', outcome.url);
+      else if (outcome.kind === 'unsafe') element.removeAttribute('href');
+    }
+    element.textContent = Array.isArray(value) ? value.map(label).join(', ') : label(value);
   },
 };
 
-function collectLabels(value: unknown): readonly string[] {
-  if (value === null || value === undefined) return [''];
-  if (Array.isArray(value)) return value.map(pickLabel);
-  return [pickLabel(value)];
-}
-
-function pickLabel(value: unknown): string {
-  if (typeof value === 'object' && value !== null) {
-    const rel = value as PayloadRelationship;
-    if (typeof rel.title === 'string' && rel.title.length > 0) return rel.title;
-    if (typeof rel.name === 'string' && rel.name.length > 0) return rel.name;
-    if (typeof rel.slug === 'string' && rel.slug.length > 0) return rel.slug;
-    if (rel.id !== undefined) return String(rel.id);
-    return '';
-  }
-  return safeStringify(value);
+function label(value: unknown): string {
+  const record = asRecord(value) as RelationShape | undefined;
+  if (record === undefined) return safeStringify(value);
+  return pickRelationLabel(record) ?? '';
 }
 
 export { relationshipRenderer };

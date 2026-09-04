@@ -6,6 +6,7 @@ import {
   registeredBlockTypes,
 } from '@lexical/blocks/registry';
 import { registerDefaultBlocks } from '@lexical/blocks/defaults';
+import { setSanitizerPolicy } from '@security/sanitizer';
 import type { LexicalRoot } from '@lexical/types';
 
 function makeBlockRoot(blockType: string, fields: Record<string, unknown>): LexicalRoot {
@@ -48,9 +49,7 @@ describe('default block renderers (after registerDefaultBlocks)', () => {
   });
 
   afterEach(() => {
-    // Defaults stay registered for the whole suite; tests must not
-    // rely on a pristine state between them. The registry is process-
-    // wide which mirrors production usage.
+    setSanitizerPolicy('strict');
   });
 
   describe('callout', () => {
@@ -58,8 +57,7 @@ describe('default block renderers (after registerDefaultBlocks)', () => {
       const html = lexicalToHtml(makeBlockRoot('callout', { text: 'Heads up' }), {
         sanitize: false,
       });
-      expect(html).toContain('<aside class="lp-block-callout"');
-      expect(html).toContain('data-importance="info"');
+      expect(html).toContain('<aside class="lp-block-callout lp-block-callout--info">');
       expect(html).toContain('<p>Heads up</p>');
     });
 
@@ -69,7 +67,7 @@ describe('default block renderers (after registerDefaultBlocks)', () => {
         { sanitize: false },
       );
       expect(html).toContain('<strong>Warning</strong>');
-      expect(html).toContain('data-importance="warning"');
+      expect(html).toContain('lp-block-callout--warning');
     });
 
     it('renders lexical body when present (delegates to renderChildren)', () => {
@@ -251,13 +249,22 @@ describe('default block renderers (after registerDefaultBlocks)', () => {
     });
   });
 
+  describe.each([['compat'], ['strict']])('callout classes under the %s policy', (policy) => {
+    it('keep the importance modifier through the sanitizer', () => {
+      setSanitizerPolicy(policy as 'compat' | 'strict');
+      const html = lexicalToHtml(makeBlockRoot('callout', { text: 'Body', importance: 'warning' }));
+      expect(html).toBe(
+        '<aside class="lp-block-callout lp-block-callout--warning"><p>Body</p></aside>',
+      );
+    });
+  });
+
   describe('fallback', () => {
-    it('falls through to generic data-block-type for unknown slugs', () => {
+    it('falls through to the class-tagged placeholder for unknown slugs', () => {
       const html = lexicalToHtml(makeBlockRoot('totally-custom-slug', { text: 'x' }), {
         sanitize: false,
       });
-      expect(html).toContain('data-block-type="totally-custom-slug"');
-      expect(html).toContain('data-block-text="x"');
+      expect(html).toBe('<div class="lp-block lp-block--totally-custom-slug"></div>');
     });
   });
 });

@@ -1,39 +1,17 @@
 /**
- * The shape of a live-preview inspection snapshot.
- *
- * This module is types only. The snapshot is assembled by
- * `LivePreviewRuntime.inspect()` as a plain object literal, because the inline
- * runtime pays for every byte of indirection and the assembly needs access to
- * internal state the runtime does not otherwise expose.
- *
- * A snapshot is a read of what the runtime already holds. It discloses nothing
- * that is not already observable on the page: the trusted origins are inside
- * the injected script, the field names are `data-payload-field` attributes in
- * the DOM, and the counters are derived from those. It is therefore available
- * in production rather than gated to development builds — a preview that
- * misbehaves only on the deployed site is exactly the case where the
- * information is worth having, and a development-only gate would withhold it
- * there.
- *
- * Nothing here is transmitted anywhere. Reading a snapshot performs no I/O.
- *
- * @module @core/inspection/types
+ * Shape of the `inspect()` snapshot. It only re-reads what the page already
+ * shows — origins from the injected script, field names from the DOM,
+ * counters derived from both — so it stays available in production, where a
+ * misbehaving preview is exactly the case worth diagnosing. Reading one
+ * performs no I/O and transmits nothing.
  */
 import type { ConnectionStatus } from '../state';
 
 /** Origin trust as the runtime currently sees it. */
 export interface InspectionOrigins {
-  /**
-   * Origins the runtime is willing to accept messages from, as configured.
-   * An empty list means no explicit allow-list was given, which is the
-   * condition under which referrer and localhost heuristics decide instead.
-   */
+  /** Configured origins; empty means the referrer and localhost heuristics decide instead. */
   readonly trusted: readonly string[];
-  /**
-   * The origin the runtime locked onto after its first accepted update, or
-   * `undefined` while still unlocked. Once locked, every other origin is
-   * refused for the rest of the session.
-   */
+  /** The origin locked onto by the first accepted update; every other is then refused. */
   readonly locked: string | undefined;
 }
 
@@ -74,8 +52,7 @@ export interface InspectionRevisions {
   /**
    * Bindings not scheduled because their value was identical to the one last
    * applied. Cumulative since start; always `0` unless `skipUnchanged` is on.
-   * A large number next to a small `accepted` is the optimisation working; a
-   * stale binding next to a non-zero number is where to look first.
+   * A large number beside a small `accepted` is the optimisation working.
    */
   readonly skippedUnchanged: number;
   /** Revision currently in flight, or `undefined` when the pipeline is idle. */
@@ -91,22 +68,14 @@ export interface InspectionBindings {
   /** Those field names, sorted. */
   readonly fieldNames: readonly string[];
   /**
-   * Field names that arrived in an update but matched no binding, as far as
-   * the runtime has observed. This is the list to read when a field refuses
-   * to update: a name here is a markup problem, a name absent from here and
-   * from `fieldNames` was never sent.
-   */
-  /**
-   * Bound fields that some update since start carried no value for, so the
-   * binding kept whatever text it already had. Cumulative, like
-   * `orphanFields`, and the exact opposite of it: a binding with no value
-   * rather than a value with no binding.
-   *
-   * This is why a binding can stay stale while its siblings update. Without
-   * it the two cases are indistinguishable from the DOM, since neither
-   * leaves a trace.
+   * Bound fields some update carried no value for, so the binding kept its old
+   * text — why a binding can stay stale while its siblings update. Cumulative.
    */
   readonly absentFields: readonly string[];
+  /**
+   * Field names that arrived but matched no binding — a markup problem.
+   * A name in neither this list nor `fieldNames` was never sent. Cumulative.
+   */
   readonly orphanFields: readonly string[];
   /** Whether `scopeBindingsByOwner` is active. */
   readonly ownerScoped: boolean;
@@ -118,11 +87,7 @@ export interface InspectionBindings {
 export interface InspectionScheduler {
   /** Writes buffered for the next flush. */
   readonly pending: number;
-  /**
-   * Writes held back because their element is offscreen and the binding count
-   * is above `visibilityGateThreshold`. These are applied when the element
-   * scrolls into view — never, on a page nobody scrolls.
-   */
+  /** Writes held back offscreen above `visibilityGateThreshold`; applied when scrolled into view. */
   readonly deferred: number;
   /** The binding count above which the visibility gate starts deferring. */
   readonly visibilityGateThreshold: number;
@@ -132,13 +97,7 @@ export interface InspectionScheduler {
   readonly lastFlush:
     | {
         readonly applied: number;
-        /**
-         * Field names the flush applied, in application order.
-         *
-         * `applied` is a count, and a count cannot separate "this binding was
-         * written" from "this binding was never scheduled" — a stale binding
-         * next to a non-zero count is consistent with both. The names can.
-         */
+        /** Which fields the flush wrote; a count alone cannot say a binding was skipped. */
         readonly appliedFields: readonly string[];
         readonly deferred: number;
         readonly durationMs: number;
@@ -146,11 +105,7 @@ export interface InspectionScheduler {
     | undefined;
 }
 
-/**
- * A point-in-time read of runtime state, for diagnosing a preview that is not
- * behaving. Every field is a plain value; the snapshot holds no references
- * into runtime internals and does not change after it is returned.
- */
+/** A point-in-time read; plain values only, with no references into runtime internals. */
 export interface LivePreviewInspection {
   /** Package version that produced this snapshot. */
   readonly version: string;
@@ -165,12 +120,7 @@ export interface LivePreviewInspection {
   readonly scheduler: InspectionScheduler;
   /** Field types with a registered renderer, sorted. */
   readonly renderers: readonly string[];
-  /**
-   * Every registered plugin with its live registrations. Empty on a bare
-   * runtime; `LivePreviewClient.inspect()` fills it from the plugin manager,
-   * so "teardown is complete" is a snapshot fact, not a listener count in one
-   * test.
-   */
+  /** Registered plugins and their live registrations; empty on a bare runtime. */
   readonly plugins: readonly PluginInspection[];
   /** Server-rendered fragment boundaries: whether a handler exists and what happened to renders. */
   readonly fragments: InspectionFragments;

@@ -7,7 +7,7 @@
 // @public
 export function collectFragmentBoundaries(root: ParentNode, changedFields: ReadonlySet<string>): readonly FragmentBoundary[];
 
-// @public
+// @public (undocumented)
 export function createFragmentHandler(options: FragmentStrategyOptions): FragmentHandler;
 
 // @public
@@ -16,13 +16,14 @@ export function createFragmentStrategy(options: FragmentStrategyOptions): Fragme
 // @public (undocumented)
 export function createRouteStrategy(options?: RouteStrategyOptions): RouteStrategy;
 
-// @public
+// @public (undocumented)
 export function describeBoundary(element: Element): FragmentBoundary | null;
 
 // @public
 export const DIAGNOSTIC_CODES: Readonly<{
     readonly NoTrustedOrigin: "LP0101";
     readonly ReferrerOnlyTrust: "LP0102";
+    readonly PluginIncompatible: "LP0103";
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly VisibilityGateDeferred: "LP0301";
@@ -55,6 +56,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RouteRefreshLoop: "LP0805";
     readonly FragmentStrategyUnavailable: "LP0806";
     readonly V2ReadinessGap: "LP0709";
+    readonly RuntimeOnPublicPage: "LP0710";
 }>;
 
 // @public
@@ -69,7 +71,7 @@ export const FRAGMENT_KEY_ATTRIBUTE = "data-payload-fragment-key";
 // @public
 export const FRAGMENT_PROTOCOL_VERSION = 1;
 
-// @public
+// @public (undocumented)
 export const FRAGMENT_VERSION_HEADER = "x-payload-fragment-version";
 
 // @public (undocumented)
@@ -78,6 +80,7 @@ export interface FragmentBoundary {
     // (undocumented)
     readonly element: Element;
     readonly id: string;
+    // (undocumented)
     readonly key: string | undefined;
 }
 
@@ -175,7 +178,7 @@ export interface FragmentStrategy {
 // @public
 export function fragmentStrategyFrom(handler: FragmentHandler): FragmentStrategy;
 
-// @public (undocumented)
+// @public
 export interface FragmentStrategyOptions {
     readonly endpoint: string;
     readonly fetch?: (url: string, init?: RequestInit) => Promise<Response>;

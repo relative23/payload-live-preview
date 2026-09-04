@@ -136,3 +136,23 @@ describe('buildLivePreviewUrl — declining a document', () => {
     expect(url(globalArgs('anything'))).toBeNull();
   });
 });
+
+describe('buildLivePreviewUrl — the preview parameter', () => {
+  const resolve = (path: string): string | null =>
+    buildLivePreviewUrl({ baseUrl: BASE, globals: { g: path } })(globalArgs('g'));
+
+  it('lands in the query, ahead of a #fragment', () => {
+    expect(resolve('/p#section')).toBe(`${BASE}/p?preview=true#section`);
+    expect(resolve('/p?a=1#section')).toBe(`${BASE}/p?a=1&preview=true#section`);
+  });
+
+  it('is not added twice', () => {
+    expect(resolve('/p?preview=true')).toBe(`${BASE}/p?preview=true`);
+    expect(resolve('/p?a=1&preview=true#h')).toBe(`${BASE}/p?a=1&preview=true#h`);
+  });
+
+  it('copes with an empty or dangling query', () => {
+    expect(resolve('/p?')).toBe(`${BASE}/p?preview=true`);
+    expect(resolve('/p?a=1&')).toBe(`${BASE}/p?a=1&preview=true`);
+  });
+});

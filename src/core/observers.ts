@@ -1,129 +1,65 @@
 /**
- * DOM observers — mutation tracking + visibility tracking.
- *
- * Two purposes:
- *
- *   1. Detect when new `data-payload-field` elements appear, when
- *      existing ones disappear, and when cached binding metadata changes.
- *      The observer debounces these mutations and then asks its host to
- *      rebuild the cache.
- *   2. Track which cached elements are within the viewport (with a
- *      configurable rootMargin). Updates for off-screen elements are
- *      queued by the scheduler and replayed when the element scrolls
- *      into view — solving the "stale offscreen content" bug from the
- *      legacy implementation.
- *
- * The observers are split from the cache and the scheduler because:
- *   - They are environment-specific (need `MutationObserver` and
- *     `IntersectionObserver`).
- *   - Tests can supply mock observers for deterministic timing.
- *
- * @module @core/observers
+ * Mutation and intersection observers: ask the host to rebuild the cache when
+ * bindings appear, vanish or change metadata, and track which bound elements
+ * are in the viewport so off-screen writes can wait. Kept apart from cache and
+ * scheduler so tests can run without the browser observer APIs.
  */
 
 import { BINDING_ATTRIBUTES, FIELD_ATTRIBUTE, OWNER_ATTRIBUTE } from './cache';
 
-/**
- * Callbacks the observer manager invokes back into its host.
- */
 export interface ObserverCallbacks {
-  /** Invoked when the cache likely needs a rebuild. */
   readonly onStructuralChange: () => void;
-  /** Invoked when an element enters or leaves the viewport. */
   readonly onVisibilityChange: (element: Element, isVisible: boolean) => void;
 }
 
-/**
- * Tunable parameters for the observer manager.
- */
 export interface ObserverOptions {
-  /** Debounce window for mutation events (ms). Default: 100. */
+  /** Debounce for mutation batches in ms. Default 100. */
   readonly mutationDebounceMs?: number;
-  /** rootMargin passed to IntersectionObserver. Default: `200px`. */
+  /** `rootMargin` for the IntersectionObserver. Default `200px`. */
   readonly intersectionRootMargin?: string;
 }
 
 const DEFAULT_DEBOUNCE_MS = 100;
 const DEFAULT_ROOT_MARGIN = '200px';
-// `nodeType` values are stable across DOM realms; the global `Node`
-// constructor is not (and is absent in pure Node/SSR environments).
+/** `nodeType` is stable across realms; the global `Node` constructor is not. */
 const ELEMENT_NODE = 1;
 
-const enum ObserverSlot {
-  Callbacks,
-  DebounceMs,
-  RootMargin,
-  Visible,
-  Mutation,
-  Intersection,
-  DebounceTimer,
-  Generation,
-}
-
-/**
- * One TS-private state record avoids private-field scaffolding in the inlined
- * runtime. Named slots keep lifecycle ownership explicit without property-name
- * mangling; this internal class never crosses the package boundary.
- */
-type ObserverState = [
-  callbacks: ObserverCallbacks,
-  debounceMs: number,
-  rootMargin: string,
-  visible: Set<Element>,
-  mutation: MutationObserver | null,
-  intersection: IntersectionObserver | null,
-  debounceTimer: ReturnType<typeof setTimeout> | null,
-  generation: number,
-];
-
-/**
- * Combined Mutation + Intersection observer.
- *
- * Lifecycle:
- *   - `start(root)` attaches the mutation observer to `root`.
- *   - `observeElement(el)` adds `el` to the intersection observer.
- *   - `unobserveElement(el)` removes it.
- *   - `stop()` disconnects everything; safe to call repeatedly.
- */
 export class ObserverManager {
-  private readonly s: ObserverState;
+  private readonly callbacks: ObserverCallbacks;
+  private readonly debounceMs: number;
+  private readonly rootMargin: string;
+  private readonly visible = new Set<Element>();
+  private mutation: MutationObserver | null = null;
+  private intersection: IntersectionObserver | null = null;
+  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Bumped by every start/stop so deliveries from an older lifetime are inert. */
+  private generation = 0;
 
   constructor(callbacks: ObserverCallbacks, options: ObserverOptions = {}) {
-    this.s = [
-      callbacks,
-      options.mutationDebounceMs ?? DEFAULT_DEBOUNCE_MS,
-      options.intersectionRootMargin ?? DEFAULT_ROOT_MARGIN,
-      new Set<Element>(),
-      null,
-      null,
-      null,
-      0,
-    ];
+    this.callbacks = callbacks;
+    this.debounceMs = options.mutationDebounceMs ?? DEFAULT_DEBOUNCE_MS;
+    this.rootMargin = options.intersectionRootMargin ?? DEFAULT_ROOT_MARGIN;
   }
 
-  /** Begin observing `root` for mutations and create the intersection observer. */
+  /** Observe `root`; a repeated start hands over cleanly. */
   start(root: Node): void {
-    // Restarting is an explicit resource hand-off. Disconnect before replacing
-    // either handle so repeated starts cannot orphan observers or timers.
-    const previousGeneration = this.s[ObserverSlot.Generation];
+    const previousGeneration = this.generation;
     this.stop();
     const generation = previousGeneration + 1;
-    // A disconnect hook may synchronously start a newer observer generation.
-    // That nested start owns the lifecycle; this older stack must build nothing.
-    if (this.s[ObserverSlot.Generation] !== generation) return;
+    // A disconnect hook may have started a newer generation; it owns the lifecycle.
+    if (this.generation !== generation) return;
     let mutation: MutationObserver | null = null;
     let intersection: IntersectionObserver | null = null;
     try {
       mutation = new MutationObserver((mutations) => {
-        this.#handleMutations(mutations, generation);
+        this.handleMutations(mutations, generation);
       });
-      // Construct both resources before activating either one. If a host lacks
-      // a usable IntersectionObserver, no MutationObserver may be left live.
+      // Both resources exist before either is live, so a missing IntersectionObserver leaves nothing behind.
       intersection = new IntersectionObserver(
         (entries) => {
-          this.#handleIntersection(entries, generation);
+          this.handleIntersection(entries, generation);
         },
-        { rootMargin: this.s[ObserverSlot.RootMargin], threshold: 0 },
+        { rootMargin: this.rootMargin, threshold: 0 },
       );
       mutation.observe(root, {
         childList: true,
@@ -136,51 +72,45 @@ export class ObserverManager {
       intersection?.disconnect();
       throw error;
     }
-    // Constructors/observe are host boundaries. A re-entrant stop or start
-    // invalidates these candidates before they can replace newer resources.
-    if (this.s[ObserverSlot.Generation] !== generation) {
+    if (this.generation !== generation) {
       mutation.disconnect();
       intersection.disconnect();
       return;
     }
-    this.s[ObserverSlot.Mutation] = mutation;
-    this.s[ObserverSlot.Intersection] = intersection;
+    this.mutation = mutation;
+    this.intersection = intersection;
   }
 
-  /** Add an element to the intersection observer. */
   observeElement(element: Element): void {
-    this.s[ObserverSlot.Intersection]?.observe(element);
+    this.intersection?.observe(element);
   }
 
-  /** Remove an element from the intersection observer. */
   unobserveElement(element: Element): void {
-    this.s[ObserverSlot.Intersection]?.unobserve(element);
-    this.s[ObserverSlot.Visible].delete(element);
+    this.intersection?.unobserve(element);
+    this.visible.delete(element);
   }
 
-  /** Mark an element as currently visible. Useful for tests/seeding. */
+  /** Seed visibility (tests). */
   markVisible(element: Element, visible: boolean): void {
-    if (visible) this.s[ObserverSlot.Visible].add(element);
-    else this.s[ObserverSlot.Visible].delete(element);
+    if (visible) this.visible.add(element);
+    else this.visible.delete(element);
   }
 
-  /** Is `element` currently within the (margined) viewport? */
   isVisible(element: Element): boolean {
-    return this.s[ObserverSlot.Visible].has(element);
+    return this.visible.has(element);
   }
 
-  /** Disconnect all observers and clear pending timers. */
+  /** Disconnect everything; safe to repeat. */
   stop(): void {
-    // Invalidate callbacks first. Queued observer deliveries and timers must
-    // become inert before any owned resource is disconnected or cleared.
-    this.s[ObserverSlot.Generation] += 1;
-    const timer = this.s[ObserverSlot.DebounceTimer];
-    const mutation = this.s[ObserverSlot.Mutation];
-    const intersection = this.s[ObserverSlot.Intersection];
-    this.s[ObserverSlot.DebounceTimer] = null;
-    this.s[ObserverSlot.Mutation] = null;
-    this.s[ObserverSlot.Intersection] = null;
-    this.s[ObserverSlot.Visible].clear();
+    // Invalidate first so queued deliveries and the timer are inert before disconnecting.
+    this.generation += 1;
+    const timer = this.debounceTimer;
+    const mutation = this.mutation;
+    const intersection = this.intersection;
+    this.debounceTimer = null;
+    this.mutation = null;
+    this.intersection = null;
+    this.visible.clear();
     if (timer !== null) clearTimeout(timer);
     try {
       mutation?.disconnect();
@@ -189,53 +119,41 @@ export class ObserverManager {
     }
   }
 
-  #handleMutations(mutations: readonly MutationRecord[], generation: number): void {
-    if (!this.#isCurrentGeneration(generation)) return;
-    if (!hasStructuralImpact(mutations)) return;
-    if (!this.#isCurrentGeneration(generation)) return;
-    if (this.s[ObserverSlot.DebounceTimer] !== null) {
-      clearTimeout(this.s[ObserverSlot.DebounceTimer]);
-    }
+  private handleMutations(mutations: readonly MutationRecord[], generation: number): void {
+    if (!this.isCurrentGeneration(generation) || !hasStructuralImpact(mutations)) return;
+    if (this.debounceTimer !== null) clearTimeout(this.debounceTimer);
     const timer = setTimeout(() => {
-      if (!this.#isCurrentGeneration(generation) || this.s[ObserverSlot.DebounceTimer] !== timer) {
-        return;
-      }
-      this.s[ObserverSlot.DebounceTimer] = null;
-      this.s[ObserverSlot.Callbacks].onStructuralChange();
-    }, this.s[ObserverSlot.DebounceMs]);
-    this.s[ObserverSlot.DebounceTimer] = timer;
+      if (!this.isCurrentGeneration(generation) || this.debounceTimer !== timer) return;
+      this.debounceTimer = null;
+      this.callbacks.onStructuralChange();
+    }, this.debounceMs);
+    this.debounceTimer = timer;
   }
 
-  #handleIntersection(entries: readonly IntersectionObserverEntry[], generation: number): void {
+  private handleIntersection(
+    entries: readonly IntersectionObserverEntry[],
+    generation: number,
+  ): void {
     for (const entry of entries) {
-      if (!this.#isCurrentGeneration(generation)) return;
-      const target = entry.target;
+      if (!this.isCurrentGeneration(generation)) return;
+      const { target } = entry;
       if (entry.isIntersecting) {
-        if (!this.s[ObserverSlot.Visible].has(target)) {
-          this.s[ObserverSlot.Visible].add(target);
-          this.s[ObserverSlot.Callbacks].onVisibilityChange(target, true);
-          if (!this.#isCurrentGeneration(generation)) return;
-        }
-      } else if (this.s[ObserverSlot.Visible].has(target)) {
-        this.s[ObserverSlot.Visible].delete(target);
-        this.s[ObserverSlot.Callbacks].onVisibilityChange(target, false);
-        if (!this.#isCurrentGeneration(generation)) return;
+        if (this.visible.has(target)) continue;
+        this.visible.add(target);
+        this.callbacks.onVisibilityChange(target, true);
+      } else if (this.visible.has(target)) {
+        this.visible.delete(target);
+        this.callbacks.onVisibilityChange(target, false);
       }
     }
   }
 
-  #isCurrentGeneration(generation: number): boolean {
-    return (
-      this.s[ObserverSlot.Generation] === generation && this.s[ObserverSlot.Intersection] !== null
-    );
+  private isCurrentGeneration(generation: number): boolean {
+    return this.generation === generation && this.intersection !== null;
   }
 }
 
-/**
- * Returns true iff any mutation in the batch affects the live preview
- * tracking attributes. This short-circuits the common case where DOM
- * activity is unrelated to the preview, avoiding spurious rebuilds.
- */
+/** Whether a mutation batch can change what is bound; unrelated DOM activity never rebuilds. */
 function hasStructuralImpact(mutations: readonly MutationRecord[]): boolean {
   for (const m of mutations) {
     if (
@@ -243,12 +161,8 @@ function hasStructuralImpact(mutations: readonly MutationRecord[]): boolean {
       m.attributeName !== null &&
       BINDING_ATTRIBUTES.includes(m.attributeName)
     ) {
-      // The field attribute itself can add, remove, or retarget a binding, and
-      // the owner attribute re-attributes every binding below it — neither is
-      // required to sit on a binding element. All other metadata — especially
-      // the generic native `type` attribute — only matters on an element that
-      // is still a live-preview binding. This keeps unrelated form activity
-      // from causing whole-cache rebuilds.
+      // The field and owner attributes matter anywhere; other metadata (notably
+      // the native `type`) only on an element that is a binding.
       if (
         m.attributeName === FIELD_ATTRIBUTE ||
         m.attributeName === OWNER_ATTRIBUTE ||
@@ -257,12 +171,8 @@ function hasStructuralImpact(mutations: readonly MutationRecord[]): boolean {
         return true;
       }
     }
-    for (const node of m.addedNodes) {
-      if (containsTrackedElement(node)) return true;
-    }
-    for (const node of m.removedNodes) {
-      if (containsTrackedElement(node)) return true;
-    }
+    for (const node of m.addedNodes) if (containsTrackedElement(node)) return true;
+    for (const node of m.removedNodes) if (containsTrackedElement(node)) return true;
   }
   return false;
 }
@@ -270,6 +180,7 @@ function hasStructuralImpact(mutations: readonly MutationRecord[]): boolean {
 function containsTrackedElement(node: Node): boolean {
   if (node.nodeType !== ELEMENT_NODE) return false;
   const element = node as Element;
-  if (element.hasAttribute(FIELD_ATTRIBUTE)) return true;
-  return element.querySelector(`[${FIELD_ATTRIBUTE}]`) !== null;
+  return (
+    element.hasAttribute(FIELD_ATTRIBUTE) || element.querySelector(`[${FIELD_ATTRIBUTE}]`) !== null
+  );
 }

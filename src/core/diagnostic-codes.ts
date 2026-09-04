@@ -1,37 +1,11 @@
 /**
- * Stable identifiers for everything the runtime reports.
+ * Every diagnostic code the runtime and tools emit, so a consumer can branch
+ * on `e.code` instead of matching message text. A code is never reused for a
+ * different meaning; a retired one stays reserved.
  *
- * Prose gets reworded; a code does not. A consumer filtering logs, an alert
- * rule, or a bug report referring to `LP0301` keeps meaning the same thing
- * after the sentence around it is rewritten, and a code is greppable in a way
- * that a sentence fragment is not.
- *
- * Codes are grouped by the question they answer:
- *
- * - `LP01xx` — configuration and origin trust: the runtime is running, but it
- *   was set up in a way that will bite.
- * - `LP02xx` — bindings and markup: an update had nowhere to land.
- * - `LP03xx` — updates and scheduling: the update landed somewhere other than
- *   the DOM, or not yet.
- * - `LP04xx` — rendering: a value reached an element and was refused.
- * - `LP05xx` — protocol and messages: something arrived that was not accepted.
- * - `LP06xx` — consumer callbacks: code the consumer supplied threw.
- * - `LP07xx` — audit findings from `pll doctor`, which reports on a served
- *   response rather than on a running runtime.
- *
- * A code is part of the public contract. Codes are never reused for a
- * different meaning and never renumbered; a retired code stays retired.
- * `LP0604` is unassigned: a throwing token validator is deliberately treated
- * as a rejection and reported as `LP0502`, so there is nothing distinct to
- * report yet. The number stays reserved rather than being handed to something
- * else.
- *
- * The runtime writes these as string literals at each reporting site rather
- * than reading them from this record, so the inline build pays for the six
- * characters it prints and nothing more. This record exists so consumers can
- * refer to a code by name instead of copying a literal.
- *
- * @module @core/diagnostic-codes
+ * Browser-side reporting sites write the literal (`code: 'LP0603'`) rather than
+ * reading it from this record: the frozen table would then ship in the inline
+ * runtime for the sake of six characters. Server-side tools may import it.
  */
 
 /**
@@ -48,6 +22,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   NoTrustedOrigin: 'LP0101',
   /** Origin trust rests on `document.referrer`, so any framing site is trusted. */
   ReferrerOnlyTrust: 'LP0102',
+  /** A plugin declares a runtime range this runtime does not satisfy; it was refused. */
+  PluginIncompatible: 'LP0103',
 
   /** An update named a field with no binding anchor on the page. */
   OrphanField: 'LP0201',
@@ -83,6 +59,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   TransformThrew: 'LP0602',
   /** A renderer threw while writing a value. */
   RendererThrew: 'LP0603',
+  // LP0604 is reserved and unassigned; codes are never reused or renumbered.
   /** Runtime startup failed. */
   StartupFailed: 'LP0605',
   /** Sending the ready handshake failed. */
@@ -118,6 +95,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   FragmentStrategyUnavailable: 'LP0806',
   /** A readiness row is not yet at its 2.0 value; `pll doctor --v2` reports it. */
   V2ReadinessGap: 'LP0709',
+  /** The preview runtime is served to anonymous visitors, not only inside the admin frame. */
+  RuntimeOnPublicPage: 'LP0710',
 } as const);
 
 /** A diagnostic code, as it appears in log output and on the `error` event. */

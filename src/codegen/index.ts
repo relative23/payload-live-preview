@@ -1,62 +1,48 @@
 /**
- * Programmatic codegen API.
- *
- *   ```ts
- *   import { generateTypes } from 'payload-live-preview/codegen';
- *   const { code, diagnostics } = await generateTypes({
- *     configPath: 'backend/src/payload.config.ts',
- *     outFile: 'frontend/src/payload-types.ts',
- *   });
- *   ```
- *
- * @module @codegen
+ * Programmatic codegen API: `generateTypes({ configPath, outFile })` parses a
+ * Payload config and writes the TypeScript types and, optionally, the preview
+ * inventory. Requires ts-morph.
  */
-
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, resolve } from 'node:path';
-import { extractSchema, type ExtractSchemaOptions } from './parser/extract-schema';
 import { emitTypes, type EmitOptions } from './emit/emit-types';
-import type { ExtractedSchema } from './parser/types';
-
 import { buildPreviewInventory, type PreviewInventory } from './inventory';
+import { extractSchema, type ExtractSchemaOptions } from './parser/extract-schema';
+import type { ExtractedSchema } from './parser/types';
 
 export interface GenerateTypesOptions
   extends Pick<ExtractSchemaOptions, 'configPath' | 'project' | 'tsConfigFilePath'>, EmitOptions {
-  /**
-   * If set, the generated code is written to this absolute or
-   * cwd-relative path. The function still returns the rendered string
-   * in `code` so callers can verify before writing.
-   */
+  /** Where to write the generated code; `code` is returned either way. */
   readonly outFile?: string;
-  /** Working directory used to resolve relative paths. Defaults to `process.cwd()`. */
+  /** Resolves relative paths. Defaults to `process.cwd()`. */
   readonly cwd?: string;
-  /**
-   * If set, the preview inventory is written to this path as JSON.
-   *
-   * Every field a binding can address, spelled the way the runtime resolves it.
-   * Consumers have had to re-derive that spelling to check their markup against
-   * the schema, and re-deriving it is where the two drift apart.
-   */
+  /** Where to write the preview inventory as JSON: every path a binding may address. */
   readonly inventoryFile?: string;
 }
 
 export interface GenerateTypesResult {
   readonly code: string;
+  /** Extraction diagnostics, plus a note when nothing was written. */
   readonly diagnostics: readonly string[];
   readonly schema: ExtractedSchema;
+  /** The types file actually written; absent when writing was refused. */
   readonly outFile?: string;
   /** Always produced; written to disk only when `inventoryFile` is set. */
   readonly inventory: PreviewInventory;
   readonly inventoryFile?: string;
 }
 
+async function writeOut(path: string, content: string): Promise<void> {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, content, 'utf8');
+}
+
+/** Parse the config and write the types, never writing an empty schema over a consumer's file. */
 export async function generateTypes(options: GenerateTypesOptions): Promise<GenerateTypesResult> {
   const cwd = options.cwd ?? process.cwd();
-  const configPath = isAbsolute(options.configPath)
-    ? options.configPath
-    : resolve(cwd, options.configPath);
+  const absolute = (path: string): string => (isAbsolute(path) ? path : resolve(cwd, path));
   const schema = extractSchema({
-    configPath,
+    configPath: absolute(options.configPath),
     ...(options.project !== undefined ? { project: options.project } : {}),
     ...(options.tsConfigFilePath !== undefined
       ? { tsConfigFilePath: options.tsConfigFilePath }
@@ -64,36 +50,32 @@ export async function generateTypes(options: GenerateTypesOptions): Promise<Gene
   });
   const code = emitTypes(schema, options);
   const inventory = buildPreviewInventory(schema);
-
-  const result: GenerateTypesResult = {
+  const diagnostics = [...schema.diagnostics];
+  const outFile = options.outFile === undefined ? undefined : absolute(options.outFile);
+  const inventoryFile =
+    options.inventoryFile === undefined ? undefined : absolute(options.inventoryFile);
+  const targets = [outFile, inventoryFile].filter((path): path is string => path !== undefined);
+  const empty = schema.globals.length + schema.collections.length === 0;
+  if (empty && targets.length > 0) {
+    diagnostics.push(
+      `Nothing written: the schema is empty (0 globals, 0 collections), so ${targets.join(' and ')} ` +
+        'were left as they are.',
+    );
+  } else {
+    if (outFile !== undefined) await writeOut(outFile, code);
+    // Stable key order and a trailing newline keep the inventory diffable.
+    if (inventoryFile !== undefined) {
+      await writeOut(inventoryFile, `${JSON.stringify(inventory, null, 2)}\n`);
+    }
+  }
+  return {
     code,
-    diagnostics: schema.diagnostics,
+    diagnostics,
     schema,
     inventory,
-    ...(options.outFile !== undefined
-      ? { outFile: isAbsolute(options.outFile) ? options.outFile : resolve(cwd, options.outFile) }
-      : {}),
-    ...(options.inventoryFile !== undefined
-      ? {
-          inventoryFile: isAbsolute(options.inventoryFile)
-            ? options.inventoryFile
-            : resolve(cwd, options.inventoryFile),
-        }
-      : {}),
+    ...(!empty && outFile !== undefined ? { outFile } : {}),
+    ...(!empty && inventoryFile !== undefined ? { inventoryFile } : {}),
   };
-
-  if (result.outFile) {
-    await mkdir(dirname(result.outFile), { recursive: true });
-    await writeFile(result.outFile, code, 'utf8');
-  }
-  if (result.inventoryFile) {
-    await mkdir(dirname(result.inventoryFile), { recursive: true });
-    // Trailing newline and stable key order so the file is diffable and can be
-    // committed as a contract rather than regenerated noise.
-    await writeFile(result.inventoryFile, `${JSON.stringify(inventory, null, 2)}\n`, 'utf8');
-  }
-
-  return result;
 }
 
 export { buildPreviewInventory, checkPreviewBindings } from './inventory';

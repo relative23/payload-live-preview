@@ -1,39 +1,56 @@
 /**
- * `select` / `radio` field renderer.
- *
- * For `<select>` and `<input type="radio">` elements: updates the
- * value/checked state. For arbitrary elements: text content.
- *
- * For has-many `select` fields the value is an array — we render the
- * joined labels.
- *
- * @module @field-types/select
+ * `select` / `radio` renderer. Form controls receive option values; other
+ * elements show the option labels from the field schema when the admin sent
+ * one, else the values.
  */
 
-import type { FieldRenderer } from '@core/types';
-import { safeStringify } from './utils';
+import type { FieldRenderer, RenderContext } from '@core/types';
+import { asRecord } from '@lexical/value-shapes';
+import { isEmptyValue, safeStringify } from './utils';
 
 const selectRenderer: FieldRenderer = {
   name: 'select',
-  render(target, value) {
+  render(target, value, context) {
     const element = target.element;
-    const text = stringify(value);
+    const values = isEmptyValue(value) ? [] : toValues(value);
     if (element.tagName === 'SELECT') {
-      (element as HTMLSelectElement).value = text;
+      writeSelect(element as HTMLSelectElement, values);
       return;
     }
     if (element.tagName === 'INPUT' && (element as HTMLInputElement).type === 'radio') {
       const radio = element as HTMLInputElement;
-      radio.checked = radio.value === text;
+      radio.checked = values.includes(radio.value);
       return;
     }
-    element.textContent = text;
+    element.textContent = values.map((item) => labelFor(item, context)).join(', ');
   },
 };
 
-function stringify(value: unknown): string {
-  if (Array.isArray(value)) return value.map((v) => stringify(v)).join(', ');
-  return safeStringify(value);
+function toValues(value: unknown): readonly string[] {
+  if (Array.isArray(value)) return value.map(safeStringify);
+  return [safeStringify(value)];
+}
+
+// `.value = 'a, b'` on a multiple select selects nothing; options are set one by one.
+function writeSelect(select: HTMLSelectElement, values: readonly string[]): void {
+  if (select.multiple) {
+    for (const option of Array.from(select.options)) {
+      option.selected = values.includes(option.value);
+    }
+    return;
+  }
+  select.value = values[0] ?? '';
+}
+
+function labelFor(value: string, context: RenderContext): string {
+  const options = context.schema?.['options'];
+  if (!Array.isArray(options)) return value;
+  for (const option of options) {
+    const record = asRecord(option);
+    if (record === undefined || safeStringify(record['value']) !== value) continue;
+    return typeof record['label'] === 'string' ? record['label'] : value;
+  }
+  return value;
 }
 
 export { selectRenderer };

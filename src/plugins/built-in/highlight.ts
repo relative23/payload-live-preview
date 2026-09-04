@@ -1,15 +1,10 @@
 /**
- * `highlight` plugin — flashes an outline on updated elements so the
- * editor can see what changed.
- *
- * Respects `prefers-reduced-motion`. Adds at most one style tag per
- * document.
- *
- * @module @plugins/built-in/highlight
+ * `highlight` plugin: flashes an outline on updated elements. Respects
+ * `prefers-reduced-motion`; the stylesheet is shared per document across
+ * clients through a lease (ADR 0002).
  */
 
-import type { LivePreviewPlugin } from '../types';
-import type { PluginDisposer } from '../types';
+import type { LivePreviewPlugin, PluginDisposer } from '../types';
 
 const STYLE_ID = 'payload-live-preview-highlight';
 const REDUCED_MOTION_CSS =
@@ -18,19 +13,18 @@ const ANIMATED_CSS =
   '@keyframes lp-highlight{0%{outline:2px solid rgba(0,102,204,0.85);outline-offset:2px}100%{outline:2px solid transparent;outline-offset:2px}}.lp-highlight{animation:lp-highlight 0.6s ease-out;}';
 
 interface StyleLease {
-  readonly element: HTMLStyleElement;
   readonly pluginOwned: boolean;
+  readonly connected: () => boolean;
+  readonly remove: () => void;
   owners: number;
 }
 
-// DOM-keyed shared leases prevent one client from removing resources still in
-// use by another client. WeakMaps do not retain discarded documents/elements.
-const styleLeases = new WeakMap<Document, StyleLease>();
 interface HighlightLease {
   owners: number;
   readonly pluginAdded: boolean;
 }
 
+const styleLeases = new WeakMap<Document, StyleLease>();
 const highlightLeases = new WeakMap<Element, HighlightLease>();
 
 export const highlightPlugin: LivePreviewPlugin = {
@@ -44,9 +38,7 @@ export const highlightPlugin: LivePreviewPlugin = {
     const releaseStyle = acquireStyle(document, prefersReducedMotion);
     const duration = prefersReducedMotion ? 1000 : 600;
     const activeTimers = new WeakMap<Element, PluginDisposer>();
-    // Only currently armed timers are strongly retained. Each completion
-    // removes itself; one registration-owned cleanup drains the bounded set on
-    // teardown without requiring a new public disposer-return contract.
+    // Only armed timers are retained; one registration-owned cleanup drains them.
     const timerCleanups = new Set<PluginDisposer>();
     ctx.registerCleanup?.(() => {
       for (const cleanup of [...timerCleanups]) cleanup();
@@ -74,22 +66,13 @@ export const highlightPlugin: LivePreviewPlugin = {
 
 function acquireStyle(document: Document, prefersReducedMotion: boolean): PluginDisposer {
   let lease = styleLeases.get(document);
-  // Tests, HMR, or a host DOM swap may remove an owned node without running
-  // plugin teardown. Never reuse a disconnected lease.
-  if (lease !== undefined && !lease.element.isConnected) {
+  // HMR or a host DOM swap may drop the sheet without plugin teardown.
+  if (lease !== undefined && !lease.connected()) {
     styleLeases.delete(document);
     lease = undefined;
   }
   if (lease === undefined) {
-    const existing = document.getElementById(STYLE_ID);
-    const style = existing instanceof HTMLStyleElement ? existing : document.createElement('style');
-    const pluginOwned = existing === null;
-    if (pluginOwned) {
-      style.id = STYLE_ID;
-      style.textContent = prefersReducedMotion ? REDUCED_MOTION_CSS : ANIMATED_CSS;
-      document.head.appendChild(style);
-    }
-    lease = { element: style, pluginOwned, owners: 0 };
+    lease = installStyle(document, prefersReducedMotion ? REDUCED_MOTION_CSS : ANIMATED_CSS);
     styleLeases.set(document, lease);
   }
   const acquiredLease = lease;
@@ -102,8 +85,59 @@ function acquireStyle(document: Document, prefersReducedMotion: boolean): Plugin
     acquiredLease.owners -= 1;
     if (acquiredLease.owners > 0) return;
     if (styleLeases.get(document) === acquiredLease) styleLeases.delete(document);
-    if (acquiredLease.pluginOwned) acquiredLease.element.remove();
+    if (acquiredLease.pluginOwned) acquiredLease.remove();
   };
+}
+
+function installStyle(document: Document, css: string): StyleLease {
+  const existing = document.getElementById(STYLE_ID);
+  if (existing instanceof HTMLStyleElement) {
+    return {
+      pluginOwned: false,
+      connected: () => existing.isConnected,
+      remove: () => undefined,
+      owners: 0,
+    };
+  }
+  const sheet = adoptSheet(document, css);
+  if (sheet !== undefined) {
+    return {
+      pluginOwned: true,
+      connected: () => document.adoptedStyleSheets.includes(sheet),
+      remove: () => {
+        document.adoptedStyleSheets = document.adoptedStyleSheets.filter((s) => s !== sheet);
+      },
+      owners: 0,
+    };
+  }
+  const style = document.createElement('style');
+  style.id = STYLE_ID;
+  style.textContent = css;
+  document.head.appendChild(style);
+  return {
+    pluginOwned: true,
+    connected: () => style.isConnected,
+    remove: () => {
+      style.remove();
+    },
+    owners: 0,
+  };
+}
+
+// A constructed sheet needs no nonce under `style-src`; `<style>` is only the fallback.
+function adoptSheet(document: Document, css: string): CSSStyleSheet | undefined {
+  try {
+    if (!Array.isArray(document.adoptedStyleSheets) || typeof CSSStyleSheet !== 'function') {
+      return undefined;
+    }
+    const sheet = new CSSStyleSheet();
+    if (typeof sheet.replaceSync !== 'function') return undefined;
+    sheet.replaceSync(css);
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+    return sheet;
+  } catch {
+    return undefined;
+  }
 }
 
 function acquireHighlight(element: Element): PluginDisposer {

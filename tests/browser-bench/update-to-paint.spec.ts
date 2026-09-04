@@ -128,6 +128,20 @@ async function sendTimed(page: Page, value: string): Promise<void> {
   }, value);
 }
 
+/** Let every already-scheduled measurement frame run before reading the samples. */
+async function drainFrames(frame: Frame): Promise<void> {
+  await frame.evaluate(
+    async () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve();
+          });
+        });
+      }),
+  );
+}
+
 async function collect(frame: Frame): Promise<Sample[]> {
   return frame.evaluate(
     () => (window as Window & { __bench?: { samples: Sample[] } }).__bench?.samples ?? [],
@@ -151,6 +165,11 @@ function registerScenario(count: number): void {
       await sendTimed(page, `warm-${String(index)}`);
       await expect(first).toHaveText(`warm-${String(index)}`);
     }
+    // A measurement lands one animation frame after the text does, and
+    // `toHaveText` returns as soon as the text is there. Without draining the
+    // pending frames first, the last warm-up sample is counted in the measured
+    // window and the run fails with one sample too many.
+    await drainFrames(frame);
     const warm = (await collect(frame)).length;
 
     for (let index = 0; index < SAMPLES; index += 1) {
@@ -161,6 +180,10 @@ function registerScenario(count: number): void {
       await expect(first).toHaveText(value);
     }
 
+    // The same boundary at the other end: the last sample of the measured run
+    // lands a frame after its text, so collecting without draining first counts
+    // one too few. Both edges of the window need the same treatment.
+    await drainFrames(frame);
     const samples = (await collect(frame)).slice(warm);
     expect(samples.length, 'every sample produced a measurement').toBe(SAMPLES);
     expect(errors).toEqual([]);

@@ -6,12 +6,6 @@ import {
   type StrategyRequest,
 } from '@fragment/index';
 
-/**
- * The fragment client (ADR 0011): what it posts, what it accepts back, and
- * how it fails — always as an `LP08xx` outcome the runtime can fall back
- * from, never as an exception or a stale render.
- */
-
 const ENDPOINT = '/payload/fragment';
 const LOCATION = { pathname: '/page', search: '?preview=true&previewToken=t' };
 
@@ -228,5 +222,115 @@ describe('createFragmentStrategy — the response', () => {
       code: 'LP0801',
       reason: 'timeout after 10 ms',
     });
+  });
+});
+
+/** A JSON response whose body streams and errors on abort, as a real fetch body does. */
+function streaming(head: string, init?: RequestInit, contentType = 'application/json'): Response {
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(head));
+      init?.signal?.addEventListener('abort', () => {
+        controller.error(new DOMException('aborted', 'AbortError'));
+      });
+    },
+  });
+  return new Response(stream, { headers: { 'content-type': contentType } });
+}
+
+const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+describe('createFragmentStrategy — cancellation and bounds', () => {
+  it('rejects a backslash endpoint: the URL parser reads `\\` as `/` and would leave the origin', () => {
+    expect(() => createFragmentStrategy({ endpoint: '/\\evil.com/x' })).toThrow(/same-origin/u);
+    expect(() => createFragmentStrategy({ endpoint: '/x\\y' })).toThrow(/same-origin/u);
+    expect(new URL('/\\evil.com/x', 'https://site.example').origin).toBe('https://evil.com');
+  });
+
+  it('is superseded, with no unhandled rejection, when the revision is aborted while the body streams', async () => {
+    const unhandled: unknown[] = [];
+    const capture = (reason: unknown): void => {
+      unhandled.push(reason);
+    };
+    process.on('unhandledRejection', capture);
+    const controller = new AbortController();
+    // Only the aborted revision streams; the retry answers at once, so no real timer runs.
+    const fetchFn = vi
+      .fn<FetchLike>()
+      .mockImplementationOnce((_url, init) => Promise.resolve(streaming('{"html":"', init)))
+      .mockImplementation(() => Promise.resolve(rendered('<h1>S</h1>', 8)));
+    const strategy = createFragmentHandler({
+      endpoint: ENDPOINT,
+      fetch: fetchFn,
+      location: LOCATION,
+    });
+    try {
+      const pending = strategy(request({ signal: controller.signal }), boundary());
+      await tick();
+      expect(fetchFn).toHaveBeenCalledOnce();
+      controller.abort();
+      expect(await pending).toEqual({ status: 'superseded' });
+      await tick();
+      expect(unhandled).toEqual([]);
+      // The dedupe map was cleaned: the same boundary issues a new request.
+      expect(await strategy(request({ revision: 8 }), boundary())).toMatchObject({
+        status: 'rendered',
+      });
+      expect(fetchFn).toHaveBeenCalledTimes(2);
+    } finally {
+      process.off('unhandledRejection', capture);
+    }
+  });
+
+  it('counts the streamed body in bytes, not UTF-16 units, and cuts an oversized answer off as LP0802', async () => {
+    // 'ä' is one UTF-16 unit but two bytes: 250 units fit a 400 cap, 500 bytes do not.
+    const strategy = createFragmentHandler({
+      endpoint: ENDPOINT,
+      location: LOCATION,
+      maxResponseBytes: 400,
+      fetch: vi
+        .fn<FetchLike>()
+        .mockResolvedValueOnce(rendered('ä'.repeat(250)))
+        .mockResolvedValueOnce(rendered('a'.repeat(250), 8)),
+    });
+    expect(await strategy(request(), boundary())).toMatchObject({
+      status: 'failed',
+      code: 'LP0802',
+      reason: 'response exceeds the size limit',
+    });
+    expect(await strategy(request({ revision: 8 }), boundary())).toMatchObject({
+      status: 'rendered',
+      html: 'a'.repeat(250),
+    });
+  });
+
+  it('maps a body that cannot be serialized to LP0801 instead of rejecting', async () => {
+    const strategy = createFragmentHandler({ endpoint: ENDPOINT, location: LOCATION });
+    expect(await strategy(request({ fields: { n: 1n } }), boundary())).toMatchObject({
+      status: 'failed',
+      code: 'LP0801',
+      reason: expect.stringContaining('BigInt') as string,
+    });
+  });
+
+  it('forgets a request that rejected, so the next identical one is retried instead of replaying the rejection', async () => {
+    const fetchFn = vi.fn<FetchLike>(() => Promise.resolve(rendered()));
+    // The only way past the outcome mapping is a throw before the request is built.
+    let broken = true;
+    const location = {
+      get pathname(): string {
+        if (broken) {
+          broken = false;
+          throw new Error('no location yet');
+        }
+        return '/page';
+      },
+      search: '',
+    };
+    const strategy = createFragmentHandler({ endpoint: ENDPOINT, fetch: fetchFn, location });
+    await expect(strategy(request(), boundary())).rejects.toThrow('no location yet');
+    expect(fetchFn).not.toHaveBeenCalled();
+    expect(await strategy(request(), boundary())).toMatchObject({ status: 'rendered' });
+    expect(fetchFn).toHaveBeenCalledOnce();
   });
 });

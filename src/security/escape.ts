@@ -1,13 +1,4 @@
-/**
- * HTML-escape primitives.
- *
- * Implementations follow the OWASP XSS Prevention Cheat Sheet: each
- * special character is replaced with its decimal or hex entity. The
- * functions are isomorphic — they have no dependency on the DOM and
- * can run in any JavaScript environment (browser, Node, Deno, Bun).
- *
- * @module @security/escape
- */
+/** HTML and CSS escaping primitives (OWASP XSS Prevention Cheat Sheet). DOM-free. */
 
 const HTML_ESCAPES: Readonly<Record<string, string>> = Object.freeze({
   '&': '&amp;',
@@ -22,30 +13,15 @@ const HTML_ESCAPES: Readonly<Record<string, string>> = Object.freeze({
 
 const HTML_ESCAPE_PATTERN = /[&<>"'/`=]/g;
 
-/**
- * Escape every HTML-significant character in `text` so the result is
- * safe to interpolate into any HTML context (element body or attribute).
- *
- * - Coerces non-strings via `String(value)`; pass `null`/`undefined`
- *   intentionally — they become `"null"`/`"undefined"`.
- * - Cannot fail; returns `""` for the empty input.
- */
+/** Escape `text` for an element body or a *quoted* attribute value; strings only, and unquoted attributes are not covered. */
 export function escapeHtml(text: string): string {
   if (text === '') return '';
-  // The regex character class and the HTML_ESCAPES map are intentionally
-  // coupled — every match is guaranteed to be a key in the map.
+  // The character class and the map are coupled: every match is a key.
   // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
   return text.replace(HTML_ESCAPE_PATTERN, (char) => HTML_ESCAPES[char] as string);
 }
 
-/**
- * Escape characters that have special meaning inside a CSS `url(...)`
- * literal so an attacker cannot break out of a value.
- *
- * Use only when constructing CSS at runtime (e.g.,
- * `style.backgroundImage`). Combined with a passing `isSafeUrl()` this
- * eliminates the CSS-injection vector for media URLs.
- */
+/** Escape a value for a CSS `url(...)` literal; this stops the break-out, not the scheme, so pair it with `isSafeUrl()`. */
 export function escapeCssUrl(value: string): string {
   return value.replace(/['"()\\]/g, '\\$&');
 }
@@ -60,28 +36,14 @@ const ATTR_ESCAPES: Readonly<Record<string, string>> = Object.freeze({
 
 const ATTR_ESCAPE_PATTERN = /[&<>"']/g;
 
-/**
- * Escape characters that would break out of a double-quoted HTML
- * attribute value. Stricter than `escapeHtml` for body content but
- * preserves URL characters (`/`, `=`, etc.) that are common in
- * `href` and `src` values.
- *
- * Only call this for values that have already been validated as safe
- * URLs or trusted strings; it does NOT block dangerous protocols.
- */
+/** Escape a value for a *quoted* HTML attribute, leaving URL characters intact; it validates no scheme, so run `isSafeUrl()` on `href`/`src` first. */
 export function escapeHtmlAttribute(value: string): string {
   if (value === '') return '';
   // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
   return value.replace(ATTR_ESCAPE_PATTERN, (char) => ATTR_ESCAPES[char] as string);
 }
 
-/**
- * Escape newlines into `<br>` tags after HTML-escaping the input.
- *
- * The order is critical: escape first, then introduce the `<br>` markers.
- * Reversing the order would let an attacker inject HTML by smuggling
- * `<br>` boundaries around malicious content.
- */
+/** `escapeHtml()` then newlines to `<br>`; the order is what makes it safe. */
 export function escapeAndLinebreak(text: string): string {
   return escapeHtml(text).replace(/\r\n|\r|\n/g, '<br>');
 }

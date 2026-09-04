@@ -114,10 +114,14 @@
       // callback; this fixture has no Payload, so it asks the example's own
       // fixture endpoint. Without the token the page is a public response:
       // no runtime, no bindings, nothing to preview.
-      // `?target=/owners` previews another route of this site (tests use it);
-      // anything that is not a same-site path falls back to the home page.
-      const requested = new URLSearchParams(window.location.search).get('target') ?? '/';
-      const target = /^\/(?!\/)[^?#]*$/.test(requested) ? requested : '/';
+      // `?target=/owners` previews another route of this site (tests use it).
+      // The framed route comes out of this list, never out of the query: the
+      // parameter only selects an entry, so a crafted `?target=` has no path to
+      // `iframe.src` at all. A mock admin is the first integration a reader
+      // copies, so it models the check a real one needs.
+      const ROUTES = ['/', '/owners'];
+      const requested = new URLSearchParams(window.location.search).get('target');
+      const target = ROUTES.find((route) => route === requested) ?? ROUTES[0];
       fetch(`/preview-token?path=${encodeURIComponent(target)}`)
         .then((response) => response.text())
         .then((token) => {

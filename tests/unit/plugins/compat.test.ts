@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { incompatibilityOf, satisfiesRange } from '@plugins/compat';
+import { LIBRARY_PROTOCOL_VERSION } from '@core/protocol-version';
+import { VERSION } from '@/version';
 
 describe('satisfiesRange', () => {
   it('reads the range forms a plugin author writes', () => {
@@ -49,5 +51,14 @@ describe('incompatibilityOf', () => {
     );
     expect(incompatibilityOf({ protocol: 0 }, '1.9.0', 4)).toMatch(/invalid protocol/);
     expect(incompatibilityOf({ protocol: 2.5 }, '1.9.0', 4)).toMatch(/invalid protocol/);
+  });
+
+  it('accepts the range docs/renderers.md tells plugin authors to write', () => {
+    expect(
+      incompatibilityOf({ runtime: '>=1.2.0' }, VERSION, LIBRARY_PROTOCOL_VERSION),
+    ).toBeUndefined();
+    expect(incompatibilityOf({ runtime: '^1.2.0' }, VERSION, LIBRARY_PROTOCOL_VERSION)).toMatch(
+      /declares runtime \^1\.2\.0/,
+    );
   });
 });

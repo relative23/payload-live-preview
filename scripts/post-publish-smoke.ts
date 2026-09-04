@@ -1,21 +1,7 @@
 /**
- * Install the published package from the registry and import every public
- * entry, in a directory that shares nothing with this repository.
- *
- * `check-package.ts` already proves the *tarball* installs and type-checks
- * before it is published. This proves the thing consumers actually get: the
- * artifact the registry serves, resolved by version range, installed by a
- * plain `npm install` with no workspace, no lockfile and no local `dist` to
- * fall back on. A release can be green end to end and still leave an
- * uninstallable package — a missing file in `files`, an export map that
- * resolves to nothing, a dependency that only existed locally — and nothing
- * before this step would notice.
- *
- * Registry propagation is the one delay it tolerates, bounded and only for
- * the read-after-write window. An import that fails is a failure, never a
- * retry.
- *
- * @module scripts/post-publish-smoke
+ * Install the just-published version from the registry into a directory that
+ * shares nothing with this repository and import every Node-reachable entry.
+ * Registry propagation is the only delay tolerated; a failing import fails.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -35,15 +21,9 @@ const manifest = require_(join(ROOT, 'package.json')) as {
 };
 
 /**
- * How each published subpath can be reached from a plain Node consumer.
- *
- * Written out rather than filtered by a rule, because the two exclusions are
- * claims that deserve to be read: `RichText.astro` is a component compiled by
- * Astro, and `middleware-entry` imports the virtual module the integration
- * provides at build time. Neither is importable by Node, and pretending
- * otherwise would make this step fail for a reason that is not a defect. A
- * subpath added later is not listed here, and the check below fails until
- * somebody decides which of these it is.
+ * Written out per subpath so each exclusion is a reviewed claim: the Astro
+ * components need the Astro compiler and `middleware-entry` imports the
+ * integration's virtual module. An unlisted subpath fails the smoke test.
  */
 export const ENTRY_REACHABILITY = {
   '.': 'import',
@@ -53,7 +33,14 @@ export const ENTRY_REACHABILITY = {
   './sveltekit': 'import',
   './nuxt': 'import',
   './doctor': 'import',
+  './migrate': 'import',
   './payload': 'import',
+  './server': 'import',
+  './client': 'import',
+  './structural': 'import',
+  './lexical': 'import',
+  './plugins': 'import',
+  './fragment': 'import',
   './codegen': 'needs-ts-morph',
   './codegen/astro': 'needs-ts-morph',
   './astro/RichText.astro': 'not-node-importable',
@@ -61,7 +48,6 @@ export const ENTRY_REACHABILITY = {
   './astro/middleware-entry': 'not-node-importable',
 } as const satisfies Readonly<Record<string, 'import' | 'needs-ts-morph' | 'not-node-importable'>>;
 
-/** Fail on an unclassified subpath instead of silently not testing it. */
 export function classifyPublishedEntries(
   published: readonly string[],
 ): readonly (readonly [string, string])[] {
@@ -81,10 +67,6 @@ export function classifyPublishedEntries(
   return published.map((key) => [key, ENTRY_REACHABILITY[key as keyof typeof ENTRY_REACHABILITY]]);
 }
 
-function classifiedEntries(): readonly (readonly [string, string])[] {
-  return classifyPublishedEntries(Object.keys(manifest.exports));
-}
-
 function run(command: string, args: readonly string[], cwd: string): string {
   return execFileSync(command, [...args], {
     cwd,
@@ -93,15 +75,12 @@ function run(command: string, args: readonly string[], cwd: string): string {
   });
 }
 
-/** Whether the registry serves this exact version yet. */
 function registryHasVersion(): { readonly ok: boolean; readonly output: string } {
   try {
     const output = run('npm', ['view', `${manifest.name}@${manifest.version}`, 'version'], ROOT);
     return { ok: output.trim() === manifest.version, output };
   } catch (error) {
     const output = error instanceof Error ? error.message : String(error);
-    // A propagation delay is expected briefly; anything else is a real fault
-    // and must not be swallowed by the retry loop.
     if (!isRegistryPropagationDelay(output)) throw error;
     return { ok: false, output };
   }
@@ -123,17 +102,13 @@ async function main(): Promise<void> {
       join(workspace, 'package.json'),
       `${JSON.stringify({ name: 'plp-smoke', private: true, type: 'module' }, null, 2)}\n`,
     );
-    // --ignore-scripts because a consumer install must not need our scripts,
-    // and because running unreviewed lifecycle scripts here would defeat the
-    // point of installing from the registry.
     run(
       'npm',
       ['install', target, '--ignore-scripts', '--no-audit', '--no-fund', '--loglevel=error'],
       workspace,
     );
 
-    // Read from disk, not through resolution: the package deliberately does
-    // not expose `./package.json` in its export map.
+    // Read from disk: the package deliberately does not export `./package.json`.
     const installed = JSON.parse(
       readFileSync(join(workspace, 'node_modules', manifest.name, 'package.json'), 'utf8'),
     ) as { readonly version: string };
@@ -143,10 +118,8 @@ async function main(): Promise<void> {
       );
     }
 
-    const classified = classifiedEntries();
-    // The optional peers are installed so the entries that declare them are
-    // genuinely exercised. Without ts-morph the codegen entries fail with
-    // "Cannot find package", which says nothing about whether they work.
+    const classified = classifyPublishedEntries(Object.keys(manifest.exports));
+    // The optional peer is installed so the codegen entries are genuinely exercised.
     run(
       'npm',
       [
@@ -179,7 +152,6 @@ console.log('  ', ${JSON.stringify(specifier)}, Object.keys(m${String(index)}).l
     writeFileSync(join(workspace, 'probe.mjs'), `${probe}\n`);
     process.stdout.write(run('node', ['probe.mjs'], workspace));
 
-    // The root entry also ships CJS. A consumer on `require` must reach it.
     writeFileSync(
       join(workspace, 'probe.cjs'),
       `const m = require(${JSON.stringify(manifest.name)});\n` +

@@ -1,15 +1,7 @@
 /**
  * The Astro fragment endpoint (ADR 0011): renders a registered component
  * boundary from unsaved form state for an authorized preview, and nothing
- * else. The browser names a registry id; the server decides what that id
- * renders, with which props, and whether the caller may ask at all.
- *
- * Verification of the abuse model in ADR 0011 is the test suite next to
- * this file: method, same-origin, content type, body size and depth,
- * authorization bound to the page route and the document scope, registry
- * lookup, render timeout, response headers.
- *
- * @module @adapters/astro/fragments
+ * else. The browser names a registry id; the server decides what it renders.
  */
 import {
   authorizePreviewRequest,
@@ -165,15 +157,7 @@ function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-/**
- * Build the endpoint. Use it as an Astro API route:
- *
- * ```ts
- * // src/pages/payload/fragment.ts
- * export const prerender = false;
- * export const POST = createFragmentEndpoint({ registry, authorize: { type: 'signed-token', secret } });
- * ```
- */
+/** Build the endpoint; export it as the `POST` of a non-prerendered Astro API route. */
 export function createFragmentEndpoint(
   options: FragmentEndpointOptions,
 ): (context: { readonly request: Request }) => Promise<Response> {
@@ -193,9 +177,8 @@ export function createFragmentEndpoint(
     const body = parseFragmentRequest(raw);
     if (body === null) return refuse(400, 'shape');
 
-    // Authorize as the page would: the page route with its query string,
-    // under this request's cookies and headers, so a token is bound to the
-    // route it was issued for and a session is the visitor's own.
+    // Authorize as the page would, so a token stays bound to the route it was
+    // issued for and a session is the visitor's own.
     const origin = new URL(request.url).origin;
     const pageRequest = new Request(`${origin}${body.route}${body.search}`, {
       headers: request.headers,

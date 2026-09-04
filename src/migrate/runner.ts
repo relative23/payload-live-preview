@@ -1,13 +1,8 @@
-/**
- * The file walker behind `pll migrate`: find source files, apply the
- * codemods, and report or write the result. Kept apart from the codemods
- * (`@migrate/index`) so those stay pure and testable without a filesystem.
- *
- * @module @migrate/runner
- */
+/** The file walker behind `pll migrate`: find source files, apply the codemods, report or write. */
 import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
-import { migrateSource, type CodemodConflict, type CodemodEdit } from './index';
+import { migrateSource } from './index';
+import type { CodemodConflict, CodemodEdit } from './types';
 
 const SOURCE_EXTENSIONS = new Set([
   '.ts',
@@ -17,10 +12,12 @@ const SOURCE_EXTENSIONS = new Set([
   '.js',
   '.jsx',
   '.mjs',
+  '.cjs',
   '.astro',
   '.svelte',
   '.vue',
 ]);
+const DECLARATION_FILE = /\.d\.[cm]?ts$/u;
 const SKIP_DIRECTORIES = new Set([
   'node_modules',
   'dist',
@@ -36,7 +33,7 @@ export interface MigrateFileResult {
   readonly file: string;
   readonly edits: readonly CodemodEdit[];
   readonly changed: boolean;
-  /** Removed APIs this file uses that a codemod could not rewrite automatically. */
+  /** What a codemod could not rewrite safely in this file. */
   readonly conflicts: readonly CodemodConflict[];
 }
 
@@ -46,31 +43,12 @@ export interface MigrateRunResult {
   readonly changedCount: number;
   /** Codemod id → number of files it touched. */
   readonly byCodemod: Readonly<Record<string, number>>;
-  /** Files needing manual attention (a rewrite that could not be applied safely). */
+  /** Files needing manual attention. */
   readonly conflictCount: number;
 }
 
-async function collectFiles(root: string): Promise<string[]> {
-  const found: string[] = [];
-  async function walk(directory: string): Promise<void> {
-    const entries = await readdir(directory, { withFileTypes: true });
-    for (const entry of entries) {
-      const path = join(directory, entry.name);
-      if (entry.isDirectory()) {
-        if (!SKIP_DIRECTORIES.has(entry.name)) await walk(path);
-      } else if (SOURCE_EXTENSIONS.has(extname(entry.name))) {
-        found.push(path);
-      }
-    }
-  }
-  const info = await stat(root);
-  if (info.isDirectory()) await walk(root);
-  else if (SOURCE_EXTENSIONS.has(extname(root))) found.push(root);
-  return found.sort();
-}
-
 export interface MigrateOptions {
-  /** Apply and save; without it the run only reports (dry-run). */
+  /** Apply and save; without it the run only reports. */
   readonly write?: boolean;
   /** Restrict to these codemod ids. */
   readonly only?: readonly string[];
@@ -80,6 +58,33 @@ export interface MigrateOptions {
     readonly write: (path: string, content: string) => Promise<void>;
     readonly list: (root: string) => Promise<readonly string[]>;
   };
+}
+
+function isSourceFile(name: string): boolean {
+  return SOURCE_EXTENSIONS.has(extname(name)) && !DECLARATION_FILE.test(name);
+}
+
+async function collectFiles(root: string): Promise<string[]> {
+  const found: string[] = [];
+  async function walk(directory: string): Promise<void> {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (!SKIP_DIRECTORIES.has(entry.name)) await walk(path);
+      } else if (isSourceFile(entry.name)) {
+        found.push(path);
+      }
+    }
+  }
+  const info = await stat(root);
+  if (info.isDirectory()) await walk(root);
+  else if (isSourceFile(root)) found.push(root);
+  return found.sort();
+}
+
+function relativeTo(root: string, file: string): string {
+  const rel = relative(root, file);
+  return rel.length === 0 ? file : rel;
 }
 
 /** Migrate every source file under `root`. */
@@ -92,15 +97,14 @@ export async function runMigrate(
     write: (path, content) => writeFile(path, content, 'utf8'),
     list: collectFiles,
   };
-  const files = await io.list(root);
   const results: MigrateFileResult[] = [];
   const byCodemod: Record<string, number> = {};
-  for (const file of files) {
+  for (const file of await io.list(root)) {
     const source = await io.read(file);
-    const { output, edits, conflicts } = migrateSource(
-      source,
-      options.only === undefined ? {} : { only: options.only },
-    );
+    const { output, edits, conflicts } = migrateSource(source, {
+      fileName: file,
+      ...(options.only === undefined ? {} : { only: options.only }),
+    });
     const changed = output !== source;
     if (changed && options.write === true) await io.write(file, output);
     if (changed) {
@@ -114,9 +118,4 @@ export async function runMigrate(
     byCodemod,
     conflictCount: results.filter((result) => result.conflicts.length > 0).length,
   };
-}
-
-function relativeTo(root: string, file: string): string {
-  const rel = relative(root, file);
-  return rel.length === 0 ? file : rel;
 }

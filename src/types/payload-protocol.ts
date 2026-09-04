@@ -1,62 +1,27 @@
 /**
- * Payload Live Preview message protocol.
- *
- * Mirrors the messages emitted by Payload CMS through
- * `window.postMessage`, verified against the shipped admin code
- * (`@payloadcms/ui` → `elements/LivePreview/Window`):
- *
- *   - Payload **3.x** sends `{ type, collectionSlug, globalSlug, data,
- *     locale, externallyUpdatedRelationship }` on every form edit —
- *     `data` holds **raw form values** (relationships as bare IDs) and
- *     there is **no** `fieldSchemaJSON`.
- *   - Payload **2.x** additionally sent `fieldSchemaJSON` with the
- *     first update (client-side merge era).
- *   - `previewToken` and `protocolVersion` are extensions of THIS
- *     library for custom admin senders; stock Payload never sends
- *     them and ignores them in our `ready` handshake.
- *
- * @module @/types/payload-protocol
+ * Payload's live-preview `postMessage` protocol as the shipped admin sends it:
+ * raw form values on every edit, no schema. `previewToken` and
+ * `protocolVersion` are extensions of this library for custom senders.
  */
 
-/**
- * A `payload-live-preview` data update.
- *
- * `data` is the serialized document state. `fieldSchemaJSON`, when
- * present (Payload 2.x or custom senders), allows the schema-driven
- * engine to resolve field types without any DOM annotations.
- */
 export interface PayloadLivePreviewMessage {
   readonly type: 'payload-live-preview';
   readonly data?: Record<string, unknown>;
+  /** Sent by Payload 2.x and custom senders only. */
   readonly fieldSchemaJSON?: readonly PayloadFieldSchema[];
   readonly globalSlug?: string;
   readonly collectionSlug?: string;
   readonly locale?: string;
   readonly ready?: boolean;
-  /**
-   * Payload 3.x: most recent relationship-document event (create/update
-   * in a drawer), or `null`. The official client ignores it too — it is
-   * modeled here for completeness and consumer event access.
-   */
+  /** Payload 3.x: the most recent relationship-document event (a drawer save), or `null`. */
   readonly externallyUpdatedRelationship?: PayloadDocumentEventDetail | null;
-  /**
-   * Optional preview JWT. ⚠️ Library extension — stock Payload never
-   * sends one. When `RuntimeOptions.validateToken` is set, the runtime
-   * requires every data update to carry a token that passes the
-   * validator; messages without a valid token are dropped.
-   */
+  /** Library extension: the token `validateToken` checks. Stock Payload never sends one. */
   readonly previewToken?: string;
-  /**
-   * Highest protocol version the sender supports. ⚠️ Library extension
-   * for custom senders — stock Payload sends no version. When absent,
-   * the receiver assumes v1.
-   */
+  /** Library extension: the highest protocol version the sender supports; absent means v1. */
   readonly protocolVersion?: number;
 }
 
-/**
- * Payload's `DocumentEvent` shape (admin `providers/DocumentEvents`).
- */
+/** Payload's `DocumentEvent` shape (admin `providers/DocumentEvents`). */
 export interface PayloadDocumentEventDetail {
   readonly entitySlug: string;
   readonly operation?: 'create' | 'update';
@@ -65,13 +30,7 @@ export interface PayloadDocumentEventDetail {
   readonly [extra: string]: unknown;
 }
 
-/**
- * A `payload-document-event` message — published when the document is
- * saved in the admin panel. Stock Payload 3.x sends a **bare**
- * `{ type: 'payload-document-event' }` with no further fields; the
- * optional fields below only appear from custom senders. We surface it
- * as a `documentSave` event so the consumer can revalidate caches.
- */
+/** Sent on save. Stock Payload 3.x sends the bare `{ type }`; the other fields come from custom senders. */
 export interface PayloadDocumentEventMessage {
   readonly type: 'payload-document-event';
   readonly action?: 'updated' | 'created' | 'deleted';
@@ -81,9 +40,7 @@ export interface PayloadDocumentEventMessage {
 
 export type PayloadProtocolMessage = PayloadLivePreviewMessage | PayloadDocumentEventMessage;
 
-/**
- * Parsed, validated message payload exposed to consumers via events.
- */
+/** A validated update as events expose it. */
 export interface PayloadLivePreviewData {
   readonly fields: Record<string, unknown>;
   readonly schema?: readonly PayloadFieldSchema[];
@@ -92,13 +49,7 @@ export interface PayloadLivePreviewData {
   readonly locale?: string;
 }
 
-/**
- * The subset of Payload's field-schema description we rely on.
- *
- * Payload emits the entire field configuration tree but we only need
- * the discriminator `type` and the nesting via `fields`/`blocks`.
- * Extra properties are preserved opaquely.
- */
+/** The subset of Payload's field schema the runtime reads; extra properties are kept opaquely. */
 export interface PayloadFieldSchema {
   readonly name: string;
   readonly type: PayloadFieldType;
@@ -119,11 +70,7 @@ export interface PayloadBlockSchema {
   readonly [extra: string]: unknown;
 }
 
-/**
- * The Payload core field types this library recognises (20 as of
- * Payload 3.x). `tabs` is treated as a structural container; `group`
- * flattens nested fields.
- */
+/** Payload's core field types. `tabs` is a structural container; `group` flattens. */
 export type PayloadFieldType =
   | 'text'
   | 'textarea'
@@ -147,10 +94,5 @@ export type PayloadFieldType =
   | 'code'
   | 'ui';
 
-/**
- * Payload's `admin.condition` is a function in source, but it cannot
- * be transferred over postMessage. The schema arrives with this slot
- * either absent or, in future Payload versions, replaced by a
- * serialized expression. We model the slot but do not consume it yet.
- */
+/** `admin.condition` is a function in source and cannot cross `postMessage`; modelled, not consumed. */
 export type PayloadFieldCondition = (data: unknown, siblingData: unknown) => boolean;

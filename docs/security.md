@@ -9,17 +9,18 @@ corresponding server or browser boundary verifies them.
 
 ### 0. Preview intent is not HTTP authorization
 
-`hasPreviewIntent()` (1.1.0; `isPreviewRequest()` is its deprecated alias)
-is an **intent detector**. It checks query parameters,
-`Sec-Fetch-Dest: iframe`, and optionally an admin-origin `Referer`. A client
-can add a query parameter, cause an iframe navigation, or forge/omit request
-headers outside the browser, so a `true` result proves neither identity nor
-permission to read a draft.
+`hasPreviewIntent()` is an **intent detector**. It checks query parameters
+and, when enabled through `previewSignals`, `Sec-Fetch-Dest: iframe` and an
+admin-origin `Referer`. A client can add a query parameter, cause an iframe
+navigation, or forge/omit request headers outside the browser, so a `true`
+result proves neither identity nor permission to read a draft.
 
-Since 1.1.0 the package expresses the verification itself.
 `authorizePreviewRequest(request, strategy)` turns one of three strategies
 into a branded `AuthorizedPreviewContext` — or a refusal with a named
-outcome, never an exception:
+outcome. It throws only a `PreviewConfigurationError` (a short secret, a
+malformed cookie name, a relative `serverURL`), which the adapters re-throw
+rather than report as `unavailable`, so a misconfigured deployment fails on
+the first preview request instead of serving public pages quietly:
 
 | Strategy          | What it verifies                                                                                                                 | What it forwards to Payload                  |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
@@ -47,21 +48,25 @@ The controls keep deliberately narrow responsibilities:
 | `shouldInject`                                  | Filter script insertion by route/content                                             | Authorization; it does not suppress adapter CSP handling |
 | `draft` / privileged fetch headers              | Select and authenticate a Payload data request                                       | Verifying the frontend request that chose them           |
 
-Without `authorizePreview` the adapters behave as in 1.0 — intent-gated
-delivery — for the rest of 1.x, and say so once per process outside
-production. `strict: true` refuses to start without the hook, without
-explicit `https` admin origins, or with referrer trust; `defaults: 'v2'`
-implies it. Both are the 2.0 defaults, available now.
+`strict` is the default: an adapter refuses to start without
+`authorizePreview`, without explicit `https` admin origins (outside
+development), or with referrer trust — including the trust the `'v1'` signal
+set implies. `defaults: 'v1'` restores the 1.x intent-only behaviour, with a
+one-time development warning, for a staged migration.
 
-When verification fails or is unavailable, serve the ordinary published
-response without privileged headers or preview-specific response changes —
-the adapters do exactly that. Bypass application caches and return
-`Cache-Control: private, no-store` on authorized responses. Never attach a
-long-lived API/service key because an intent signal was present.
-`definePreview()` on `payload-live-preview/server` takes the context as its
-required `authorization` and reads a draft only with a real one; the
-root-entry `fetchPreviewDocument()` / `fetchPreviewGlobal()` (deprecated)
-still default `draft` to `true` for 1.x compatibility.
+When verification fails or is unavailable the adapters serve the ordinary
+published response unchanged. A response an adapter did change — runtime
+injected or CSP merged — is sent with `Cache-Control: private, no-store` and
+`Vary: Cookie`, so a preview is never stored as the public page; your own
+page cache should consume the same verdict. Astro, SvelteKit and Nuxt
+publish the verdict as `livePreviewAuthorization` and the hook's outcome as
+`livePreviewAuthorizationOutcome` on `locals` / `event.context` (Nuxt: from
+`defineLivePreviewServerHandler()`, before the app renders); Next.js
+middleware has no locals, so call `authorizePreviewRequest()` in the route
+when the page needs the verdict. Never attach a long-lived API/service key
+because an intent signal was present. `definePreview()` on
+`payload-live-preview/server` takes the context as its required
+`authorization` and reads a draft only with a real one.
 
 Signed tokens travel in a query parameter by default, which the browser
 history, the `Referer` header, server and CDN logs, and error reporters all
@@ -75,7 +80,8 @@ from log formats and error-reporter URLs, and supply a replay store.
 
 Inbound `postMessage` events are dropped unless `event.origin` matches one of:
 
-- An explicit origin from `allowedOrigins` (or `PAYLOAD_ADMIN_ORIGIN` env var).
+- An explicit origin from `allowedOrigins`. The browser runtime reads no
+  environment variable — read it on the server and pass the value in.
 - The captured `document.referrer` origin — **only as a zero-config fallback when no explicit origins are configured**. The referrer names whoever actually framed the page, so it must never widen an explicitly pinned allow-list; the detector enforces this.
 - A localhost pattern (`/^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i`) — only in development.
 
@@ -83,7 +89,7 @@ After the first accepted data-bearing update, the detector **locks** to that exa
 
 ⚠️ **Referrer-fallback mode:** when no explicit origins are configured and dev-mode matching is off, the referrer is the only trust source — any site that embeds the preview page in an iframe could then post (sanitised) updates into it. The inline bootstrap logs a console warning in this configuration; programmatic clients can inspect their configuration and provide their own diagnostics. Mitigations: set explicit `allowedOrigins`, and serve a `frame-ancestors` CSP so only the admin may frame the page (the adapters do this by default on intent-matched responses; use the authorization boundary above when that response change is protected).
 
-Note on intent detection and CSP: the adapters treat `Sec-Fetch-Dest: iframe` as an intent signal, so when used directly **any** iframe-destined request gets the merged `frame-ancestors 'self' <admin-origins>` policy. Foreign origins remain blocked from framing; the relaxation versus a site-wide `frame-ancestors 'none'` is that `'self'` and the admin origins become allowed on those responses. For an authorization-gated policy, invoke the adapter middleware only after the application verifier succeeds. Disable with `manageCsp: false` if you need `'none'` unconditionally.
+Note on intent detection and CSP: under the default `previewSignals: ['query']` only `?preview=true` (or a configured parameter) counts as intent; with `defaults: 'v1'` an iframe destination and an admin referer count too, so **any** iframe-destined request then gets the merged `frame-ancestors 'self' <admin-origins>` policy. Foreign origins remain blocked from framing; the relaxation versus a site-wide `frame-ancestors 'none'` is that `'self'` and the admin origins become allowed on those responses — and only after `authorizePreview` accepted the request under `strict`. Disable with `manageCsp: false` if you need `'none'` unconditionally.
 
 ### 2. Message-shape validation
 
@@ -111,14 +117,20 @@ their own HTML:
 - **External `<a>` hardened.** Auto-applies `rel="noopener noreferrer"` and `target="_blank"`.
 - **HTML comments removed.**
 
-**Policies (1.3.0).** `sanitizerPolicy: 'compat'` is the 1.x behaviour:
-`id` and every `data-*` attribute pass. `'strict'` — the 2.0 default,
-set today by `defaults: 'v2'` — strips `id` and `name` (DOM clobbering,
-§5c), strips `data-payload-*` (rich text must never add a binding), and
-passes other `data-*` only when listed in `allowedDataAttributes`. Every
-sanitizer case in the property suite runs under both policies. Item
-templates for structural lists are the one place form controls and custom
-elements are admitted (`allowFormControls`), because they are the page
+**Policies.** `sanitizerPolicy: 'strict'` is the default everywhere — the
+browser runtime, `sanitizeHtml()` and SSR `lexicalToHtml()`: it strips `id`
+and `name` (DOM clobbering, §5c), strips `data-payload-*` (rich text must
+never add a binding), and passes other `data-*` only when listed in
+`allowedDataAttributes`. Those checks run before the extension allow-lists,
+so `additionalAllowedAttributes` cannot re-admit them. `'compat'`
+(`defaults: 'v1'`, or `setSanitizerPolicy('compat')`) keeps `id` and every
+`data-*`. Every sanitizer case in the property suite runs under both
+policies. Item templates for structural lists are the one place form
+controls are admitted (`allowFormControls`) and the applier's own
+reconciliation attributes survive strict (`templateMode`: `id`, `name`,
+`data-payload-key`, `data-payload-nested-key`,
+`data-payload-nested-template` — every other `data-payload-*` is still
+stripped, so a template cannot add a binding), because they are the page
 author's markup and every interpolated value is escaped first.
 
 **Trusted Types.** Every HTML sink — the sanitizer's own parse and the
@@ -138,11 +150,11 @@ that name in its `trusted-types` directive, or hands its own policy to
 - hash / query fragments
 - plain relative paths
 
-Everything else — `javascript:`, `data:`, `vbscript:`, `file:`, `blob:`, `about:`, custom schemes — is rejected. Comparison is case-insensitive and tolerates leading whitespace that some browsers strip before scheme detection.
+Everything else — `javascript:`, `data:`, `vbscript:`, `file:`, `blob:`, `about:`, custom schemes — is rejected. Comparison is case-insensitive; tabs and newlines are removed and leading whitespace is trimmed first, as the URL parser does. Backslash forms the parser resolves to another origin (`/\evil.com`, `\\evil.com`) count as protocol-relative, so `isExternalHttpUrl()` reports them external and the sanitizer hardens such links with `noopener`.
 
 ### 5. CSP integration
 
-On responses carrying preview intent, adapters merge `frame-ancestors 'self' <admin-origins>` into any existing `Content-Security-Policy` header — as a **union** with the existing directive's sources, never clobbering them (`mergeCspHeader`). Responses without a configured intent signal are left untouched. Intent is not authorization; wrap adapter invocation behind the verified decision described in section 0 when this policy change is protected.
+On authorized preview responses (intent, then `authorizePreview`), adapters merge `frame-ancestors 'self' <admin-origins>` into any existing `Content-Security-Policy` header — as a **union** with the existing directive's sources, never clobbering them (`mergeCspHeader`). A header value carrying several policies (`Headers.get()` joins repeated headers with `, `; Node hands them over as an array) has the directive merged into every policy, because a browser enforces all of them and widening only one would leave the others blocking the admin. Responses without intent, or refused, are left untouched.
 
 The merge parser follows CSP3 policy parsing at this boundary: directive names and
 values are split on CSP ASCII whitespace, directive-name matching uses ASCII-only
@@ -157,11 +169,10 @@ Full `script-src` management is opt-in (`manageCsp: 'full'`): a per-request cryp
 
 ### 5c. DOM clobbering through sanitized `id`, `name` and `data-*`
 
-The sanitizer keeps `id` (a global attribute) and every `data-*` attribute
-on rich-text output, and drops `name` except where a tag's allow-list
-carries it (none of the allowed tags do). Those decisions have a threat
-model, written down here so the 1.3.0 strict sanitizer policy changes them
-deliberately rather than by accident.
+The strict default drops `id`, `name` and every `data-payload-*` attribute
+from sanitized output and passes other `data-*` only by explicit list
+(ADR 0007, entry 11). The `'compat'` policy keeps `id` and every `data-*`.
+This is the threat model behind that difference.
 
 **Who can author the input.** Rich text comes from the Payload editor, so
 the author is an editor — someone the site already trusts with its content
@@ -194,16 +205,11 @@ renderers — so this is an integrity nuisance an editor could inflict on
 their own page, not an escalation. It is still a binding the author of the
 page did not write.
 
-**Controls today.** Keep rich-text output out of `id`-sensitive scripts —
-declare every global a page script reads. Run with `scopeBindingsByOwner`
-so a claimed owner cannot reach into another document. Treat
-user-generated Lexical as untrusted for a different reason than XSS: it can
-add bindings.
-
-**What 1.3.0 changed (F-21).** `sanitizerPolicy: 'strict'` drops `id`,
-`name` and every `data-payload-*` attribute from sanitized output and passes
-other `data-*` only by explicit list; it is the 2.0 default and is set today
-by `defaults: 'v2'` (ADR 0007, entry 11).
+**Residual controls under `'compat'`.** Keep rich-text output out of
+`id`-sensitive scripts — declare every global a page script reads. Run with
+`scopeBindingsByOwner` so a claimed owner cannot reach into another
+document. Treat user-generated Lexical as untrusted for a different reason
+than XSS: it can add bindings.
 
 ### 6. Prototype-pollution guard
 

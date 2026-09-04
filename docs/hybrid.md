@@ -140,7 +140,11 @@ query, header `x-payload-live-preview: route`), syncs `<title>`, `<meta>`
 and the canonical link, morphs `<body>` in place (islands and custom
 elements are boundaries it does not cross; focus, typed values and scroll
 survive), rescans, and re-applies the revision so the unsaved state lands on
-the fresh markup. At most one refresh per revision; a second request for the
+the fresh markup. The head sync mirrors the fresh document both ways: a
+named `<meta>` or the canonical `<link>` that the server no longer renders
+is removed, because the refresh is that server's own render of this URL.
+Mark a tag your own script owns with `data-payload-owned` and the sync
+leaves it alone in both directions. At most one refresh per revision; a second request for the
 same revision, or one inside `minIntervalMs` (1 s) of the previous, is
 refused with `LP0805` and the elements are patched instead. A failed
 refresh (`LP0801`/`LP0802`) also falls back to patching.

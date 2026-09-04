@@ -1,17 +1,10 @@
-/**
- * Safe field-path resolution shared by lifecycle bindings and sibling-field
- * renderer metadata.
- *
- * @module @core/field-value
- */
+/** Field-path resolution for bindings and sibling-field metadata, prototype-safe. */
 
 const BLOCKED_KEYS: ReadonlySet<string> = new Set(['__proto__', 'prototype', 'constructor']);
 
 /**
- * Resolve a field value from an update payload, walking nested dotted paths
- * and trying a locale-suffixed top-level fallback when a locale is active.
- * Prototype-chain properties and pollution-sensitive path segments are never
- * traversed.
+ * Resolve a dotted field path, preferring a `_<locale>` suffix when one is
+ * active. Prototype-chain properties and pollution-prone segments never resolve.
  */
 export function resolveFieldValue(
   fields: Record<string, unknown>,

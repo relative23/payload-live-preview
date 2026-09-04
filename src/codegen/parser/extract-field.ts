@@ -1,29 +1,25 @@
 /**
- * Field-level extraction from ts-morph object literals.
- *
- * Payload field definitions are TypeScript object literals like:
- *
- *   ```ts
- *   { name: 'heroTitle', type: 'text', required: true }
- *   ```
- *
- * `extractField()` reads one such literal and produces a normalised
- * `ExtractedField`. It is intentionally tolerant — unknown field types
- * collapse to `unknown`, deeply-conditional fields surface as a
- * diagnostic rather than crashing the parser.
- *
- * @module @codegen/parser/extract-field
+ * Field-level extraction: one Payload field literal → an `ExtractedField`,
+ * recursing into groups, arrays, tabs and blocks.
  */
-
+import { Node, type ArrayLiteralExpression, type ObjectLiteralExpression } from 'ts-morph';
+import { toPascalCase } from './names';
 import {
-  Node,
-  SyntaxKind,
-  type ArrayLiteralExpression,
-  type ObjectLiteralExpression,
-  type PropertyAssignment,
-} from 'ts-morph';
+  expandElements,
+  hasProperty,
+  readArrayProperty,
+  readBooleanProperty,
+  readRelationTarget,
+  readStringProperty,
+  reportSkip,
+  resolveToObjectLiteral,
+  type ExtractContext,
+} from './resolve';
 import type { ExtractedBlock, ExtractedField, ExtractedScalarField } from './types';
 
+/** Name of an unnamed structural container; its fields flatten into the parent. */
+export const STRUCTURAL_SENTINEL = '__structural';
+const STRUCTURAL_TYPES = new Set(['tabs', 'row', 'collapsible']);
 const SCALAR_TYPE_MAP: Readonly<Record<string, ExtractedScalarField['typeRef']>> = {
   text: 'string',
   textarea: 'string',
@@ -33,230 +29,170 @@ const SCALAR_TYPE_MAP: Readonly<Record<string, ExtractedScalarField['typeRef']>>
   checkbox: 'boolean',
   date: 'string',
   code: 'string',
-  point: 'unknown',
-  ui: 'unknown',
-  radio: 'string',
+  point: '[number, number]',
 };
+const HAS_MANY_SCALARS = new Set(['text', 'number']);
 
-export function extractField(literal: ObjectLiteralExpression): ExtractedField | undefined {
+/** Every field in `array`, spreads expanded and structural containers flattened. */
+export function extractFields(
+  array: ArrayLiteralExpression,
+  context: ExtractContext,
+): ExtractedField[] {
+  const out: ExtractedField[] = [];
+  for (const element of expandElements(array, context)) {
+    const literal = resolveToObjectLiteral(element);
+    if (literal === undefined) {
+      reportSkip(context, element, 'could not resolve the field to an object literal');
+      continue;
+    }
+    const field = extractField(literal, context);
+    if (field === undefined) continue;
+    if (field.kind === 'group' && field.name === STRUCTURAL_SENTINEL) out.push(...field.fields);
+    else out.push(field);
+  }
+  return out;
+}
+
+function nestedFields(literal: ObjectLiteralExpression, context: ExtractContext): ExtractedField[] {
+  const array = readArrayProperty(literal, 'fields');
+  if (array !== undefined) return extractFields(array, context);
+  reportSkip(
+    context,
+    literal,
+    hasProperty(literal, 'fields')
+      ? 'its `fields` could not be resolved to an array literal'
+      : 'it has no `fields`',
+  );
+  return [];
+}
+
+function extractTabs(literal: ObjectLiteralExpression, context: ExtractContext): ExtractedField[] {
+  const tabs = readArrayProperty(literal, 'tabs');
+  if (tabs === undefined) {
+    reportSkip(context, literal, 'its `tabs` could not be resolved to an array literal');
+    return [];
+  }
+  const out: ExtractedField[] = [];
+  for (const element of expandElements(tabs, context)) {
+    const tab = resolveToObjectLiteral(element);
+    if (tab === undefined) {
+      reportSkip(context, element, 'could not resolve the tab to an object literal');
+      continue;
+    }
+    const name = readStringProperty(tab, 'name');
+    const fields = nestedFields(tab, context);
+    if (name === undefined) out.push(...fields);
+    else out.push({ kind: 'group', name, required: false, localized: false, fields });
+  }
+  return out;
+}
+
+function extractBlocks(
+  literal: ObjectLiteralExpression,
+  context: ExtractContext,
+): ExtractedBlock[] {
+  const blocks = readArrayProperty(literal, 'blocks');
+  if (blocks === undefined) {
+    reportSkip(context, literal, 'its `blocks` could not be resolved to an array literal');
+    return [];
+  }
+  const out: ExtractedBlock[] = [];
+  for (const element of expandElements(blocks, context)) {
+    const block = resolveToObjectLiteral(element);
+    if (block === undefined) {
+      reportSkip(context, element, 'could not resolve the block to an object literal');
+      continue;
+    }
+    const slug = readStringProperty(block, 'slug');
+    if (slug === undefined) {
+      reportSkip(context, element, 'a block needs a string `slug`');
+      continue;
+    }
+    out.push({ slug, typeName: toPascalCase(slug), fields: nestedFields(block, context) });
+  }
+  return out;
+}
+
+function readOptions(literal: ObjectLiteralExpression, context: ExtractContext): string[] {
+  const options = readArrayProperty(literal, 'options');
+  if (options === undefined) {
+    reportSkip(context, literal, 'its `options` could not be resolved to an array literal');
+    return [];
+  }
+  const out: string[] = [];
+  for (const element of expandElements(options, context)) {
+    if (Node.isStringLiteral(element)) {
+      out.push(element.getLiteralValue());
+      continue;
+    }
+    const option = resolveToObjectLiteral(element);
+    const value = option === undefined ? undefined : readStringProperty(option, 'value');
+    if (value === undefined) reportSkip(context, element, 'an option needs a string or a `value`');
+    else out.push(value);
+  }
+  return out;
+}
+
+/** One field, or `undefined` for a `ui` field (nothing to type) and for shapes reported as skipped. */
+export function extractField(
+  literal: ObjectLiteralExpression,
+  context: ExtractContext,
+): ExtractedField | undefined {
   const type = readStringProperty(literal, 'type');
-  if (type === undefined) return undefined;
-
-  // Most fields carry a `name`. Structural containers (`tabs`,
-  // `row`, `collapsible`) do not — they flatten into their parent.
-  const STRUCTURAL_TYPES = new Set(['tabs', 'row', 'collapsible']);
+  if (type === undefined) {
+    reportSkip(context, literal, 'it has no string `type`');
+    return undefined;
+  }
+  if (type === 'ui') return undefined;
   const name = readStringProperty(literal, 'name');
-  if (name === undefined && !STRUCTURAL_TYPES.has(type)) return undefined;
-
-  const required = readBooleanProperty(literal, 'required') ?? false;
-  const localized = readBooleanProperty(literal, 'localized') ?? false;
-  const base = { name: name ?? '__structural', required, localized };
-
+  if (name === undefined && !STRUCTURAL_TYPES.has(type)) {
+    reportSkip(context, literal, `a ${type} field needs a string \`name\``);
+    return undefined;
+  }
+  const base = {
+    name: name ?? STRUCTURAL_SENTINEL,
+    required: readBooleanProperty(literal, 'required') ?? false,
+    localized: readBooleanProperty(literal, 'localized') ?? false,
+  };
+  const hasMany = readBooleanProperty(literal, 'hasMany') ?? false;
   switch (type) {
     case 'array':
-      return {
-        ...base,
-        kind: 'array',
-        fields: extractNestedFields(literal),
-      };
-    case 'blocks':
-      return {
-        ...base,
-        kind: 'blocks',
-        blocks: extractBlocks(literal),
-      };
+      return { ...base, kind: 'array', fields: nestedFields(literal, context) };
     case 'group':
-      return {
-        ...base,
-        kind: 'group',
-        fields: extractNestedFields(literal),
-      };
-    case 'tabs':
     case 'row':
-    case 'collapsible': {
-      // Structural containers — flatten their inner fields up so they
-      // appear at the parent's level (Payload does the same at runtime).
-      const flattened = extractNestedFieldsFromStructural(literal);
-      return {
-        ...base,
-        kind: 'group',
-        fields: flattened,
-      };
-    }
+    case 'collapsible':
+      return { ...base, kind: 'group', fields: nestedFields(literal, context) };
+    case 'tabs':
+      return { ...base, kind: 'group', fields: extractTabs(literal, context) };
+    case 'blocks':
+      return { ...base, kind: 'blocks', blocks: extractBlocks(literal, context) };
     case 'relationship':
-      return {
-        ...base,
-        kind: 'relationship',
-        target: readRelationTarget(literal),
-        hasMany: readBooleanProperty(literal, 'hasMany') ?? false,
-      };
-    case 'upload':
+      return { ...base, kind: 'relationship', target: readRelationTarget(literal), hasMany };
+    case 'upload': {
+      const target = readRelationTarget(literal);
       return {
         ...base,
         kind: 'upload',
-        target: readRelationTargetSingle(literal) ?? 'media',
+        target: (typeof target === 'string' ? target : target[0]) ?? 'media',
+        hasMany,
       };
+    }
     case 'json':
       return { ...base, kind: 'json' };
     case 'select':
+    case 'radio':
       return {
         ...base,
         kind: 'select',
-        options: readSelectOptions(literal),
-        hasMany: readBooleanProperty(literal, 'hasMany') ?? false,
+        options: readOptions(literal, context),
+        hasMany: type === 'select' && hasMany,
       };
-    default: {
-      const typeRef = SCALAR_TYPE_MAP[type] ?? 'unknown';
-      return { ...base, kind: 'scalar', typeRef };
-    }
+    default:
+      return {
+        ...base,
+        kind: 'scalar',
+        typeRef: SCALAR_TYPE_MAP[type] ?? 'unknown',
+        hasMany: HAS_MANY_SCALARS.has(type) && hasMany,
+      };
   }
 }
-
-function extractNestedFields(literal: ObjectLiteralExpression): readonly ExtractedField[] {
-  const fieldsLiteral = readArrayProperty(literal, 'fields');
-  if (!fieldsLiteral) return [];
-  const out: ExtractedField[] = [];
-  for (const element of fieldsLiteral.getElements()) {
-    if (!Node.isObjectLiteralExpression(element)) continue;
-    const f = extractField(element);
-    if (!f) continue;
-    // Structural containers carry the magic `__structural` sentinel
-    // name — splat their child fields into the parent instead of
-    // surfacing them as a nameless property.
-    if (f.kind === 'group' && f.name === '__structural') {
-      out.push(...f.fields);
-    } else {
-      out.push(f);
-    }
-  }
-  return out;
-}
-
-function extractNestedFieldsFromStructural(
-  literal: ObjectLiteralExpression,
-): readonly ExtractedField[] {
-  // `tabs` is the awkward one — its inner shape is `tabs: [{ name, fields }, …]`
-  // and each tab can either flatten via `name` or expose itself as a group.
-  const tabsLiteral = readArrayProperty(literal, 'tabs');
-  if (tabsLiteral) {
-    const out: ExtractedField[] = [];
-    for (const tabElement of tabsLiteral.getElements()) {
-      if (!Node.isObjectLiteralExpression(tabElement)) continue;
-      const tabName = readStringProperty(tabElement, 'name');
-      const tabFields = extractNestedFields(tabElement);
-      if (tabName !== undefined) {
-        out.push({
-          kind: 'group',
-          name: tabName,
-          required: false,
-          localized: false,
-          fields: tabFields,
-        });
-      } else {
-        // Named-less tab — flatten its fields into the parent's surface.
-        out.push(...tabFields);
-      }
-    }
-    return out;
-  }
-  // `row` / `collapsible` — fields array sits directly on the literal.
-  return extractNestedFields(literal);
-}
-
-function extractBlocks(literal: ObjectLiteralExpression): readonly ExtractedBlock[] {
-  const blocksLiteral = readArrayProperty(literal, 'blocks');
-  if (!blocksLiteral) return [];
-  const out: ExtractedBlock[] = [];
-  for (const element of blocksLiteral.getElements()) {
-    if (!Node.isObjectLiteralExpression(element)) continue;
-    const slug = readStringProperty(element, 'slug');
-    if (slug === undefined) continue;
-    out.push({
-      slug,
-      typeName: toPascalCase(slug),
-      fields: extractNestedFields(element),
-    });
-  }
-  return out;
-}
-
-function readRelationTarget(literal: ObjectLiteralExpression): string | readonly string[] {
-  const property = literal.getProperty('relationTo');
-  if (!property || !Node.isPropertyAssignment(property)) return 'unknown';
-  const initialiser = property.getInitializer();
-  if (initialiser && Node.isStringLiteral(initialiser)) return initialiser.getLiteralValue();
-  if (initialiser && Node.isArrayLiteralExpression(initialiser)) {
-    return initialiser
-      .getElements()
-      .filter(Node.isStringLiteral)
-      .map((el) => el.getLiteralValue());
-  }
-  return 'unknown';
-}
-
-function readRelationTargetSingle(literal: ObjectLiteralExpression): string | undefined {
-  const target = readRelationTarget(literal);
-  if (typeof target === 'string') return target;
-  return target[0];
-}
-
-function readSelectOptions(literal: ObjectLiteralExpression): readonly string[] {
-  const optionsLiteral = readArrayProperty(literal, 'options');
-  if (!optionsLiteral) return [];
-  const out: string[] = [];
-  for (const element of optionsLiteral.getElements()) {
-    if (Node.isStringLiteral(element)) {
-      out.push(element.getLiteralValue());
-    } else if (Node.isObjectLiteralExpression(element)) {
-      const value = readStringProperty(element, 'value');
-      if (value !== undefined) out.push(value);
-    }
-  }
-  return out;
-}
-
-function readStringProperty(literal: ObjectLiteralExpression, name: string): string | undefined {
-  const property = literal.getProperty(name);
-  if (!property || !isPropertyAssignment(property)) return undefined;
-  const initialiser = property.getInitializer();
-  if (initialiser && Node.isStringLiteral(initialiser)) return initialiser.getLiteralValue();
-  if (initialiser && Node.isNoSubstitutionTemplateLiteral(initialiser)) {
-    return initialiser.getLiteralValue();
-  }
-  return undefined;
-}
-
-function readBooleanProperty(literal: ObjectLiteralExpression, name: string): boolean | undefined {
-  const property = literal.getProperty(name);
-  if (!property || !isPropertyAssignment(property)) return undefined;
-  const initialiser = property.getInitializer();
-  if (!initialiser) return undefined;
-  if (initialiser.getKind() === SyntaxKind.TrueKeyword) return true;
-  if (initialiser.getKind() === SyntaxKind.FalseKeyword) return false;
-  return undefined;
-}
-
-function readArrayProperty(
-  literal: ObjectLiteralExpression,
-  name: string,
-): ArrayLiteralExpression | undefined {
-  const property = literal.getProperty(name);
-  if (!property || !isPropertyAssignment(property)) return undefined;
-  const initialiser = property.getInitializer();
-  if (initialiser && Node.isArrayLiteralExpression(initialiser)) return initialiser;
-  return undefined;
-}
-
-function isPropertyAssignment(node: Node): node is PropertyAssignment {
-  return Node.isPropertyAssignment(node);
-}
-
-function toPascalCase(slug: string): string {
-  return slug
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-}
-
-export { toPascalCase };

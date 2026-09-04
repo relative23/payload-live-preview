@@ -1,28 +1,7 @@
 /**
- * The preview policy every framework adapter applies.
- *
- * Four adapters used to carry the same decisions four times: whether a
- * request shows preview intent, whether the runtime is injected into the
- * response, which CSP directives are added, how the inline script is built
- * from the options, and how it lands in `<head>`. The framework-specific part
- * — a `Response` here, a Nitro `head` array there, `locals` versus `context`
- * for the nonce — is small; the policy was the bulk, and it was copied.
- *
- * This module is the one copy. It is pure: it never touches a response, a
- * DOM, or a header object, and it takes the request only as the minimal
- * `{ url, headers.get }` shape the intent check needs. An adapter translates
- * its framework's request into that shape, asks for a decision, and applies
- * it to its framework's response.
- *
- * Since 1.1.0 the decision has an authorization step (ADR 0006): when the
- * adapter is configured with `authorizePreview`, a request with intent is
- * verified before anything privileged is decided, and a refusal blocks
- * injection, CSP changes and nonce exposure regardless of `autoInject` or
- * `shouldInject`. Without the hook the 1.0 behaviour — intent only — remains
- * through 1.x, announced once per process outside production; `strict` (and
- * therefore `defaults: 'v2'`) refuses to run without it.
- *
- * @module @adapters/shared/policy
+ * The preview policy every framework adapter applies: intent, authorization,
+ * injection, CSP. Pure — it reads a `{ url, headers.get }` request shape and
+ * never touches a response; the adapter translates both ends. See ADR 0006.
  */
 
 import {
@@ -31,13 +10,10 @@ import {
   generateCspNonce,
   mergeCspHeader,
 } from '@security/csp';
-import type {
-  PreviewAuthorization,
-  PreviewAuthorizationOutcome,
-} from '@security/preview-authorization';
-// The brand check comes from the leaf `types` domain on purpose: importing it
-// through the security module would pull the HMAC and session code into
-// every adapter bundle for a check that is ten lines long.
+import { isPreviewConfigurationError } from '@security/preview-verdict';
+import type { PreviewAuthorizationOutcome } from '@security/preview-verdict';
+// From the leaf `types` domain on purpose: the security module would pull the
+// HMAC and session code into every adapter bundle for a ten-line brand check.
 import {
   isAuthorizedPreviewContext,
   type AuthorizedPreviewContext,
@@ -47,74 +23,40 @@ import {
   adapterDefaultsFor,
   runtimeDefaultsFor,
   V2_RUNTIME_DEFAULTS,
-  type DefaultsProfile,
 } from '@core/defaults-profile';
 import { hasPreviewIntent, type PreviewRequestLike, type PreviewSignal } from './preview-request';
-import { isDevelopmentProcess, warnOnce } from './deprecation';
+import { isDevelopmentProcess, warnOnce } from './dev-warning';
+import type { PreviewAdapterOptions, PreviewAuthorizationHookResult } from './options';
+
+export type { PreviewAuthorizationHookResult } from './options';
 
 /** How the adapter manages Content-Security-Policy, normalised. */
 export type CspMode = false | 'frame-ancestors' | 'full';
 
-/**
- * What an adapter's `authorizePreview` hook may resolve to: the full result
- * of `authorizePreviewRequest()`, a bare context, or nothing. Anything that is
- * not a context produced by `authorizePreviewRequest()` is a refusal — a
- * `{ authorized: true }` literal included.
- */
-export type PreviewAuthorizationHookResult =
-  PreviewAuthorization | AuthorizedPreviewContext | null | undefined;
-
-/**
- * The options every adapter shares. Each adapter declares its own public
- * interface — those are part of its API report — and this is the structural
- * subset the policy reads from any of them. `authorizePreview` is typed
- * loosely here because each adapter binds it to its own request type; the
- * policy only needs to know whether it exists.
- */
-export interface PreviewPolicyOptions {
-  readonly allowedOrigins?: readonly string[];
-  readonly serverURL?: string;
-  readonly apiRoute?: string;
-  readonly mergeDepth?: number;
-  readonly debug?: boolean;
-  readonly debounceMs?: number;
-  readonly heartbeatMs?: number;
-  readonly skipUnchanged?: boolean;
-  /** Scroll the preview to the field being edited when its value changes. */
-  readonly revealEditedField?: boolean;
-  readonly scopeBindingsByOwner?: boolean;
-  readonly sanitizerPolicy?: 'compat' | 'strict';
+/** The structural subset of any adapter's options the policy reads; hooks are bound per request. */
+export interface PreviewPolicyOptions extends PreviewAdapterOptions<never> {
   /** Server-rendered fragment boundaries (ADR 0011): the same-origin endpoint the runtime posts to. */
   readonly fragments?: { readonly endpoint: string };
-  readonly inject?: 'preview-only' | 'always';
-  readonly autoInject?: boolean;
-  readonly previewQueryParams?: readonly string[];
-  readonly previewSignals?: readonly PreviewSignal[];
-  readonly manageCsp?: boolean | 'frame-ancestors' | 'full';
-  readonly strictDynamic?: boolean;
-  readonly frameAncestorsExtra?: readonly string[];
-  readonly scriptSrcExtra?: readonly string[];
-  readonly strict?: boolean;
-  readonly defaults?: DefaultsProfile;
-  readonly authorizePreview?: (...args: never[]) => unknown;
 }
 
-/** Matches the opening `<head>` tag the runtime script is inserted after. */
+/** The opening `<head>` tag the runtime script is inserted into. */
 export const HEAD_INSERT = /<head(\s[^>]*)?>/i;
 
 /** `text/html` with or without parameters. */
 export const HTML_CONTENT_TYPE = /text\/html/i;
 
-/**
- * The options after the `defaults` profile is applied: explicit options win,
- * the profile fills the rest, and `v1` fills nothing so an empty options
- * object still yields an empty inline configuration.
- */
+// Browsers prescan only the first 1024 bytes for the encoding; a script
+// inserted ahead of `<meta charset>` would push it out of that window.
+const META_CHARSET =
+  /<meta\s+(?:[^>]*\s)?(?:charset\s*=|http-equiv\s*=\s*["']?content-type)[^>]*>/i;
+
+/** The options after the `defaults` profile: explicit options win, the profile fills the rest. */
 export interface ResolvedPolicyOptions {
   readonly strict: boolean;
   readonly previewSignals: readonly PreviewSignal[] | undefined;
   readonly skipUnchanged: boolean | undefined;
   readonly disableReferrerDetection: boolean | undefined;
+  readonly disableLocalhostMatching: boolean | undefined;
   readonly eventSourcePolicy: 'any' | 'parent-or-opener' | undefined;
   readonly sanitizerPolicy: 'compat' | 'strict' | undefined;
 }
@@ -122,9 +64,8 @@ export interface ResolvedPolicyOptions {
 export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPolicyOptions {
   const adapter = adapterDefaultsFor(options.defaults);
   const runtime = runtimeDefaultsFor(options.defaults);
-  // 2.0: the inline runtime defaults to the v2 rows, so a row is written into
-  // the inline configuration only when the resolved profile differs from that
-  // — i.e. for an explicit `defaults: 'v1'` consumer staging the migration.
+  // The inline runtime already defaults to the v2 rows, so only a differing
+  // profile — an explicit `defaults: 'v1'` — needs a row on the wire.
   const runtimeRow = <K extends keyof typeof V2_RUNTIME_DEFAULTS>(
     key: K,
   ): (typeof V2_RUNTIME_DEFAULTS)[K] | undefined =>
@@ -133,26 +74,23 @@ export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPol
     strict: options.strict ?? adapter.strict,
     previewSignals: options.previewSignals ?? adapter.previewSignals,
     skipUnchanged: options.skipUnchanged ?? runtimeRow('skipUnchanged'),
-    disableReferrerDetection: runtimeRow('disableReferrerDetection'),
-    eventSourcePolicy: runtimeRow('eventSourcePolicy'),
+    disableReferrerDetection:
+      options.disableReferrerDetection ?? runtimeRow('disableReferrerDetection'),
+    disableLocalhostMatching: options.disableLocalhostMatching,
+    eventSourcePolicy: options.eventSourcePolicy ?? runtimeRow('eventSourcePolicy'),
     sanitizerPolicy: options.sanitizerPolicy ?? runtimeRow('sanitizerPolicy'),
   };
 }
 
-/**
- * The inline-script configuration an adapter's options describe.
- *
- * Only options that were given are forwarded, so the generated config carries
- * no defaults of its own and the runtime's defaults stay the single source of
- * them — the wire-format tests pin that an empty options object yields an
- * empty config. `defaults: 'v2'` adds exactly the runtime rows the profile
- * flips.
- */
+/** The inline-script configuration; only given options travel, so the runtime's own defaults stay the single source of them. */
 export function inlineScriptConfig(
   options: PreviewPolicyOptions,
 ): Parameters<typeof generateInlineScript>[0] {
+  assertMergeDepthExplicit(options);
   const resolved = resolvePolicyOptions(options);
   return {
+    // Not a wire slot: it tells the generator an omitted `mergeDepth` is deliberate.
+    ...(options.defaults !== undefined ? { defaults: options.defaults } : {}),
     ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
     ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
     ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
@@ -170,6 +108,9 @@ export function inlineScriptConfig(
     ...(resolved.disableReferrerDetection !== undefined
       ? { disableReferrerDetection: resolved.disableReferrerDetection }
       : {}),
+    ...(resolved.disableLocalhostMatching !== undefined
+      ? { disableLocalhostMatching: resolved.disableLocalhostMatching }
+      : {}),
     ...(resolved.eventSourcePolicy !== undefined
       ? { eventSourcePolicy: resolved.eventSourcePolicy }
       : {}),
@@ -180,20 +121,14 @@ export function inlineScriptConfig(
   };
 }
 
-/** `manageCsp` as the adapters have always read it: unset and `true` both mean frame-ancestors only. */
+/** `manageCsp` normalised: unset and `true` both mean frame-ancestors only. */
 export function normalizeCspMode(value: PreviewPolicyOptions['manageCsp']): CspMode {
   if (value === false) return false;
   if (value === 'full') return 'full';
   return 'frame-ancestors';
 }
 
-/**
- * Whether the request shows preview intent under an adapter's options —
- * `hasPreviewIntent()` with the adapter's option names, plus `inject: 'always'`.
- *
- * Intent, not authorization: a query parameter, an iframe fetch destination or
- * an admin referer says an editor *may* be looking, and nothing more.
- */
+/** Whether the request shows preview intent under the options; `inject: 'always'` counts as intent. */
 export function previewIntentFor(
   request: PreviewRequestLike,
   options: PreviewPolicyOptions,
@@ -211,12 +146,7 @@ export function previewIntentFor(
   );
 }
 
-/**
- * The Content-Security-Policy header value after the preview directives are
- * merged into `existing`. `frame-ancestors` always; `script-src` with the
- * nonce only in `'full'` mode, since tightening script-src silently would
- * break unrelated application scripts.
- */
+/** The CSP header after merging: `frame-ancestors` always, a nonce'd `script-src` only in `'full'` mode. */
 export function buildPreviewCsp(
   options: PreviewPolicyOptions,
   nonce: string,
@@ -240,27 +170,20 @@ export function buildPreviewCsp(
 }
 
 /**
- * `html` with the script tag inserted after the opening `<head>`, or
- * `undefined` when the document has no `<head>` — a fragment or a streamed
- * chunk — in which case the caller leaves it untouched rather than prepending
- * a script ahead of the fragment's own markup.
+ * `html` with the script tag after `<meta charset>`, else right after
+ * `<head>`; `undefined` when there is no `<head>` to insert into.
  */
 export function injectIntoHead(html: string, scriptTag: string): string | undefined {
-  if (!HEAD_INSERT.test(html)) return undefined;
-  return html.replace(HEAD_INSERT, (match) => `${match}${scriptTag}`);
+  const head = HEAD_INSERT.exec(html);
+  if (head === null) return undefined;
+  const headEnd = head.index + head[0].length;
+  const headClose = html.indexOf('</head', headEnd);
+  const meta = META_CHARSET.exec(html.slice(headEnd, headClose === -1 ? undefined : headClose));
+  const at = meta === null ? headEnd : headEnd + meta.index + meta[0].length;
+  return `${html.slice(0, at)}${scriptTag}${html.slice(at)}`;
 }
 
-/**
- * Raise the configuration errors `strict` exists to raise. Called once when
- * the policy is created, so a misconfigured deployment fails at startup
- * rather than serving public responses quietly.
- */
-/**
- * 2.0 (ADR 0007, entry 10): when a deployment enables server-side merging by
- * setting `serverURL`, it must also choose a `mergeDepth` rather than inherit
- * a silent default. Under an explicit `defaults: 'v1'` the 1.x default (depth
- * 1) still applies, so a staged migration keeps working.
- */
+/** `serverURL` needs an explicit `mergeDepth` (ADR 0007, entry 10); `defaults: 'v1'` keeps the old default of 1. */
 export function assertMergeDepthExplicit(options: PreviewPolicyOptions): void {
   if (options.defaults === 'v1') return;
   if (options.serverURL !== undefined && options.mergeDepth === undefined) {
@@ -272,6 +195,7 @@ export function assertMergeDepthExplicit(options: PreviewPolicyOptions): void {
   }
 }
 
+/** The configuration errors `strict` exists to raise, at startup rather than on a public response. */
 export function assertStrictConfiguration(options: PreviewPolicyOptions): void {
   if (typeof options.authorizePreview !== 'function') {
     throw new Error(
@@ -300,9 +224,11 @@ export function assertStrictConfiguration(options: PreviewPolicyOptions): void {
       }
     }
   }
-  if (options.previewSignals?.includes('referer') === true) {
+  // The resolved signals, not the option: `defaults: 'v1'` fills in `referer`.
+  if (resolvePolicyOptions(options).previewSignals?.includes('referer') === true) {
     throw new Error(
-      "payload-live-preview: strict mode disables referrer trust; remove 'referer' from `previewSignals`.",
+      "payload-live-preview: strict mode disables referrer trust; remove 'referer' from " +
+        "`previewSignals` (the 'v1' profile includes it).",
     );
   }
 }
@@ -315,43 +241,38 @@ export interface PreviewDecision {
   readonly authorization: AuthorizedPreviewContext | null;
   /** The hook's verdict, or `undefined` when no hook ran (no intent, or none configured). */
   readonly outcome: PreviewAuthorizationOutcome | undefined;
-  /** The runtime is to be injected: intent, authorization, `autoInject` and the adapter's own content filter all agreed. */
+  /** Intent, authorization, `autoInject` and the adapter's content filter all agreed. */
   readonly inject: boolean;
-  /** CSP directives to add, or `false` for none. Never set without intent, never set after a refusal. */
+  /** CSP directives to add, or `false`. Never set without intent, never after a refusal. */
   readonly cspMode: CspMode;
-  /** Whether the request-scoped nonce may be handed to templates (`locals`, `context`, a header). */
+  /** Whether the request-scoped nonce may be handed to templates. */
   readonly exposeNonce: boolean;
 }
 
 /** The per-request hooks an adapter binds to its own request type. */
 export interface PreviewDecisionHooks {
-  /** The adapter's content filter, evaluated lazily and only once injection is otherwise decided. */
+  /** The adapter's content filter, evaluated lazily once injection is otherwise decided. */
   readonly shouldInject?: () => boolean;
   /** The adapter's `authorizePreview` option, bound to the framework request. Called only on intent. */
   readonly authorize?: () =>
     PreviewAuthorizationHookResult | Promise<PreviewAuthorizationHookResult>;
 }
 
-/**
- * A policy bound to one adapter's options. The inline script body is built
- * once and reused: it depends only on the options, never on the request.
- */
+/** A policy bound to one adapter's options. The script body depends on the options only and is built once. */
 export interface PreviewPolicy {
   /**
-   * Decide for a request. `hooks.authorize` runs only when intent was found,
-   * so public requests never pay for a verification; `hooks.shouldInject`
-   * runs only when injection is otherwise decided. `shouldInject` gates
-   * injection only — never CSP — which is what it has always meant and what
-   * the docs say it is not: an authorization boundary.
+   * Decide for a request: `hooks.authorize` runs only on intent, and a
+   * `PreviewConfigurationError` from it is re-thrown while any other failure
+   * becomes the `'unavailable'` refusal.
    */
   decide(request: PreviewRequestLike, hooks?: PreviewDecisionHooks): Promise<PreviewDecision>;
   /** The `<script>` tag for this policy's runtime, carrying `nonce`. */
   scriptTag(nonce: string): string;
   /** CSP header value for a decision that has a mode. */
   csp(existing: string, nonce: string, mode: Exclude<CspMode, false>): string;
-  /** A fresh nonce. Adapters that reuse a nonce from the response call this only when there is none. */
+  /** A fresh nonce. */
   nonce(): string;
-  /** Whether `authorizePreview` is configured — adapters use it to decide whether to bind the hook. */
+  /** Whether `authorizePreview` is configured; `decide()` then requires the bound hook. */
   readonly authorizes: boolean;
 }
 
@@ -403,6 +324,12 @@ export function createPreviewPolicy(options: PreviewPolicyOptions): PreviewPolic
   return {
     authorizes,
     async decide(request, hooks = {}) {
+      if (authorizes && hooks.authorize === undefined) {
+        throw new Error(
+          'payload-live-preview: `authorizePreview` is configured but decide() was called ' +
+            'without an `authorize` hook; bind the hook to the request (bindDecisionHooks).',
+        );
+      }
       const isPreview = previewIntentFor(request, options);
       if (!isPreview) return NONE;
       let authorization: AuthorizedPreviewContext | null = null;
@@ -411,7 +338,8 @@ export function createPreviewPolicy(options: PreviewPolicyOptions): PreviewPolic
         let result: PreviewAuthorizationHookResult;
         try {
           result = await hooks.authorize();
-        } catch {
+        } catch (error) {
+          if (isPreviewConfigurationError(error)) throw error;
           result = { authorized: false, outcome: 'unavailable', context: null };
         }
         ({ context: authorization, outcome } = contextFrom(result));

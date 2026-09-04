@@ -1,47 +1,59 @@
 /**
- * `url`/`email` field renderer.
- *
- * Sets the text content to the value and, when the element is an
- * `<a>`, updates the `href` attribute as well — pulling from a sibling
- * field when `data-payload-href` is set.
- *
- * @module @field-types/url
+ * `url` renderer and the factory the `email` renderer shares. On an `<a>` the
+ * value (or the `data-payload-href` sibling) becomes `href`; the value is
+ * always the visible text.
  */
 
-import { isSafeUrl } from '@security/url-validator';
 import { resolveFieldValue } from '@core/field-value';
-import type { FieldRenderer } from '@core/types';
-import { safeStringify } from './utils';
+import type { FieldRenderer, RendererKey } from '@core/types';
+import { acceptUrl } from './unsafe-url';
+import { isEmptyValue, safeStringify } from './utils';
 
-const urlRenderer: FieldRenderer = {
-  name: 'url',
-  render(target, value, context) {
-    const element = target.element;
-    const text = safeStringify(value);
-    if (element.tagName === 'A') {
-      const anchor = element as HTMLAnchorElement;
-      const hrefField = target.hrefField;
-      const hrefSource =
-        hrefField === undefined || hrefField.length === 0
-          ? value
-          : resolveFieldValue(
-              context.allFields,
-              hrefField,
-              context.locale,
-              target.locale !== undefined,
-            );
-      if (typeof hrefSource === 'string' && isSafeUrl(hrefSource)) {
-        anchor.href = hrefSource;
+/** Build the link renderer named `name`; `toHref` derives the URL from the field value. */
+export function createLinkRenderer(
+  name: RendererKey,
+  toHref: (value: string) => string = (value) => value,
+): FieldRenderer {
+  return {
+    name,
+    render(target, value, context) {
+      const element = target.element;
+      if (isEmptyValue(value)) {
+        clear(element);
+        return;
       }
-      anchor.textContent = text;
-      return;
-    }
-    if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-      (element as HTMLInputElement | HTMLTextAreaElement).value = text;
-      return;
-    }
-    element.textContent = text;
-  },
-};
+      const text = safeStringify(value);
+      if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+        (element as HTMLInputElement | HTMLTextAreaElement).value = text;
+        return;
+      }
+      if (element.tagName === 'A') {
+        const hrefField = target.hrefField;
+        const candidate =
+          hrefField === undefined || hrefField.length === 0
+            ? toHref(text)
+            : resolveFieldValue(
+                context.allFields,
+                hrefField,
+                context.locale,
+                target.locale !== undefined,
+              );
+        const outcome = acceptUrl(element, target.fieldName, candidate);
+        if (outcome.kind === 'safe') element.setAttribute('href', outcome.url);
+        else if (outcome.kind === 'unsafe') element.removeAttribute('href');
+      }
+      element.textContent = text;
+    },
+  };
+}
 
-export { urlRenderer };
+function clear(element: Element): void {
+  if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+    (element as HTMLInputElement | HTMLTextAreaElement).value = '';
+    return;
+  }
+  element.removeAttribute('href');
+  element.textContent = '';
+}
+
+export const urlRenderer: FieldRenderer = createLinkRenderer('url');

@@ -54,7 +54,7 @@ describe('revision pipeline', () => {
     for (const verdict of verdicts) verdict.resolve(true);
     await Promise.all(verdicts.map(({ promise }) => promise));
     await Promise.resolve();
-    bus.detach(target);
+    bus.detach();
 
     if (delivered !== BACKLOG_SIZE) {
       throw new Error(`expected ${String(BACKLOG_SIZE)} deliveries, received ${String(delivered)}`);

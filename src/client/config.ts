@@ -1,7 +1,6 @@
 /**
- * `LivePreviewClient` configuration shape.
- *
- * @module @client/config
+ * `LivePreviewClient` configuration. Defaults are the 2.0 rows; `defaults: 'v1'`
+ * restores the 1.x values named per option (ADR 0007).
  */
 
 import type { CachedElement, FieldRenderer, RendererKey, RichTextRenderer } from '@core/types';
@@ -13,146 +12,72 @@ import {
 } from '@core/defaults-profile';
 
 export interface LivePreviewClientConfig {
-  /** Explicit additional trusted origins. */
+  /** Explicit trusted admin origins. */
   readonly allowedOrigins?: readonly string[];
-  /**
-   * Payload server origin, e.g. `https://cms.example.com`. When set,
-   * every incoming update is re-fetched through the Payload REST API
-   * so relationship/upload fields render populated instead of as bare
-   * IDs (same strategy as the official client). Recommended for
-   * Payload 3.x.
-   */
+  /** Payload origin; every update is then re-fetched through the REST API so relations arrive populated. Requires `mergeDepth`. */
   readonly serverURL?: string;
-  /** REST API route prefix used with `serverURL`. Defaults to `/api`. */
+  /** REST route prefix used with `serverURL`. Default `/api`. */
   readonly apiRoute?: string;
-  /** Population depth used with `serverURL`. Defaults to `1`. */
+  /** Population depth used with `serverURL`. Required with it; `defaults: 'v1'` falls back to `1`. */
   readonly mergeDepth?: number;
-  /**
-   * Custom fetch implementation for the `serverURL` merge request —
-   * the equivalent of the official client's `requestHandler`. Use it
-   * to attach auth headers or route through your own proxy. Only
-   * available on the programmatic client (functions cannot be
-   * serialised into the inline script).
-   */
+  /** Custom fetch for the `serverURL` merge request: attach auth headers or route through a proxy. */
   readonly mergeFetch?: typeof fetch;
-  /** Enable verbose console debug output. Defaults to dev-mode detection. */
+  /** Verbose console output. Defaults to dev-mode detection. */
   readonly debug?: boolean;
-  /** Debounce window for incoming updates. Defaults to 50 ms. */
+  /** Debounce window for incoming updates. Default 50 ms. */
   readonly debounceMs?: number;
-  /**
-   * Heartbeat timeout in ms. Defaults to `0` (disabled) because the
-   * Payload admin sends messages only on form edits — there is no
-   * protocol keepalive, so an idle timeout would produce false
-   * disconnects.
-   */
+  /** Heartbeat timeout in ms; `0` disables it (default), because the admin posts only on edits. */
   readonly heartbeatMs?: number;
-  /** IntersectionObserver rootMargin. Defaults to `200px`. */
+  /** IntersectionObserver `rootMargin`. Default `200px`. */
   readonly intersectionRootMargin?: string;
-  /**
-   * Restrict each update to the bindings owned by the document it describes.
-   *
-   * Ownership is declared in markup with `data-payload-owner`, resolved from
-   * the nearest ancestor: `global:<slug>`, `collection:<slug>`, or
-   * `collection:<slug>:<id>`. Payload already sends the edited document's
-   * identity, so nothing else needs configuring.
-   *
-   * Defaults to `false`, which keeps the 1.x behaviour of matching on the
-   * field name alone. Enable it when one page previews more than one document
-   * and a field name is therefore no longer a unique identity. While enabled,
-   * a binding without an owner is never updated.
-   */
+  /** Update only bindings under a matching `data-payload-owner`; an unowned binding is then never updated. Default `false`. */
   readonly scopeBindingsByOwner?: boolean;
-  /**
-   * Skip a binding whose value is identical to the one it last applied.
-   * Defaults to `false`; enable to re-render only what a keystroke changed.
-   */
+  /** Skip a binding whose value did not change. Default `true`; `defaults: 'v1'` sets `false`. */
   readonly skipUnchanged?: boolean;
-  /**
-   * Scroll the preview to the field being edited when its value changes, so the
-   * section under the editor's cursor is always visible. Independent of the
-   * `defaults` profile; off unless set.
-   */
+  /** Scroll the preview to the field being edited when its value changes. Default `false`. */
   readonly revealEditedField?: boolean;
-  /**
-   * Fields whose change re-applies other bindings regardless of their own
-   * value: `{ price: ['priceLabel'] }`. Used only with `skipUnchanged`.
-   */
+  /** Fields whose change re-applies other bindings regardless of their own value: `{ price: ['priceLabel'] }`. Used with `skipUnchanged`. */
   readonly dependencies?: Readonly<Record<string, readonly string[]>>;
-  /**
-   * Strategy handlers beyond patching. `fragment` renders `data-payload-fragment`
-   * boundaries on the server; `createFragmentStrategy()` from
-   * `payload-live-preview/fragment` builds one for an endpoint.
-   */
+  /** Strategy handlers beyond patching; `createFragmentStrategy()` from `payload-live-preview/fragment` builds one. */
   readonly strategies?: StrategyHandlers;
-  /** Bypass the visibility gate (apply every update). Defaults to `false`. */
+  /** Apply every update regardless of visibility. Default `false`. */
   readonly disableVisibilityGate?: boolean;
-  /** Cache-size threshold above which off-screen updates are queued for replay. Defaults to 50. */
+  /** Cache size above which off-screen updates wait for intersection. Default `50`. */
   readonly visibilityGateThreshold?: number;
-  /**
-   * Mount an `aria-live` region for connections, applied updates, and mounted
-   * heartbeat-timeout disconnects. Destroy releases it synchronously. Default `true`.
-   */
+  /** Mount an `aria-live` region for connections, applied updates and heartbeat disconnects. Default `true`. */
   readonly enableA11y?: boolean;
-  /** Locale used to pick A11y announcement strings. Defaults to detected locale. */
+  /** Locale of the announcement strings. Defaults to the detected locale. */
   readonly a11yLocale?: string;
-  /** Document root, defaults to `document`. */
+  /** Document root. Default `document`. */
   readonly root?: Document | Element;
-  /**
-   * Explicit renderer resolution ahead of the registry: return a renderer for
-   * this element, or `undefined` to fall through to registered renderers.
-   * The element is available, so a predicate can look at its attributes.
-   */
+  /** Renderer resolution ahead of the registry; return `undefined` to fall through. */
   readonly resolveRenderer?: (
     fieldType: RendererKey,
     target: CachedElement,
   ) => FieldRenderer | undefined;
-  /**
-   * The project's rich-text renderer, shared with SSR so one Lexical document
-   * produces the same markup on both sides. Its output is sanitized.
-   */
+  /** The project's rich-text renderer, shared with SSR. Its output is sanitized. */
   readonly renderRichText?: RichTextRenderer;
-  /** Disable `document.referrer` detection. */
+  /** Ignore `document.referrer` as an origin source. Default `true`; `defaults: 'v1'` sets `false`. */
   readonly disableReferrerDetection?: boolean;
-  /** Disable the localhost dev-mode pattern matcher. */
+  /** Disable the dev-mode localhost matcher. Default `false`. */
   readonly disableLocalhostMatching?: boolean;
-  /**
-   * Which windows may post updates: `'any'` that passes the origin check
-   * (default), or `'parent-or-opener'` — only the window that framed or
-   * opened the page. `defaults: 'v2'` sets the latter.
-   */
+  /** Which windows may post updates. Default `'parent-or-opener'`; `defaults: 'v1'` sets `'any'`. */
   readonly eventSourcePolicy?: EventSourcePolicy;
-  /** Sanitizer policy for rich text and HTML writes: `'compat'` (1.x) or `'strict'` (2.0, set by `defaults: 'v2'`). */
+  /** Sanitizer policy for rich text and HTML writes. Default `'strict'`; `defaults: 'v1'` sets `'compat'`. */
   readonly sanitizerPolicy?: 'compat' | 'strict';
-  /**
-   * `'v2'` applies every 2.0 runtime default that exists as a 1.x option —
-   * `skipUnchanged`, `disableReferrerDetection`, `eventSourcePolicy` — at
-   * once. Explicit options override the profile. ADR 0007.
-   */
+  /** `'v2'` (default) is the 2.0 table; `'v1'` restores every 1.x row at once. Explicit options win. */
   readonly defaults?: DefaultsProfile;
-  /** Auto-start the runtime in the constructor. Defaults to `true`. */
+  /** Start the runtime in the constructor. Default `true`. */
   readonly autoStart?: boolean;
-  /**
-   * Optional preview-token validator. When set, every data update
-   * must carry a `previewToken` field that this function approves.
-   *
-   * ⚠️ `previewToken` is an extension of THIS library, not part of the
-   * stock Payload postMessage protocol — the Payload admin never sends
-   * one. Only enable this when a custom admin component adds the token
-   * to outgoing messages; against an unmodified Payload admin it would
-   * drop every update.
-   */
+  /** Preview-token validator; every update must then carry a `previewToken` it approves. Stock Payload sends none. */
   readonly validateToken?: (
     token: string | undefined,
     origin: string,
   ) => boolean | Promise<boolean>;
 }
 
-/**
- * The configuration with the `defaults` profile applied: explicit options
- * win, the profile fills the rest, `'v1'` (or none) changes nothing.
- */
+/** The configuration with the `defaults` profile applied: explicit options win, `'v1'` changes nothing. */
 export function withProfileDefaults(config: LivePreviewClientConfig): LivePreviewClientConfig {
-  // 2.0: v2 is the default; only an explicit `defaults: 'v1'` opts out.
   if (config.defaults === 'v1') return config;
   const rows = runtimeDefaultsFor(config.defaults);
   return {

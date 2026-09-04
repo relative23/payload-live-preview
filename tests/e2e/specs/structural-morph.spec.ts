@@ -1,4 +1,5 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
+import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 /**
  * ADR 0008 §7 — the keyed morph's acceptance gates, in a real browser:
@@ -10,40 +11,15 @@ import { expect, test, type Frame, type Page } from '@playwright/test';
 
 const PATH = '/structural/';
 
-function previewFrame(page: Page): Frame | undefined {
-  return page.frames().find((candidate) => candidate !== page.mainFrame());
-}
-
 async function open(page: Page): Promise<Frame> {
   await page.goto(`/bench?target=${PATH}`);
-  await expect
-    .poll(() => previewFrame(page)?.url().endsWith(PATH) ?? false, { timeout: 15_000 })
-    .toBe(true);
-  const frame = previewFrame(page);
-  if (!frame) throw new Error('preview frame missing');
-  await expect
-    .poll(
-      async () =>
-        (await frame.evaluate(
-          () =>
-            (
-              window as Window & { __livePreview?: { inspect: () => { started: boolean } } }
-            ).__livePreview?.inspect().started,
-        )) ?? false,
-      { timeout: 15_000 },
-    )
-    .toBe(true);
+  const frame = await waitForPreviewFrame(page, PATH);
+  await waitForStarted(frame);
   return frame;
 }
 
-async function post(page: Page, rows: readonly { id: string; title: string }[]): Promise<void> {
-  await page.evaluate((data) => {
-    const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-    frame?.contentWindow?.postMessage(
-      { type: 'payload-live-preview', data: { rows: data } },
-      window.location.origin,
-    );
-  }, rows);
+async function postRows(page: Page, rows: readonly { id: string; title: string }[]): Promise<void> {
+  await post(page, { rows });
 }
 
 const BASE = [
@@ -60,7 +36,7 @@ test.describe('keyed morph — what survives a structural update', () => {
         (li as HTMLElement & { __mark?: number }).__mark = index;
       });
     });
-    await post(page, [BASE[2]!, { id: 'a', title: 'Alpha, edited' }, BASE[1]!]);
+    await postRows(page, [BASE[2]!, { id: 'a', title: 'Alpha, edited' }, BASE[1]!]);
     await expect(frame.locator('[data-testid="rows"] > li .t').first()).toHaveText('Gamma');
     const marks = await frame.evaluate(() =>
       Array.from(document.querySelectorAll<HTMLElement>('[data-testid="rows"] > li'), (li) => ({
@@ -84,7 +60,7 @@ test.describe('keyed morph — what survives a structural update', () => {
       const el = document.activeElement as HTMLInputElement;
       el.setSelectionRange(5, 10);
     });
-    await post(page, [BASE[0]!, { id: 'b', title: 'Beta, edited' }, BASE[2]!]);
+    await postRows(page, [BASE[0]!, { id: 'b', title: 'Beta, edited' }, BASE[2]!]);
     await expect(frame.locator('[data-payload-key="b"] .t')).toHaveText('Beta, edited');
     const state = await frame.evaluate(() => {
       const el = document.activeElement as HTMLInputElement | null;
@@ -118,7 +94,7 @@ test.describe('keyed morph — what survives a structural update', () => {
       const el = document.querySelector('[data-payload-key="a"] x-counter');
       (el as HTMLElement & { __mark?: string }).__mark = 'same';
     });
-    await post(page, [{ id: 'a', title: 'Alpha, edited' }, BASE[1]!, BASE[2]!]);
+    await postRows(page, [{ id: 'a', title: 'Alpha, edited' }, BASE[1]!, BASE[2]!]);
     await expect(frame.locator('[data-payload-key="a"] .t')).toHaveText('Alpha, edited');
     await expect(button).toHaveText('2');
     const kept = await frame.evaluate(() => {
@@ -138,7 +114,7 @@ test.describe('keyed morph — what survives a structural update', () => {
     const details = frame.locator('[data-payload-key="c"] details');
     await details.locator('summary').click();
     await expect(details).toHaveAttribute('open', '');
-    await post(page, [BASE[0]!, BASE[1]!, { id: 'c', title: 'Gamma, edited' }]);
+    await postRows(page, [BASE[0]!, BASE[1]!, { id: 'c', title: 'Gamma, edited' }]);
     await expect(frame.locator('[data-payload-key="c"] .t')).toHaveText('Gamma, edited');
     await expect(details).toHaveAttribute('open', '');
     await expect(details.locator('p')).toHaveText('Details of Gamma, edited');

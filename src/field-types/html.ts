@@ -1,22 +1,14 @@
-/**
- * `html` field renderer.
- *
- * Used when the consumer explicitly opts into raw-HTML rendering with
- * `data-payload-type="html"`. The value is always run through
- * `sanitizeHtml` first. Non-string values are coerced via `String()`.
- *
- * @module @field-types/html
- */
+/** `html` renderer (`data-payload-type="html"`): the value is sanitised, then injected. */
 
 import { sanitizeHtml } from '@security/sanitizer';
 import { trustedHtml } from '@security/trusted-types';
 import type { FieldRenderer } from '@core/types';
-import { safeStringify } from './utils';
+import { isEmptyValue, safeStringify } from './utils';
 
 const htmlRenderer: FieldRenderer = {
   name: 'html',
   render(target, value) {
-    if (value === null || value === undefined) {
+    if (isEmptyValue(value)) {
       target.element.textContent = '';
       return;
     }

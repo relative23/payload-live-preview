@@ -68,8 +68,17 @@ export interface ApiReportCheckOptions {
  * and `plugins` re-export every type their signatures reference, so they add
  * nothing; and `PayloadFieldCondition`, which `PayloadFieldSchema` references
  * and the root and core entries had left unexported, is now exported by both.
+ *
+ * 46 → 59 with the 2.0 correctness pass. Thirteen are structural shims a
+ * consumer never names: the Nuxt adapter's `HeadersLike`/`NodeRequestLike`/
+ * `NodeResponseLike`/`NodeHeaderValue` (it now reads a web-shaped h3 event as
+ * well as a Node one) and, on `./astro`, the authorization strategy types and
+ * `FetchLike`/`SubtleCryptoLike` — all of which the root entry does export, so
+ * they are nameable, just not twice. A fourteenth was real and was fixed rather
+ * than absorbed: `./structural` exports `CachedElement` but had left
+ * `UpdateSource`, the type of its `strategyKind`, unexported.
  */
-export const FORGOTTEN_EXPORT_BASELINE = 46;
+export const FORGOTTEN_EXPORT_BASELINE = 59;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

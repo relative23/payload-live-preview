@@ -114,36 +114,19 @@ describe('HeartbeatTimer', () => {
 });
 
 describe('ConnectionState', () => {
-  it('transitions through every status', () => {
-    const onChange = vi.fn();
-    const state = new ConnectionState(onChange);
+  it('transitions between disconnected and connected', () => {
+    const state = new ConnectionState();
     expect(state.status).toBe('disconnected');
-    expect(state.markConnecting()).toBe(true);
-    expect(state.status).toBe('connecting');
     expect(state.markConnected()).toBe(true);
     expect(state.status).toBe('connected');
     expect(state.markDisconnected()).toBe(true);
     expect(state.status).toBe('disconnected');
-    expect(onChange).toHaveBeenCalledTimes(3);
   });
 
-  it('idempotent transitions return false and do not call onChange', () => {
-    const onChange = vi.fn();
-    const state = new ConnectionState(onChange);
+  it('reports an idempotent transition as unchanged', () => {
+    const state = new ConnectionState();
     expect(state.markDisconnected()).toBe(false);
-    expect(onChange).not.toHaveBeenCalled();
     state.markConnected();
-    onChange.mockClear();
     expect(state.markConnected()).toBe(false);
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
-  it('passes previous status to onChange', () => {
-    const onChange = vi.fn();
-    const state = new ConnectionState(onChange);
-    state.markConnecting();
-    expect(onChange).toHaveBeenLastCalledWith('connecting', 'disconnected');
-    state.markConnected();
-    expect(onChange).toHaveBeenLastCalledWith('connected', 'connecting');
   });
 });

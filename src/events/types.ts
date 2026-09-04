@@ -1,111 +1,62 @@
-/**
- * Public event payload shapes for the live preview lifecycle.
- *
- * The map keys form the union of valid event names. Adding a new event
- * is a two-line change: add the entry here and dispatch from the
- * relevant module. Consumers get autocompletion and exhaustive checks
- * for free because the `EventEmitter` is generic over this map.
- *
- * @module @events/types
- */
+/** Public event payloads. The map keys are the valid event names; `EventEmitter` is generic over it. */
 
 import type { PayloadDocumentEventDetail, PayloadLivePreviewData } from '@/types/payload-protocol';
 import type { UpdateSource } from '@core/strategies';
 import type { DiagnosticCode } from '@core/diagnostic-codes';
 
 export interface LivePreviewEventMap {
-  /**
-   * Fired once per startup attempt after observers, cache, and message listening
-   * are active. A later startup failure may roll that attempt back; retrying then
-   * emits a new `init` event.
-   */
+  /** Once per startup attempt, after observers, cache and message listening are active. A rolled-back attempt emits it again on retry. */
   readonly init: { readonly timestamp: number };
 
-  /** Fired for the first accepted data-bearing update from a trusted origin. */
+  /** The first accepted data-bearing update from a trusted origin. */
   readonly connect: { readonly origin: string; readonly timestamp: number };
 
-  /**
-   * Fired when the heartbeat times out or the runtime is destroyed. The
-   * `'unload'` reason remains in the public union for 1.x producer compatibility;
-   * the built-in runtime does not currently emit it.
-   */
+  /** The heartbeat timed out, the runtime was destroyed, or the page was suspended for navigation (`'unload'`). */
   readonly disconnect: {
     readonly reason: 'timeout' | 'destroy' | 'unload';
     readonly timestamp: number;
   };
 
-  /**
-   * Fired before the DOM is mutated for an incoming update.
-   *
-   * Handlers may call `cancel()` before their synchronous or asynchronous
-   * work settles to skip exactly this revision.
-   */
+  /** Before the DOM is mutated for an update; `cancel()` skips exactly this revision. */
   readonly beforeUpdate: {
     readonly data: PayloadLivePreviewData;
-    /** Runtime-populated ordering metadata; optional for 1.x producer compatibility. */
     readonly revision?: number;
-    /** When the runtime accepted the message, Unix milliseconds. Optional for 1.x producer compatibility. */
+    /** When the runtime accepted the message, Unix milliseconds. */
     readonly receivedAt?: number;
-    /**
-     * The strategy that produced the update: `'patch'` (the runtime's DOM
-     * patching), `'fragment'` (a server-rendered boundary) or `'route'` (a
-     * route refresh). Optional for 1.x producer compatibility.
-     */
+    /** The strategy that produced the update. */
     readonly source?: UpdateSource;
     readonly cancel: () => void;
   };
 
-  /**
-   * Fired after each actual, current DOM application batch. Visibility replay
-   * may produce another event for the same revision; cancelled, obsolete, and
-   * deferred-only batches produce none.
-   */
+  /** After each applied, still-current batch. Visibility replay may emit another for the same revision; cancelled, obsolete and deferred-only batches emit none. */
   readonly afterUpdate: {
     readonly data: PayloadLivePreviewData;
     readonly updatedCount: number;
     readonly durationMs: number;
-    /** Runtime-populated ordering metadata; optional for 1.x producer compatibility. */
     readonly revision?: number;
-    /** When the runtime accepted the message, Unix milliseconds. Optional for 1.x producer compatibility. */
     readonly receivedAt?: number;
-    /**
-     * The strategy that produced the update: `'patch'` (the runtime's DOM
-     * patching), `'fragment'` (a server-rendered boundary) or `'route'` (a
-     * route refresh). Optional for 1.x producer compatibility.
-     */
     readonly source?: UpdateSource;
   };
 
-  /** Fired for each successful, still-current element write. */
+  /** Each successful, still-current element write. */
   readonly elementUpdate: {
     readonly element: Element;
     readonly fieldName: string;
     readonly previousValue: unknown;
     readonly nextValue: unknown;
-    /** Runtime-populated ordering metadata; optional for 1.x producer compatibility. */
     readonly revision?: number;
-    /** When the runtime accepted the message, Unix milliseconds. Optional for 1.x producer compatibility. */
     readonly receivedAt?: number;
-    /**
-     * The strategy that produced the update: `'patch'` (the runtime's DOM
-     * patching), `'fragment'` (a server-rendered boundary) or `'route'` (a
-     * route refresh). Optional for 1.x producer compatibility.
-     */
     readonly source?: UpdateSource;
   };
 
-  /** Fired whenever the element cache is rebuilt (initial scan or MutationObserver-triggered). */
+  /** The element cache was rebuilt (initial scan or mutation). */
   readonly cacheRefresh: {
     readonly elementCount: number;
     readonly fieldCount: number;
     readonly durationMs: number;
   };
 
-  /**
-   * Fired once per fragment boundary and revision: the server rendered it
-   * (`rendered`) or the request failed and the boundary was patched instead
-   * (`failed`, with the LP08xx code).
-   */
+  /** Once per fragment boundary and revision: rendered by the server, or failed (with the LP08xx code) and patched instead. */
   readonly fragmentRender: {
     readonly element: Element;
     readonly id: string;
@@ -116,48 +67,27 @@ export interface LivePreviewEventMap {
     readonly receivedAt: number;
   };
 
-  /** Fired when a `payload-document-event` message arrives (document save). */
+  /** A `payload-document-event` message arrived (document save). */
   readonly documentSave: { readonly timestamp: number };
 
-  /**
-   * Fired when a data update carries `externallyUpdatedRelationship` — a
-   * related document was created or edited in an admin drawer. The update
-   * itself re-renders unconditionally, because populated values may have
-   * changed while the form values did not.
-   */
+  /** A data update carried `externallyUpdatedRelationship`: a related document changed in an admin drawer, so the update re-renders unconditionally. */
   readonly relationshipUpdate: {
     readonly detail: PayloadDocumentEventDetail;
     readonly timestamp: number;
   };
 
-  /**
-   * Fired on errors that the runtime caught but cannot fully recover from.
-   *
-   * The `context` string identifies where the error originated. `code` says
-   * the same thing in a form that survives rewording — branch on `code`, read
-   * `context` when you want the human-readable origin.
-   */
+  /** An error the runtime caught but cannot fully recover from. Branch on `code`; `context` is the human-readable origin. */
   readonly error: {
     readonly error: Error;
     readonly context: string;
     readonly code: DiagnosticCode;
   };
 
-  /**
-   * Fired during destroy after browser observers and the message listener are
-   * removed. Event/plugin listeners remain available for this notification and
-   * are released by the owning client afterwards.
-   */
+  /** During destroy, after observers and the message listener are removed; listeners are released by the owning client afterwards. */
   readonly destroy: { readonly timestamp: number };
 }
 
-/**
- * Handler signature: receives the payload and may return a Promise.
- *
- * Promise-returning handlers are awaited in registration order — this
- * is important for `beforeUpdate.cancel()` semantics.
- */
+/** Handlers may return a promise; they are awaited in registration order, which `beforeUpdate.cancel()` relies on. */
 export type EventHandler<TPayload> = (payload: TPayload) => void | Promise<void>;
 
-/** Subscription removal function returned by `on()`/`once()`. */
 export type Unsubscribe = () => void;

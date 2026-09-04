@@ -4,33 +4,58 @@
 
 ```ts
 
-import { a } from '../../policy-B4DHbtJN.js';
-import { D } from '../../policy-B4DHbtJN.js';
-import { P } from '../../preview-request-CCLPaG55.js';
+import { c } from '../../options-CEzzfHJu.js';
+import { b as PreviewAdapterOptions } from '../../options-CEzzfHJu.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;
 
 // @public
-export function defineLivePreviewServerHandler(_options?: LivePreviewNuxtOptions): NitroHandler;
+export const DECISION_CONTEXT_KEY = "livePreviewDecision";
 
-// @public (undocumented)
+// @public
+export function defineLivePreviewServerHandler(options?: LivePreviewNuxtOptions): NitroHandler;
+
+// @public
 interface H3EventLike {
     // (undocumented)
     readonly context?: Record<string, unknown>;
+    // Warning: (ae-forgotten-export) The symbol "HeadersLike" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly headers?: HeadersLike;
     // (undocumented)
     readonly node?: {
-        readonly req?: {
-            readonly url?: string;
-            readonly headers?: Record<string, string | string[] | undefined>;
-        };
-        readonly res?: {
-            getHeader?: (name: string) => string | number | string[] | undefined;
-            setHeader?: (name: string, value: string) => void;
-        };
+        readonly req?: NodeRequestLike;
+        readonly res?: NodeResponseLike;
     };
     // (undocumented)
     readonly path?: string;
+    // Warning: (ae-forgotten-export) The symbol "NodeRequestLike" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly req?: NodeRequestLike | {
+        readonly headers?: HeadersLike;
+        readonly url?: string;
+    };
+    // Warning: (ae-forgotten-export) The symbol "NodeResponseLike" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly res?: NodeResponseLike | {
+        readonly headers?: HeadersLike;
+    };
+    // (undocumented)
+    readonly url?: {
+        readonly href: string;
+    } | string;
+}
+
+// @public (undocumented)
+interface HeadersLike {
+    // (undocumented)
+    get(name: string): string | null;
+    // (undocumented)
+    set?(name: string, value: string): void;
 }
 
 // Warning: (ae-forgotten-export) The symbol "NitroAppLike" needs to be exported by the entry point index.d.ts
@@ -39,36 +64,7 @@ interface H3EventLike {
 export function livePreviewNitroPlugin(options?: LivePreviewNuxtOptions): (nitroApp: NitroAppLike) => void;
 
 // @public
-export interface LivePreviewNuxtOptions {
-    // (undocumented)
-    readonly allowedOrigins?: readonly string[];
-    readonly apiRoute?: string;
-    readonly authorizePreview?: (request: P) => a | Promise<a>;
-    // (undocumented)
-    readonly autoInject?: boolean;
-    // (undocumented)
-    readonly debounceMs?: number;
-    // (undocumented)
-    readonly debug?: boolean;
-    readonly defaults?: D;
-    // (undocumented)
-    readonly frameAncestorsExtra?: readonly string[];
-    readonly heartbeatMs?: number;
-    readonly inject?: 'preview-only' | 'always';
-    readonly manageCsp?: boolean | 'frame-ancestors' | 'full';
-    readonly mergeDepth?: number;
-    readonly previewQueryParams?: readonly string[];
-    readonly previewSignals?: readonly ('query' | 'fetch-dest' | 'referer')[];
-    readonly sanitizerPolicy?: 'compat' | 'strict';
-    readonly scopeBindingsByOwner?: boolean;
-    // (undocumented)
-    readonly scriptSrcExtra?: readonly string[];
-    readonly serverURL?: string;
-    readonly shouldInject?: (request: P) => boolean;
-    readonly skipUnchanged?: boolean;
-    readonly strict?: boolean;
-    readonly strictDynamic?: boolean;
-}
+export type LivePreviewNuxtOptions = PreviewAdapterOptions<c>;
 
 // @public (undocumented)
 interface NitroAppLike {
@@ -83,6 +79,29 @@ interface NitroAppLike {
 // @public (undocumented)
 export type NitroHandler = (event: H3EventLike) => Promise<Response | undefined>;
 
+// @public (undocumented)
+type NodeHeaderValue = string | number | string[] | undefined;
+
+// @public (undocumented)
+interface NodeRequestLike {
+    // (undocumented)
+    readonly headers?: Record<string, string | string[] | undefined>;
+    // (undocumented)
+    readonly url?: string;
+}
+
+// @public (undocumented)
+interface NodeResponseLike {
+    // Warning: (ae-forgotten-export) The symbol "NodeHeaderValue" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    getHeader?: (name: string) => NodeHeaderValue;
+    // (undocumented)
+    setHeader?: (name: string, value: string) => void;
+}
+
+export { PreviewAdapterOptions }
+
 // @public
 interface RenderHtmlContextLike {
     // (undocumented)
@@ -96,8 +115,8 @@ export function renderLivePreviewScript(options?: LivePreviewNuxtOptions & {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/nuxt/index.d.ts:134:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/nuxt/index.d.ts:135:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:49:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:50:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

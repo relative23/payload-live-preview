@@ -1,12 +1,7 @@
 /**
- * Protocol profiles (roadmap 1.8.0): Payload-version-specific message and
- * merge behaviour, isolated behind one seam.
- *
- * The runtime never asks "which Payload is this"; it asks the profile what
- * the peer does. A profile is derived from observed capabilities, so it
- * starts unknown and settles once the admin has shown its shape.
- *
- * @module @core/protocol-profile
+ * What the peer does, derived from the capabilities its messages showed —
+ * the runtime never asks which Payload version it is talking to. Unknown
+ * until the admin reveals its shape. See ADR 0010.
  */
 import type { ProtocolCapability } from './protocol-version';
 

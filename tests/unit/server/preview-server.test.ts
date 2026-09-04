@@ -5,13 +5,8 @@ import {
   definePreview,
   type PreviewFetchDiagnostic,
   type PreviewFetchFunction,
+  type PreviewWhere,
 } from '@/server/index';
-
-/**
- * The server subpath's read contract (roadmap 1.2.0): one depth for fetch
- * and merge, an explicit authorization verdict as the draft decision, and a
- * failure that is a typed result — or a typed error, when asked.
- */
 
 const CMS = 'https://cms.example.com';
 
@@ -24,10 +19,13 @@ async function context(headers: Record<string, string> = { cookie: 'payload-toke
   return result.context;
 }
 
+type Init = Parameters<PreviewFetchFunction>[1];
+
 function capture(body: unknown = { docs: [{ id: 1 }] }, status = 200) {
-  const calls: { url: string; headers: Record<string, string>; signal: AbortSignal }[] = [];
+  const calls: { url: string; headers: Record<string, string>; signal: AbortSignal; init: Init }[] =
+    [];
   const fetch: PreviewFetchFunction = (url, init) => {
-    calls.push({ url, headers: init.headers, signal: init.signal });
+    calls.push({ url, headers: init.headers, signal: init.signal, init });
     return Promise.resolve({
       ok: status >= 200 && status < 300,
       status,
@@ -109,6 +107,46 @@ describe('definePreview — reads', () => {
     const preview = definePreview({ serverURL: CMS, depth: 1, fetch });
     const result = await preview.fetchDocument({ collection: 'pages', authorization: null });
     expect(result).toEqual({ ok: true, data: null, draft: false, status: 200 });
+  });
+
+  it('never lets the read be cached or follow a redirect: it carries a session cookie', async () => {
+    const { calls, fetch } = capture();
+    const preview = definePreview({ serverURL: CMS, depth: 1, fetch });
+    await preview.fetchDocument({ collection: 'pages', authorization: await context() });
+    await preview.fetchGlobal({ global: 'g', authorization: null });
+    expect(calls).toHaveLength(2);
+    for (const call of calls) {
+      expect(call.init.cache).toBe('no-store');
+      expect(call.init.redirect).toBe('error');
+    }
+  });
+});
+
+describe('definePreview — where', () => {
+  async function queryFor(where: PreviewWhere) {
+    const { calls, fetch } = capture();
+    const preview = definePreview({ serverURL: CMS, depth: 0, fetch });
+    await preview.fetchDocument({ collection: 'pages', authorization: null, where });
+    return new URL(calls[0]?.url ?? '').searchParams;
+  }
+
+  it('indexes the branches of or / and so Payload parses them back into arrays', async () => {
+    const query = await queryFor({
+      or: [
+        { slug: { equals: 'about' } },
+        { and: [{ id: { equals: 7 } }, { _status: { equals: 'draft' } }] },
+      ],
+    });
+    expect(query.get('where[or][0][slug][equals]')).toBe('about');
+    expect(query.get('where[or][1][and][0][id][equals]')).toBe('7');
+    expect(query.get('where[or][1][and][1][_status][equals]')).toBe('draft');
+    expect([...query.keys()].some((key) => key.includes('[object'))).toBe(false);
+  });
+
+  it('serializes a null operand instead of throwing, and joins scalar arrays', async () => {
+    const query = await queryFor({ parent: { equals: null }, tags: { in: ['a', 2] } });
+    expect(query.get('where[parent][equals]')).toBe('null');
+    expect(query.get('where[tags][in]')).toBe('a,2');
   });
 });
 

@@ -1,22 +1,15 @@
-/**
- * `number` field renderer.
- *
- * Inputs get `valueAsNumber`. Other elements get the value formatted
- * via `Intl.NumberFormat` with the active locale.
- *
- * @module @field-types/number
- */
+/** `number` renderer: raw value on inputs, `Intl.NumberFormat` elsewhere. */
 
 import { detectInitialLocale } from '@detection/locale';
 import { getNumberFormat } from '@core/intl-cache';
 import type { FieldRenderer, RenderContext } from '@core/types';
-import { safeStringify } from './utils';
+import { isEmptyValue, safeStringify } from './utils';
 
 const numberRenderer: FieldRenderer = {
   name: 'number',
   render(target, value, context) {
     const element = target.element;
-    if (value === null || value === undefined || value === '') {
+    if (isEmptyValue(value)) {
       if (element.tagName === 'INPUT') (element as HTMLInputElement).value = '';
       else element.textContent = '';
       return;

@@ -1,28 +1,18 @@
 /**
- * The reviewed npm audit gate (roadmap 1.9.0 supply-chain). It fails on any
- * high or critical advisory that is not covered by a non-expired exception in
- * `quality/audit-exceptions.json`, and it fails on an expired or unused
- * exception too, so the register cannot rot. A bare `npm audit --audit-level`
- * has no way to say "this one is triaged, reachable-only-in-X, fixed by date";
- * this gate is that register.
- *
- * Run: `tsx scripts/audit-gate.ts [--prefix <dir>]`. The exception register
- * governs the maintainer tree; fixtures keep the plain `npm audit` in CI.
- *
- * @module scripts/audit-gate
+ * npm audit with a reviewed exception register: every high/critical advisory
+ * needs a non-expired exception for its exact advisory id, and an expired or
+ * unused exception fails too, so the register cannot rot.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export interface AuditException {
   /** The advisory id (a GHSA identifier) this exception covers. */
   readonly id: string;
-  /** The vulnerable package. */
   readonly package: string;
-  /** Why it is tolerated for now — the triage decision. */
   readonly reason: string;
-  /** Where (or whether) the advisory is reachable from this package. */
   readonly reachability: string;
   /** ISO date (YYYY-MM-DD) after which the exception no longer applies. */
   readonly expires: string;
@@ -33,21 +23,24 @@ export interface AuditRegister {
   readonly exceptions: readonly AuditException[];
 }
 
-/** One high/critical advisory as the gate needs to see it. */
 export interface AuditFinding {
   readonly id: string;
   readonly package: string;
   readonly severity: string;
 }
 
+export interface GateResult {
+  readonly ok: boolean;
+  readonly violations: readonly string[];
+}
+
 const HIGH_OR_CRITICAL = new Set(['high', 'critical']);
 
-/** Coerce a value to a string only when it already is one; anything else is ''. */
 function asString(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
-/** The high/critical advisories in an `npm audit --json` document. */
+/** The high/critical advisories in an `npm audit --json` document, one per advisory. */
 export function findingsFromAudit(auditJson: unknown): AuditFinding[] {
   const findings: AuditFinding[] = [];
   if (typeof auditJson !== 'object' || auditJson === null) return findings;
@@ -69,19 +62,15 @@ export function findingsFromAudit(auditJson: unknown): AuditFinding[] {
           )
           .filter((id) => id.length > 0)
       : [];
-    findings.push({ id: ids[0] ?? pkg, package: pkg, severity });
+    if (ids.length === 0) findings.push({ id: pkg, package: pkg, severity });
+    for (const id of new Set(ids)) findings.push({ id, package: pkg, severity });
   }
   return findings;
 }
 
-export interface GateResult {
-  readonly ok: boolean;
-  readonly violations: readonly string[];
-}
-
 /**
- * Decide the gate from the findings, the register, and today's date. Pure, so
- * the policy is unit-testable without a network or a real audit.
+ * An exception covers one advisory id in one package. Matching by package
+ * name alone would wave through every future advisory in that package.
  */
 export function evaluateAuditGate(
   findings: readonly AuditFinding[],
@@ -89,12 +78,12 @@ export function evaluateAuditGate(
   today: Date,
 ): GateResult {
   const violations: string[] = [];
-  const used = new Set<string>();
+  const used = new Set<AuditException>();
   const now = today.getTime();
 
   for (const finding of findings) {
     const exception = register.exceptions.find(
-      (candidate) => candidate.package === finding.package || candidate.id === finding.id,
+      (candidate) => candidate.package === finding.package && candidate.id === finding.id,
     );
     if (exception === undefined) {
       violations.push(
@@ -110,11 +99,11 @@ export function evaluateAuditGate(
         `exception for ${exception.package} expired ${exception.expires}; re-triage or remove it`,
       );
     }
-    used.add(exception.id);
+    used.add(exception);
   }
 
   for (const exception of register.exceptions) {
-    if (!used.has(exception.id)) {
+    if (!used.has(exception)) {
       violations.push(
         `exception for ${exception.package} (${exception.id}) matches no current advisory; remove it`,
       );
@@ -158,6 +147,7 @@ function main(argv: readonly string[]): number {
   return 1;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const invokedPath = process.argv[1] === undefined ? undefined : resolve(process.argv[1]);
+if (invokedPath !== undefined && fileURLToPath(import.meta.url) === invokedPath) {
   process.exit(main(process.argv.slice(2)));
 }

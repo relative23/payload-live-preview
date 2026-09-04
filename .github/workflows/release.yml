@@ -1,177 +1,77 @@
 name: Release
 
+# A successful CI run on main certifies its head commit; this workflow either
+# opens the Version PR or publishes the exact artifact that run produced.
+# `workflow_dispatch` re-enters a certified run whose release was skipped
+# (for example because a newer push landed while its CI was still running).
 on:
-  # CI contains lint/policy/architecture, unit/matrix, critical coverage, the
-  # complete release mutation baseline, the 10k Node leak gate, a five-minute
-  # Chromium soak, browser E2E, real-Payload E2E, build, and exact-package gates.
-  # A successful conclusion therefore certifies all of them for head_sha.
   workflow_run:
     workflows: [CI]
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Id of a successful CI push run on main to release.
+        required: true
+        type: string
 
-# Main release state mutations are serialized, and a newer push must never
-# interrupt a running publish.
 concurrency:
-  group: release-${{ github.event.workflow_run.head_branch }}
+  group: release-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: false
 
-# The workflow-level token starts with no access. Each job below requests only
-# the subset needed for its own release phase.
 permissions: {}
 
 jobs:
   gate:
     name: Decide release action
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main' &&
-      github.event.workflow_run.head_repository.full_name == github.repository &&
-      github.event.workflow_run.head_sha == github.sha
+      github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
     outputs:
+      run_id: ${{ steps.release_gate.outputs.run_id }}
+      tested_sha: ${{ steps.release_gate.outputs.tested_sha }}
       version_pr: ${{ steps.release_gate.outputs.version_pr }}
       publish: ${{ steps.release_gate.outputs.publish }}
     steps:
+      # The gate itself runs from the current main tip; the tested commit is
+      # read through Git so a re-entered run still gets today's gate logic.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
-
-      - name: Verify tested commit
-        env:
-          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: test "$(git rev-parse HEAD)" = "$TESTED_SHA"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
+          cache: npm
           registry-url: https://registry.npmjs.org
 
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
 
-      # A changeset opens/updates the Version PR. Once that PR is merged there
-      # are no pending changesets, and an unpublished package version is the
-      # only state allowed to reach the registry.
+      - run: npm ci
+
       - name: Decide whether to version or publish
         id: release_gate
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          name=$(node -p "require('./package.json').name")
-          version=$(node -p "require('./package.json').version")
-          changesets=false
-          for changeset in .changeset/*.md; do
-            if [ -f "$changeset" ] && [ "$changeset" != ".changeset/README.md" ]; then
-              changesets=true
-              break
-            fi
-          done
-
-          # A registry outage is not evidence that a version is unpublished.
-          # Fail closed unless npm explicitly reports a missing package/version.
-          #
-          # stderr is captured to its own file rather than merged into the
-          # result. npm writes config warnings there, and folding them into
-          # $published made it unequal to $version for reasons that have
-          # nothing to do with the registry, which flips the comparison below
-          # to "not published" and asks the publisher to release over an
-          # existing version.
-          registry_stderr=$(mktemp)
-          set +e
-          registry_result=$(npm view "$name@$version" version 2>"$registry_stderr")
-          registry_status=$?
-          set -e
-          if [ "$registry_status" -eq 0 ]; then
-            published=$(printf '%s\n' "$registry_result" | grep -v '^[[:space:]]*$' | tail -n 1 | tr -d '[:space:]')
-          elif grep -q 'E404' "$registry_stderr"; then
-            published=
-          else
-            echo "npm registry lookup failed; refusing to infer an unpublished version"
-            cat "$registry_stderr"
-            exit "$registry_status"
-          fi
-
-          version_pr=false
-          publish=false
-          # Publish an unpublished version before considering a Version PR. In
-          # Changesets pre-release mode the changeset files are retained through
-          # the whole prerelease line, so keying version_pr on their mere
-          # presence would never publish a prerelease. The registry lacking the
-          # current version is the publish signal in both normal and pre mode
-          # (a merged Version PR leaves package.json ahead of the registry);
-          # retained changesets only mean "open the next Version PR" once the
-          # current version is already published.
-          if [ "$published" != "$version" ]; then
-            publish=true
-          elif [ "$changesets" = "true" ]; then
-            version_pr=true
-          else
-            # A package may have reached npm before tag/release creation failed.
-            # Re-enter the exact-artifact publisher only to reconcile that state.
-            tag="v$version"
-            tagged=false
-            tagged_sha=
-            if git show-ref --verify --quiet "refs/tags/$tag"; then
-              tagged_sha=$(git rev-list -n 1 "$tag")
-              tagged=true
-            fi
-
-            # Same reason as the npm lookup above: stderr stays out of the
-            # value that gets compared against "$tag".
-            release_stderr=$(mktemp)
-            set +e
-            release_result=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq .tag_name 2>"$release_stderr")
-            release_status=$?
-            set -e
-            if [ "$release_status" -eq 0 ]; then
-              release_result=$(printf '%s\n' "$release_result" | grep -v '^[[:space:]]*$' | tail -n 1 | tr -d '[:space:]')
-              if [ "$release_result" != "$tag" ]; then
-                echo "GitHub returned an unexpected release tag: $release_result"
-                exit 1
-              fi
-              released=true
-            elif grep -q 'HTTP 404' "$release_stderr"; then
-              released=false
-            else
-              echo "GitHub release lookup failed; refusing to infer missing release state"
-              cat "$release_stderr"
-              exit "$release_status"
-            fi
-
-            if [ "$released" = "true" ]; then
-              if [ "$tagged" != "true" ]; then
-                echo "GitHub Release $tag exists without a fetched Git tag; refusing inconsistent state"
-                exit 1
-              fi
-              # A later docs-only commit normally retains the already-published
-              # package version. Its complete historical release is a no-op;
-              # the tag is expected to point to the earlier release commit.
-              publish=false
-            elif [ "$tagged" = "true" ] && [ "$tagged_sha" != "$TESTED_SHA" ]; then
-              echo "$tag has no GitHub Release and points to $tagged_sha, not tested commit $TESTED_SHA"
-              echo "rerun the original release commit to reconcile its certified artifact"
-              exit 1
-            else
-              publish=true
-            fi
-          fi
-
-          echo "version_pr=$version_pr" >> "$GITHUB_OUTPUT"
-          echo "publish=$publish" >> "$GITHUB_OUTPUT"
-          echo "changesets=$changesets published=${published:-none} version=$version version_pr=$version_pr publish_or_reconcile=$publish"
+          RELEASE_RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id }}
+        run: npx tsx scripts/release-gate.ts
 
   version:
     name: Create or update Version PR
     needs: gate
+    # changesets/action branches from github.sha, so the Version PR is only
+    # correct when the tested commit is still the tip of main.
     if: >-
       needs.gate.outputs.version_pr == 'true' &&
-      github.event.workflow_run.head_sha == github.sha
+      needs.gate.outputs.tested_sha == github.sha
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -179,12 +79,12 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ needs.gate.outputs.tested_sha }}
           fetch-depth: 0
 
       - name: Verify tested commit
         env:
-          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TESTED_SHA: ${{ needs.gate.outputs.tested_sha }}
         run: test "$(git rev-parse HEAD)" = "$TESTED_SHA"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -200,10 +100,6 @@ jobs:
       - name: Create Version PR
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
         with:
-          # The action does not publish while changesets are present; this
-          # input makes the generated PR accurately describe the post-merge
-          # publish phase handled by the separate least-privilege job below.
-          publish: npm run release
           version: npm run version
           commit: 'chore: release'
           title: 'chore: release'
@@ -213,9 +109,9 @@ jobs:
   publish:
     name: Publish verified version
     needs: gate
-    if: >-
-      needs.gate.outputs.publish == 'true' &&
-      github.event.workflow_run.head_sha == github.sha
+    # The gate has proven the tested commit is on main and its version is
+    # still unpublished; a newer push to main must not block this artifact.
+    if: needs.gate.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -224,12 +120,12 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ needs.gate.outputs.tested_sha }}
           fetch-depth: 0
 
       - name: Verify tested commit
         env:
-          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TESTED_SHA: ${{ needs.gate.outputs.tested_sha }}
         run: test "$(git rev-parse HEAD)" = "$TESTED_SHA"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -246,7 +142,7 @@ jobs:
       - name: Derive reproducible source date from the tested commit
         id: source_date
         env:
-          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TESTED_SHA: ${{ needs.gate.outputs.tested_sha }}
         run: |
           epoch=$(git show -s --format=%ct "$TESTED_SHA")
           case "$epoch" in
@@ -254,21 +150,20 @@ jobs:
           esac
           echo "epoch=$epoch" >> "$GITHUB_OUTPUT"
 
-      # Artifacts v4 are immutable. Supplying both run-id and the commit-bound
-      # name prevents this privileged workflow_run job from selecting a package
-      # produced by another workflow execution.
+      # Artifacts v4 are immutable; run-id plus the commit-bound name selects
+      # exactly the package the certified run produced.
       - name: Download exact CI package artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: release-candidate-${{ github.event.workflow_run.head_sha }}
+          name: release-candidate-${{ needs.gate.outputs.tested_sha }}
           path: release-artifact
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ needs.gate.outputs.run_id }}
 
       - name: Recheck downloaded archive without repacking the repository
         env:
           SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
-          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TESTED_SHA: ${{ needs.gate.outputs.tested_sha }}
         shell: bash
         run: |
           shopt -s nullglob
@@ -279,28 +174,25 @@ jobs:
           fi
           npm run test:package -- --tarball "${tarballs[0]}" --source-commit "$TESTED_SHA"
 
-      # The custom publish script sends the already-checked tgz directly to npm
-      # with scripts disabled, then downloads it from the registry and compares
-      # SHA-256/SHA-512 plus the complete inventory. Only after that proof does
-      # it emit Changesets' New-tag signal; the pinned action pushes the tag and
-      # creates (or reconciles) the GitHub Release from CHANGELOG.md.
+      # Sends the checked tgz to npm with scripts disabled, then downloads it
+      # from the registry and compares digests and inventory before creating
+      # the local release tag.
       - name: Publish with provenance
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
-        with:
-          publish: npm run release
-          createGithubReleases: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
           PACKAGE_ARTIFACT_DIR: release-artifact
-          PACKAGE_SOURCE_COMMIT: ${{ github.event.workflow_run.head_sha }}
+          PACKAGE_SOURCE_COMMIT: ${{ needs.gate.outputs.tested_sha }}
           SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
+        run: npm run release
 
-      # Everything before this point reasons about the tarball this job built.
-      # This installs what the registry actually serves, in a directory with no
-      # workspace, no lockfile and no local dist to fall back on, and imports
-      # every subpath a Node consumer can reach. A release can be green end to
-      # end and still leave an uninstallable package; the publish has already
-      # happened here, so a failure cannot prevent it — it makes it loud.
+      - name: Push the release tag and create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_SOURCE_COMMIT: ${{ needs.gate.outputs.tested_sha }}
+        run: npx tsx scripts/github-release.ts
+
+      # Installs what the registry actually serves, in a directory with no
+      # workspace, lockfile or local dist, and imports every Node-reachable
+      # subpath. It cannot prevent the publish; it makes a broken one loud.
       - name: Smoke-test the published package from the registry
         run: npm run test:smoke

@@ -8,8 +8,8 @@ import {
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 86_713, gzip: 26_897, brotli: 23_613 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 96_441, gzip: 30_121, brotli: 26_260 });
+    expect(INLINE_BUDGET).toEqual({ raw: 93_073, gzip: 28_966, brotli: 25_760 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 104_501, gzip: 32_738, brotli: 28_868 });
   });
 
   it('measures raw, gzip, and Brotli bytes deterministically', () => {

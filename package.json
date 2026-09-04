@@ -5,7 +5,7 @@
   "author": "relative23",
   "license": "MIT",
   "type": "module",
-  "packageManager": "npm@11.16.0",
+  "packageManager": "npm@12.0.2",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -176,11 +176,13 @@
     "build": "npm run build:runtime && tsx scripts/build-dist.ts && npm run build:assets && npm run test:bundle && npm run test:treeshake && npm run test:edge",
     "build:assets": "node -e \"const fs=require('node:fs');for(const f of ['RichText','PreviewBoundary'])fs.copyFileSync('src/adapters/astro/'+f+'.astro','dist/adapters/astro/'+f+'.astro')\"",
     "dev": "tsup --watch",
+    "pretest": "npm run build:runtime",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
+    "check:fixtures": "tsx scripts/check-fixture-freshness.ts",
     "test:e2e:real-payload": "playwright test --config playwright.real-payload.config.ts",
     "test:a11y": "playwright test tests/e2e/specs/accessibility.spec.ts",
     "test:soak": "playwright test --config playwright.soak.config.ts",
@@ -198,7 +200,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:diff": "tsx scripts/coverage-policy.ts",
     "test:policy": "tsx scripts/test-policy.ts",
-    "test:architecture": "tsx scripts/architecture-policy.ts && tsx scripts/quality-workflow-policy.ts && knip --no-progress --treat-config-hints-as-errors",
+    "test:architecture": "tsx scripts/architecture-policy.ts && tsx scripts/workflow-contracts.ts && tsx scripts/docs-contracts.ts && knip --no-progress --treat-config-hints-as-errors",
     "test:property": "vitest run tests/unit/property",
     "test:mutation": "stryker run stryker.config.js",
     "test:mutation:policy:pr": "tsx scripts/mutation-policy.ts --policy quality/mutation-policy-pr.json --report test-results/stryker-pr.json",
@@ -215,7 +217,8 @@
     "prepublishOnly": "npm run build && npm run check && npm run format:check && npm run test:package",
     "changeset": "changeset",
     "version": "changeset version && tsx scripts/sync-lockfile-metadata.ts",
-    "release": "tsx scripts/publish-artifact.ts"
+    "release": "tsx scripts/publish-artifact.ts",
+    "test:docs": "tsx scripts/docs-contracts.ts"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
@@ -246,7 +249,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.67.0",
     "vite": "^7.3.6",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "yaml": "^2.9.0"
   },
   "overrides": {
     "qs": "6.15.3",

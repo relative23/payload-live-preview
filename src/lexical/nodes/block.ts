@@ -1,66 +1,34 @@
 /**
- * Renderer for Lexical `block` nodes — Payload's custom-blocks feature
- * (the `BlocksFeature` of `@payloadcms/richtext-lexical`).
- *
- * The Lexical serializer emits a block as:
- *   {
- *     type: 'block',
- *     fields: { blockType: 'callout', text: '...', ... },
- *   }
- *
- * Dispatch order:
- *
- *   1. The blocks sub-registry (`./blocks/registry.ts`) is consulted
- *      first. Consumers opt into the default renderer set via
- *      `registerDefaultBlocks()`; custom slugs override via
- *      `registerBlockRenderer()`.
- *   2. Falling through, the generic renderer emits a
- *      `<div data-block-type="…">` annotated with each field as a
- *      `data-block-<key>` attribute, so consumer CSS / hydration can
- *      pick the block up.
- *
- * @module @lexical/nodes/block
+ * `block` and `inlineBlock` renderers for Payload's BlocksFeature. The block
+ * registry is consulted first; without a renderer for the slug the node
+ * becomes an empty, class-tagged element a consumer can style or replace.
  */
 
-import { escapeHtml } from '@security/escape';
 import { lookupBlockRenderer } from '../blocks/registry';
-import type { NodeRenderer } from '../registry';
+import type { NodeRenderer, RenderNodeContext } from '../registry';
+import type { LexicalNode } from '../types';
+import { asRecord, sanitizeIdent } from '../value-shapes';
 
-const blockRenderer: NodeRenderer = (node, ctx): string => {
-  const fields = readFields(node);
-  const blockTypeRaw = typeof fields['blockType'] === 'string' ? fields['blockType'] : '';
-  const slug = sanitizeIdent(blockTypeRaw);
-
-  if (blockTypeRaw !== '') {
-    const custom = lookupBlockRenderer(blockTypeRaw) ?? lookupBlockRenderer(slug);
-    if (custom) {
-      return custom(fields, { renderChildren: ctx.renderChildren });
-    }
+function renderBlockNode(
+  node: LexicalNode,
+  ctx: RenderNodeContext,
+  tag: 'div' | 'span',
+  baseClass: string,
+): string {
+  const fields = asRecord(node['fields']) ?? {};
+  const blockType = typeof fields['blockType'] === 'string' ? fields['blockType'] : '';
+  const slug = sanitizeIdent(blockType);
+  if (blockType !== '') {
+    const custom = lookupBlockRenderer(blockType) ?? lookupBlockRenderer(slug);
+    if (custom) return custom(fields, { renderChildren: ctx.renderChildren });
   }
-
-  const attrs: string[] = [];
-  if (slug !== '') attrs.push(`data-block-type="${escapeHtml(slug)}"`);
-  for (const [key, value] of Object.entries(fields)) {
-    if (key === 'blockType' || key === 'id') continue;
-    if (value === null || value === undefined) continue;
-    const stringValue =
-      typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
-        ? String(value)
-        : JSON.stringify(value);
-    attrs.push(`data-block-${sanitizeIdent(key)}="${escapeHtml(stringValue)}"`);
-  }
-  const attrString = attrs.length === 0 ? '' : ` ${attrs.join(' ')}`;
-  return `<div${attrString}></div>`;
-};
-
-export { blockRenderer };
-
-function readFields(node: Record<string, unknown>): Record<string, unknown> {
-  const raw = node['fields'];
-  if (typeof raw !== 'object' || raw === null) return {};
-  return raw as Record<string, unknown>;
+  const classes = slug === '' ? baseClass : `${baseClass} ${baseClass}--${slug}`;
+  return `<${tag} class="${classes}"></${tag}>`;
 }
 
-function sanitizeIdent(value: string): string {
-  return value.replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase();
-}
+const blockRenderer: NodeRenderer = (node, ctx) => renderBlockNode(node, ctx, 'div', 'lp-block');
+
+const inlineBlockRenderer: NodeRenderer = (node, ctx) =>
+  renderBlockNode(node, ctx, 'span', 'lp-inline-block');
+
+export { blockRenderer, inlineBlockRenderer };

@@ -43,18 +43,20 @@ export interface CachedElement {
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
     readonly fieldType: RendererKey;
+    readonly fragmentBoundary?: Element;
     readonly hrefField?: string;
     readonly locale?: string;
     readonly owner?: string;
     readonly srcField?: string;
     readonly strategy?: string;
+    readonly strategyKind?: UpdateSource | 'unknown';
     readonly targetAttribute?: string;
 }
 
 // @public
 export function createStructuralArrayRenderer(): FieldRenderer;
 
-// @public
+// @public (undocumented)
 export function createStructuralStore(): StructuralStore;
 
 // @public
@@ -77,10 +79,10 @@ export interface FieldRenderer {
 // @public
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';
 
-// @public
+// @public (undocumented)
 export const ISLAND_ATTRIBUTE = "data-payload-island";
 
-// @public
+// @public (undocumented)
 export function isMorphBoundary(element: Element): boolean;
 
 // @public
@@ -102,7 +104,7 @@ export interface MorphOptions {
     readonly retainChildrenOf?: (live: Element, rendered: Element) => boolean;
 }
 
-// @public (undocumented)
+// @public
 export const OWNED_ATTRIBUTE = "data-payload-owned";
 
 // @public
@@ -201,6 +203,9 @@ export interface StructuralApplyOptions {
 
 // @public
 export type StructuralStore = WeakMap<Element, Map<string, unknown>>;
+
+// @public
+export type UpdateSource = 'patch' | 'fragment' | 'route';
 
 // (No @packageDocumentation comment for this package)
 
