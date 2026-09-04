@@ -97,9 +97,13 @@ function compareRatchetedMaximum(
  * from `survived` to `timeout`, which raised the score to 81.52 without a line
  * of source changing: a timeout counts as detected, so a slow runner flatters
  * the figure. The score is therefore load-sensitive in both directions, and the
- * drift band has to cover that spread rather than pretend it away. This ceiling
- * can only catch a regime change, and is set wide enough to do that without
- * firing on load.
+ * drift band has to cover that spread rather than pretend it away.
+ *
+ * That spread came from a 20-second timeout leaving borderline mutants to the
+ * clock. At 60 seconds the assertions decide, and two runs of the same tree
+ * both reported exactly 25 — the mutants that genuinely never terminate. The
+ * ceiling is set from that with room for a slow runner, and can only catch a
+ * regime change, which is all it is for.
  * Failing because *fewer* mutants timed out would only teach the next reader to
  * edit the number. A slowdown still fails: timeouts above the ceiling
  * are a regression, and a timeout counts as detected, so the score is unaffected

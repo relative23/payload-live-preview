@@ -81,7 +81,7 @@
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 45,
     "noCoverageMaximum": 85,
-    "timeoutMaximum": 250,
+    "timeoutMaximum": 60,
     "errorMaximum": 0,
     "ignoredMaximum": 0
   }
