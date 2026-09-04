@@ -52,6 +52,10 @@ describe('generateCspNonce', () => {
     delete globalThis.crypto;
     try {
       expect(() => generateCspNonce()).toThrow(/Web Crypto is unavailable/);
+      // The remedy is the part a reader needs; a message that names the
+      // problem and swallows the fix is what the mutant left behind.
+      expect(() => generateCspNonce()).toThrow(/setCspCrypto\(webcrypto\)/);
+      expect(() => generateCspNonce()).toThrow(/--experimental-global-webcrypto/);
     } finally {
       globalThis.crypto = original;
     }
@@ -194,6 +198,35 @@ describe('buildScriptSrcWithNonce', () => {
 });
 
 describe('mergeCspHeader', () => {
+  // The whitespace table below puts each character between the name and the
+  // value, which the split regex handles. Around a directive it is the trim's
+  // job — a policy that survives `;` splitting carries exactly that — and each
+  // character has to be tried there too, or one of them can quietly stop
+  // counting. Leading-only and trailing-only tell the two ends of the trim
+  // apart: a shortcut that returns the input untouched passes when both ends
+  // are dirty and fails only when one is clean.
+  it.each([
+    ['horizontal tab', '\t'],
+    ['line feed', '\n'],
+    ['form feed', '\f'],
+    ['carriage return', '\r'],
+    ['space', ' '],
+  ])('trims %s around a directive, not only between name and value', (_name, ws) => {
+    const canonical = mergeCspHeader("default-src 'self'", {});
+    expect(canonical).toBe("default-src 'self'");
+    expect(mergeCspHeader(`${ws}${ws}default-src 'self'${ws}${ws}`, {})).toBe(canonical);
+    expect(mergeCspHeader(`${ws}default-src 'self'`, {})).toBe(canonical);
+    expect(mergeCspHeader(`default-src 'self'${ws}`, {})).toBe(canonical);
+  });
+
+  it('replaces an existing value under mode replace instead of merging into it', () => {
+    const merged = mergeCspHeader('img-src https://old.example', {
+      'img-src': { value: 'https://new.example', mode: 'replace' },
+    });
+    expect(merged).toContain('https://new.example');
+    expect(merged).not.toContain('https://old.example');
+  });
+
   it.each([
     ['horizontal tab', '\t'],
     ['line feed', '\n'],

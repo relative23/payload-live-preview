@@ -19,7 +19,7 @@
   "totals": {
     "files": 239,
     "suites": 516,
-    "tests": 2156,
+    "tests": 2158,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 201,
       "suites": 463,
-      "tests": 2005,
+      "tests": 2007,
       "benchmarks": 0
     }
   },
@@ -1632,7 +1632,7 @@
       "path": "tests/unit/security/csp.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 36,
+      "tests": 38,
       "benchmarks": 0
     },
     {

@@ -66,7 +66,10 @@ describe('revealElement', () => {
     const spy = vi.spyOn(target, 'scrollIntoView');
     revealElement(target, win({ matchMedia: () => ({ matches: true }) }));
     expect(spy).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'auto' }));
-    revealElement(el({ top: 2000, bottom: 2040 }), win());
+    const moving = el({ top: 2000, bottom: 2040 });
+    const smooth = vi.spyOn(moving, 'scrollIntoView');
+    revealElement(moving, win());
+    expect(smooth).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
   });
 });
 
