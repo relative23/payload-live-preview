@@ -19,7 +19,7 @@
   "totals": {
     "files": 239,
     "suites": 516,
-    "tests": 2155,
+    "tests": 2156,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 201,
       "suites": 463,
-      "tests": 2004,
+      "tests": 2005,
       "benchmarks": 0
     }
   },
@@ -1527,7 +1527,7 @@
       "path": "tests/unit/quality/coverage-policy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 12,
+      "tests": 13,
       "benchmarks": 0
     },
     {

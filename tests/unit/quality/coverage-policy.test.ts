@@ -3,6 +3,7 @@ import {
   addUntrackedChangedLines,
   COVERAGE_POLICY,
   emitsJavaScript,
+  neverInstrumented,
   evaluateDiffCoverage,
   findCoveragePolicyRegressions,
   globCovers,
@@ -134,6 +135,16 @@ end_of_record
     expect(emitsJavaScript('/** Just documentation. */\nexport type A = string;')).toBe(false);
     expect(emitsJavaScript('export const a = 1;')).toBe(true);
     expect(emitsJavaScript('export enum A { b }')).toBe(true);
+  });
+
+  it('names the file types vitest never executes, and nothing else', () => {
+    // A changed Astro component has no LCOV entry by construction: Astro
+    // compiles it and the browser suite exercises it. Demanding one would fail
+    // a documentation edit, which is what surfaced this.
+    expect(neverInstrumented('src/adapters/astro/RichText.astro')).toBe(true);
+    expect(neverInstrumented('src/adapters/astro/PreviewBoundary.astro')).toBe(true);
+    expect(neverInstrumented('src/adapters/astro/index.ts')).toBe(false);
+    expect(neverInstrumented('src/core/astro.ts')).toBe(false);
   });
 
   it('matches the narrow coverage exclusions without hiding neighbouring source', () => {

@@ -156,6 +156,16 @@ export function globCovers(broad: string, narrow: string): boolean {
  * transpiles to nothing, so no coverage tool can report it and demanding a
  * report from it says nothing about how well it is tested.
  */
+/**
+ * File types vitest never executes, so the unit LCOV cannot contain them
+ * whatever they hold. Today that is the Astro components: Astro compiles them,
+ * and the browser suite on the astro-payload fixture is what exercises them —
+ * a verdict that is not a line count and cannot be one.
+ */
+export function neverInstrumented(path: string): boolean {
+  return path.endsWith('.astro');
+}
+
 export function emitsJavaScript(source: string): boolean {
   const { outputText } = transpileModule(source, {
     compilerOptions: {
@@ -168,13 +178,20 @@ export function emitsJavaScript(source: string): boolean {
   return outputText.replaceAll(/export\s*\{\s*\};?/gu, '').trim().length > 0;
 }
 
-/** Drops declaration-only modules, so "absent from the LCOV report" keeps meaning untested code. */
+/**
+ * Drops modules this toolchain can never put into the LCOV report, so "absent
+ * from the LCOV report" keeps meaning untested code: declaration-only modules,
+ * which emit no JavaScript, and the file types `neverInstrumented` names.
+ * `diff.ignored` is not the place for either — against the base branch that
+ * list may only narrow, by design.
+ */
 async function withoutDeclarationOnlyModules(
   changedLines: ReadonlyMap<string, ReadonlySet<number>>,
   repositoryRoot: string,
 ): Promise<Map<string, ReadonlySet<number>>> {
   const kept = new Map<string, ReadonlySet<number>>();
   for (const [path, lines] of changedLines) {
+    if (neverInstrumented(path)) continue;
     let source: string;
     try {
       source = await readFile(resolve(repositoryRoot, path), 'utf8');
