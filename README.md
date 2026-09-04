@@ -359,25 +359,28 @@ A static build cannot make a request-time authorization decision, so the inline 
 
 ```ts
 // src/hooks.server.ts
+import { env } from '$env/dynamic/private';
 import { livePreviewHandle } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest } from 'payload-live-preview';
+const adminOrigin = env.PAYLOAD_ADMIN_ORIGIN ?? '';
 export const handle = livePreviewHandle({
-  allowedOrigins: [process.env.PAYLOAD_ADMIN_ORIGIN!],
-  serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
+  allowedOrigins: [adminOrigin],
+  serverURL: adminOrigin,
   mergeDepth: 1,
   // Required under the 2.0 defaults; without it the handle refuses and every
   // route, not only the preview, fails.
   authorizePreview: (request) =>
-    authorizePreviewRequest(request, {
-      type: 'payload-session',
-      serverURL: process.env.PAYLOAD_ADMIN_ORIGIN!,
-    }),
+    authorizePreviewRequest(request, { type: 'payload-session', serverURL: adminOrigin }),
 });
 ```
 
+`$env/dynamic/private` rather than `process.env`: a SvelteKit project carries no
+Node globals in its types unless it adds `@types/node`, so the `process.env`
+form does not type-check in a fresh one.
+
 This shorthand performs intent-gated delivery, not authentication. For protected preview responses, wrap it and invoke it only after an application-owned server verifier succeeds; reuse that authorization for draft data and cache policy.
 
-### Nuxt 3
+### Nuxt
 
 ```ts
 // server/plugins/live-preview.ts
