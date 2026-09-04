@@ -162,6 +162,12 @@ jobs:
       - run: npm audit --audit-level=high --package-lock-only --prefix examples/astro-middleware
       - run: npm audit --audit-level=high --package-lock-only --prefix examples/payload-backend
 
+  # A job that calls a reusable workflow reports its check as
+  # "<this name> / <the called job's name>" — here "Build / Build" — and the
+  # branch protection on main requires that exact string. When the build moved
+  # into build.yml the protection still asked for "Build", which no run could
+  # ever report, and every pull request sat BLOCKED with all checks green.
+  # Rename this job, or the one in build.yml, and the protection must follow.
   build:
     name: Build
     uses: ./.github/workflows/build.yml
