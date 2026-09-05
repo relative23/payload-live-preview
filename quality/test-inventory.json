@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 250,
-    "suites": 541,
-    "tests": 2227,
+    "suites": 542,
+    "tests": 2232,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 209,
-      "suites": 485,
-      "tests": 2069,
+      "suites": 486,
+      "tests": 2074,
       "benchmarks": 0
     }
   },
@@ -1596,8 +1596,8 @@
     {
       "path": "tests/unit/quality/coverage-policy.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 13,
+      "suites": 2,
+      "tests": 18,
       "benchmarks": 0
     },
     {

@@ -328,9 +328,22 @@ function gitOutput(repositoryRoot: string, arguments_: readonly string[]): strin
   });
 }
 
-function resolveComparisonBase(repositoryRoot: string, requestedBase: string | undefined): string {
+/**
+ * The commit whose lines this run is measured against.
+ *
+ * A force-push leaves the pushed-from commit outside the repository, and so
+ * does a rebased branch; the base CI hands over then names nothing. The push
+ * still changed lines, so the parent commit answers the question the gate
+ * actually asks. Failing instead would block a branch over its history rather
+ * than over its coverage, which is what a rewrite of two commit messages did.
+ */
+export function resolveComparisonBase(
+  requestedBase: string | undefined,
+  git: (arguments_: readonly string[]) => string,
+  environment: { readonly ci: boolean; readonly warn: (message: string) => void },
+): string {
   if (requestedBase === undefined) {
-    if (process.env['CI'] === 'true') {
+    if (environment.ci) {
       throw new Error(
         'coverage diff base is required in CI; pass --base <ref> or COVERAGE_BASE_REF',
       );
@@ -338,11 +351,25 @@ function resolveComparisonBase(repositoryRoot: string, requestedBase: string | u
     return 'HEAD';
   }
   try {
-    const mergeBase = gitOutput(repositoryRoot, ['merge-base', requestedBase, 'HEAD']).trim();
+    const mergeBase = git(['merge-base', requestedBase, 'HEAD']).trim();
     if (mergeBase.length === 0) throw new Error('empty merge base');
     return mergeBase;
-  } catch (error) {
-    throw new Error(`cannot resolve coverage diff base ${requestedBase}`, { cause: error });
+  } catch {
+    let parent: string;
+    try {
+      parent = git(['rev-parse', 'HEAD~1']).trim();
+      if (parent.length === 0) throw new Error('empty parent');
+    } catch (parentError) {
+      throw new Error(
+        `cannot resolve coverage diff base ${requestedBase}, and HEAD has no parent to measure against`,
+        { cause: parentError },
+      );
+    }
+    environment.warn(
+      `[coverage] base ${requestedBase} is not in this repository, which is what a force-push ` +
+        `or a rebase leaves behind; measuring against the parent commit ${parent} instead.`,
+    );
+    return parent;
   }
 }
 
@@ -370,7 +397,16 @@ async function readUntrackedSourceLines(
 async function main(): Promise<void> {
   const repositoryRoot = resolve(import.meta.dirname, '..');
   const requestedBase = readArgument('--base') ?? process.env['COVERAGE_BASE_REF'];
-  const base = resolveComparisonBase(repositoryRoot, requestedBase);
+  const base = resolveComparisonBase(
+    requestedBase,
+    (arguments_) => gitOutput(repositoryRoot, arguments_),
+    {
+      ci: process.env['CI'] === 'true',
+      warn: (message) => {
+        console.warn(message);
+      },
+    },
+  );
   const lcovPath = resolve(repositoryRoot, readArgument('--lcov') ?? 'coverage/lcov.info');
   // Git diff omits untracked files, so they are added explicitly below.
   const diff = gitOutput(repositoryRoot, [
