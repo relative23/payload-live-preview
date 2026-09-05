@@ -51,6 +51,7 @@ export const CI: WorkflowSpec = {
         { run: 'npm run test:policy' },
         { run: 'npm run test:architecture' },
         { run: 'npm run compat:check' },
+        { run: 'npm run diagnostics:check' },
       ],
     },
     unit: {

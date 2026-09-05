@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 249,
-    "suites": 535,
-    "tests": 2208,
+    "files": 250,
+    "suites": 541,
+    "tests": 2227,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 208,
-      "suites": 479,
-      "tests": 2050,
+      "files": 209,
+      "suites": 485,
+      "tests": 2069,
       "benchmarks": 0
     }
   },
@@ -421,14 +421,14 @@
       "path": "tests/unit/adapters/policy-authorization.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 26,
+      "tests": 27,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 22,
+      "tests": 26,
       "benchmarks": 0
     },
     {
@@ -1601,10 +1601,17 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/diagnostic-table.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/docs-contracts.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 6,
+      "suites": 5,
+      "tests": 11,
       "benchmarks": 0
     },
     {

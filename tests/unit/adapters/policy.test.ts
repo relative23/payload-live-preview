@@ -81,6 +81,42 @@ describe('normalizeCspMode', () => {
 });
 
 describe('inlineScriptConfig', () => {
+  // Each row is one adapter option and the key it travels under. An option the
+  // adapter drops here never reaches the runtime, and nothing else notices.
+  const WIRE = [
+    ['defaults', 'v1', 'defaults', 'v1'],
+    [
+      'allowedOrigins',
+      ['https://admin.example.com'],
+      'allowedOrigins',
+      ['https://admin.example.com'],
+    ],
+    ['serverURL', 'https://cms.example.com', 'serverURL', 'https://cms.example.com'],
+    ['apiRoute', '/api', 'apiRoute', '/api'],
+    ['mergeDepth', 2, 'mergeDepth', 2],
+    ['revealEditedField', true, 'revealEditedField', true],
+    ['debug', true, 'debug', true],
+    ['debounceMs', 5, 'debounceMs', 5],
+    ['heartbeatMs', 1000, 'heartbeatMs', 1000],
+    ['skipUnchanged', false, 'skipUnchanged', false],
+    ['scopeBindingsByOwner', true, 'scopeBindingsByOwner', true],
+    ['disableReferrerDetection', false, 'disableReferrerDetection', false],
+    ['disableLocalhostMatching', true, 'disableLocalhostMatching', true],
+    ['eventSourcePolicy', 'any', 'eventSourcePolicy', 'any'],
+    ['sanitizerPolicy', 'compat', 'sanitizerPolicy', 'compat'],
+    ['fragments', { endpoint: '/payload/fragment' }, 'fragmentEndpoint', '/payload/fragment'],
+  ] as const;
+
+  it.each(WIRE)('puts %s on the wire', (option, value, wireKey, wireValue) => {
+    // `mergeDepth` keeps the serverURL row from failing the explicit-depth rule.
+    const config = inlineScriptConfig({ mergeDepth: 1, [option]: value });
+    expect(config).toHaveProperty(wireKey, wireValue);
+  });
+
+  it.each(WIRE)('leaves %s off the wire when it is not given', (_option, _value, wireKey) => {
+    expect(inlineScriptConfig({})).not.toHaveProperty(wireKey);
+  });
+
   it('forwards only the options that were given, so runtime defaults stay the single source', () => {
     expect(inlineScriptConfig({})).toEqual({});
     expect(inlineScriptConfig({ debounceMs: 25, skipUnchanged: true })).toEqual({
@@ -142,6 +178,34 @@ describe('injectIntoHead', () => {
   ])('inserts after the encoding declaration %s so it stays in the 1024-byte prescan', (meta) => {
     expect(injectIntoHead(`<html><head>${meta}<title>t</title></head></html>`, TAG)).toBe(
       `<html><head>${meta}${TAG}<title>t</title></head></html>`,
+    );
+  });
+
+  it.each([
+    ['an upper-case head tag', '<HEAD>', '</HEAD>', ''],
+    ['a head tag with attributes over lines', '<head\n  lang="en">', '</head>', ''],
+    [
+      'a charset meta after other head content',
+      '<head>',
+      '</head>',
+      '<title>t</title><meta charset="utf-8">',
+    ],
+    [
+      'a content-type meta with spaces around =',
+      '<head>',
+      '</head>',
+      '<meta http-equiv = "content-type" content="text/html; charset=utf-8">',
+    ],
+  ])('handles %s', (_case, open, close, before) => {
+    const html = `<html>${open}${before}<link rel="x"></link>${close}</html>`;
+    const at = before === '' ? open.length + '<html>'.length : html.indexOf(before) + before.length;
+    expect(injectIntoHead(html, TAG)).toBe(`${html.slice(0, at)}${TAG}${html.slice(at)}`);
+  });
+
+  it('does not let a charset meta after </head> pull the tag out of the head', () => {
+    const html = '<html><head><title>t</title></head><body><meta charset="utf-8"></body></html>';
+    expect(injectIntoHead(html, TAG)).toBe(
+      `<html><head>${TAG}<title>t</title></head><body><meta charset="utf-8"></body></html>`,
     );
   });
 

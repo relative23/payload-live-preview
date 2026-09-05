@@ -23,20 +23,20 @@ type-checks or runs tests runs it explicitly for the same reason.
 
 The common maintainer commands are:
 
-| Command                         | Contract                                                                                  |
-| ------------------------------- | ----------------------------------------------------------------------------------------- |
-| `npm run check`                 | Types, lint, formatting, test policy, architecture/dead-code policy, compat table, Vitest |
-| `npm run format:check`          | Source, config, workflow, fixture, and packed type-fixture formatting                     |
-| `npm run test:coverage`         | Global and critical-file coverage floors                                                  |
-| `npm run test:coverage:diff`    | Changed executable lines and monotonic threshold ratchets                                 |
-| `npm run test:package`          | Exact tarball, API reports, publint, ATTW, imports, CLI, and type clients                 |
-| `npm run test:mutation`         | PR-sized Stryker mutation profile                                                         |
-| `npm run test:property`         | Deterministic fast-check security and lifecycle models                                    |
-| `npm run test:e2e`              | Chromium, Firefox, and WebKit behavior plus accessibility assertions                      |
-| `npm run test:e2e:real-payload` | Real Payload admin-to-preview protocol                                                    |
-| `npm run test:leak`             | 10,000 awaited updates, forced-GC heap, and exact resource ownership                      |
-| `npm run test:soak`             | Built-runtime Chromium update/heap soak                                                   |
-| `npm run test:bench:codspeed`   | Versioned CPU/allocation trend inputs                                                     |
+| Command                         | Contract                                                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `npm run check`                 | Types, lint, formatting, test policy, architecture/dead-code policy, compat and diagnostic tables, Vitest |
+| `npm run format:check`          | Source, config, workflow, fixture, and packed type-fixture formatting                                     |
+| `npm run test:coverage`         | Global and critical-file coverage floors                                                                  |
+| `npm run test:coverage:diff`    | Changed executable lines and monotonic threshold ratchets                                                 |
+| `npm run test:package`          | Exact tarball, API reports, publint, ATTW, imports, CLI, and type clients                                 |
+| `npm run test:mutation`         | PR-sized Stryker mutation profile                                                                         |
+| `npm run test:property`         | Deterministic fast-check security and lifecycle models                                                    |
+| `npm run test:e2e`              | Chromium, Firefox, and WebKit behavior plus accessibility assertions                                      |
+| `npm run test:e2e:real-payload` | Real Payload admin-to-preview protocol                                                                    |
+| `npm run test:leak`             | 10,000 awaited updates, forced-GC heap, and exact resource ownership                                      |
+| `npm run test:soak`             | Built-runtime Chromium update/heap soak                                                                   |
+| `npm run test:bench:codspeed`   | Versioned CPU/allocation trend inputs                                                                     |
 
 ### The nightly mutation scope
 
@@ -169,6 +169,16 @@ have a budget of zero. Playwright retries may collect diagnostics, but
 - `npm run test:treeshake`, `npm run test:edge`, `npm run test:bundle` — the
   built package as a consumer sees it: one-symbol bundles, a Web-platform-only
   runtime, and size budgets. All three run inside `npm run build`.
+- `scripts/diagnostic-table.ts` · `npm run diagnostics:check` — the
+  diagnostic-code table in `docs/troubleshooting.md` is rendered from
+  `src/core/diagnostic-codes.ts`; the check fails on drift, on a code without
+  a "what to do" entry and on an entry for a code that no longer exists.
+  `npx tsx scripts/diagnostic-table.ts --write` re-renders it.
+- `scripts/compat-table.ts` · `npm run compat:check` — the README
+  compatibility table is rendered from `quality/compat-matrix.json`; the check
+  fails when the table, a fixture lockfile or the CI workflow matrix disagree.
+  `npm run compat:write` re-renders it. Every version in that table is one a
+  fixture lockfile or a matrix job installs.
 
 ## Coverage and mutation policy
 
@@ -211,16 +221,67 @@ pull request should fail on. The same three scenario pages are functional E2E
 in all three engines, where 5,000 bindings proves the visibility gate's replay
 path rather than merely that 5,000 writes complete.
 
-The deterministic CodSpeed benchmark harness is a hard workflow step. Uploading
-its trends is temporarily allowed to fail only until the repository is imported
-into CodSpeed and its GitHub App is installed. That transition is explicit: set
-the repository variable `CODSPEED_REQUIRED=true` after onboarding to make upload
-authentication and action execution fail-closed. A hard regression gate additionally
-requires calibrated CodSpeed thresholds, informational failures disabled, and the
-`CodSpeed Performance Analysis` status made required through the repository ruleset.
-Until that governance is configured, CodSpeed timings remain trend telemetry.
-Absolute raw/gzip/Brotli package budgets and deterministic algorithmic invariants
-remain hard gates throughout that calibration period.
+The deterministic CodSpeed benchmark harness is a hard workflow step, and its
+timings are trend telemetry: the upload is allowed to fail unless the repository
+variable `CODSPEED_REQUIRED=true` makes it fail closed, and a hard regression
+gate would additionally need calibrated thresholds and the
+`CodSpeed Performance Analysis` status required by the repository ruleset.
+Absolute raw/gzip/Brotli package budgets and deterministic algorithmic
+invariants are hard gates regardless.
+
+## Protocol coverage, layered
+
+What is proven about the Payload wire protocol, from the outside in:
+
+1. **Full running-Payload E2E** (`tests/real-payload/`, `npm run test:e2e:real-payload`)
+   boots an actual Payload 3.x admin — `examples/payload-backend`, a
+   self-contained SQLite Payload + Next.js server, seeded and auto-logged-in —
+   opens its real Live Preview panel, types into real form fields, and asserts
+   that the cross-origin Astro preview iframe (the injected runtime) patches
+   the DOM. No mock, no stub: real admin → real form → real `postMessage` →
+   real iframe → runtime → DOM, driven by Payload's own admin code.
+2. **Browser E2E** (`tests/e2e/`) drives a real browser and a real iframe
+   across Chromium, Firefox and WebKit: `postMessage` → runtime → DOM. Its
+   `/admin` page emulates the Payload admin, so it can exercise edge cases
+   (XSS, origin spoofing, every field type) faster than booting a server.
+3. **Wire corpus** (`tests/fixtures/wire-corpus/`, one file per Payload
+   version, recorded from a real admin by `tests/real-payload/record-wire-corpus.spec.ts`
+   with `PLP_RECORD_CORPUS=1`) is replayed through the real runtime by
+   `tests/integration/wire-corpus.test.ts`: every capture must validate,
+   render, and demonstrate exactly the capabilities the runtime then reports.
+   `tests/integration/real-payload-protocol.test.ts` feeds a message captured
+   verbatim from a Payload 3.85 admin through the real `MessageBus` and
+   runtime, envelope quirks included: `collectionSlug` absent on a global,
+   `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields.
+4. **Weekly protocol watch** (`.github/workflows/protocol-watch.yml`) executes
+   the real `@payloadcms/live-preview@latest` and `@canary` (Payload 4.0
+   pre-releases) against the corpus and asserts that their behavior — the
+   `ready` handshake, event discriminators, the `mergeData` REST request —
+   still matches the runtime's invariants.
+
+Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
+quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches
+drift the moment Payload ships it. Per Payload version that means: 2.x is
+covered by captured-message integration tests and `fieldSchemaJSON` typing;
+3.85.0 by a corpus captured from a real admin; 3.88.0 by the real-admin E2E on
+every push plus its corpus; `latest` and the 4.0 pre-releases by the weekly
+watch, the latter as early warning only. The four real-app fixtures cover
+Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all three engines; the Astro
+4–7 peer range is wider than the single-major browser fixture and is backed
+by the `astro-matrix` job.
+
+## Tree-shaking gate
+
+The root barrel tree-shakes, and that is measured rather than declared:
+`npm run test:treeshake` bundles one-symbol consumers with Vite against the
+built package, resolved through `node_modules` so `exports` and `sideEffects`
+apply as after `npm install`, and holds each to a budget. Importing
+`escapeHtml` from the root ships 220 B gzip, `lexicalToHtml` 4.3 KB,
+`initLivePreview` 30.5 KB (the client with its built-in renderers, Lexical
+included), `generateInlineScript` 24.8 KB (the inline runtime source and
+nothing of the client). The focused entries give a bundler less to look
+through; the bytes are the same. The table and its budgets are in
+[benchmarks.md](benchmarks.md#tree-shaking-what-one-import-costs).
 
 ## Failure handling
 

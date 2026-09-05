@@ -13,7 +13,7 @@ cd payload-live-preview
 npm install --global "$(node -p "require('./package.json').packageManager")"
 npm ci
 npm run build:runtime   # required before typecheck (generates the src/inline/*.generated.ts files)
-npm run check           # typecheck, lint, formatting, test/architecture policy, compat table, Vitest
+npm run check           # typecheck, lint, formatting, test/architecture policy, compat and diagnostic tables, Vitest
 ```
 
 `npm run check` runs what the CI "Lint & Typecheck" job runs, with one
@@ -35,24 +35,13 @@ not the sources. Browsers are installed once:
 npx playwright install
 ```
 
-Then, after every change you want the browsers to see:
-
-```sh
-npm run build
-for fixture in astro-payload nextjs-payload sveltekit-payload nuxt-payload \
-  astro-hybrid pure-html vanilla-client astro-inline astro-middleware; do
-  npm ci --no-audit --no-fund --prefix "examples/$fixture"
-done
-npm run check:fixtures                      # fails on a fixture that still carries an older build
-npm run test:e2e                            # every fixture, three browsers
-PLP_E2E_SERVERS=astro npm run test:e2e      # one fixture; names are the webServer names in playwright.config.ts
-```
-
-`astro-payload`, `nextjs-payload`, `sveltekit-payload` and `nuxt-payload`
-install a packed copy of the package rather than a link, and `npm install`
-keeps that copy while the manifest is unchanged. `npm run check:fixtures` names
-the stale copy and the command that replaces it. The fixture table, ports and
-delivery modes are in [examples/README.md](examples/README.md).
+After every change you want the browsers to see, run `npm run build` and
+refresh the fixtures as described under
+[Refresh after a build](examples/README.md#refresh-after-a-build) — four of
+them install a packed copy rather than a link, and `npm run check:fixtures`
+names a stale one. `npm run test:e2e` then runs every fixture in three
+browsers; `PLP_E2E_SERVERS=astro npm run test:e2e` runs one. The fixture
+table, ports and delivery modes are in [examples/README.md](examples/README.md).
 
 ## Project layout
 
@@ -124,6 +113,8 @@ the number it reports.
 | `workflow-contracts.ts` · `npm run test:architecture`                   | Each workflow's required steps, order, conditions, permissions, matrices; actions pinned to a commit SHA                    | `scripts/workflow-expectations*.ts`                                    | Mirror the workflow change in the expectations file in the same commit                                                                  |
 | `check-bundle-size.ts` · `npm run test:bundle` (inside `npm run build`) | Raw, gzip and Brotli budgets per entry and for the inline script                                                            | `scripts/bundle-budgets.ts`, `ENTRY_BUDGETS` in `check-bundle-size.ts` | Raise a budget in the commit that spends it, with the reason in the ledger comment; a drop above 2 % prints a notice to tighten it      |
 | `docs-contracts.ts` · `npm run test:docs`                               | Entries, diagnostic codes, `lp-` classes and `data-payload-` attributes named in README and `docs/` exist in `src/`         | The source itself                                                      | Fix the prose or the source; there is no exception list                                                                                 |
+| `diagnostic-table.ts` · `npm run diagnostics:check`                     | The code table in `docs/troubleshooting.md` matches `src/core/diagnostic-codes.ts`, and every code has a "what to do" entry | `REMEDIES` in the script                                               | Add the remedy with the code, then `npx tsx scripts/diagnostic-table.ts --write`                                                        |
+| `compat-table.ts` · `npm run compat:check`                              | The README compatibility table matches the fixture lockfiles and the CI matrices                                            | `quality/compat-matrix.json`                                           | Edit the matrix with the lockfile or workflow change, then `npm run compat:write`                                                       |
 | `release-gate.ts` · Release workflow                                    | Only a completed, successful CI push run on `main` of this repository is versioned or published                             | None; the verdict is computed from Git, npm and GitHub state           | `workflow_dispatch` with the CI `run_id` re-enters a certified run; a tag on another commit is an error, not repaired                   |
 | `api-contracts.ts` · `npm run test:package`                             | One API Extractor report per entry and the exact `ae-forgotten-export` count                                                | `etc/api/*.api.md`, `FORGOTTEN_EXPORT_BASELINE` in the script          | `npm run api:update`, review the diff, change the constant with a comment on what moved; include a changeset                            |
 | `check-fixture-freshness.ts` · `npm run check:fixtures`                 | The copy-installed fixtures carry the build in `dist/`                                                                      | None; `dist/index.js` is hashed against each installed copy            | `rm -rf examples/<name>/node_modules/payload-live-preview && npm install --prefix examples/<name>`                                      |
@@ -140,6 +131,45 @@ reusable `build.yml`, so the check it reports is named `Build / Build` — the
 exact string the branch protection on `main` requires. Renaming either job
 leaves every pull request blocked with all checks green until the protection
 follows.
+
+## Dependency policy
+
+The repository pins its maintainer package manager through `packageManager`,
+and CI installs that exact npm release before a clean install.
+`strict-allow-scripts=true` in `.npmrc` makes an unreviewed dependency install
+script a hard failure; the allow-list permits only the pinned `esbuild` binary
+installer, and the optional `fsevents` install scripts are explicitly denied
+because the supported CI platforms do not need them.
+
+`npm run audit:gate` runs `npm audit --audit-level=high` against the exception
+register `quality/audit-exceptions.json`. Every high or critical advisory needs
+a non-expired exception for its exact advisory id, with a reachability
+analysis and an expiry date; an expired or unused exception fails the gate
+too, so the register cannot rot. The register is the only place an exception
+and its date live — this page states the policy, not the current list. A
+narrow `tsup` override keeps its private build-time `esbuild` copy on the
+reviewed patched version until `tsup`'s own range includes it. These are
+maintainer-tooling controls: the published package has no mandatory runtime
+dependency, so root development advisories are not consumer runtime
+advisories.
+
+The published manifest is install-script-free: it exposes no `preinstall`,
+`install`, `postinstall` or `prepare` hook. CI builds the single-source runtime
+explicitly, then installs the exact tarball without `--ignore-scripts` under
+`strict-allow-scripts=true` and independently rejects any forbidden lifecycle
+key in the installed packed manifest. Package consumers are created outside
+the repository tree: runtime exports are tested without optional peers, and a
+separate codegen consumer explicitly installs the reviewed `ts-morph` peer, so
+maintainer `node_modules` cannot hide an undeclared package dependency.
+
+Each real-app fixture has the same strict policy and approves only the exact
+registry binary installers present in that fixture's lockfile. CI builds the
+root package first and the `file:../..` fixtures consume that reviewed `dist`
+copy; the package itself has no install hook to approve. The private
+real-Payload fixture is maintainer E2E only, binds its servers to localhost,
+and ships nothing in the published tarball; do not force an unsupported
+transitive override through Payload's database tooling merely to make an
+audit count zero.
 
 ## Changesets
 

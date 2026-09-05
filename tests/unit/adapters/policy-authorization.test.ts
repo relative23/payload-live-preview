@@ -224,6 +224,17 @@ describe('strict', () => {
     ).not.toThrow();
   });
 
+  it('accepts https admin origins in production, which is the configuration strict exists for', () => {
+    process.env['NODE_ENV'] = 'production';
+    expect(() =>
+      assertStrictConfiguration({
+        authorizePreview: hook,
+        allowedOrigins: ['https://admin.example.com', 'https://cms.example.com:8443'],
+      }),
+    ).not.toThrow();
+    process.env['NODE_ENV'] = 'development';
+  });
+
   it('refuses an admin origin that is not a URL at all', () => {
     // Unparseable is not https, and strict mode may not fall through to "fine".
     process.env['NODE_ENV'] = 'production';
