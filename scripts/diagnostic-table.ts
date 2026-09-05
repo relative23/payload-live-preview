@@ -140,9 +140,14 @@ export function parseDiagnosticCodes(source: string): DiagnosticCatalog {
   return { entries, reserved };
 }
 
-/** Table cells: no pipes, and the source's terminal period reads as a fragment beside the remedy. */
+/** A table cell: backslashes first, then pipes, so an escaped pipe cannot be unescaped by a preceding backslash. */
+function escapeCell(text: string): string {
+  return text.replace(/\\/gu, '\\\\').replace(/\|/gu, '\\|');
+}
+
+/** The source's terminal period reads as a fragment beside the remedy. */
 function cell(text: string): string {
-  return text.replace(/\|/gu, '\\|').replace(/\.$/u, '');
+  return escapeCell(text.replace(/\.$/u, ''));
 }
 
 export function render(
@@ -153,7 +158,7 @@ export function render(
     .sort((a, b) => a.code.localeCompare(b.code))
     .map(
       (entry) =>
-        `| \`${entry.code}\` | ${cell(entry.meaning)} | ${(remedies[entry.code] ?? '').replace(/\|/gu, '\\|')} |`,
+        `| \`${entry.code}\` | ${cell(entry.meaning)} | ${escapeCell(remedies[entry.code] ?? '')} |`,
     );
   const reserved =
     catalog.reserved.length === 0

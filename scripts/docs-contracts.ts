@@ -13,7 +13,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { INLINE_BUDGET } from './bundle-budgets';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
@@ -218,8 +218,12 @@ export function sizeClaimViolations(text: string, file: string, gzipBudget: numb
 function linkTarget(from: string): (path: string) => string | undefined {
   return (path) => {
     const full = resolve(dirname(from), path);
-    if (!existsSync(full)) return undefined;
-    return statSync(full).isDirectory() ? '' : readFileSync(full, 'utf8');
+    // One read, no existence check first: the file is the answer, or it is not.
+    try {
+      return statSync(full).isDirectory() ? '' : readFileSync(full, 'utf8');
+    } catch {
+      return undefined;
+    }
   };
 }
 
