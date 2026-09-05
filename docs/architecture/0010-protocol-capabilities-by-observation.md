@@ -1,13 +1,13 @@
 # ADR 0010 — Protocol capabilities are observed, and Payload versions sit behind a profile
 
-**Status:** accepted, 2026-08-27.
+**Status:** Accepted • **Date:** 2026-08-27
 
 ## Context
 
 `negotiateProtocol()` derived capabilities from a version the peer announces.
 The stock Payload admin announces none, so against every real admin the
 runtime reported `basic` and nothing else, and no runtime behaviour branched
-on a capability: `CAPABILITY_REQUIREMENTS` was metadata (roadmap 1.8.0,
+on a capability: `CAPABILITY_REQUIREMENTS` was metadata (the 1.8.0 item
 "capabilities are real"). Meanwhile the runtime did branch on Payload
 versions implicitly — schema typing when `fieldSchemaJSON` arrives, a REST
 merge whenever `serverURL` is set — without naming either.

@@ -3,6 +3,7 @@
  * with a fragment endpoint gets the fragment prelude ahead of it.
  */
 
+import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
 import { FRAGMENT_SOURCE } from './fragment.generated';
 import { LOADER_SOURCE } from './loader.generated';
@@ -38,13 +39,7 @@ function configStatement(config: InlineScriptConfig): string {
 
 /** The positional wire literal the runtime destructures; shared by the inline script and the loader. */
 function buildConfigLiteral(config: InlineScriptConfig): string {
-  if (config.defaults !== 'v1' && (config.serverURL ?? '') !== '' && config.mergeDepth == null) {
-    throw new Error(
-      'payload-live-preview: `serverURL` needs an explicit `mergeDepth` under the 2.0 defaults — ' +
-        "choose the population depth deliberately (0 for none), or pass `defaults: 'v1'` to keep " +
-        'the 1.x default of 1 while migrating (ADR 0007, entry 10).',
-    );
-  }
+  assertMergeDepthExplicit(config);
   // `null` counts as omitted, and omitted slots stay empty (`[,,1]`): a JSON
   // `null` would bypass the runtime's destructuring defaults.
   const values: unknown[] = INLINE_CONFIG_KEYS.map((key) => config[key] ?? undefined);

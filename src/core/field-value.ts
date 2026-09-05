@@ -45,3 +45,21 @@ function readOwn(object: Record<string, unknown>, key: string): unknown {
   }
   return object[key];
 }
+
+/**
+ * The value a binding renders. A binding that names its own locale reads that
+ * locale and nothing else; one that does not falls back to the message locale.
+ */
+export function bindingValue(
+  fields: Record<string, unknown>,
+  target: { readonly locale?: string | undefined },
+  fieldName: string,
+  fallbackLocale: string | undefined,
+): unknown {
+  return resolveFieldValue(
+    fields,
+    fieldName,
+    target.locale ?? fallbackLocale,
+    target.locale !== undefined,
+  );
+}

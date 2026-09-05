@@ -7,19 +7,14 @@ import type { PayloadLivePreviewData, PayloadLivePreviewMessage } from '@/types/
 import { buildSchemaIndex } from '@schema/index';
 import { isBindingInScope, messageOwnerKeys, readDocumentId } from './binding-owner';
 import { mergeDependencyMaps } from './dependencies';
-import { resolveFieldValue } from './field-value';
+import { bindingValue } from './field-value';
 import { dispatchIslandUpdate } from './islands';
-import type { MessageRevision } from './message-bus';
+import { type MessageRevision, sameRevision } from './message-bus';
 import { diagnoseOrphanFields } from './orphan-diagnostics';
 import { detectProtocolProfile } from './protocol-profile';
 import { observeCapabilities } from './protocol-version';
 import type { RevealWindow } from './reveal';
-import {
-  sameRevision,
-  type RuntimeDeps,
-  type RuntimeState,
-  type UpdateTransaction,
-} from './runtime-state';
+import { type RuntimeDeps, type RuntimeState, type UpdateTransaction } from './runtime-state';
 import { resolveStrategy } from './strategies';
 import { StrategyRunner } from './strategy-runner';
 import { observeThenableResult } from './thenable';
@@ -52,7 +47,7 @@ export class UpdatePipeline {
   handleUpdate(
     message: PayloadLivePreviewMessage,
     origin: string,
-    identity: MessageRevision | undefined,
+    revision: MessageRevision | undefined,
   ): void {
     const { deps, state } = this;
     deps.heartbeat.kick();
@@ -63,7 +58,7 @@ export class UpdatePipeline {
       }
       return;
     }
-    if (identity === undefined) return;
+    if (revision === undefined) return;
     const relationship = message.externallyUpdatedRelationship;
     const relationshipEdited = typeof relationship === 'object' && relationship !== null;
     if (relationshipEdited) {
@@ -75,7 +70,7 @@ export class UpdatePipeline {
       state.schemaIndex = buildSchemaIndex(message.fieldSchemaJSON);
     }
     const transaction: UpdateTransaction = {
-      identity,
+      revision,
       message,
       locale: state.locale,
       schema: state.schema,
@@ -97,7 +92,7 @@ export class UpdatePipeline {
     state.abortStrategies();
     if (previous !== null && !previous.completed) state.supersededCount += 1;
     state.activeUpdate = transaction;
-    deps.scheduler.acceptRevision(identity);
+    deps.scheduler.acceptRevision(revision);
     state.updateCount += 1;
     if (message.protocolVersion !== undefined) {
       state.protocol.applyVersion(message.protocolVersion, deps.log);
@@ -137,12 +132,12 @@ export class UpdatePipeline {
         'beforeUpdate',
         {
           data,
-          revision: transaction.identity.revision,
+          revision: transaction.revision.revision,
           receivedAt: transaction.receivedAt,
           source: 'patch',
           cancel: (): void => {
             transaction.cancelled = true;
-            deps.scheduler.cancelRevision(transaction.identity);
+            deps.scheduler.cancelRevision(transaction.revision);
           },
         },
         () => !transaction.cancelled && state.isCurrent(transaction),
@@ -210,7 +205,7 @@ export class UpdatePipeline {
         if (plan?.covers(target) === true) {
           // Resolving the value is only worth it when something reveals.
           if (deps.revealEditedField) {
-            this.noteRevealCandidate(transaction, target, this.rawValue(transaction, target, data));
+            state.revealLedger.note(transaction, target, this.rawValue(transaction, target, data));
           }
           continue;
         }
@@ -220,12 +215,7 @@ export class UpdatePipeline {
           continue;
         }
         if (kind === 'fragment' && plan === null) this.strategies.warnFragmentFallback(target);
-        const value = resolveFieldValue(
-          data.fields,
-          fieldName,
-          target.locale ?? transaction.locale,
-          target.locale !== undefined,
-        );
+        const value = bindingValue(data.fields, target, fieldName, transaction.locale);
         if (value === undefined) {
           state.absentFields.add(fieldName);
           continue;
@@ -233,7 +223,7 @@ export class UpdatePipeline {
         // Noted before `skipUnchanged` can skip the write: the reveal ledger is
         // its own record, and a binding whose write is unchanged since the last
         // one that landed may still be the field whose reveal was superseded.
-        this.noteRevealCandidate(transaction, target, value);
+        if (deps.revealEditedField) state.revealLedger.note(transaction, target, value);
         if (!isCurrent()) return;
         const transformed = this.transformForBinding(target, value, data.fields, isCurrent);
         if (!isCurrent()) return;
@@ -258,7 +248,7 @@ export class UpdatePipeline {
           target,
           value: transformed,
           allFields: data.fields,
-          identity: transaction.identity,
+          revision: transaction.revision,
           data,
           valueIdentity: identity,
         };
@@ -289,44 +279,7 @@ export class UpdatePipeline {
     target: CachedElement,
     data: PayloadLivePreviewData,
   ): unknown {
-    return resolveFieldValue(
-      data.fields,
-      target.fieldName,
-      target.locale ?? transaction.locale,
-      target.locale !== undefined,
-    );
-  }
-
-  /**
-   * Record what this binding's value looks like now and, for the first binding
-   * whose value moved, mark it as the one to reveal.
-   *
-   * The first message is a baseline and a binding new to the page is not an
-   * edit, so an unseen key only records. A value too large or cyclic to compare
-   * cannot claim to have changed either, or it would take the reveal from a
-   * field that did. The ledger is keyed by document, locale and field rather
-   * than by element: the element a fragment renders does not survive its own
-   * re-render, but the field it shows is the same field.
-   */
-  private noteRevealCandidate(
-    transaction: UpdateTransaction,
-    target: CachedElement,
-    value: unknown,
-  ): void {
-    const { deps, state } = this;
-    if (!deps.revealEditedField) return;
-    const identity = valueIdentity(value);
-    if (identity === undefined) return;
-    const key = `${target.owner ?? ''}\u0000${target.locale ?? ''}\u0000${target.fieldName}`;
-    const seen = state.seenFieldIdentity.get(key);
-    if (seen === undefined) {
-      // A baseline is recorded at once: nothing is owed for it.
-      state.seenFieldIdentity.set(key, identity);
-      return;
-    }
-    if (seen === identity) return;
-    transaction.revealIdentities.push([key, identity]);
-    transaction.revealTarget ??= target;
+    return bindingValue(data.fields, target, target.fieldName, transaction.locale);
   }
 
   /** Owner keys this update may address; `false` when scoping is off, `null` when the message names no document. */
@@ -394,19 +347,19 @@ export class UpdatePipeline {
         `[live-preview] LP0301: visibility gate held ${String(stats.deferred)} off-screen update(s) until scrolled into view; see visibilityGateThreshold`,
       );
     }
-    const { identity, data } = stats;
-    if (identity === undefined) return;
+    const { revision, data } = stats;
+    if (revision === undefined) return;
     const transaction = state.activeUpdate;
     if (
       transaction === null ||
       !state.isCurrent(transaction) ||
-      !sameRevision(transaction.identity, identity)
+      !sameRevision(transaction.revision, revision)
     ) {
       return;
     }
     if (transaction.pendingFragments === 0) state.complete(transaction);
     const isCurrent = (): boolean =>
-      state.isCurrent(transaction) && sameRevision(transaction.identity, identity);
+      state.isCurrent(transaction) && sameRevision(transaction.revision, revision);
     // Reveal before the applied check: the edited element may be exactly the
     // off-screen one the visibility gate deferred, and scrolling to it is what replays it.
     this.revealPending(transaction);
@@ -416,7 +369,7 @@ export class UpdatePipeline {
     if (!isCurrent()) return;
     dispatchIslandUpdate(deps.cache.islands, {
       fields: data.fields,
-      revision: identity.revision,
+      revision: revision.revision,
       receivedAt: transaction.receivedAt,
       locale: transaction.locale,
     });
@@ -427,7 +380,7 @@ export class UpdatePipeline {
         data,
         updatedCount: stats.applied,
         durationMs: stats.durationMs,
-        revision: identity.revision,
+        revision: revision.revision,
         receivedAt: transaction.receivedAt,
         source: 'patch',
       },
@@ -441,15 +394,8 @@ export class UpdatePipeline {
    * given field, and a fragment-rendered element is in place only afterwards.
    */
   revealPending(transaction: UpdateTransaction): void {
-    // This revision reached its reveal point, so what it saw is now what the
-    // ledger shows — whether or not the scroll below has anything to do.
-    for (const [key, identity] of transaction.revealIdentities) {
-      this.state.seenFieldIdentity.set(key, identity);
-    }
-    transaction.revealIdentities = [];
-    const target = transaction.revealTarget;
+    const target = this.state.revealLedger.commit(transaction);
     if (target === undefined) return;
-    transaction.revealTarget = undefined;
     try {
       this.revealBinding(target);
     } catch (error) {
@@ -494,12 +440,7 @@ function bindingIdentity(
   let combined = own;
   for (const sibling of siblings) {
     if (sibling === undefined || sibling.length === 0) continue;
-    const resolved = resolveFieldValue(
-      fields,
-      sibling,
-      target.locale ?? locale,
-      target.locale !== undefined,
-    );
+    const resolved = bindingValue(fields, target, sibling, locale);
     const identity = valueIdentity(resolved);
     if (identity === undefined) return undefined;
     combined += `|${sibling}=${identity}`;

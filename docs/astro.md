@@ -176,6 +176,22 @@ export const onRequest = createLivePreviewMiddleware({
 });
 ```
 
+`Astro.locals` is typed through `App.Locals`, so declare the three keys the
+middleware may set once in `src/env.d.ts`. All are optional: the nonce is
+withheld after a refusal, and the other two exist only once the hook ran on
+a request carrying preview intent:
+
+```ts
+// src/env.d.ts
+declare namespace App {
+  interface Locals {
+    livePreviewNonce?: string;
+    livePreviewAuthorization?: import('payload-live-preview').AuthorizedPreviewContext;
+    livePreviewAuthorizationOutcome?: import('payload-live-preview').PreviewAuthorizationOutcome;
+  }
+}
+```
+
 Three strategies exist. `payload-session` is the one above.
 `signed-token` verifies a short-lived HMAC token the Payload side mints
 with `issuePreviewToken()` — bound to this site, this path, the locale and
@@ -210,7 +226,7 @@ const result = await preview.fetchDocument<Page>({
 });
 if (!result.ok || result.data === null) return Astro.rewrite('/404');
 const page = result.data;
-const bindings = createPreviewBindings({ authorization, owner: `pages:${page.id}` });
+const bindings = createPreviewBindings({ authorization, owner: `collection:pages:${page.id}` });
 ---
 <h1 {...bindings.bind<Page>('title')}>{page.title}</h1>
 ```
@@ -245,8 +261,10 @@ import PreviewBoundary from 'payload-live-preview/astro/PreviewBoundary.astro';
 It writes `data-payload-strategy="patch"` explicitly. Markup whose
 conditional logic cannot be expressed as a patch target — a component that
 appears or disappears with its own islands and scripts — is what the
-fragment strategy (1.7.0) is for; until then such markup should say
-`data-payload-strategy="fragment"` and is left alone (`LP0407`).
+fragment strategy is for: wrap it in a `data-payload-fragment` boundary and
+configure `fragments` with the endpoint from `createFragmentEndpoint()`
+([hybrid.md](hybrid.md)). A boundary on a page without a configured fragment
+client is patched instead and reports `LP0806` once.
 
 ## Gotchas
 

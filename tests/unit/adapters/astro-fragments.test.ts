@@ -1,6 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createFragmentEndpoint, type FragmentRegistry } from '@adapters/astro/fragments';
-import { issuePreviewToken } from '@security/preview-authorization';
+import {
+  authorizePreviewRequest,
+  issuePreviewToken,
+  PreviewConfigurationError,
+  type AuthorizedPreviewContext,
+} from '@security/preview-authorization';
+import type { PreviewAuthorizationHookResult } from '@adapters/shared/options';
+
+// `astro` is a peer this package does not install; the default renderer
+// imports `astro/container` lazily, so the container is stood in for here.
+const container = vi.hoisted(() => ({ create: vi.fn<() => Promise<unknown>>() }));
+vi.mock('astro/container', () => ({ experimental_AstroContainer: container }));
 
 /** ADR 0011's abuse model: registered boundaries only, authorized and same-origin only, refusals say nothing. */
 
@@ -166,5 +177,147 @@ describe('createFragmentEndpoint — refusals carry no information', () => {
       }),
     });
     expect(timedOut.status).toBe(500);
+  });
+});
+
+/** The middleware hook on the endpoint (ADR 0006): same callback, same verdict rules, called with the page request. */
+
+const STRATEGY = { type: 'signed-token', secret: SECRET, audience: SITE } as const;
+
+async function realContext(): Promise<AuthorizedPreviewContext> {
+  const result = await authorizePreviewRequest(new Request(`${SITE}/page`), {
+    type: 'verifier',
+    verify: () => ({ subject: 'editor' }),
+  });
+  if (!result.authorized) throw new Error('expected authorization');
+  return result.context;
+}
+
+function fragmentRequest(body: unknown, headers: Record<string, string> = {}): Request {
+  return new Request(`${SITE}/payload/fragment`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', origin: SITE, ...headers },
+    body: JSON.stringify(body),
+  });
+}
+
+describe('createFragmentEndpoint — authorizePreview, the middleware hook', () => {
+  it('accepts the hook and calls it with the page request the fragment belongs to', async () => {
+    const hook = vi.fn((request: Request) => authorizePreviewRequest(request, STRATEGY));
+    const handler = createFragmentEndpoint({ registry, authorizePreview: hook, render });
+    const body = await validBody();
+    const response = await handler({
+      request: fragmentRequest(body, { cookie: 'payload-token=abc' }),
+    });
+    expect(response.status).toBe(200);
+    expect(hook).toHaveBeenCalledOnce();
+    const seen = hook.mock.calls[0]?.[0];
+    expect(seen?.url).toBe(`${SITE}/page${body.search}`);
+    expect(seen?.headers.get('cookie')).toBe('payload-token=abc');
+  });
+
+  type Row = readonly [
+    string,
+    (context: AuthorizedPreviewContext) => PreviewAuthorizationHookResult,
+    number,
+  ];
+  // The page adapters' rules, verbatim: only a real context authorizes.
+  const verdicts: readonly Row[] = [
+    ['a bare context', (context) => context, 200],
+    [
+      'a full authorized verdict',
+      (context) => ({ authorized: true, outcome: 'authorized', context }),
+      200,
+    ],
+    ['null', () => null, 403],
+    ['undefined', () => undefined, 403],
+    ['a refusal verdict', () => ({ authorized: false, outcome: 'expired', context: null }), 403],
+    [
+      'an { authorized: true } literal',
+      () => ({ authorized: true }) as PreviewAuthorizationHookResult,
+      403,
+    ],
+    ['a copy of a context', (context) => ({ ...context }), 403],
+    [
+      'a JSON round trip of a context',
+      (context) => JSON.parse(JSON.stringify(context)) as PreviewAuthorizationHookResult,
+      403,
+    ],
+    [
+      'a wrapped copy',
+      (context) => ({ authorized: true, outcome: 'authorized', context: { ...context } }),
+      403,
+    ],
+    [
+      'a throwing hook',
+      () => {
+        throw new Error('idp down');
+      },
+      403,
+    ],
+  ];
+
+  it.each(verdicts)('%s → %i, as the page adapters decide', async (_label, result, status) => {
+    const context = await realContext();
+    const handler = createFragmentEndpoint({
+      registry,
+      authorizePreview: () => result(context),
+      render,
+    });
+    // No token in the search: the hook alone decides.
+    const response = await handler({
+      request: fragmentRequest(await validBody({ search: '?preview=true' })),
+    });
+    expect(response.status).toBe(status);
+    if (status === 403) expect(await response.json()).toEqual({ error: 'unauthorized' });
+  });
+
+  it('re-throws a PreviewConfigurationError so a misconfigured hook is loud', async () => {
+    const handler = createFragmentEndpoint({
+      registry,
+      authorizePreview: () => Promise.reject(new PreviewConfigurationError('secret too short')),
+      render,
+    });
+    await expect(handler({ request: fragmentRequest(await validBody()) })).rejects.toThrow(
+      PreviewConfigurationError,
+    );
+  });
+
+  const exclusive = [
+    [
+      'both',
+      { authorize: STRATEGY, authorizePreview: () => null },
+      /`authorizePreview` or `authorize`, not both/u,
+    ],
+    ['neither', {}, /needs `authorizePreview` \(the middleware hook\) or `authorize`/u],
+  ] as const;
+
+  it.each(exclusive)(
+    '%s given: throws at construction, naming both options',
+    (_label, given, message) => {
+      expect(() => createFragmentEndpoint({ registry, render, ...given })).toThrow(message);
+    },
+  );
+});
+
+describe('createFragmentEndpoint — the default renderer', () => {
+  it('retries the container after a failed creation instead of caching the rejection', async () => {
+    // A rejected container promise kept for the process would turn one bad
+    // start (astro not resolvable yet, a transient error) into a permanent 500.
+    const renderToString = vi.fn(() => Promise.resolve('<h1>Hallo (container)</h1>'));
+    container.create
+      .mockRejectedValueOnce(new Error('container failed to start'))
+      .mockResolvedValueOnce({ renderToString });
+    const handler = createFragmentEndpoint({ registry, authorize: STRATEGY });
+    const first = await handler({ request: fragmentRequest(await validBody()) });
+    expect(first.status).toBe(500);
+    const second = await handler({ request: fragmentRequest(await validBody()) });
+    expect(second.status).toBe(200);
+    expect(container.create).toHaveBeenCalledTimes(2);
+    expect(await second.json()).toMatchObject({
+      html: '<h1>Hallo (container)</h1>',
+      metadata: { renderer: 'astro-container' },
+    });
+    expect(renderToString).toHaveBeenCalledWith(Hero, { props: { title: 'Hallo', locale: 'de' } });
   });
 });

@@ -5,23 +5,28 @@
  * transaction is re-checked after each one (ADR 0004).
  */
 
+import { definedOnly } from '@/types/defined-only';
+import { sameRevision } from './message-bus';
 import { lookupSchema, payloadTypeToRenderer } from '@schema/index';
 import { applyAttributeBinding } from './attribute-binding';
 import { rendererUsesNoWriteOutcome } from './internal-outcome';
-import {
-  sameRevision,
-  type RuntimeDeps,
-  type RuntimeState,
-  type UpdateTransaction,
-} from './runtime-state';
+import { type RuntimeDeps, type RuntimeState, type UpdateTransaction } from './runtime-state';
 import type { CachedElement, FieldRenderer, RenderContext, RendererKey } from './types';
 import type { ScheduledUpdate } from './update-scheduler';
 
 export class BindingWriter {
+  /** The instance's share of every `RenderContext`, built once: a write allocates the context alone. */
+  private readonly instanceContext: Pick<RenderContext, 'renderRichText' | 'sanitizerPolicy'>;
+
   constructor(
     private readonly deps: RuntimeDeps,
     private readonly state: RuntimeState,
-  ) {}
+  ) {
+    this.instanceContext = definedOnly({
+      renderRichText: deps.renderRichText,
+      sanitizerPolicy: deps.sanitizerPolicy,
+    });
+  }
 
   /** Scheduler callback. `false` means nothing reached the DOM. */
   apply(update: ScheduledUpdate): boolean {
@@ -29,8 +34,8 @@ export class BindingWriter {
     const transaction = state.activeUpdate;
     if (
       transaction === null ||
-      update.identity === undefined ||
-      !sameRevision(transaction.identity, update.identity) ||
+      update.revision === undefined ||
+      !sameRevision(transaction.revision, update.revision) ||
       !state.isCurrent(transaction)
     ) {
       return false;
@@ -60,10 +65,10 @@ export class BindingWriter {
       allFields: update.allFields,
       locale: target.locale ?? transaction.locale,
       schema: schemaEntry,
-      ...(deps.renderRichText !== undefined ? { renderRichText: deps.renderRichText } : {}),
+      ...this.instanceContext,
     };
     // A boundary anchor stays out of layout and the accessibility tree while empty.
-    if (target.boundary === true) {
+    if (target.hidesWhenEmpty === true) {
       target.element.toggleAttribute('hidden', isEmptyFieldValue(value));
     }
     try {
@@ -93,7 +98,7 @@ export class BindingWriter {
           fieldName: target.fieldName,
           previousValue: previous,
           nextValue: value,
-          revision: transaction.identity.revision,
+          revision: transaction.revision.revision,
           receivedAt: transaction.receivedAt,
           source: 'patch',
         },

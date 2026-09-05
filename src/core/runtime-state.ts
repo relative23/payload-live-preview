@@ -6,6 +6,7 @@
 import type { PayloadFieldSchema, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 import type { EventEmitter } from '@events/emitter';
 import type { SchemaIndex } from '@schema/index';
+import type { SanitizerPolicyMode } from '@security/sanitizer';
 import type { A11yAnnouncer } from './a11y';
 import type { ElementCache } from './cache';
 import type { DataMerger } from './data-merger';
@@ -14,6 +15,7 @@ import type { MessageBus, MessageRevision } from './message-bus';
 import type { ObserverManager } from './observers';
 import { ProtocolTracker } from './protocol-tracker';
 import { FieldRevealer } from './reveal';
+import { RevealLedger } from './reveal-ledger';
 import type { RuntimeOptions } from './runtime-options';
 import type { ConnectionState, HeartbeatTimer } from './state';
 import type { StrategyHandlers } from './strategies';
@@ -22,7 +24,7 @@ import type { FlushStats, UpdateScheduler } from './update-scheduler';
 
 /** One accepted message on its way to the DOM. See ADR 0004. */
 export interface UpdateTransaction {
-  readonly identity: MessageRevision;
+  readonly revision: MessageRevision;
   readonly message: PayloadLivePreviewMessage;
   readonly locale: string | undefined;
   readonly schema: readonly PayloadFieldSchema[] | undefined;
@@ -66,6 +68,7 @@ export interface RuntimeDeps {
   readonly resolveRenderer: NonNullable<RuntimeOptions['resolveRenderer']>;
   readonly transformValue: RuntimeOptions['transformValue'];
   readonly renderRichText: RichTextRenderer | undefined;
+  readonly sanitizerPolicy: SanitizerPolicyMode | undefined;
   readonly root: Document | Element;
   readonly readyTargets: () => readonly string[];
   readonly sendReady: (origins: readonly string[]) => void;
@@ -80,10 +83,6 @@ export interface RuntimeDeps {
   readonly dependencies: Readonly<Record<string, readonly string[]>>;
   readonly strategies: StrategyHandlers;
   readonly revealEditedField: boolean;
-}
-
-export function sameRevision(a: MessageRevision, b: MessageRevision): boolean {
-  return a.generation === b.generation && a.revision === b.revision;
 }
 
 export class RuntimeState {
@@ -108,13 +107,8 @@ export class RuntimeState {
   warnedFragmentFallback = false;
   /** Identity of the value each element last applied; reset when the markup is re-rendered. */
   lastAppliedIdentity = new WeakMap<Element, string>();
-  /**
-   * Identity of the value last seen per owned field, for the reveal decision
-   * only. Keyed by document and field rather than by element, so a field the
-   * server re-renders behind a fragment boundary — where no element survives
-   * to carry the identity — is still known to have changed.
-   */
-  readonly seenFieldIdentity = new Map<string, string>();
+  /** What each owned field was last seen with, for the reveal decision only. */
+  readonly revealLedger = new RevealLedger();
   readonly fragmentStats = { rendered: 0, failed: 0, superseded: 0 };
   readonly routeStats = { refreshes: 0, failed: 0, loopStopped: 0 };
   fragmentController: AbortController | null = null;

@@ -2,9 +2,10 @@
  * Nitro plugin wiring for Payload Live Preview.
  *
  * `livePreviewNitroPlugin` hooks `render:html`, injects the inline runtime into
- * the head of responses carrying preview intent (`?preview=true`,
- * `Sec-Fetch-Dest: iframe`, or an admin referer) and merges the CSP so the
- * Payload admin may embed the page.
+ * the head of responses carrying preview intent and merges the CSP so the
+ * Payload admin may embed the page. This fixture keeps `defaults: 'v1'`, so
+ * intent is `?preview=true`, `Sec-Fetch-Dest: iframe`, or an admin referer;
+ * the 2.0 default counts the query alone.
  *
  * The default `inject: 'preview-only'` mode is kept deliberately: the mock
  * admin loads `/` in an iframe, so that request carries `Sec-Fetch-Dest:

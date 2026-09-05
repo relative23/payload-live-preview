@@ -29,6 +29,9 @@ export interface MessageRevision {
   readonly revision: number;
   readonly generation: number;
 }
+export function sameRevision(a: MessageRevision, b: MessageRevision): boolean {
+  return a.generation === b.generation && a.revision === b.revision;
+}
 
 export type InvalidReason = 'origin' | 'shape' | 'type' | 'token' | 'source';
 

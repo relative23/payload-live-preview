@@ -12,7 +12,7 @@ body:
     attributes:
       label: Package version
       description: Output of `npm ls payload-live-preview`
-      placeholder: '1.0.0-alpha.5'
+      placeholder: '2.0.0'
     validations:
       required: true
   - type: dropdown

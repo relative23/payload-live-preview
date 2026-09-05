@@ -1,8 +1,10 @@
 # ADR 0012 — Package topology and delivery profiles
 
-**Status:** accepted, 2026-08-30. Records boundaries that were already enforced
-in code and in CI but had no record of their own; the 2.0 readiness audit named
-this as the last of the five decision records it required.
+**Status:** Accepted • **Date:** 2026-08-30
+
+Records boundaries that were already enforced in code and in CI but had no
+record of their own; the 2.0 readiness audit named this as the last of the five
+decision records it required.
 
 ## Context
 
@@ -44,7 +46,13 @@ people into duplicating types.
 `FORBIDDEN_RUNTIME_DOMAINS` additionally forbids _upward_ imports — the client
 may not reach into `adapters`, `codegen`, `inline` or `payload`, and so on — so
 the low-level runtime and security modules cannot acquire a dependency on the
-layers built above them. Cycles are rejected in the same pass. A violation fails
+layers built above them. The table names every domain a browser bundle or an
+adapter can contain — `adapters`, `client`, `codegen`, `core`, `detection`,
+`dsl`, `events`, `field-types`, `fragment`, `inline`, `lexical`, `payload`,
+`plugins`, `schema`, `security` and `types` — because a domain without a
+deny-list may import anything: `types` is a leaf that imports nothing at
+runtime, and `core` may not reach `fragment`, which orchestrates above it.
+Cycles are rejected in the same pass. A violation fails
 `npm run test:architecture`, so a boundary cannot erode between reviews.
 
 ### 3. Delivery profiles are sized, not described
@@ -52,8 +60,9 @@ layers built above them. Cycles are rejected in the same pass. A violation fails
 The runtime reaches a page as a build-time-inlined IIFE (ADR 0001), as the
 `LivePreviewClient` class, or through an adapter that injects the first. Only
 the inline profile has a size a consumer cannot choose to avoid, so only it is
-gated: `INLINE_BUDGET` at 28 923 bytes gzip and `INLINE_FRAGMENT_BUDGET` at
-32 693, both asserted on every push with the exact bytes the release measures.
+gated: `INLINE_BUDGET` and `INLINE_FRAGMENT_BUDGET` in `scripts/bundle-budgets.ts`
+(raw, gzip and Brotli), both asserted on every push with the exact bytes the
+release measures.
 A budget is raised in the same commit as the feature that spends it, with the
 reason in `scripts/bundle-budgets.ts` — the file reads as a ledger of what each
 increase bought.

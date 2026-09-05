@@ -7,6 +7,21 @@
     "statements": 92
   },
   "criticalFiles": {
+    "src/adapters/shared/authorize-hook.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/adapters/shared/html-inject.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/adapters/shared/policy-options.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 91
+    },
     "src/adapters/shared/policy.ts": {
       "lines": 100,
       "functions": 100,
@@ -21,6 +36,11 @@
       "lines": 100,
       "functions": 100,
       "branches": 97
+    },
+    "src/adapters/shared/strict.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 91
     },
     "src/core/array-template.ts": {
       "lines": 100,
@@ -87,6 +107,11 @@
       "functions": 100,
       "branches": 100
     },
+    "src/core/lru.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/message-bus.ts": {
       "lines": 98,
       "functions": 100,
@@ -123,6 +148,11 @@
       "branches": 83
     },
     "src/core/protocol-version.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/reveal-ledger.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
@@ -202,6 +232,11 @@
       "functions": 100,
       "branches": 94
     },
+    "src/fragment/abort.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/fragment/boundary.ts": {
       "lines": 100,
       "functions": 100,
@@ -268,6 +303,11 @@
       "branches": 92
     },
     "src/security/url-validator.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/types/merge-depth.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100

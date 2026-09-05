@@ -3,12 +3,14 @@
  * `sequence()` and never short-circuits the chain.
  */
 
-import { createPreviewPolicy, injectIntoHead, type PreviewPolicy } from '@adapters/shared/policy';
+import { injectIntoHead } from '@adapters/shared/html-inject';
+import { createPreviewPolicy, type PreviewPolicy } from '@adapters/shared/policy';
 import { bindDecisionHooks, withCspHeader } from '@adapters/shared/response';
 import { exposeDecision } from '@adapters/shared/locals';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
+export type { LivePreviewLocals } from '@adapters/shared/locals';
 
 export type LivePreviewSvelteKitOptions = PreviewAdapterOptions;
 

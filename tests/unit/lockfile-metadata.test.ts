@@ -134,10 +134,10 @@ describe('workspace package-lock identity contract', () => {
         root: { ...input.root, lockfile },
       }),
     ).toEqual([
-      `root: package-lock.json name must match package.json name ${name}`,
-      `root: package-lock.json version must match package.json version ${version}`,
-      `root: package-lock.json packages[""] name must match package.json name ${name}`,
-      `root: package-lock.json packages[""] version must match package.json version ${version}`,
+      `root: package-lock.json name must match package.json name ${name}; run npm run version`,
+      `root: package-lock.json version must match package.json version ${version}; run npm run version`,
+      `root: package-lock.json packages[""] name must match package.json name ${name}; run npm run version`,
+      `root: package-lock.json packages[""] version must match package.json version ${version}; run npm run version`,
     ]);
   });
 
@@ -174,7 +174,7 @@ describe('workspace package-lock identity contract', () => {
         `${fixture.label}: package.json must depend on ${name} through file:../..`,
         `${fixture.label}: package-lock.json root dependency must remain file:../..`,
         `${fixture.label}: package-lock.json installed entry must resolve to file:../..`,
-        `${fixture.label}: file:../.. lock entry version must match ${name}@${version}`,
+        `${fixture.label}: file:../.. lock entry version must match ${name}@${version}; run npm run version`,
       ]);
     },
   );

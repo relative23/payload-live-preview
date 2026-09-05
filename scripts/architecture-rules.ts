@@ -38,8 +38,15 @@ const NODE_BUILTINS = new Set(
  * These rules protect the low-level runtime/security layers from convenient
  * upward imports while allowing type-only references, which are erased and
  * cannot create runtime coupling or cycles.
+ *
+ * Three entries exist because a domain without one may import anything:
+ * `fragment` orchestrates above `core` (ADR 0011), so `core` may not reach it
+ * and it may not pull an adapter or the client in; `types` is the leaf every
+ * bundle shares, so a runtime import there would be paid by all of them; and
+ * `adapters` take only the runtime seam, never the client or a tool.
  */
 const FORBIDDEN_RUNTIME_DOMAINS: Readonly<Record<string, ReadonlySet<string>>> = {
+  adapters: new Set(['client', 'codegen', 'doctor', 'migrate', 'payload']),
   client: new Set(['adapters', 'codegen', 'inline', 'payload']),
   codegen: new Set([
     'adapters',
@@ -56,7 +63,7 @@ const FORBIDDEN_RUNTIME_DOMAINS: Readonly<Record<string, ReadonlySet<string>>> =
     'schema',
     'security',
   ]),
-  core: new Set(['adapters', 'client', 'codegen', 'inline', 'payload', 'plugins']),
+  core: new Set(['adapters', 'client', 'codegen', 'fragment', 'inline', 'payload', 'plugins']),
   detection: new Set([
     'adapters',
     'client',
@@ -97,6 +104,7 @@ const FORBIDDEN_RUNTIME_DOMAINS: Readonly<Record<string, ReadonlySet<string>>> =
     'security',
   ]),
   'field-types': new Set(['adapters', 'client', 'codegen', 'inline', 'payload', 'plugins']),
+  fragment: new Set(['adapters', 'client', 'codegen', 'inline', 'payload', 'plugins']),
   inline: new Set([
     'adapters',
     'client',
@@ -165,6 +173,26 @@ const FORBIDDEN_RUNTIME_DOMAINS: Readonly<Record<string, ReadonlySet<string>>> =
     'payload',
     'plugins',
     'schema',
+  ]),
+  types: new Set([
+    'adapters',
+    'client',
+    'codegen',
+    'core',
+    'detection',
+    'doctor',
+    'dsl',
+    'events',
+    'field-types',
+    'fragment',
+    'inline',
+    'lexical',
+    'migrate',
+    'payload',
+    'plugins',
+    'schema',
+    'security',
+    'server',
   ]),
 };
 

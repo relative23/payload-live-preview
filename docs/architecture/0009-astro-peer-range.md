@@ -1,7 +1,8 @@
 # ADR 0009 — The Astro peer range is what CI runs
 
-**Status:** accepted, 2026-08-27. Supersedes the audit note under 1.4.0 that
-recommended narrowing.
+**Status:** Accepted • **Date:** 2026-08-27
+
+Supersedes the audit note under 1.4.0 that recommended narrowing.
 
 ## Context
 

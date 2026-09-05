@@ -4,8 +4,9 @@
 
 ```ts
 
-import { c } from '../../options-CEzzfHJu.js';
-import { b as PreviewAdapterOptions } from '../../options-CEzzfHJu.js';
+import { c } from '../../options-Dm3M0ZKq.js';
+import { L as LivePreviewLocals } from '../../locals-DHAcDRVD.js';
+import { b as PreviewAdapterOptions } from '../../options-Dm3M0ZKq.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;
@@ -57,6 +58,8 @@ interface HeadersLike {
     // (undocumented)
     set?(name: string, value: string): void;
 }
+
+export { LivePreviewLocals }
 
 // Warning: (ae-forgotten-export) The symbol "NitroAppLike" needs to be exported by the entry point index.d.ts
 //
@@ -115,8 +118,8 @@ export function renderLivePreviewScript(options?: LivePreviewNuxtOptions & {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/nuxt/index.d.ts:49:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/nuxt/index.d.ts:50:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:50:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:51:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

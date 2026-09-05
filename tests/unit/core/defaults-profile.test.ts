@@ -71,15 +71,18 @@ describe('withProfileDefaults (client)', () => {
     });
   });
 
-  it('returns the same object only under an explicit v1 (2.0: v2 is the default)', () => {
-    const config = { allowedOrigins: ['https://admin.example.com'], defaults: 'v1' as const };
-    expect(withProfileDefaults(config)).toBe(config);
-    // No profile now means v2, so the runtime rows are filled in.
-    expect(withProfileDefaults({ allowedOrigins: ['https://admin.example.com'] })).toMatchObject({
-      skipUnchanged: true,
-      disableReferrerDetection: true,
-      eventSourcePolicy: 'parent-or-opener',
+  it("fills the 1.x rows under defaults: 'v1', explicit options winning", () => {
+    expect(
+      withProfileDefaults({ allowedOrigins: ['https://admin.example.com'], defaults: 'v1' }),
+    ).toMatchObject({
+      skipUnchanged: false,
+      disableReferrerDetection: false,
+      eventSourcePolicy: 'any',
+      sanitizerPolicy: 'compat',
+    });
+    expect(withProfileDefaults({ defaults: 'v1', sanitizerPolicy: 'strict' })).toMatchObject({
       sanitizerPolicy: 'strict',
+      skipUnchanged: false,
     });
   });
 });

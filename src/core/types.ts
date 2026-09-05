@@ -1,6 +1,7 @@
 /** Types shared by the runtime primitives. */
 
 import type { PayloadFieldType, PayloadFieldSchema } from '@/types/payload-protocol';
+import type { SanitizerPolicyMode } from '@security/sanitizer';
 import type { UpdateSource } from './strategies';
 
 /** Payload's field set plus the DOM-binding categories `html`, `url`, `image` and `structural-array`. */
@@ -44,7 +45,7 @@ export interface CachedElement {
   /** Nearest enclosing `data-payload-fragment` boundary. Resolved by the cache. */
   readonly fragmentBoundary?: Element;
   /** `data-payload-boundary`: an anchor that hides itself while its field is empty. */
-  readonly boundary?: boolean;
+  readonly hidesWhenEmpty?: boolean;
   /** Write the value into this attribute instead of the content; policed writes. */
   readonly targetAttribute?: string;
   /** Optional sibling-field path bound to the element's `href` attribute. */
@@ -73,6 +74,11 @@ export interface RenderContext {
   readonly schema: PayloadFieldSchema | undefined;
   /** The project's rich-text renderer, when the client was configured with one. */
   readonly renderRichText?: RichTextRenderer;
+  /**
+   * This instance's sanitizer policy, for every HTML write the renderer makes.
+   * Absent, the process default set by `setSanitizerPolicy()` applies.
+   */
+  readonly sanitizerPolicy?: SanitizerPolicyMode;
 }
 
 /**

@@ -91,13 +91,13 @@ export interface CachedElement {
     readonly altField?: string;
     readonly arraySeparator?: string;
     readonly arrayTemplate?: string;
-    readonly boundary?: boolean;
     readonly dependsOn?: readonly string[];
     readonly element: Element;
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
     readonly fieldType: RendererKey;
     readonly fragmentBoundary?: Element;
+    readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;
     readonly locale?: string;
     readonly owner?: string;
@@ -1110,7 +1110,9 @@ export interface PreviewRequestLike {
 
 // @public (undocumented)
 export interface PreviewRequestOptions {
+    // @deprecated (undocumented)
     readonly adminOrigins?: readonly string[];
+    readonly allowedOrigins?: readonly string[];
     readonly queryParams?: readonly string[];
     // Warning: (ae-forgotten-export) The symbol "PreviewSignal" needs to be exported by the entry point index.d.ts
     readonly signals?: readonly PreviewSignal[];
@@ -1199,6 +1201,7 @@ export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
+    readonly sanitizerPolicy?: SanitizerPolicyMode;
     readonly schema: PayloadFieldSchema | undefined;
 }
 

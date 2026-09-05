@@ -296,7 +296,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     scheduler.acceptRevision(identity);
     scheduler.cancelRevision(identity);
 
-    scheduler.schedule({ ...update(target, 'must-not-apply'), identity });
+    scheduler.schedule({ ...update(target, 'must-not-apply'), revision: identity });
     scheduler.flushNow();
 
     expect(apply).not.toHaveBeenCalled();
@@ -313,7 +313,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const current = { generation: 2, revision: 2 };
     const target = entry(document.createElement('p'));
     scheduler.acceptRevision(current);
-    scheduler.schedule({ ...update(target, 'current'), identity: current });
+    scheduler.schedule({ ...update(target, 'current'), revision: current });
 
     scheduler.acceptRevision(current);
     scheduler.acceptRevision({ generation: 1, revision: 99 });
@@ -321,7 +321,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     scheduler.cancelRevision({ generation: 2, revision: 1 });
     scheduler.schedule({
       ...update(target, 'future-mismatch'),
-      identity: { generation: 2, revision: 3 },
+      revision: { generation: 2, revision: 3 },
     });
 
     expect(scheduler.pendingCount).toBe(1);

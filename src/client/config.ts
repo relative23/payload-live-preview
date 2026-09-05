@@ -63,7 +63,11 @@ export interface LivePreviewClientConfig {
   readonly disableLocalhostMatching?: boolean;
   /** Which windows may post updates. Default `'parent-or-opener'`; `defaults: 'v1'` sets `'any'`. */
   readonly eventSourcePolicy?: EventSourcePolicy;
-  /** Sanitizer policy for rich text and HTML writes. Default `'strict'`; `defaults: 'v1'` sets `'compat'`. */
+  /**
+   * Sanitizer policy for this client's rich text and HTML writes. Default
+   * `'strict'`; `defaults: 'v1'` sets `'compat'`. Per instance: it leaves the
+   * process default that `setSanitizerPolicy()` sets for direct `sanitizeHtml()` calls alone.
+   */
   readonly sanitizerPolicy?: 'compat' | 'strict';
   /** `'v2'` (default) is the 2.0 table; `'v1'` restores every 1.x row at once. Explicit options win. */
   readonly defaults?: DefaultsProfile;
@@ -78,7 +82,9 @@ export interface LivePreviewClientConfig {
 
 /** The configuration with the `defaults` profile applied: explicit options win, `'v1'` changes nothing. */
 export function withProfileDefaults(config: LivePreviewClientConfig): LivePreviewClientConfig {
-  if (config.defaults === 'v1') return config;
+  // `'v1'` fills the rows too: the runtime's own fallbacks are the 2.0 values
+  // since the default flip, so leaving the config alone would hand a v1 client
+  // the strict sanitizer and `skipUnchanged` it opted out of.
   const rows = runtimeDefaultsFor(config.defaults);
   return {
     ...config,

@@ -4,6 +4,7 @@ export { escapeHtml, escapeHtmlAttribute, escapeCssUrl, escapeAndLinebreak } fro
 export { isSafeUrl, isExternalHttpUrl, SAFE_URL_PROTOCOLS } from './url-validator';
 export {
   sanitizeHtml,
+  sanitizeHtmlWithPolicy,
   setSanitizerDocument,
   setSanitizerPolicy,
   type SanitizerPolicyMode,

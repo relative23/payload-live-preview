@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { injectIntoHead } from '@adapters/shared/html-inject';
 import {
   buildPreviewCsp,
   createPreviewPolicy,
   previewIntentFor,
-  injectIntoHead,
-  inlineScriptConfig,
   normalizeCspMode,
 } from '@adapters/shared/policy';
+import { inlineScriptConfig } from '@adapters/shared/policy-options';
 
 /** The shared policy's decisions, pinned by name rather than through four framework fixtures. */
 

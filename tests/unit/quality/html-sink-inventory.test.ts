@@ -33,18 +33,28 @@ const SRC = resolve(ROOT, 'src');
  */
 type Justification = 'inert-parse' | 'sanitised' | 'escaped' | 'trusted-origin';
 
+// The renderers sanitise with the instance's policy (`context.sanitizerPolicy`,
+// ADR 0002); `sanitizeHtmlWithPolicy` is `sanitizeHtml` with that one extra input.
 const INVENTORY: ReadonlyMap<string, Justification> = new Map([
-  ['src/field-types/html.ts::trustedHtml(sanitizeHtml(html))', 'sanitised'],
   [
-    'src/field-types/array.ts::trustedHtml(sanitizeHtml(html, templateSanitizeOptions(template)))',
+    'src/field-types/html.ts::trustedHtml(sanitizeHtmlWithPolicy(html, context.sanitizerPolicy))',
     'sanitised',
   ],
-  ['src/field-types/rich-text.ts::trustedHtml(sanitizeHtml(html))', 'sanitised'],
-  ['src/field-types/rich-text.ts::trustedHtml(sanitizeHtml(value))', 'sanitised'],
-  // `lexicalToHtml` sanitises its own output whenever a DOM is reachable, which
-  // in the browser is always. That is what covers a project's own
-  // `registerBlockRenderer`, whose string this package never inspects.
-  ['src/field-types/rich-text.ts::trustedHtml(lexicalToHtml(value))', 'sanitised'],
+  // `templateOptions` is `templateSanitizeOptions(template)`: the author's item template.
+  [
+    'src/field-types/array.ts::trustedHtml(sanitizeHtmlWithPolicy(html, policy, templateOptions))',
+    'sanitised',
+  ],
+  ['src/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(html, policy))', 'sanitised'],
+  ['src/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(value, policy))', 'sanitised'],
+  // `lexical` is `lexicalToHtml(value, { sanitize: false })`: Lexical no longer
+  // sanitises on its own here, because it would do so with the process default.
+  // The sink does it with the instance's policy, and that is what covers a
+  // project's own `registerBlockRenderer`, whose string this package never inspects.
+  [
+    'src/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(lexical, policy))',
+    'sanitised',
+  ],
   [
     'src/field-types/upload.ts::trustedHtml(`<a href="${escapeHtmlAttribute(url)}">${label}</a>`)',
     'escaped',

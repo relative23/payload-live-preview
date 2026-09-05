@@ -4,12 +4,12 @@
  * `generateInlineScript()` instead.
  */
 
+import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import { LivePreviewRuntime, type RuntimeOptions } from '@core/lifecycle';
 import type { LivePreviewInspection } from '@core/inspection/types';
 import type { CachedElement, RendererKey } from '@core/types';
 import { EventEmitter } from '@events/emitter';
 import { OriginDetector } from '@detection/origin';
-import { setSanitizerPolicy } from '@security/sanitizer';
 import { PluginManager } from '@plugins/manager';
 import { RendererRegistry } from '@plugins/renderer-registry';
 import type { LivePreviewPlugin } from '@plugins/types';
@@ -41,14 +41,11 @@ export class LivePreviewClient {
   constructor(rawConfig: LivePreviewClientConfig = {}) {
     const config = withProfileDefaults(rawConfig);
     const serverURL = config.serverURL ?? '';
-    if (rawConfig.defaults !== 'v1' && serverURL !== '' && config.mergeDepth === undefined) {
-      throw new Error(
-        'payload-live-preview: `serverURL` needs an explicit `mergeDepth` under the 2.0 defaults — ' +
-          "choose the population depth deliberately (0 for none), or pass `defaults: 'v1'` to keep " +
-          'the 1.x default of 1 while migrating (ADR 0007, entry 10).',
-      );
-    }
-    if (config.sanitizerPolicy !== undefined) setSanitizerPolicy(config.sanitizerPolicy);
+    assertMergeDepthExplicit({
+      defaults: rawConfig.defaults,
+      serverURL,
+      mergeDepth: config.mergeDepth,
+    });
     const debug = config.debug ?? isDevMode();
     this.#log = debug
       ? (...args): void => {
@@ -87,6 +84,7 @@ export class LivePreviewClient {
         resolveRenderer: (fieldType: RendererKey, target: CachedElement) =>
           config.resolveRenderer?.(fieldType, target) ?? this.#rendererRegistry.resolve(fieldType),
         renderRichText: config.renderRichText,
+        sanitizerPolicy: config.sanitizerPolicy,
         transformValue: (
           fieldName: string,
           value: unknown,

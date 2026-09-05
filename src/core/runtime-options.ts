@@ -1,6 +1,7 @@
 /** Options accepted by `LivePreviewRuntime`. */
 
 import type { EventEmitter } from '@events/emitter';
+import type { SanitizerPolicyMode } from '@security/sanitizer';
 import type { OriginMatcher } from './message-bus';
 import type { StrategyHandlers } from './strategies';
 import type { CachedElement, FieldRenderer, RendererKey, RichTextRenderer } from './types';
@@ -17,6 +18,12 @@ export interface RuntimeOptions {
   ) => FieldRenderer | undefined;
   /** Project rich-text renderer, handed to the `richText` renderer through its context. */
   readonly renderRichText?: RichTextRenderer;
+  /**
+   * Sanitizer policy for this instance's rich-text and HTML writes, handed to
+   * every renderer through its context. Without one, the process default set
+   * by `setSanitizerPolicy()` applies.
+   */
+  readonly sanitizerPolicy?: SanitizerPolicyMode;
   /**
    * Transform a field value before it is scheduled for a binding. Must be
    * synchronous; the result is frozen for debounce and replay.

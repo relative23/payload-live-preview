@@ -271,7 +271,9 @@ export interface PreviewRequestLike {
 
 // @public (undocumented)
 export interface PreviewRequestOptions {
+    // @deprecated (undocumented)
     readonly adminOrigins?: readonly string[];
+    readonly allowedOrigins?: readonly string[];
     readonly queryParams?: readonly string[];
     readonly signals?: readonly PreviewSignal[];
 }

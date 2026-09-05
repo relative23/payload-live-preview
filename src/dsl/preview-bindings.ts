@@ -39,6 +39,7 @@ export interface PreviewBindings {
     options?: BindOptions,
   ) => FieldBindingAttributes | SuppressedBinding;
   /** Rename-safe field binding, or nothing while unauthorized. */
+  // `T` names the caller's document type; see bindByPath in ./bind.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   bindByPath: <T = Record<string, unknown>>(
     picker: (data: T) => unknown,
@@ -61,6 +62,7 @@ export function createPreviewBindings(options: PreviewBindingsOptions): PreviewB
       bindOptions?: BindOptions,
     ): FieldBindingAttributes | SuppressedBinding =>
       authorized ? bind<T>(field, bindOptions) : SUPPRESSED,
+    // `T` names the caller's document type; see bindByPath in ./bind.
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
     bindByPath: <T = Record<string, unknown>>(
       picker: (data: T) => unknown,

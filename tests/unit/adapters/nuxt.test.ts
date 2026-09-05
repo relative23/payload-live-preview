@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildLivePreviewCsp,
+  DECISION_CONTEXT_KEY,
   defineLivePreviewServerHandler,
   livePreviewNitroPlugin,
   renderLivePreviewScript,
 } from '@adapters/nuxt/index';
+import { createPreviewPolicy } from '@adapters/shared/policy';
+import { withCspHeader } from '@adapters/shared/response';
 import { authorizePreviewRequest } from '@security/preview-authorization';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 
@@ -157,6 +160,53 @@ describe('livePreviewNitroPlugin — CSP', () => {
     );
     expect(res.headers.get('cache-control')).toBe('private, no-store');
     expect(res.headers.get('vary')).toBe('Cookie');
+  });
+});
+
+describe('livePreviewNitroPlugin — the header side agrees with withCspHeader', () => {
+  // Characterisation: the Nitro sink and the fetch-style sink share
+  // applyCspHeaders(), so for one decision and nonce both write the same
+  // CSP and cache headers, whatever the response already carried.
+  const HEADERS = ['content-security-policy', 'cache-control', 'vary'] as const;
+  const rows = [
+    [
+      'frame-ancestors merged into an existing policy',
+      {},
+      { 'content-security-policy': "default-src 'self'" },
+    ],
+    ['full mode with the nonce', { manageCsp: 'full' }, {}],
+    [
+      'CSP off: only the cache headers change',
+      { manageCsp: false },
+      { 'cache-control': 'public, max-age=60', vary: 'Accept-Encoding' },
+    ],
+    [
+      'an existing no-store and Cookie kept as they are',
+      {},
+      { 'cache-control': 'no-store', vary: 'cookie' },
+    ],
+  ] as const;
+
+  it.each(rows)('%s', async (_label, csp, existing) => {
+    const options = { defaults: 'v1' as const, allowedOrigins: [ADMIN], ...csp };
+    const policy = createPreviewPolicy(options);
+    const decision = await policy.decide(new Request('https://site.example.com/?preview=true'));
+    const nonce = 'n0nce';
+    const expected = withCspHeader(
+      new Response('', { headers: existing }),
+      policy,
+      decision,
+      nonce,
+    );
+    const nitro = fakeNitro();
+    livePreviewNitroPlugin(options)(nitro.app);
+    const res = { headers: new Headers(existing) };
+    await nitro.render({
+      path: '/?preview=true',
+      res,
+      context: { [DECISION_CONTEXT_KEY]: { decision, nonce } },
+    });
+    for (const name of HEADERS) expect(res.headers.get(name)).toBe(expected.headers.get(name));
   });
 });
 

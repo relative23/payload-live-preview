@@ -4,7 +4,6 @@
  * it. Nitro and H3 are duck-typed so this compiles without the peers.
  */
 
-import { generateCspNonce } from '@security/csp';
 import {
   buildPreviewCsp,
   createPreviewPolicy,
@@ -12,12 +11,13 @@ import {
   type PreviewDecision,
   type PreviewPolicy,
 } from '@adapters/shared/policy';
-import { bindDecisionHooks, markUncacheable, renderScriptTag } from '@adapters/shared/response';
+import { applyCspHeaders, bindDecisionHooks, renderScriptTag } from '@adapters/shared/response';
 import { exposeDecision } from '@adapters/shared/locals';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PreviewRequestLike } from '@adapters/shared/preview-request';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
+export type { LivePreviewLocals } from '@adapters/shared/locals';
 
 export type LivePreviewNuxtOptions = PreviewAdapterOptions<PreviewRequestLike>;
 
@@ -86,11 +86,7 @@ export function livePreviewNitroPlugin(
       if (decision.inject) html.head.push(policy.scriptTag(nonce));
       const headers = responseHeaders(event);
       if (headers === undefined || (!decision.inject && decision.cspMode === false)) return;
-      if (decision.cspMode !== false) {
-        const existing = headers.get('content-security-policy') ?? '';
-        headers.set('content-security-policy', policy.csp(existing, nonce, decision.cspMode));
-      }
-      markUncacheable(headers);
+      applyCspHeaders(headers, policy, decision, nonce);
     });
   };
 }
@@ -119,7 +115,7 @@ async function decideFor(
   if (stashed !== undefined) return stashed;
   const request = toPreviewRequestLike(event);
   const decision = await policy.decide(request, bindDecisionHooks(policy, options, request));
-  const result: StashedDecision = { decision, nonce: generateCspNonce() };
+  const result: StashedDecision = { decision, nonce: policy.nonce() };
   context[DECISION_CONTEXT_KEY] = result;
   exposeDecision(context, decision, result.nonce);
   return result;

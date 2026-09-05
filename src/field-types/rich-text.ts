@@ -4,12 +4,16 @@
  * other HTML write.
  */
 
-import { isLexicalContent, lexicalToHtml } from '@lexical/render';
+import { isLexicalContent, lexicalToHtml, type LexicalRenderOptions } from '@lexical/render';
 import { trustedHtml } from '@security/trusted-types';
-import { sanitizeHtml } from '@security/sanitizer';
+import { sanitizeHtmlWithPolicy } from '@security/sanitizer';
 import { markNoWriteCallback } from '@core/internal-outcome';
 import type { FieldRenderer } from '@core/types';
 import { isEmptyValue } from './utils';
+
+// Lexical would otherwise sanitise with the process default; the sink below
+// does it with the instance's policy instead.
+const UNSANITISED: LexicalRenderOptions = { sanitize: false };
 
 const richTextRenderer: FieldRenderer = {
   name: 'richText',
@@ -19,21 +23,23 @@ const richTextRenderer: FieldRenderer = {
       element.textContent = '';
       return;
     }
+    const policy = context.sanitizerPolicy;
     if (context.renderRichText !== undefined) {
       const html = context.renderRichText(value, {
         fieldName: target.fieldName,
         element,
         locale: context.locale,
       });
-      element.innerHTML = trustedHtml(sanitizeHtml(html));
+      element.innerHTML = trustedHtml(sanitizeHtmlWithPolicy(html, policy));
       return;
     }
     if (isLexicalContent(value)) {
-      element.innerHTML = trustedHtml(lexicalToHtml(value));
+      const lexical = lexicalToHtml(value, UNSANITISED);
+      element.innerHTML = trustedHtml(sanitizeHtmlWithPolicy(lexical, policy));
       return;
     }
     if (typeof value === 'string') {
-      element.innerHTML = trustedHtml(sanitizeHtml(value));
+      element.innerHTML = trustedHtml(sanitizeHtmlWithPolicy(value, policy));
       return;
     }
     return false;

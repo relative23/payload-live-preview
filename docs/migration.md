@@ -147,11 +147,18 @@ Then adopt the rows. Each is a readiness-table entry (ADR 0007):
 ### Renamed and moved (what `pll migrate` handles)
 
 - `isPreviewRequest()` → `hasPreviewIntent()` — same signature.
+- `hasPreviewIntent(request, { adminOrigins })` → `{ allowedOrigins }` — the
+  name everything else already uses; `adminOrigins` keeps working as a
+  deprecated alias until 3.0.
 - `createPreviewBindings({ authorized })` → `{ authorization }` — pass the
   context from `authorizePreviewRequest()`.
 - `fetchPreviewDocument()` / `fetchPreviewGlobal()` (root) →
   `definePreview({ serverURL, depth }).fetchDocument()` / `.fetchGlobal()`
   from `payload-live-preview/server`.
+
+Not a codemod target, because TypeScript reports it: `CachedElement.boundary`
+is `hidesWhenEmpty` — the `data-payload-boundary` anchor that hides itself while
+its field is empty. Only a custom renderer that read the flag is affected.
 
 ### Before / after
 

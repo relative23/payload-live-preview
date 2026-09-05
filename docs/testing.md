@@ -23,27 +23,29 @@ type-checks or runs tests runs it explicitly for the same reason.
 
 The common maintainer commands are:
 
-| Command                         | Contract                                                                  |
-| ------------------------------- | ------------------------------------------------------------------------- |
-| `npm run check`                 | Types, typed lint, test policy, architecture/dead-code policy, Vitest     |
-| `npm run format:check`          | Source, config, workflow, fixture, and packed type-fixture formatting     |
-| `npm run test:coverage`         | Global and critical-file coverage floors                                  |
-| `npm run test:coverage:diff`    | Changed executable lines and monotonic threshold ratchets                 |
-| `npm run test:package`          | Exact tarball, API reports, publint, ATTW, imports, CLI, and type clients |
-| `npm run test:mutation`         | PR-sized Stryker mutation profile                                         |
-| `npm run test:property`         | Deterministic fast-check security and lifecycle models                    |
-| `npm run test:e2e`              | Chromium, Firefox, and WebKit behavior plus accessibility assertions      |
-| `npm run test:e2e:real-payload` | Real Payload admin-to-preview protocol                                    |
-| `npm run test:leak`             | 10,000 awaited updates, forced-GC heap, and exact resource ownership      |
-| `npm run test:soak`             | Built-runtime Chromium update/heap soak                                   |
-| `npm run test:bench:codspeed`   | Versioned CPU/allocation trend inputs                                     |
+| Command                         | Contract                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------- |
+| `npm run check`                 | Types, lint, formatting, test policy, architecture/dead-code policy, compat table, Vitest |
+| `npm run format:check`          | Source, config, workflow, fixture, and packed type-fixture formatting                     |
+| `npm run test:coverage`         | Global and critical-file coverage floors                                                  |
+| `npm run test:coverage:diff`    | Changed executable lines and monotonic threshold ratchets                                 |
+| `npm run test:package`          | Exact tarball, API reports, publint, ATTW, imports, CLI, and type clients                 |
+| `npm run test:mutation`         | PR-sized Stryker mutation profile                                                         |
+| `npm run test:property`         | Deterministic fast-check security and lifecycle models                                    |
+| `npm run test:e2e`              | Chromium, Firefox, and WebKit behavior plus accessibility assertions                      |
+| `npm run test:e2e:real-payload` | Real Payload admin-to-preview protocol                                                    |
+| `npm run test:leak`             | 10,000 awaited updates, forced-GC heap, and exact resource ownership                      |
+| `npm run test:soak`             | Built-runtime Chromium update/heap soak                                                   |
+| `npm run test:bench:codspeed`   | Versioned CPU/allocation trend inputs                                                     |
 
 ### The nightly mutation scope
 
 `npm run test:mutation` mutates the small PR profile. The release-critical scope
-is every file with a per-file coverage baseline (`quality/coverage-policy.json`),
-which is the runtime core, the security modules, the shared adapter policy and
-the fragment strategies:
+is every file with a per-file coverage baseline (`quality/coverage-policy.json`)
+plus the PR profile's three files and `src/core/a11y.ts`; `stryker.config.js`
+builds that union at startup. The reviewed file list, mutant total and score are
+pinned in `quality/mutation-policy.json` — that file is the baseline, not this
+page:
 
 ```sh
 STRYKER_SCOPE=nightly npm run test:mutation
@@ -77,6 +79,29 @@ npx tsx scripts/mutation-shard-weights.ts --durations test-results/vitest-durati
 Stale weights only unbalance the shards, and missing ones fall back to counting
 executions. Neither changes the verdict, which is graded on the merged report.
 
+#### Adding a file to `criticalFiles`
+
+1. Add the file with its floors to `criticalFiles` in
+   `quality/coverage-policy.json`. `stryker.config.js` reads that list, so the
+   file is now in the nightly scope as well.
+2. Add the same path to `scope` in `quality/mutation-policy.json`. The policy
+   refuses a report whose configured or reported file set differs from it.
+3. Push the branch and run the scheduled workflow against it:
+   `gh workflow run deep-quality.yml --ref <branch>`. Its Critical Gates job
+   runs the six shards and joins them. The baseline step fails; that is
+   expected, the total has changed.
+4. Download the joined report:
+   `gh run download <run id> -n critical-mutation-report-<sha> -D test-results`
+   gives `test-results/stryker-nightly.json`. Run `npm run test:mutation:policy`
+   on the same commit; every `[regression]` and `[improvement]` line names a
+   number to record.
+5. Record `total`, `mutationScoreMinimum` (two decimals), `noCoverageMaximum`
+   and `timeoutMaximum` from the report under `baseline`. `errorMaximum` and
+   `ignoredMaximum` stay at zero.
+6. Refresh the shard weights from the same report (the two commands above) and
+   commit `quality/mutation-policy.json`, `quality/mutation-shard-weights.json`
+   and the coverage policy together.
+
 `npm run api:update` is intentionally not a routine formatter. It rebuilds and
 repacks the project, regenerates API Extractor reports from the installed archive,
 and leaves a reviewable public-surface diff. Run it only for an intentional API
@@ -101,8 +126,11 @@ disabled and OIDC provenance enabled. Before any tag or GitHub Release is
 created, the workflow compares npm's `dist.integrity`, downloads the registry
 tgz, and verifies its raw digests and inventory against the CI manifest. A rerun
 may reconcile a matching npm version with a missing tag/release, but a registry
-version with different bytes fails closed. Prerelease publishing is deliberately
-blocked until an explicit non-`latest` dist-tag policy is reviewed.
+version with different bytes fails closed. A prerelease (`X.Y.Z-<label>.<n>`,
+the shape Changesets pre mode produces) publishes under the dist-tag named by
+its label — `2.0.0-beta.0` lands on `beta` — so `npm install` keeps resolving
+`latest`; a version of any other shape is refused. The pipeline is ADR
+[0013](architecture/0013-release-pipeline.md).
 
 ## Quality map
 
@@ -175,8 +203,8 @@ The Chromium update-to-paint trend runs the 300, 1,000 and 5,000-binding
 scenario pages and measures one changed field per message from the Admin's
 `postMessage` to the first animation frame after the bound element changed —
 the earliest instant the new text can be on screen, not the compositor's own
-timestamp. It reports p50/p95/max per scenario against the roadmap's stated
-budget (p95 ≤ 100 ms) and keeps ninety days of reports as artifacts. It is a
+timestamp. It reports p50/p95/max per scenario against the budget set for it
+before 2.0 (p95 ≤ 100 ms) and keeps ninety days of reports as artifacts. It is a
 trend: the only assertions are that every sample produced a measurement and
 the page raised no errors, because timing on a shared runner is not a fact a
 pull request should fail on. The same three scenario pages are functional E2E

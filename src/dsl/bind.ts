@@ -46,6 +46,8 @@ export function bind<T = Record<string, unknown>>(
 }
 
 /** `bindByPath<Homepage>(d => d.slides[0].title)` → `slides.title`; array indices are dropped because bindings resolve against the schema. */
+// `T` is used once, by design: the caller names the document type so the
+// picker is checked against it instead of against an untyped `d`.
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function bindByPath<T = Record<string, unknown>>(
   picker: (data: T) => unknown,

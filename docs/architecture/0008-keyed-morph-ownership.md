@@ -15,9 +15,9 @@ form state, event listeners the site attached, and — worst — the internal
 state of a custom element or a hydrated framework island that happened to
 live inside the item.
 
-The roadmap (1.3.0) asks for a conservative keyed morph that preserves node
-identity where the old and new markup are compatible, and asks this record
-to say, before the code exists, what the morph will **never** cross.
+The 1.3.0 plan asked for a conservative keyed morph that preserves node
+identity where the old and new markup are compatible, and asked this record
+to say, before the code existed, what the morph will **never** cross.
 
 ## Decision
 
@@ -83,7 +83,7 @@ it. Boundaries are:
 - **Hydrated islands** — `astro-island`, and any element marked
   `data-payload-island`. A framework owns that subtree; patching into it
   corrupts the framework's view of its own DOM. The island bridge
-  (roadmap 1.3.0, "island interoperability") is the explicit adapter for
+  (the 1.3.0 "island interoperability" item) is the explicit adapter for
   handing data in.
 - **`contenteditable`** — a subtree the visitor is editing.
 - **Consumer-owned subtrees** — `data-payload-owned`, the opt-out for

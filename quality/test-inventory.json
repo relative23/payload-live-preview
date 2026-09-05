@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 239,
-    "suites": 516,
-    "tests": 2161,
+    "files": 249,
+    "suites": 535,
+    "tests": 2208,
     "benchmarks": 12
   },
   "groups": {
@@ -42,9 +42,9 @@
       "benchmarks": 0
     },
     "integration": {
-      "files": 15,
-      "suites": 17,
-      "tests": 79,
+      "files": 18,
+      "suites": 20,
+      "tests": 86,
       "benchmarks": 0
     },
     "real-payload": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 201,
-      "suites": 463,
-      "tests": 2010,
+      "files": 208,
+      "suites": 479,
+      "tests": 2050,
       "benchmarks": 0
     }
   },
@@ -215,6 +215,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/integration/client-sanitizer-policy.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/integration/client-structural.test.ts",
       "group": "integration",
       "suites": 1,
@@ -250,6 +257,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/integration/runtime-autostart.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/integration/runtime-config-defaults.test.ts",
       "group": "integration",
       "suites": 1,
@@ -282,6 +296,13 @@
       "group": "integration",
       "suites": 1,
       "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/runtime-sanitizer-policy.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -336,8 +357,8 @@
     {
       "path": "tests/unit/adapters/astro-fragments.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 7,
+      "suites": 4,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -392,8 +413,8 @@
     {
       "path": "tests/unit/adapters/nuxt.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 18,
+      "suites": 6,
+      "tests": 19,
       "benchmarks": 0
     },
     {
@@ -413,8 +434,8 @@
     {
       "path": "tests/unit/adapters/preview-request.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 11,
+      "suites": 4,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -621,6 +642,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/field-value.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/fragment-strategy.test.ts",
       "group": "unit",
       "suites": 1,
@@ -726,10 +754,17 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/lifecycle-sanitizer-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/lifecycle-startup-errors.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -751,6 +786,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/lru.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -880,10 +922,17 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/reveal-ledger.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/reveal-lifecycle.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 6,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -980,8 +1029,8 @@
     {
       "path": "tests/unit/core/template-sanitize.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 12,
+      "suites": 5,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -1174,6 +1223,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/field-types/sanitizer-policy-context.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/field-types/structural-array.test.ts",
       "group": "unit",
       "suites": 2,
@@ -1192,6 +1248,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 15,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/fragment/abort.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1325,6 +1388,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/rename-admin-origins-option.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1694,8 +1764,8 @@
     {
       "path": "tests/unit/security/sanitizer-policy.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 7,
+      "suites": 5,
+      "tests": 8,
       "benchmarks": 0
     },
     {

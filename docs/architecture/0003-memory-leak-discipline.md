@@ -50,6 +50,8 @@ Reference: `tests/unit/core/observers-lifecycle.test.ts`, `tests/unit/core/state
 Module-scoped lookup caches use an LRU bound, never an unbounded `Map`. Today this rule applies to:
 
 - `@core/intl-cache` — bounded to 64 entries by default, adjustable via `setIntlCacheLimit`. The cache stores pure values (`Intl.NumberFormat`, `Intl.DateTimeFormat`) keyed by `(locale, options)` so module-scoped sharing is safe.
+- `@core/template-sanitize` — the per-template sanitizer options are memoised in a map bounded to `TEMPLATE_CACHE_LIMIT` (64). A nested template is interpolated with its parent's, so an outer value that lands in it mints a key per item and per keystroke; without the bound the page would keep every one.
+- `@core/lru` — the `lruGet`/`lruSet`/`lruTrim` helpers both caches share. Functions over the caller's `Map` rather than a class: the minifier shortens function names but not property names, so the class form measured larger in the inline bundle.
 
 When adding a new cache, copy that pattern — including a test that asserts the LRU eviction policy.
 

@@ -60,6 +60,9 @@ export default tseslint.config(
       ],
       '@typescript-eslint/prefer-readonly': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
+      // A file past 500 lines has grown a second responsibility; split it
+      // rather than raise the limit. Generated bundles are ignored above.
+      'max-lines': ['error', { max: 500, skipBlankLines: false, skipComments: false }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       eqeqeq: ['error', 'always', { null: 'ignore' }],

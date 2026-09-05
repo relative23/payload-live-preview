@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { sanitizeHtml, setSanitizerPolicy } from '@security/sanitizer';
+import { sanitizeHtml, sanitizeHtmlWithPolicy, setSanitizerPolicy } from '@security/sanitizer';
 
 /** The strict policy (ADR 0007, entry 11) against the attack classes it exists for; every case runs compat too. */
 
@@ -104,4 +104,24 @@ describe('policy extension collisions', () => {
     expect(out).not.toContain('javascript:');
     expect(out).toContain('ping="/p"');
   });
+});
+
+describe('sanitizeHtmlWithPolicy — the instance layer between a call and the process default', () => {
+  const CLOBBER = '<p id="a">t</p>';
+  it.each([
+    // [process default, instance policy, per-call policy, expected]
+    ['strict', undefined, undefined, '<p>t</p>'],
+    ['compat', undefined, undefined, CLOBBER],
+    ['strict', 'compat', undefined, CLOBBER],
+    ['compat', 'strict', undefined, '<p>t</p>'],
+    ['compat', 'strict', 'compat', CLOBBER],
+    ['strict', 'compat', 'strict', '<p>t</p>'],
+  ] as const)(
+    'process %s, instance %s, call %s',
+    (processPolicy, instancePolicy, callPolicy, expected) => {
+      setSanitizerPolicy(processPolicy);
+      const options = callPolicy === undefined ? undefined : { policy: callPolicy };
+      expect(sanitizeHtmlWithPolicy(CLOBBER, instancePolicy, options)).toBe(expected);
+    },
+  );
 });

@@ -8,9 +8,12 @@ import {
 } from 'payload-live-preview';
 import { EventEmitter, initLivePreview } from 'payload-live-preview/core';
 import {
+  createFragmentEndpoint,
   createLivePreviewMiddleware as createAstroMiddleware,
+  hasPreviewIntent,
   livePreview,
   type LivePreviewAstroOptions,
+  type LivePreviewLocals,
 } from 'payload-live-preview/astro';
 import { onRequest } from 'payload-live-preview/astro/middleware-entry';
 import {
@@ -20,12 +23,18 @@ import {
 import {
   buildLivePreviewCsp,
   livePreviewNitroPlugin,
+  type LivePreviewLocals as NuxtLivePreviewLocals,
   type LivePreviewNuxtOptions,
 } from 'payload-live-preview/nuxt';
 import { buildLivePreviewUrl } from 'payload-live-preview/payload';
-import { definePreview } from 'payload-live-preview/server';
+import {
+  definePreview,
+  type AuthorizedPreviewContext,
+  type PreviewAuthorizationOutcome,
+} from 'payload-live-preview/server';
 import {
   livePreviewHandle,
+  type LivePreviewLocals as SvelteKitLivePreviewLocals,
   type LivePreviewSvelteKitOptions,
 } from 'payload-live-preview/sveltekit';
 
@@ -104,4 +113,47 @@ async function crossEntryDraftRead(request: Request): Promise<unknown> {
   return preview.fetchDocument({ collection: 'pages', authorization: verdict.context });
 }
 
-export { crossEntryOptions, crossEntryDraftRead };
+// The fragment endpoint takes the middleware's hook as it is, and the intent
+// detector the adapters' spelling of the admin origins.
+const fragmentEndpoint = createFragmentEndpoint({
+  registry: {},
+  authorizePreview: (request) =>
+    authorizePreviewRequest(request, { type: 'verifier', verify: () => null }),
+});
+const intent = hasPreviewIntent(new Request('https://example.com/?preview=true'), {
+  allowedOrigins: ['https://admin.example.com'],
+});
+
+// Astro's `src/env.d.ts` and SvelteKit's `src/app.d.ts` both augment the
+// global `App.Locals`; the three adapter entries export one interface for it.
+declare global {
+  namespace App {
+    interface Locals extends LivePreviewLocals {}
+  }
+}
+// Astro: `Astro.locals` in a page, `context.locals` in middleware.
+function astroPage(Astro: { readonly locals: App.Locals }): string | undefined {
+  return Astro.locals.livePreviewNonce;
+}
+// SvelteKit: `event.locals` in a server `load`.
+function svelteKitLoad(event: {
+  readonly locals: App.Locals & SvelteKitLivePreviewLocals;
+}): AuthorizedPreviewContext | undefined {
+  return event.locals.livePreviewAuthorization;
+}
+// Nuxt: `event.context` in a server route.
+function nuxtRoute(event: {
+  readonly context: NuxtLivePreviewLocals;
+}): PreviewAuthorizationOutcome | undefined {
+  return event.context.livePreviewAuthorizationOutcome;
+}
+
+export {
+  astroPage,
+  crossEntryDraftRead,
+  crossEntryOptions,
+  fragmentEndpoint,
+  intent,
+  nuxtRoute,
+  svelteKitLoad,
+};

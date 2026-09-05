@@ -31,34 +31,41 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // ~1.4 KB gzip to the inline runtime and therefore to every adapter bundle. core.* rows: +~200 B gzip for
   // the message bus source policy (eventSourcePolicy), same date. 2026-09-04:
   // +~45 B gzip in every adapter that embeds the runtime, for the reveal ledger
-  // fix recorded in bundle-budgets.ts.
-  'adapters/astro/index.js': { raw: 129_850, gzip: 41_150, brotli: 36_000 },
-  'adapters/astro/middleware-entry.js': { raw: 117_000, gzip: 37_200, brotli: 32_450 },
-  'adapters/nextjs/index.js': { raw: 116_800, gzip: 37_100, brotli: 32_350 },
-  'adapters/nuxt/index.js': { raw: 117_450, gzip: 37_400, brotli: 32_550 },
-  'adapters/sveltekit/index.js': { raw: 116_550, gzip: 37_050, brotli: 32_350 },
+  // fix recorded in bundle-budgets.ts. 2026-09-05: +~70 B gzip in every bundle
+  // that embeds the runtime, for the per-instance sanitizer policy (see
+  // bundle-budgets.ts); astro +~285 B for `authorizePreview` on the fragment
+  // endpoint and `LivePreviewLocals`, the other adapters +~70–120 B for the
+  // type-bound locals writes and the shared CSP helper; migrate.js and
+  // doctor-cli.js +~170/+~75 B for the `rename-admin-origins-option` codemod;
+  // server.* +~50 B for the entry split into a barrel and `preview.ts`;
+  // index.js brotli lowered to the measured 45 859.
+  'adapters/astro/index.js': { raw: 130_750, gzip: 41_500, brotli: 36_250 },
+  'adapters/astro/middleware-entry.js': { raw: 117_250, gzip: 37_300, brotli: 32_550 },
+  'adapters/nextjs/index.js': { raw: 117_000, gzip: 37_250, brotli: 32_500 },
+  'adapters/nuxt/index.js': { raw: 117_650, gzip: 37_450, brotli: 32_650 },
+  'adapters/sveltekit/index.js': { raw: 116_750, gzip: 37_200, brotli: 32_450 },
   'codegen-astro.js': { raw: 12_950, gzip: 4_550, brotli: 4_100 },
   'codegen-cli.js': { raw: 14_550, gzip: 5_000, brotli: 4_500 },
   'codegen.cjs': { raw: 12_450, gzip: 4_250, brotli: 3_860 },
   'codegen.js': { raw: 12_300, gzip: 4_250, brotli: 3_850 },
-  'doctor-cli.js': { raw: 31_850, gzip: 11_900, brotli: 10_500 },
+  'doctor-cli.js': { raw: 32_750, gzip: 12_000, brotli: 10_650 },
   'doctor.js': { raw: 13_100, gzip: 5_500, brotli: 4_750 },
-  'migrate.js': { raw: 12_300, gzip: 4_600, brotli: 4_100 },
-  'core.cjs': { raw: 111_600, gzip: 34_950, brotli: 30_400 },
-  'core.js': { raw: 111_100, gzip: 34_900, brotli: 30_400 },
-  'index.cjs': { raw: 231_700, gzip: 71_800, brotli: 46_800 },
-  'index.js': { raw: 231_150, gzip: 71_950, brotli: 46_850 },
+  'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_250 },
+  'core.cjs': { raw: 111_700, gzip: 34_950, brotli: 30_500 },
+  'core.js': { raw: 111_200, gzip: 34_900, brotli: 30_400 },
+  'index.cjs': { raw: 232_050, gzip: 71_800, brotli: 46_850 },
+  'index.js': { raw: 231_450, gzip: 71_950, brotli: 45_900 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
   'payload.js': { raw: 1_080, gzip: 575, brotli: 515 },
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
-  'server.cjs': { raw: 11_850, gzip: 4_350, brotli: 3_950 },
-  'server.js': { raw: 11_750, gzip: 4_350, brotli: 3_950 },
-  'client.cjs': { raw: 106_550, gzip: 33_200, brotli: 28_900 },
-  'client.js': { raw: 106_450, gzip: 33_150, brotli: 28_950 },
-  'structural.cjs': { raw: 18_550, gzip: 6_500, brotli: 5_850 },
-  'structural.js': { raw: 18_500, gzip: 6_500, brotli: 5_900 },
+  'server.cjs': { raw: 12_000, gzip: 4_450, brotli: 4_000 },
+  'server.js': { raw: 11_850, gzip: 4_400, brotli: 4_000 },
+  'client.cjs': { raw: 106_600, gzip: 33_200, brotli: 28_950 },
+  'client.js': { raw: 106_550, gzip: 33_150, brotli: 28_950 },
+  'structural.cjs': { raw: 18_600, gzip: 6_500, brotli: 5_900 },
+  'structural.js': { raw: 18_600, gzip: 6_500, brotli: 5_900 },
   'lexical.cjs': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
   'lexical.js': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
   'plugins.cjs': { raw: 15_550, gzip: 5_650, brotli: 5_000 },
