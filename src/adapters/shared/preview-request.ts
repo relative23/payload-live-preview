@@ -12,7 +12,9 @@ export interface PreviewRequestOptions {
   readonly signals?: readonly PreviewSignal[];
   /** Query parameters (value `true` or `1`) that signal intent. Default `['preview', 'draft', 'livePreview']`. */
   readonly queryParams?: readonly string[];
-  /** Admin origins whose Referer signals intent, e.g. `['https://cms.example.com']`. */
+  /** Admin origins whose Referer signals intent, e.g. `['https://cms.example.com']` — the adapters' option of the same name. */
+  readonly allowedOrigins?: readonly string[];
+  /** @deprecated Use `allowedOrigins`; removed in 3.0. Ignored when `allowedOrigins` is given. */
   readonly adminOrigins?: readonly string[];
 }
 
@@ -51,7 +53,10 @@ export function hasPreviewIntent(
     return true;
   }
 
-  const adminOrigins = signals.has('referer') ? (options.adminOrigins ?? []) : [];
+  // The 1.x spelling is honoured until 3.0; the canonical name wins when both are given.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the alias is read exactly here
+  const configured = options.allowedOrigins ?? options.adminOrigins ?? [];
+  const adminOrigins = signals.has('referer') ? configured : [];
   if (adminOrigins.length > 0) {
     const referer = request.headers.get('referer');
     if (referer !== null) {

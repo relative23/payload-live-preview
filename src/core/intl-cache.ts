@@ -6,6 +6,8 @@
  * limit.
  */
 
+import { lruGet, lruSet, lruTrim } from './lru';
+
 const NUMBER_CACHE = new Map<string, Intl.NumberFormat>();
 const DATE_CACHE = new Map<string, Intl.DateTimeFormat>();
 
@@ -25,8 +27,8 @@ export function setIntlCacheLimit(limit: number): number {
   if (!Number.isFinite(limit) || limit < 1) return maxEntries;
   const previous = maxEntries;
   maxEntries = Math.floor(limit);
-  trimToLimit(NUMBER_CACHE);
-  trimToLimit(DATE_CACHE);
+  lruTrim(NUMBER_CACHE, maxEntries);
+  lruTrim(DATE_CACHE, maxEntries);
   return previous;
 }
 
@@ -40,16 +42,10 @@ export function getNumberFormat(
   options?: Intl.NumberFormatOptions,
 ): Intl.NumberFormat {
   const key = buildKey(locale, options);
-  const cached = NUMBER_CACHE.get(key);
-  if (cached !== undefined) {
-    NUMBER_CACHE.delete(key);
-    NUMBER_CACHE.set(key, cached);
-    return cached;
-  }
-  const formatter = new Intl.NumberFormat(locale, options);
-  NUMBER_CACHE.set(key, formatter);
-  trimToLimit(NUMBER_CACHE);
-  return formatter;
+  return (
+    lruGet(NUMBER_CACHE, key) ??
+    lruSet(NUMBER_CACHE, key, new Intl.NumberFormat(locale, options), maxEntries)
+  );
 }
 
 export function getDateTimeFormat(
@@ -57,16 +53,10 @@ export function getDateTimeFormat(
   options?: Intl.DateTimeFormatOptions,
 ): Intl.DateTimeFormat {
   const key = buildKey(locale, options);
-  const cached = DATE_CACHE.get(key);
-  if (cached !== undefined) {
-    DATE_CACHE.delete(key);
-    DATE_CACHE.set(key, cached);
-    return cached;
-  }
-  const formatter = new Intl.DateTimeFormat(locale, options);
-  DATE_CACHE.set(key, formatter);
-  trimToLimit(DATE_CACHE);
-  return formatter;
+  return (
+    lruGet(DATE_CACHE, key) ??
+    lruSet(DATE_CACHE, key, new Intl.DateTimeFormat(locale, options), maxEntries)
+  );
 }
 
 function buildKey(locale: string | undefined, options: unknown): string {
@@ -93,12 +83,4 @@ function stableStringify(value: unknown): string {
     parts.push(`${JSON.stringify(key)}:${stableStringify(inner)}`);
   }
   return `{${parts.join(',')}}`;
-}
-
-function trimToLimit(map: Map<string, unknown>): void {
-  while (map.size > maxEntries) {
-    const oldest = map.keys().next().value;
-    if (oldest === undefined) break;
-    map.delete(oldest);
-  }
 }

@@ -10,7 +10,7 @@
 
 import { describe, expect, it, beforeEach } from 'vitest';
 import { sanitizeHtml, setSanitizerPolicy } from '@security/sanitizer';
-import { templateSanitizeOptions } from '@core/template-sanitize';
+import { TEMPLATE_CACHE_LIMIT, templateSanitizeOptions } from '@core/template-sanitize';
 
 const TEMPLATE = '<li>{{title}}</li>';
 
@@ -134,5 +134,31 @@ describe('options are memoised per template string', () => {
     const attributes = options.additionalAllowedAttributes ?? {};
     expect(Object.keys(attributes)).toContain('c-three');
     expect(attributes['c-three']).toEqual(attributes['input']);
+  });
+});
+
+describe('the cache is bounded (ADR 0003 §3)', () => {
+  // Enough distinct templates to fill the cache on their own, whatever earlier
+  // tests left in it.
+  const oldest = '<li>{{oldest}}</li>';
+  const second = '<li>{{second}}</li>';
+  const rest = Array.from({ length: TEMPLATE_CACHE_LIMIT - 2 }, (_, i) => `<li>{{f${i}}}</li>`);
+
+  it('keeps every template up to the bound', () => {
+    const kept = templateSanitizeOptions(oldest);
+    templateSanitizeOptions(second);
+    for (const template of rest) templateSanitizeOptions(template);
+    expect(templateSanitizeOptions(oldest)).toBe(kept);
+  });
+
+  it('evicts the least recently used template beyond it, not the oldest', () => {
+    const kept = templateSanitizeOptions(oldest);
+    const evicted = templateSanitizeOptions(second);
+    for (const template of rest) templateSanitizeOptions(template);
+    // Full. A hit on `oldest` leaves `second` as the least recently used.
+    expect(templateSanitizeOptions(oldest)).toBe(kept);
+    templateSanitizeOptions('<li>{{overflow}}</li>');
+    expect(templateSanitizeOptions(oldest)).toBe(kept);
+    expect(templateSanitizeOptions(second)).not.toBe(evicted);
   });
 });

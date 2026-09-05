@@ -124,9 +124,11 @@ describe('the dev watcher covers the directory, not just the config file', () =>
     expect(await readFile(out, 'utf8')).not.toContain('subtitle');
 
     await writeFile(join(root, 'collections/posts.ts'), POSTS_CHANGED, 'utf8');
-    const regenerated = await until(async () => (await readFile(out, 'utf8')).includes('subtitle'));
+    // The file lands before the plugin logs it; waiting on the file alone
+    // read the log a tick too early on Node 26.
+    const regenerated = await until(() => log.info.length > 1);
     expect(regenerated).toBe(true);
-    expect(log.info.length).toBeGreaterThan(1);
+    expect(await readFile(out, 'utf8')).toContain('subtitle');
   }, 30_000);
 
   it('ignores its own output and files it does not parse, so it never loops', async () => {

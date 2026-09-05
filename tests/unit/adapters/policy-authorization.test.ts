@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  assertStrictConfiguration,
-  createPreviewPolicy,
-  inlineScriptConfig,
-  resolvePolicyOptions,
-  type PreviewAuthorizationHookResult,
-} from '@adapters/shared/policy';
+import { createPreviewPolicy, type PreviewAuthorizationHookResult } from '@adapters/shared/policy';
+import { inlineScriptConfig, resolvePolicyOptions } from '@adapters/shared/policy-options';
+import { assertStrictConfiguration } from '@adapters/shared/strict';
 import { resetDevWarnings } from '@adapters/shared/dev-warning';
 import {
   authorizePreviewRequest,
@@ -226,6 +222,17 @@ describe('strict', () => {
     expect(() =>
       assertStrictConfiguration({ authorizePreview: hook, allowedOrigins: ['http://admin.local'] }),
     ).not.toThrow();
+  });
+
+  it('accepts https admin origins in production, which is the configuration strict exists for', () => {
+    process.env['NODE_ENV'] = 'production';
+    expect(() =>
+      assertStrictConfiguration({
+        authorizePreview: hook,
+        allowedOrigins: ['https://admin.example.com', 'https://cms.example.com:8443'],
+      }),
+    ).not.toThrow();
+    process.env['NODE_ENV'] = 'development';
   });
 
   it('refuses an admin origin that is not a URL at all', () => {

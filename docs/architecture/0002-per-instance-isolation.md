@@ -13,6 +13,7 @@ Every stateful primitive is now a class:
 - `EventEmitter`, `PluginManager`, `OriginDetector`, `HeartbeatTimer`, `ConnectionState`, `ElementCache`, `ObserverManager`, `UpdateScheduler`, `LivePreviewRuntime`, `LivePreviewClient`.
 
 Runtime, event, plugin, field-renderer-layer, and cache state remains per instance.
+The sanitizer policy is per instance as well: `sanitizerPolicy` travels from the client configuration or the inline script through `RuntimeOptions` into every renderer's `RenderContext`, and no runtime writes the module-level default — `setSanitizerPolicy()` remains the process-wide default only for direct `sanitizeHtml()` callers and for a render context without a policy (see `tests/integration/client-sanitizer-policy.test.ts`).
 Two deliberate module-scope exceptions coordinate shared DOM effects through DOM-keyed `WeakMap`
 leases: the built-in highlight plugin leases its style element and active highlight
 class, while the accessibility announcer leases one live region and its clear timer

@@ -9,7 +9,7 @@ import type { CachedElement } from '@core/types';
 export interface SchedulerApplication {
   readonly element: number;
   readonly value: number;
-  readonly identity: MessageRevision;
+  readonly revision: MessageRevision;
 }
 
 export interface SchedulerModel {
@@ -46,10 +46,10 @@ export function createSchedulerReal(): SchedulerReal {
   const scheduler = new UpdateScheduler(
     (update) => {
       const element = elements.indexOf(update.target.element as HTMLElement);
-      if (element < 0 || update.identity === undefined || typeof update.value !== 'number') {
+      if (element < 0 || update.revision === undefined || typeof update.value !== 'number') {
         throw new Error('scheduler model received an invalid application');
       }
-      applied.push({ element, value: update.value, identity: update.identity });
+      applied.push({ element, value: update.value, revision: update.revision });
     },
     {
       debounceMs: 1_000_000,
@@ -68,20 +68,20 @@ export function assertSchedulerState(model: SchedulerModel, real: SchedulerReal)
 }
 
 export class AcceptSchedulerRevision implements Command<SchedulerModel, SchedulerReal> {
-  constructor(private readonly identity: MessageRevision) {}
+  constructor(private readonly revision: MessageRevision) {}
 
   check(_model: Readonly<SchedulerModel>): boolean {
     return true;
   }
 
   run(model: SchedulerModel, real: SchedulerReal): void {
-    real.scheduler.acceptRevision(this.identity);
+    real.scheduler.acceptRevision(this.revision);
     if (
       model.active === null ||
-      (!sameIdentity(this.identity, model.active) &&
-        compareIdentity(this.identity, model.active) >= 0)
+      (!sameIdentity(this.revision, model.active) &&
+        compareIdentity(this.revision, model.active) >= 0)
     ) {
-      model.active = this.identity;
+      model.active = this.revision;
       model.cancelled = false;
       model.pending.clear();
     }
@@ -89,20 +89,20 @@ export class AcceptSchedulerRevision implements Command<SchedulerModel, Schedule
   }
 
   toString(): string {
-    return `accept(${this.identity.generation}:${this.identity.revision})`;
+    return `accept(${this.revision.generation}:${this.revision.revision})`;
   }
 }
 
 export class CancelSchedulerRevision implements Command<SchedulerModel, SchedulerReal> {
-  constructor(private readonly identity: MessageRevision) {}
+  constructor(private readonly revision: MessageRevision) {}
 
   check(_model: Readonly<SchedulerModel>): boolean {
     return true;
   }
 
   run(model: SchedulerModel, real: SchedulerReal): void {
-    real.scheduler.cancelRevision(this.identity);
-    if (sameIdentity(this.identity, model.active)) {
+    real.scheduler.cancelRevision(this.revision);
+    if (sameIdentity(this.revision, model.active)) {
       model.cancelled = true;
       model.pending.clear();
     }
@@ -110,13 +110,13 @@ export class CancelSchedulerRevision implements Command<SchedulerModel, Schedule
   }
 
   toString(): string {
-    return `cancel(${this.identity.generation}:${this.identity.revision})`;
+    return `cancel(${this.revision.generation}:${this.revision.revision})`;
   }
 }
 
 export class ScheduleValue implements Command<SchedulerModel, SchedulerReal> {
   constructor(
-    private readonly identity: MessageRevision,
+    private readonly revision: MessageRevision,
     private readonly element: number,
     private readonly value: number,
   ) {}
@@ -132,21 +132,21 @@ export class ScheduleValue implements Command<SchedulerModel, SchedulerReal> {
       target,
       value: this.value,
       allFields: {},
-      identity: this.identity,
+      revision: this.revision,
     };
     real.scheduler.schedule(update);
-    if (!model.cancelled && sameIdentity(this.identity, model.active)) {
+    if (!model.cancelled && sameIdentity(this.revision, model.active)) {
       model.pending.set(this.element, {
         element: this.element,
         value: this.value,
-        identity: this.identity,
+        revision: this.revision,
       });
     }
     assertSchedulerState(model, real);
   }
 
   toString(): string {
-    return `schedule(${this.identity.generation}:${this.identity.revision},${String(this.element)},${String(this.value)})`;
+    return `schedule(${this.revision.generation}:${this.revision.revision},${String(this.element)},${String(this.value)})`;
   }
 }
 

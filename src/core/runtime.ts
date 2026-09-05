@@ -11,7 +11,6 @@ import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from './lifecycle';
 import type { FragmentStrategy, RouteStrategy } from './strategies';
 import { OriginDetector } from '@detection/origin';
-import { setSanitizerPolicy } from '@security/sanitizer';
 import { isInPreviewContext, isInIframe, isInPopup } from '@detection/environment';
 import { bindNavigationLifecycle } from './navigation-lifecycle';
 import { VERSION } from '../version';
@@ -98,7 +97,6 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
           route: __LIVE_PREVIEW_FRAGMENT__.createRouteStrategy(),
         }
       : undefined;
-  setSanitizerPolicy(sanitizerPolicy);
 
   const detector = new OriginDetector({
     additionalOrigins,
@@ -146,6 +144,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     scopeBindingsByOwner,
     skipUnchanged,
     revealEditedField,
+    sanitizerPolicy,
     ...(strategies !== undefined ? { strategies } : {}),
     onHeartbeatTimeout: () => {
       detector.unlockOrigin();

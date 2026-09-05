@@ -8,6 +8,7 @@ import { morphElement, OWNED_ATTRIBUTE } from '@core/morph';
 import { KEY_ATTRIBUTE } from '@core/structural-applier';
 import { parseDependencyList } from '@core/dependencies';
 import { FRAGMENT_ATTRIBUTE, type RouteContext, type RouteStrategy } from '@core/strategies';
+import { errorMessage, linkedTimeout } from './abort';
 import { FRAGMENT_KEY_ATTRIBUTE } from './boundary';
 
 const STRATEGY_ATTRIBUTE = 'data-payload-strategy';
@@ -125,17 +126,14 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
       const live = options.document ?? document;
       const where = options.location ?? location;
       const view = options.window ?? window;
-      const controller = new AbortController();
-      const onAbort = (): void => {
-        controller.abort();
-      };
-      context.signal.addEventListener('abort', onAbort, { once: true });
-      const timer = setTimeout(() => {
-        controller.abort();
-      }, timeoutMs);
+      const timeout = linkedTimeout(context.signal, timeoutMs);
       const failure = (error: unknown): 'failed' | 'superseded' => {
         if (context.signal.aborted) return 'superseded';
-        context.log('LP0801', error instanceof Error ? error.message : String(error));
+        // A timeout surfaces as an AbortError whose text differs per browser.
+        const detail = timeout.timedOut()
+          ? `route refresh timed out after ${String(timeoutMs)} ms`
+          : errorMessage(error);
+        context.log('LP0801', detail);
         return 'failed';
       };
       try {
@@ -146,7 +144,7 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
             credentials: 'same-origin',
             cache: 'no-store',
             headers: { accept: 'text/html', [ROUTE_REFRESH_HEADER]: 'route' },
-            signal: controller.signal,
+            signal: timeout.signal,
           });
         } catch (error) {
           return failure(error);
@@ -180,8 +178,7 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
           return failure(error);
         }
       } finally {
-        clearTimeout(timer);
-        context.signal.removeEventListener('abort', onAbort);
+        timeout.dispose();
       }
     },
   };

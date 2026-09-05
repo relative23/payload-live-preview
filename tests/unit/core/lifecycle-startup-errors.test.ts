@@ -4,6 +4,24 @@ import { LivePreviewRuntime } from '@core/lifecycle';
 import { TRUSTED, fireMessage, flushMicrotasks, textRenderer } from './lifecycle-harness';
 
 describe('LivePreviewRuntime — error handling during startup and teardown', () => {
+  it('refuses to construct without a document and names the option to pass', () => {
+    vi.stubGlobal('document', undefined);
+    try {
+      expect(
+        () =>
+          new LivePreviewRuntime({
+            renderers: { text: textRenderer() },
+            originMatcher: (origin) => origin === TRUSTED,
+            readyTargets: [TRUSTED],
+            emitter: new EventEmitter(),
+            sendReady: () => undefined,
+          }),
+      ).toThrow('LivePreviewRuntime: no document; pass options.root');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('contains a later ready-retry failure and keeps the runtime operational', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     const emitter = new EventEmitter();

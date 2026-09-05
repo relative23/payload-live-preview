@@ -7,7 +7,10 @@ import {
   authorizePreviewRequest,
   type PreviewAuthorizationStrategy,
 } from '@security/preview-authorization';
+import type { PreviewAuthorization } from '@security/preview-verdict';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
+import { runAuthorizeHook } from '@adapters/shared/authorize-hook';
+import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import {
   FRAGMENT_PROTOCOL_VERSION,
   FRAGMENT_VERSION_HEADER,
@@ -53,8 +56,17 @@ export type FragmentRenderer = (
 export interface FragmentEndpointOptions {
   /** The only things this endpoint can render. */
   readonly registry: FragmentRegistry;
-  /** How a preview request is authorized; the same strategies as `authorizePreviewRequest()`. */
-  readonly authorize: PreviewAuthorizationStrategy;
+  /**
+   * The middleware's `authorizePreview` hook — same type, same rules: a
+   * context `authorizePreviewRequest()` produced authorizes, anything else
+   * refuses, a `PreviewConfigurationError` is loud. It is called with the
+   * page request the fragment belongs to (route, search, and this request's
+   * headers), so a token stays bound to its route and a session is the
+   * visitor's own. One of `authorizePreview` and `authorize` is required.
+   */
+  readonly authorizePreview?: NonNullable<PreviewAdapterOptions['authorizePreview']>;
+  /** A strategy for `authorizePreviewRequest()`, when there is no hook to share. Exclusive with `authorizePreview`. */
+  readonly authorize?: PreviewAuthorizationStrategy;
   /** Override the renderer (tests, other component systems). Default: Astro container. */
   readonly render?: FragmentRenderer;
   /** Origins besides the page's own that may call the endpoint. Default: none. */
@@ -95,19 +107,36 @@ interface ContainerLike {
 
 let containerPromise: Promise<ContainerLike> | undefined;
 
-/** The default renderer: Astro's container, created once per process. */
+async function createContainer(): Promise<ContainerLike> {
+  const specifier = 'astro/container';
+  const astro = (await import(/* @vite-ignore */ specifier)) as {
+    experimental_AstroContainer: { create: () => Promise<unknown> };
+  };
+  return (await astro.experimental_AstroContainer.create()) as ContainerLike;
+}
+
+/**
+ * One container per process, shared by the requests that arrive while it is
+ * being created. A creation that failed is forgotten rather than kept: cached,
+ * one bad start would answer every later fragment request with the same error.
+ */
+function loadContainer(): Promise<ContainerLike> {
+  if (containerPromise === undefined) {
+    const pending = createContainer();
+    containerPromise = pending;
+    pending.catch(() => {
+      if (containerPromise === pending) containerPromise = undefined;
+    });
+  }
+  return containerPromise;
+}
+
+/** The default renderer: Astro's container. */
 async function renderWithContainer(
   component: AstroComponentLike,
   props: Record<string, unknown>,
 ): Promise<string> {
-  containerPromise ??= (async () => {
-    const specifier = 'astro/container';
-    const astro = (await import(/* @vite-ignore */ specifier)) as {
-      experimental_AstroContainer: { create: () => Promise<unknown> };
-    };
-    return (await astro.experimental_AstroContainer.create()) as ContainerLike;
-  })();
-  const container = await containerPromise;
+  const container = await loadContainer();
   return container.renderToString(component, { props });
 }
 
@@ -157,10 +186,34 @@ function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
   });
 }
 
+type FragmentAuthorizer = (pageRequest: Request) => Promise<PreviewAuthorization>;
+
+/** One authorizer from the two options: the hook decides as it does in the middleware, a strategy as `authorizePreviewRequest()` does. */
+function authorizerFor(options: FragmentEndpointOptions): FragmentAuthorizer {
+  const { authorize, authorizePreview } = options;
+  if (authorizePreview !== undefined && authorize !== undefined) {
+    throw new Error(
+      'payload-live-preview: createFragmentEndpoint() takes `authorizePreview` or `authorize`, ' +
+        'not both — pass the middleware hook as `authorizePreview`, or a strategy as `authorize`.',
+    );
+  }
+  if (authorizePreview !== undefined) {
+    return (pageRequest) => runAuthorizeHook(() => authorizePreview(pageRequest));
+  }
+  if (authorize !== undefined) {
+    return (pageRequest) => authorizePreviewRequest(pageRequest, authorize);
+  }
+  throw new Error(
+    'payload-live-preview: createFragmentEndpoint() needs `authorizePreview` (the middleware hook) ' +
+      'or `authorize` (a strategy); without one it would render drafts for anyone.',
+  );
+}
+
 /** Build the endpoint; export it as the `POST` of a non-prerendered Astro API route. */
 export function createFragmentEndpoint(
   options: FragmentEndpointOptions,
 ): (context: { readonly request: Request }) => Promise<Response> {
+  const authorize = authorizerFor(options);
   const render = options.render ?? renderWithContainer;
   const allowed = new Set(options.allowedOrigins ?? []);
   const bodyLimit = options.limits?.bodyBytes ?? DEFAULT_BODY_BYTES;
@@ -183,7 +236,7 @@ export function createFragmentEndpoint(
     const pageRequest = new Request(`${origin}${body.route}${body.search}`, {
       headers: request.headers,
     });
-    const authorization = await authorizePreviewRequest(pageRequest, options.authorize);
+    const authorization = await authorize(pageRequest);
     if (!authorization.authorized || !scopeAllows(authorization.context, body)) {
       return refuse(403, 'unauthorized');
     }

@@ -5,6 +5,7 @@
  */
 import { applyTextEdits, parseScript } from './ast';
 import { moveFetchPreviewHelpers } from './codemods/move-fetch-preview-helpers';
+import { renameAdminOriginsOption } from './codemods/rename-admin-origins-option';
 import { renameBindingsAuthorizedOption } from './codemods/rename-bindings-authorized-option';
 import { renameIsPreviewRequest } from './codemods/rename-is-preview-request';
 import { scriptBlocks } from './script-blocks';
@@ -33,8 +34,10 @@ export function importsThisPackage(source: string): boolean {
   return PACKAGE_REFERENCE.test(source);
 }
 
+// The option rename follows the function rename so it sees the new binding.
 const IMPLEMENTATIONS: readonly CodemodImplementation[] = [
   renameIsPreviewRequest,
+  renameAdminOriginsOption,
   renameBindingsAuthorizedOption,
   moveFetchPreviewHelpers,
 ];

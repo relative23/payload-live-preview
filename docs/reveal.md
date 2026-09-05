@@ -1,14 +1,16 @@
 # Reveal the edited section
 
-While editing in the Payload admin, the preview can scroll to the part of the
-page you're writing, so you never lose the section under the cursor. The route
-strategy already brings up the right _page_; this brings up the right _section_.
+While editing in the Payload admin, the preview scrolls to the part of the
+page the editor is writing, so the section under the cursor never gets lost.
+The route strategy brings up the right _page_; this brings up the right
+_section_.
 
-Off by default. Turn it on with one option.
+Off by default. One option turns it on.
 
-## Tier 1 — follow the field you're typing in (no admin changes)
+## Tier 1 — follow the field being typed in (no admin changes)
 
-Set `revealEditedField` on the client/adapter config:
+Set `revealEditedField` on the client, the inline script or any adapter
+([docs/options.md](options.md)):
 
 ```ts
 initLivePreview({
@@ -18,21 +20,21 @@ initLivePreview({
 ```
 
 When a field's value changes, the preview scrolls that field's bound element
-(`[data-payload-field]`) into view. It works with stock Payload — no admin
-component, no protocol change — because "the field whose value changed" is where
-the cursor is.
+(`[data-payload-field]`, see [docs/bindings.md](bindings.md)) into view. It
+works with stock Payload — no admin component, no protocol change — because
+"the field whose value changed" is where the cursor is.
 
 Nested paths work the same way: a binding on `hero.title` or on a field inside
 a block or array is found by its bound path, not only by a top-level field name.
 
 It is deliberately quiet:
 
-- It scrolls only when the target is **off-screen** — a field you can already
-  see is left alone.
+- It scrolls only when the target is **off-screen** — a field the editor can
+  already see is left alone.
 - It reveals only when the **edited field changes**, so typing on in one field
-  never re-scrolls, and scrolling away from the field you're editing is not
+  never re-scrolls, and scrolling away from the field being edited is not
   fought.
-- It honours **`prefers-reduced-motion`** (no smooth-scroll animation then).
+- It honors **`prefers-reduced-motion`** (no smooth-scroll animation then).
 - The first message is a **baseline** — the initial document load never scrolls,
   and neither does a binding that has just appeared on the page.
 - A value too large or too complex to compare (over 64 KB, or cyclic) never
@@ -45,7 +47,7 @@ It is deliberately quiet:
 
 ## Tier 2 — follow the cursor even without typing (opt-in admin helper)
 
-Tier 1 covers writing. To also reveal a field when the editor just moves the
+Tier 1 covers writing. To also reveal a field when the editor only moves the
 cursor into it (no edit), report focus from the admin. This runs in the Payload
 admin, not the preview page:
 
@@ -64,8 +66,8 @@ const report = createPreviewFocusReporter(
 `report(fieldName)` posts a `payload-live-preview-focus` message to the preview;
 the runtime (with `revealEditedField` on) reveals that field with the same
 off-screen / reduced-motion guards. `createPreviewFocusReporter` resolves the
-target per call, so a lazily-created iframe is always addressed freshly, and it
+target per call, so a lazily created iframe is always addressed freshly, and it
 is a no-op while the preview is closed.
 
-`reportPreviewFocus(target, field, origin)` is the one-shot form if you already
-hold the preview window.
+`reportPreviewFocus(target, field, origin)` is the one-shot form for callers
+that already hold the preview window.

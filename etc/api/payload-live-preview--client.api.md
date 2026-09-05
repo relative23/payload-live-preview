@@ -9,13 +9,13 @@ export interface CachedElement {
     readonly altField?: string;
     readonly arraySeparator?: string;
     readonly arrayTemplate?: string;
-    readonly boundary?: boolean;
     readonly dependsOn?: readonly string[];
     readonly element: Element;
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
     readonly fieldType: RendererKey;
     readonly fragmentBoundary?: Element;
+    readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;
     readonly locale?: string;
     readonly owner?: string;
@@ -540,6 +540,7 @@ export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
+    readonly sanitizerPolicy?: SanitizerPolicyMode;
     readonly schema: PayloadFieldSchema | undefined;
 }
 
@@ -576,6 +577,9 @@ export interface RouteStrategy {
     // (undocumented)
     readonly refresh: (context: RouteContext) => Promise<'refreshed' | 'failed' | 'superseded'>;
 }
+
+// @public
+export type SanitizerPolicyMode = 'compat' | 'strict';
 
 // @public (undocumented)
 export interface StrategyHandlers {

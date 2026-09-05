@@ -290,7 +290,7 @@ export class ElementCache {
       ...(owner !== undefined ? { owner } : {}),
       ...(dependsOn.length > 0 ? { dependsOn } : {}),
       ...(strategy !== null && strategy.length > 0 ? { strategy } : {}),
-      ...(element.hasAttribute(BOUNDARY_ATTRIBUTE) ? { boundary: true } : {}),
+      ...(element.hasAttribute(BOUNDARY_ATTRIBUTE) ? { hidesWhenEmpty: true } : {}),
     };
   }
 }

@@ -4,7 +4,7 @@ import { CODEMODS, importsThisPackage, migrateSource } from '@migrate/index';
 const EVERYTHING = [
   "import { isPreviewRequest, createPreviewBindings, fetchPreviewGlobal } from 'payload-live-preview';",
   'export async function load({ request }) {',
-  '  const preview = isPreviewRequest(request);',
+  '  const preview = isPreviewRequest(request, { adminOrigins: [env.ADMIN] });',
   '  const bindings = createPreviewBindings({ authorized: preview });',
   "  const site = await fetchPreviewGlobal({ serverURL: env.CMS, global: 'site', depth: 1, authorization });",
   '  return { site, bindings };',
@@ -32,7 +32,7 @@ describe('migrateSource', () => {
   it('runs every codemod in order and is idempotent', () => {
     const once = migrateSource(EVERYTHING);
     expect(once.edits.map((e) => e.codemod)).toEqual(CODEMODS.map((c) => c.id));
-    expect(once.output).toContain('hasPreviewIntent(request)');
+    expect(once.output).toContain('hasPreviewIntent(request, { allowedOrigins: [env.ADMIN] })');
     expect(once.output).toContain('authorization: preview');
     expect(once.output).toContain(
       "definePreview({ serverURL: env.CMS, depth: 1 }).fetchGlobal({ global: 'site', authorization })",
@@ -112,7 +112,7 @@ describe('migrateSource', () => {
   it('every codemod names a real ledger entry', () => {
     for (const codemod of CODEMODS) {
       expect(codemod.ledgerEntry).toBeGreaterThanOrEqual(1);
-      expect(codemod.ledgerEntry).toBeLessThanOrEqual(12);
+      expect(codemod.ledgerEntry).toBeLessThanOrEqual(13);
       expect(codemod.summary.length).toBeGreaterThan(10);
     }
   });

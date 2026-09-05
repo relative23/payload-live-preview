@@ -108,37 +108,19 @@ Owner: package maintainers. Review these classifications whenever one of the thr
 files changes, and no later than 2026-11-13. A refactor that removes equivalent
 branches is preferable to accumulating ignore annotations.
 
-## Critical Nightly baseline status
+## Critical Nightly baseline
 
-The superseded eight-file risk slice completed uncached in approximately 11 minutes
-10 seconds: 1,811 total, 1,367 killed, 410 survived, 23 without coverage, 11 timed
-out, and no error/ignored mutants (76.09% mutation score; 77.07% covered-code score).
-It omitted files classified as critical by the repository coverage policy,
-including current cache and observer bug-fix surfaces, so it is explicitly not a
-critical-scope baseline.
+The reviewed baseline is `quality/mutation-policy.json`: the exact file scope,
+the mutant total, the minimum score, and the no-coverage, timeout, error and
+ignored maxima. `npm run test:mutation:policy` fails on a regression and on an
+improvement alike until a maintainer ratchets the file, so a scope reduction and
+a better score are both visible review events rather than silent changes to the
+quality contract. Earlier baselines — an eight-file slice, then fourteen files —
+are in this file's Git history; their numbers describe a scope that no longer
+exists.
 
-The first aligned 14-file uncached run completed in 17 minutes 12 seconds after 918
-related tests: 3,626 total, 2,578 killed, 900 survived, 136 without coverage, 11
-timed out, one runtime error, and no ignored mutants (71.42% total; 74.20% covered
-score). The sole error was Stryker's Vitest adapter failing to stringify the
-exception from the mutant that removed the non-element guard at
-`src/core/observers.ts:268`. A deterministic callback regression now kills all
-three mutants in that exact range with zero errors in an 11-second targeted run.
-
-After focused observer, sanitizer, and lifecycle hardening, the final uncached
-14-file run passed its native 70% gate in 13 minutes 27 seconds after 950 related
-tests: 3,623 total, 2,853 killed, 696 survived, 63 without coverage, 11 timed out,
-zero errors, and zero ignored (79.05% total; 80.45% covered score).
-
-The `ready` wire-type regression added a runtime boolean expression and its exact
-minified-artifact assertion. A fresh uncached run after that change completed in
-13 minutes 40 seconds after the same 950 related tests: 3,625 total, 2,854 killed,
-697 survived, 63 without coverage, 11 timed out, zero errors, and zero ignored
-(79.03% total; 80.43% covered score). The remaining no-target/no-origin loop
-elisions are behaviorally equivalent because either loop has no iterations; they
-remain visible rather than being ignored.
-
-`quality/mutation-policy.json` pins that exact file set, total, score, no-coverage,
-timeout, error, and ignored baseline. Both regressions and improvements fail until a
-maintainer consciously ratchets it. This makes scope reduction or a better score
-visible review events rather than silently changing the quality contract.
+The scope is the union `stryker.config.js` builds: every `criticalFiles` entry of
+`quality/coverage-policy.json`, the three PR-profile files and `src/core/a11y.ts`.
+How the baseline is refreshed when a file joins that set is the numbered
+procedure under "Adding a file to `criticalFiles`" in
+[docs/testing.md](../testing.md).

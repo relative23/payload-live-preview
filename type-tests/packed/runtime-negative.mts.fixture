@@ -1,5 +1,9 @@
 import { bind, type FieldRenderer, type LivePreviewClient } from 'payload-live-preview';
-import { livePreview } from 'payload-live-preview/astro';
+import {
+  createFragmentEndpoint,
+  livePreview,
+  type LivePreviewLocals,
+} from 'payload-live-preview/astro';
 import { onRequest } from 'payload-live-preview/astro/middleware-entry';
 import { createLivePreviewMiddleware as createNextMiddleware } from 'payload-live-preview/nextjs';
 import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';
@@ -26,5 +30,15 @@ livePreviewNitroPlugin({ manageCsp: 'nonce-only' });
 buildLivePreviewUrl({});
 // @ts-expect-error -- the Astro middleware entry is not a Request-only handler
 void onRequest(new Request('https://example.com'));
+
+createFragmentEndpoint({
+  registry: {},
+  // @ts-expect-error -- the fragment endpoint's hook is the adapters' callback type, request in
+  authorizePreview: (route: string) => (route ? null : undefined),
+});
+
+declare const locals: LivePreviewLocals;
+// @ts-expect-error -- locals are published by the adapter, never written by a template
+locals.livePreviewNonce = 'nonce';
 
 void invalidRenderer;

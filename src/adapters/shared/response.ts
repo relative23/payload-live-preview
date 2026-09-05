@@ -4,15 +4,9 @@
  */
 
 import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
-import {
-  HTML_CONTENT_TYPE,
-  injectIntoHead,
-  inlineScriptConfig,
-  type PreviewDecision,
-  type PreviewDecisionHooks,
-  type PreviewPolicy,
-  type PreviewPolicyOptions,
-} from './policy';
+import { HTML_CONTENT_TYPE, injectIntoHead } from './html-inject';
+import { inlineScriptConfig, type PreviewPolicyOptions } from './policy-options';
+import type { PreviewDecision, PreviewDecisionHooks, PreviewPolicy } from './policy';
 import type { PreviewAdapterOptions } from './options';
 
 /** The header surface shared by `Headers` and a Node response. */
@@ -88,6 +82,25 @@ export function withHeaders(response: Response, apply: (headers: Headers) => voi
   }
 }
 
+/**
+ * The header side of a decision on any sink: the merged CSP for its mode,
+ * then the cache headers — those also when the mode is off, because an
+ * injected body alone already makes the response private.
+ */
+export function applyCspHeaders(
+  headers: HeaderSink,
+  policy: PreviewPolicy,
+  decision: PreviewDecision,
+  nonce: string,
+): void {
+  const mode = decision.cspMode;
+  if (mode !== false) {
+    const existing = headers.get('content-security-policy') ?? '';
+    headers.set('content-security-policy', policy.csp(existing, nonce, mode));
+  }
+  markUncacheable(headers);
+}
+
 /** Set the merged CSP header for `mode` and mark the response uncacheable. */
 export function withCspHeader(
   response: Response,
@@ -95,13 +108,8 @@ export function withCspHeader(
   decision: PreviewDecision,
   nonce: string,
 ): Response {
-  const mode = decision.cspMode;
   return withHeaders(response, (headers) => {
-    if (mode !== false) {
-      const existing = headers.get('content-security-policy') ?? '';
-      headers.set('content-security-policy', policy.csp(existing, nonce, mode));
-    }
-    markUncacheable(headers);
+    applyCspHeaders(headers, policy, decision, nonce);
   });
 }
 

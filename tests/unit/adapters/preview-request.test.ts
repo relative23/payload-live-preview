@@ -25,8 +25,8 @@ describe('hasPreviewIntent', () => {
     const request = new Request('https://x.test/p', {
       headers: { referer: 'https://cms.example.com/admin/collections/posts/1' },
     });
-    expect(hasPreviewIntent(request, { adminOrigins: ['https://cms.example.com'] })).toBe(true);
-    expect(hasPreviewIntent(request, { adminOrigins: ['https://other.example'] })).toBe(false);
+    expect(hasPreviewIntent(request, { allowedOrigins: ['https://cms.example.com'] })).toBe(true);
+    expect(hasPreviewIntent(request, { allowedOrigins: ['https://other.example'] })).toBe(false);
     expect(hasPreviewIntent(request)).toBe(false);
   });
 
@@ -52,7 +52,7 @@ describe('hasPreviewIntent', () => {
     const request = new Request('https://x.test/p', {
       headers: { referer: 'not a url' },
     });
-    expect(hasPreviewIntent(request, { adminOrigins: ['also not a url'] })).toBe(false);
+    expect(hasPreviewIntent(request, { allowedOrigins: ['also not a url'] })).toBe(false);
   });
 });
 
@@ -67,7 +67,7 @@ describe('hasPreviewIntent — signal restriction', () => {
     expect(
       hasPreviewIntent(iframeLoad, {
         signals: ['query'],
-        adminOrigins: ['https://cms.example.com'],
+        allowedOrigins: ['https://cms.example.com'],
       }),
     ).toBe(false);
     expect(
@@ -85,7 +85,7 @@ describe('hasPreviewIntent — signal restriction', () => {
     expect(
       hasPreviewIntent(fromAdmin, {
         signals: ['referer'],
-        adminOrigins: ['https://cms.example.com'],
+        allowedOrigins: ['https://cms.example.com'],
       }),
     ).toBe(true);
   });
@@ -97,13 +97,59 @@ describe('hasPreviewIntent — a url the URL parser rejects', () => {
     // malformed one must not take the whole request down. The other signals
     // still have to work.
     const bogus = { url: 'not a url', headers: new Headers() } as unknown as Request;
-    expect(() => hasPreviewIntent(bogus, { adminOrigins: [] })).not.toThrow();
-    expect(hasPreviewIntent(bogus, { adminOrigins: [] })).toBe(false);
+    expect(() => hasPreviewIntent(bogus, { allowedOrigins: [] })).not.toThrow();
+    expect(hasPreviewIntent(bogus, { allowedOrigins: [] })).toBe(false);
 
     const iframe = {
       url: '::::',
       headers: new Headers({ 'sec-fetch-dest': 'iframe' }),
     } as unknown as Request;
-    expect(hasPreviewIntent(iframe, { adminOrigins: [] })).toBe(true);
+    expect(hasPreviewIntent(iframe, { allowedOrigins: [] })).toBe(true);
+  });
+});
+
+describe('hasPreviewIntent — allowedOrigins is the name, adminOrigins the 1.x alias', () => {
+  const CMS = 'https://cms.example.com';
+  const OTHER = 'https://other.example';
+  const fromAdmin = () =>
+    new Request('https://x.test/p', { headers: { referer: `${CMS}/admin/collections/posts/1` } });
+
+  // Both spellings must decide identically until the alias goes in 3.0.
+  const spellings = [
+    ['allowedOrigins', { allowedOrigins: [CMS] }, true],
+    ['allowedOrigins, another origin', { allowedOrigins: [OTHER] }, false],
+    ['adminOrigins', { adminOrigins: [CMS] }, true],
+    ['adminOrigins, another origin', { adminOrigins: [OTHER] }, false],
+  ] as const;
+
+  it.each(spellings)(
+    '%s matches the referer like the other spelling',
+    (_label, options, expected) => {
+      expect(hasPreviewIntent(fromAdmin(), options)).toBe(expected);
+      expect(hasPreviewIntent(fromAdmin(), { ...options, signals: ['referer'] })).toBe(expected);
+    },
+  );
+
+  // With both given, only `allowedOrigins` is read — an empty list included.
+  const precedence = [
+    [
+      'allowedOrigins matches, adminOrigins does not',
+      { allowedOrigins: [CMS], adminOrigins: [OTHER] },
+      true,
+    ],
+    [
+      'adminOrigins matches, allowedOrigins does not',
+      { allowedOrigins: [OTHER], adminOrigins: [CMS] },
+      false,
+    ],
+    [
+      'allowedOrigins empty, adminOrigins matches',
+      { allowedOrigins: [], adminOrigins: [CMS] },
+      false,
+    ],
+  ] as const;
+
+  it.each(precedence)('%s → allowedOrigins wins', (_label, options, expected) => {
+    expect(hasPreviewIntent(fromAdmin(), options)).toBe(expected);
   });
 });

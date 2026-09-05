@@ -5,7 +5,7 @@
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { trustedHtml } from '@security/trusted-types';
-import { resolveFieldValue } from './field-value';
+import { bindingValue } from './field-value';
 import { morphElement } from './morph';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
 import type { FragmentContext, FragmentStrategy, RouteStrategy } from './strategies';
@@ -73,7 +73,7 @@ export class StrategyRunner {
     const isCurrent = (): boolean => state.isCurrent(transaction) && !controller.signal.aborted;
     const { emitter } = deps;
     const { message } = transaction;
-    const revision = transaction.identity.revision;
+    const revision = transaction.revision.revision;
     const receivedAt = transaction.receivedAt;
     const context: FragmentContext = {
       root: deps.root,
@@ -170,7 +170,7 @@ export class StrategyRunner {
       deps.log(
         'route',
         'LP0805',
-        `revision ${String(transaction.identity.revision)} asked for a second refresh`,
+        `revision ${String(transaction.revision.revision)} asked for a second refresh`,
       );
       return;
     }
@@ -181,7 +181,7 @@ export class StrategyRunner {
     let outcome: 'refreshed' | 'failed' | 'superseded';
     try {
       outcome = await strategy.refresh({
-        revision: transaction.identity.revision,
+        revision: transaction.revision.revision,
         receivedAt: transaction.receivedAt,
         signal: controller.signal,
         isCurrent,
@@ -212,7 +212,7 @@ export class StrategyRunner {
             // above report themselves in their own `patch` batch.
             updatedCount: deps.cache.elementCount,
             durationMs: Date.now() - transaction.receivedAt,
-            revision: transaction.identity.revision,
+            revision: transaction.revision.revision,
             receivedAt: transaction.receivedAt,
             source: 'route',
           },
@@ -252,18 +252,13 @@ export class StrategyRunner {
     for (const [fieldName, bindings] of this.deps.cache.entries()) {
       for (const target of bindings) {
         if (target.fragmentBoundary !== boundary) continue;
-        const value = resolveFieldValue(
-          data.fields,
-          fieldName,
-          target.locale ?? transaction.locale,
-          target.locale !== undefined,
-        );
+        const value = bindingValue(data.fields, target, fieldName, transaction.locale);
         if (value === undefined) continue;
         this.deps.scheduler.schedule({
           target,
           value: this.host.transform(target, value, data.fields, () => true),
           allFields: data.fields,
-          identity: transaction.identity,
+          revision: transaction.revision,
           data,
         });
       }

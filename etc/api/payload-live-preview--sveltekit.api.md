@@ -4,10 +4,13 @@
 
 ```ts
 
-import { b as PreviewAdapterOptions } from '../../options-CEzzfHJu.js';
+import { L as LivePreviewLocals } from '../../locals-DHAcDRVD.js';
+import { b as PreviewAdapterOptions } from '../../options-Dm3M0ZKq.js';
 
 // @public
 export function livePreviewHandle(options?: LivePreviewSvelteKitOptions): SvelteKitHandle;
+
+export { LivePreviewLocals }
 
 // @public
 export type LivePreviewSvelteKitOptions = PreviewAdapterOptions;
@@ -44,8 +47,8 @@ type SvelteKitResolve = (event: SvelteKitRequestEvent, opts?: ResolveOptions) =>
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/sveltekit/index.d.ts:21:5 - (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
-// dist/adapters/sveltekit/index.d.ts:22:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:22:5 - (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:23:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

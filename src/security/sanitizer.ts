@@ -221,12 +221,20 @@ interface ResolvedPolicy {
 
 let defaultMode: SanitizerPolicyMode = 'strict';
 
-/** Set the policy for calls without an explicit `policy`. The runtime sets it from `sanitizerPolicy`. */
+/**
+ * The process-wide default for calls without an explicit `policy`. A runtime
+ * instance carries its own `sanitizerPolicy` and never writes here (ADR 0002).
+ */
 export function setSanitizerPolicy(mode: SanitizerPolicyMode): void {
   defaultMode = mode;
 }
 
-function resolvePolicy(options: SanitizeOptions | undefined): ResolvedPolicy {
+/** `instancePolicy` sits between a per-call `options.policy` and the process default. */
+function resolvePolicy(
+  options: SanitizeOptions | undefined,
+  instancePolicy: SanitizerPolicyMode | undefined,
+): ResolvedPolicy {
+  const mode = options?.policy ?? instancePolicy ?? defaultMode;
   if (!options) {
     const attrMap = new Map<string, ReadonlySet<string>>();
     for (const [tag, attrs] of Object.entries(ATTR_BY_TAG)) attrMap.set(tag, attrs);
@@ -235,7 +243,7 @@ function resolvePolicy(options: SanitizeOptions | undefined): ResolvedPolicy {
       attrByTag: attrMap,
       allowFormControls: false,
       templateMode: false,
-      mode: defaultMode,
+      mode,
       allowedData: new Set(),
     };
   }
@@ -255,7 +263,7 @@ function resolvePolicy(options: SanitizeOptions | undefined): ResolvedPolicy {
     attrByTag: attrMap,
     allowFormControls: options.allowFormControls === true,
     templateMode: options.templateMode === true,
-    mode: options.policy ?? defaultMode,
+    mode,
     allowedData: new Set((options.allowedDataAttributes ?? []).map((name) => name.toLowerCase())),
   };
 }
@@ -281,15 +289,28 @@ export function setSanitizerDocument(doc: SanitizerDocument | null): void {
  * @throws {SanitizerEnvironmentError} when no DOM is available.
  */
 export function sanitizeHtml(html: string, options?: SanitizeOptions): string {
+  return sanitizeHtmlWithPolicy(html, undefined, options);
+}
+
+/**
+ * The runtime's entry: `policy` is one instance's, applied unless `options`
+ * carry their own, so two clients on a page never share a policy through
+ * this module. Not public — a direct caller has `options.policy`.
+ */
+export function sanitizeHtmlWithPolicy(
+  html: string,
+  policy: SanitizerPolicyMode | undefined,
+  options?: SanitizeOptions,
+): string {
   const doc = resolveDocument();
   if (!doc) throw environmentError();
   if (html === '') return '';
 
-  const policy = resolvePolicy(options);
+  const resolved = resolvePolicy(options, policy);
   const template = doc.createElement('template');
   // The sanitizer's own parse is a sink too: under Trusted Types it needs the policy.
   template.innerHTML = trustedHtml(html);
-  sanitizeFragment(template.content, policy);
+  sanitizeFragment(template.content, resolved);
   return template.innerHTML;
 }
 

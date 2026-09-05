@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { isKnownName, referencesIn } from '../../../scripts/docs-contracts';
+import {
+  brokenLinks,
+  headingSlugs,
+  isKnownName,
+  referencesIn,
+  sizeClaimViolations,
+} from '../../../scripts/docs-contracts';
 
 /**
  * The gate that reads prose. Every other gate reads code, which is why the
@@ -58,5 +64,62 @@ describe('what counts as a known name', () => {
   it('rejects a neighbouring name that merely shares a prefix', () => {
     expect(isKnownName('lp-blockquote', emitted)).toBe(false);
     expect(isKnownName('lp-relations', emitted)).toBe(false);
+  });
+});
+
+describe('heading slugs', () => {
+  it.each([
+    ['## Quick start', 'quick-start'],
+    ['### `pll doctor` and exit codes', 'pll-doctor-and-exit-codes'],
+    [
+      '## Payload 3.x: populated relationships (`serverURL`)',
+      'payload-3x-populated-relationships-serverurl',
+    ],
+    ['# Über  Umlaute', 'über-umlaute'],
+  ])('%s → %s', (heading, slug) => {
+    expect(headingSlugs(`${heading}\n`).has(slug)).toBe(true);
+  });
+
+  it('does not read a comment inside a code fence as a heading', () => {
+    expect(headingSlugs('```sh\n# not a heading\n```\n## Real\n')).toEqual(new Set(['real']));
+  });
+});
+
+describe('links between pages', () => {
+  const pages: Record<string, string> = {
+    'docs/options.md': '## Every option\n',
+    'docs/': '',
+  };
+  const target = (path: string): string | undefined => pages[path];
+
+  it.each([
+    ['a page that exists', '[options](docs/options.md)', 0],
+    ['a heading that exists', '[options](docs/options.md#every-option)', 0],
+    ['a directory', '[docs](docs/)', 0],
+    ['an external URL', '[npm](https://www.npmjs.com/package/x)', 0],
+    ['a link inside a code fence', '```md\n[gone](docs/gone.md)\n```', 0],
+    ['a page that does not exist', '[gone](docs/gone.md)', 1],
+    ['a heading that does not exist', '[options](docs/options.md#nope)', 1],
+    ['an anchor into the same page', '## Here\n[there](#there)', 1],
+    ['a reference-style definition', '[ref]: docs/gone.md', 1],
+  ])('flags %s as expected', (_case, text, count) => {
+    expect(brokenLinks(text, 'README.md', target)).toHaveLength(count);
+  });
+
+  it('names the file and line of a broken link', () => {
+    expect(brokenLinks('\n\n[gone](docs/gone.md)', 'README.md', target)).toEqual([
+      'README.md:3 link to a file that does not exist: docs/gone.md',
+    ]);
+  });
+});
+
+describe('the runtime size claim', () => {
+  it.each([
+    ['matches the budget', 'about 29 KB gzip', 29_035, 0],
+    ['is within a kilobyte', 'about 28 KB gzip', 29_035, 0],
+    ['is stale', 'about 21 KB gzip', 29_035, 1],
+    ['is absent', 'no figure here', 29_035, 0],
+  ])('%s', (_case, text, budget, count) => {
+    expect(sizeClaimViolations(text, 'README.md', budget)).toHaveLength(count);
   });
 });

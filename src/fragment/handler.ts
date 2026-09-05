@@ -12,6 +12,7 @@ import {
   type FragmentRequestBody,
 } from '@/types/fragment-protocol';
 import { definedOnly } from '@/types/defined-only';
+import { errorMessage, linkedTimeout } from './abort';
 import type {
   FragmentBoundary,
   FragmentHandler,
@@ -47,10 +48,6 @@ const SUPERSEDED: FragmentOutcome = { status: 'superseded' };
 
 function failed(code: DiagnosticCode, reason: string): FragmentOutcome {
   return { status: 'failed', code, reason };
-}
-
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 /**
@@ -157,20 +154,11 @@ export function createFragmentHandler(options: FragmentStrategyOptions): Fragmen
       globalSlug: request.globalSlug,
       fields: request.fields,
     });
-    const controller = new AbortController();
-    const onAbort = (): void => {
-      controller.abort();
-    };
-    request.signal.addEventListener('abort', onAbort, { once: true });
-    const state = { timedOut: false };
-    const timer = setTimeout(() => {
-      state.timedOut = true;
-      controller.abort();
-    }, timeoutMs);
+    const timeout = linkedTimeout(request.signal, timeoutMs);
     const failure = (error: unknown): FragmentOutcome => {
       if (superseded()) return SUPERSEDED;
-      if (state.timedOut) return failed('LP0801', `timeout after ${String(timeoutMs)} ms`);
-      return failed('LP0801', message(error));
+      if (timeout.timedOut()) return failed('LP0801', `timeout after ${String(timeoutMs)} ms`);
+      return failed('LP0801', errorMessage(error));
     };
     try {
       let response: Response;
@@ -185,7 +173,7 @@ export function createFragmentHandler(options: FragmentStrategyOptions): Fragmen
             [FRAGMENT_VERSION_HEADER]: String(FRAGMENT_PROTOCOL_VERSION),
           },
           body: JSON.stringify(body),
-          signal: controller.signal,
+          signal: timeout.signal,
         });
       } catch (error) {
         return failure(error);
@@ -203,12 +191,12 @@ export function createFragmentHandler(options: FragmentStrategyOptions): Fragmen
       if (length > maxResponseBytes) return failed('LP0802', 'response exceeds the size limit');
       let text: string | null;
       try {
-        text = await readBoundedText(response, maxResponseBytes, controller.signal);
+        text = await readBoundedText(response, maxResponseBytes, timeout.signal);
       } catch (error) {
         return failure(error);
       }
       if (superseded()) return SUPERSEDED;
-      if (state.timedOut) return failed('LP0801', `timeout after ${String(timeoutMs)} ms`);
+      if (timeout.timedOut()) return failed('LP0801', `timeout after ${String(timeoutMs)} ms`);
       if (text === null) return failed('LP0802', 'response exceeds the size limit');
       let parsed: unknown;
       try {
@@ -224,8 +212,7 @@ export function createFragmentHandler(options: FragmentStrategyOptions): Fragmen
       if (fragment.revision !== request.revision) return SUPERSEDED;
       return { status: 'rendered', html: fragment.html, metadata: fragment.metadata };
     } finally {
-      clearTimeout(timer);
-      request.signal.removeEventListener('abort', onAbort);
+      timeout.dispose();
     }
   }
 

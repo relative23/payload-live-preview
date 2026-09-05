@@ -43,8 +43,10 @@ export class LivePreviewRuntime {
     const { emitter, renderers } = options;
     const log = options.log === undefined ? noopDiagnostic : isolateDiagnostic(options.log);
     const warn = options.warn === undefined ? safeConsoleWarn : isolateDiagnostic(options.warn);
-    const root =
-      options.root ?? (typeof document !== 'undefined' ? document : (null as unknown as Document));
+    const root = options.root ?? (typeof document !== 'undefined' ? document : undefined);
+    // Without a document there is nothing to bind. Failing here names the
+    // option; the alternative is a TypeError from the first DOM read in start().
+    if (root === undefined) throw new Error('LivePreviewRuntime: no document; pass options.root');
     // Bindings inside a hydrated island are the island's business (ADR 0008 §4).
     const cache = new ElementCache({ filter: (element) => !isInsideIsland(element) });
     const observers = new ObserverManager(
@@ -78,8 +80,8 @@ export class LivePreviewRuntime {
       },
     );
     const bus = new MessageBus(options.originMatcher, {
-      onUpdate: (message, origin, identity) => {
-        this.pipeline.handleUpdate(message, origin, identity);
+      onUpdate: (message, origin, revision) => {
+        this.pipeline.handleUpdate(message, origin, revision);
       },
       onDocumentEvent: () => {
         this.state.protocol.observe(['document-events'], log);
@@ -118,6 +120,7 @@ export class LivePreviewRuntime {
       resolveRenderer: options.resolveRenderer ?? ((fieldType) => renderers[fieldType]),
       transformValue: options.transformValue,
       renderRichText: options.renderRichText,
+      sanitizerPolicy: options.sanitizerPolicy,
       root,
       readyTargets:
         typeof options.readyTargets === 'function'
@@ -401,7 +404,7 @@ export class LivePreviewRuntime {
     deps.bus.advanceGeneration();
     const active = state.activeUpdate;
     state.activeUpdate = null;
-    if (active !== null) deps.scheduler.cancelRevision(active.identity);
+    if (active !== null) deps.scheduler.cancelRevision(active.revision);
     deps.merger?.destroy();
     const wasConnected = deps.connection.markDisconnected();
     // Release the origin lock before the disconnect event: a listener may
