@@ -85,10 +85,10 @@
   ],
   "baseline": {
     "total": 7096,
-    "mutationScoreMinimum": 81.74,
+    "mutationScoreMinimum": 82.2,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 45,
-    "noCoverageMaximum": 83,
+    "noCoverageMaximum": 79,
     "timeoutMaximum": 60,
     "errorMaximum": 0,
     "ignoredMaximum": 0
