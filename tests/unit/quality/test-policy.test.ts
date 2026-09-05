@@ -240,7 +240,9 @@ describe('test policy', () => {
 
   it(
     'keeps the committed inventory byte-for-byte reproducible and policy-clean',
-    { timeout: 20_000 },
+    // Parses every test file; under coverage instrumentation on the CI runner
+    // that took 20 s at 250 files, the old budget, and the suite keeps growing.
+    { timeout: 90_000 },
     async () => {
       const { inventory, violations } = await buildTestInventory(ROOT);
       const committed = readFileSync(resolve(ROOT, 'quality/test-inventory.json'), 'utf8');
