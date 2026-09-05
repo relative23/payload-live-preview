@@ -1,5 +1,431 @@
 # payload-live-preview
 
+## 2.0.0
+
+### Major Changes
+
+- b105f2a: Correctness and hardening pass over the whole package for 2.0.
+
+  **Fixes you can observe**
+
+  - Rich text: Payload 3.x link nodes carry their target in `fields`, which the
+    renderer did not read — every link rendered as plain text. Inline blocks and
+    tables render as well.
+  - The keyed morph could consume live elements when the rendered markup began
+    with a comment or indentation the live tree lacked, losing focus and form
+    state in exactly the case the morph exists to protect. An attribute with an
+    empty value (a boolean marker such as `data-payload-island`) is not a key,
+    so sibling markers stop sharing one key, and the morph no longer strips key
+    attributes off the page to disambiguate duplicates.
+  - Focus and selection are restored after a keyed move, which is a remove and
+    re-insert however the node is retained.
+  - Strategies were planned against the whole document on every keystroke
+    instead of the fields that changed, so a page using fragments re-rendered
+    every boundary server-side per keystroke. `dependencies` were silently
+    dropped on the route path.
+  - With `skipUnchanged`, a route refresh reverted every unsaved field except
+    the one being typed in.
+  - `revealEditedField` follows nested bindings (`hero.title`, fields inside
+    blocks and arrays), reveals after the write lands, and never lets a value too
+    large or cyclic to compare claim the reveal from a field that changed. On a
+    page previewing several documents it reveals the edited document's binding
+    rather than the first element that happens to share the field name, and a
+    field the server re-renders behind a `data-payload-fragment` boundary is
+    revealed once that boundary has landed — previously it was never revealed at
+    all, because only patched bindings were considered.
+  - `destroy()` after `suspend()` was a no-op: the screen-reader live region
+    leaked and no `destroy` event was emitted.
+  - The scheduler could postpone a flush indefinitely under key repeat; it
+    flushes within a bounded window.
+  - `pll-codegen` could not follow an imported binding to the module that
+    declares it, so a config split across files produced no types at all. It
+    also refuses to overwrite an existing types file when the schema comes out
+    empty.
+  - `pll migrate` rewrites only identifiers bound by an import from this
+    package, and reports the sites it cannot rewrite instead of leaving a
+    dangling call. `pll doctor` no longer evaluates page-supplied JavaScript,
+    follows redirects, or hangs on an origin that never answers.
+  - Adapters mark every response they change `Cache-Control: private, no-store`
+    with `Vary: Cookie`, refuse to rewrite a null-body status, drop
+    `content-encoding` and `etag` when they rewrite a body, and keep the CSP
+    nonce out of a response header. The SvelteKit handle no longer returns an
+    empty page for a chunk without a `<head>`.
+  - `mergeCspHeader` merges into every policy of a comma-joined header instead
+    of widening the last one, and Nuxt no longer replaces an array-valued CSP
+    header.
+  - `definePreview` reads drafts with `cache: 'no-store'` and can express
+    Payload's `or`/`and` queries.
+  - The fragment and route clients no longer reject when a body read is aborted
+    by a newer revision, and the fragment endpoint must be genuinely
+    same-origin.
+  - A binding that renders a sibling field through `data-payload-href`,
+    `data-payload-src` or `data-payload-alt` is re-applied when that sibling
+    changes. Under `skipUnchanged` only its own value counted, so editing just
+    the URL left the link pointing at the old target while its text updated.
+  - The Nuxt plugin detects preview intent when Nitro reports a relative
+    `event.url`, and sets response headers on the response object rather than
+    through a detached function, which threw on a real Node server.
+
+  **Breaking**
+
+  - The sanitizer's default policy is `strict` everywhere, not only inside the
+    browser runtime. Server-rendered rich text can no longer introduce `id`,
+    `name` or `data-payload-*` attributes. Item templates keep the attributes
+    they need through `SanitizeOptions.templateMode`.
+  - Lexical output uses classes instead of data attributes, which the strict
+    policy strips: `lp-block--<slug>`, `lp-inline-block--<slug>`,
+    `lp-relation--<slug>`, `lp-block-<kind>` for the built-in blocks (callout,
+    image, video, code, cta), and `lp-align-*` / `lp-indent-*` in place of an
+    inline `style`. Block fields are no longer serialized into attributes.
+  - `email` is its own renderer and writes a `mailto:` URL; in 1.x it was an
+    alias of `url`, which turned an address into a relative link.
+  - One value contract for every renderer: an empty value or an unsafe URL
+    clears the binding and counts as a write, rather than leaving the previous
+    link or image in place. `<img>` writes rebuild or remove `srcset`/`sizes`.
+  - Date bindings write local time into `date` and `datetime-local` inputs.
+  - `generateInlineScript({ serverURL })` requires an explicit `mergeDepth`, as
+    the client and the adapters do. The `nonce` option is gone; pass the nonce to
+    `wrapWithScriptTag()`.
+  - Removed: the `NextMiddleware` type and the `checkFetchDest` option.
+  - `payload-live-preview/migrate`: `Codemod` describes a codemod (id, summary,
+    ledger entry) without its `apply`, so importing this entry's types does not
+    require `ts-morph` — an optional peer needed only to _run_ `pll migrate` and
+    `pll-codegen`. `CodemodEdit` reports line-level edits instead of whole file
+    contents, and `pll migrate` exits `3` when a file needs a human.
+  - Added: `PreviewAdapterOptions` on every adapter entry; a configuration error
+    thrown by `authorizePreview` propagates instead of being swallowed as an
+    outage; the authorization outcome on framework locals
+    (`LivePreviewLocals`); `defineLivePreviewServerHandler` for Nuxt, which
+    decides early enough for pages to read the outcome; and
+    `SanitizeOptions.templateMode`.
+
+- c520ff1: 2.0 is secure and explicit by default. The hardened readiness table is the
+  default profile: production response changes require an authorization
+  (`strict`), the intent signal is the query string alone (the `fetch-dest` and
+  `referer` signals are opt-in through `previewSignals`), `allowedOrigins` are
+  required and must be `https:`, referrer trust is off, messages must come from
+  the window that framed or opened the page, unchanged bindings are skipped, and
+  the sanitizer runs in strict mode. `serverURL` requires an explicit
+  `mergeDepth` (`0` for none). `defaults: 'v1'` restores the whole 1.x table on
+  the adapters, the client and the inline script; every row is also an option,
+  so a migration can move one row at a time.
+
+  Removed, with `pll migrate` rewriting each call site:
+
+  - `isPreviewRequest()` — use `hasPreviewIntent()`.
+  - the root `fetchPreviewDocument()` / `fetchPreviewGlobal()` helpers — use
+    `definePreview()` from `payload-live-preview/server`.
+  - `createPreviewBindings({ authorized: boolean })` — pass `{ authorization }`
+    from `authorizePreviewRequest()`.
+
+  The Astro integration's `mode: 'middleware'` refuses to build under `strict`:
+  it serializes its options into the build, so it cannot carry the
+  `authorizePreview` function strict mode requires. Without the check this
+  combination builds cleanly and then answers every preview request with a 500.
+  Register `createLivePreviewMiddleware({ authorizePreview })` in your own Astro
+  middleware instead, or pass `defaults: 'v1'` / `strict: false` for intent-only
+  middleware.
+
+  Migration: run `pll migrate <path>` to rewrite the renamed and moved APIs, and
+  `pll doctor --v2 <url>` to audit a served page against the new defaults.
+  docs/migration.md walks the table row by row with before/after examples.
+
+### Minor Changes
+
+- ee0a3d7: Hybrid preview (ADR 0011, the fragment protocol and its abuse model): a
+  `data-payload-fragment` boundary is rendered by the site's server from the
+  unsaved form state and morphed in with focus and visitor state intact.
+  `createFragmentEndpoint()` on the Astro entry renders only a registry of
+  components, for an authorized preview bound to the page route, from a
+  same-origin JSON POST within body-size and time limits;
+  `payload-live-preview/fragment` is the browser half
+  (`createFragmentStrategy()`), with one revision-bound request per boundary,
+  dedupe, a concurrency cap, timeouts and response validation. A failure
+  patches the boundary from the same revision and reports `LP0801`–`LP0806`; a
+  superseded revision aborts its requests. Adapters take
+  `fragments: { endpoint }`; the injected runtime then carries the fragment
+  client, and a page without it gets the plain runtime.
+
+  The route strategy refreshes the whole route once per revision for head or
+  `data-payload-strategy="route"` bindings — scroll and focus kept, the revision
+  re-applied on the fresh markup, a second request refused with `LP0805`.
+  Strategies are resolved per binding (explicit attribute, fragment boundary,
+  head, patch) and dirty fields are coalesced per boundary and route, the
+  `dependencies` registry included. Events gain `fragmentRender` and
+  `source: 'patch' | 'fragment' | 'route'`; `inspect().fragments` and
+  `inspect().route` report counts. docs/hybrid.md covers the setup.
+
+- 37aca89: Island interoperability. A hydrated island — `astro-island`, or any element
+  marked `data-payload-island` — owns its subtree: the runtime does not patch
+  bindings inside it and the keyed morph never enters it. Instead every applied
+  update is dispatched on each island root as a `payload-live-preview:update`
+  DOM event (`ISLAND_EVENT`; `detail: { fields, revision, receivedAt, locale }`)
+  for the island's own code to apply; islands on Payload's official
+  `useLivePreview` hook need nothing and are left alone.
+  `data-payload-island="patch"` opts an island into patching. Proven in three
+  browsers.
+- 37aca89: Keyed DOM morph for structural updates (ADR 0008, keyed morph: what it keeps,
+  what it never crosses). A changed item keeps its live element and is edited
+  toward the re-rendered markup, so focus, text selection, typed values, scroll
+  position, playback, a visitor-opened `<details>` and the listeners the site
+  attached all survive an update. Children pair by `data-payload-key` /
+  `data-payload-nested-key`, else by position; `open`, `value`, `checked` and
+  `selected` are touched only when the template names them. The morph never
+  enters a custom element, `astro-island`, `data-payload-island`,
+  `contenteditable` or `data-payload-owned` subtree. Missing, duplicate and
+  unstable keys are reported once per container (`LP0404`–`LP0406`) and degrade
+  to positional pairing. Item templates may contain form controls, `<details>`,
+  media and custom elements (`sanitizeHtml(html, { allowFormControls: true })`,
+  used only for author templates — every interpolated value is escaped first).
+  Proven in three browsers; the cost against a plain replace is in
+  docs/benchmarks.md.
+- 37aca89: Conditional and derived markup. `data-payload-depends="price currency"` on a
+  binding declares the fields whose change re-applies it under `skipUnchanged`;
+  it is parsed by the same module the `dependencies` option uses and merged into
+  one map. `data-payload-strategy` names the delivery strategy — `patch`,
+  `fragment` or `route`; an unknown name is left unchanged with `LP0407`.
+  `data-payload-boundary` marks an empty-field anchor: a stable element for a
+  field that may be empty, hidden while empty, shown when filled;
+  `PreviewBoundary.astro` (`payload-live-preview/astro/PreviewBoundary.astro`)
+  renders it. `data-payload-island` and `data-payload-owned` mark subtrees the
+  morph never enters. The Astro `renderLivePreviewScript()` maps its options
+  through the shared adapter policy, so `skipUnchanged`, `scopeBindingsByOwner`
+  and `defaults` reach the inline runtime too.
+- ee0a3d7: Migration tooling for 2.0. `pll migrate <path>` (the codemods live in
+  `payload-live-preview/migrate`) rewrites the 1.x → 2.0 renames and moves from
+  the renames ledger (ADR 0007, 2.0 defaults, migration policy, and the renames
+  ledger): `isPreviewRequest` → `hasPreviewIntent`, the `createPreviewBindings`
+  `authorized` option → `authorization`, the root `fetchPreview*` helpers →
+  `definePreview()` on `payload-live-preview/server`. It touches only
+  identifiers imported from this package and exits `3` when a site needs a
+  human. `pll doctor --v2 <url>` reads a served page's inline configuration and
+  reports each readiness row the page runs at its 1.x value — referrer trust,
+  message source policy, sanitizer policy, `skipUnchanged` — as `LP0709`, each
+  with the option that closes it. docs/migration.md walks the `defaults: 'v2'`
+  table row by row with before/after examples.
+- 2820bbb: Authorized preview context (ADR 0006, authorized preview context: threat model
+  and authorization strategies). `authorizePreviewRequest(request, strategy)`
+  turns a Payload session, a short-lived signed token (`issuePreviewToken`) or a
+  consumer-supplied verifier into one branded `AuthorizedPreviewContext`; a
+  refusal is an outcome, never an exception. Every adapter accepts
+  `authorizePreview`, and a refusal blocks runtime injection, CSP changes and
+  nonce exposure regardless of `autoInject` and `shouldInject`.
+
+  `strict` (default `true`) refuses to start without the hook, without explicit
+  `https:` `allowedOrigins`, or with referrer trust, rather than gating a
+  response on preview intent alone. `defaults: 'v1'` restores intent-only
+  gating, which is announced once per process outside production. The runtime
+  option `eventSourcePolicy: 'parent-or-opener'` (the default) accepts updates
+  only from the window that framed or opened the page; `'any'` is the 1.x
+  behavior.
+
+  `hasPreviewIntent()` is the honest name for what the 1.x `isPreviewRequest()`
+  did — detect intent, not authorize — and replaces it; `isPreviewRequest()` is
+  removed and `pll migrate` rewrites the call sites.
+
+- 422a71b: Protocol capabilities are observed, not assumed (ADR 0010, protocol
+  capabilities are observed, and Payload versions sit behind a profile). Each
+  capability names the behavior it gates and the fallback without it
+  (`CAPABILITY_DECLARATIONS`), and becomes active by an announced protocol
+  version or by observation — the stock Payload admin announces no version, so
+  the runtime reads what it can do off its messages. `inspect().protocol` gains
+  `observed` (the capabilities seen on the wire) and `profile` (`payload-2`,
+  `payload-3` or `unknown`). Payload-version-specific behavior sits behind that
+  profile: a Payload 2.x admin, recognized by the schema it sends, populates
+  relationships itself, so the runtime does not re-merge its data through the
+  REST API. A data update that carries `externallyUpdatedRelationship` fires the
+  `relationshipUpdate` event and re-renders every bound field even under
+  `skipUnchanged`, because a drawer edit changes populated values, not form
+  values.
+- 3c0f1e1: Renderer API and plugin ownership. Renderers may register under namespaced
+  custom keys (`data-payload-type="acme:money"`) without weakening the built-in
+  field-type safety — an un-namespaced unknown type still falls back to the
+  heuristics. `LivePreviewClient` accepts `resolveRenderer(fieldType, target)`
+  for explicit resolution ahead of the registry and `renderRichText` for a
+  project rich-text renderer shared with SSR (its output is sanitized, and a
+  test pins the equivalence with server rendering). Plugins may declare
+  `compat: { runtime, protocol }` and are refused when they do not fit;
+  `inspect().plugins` lists every plugin with its state and live registrations.
+  The ownership contract — ordering, precedence, duplicates, rollback, async
+  destroy, return to baseline over repeated cycles — is under test and
+  documented in docs/renderers.md.
+- 1d5b302: Reveal the edited section in the preview. With `revealEditedField: true`, when
+  a field's value changes the preview scrolls that field's bound element into
+  view, so the section under the editor's cursor is visible without manual
+  scrolling — the route strategy brings up the right page; this brings up the
+  right section. It is conservative by design: it scrolls only when the target
+  is off-screen and only when the edited field changes, honors
+  `prefers-reduced-motion`, and never fights a deliberate manual scroll. Off by
+  default.
+
+  Opt-in admin side: `createPreviewFocusReporter` / `reportPreviewFocus` let a
+  Payload field component report the focused field (a
+  `payload-live-preview-focus` message), so the preview reveals a field the
+  cursor moves into even without typing. docs/reveal.md covers both halves.
+
+- 37aca89: Sanitizer policy and Trusted Types. `sanitizerPolicy: 'strict'`, the default,
+  strips `id` and `name` (DOM clobbering), strips `data-payload-*` (rich text
+  must never add a binding) and passes other `data-*` only when listed in
+  `allowedDataAttributes`; `'compat'` is the 1.x behavior and comes back with
+  `defaults: 'v1'`. Every sanitizer case in the property suite runs under both
+  policies, and mutation-XSS, namespace-transition, malformed-`srcset`,
+  clobbering and extension-collision vectors are pinned.
+
+  Every HTML sink — the sanitizer's own parse and each renderer write — goes
+  through one Trusted Types policy named `payload-live-preview`
+  (`TRUSTED_TYPES_POLICY_NAME`) where the API exists; a site enforcing
+  `require-trusted-types-for 'script'` lists that name or hands in its own
+  policy with `setTrustedTypesPolicy()`.
+
+- 3c0f1e1: `payload-live-preview/server` is the privileged, server-only surface.
+  `definePreview({ serverURL, depth })` binds the Payload origin and **one**
+  population depth shared by the initial read and the runtime merge
+  (`runtimeOptions` spreads into any adapter). Its `fetchDocument()` /
+  `fetchGlobal()` take the authorization — or `null` — as the explicit draft
+  decision, accept an `AbortSignal`, time out, and report failure as a typed
+  result, or throw `PreviewFetchError` under `errorMode: 'throw'`;
+  `onDiagnostic` receives every failure for logs. The subpath re-exports
+  `authorizePreviewRequest`, `issuePreviewToken`, `hasPreviewIntent` and the
+  binding helpers, so a server file imports one thing, and no browser bundle can
+  reach it.
+
+  The root-entry `fetchPreviewDocument()` / `fetchPreviewGlobal()` are removed;
+  `pll migrate` rewrites each call to `definePreview()`.
+
+- 1391439: New option `skipUnchanged`, on by default: a binding whose value is
+  structurally identical to the one it last applied is not scheduled again.
+
+  Every message from the admin carries the whole document, so on a page with
+  many bindings almost every value in a keystroke is unchanged, and rendering it
+  again costs a Lexical pass and a sanitizer pass for nothing. The comparison is
+  canonical JSON, so a fresh object graph per message still matches; a value
+  that cannot be given an identity is always applied; a binding on an element
+  the cache has not written before is always applied; and a write the renderer
+  refused is not remembered, so the next identical message applies it.
+
+  `dependencies` names fields whose change must re-apply other bindings whatever
+  their own value did — `{ price: ['priceLabel'] }`. It is consulted only with
+  `skipUnchanged`.
+
+  Renderers and `elementUpdate` listeners stop seeing repeats, which is
+  observable: `defaults: 'v1'` or `skipUnchanged: false` restores the 1.x
+  behavior. `inspect().revisions.skippedUnchanged` counts the skips. Available
+  on the client, the inline runtime and every adapter; what a keystroke costs
+  with and without it is in docs/benchmarks.md.
+
+- 33ae375: Four focused package entries join `payload-live-preview/core` and
+  `payload-live-preview/server`: `payload-live-preview/client` (the
+  `LivePreviewClient` and `initLivePreview()`), `payload-live-preview/structural`
+  (the structural array renderer, the keyed morph and the dependency helpers),
+  `payload-live-preview/lexical` (the Lexical renderer and its registries) and
+  `payload-live-preview/plugins` (the plugin manager, plugin types and the
+  built-in plugins). Each ships ESM and CommonJS with self-contained
+  declarations and its own API report, and is verified from the packed tarball.
+  The root barrel is unchanged (ADR 0012, package topology and delivery
+  profiles).
+
+### Patch Changes
+
+- 422a71b: The Nuxt adapter accepts `shouldInject`, like the other three. One behavioral
+  suite drives all four adapters through the same cases — injection on preview
+  intent, CSP modes, the one-nonce rule, authorization refusal — which is how
+  the gap was found.
+- bbd8195: The Next.js, SvelteKit, Nuxt and Astro adapters share one preview policy for
+  intent detection, injection, CSP and nonce handling instead of carrying four
+  copies of it. Behavior, options and public exports are unchanged;
+  `shouldInject` is consulted only once preview intent is established.
+- 33ae375: Compatibility claims are what the tests run. The README compatibility table is
+  rendered from the framework versions the fixtures install, and a check fails
+  when the table, a fixture lockfile or the test matrix disagree. The
+  Astro-served browser specs run on Astro 4, 5, 6 and 7, which is the evidence
+  behind the `>=4 <8` peer range (ADR 0009, the Astro peer range is what CI
+  runs). The built adapters and the server entry also execute inside a
+  Web-platform-only context — no `process`, `Buffer` or `node:` modules — so
+  edge compatibility is a passing test rather than a claim.
+- 33ae375: The keyed morph no longer moves a retained element to step around
+  whitespace-only text nodes the template does not render. Markup that keeps
+  its source indentation between elements — Astro 4–6, and most SSR output —
+  made the morph re-insert a focused `<input>`, which blurred it and dropped the
+  selection.
+- ad7ad22: One name and one shape per option, across the adapters, the intent detector
+  and the fragment endpoint:
+
+  - `hasPreviewIntent()` takes `allowedOrigins`, the name the adapters, the
+    client, the inline config and `pll doctor` use. `adminOrigins` is a
+    deprecated alias, removed in 3.0; `allowedOrigins` wins when both are given.
+  - `createFragmentEndpoint()` accepts `authorizePreview` — the page
+    middleware's hook, with the same callback type and the same rules (a context
+    from `authorizePreviewRequest()` authorizes, any other outcome refuses, a
+    configuration error propagates) — called with the page request the fragment
+    belongs to. `authorize` still takes a strategy; giving both throws at
+    construction, naming both.
+  - `LivePreviewLocals`, exported from `./astro`, `./sveltekit` and `./nuxt`,
+    types what the adapters publish on `Astro.locals`, `event.locals` and
+    `event.context` (`livePreviewNonce`, `livePreviewAuthorization`,
+    `livePreviewAuthorizationOutcome`). The adapters write through it, so
+    `interface Locals extends LivePreviewLocals {}` cannot drift from the code.
+
+- ffb6631: Every release installs the published package from the registry and imports
+  every subpath a Node consumer can reach, immediately after publishing.
+
+  Everything before that step reasons about the tarball the release built. This
+  proves the artifact the registry serves: installed by a plain `npm install`
+  into a directory with no workspace, no lockfile and no local build to fall
+  back on, with the optional `ts-morph` peer present so the codegen and migrate
+  entries are exercised rather than failing on a missing package. A release
+  could otherwise be green end to end and still leave an uninstallable package —
+  a file missing from `files`, an export map resolving to nothing, a dependency
+  that only existed locally. A subpath added to the package and not to that
+  check fails the release rather than going untested.
+
+- ad7ad22: The sanitizer policy is per client instance. `sanitizerPolicy` — from the
+  client configuration or the inline script — travels with its runtime into
+  every renderer's `RenderContext` (`context.sanitizerPolicy`), so two clients
+  on one page each sanitize with their own policy, and constructing one no
+  longer changes what the other renders. `setSanitizerPolicy()` remains the
+  process-wide default for code that calls `sanitizeHtml()` directly, and the
+  fallback for a render context without a policy.
+- 33ae375: The root barrel tree-shakes. Importing one symbol from `payload-live-preview`
+  ships that symbol, not the whole bundle, because the three things that
+  defeated a consumer's bundler are gone: esbuild's `keepNames`, whose helper
+  statements cannot be proven pure (name preservation moved to the terser pass
+  with the same public allow-list, so `fn.name` on exported classes and
+  functions is unchanged); minification in esbuild, which stripped the
+  `/* @__PURE__ */` annotations Rollup relies on; and three import-time side
+  effects in the library itself (the built-in renderer table, Lexical node
+  registration, an eager `TextEncoder`). A test bundles one-symbol consumers
+  with Vite against the built package; what one import costs is in
+  docs/benchmarks.md. Bundles are 6–7 % smaller as a side effect; the inline
+  runtime is unchanged.
+- ad7ad22: Polish from the 2.0 readiness pass.
+
+  - `CachedElement.boundary` is renamed `hidesWhenEmpty`: the flag marks a
+    `data-payload-boundary` empty-field anchor that hides itself while its field
+    is empty, and the old name read like a fragment boundary. Only a custom
+    renderer that inspected the flag is affected; TypeScript reports the old
+    name.
+  - Constructing a client without a document fails at once with a message that
+    names the `root` option, instead of a `TypeError` on the first DOM read in
+    `start()`.
+  - A route refresh that outlives its timeout is logged as a timeout
+    (`LP0801 route refresh timed out after N ms`), not as the browser's
+    `AbortError` text.
+  - The per-template sanitizer options cache is bounded (64 entries, least
+    recently used evicted).
+  - `defaults: 'v1'` on `LivePreviewClient` fills every 1.x row
+    (`sanitizerPolicy: 'compat'`, `skipUnchanged: false`, referrer detection on,
+    any event source). Before this fix the client left the config alone and fell
+    through to the runtime's own fallbacks, which are the 2.0 values, so a v1
+    client without explicit values sanitized strictly. The inline script was not
+    affected: the adapters put the v1 rows on the wire.
+
+- 422a71b: A wire corpus: messages captured verbatim from real Payload admins (3.85.0
+  and 3.88.0) are replayed through the runtime in tests and checked by the
+  weekly protocol watch against the official client. The README compatibility
+  table carries one row per capture. The bug report template asks for the
+  update strategy, the authorization mode and the `__livePreview.inspect()`
+  output.
+
 ## 2.0.0-beta.0
 
 Pre-release of 2.0.0. Its changes are listed under 2.0.0.
