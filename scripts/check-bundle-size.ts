@@ -38,36 +38,38 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // type-bound locals writes and the shared CSP helper; migrate.js and
   // doctor-cli.js +~170/+~75 B for the `rename-admin-origins-option` codemod;
   // server.* +~50 B for the entry split into a barrel and `preview.ts`;
-  // index.js brotli lowered towards its measurement. Brotli is not byte-stable
-  // across machines: CI compresses index.* 48–56 B larger than this host, so
-  // the brotli rows keep that much headroom on top of the local figure.
-  'adapters/astro/index.js': { raw: 130_750, gzip: 41_500, brotli: 36_250 },
-  'adapters/astro/middleware-entry.js': { raw: 117_250, gzip: 37_300, brotli: 32_550 },
-  'adapters/nextjs/index.js': { raw: 117_000, gzip: 37_250, brotli: 32_500 },
-  'adapters/nuxt/index.js': { raw: 117_650, gzip: 37_450, brotli: 32_650 },
-  'adapters/sveltekit/index.js': { raw: 116_750, gzip: 37_200, brotli: 32_450 },
+  // index.js brotli lowered towards its measurement. Brotli is not byte-stable:
+  // CI compressed index.js 45 915 and then 45 959 B from byte-identical raw
+  // and gzip output, 56–100 B over this host. Every brotli row therefore keeps
+  // about 120 B over the local figure, still under the 2 % the improvement
+  // hint allows; raw and gzip rows stay tight because they reproduce.
+  'adapters/astro/index.js': { raw: 130_750, gzip: 41_500, brotli: 36_350 },
+  'adapters/astro/middleware-entry.js': { raw: 117_250, gzip: 37_300, brotli: 32_650 },
+  'adapters/nextjs/index.js': { raw: 117_000, gzip: 37_250, brotli: 32_600 },
+  'adapters/nuxt/index.js': { raw: 117_650, gzip: 37_450, brotli: 32_750 },
+  'adapters/sveltekit/index.js': { raw: 116_750, gzip: 37_200, brotli: 32_550 },
   'codegen-astro.js': { raw: 12_950, gzip: 4_550, brotli: 4_100 },
   'codegen-cli.js': { raw: 14_550, gzip: 5_000, brotli: 4_500 },
   'codegen.cjs': { raw: 12_450, gzip: 4_250, brotli: 3_860 },
   'codegen.js': { raw: 12_300, gzip: 4_250, brotli: 3_850 },
-  'doctor-cli.js': { raw: 32_750, gzip: 12_000, brotli: 10_650 },
+  'doctor-cli.js': { raw: 32_750, gzip: 12_000, brotli: 10_750 },
   'doctor.js': { raw: 13_100, gzip: 5_500, brotli: 4_750 },
-  'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_250 },
-  'core.cjs': { raw: 111_700, gzip: 34_950, brotli: 30_500 },
-  'core.js': { raw: 111_200, gzip: 34_900, brotli: 30_400 },
-  'index.cjs': { raw: 232_050, gzip: 71_800, brotli: 46_950 },
-  'index.js': { raw: 231_450, gzip: 71_950, brotli: 45_950 },
+  'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
+  'core.cjs': { raw: 111_700, gzip: 34_950, brotli: 30_600 },
+  'core.js': { raw: 111_200, gzip: 34_900, brotli: 30_500 },
+  'index.cjs': { raw: 232_050, gzip: 71_800, brotli: 47_050 },
+  'index.js': { raw: 231_450, gzip: 71_950, brotli: 46_100 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
   'payload.js': { raw: 1_080, gzip: 575, brotli: 515 },
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
-  'server.cjs': { raw: 12_000, gzip: 4_450, brotli: 4_000 },
-  'server.js': { raw: 11_850, gzip: 4_400, brotli: 4_000 },
-  'client.cjs': { raw: 106_600, gzip: 33_200, brotli: 28_950 },
-  'client.js': { raw: 106_550, gzip: 33_150, brotli: 28_950 },
-  'structural.cjs': { raw: 18_600, gzip: 6_500, brotli: 5_900 },
-  'structural.js': { raw: 18_600, gzip: 6_500, brotli: 5_900 },
+  'server.cjs': { raw: 12_000, gzip: 4_450, brotli: 4_050 },
+  'server.js': { raw: 11_850, gzip: 4_400, brotli: 4_050 },
+  'client.cjs': { raw: 106_600, gzip: 33_200, brotli: 29_050 },
+  'client.js': { raw: 106_550, gzip: 33_150, brotli: 29_000 },
+  'structural.cjs': { raw: 18_600, gzip: 6_500, brotli: 5_950 },
+  'structural.js': { raw: 18_600, gzip: 6_500, brotli: 5_950 },
   'lexical.cjs': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
   'lexical.js': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
   'plugins.cjs': { raw: 15_550, gzip: 5_650, brotli: 5_000 },
