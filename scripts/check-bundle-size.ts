@@ -38,7 +38,9 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // type-bound locals writes and the shared CSP helper; migrate.js and
   // doctor-cli.js +~170/+~75 B for the `rename-admin-origins-option` codemod;
   // server.* +~50 B for the entry split into a barrel and `preview.ts`;
-  // index.js brotli lowered to the measured 45 859.
+  // index.js brotli lowered towards its measurement. Brotli is not byte-stable
+  // across machines: CI compresses index.* 48–56 B larger than this host, so
+  // the brotli rows keep that much headroom on top of the local figure.
   'adapters/astro/index.js': { raw: 130_750, gzip: 41_500, brotli: 36_250 },
   'adapters/astro/middleware-entry.js': { raw: 117_250, gzip: 37_300, brotli: 32_550 },
   'adapters/nextjs/index.js': { raw: 117_000, gzip: 37_250, brotli: 32_500 },
@@ -53,8 +55,8 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_250 },
   'core.cjs': { raw: 111_700, gzip: 34_950, brotli: 30_500 },
   'core.js': { raw: 111_200, gzip: 34_900, brotli: 30_400 },
-  'index.cjs': { raw: 232_050, gzip: 71_800, brotli: 46_850 },
-  'index.js': { raw: 231_450, gzip: 71_950, brotli: 45_900 },
+  'index.cjs': { raw: 232_050, gzip: 71_800, brotli: 46_950 },
+  'index.js': { raw: 231_450, gzip: 71_950, brotli: 45_950 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
