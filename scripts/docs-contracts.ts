@@ -13,7 +13,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { INLINE_BUDGET } from './bundle-budgets';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
@@ -218,11 +218,12 @@ export function sizeClaimViolations(text: string, file: string, gzipBudget: numb
 function linkTarget(from: string): (path: string) => string | undefined {
   return (path) => {
     const full = resolve(dirname(from), path);
-    // One read, no existence check first: the file is the answer, or it is not.
+    // One read and nothing before it: the file is the answer, a directory
+    // says so itself, and anything else is a broken link.
     try {
-      return statSync(full).isDirectory() ? '' : readFileSync(full, 'utf8');
-    } catch {
-      return undefined;
+      return readFileSync(full, 'utf8');
+    } catch (error) {
+      return (error as NodeJS.ErrnoException).code === 'EISDIR' ? '' : undefined;
     }
   };
 }
