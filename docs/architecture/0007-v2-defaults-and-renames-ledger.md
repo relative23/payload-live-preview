@@ -8,9 +8,9 @@
 only a safe release if every 2.0 default already exists in 1.x as an opt-in,
 is tested in both modes, and has a mechanical migration. A migration tool
 written from memory at 2.0 time would miss the small renames; this record is
-the ledger it is generated from instead. The 1.9.0 readiness audit in the
-private roadmap lists the defaults; this file lists the _changes_, one entry
-each, in the order they landed.
+the ledger it is generated from instead. The 1.9.0 readiness audit fixed the
+defaults; this file lists the _changes_, one entry each, in the order they
+landed.
 
 ## Decision
 
@@ -58,11 +58,14 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 10  | 1.2.0   | default | `mergeDepth ?? 1` in the runtime and `depth ?? 1` in the fetch helpers, independently                     | `definePreview({ depth })` is required and feeds both; the 2.0 runtime default (`0` or explicit) is decided from measured consumer depths, not yet flipped by `'v2'`                       | merge depth `0` or explicit                               | add `depth` to `definePreview`; spread `runtimeOptions` into the adapter                                      |
 | 11  | 1.3.0   | default | sanitizer `'compat'`: `id` and every `data-*` pass                                                        | `sanitizerPolicy: 'strict'` under `'v2'`: `id`, `name` and `data-payload-*` stripped, other `data-*` by `allowedDataAttributes`; Trusted Types policy `payload-live-preview` at every sink | hardened sanitizer `id`/`data-*` policy                   | add `sanitizerPolicy: 'compat'` where rich text relies on `id` or `data-*`; list the CSP `trusted-types` name |
 | 12  | 1.4.0   | range   | Astro peer `>=4.0.0 <8.0.0`, with 4, 5, 6 and 7 each run in CI (ADR 0009)                                 | unchanged under `'v2'`; 2.0 narrows the range to the majors the CI matrix still runs at release time                                                                                       | the tested majors only                                    | upgrade Astro to a major in the compatibility table before 2.0                                                |
+| 13  | 2.0.0   | rename  | `hasPreviewIntent(request, { adminOrigins })`                                                             | `{ allowedOrigins }` — the name the adapters, the client, the inline config and `pll doctor` use; `adminOrigins` stays a deprecated alias until 3.0 and loses when both are given          | —                                                         | `rename-admin-origins-option` rewrites the key; both keys at once is a conflict, not a rewrite                |
+| 14  | 2.0.0   | rename  | `CachedElement.boundary`                                                                                  | `CachedElement.hidesWhenEmpty` — the `data-payload-boundary` anchor that hides while its field is empty; the old name read like a fragment boundary                                        | —                                                         | none: a type-level rename that TypeScript reports; only a custom renderer that read the flag is affected      |
 
 ## Addendum — what `pll migrate` automates
 
-Three ledger entries have codemods: 1 (`rename-is-preview-request`), 7
-(`rename-bindings-authorized-option`) and 9 (`move-fetch-preview-helpers`).
+Four ledger entries have codemods: 1 (`rename-is-preview-request`), 7
+(`rename-bindings-authorized-option`), 9 (`move-fetch-preview-helpers`) and 13
+(`rename-admin-origins-option`).
 The rest are "flag it", not "rewrite it": their new form needs a value only the
 consumer has (an authorization verdict, a considered `depth`), so the tool would
 have to invent one.

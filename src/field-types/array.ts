@@ -4,7 +4,7 @@
  * without one, items are joined by `data-payload-array-separator`.
  */
 
-import { sanitizeHtml } from '@security/sanitizer';
+import { sanitizeHtmlWithPolicy } from '@security/sanitizer';
 import { trustedHtml } from '@security/trusted-types';
 import { interpolateArrayTemplate } from '@core/array-template';
 import { markNoWriteCallback } from '@core/internal-outcome';
@@ -14,7 +14,7 @@ import { isEmptyValue, safeStringify } from './utils';
 
 const arrayRenderer: FieldRenderer = {
   name: 'array',
-  render: /* @__PURE__ */ markNoWriteCallback((target, value) => {
+  render: /* @__PURE__ */ markNoWriteCallback((target, value, context) => {
     const element = target.element;
     if (isEmptyValue(value)) {
       element.textContent = '';
@@ -24,7 +24,9 @@ const arrayRenderer: FieldRenderer = {
     const template = target.arrayTemplate;
     if (template !== undefined && template.length > 0) {
       const html = renderTemplate(template, value);
-      element.innerHTML = trustedHtml(sanitizeHtml(html, templateSanitizeOptions(template)));
+      const policy = context.sanitizerPolicy;
+      const templateOptions = templateSanitizeOptions(template);
+      element.innerHTML = trustedHtml(sanitizeHtmlWithPolicy(html, policy, templateOptions));
       return;
     }
     element.textContent = value.map(safeStringify).join(target.arraySeparator ?? ', ');

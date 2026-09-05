@@ -1,15 +1,17 @@
 # ADR 0011 — The fragment protocol and its abuse model
 
-**Status:** accepted, 2026-08-27. The roadmap's "ADR 0005 (fragment protocol
-and abuse model)"; 0005 was taken by plugin ownership.
+**Status:** Accepted • **Date:** 2026-08-27
+
+Planned as "ADR 0005 (fragment protocol and abuse model)" before that number
+was taken by plugin ownership.
 
 ## Context
 
 Patching (ADR 0008) brings unsaved form state into server-rendered HTML
 without a reload, as long as the markup that shows a field already exists.
 It cannot create a section a template renders only when a field is set,
-compute a derived value, or run a component's own logic. The roadmap's
-hybrid preview asks the real component renderer to do that for one
+compute a derived value, or run a component's own logic. The hybrid preview
+planned for 1.7.0 asks the real component renderer to do that for one
 boundary at a time — which means a browser asking a server to render
 something from request-controlled data, on behalf of an editor. That is
 the part that needs a threat model before an endpoint.
@@ -86,7 +88,7 @@ service); the docs say so.
 
 - No unsigned query-only fragment endpoint: authorization is mandatory.
 - No generalisation to other frameworks' endpoints before the Astro one has
-  run against a real admin in three engines (roadmap 1.7.0 gates). The
+  run against a real admin in three engines (the 1.7.0 release gates). The
   client option `fragments` is framework-neutral because the policy engine
   is; only the Astro endpoint helper exists.
 - The morph never crosses an island: a boundary inside `astro-island` or

@@ -8,7 +8,7 @@
 
 ## Checklist
 
-- [ ] `npm run check` passes (typecheck + lint + tests)
+- [ ] `npm run check` passes (typecheck, lint, formatting, test/architecture policy, compat table, Vitest)
 - [ ] Changeset added (`npx changeset`) if published behavior changed
 - [ ] Tests added/updated for behavior changes (security-sensitive changes have tests in `tests/unit/security`)
 - [ ] Docs updated (`docs/`, README) if public API or behavior changed

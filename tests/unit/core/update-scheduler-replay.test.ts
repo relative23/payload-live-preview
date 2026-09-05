@@ -144,7 +144,7 @@ describe('UpdateScheduler — offscreen replay queue', () => {
     scheduler.acceptRevision(first);
     scheduler.schedule({
       ...update(entry(document.createElement('p')), 'obsolete'),
-      identity: first,
+      revision: first,
     });
 
     scheduler.flushNow();
@@ -172,7 +172,7 @@ describe('UpdateScheduler — offscreen replay queue', () => {
     scheduler.acceptRevision(first);
     scheduler.schedule({
       ...update(entry(document.createElement('p')), 'obsolete'),
-      identity: first,
+      revision: first,
     });
 
     scheduler.flushNow();

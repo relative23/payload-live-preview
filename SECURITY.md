@@ -2,10 +2,11 @@
 
 ## Supported versions
 
-| Version            | Supported              |
-| ------------------ | ---------------------- |
-| 1.x                | Yes                    |
-| < 1.0 (alpha/beta) | Latest prerelease only |
+| Version            | Supported                             |
+| ------------------ | ------------------------------------- |
+| 2.x                | Yes                                   |
+| 1.x                | Security fixes only, until 2026-12-04 |
+| < 1.0 (alpha/beta) | No                                    |
 
 ## Reporting a vulnerability
 

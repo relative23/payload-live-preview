@@ -39,6 +39,7 @@ const ATTR_ESCAPE_PATTERN = /[&<>"']/g;
 /** Escape a value for a *quoted* HTML attribute, leaving URL characters intact; it validates no scheme, so run `isSafeUrl()` on `href`/`src` first. */
 export function escapeHtmlAttribute(value: string): string {
   if (value === '') return '';
+  // The character class and the map are coupled: every match is a key.
   // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
   return value.replace(ATTR_ESCAPE_PATTERN, (char) => ATTR_ESCAPES[char] as string);
 }

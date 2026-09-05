@@ -17,6 +17,7 @@
  */
 
 import type { SanitizeOptions } from '@security/sanitizer';
+import { lruGet, lruSet } from './lru';
 
 const TEMPLATE_EXTRA_TAGS: readonly string[] = [
   'input',
@@ -59,11 +60,16 @@ const TEMPLATE_EXTRA_ATTRIBUTES: readonly string[] = [
 ];
 
 const CUSTOM_TAG_PATTERN = /<([a-z][a-z0-9]*(?:-[a-z0-9]+)+)\b/gi;
+
+// 64 like the intl cache: more than a page declares, and a nested template is
+// interpolated with its parent's, so an outer value or `{{index}}` that lands
+// in it mints a key per item and per keystroke (ADR 0003 §3).
+export const TEMPLATE_CACHE_LIMIT = 64;
 const optionsByTemplate = new Map<string, SanitizeOptions>();
 
 /** Options for one template; memoised per template string. */
 export function templateSanitizeOptions(template: string): SanitizeOptions {
-  const cached = optionsByTemplate.get(template);
+  const cached = lruGet(optionsByTemplate, template);
   if (cached !== undefined) return cached;
   const tags = new Set(TEMPLATE_EXTRA_TAGS);
   for (const match of template.matchAll(CUSTOM_TAG_PATTERN)) {
@@ -78,6 +84,5 @@ export function templateSanitizeOptions(template: string): SanitizeOptions {
     allowFormControls: true,
     templateMode: true,
   };
-  optionsByTemplate.set(template, options);
-  return options;
+  return lruSet(optionsByTemplate, template, options, TEMPLATE_CACHE_LIMIT);
 }

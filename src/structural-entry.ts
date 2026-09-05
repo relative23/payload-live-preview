@@ -45,3 +45,5 @@ export type {
 export type { ArrayPatch } from './schema/diff';
 // `CachedElement.strategyKind` is typed with it, so this entry must name it too.
 export type { UpdateSource } from './core/strategies';
+// `RenderContext.sanitizerPolicy` names it, so the entry has to as well.
+export type { SanitizerPolicyMode } from './security';

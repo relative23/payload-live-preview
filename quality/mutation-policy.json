@@ -19,9 +19,13 @@
     }
   },
   "scope": [
+    "src/adapters/shared/authorize-hook.ts",
+    "src/adapters/shared/html-inject.ts",
+    "src/adapters/shared/policy-options.ts",
     "src/adapters/shared/policy.ts",
     "src/adapters/shared/preview-request.ts",
     "src/adapters/shared/response.ts",
+    "src/adapters/shared/strict.ts",
     "src/core/a11y.ts",
     "src/core/array-template.ts",
     "src/core/attribute-binding.ts",
@@ -37,6 +41,7 @@
     "src/core/islands.ts",
     "src/core/lifecycle.ts",
     "src/core/loader.ts",
+    "src/core/lru.ts",
     "src/core/message-bus.ts",
     "src/core/message-guards.ts",
     "src/core/morph.ts",
@@ -45,6 +50,7 @@
     "src/core/orphan-diagnostics.ts",
     "src/core/protocol-tracker.ts",
     "src/core/protocol-version.ts",
+    "src/core/reveal-ledger.ts",
     "src/core/reveal.ts",
     "src/core/runtime-state.ts",
     "src/core/runtime.ts",
@@ -60,6 +66,7 @@
     "src/detection/locale.ts",
     "src/detection/origin.ts",
     "src/events/emitter.ts",
+    "src/fragment/abort.ts",
     "src/fragment/boundary.ts",
     "src/fragment/gate.ts",
     "src/fragment/handler.ts",
@@ -73,14 +80,15 @@
     "src/security/preview-token.ts",
     "src/security/sanitizer.ts",
     "src/security/trusted-types.ts",
-    "src/security/url-validator.ts"
+    "src/security/url-validator.ts",
+    "src/types/merge-depth.ts"
   ],
   "baseline": {
-    "total": 7101,
-    "mutationScoreMinimum": 81.38,
+    "total": 7096,
+    "mutationScoreMinimum": 82.2,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 45,
-    "noCoverageMaximum": 85,
+    "noCoverageMaximum": 79,
     "timeoutMaximum": 60,
     "errorMaximum": 0,
     "ignoredMaximum": 0

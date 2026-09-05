@@ -5,15 +5,15 @@
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { usesNoWriteOutcome } from './internal-outcome';
-import type { MessageRevision } from './message-bus';
+import { type MessageRevision, sameRevision } from './message-bus';
 import type { CachedElement } from './types';
 
 export interface ScheduledUpdate {
   readonly target: CachedElement;
   readonly value: unknown;
   readonly allFields: Record<string, unknown>;
-  /** Revision identity; runtime-produced entries always carry one. */
-  readonly identity?: MessageRevision | undefined;
+  /** Revision revision; runtime-produced entries always carry one. */
+  readonly revision?: MessageRevision | undefined;
   readonly data?: PayloadLivePreviewData | undefined;
   /** `valueIdentity(value)`, computed once by the pipeline for skip and reveal. */
   readonly valueIdentity?: string | undefined;
@@ -45,7 +45,7 @@ export interface FlushStats {
   readonly appliedFields: readonly string[];
   readonly deferred: number;
   readonly durationMs: number;
-  readonly identity?: MessageRevision;
+  readonly revision?: MessageRevision;
   readonly data?: PayloadLivePreviewData;
 }
 
@@ -57,7 +57,7 @@ interface BufferEntry {
   target: CachedElement;
   value: unknown;
   allFields: Record<string, unknown>;
-  identity: MessageRevision | undefined;
+  revision: MessageRevision | undefined;
   data: PayloadLivePreviewData | undefined;
   valueIdentity: string | undefined;
 }
@@ -81,7 +81,7 @@ export class UpdateScheduler {
   private deadlineTimer: ReturnType<typeof setTimeout> | null = null;
   private frameHandle: number | null = null;
   private frameToken = 0;
-  private activeIdentity: MessageRevision | null = null;
+  private activeRevision: MessageRevision | null = null;
   private activeRevisionCancelled = false;
 
   constructor(apply: ApplyUpdate, options: UpdateSchedulerOptions) {
@@ -112,15 +112,17 @@ export class UpdateScheduler {
 
   /** Queue a write; a later write for the same element replaces it until the flush. */
   schedule(update: ScheduledUpdate): void {
-    if (update.identity !== undefined) {
+    if (update.revision !== undefined) {
       if (this.activeRevisionCancelled) return;
-      if (!sameIdentity(update.identity, this.activeIdentity)) return;
+      if (this.activeRevision === null || !sameRevision(update.revision, this.activeRevision)) {
+        return;
+      }
     }
     const existing = this.pending.get(update.target.element);
     if (existing) {
       existing.value = update.value;
       existing.allFields = update.allFields;
-      existing.identity = update.identity;
+      existing.revision = update.revision;
       existing.data = update.data;
       existing.valueIdentity = update.valueIdentity;
     } else {
@@ -128,7 +130,7 @@ export class UpdateScheduler {
         target: update.target,
         value: update.value,
         allFields: update.allFields,
-        identity: update.identity,
+        revision: update.revision,
         data: update.data,
         valueIdentity: update.valueIdentity,
       });
@@ -137,21 +139,21 @@ export class UpdateScheduler {
   }
 
   /**
-   * Make `identity` the sole revision allowed to schedule, flush or replay.
+   * Make `revision` the sole revision allowed to schedule, flush or replay.
    * Older buffered work is dropped even if the new revision is later cancelled.
    */
-  acceptRevision(identity: MessageRevision): void {
-    if (sameIdentity(identity, this.activeIdentity)) return;
-    if (this.activeIdentity !== null && compareIdentity(identity, this.activeIdentity) < 0) return;
+  acceptRevision(revision: MessageRevision): void {
+    if (this.activeRevision !== null && sameRevision(revision, this.activeRevision)) return;
+    if (this.activeRevision !== null && compareRevision(revision, this.activeRevision) < 0) return;
     this.cancelScheduledWork();
     this.clearWork();
-    this.activeIdentity = identity;
+    this.activeRevision = revision;
     this.activeRevisionCancelled = false;
   }
 
   /** Cancel buffered work for exactly one revision without reviving its predecessor. */
-  cancelRevision(identity: MessageRevision): void {
-    if (!sameIdentity(identity, this.activeIdentity)) return;
+  cancelRevision(revision: MessageRevision): void {
+    if (this.activeRevision === null || !sameRevision(revision, this.activeRevision)) return;
     this.cancelScheduledWork();
     this.clearWork();
     this.activeRevisionCancelled = true;
@@ -202,7 +204,7 @@ export class UpdateScheduler {
   destroy(): void {
     this.cancelScheduledWork();
     this.clearWork();
-    this.activeIdentity = null;
+    this.activeRevision = null;
     this.activeRevisionCancelled = false;
   }
 
@@ -307,8 +309,10 @@ export class UpdateScheduler {
 
   private isCurrent(entry: BufferEntry): boolean {
     return (
-      entry.identity === undefined ||
-      (!this.activeRevisionCancelled && sameIdentity(entry.identity, this.activeIdentity))
+      entry.revision === undefined ||
+      (!this.activeRevisionCancelled &&
+        this.activeRevision !== null &&
+        sameRevision(entry.revision, this.activeRevision))
     );
   }
 
@@ -347,7 +351,7 @@ export class UpdateScheduler {
       appliedFields,
       deferred,
       durationMs,
-      ...(entry?.identity !== undefined ? { identity: entry.identity } : {}),
+      ...(entry?.revision !== undefined ? { revision: entry.revision } : {}),
       ...(entry?.data !== undefined ? { data: entry.data } : {}),
     };
   }
@@ -373,11 +377,7 @@ export class UpdateScheduler {
   }
 }
 
-function sameIdentity(a: MessageRevision, b: MessageRevision | null): boolean {
-  return b !== null && a.generation === b.generation && a.revision === b.revision;
-}
-
-function compareIdentity(a: MessageRevision, b: MessageRevision): number {
+function compareRevision(a: MessageRevision, b: MessageRevision): number {
   if (a.generation !== b.generation) return a.generation - b.generation;
   return a.revision - b.revision;
 }

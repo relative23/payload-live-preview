@@ -6,7 +6,7 @@
 
 import { generateInlineScript, generateLoaderScript } from '@inline/generator';
 import { loaderAsset } from './loader-asset';
-import { inlineScriptConfig } from '@adapters/shared/policy';
+import { inlineScriptConfig } from '@adapters/shared/policy-options';
 import type { LivePreviewAstroOptions } from './types';
 
 // Local shims keep `astro` a runtime-optional peer.

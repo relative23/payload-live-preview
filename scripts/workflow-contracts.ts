@@ -320,8 +320,11 @@ async function main(): Promise<void> {
     await readWorkflowSources(resolve(import.meta.dirname, '..')),
   );
   if (violations.length > 0) {
+    // The message names the expectations because a reader of the failure is
+    // usually looking at the workflow, not at the file that pins its shape.
     throw new Error(
-      `workflow contracts failed:\n${violations.map((violation) => `- ${violation}`).join('\n')}`,
+      `workflow contracts failed:\n${violations.map((violation) => `- ${violation}`).join('\n')}\n` +
+        'The reviewed shape is scripts/workflow-expectations*.ts; a workflow change is mirrored there in the same commit.',
     );
   }
   console.log(

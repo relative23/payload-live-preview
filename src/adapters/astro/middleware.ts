@@ -6,13 +6,14 @@
 
 import { createPreviewPolicy } from '@adapters/shared/policy';
 import { applyDecision, bindDecisionHooks } from '@adapters/shared/response';
-import { exposeDecision, NONCE_LOCALS_KEY } from '@adapters/shared/locals';
+import { exposeDecision, exposeNonce } from '@adapters/shared/locals';
 import type { LivePreviewAstroOptions } from './types';
 
 export {
   AUTHORIZATION_LOCALS_KEY,
   AUTHORIZATION_OUTCOME_LOCALS_KEY,
   NONCE_LOCALS_KEY,
+  type LivePreviewLocals,
 } from '@adapters/shared/locals';
 
 // Local shims keep `astro` a runtime-optional peer; the runtime signature matches.
@@ -36,7 +37,7 @@ export function createLivePreviewMiddleware(
   return async (context, next) => {
     const nonce = policy.nonce();
     if (context.isPrerendered === true) {
-      context.locals[NONCE_LOCALS_KEY] = nonce;
+      exposeNonce(context.locals, nonce);
       return next();
     }
     const decision = await policy.decide(

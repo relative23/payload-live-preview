@@ -139,6 +139,19 @@ describe('reveal on admin focus (tier 2)', () => {
     expect(scrolled).toEqual(['body']);
   });
 
+  it('does nothing for a focus message that names a field with no binding', async () => {
+    start(true);
+    await post({ title: 'a', body: 'b' });
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: 'payload-live-preview-focus', field: 'missing' },
+        origin: TRUSTED,
+      }),
+    );
+    await new Promise((r) => setTimeout(r, 20));
+    expect(scrolled).toEqual([]);
+  });
+
   it('ignores focus messages when the option is off', async () => {
     start(false);
     window.dispatchEvent(

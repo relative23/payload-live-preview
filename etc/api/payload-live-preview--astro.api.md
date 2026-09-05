@@ -4,16 +4,20 @@
 
 ```ts
 
-import { A } from '../../options-CEzzfHJu.js';
-import { a } from '../../options-CEzzfHJu.js';
-import { c as createLivePreviewMiddleware } from '../../middleware-CEPsY1P7.js';
-import { h as hasPreviewIntent } from '../../options-CEzzfHJu.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-CEPsY1P7.js';
-import { a as LivePreviewMiddleware } from '../../middleware-CEPsY1P7.js';
-import { P } from '../../options-CEzzfHJu.js';
-import { b as PreviewAdapterOptions } from '../../options-CEzzfHJu.js';
-import { c as PreviewRequestLike } from '../../options-CEzzfHJu.js';
-import { d as PreviewRequestOptions } from '../../options-CEzzfHJu.js';
+import { A } from '../../options-Dm3M0ZKq.js';
+import { a } from '../../options-Dm3M0ZKq.js';
+import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-DHAcDRVD.js';
+import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-DHAcDRVD.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-B6QILkql.js';
+import { h as hasPreviewIntent } from '../../options-Dm3M0ZKq.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-B6QILkql.js';
+import { L as LivePreviewLocals } from '../../locals-DHAcDRVD.js';
+import { a as LivePreviewMiddleware } from '../../middleware-B6QILkql.js';
+import { N as NONCE_LOCALS_KEY } from '../../locals-DHAcDRVD.js';
+import { P } from '../../options-Dm3M0ZKq.js';
+import { b as PreviewAdapterOptions } from '../../options-Dm3M0ZKq.js';
+import { c as PreviewRequestLike } from '../../options-Dm3M0ZKq.js';
+import { d as PreviewRequestOptions } from '../../options-Dm3M0ZKq.js';
 
 // @public
 export type AstroComponentLike = object;
@@ -50,11 +54,9 @@ export interface AstroIntegrationLike {
     readonly name: string;
 }
 
-// @public
-export const AUTHORIZATION_LOCALS_KEY = "livePreviewAuthorization";
+export { AUTHORIZATION_LOCALS_KEY }
 
-// @public
-export const AUTHORIZATION_OUTCOME_LOCALS_KEY = "livePreviewAuthorizationOutcome";
+export { AUTHORIZATION_OUTCOME_LOCALS_KEY }
 
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (context: {
@@ -93,7 +95,8 @@ type FetchLike = (input: string, init: {
 export interface FragmentEndpointOptions {
     readonly allowedOrigins?: readonly string[];
     // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationStrategy" needs to be exported by the entry point index.d.ts
-    readonly authorize: PreviewAuthorizationStrategy;
+    readonly authorize?: PreviewAuthorizationStrategy;
+    readonly authorizePreview?: NonNullable<PreviewAdapterOptions['authorizePreview']>;
     // (undocumented)
     readonly limits?: {
         readonly bodyBytes?: number;
@@ -147,10 +150,11 @@ export function livePreview(options?: LivePreviewAstroOptions): AstroIntegration
 
 export { LivePreviewAstroOptions }
 
+export { LivePreviewLocals }
+
 export { LivePreviewMiddleware }
 
-// @public
-export const NONCE_LOCALS_KEY = "livePreviewNonce";
+export { NONCE_LOCALS_KEY }
 
 // @public (undocumented)
 interface PayloadSessionStrategy {
@@ -308,10 +312,10 @@ interface VitePluginLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/astro/index.d.ts:29:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:29:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:48:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:59:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:30:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:30:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:49:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:60:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

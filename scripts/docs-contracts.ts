@@ -11,8 +11,10 @@
  */
 
 import { readdir, readFile } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { INLINE_BUDGET } from './bundle-budgets';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 
@@ -139,6 +141,93 @@ export function setupSnippetViolations(text: string, file: string): string[] {
   return violations;
 }
 
+/** GitHub's heading slugs: lower case, punctuation dropped, spaces to hyphens; fenced code is not a heading. */
+export function headingSlugs(text: string): Set<string> {
+  const slugs = new Set<string>();
+  let fenced = false;
+  for (const line of text.split('\n')) {
+    if (line.startsWith('```')) fenced = !fenced;
+    if (fenced) continue;
+    const heading = /^#{1,6}\s+(.+?)\s*#*\s*$/u.exec(line);
+    if (heading === null) continue;
+    const slug = (heading[1] ?? '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '')
+      .trim()
+      .replace(/\s+/gu, '-');
+    slugs.add(slug);
+  }
+  return slugs;
+}
+
+/**
+ * Relative links between pages, with their heading anchors. A restructuring
+ * moves sections between files, and a link to a page or heading that no longer
+ * exists fails only for the reader who follows it. External URLs are not
+ * fetched; a link inside a code fence is a snippet, not a link.
+ */
+export function brokenLinks(
+  text: string,
+  file: string,
+  target: (path: string) => string | undefined,
+): string[] {
+  const violations: string[] = [];
+  const prose = text.replace(/```[\s\S]*?```/gu, (block) => block.replace(/[^\n]/gu, ' '));
+  const links = [
+    ...prose.matchAll(/\]\(([^)\s]+)(?:\s+"[^"]*")?\)/gu),
+    ...prose.matchAll(/^\[[^\]]+\]:\s*(\S+)/gmu),
+  ];
+  for (const link of links) {
+    const raw = link[1] ?? '';
+    if (/^[a-z][a-z0-9+.-]*:/iu.test(raw)) continue;
+    const [path, anchor] = raw.split('#', 2);
+    const body = path === '' || path === undefined ? text : target(path);
+    const line = prose.slice(0, link.index).split('\n').length;
+    if (body === undefined) {
+      violations.push(`${file}:${String(line)} link to a file that does not exist: ${raw}`);
+      continue;
+    }
+    if (
+      anchor !== undefined &&
+      anchor !== '' &&
+      !headingSlugs(body).has(decodeURIComponent(anchor))
+    ) {
+      violations.push(`${file}:${String(line)} link to a heading that does not exist: ${raw}`);
+    }
+  }
+  return violations;
+}
+
+/**
+ * The README states the runtime's transfer size once. It drifted from 21 KB to
+ * 29 KB without anyone noticing, so the claim is held to the release gate's
+ * budget within a kilobyte.
+ */
+export function sizeClaimViolations(text: string, file: string, gzipBudget: number): string[] {
+  const claims = [...text.matchAll(/about (\d+) KB gzip/gu)];
+  const expected = Math.round(gzipBudget / 1024);
+  return claims
+    .filter((claim) => Math.abs(Number(claim[1]) - expected) > 1)
+    .map((claim) => {
+      const line = text.slice(0, claim.index).split('\n').length;
+      return `${file}:${String(line)} says about ${claim[1] ?? ''} KB gzip, the budget is ${String(expected)} KB`;
+    });
+}
+
+/** Resolve a link relative to the page that carries it; a directory counts as a page too. */
+function linkTarget(from: string): (path: string) => string | undefined {
+  return (path) => {
+    const full = resolve(dirname(from), path);
+    // One read and nothing before it: the file is the answer, a directory
+    // says so itself, and anything else is a broken link.
+    try {
+      return readFileSync(full, 'utf8');
+    } catch (error) {
+      return (error as NodeJS.ErrnoException).code === 'EISDIR' ? '' : undefined;
+    }
+  };
+}
+
 async function main(): Promise<void> {
   const pkg = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
     exports: Record<string, unknown>;
@@ -165,8 +254,7 @@ async function main(): Promise<void> {
   };
 
   const violations: string[] = [];
-  // The README carries the quickstarts, so it is checked with the rest.
-  const files = [...(await docFiles()), resolve(ROOT, 'README.md')];
+  const files = await docFiles();
   for (const file of files) {
     const text = await readFile(file, 'utf8');
     const name = relative(ROOT, file);
@@ -175,6 +263,14 @@ async function main(): Promise<void> {
       violations.push(`${ref.file}:${String(ref.line)} unknown ${ref.kind} "${ref.name}"`);
     }
     violations.push(...setupSnippetViolations(text, name));
+    violations.push(...brokenLinks(text, name, linkTarget(file)));
+    if (name === 'README.md') {
+      violations.push(...sizeClaimViolations(text, name, INLINE_BUDGET.gzip));
+    }
+  }
+  for (const extra of ['CONTRIBUTING.md', 'examples/README.md', 'tests/README.md']) {
+    const file = resolve(ROOT, extra);
+    violations.push(...brokenLinks(await readFile(file, 'utf8'), extra, linkTarget(file)));
   }
 
   if (violations.length > 0) {

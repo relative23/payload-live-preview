@@ -1,7 +1,7 @@
-# Renderers, transforms and plugins
+# Renderers, events and plugins
 
-What a renderer receives, how it is chosen, what it writes, and what a plugin
-owns.
+What a renderer receives, how it is chosen, what it writes, which events the
+client emits, and what a plugin owns.
 
 ## What a renderer receives: raw, populated, transformed
 
@@ -36,8 +36,34 @@ Resolution order for an element:
 3. The built-in renderer for the resolved type.
 
 The type itself comes from `data-payload-type` when set, else from the
-admin's field schema, else from tag heuristics (`<img>` → image, `<a>` → url,
-`data-payload-richtext` → richText, …).
+admin's field schema, else from element heuristics (`<img>` → `image`,
+`<a>` → `url`, `data-payload-richtext` → `richText`, …); the full list is in
+[docs/bindings.md](bindings.md).
+
+### Registering a renderer
+
+A plugin registers renderers in `init`. Registering under a built-in name
+layers over that built-in for this client:
+
+```ts
+import { LivePreviewClient } from 'payload-live-preview';
+
+const client = new LivePreviewClient({ allowedOrigins: ['https://admin.example.com'] });
+await client.use({
+  name: 'currency',
+  init: (ctx) => {
+    ctx.registerFieldRenderer({
+      name: 'text',
+      render: (target, value) => {
+        target.element.textContent = new Intl.NumberFormat('de-AT', {
+          style: 'currency',
+          currency: 'EUR',
+        }).format(Number(value));
+      },
+    });
+  },
+});
+```
 
 ### Custom renderer keys
 
@@ -45,13 +71,13 @@ A project renderer registers under a **namespaced** key —
 `data-payload-type="acme:money"` selects the renderer named `acme:money`.
 The namespace is what keeps built-in safety intact: an un-namespaced unknown
 type such as `richtext` (lowercase) is treated as what it is, a typo, and the
-element falls back to the heuristics as it always has. Keys match
+element falls back to the heuristics. Keys match
 `^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$`.
 
 ```ts
 client.use({
   name: 'acme-renderers',
-  compat: { runtime: '>=1.2.0' },
+  compat: { runtime: '>=2.0.0' },
   init(ctx) {
     ctx.registerFieldRenderer({
       name: 'acme:money',
@@ -89,9 +115,6 @@ What "clears" means per renderer:
 | `structural-array`                                         | Every keyed item removed                                           |
 | `text`, `textarea`, `number`, `date`, `select`, `checkbox` | The control reset (`value = ''`, `checked = false`)                |
 
-`tests/unit/field-types/value-semantics.test.ts` pins the table renderer by
-renderer, under an explicit sanitizer policy.
-
 ### Responsive images
 
 Setting `src` alone leaves a server-rendered `srcset` winning, so the
@@ -110,10 +133,10 @@ carries a scheme is used as written.
 
 ## Class hooks the renderers emit
 
-The 2.0 sanitizer strips `data-*` and `style` under both policies, so the
-Lexical renderers express everything through classes. Nothing is
-JSON-serialised into an attribute. Style these, or replace the node with
-`registerLexicalNode` / `registerBlockRenderer`.
+The sanitizer strips `data-*` and `style` under both policies, so the Lexical
+renderers express everything through classes. Nothing is JSON-serialized into
+an attribute. Style these, or replace the node with `registerLexicalNode` /
+`registerBlockRenderer` from `payload-live-preview/lexical`.
 
 | Class                                                               | Emitted by                                                                                |
 | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
@@ -131,14 +154,13 @@ other character becomes `-`, so a slug can never escape the class attribute.
 
 Alignment and indent are classes, not inline CSS — the sanitizer removes
 `style` under both policies, so a `style="text-align:center"` would never
-reach the page. `resolveAlignment(node)` and `resolveIndent(node)` stay
-public for a custom node renderer that wants the same values.
+reach the page.
 
 ### The sanitizer adds `target="_blank"` itself
 
 An anchor whose `href` is an external `http(s)` URL leaves the sanitizer with
 `rel="noopener noreferrer"`, and with `target="_blank"` unless the markup
-already set a `target`. This applies to every sanitised write — a CMS link
+already set a `target`. This applies to every sanitized write — a CMS link
 inside rich text, a plugin renderer's HTML, an array template — so a link
 that must open in the same tab needs an explicit `target="_self"`.
 
@@ -149,7 +171,8 @@ preview to produce exactly that markup, not the package's default. Pass the
 renderer to the client:
 
 ```ts
-import { lexicalToHtml, registerLexicalNode, sanitizeHtml } from 'payload-live-preview';
+import { lexicalToHtml, sanitizeHtml, type LexicalRoot } from 'payload-live-preview';
+import { registerLexicalNode } from 'payload-live-preview/lexical';
 
 registerLexicalNode(
   'callout',
@@ -162,11 +185,9 @@ export const renderRichText = (value: unknown) => lexicalToHtml(value as Lexical
 ```
 
 The runtime passes the renderer's output through the sanitizer. Sanitize the
-server output with the same `sanitizeHtml()` and the two are byte-equal —
-`tests/unit/core/renderer-api.test.ts` pins that equivalence for one
-document with a custom node. The inline runtime (adapters) cannot carry a
-function; `renderRichText` is a `LivePreviewClient` / `initLivePreview`
-option.
+server output with the same `sanitizeHtml()` and the two are byte-equal. The
+inline runtime (adapters) cannot carry a function; `renderRichText` is a
+`LivePreviewClient` / `initLivePreview` option.
 
 ### Custom Lexical nodes and the sanitizer
 
@@ -175,19 +196,46 @@ In the browser the runtime sanitizes the whole rendered document, so a
 custom node cannot introduce a script or an event handler however it is
 written. On the server `lexicalToHtml` sanitizes when a sanitizer document
 was set (`setSanitizerDocument()` with linkedom or jsdom); **without one it
-returns the HTML as rendered and warns once**, because silently unsanitised
+returns the HTML as rendered and warns once**, because silently unsanitized
 output is the worse failure. The built-in nodes escape their own output;
-custom nodes are responsible for theirs — see [security.md](security.md) §3.
+custom nodes are responsible for theirs — see [docs/security.md](security.md).
 Pass `{ sanitize: false }` when the caller sanitizes downstream itself; that
 opts out of the warning too.
 
 The built-in nodes read the shapes `@payloadcms/richtext-lexical` actually
-serialises, not vanilla Lexical's: a link is
+serializes, not vanilla Lexical's: a link is
 `{ type: 'link', fields: { linkType, url, newTab, doc } }` (an `internal`
 link needs `doc.value` populated to have a URL at all — a bare id renders the
 link text only), and `block`, `inlineBlock`, `table`, `tablerow` and
 `tablecell` all have renderers, so a table stays a table instead of
 collapsing into its text.
+
+## Events
+
+```ts
+const client = new LivePreviewClient({ allowedOrigins: ['https://admin.example.com'] });
+
+client.events.on('connect', (e) => console.log('connected to', e.origin));
+client.events.on('beforeUpdate', (e) => {
+  if (frozen) e.cancel();
+});
+client.events.on('documentSave', () => location.reload());
+```
+
+Events: `init` · `connect` · `disconnect` · `beforeUpdate` · `afterUpdate` ·
+`elementUpdate` · `cacheRefresh` · `fragmentRender` · `documentSave` ·
+`relationshipUpdate` · `error` · `destroy`.
+
+`beforeUpdate`, `afterUpdate` and `elementUpdate` carry `revision`,
+`receivedAt` (when the runtime accepted the message, Unix ms) and `source`
+(`'patch'`, `'fragment'` or `'route'`: the strategy that produced the
+update). `fragmentRender` fires per boundary and revision with `status`
+`'rendered'` or `'failed'` and the diagnostic `code`. `relationshipUpdate`
+fires when an update carries `externallyUpdatedRelationship` (a related
+document edited in an admin drawer); that update re-renders every bound field
+even under `skipUnchanged`, because populated values may have changed while
+the form values did not. `error` carries a stable `code`, so a handler can
+branch on `DIAGNOSTIC_CODES` without parsing the message.
 
 ## Transforms are synchronous — by decision
 
@@ -207,6 +255,13 @@ client.events.on('beforeUpdate', async (e) => {
 });
 ```
 
+Synchronous transforms see the merged field value and run in registration
+order while each revision-bound binding entry is prepared, immediately before
+that entry is scheduled. The transformed value is fixed in the entry and later
+passes through the normal attribute or renderer dispatch. A thrown error or a
+thenable result emits a lifecycle `error` and keeps the original merged value
+as the fallback, which still passes through the normal security checks.
+
 ## Plugin ownership
 
 A plugin owns what it registers, and only for as long as it is registered:
@@ -214,34 +269,47 @@ A plugin owns what it registers, and only for as long as it is registered:
 - `init(ctx)` registers transforms, renderers, event subscriptions
   (`ctx.events.on/once`) and cleanups (`ctx.registerCleanup`). Every
   registration is scoped; `client.unuse(name)` — or a failed `init` —
-  releases all of them, in reverse order.
+  releases all of them, in reverse order, without touching another plugin or
+  the built-in renderers. Registering the plugin again starts with a fresh
+  scope.
+- **Staging.** Resources stay staged until `init()` succeeds; a failed
+  `init()` rolls them back without exposing a partial registration.
 - **Order and precedence.** Transforms for a field run in registration
   order across plugins. Renderers layer: the last registration wins,
   unregistering restores the previous layer.
 - **Duplicates.** A second plugin with a registered name is ignored and
   logged; the first stays.
-- **Rollback.** If `init` throws, everything it registered is released and
-  the plugin is not listed.
 - **Async destroy.** `destroy()` may return a promise; `unuse()` resolves
   after it, and the plugin's registrations are already released when it runs.
-- **Compatibility.** `compat: { runtime: '>=1.2.0', protocol: 4 }` is checked
+- **Compatibility.** `compat: { runtime: '>=2.0.0', protocol: 4 }` is checked
   at registration; a plugin that does not fit is refused, logged, and
   reported on the client's `error` event with `code: 'LP0103'` and
   `context: 'plugin'`, so a refusal is visible without reading the console.
-  Write an open range: a caret range pinned to a 1.x version (`^1.2.0`) is
-  refused by the 2.0 runtime, which is almost never what the author meant.
+  Write an open range: a caret range pinned to an older major (`^1.2.0`) is
+  refused by this runtime, which is almost never what the author meant.
 - **Observable.** `client.inspect().plugins` lists each plugin with its
   state and live registrations by kind, so "teardown is complete" is a
-  snapshot fact. `tests/unit/plugins/ownership-contract.test.ts` pins that
-  300 register/unregister cycles return every count to its baseline.
+  snapshot fact.
 
-### `documentSave`: the `revalidate` endpoint authorises itself
+The contract is recorded in
+[ADR 0005 — Plugin resource ownership and transform ordering](architecture/0005-plugin-resource-ownership.md).
+
+### Built-in plugins
+
+| Plugin                             | Effect                                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `highlightPlugin`                  | Flashes an outline on updated elements (respects reduced motion).                                |
+| `debugPlugin`                      | Logs every lifecycle event to the console.                                                       |
+| `createAnalyticsPlugin()`          | Collects update statistics, exposed via `getStats()`.                                            |
+| `documentSavePlugin({ strategy })` | Reacts to admin saves: `'silent'` · `'reload'` (scroll-preserving) · `'revalidate'` · `'fetch'`. |
+
+### `documentSave`: the `revalidate` endpoint authorizes itself
 
 The `'revalidate'` strategy POSTs `{ source: 'payload-live-preview' }` to
 `revalidateUrl` (default `/api/revalidate`) as a plain `fetch` from the
 preview page. Cookies travel with it and **there is no CSRF token**; a bearer
 secret in `revalidateHeaders` would sit in page JavaScript where any visitor
-can read it. The endpoint must authorise on its own — an admin session
+can read it. The endpoint must authorize on its own — an admin session
 cookie, a same-origin check, or both — and must be safe to call repeatedly
 from a browser that is already framed by the CMS.
 
@@ -249,7 +317,8 @@ from a browser that is already framed by the CMS.
 
 A hydrated framework island — `astro-island`, or any element marked
 `data-payload-island` — owns its subtree. The runtime does not patch a
-binding inside it, and the keyed morph never enters it (ADR 0008 §4).
+binding inside it, and the keyed morph never enters it
+([ADR 0008 — Keyed morph: what it keeps, what it never crosses](architecture/0008-keyed-morph-ownership.md)).
 Instead, every applied update is dispatched on each island root as a
 `payload-live-preview:update` DOM event whose `detail` is
 `{ fields, revision, receivedAt, locale }`:
@@ -269,4 +338,3 @@ from the bridge: the admin's `postMessage` reaches the window the island
 lives in, and this runtime keeps its hands off the island's DOM. An island
 that wants the runtime's patching after all opts in with
 `data-payload-island="patch"` and receives no event.
-`tests/e2e/specs/island-bridge.spec.ts` proves the split in three browsers.

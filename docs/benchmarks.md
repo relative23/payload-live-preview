@@ -27,16 +27,6 @@ below a 60 fps frame budget (16.7 ms), even in jsdom, which is substantially slo
 than real browser DOM implementations. These isolated measurements do not promise a
 whole-update bound for pages that render many expensive bindings in one revision.
 
-The 1.0.4 concurrency pipeline also had two separate, profiling-only controlled comparisons
-on the same maintainer host. They are not cases emitted by the current
-`npm run test:bench -- --run` suite and are not pass/fail gates: an 80,000-verdict
-backlog measured a 1,443 ms median with per-entry `Array.shift()` versus 5.11 ms with
-amortized O(1) dequeue, while a 300-binding update with no `elementUpdate` observer
-measured 0.1267 ms versus 0.00128 ms after unused DOM snapshots and Promise dispatch
-were skipped. The committed suite retains the optimized 1,000-verdict and no-listener
-paths as ongoing trend signals. Functional tests, rather than these wall-clock values,
-assert order, reset, reentrancy, and event truth.
-
 ## Update-to-paint in a real browser
 
 `npm run test:browser-bench` (Playwright, Chromium, `playwright.bench.config.ts`)
@@ -64,10 +54,6 @@ keeps ninety days of reports; it asserts only that every sample produced a
 measurement, because timing on a shared runner is not a fact a pull request
 should fail on.
 
-Not yet measured: the same scenarios with `skipUnchanged` on. The fixture's
-runtime configuration is site-wide, so a second variant needs a per-page
-override, which is topology work rather than benchmark work.
-
 ## `skipUnchanged` — what a keystroke costs with and without it
 
 `tests/benchmarks/skip-unchanged.bench.ts` (Vitest bench, jsdom): one message
@@ -90,10 +76,12 @@ render them — the comparison cost six times the work it was avoiding. Plain
 `JSON.stringify` is 0.153 ms for the same 300, and a reordered object simply
 counts as changed, which is the safe direction.
 
-## Structural updates: keyed morph versus replace (ADR 0008)
+## Structural updates: keyed morph versus replace
 
 `tests/benchmarks/hot-paths.bench.ts`, "structural apply — morph versus
 replace". Pre-seeded 100-item `<ul>` containers; the sample is one update.
+What the morph keeps and what it never crosses is
+[ADR 0008 — Keyed morph](architecture/0008-keyed-morph-ownership.md).
 
 | Case                     | replace  | morph    | Δ             |
 | ------------------------ | -------- | -------- | ------------- |

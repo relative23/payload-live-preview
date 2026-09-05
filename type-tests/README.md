@@ -18,10 +18,11 @@ change is intentional, regenerate all manifest-derived reports from the packed a
 with `npx tsx scripts/check-package.ts --update-api-reports`, review the report diffs,
 then rerun the normal package gate.
 
-The initial report baseline intentionally exposes 48 `ae-forgotten-export` findings
-across seven legacy entry points. They are visible in the reports instead of being
-removed from the snapshot, but API Extractor does not fail the 1.0.4 patch on them:
-exporting or hiding those signature types can itself change the public surface. Package
-maintainers own a type-surface cleanup review by 2026-11-13; no count increase is
-acceptable in the meantime. Dual ESM/CommonJS declaration files are required to be
-byte-identical by the exact-tarball gate, so one API report cannot hide condition drift.
+The reports carry a reviewed number of `ae-forgotten-export` findings: types a public
+signature references without the entry exporting them. That number is pinned as
+`FORGOTTEN_EXPORT_BASELINE` in `scripts/api-contracts.ts`, whose comment records every
+change to it and why each remaining finding is left visible rather than exported. The
+gate fails on a change in either direction, so a new count is a reviewed edit of that
+constant, not a mechanical update. Dual ESM/CommonJS declaration files are required to
+be byte-identical by the exact-tarball gate, so one API report cannot hide condition
+drift.

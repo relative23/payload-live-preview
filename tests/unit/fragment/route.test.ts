@@ -318,6 +318,8 @@ describe('route refresh — timeout and head elements it does not own', () => {
       const pending = strategy.refresh(context());
       await vi.advanceTimersByTimeAsync(1_100);
       expect(await pending).toBe('failed');
+      // The fixed text, not the AbortError's: that one differs per browser.
+      expect(logs.at(-1)).toBe('LP0801 route refresh timed out after 1000 ms');
     } finally {
       vi.useRealTimers();
     }

@@ -28,11 +28,19 @@ export type BundleBudget = BundleMeasurement;
 // supersedes one before its reveal point still owes — and pays — the reveal.
 // A slow first reveal caused the admin to re-send, and the re-send cancelled
 // the only reveal there was; Firefox in CI reproduced it one run in seven.
-export const INLINE_BUDGET = { raw: 93_073, gzip: 28_966, brotli: 25_760 } as const;
+//
+// Raised 2026-09-05: 28 966 → 29 035 gzip. The +69 is net. The sanitizer
+// policy became instance state (ADR 0002) — it travels through the runtime
+// options into every render context, so two clients on one page no longer
+// share whichever policy was set last — and that costs about a hundred bytes;
+// the LRU helpers behind both caches and the fragment client's shared abort
+// scaffolding give a third of it back. The reveal ledger as its own module and
+// the `revision` and `hidesWhenEmpty` names are free.
+export const INLINE_BUDGET = { raw: 93_591, gzip: 29_035, brotli: 25_777 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
-export const INLINE_FRAGMENT_BUDGET = { raw: 104_501, gzip: 32_738, brotli: 28_868 } as const;
+export const INLINE_FRAGMENT_BUDGET = { raw: 104_954, gzip: 32_827, brotli: 28_954 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

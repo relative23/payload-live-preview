@@ -5,6 +5,7 @@
  */
 
 import type { FragmentContext, FragmentReport, FragmentStrategy } from '@core/strategies';
+import { errorMessage } from './abort';
 import {
   collectFragmentBoundaries,
   describeBoundary,
@@ -81,7 +82,7 @@ export function fragmentStrategyFrom(handler: FragmentHandler): FragmentStrategy
             outcome = {
               status: 'failed',
               code: 'LP0801',
-              reason: error instanceof Error ? error.message : String(error),
+              reason: errorMessage(error),
             };
           }
           if (!context.isCurrent() || outcome.status === 'superseded') {

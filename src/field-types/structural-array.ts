@@ -32,7 +32,7 @@ export function createStructuralArrayRenderer(): FieldRenderer {
 
   return {
     name: 'structural-array',
-    render: /* @__PURE__ */ markNoWriteCallback((target, rawValue) => {
+    render: /* @__PURE__ */ markNoWriteCallback((target, rawValue, context) => {
       const value = isEmptyValue(rawValue) ? [] : rawValue;
       if (!Array.isArray(value)) return false;
       const container = target.element;
@@ -58,6 +58,7 @@ export function createStructuralArrayRenderer(): FieldRenderer {
         nextItems: value,
         store,
         forceRender,
+        sanitizerPolicy: context.sanitizerPolicy,
         onDuplicateKey: (owner, key) => {
           warnDuplicateKey(warnedKeys, owner, target.fieldName, key);
         },

@@ -149,7 +149,13 @@ function isRecord(value: unknown): value is JsonRecord {
 
 export const LOCAL_PACKAGE_SPECIFIER = 'file:../..';
 
-/** Metadata only: dependency resolution stays with reviewed npm installs. */
+/**
+ * Metadata only: dependency resolution stays with reviewed npm installs.
+ *
+ * Every mismatch reported here is what `npm run version` repairs
+ * (`changeset version` followed by `sync-lockfile-metadata.ts`); the message
+ * strings are pinned verbatim by tests/unit/lockfile-metadata.test.ts.
+ */
 export function findPackageLockMetadataViolations(
   input: PackageLockMetadataInput,
 ): readonly string[] {
@@ -181,12 +187,12 @@ export function findPackageLockMetadataViolations(
   }
   if (rootLockfile['name'] !== packageName) {
     violations.push(
-      `${input.root.label}: package-lock.json name must match package.json name ${packageName}`,
+      `${input.root.label}: package-lock.json name must match package.json name ${packageName}; run npm run version`,
     );
   }
   if (rootLockfile['version'] !== packageVersion) {
     violations.push(
-      `${input.root.label}: package-lock.json version must match package.json version ${packageVersion}`,
+      `${input.root.label}: package-lock.json version must match package.json version ${packageVersion}; run npm run version`,
     );
   }
   const rootPackages = rootLockfile['packages'];
@@ -196,12 +202,12 @@ export function findPackageLockMetadataViolations(
   } else {
     if (rootEntry['name'] !== packageName) {
       violations.push(
-        `${input.root.label}: package-lock.json packages[""] name must match package.json name ${packageName}`,
+        `${input.root.label}: package-lock.json packages[""] name must match package.json name ${packageName}; run npm run version`,
       );
     }
     if (rootEntry['version'] !== packageVersion) {
       violations.push(
-        `${input.root.label}: package-lock.json packages[""] version must match package.json version ${packageVersion}`,
+        `${input.root.label}: package-lock.json packages[""] version must match package.json version ${packageVersion}; run npm run version`,
       );
     }
   }
@@ -240,7 +246,7 @@ export function findPackageLockMetadataViolations(
     }
     if (!isRecord(installedEntry) || installedEntry['version'] !== packageVersion) {
       violations.push(
-        `${fixture.label}: ${LOCAL_PACKAGE_SPECIFIER} lock entry version must match ${packageName}@${packageVersion}`,
+        `${fixture.label}: ${LOCAL_PACKAGE_SPECIFIER} lock entry version must match ${packageName}@${packageVersion}; run npm run version`,
       );
     }
   }

@@ -6,18 +6,18 @@ field is set, and run a component's own logic (derived values, custom
 blocks, conditional sections). The **fragment** strategy asks your server
 to render one component boundary from the unsaved form state and morphs
 the result in — focus, typed values and open `<details>` survive, as with
-every keyed morph (ADR 0008). The **route** strategy refreshes the whole
-route when nothing smaller is safe. ADR 0011 records the protocol and its
-abuse model.
+every keyed morph
+([ADR 0008 — Keyed morph: what it keeps, what it never crosses](architecture/0008-keyed-morph-ownership.md)).
+The **route** strategy refreshes the whole route when nothing smaller is
+safe. The protocol and its abuse model are recorded in
+[ADR 0011 — The fragment protocol and its abuse model](architecture/0011-fragment-protocol-and-abuse-model.md).
 
 ## Marking a boundary
 
-```html
+```astro
 <section data-payload-fragment="hero" data-payload-depends="title,tagline,body">
   <h1 data-payload-field="title">{title}</h1>
-  {tagline &&
-  <p class="lede">{tagline}</p>
-  }
+  {tagline && <p class="lede">{tagline}</p>}
   <p>{wordCount(body)} words</p>
 </section>
 ```
@@ -38,14 +38,30 @@ island's business and is never rendered by the server.
 
 ## The endpoint (Astro)
 
+The endpoint authorizes with the same hook as the page. Define it once and
+hand it to both:
+
+```ts
+// src/lib/authorize-preview.ts — server-only
+import { authorizePreviewRequest } from 'payload-live-preview/server';
+
+export const authorizePreview = (request: Request) =>
+  authorizePreviewRequest(request, {
+    type: 'payload-session',
+    serverURL: import.meta.env.PAYLOAD_URL,
+  });
+```
+
 ```ts
 // src/pages/payload/fragment.ts
 import { createFragmentEndpoint } from 'payload-live-preview/astro';
 import Hero from '../../components/Hero.astro';
+import { authorizePreview } from '../../lib/authorize-preview';
 
 export const prerender = false;
 
 export const POST = createFragmentEndpoint({
+  authorizePreview,
   registry: {
     hero: {
       component: Hero,
@@ -57,23 +73,28 @@ export const POST = createFragmentEndpoint({
       }),
     },
   },
-  authorize: { type: 'signed-token', secret: import.meta.env.PREVIEW_SECRET, audience: SITE },
 });
 ```
 
 - **Registry**: the only things the endpoint can render. Props are computed
   on the server from the request's fields; nothing in the request selects
   code.
-- **Authorization**: the same strategies as `authorizePreviewRequest()`
-  (`payload-session`, `signed-token`, `verifier`). The endpoint authorizes
-  the **page route** the browser reports, with the request's own cookies
-  and query, so a token is bound to the route it was issued for and a
-  session is the visitor's own. There is no unsigned endpoint.
+- **Authorization**: `authorizePreview` is the middleware's hook — same type,
+  same rules; a context `authorizePreviewRequest()` produced authorizes,
+  anything else refuses. When there is no hook to share, `authorize` takes a
+  strategy instead, exactly as `authorizePreviewRequest()` does
+  (`authorize: { type: 'signed-token', secret: import.meta.env.PREVIEW_TOKEN_SECRET, audience: import.meta.env.SITE_ORIGIN }`).
+  One of the two is required and they are exclusive. The endpoint
+  authorizes the **page route** the browser reports, with the request's own
+  cookies and query, so a token stays bound to the route it was issued for
+  and a session is the visitor's own. There is no unsigned endpoint.
+  The strategies are described in [docs/authorization.md](authorization.md).
 - **Renderer**: Astro's container API (`astro/container`) by default,
   created once per process. Pass `render` to use another component system
   or to test.
-- **Limits**: body 64 KiB, field depth 12, render timeout 5 s (configurable
-  through `limits`). Every response is `Cache-Control: private, no-store`.
+- **Limits**: body 64 KiB and render timeout 5 s, configurable through
+  `limits` (`bodyBytes`, `timeoutMs`); field depth 12 is fixed. Every
+  response is `Cache-Control: private, no-store`.
 
 ### What a deployment needs
 
@@ -99,21 +120,23 @@ Astro, request-time injection:
 ```ts
 // src/middleware.ts
 import { createLivePreviewMiddleware } from 'payload-live-preview/astro';
+import { authorizePreview } from './lib/authorize-preview';
 
 export const onRequest = createLivePreviewMiddleware({
-  allowedOrigins: [ADMIN],
-  authorizePreview: (request) => authorizePreviewRequest(request, strategy),
+  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+  authorizePreview,
   fragments: { endpoint: '/payload/fragment' },
 });
 ```
 
 With `fragments` set, the injected script carries a small prelude with the
 fragment client ahead of the runtime; a page without it gets the runtime
-alone (its size budget does not include the client). Loader mode emits the
-same prelude in the bootstrap; the runtime asset is the same for every page.
-The same option exists on the other adapters and on `LivePreviewClient`
-(`strategies: { fragment: createFragmentStrategy({ endpoint }) }` from
-`payload-live-preview/fragment`).
+alone. The Astro integration (`livePreview()`) takes the same option in every
+mode; loader mode emits the prelude in the bootstrap, and the runtime asset
+stays the same for every page. `generateInlineScript()` takes it as
+`fragmentEndpoint`. `LivePreviewClient` takes `strategies` instead:
+`{ fragment: createFragmentStrategy({ endpoint }), route: createRouteStrategy() }`
+from `payload-live-preview/fragment`.
 
 ## What you observe
 
@@ -144,10 +167,10 @@ the fresh markup. The head sync mirrors the fresh document both ways: a
 named `<meta>` or the canonical `<link>` that the server no longer renders
 is removed, because the refresh is that server's own render of this URL.
 Mark a tag your own script owns with `data-payload-owned` and the sync
-leaves it alone in both directions. At most one refresh per revision; a second request for the
-same revision, or one inside `minIntervalMs` (1 s) of the previous, is
-refused with `LP0805` and the elements are patched instead. A failed
-refresh (`LP0801`/`LP0802`) also falls back to patching.
+leaves it alone in both directions. At most one refresh per revision; a
+second request for the same revision, or one inside `minIntervalMs` (1 s) of
+the previous, is refused with `LP0805` and the elements are patched instead.
+A failed refresh (`LP0801`/`LP0802`) also falls back to patching.
 
 The route strategy needs no endpoint: with `fragments` configured the
 injected prelude carries it (`createRouteStrategy()` from
@@ -179,13 +202,13 @@ subtree: patching skips it, a fragment boundary inside it is never planned,
 the route morph stops at it, and it receives every update as a
 `payload-live-preview:update` event to re-render itself — with the official
 `@payloadcms/live-preview-react`/`-vue` hook if that is what renders it
-([interop.md](interop.md)). Patch boundaries, fragment boundaries and hook
-islands coexist on one page; the hybrid fixture and its browser suite are
-exactly that page.
+([docs/interop.md](interop.md)). Patch boundaries, fragment boundaries and
+hook islands coexist on one page.
 
 ## Revision discipline
 
 One revision per admin message. A newer message aborts the previous
 revision's fragment requests; a response that arrives late is discarded;
 identical boundaries in one revision share a request; at most four
-requests run at once. Slow fragment A can never overwrite fast fragment B.
+requests run at once (`maxConcurrent` on `createFragmentStrategy()`). Slow
+fragment A can never overwrite fast fragment B.

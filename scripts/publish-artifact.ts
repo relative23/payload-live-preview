@@ -48,9 +48,13 @@ export interface RegistryPropagationPolicy {
   readonly intervalMs: number;
 }
 
+// 2026-09-04: 2.0.0-beta.0 became readable about three minutes after npm
+// acknowledged it. The budget was three minutes, so a successful publish was
+// reported as a failure and the run stopped before its tag and release. The
+// budget only costs time in the slow case; the fast case returns on the first read.
 export const REGISTRY_PROPAGATION_POLICY: RegistryPropagationPolicy = {
-  timeoutMs: 180_000,
-  intervalMs: 5_000,
+  timeoutMs: 900_000,
+  intervalMs: 10_000,
 };
 
 /** Injectable clock so the wait is testable without real time passing. */
@@ -248,7 +252,9 @@ async function verifyRegistryArchive(
   if (visible.value.kind !== 'published') {
     throw new Error(
       'npm publish returned success but the exact package version is not observable ' +
-        `after ${String(visible.attempts)} attempts over ${String(Math.round(visible.waitedMs / 1000))}s`,
+        `after ${String(visible.attempts)} attempts over ${String(Math.round(visible.waitedMs / 1000))}s. ` +
+        'The publish itself is done: the next release run sees the version and carries on ' +
+        'with its tag and GitHub Release, or re-run this workflow for the same CI run id.',
     );
   }
   registryArtifactAction(visible.value, manifest.archive.integrity);

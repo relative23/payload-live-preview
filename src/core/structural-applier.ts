@@ -6,7 +6,7 @@
  * `data-payload-nested-key` slots. See ADR 0008.
  */
 
-import { sanitizeHtml } from '@security/sanitizer';
+import { sanitizeHtmlWithPolicy, type SanitizerPolicyMode } from '@security/sanitizer';
 import { trustedHtml } from '@security/trusted-types';
 import { interpolateArrayTemplate } from './array-template';
 import { safeStringify } from '@field-types/utils';
@@ -35,6 +35,8 @@ export interface StructuralApplyOptions {
   readonly store: StructuralStore;
   /** Re-render existing items even when unchanged. */
   readonly forceRender?: boolean;
+  /** The instance's policy for item markup; absent, the process default applies. */
+  readonly sanitizerPolicy?: SanitizerPolicyMode | undefined;
   /** Edit a changed item in place instead of replacing it. Default `true`. */
   readonly morph?: boolean;
   /** Reported once per container when two items share a key (`LP0405`). */
@@ -47,10 +49,9 @@ export interface StructuralApplyOptions {
  * before any mutation, so the previous DOM and memory stay intact.
  */
 export function applyStructuralPatches(options: StructuralApplyOptions): boolean | null {
-  const { template, container, patches, nextItems, store, forceRender = false } = options;
-  const plan = prepareStructuralPlan(container, template, patches, nextItems, forceRender, store);
+  const plan = prepareStructuralPlan(options.container, options.patches, options);
   if (plan === null) return null;
-  return commitStructuralPlan(plan, store, {
+  return commitStructuralPlan(plan, options.store, {
     morph: options.morph ?? true,
     onDuplicateKey: options.onDuplicateKey,
   });
@@ -77,6 +78,13 @@ type NestedSlotPlan = readonly [
   children: StructuralPlan | undefined,
 ];
 
+// One per container, not per item, so — unlike the tuples above — named keys
+// cost the inline bundle nothing per render.
+type RenderEnv = Pick<
+  StructuralApplyOptions,
+  'template' | 'nextItems' | 'forceRender' | 'store' | 'sanitizerPolicy'
+>;
+
 interface CommitOptions {
   readonly morph: boolean;
   readonly onDuplicateKey: ((container: Element, key: string) => void) | undefined;
@@ -92,22 +100,11 @@ function isManagedNestedSlot(_live: Element, rendered: Element): boolean {
 /** Materialise the whole recursive replacement tree before touching live DOM. */
 function prepareStructuralPlan(
   container: Element,
-  template: string,
   patches: readonly ArrayPatch[],
-  nextItems: readonly unknown[],
-  forceRender: boolean,
-  store: StructuralStore,
+  env: RenderEnv,
 ): StructuralPlan | null {
-  const entries = prepareReconciliation(
-    container,
-    template,
-    nextItems,
-    createPatchPlan(patches),
-    forceRender,
-    store.get(container),
-    store,
-  );
-  return entries === null ? null : [container, entries, nextItems];
+  const entries = prepareReconciliation(container, createPatchPlan(patches), env);
+  return entries === null ? null : [container, entries, env.nextItems];
 }
 
 function commitStructuralPlan(
@@ -180,13 +177,11 @@ function commitStructuralPlan(
  */
 function prepareReconciliation(
   container: Element,
-  template: string,
-  nextItems: readonly unknown[],
   plan: PatchPlan,
-  forceRender: boolean,
-  memory: ReadonlyMap<string, unknown> | undefined,
-  store: StructuralStore,
+  env: RenderEnv,
 ): readonly ReconciliationEntry[] | null {
+  const { template, nextItems, forceRender = false, store, sanitizerPolicy } = env;
+  const memory = store.get(container);
   const initialChildren = Array.from(container.children);
   const keyedChildren = indexByAttribute(initialChildren, KEY_ATTRIBUTE);
   const reserved = new Set<Element>();
@@ -203,15 +198,21 @@ function prepareReconciliation(
     const replace = plan.replaces.has(index);
     const needsRender = forceRender || plan.renders.has(index) || live === null;
     const rendered = needsRender
-      ? renderItem(container.ownerDocument, template, value, index)
+      ? renderItem(container.ownerDocument, template, value, index, sanitizerPolicy)
       : undefined;
     if (rendered === null) return null;
     const nestedSlots =
       rendered === undefined
         ? []
-        : prepareNestedSlots(replace ? null : live, rendered, value, memory, store);
+        : prepareNestedSlots(
+            replace ? null : live,
+            rendered,
+            value,
+            key === undefined ? undefined : memory?.get(key),
+            env,
+          );
     if (nestedSlots === null) return null;
-    entries.push([index, live, rendered ?? undefined, nestedSlots, replace]);
+    entries.push([index, live, rendered, nestedSlots, replace]);
   }
   return entries;
 }
@@ -239,13 +240,11 @@ function prepareNestedSlots(
   oldItem: Element | null,
   newItem: Element,
   nextValue: unknown,
-  memory: ReadonlyMap<string, unknown> | undefined,
-  store: StructuralStore,
+  prevValue: unknown,
+  env: RenderEnv,
 ): readonly NestedSlotPlan[] | null {
   const oldSlots = oldItem === null ? [] : findDirectNestedSlots(oldItem);
   const oldSlotsByKey = indexByAttribute(oldSlots, NESTED_KEY_ATTRIBUTE);
-  const itemKey = readKey(nextValue);
-  const prevValue = itemKey !== undefined ? memory?.get(itemKey) : undefined;
   const plans: NestedSlotPlan[] = [];
   for (const newSlot of findDirectNestedSlots(newItem)) {
     const key = newSlot.getAttribute(NESTED_KEY_ATTRIBUTE);
@@ -265,14 +264,13 @@ function prepareNestedSlots(
         const templateChanged = liveSlot !== null && previousTemplate !== nextTemplate;
         if (patches.length > 0 || templateChanged) {
           children =
-            prepareStructuralPlan(
-              liveSlot ?? newSlot,
-              nextTemplate,
-              patches,
-              resolvedNext,
-              templateChanged,
-              store,
-            ) ?? undefined;
+            prepareStructuralPlan(liveSlot ?? newSlot, patches, {
+              template: nextTemplate,
+              nextItems: resolvedNext,
+              forceRender: templateChanged,
+              store: env.store,
+              sanitizerPolicy: env.sanitizerPolicy,
+            }) ?? undefined;
           if (children === undefined) return null;
         }
       }
@@ -356,9 +354,10 @@ function renderItem(
   template: string,
   value: unknown,
   index: number,
+  policy: SanitizerPolicyMode | undefined,
 ): Element | null {
   const filled = interpolateArrayTemplate(template, value, index, safeStringify);
-  const safe = sanitizeHtml(filled, templateSanitizeOptions(template));
+  const safe = sanitizeHtmlWithPolicy(filled, policy, templateSanitizeOptions(template));
   const host = ownerDocument.createElement('template');
   host.innerHTML = trustedHtml(safe);
   const first = host.content.firstElementChild;
