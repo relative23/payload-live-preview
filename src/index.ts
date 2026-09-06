@@ -110,22 +110,8 @@ export {
   type PreviewRequestLike,
   type PreviewRequestOptions,
 } from './adapters/shared/preview-request';
-import { hasPreviewIntent as previewIntent } from './adapters/shared/preview-request';
-
-/**
- * The 1.x name for `hasPreviewIntent`, kept so a 1.x project compiles against
- * 2.0 without an edit.
- *
- * Measured rather than assumed: of the 114 names 1.8.1 exported from this
- * entry, eight are gone in 2.0, and this is the only renamed *function* among
- * them — the rest moved behind `definePreview()`, where an alias would restore
- * the silent `depth ?? 1` that move exists to remove (ADR 0007, ledger rows 1
- * and 9). So this one is aliased and those are not. It lives here rather than
- * beside the function because this is the entry 1.x exported it from.
- *
- * @deprecated Use `hasPreviewIntent`; removed in 3.0. `pll migrate` rewrites it.
- */
-export const isPreviewRequest = previewIntent;
+// eslint-disable-next-line @typescript-eslint/no-deprecated -- the alias exists to be re-exported
+export { isPreviewRequest } from './adapters/shared/preview-request-legacy';
 
 // Lexical rendering — useful for SSR pre-rendering of rich text fields
 export {

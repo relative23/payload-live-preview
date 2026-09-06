@@ -59,7 +59,8 @@ Each row is an entry of the readiness table in
 `pll migrate` handles the first four:
 
 - `isPreviewRequest()` → `hasPreviewIntent()` — same signature. The old name is
-  a deprecated alias, removed in 3.0, so a 1.x project compiles against 2.0
+  a deprecated alias, removed in 3.0, on both entries that exported it (the root
+  and `payload-live-preview/astro`), so a 1.x project compiles against 2.0
   unchanged; the codemod renames it when you want the new one.
 - `hasPreviewIntent(request, { adminOrigins })` → `{ allowedOrigins }` — the
   name everything else uses; `adminOrigins` is a deprecated alias that is

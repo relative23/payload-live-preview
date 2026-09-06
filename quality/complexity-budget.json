@@ -11,8 +11,8 @@
   ],
   "totals": {
     "publicDeclarations": {
-      "limit": 654,
-      "why": "Every exported name across all API reports. The number a consumer's editor offers them, and the number this package has to keep meaning something. 2026-09-06: +12 for the two zero-config setups — `withLivePreview()` for Next.js and the Nuxt module — which exist to remove lines from a consumer's project, not to add names to it. +5 for asset delivery: a route factory in each of the three adapters, plus what a route file re-exports in the two that name it. +13 for the build-time annotator, nine of them its own entry. 2026-09-06 (1.x-Upgrade): +1, `isPreviewRequest` back as a deprecated alias — measured against the published 1.8.1 surface, it is the only renamed function among the eight names that left, and the alias is what makes a 1.x project compile against 2.0 unchanged. 2026-09-06 (R9): −5, two concepts with no remaining reason — `PreviewBindingsCommonOptions`, a one-member base left behind when its sibling options type was removed in 2.0, and `AnnotatableEntry`, which had one member and one use."
+      "limit": 656,
+      "why": "Every exported name across all API reports. The number a consumer's editor offers them, and the number this package has to keep meaning something. 2026-09-06: +12 for the two zero-config setups — `withLivePreview()` for Next.js and the Nuxt module — which exist to remove lines from a consumer's project, not to add names to it. +5 for asset delivery: a route factory in each of the three adapters, plus what a route file re-exports in the two that name it. +13 for the build-time annotator, nine of them its own entry. 2026-09-06 (1.x-Upgrade): +3, the 1.x names 2.0 renamed rather than reshaped: `isPreviewRequest` on the two entries that exported it, and `PreviewSignal` back on `./astro`. Measured against the published 1.8.1 declarations entry by entry; everything whose meaning changed stays gone, because an alias there would type something the package no longer produces. 2026-09-06 (R9): −5, two concepts with no remaining reason — `PreviewBindingsCommonOptions`, a one-member base left behind when its sibling options type was removed in 2.0, and `AnnotatableEntry`, which had one member and one use."
     },
     "entrySubpaths": {
       "limit": 25,
@@ -31,8 +31,8 @@
       "why": "LP codes. A code is a promise to explain one situation; forty is a table someone can skim, and a hundred would be a table nobody reads. 2026-09-06: +1 for LP0409, the strict sanitizer reporting an attribute the 1.x default kept — the one 2.0 behaviour change an upgrading project could otherwise only discover by looking."
     },
     "sourceModules": {
-      "limit": 239,
-      "why": "Source modules in the architecture graph. Files stay under 500 lines, so this is the other half of that rule: many small files are only better than few large ones while the count itself stays legible. 2026-09-06: +2, the Nuxt module and the Next.js config wrapper; +2, the shared runtime-asset descriptor and the Next.js asset route; +2, the SvelteKit and Nuxt ones; +2, the annotator plugin and its entry; +1, the sanitizer's upgrade report."
+      "limit": 240,
+      "why": "Source modules in the architecture graph. Files stay under 500 lines, so this is the other half of that rule: many small files are only better than few large ones while the count itself stays legible. 2026-09-06: +2, the Nuxt module and the Next.js config wrapper; +2, the shared runtime-asset descriptor and the Next.js asset route; +2, the SvelteKit and Nuxt ones; +2, the annotator plugin and its entry; +1, the sanitizer's upgrade report; +1, the quarantine for the deprecated 1.x names."
     }
   },
   "entries": {
@@ -69,8 +69,8 @@
       "why": "Type generation and the annotate surface, including the schema shape the annotator reads."
     },
     "payload-live-preview--astro.api.md": {
-      "limit": 22,
-      "why": "The integration, the middleware and the fragment endpoint."
+      "limit": 24,
+      "why": "The integration, the middleware, the fragment endpoint, and the two 1.x names this entry exported before the 2.0 rename."
     },
     "payload-live-preview--nextjs.api.md": {
       "limit": 21,

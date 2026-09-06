@@ -583,7 +583,7 @@ export interface IslandUpdateDetail {
 // @public (undocumented)
 export function isLexicalContent(value: unknown): value is LexicalRoot;
 
-// @public @deprecated
+// @public @deprecated (undocumented)
 export const isPreviewRequest: typeof hasPreviewIntent;
 
 // @public

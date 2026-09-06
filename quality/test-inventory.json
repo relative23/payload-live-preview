@@ -19,7 +19,7 @@
   "totals": {
     "files": 288,
     "suites": 604,
-    "tests": 2467,
+    "tests": 2468,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 235,
       "suites": 535,
-      "tests": 2260,
+      "tests": 2261,
       "benchmarks": 0
     }
   },
@@ -2080,7 +2080,7 @@
       "path": "tests/unit/upgrade-from-1x.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     }
   ]

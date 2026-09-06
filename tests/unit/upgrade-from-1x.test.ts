@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 /* eslint-disable @typescript-eslint/no-deprecated -- the deprecation is what this file holds */
 import { hasPreviewIntent, isPreviewRequest } from '@/index';
+import {
+  hasPreviewIntent as astroHasPreviewIntent,
+  isPreviewRequest as astroIsPreviewRequest,
+} from '@adapters/astro/index';
 
 /**
  * What a 1.x project keeps.
@@ -13,6 +17,14 @@ import { hasPreviewIntent, isPreviewRequest } from '@/index';
  */
 
 describe('the 1.x name that stayed', () => {
+  it('is on every entry that exported it, not only the root', () => {
+    // 1.8.1 exported it from `./astro` as well, and an Astro project is this
+    // package's most common consumer — an alias only at the root would have
+    // left exactly them with the edit.
+    expect(astroIsPreviewRequest).toBe(astroHasPreviewIntent);
+    expect(astroIsPreviewRequest).toBe(isPreviewRequest);
+  });
+
   it('`isPreviewRequest` is `hasPreviewIntent`, not a copy of it', () => {
     expect(isPreviewRequest).toBe(hasPreviewIntent);
   });
