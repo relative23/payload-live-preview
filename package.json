@@ -227,6 +227,7 @@
     "test:bundle": "tsx scripts/check-bundle-size.ts",
     "test:interaction": "tsx scripts/check-interaction-budgets.ts",
     "test:protocol-semantics": "tsx scripts/check-protocol-semantics.ts",
+    "test:upstream-findings": "tsx scripts/check-upstream-findings.ts",
     "test:treeshake": "tsx scripts/check-tree-shaking.ts",
     "test:edge": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' tsx scripts/check-edge-runtime.ts",
     "compat:check": "tsx scripts/compat-table.ts --check",

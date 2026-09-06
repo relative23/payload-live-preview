@@ -183,6 +183,12 @@ const PROTOCOL_WATCH: WorkflowSpec = {
           condition: "failure() && matrix.dist-tag == 'latest'",
           env: { GH_TOKEN: '${{ github.token }}' },
         },
+        // After the issue step on purpose: a finding that stops reproducing is
+        // upstream fixing something, which the docs answer, not an issue.
+        {
+          run: 'npm run test:upstream-findings',
+          env: { UPSTREAM_FINDINGS_PACKAGE: `@payloadcms/live-preview@${PAYLOAD_CHANNEL}` },
+        },
       ],
     },
     // The nightly half that needs a running admin: the same E2E CI runs against

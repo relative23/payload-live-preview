@@ -59,6 +59,13 @@ jobs:
         run: npx tsx scripts/report-protocol-drift.ts
         env:
           GH_TOKEN: ${{ github.token }}
+      # Last, and deliberately after the issue step: this one re-runs the
+      # behaviours docs/react.md compares against on the published dist. A red
+      # run means one of them was fixed upstream — news for the docs, not drift
+      # to file an issue about.
+      - run: npm run test:upstream-findings
+        env:
+          UPSTREAM_FINDINGS_PACKAGE: '@payloadcms/live-preview@${{ matrix.dist-tag }}'
 
   admin-e2e:
     name: Real admin E2E (${{ matrix.dist-tag }})

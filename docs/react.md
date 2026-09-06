@@ -60,20 +60,44 @@ update merges. `status` is `'idle'` before the first update, `'live'` when the
 newest one merged, `'unavailable'` when it did not; `error` says why, and only
 then.
 
-## What it does differently
+## Measured against the official package
 
-The differences are not stylistic. Each is a case where the official package
-shows something that is not the document, and each is asserted twice in this
-repository — once against this hook, once against `@payloadcms/live-preview`
-3.88 ([tests/unit/adapters](../tests/unit/adapters)):
+`@payloadcms/live-preview` is the right choice for a React app that owns the
+document anyway: one hook, no attributes, and the tree it re-renders is yours.
+What follows is not an argument against that. It is what seven cases did when
+both packages were run through the same input.
 
-| Case                                 | `@payloadcms/live-preview` 3.88         | This hook                               |
-| ------------------------------------ | --------------------------------------- | --------------------------------------- |
-| `serverURL` with a trailing slash    | every message ignored, silently         | merged                                  |
-| A slow response overtaken by a newer | the older one lands last                | the newer wins; the older is discarded  |
-| The request fails                    | unhandled rejection, page keeps the old | `status: 'unavailable'`, last good kept |
-| HTTP 403                             | the error body becomes `data`           | refused; `data` unchanged               |
-| Two hooks on one page                | one module-level cache, shared          | one session each (ADR 0002)             |
+Every case runs twice in this repository — against this hook in
+[`document-session.test.ts`](../tests/unit/adapters/document-session.test.ts),
+and against `@payloadcms/live-preview` 3.88.0 in
+[`payload-hook-comparison.test.ts`](../tests/unit/adapters/payload-hook-comparison.test.ts),
+which imports the published package rather than describing it.
+`npm run test:upstream-findings` runs the same cases against whatever the
+registry serves today, so a row upstream has since fixed turns red here instead
+of standing as a claim.
+
+### Five where the results differ
+
+| Measured with                                                                  | `@payloadcms/live-preview` 3.88.0                                              | This hook                                                         |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                        |
+| Two messages, the first answered after 80 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands |
+| HTTP 403 with the body `{"errors":[{"message":"Forbidden"}]}`                  | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403  |
+| Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | each keeps its own document (ADR 0002)                            |
+| `collectionSlug: '../../admin'` in the message                                 | request endpoint `../../admin/1`, sent with `credentials: 'include'`           | no request; the merge is refused                                  |
+
+### Two the hook does not fix
+
+| Measured with                                       | `@payloadcms/live-preview` 3.88.0                                                                    | This hook                                                          |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `fetch` rejecting with `TypeError: Failed to fetch` | the rejection escapes an async listener nobody awaits; the page keeps the old value and says nothing | last good document kept, `status: 'unavailable'`, `error` names it |
+| A burst of typing, one message per keystroke        | 30 requests on 27 keystrokes, counted in a 3.88 admin                                                | one request per accepted message, with nothing in front of them    |
+
+Neither of those two is a win. The update lost to a failed request is lost in
+both: no retry, and the preview catches up only on the next message. And neither
+package coalesces a burst — the debounce this one has slows the writes the DOM
+runtime makes, not the requests it sends (`npm run test:interaction` records 18
+requests for an 18-keystroke burst), and the hook has no debounce at all.
 
 The merge itself is the same protocol: a `POST` to the REST API with
 `X-Payload-HTTP-Method-Override: GET`, which returns the stored document with
@@ -104,7 +128,7 @@ The two are complementary:
 
 ## Vue
 
-The same composable, the same session, the same five differences:
+The same composable, the same session, the same seven cases:
 [vue.md](vue.md).
 
 ## Server rendering

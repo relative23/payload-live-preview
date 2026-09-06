@@ -200,6 +200,15 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   make every change to `src/` red in a test file. Both numbers are exact in both
   directions, so a path that stops charging fails until the win is recorded.
   `tests/e2e/specs/public-response.spec.ts` runs it against every fixture.
+- `scripts/check-upstream-findings.ts` · `npm run test:upstream-findings` — the
+  seven cases the comparison in `docs/react.md` is built from, re-run on the
+  published `@payloadcms/live-preview` dist that the registry serves today. It
+  packs the dist-tag, imports the real `dist/index.js` into a synthetic window
+  and compares each observation against the one recorded when the comparison was
+  written. Deliberately outside `npm run check` and `npm run build`: it needs the
+  network and someone else's registry. It runs in the nightly protocol watch,
+  where a red run usually means upstream fixed something and a row in
+  `docs/react.md` has to go.
 - `scripts/diagnostic-table.ts` · `npm run diagnostics:check` — the
   diagnostic-code table in `docs/troubleshooting.md` is rendered from
   `src/core/diagnostic-codes.ts`; the check fails on drift, on a code without
@@ -308,7 +317,10 @@ What is proven about the Payload wire protocol, from the outside in:
    that object are compared against `tests/fixtures/protocol-model.ts`. The
    second job of the same workflow points `examples/payload-backend` at each
    channel and runs the real admin E2E against it; `canary` is a major and may
-   not boot, so that row is soft-fail like its wire-format twin.
+   not boot, so that row is soft-fail like its wire-format twin. The same job
+   re-runs `npm run test:upstream-findings`, so the comparison in
+   `docs/react.md` is checked against the package a reader would install rather
+   than against the version it was written for.
 
 Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
 quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches
