@@ -65,7 +65,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0407:
     'Only `patch`, `fragment` and `route` exist; fix the `data-payload-strategy` value. The element is left unchanged.',
   LP0501:
-    'The reason is one of origin, shape, type, token and is visible with `debug: true`. An origin reason means `allowedOrigins` does not list the sender.',
+    "The reason is one of origin, shape, type, token, source. Most are visible only with `debug: true`; a source reason is reported once without it, because that default changed. An origin reason means `allowedOrigins` does not list the sender. A source reason means the message came from a window that is neither this page's parent nor its opener — `eventSourcePolicy` is `'parent-or-opener'` since 2.0, where 1.x accepted any window on a trusted origin; set `eventSourcePolicy: 'any'` if your admin posts from elsewhere.",
   LP0502:
     'Your `validateToken` refused the token or threw — a throwing validator fails closed. Check the token the admin sends and the validator.',
   LP0503:

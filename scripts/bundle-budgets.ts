@@ -85,7 +85,7 @@ export type BundleBudget = BundleMeasurement;
 // `'compat'` default kept. The lean profile carries it too: the sanitizer is
 // not one of the features that profile leaves out, so the report belongs there
 // as much as anywhere.
-export const INLINE_BUDGET = { raw: 98_739, gzip: 30_918, brotli: 27_395 } as const;
+export const INLINE_BUDGET = { raw: 99_176, gzip: 31_075, brotli: 27_513 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -102,11 +102,11 @@ export const INLINE_BUDGET = { raw: 98_739, gzip: 30_918, brotli: 27_395 } as co
  * a prelude repeats the sanitizer and the schema diff, so a page that uses the
  * feature ends up larger than it is today.
  */
-export const INLINE_LEAN_BUDGET = { raw: 81_098, gzip: 25_359, brotli: 22_557 } as const;
+export const INLINE_LEAN_BUDGET = { raw: 81_534, gzip: 25_516, brotli: 22_687 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
-export const INLINE_FRAGMENT_BUDGET = { raw: 110_147, gzip: 34_697, brotli: 30_581 } as const;
+export const INLINE_FRAGMENT_BUDGET = { raw: 110_584, gzip: 34_856, brotli: 30_687 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -117,7 +117,7 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 110_147, gzip: 34_697, brotli: 30_5
  * The 1 723 in between are the endpoint request, the fragment protocol and its
  * abort scaffolding — none of which a route refresh calls.
  */
-export const INLINE_ROUTE_BUDGET = { raw: 105_202, gzip: 33_014, brotli: 29_114 } as const;
+export const INLINE_ROUTE_BUDGET = { raw: 105_638, gzip: 33_176, brotli: 29_180 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

@@ -106,6 +106,19 @@ export class LivePreviewRuntime {
               'ignored. A newer Payload or a custom sender: check that the versions match.',
           );
         }
+        // The one refusal reason whose default changed in 2.0. A page whose
+        // admin posts from somewhere other than the window that framed or
+        // opened it simply stops updating, and the cause is invisible unless
+        // `debug` happens to be on — so it is said once, like LP0503.
+        if (reason === 'source' && !this.state.warnedForeignSource) {
+          this.state.warnedForeignSource = true;
+          warn(
+            `[live-preview] LP0501: a message from ${origin} was ignored because it did not come ` +
+              'from the window that framed or opened this page. `eventSourcePolicy` is ' +
+              "'parent-or-opener' by default since 2.0, where 1.x accepted any window on a " +
+              "trusted origin. Set `eventSourcePolicy: 'any'` if the admin posts from elsewhere.",
+          );
+        }
         log('LP0501 message rejected:', reason, origin);
       },
       ...(options.validateToken !== undefined ? { validateToken: options.validateToken } : {}),

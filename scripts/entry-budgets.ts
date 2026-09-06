@@ -94,10 +94,14 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // consumer: a `data-*` hook driving a CSS selector disappeared on the first
   // write, with nothing said anywhere. The bytes buy the one thing an upgrade
   // could not otherwise discover except by looking.
+  //
+  // 2026-09-06 (LP0501 aloud): +~430 B raw / ~150 B gzip wherever the runtime
+  // is embedded, for the sentence a page prints when a message is refused for
+  // coming from the wrong window — the second default 2.0 flipped in silence.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
-  'adapters/astro/index.js': { raw: 144_279, gzip: 44_901, brotli: 38_808 },
-  'adapters/astro/middleware-entry.js': { raw: 130_927, gzip: 40_778, brotli: 35_247 },
-  'adapters/nextjs/index.js': { raw: 142_535, gzip: 44_389, brotli: 38_391 },
+  'adapters/astro/index.js': { raw: 144_813, gzip: 45_103, brotli: 38_921 },
+  'adapters/astro/middleware-entry.js': { raw: 131_432, gzip: 40_978, brotli: 35_357 },
+  'adapters/nextjs/index.js': { raw: 143_040, gzip: 44_595, brotli: 38_486 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -115,8 +119,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
   // frame-ancestors builder it shares with the middleware.
   'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
-  'adapters/nuxt/index.js': { raw: 142_000, gzip: 44_263, brotli: 38_293 },
-  'adapters/sveltekit/index.js': { raw: 141_023, gzip: 43_998, brotli: 38_011 },
+  'adapters/nuxt/index.js': { raw: 142_505, gzip: 44_472, brotli: 38_470 },
+  'adapters/sveltekit/index.js': { raw: 141_528, gzip: 44_196, brotli: 38_229 },
   //
   // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
   // scanner, its refusal reasons and the `annotate` subcommand. It is a build
@@ -128,10 +132,10 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'doctor-cli.js': { raw: 33_150, gzip: 12_140, brotli: 10_780 },
   'doctor.js': { raw: 13_183, gzip: 5_507, brotli: 4_803 },
   'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
-  'core.cjs': { raw: 117_781, gzip: 36_972, brotli: 32_125 },
-  'core.js': { raw: 117_248, gzip: 36_895, brotli: 32_102 },
-  'index.cjs': { raw: 250_671, gzip: 76_968, brotli: 49_801 },
-  'index.js': { raw: 250_049, gzip: 76_964, brotli: 49_744 },
+  'core.cjs': { raw: 118_205, gzip: 37_146, brotli: 32_293 },
+  'core.js': { raw: 117_672, gzip: 37_068, brotli: 32_221 },
+  'index.cjs': { raw: 251_541, gzip: 77_289, brotli: 49_696 },
+  'index.js': { raw: 250_918, gzip: 77_288, brotli: 49_657 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
@@ -141,12 +145,12 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // helper the build-time annotator writes a call to.
   'server.cjs': { raw: 12_950, gzip: 4_780, brotli: 4_310 },
   'server.js': { raw: 12_830, gzip: 4_775, brotli: 4_300 },
-  'client.cjs': { raw: 111_985, gzip: 34_891, brotli: 30_437 },
-  'client.js': { raw: 111_912, gzip: 34_879, brotli: 30_411 },
+  'client.cjs': { raw: 112_409, gzip: 35_058, brotli: 30_548 },
+  'client.js': { raw: 112_337, gzip: 35_049, brotli: 30_543 },
   'structural.cjs': { raw: 19_414, gzip: 6_859, brotli: 6_218 },
   'structural.js': { raw: 19_368, gzip: 6_858, brotli: 6_213 },
-  'lean.cjs': { raw: 81_454, gzip: 25_607, brotli: 22_776 },
-  'lean.js': { raw: 81_443, gzip: 25_602, brotli: 22_768 },
+  'lean.cjs': { raw: 81_899, gzip: 25_770, brotli: 22_913 },
+  'lean.js': { raw: 81_888, gzip: 25_764, brotli: 22_905 },
   'lexical.cjs': { raw: 16_371, gzip: 5_619, brotli: 5_088 },
   'lexical.js': { raw: 16_343, gzip: 5_627, brotli: 5_087 },
   //
