@@ -42,9 +42,19 @@ export interface RuntimeAsset {
   readonly source: string;
 }
 
-/** One leading slash, no trailing one, so joining is a single concatenation. */
+/**
+ * One leading slash, no trailing one, so joining is a single concatenation.
+ *
+ * Trimmed by index rather than by `/^\/+|\/+$/`: that expression backtracks over
+ * a long run of slashes and costs quadratic time on a path the consumer
+ * configures (CodeQL js/polynomial-redos).
+ */
 function normalizePath(path: string): string {
-  const trimmed = path.replace(/^\/+|\/+$/gu, '');
+  let start = 0;
+  let end = path.length;
+  while (start < end && path[start] === '/') start += 1;
+  while (end > start && path[end - 1] === '/') end -= 1;
+  const trimmed = path.slice(start, end);
   return trimmed === '' ? '' : `/${trimmed}`;
 }
 

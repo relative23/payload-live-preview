@@ -44,6 +44,9 @@ describe('the runtime asset', () => {
     ['app/', '/app/runtime.'],
     ['//app//', '/app/runtime.'],
     ['/', '/runtime.'],
+    // The path is the consumer's, so trimming it may not backtrack: the
+    // expression this replaced cost quadratic time on this row.
+    [`${'/'.repeat(50_000)}app${'/'.repeat(50_000)}`, '/app/runtime.'],
   ])('mounts at %s as %s…', (assetPath, expected) => {
     expect(runtimeAsset({ assetPath }).urlPath.startsWith(expected)).toBe(true);
   });
