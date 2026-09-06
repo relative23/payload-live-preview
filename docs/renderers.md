@@ -156,6 +156,18 @@ Alignment and indent are classes, not inline CSS — the sanitizer removes
 `style` under both policies, so a `style="text-align:center"` would never
 reach the page.
 
+### A block with no renderer keeps what the server rendered
+
+The two placeholders above are what `lexicalToHtml()` returns for a `block` or
+`inlineBlock` whose slug nothing registered. In the browser they are usually not
+what the page ends up with: the `richText` write pairs each placeholder with the
+element standing in its position in the live markup and leaves that element
+alone, so the `<figure>` your own server rendered for a `mediaBlock` survives an
+edit to another field. Pairing is positional — the server writes no id to match
+on — and stops where the child counts disagree, at which point the empty
+placeholder is written after all. Either way the runtime reports `LP0410` once
+per slug, naming the one to register.
+
 ### The sanitizer adds `target="_blank"` itself
 
 An anchor whose `href` is an external `http(s)` URL leaves the sanitizer with

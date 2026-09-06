@@ -47,14 +47,13 @@ const INVENTORY: ReadonlyMap<string, Justification> = new Map([
   ],
   ['src/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(html, policy))', 'sanitised'],
   ['src/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(value, policy))', 'sanitised'],
-  // `lexical` is `lexicalToHtml(value, { sanitize: false })`: Lexical no longer
-  // sanitises on its own here, because it would do so with the process default.
-  // The sink does it with the instance's policy, and that is what covers a
-  // project's own `registerBlockRenderer`, whose string this package never inspects.
-  [
-    'src/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(lexical, policy))',
-    'sanitised',
-  ],
+  // `html` is `sanitizeHtmlWithPolicy(lexicalToHtml(value, { sanitize: false }),
+  // policy)`: Lexical no longer sanitises on its own here, because it would do
+  // so with the process default. The caller does it with the instance's policy,
+  // and that is what covers a project's own `registerBlockRenderer`, whose
+  // string this package never inspects. The element parsed into is a childless
+  // clone of the bound one, detached until its children are moved across.
+  ['src/field-types/rich-text.ts::trustedHtml(html)', 'sanitised'],
   [
     'src/field-types/upload.ts::trustedHtml(`<a href="${escapeHtmlAttribute(url)}">${label}</a>`)',
     'escaped',

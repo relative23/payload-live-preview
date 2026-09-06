@@ -68,6 +68,15 @@ interface Fixture {
  * writes sanitized HTML, so it pulls the sanitizer, and the sanitizer now
  * carries the message it prints when the strict policy drops an attribute the
  * 1.x default kept.
+ *
+ * 2026-09-07 (LP0410): the same two rows rise ~25 B gzip (5 118 → 5 145,
+ * measured 5 143; 5 251 → 5 275, measured 5 272). A `block` node whose slug has
+ * no registered renderer now says so once, naming the slug to register — until
+ * now the only sign was an empty `<div class="lp-block ...">` where the block
+ * should be, in a preview that keeps the server's markup for it (see
+ * bundle-budgets.ts). The line and its warned-once set are all these rows
+ * carry; the write path that keeps the markup is in the field renderers, which
+ * this entry does not pull.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -81,7 +90,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_118,
+    gzip: 5_145,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
@@ -109,7 +118,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_251,
+    gzip: 5_275,
     why: 'the Lexical renderer from its focused entry',
   },
   {

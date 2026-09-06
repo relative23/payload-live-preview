@@ -53,6 +53,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   UnknownValueFormat: 'LP0408',
   /** The strict sanitizer removed an attribute the 1.x `'compat'` policy kept. */
   SanitizerDroppedAttribute: 'LP0409',
+  /** A Lexical block has no renderer; the markup the server rendered for it is kept instead. */
+  UnrenderedBlockKept: 'LP0410',
 
   /** A message was rejected before it reached the update pipeline. */
   MessageRejected: 'LP0501',

@@ -111,6 +111,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'Use one of the known formats — `date`, `date:short|medium|long|full`, `time`, `datetime`, `number`, `number:0-4`, `currency:XXX`, `percent` — or drop the attribute and format on the server behind a fragment.',
   LP0409:
     "Upgrading from 1.x: `sanitizerPolicy` defaults to `'strict'` since 2.0, which drops `id`, `name` and every `data-*` from written markup. Put the hook on an element the template owns, list the attribute in `allowedDataAttributes`, or set `sanitizerPolicy: 'compat'` to keep the 1.x behaviour. `data-payload-*` is refused whatever the policy ([security.md](security.md)).",
+  LP0410:
+    'The block renders as an empty placeholder, so the preview keeps what the server rendered for it in its place. Call `registerBlockRenderer(slug, …)` (or `registerDefaultBlocks()`) to render it in the browser too. Where the live markup and the rendered document do not line up — a wrapper around the rich text, a paragraph the server dropped — there is nothing to keep and the empty placeholder is written.',
   LP0806:
     'Configure `fragments: { endpoint }` on the adapter so boundaries render on the server; until then they are patched.',
   LP0807:

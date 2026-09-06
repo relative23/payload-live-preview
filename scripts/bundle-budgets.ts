@@ -112,7 +112,28 @@ export type BundleBudget = BundleMeasurement;
 // three builds from byte-identical raw and gzip output measured 49 731, 49 758
 // and 49 785 B for `index.js`. A row sitting 24 B under its ceiling is a coin
 // flip, not a budget.
-export const INLINE_BUDGET = { raw: 98_930, gzip: 30_918, brotli: 27_500 } as const;
+//
+// 2026-09-07 (LP-2, keeping a block the registry cannot render): every artifact
+// that embeds the runtime rises +672 B raw / ~245 B gzip / ~190 B brotli — the
+// lean profile +643, which is the same code minus what it shares with the morph
+// it does not carry. Measured against the same build without the change.
+//
+// What the bytes buy is an image that stops disappearing. A `block` node whose
+// slug has no registered renderer rendered as an empty `<div class="lp-block
+// lp-block--mediablock">`, and that empty div was written over the `<figure>`
+// with the `<img>` the project's own server had already rendered for it. In the
+// demo: 1 286 characters and one image before the patch, 501 and none after,
+// triggered by an edit to the *title*. The runtime now writes the rest of the
+// document and leaves that subtree standing — it pairs each placeholder with
+// the live element in its position and moves it across, descending only while
+// the child counts agree, so a page whose markup does not line up gets exactly
+// what it got before. The rest is LP0410, the line that names the slug to
+// register; without it the reader sees a block that renders in one place and
+// not the other, and nothing anywhere says why.
+//
+// Raised 2026-09-07 (LP-2): raw 98 930 → 99 550 (measured 99 449), gzip 30 918 →
+// 31 200 (measured 31 156), brotli 27 500 → 27 680 (measured 27 559).
+export const INLINE_BUDGET = { raw: 99_550, gzip: 31_200, brotli: 27_680 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -135,14 +156,20 @@ export const INLINE_BUDGET = { raw: 98_930, gzip: 30_918, brotli: 27_500 } as co
 // it does not leave out the update pipeline, and the level-versus-edge decision
 // lives there. A lean page pays the same 431 B as a full one and gets the same
 // thing back: `skipUnchanged` still works after the editor saves.
-export const INLINE_LEAN_BUDGET = { raw: 81_330, gzip: 25_430, brotli: 22_660 } as const;
+// Raised 2026-09-07 (LP-2): raw 81 330 → 81 920 (measured 81 849), gzip 25 430 →
+// 25 650 (measured 25 620), brotli 22 660 → 22 850 (measured 22 735). The lean
+// profile leaves out the morph and the structural applier; it does not leave out
+// the rich-text renderer, and that is where a block's server markup is kept.
+export const INLINE_LEAN_BUDGET = { raw: 81_920, gzip: 25_650, brotli: 22_850 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
 // Raised 2026-09-07 (LP-1, brotli only): 30 581 → 30 690 (measured 30 566). Raw
 // and gzip still hold — this profile had the most room — so only the metric that
 // does not reproduce gets its cushion back.
-export const INLINE_FRAGMENT_BUDGET = { raw: 110_147, gzip: 34_697, brotli: 30_690 } as const;
+// Raised 2026-09-07 (LP-2): raw 110 147 → 110 930 (measured 110 812), gzip
+// 34 697 → 34 975 (measured 34 927), brotli 30 690 → 30 910 (measured 30 748).
+export const INLINE_FRAGMENT_BUDGET = { raw: 110_930, gzip: 34_975, brotli: 30_910 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -157,7 +184,10 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 110_147, gzip: 34_697, brotli: 30_6
 // 33 014 → 33 070 (measured 33 016), brotli 29 114 → 29 180 (measured 29 049).
 // Both prelude profiles move by the same 431 B as the runtime they wrap; the
 // distance between the two, which is the point of this pair, is unchanged.
-export const INLINE_ROUTE_BUDGET = { raw: 105_380, gzip: 33_070, brotli: 29_180 } as const;
+// Raised 2026-09-07 (LP-2): raw 105 380 → 106 000 (measured 105 886), gzip
+// 33 070 → 33 300 (measured 33 258), brotli 29 180 → 29 390 (measured 29 271).
+// Both prelude profiles move by the same 672 B as the runtime they wrap.
+export const INLINE_ROUTE_BUDGET = { raw: 106_000, gzip: 33_300, brotli: 29_390 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

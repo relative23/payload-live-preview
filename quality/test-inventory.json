@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 289,
-    "suites": 607,
-    "tests": 2477,
+    "files": 290,
+    "suites": 609,
+    "tests": 2485,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 236,
-      "suites": 538,
-      "tests": 2268,
+      "files": 237,
+      "suites": 540,
+      "tests": 2276,
       "benchmarks": 0
     }
   },
@@ -873,6 +873,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/lexical-block-preservation.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/lifecycle-attribute-bindings.test.ts",
       "group": "unit",
       "suites": 1,
@@ -1407,8 +1414,8 @@
     {
       "path": "tests/unit/field-types/html-renderers.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 14,
+      "suites": 4,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -1555,7 +1562,7 @@
       "path": "tests/unit/lexical/render-blocks.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 21,
+      "tests": 23,
       "benchmarks": 0
     },
     {

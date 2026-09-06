@@ -1,9 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { lexicalToHtml } from '@lexical/render';
+import { __resetBlockWarningsForTests } from '@lexical/nodes/block';
+import { registerBlockRenderer, __resetBlockRegistryForTests } from '@lexical/blocks/registry';
 import { setSanitizerPolicy } from '@security/sanitizer';
 import { makeRoot, paragraphWith } from './helpers';
 
 const RAW = { sanitize: false } as const;
+
+/** Keep LP0410 out of the test output while a case is about something else. */
+function silenceWarn() {
+  return vi.spyOn(console, 'warn').mockImplementation(() => {});
+}
 
 beforeEach(() => {
   setSanitizerPolicy('strict');
@@ -261,6 +268,18 @@ describe('lexicalToHtml — relationship', () => {
 });
 
 describe('lexicalToHtml — block', () => {
+  let warn: ReturnType<typeof silenceWarn>;
+
+  beforeEach(() => {
+    __resetBlockWarningsForTests();
+    __resetBlockRegistryForTests();
+    warn = silenceWarn();
+  });
+
+  afterEach(() => {
+    warn.mockRestore();
+  });
+
   it('emits a class-tagged placeholder for a slug without a renderer', () => {
     const html = lexicalToHtml(
       makeRoot([{ type: 'block', fields: { blockType: 'callout', text: 'Heads up' } }]),
@@ -291,6 +310,26 @@ describe('lexicalToHtml — block', () => {
       makeRoot([{ type: 'block', fields: { blockType: 'callout', text: 'Heads up' } }]),
     );
     expect(html).toBe('<div class="lp-block lp-block--callout"></div>');
+  });
+
+  it('reports LP0410 once per block type, naming the slug to register', () => {
+    const doc = makeRoot([{ type: 'block', fields: { blockType: 'mediaBlock' } }]);
+    lexicalToHtml(doc, RAW);
+    lexicalToHtml(doc, RAW);
+    lexicalToHtml(makeRoot([{ type: 'block', fields: { blockType: 'otherBlock' } }]), RAW);
+    const messages = warn.mock.calls.map((call) => String(call[0]));
+    expect(messages).toHaveLength(2);
+    expect(messages[0]).toContain('LP0410');
+    expect(messages[0]).toContain('"mediaBlock"');
+    expect(messages[1]).toContain('"otherBlock"');
+  });
+
+  it('says nothing for a block it can render', () => {
+    registerBlockRenderer('quoteBlock', () => '<blockquote>q</blockquote>');
+    expect(
+      lexicalToHtml(makeRoot([{ type: 'block', fields: { blockType: 'quoteBlock' } }]), RAW),
+    ).toBe('<blockquote>q</blockquote>');
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 

@@ -56,6 +56,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnsupportedStrategy: "LP0407";
     readonly UnknownValueFormat: "LP0408";
     readonly SanitizerDroppedAttribute: "LP0409";
+    readonly UnrenderedBlockKept: "LP0410";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
