@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 296,
-    "suites": 617,
-    "tests": 2522,
+    "files": 297,
+    "suites": 618,
+    "tests": 2526,
     "benchmarks": 12
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 26,
-      "suites": 34,
-      "tests": 104,
+      "files": 27,
+      "suites": 35,
+      "tests": 108,
       "benchmarks": 0
     },
     "integration": {
@@ -113,6 +113,13 @@
       "path": "tests/e2e/specs/diagnostics.spec.ts",
       "group": "e2e",
       "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/fidelity-oracle.spec.ts",
+      "group": "e2e",
+      "suites": 1,
       "tests": 4,
       "benchmarks": 0
     },

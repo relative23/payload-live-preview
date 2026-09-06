@@ -16,6 +16,12 @@ export interface PostOptions {
   readonly globalSlug?: string;
   /** Defaults to the admin window's own origin. */
   readonly targetOrigin?: string;
+  /**
+   * Payload's panel puts `mostRecentUpdate` here, and after the first autosave
+   * that is the edited document itself, in every message. A spec that wants the
+   * runtime to re-render fields nobody changed asks for it through this.
+   */
+  readonly relationshipUpdate?: Record<string, unknown>;
 }
 
 /** Hosts carry the framed path in their own query, so identity separates them, not the URL. */
@@ -50,14 +56,22 @@ export async function post(
   options: PostOptions = {},
 ): Promise<void> {
   await page.evaluate(
-    ({ payload, globalSlug, targetOrigin }) => {
+    ({ payload, globalSlug, targetOrigin, relationshipUpdate }) => {
       const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
       if (iframe?.contentWindow == null) throw new Error('preview frame is unavailable');
       const message: Record<string, unknown> = { type: 'payload-live-preview', data: payload };
       if (globalSlug !== undefined) message['globalSlug'] = globalSlug;
+      if (relationshipUpdate !== undefined) {
+        message['externallyUpdatedRelationship'] = relationshipUpdate;
+      }
       iframe.contentWindow.postMessage(message, targetOrigin ?? window.location.origin);
     },
-    { payload: data, globalSlug: options.globalSlug, targetOrigin: options.targetOrigin },
+    {
+      payload: data,
+      globalSlug: options.globalSlug,
+      targetOrigin: options.targetOrigin,
+      relationshipUpdate: options.relationshipUpdate,
+    },
   );
 }
 
