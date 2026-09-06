@@ -231,10 +231,12 @@ Events: `init` · `connect` · `disconnect` · `beforeUpdate` · `afterUpdate` �
 (`'patch'`, `'fragment'` or `'route'`: the strategy that produced the
 update). `fragmentRender` fires per boundary and revision with `status`
 `'rendered'` or `'failed'` and the diagnostic `code`. `relationshipUpdate`
-fires when an update carries `externallyUpdatedRelationship` (a related
-document edited in an admin drawer); that update re-renders every bound field
-even under `skipUnchanged`, because populated values may have changed while
-the form values did not. `error` carries a stable `code`, so a handler can
+fires once per save in a _related_ document (an admin drawer), read off
+`externallyUpdatedRelationship`; that update re-renders every bound field even
+under `skipUnchanged`, because populated values may have changed while the
+form values did not. The panel repeats its last document event in every later
+message, its own saves of the previewed document included — those repeats are
+neither an event nor a re-render. `error` carries a stable `code`, so a handler can
 branch on `DIAGNOSTIC_CODES` without parsing the message.
 
 ## Transforms are synchronous — by decision

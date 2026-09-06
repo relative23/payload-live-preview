@@ -85,7 +85,34 @@ export type BundleBudget = BundleMeasurement;
 // `'compat'` default kept. The lean profile carries it too: the sanitizer is
 // not one of the features that profile leaves out, so the report belongs there
 // as much as anywhere.
-export const INLINE_BUDGET = { raw: 98_739, gzip: 30_918, brotli: 27_395 } as const;
+// 2026-09-07 (LP-1, the relationship tracker): every artifact that embeds the
+// runtime rises +431 B raw / ~120 B gzip / ~110 B brotli, measured against the
+// same build without the change. The bytes are an identity for Payload's
+// document event and a comparison against the document the message previews.
+// `externallyUpdatedRelationship` is not a flag: the panel fills it from
+// `useDocumentEvents().mostRecentUpdate`, which every save of the previewed
+// document raises and which nothing ever clears, so from the first save on it
+// was set in every message. What stood here before was `typeof x === 'object'`,
+// and the distance between "the field is present" and "the field means
+// something that has not happened yet" is exactly this code — an identity kept
+// between messages (`entitySlug`, id, `updatedAt`; never id alone, a global's
+// save carries none) plus the slug-and-id comparison. Replaying the recorded
+// 3.88 admin session that crosses a save: four `relationshipUpdate` events
+// become none, and thirteen writes after the save are skipped that were not.
+// About a third of it is the id comparison, and that third is what keeps a page
+// previewing a collection from missing a sibling document's save; dropping it
+// would fit under the old numbers and hand back half the finding.
+//
+// Raised 2026-09-07: raw 98 739 → 98 930 (measured 98 777). The gzip and the
+// fragment-profile raw rows below still hold and stay where they are.
+//
+// Raised 2026-09-07 (brotli): 27 395 → 27 500 (measured 27 371). Not paid for by
+// new code — it restores the ~120 B cushion this file has documented since
+// 2026-08-27 and which the raise above ate. Brotli does not reproduce here:
+// three builds from byte-identical raw and gzip output measured 49 731, 49 758
+// and 49 785 B for `index.js`. A row sitting 24 B under its ceiling is a coin
+// flip, not a budget.
+export const INLINE_BUDGET = { raw: 98_930, gzip: 30_918, brotli: 27_500 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -102,11 +129,20 @@ export const INLINE_BUDGET = { raw: 98_739, gzip: 30_918, brotli: 27_395 } as co
  * a prelude repeats the sanitizer and the schema diff, so a page that uses the
  * feature ends up larger than it is today.
  */
-export const INLINE_LEAN_BUDGET = { raw: 81_098, gzip: 25_359, brotli: 22_557 } as const;
+// Raised 2026-09-07 (LP-1): raw 81 098 → 81 330 (measured 81 206), gzip 25 359 →
+// 25 430 (measured 25 386), brotli 22 557 → 22 660 (measured 22 530). The lean
+// profile leaves out the strategy runner, the morph and the structural applier —
+// it does not leave out the update pipeline, and the level-versus-edge decision
+// lives there. A lean page pays the same 431 B as a full one and gets the same
+// thing back: `skipUnchanged` still works after the editor saves.
+export const INLINE_LEAN_BUDGET = { raw: 81_330, gzip: 25_430, brotli: 22_660 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
-export const INLINE_FRAGMENT_BUDGET = { raw: 110_147, gzip: 34_697, brotli: 30_581 } as const;
+// Raised 2026-09-07 (LP-1, brotli only): 30 581 → 30 690 (measured 30 566). Raw
+// and gzip still hold — this profile had the most room — so only the metric that
+// does not reproduce gets its cushion back.
+export const INLINE_FRAGMENT_BUDGET = { raw: 110_147, gzip: 34_697, brotli: 30_690 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -117,7 +153,11 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 110_147, gzip: 34_697, brotli: 30_5
  * The 1 723 in between are the endpoint request, the fragment protocol and its
  * abort scaffolding — none of which a route refresh calls.
  */
-export const INLINE_ROUTE_BUDGET = { raw: 105_202, gzip: 33_014, brotli: 29_114 } as const;
+// Raised 2026-09-07 (LP-1): raw 105 202 → 105 380 (measured 105 214), gzip
+// 33 014 → 33 070 (measured 33 016), brotli 29 114 → 29 180 (measured 29 049).
+// Both prelude profiles move by the same 431 B as the runtime they wrap; the
+// distance between the two, which is the point of this pair, is unchanged.
+export const INLINE_ROUTE_BUDGET = { raw: 105_380, gzip: 33_070, brotli: 29_180 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

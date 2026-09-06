@@ -169,7 +169,7 @@ describe('runtime', () => {
       expect.arrayContaining(['basic', 'schema-json', 'locale']),
     );
   });
-  it('a relationship edit fires relationshipUpdate and re-renders even under skipUnchanged', async () => {
+  it('a relationship edit fires relationshipUpdate once and re-renders under skipUnchanged', async () => {
     const rt = start({ skipUnchanged: true });
     const events: unknown[] = [];
     emitter.on('relationshipUpdate', (event) => {
@@ -190,5 +190,12 @@ describe('runtime', () => {
     expect(renders).toEqual(['same', 'same']);
     expect(events).toEqual([{ entitySlug: 'authors', id: 7 }]);
     expect(rt.inspect().protocol.observed).toContain('relationship-events');
+    // The panel repeats its last document event in every later message. The
+    // edit already happened, so the repeat is neither an event nor a render.
+    post({ title: 'same' }, { externallyUpdatedRelationship: { entitySlug: 'authors', id: 7 } });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(renders).toEqual(['same', 'same']);
+    expect(events).toEqual([{ entitySlug: 'authors', id: 7 }]);
+    expect(rt.inspect().revisions.skippedUnchanged).toBe(2);
   });
 });

@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 288,
-    "suites": 604,
-    "tests": 2467,
+    "files": 289,
+    "suites": 607,
+    "tests": 2477,
     "benchmarks": 12
   },
   "groups": {
@@ -44,7 +44,7 @@
     "integration": {
       "files": 19,
       "suites": 22,
-      "tests": 94,
+      "tests": 96,
       "benchmarks": 0
     },
     "real-payload": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 235,
-      "suites": 535,
-      "tests": 2260,
+      "files": 236,
+      "suites": 538,
+      "tests": 2268,
       "benchmarks": 0
     }
   },
@@ -407,7 +407,7 @@
       "path": "tests/integration/wire-corpus.test.ts",
       "group": "integration",
       "suites": 1,
-      "tests": 5,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -1115,6 +1115,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/relationship-tracker.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 8,
       "benchmarks": 0
     },
     {

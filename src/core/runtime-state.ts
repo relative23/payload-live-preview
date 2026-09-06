@@ -14,6 +14,7 @@ import { FieldChangeTracker } from './field-changes';
 import type { MessageBus, MessageRevision } from './message-bus';
 import type { ObserverManager } from './observers';
 import { ProtocolTracker } from './protocol-tracker';
+import { RelationshipTracker } from './relationship-tracker';
 import { FieldRevealer } from './reveal';
 import { RevealLedger } from './reveal-ledger';
 import type { RuntimeOptions } from './runtime-options';
@@ -30,7 +31,7 @@ export interface UpdateTransaction {
   readonly schema: readonly PayloadFieldSchema[] | undefined;
   readonly schemaIndex: SchemaIndex | undefined;
   readonly receivedAt: number;
-  /** A relationship edit may change populated values only, so render everything. */
+  /** A save in another document may change populated values only, so render everything. */
   readonly forceRender: boolean;
   /** Top-level fields whose value changed since the previous message, plus their dependents. */
   touched: ReadonlySet<string>;
@@ -123,6 +124,7 @@ export class RuntimeState {
   readonly revealer = new FieldRevealer();
   readonly changes = new FieldChangeTracker();
   readonly protocol = new ProtocolTracker();
+  readonly relationships = new RelationshipTracker();
 
   /** Read through a method: TypeScript keeps a narrowed `started` across the calls that can flip it. */
   isRunning(): boolean {

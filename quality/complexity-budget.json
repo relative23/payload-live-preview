@@ -31,8 +31,8 @@
       "why": "LP codes. A code is a promise to explain one situation; forty is a table someone can skim, and a hundred would be a table nobody reads. 2026-09-06: +1 for LP0409, the strict sanitizer reporting an attribute the 1.x default kept — the one 2.0 behaviour change an upgrading project could otherwise only discover by looking."
     },
     "sourceModules": {
-      "limit": 239,
-      "why": "Source modules in the architecture graph. Files stay under 500 lines, so this is the other half of that rule: many small files are only better than few large ones while the count itself stays legible. 2026-09-06: +2, the Nuxt module and the Next.js config wrapper; +2, the shared runtime-asset descriptor and the Next.js asset route; +2, the SvelteKit and Nuxt ones; +2, the annotator plugin and its entry; +1, the sanitizer's upgrade report."
+      "limit": 240,
+      "why": "Source modules in the architecture graph. Files stay under 500 lines, so this is the other half of that rule: many small files are only better than few large ones while the count itself stays legible. 2026-09-06: +2, the Nuxt module and the Next.js config wrapper; +2, the shared runtime-asset descriptor and the Next.js asset route; +2, the SvelteKit and Nuxt ones; +2, the annotator plugin and its entry; +1, the sanitizer's upgrade report. 2026-09-07: +1, the relationship tracker — reading `externallyUpdatedRelationship` as an edge has two halves (has the event changed, does it name another document) and holds state between messages, so it is a named module beside the other trackers rather than a paragraph inside the pipeline."
     }
   },
   "entries": {

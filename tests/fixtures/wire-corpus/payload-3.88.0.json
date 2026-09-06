@@ -1,7 +1,7 @@
 {
-  "$comment": "Captured verbatim from a real Payload admin (examples/payload-backend) by tests/real-payload/record-wire-corpus.spec.ts. Do not edit; re-record with PLP_RECORD_CORPUS=1.",
+  "$comment": "Captured verbatim from a real Payload admin (examples/payload-backend) by tests/real-payload/record-wire-corpus.spec.ts. The session crosses a save, so the messages after it carry externallyUpdatedRelationship. Do not edit; re-record with PLP_RECORD_CORPUS=1.",
   "payload": "3.88.0",
-  "capturedAt": "2026-08-27",
+  "capturedAt": "2026-09-06",
   "adminOrigin": "http://localhost:3001",
   "messages": [
     {
@@ -12,16 +12,16 @@
         "subtitle": "Seeded subtitle",
         "tags": [
           {
-            "id": "6a905558c843a04ac3fd9ac6",
+            "id": "6a9d9a76b58dd95c6e6a12f8",
             "label": "alpha"
           },
           {
-            "id": "6a905558c843a04ac3fd9ac7",
+            "id": "6a9d9a76b58dd95c6e6a12f9",
             "label": "beta"
           }
         ],
-        "updatedAt": "2026-08-27T15:18:48.899Z",
-        "createdAt": "2026-07-11T20:11:37.034Z"
+        "updatedAt": "2026-09-06T16:53:10.205Z",
+        "createdAt": "2026-09-06T16:53:10.205Z"
       },
       "externallyUpdatedRelationship": null,
       "globalSlug": "homepage"
@@ -33,42 +33,20 @@
       "type": "payload-live-preview",
       "data": {
         "body": null,
-        "title": "Seeded title",
-        "subtitle": "Seeded subtitle",
-        "tags": [
-          {
-            "id": "6a905558c843a04ac3fd9ac6",
-            "label": "alpha"
-          },
-          {
-            "id": "6a905558c843a04ac3fd9ac7",
-            "label": "beta"
-          }
-        ],
-        "updatedAt": "2026-08-27T15:18:48.899Z",
-        "createdAt": "2026-07-11T20:11:37.034Z"
-      },
-      "externallyUpdatedRelationship": null,
-      "globalSlug": "homepage"
-    },
-    {
-      "type": "payload-live-preview",
-      "data": {
-        "body": null,
         "title": "Corpus title",
         "subtitle": "Seeded subtitle",
         "tags": [
           {
-            "id": "6a905558c843a04ac3fd9ac6",
+            "id": "6a9d9a76b58dd95c6e6a12f8",
             "label": "alpha"
           },
           {
-            "id": "6a905558c843a04ac3fd9ac7",
+            "id": "6a9d9a76b58dd95c6e6a12f9",
             "label": "beta"
           }
         ],
-        "updatedAt": "2026-08-27T15:18:48.899Z",
-        "createdAt": "2026-07-11T20:11:37.034Z"
+        "updatedAt": "2026-09-06T16:53:10.205Z",
+        "createdAt": "2026-09-06T16:53:10.205Z"
       },
       "externallyUpdatedRelationship": null,
       "globalSlug": "homepage"
@@ -78,19 +56,19 @@
       "data": {
         "body": null,
         "title": "Corpus title",
-        "subtitle": "Corpus subtitle",
+        "subtitle": "Seeded subtitle",
         "tags": [
           {
-            "id": "6a905558c843a04ac3fd9ac6",
+            "id": "6a9d9a76b58dd95c6e6a12f8",
             "label": "alpha"
           },
           {
-            "id": "6a905558c843a04ac3fd9ac7",
+            "id": "6a9d9a76b58dd95c6e6a12f9",
             "label": "beta"
           }
         ],
-        "updatedAt": "2026-08-27T15:18:48.899Z",
-        "createdAt": "2026-07-11T20:11:37.034Z"
+        "updatedAt": "2026-09-06T16:53:10.205Z",
+        "createdAt": "2026-09-06T16:53:10.205Z"
       },
       "externallyUpdatedRelationship": null,
       "globalSlug": "homepage"
@@ -101,19 +79,41 @@
         "body": null,
         "title": "Corpus title",
         "subtitle": "Corpus subtitle",
-        "updatedAt": "2026-08-27T15:18:48.899Z",
-        "createdAt": "2026-07-11T20:11:37.034Z",
         "tags": [
           {
-            "id": "6a905558c843a04ac3fd9ac6",
+            "id": "6a9d9a76b58dd95c6e6a12f8",
             "label": "alpha"
           },
           {
-            "id": "6a905558c843a04ac3fd9ac7",
+            "id": "6a9d9a76b58dd95c6e6a12f9",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-06T16:53:10.205Z",
+        "createdAt": "2026-09-06T16:53:10.205Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-09-06T16:53:10.205Z",
+        "createdAt": "2026-09-06T16:53:10.205Z",
+        "tags": [
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f8",
+            "label": "alpha"
+          },
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f9",
             "label": "beta"
           },
           {
-            "id": "6a90555f8b6424698a685d39"
+            "id": "6a9d9a795c635663a8c0e609"
           }
         ]
       },
@@ -126,19 +126,19 @@
         "body": null,
         "title": "Corpus title",
         "subtitle": "Corpus subtitle",
-        "updatedAt": "2026-08-27T15:18:48.899Z",
-        "createdAt": "2026-07-11T20:11:37.034Z",
+        "updatedAt": "2026-09-06T16:53:10.205Z",
+        "createdAt": "2026-09-06T16:53:10.205Z",
         "tags": [
           {
-            "id": "6a905558c843a04ac3fd9ac6",
+            "id": "6a9d9a76b58dd95c6e6a12f8",
             "label": "corpus-tag"
           },
           {
-            "id": "6a905558c843a04ac3fd9ac7",
+            "id": "6a9d9a76b58dd95c6e6a12f9",
             "label": "beta"
           },
           {
-            "id": "6a90555f8b6424698a685d39"
+            "id": "6a9d9a795c635663a8c0e609"
           }
         ]
       },
@@ -151,23 +151,237 @@
         "body": null,
         "title": "Corpus title",
         "subtitle": "Corpus subtitle",
-        "updatedAt": "2026-08-27T15:18:48.899Z",
-        "createdAt": "2026-07-11T20:11:37.034Z",
+        "updatedAt": "2026-09-06T16:53:10.205Z",
+        "createdAt": "2026-09-06T16:53:10.205Z",
         "tags": [
           {
-            "id": "6a905558c843a04ac3fd9ac6",
+            "id": "6a9d9a76b58dd95c6e6a12f8",
             "label": "corpus-tag"
           },
           {
-            "id": "6a905558c843a04ac3fd9ac7",
+            "id": "6a9d9a76b58dd95c6e6a12f9",
             "label": "beta"
           },
           {
-            "id": "6a90555f8b6424698a685d39"
+            "id": "6a9d9a795c635663a8c0e609"
           }
         ]
       },
       "externallyUpdatedRelationship": null,
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-09-06T16:53:10.205Z",
+        "createdAt": "2026-09-06T16:53:10.205Z",
+        "tags": [
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f8",
+            "label": "corpus-tag"
+          },
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f9",
+            "label": "beta"
+          },
+          {
+            "id": "6a9d9a795c635663a8c0e609"
+          }
+        ]
+      },
+      "externallyUpdatedRelationship": {
+        "doc": {
+          "id": 1,
+          "title": "Corpus title",
+          "subtitle": "Corpus subtitle",
+          "body": null,
+          "tags": [
+            {
+              "id": "6a9d9a76b58dd95c6e6a12f8",
+              "label": "corpus-tag"
+            },
+            {
+              "id": "6a9d9a76b58dd95c6e6a12f9",
+              "label": "beta"
+            },
+            {
+              "id": "6a9d9a795c635663a8c0e609",
+              "label": null
+            }
+          ],
+          "updatedAt": "2026-09-06T16:53:14.954Z",
+          "createdAt": "2026-09-06T16:53:10.205Z",
+          "globalType": "homepage"
+        },
+        "entitySlug": "homepage",
+        "operation": "update",
+        "updatedAt": "2026-09-06T16:53:14.954Z"
+      },
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-document-event"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-09-06T16:53:14.954Z",
+        "createdAt": "2026-09-06T16:53:10.205Z",
+        "tags": [
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f8",
+            "label": "corpus-tag"
+          },
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f9",
+            "label": "beta"
+          },
+          {
+            "id": "6a9d9a795c635663a8c0e609",
+            "label": null
+          }
+        ]
+      },
+      "externallyUpdatedRelationship": {
+        "doc": {
+          "id": 1,
+          "title": "Corpus title",
+          "subtitle": "Corpus subtitle",
+          "body": null,
+          "tags": [
+            {
+              "id": "6a9d9a76b58dd95c6e6a12f8",
+              "label": "corpus-tag"
+            },
+            {
+              "id": "6a9d9a76b58dd95c6e6a12f9",
+              "label": "beta"
+            },
+            {
+              "id": "6a9d9a795c635663a8c0e609",
+              "label": null
+            }
+          ],
+          "updatedAt": "2026-09-06T16:53:14.954Z",
+          "createdAt": "2026-09-06T16:53:10.205Z",
+          "globalType": "homepage"
+        },
+        "entitySlug": "homepage",
+        "operation": "update",
+        "updatedAt": "2026-09-06T16:53:14.954Z"
+      },
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title after save",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-09-06T16:53:14.954Z",
+        "createdAt": "2026-09-06T16:53:10.205Z",
+        "tags": [
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f8",
+            "label": "corpus-tag"
+          },
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f9",
+            "label": "beta"
+          },
+          {
+            "id": "6a9d9a795c635663a8c0e609",
+            "label": null
+          }
+        ]
+      },
+      "externallyUpdatedRelationship": {
+        "doc": {
+          "id": 1,
+          "title": "Corpus title",
+          "subtitle": "Corpus subtitle",
+          "body": null,
+          "tags": [
+            {
+              "id": "6a9d9a76b58dd95c6e6a12f8",
+              "label": "corpus-tag"
+            },
+            {
+              "id": "6a9d9a76b58dd95c6e6a12f9",
+              "label": "beta"
+            },
+            {
+              "id": "6a9d9a795c635663a8c0e609",
+              "label": null
+            }
+          ],
+          "updatedAt": "2026-09-06T16:53:14.954Z",
+          "createdAt": "2026-09-06T16:53:10.205Z",
+          "globalType": "homepage"
+        },
+        "entitySlug": "homepage",
+        "operation": "update",
+        "updatedAt": "2026-09-06T16:53:14.954Z"
+      },
+      "globalSlug": "homepage"
+    },
+    {
+      "type": "payload-live-preview",
+      "data": {
+        "body": null,
+        "title": "Corpus title after save",
+        "subtitle": "Corpus subtitle after save",
+        "updatedAt": "2026-09-06T16:53:14.954Z",
+        "createdAt": "2026-09-06T16:53:10.205Z",
+        "tags": [
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f8",
+            "label": "corpus-tag"
+          },
+          {
+            "id": "6a9d9a76b58dd95c6e6a12f9",
+            "label": "beta"
+          },
+          {
+            "id": "6a9d9a795c635663a8c0e609",
+            "label": null
+          }
+        ]
+      },
+      "externallyUpdatedRelationship": {
+        "doc": {
+          "id": 1,
+          "title": "Corpus title",
+          "subtitle": "Corpus subtitle",
+          "body": null,
+          "tags": [
+            {
+              "id": "6a9d9a76b58dd95c6e6a12f8",
+              "label": "corpus-tag"
+            },
+            {
+              "id": "6a9d9a76b58dd95c6e6a12f9",
+              "label": "beta"
+            },
+            {
+              "id": "6a9d9a795c635663a8c0e609",
+              "label": null
+            }
+          ],
+          "updatedAt": "2026-09-06T16:53:14.954Z",
+          "createdAt": "2026-09-06T16:53:10.205Z",
+          "globalType": "homepage"
+        },
+        "entitySlug": "homepage",
+        "operation": "update",
+        "updatedAt": "2026-09-06T16:53:14.954Z"
+      },
       "globalSlug": "homepage"
     }
   ]

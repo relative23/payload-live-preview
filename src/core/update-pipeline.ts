@@ -66,10 +66,15 @@ export class UpdatePipeline {
       return;
     }
     if (revision === undefined) return;
-    const relationship = message.externallyUpdatedRelationship;
-    const relationshipEdited = typeof relationship === 'object' && relationship !== null;
-    if (relationshipEdited) {
-      void deps.emitter.emit('relationshipUpdate', { detail: relationship, timestamp: Date.now() });
+    // A level, not an edge: the panel repeats its last document event in every
+    // message and never clears it, so only a changed event about a document
+    // other than this one is news (LP-1).
+    const relationshipEdit = state.relationships.edit(message);
+    if (relationshipEdit !== null) {
+      void deps.emitter.emit('relationshipUpdate', {
+        detail: relationshipEdit,
+        timestamp: Date.now(),
+      });
     }
     if (typeof message.locale === 'string') state.locale = message.locale;
     if (Array.isArray(message.fieldSchemaJSON)) {
@@ -83,7 +88,7 @@ export class UpdatePipeline {
       schema: state.schema,
       schemaIndex: state.schemaIndex,
       receivedAt: Date.now(),
-      forceRender: relationshipEdited,
+      forceRender: relationshipEdit !== null,
       touched: new Set(),
       baseline: false,
       invalidated: new Set(),
