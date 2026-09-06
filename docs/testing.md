@@ -169,6 +169,17 @@ have a budget of zero. Playwright retries may collect diagnostics, but
 - `npm run test:treeshake`, `npm run test:edge`, `npm run test:bundle` — the
   built package as a consumer sees it: one-symbol bundles, a Web-platform-only
   runtime, and size budgets. All three run inside `npm run build`.
+- `scripts/check-interaction-budgets.ts` · `npm run test:interaction` — what one
+  burst of typing costs: the merge requests an 18-keystroke burst makes, and the
+  p95 from a keystroke to the change on the page, per scenario (plain text, rich
+  text, relationship, an unbound field, a page with no bindings at all). The
+  runtime is driven in jsdom against a merge endpoint that answers without delay,
+  so both numbers are the package's own and reproduce run to run; the network
+  half of what an editor waits for is carried by the request count instead. The
+  limits and the reason for each of them are in `scripts/interaction-budgets.ts`.
+  Request counts are exact rather than ceilings, and the latency rows carry a
+  floor as well as a ceiling: an improvement nobody records fails the gate too.
+  Runs inside `npm run build`.
 - `scripts/diagnostic-table.ts` · `npm run diagnostics:check` — the
   diagnostic-code table in `docs/troubleshooting.md` is rendered from
   `src/core/diagnostic-codes.ts`; the check fails on drift, on a code without
