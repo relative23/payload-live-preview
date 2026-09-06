@@ -7,6 +7,7 @@ import {
   evaluateDiffCoverage,
   findCoveragePolicyRegressions,
   globCovers,
+  resolveComparisonBase,
   matchesPolicyGlob,
   parseChangedLines,
   parseLcov,
@@ -218,5 +219,77 @@ end_of_record
     // Only the CLI runs as a subprocess; the Astro plugin has direct tests.
     expect(uncovered('src/codegen/cli.ts')).toBe(true);
     expect(uncovered('src/codegen/astro-plugin.ts')).toBe(false);
+  });
+});
+
+/**
+ * The commit a run measures its changed lines against. A force-push or a
+ * rebase leaves the commit CI names outside the repository, and a coverage
+ * gate must not fail a branch over its history.
+ */
+describe('resolveComparisonBase', () => {
+  const MERGE_BASE = 'a'.repeat(40);
+  const PARENT = 'b'.repeat(40);
+  const GONE = 'c'.repeat(40);
+
+  /** A git that answers the two questions this function asks, or refuses to. */
+  function git(answers: { readonly mergeBase?: string; readonly parent?: string }) {
+    return (arguments_: readonly string[]): string => {
+      const wanted = arguments_[0] === 'merge-base' ? answers.mergeBase : answers.parent;
+      if (wanted === undefined) throw new Error('unknown revision');
+      return `${wanted}\n`;
+    };
+  }
+
+  function recorder() {
+    const warnings: string[] = [];
+    return {
+      warnings,
+      options: {
+        ci: true,
+        warn: (message: string) => {
+          warnings.push(message);
+        },
+      },
+    };
+  }
+
+  it('uses the merge base when the requested base is in the repository', () => {
+    const { warnings, options } = recorder();
+    const git_ = git({ mergeBase: MERGE_BASE, parent: PARENT });
+    expect(resolveComparisonBase('origin/main', git_, options)).toBe(MERGE_BASE);
+    expect(warnings).toEqual([]);
+  });
+
+  it('falls back to the parent commit when the base is gone, and names both', () => {
+    const { warnings, options } = recorder();
+    expect(resolveComparisonBase(GONE, git({ parent: PARENT }), options)).toBe(PARENT);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain(GONE);
+    expect(warnings[0]).toContain(PARENT);
+  });
+
+  it.each([
+    ['an empty merge base counts as unresolvable', { mergeBase: '', parent: PARENT }, PARENT],
+    ['a resolvable base wins over the fallback', { mergeBase: MERGE_BASE }, MERGE_BASE],
+  ] as const)('%s', (_case, answers, expected) => {
+    const { options } = recorder();
+    expect(resolveComparisonBase(GONE, git(answers), options)).toBe(expected);
+  });
+
+  it.each([
+    ['no parent at all', {}],
+    ['an empty parent', { parent: '' }],
+  ] as const)('fails on %s, naming the base it could not resolve', (_case, answers) => {
+    const { options } = recorder();
+    expect(() => resolveComparisonBase(GONE, git(answers), options)).toThrow(
+      new RegExp(`cannot resolve coverage diff base ${GONE}`),
+    );
+  });
+
+  it('requires a base in CI and defaults to HEAD outside it', () => {
+    const { options } = recorder();
+    expect(() => resolveComparisonBase(undefined, git({}), options)).toThrow(/required in CI/);
+    expect(resolveComparisonBase(undefined, git({}), { ...options, ci: false })).toBe('HEAD');
   });
 });
