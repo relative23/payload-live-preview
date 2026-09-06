@@ -1,5 +1,15 @@
 /**
- * Protocol-drift watchdog — EXECUTES the real Payload client.
+ * Protocol-drift watchdog — EXECUTES the real Payload client, and READS the
+ * admin that talks to it.
+ *
+ * The executed half below was already good and still missed LP-1, because LP-1
+ * is not in the receiver: the panel fills `externallyUpdatedRelationship` in
+ * every message it sends, and the published package never sees that. So this
+ * script also fetches the two files of Payload's *sender* and compares the
+ * message objects they build against `tests/fixtures/protocol-model.ts`, which
+ * holds each field's meaning next to its name. What that comparison cannot see
+ * is written down in `scripts/payload-sender-model.ts`; the part it cannot see
+ * at all — that a field repeats — is measured by `npm run test:protocol-semantics`.
  *
  * This library hand-mirrors Payload's live-preview postMessage protocol
  * (there is deliberately no `payload` dependency), so nothing breaks
@@ -21,7 +31,7 @@
  * message type, or restructures the endpoint, an executed assertion
  * fails — a behavioural signal, not a brittle grep.
  *
- * Run weekly in CI (`protocol-watch.yml`) against `@latest` and, as a
+ * Run nightly in CI (`protocol-watch.yml`) against `@latest` and, as a
  * soft-fail early warning, `@canary`.
  */
 import { execFileSync } from 'node:child_process';
@@ -29,6 +39,9 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'n
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { findFormViolations } from '../tests/fixtures/protocol-model';
+import { readDeclaredProperties, readSenderMessages } from './payload-sender-model';
+import { readSenderSources, SENDER_CHANNELS, WINDOW_PATH } from './payload-sender-source';
 
 const PACKAGE = process.env['PROTOCOL_WATCH_PACKAGE'] ?? '@payloadcms/live-preview@latest';
 
@@ -217,6 +230,39 @@ async function main(): Promise<void> {
       JSON.stringify(body['data']),
     );
 
+    // 5. The sender: the message object the admin builds, out of their source.
+    //    The dist-tag under test picks the channel; a pinned version has none,
+    //    and reading `latest` instead would quietly answer a different question.
+    const distTag = PACKAGE.split('@').pop() ?? '';
+    const channel = SENDER_CHANNELS.find((candidate) => candidate.distTag === distTag);
+    if (channel === undefined) {
+      console.log(`[protocol-watch] sender not read: ${distTag} is not a channel`);
+    } else {
+      const senderDir = mkdtempSync(join(tmpdir(), 'protocol-sender-'));
+      try {
+        const sources = readSenderSources(channel, senderDir);
+        console.log(
+          `[protocol-watch] sender ${channel.distTag} = ${sources.version} @ ${sources.ref}` +
+            (sources.exact ? '' : ' (branch: canary builds carry no tag)'),
+        );
+        const built = readSenderMessages(WINDOW_PATH, sources.window);
+        const declared = readDeclaredProperties(sources.types);
+        assert(
+          `sender ${channel.distTag} still builds a message`,
+          built.length > 0,
+          `no object literal with a payload- type in ${WINDOW_PATH}`,
+        );
+        for (const violation of findFormViolations(built, declared)) {
+          failures.push({
+            check: `sender ${channel.distTag}: ${violation.what}`,
+            detail: violation.detail,
+          });
+        }
+      } finally {
+        rmSync(senderDir, { recursive: true, force: true });
+      }
+    }
+
     if (failures.length > 0) {
       const report: DriftReport = {
         package: PACKAGE,
@@ -228,13 +274,14 @@ async function main(): Promise<void> {
       for (const f of failures) console.error(`  ✗ ${f.check} — got ${f.detail}`);
       console.error(
         '[protocol-watch] Review src/core/message-bus.ts, src/core/data-merger.ts, ' +
-          'src/types/payload-protocol.ts against the new @payloadcms/live-preview.',
+          'src/types/payload-protocol.ts against the new @payloadcms/live-preview, ' +
+          'and tests/fixtures/protocol-model.ts against the new admin.',
       );
       process.exit(1);
     }
     console.log(
       `[protocol-watch] OK — executed ${PACKAGE}; ready handshake, event discriminators, ` +
-        'and mergeData request all match our runtime invariants.',
+        "mergeData request and the admin's message objects all match the model.",
     );
   } finally {
     rmSync(workDir, { recursive: true, force: true });

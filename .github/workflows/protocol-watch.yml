@@ -1,14 +1,17 @@
 name: Protocol Watch
 
 # This library hand-mirrors Payload's live-preview postMessage protocol
-# (no `payload` dependency by design). This weekly job downloads the
-# latest @payloadcms/live-preview and asserts the wire-format
-# invariants we depend on, so protocol drift surfaces as a red run
-# instead of silent breakage in consumer projects.
+# (no `payload` dependency by design). This nightly job downloads the
+# @payloadcms/live-preview client, reads the admin that talks to it, and
+# drives a real admin against the fixture frontend, so protocol drift
+# surfaces as a red run instead of silent breakage in consumer projects.
+#
+# Nightly rather than weekly since Z13: canary moves daily, and the point of
+# the canary row is to hear about Payload 4 before it ships, not six days after.
 
 on:
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: '0 6 * * *'
   workflow_dispatch:
 
 # The watch installs a published package and compares its wire shape; it writes
@@ -44,6 +47,8 @@ jobs:
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
+      # Executes their receiver AND reads their sender: the message object the
+      # admin builds, against tests/fixtures/protocol-model.ts.
       - run: npx tsx scripts/check-protocol-drift.ts
         env:
           PROTOCOL_WATCH_PACKAGE: '@payloadcms/live-preview@${{ matrix.dist-tag }}'
@@ -54,3 +59,50 @@ jobs:
         run: npx tsx scripts/report-protocol-drift.ts
         env:
           GH_TOKEN: ${{ github.token }}
+
+  admin-e2e:
+    name: Real admin E2E (${{ matrix.dist-tag }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dist-tag: latest
+            soft-fail: false
+          # canary is a major (Payload 4) and may not even boot this fixture;
+          # a red run here is news, not a broken build.
+          - dist-tag: canary
+            soft-fail: true
+    continue-on-error: ${{ matrix.soft-fail }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # No build job to download from in a scheduled workflow, so the artefact
+      # the fixtures inject is built here.
+      - run: npm run build
+      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
+      # The install mutates the fixture manifest in this checkout only; the
+      # resolved version is printed so the log states what was tested.
+      - run: npm --prefix examples/payload-backend install --no-audit --no-fund --dangerously-allow-all-scripts "payload@${{ matrix.dist-tag }}" "@payloadcms/next@${{ matrix.dist-tag }}" "@payloadcms/db-sqlite@${{ matrix.dist-tag }}" "@payloadcms/richtext-lexical@${{ matrix.dist-tag }}"
+      - run: node -p "'payload ' + require('./examples/payload-backend/node_modules/payload/package.json').version"
+      # The recorder runs as an assertion, not as a recorder: it fails if the
+      # session no longer crosses a save, and CI cannot commit what it captures.
+      # Re-recording stays a maintainer step (`PLP_RECORD_CORPUS=1`).
+      - run: npm run test:e2e:real-payload
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-admin-${{ matrix.dist-tag }}
+          path: playwright-report/
+          retention-days: 7

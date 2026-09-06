@@ -180,6 +180,17 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   Request counts are exact rather than ceilings, and the latency rows carry a
   floor as well as a ceiling: an improvement nobody records fails the gate too.
   Runs inside `npm run build`.
+- `tests/fixtures/protocol-model.ts` · `npm run test:protocol-semantics` — what
+  each field on the wire _means_, and what the runtime must therefore do with
+  it. Two halves. The form half is compared by the protocol watch against the
+  message objects Payload's admin builds, read out of their source. The
+  semantics half replays every wire corpus through the real runtime in jsdom and
+  counts what the meaning implies: how many messages carry
+  `externallyUpdatedRelationship`, how many distinct documents those name, how
+  many `relationshipUpdate` events the runtime emits, and how many writes it
+  still skips as unchanged after a save. Numbers are exact in both directions,
+  and a row whose number is today a known defect carries the finding and the
+  task that removes it. Runs inside `npm run build`.
 - `tests/fixtures/delivery-budgets.ts` · part of `npm run test:e2e` — what an
   anonymous visitor is charged, per delivery path: how many `<script>` elements
   of a cookie-less response carry this package, and how many bytes those
@@ -286,19 +297,27 @@ What is proven about the Payload wire protocol, from the outside in:
    verbatim from a Payload 3.85 admin through the real `MessageBus` and
    runtime, envelope quirks included: `collectionSlug` absent on a global,
    `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields.
-4. **Weekly protocol watch** (`.github/workflows/protocol-watch.yml`) executes
+4. **Nightly protocol watch** (`.github/workflows/protocol-watch.yml`) executes
    the real `@payloadcms/live-preview@latest` and `@canary` (Payload 4.0
    pre-releases) against the corpus and asserts that their behavior — the
    `ready` handshake, event discriminators, the `mergeData` REST request —
-   still matches the runtime's invariants.
+   still matches the runtime's invariants. It also **reads their sender**: the
+   published package is only the receiver, and the message object goes together
+   in the admin UI, which ships compiled. A treeless fetch of
+   `payloadcms/payload` and an AST walk over the two files that build and type
+   that object are compared against `tests/fixtures/protocol-model.ts`. The
+   second job of the same workflow points `examples/payload-backend` at each
+   channel and runs the real admin E2E against it; `canary` is a major and may
+   not boot, so that row is soft-fail like its wire-format twin.
 
 Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
 quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches
 drift the moment Payload ships it. Per Payload version that means: 2.x is
 covered by captured-message integration tests and `fieldSchemaJSON` typing;
 3.85.0 by a corpus captured from a real admin; 3.88.0 by the real-admin E2E on
-every push plus its corpus; `latest` and the 4.0 pre-releases by the weekly
-watch, the latter as early warning only. The four real-app fixtures cover
+every push plus its corpus; `latest` and the 4.0 pre-releases by the nightly
+watch — wire format, sender source and a real admin — the latter as early
+warning only. The four real-app fixtures cover
 Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all three engines; the Astro
 4–7 peer range is wider than the single-major browser fixture and is backed
 by the `astro-matrix` job.

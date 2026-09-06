@@ -1,7 +1,7 @@
 /**
  * Turn a drift report into a GitHub issue.
  *
- * `check-protocol-drift.ts` runs weekly and fails when the published Payload
+ * `check-protocol-drift.ts` runs nightly and fails when the published Payload
  * client stops behaving the way this package's hand-mirrored protocol expects.
  * A red scheduled run is easy to miss — nobody watches a cron job — so the same
  * finding is filed as an issue, and updated rather than duplicated while it is
@@ -24,7 +24,7 @@ const TITLE = 'Protocol drift: @payloadcms/live-preview no longer matches this r
 
 export function issueBody(report: DriftReport): string {
   const lines = [
-    `The weekly protocol watch executed \`${report.package}\` at ${report.checkedAt} and found`,
+    `The nightly protocol watch executed \`${report.package}\` at ${report.checkedAt} and found`,
     `${String(report.failures.length)} behaviour(s) this package mirrors differently:`,
     '',
     '| Check | What it saw |',
@@ -40,6 +40,7 @@ export function issueBody(report: DriftReport): string {
     '- `src/core/message-bus.ts` — the handshake and the message discriminators',
     '- `src/core/data-merger.ts` — the REST merge request',
     '- `src/types/payload-protocol.ts` — the shapes both of them read',
+    '- `tests/fixtures/protocol-model.ts` — what each field on the wire means',
     '',
     'Filed by `scripts/report-protocol-drift.ts` from the Protocol Watch workflow.',
   ];
