@@ -12,7 +12,16 @@ import { WORKFLOW_EXPECTATIONS } from './workflow-expectations';
 
 export type YamlRecord = Record<string, unknown>;
 
-export interface RunStepSpec {
+/**
+ * A condition a step is *allowed* to carry. Without one a step must be
+ * unconditional: a reviewed gate that silently stopped running is the failure
+ * mode this file exists to prevent, so the condition is part of the review.
+ */
+export interface ConditionalStep {
+  readonly condition?: string;
+}
+
+export interface RunStepSpec extends ConditionalStep {
   readonly run: string;
   readonly name?: string;
   readonly env?: Readonly<Record<string, string>>;
@@ -22,7 +31,7 @@ export interface RunStepSpec {
   readonly operators?: true;
 }
 
-export interface UsesStepSpec {
+export interface UsesStepSpec extends ConditionalStep {
   readonly uses: string;
   readonly name?: string;
   readonly with?: Readonly<Record<string, string>>;
@@ -153,7 +162,14 @@ function describeStep(spec: StepSpec): string {
 }
 
 function checkStep(step: YamlRecord, spec: StepSpec, label: string, violations: string[]): void {
-  if (step['if'] !== undefined) violations.push(`${label} is conditional`);
+  const condition = step['if'];
+  if (spec.condition === undefined) {
+    if (condition !== undefined) violations.push(`${label} is conditional`);
+  } else if (condition === undefined) {
+    violations.push(`${label} lost its reviewed condition`);
+  } else if (normalizeExpression(condition) !== normalizeExpression(spec.condition)) {
+    violations.push(`${label} does not use the reviewed condition`);
+  }
   const continueOnError = step['continue-on-error'];
   if (spec.continueOnError === undefined) {
     if (continueOnError !== undefined) violations.push(`${label} may fail without failing the job`);

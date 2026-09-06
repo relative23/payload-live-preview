@@ -96,6 +96,47 @@ describe('generateInlineScript', () => {
     expect(generateInlineScript()).not.toContain('var __LIVE_PREVIEW_FRAGMENT__=');
   });
 
+  it('emits the route prelude alone when routeStrategy is set without a fragment endpoint', () => {
+    const script = generateInlineScript({ routeStrategy: true });
+    const config = generatedConfig(script);
+
+    expect(config).toHaveLength(20);
+    expect(config[19]).toBe(true);
+    expect(script).toContain('var __LIVE_PREVIEW_ROUTE__=');
+    expect(script).not.toContain('var __LIVE_PREVIEW_FRAGMENT__=');
+  });
+
+  it('emits the fragment prelude alone when both are asked for; it already carries the route strategy', () => {
+    const script = generateInlineScript({
+      fragmentEndpoint: '/payload/fragment',
+      routeStrategy: true,
+    });
+
+    expect(script).toContain('var __LIVE_PREVIEW_FRAGMENT__=');
+    expect(script).not.toContain('var __LIVE_PREVIEW_ROUTE__=');
+  });
+
+  it('keeps a page that asks for neither byte-identical to before', () => {
+    const script = generateInlineScript();
+
+    expect(script).not.toContain('var __LIVE_PREVIEW_ROUTE__=');
+    expect(script).not.toContain('var __LIVE_PREVIEW_FRAGMENT__=');
+  });
+
+  it('leaves the fragment client out of the route prelude', () => {
+    // The point of the split. The codes name it better than a byte count: the
+    // endpoint's refusal (LP0803) and its superseded response (LP0804) cannot
+    // occur without a fragment endpoint, so their absence proves the request,
+    // protocol and abort machinery stayed behind.
+    const routeOnly = generateInlineScript({ routeStrategy: true }).split('\n')[1] ?? '';
+    const withFragments = generateInlineScript({ fragmentEndpoint: '/f' }).split('\n')[1] ?? '';
+
+    expect(new Set(routeOnly.match(/LP0[0-9]{3}/gu) ?? [])).toEqual(
+      new Set(['LP0801', 'LP0802', 'LP0805']),
+    );
+    expect(routeOnly.length).toBeLessThan(withFragments.length);
+  });
+
   it('ships no diagnostic-code table in the prelude, only the codes the fragment client reports', () => {
     const prelude = generateInlineScript({ fragmentEndpoint: '/payload/fragment' }).split('\n')[1];
     // The prelude re-exports DIAGNOSTIC_CODES through the fragment barrel, so
@@ -148,9 +189,11 @@ describe('generateInlineScript', () => {
   });
 
   it('writes the slots in INLINE_CONFIG_KEYS order, the one table the runtime destructures', () => {
-    expect(INLINE_CONFIG_KEYS).toHaveLength(19);
+    expect(INLINE_CONFIG_KEYS).toHaveLength(21);
     expect(INLINE_CONFIG_KEYS.indexOf('fragmentEndpoint')).toBe(17);
     expect(INLINE_CONFIG_KEYS.indexOf('revealEditedField')).toBe(18);
+    expect(INLINE_CONFIG_KEYS.indexOf('routeStrategy')).toBe(19);
+    expect(INLINE_CONFIG_KEYS.indexOf('onUnboundChange')).toBe(20);
     const every = Object.fromEntries(
       INLINE_CONFIG_KEYS.map((key, index) => [key, `slot-${String(index)}`]),
     ) as unknown as InlineScriptConfig;

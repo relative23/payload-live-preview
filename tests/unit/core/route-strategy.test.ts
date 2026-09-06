@@ -52,7 +52,10 @@ function afterUpdates(sources: readonly string[]): Promise<void> {
     });
   });
 }
-function start(route?: RouteStrategy): LivePreviewRuntime {
+function start(
+  route?: RouteStrategy,
+  extra: { onUnboundChange?: 'ignore' | 'route' } = {},
+): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
@@ -67,6 +70,7 @@ function start(route?: RouteStrategy): LivePreviewRuntime {
       logs.push(args.map(String).join(' '));
     },
     ...(route === undefined ? {} : { strategies: { route } }),
+    ...extra,
   });
   runtime.start();
   return runtime;
@@ -194,5 +198,115 @@ describe('route strategy', () => {
     expect(rt.inspect().revisions.superseded).toBe(1);
     expect(rt.inspect().route.refreshes).toBe(1);
     expect(logs.some((line) => line.includes('LP0805'))).toBe(false);
+  });
+});
+
+/**
+ * `onUnboundChange: 'route'` — the guarantee that this package is never worse
+ * than a framework hook that re-renders everything. A field the page does not
+ * bind cannot be patched; without this the edit is simply lost until the next
+ * navigation.
+ */
+describe('onUnboundChange', () => {
+  // The shared fixture binds `title` inside <head>, which `resolveStrategy`
+  // already calls route-bound. These tests are about the other reason to
+  // refresh, so the head binding goes away: `footer` is the bound field here
+  // and `headline` the unbound one.
+  beforeEach(() => {
+    document.head.innerHTML = '';
+  });
+
+  /** Refreshes whatever it is asked to, and never claims a binding of its own. */
+  function passiveRoute(): RouteStrategy & { refreshes: number } {
+    const strategy = {
+      refreshes: 0,
+      plan: () => false,
+      refresh: () => {
+        strategy.refreshes += 1;
+        return Promise.resolve('refreshed' as const);
+      },
+    };
+    return strategy;
+  }
+
+  /** The connection's first message; on it every field counts as changed. */
+  async function connect(route: { refreshes: number }): Promise<void> {
+    const settled = afterUpdates(['patch']);
+    post({ footer: 'Old' });
+    await settled;
+    expect(route.refreshes).toBe(0);
+  }
+
+  it('refreshes the route when a revision changes a field nothing binds', async () => {
+    const route = passiveRoute();
+    const rt = start(route, { onUnboundChange: 'route' });
+    await connect(route);
+    const done = afterUpdates(['route']);
+    post({ footer: 'Old', headline: 'nothing binds this' });
+    await done;
+    expect(route.refreshes).toBe(1);
+    expect(rt.inspect().route.refreshes).toBe(1);
+    expect(logs.some((line) => line.includes('LP0807'))).toBe(true);
+  });
+
+  it('sits out the first message, where every field looks changed', async () => {
+    // The page was just rendered from that document, so a refresh would only
+    // fetch what is already on screen — once per connection, for every visitor.
+    const route = passiveRoute();
+    start(route, { onUnboundChange: 'route' });
+    const done = afterUpdates(['patch']);
+    post({ footer: 'Old', headline: 'nothing binds this' });
+    await done;
+    expect(route.refreshes).toBe(0);
+  });
+
+  it('leaves a revision that only touches bound fields to the patch path', async () => {
+    const route = passiveRoute();
+    start(route, { onUnboundChange: 'route' });
+    await connect(route);
+    const done = afterUpdates(['patch']);
+    post({ footer: 'Patched' });
+    await done;
+    expect(route.refreshes).toBe(0);
+    expect(document.querySelector('[data-payload-field="footer"]')?.textContent).toBe('Patched');
+  });
+
+  it('ignores unbound changes by default, as 2.0 shipped', async () => {
+    const route = passiveRoute();
+    start(route);
+    await connect(route);
+    const done = afterUpdates(['patch']);
+    post({ footer: 'Patched', headline: 'still nothing binds this' });
+    await done;
+    expect(route.refreshes).toBe(0);
+  });
+
+  it('never counts the document fields Payload sends with every update', async () => {
+    const route = passiveRoute();
+    start(route, { onUnboundChange: 'route' });
+    await connect(route);
+    const done = afterUpdates(['patch']);
+    post({ footer: 'Patched', id: 7, updatedAt: '2026-09-06T00:00:00.000Z', _status: 'draft' });
+    await done;
+    expect(route.refreshes).toBe(0);
+  });
+
+  it('refreshes once for a revision, however many fields are unbound', async () => {
+    const route = passiveRoute();
+    const rt = start(route, { onUnboundChange: 'route' });
+    await connect(route);
+    const done = afterUpdates(['route']);
+    post({ footer: 'Old', headline: 'one', subheadline: 'two', kicker: 'three' });
+    await done;
+    expect(route.refreshes).toBe(1);
+    expect(rt.inspect().route.loopStopped).toBe(0);
+  });
+
+  it('does nothing without a route strategy to run', async () => {
+    start(undefined, { onUnboundChange: 'route' });
+    const done = afterUpdates(['patch']);
+    post({ footer: 'Patched', headline: 'nothing binds this' });
+    await done;
+    expect(document.querySelector('[data-payload-field="footer"]')?.textContent).toBe('Patched');
   });
 });

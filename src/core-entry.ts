@@ -110,10 +110,11 @@ export type {
   FieldBindingAttributes,
   FieldName,
   FieldPath,
+  FragmentBoundaryAttributes,
+  FragmentBoundaryOptions,
   OwnerBindingAttributes,
   PreviewBindings,
   PreviewBindingsOptions,
-  PreviewBindingsCommonOptions,
   SuppressedBinding,
   ValueAt,
 } from './dsl';

@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { minify } from 'terser';
 import { build } from 'tsup';
 import { BUILD_PROFILES } from '../tsup.config';
+import { DIRECTIVE_ENTRIES } from './package-entries';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(ROOT, 'dist');
@@ -59,20 +60,42 @@ for (const profile of BUILD_PROFILES) {
 }
 
 /**
+ * `dist/<entry>.js` → the module directive its published file must start with.
+ * esbuild drops a source directive and a banner alike when it bundles, so this
+ * pass is the only place that can put one back.
+ */
+const DIRECTIVES = new Map<string, string>(
+  Object.entries(DIRECTIVE_ENTRIES).map(([name, entry]) => [
+    resolve(DIST, `${name}.js`),
+    entry.directive,
+  ]),
+);
+
+/**
  * esbuild lowers syntax and minifies whitespace; this pass mangles identifiers.
  * Names on the public allow-list are kept so `fn.name` stays meaningful, and
  * nothing else is preserved — a preserved internal name costs bytes in every
  * consumer bundle. Pure annotations survive so a consumer's bundler can drop
  * what it does not import. The original source map is supplied as input so
- * every published artefact still maps back to TypeScript.
+ * every published artefact still maps back to TypeScript, and a module
+ * directive is written back through terser's `preamble`, which shifts that map
+ * with it.
  */
 async function compressJavaScript(path: string): Promise<void> {
   const sourceMapPath = `${path}.map`;
   const isModule = path.endsWith('.js');
-  const result = await minify(await readFile(path, 'utf8'), {
+  const source = await readFile(path, 'utf8');
+  const directive = DIRECTIVES.get(path);
+  const result = await minify(source, {
     compress: { module: isModule, passes: 2 },
     ecma: 2022,
-    format: { comments: false, preserve_annotations: true },
+    // `preamble` rather than a prepended string: terser shifts the source map
+    // for it, so the published file still maps back to TypeScript line by line.
+    format: {
+      comments: false,
+      preserve_annotations: true,
+      ...(directive !== undefined ? { preamble: directive } : {}),
+    },
     // esbuild emits classes as `var X = class {}`, whose `.name` is inferred
     // from the binding; reserving the identifiers keeps the names for classes and
     // functions alike, where `keep_classnames` would only cover `class X {}`.

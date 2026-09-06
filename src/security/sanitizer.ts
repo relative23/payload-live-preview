@@ -6,6 +6,7 @@
 
 import { trustedHtml } from './trusted-types';
 import { isSafeUrl, isExternalHttpUrl } from './url-validator';
+import { reportDroppedAttribute } from './sanitizer-report';
 
 declare const __INLINE_BUILD__: boolean | undefined;
 
@@ -388,10 +389,14 @@ function sanitizeAttributes(element: Element, tag: string, policy: ResolvedPolic
       // before the allow-list so an extension cannot re-admit them.
       if (name === 'id' || name === 'name' || name.startsWith(BINDING_DATA_PREFIX)) {
         element.removeAttribute(attr.name);
+        reportDroppedAttribute(name);
         continue;
       }
       if (name.startsWith(ATTR_DATA_PREFIX)) {
-        if (!policy.allowedData.has(name)) element.removeAttribute(attr.name);
+        if (!policy.allowedData.has(name)) {
+          element.removeAttribute(attr.name);
+          reportDroppedAttribute(name);
+        }
         continue;
       }
       if (ATTR_GLOBAL.has(name) || name.startsWith(ATTR_ARIA_PREFIX)) continue;

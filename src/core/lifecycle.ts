@@ -4,7 +4,7 @@
  * itself and never walks the DOM during an update. See ADR 0004.
  */
 
-import { A11yAnnouncer } from './a11y';
+import { createA11y, defaultSendReady } from './runtime-wiring';
 import { BindingWriter } from './binding-writer';
 import { ElementCache } from './cache';
 import { DataMerger } from './data-merger';
@@ -95,6 +95,17 @@ export class LivePreviewRuntime {
           const error = new Error(`Preview token rejected (origin: ${origin})`);
           void emitter.emit('error', { error, context: 'token', code: 'LP0502' });
         }
+        // A trusted origin sending a shape this runtime does not know is
+        // protocol drift, not an attack — and the only place it is visible is
+        // here, so it is said out loud once rather than only under `debug`.
+        if ((reason === 'shape' || reason === 'type') && !this.state.warnedProtocolShape) {
+          this.state.warnedProtocolShape = true;
+          warn(
+            `[live-preview] LP0503: ${origin} posted a message this runtime does not recognise ` +
+              `(${reason === 'type' ? 'unknown message type' : 'unexpected shape'}); it was ` +
+              'ignored. A newer Payload or a custom sender: check that the versions match.',
+          );
+        }
         log('LP0501 message rejected:', reason, origin);
       },
       ...(options.validateToken !== undefined ? { validateToken: options.validateToken } : {}),
@@ -150,6 +161,7 @@ export class LivePreviewRuntime {
       dependencies: options.dependencies ?? {},
       strategies: options.strategies ?? {},
       revealEditedField: options.revealEditedField === true,
+      onUnboundChange: options.onUnboundChange ?? 'ignore',
     };
     this.writer = new BindingWriter(this.deps, this.state);
     this.pipeline = new UpdatePipeline(this.deps, this.state, () => {
@@ -450,14 +462,6 @@ export class LivePreviewRuntime {
   }
 }
 
-function createA11y(options: RuntimeOptions): A11yAnnouncer | null {
-  if (options.enableA11y === false) return null;
-  const root = options.root;
-  const targetDocument =
-    root === undefined ? undefined : isDocumentRoot(root) ? root : root.ownerDocument;
-  return new A11yAnnouncer(options.a11yLocale, targetDocument);
-}
-
 /** Node types are stable across realms; global constructors are not. */
 function isDocumentRoot(root: Document | Element): root is Document {
   return root.nodeType === 9;
@@ -466,12 +470,4 @@ function isDocumentRoot(root: Document | Element): root is Document {
 /** lib.dom types body as present; a head-time document has none yet. */
 function readDocumentBody(root: Document): HTMLElement | null {
   return root.body;
-}
-
-function defaultSendReady(origins: readonly string[]): void {
-  if (typeof window === 'undefined') return;
-  const targets: Window[] = [];
-  if (window.parent !== window) targets.push(window.parent);
-  if (window.opener instanceof Window) targets.push(window.opener);
-  MessageBus.sendReady(targets, origins);
 }

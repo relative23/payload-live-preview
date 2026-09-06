@@ -15,8 +15,13 @@ export default tseslint.config(
       'test-results/**',
       '*.config.js',
       'src/inline/runtime.generated.ts',
+      'src/inline/runtime-lean.generated.ts',
       'src/inline/loader.generated.ts',
       'src/inline/fragment.generated.ts',
+      // Local-only working files (`.git/info/exclude`): they are not part of
+      // the project's tsconfig, so the type-aware rules cannot see them and
+      // would fail the whole run on a file that never ships.
+      'docs/PRIVATE-*',
     ],
   },
   js.configs.recommended,

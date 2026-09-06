@@ -12,6 +12,8 @@ npm install payload-live-preview
 
 ## The handle
 
+There is no separate setup step. SvelteKit already has one place where a request passes through server code, and `livePreviewHandle` is a handle like any other — the export below is the whole integration: injection, CSP and authorization.
+
 ```ts
 // src/hooks.server.ts
 import { env } from '$env/dynamic/private';
@@ -34,6 +36,24 @@ export const handle = livePreviewHandle({
 ```
 
 Compose it with `sequence()` next to other hooks; it never short-circuits the chain. `authorizePreview` runs on requests carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true`); a refusal leaves the response exactly as rendered. The strict default also requires `https:` admin origins in production and no referer trust. The three strategies and what each one binds: [authorization.md](authorization.md).
+
+## The runtime as a cached asset
+
+The handle inlines the runtime by default. `delivery: 'asset'` puts a bootstrap of a few hundred bytes there instead, which fetches the runtime only once the page finds itself in a preview context:
+
+```ts
+// src/routes/payload-live-preview/[file]/+server.ts
+import { createRuntimeAssetRoute } from 'payload-live-preview/sveltekit';
+import { livePreviewOptions } from '$lib/live-preview';
+
+export const { GET } = createRuntimeAssetRoute(livePreviewOptions);
+```
+
+Give `livePreviewHandle` the same object with `delivery: 'asset'` on it. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
+
+A handle sees the request, so the choice can be per route. The example splits on the pathname: `/asset` gets the bootstrap, everything else the inlined runtime, from two handles that differ in that one option. Authorization is untouched either way — an unauthorized request gets neither.
+
+Move the route folder and set `assetPath` together if the app is not served from the site root. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 
 ## Types for `event.locals`
 
@@ -96,6 +116,41 @@ export const load: PageServerLoad = async ({ locals, params, request }) => {
 </section>
 ```
 
+## Server-rendered boundaries
+
+A patch reaches what the markup annotates. It cannot create a section the
+template renders only when a field is set, and it cannot run a component's own
+logic. For those, mark the region as a fragment boundary and let the server
+render it from the unsaved form state:
+
+```ts
+// src/routes/payload/fragment/+server.ts
+import { createFragmentEndpoint } from 'payload-live-preview/sveltekit';
+import Hero from '$lib/Hero.svelte';
+import { heroProps } from '$lib/hero';
+import { authorizePreview } from '$lib/authorize-preview';
+
+export const POST = createFragmentEndpoint({
+  authorizePreview,
+  registry: { hero: { component: Hero, props: ({ fields }) => heroProps(fields) } },
+});
+```
+
+Point the script at it — `fragments: { endpoint: '/payload/fragment' }` in the
+handle's options — and mark the region with
+`{...preview.boundary('hero', { dependsOn: ['title', 'subtitle'] })}`, which is
+gated on the same verdict as `preview.bind()`.
+
+Svelte renders through `render()` from `svelte/server`, and the endpoint
+delivers its `body`: `<svelte:head>` output belongs to the document head, which
+the route strategy owns. `svelte` is an optional peer, imported at the first
+render.
+
+A page built around boundaries usually wants `export const csr = false` on that
+route: the runtime writes into the DOM, and a component hydrating afterwards can
+reset what was patched (the caveat below). Registry, limits, the fallback and
+the abuse model: [hybrid.md](hybrid.md).
+
 ## Caveats
 
 - **Hydration.** A component that re-renders a bound element from its own state overwrites the live patch. Bind fields in server-rendered markup, and mark a client-owned root with `data-payload-island` so the runtime never patches or morphs into it ([renderers.md](renderers.md)).
@@ -111,7 +166,7 @@ export const load: PageServerLoad = async ({ locals, params, request }) => {
 
 ## Example
 
-[`examples/sveltekit-payload`](../examples/sveltekit-payload) — `livePreviewHandle()` with the `signed-token` strategy and owner-scoped bindings on SvelteKit 2, run in Chromium, Firefox and WebKit.
+[`examples/sveltekit-payload`](../examples/sveltekit-payload) — `livePreviewHandle()` with the `signed-token` strategy and owner-scoped bindings on SvelteKit 2, and `/hybrid` with its endpoint at `src/routes/payload/fragment/+server.ts`. Run in Chromium, Firefox and WebKit.
 
 ## When something does not update
 

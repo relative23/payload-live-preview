@@ -43,6 +43,31 @@ describe('architecture policy', () => {
     );
   });
 
+  it('lets a named build-time module use Node, and keeps browser code away from it', () => {
+    // The Nuxt module runs in Nuxt's build, not in a page. Naming it says both
+    // halves at once: it may reach for Node, and nothing that ships to a
+    // browser may reach for it.
+    const modules: readonly ArchitectureModule[] = [
+      {
+        path: 'src/adapters/nuxt/module.ts',
+        dependencies: [{ specifier: 'node:path', kind: 'runtime' }],
+      },
+      {
+        path: 'src/adapters/nuxt/adapter.ts',
+        dependencies: [dependency('src/adapters/nuxt/module.ts')],
+      },
+    ];
+
+    expect(findArchitectureViolations(modules)).toEqual([
+      {
+        kind: 'server-boundary',
+        module: 'src/adapters/nuxt/adapter.ts',
+        dependency: 'src/adapters/nuxt/module.ts',
+        message: 'src/adapters/nuxt/adapter.ts imports server-only src/adapters/nuxt/module.ts',
+      },
+    ]);
+  });
+
   it('rejects static dynamic-import, require and import-equals boundary bypasses', async () => {
     const repository = await mkdtemp(join(tmpdir(), 'plp-architecture-policy-'));
     try {

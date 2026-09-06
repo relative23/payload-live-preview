@@ -27,7 +27,48 @@ interface Fixture {
   readonly why: string;
 }
 
-/** Measured 2026-08-27; headroom ~1.5 %. */
+/**
+ * Measured 2026-08-27; headroom ~1.5 %.
+ *
+ * The three client rows and the generator row rose twice on 2026-09-06: for the
+ * lean profile's own code (the LP0104 message, the renderers that report it, the two
+ * strategy warnings as shared functions). The lean artifact itself is not in any
+ * of them: it lives behind `payload-live-preview/lean`, measured below. Then
+ * again for LP0503, the line a page prints when a trusted admin sends a message
+ * this runtime does not recognise.
+ *
+ * The three rows carrying the inline runtime were raised on 2026-09-06 for the
+ * ~660 B gzip `onUnboundChange` costs it (see bundle-budgets.ts). The generator
+ * row moved furthest because it also gained the route prelude alongside the
+ * fragment one — a second copy of the runtime's own strategy source, which the
+ * generator embeds whole and cannot shake. Raised again the same day for
+ * `data-payload-format`.
+ *
+ * 2026-09-06: the numbers are Vite 7's, because that is the newest major the
+ * repository's own dev tooling accepts (`@codspeed/vitest-plugin` peers below
+ * 8) — the record and the reason live in `quality/compat-matrix.json`.
+ *
+ * Vite 8 was measured before that constraint surfaced, and the measurement is
+ * worth keeping: it bundles with Rolldown instead of Rollup, which is less
+ * precise at dropping unused declarations out of a bundled module —
+ * `escapeHtml` from the barrel came out at 2 378 B against Rollup's 220, and
+ * `payload-live-preview/plugins` about a fifth larger. Consumers on Astro 7 or
+ * Nuxt get that bundler, so the difference is theirs, not ours; the focused
+ * entries were within a few percent either way.
+ *
+ * One thing did not survive the move unassisted, and its fix is still in
+ * place. The runtime source is emitted as chunks joined at load
+ * (scripts/serialize-source.ts), and Rolldown would not prove that call pure:
+ * importing `escapeHtml` from the barrel came out at 32 512 B gzip — the whole
+ * package — until the expression was annotated `\/* @__PURE__ *\/`. Rollup drops
+ * it either way, so the annotation costs nothing here and is what keeps the
+ * barrel shakeable for a consumer on 8.
+ *
+ * 2026-09-06 (LP0409): the two Lexical rows rise ~350 B gzip. The renderer
+ * writes sanitized HTML, so it pulls the sanitizer, and the sanitizer now
+ * carries the message it prints when the strict policy drops an attribute the
+ * 1.x default kept.
+ */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
     from: 'payload-live-preview',
@@ -40,49 +81,77 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 4_750,
+    gzip: 5_118,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 36_450,
+    gzip: 39_236,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 33_800,
-    why: 'the generator carries the inline runtime source and nothing of the client',
+    gzip: 37_151,
+    why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 36_450,
+    gzip: 39_211,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 4_850,
+    gzip: 5_251,
     why: 'the Lexical renderer from its focused entry',
   },
   {
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_495,
+    gzip: 1_493,
     why: 'the keyed morph alone, without the array renderer',
+  },
+  {
+    from: 'payload-live-preview/nextjs',
+    symbol: 'createLivePreviewMiddleware',
+    use: 'export const out = createLivePreviewMiddleware({});',
+    gzip: 42_011,
+    why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
+  },
+  {
+    from: 'payload-live-preview/lean',
+    symbol: 'LEAN_RUNTIME',
+    use: 'export const out = LEAN_RUNTIME.source.length;',
+    gzip: 25_890,
+    why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
+  },
+  {
+    from: 'payload-live-preview/react',
+    symbol: 'useLivePreviewDocument',
+    use: 'export const out = useLivePreviewDocument;',
+    gzip: 5_322,
+    why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
+  },
+  {
+    from: 'payload-live-preview/vue',
+    symbol: 'useLivePreviewDocument',
+    use: 'export const out = useLivePreviewDocument;',
+    gzip: 5_311,
+    why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {
     from: 'payload-live-preview/plugins',
     symbol: 'PluginManager',
     use: 'export const out = PluginManager;',
-    gzip: 3_375,
+    gzip: 3_372,
     why: 'the plugin manager without the built-in plugins',
   },
 ];
@@ -103,7 +172,9 @@ async function bundle(consumer: string, fixture: Fixture): Promise<string> {
       minify: 'esbuild',
       target: 'es2022',
       lib: { entry, formats: ['es'], fileName: 'out' },
-      rollupOptions: { external: ['ts-morph'] },
+      // The optional peers a fixture must not inline: measuring React would
+      // measure React, not what this package ships.
+      rollupOptions: { external: ['ts-morph', 'react', 'vue'] },
     },
   });
   const outputs = Array.isArray(result) ? result : [result];

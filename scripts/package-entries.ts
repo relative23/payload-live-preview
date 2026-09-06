@@ -20,6 +20,7 @@ export const DUAL_FORMAT_ENTRIES = {
  * `<entry>.d.ts` self-contained.
  */
 export const STANDALONE_ENTRIES = {
+  lean: 'src/lean.ts',
   server: 'src/server/index.ts',
   client: 'src/client-entry.ts',
   structural: 'src/structural-entry.ts',
@@ -40,9 +41,26 @@ export const ESM_ONLY_ENTRIES = {
   doctor: 'src/doctor/index.ts',
   migrate: 'src/migrate/index.ts',
   'codegen-astro': 'src/codegen/astro-plugin.ts',
+  annotate: 'src/codegen/annotate/entry.ts',
   'adapters/astro/index': 'src/adapters/astro/index.ts',
   'adapters/astro/middleware-entry': 'src/adapters/astro/middleware-entry.ts',
   'adapters/nextjs/index': 'src/adapters/nextjs/index.ts',
   'adapters/sveltekit/index': 'src/adapters/sveltekit/index.ts',
   'adapters/nuxt/index': 'src/adapters/nuxt/index.ts',
+  'adapters/vue/index': 'src/adapters/vue/index.ts',
+  // Nuxt loads the module by specifier and the plugin it registers by path;
+  // nothing in application code imports either.
+  'adapters/nuxt/module': 'src/adapters/nuxt/module.ts',
+} as const;
+
+/**
+ * Entries whose published file must start with a framework directive.
+ *
+ * The directive cannot live in the source: esbuild drops a module-level one
+ * when it bundles, and a `banner` is dropped with it. `scripts/build-dist.ts`
+ * therefore writes it back through terser's `preamble`, which also shifts the
+ * source map for it. These entries are built with the other ESM-only ones.
+ */
+export const DIRECTIVE_ENTRIES = {
+  'adapters/react/index': { source: 'src/adapters/react/index.ts', directive: "'use client';" },
 } as const;

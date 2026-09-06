@@ -22,6 +22,15 @@
     "enabled": false
   },
   "messages": {
+    "compilerMessageReporting": {
+      // Vue 3's own declarations trip this on a generic constraint, and this
+      // compiler reads them with `skipLibCheck: false` on purpose. Our sources
+      // do not hide behind the suppression: `tsc --noEmit` checks them
+      // separately and fails on a circular constraint of our own.
+      "TS2313": {
+        "logLevel": "none"
+      }
+    },
     "extractorMessageReporting": {
       "ae-missing-release-tag": {
         "logLevel": "none"

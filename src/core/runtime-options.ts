@@ -49,6 +49,13 @@ export interface RuntimeOptions {
   /** Scroll the preview to the field being edited when its value changes. */
   readonly revealEditedField?: boolean;
   /**
+   * What to do when a revision changes a field the page has no binding for.
+   * `'ignore'` (the default) leaves it, as 2.0 shipped; `'route'` refreshes the
+   * whole route instead of patching, so the edit is never silently lost. Needs
+   * a route strategy — see `strategies` and `routeStrategy`.
+   */
+  readonly onUnboundChange?: 'ignore' | 'route';
+  /**
    * Fields whose change re-applies other bindings: `{ price: ['priceLabel'] }`.
    * Merged with what the markup declares via `data-payload-depends`.
    */

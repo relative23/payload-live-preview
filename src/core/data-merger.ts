@@ -86,6 +86,17 @@ function isSafeId(value: unknown): value is string | number {
   }
 }
 
+/**
+ * Trailing slashes off a base URL, without a regular expression: `/\/+$/`
+ * backtracks over a long run of slashes and takes quadratic time on input the
+ * page supplies (CodeQL js/polynomial-redos).
+ */
+function withoutTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end -= 1;
+  return value.slice(0, end);
+}
+
 export class DataMerger {
   private readonly serverURL: string;
   private readonly apiRoute: string;
@@ -97,7 +108,7 @@ export class DataMerger {
   private destroyDepth = 0;
 
   constructor(options: DataMergerOptions) {
-    this.serverURL = options.serverURL.replace(/\/+$/, '');
+    this.serverURL = withoutTrailingSlashes(options.serverURL);
     const route = options.apiRoute ?? '/api';
     this.apiRoute = route.startsWith('/') ? route : `/${route}`;
     this.depth = options.depth ?? 1;

@@ -23,6 +23,7 @@ export const ALT_ATTRIBUTE = 'data-payload-alt';
 export const ARRAY_TEMPLATE_ATTRIBUTE = 'data-payload-array-template';
 export const ARRAY_SEPARATOR_ATTRIBUTE = 'data-payload-array-separator';
 export const LOCALE_ATTRIBUTE = 'data-payload-locale';
+export const FORMAT_ATTRIBUTE = 'data-payload-format';
 export const RICH_TEXT_ATTRIBUTE = 'data-payload-richtext';
 export const HTML_ATTRIBUTE = 'data-payload-html';
 export const ARRAY_ATTRIBUTE = 'data-payload-array';
@@ -269,6 +270,7 @@ export class ElementCache {
     const arrayTemplate = element.getAttribute(ARRAY_TEMPLATE_ATTRIBUTE);
     const arraySeparator = element.getAttribute(ARRAY_SEPARATOR_ATTRIBUTE);
     const locale = element.getAttribute(LOCALE_ATTRIBUTE);
+    const format = element.getAttribute(FORMAT_ATTRIBUTE);
     const owner = resolveBindingOwner(element);
     const dependsOn = parseDependencyList(element.getAttribute(DEPENDS_ATTRIBUTE));
     const strategy = element.getAttribute(STRATEGY_ATTRIBUTE);
@@ -287,6 +289,7 @@ export class ElementCache {
       ...(arrayTemplate !== null ? { arrayTemplate } : {}),
       ...(arraySeparator !== null ? { arraySeparator } : {}),
       ...(locale !== null && locale.length > 0 ? { locale } : {}),
+      ...(format !== null && format.length > 0 ? { format } : {}),
       ...(owner !== undefined ? { owner } : {}),
       ...(dependsOn.length > 0 ? { dependsOn } : {}),
       ...(strategy !== null && strategy.length > 0 ? { strategy } : {}),

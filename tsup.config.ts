@@ -2,12 +2,13 @@ import { defineConfig, type Options } from 'tsup';
 
 import {
   CORE_ENTRY,
+  DIRECTIVE_ENTRIES,
   DUAL_FORMAT_ENTRIES,
   ESM_ONLY_ENTRIES,
   STANDALONE_ENTRIES,
 } from './scripts/package-entries';
 
-export { CORE_ENTRY, DUAL_FORMAT_ENTRIES, ESM_ONLY_ENTRIES, STANDALONE_ENTRIES };
+export { CORE_ENTRY, DIRECTIVE_ENTRIES, DUAL_FORMAT_ENTRIES, ESM_ONLY_ENTRIES, STANDALONE_ENTRIES };
 
 const SHARED_OPTIONS = {
   dts: true,
@@ -38,7 +39,13 @@ const SHARED_OPTIONS = {
   // ts-morph is huge — never inline it. Codegen consumers install it
   // themselves via the peerDependencies declaration. The virtual
   // module is resolved by the consumer's Vite (integration plugin).
-  external: ['ts-morph', /^virtual:/],
+  // `svelte/server` is an optional peer written as a real specifier (see
+  // src/adapters/sveltekit/fragments.ts on why that one cannot be hidden behind
+  // a variable); `react` and `vue` are the optional peers the `./react` and
+  // `./vue` entries import statically, because a hook cannot be lazy. All are
+  // named external so the build never inlines them — a consumer resolves its
+  // own copy.
+  external: ['ts-morph', 'react', 'svelte/server', 'vue', /^virtual:/],
   tsconfig: 'tsconfig.json',
 } satisfies Options;
 
@@ -72,7 +79,14 @@ export const BUILD_PROFILES: Options[] = [
   {
     ...SHARED_OPTIONS,
     name: 'esm-only',
-    entry: ESM_ONLY_ENTRIES,
+    entry: {
+      ...ESM_ONLY_ENTRIES,
+      // Their directive is not a build option: esbuild drops both a source
+      // directive and a banner, so `scripts/build-dist.ts` writes it back.
+      ...Object.fromEntries(
+        Object.entries(DIRECTIVE_ENTRIES).map(([name, entry]) => [name, entry.source]),
+      ),
+    },
     format: ['esm'],
   },
 ];

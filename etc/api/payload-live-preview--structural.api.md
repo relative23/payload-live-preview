@@ -42,6 +42,7 @@ export interface CachedElement {
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
     readonly fieldType: RendererKey;
+    readonly format?: string;
     readonly fragmentBoundary?: Element;
     readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;

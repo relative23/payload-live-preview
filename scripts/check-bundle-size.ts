@@ -1,82 +1,24 @@
 import { access, readdir, readFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { LEAN_RUNTIME } from '../src/lean';
 import { generateInlineScript } from '../src/inline/generator';
 import {
   findBudgetViolations,
   INLINE_BUDGET,
+  INLINE_LEAN_BUDGET,
   INLINE_FRAGMENT_BUDGET,
+  INLINE_ROUTE_BUDGET,
   measureBundle,
   type BundleBudget,
   type BundleMeasurement,
 } from './bundle-budgets';
+import { ENTRY_BUDGETS } from './entry-budgets';
 import { improvementNotice } from './size-budget-notice';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(ROOT, 'dist');
 const PACKAGE_JSON = resolve(ROOT, 'package.json');
-
-// Budgets include narrow headroom for patch-level correctness fixes while still
-// failing the unminified 1.0.4 artifacts. Public names and source maps are retained.
-const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
-  // Adapter rows raised twice on 2026-08-27, measured with ~1 % headroom:
-  // +~200 B gzip when the four adapters moved onto the shared preview policy
-  // (one decision path per bundle costs more than straight-line code the
-  // minifier could fold), then +~1.2 KB gzip for the authorization gate —
-  // authorizePreview, strict-mode checks, the defaults profile, the development
-  // warnings, and the runtime's source policy embedded in every adapter bundle.
-  // The HMAC/session code is not in these bundles; the brand check is imported
-  // from the `types` leaf for exactly that reason. 2026-08-27 (1.3.0): the keyed
-  // morph (ADR 0008), its diagnostics and the template sanitizer options add
-  // ~1.4 KB gzip to the inline runtime and therefore to every adapter bundle. core.* rows: +~200 B gzip for
-  // the message bus source policy (eventSourcePolicy), same date. 2026-09-04:
-  // +~45 B gzip in every adapter that embeds the runtime, for the reveal ledger
-  // fix recorded in bundle-budgets.ts. 2026-09-05: +~70 B gzip in every bundle
-  // that embeds the runtime, for the per-instance sanitizer policy (see
-  // bundle-budgets.ts); astro +~285 B for `authorizePreview` on the fragment
-  // endpoint and `LivePreviewLocals`, the other adapters +~70–120 B for the
-  // type-bound locals writes and the shared CSP helper; migrate.js and
-  // doctor-cli.js +~170/+~75 B for the `rename-admin-origins-option` codemod;
-  // server.* +~50 B for the entry split into a barrel and `preview.ts`;
-  // index.js brotli lowered towards its measurement. Brotli is not byte-stable:
-  // CI compressed index.js 45 915 and then 45 959 B from byte-identical raw
-  // and gzip output, 56–100 B over this host. Every brotli row therefore keeps
-  // about 120 B over the local figure, still under the 2 % the improvement
-  // hint allows; raw and gzip rows stay tight because they reproduce.
-  'adapters/astro/index.js': { raw: 130_750, gzip: 41_500, brotli: 36_350 },
-  'adapters/astro/middleware-entry.js': { raw: 117_250, gzip: 37_300, brotli: 32_650 },
-  'adapters/nextjs/index.js': { raw: 117_000, gzip: 37_250, brotli: 32_600 },
-  'adapters/nuxt/index.js': { raw: 117_650, gzip: 37_450, brotli: 32_750 },
-  'adapters/sveltekit/index.js': { raw: 116_750, gzip: 37_200, brotli: 32_550 },
-  'codegen-astro.js': { raw: 12_950, gzip: 4_550, brotli: 4_100 },
-  'codegen-cli.js': { raw: 14_550, gzip: 5_000, brotli: 4_500 },
-  'codegen.cjs': { raw: 12_450, gzip: 4_250, brotli: 3_860 },
-  'codegen.js': { raw: 12_300, gzip: 4_250, brotli: 3_850 },
-  'doctor-cli.js': { raw: 32_750, gzip: 12_000, brotli: 10_750 },
-  'doctor.js': { raw: 13_100, gzip: 5_500, brotli: 4_750 },
-  'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
-  'core.cjs': { raw: 111_700, gzip: 34_950, brotli: 30_600 },
-  'core.js': { raw: 111_200, gzip: 34_900, brotli: 30_500 },
-  'index.cjs': { raw: 232_050, gzip: 71_800, brotli: 47_050 },
-  'index.js': { raw: 231_450, gzip: 71_950, brotli: 46_100 },
-  // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
-  // 50-byte step is 5 % of the artifact, which stops being a budget.
-  'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
-  'payload.js': { raw: 1_080, gzip: 575, brotli: 515 },
-  // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
-  'server.cjs': { raw: 12_000, gzip: 4_450, brotli: 4_050 },
-  'server.js': { raw: 11_850, gzip: 4_400, brotli: 4_050 },
-  'client.cjs': { raw: 106_600, gzip: 33_200, brotli: 29_050 },
-  'client.js': { raw: 106_550, gzip: 33_150, brotli: 29_000 },
-  'structural.cjs': { raw: 18_600, gzip: 6_500, brotli: 5_950 },
-  'structural.js': { raw: 18_600, gzip: 6_500, brotli: 5_950 },
-  'lexical.cjs': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
-  'lexical.js': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
-  'plugins.cjs': { raw: 15_550, gzip: 5_650, brotli: 5_000 },
-  'plugins.js': { raw: 15_550, gzip: 5_650, brotli: 5_000 },
-  'fragment.cjs': { raw: 13_950, gzip: 5_350, brotli: 4_700 },
-  'fragment.js': { raw: 13_850, gzip: 5_300, brotli: 4_700 },
-};
 
 const STABLE_EXPORT_NAMES: Readonly<Record<string, readonly string[]>> = {
   'index.cjs': [
@@ -130,7 +72,18 @@ function collectManifestTargets(value: unknown, label: string, targets: Map<stri
   }
 }
 
+/**
+ * The one target that legitimately sits outside `dist/`: the manifest exporting
+ * itself. `require('payload-live-preview/package.json')` is how tooling reads
+ * the installed version, and without the export Node answers
+ * ERR_PACKAGE_PATH_NOT_EXPORTED — measured on a real consumer whose E2E gate
+ * asserts the running runtime's version. Named here rather than admitted by a
+ * looser rule, so nothing else drifts out of dist with it.
+ */
+const SELF_MANIFEST_TARGET = './package.json';
+
 function resolveManifestTarget(target: string): string | undefined {
+  if (target === SELF_MANIFEST_TARGET) return resolve(ROOT, 'package.json');
   if (!target.startsWith('./dist/')) return undefined;
   const absolute = resolve(ROOT, target.slice(2));
   const relativeTarget = relative(DIST, absolute);
@@ -280,6 +233,16 @@ async function main(): Promise<void> {
     'default inline script',
     measureBundle(generateInlineScript()),
     INLINE_BUDGET,
+  );
+  failures += printMeasurement(
+    'inline script, lean profile',
+    measureBundle(generateInlineScript({ runtime: LEAN_RUNTIME })),
+    INLINE_LEAN_BUDGET,
+  );
+  failures += printMeasurement(
+    'inline script with the route strategy',
+    measureBundle(generateInlineScript({ routeStrategy: true })),
+    INLINE_ROUTE_BUDGET,
   );
   failures += printMeasurement(
     'inline script with fragments',

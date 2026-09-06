@@ -19,11 +19,16 @@
     "src/lexical-entry.ts",
     "src/plugins-entry.ts",
     "src/fragment/index.ts",
+    "src/lean.ts",
     "src/adapters/astro/index.ts",
     "src/adapters/astro/middleware-entry.ts",
     "src/adapters/nextjs/index.ts",
     "src/adapters/nuxt/index.ts",
     "src/adapters/sveltekit/index.ts",
+    "src/adapters/react/index.ts",
+    "src/adapters/vue/index.ts",
+    "src/adapters/nuxt/module.ts",
+    "src/codegen/annotate/entry.ts",
     "src/doctor/index.ts",
     "src/migrate/index.ts",
     "src/doctor/cli.ts",
@@ -31,6 +36,7 @@
     // esbuild entry for the static-delivery bootstrap; nothing imports it.
     "src/core/loader.ts",
     "src/fragment/inline.ts",
+    "src/fragment/route-inline.ts",
     "scripts/api-contracts.ts",
     "tests/**/*.{test,spec,bench}.ts",
     "*.config.ts",
@@ -38,7 +44,11 @@
   // Analyze the complete maintained TS/JS surface. Build output, fixtures and
   // mutation sandboxes are deliberately outside the project instead of hiding
   // any production src subtree.
-  "project": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "*.config.ts"],
+  // `.vue` is listed although this repository has no single-file component:
+  // `vue` is a devDependency (the composable's tests) and an optional peer, and
+  // knip otherwise reports that it would not follow imports in a file type the
+  // project excludes. A `.vue` file under these paths would be followed.
+  "project": ["src/**/*.{ts,vue}", "scripts/**/*.ts", "tests/**/*.{ts,tsx,vue}", "*.config.ts"],
   // Cycles and layer direction belong to scripts/architecture-policy.ts. Knip
   // remains responsible for dead files/exports and dependency drift.
   "include": ["files", "dependencies", "unlisted", "unresolved", "exports", "types", "duplicates"],
@@ -48,7 +58,11 @@
   "ignoreExportsUsedInFile": true,
   // CLI-resolved tools are invoked through scripts/check-package.ts without a
   // static package import. Keep only those exact dynamic binaries exempt.
-  "ignoreDependencies": ["@arethetypeswrong/cli", "publint"],
+  // `svelte` is an optional peer the SvelteKit fragment binding imports by name
+  // on purpose (module identity in Vite's SSR graph — see
+  // src/adapters/sveltekit/fragments.ts); knip sees the reference and asks for
+  // it to be a real dependency, which is exactly what it must not be.
+  "ignoreDependencies": ["@arethetypeswrong/cli", "publint", "svelte"],
   // Internal registry constants and helpers intentionally export for tests and
   // source-barrel compatibility. Public/package exports remain entry points and
   // therefore are not globally ignored.

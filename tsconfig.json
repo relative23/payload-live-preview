@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+    // Only test files use JSX (the React entry itself is a hook, not markup).
+    "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],

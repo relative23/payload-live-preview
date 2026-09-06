@@ -5,6 +5,7 @@
  * untouched, since an empty schema almost always means a wrong config path.
  */
 import { generateTypes } from './index';
+import { runAnnotate } from './annotate/cli';
 
 interface ParsedArgs {
   configPath: string | undefined;
@@ -56,6 +57,7 @@ const HELP_TEXT = `pll-codegen — generate TypeScript types from a Payload conf
 
 Usage:
   pll-codegen --config <path> --out <path> [--inventory <path>] [--quiet]
+  pll-codegen annotate <path...> --config <path> [--write]
 
 Options:
   -c, --config <path>   Path to payload.config.ts (required)
@@ -70,12 +72,25 @@ Exit codes:
   1  fatal error
   2  no globals or collections found; nothing was written
 
+Subcommands:
+  annotate              Add data-payload-field where a template already prints a
+                        field, and report every place it will not guess at.
+                        Run "pll-codegen annotate --help" for its options.
+
 Examples:
   pll-codegen --config backend/src/payload.config.ts --out frontend/src/payload-types.ts
   pll-codegen -c ./payload.config.ts -o ./generated.ts
 `;
 
 export async function run(argv: readonly string[]): Promise<number> {
+  // One subcommand, dispatched on the first positional: `annotate` writes
+  // bindings into templates, everything else generates types as before.
+  if (argv[0] === 'annotate') {
+    return runAnnotate(argv.slice(1), {
+      out: (text) => process.stdout.write(text),
+      err: (text) => process.stderr.write(text),
+    });
+  }
   const args = parseArgs(argv);
   if (args.showHelp) {
     process.stdout.write(HELP_TEXT);

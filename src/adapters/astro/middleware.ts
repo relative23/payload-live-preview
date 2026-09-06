@@ -6,7 +6,7 @@
 
 import { createPreviewPolicy } from '@adapters/shared/policy';
 import { applyDecision, bindDecisionHooks } from '@adapters/shared/response';
-import { exposeDecision, exposeNonce } from '@adapters/shared/locals';
+import { exposeDecision, exposeNonce, type LivePreviewLocalsSink } from '@adapters/shared/locals';
 import type { LivePreviewAstroOptions } from './types';
 
 export {
@@ -20,7 +20,7 @@ export {
 type MiddlewareNext = () => Promise<Response>;
 interface MiddlewareContext {
   readonly request: Request;
-  readonly locals: Record<string, unknown>;
+  readonly locals: LivePreviewLocalsSink;
   /** Astro ≥ 5: `true` while prerendering at build time. */
   readonly isPrerendered?: boolean;
 }

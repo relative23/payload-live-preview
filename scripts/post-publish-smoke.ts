@@ -32,6 +32,7 @@ export const ENTRY_REACHABILITY = {
   './nextjs': 'import',
   './sveltekit': 'import',
   './nuxt': 'import',
+  './nuxt-module': 'import',
   './doctor': 'import',
   './migrate': 'import',
   './payload': 'import',
@@ -41,12 +42,20 @@ export const ENTRY_REACHABILITY = {
   './lexical': 'import',
   './plugins': 'import',
   './fragment': 'import',
+  './lean': 'import',
   './codegen': 'needs-ts-morph',
   './codegen/astro': 'needs-ts-morph',
+  './annotate': 'import',
+  './react': 'needs-peer',
+  './vue': 'needs-peer',
+  // The manifest exporting itself, so tooling can read the installed version.
+  './package.json': 'not-node-importable',
   './astro/RichText.astro': 'not-node-importable',
   './astro/PreviewBoundary.astro': 'not-node-importable',
   './astro/middleware-entry': 'not-node-importable',
-} as const satisfies Readonly<Record<string, 'import' | 'needs-ts-morph' | 'not-node-importable'>>;
+} as const satisfies Readonly<
+  Record<string, 'import' | 'needs-ts-morph' | 'needs-peer' | 'not-node-importable'>
+>;
 
 export function classifyPublishedEntries(
   published: readonly string[],
@@ -119,12 +128,16 @@ async function main(): Promise<void> {
     }
 
     const classified = classifyPublishedEntries(Object.keys(manifest.exports));
-    // The optional peer is installed so the codegen entries are genuinely exercised.
+    // The optional peers are installed so the entries that need one are
+    // genuinely exercised rather than skipped: codegen needs `ts-morph`, and the
+    // two hooks import `react` and `vue` at module scope, as a hook must.
     run(
       'npm',
       [
         'install',
         'ts-morph@^28.0.0',
+        'react@^19.0.0',
+        'vue@^3.5.0',
         '--ignore-scripts',
         '--no-audit',
         '--no-fund',

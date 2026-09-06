@@ -5,6 +5,55 @@ field's value in every update and writes it into that element. Everything
 else on this page refines what "writes" means: which renderer, which
 attribute, which locale, which document.
 
+## How much markup this actually needs
+
+Start here, because the honest answer is "less than the rest of this page
+suggests". Three routes, and the first one is usually the right one:
+
+| Your page is                                       | Start with                 | Markup for a component |
+| -------------------------------------------------- | -------------------------- | ---------------------- |
+| server-rendered (Astro SSR, Next, SvelteKit, Nuxt) | one boundary per component | **one attribute**      |
+| static, no server at request time                  | field bindings             | one per field          |
+| client-rendered React or Vue                       | the hook or composable     | none                   |
+
+A **boundary** marks a region your server can render again from the unsaved
+form state. One attribute, and everything inside it is as correct as a full
+page render — conditional sections, derived values, custom blocks, a
+component's own logic:
+
+```astro
+<section data-payload-fragment="hero" data-payload-depends="title,subtitle,body">
+  <Hero {...page} />
+</section>
+```
+
+The same component with field bindings instead, which is what the rest of this
+page is about:
+
+```astro
+<h1 data-payload-field="title">{page.title}</h1>
+{page.subtitle && <p class="lede" data-payload-field="subtitle">{page.subtitle}</p>}
+<div data-payload-field="body" data-payload-richtext>{body}</div>
+<p>{wordCount(page.body)} words</p>
+```
+
+Three lines against twelve, and the boundary version also fixes what the
+bindings cannot: the `subtitle` paragraph does not exist while the field is
+empty, so an editor filling it sees nothing, and the word count is derived, so
+no field names it.
+
+**What the boundary costs.** A route that renders it — `createFragmentEndpoint()`
+in your framework, authorized like the page — and therefore a server at request
+time ([hybrid.md](hybrid.md)). A static build has none, which is why field
+bindings exist and why they are not going anywhere.
+
+**Why you will still want field bindings inside a boundary.** A server render
+replaces the region; a patch writes into the element that is already there. For
+a field an editor types into while looking at it, the patch keeps focus, the
+caret and scroll position. So: boundary for the component, bindings for the two
+or three fields being edited. Both at once is the normal case — the bindings
+inside a boundary are also its fallback when the server cannot render.
+
 ## Attribute reference
 
 | Attribute                      | Purpose                                                                                                                                                                                                                                         | Example                                            |
@@ -26,6 +75,7 @@ attribute, which locale, which document.
 | `data-payload-nested-template` | The template for that nested array's items                                                                                                                                                                                                      | `data-payload-nested-template="<li>{{t}}</li>"`    |
 | `data-payload-key`             | Written by the runtime from each item's `id`; never write it yourself                                                                                                                                                                           | —                                                  |
 | `data-payload-locale`          | Read this locale's value (`field_<locale>`) regardless of the message locale                                                                                                                                                                    | `data-payload-locale="de-AT"`                      |
+| `data-payload-format`          | How a date or number is written; a closed vocabulary, see below                                                                                                                                                                                 | `data-payload-format="currency:EUR"`               |
 | `data-payload-owner`           | The document this subtree belongs to (see below)                                                                                                                                                                                                | `data-payload-owner="global:homepage"`             |
 | `data-payload-depends`         | Fields whose change re-applies this binding under `skipUnchanged`; separated by commas or whitespace                                                                                                                                            | `data-payload-depends="price currency"`            |
 | `data-payload-strategy`        | `patch` (default), `fragment` (server-rendered) or `route` (whole-route refresh); any other value is left alone with `LP0407`. Without it: inside a fragment boundary → fragment, in `<head>` → route, else patch ([docs/hybrid.md](hybrid.md)) | `data-payload-strategy="route"`                    |
@@ -37,6 +87,40 @@ attribute, which locale, which document.
 
 Binding metadata is live: changing any of these attributes, or an input's
 native `type`, rebuilds the affected bindings after the mutation debounce.
+
+### Formatting a date or a number
+
+A bound date is written as a localised date and time, a bound number with the
+locale's grouping. `data-payload-format` picks something else, from a closed
+vocabulary:
+
+| Value                                  | Writes                                     |
+| -------------------------------------- | ------------------------------------------ |
+| `date`                                 | `17 Oct 2026`                              |
+| `date:short` `:medium` `:long` `:full` | `17/10/2026` … `Saturday, 17 October 2026` |
+| `time`                                 | `15:05`                                    |
+| `datetime`                             | `17 Oct 2026, 15:05` (the default)         |
+| `number`                               | `1,234.5`                                  |
+| `number:0` … `number:4`                | fixed fraction digits                      |
+| `currency:EUR` (any ISO 4217)          | `€12.00`                                   |
+| `percent`                              | `25%` for `0.25`                           |
+
+```astro
+<time data-payload-field="startsAt" data-payload-format="date:long">17 October 2026</time>
+<span data-payload-field="price" data-payload-format="currency:EUR">€12.00</span>
+```
+
+The locale is the element's `data-payload-locale`, else the message's, else the
+document's `lang`. A `<time>` keeps the ISO instant in its `datetime` attribute
+whatever the label says.
+
+Three things it does not do. It formats the amount it is given, so a field
+holding minor units renders as minor units — dividing would be data shaping, and
+the runtime cannot know which fields are cents. It formats in the visitor's time
+zone, which may not be the server's. And there is no relative form ("in 3
+days"): choosing the unit and its rounding is policy rather than formatting, and
+belongs on the server behind a fragment. An unknown value is reported as
+`LP0408` and the value is written unformatted.
 
 **Svelte and Vue templates.** The `{{field}}` in `data-payload-array-template`
 is read by this package, but Svelte reads `{...}` and Vue reads `{{ ... }}` as
@@ -179,6 +263,20 @@ locale, rich-text marker and owner: pass companions through `BindOptions`
 where they would stay behind when the gate closes. Where the authorization
 comes from is in [docs/authorization.md](authorization.md).
 
+`preview.boundary()` gates a server-rendered boundary the same way, because a
+registry id and the fields it depends on describe the content model as much as a
+binding does:
+
+```svelte
+<section {...preview.boundary('hero', { dependsOn: ['title', 'subtitle'] })}>
+```
+
+It writes `data-payload-fragment`, `data-payload-depends` and — with `key` —
+`data-payload-fragment-key`, and nothing at all while unauthorized. An id the
+endpoint would refuse (anything but lowercase `[a-z][a-z0-9-]*`) throws here
+rather than becoming a boundary that silently never renders. What the endpoint
+does with the id: [hybrid.md](hybrid.md).
+
 Do not key CSS off `data-payload-*`: a selector that reads "no filled
 binding" as "empty section" changes the public layout the moment the
 attributes are gated. Style on a marker of your own.
@@ -214,3 +312,76 @@ through a proxy, so a rename follows; array indices are dropped
 
 With `revealEditedField` the preview scrolls to the binding of the field
 being edited: [docs/reveal.md](reveal.md).
+
+### Annotating an existing template
+
+`pll-codegen annotate` puts `data-payload-field` where a template already prints
+a field, and reports every place it will not guess at:
+
+```bash
+npx pll-codegen annotate src/pages --config ../backend/src/payload.config.ts
+npx pll-codegen annotate src/pages --config ../backend/src/payload.config.ts --write
+```
+
+Without `--write` nothing is touched; the report is the whole output, and the
+exit code is 3 when a dry run found work — a pre-commit hook can tell that apart
+from "nothing to do".
+
+It annotates one shape, the one that means the same thing in Astro, JSX and
+Svelte: an element whose entire content is a single field access whose path the
+schema has.
+
+```astro
+<h1>{page.title}</h1>          →  <h1 data-payload-field="title">{page.title}</h1>
+<p>{page.hero.eyebrow}</p>     →  <p data-payload-field="hero.eyebrow">…</p>
+```
+
+Everything else is listed with a reason and left alone:
+
+| Left alone                                               | Why                                                                                                                         |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `<p>Published {page.date}</p>`                           | A binding replaces the element's whole text, label included. Split the markup first.                                        |
+| `<p>{formatDate(page.date)}</p>`                         | Derived: no single field to name. `data-payload-format` covers dates and numbers ([above](#formatting-a-date-or-a-number)). |
+| `<p>{page.internalNote}</p>`                             | The schema has no such field, so the binding would name something that never arrives.                                       |
+| `{page.slides.map((slide) => <li>{slide.caption}</li>)}` | Nothing connects `slide` to the `slides` field; array items are annotated by hand ([structural arrays](#field-types)).      |
+| `<Hero title={page.title} />`                            | A component's props are its own business.                                                                                   |
+| Anything already annotated                               | Yours wins, always.                                                                                                         |
+
+A missing binding costs an editor one invisible edit; a wrong one writes a value
+into the wrong element on every keystroke. That asymmetry is why the tool reports
+rather than guesses.
+
+### Annotating at build time instead
+
+The codemod writes the attribute into the file, where it is part of every
+response. `livePreviewAnnotate()` writes the same decision as a call instead,
+resolved per request against the authorization the adapter published — so the
+template stays as its author wrote it and a public response carries no
+`data-payload-*` at all.
+
+```js
+// astro.config.mjs
+import { livePreviewAnnotate } from 'payload-live-preview/annotate';
+
+export default defineConfig({
+  vite: { plugins: [livePreviewAnnotate({ inventory })] },
+});
+```
+
+```astro
+<h1>{page.title}</h1>   →   <h1 {...__lpPreview.bind('title')}>{page.title}</h1>
+```
+
+`inventory` is what `generateTypes()` returns, or the file `pll-codegen
+--inventory` writes; only the field paths are read. The helper is built once per
+file from `Astro.locals`, which is why this is Astro-only: the rewrite needs a
+template whose own scope reaches the request context, and a Svelte or Vue
+component's does not — there the verdict would have to travel through `load` or
+a serialized payload, where a function cannot go. Both routes decide what is
+safe in the same scanner, so they annotate the same places and refuse the same
+ones; the table above applies unchanged.
+
+A statically built page has no request to authorize, so it emits nothing.
+`allowPublicBindings: true` writes the plain attribute there instead — the same
+output as the codemod, and the same disclosure, said out loud rather than
+arrived at.

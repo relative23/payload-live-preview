@@ -45,8 +45,50 @@ export interface InlineScriptConfig {
   readonly sanitizerPolicy?: 'compat' | 'strict';
   /** Same-origin path of a fragment endpoint; the script then carries the fragment client ahead of the runtime (ADR 0011). */
   readonly fragmentEndpoint?: string;
+  /**
+   * Carry the route strategy, so a binding in `<head>` or one marked
+   * `data-payload-strategy="route"` refreshes the route. `fragmentEndpoint`
+   * implies it — the fragment prelude already contains it. Default `false`.
+   */
+  readonly routeStrategy?: boolean;
+  /**
+   * What to do when a revision changes a field the page has no binding for.
+   * `'route'` refreshes the whole route rather than losing the edit, and needs
+   * a route strategy. Default `'ignore'`.
+   */
+  readonly onUnboundChange?: 'ignore' | 'route';
   /** Which defaults the omitted options fall back to. Not serialized: `'v1'` only relaxes the generator's `mergeDepth` check. */
   readonly defaults?: DefaultsProfile;
+  /**
+   * A runtime artifact to embed instead of the full one — today only
+   * `LEAN_RUNTIME` from `payload-live-preview/lean`, which leaves out the
+   * strategies, the keyed morph, the structural arrays, the item templates and
+   * the announcer (about 5.5 KB gzip less on the page) and reports LP0104 when
+   * a page needs one of them.
+   *
+   * It is an imported value rather than a `profile: 'lean'` string on purpose:
+   * a second artifact behind a string option would sit in every build that can
+   * reach the generator, which measured +24 KB gzip in each adapter entry. This
+   * way the bytes follow the import.
+   *
+   * Not serialized: it decides which bytes are emitted, not how they behave.
+   */
+  readonly runtime?: RuntimeArtifact;
+}
+
+/**
+ * A runtime build this package produces. `source` is the IIFE the page runs;
+ * the two digests describe the same bytes as a servable asset, so asset
+ * delivery can hash-name and SRI-verify whichever artifact was chosen without
+ * hashing anything at request time.
+ */
+export interface RuntimeArtifact {
+  readonly profile: 'lean';
+  readonly source: string;
+  /** Short content hash, for the asset's file name. */
+  readonly contentHash: string;
+  /** `sha384-…`, for the bootstrap's `integrity` attribute. */
+  readonly integrity: string;
 }
 
 /** Keys that travel in the wire tuple, in slot order. */
@@ -70,4 +112,6 @@ export const INLINE_CONFIG_KEYS = [
   'sanitizerPolicy',
   'fragmentEndpoint',
   'revealEditedField',
-] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'defaults'>[];
+  'routeStrategy',
+  'onUnboundChange',
+] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'defaults' | 'runtime'>[];

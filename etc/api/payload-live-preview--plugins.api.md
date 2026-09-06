@@ -26,6 +26,7 @@ export interface CachedElement {
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
     readonly fieldType: RendererKey;
+    readonly format?: string;
     readonly fragmentBoundary?: Element;
     readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;
@@ -43,6 +44,9 @@ export function createAnalyticsPlugin(): LivePreviewPlugin & {
 };
 
 // @public
+export function createUnboundFieldsOverlayPlugin(options?: UnboundFieldsOverlayOptions): LivePreviewPlugin;
+
+// @public
 export type CustomRendererKey = `${string}:${string}`;
 
 // @public
@@ -53,6 +57,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly NoTrustedOrigin: "LP0101";
     readonly ReferrerOnlyTrust: "LP0102";
     readonly PluginIncompatible: "LP0103";
+    readonly ProfileFeatureOmitted: "LP0104";
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly VisibilityGateDeferred: "LP0301";
@@ -63,8 +68,11 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly StructuralDuplicateKey: "LP0405";
     readonly StructuralUnstableKeys: "LP0406";
     readonly UnsupportedStrategy: "LP0407";
+    readonly UnknownValueFormat: "LP0408";
+    readonly SanitizerDroppedAttribute: "LP0409";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
+    readonly ProtocolShapeUnknown: "LP0503";
     readonly HandlerThrew: "LP0601";
     readonly TransformThrew: "LP0602";
     readonly RendererThrew: "LP0603";
@@ -84,6 +92,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly FragmentSuperseded: "LP0804";
     readonly RouteRefreshLoop: "LP0805";
     readonly FragmentStrategyUnavailable: "LP0806";
+    readonly UnboundChangeRefresh: "LP0807";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
 }>;
@@ -409,6 +418,16 @@ export type RichTextRenderer = (value: unknown, context: {
 
 // @public
 export type SanitizerPolicyMode = 'compat' | 'strict';
+
+// @public
+export function unboundFieldNames(fields: Readonly<Record<string, unknown>>, boundNames: Iterable<string>, locale?: string): readonly string[];
+
+// @public
+export interface UnboundFieldsOverlayOptions {
+    readonly onlyWithDebug?: boolean;
+    readonly position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+    readonly root?: Document | Element;
+}
 
 // @public (undocumented)
 export type Unsubscribe = () => void;

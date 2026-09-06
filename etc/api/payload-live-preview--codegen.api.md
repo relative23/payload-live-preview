@@ -7,6 +7,85 @@
 import { Project } from 'ts-morph';
 
 // @public
+export const ANNOTATABLE_EXTENSIONS: readonly string[];
+
+// @public
+export function annotatablePaths(inventory: AnnotatableSchema): ReadonlySet<string>;
+
+// @public
+export interface AnnotatableSchema {
+    // (undocumented)
+    readonly collections: readonly {
+        readonly fields: readonly {
+            readonly path: string;
+        }[];
+    }[];
+    // (undocumented)
+    readonly globals: readonly {
+        readonly fields: readonly {
+            readonly path: string;
+        }[];
+    }[];
+}
+
+// @public (undocumented)
+export interface AnnotateFileResult {
+    // (undocumented)
+    readonly annotations: readonly AnnotationCandidate[];
+    // (undocumented)
+    readonly changed: boolean;
+    readonly code: string;
+    // (undocumented)
+    readonly file: string;
+    // (undocumented)
+    readonly refusals: readonly AnnotationRefusal[];
+}
+
+// @public (undocumented)
+export interface AnnotateOptions {
+    readonly cwd?: string;
+    readonly files: readonly string[];
+    readonly inventory: PreviewInventory;
+    readonly io?: {
+        readonly read: (path: string) => Promise<string>;
+        readonly write: (path: string, content: string) => Promise<void>;
+    };
+    readonly write?: boolean;
+}
+
+// @public (undocumented)
+export interface AnnotateResult {
+    // (undocumented)
+    readonly annotationCount: number;
+    // (undocumented)
+    readonly files: readonly AnnotateFileResult[];
+    // (undocumented)
+    readonly refusalCount: number;
+    readonly written: boolean;
+}
+
+// @public (undocumented)
+export function annotateTemplates(options: AnnotateOptions): Promise<AnnotateResult>;
+
+// @public
+export interface AnnotationCandidate {
+    readonly insertAt: number;
+    readonly line: number;
+    readonly path: string;
+    // (undocumented)
+    readonly tag: string;
+}
+
+// @public
+export interface AnnotationRefusal {
+    readonly expression: string;
+    // (undocumented)
+    readonly line: number;
+    // (undocumented)
+    readonly reason: string;
+}
+
+// @public
 export function buildPreviewInventory(schema: ExtractedSchema): PreviewInventory;
 
 // @public
@@ -156,6 +235,9 @@ interface ExtractSchemaOptions {
     readonly project?: Project;
     readonly tsConfigFilePath?: string;
 }
+
+// @public
+export function formatAnnotateReport(result: AnnotateResult): string;
 
 // @public
 export function generateTypes(options: GenerateTypesOptions): Promise<GenerateTypesResult>;

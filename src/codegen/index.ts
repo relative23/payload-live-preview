@@ -10,6 +10,19 @@ import { buildPreviewInventory, type PreviewInventory } from './inventory';
 import { extractSchema, type ExtractSchemaOptions } from './parser/extract-schema';
 import type { ExtractedSchema } from './parser/types';
 
+export {
+  annotateTemplates,
+  annotatablePaths,
+  formatAnnotateReport,
+  ANNOTATABLE_EXTENSIONS,
+  type AnnotateOptions,
+  type AnnotateResult,
+  type AnnotateFileResult,
+  type AnnotationCandidate,
+  type AnnotationRefusal,
+  type AnnotatableSchema,
+} from './annotate/index';
+
 export interface GenerateTypesOptions
   extends Pick<ExtractSchemaOptions, 'configPath' | 'project' | 'tsConfigFilePath'>, EmitOptions {
   /** Where to write the generated code; `code` is returned either way. */

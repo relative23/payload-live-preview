@@ -77,8 +77,17 @@ export interface ApiReportCheckOptions {
  * they are nameable, just not twice. A fourteenth was real and was fixed rather
  * than absorbed: `./structural` exports `CachedElement` but had left
  * `UpdateSource`, the type of its `strategyKind`, unexported.
+ *
+ * 59 → 50 when the fragment endpoint moved to `@adapters/shared`: `./astro`
+ * falls from 16 warnings to 7. Its `FragmentEndpointOptions` used to declare
+ * the authorization strategies inline, which left `PayloadSessionStrategy`,
+ * `SignedTokenStrategy`, `VerifierStrategy`, `FetchLike`, `SubtleCryptoLike`
+ * and `PreviewTokenReplayStore` forgotten in that entry alone. The bound alias
+ * now points at the shared generic, so the rollup imports those types from the
+ * shared chunk under their own names instead. Nothing was hidden to achieve it:
+ * the surface is the same, named once instead of copied into two entries.
  */
-export const FORGOTTEN_EXPORT_BASELINE = 59;
+export const FORGOTTEN_EXPORT_BASELINE = 50;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

@@ -4,18 +4,43 @@
 
 ```ts
 
-import { c } from '../../options-Dm3M0ZKq.js';
-import { L as LivePreviewLocals } from '../../locals-DHAcDRVD.js';
-import { b as PreviewAdapterOptions } from '../../options-Dm3M0ZKq.js';
+import { a } from '../../fragment-endpoint-C7C9DLY5.js';
+import { a as a_2 } from '../../options-DxeFRGkV.js';
+import { b } from '../../fragment-endpoint-C7C9DLY5.js';
+import { c } from '../../fragment-endpoint-C7C9DLY5.js';
+import { F } from '../../fragment-endpoint-C7C9DLY5.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-C7C9DLY5.js';
+import { L as LivePreviewLocals } from '../../locals-DKuOkp7J.js';
+import { P as PreviewAdapterOptions } from '../../options-DxeFRGkV.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;
+
+// @public
+export function createFragmentEndpoint(options: FragmentEndpointOptions): (request: Request) => Promise<Response>;
+
+// @public
+export function createRuntimeAssetRoute(options?: LivePreviewNuxtOptions): (request: Request) => Response;
 
 // @public
 export const DECISION_CONTEXT_KEY = "livePreviewDecision";
 
 // @public
 export function defineLivePreviewServerHandler(options?: LivePreviewNuxtOptions): NitroHandler;
+
+// @public (undocumented)
+export type FragmentEndpointOptions = F<VueComponentLike>;
+
+// @public (undocumented)
+export type FragmentRegistry = a<VueComponentLike>;
+
+// @public (undocumented)
+export type FragmentRegistryEntry<Props extends object = object> = b<VueComponentLike, Props>;
+
+// @public (undocumented)
+export type FragmentRenderer = c<VueComponentLike>;
+
+export { FragmentRenderInput }
 
 // @public
 interface H3EventLike {
@@ -67,7 +92,7 @@ export { LivePreviewLocals }
 export function livePreviewNitroPlugin(options?: LivePreviewNuxtOptions): (nitroApp: NitroAppLike) => void;
 
 // @public
-export type LivePreviewNuxtOptions = PreviewAdapterOptions<c>;
+export type LivePreviewNuxtOptions = PreviewAdapterOptions<a_2>;
 
 // @public (undocumented)
 interface NitroAppLike {
@@ -116,10 +141,13 @@ export function renderLivePreviewScript(options?: LivePreviewNuxtOptions & {
     readonly nonce?: string;
 }): string;
 
+// @public
+export type VueComponentLike = object;
+
 // Warnings were encountered during analysis:
 //
-// dist/adapters/nuxt/index.d.ts:50:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/nuxt/index.d.ts:51:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:52:9 - (ae-forgotten-export) The symbol "RenderHtmlContextLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/nuxt/index.d.ts:53:13 - (ae-forgotten-export) The symbol "H3EventLike" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

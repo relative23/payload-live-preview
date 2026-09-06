@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createLivePreviewMiddleware, renderLivePreviewScript } from '@adapters/nextjs/index';
+import {
+  createLivePreviewMiddleware,
+  livePreviewScriptProps,
+  renderLivePreviewScript,
+} from '@adapters/nextjs/index';
 
 const ADMIN = 'https://admin.example.com';
 
@@ -22,6 +26,57 @@ function request(url = 'https://site.example.com/', headers: Record<string, stri
 }
 
 const always = () => createLivePreviewMiddleware({ defaults: 'v1', inject: 'always' });
+
+/**
+ * The App Router path. JSX cannot render a tag that arrives as a string, so a
+ * Next layout needs the element's props, not its markup — `renderLivePreviewScript`
+ * is for HTML a server assembles by hand.
+ */
+describe('livePreviewScriptProps', () => {
+  it('spreads onto a script element and carries the same body as the tag', () => {
+    const props = livePreviewScriptProps({ allowedOrigins: [ADMIN] });
+    const body = props.dangerouslySetInnerHTML.__html;
+
+    expect(body).toContain('__LIVE_PREVIEW_CONFIG__');
+    expect(body).toContain(ADMIN);
+    expect(renderLivePreviewScript({ allowedOrigins: [ADMIN] })).toBe(`<script>${body}</script>`);
+  });
+
+  it('puts the nonce in a prop, where the framework sets it as an attribute', () => {
+    // Not inside the body: a nonce written into the string would be markup the
+    // renderer escapes, and Next's own CSP handling reads the attribute.
+    const props = livePreviewScriptProps({ allowedOrigins: [ADMIN], nonce: 'abc123' });
+
+    expect(props.nonce).toBe('abc123');
+    expect(props.dangerouslySetInnerHTML.__html).not.toContain('abc123');
+    expect(livePreviewScriptProps({ allowedOrigins: [ADMIN] }).nonce).toBeUndefined();
+  });
+
+  it('escapes a closing tag inside a configured value, so the script cannot end early', () => {
+    const props = livePreviewScriptProps({ allowedOrigins: [ADMIN], apiRoute: '</script><b>' });
+
+    expect(props.dangerouslySetInnerHTML.__html).not.toContain('</script>');
+  });
+
+  it('carries the fragment prelude when the layout names an endpoint', () => {
+    // The option used to live on the Astro adapter alone, so a Next.js page
+    // could not point the runtime at its own route handler.
+    const props = livePreviewScriptProps({
+      allowedOrigins: [ADMIN],
+      fragments: { endpoint: '/payload/fragment' },
+    });
+    const body = props.dangerouslySetInnerHTML.__html;
+
+    expect(body).toContain('/payload/fragment');
+    expect(body).toContain('__LIVE_PREVIEW_FRAGMENT__');
+  });
+
+  it('refuses a nonce that is not nonce-shaped', () => {
+    expect(() => livePreviewScriptProps({ allowedOrigins: [ADMIN], nonce: 'a"b' })).toThrow(
+      RangeError,
+    );
+  });
+});
 
 describe('renderLivePreviewScript', () => {
   it('returns a script tag carrying the configuration', () => {

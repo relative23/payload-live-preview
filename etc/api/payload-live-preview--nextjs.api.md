@@ -4,20 +4,113 @@
 
 ```ts
 
-import { b as PreviewAdapterOptions } from '../../options-Dm3M0ZKq.js';
+import { a } from '../../fragment-endpoint-C7C9DLY5.js';
+import { b } from '../../fragment-endpoint-C7C9DLY5.js';
+import { c } from '../../fragment-endpoint-C7C9DLY5.js';
+import { F } from '../../fragment-endpoint-C7C9DLY5.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-C7C9DLY5.js';
+import { P as PreviewAdapterOptions } from '../../options-DxeFRGkV.js';
+
+// @public
+export function createFragmentEndpoint(options: FragmentEndpointOptions): (request: Request) => Promise<Response>;
 
 // @public
 export function createLivePreviewMiddleware(options?: LivePreviewNextOptions): (request: Request, response: Response) => Promise<Response>;
 
 // @public
+export function createRuntimeAssetRoute(options?: LivePreviewNextOptions): RuntimeAssetRoute;
+
+// @public
+export function defineFragment<Props extends object>(component: (props: Props) => unknown, props: (input: FragmentRenderInput) => Props | Promise<Props>): FragmentRegistryEntry<Props>;
+
+// @public (undocumented)
+export type FragmentEndpointOptions = F<ReactComponentLike>;
+
+// @public (undocumented)
+export type FragmentRegistry = a<ReactComponentLike>;
+
+// @public (undocumented)
+export type FragmentRegistryEntry<Props extends object = object> = b<ReactComponentLike, Props>;
+
+// @public (undocumented)
+export type FragmentRenderer = c<ReactComponentLike>;
+
+export { FragmentRenderInput }
+
+// @public
 export type LivePreviewNextOptions = PreviewAdapterOptions;
 
+// @public
+export interface LivePreviewScriptProps {
+    // (undocumented)
+    readonly dangerouslySetInnerHTML: {
+        readonly __html: string;
+    };
+    readonly nonce?: string;
+}
+
+// @public
+export function livePreviewScriptProps(options?: LivePreviewNextOptions & {
+    readonly nonce?: string;
+}): LivePreviewScriptProps;
+
+// @public
+export interface NextConfigLike {
+    // (undocumented)
+    readonly [option: string]: unknown;
+    // (undocumented)
+    readonly allowedDevOrigins?: readonly string[];
+    // (undocumented)
+    readonly headers?: () => Promise<readonly NextHeaderRule[]> | readonly NextHeaderRule[];
+}
+
+// @public (undocumented)
+export interface NextHeaderRule {
+    // (undocumented)
+    readonly [option: string]: unknown;
+    // (undocumented)
+    readonly has?: readonly {
+        readonly type: string;
+        readonly key: string;
+        readonly value?: string;
+    }[];
+    // (undocumented)
+    readonly headers: readonly {
+        readonly key: string;
+        readonly value: string;
+    }[];
+    // (undocumented)
+    readonly source: string;
+}
+
 export { PreviewAdapterOptions }
+
+// @public
+export function previewHeaderRules(options: WithLivePreviewOptions): readonly NextHeaderRule[];
+
+// @public
+export type ReactComponentLike = (props: never) => unknown;
 
 // @public
 export function renderLivePreviewScript(options?: LivePreviewNextOptions & {
     readonly nonce?: string;
 }): string;
+
+// @public
+export interface RuntimeAssetRoute {
+    // (undocumented)
+    readonly GET: (request: Request) => Response;
+}
+
+// @public
+export function withLivePreview(nextConfig: NextConfigLike, options: WithLivePreviewOptions): NextConfigLike;
+
+// @public (undocumented)
+export interface WithLivePreviewOptions {
+    readonly allowDevOrigins?: boolean;
+    readonly allowedOrigins: readonly string[];
+    readonly previewQueryParams?: readonly string[];
+}
 
 // (No @packageDocumentation comment for this package)
 

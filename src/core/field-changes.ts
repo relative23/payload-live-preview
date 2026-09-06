@@ -12,6 +12,12 @@ export interface FieldChanges {
   readonly changed: ReadonlySet<string>;
   /** Dependents of changed fields, per the dependency map. */
   readonly invalidated: ReadonlySet<string>;
+  /**
+   * The first message of a connection, where `changed` means "everything the
+   * document has" rather than "what the editor just did". A caller that acts on
+   * a change rather than rendering one has to sit this message out.
+   */
+  readonly baseline: boolean;
 }
 
 export class FieldChangeTracker {
@@ -20,6 +26,7 @@ export class FieldChangeTracker {
   /** Diff `fields` against the previous message and remember them for the next call. */
   diff(fields: Readonly<Record<string, unknown>>, dependencies: DependencyMap): FieldChanges {
     const previous = this.previous;
+    const baseline = previous === null;
     const next = new Map<string, string | undefined>();
     const changed = new Set<string>();
     for (const [name, value] of Object.entries(fields)) {
@@ -40,7 +47,7 @@ export class FieldChangeTracker {
       if (!changed.has(source)) continue;
       for (const dependent of dependents) invalidated.add(dependent);
     }
-    return { changed, invalidated };
+    return { changed, invalidated, baseline };
   }
 
   reset(): void {

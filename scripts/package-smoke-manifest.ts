@@ -24,12 +24,21 @@ const ESM_ONLY_ARTIFACT_STEMS = [
   'dist/adapters/nextjs/index',
   'dist/adapters/nuxt/index',
   'dist/adapters/sveltekit/index',
+  'dist/adapters/react/index',
+  'dist/adapters/vue/index',
   'dist/codegen-astro',
   'dist/codegen-cli',
 ] as const;
 const FORBIDDEN_ESM_ONLY_SUFFIXES = ['.cjs', '.cjs.map', '.d.cts'] as const;
 
 export const CODEGEN_EXPORT_NAMES = new Set(['./codegen', './codegen/astro']);
+
+/**
+ * Entries that cannot load without their optional peer, so the peer-free smoke
+ * would rightly fail on them: a hook has to import its framework at module
+ * scope. They are imported in a consumer that installs the peer instead.
+ */
+export const PEER_REQUIRED_EXPORT_NAMES = new Set(['./react', './vue']);
 
 export async function findPackedContentFailures(
   packedFiles: ReadonlySet<string>,

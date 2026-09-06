@@ -37,26 +37,42 @@ request locals, and its outcome as `livePreviewAuthorizationOutcome`
 preview answers every request with `Cache-Control: private, no-store`
 ([hybrid.md](hybrid.md)).
 
-## The loader asset (Astro `mode: 'loader'`)
+## The runtime as a cached asset
 
-A statically built site has no server to decide per request. In loader mode
-every page carries a bootstrap of a few hundred bytes, and only a page that
-finds itself in a preview context appends the runtime as a separate asset:
+By default the runtime is part of the page. It can be a separate file instead:
+every page then carries a bootstrap of a few hundred bytes, and only a page
+that finds itself in a preview context fetches the runtime. Measured on the
+Next.js fixture, that is 679 bytes in the page instead of 97 546.
+
+Two ways in, because the frameworks differ in who can serve a file:
+
+| Framework                | Option              | Where the file comes from                                               |
+| ------------------------ | ------------------- | ----------------------------------------------------------------------- |
+| Astro                    | `mode: 'loader'`    | the integration emits it into the build and `astro dev` serves it       |
+| Next.js, SvelteKit, Nuxt | `delivery: 'asset'` | a route you mount, from `createRuntimeAssetRoute()` and its equivalents |
 
 ```
-/_payload-live-preview/runtime.<hash>.js
+https://example.com/payload-live-preview/runtime.<hash>.js    delivery: 'asset' (default assetPath)
+https://example.com/_payload-live-preview/runtime.<hash>.js   Astro mode: 'loader' (below Astro's base)
 ```
 
-The path sits below Astro's `base`. The file is written into the build output
-by the integration and served by `astro dev` from memory at the same path, so
-development and production load identical bytes. Its properties decide how to
-host it:
+The hash is the same on both, because it is the hash of the bytes. Astro keeps
+the underscore: it is a build output directory, and an underscore is exactly
+what makes a folder private to the App Router and to SvelteKit, so the
+route-serving adapters cannot use one. Their properties are otherwise
+identical, and they decide how to host the file:
 
 - **Content-hashed and configuration-free.** The bytes depend only on the
-  package version; the configuration is assigned inline by the bootstrap. The
-  asset can be cached for as long as the host allows — its name changes with
-  the package, never with the site. `astro dev` serves it with
-  `Cache-Control: no-cache` so a package upgrade is picked up at once.
+  package version and the artifact (`runtime: LEAN_RUNTIME` is a different
+  hash); the configuration is assigned inline by the bootstrap. The asset can
+  be cached for as long as the host allows — its name changes with the package,
+  never with the site. The mounted route says so itself:
+  `Cache-Control: public, max-age=31536000, immutable`. `astro dev` serves its
+  copy with `Cache-Control: no-cache` instead, so a package upgrade during
+  development is picked up at once.
+- **One name, one set of bytes.** The route answers the file name this build
+  produces and 404s every other, rather than serving current bytes under an old
+  name. That is what makes the year-long `immutable` honest.
 - **Subresource integrity.** The bootstrap loads the asset with an `integrity`
   attribute (`sha384-…`) and `crossorigin="anonymous"`. A host, proxy or
   optimizer that rewrites, minifies or re-encodes JavaScript changes the bytes,
@@ -65,6 +81,45 @@ host it:
 - **An inline bootstrap.** The bootstrap is an inline `<script>` in the head
   of every page. A `Content-Security-Policy` with a `script-src` must allow it
   (a hash or a nonce), and allow `'self'` for the asset.
+
+## What a public visitor pays
+
+The runtime is about 97.5 KB of JavaScript (30 KB gzip). The number that
+matters is not that but who receives it, and that is decided by the delivery
+rather than by the framework. Three outcomes, each pinned by an E2E case in
+`tests/e2e/specs/public-response.spec.ts` so this table cannot drift from the
+fixtures:
+
+| Setup                                                 | A public visitor receives | Why                                                                               |
+| ----------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------- |
+| SvelteKit handle, Nuxt Nitro plugin, Astro middleware | nothing                   | something ran for the request, saw no intent, and injected neither                |
+| Astro static build, `mode: 'loader'`                  | the bootstrap, 679 bytes  | a static page has no request to decide for, so the check happens in the browser   |
+| Next.js, `delivery: 'asset'`                          | the bootstrap, 679 bytes  | the root layout renders for everyone; what it renders is the bootstrap            |
+| Next.js, script in the root layout                    | the whole runtime         | a layout renders for every visitor, and Next middleware cannot inject into a body |
+| Astro static build, `mode: 'inline'`                  | the whole runtime         | nothing decides and nothing is deferred                                           |
+
+The bootstrap is the same few hundred bytes in either row that carries it: it
+checks whether the page is framed or opened by an admin and, outside a preview,
+does nothing and fetches nothing. So a visitor to a statically built site pays
+0.7 % of what the inline build costs them, and a visitor to a site whose server
+decides pays nothing at all.
+
+Two ways to move a row up:
+
+- **A page whose script is rendered for everyone**: switch it to
+  `delivery: 'asset'` (Next.js, SvelteKit, Nuxt) or `mode: 'loader'` (Astro).
+  The bootstrap replaces the runtime, and the runtime is fetched only inside a
+  preview.
+- **Bindings in the public markup**: `data-payload-*` attributes are a few dozen
+  bytes each and harmless, but they also describe your content model to anyone
+  who reads the page. `createPreviewBindings()` keyed on the authorization
+  verdict emits them only for an authorized preview — the SvelteKit fixture's
+  public response carries no `data-payload-*` at all
+  ([authorization.md](authorization.md)).
+
+Intent alone never buys anything: a request that claims `?preview=true` without
+passing `authorizePreview` gets the public response byte for byte, which is the
+last case in that spec.
 
 ## Proxies that strip or add headers
 
@@ -106,6 +161,28 @@ Two things behave differently where `process` does not exist:
 
 `pll doctor`, `pll migrate` and `pll-codegen` are Node command-line tools and
 are not part of the deployed application.
+
+## A smaller runtime for pages that need less
+
+Every page that carries the runtime carries 30 253 bytes gzip of it. A site
+whose preview needs neither server-rendered boundaries nor keyed arrays can
+carry 24 763 instead:
+
+```ts
+import { LEAN_RUNTIME } from 'payload-live-preview/lean';
+
+livePreview({ runtime: LEAN_RUNTIME, allowedOrigins: [ADMIN] });
+```
+
+What it leaves out — the fragment and route strategies, the keyed morph, the
+structural arrays, the item templates, the screen-reader announcer — and what a
+page is told when it needs one anyway (LP0104): [options.md](options.md) and
+[troubleshooting.md](troubleshooting.md). Everything else is the same runtime:
+the same message bus, the same origin rules, the same merge, the same renderers
+for text, numbers, dates, images, uploads, relationships and rich text.
+
+The import is what puts the artifact in your build, so a project that stays on
+the default ships nothing extra.
 
 ## A static site with the fragment endpoint as a service
 

@@ -11,10 +11,12 @@ on:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
-# Read-only: the watch installs a published package and compares its wire
-# shape. Nothing here writes to the repository.
+# The watch installs a published package and compares its wire shape; it writes
+# nothing to the repository. `issues: write` is for the one thing a red cron job
+# cannot do on its own — say so somewhere a person will look.
 permissions:
   contents: read
+  issues: write
 
 jobs:
   protocol-watch:
@@ -45,3 +47,10 @@ jobs:
       - run: npx tsx scripts/check-protocol-drift.ts
         env:
           PROTOCOL_WATCH_PACKAGE: '@payloadcms/live-preview@${{ matrix.dist-tag }}'
+      # Only for the gate matrix entry: `canary` churns before it stabilises,
+      # and an issue per pre-release would train everyone to ignore the label.
+      - name: File the drift as an issue
+        if: failure() && matrix.dist-tag == 'latest'
+        run: npx tsx scripts/report-protocol-drift.ts
+        env:
+          GH_TOKEN: ${{ github.token }}

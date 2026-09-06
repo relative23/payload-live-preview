@@ -20,6 +20,31 @@ import {
   registerBuiltinRenderer,
   __resetBuiltinRenderersForTests,
 } from './registry';
+import { reportOmittedFeature } from '@core/profile';
+
+/**
+ * The array renderers carry the keyed morph, the structural applier and the item
+ * templates — the largest optional cluster in the runtime. The lean profile
+ * answers a page that needs them with LP0104 instead (@core/profile).
+ */
+function arrayRenderers(): readonly FieldRenderer[] {
+  return typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__
+    ? [
+        omittedRenderer('array', 'structural arrays'),
+        omittedRenderer('blocks', 'structural arrays'),
+      ]
+    : [arrayRenderer, { ...arrayRenderer, name: 'blocks' }];
+}
+
+/** A renderer that only explains itself: the lean profile does not carry this field type. */
+function omittedRenderer(name: FieldRenderer['name'], feature: 'structural arrays'): FieldRenderer {
+  return {
+    name,
+    render() {
+      reportOmittedFeature(feature);
+    },
+  };
+}
 
 /** One renderer map per client; the stateful text and structural renderers are created fresh each call. */
 export function buildBuiltinRenderers(): Readonly<Record<string, FieldRenderer>> {
@@ -38,15 +63,16 @@ export function buildBuiltinRenderers(): Readonly<Record<string, FieldRenderer>>
     checkboxRenderer,
     dateRenderer,
     numberRenderer,
-    arrayRenderer,
-    { ...arrayRenderer, name: 'blocks' },
+    ...arrayRenderers(),
   ];
 
   return buildRegistry([
     createTextRenderer('text'),
     createTextRenderer('textarea'),
     ...stateless,
-    createStructuralArrayRenderer(),
+    ...(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__
+      ? []
+      : [createStructuralArrayRenderer()]),
   ]);
 }
 

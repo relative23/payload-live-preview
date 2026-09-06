@@ -21,8 +21,8 @@ await build({
   minify: true,
 });
 
-const shell = (title, body) =>
-  `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title>` +
+const shell = (title, body, attributes = '') =>
+  `<!doctype html><html lang="en" ${attributes}><head><meta charset="utf-8"><title>${title}</title>` +
   `<style>body{margin:0;font:16px/1.5 system-ui,sans-serif}</style>` +
   `<script type="module" src="/app.js"></script></head><body>${body}</body></html>`;
 
@@ -35,7 +35,17 @@ const revealBody =
   '<div style="height:2200px">scroll down for the footer</div>' +
   '<p data-payload-field="footer" data-testid="footer">old footer</p>';
 
+// Two pages for the unbound-fields overlay: the same markup, which binds only
+// `title`, with the client's debug mode on and off.
+const overlayBody = '<h1 data-payload-field="title" data-testid="title">Hello</h1>';
+
 await writeFile(join(dist, 'index.html'), shell('Vanilla client preview', indexBody), 'utf8');
+await writeFile(join(dist, 'overlay.html'), shell('Overlay fixture', overlayBody), 'utf8');
+await writeFile(
+  join(dist, 'overlay-quiet.html'),
+  shell('Overlay fixture without debug', overlayBody, 'data-debug="false"'),
+  'utf8',
+);
 await writeFile(join(dist, 'reveal.html'), shell('Reveal fixture', revealBody), 'utf8');
 await copyFile(join(here, 'admin.html'), join(dist, 'admin.html'));
 console.log('vanilla-client built to dist/');

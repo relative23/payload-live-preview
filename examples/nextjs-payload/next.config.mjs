@@ -1,10 +1,21 @@
 /**
- * Minimal Next.js config. The live preview script is embedded in the
- * root layout (see app/layout.tsx) — no middleware injection is needed
- * for this fixture, so there is nothing to configure here.
+ * The config half of a Next.js setup, in one call.
+ *
+ * `withLivePreview` adds two things a preview needs and only a config can give
+ * it: `frame-ancestors` for the admin origin on requests that carry preview
+ * intent, so the panel may frame the page, and that origin in
+ * `allowedDevOrigins`, so the dev server does not refuse the admin's requests.
+ * The script itself is rendered by the root layout (app/layout.tsx) — no config
+ * hook renders HTML, so a Next.js setup is these two places, not one.
  *
  * @type {import('next').NextConfig}
  */
-const nextConfig = {};
+import { withLivePreview } from 'payload-live-preview/nextjs';
 
-export default nextConfig;
+export default withLivePreview(
+  {},
+  {
+    // The mock admin is served from this example's own origin (public/admin.html).
+    allowedOrigins: ['http://localhost:4174'],
+  },
+);

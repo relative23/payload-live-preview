@@ -6,7 +6,7 @@
 import { injectIntoHead } from '@adapters/shared/html-inject';
 import { createPreviewPolicy, type PreviewPolicy } from '@adapters/shared/policy';
 import { bindDecisionHooks, withCspHeader } from '@adapters/shared/response';
-import { exposeDecision } from '@adapters/shared/locals';
+import { exposeDecision, type LivePreviewLocalsSink } from '@adapters/shared/locals';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
@@ -16,15 +16,26 @@ export type LivePreviewSvelteKitOptions = PreviewAdapterOptions;
 
 interface SvelteKitRequestEvent {
   readonly request: Request;
-  readonly locals: Record<string, unknown>;
+  readonly locals: LivePreviewLocalsSink;
 }
 interface ResolveOptions {
   readonly transformPageChunk?: (input: { html: string; done: boolean }) => string | undefined;
 }
-type SvelteKitResolve = (event: SvelteKitRequestEvent, opts?: ResolveOptions) => Promise<Response>;
-export type SvelteKitHandle = (input: {
-  readonly event: SvelteKitRequestEvent;
-  readonly resolve: SvelteKitResolve;
+type SvelteKitResolve<Event> = (
+  event: Event,
+  opts?: ResolveOptions,
+) => Response | Promise<Response>;
+
+/**
+ * Generic in the event, so the handle composes with SvelteKit's own `Handle`.
+ * A fixed shim type would only work one way: SvelteKit's real `RequestEvent`
+ * is assignable to the shim, but its `resolve` — which takes that real event —
+ * is not assignable to a resolve that takes the shim. Passing the event
+ * through by type parameter is the same shim from the other side.
+ */
+export type SvelteKitHandle = <Event extends SvelteKitRequestEvent>(input: {
+  readonly event: Event;
+  readonly resolve: SvelteKitResolve<Event>;
 }) => Promise<Response>;
 
 /**

@@ -29,7 +29,7 @@ export default defineConfig({
     allowOnly: false,
     retry: 0,
     reporters: ['default', new ZeroSkipReporter()],
-    include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/integration/**/*.test.{ts,tsx}'],
     exclude: ['tests/e2e/**', 'tests/benchmarks/**', 'node_modules', '.archive', 'dist'],
     coverage: {
       provider: 'v8',

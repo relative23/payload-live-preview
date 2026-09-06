@@ -10,6 +10,25 @@ Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin 
 npm install payload-live-preview
 ```
 
+## The short setup
+
+One line in `nuxt.config.ts`, if every option is data:
+
+```ts
+export default defineNuxtConfig({
+  modules: ['payload-live-preview/nuxt-module'],
+  livePreview: {
+    allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+    serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+    mergeDepth: 1,
+  },
+});
+```
+
+The module writes a Nitro plugin into `.nuxt/` and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
+
+What it cannot carry is a function. The options are serialized into the generated plugin, so `authorizePreview` and `shouldInject` are not part of the module's option type — and under the strict 2.0 default the plugin refuses to start without `authorizePreview`. The short setup is therefore the shape for `defaults: 'v1'` and for a preview that authorizes elsewhere; everything else writes the plugin below, which is three lines rather than one.
+
 ## One options object
 
 The plugin and the handler share their options, so write them once:
@@ -59,6 +78,32 @@ import { livePreviewOptions } from '../utils/live-preview';
 export default defineEventHandler(defineLivePreviewServerHandler(livePreviewOptions));
 ```
 
+## The runtime as a cached asset
+
+`delivery: 'asset'` replaces the inlined runtime with a bootstrap of a few hundred bytes that fetches it once the page is in a preview context. It is data, so the short setup can carry it:
+
+```ts
+// lib/live-preview.ts — one object for both halves
+export const livePreviewOptions = {
+  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+  delivery: 'asset',
+} as const;
+```
+
+```ts
+// server/routes/payload-live-preview/[file].get.ts
+import { createRuntimeAssetRoute } from 'payload-live-preview/nuxt';
+import { livePreviewOptions } from '../../../lib/live-preview';
+
+const asset = createRuntimeAssetRoute(livePreviewOptions);
+
+export default defineEventHandler((event) => asset(toWebRequest(event)));
+```
+
+`nuxt.config.ts` then reads `livePreview: livePreviewOptions`, or the hand-written plugin takes the same object. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
+
+Move the route folder and set `assetPath` together if the app is not served from the site root. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
+
 ## Read `event.context`
 
 The keys are the ones the Astro and SvelteKit adapters publish, typed once through `LivePreviewLocals`: `livePreviewAuthorization` (the verified context, only when the hook authorized), `livePreviewAuthorizationOutcome` (`'authorized'` or the refusal reason, whenever the hook ran) and `livePreviewNonce` (the CSP nonce for scripts of your own; withheld after a refusal).
@@ -95,9 +140,53 @@ const bindings = useState('preview-bindings', () => {
 
 On a public response the helpers return empty objects, and the markup carries no `data-payload-*` attribute at all. The initial draft read is server code — `definePreview()` from `payload-live-preview/server` — and a Nitro route that serves the page's data is its own request, so it authorizes that request with the same strategy; [authorization.md](authorization.md) has the read.
 
+## Server-rendered boundaries
+
+A patch reaches what the markup annotates. It cannot create a section the
+template renders only when a field is set, and it cannot run a component's own
+logic. For those, mark the region as a fragment boundary and let the server
+render it from the unsaved form state:
+
+```ts
+// server/routes/payload/fragment.post.ts
+import { createFragmentEndpoint } from 'payload-live-preview/nuxt';
+import Hero from '../../../components/Hero.vue';
+import { heroProps } from '../../../lib/hero';
+
+const endpoint = createFragmentEndpoint({
+  authorize: { type: 'signed-token', secret: TOKEN_SECRET, audience: SITE_ORIGIN },
+  registry: { hero: { component: Hero, props: ({ fields }) => heroProps(fields) } },
+});
+
+export default defineEventHandler((event) => endpoint(toWebRequest(event)));
+```
+
+The binding takes a `Request`, which is what `toWebRequest()` makes of the H3
+event; this package therefore needs no `h3` dependency to describe its own
+signature. Point the script at the route — `fragments: { endpoint:
+'/payload/fragment' }` in the plugin's options — and mark the region with
+`data-payload-fragment="hero"`.
+
+Vue renders through `renderToString()` from `vue/server-renderer`, one SSR app
+per render. `vue` is an optional peer imported at the first render.
+
+The component is rendered inside the Nitro bundle, and Nitro's rollup does not
+know single-file components. Add the plugin once:
+
+```ts
+// nuxt.config.ts
+import vue from '@vitejs/plugin-vue';
+export default defineNuxtConfig({ nitro: { rollupConfig: { plugins: [vue()] } } });
+```
+
+Without it the server build fails on the first `.vue` import from `server/`. The
+alternative is a `defineComponent` in a `.ts` file, which Nitro reads as it is.
+Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
+
 ## Caveats
 
 - **Hydrated components.** The runtime patches the server-rendered markup. A Vue component that re-renders a bound node overwrites the patch: bind fields in server-rendered regions, mark a client-owned root with `data-payload-island` ([renderers.md](renderers.md)), or use the official `@payloadcms/live-preview-vue` composable inside client components.
+- **Hydration and boundaries.** The same applies to a fragment boundary, with one extra wrinkle: hydration resets what Vue owns, so a boundary the server re-rendered _before_ the page finished hydrating is thrown away — the runtime rendered it, `inspect().fragments.rendered` counts it, and the markup is gone. Once hydrated, Vue is idle and a morph survives. Put boundaries in markup Vue does not own (a server component, or a region marked `data-payload-island` for the runtime to own alone) if an update can arrive that early.
 - **Array templates.** Vue reads `{{ … }}` as its own interpolation, so an inline template is silently empty. Bind it as a string:
 
 ```vue
@@ -112,7 +201,7 @@ const template = '<li><a data-payload-href="url">{{title}}</a></li>';
 
 ## Example
 
-[`examples/nuxt-payload`](../examples/nuxt-payload) — `livePreviewNitroPlugin()` on Nuxt 3, run in Chromium, Firefox and WebKit.
+[`examples/nuxt-payload`](../examples/nuxt-payload) — `livePreviewNitroPlugin()` on Nuxt 3, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
 
 ## When something does not update
 

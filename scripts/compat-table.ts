@@ -3,10 +3,19 @@
  * and held against the fixture lockfiles and the CI matrices.
  * `--write` updates the README block; `--check` fails on any drift.
  */
+import { execFile } from 'node:child_process';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { promisify } from 'node:util';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { matrixValues, parseWorkflow } from './workflow-contracts';
+import {
+  peerCoverageProblems,
+  renderViteLine,
+  viteProblems,
+  type RecordedVite,
+  type ViteFacts,
+} from './compat-vite';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MATRIX = resolve(ROOT, 'quality/compat-matrix.json');
@@ -21,6 +30,8 @@ interface Tested {
   readonly source: 'lockfile' | 'astro-matrix';
   readonly browsers: readonly string[];
   readonly job: string;
+  /** The Vite range this framework version declares; absent for a framework that has none. */
+  vite?: string;
 }
 interface Framework {
   readonly name: string;
@@ -28,9 +39,12 @@ interface Framework {
   readonly supported: string;
   readonly fixture: string;
   readonly tested: readonly Tested[];
+  /** Where the framework's Vite range is declared; absent for a framework without one. */
+  readonly vite?: { readonly from: string; readonly field: 'dependencies' | 'peerDependencies' };
 }
 interface Matrix {
   readonly frameworks: readonly Framework[];
+  readonly vite?: { readonly measured: string; readonly devBelowNewest?: string };
   readonly node: {
     readonly engines: string;
     readonly tested: readonly number[];
@@ -48,7 +62,7 @@ function label(entry: Tested): string {
   return `${what} (${entry.browsers.join(', ')})`;
 }
 
-export function render(matrix: Matrix): string {
+export function render(matrix: Matrix, viteLine = ''): string {
   const rows = matrix.frameworks.map(
     (framework) =>
       `| ${framework.name} | ${framework.supported} | ${framework.tested.map(label).join('; ')} |`,
@@ -63,10 +77,88 @@ export function render(matrix: Matrix): string {
     '',
     `Node ${matrix.node.engines}; the unit and integration suites run on Node ${matrix.node.tested.join(', ')}. Every version in the table is what the fixture lockfile or the matrix job installs, checked by \`npm run compat:check\`.`,
     '',
+    ...(viteLine === '' ? [] : [viteLine, '']),
     ...payload,
     '',
     END,
   ].join('\n');
+}
+
+/** What the record says each supported framework major installs. */
+function recordedVite(matrix: Matrix): readonly RecordedVite[] {
+  return matrix.frameworks.flatMap((framework) =>
+    framework.tested.flatMap((entry) => {
+      if (entry.vite === undefined) return [];
+      const major = entry.major ?? Number(entry.version?.split('.')[0]);
+      return [{ framework: framework.name, major, range: entry.vite }];
+    }),
+  );
+}
+
+/** Every fixture lockfile that installs Vite at all, and at which version. */
+async function viteLockfiles(
+  matrix: Matrix,
+): Promise<readonly { readonly fixture: string; readonly version: string }[]> {
+  const found: { fixture: string; version: string }[] = [];
+  for (const fixture of new Set(matrix.frameworks.map((framework) => framework.fixture))) {
+    const version = await lockfileVersion(fixture, 'vite');
+    if (version !== undefined) found.push({ fixture, version });
+  }
+  return found;
+}
+
+async function viteFacts(matrix: Matrix): Promise<ViteFacts> {
+  const manifest = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
+    devDependencies?: Record<string, string>;
+  };
+  const reason = matrix.vite?.devBelowNewest;
+  return {
+    recorded: recordedVite(matrix),
+    dev: manifest.devDependencies?.['vite'] ?? '',
+    lockfiles: await viteLockfiles(matrix),
+    ...(reason === undefined ? {} : { devBelowNewest: reason }),
+  };
+}
+
+const run = promisify(execFile);
+
+/**
+ * The one place this file reaches the network. `--check` never calls it: a gate
+ * that needs the registry is a gate that fails on a plane, and the question it
+ * answers — does the record still match the repository — is answerable offline.
+ */
+async function declaredVite(
+  spec: string,
+  field: 'dependencies' | 'peerDependencies',
+): Promise<string | undefined> {
+  const { stdout } = await run('npm', ['view', spec, `${field}.vite`, '--json'], {
+    encoding: 'utf8',
+  });
+  const parsed: unknown = JSON.parse(stdout.trim() === '' ? 'null' : stdout);
+  // A range that matches several published versions answers with a list, newest last.
+  const value: unknown = Array.isArray(parsed) ? (parsed as readonly unknown[]).at(-1) : parsed;
+  return typeof value === 'string' ? value : undefined;
+}
+
+/** Re-read what each supported framework major installs, and stamp the date. */
+async function refresh(matrix: Matrix): Promise<Matrix> {
+  for (const framework of matrix.frameworks) {
+    if (framework.vite === undefined) continue;
+    for (const entry of framework.tested) {
+      // `@nuxt/vite-builder` ships in lockstep with Nuxt, so the framework's
+      // own version is the version to ask about even when the package differs.
+      const version = entry.version ?? `^${String(entry.major)}`;
+      const spec = `${framework.vite.from}@${version}`;
+      const range = await declaredVite(spec, framework.vite.field);
+      if (range === undefined) {
+        console.warn(`compat-table: ${spec} declares no vite in ${framework.vite.field}`);
+        continue;
+      }
+      if (entry.vite !== range) console.log(`compat-table: ${spec} → ${range}`);
+      entry.vite = range;
+    }
+  }
+  return { ...matrix, vite: { measured: new Date().toISOString().slice(0, 10) } };
 }
 
 async function lockfileVersion(fixture: string, name: string): Promise<string | undefined> {
@@ -115,6 +207,23 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
       `Payload corpus: files cover [${corpusVersions.join(', ')}], matrix lists [${listedCorpus.join(', ')}]`,
     );
   }
+  const manifest = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
+    peerDependencies?: Record<string, string>;
+  };
+  problems.push(
+    ...peerCoverageProblems(
+      matrix.frameworks.map((framework) => ({
+        name: framework.name,
+        package: framework.package,
+        majors: framework.tested.map(
+          (entry) => entry.major ?? Number(entry.version?.split('.')[0]),
+        ),
+      })),
+      manifest.peerDependencies ?? {},
+    ),
+  );
+  problems.push(...viteProblems(await viteFacts(matrix)));
+
   const workflowNode = matrixValues(workflow, 'unit', 'node').map(String);
   if (matrix.node.tested.map(String).join(',') !== workflowNode.join(',')) {
     problems.push(
@@ -148,16 +257,24 @@ function replaceBlock(readme: string, block: string): string {
 
 async function main(): Promise<void> {
   const mode = process.argv[2];
-  if (mode !== '--write' && mode !== '--check') {
-    throw new Error('usage: compat-table.ts --write | --check');
+  if (mode !== '--write' && mode !== '--check' && mode !== '--refresh') {
+    throw new Error('usage: compat-table.ts --write | --check | --refresh');
   }
-  const matrix = JSON.parse(await readFile(MATRIX, 'utf8')) as Matrix;
+  const recorded = JSON.parse(await readFile(MATRIX, 'utf8')) as Matrix;
+  const matrix = mode === '--refresh' ? await refresh(recorded) : recorded;
+  if (mode === '--refresh') {
+    await writeFile(MATRIX, `${JSON.stringify(matrix, undefined, 2)}\n`, 'utf8');
+    console.log('compat-table: quality/compat-matrix.json refreshed; read the diff');
+  }
   const problems = [...(await validate(matrix))];
   const readme = await readFile(README, 'utf8');
-  const block = render(matrix);
+  const block = render(
+    matrix,
+    matrix.vite === undefined ? '' : renderViteLine(await viteFacts(matrix), matrix.vite.measured),
+  );
   const next = replaceBlock(readme, block);
   const same = normalize(next) === normalize(readme);
-  if (mode === '--write') {
+  if (mode === '--write' || mode === '--refresh') {
     if (!same) await writeFile(README, next, 'utf8');
     console.log(`compat-table: README ${same ? 'unchanged' : 'updated (run npm run format)'}`);
   } else if (!same) {

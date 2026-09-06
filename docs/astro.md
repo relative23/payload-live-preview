@@ -76,7 +76,22 @@ livePreview({
 
 Intent is the query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`); `previewSignals` can add `Sec-Fetch-Dest: iframe`, and `defaults: 'v1'` restores the admin referer as well. All of them are client-controlled. For a preview gated on a verified request, register `createLivePreviewMiddleware()` yourself as in step 5: it takes the hook, and the integration stays out of `astro.config.mjs`.
 
-## 3. Annotate your markup
+## 3. Mark what should update
+
+On an SSR page, one attribute per component is enough: the region is rendered
+again from the unsaved form state, so conditional sections and derived values
+stay correct without naming a single field. It needs the endpoint from
+[hybrid.md](hybrid.md), and `output: 'server'`.
+
+```astro
+<section data-payload-fragment="hero" data-payload-depends="title,subtitle,hero">
+  <Hero {...page} />
+</section>
+```
+
+A static build has no server at request time, so there the fields are bound
+individually — and inside a boundary as well, for the ones an editor types into
+while watching: a patch keeps focus and the caret, a re-render does not.
 
 ```astro
 ---
@@ -86,6 +101,10 @@ const page = await getPage(); // your existing data fetch
 <p data-payload-field="subtitle">{page.subtitle}</p>
 <img data-payload-field="hero" data-payload-type="image" src={page.hero.url} alt={page.hero.alt} />
 ```
+
+Which to reach for, and what each costs:
+[bindings.md](bindings.md#how-much-markup-this-actually-needs). `pll-codegen annotate`
+writes the unambiguous field bindings for you and reports the rest.
 
 Rich text is detected automatically. The `<RichText />` component renders the field through the same built-in Lexical serializer the runtime uses for live patches, which reduces drift between the server render and the preview and gives an empty field a stable anchor. Exact markup parity also needs the same sanitizer availability and the same custom node and block registrations in both JavaScript realms; server-side registrations are not copied into the prebuilt inline runtime.
 

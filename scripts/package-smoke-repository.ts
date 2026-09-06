@@ -136,25 +136,27 @@ export async function verifyRepositoryPreconditions(
  * so the smoke exercises the exact tree that was reviewed rather than whatever
  * the registry currently resolves.
  */
-export async function readReviewedTsMorphVersion(): Promise<string> {
+export async function readReviewedPeerVersion(name: string): Promise<string> {
   const lockfileValue: unknown = JSON.parse(await readFile(PACKAGE_LOCK, 'utf8'));
   const lockfilePackages = isRecord(lockfileValue) ? lockfileValue['packages'] : undefined;
-  const lockedTsMorph = isRecord(lockfilePackages)
-    ? lockfilePackages['node_modules/ts-morph']
-    : undefined;
-  if (!isRecord(lockedTsMorph) || typeof lockedTsMorph['version'] !== 'string') {
-    throw new Error('maintainer lockfile does not pin the reviewed ts-morph peer');
+  const locked = isRecord(lockfilePackages) ? lockfilePackages[`node_modules/${name}`] : undefined;
+  if (!isRecord(locked) || typeof locked['version'] !== 'string') {
+    throw new Error(`maintainer lockfile does not pin the reviewed ${name} peer`);
   }
-  const lockedTsMorphVersion = lockedTsMorph['version'];
-  const installedTsMorphManifest: unknown = JSON.parse(
-    await readFile(resolve(ROOT, 'node_modules/ts-morph/package.json'), 'utf8'),
+  const lockedVersion = locked['version'];
+  const installedManifest: unknown = JSON.parse(
+    await readFile(resolve(ROOT, `node_modules/${name}/package.json`), 'utf8'),
   );
   if (
-    !isRecord(installedTsMorphManifest) ||
-    installedTsMorphManifest['name'] !== 'ts-morph' ||
-    installedTsMorphManifest['version'] !== lockedTsMorphVersion
+    !isRecord(installedManifest) ||
+    installedManifest['name'] !== name ||
+    installedManifest['version'] !== lockedVersion
   ) {
-    throw new Error('maintainer install does not match the locked ts-morph peer');
+    throw new Error(`maintainer install does not match the locked ${name} peer`);
   }
-  return lockedTsMorphVersion;
+  return lockedVersion;
+}
+
+export function readReviewedTsMorphVersion(): Promise<string> {
+  return readReviewedPeerVersion('ts-morph');
 }

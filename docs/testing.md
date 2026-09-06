@@ -174,6 +174,19 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   `src/core/diagnostic-codes.ts`; the check fails on drift, on a code without
   a "what to do" entry and on an entry for a code that no longer exists.
   `npx tsx scripts/diagnostic-table.ts --write` re-renders it.
+- `scripts/compare-scope.ts` — how much code this package spends on the job
+  `@payloadcms/live-preview` also does, both sides measured as authored source
+  (theirs recovered from the `sourcesContent` they ship). `--check` fails when
+  our side moves without the reviewed number moving with it, so the ratio the
+  comparison quotes stays a measurement rather than a memory.
+- `scripts/check-complexity.ts` · part of `npm run test:architecture` — the
+  reviewed size of the public surface: exported names per entry, adapter and
+  inline options, diagnostic codes, source modules. The limits in
+  [quality/complexity-budget.json](../quality/complexity-budget.json) are the
+  exact current numbers with no headroom — a count is stable, so headroom would
+  only be room to grow into without saying so. Raising one is two lines: the
+  number, and why it moved. It is the byte budget's counterpart for the thing a
+  reader pays instead of bandwidth.
 - `scripts/compat-table.ts` · `npm run compat:check` — the README
   compatibility table is rendered from `quality/compat-matrix.json`; the check
   fails when the table, a fixture lockfile or the CI workflow matrix disagree.

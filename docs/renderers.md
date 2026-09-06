@@ -296,12 +296,37 @@ The contract is recorded in
 
 ### Built-in plugins
 
-| Plugin                             | Effect                                                                                           |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `highlightPlugin`                  | Flashes an outline on updated elements (respects reduced motion).                                |
-| `debugPlugin`                      | Logs every lifecycle event to the console.                                                       |
-| `createAnalyticsPlugin()`          | Collects update statistics, exposed via `getStats()`.                                            |
-| `documentSavePlugin({ strategy })` | Reacts to admin saves: `'silent'` · `'reload'` (scroll-preserving) · `'revalidate'` · `'fetch'`. |
+| Plugin                               | Effect                                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `highlightPlugin`                    | Flashes an outline on updated elements (respects reduced motion).                                |
+| `debugPlugin`                        | Logs every lifecycle event to the console.                                                       |
+| `createAnalyticsPlugin()`            | Collects update statistics, exposed via `getStats()`.                                            |
+| `documentSavePlugin({ strategy })`   | Reacts to admin saves: `'silent'` · `'reload'` (scroll-preserving) · `'revalidate'` · `'fetch'`. |
+| `createUnboundFieldsOverlayPlugin()` | Development overlay listing the fields an update carried that the page cannot show.              |
+
+### `unbound-fields`: what the page is still missing
+
+Annotating a template is the work this package asks for, and the hard part is
+knowing what is left. `inspect().bindings.orphanFields` answers it in the
+console; this answers it in the preview, next to the markup you are editing:
+
+```ts
+import { createUnboundFieldsOverlayPlugin } from 'payload-live-preview/plugins';
+
+void client.use(createUnboundFieldsOverlayPlugin());
+```
+
+Every update recomputes the list from the message's own fields and the bindings
+in the DOM, so an entry disappears the moment you save the file that binds it.
+A click copies `data-payload-field="…"` for that field. Fields Payload sends with
+every document (`id`, `updatedAt`, `_status` and their kin) never appear, and a
+binding on a path inside a field — `hero.eyebrow` for `hero` — counts as covering
+it, exactly as the runtime's own LP0201 does.
+
+It mounts only when the client runs with `debug: true` (`onlyWithDebug: false`
+overrides that), and it is a plugin rather than part of the runtime for one
+reason: no page should carry a development tool it did not ask for. The inline
+script's budget is unchanged by it.
 
 ### `documentSave`: the `revalidate` endpoint authorizes itself
 

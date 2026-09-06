@@ -7,7 +7,11 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { CODEGEN_EXPORT_NAMES, findExecutableBinFailures } from './package-smoke-manifest';
+import {
+  CODEGEN_EXPORT_NAMES,
+  PEER_REQUIRED_EXPORT_NAMES,
+  findExecutableBinFailures,
+} from './package-smoke-manifest';
 import { detailFor, exists, isRecord, run, type JsonRecord } from './package-smoke-support';
 
 function packageSpecifier(name: string, exportName: string): string {
@@ -25,6 +29,7 @@ function conditionTarget(value: unknown, condition: 'import' | 'require'): strin
 interface SpecifierPartition {
   readonly runtimeEsm: readonly string[];
   readonly codegenEsm: readonly string[];
+  readonly peerEsm: readonly string[];
   readonly runtimeCjs: readonly string[];
   readonly codegenCjs: readonly string[];
 }
@@ -35,11 +40,16 @@ function partitionExportSpecifiers(
 ): SpecifierPartition {
   const runtimeEsm: string[] = [];
   const codegenEsm: string[] = [];
+  const peerEsm: string[] = [];
   const runtimeCjs: string[] = [];
   const codegenCjs: string[] = [];
   for (const [exportName, conditions] of Object.entries(exportsValue)) {
     if (conditionTarget(conditions, 'import') !== undefined) {
-      const target = CODEGEN_EXPORT_NAMES.has(exportName) ? codegenEsm : runtimeEsm;
+      const target = CODEGEN_EXPORT_NAMES.has(exportName)
+        ? codegenEsm
+        : PEER_REQUIRED_EXPORT_NAMES.has(exportName)
+          ? peerEsm
+          : runtimeEsm;
       target.push(packageSpecifier(packageName, exportName));
     }
     if (conditionTarget(conditions, 'require') !== undefined) {
@@ -47,7 +57,7 @@ function partitionExportSpecifiers(
       target.push(packageSpecifier(packageName, exportName));
     }
   }
-  return { runtimeEsm, codegenEsm, runtimeCjs, codegenCjs };
+  return { runtimeEsm, codegenEsm, peerEsm, runtimeCjs, codegenCjs };
 }
 
 /** The Astro integration reads a virtual options module that only a bundler provides. */
@@ -184,6 +194,8 @@ async function checkPackedCli(
 export async function checkPackedImportSmokes(inputs: {
   readonly consumer: string;
   readonly codegenConsumer: string;
+  /** Installs the peers the entries in `PEER_REQUIRED_EXPORT_NAMES` import. */
+  readonly peerConsumer: string;
   readonly codegenPackageRoot: string;
   readonly packageName: string;
   readonly manifestValue: JsonRecord;
@@ -226,6 +238,25 @@ export async function checkPackedImportSmokes(inputs: {
   );
   if (codegenEsm.status !== 0) {
     failures.push(`peer-provisioned ESM codegen smoke failed:\n${detailFor(codegenEsm)}`);
+  }
+
+  const peerEsm = run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '--eval',
+      esmProbeSource(
+        {
+          [packageSpecifier(inputs.packageName, './react')]: ['useLivePreviewDocument'],
+          [packageSpecifier(inputs.packageName, './vue')]: ['useLivePreviewDocument'],
+        },
+        specifiers.peerEsm,
+      ),
+    ],
+    inputs.peerConsumer,
+  );
+  if (peerEsm.status !== 0) {
+    failures.push(`peer-provisioned ESM hook smoke failed:\n${detailFor(peerEsm)}`);
   }
 
   const cjs = run(

@@ -102,6 +102,22 @@ export type FieldPath<T, Depth extends 0 | 1 | 2 | 3 = 3> = Depth extends 0 ? ne
 }[Extract<keyof T, string>] : never;
 
 // @public
+export interface FragmentBoundaryAttributes {
+    // (undocumented)
+    readonly 'data-payload-depends'?: string;
+    // (undocumented)
+    readonly 'data-payload-fragment': string;
+    // (undocumented)
+    readonly 'data-payload-fragment-key'?: string;
+}
+
+// @public (undocumented)
+export interface FragmentBoundaryOptions {
+    readonly dependsOn?: readonly string[];
+    readonly key?: string;
+}
+
+// @public
 export function hasPreviewIntent(request: PreviewRequestLike, options?: PreviewRequestOptions): boolean;
 
 // @public
@@ -179,18 +195,20 @@ export interface PreviewBindings {
     readonly authorized: boolean;
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
     bindByPath: <T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
+    boundary: (id: string, options?: FragmentBoundaryOptions) => FragmentBoundaryAttributes | SuppressedBinding;
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @public (undocumented)
-export interface PreviewBindingsCommonOptions {
+// @public
+export function previewBindingsFromLocals(locals: unknown, options?: {
     readonly owner?: string;
-}
+}): PreviewBindings;
 
 // @public
-export interface PreviewBindingsOptions extends PreviewBindingsCommonOptions {
+export interface PreviewBindingsOptions {
     // (undocumented)
     readonly authorization: AuthorizedPreviewContext | null;
+    readonly owner?: string;
 }
 
 // @public

@@ -41,7 +41,9 @@ always wins. The ledger of what changed is
 | `disableReferrerDetection` | yes    | yes           | yes                                                      | —                        | `true`                                              | `false`                              |
 | `disableLocalhostMatching` | yes    | yes           | yes                                                      | —                        | `false`                                             | same                                 |
 | `strategies`               | yes    | —             | —                                                        | —                        | — (patch only)                                      | same                                 |
-| `fragmentEndpoint`         | —      | yes           | as `fragments: { endpoint }`, Astro                      | —                        | — (no fragment client)                              | same                                 |
+| `fragmentEndpoint`         | —      | yes           | as `fragments: { endpoint }`                             | —                        | — (no fragment client)                              | same                                 |
+| `routeStrategy`            | —      | yes           | yes                                                      | —                        | `false`                                             | same                                 |
+| `onUnboundChange`          | yes    | yes           | yes                                                      | —                        | `'ignore'`                                          | same                                 |
 | `resolveRenderer`          | yes    | —             | —                                                        | —                        | —                                                   | same                                 |
 | `renderRichText`           | yes    | —             | —                                                        | —                        | built-in Lexical renderer                           | same                                 |
 | `root`                     | yes    | —             | —                                                        | —                        | `document`                                          | same                                 |
@@ -59,8 +61,55 @@ always wins. The ledger of what changed is
 | `strictDynamic`            | —      | —             | yes                                                      | —                        | `false`                                             | same                                 |
 | `frameAncestorsExtra`      | —      | —             | yes                                                      | —                        | `[]`                                                | same                                 |
 | `scriptSrcExtra`           | —      | —             | yes                                                      | —                        | `[]`                                                | same                                 |
+| `delivery`                 | —      | —             | yes (Astro uses `mode`)                                  | —                        | `'inline'`                                          | same                                 |
+| `assetPath`                | —      | —             | yes, with `delivery: 'asset'`                            | —                        | `/payload-live-preview`                             | same                                 |
 | `mode`                     | —      | —             | Astro integration only                                   | —                        | `'inline'`                                          | same                                 |
 | `nonce`                    | —      | —             | render helpers only                                      | —                        | —                                                   | same                                 |
+
+### Why each of these exists
+
+Every option is a decision someone had to be able to make differently. Grouped
+by the decision, so the table above can be read as eight questions rather than
+forty-five rows.
+
+- **Which document, and how complete** — `allowedOrigins`, `serverURL`,
+  `apiRoute`, `mergeDepth`, `mergeFetch`. Payload 3.x posts raw form values, so
+  a relationship arrives as an id; re-fetching through the REST API is the only
+  way to show the populated document, and it needs an origin, a route and an
+  explicit depth ([below](#serverurl-and-mergedepth)).
+- **May this request see a preview** — `previewSignals`, `previewQueryParams`,
+  `inject`, `authorizePreview`, `strict`. Intent is client-controlled and
+  authorization is not; both exist because collapsing them into one option is
+  exactly the mistake this package is built to avoid
+  ([ADR 0006](architecture/0006-authorized-preview-context.md)).
+- **How the runtime reaches the page** — `autoInject`, `shouldInject`,
+  `delivery`, `assetPath`, `mode`, `runtime`, `nonce`. A site that renders the
+  tag itself, one that serves the runtime as a cached asset, and one that ships
+  a smaller build all need a different answer, and the wrong default costs
+  every visitor bytes ([deployment.md](deployment.md#what-a-public-visitor-pays)).
+- **What the response's CSP says** — `manageCsp`, `strictDynamic`,
+  `frameAncestorsExtra`, `scriptSrcExtra`. The admin has to be allowed to frame
+  the page and the injected script has to be allowed to run, without the package
+  ever loosening a policy the site already sends.
+- **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
+  `routeStrategy`, `onUnboundChange`, `strategies`, `dependencies`. Three
+  strategies exist because patching cannot create markup and a route refresh
+  cannot be done per keystroke
+  ([overview](architecture/overview.md#the-five-objects)).
+- **What the page does with a value** — `sanitizerPolicy`, `resolveRenderer`,
+  `renderRichText`, `revealEditedField`, `scopeBindingsByOwner`. Unsaved editor
+  input is untrusted input; the rest is how a site renders what it already
+  trusts.
+- **Which sender is believed** — `eventSourcePolicy`,
+  `disableReferrerDetection`, `disableLocalhostMatching`, `validateToken`. A
+  page inside an iframe can be addressed by anything that framed it, and each of
+  these narrows who counts as the admin.
+- **Cost and noise** — `debounceMs`, `heartbeatMs`, `skipUnchanged`,
+  `disableVisibilityGate`, `visibilityGateThreshold`, `intersectionRootMargin`,
+  `enableA11y`, `a11yLocale`, `debug`, `timeoutMs`, `onDiagnostic`, `root`,
+  `autoStart`, `defaults`. Typing produces dozens of messages a second; these
+  decide how much work each one causes, how much of it is announced to a screen
+  reader, and how loudly the runtime reports what it did.
 
 Notes on the rows that need one:
 
@@ -77,6 +126,14 @@ Notes on the rows that need one:
 - `shouldInject` filters script injection only; it never suppresses CSP
   handling. `autoInject: false` keeps CSP management and lets you place the
   tag with `renderLivePreviewScript()` (Astro, Next.js, Nuxt).
+- `delivery: 'asset'` replaces the inlined runtime with a bootstrap of a few
+  hundred bytes that fetches it as `<assetPath>/runtime.<hash>.js` — but only
+  once it finds itself in a preview context. Measured on the Next.js fixture:
+  679 bytes in the page instead of 97 546, and one response the browser may
+  keep for a year, because the file name is the hash of its contents. It needs
+  the asset route mounted, which each adapter page shows; the caching, the
+  integrity check and what a proxy must not do to the file are in
+  [docs/deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 - `mode` (Astro): `'inline'` bakes the runtime into every page at build time;
   `'loader'` injects a small bootstrap that fetches the runtime as a hashed,
   SRI-verified asset only inside a preview; `'middleware'` registers the
@@ -84,13 +141,40 @@ Notes on the rows that need one:
   `authorizePreview` or `shouldInject` and refuses the `strict` default —
   register `createLivePreviewMiddleware()` yourself for those. The loader
   asset's caching and CSP are in
-  [docs/deployment.md](deployment.md#the-loader-asset-astro-mode-loader).
+  [docs/deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 - `manageCsp: 'full'` also manages a nonce'd `script-src`; `strictDynamic`
   adds `'strict-dynamic'`, after which CSP 3 ignores `'self'` and host
   sources, so every script on the page must carry the nonce.
+- `runtime` chooses which artifact the page carries. The default is the full
+  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is 24 763 bytes gzip
+  against 30 253 — it leaves out the fragment and route strategies, the keyed
+  morph, the structural arrays, the item templates and the screen-reader
+  announcer, and reports LP0104 when a page needs one of them rather than doing
+  nothing. It is an import rather than a string option so the second artifact
+  lands only in builds that ask for it:
+
+  ```ts
+  import { LEAN_RUNTIME } from 'payload-live-preview/lean';
+
+  livePreview({ runtime: LEAN_RUNTIME, allowedOrigins: [ADMIN] });
+  ```
+
+  The strategies and the lean runtime exclude each other, and the generator says
+  so rather than emitting a prelude with nothing to talk to.
+
 - `fragmentEndpoint` / `fragments` put the fragment client ahead of the runtime
-  in the injected script; the other adapters' option types do not carry it.
-  `LivePreviewClient` takes `strategies` instead ([docs/hybrid.md](hybrid.md)).
+  in the injected script. Every adapter takes `fragments`: the option names a
+  same-origin path the runtime posts to, and which framework serves that path
+  is the endpoint's business, not the option's. `LivePreviewClient` takes
+  `strategies` instead ([docs/hybrid.md](hybrid.md)).
+- `routeStrategy` puts the route strategy alone ahead of the runtime, for a page
+  that wants a route refresh without a fragment endpoint. `fragmentEndpoint`
+  implies it and the two are never emitted together, because the fragment
+  prelude already carries the route strategy.
+- `onUnboundChange: 'route'` refreshes the route when a revision changes a field
+  the page has no binding for, instead of leaving the edit invisible. It needs a
+  route strategy and skips the connection's first message
+  ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
 - `dependencies` and `data-payload-depends` say the same thing from two sides;
   both matter only under `skipUnchanged`. `revealEditedField` is described in
   [docs/reveal.md](reveal.md), `scopeBindingsByOwner` in
@@ -132,6 +216,10 @@ are ESM-only; the rest ship ESM and CommonJS builds.
 | `payload-live-preview/server`                        | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `bind()`. |
 | `payload-live-preview/payload`                       | `buildLivePreviewUrl()` for `payload.config.ts`; imports nothing from `payload`.                            |
 | `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | One framework adapter each.                                                                                 |
+| `payload-live-preview/react`                         | `useLivePreviewDocument()`: the merged document as a hook (needs `react`).                                  |
+| `payload-live-preview/vue`                           | The same as a composable (needs `vue`).                                                                     |
+| `payload-live-preview/lean`                          | `LEAN_RUNTIME`: the smaller runtime artifact, as a value for the `runtime` option.                          |
+| `payload-live-preview/annotate`                      | `livePreviewAnnotate()`: the build-time annotator as a Vite plugin. No `ts-morph`.                          |
 | `payload-live-preview/astro/RichText.astro`          | The `RichText` component.                                                                                   |
 | `payload-live-preview/astro/PreviewBoundary.astro`   | The `PreviewBoundary` component.                                                                            |
 | `payload-live-preview/codegen`                       | Type generation from a Payload config (needs `ts-morph`).                                                   |
