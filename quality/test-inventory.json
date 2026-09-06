@@ -19,7 +19,7 @@
   "totals": {
     "files": 297,
     "suites": 618,
-    "tests": 2526,
+    "tests": 2527,
     "benchmarks": 12
   },
   "groups": {
@@ -38,7 +38,7 @@
     "e2e": {
       "files": 27,
       "suites": 35,
-      "tests": 108,
+      "tests": 109,
       "benchmarks": 0
     },
     "integration": {
@@ -218,7 +218,7 @@
       "path": "tests/e2e/specs/public-response.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {

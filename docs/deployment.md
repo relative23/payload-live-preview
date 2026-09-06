@@ -42,7 +42,8 @@ preview answers every request with `Cache-Control: private, no-store`
 By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. Measured on the
-Next.js fixture, that is 679 bytes in the page instead of 100 258.
+Next.js fixture, that is a 696-byte `<script>` element in the page instead of a
+108 994-byte one.
 
 Two ways in, because the frameworks differ in who can serve a file:
 
@@ -84,25 +85,34 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The runtime is about 103.5 KB of JavaScript (32 KB gzip). The number that
+The runtime is about 97.5 KB of JavaScript (30 KB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
-rather than by the framework. Three outcomes, each pinned by an E2E case in
-`tests/e2e/specs/public-response.spec.ts` so this table cannot drift from the
-fixtures:
+rather than by the framework. Three outcomes, each pinned to the byte by an E2E
+case in `tests/e2e/specs/public-response.spec.ts` against the budgets in
+`tests/fixtures/delivery-budgets.ts`, so this table cannot drift from the
+fixtures. The bytes are the whole `<script>` element, tag included, as measured
+on a request with no cookie and no preview intent:
 
-| Setup                                                 | A public visitor receives | Why                                                                               |
-| ----------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------- |
-| SvelteKit handle, Nuxt Nitro plugin, Astro middleware | nothing                   | something ran for the request, saw no intent, and injected neither                |
-| Astro static build, `mode: 'loader'`                  | the bootstrap, 679 bytes  | a static page has no request to decide for, so the check happens in the browser   |
-| Next.js, `delivery: 'asset'`                          | the bootstrap, 679 bytes  | the root layout renders for everyone; what it renders is the bootstrap            |
-| Next.js, script in the root layout                    | the whole runtime         | a layout renders for every visitor, and Next middleware cannot inject into a body |
-| Astro static build, `mode: 'inline'`                  | the whole runtime         | nothing decides and nothing is deferred                                           |
+| Setup                                                 | A public visitor receives | Bytes          | Why                                                                               |
+| ----------------------------------------------------- | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
+| SvelteKit handle, Nuxt Nitro plugin, Astro middleware | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
+| Next.js, `delivery: 'asset'`                          | the bootstrap             | 696, twice     | the root layout renders for everyone; what it renders is the bootstrap            |
+| Astro static build, `mode: 'loader'`                  | the bootstrap             | 762            | a static page has no request to decide for, so the check happens in the browser   |
+| Astro static build, `mode: 'inline'`                  | the whole runtime         | 97 672         | nothing decides and nothing is deferred                                           |
+| Next.js, script in the root layout                    | the whole runtime         | 108 994, twice | a layout renders for every visitor, and Next middleware cannot inject into a body |
 
-The bootstrap is the same few hundred bytes in either row that carries it: it
-checks whether the page is framed or opened by an admin and, outside a preview,
-does nothing and fetches nothing. So a visitor to a statically built site pays
-0.7 % of what the inline build costs them, and a visitor to a site whose server
-decides pays nothing at all.
+The bootstrap is the same code in either row that carries it — the byte
+difference is the configuration in front of it — and all it does is check
+whether the page is framed or opened by an admin; outside a preview it does
+nothing and fetches nothing. So a visitor to a statically built site pays under
+one per cent of what the inline build costs them, and a visitor to a site whose
+server decides pays nothing at all.
+
+"Twice" is Next's doing, not ours: a script in a layout is rendered once into
+the HTML and once more into the RSC flight payload underneath it, escaped and
+therefore slightly larger the second time. A Next page ships its delivery two
+times, which is what makes the choice between those two rows the widest in the
+table.
 
 Two ways to move a row up:
 

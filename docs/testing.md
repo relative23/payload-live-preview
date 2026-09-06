@@ -180,6 +180,15 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   Request counts are exact rather than ceilings, and the latency rows carry a
   floor as well as a ceiling: an improvement nobody records fails the gate too.
   Runs inside `npm run build`.
+- `tests/fixtures/delivery-budgets.ts` · part of `npm run test:e2e` — what an
+  anonymous visitor is charged, per delivery path: how many `<script>` elements
+  of a cookie-less response carry this package, and how many bytes those
+  elements are once the runtime artifact inside them is discounted. The
+  subtraction is what keeps the row a statement about the delivery: the
+  runtime's own size is held by `INLINE_BUDGET`, and repeating it here would
+  make every change to `src/` red in a test file. Both numbers are exact in both
+  directions, so a path that stops charging fails until the win is recorded.
+  `tests/e2e/specs/public-response.spec.ts` runs it against every fixture.
 - `scripts/diagnostic-table.ts` · `npm run diagnostics:check` — the
   diagnostic-code table in `docs/troubleshooting.md` is rendered from
   `src/core/diagnostic-codes.ts`; the check fails on drift, on a code without
