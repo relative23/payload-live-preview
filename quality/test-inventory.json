@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 273,
-    "suites": 578,
-    "tests": 2368,
+    "files": 274,
+    "suites": 579,
+    "tests": 2370,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 225,
-      "suites": 514,
-      "tests": 2181,
+      "files": 226,
+      "suites": 515,
+      "tests": 2183,
       "benchmarks": 0
     }
   },
@@ -807,6 +807,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/lean-profile-runner.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {
