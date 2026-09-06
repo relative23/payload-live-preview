@@ -27,6 +27,17 @@ export interface ViteFacts {
   readonly dev: string;
   /** What each fixture's lockfile actually installed. */
   readonly lockfiles: readonly { readonly fixture: string; readonly version: string }[];
+  /**
+   * Why the devDependency sits below the newest recorded major, when it does.
+   *
+   * The first version of this gate demanded the newest, and was wrong within a
+   * day: `@codspeed/vitest-plugin` peers below Vite 8, so `npm ci` failed with
+   * ERESOLVE and every CI job stopped before its first test. Which major the
+   * repository develops against is a fact about its own tooling; which majors
+   * the package supports is the record above, and the fixtures cover those.
+   * So a gap is allowed — stated, never silent.
+   */
+  readonly devBelowNewest?: string;
 }
 
 /** Every major a range mentions: `^5.0.3 || ^8.0.0` yields 5 and 8. */
@@ -99,12 +110,17 @@ export function viteProblems(facts: ViteFacts): readonly string[] {
   const devMajor = dev.at(-1);
   if (devMajor === undefined) {
     problems.push(`Vite: devDependencies.vite is \`${facts.dev}\`, which names no major`);
-  } else if (devMajor < span.max) {
+  } else if (devMajor < span.min || devMajor > span.max) {
+    problems.push(
+      `Vite: devDependencies.vite is \`${facts.dev}\`, outside the recorded ${String(span.min)}–${String(span.max)}; ` +
+        'the repository would develop against a major no supported framework installs',
+    );
+  } else if (devMajor < span.max && (facts.devBelowNewest ?? '').trim() === '') {
     const newest = facts.recorded.filter((entry) => majorsIn(entry.range).includes(span.max));
     const brings = newest.map((entry) => `${entry.framework} ${String(entry.major)}`).join(', ');
     problems.push(
       `Vite: devDependencies.vite is \`${facts.dev}\` but ${brings} installs Vite ${String(span.max)}; ` +
-        'develop against what they run, or record why not',
+        'raise it, or record why not in `vite.devBelowNewest`',
     );
   }
 

@@ -45,11 +45,34 @@ describe('reading majors out of a range', () => {
 });
 
 describe('what compat:check refuses', () => {
-  it('a devDependency behind the newest major the matrix records', () => {
+  it('a devDependency behind the newest major, with nothing said about it', () => {
     const problems = viteProblems(facts({ dev: '^7.3.6' }));
 
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('Astro 7 installs Vite 8');
+    expect(problems[0]).toContain('devBelowNewest');
+  });
+
+  it('accepts the same gap once the reason is recorded', () => {
+    // The first version of this gate demanded the newest major and was wrong
+    // within a day: a dev plugin peered below Vite 8, `npm ci` failed with
+    // ERESOLVE, and CI stopped before its first test. Which major the
+    // repository develops against is a fact about its own tooling.
+    expect(
+      viteProblems(facts({ dev: '^7.3.6', devBelowNewest: 'a dev plugin peers below 8' })),
+    ).toEqual([]);
+  });
+
+  it('refuses a devDependency outside the span whatever the reason says', () => {
+    const problems = viteProblems(
+      facts({
+        dev: '^4.0.0',
+        devBelowNewest: 'no reason covers developing against a major nobody installs',
+      }),
+    );
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('outside the recorded 5–8');
   });
 
   it('a peer range too narrow for a major the matrix tests', () => {
