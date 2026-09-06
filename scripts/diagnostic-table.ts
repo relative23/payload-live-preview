@@ -109,6 +109,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'The same revision asked for a second refresh; the guard refused it. Nothing to do; `inspect().route.loopStopped` counts them.',
   LP0408:
     'Use one of the known formats — `date`, `date:short|medium|long|full`, `time`, `datetime`, `number`, `number:0-4`, `currency:XXX`, `percent` — or drop the attribute and format on the server behind a fragment.',
+  LP0409:
+    "Upgrading from 1.x: `sanitizerPolicy` defaults to `'strict'` since 2.0, which drops `id`, `name` and every `data-*` from written markup. Put the hook on an element the template owns, list the attribute in `allowedDataAttributes`, or set `sanitizerPolicy: 'compat'` to keep the 1.x behaviour. `data-payload-*` is refused whatever the policy ([security.md](security.md)).",
   LP0806:
     'Configure `fragments: { endpoint }` on the adapter so boundaries render on the server; until then they are patched.',
   LP0807:

@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 286,
-    "suites": 602,
-    "tests": 2455,
+    "files": 288,
+    "suites": 604,
+    "tests": 2467,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 233,
-      "suites": 533,
-      "tests": 2248,
+      "files": 235,
+      "suites": 535,
+      "tests": 2260,
       "benchmarks": 0
     }
   },
@@ -1821,7 +1821,7 @@
       "path": "tests/unit/quality/compat-vite.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 10,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -2028,6 +2028,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/security/sanitizer-upgrade-report.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/security/sanitizer.test.ts",
       "group": "unit",
       "suites": 7,
@@ -2067,6 +2074,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/upgrade-from-1x.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     }
   ]

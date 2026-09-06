@@ -48,6 +48,8 @@ export const ENTRY_REACHABILITY = {
   './annotate': 'import',
   './react': 'needs-peer',
   './vue': 'needs-peer',
+  // The manifest exporting itself, so tooling can read the installed version.
+  './package.json': 'not-node-importable',
   './astro/RichText.astro': 'not-node-importable',
   './astro/PreviewBoundary.astro': 'not-node-importable',
   './astro/middleware-entry': 'not-node-importable',

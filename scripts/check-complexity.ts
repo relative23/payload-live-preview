@@ -99,7 +99,10 @@ export async function measureComplexity(): Promise<ComplexityMeasurement> {
   return {
     totals: {
       publicDeclarations: Object.values(entries).reduce((sum, count) => sum + count, 0),
-      entrySubpaths: Object.keys(manifest.exports).length,
+      // `./package.json` is not one of them: it exports the manifest so
+      // tooling can read the installed version, not a surface a reader chooses
+      // between before writing a line of code.
+      entrySubpaths: Object.keys(manifest.exports).filter((key) => key !== './package.json').length,
       adapterOptions,
       inlineOptions,
       diagnosticCodes: Object.keys(DIAGNOSTIC_CODES).length,

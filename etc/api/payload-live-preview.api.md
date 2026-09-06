@@ -213,6 +213,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly StructuralUnstableKeys: "LP0406";
     readonly UnsupportedStrategy: "LP0407";
     readonly UnknownValueFormat: "LP0408";
+    readonly SanitizerDroppedAttribute: "LP0409";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
@@ -581,6 +582,9 @@ export interface IslandUpdateDetail {
 
 // @public (undocumented)
 export function isLexicalContent(value: unknown): value is LexicalRoot;
+
+// @public @deprecated
+export const isPreviewRequest: typeof hasPreviewIntent;
 
 // @public
 export function isSafeUrl(url: unknown): boolean;

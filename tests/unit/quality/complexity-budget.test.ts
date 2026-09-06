@@ -98,7 +98,11 @@ describe('the reviewed budget', () => {
       },
     };
     expect(findComplexityViolations(grown, reviewed)).toEqual([
-      { metric: 'diagnosticCodes', actual: measurement.totals['diagnosticCodes']! + 1, limit: 40 },
+      {
+        metric: 'diagnosticCodes',
+        actual: measurement.totals['diagnosticCodes']! + 1,
+        limit: reviewed.totals['diagnosticCodes']!.limit,
+      },
     ]);
 
     const stale: ComplexityBudget = {

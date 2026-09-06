@@ -193,7 +193,8 @@
         "types": "./dist/adapters/astro/middleware-entry.d.ts",
         "default": "./dist/adapters/astro/middleware-entry.js"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "bin": {
     "pll-codegen": "./dist/codegen-cli.js",

@@ -44,105 +44,114 @@ interface Fixture {
  * generator embeds whole and cannot shake. Raised again the same day for
  * `data-payload-format`.
  *
- * 2026-09-06: this gate now runs on Vite 8, which the fixtures already install
- * through Astro 7 and Nuxt. Vite 8 bundles with Rolldown instead of Rollup, so
- * every number below was re-measured — the bundler changed, not the package.
- * Rolldown is less precise than Rollup at dropping unused declarations out of a
- * bundled module: `escapeHtml` from the barrel is 2 378 B where Rollup left
- * 220, and `payload-live-preview/plugins` rose about a fifth. The properties
- * this gate exists for still hold: a focused entry never drags in the client,
- * and the barrel never drags in the package.
+ * 2026-09-06: the numbers are Vite 7's, because that is the newest major the
+ * repository's own dev tooling accepts (`@codspeed/vitest-plugin` peers below
+ * 8) — the record and the reason live in `quality/compat-matrix.json`.
  *
- * What did not survive the move unassisted was the runtime source. It is
- * emitted as chunks joined at load (scripts/serialize-source.ts), and Rolldown
- * would not prove that call pure: importing `escapeHtml` from the barrel came
- * out at 32 512 B gzip — the whole package — until the expression was annotated
- * `\/* @__PURE__ *\/`. Rollup had dropped it either way, which is why this only
- * appeared here.
+ * Vite 8 was measured before that constraint surfaced, and the measurement is
+ * worth keeping: it bundles with Rolldown instead of Rollup, which is less
+ * precise at dropping unused declarations out of a bundled module —
+ * `escapeHtml` from the barrel came out at 2 378 B against Rollup's 220, and
+ * `payload-live-preview/plugins` about a fifth larger. Consumers on Astro 7 or
+ * Nuxt get that bundler, so the difference is theirs, not ours; the focused
+ * entries were within a few percent either way.
+ *
+ * One thing did not survive the move unassisted, and its fix is still in
+ * place. The runtime source is emitted as chunks joined at load
+ * (scripts/serialize-source.ts), and Rolldown would not prove that call pure:
+ * importing `escapeHtml` from the barrel came out at 32 512 B gzip — the whole
+ * package — until the expression was annotated `\/* @__PURE__ *\/`. Rollup drops
+ * it either way, so the annotation costs nothing here and is what keeps the
+ * barrel shakeable for a consumer on 8.
+ *
+ * 2026-09-06 (LP0409): the two Lexical rows rise ~350 B gzip. The renderer
+ * writes sanitized HTML, so it pulls the sanitizer, and the sanitizer now
+ * carries the message it prints when the strict policy drops an attribute the
+ * 1.x default kept.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
     from: 'payload-live-preview',
     symbol: 'escapeHtml',
     use: 'export const out = escapeHtml(String(Date.now()));',
-    gzip: 2_420,
+    gzip: 224,
     why: 'a pure helper from the root barrel: the barrel itself costs nothing',
   },
   {
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 6_760,
+    gzip: 5_118,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 39_800,
+    gzip: 39_236,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 38_720,
+    gzip: 37_151,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 39_750,
+    gzip: 39_211,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 4_945,
+    gzip: 5_251,
     why: 'the Lexical renderer from its focused entry',
   },
   {
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_690,
+    gzip: 1_493,
     why: 'the keyed morph alone, without the array renderer',
   },
   {
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 41_830,
+    gzip: 42_011,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 25_580,
+    gzip: 25_890,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_400,
+    gzip: 5_322,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_380,
+    gzip: 5_311,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {
     from: 'payload-live-preview/plugins',
     symbol: 'PluginManager',
     use: 'export const out = PluginManager;',
-    gzip: 4_040,
+    gzip: 3_372,
     why: 'the plugin manager without the built-in plugins',
   },
 ];

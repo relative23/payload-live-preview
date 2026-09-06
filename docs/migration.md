@@ -58,8 +58,9 @@ Each row is an entry of the readiness table in
 
 `pll migrate` handles the first four:
 
-- `isPreviewRequest()` → `hasPreviewIntent()` — same signature; the old name
-  is gone.
+- `isPreviewRequest()` → `hasPreviewIntent()` — same signature. The old name is
+  a deprecated alias, removed in 3.0, so a 1.x project compiles against 2.0
+  unchanged; the codemod renames it when you want the new one.
 - `hasPreviewIntent(request, { adminOrigins })` → `{ allowedOrigins }` — the
   name everything else uses; `adminOrigins` is a deprecated alias that is
   removed in 3.0.
@@ -67,7 +68,12 @@ Each row is an entry of the readiness table in
   context from `authorizePreviewRequest()`; the boolean is no longer accepted.
 - `fetchPreviewDocument()` / `fetchPreviewGlobal()` (root) →
   `definePreview({ serverURL, depth }).fetchDocument()` / `.fetchGlobal()`
-  from `payload-live-preview/server`; the root helpers are gone.
+  from `payload-live-preview/server`; the root helpers are gone, with no alias
+  on purpose. They defaulted `depth` to `1` independently of the runtime's
+  `mergeDepth`, and a shim would put that mismatch back — the one thing the move
+  exists to remove. Of the eight names 1.8.1's root entry exported and 2.0 does
+  not, these six are that move; the seventh is `isPreviewRequest` above, and the
+  eighth is `CAPABILITY_REQUIREMENTS`, whose shape changed with it.
 
 Not a codemod target, because TypeScript reports each of them:
 
@@ -109,6 +115,13 @@ The rows above announce themselves: a refused preview, a missing binding, a
 `pll doctor` finding. These do not. Each one changes output that used to be
 correct, so nothing errors and nothing logs — walk this list once against your
 own site.
+
+One of them does warn now. `LP0409` names any attribute the strict sanitizer
+removes that `'compat'` would have kept — `id`, `name`, and every `data-*` — the
+first time it happens, with the reason that applies to that attribute. It exists
+because this was the one 2.0 change an upgrading project could not discover
+except by looking: measured on a real 1.8.1 site, a `data-*` attribute driving a
+CSS selector disappeared the moment an editor typed, in the preview only.
 
 **Rich text markup is classes, not data attributes.** The strict sanitizer
 strips `data-*`, so the Lexical renderer emits classes instead:

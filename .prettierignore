@@ -21,3 +21,7 @@ examples/payload-backend/payload-types.ts
 examples/payload-backend/src/app/(payload)/admin/importMap.js
 playwright-report/
 test-results/
+
+# Local-only working files (`.git/info/exclude`). CI never sees them, so a
+# formatting gate on them can only fail on the machine that holds them.
+docs/PRIVATE-*

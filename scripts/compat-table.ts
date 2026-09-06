@@ -44,7 +44,7 @@ interface Framework {
 }
 interface Matrix {
   readonly frameworks: readonly Framework[];
-  readonly vite?: { readonly measured: string };
+  readonly vite?: { readonly measured: string; readonly devBelowNewest?: string };
   readonly node: {
     readonly engines: string;
     readonly tested: readonly number[];
@@ -111,10 +111,12 @@ async function viteFacts(matrix: Matrix): Promise<ViteFacts> {
   const manifest = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
     devDependencies?: Record<string, string>;
   };
+  const reason = matrix.vite?.devBelowNewest;
   return {
     recorded: recordedVite(matrix),
     dev: manifest.devDependencies?.['vite'] ?? '',
     lockfiles: await viteLockfiles(matrix),
+    ...(reason === undefined ? {} : { devBelowNewest: reason }),
   };
 }
 

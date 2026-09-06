@@ -20,6 +20,8 @@ describe('published subpath classification', () => {
       './astro/RichText.astro',
       './astro/PreviewBoundary.astro',
       './astro/middleware-entry',
+      // The manifest exporting itself, so tooling can read the installed version.
+      './package.json',
     ]);
     expect(classified.filter(([, kind]) => kind === 'needs-ts-morph').map(([e]) => e)).toEqual([
       './codegen',

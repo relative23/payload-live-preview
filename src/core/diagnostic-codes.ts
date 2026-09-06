@@ -51,6 +51,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   UnsupportedStrategy: 'LP0407',
   /** `data-payload-format` names a format the vocabulary does not contain; the value was written unformatted. */
   UnknownValueFormat: 'LP0408',
+  /** The strict sanitizer removed an attribute the 1.x `'compat'` policy kept. */
+  SanitizerDroppedAttribute: 'LP0409',
 
   /** A message was rejected before it reached the update pipeline. */
   MessageRejected: 'LP0501',
