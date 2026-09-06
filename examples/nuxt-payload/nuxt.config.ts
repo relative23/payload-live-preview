@@ -1,6 +1,12 @@
 import vue from '@vitejs/plugin-vue';
+import { livePreviewOptions } from './lib/live-preview';
 
 export default defineNuxtConfig({
+  // The whole setup: the module registers the Nitro plugin and hands it these
+  // options. `server/plugins/live-preview.ts` used to do the same by hand.
+  // The asset route in `server/routes/` reads the same object.
+  modules: ['payload-live-preview/nuxt-module'],
+  livePreview: livePreviewOptions,
   // The fragment endpoint renders a component inside the Nitro bundle, and
   // Nitro's rollup has no idea what a single-file component is. One plugin
   // teaches it; without this the server build fails on the first `.vue` import

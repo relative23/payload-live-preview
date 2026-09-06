@@ -145,14 +145,28 @@ export function scanTemplate(source: string, options: ScanOptions): ScanResult {
   return { candidates, refusals };
 }
 
-/** Apply the candidates back-to-front, so every earlier offset still holds. */
+/** The attribute a candidate becomes: what `pll-codegen annotate` writes into a file. */
+export function fieldAttribute(candidate: AnnotationCandidate): string {
+  return `${FIELD_ATTRIBUTE}="${candidate.path}"`;
+}
+
+/**
+ * Apply the candidates back-to-front, so every earlier offset still holds.
+ *
+ * `render` decides what a candidate becomes, because the two callers write
+ * different things from the same decision: the codemod writes the attribute
+ * into the file a person reads, and the build-time annotator writes a call to
+ * the authorization-bound helper. What may be annotated at all is decided in
+ * one place — above — and never here.
+ */
 export function applyAnnotations(
   source: string,
   candidates: readonly AnnotationCandidate[],
+  render: (candidate: AnnotationCandidate) => string = fieldAttribute,
 ): string {
   let out = source;
   for (const candidate of [...candidates].sort((a, b) => b.insertAt - a.insertAt)) {
-    out = `${out.slice(0, candidate.insertAt)} ${FIELD_ATTRIBUTE}="${candidate.path}"${out.slice(candidate.insertAt)}`;
+    out = `${out.slice(0, candidate.insertAt)} ${render(candidate)}${out.slice(candidate.insertAt)}`;
   }
   return out;
 }

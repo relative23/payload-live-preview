@@ -58,6 +58,19 @@ export interface AnnotateOptions {
 }
 
 /**
+ * The part of an inventory the annotator reads: the paths, and nothing else.
+ *
+ * `PreviewInventory` from `generateTypes()` satisfies it, and so does an object
+ * a project writes by hand. Naming the minimum keeps the build plugin's public
+ * surface free of the extracted-field union behind the full inventory — a dozen
+ * types a consumer of a Vite plugin has no reason to meet.
+ */
+export interface AnnotatableSchema {
+  readonly globals: readonly { readonly fields: readonly { readonly path: string }[] }[];
+  readonly collections: readonly { readonly fields: readonly { readonly path: string }[] }[];
+}
+
+/**
  * Every path the schema can address, in one set.
  *
  * An array's items are spelled `slides.*.caption` in the inventory because that
@@ -65,7 +78,7 @@ export interface AnnotateOptions {
  * loop, where nothing connects `slide` to `slides`. Those paths are therefore
  * kept out: the scanner would otherwise match a name that only looks right.
  */
-export function annotatablePaths(inventory: PreviewInventory): ReadonlySet<string> {
+export function annotatablePaths(inventory: AnnotatableSchema): ReadonlySet<string> {
   const paths = new Set<string>();
   for (const entry of [...inventory.globals, ...inventory.collections]) {
     for (const field of entry.fields) {

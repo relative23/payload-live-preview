@@ -41,12 +41,16 @@ export const ESM_ONLY_ENTRIES = {
   doctor: 'src/doctor/index.ts',
   migrate: 'src/migrate/index.ts',
   'codegen-astro': 'src/codegen/astro-plugin.ts',
+  annotate: 'src/codegen/annotate/entry.ts',
   'adapters/astro/index': 'src/adapters/astro/index.ts',
   'adapters/astro/middleware-entry': 'src/adapters/astro/middleware-entry.ts',
   'adapters/nextjs/index': 'src/adapters/nextjs/index.ts',
   'adapters/sveltekit/index': 'src/adapters/sveltekit/index.ts',
   'adapters/nuxt/index': 'src/adapters/nuxt/index.ts',
   'adapters/vue/index': 'src/adapters/vue/index.ts',
+  // Nuxt loads the module by specifier and the plugin it registers by path;
+  // nothing in application code imports either.
+  'adapters/nuxt/module': 'src/adapters/nuxt/module.ts',
 } as const;
 
 /**

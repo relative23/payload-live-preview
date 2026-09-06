@@ -20,6 +20,7 @@ export {
   type AnnotateFileResult,
   type AnnotationCandidate,
   type AnnotationRefusal,
+  type AnnotatableSchema,
 } from './annotate/index';
 
 export interface GenerateTypesOptions

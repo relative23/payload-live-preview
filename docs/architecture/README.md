@@ -1,5 +1,9 @@
 # Architecture decision records
 
+[overview.md](overview.md) is the map: two screens, one message, five objects,
+and one line of justification for every rule the records expand on. Read it
+first if you have not worked on this package before.
+
 One file per decision, numbered in the order they were written. A record is
 not rewritten to say something different later; a later record supersedes it
 and says so. Under each title stands one status line in one form:

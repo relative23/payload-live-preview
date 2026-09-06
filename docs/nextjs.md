@@ -43,23 +43,54 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 Compute the props once at module scope, as above: the configuration does not
 change per request, and the script body is the same bytes every time.
 
-The script stays inert outside the admin's preview iframe. On a static build these bytes are public and ship with every page, about 30 KB gzip. If delivery itself must be private, render the script in a dynamic layout only after the authorization below succeeded.
+The script stays inert outside the admin's preview iframe, but it does ship to everyone: a layout renders for every visitor, and Next.js middleware cannot inject into a body, so there is no request-time gate to put in front of it. That is about 30 KB gzip on every public page. `delivery: 'asset'` below replaces those bytes with a 679-byte bootstrap that fetches nothing outside a preview; rendering the script in a dynamic layout only after the authorization below succeeded removes them entirely. What each choice costs a visitor, measured per framework: [deployment.md](deployment.md#what-a-public-visitor-pays).
 
 `livePreviewScriptProps()` takes a `nonce` for a CSP you manage yourself, and puts it where the framework expects it — a prop, not markup inside the body. `renderLivePreviewScript()` returns the complete `<script>` tag instead, for HTML a server assembles as a string; JSX cannot render that.
+
+## The runtime as a cached asset
+
+Those ~30 KB gzip are in every page. `delivery: 'asset'` puts a bootstrap there instead — 679 bytes measured on the example — which fetches the runtime only once the page finds itself in a preview context:
+
+```ts
+// app/live-preview.ts — the one thing the layout and the route must agree on
+export const livePreviewOptions = {
+  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+  serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+  mergeDepth: 1,
+  delivery: 'asset',
+} as const;
+```
+
+```ts
+// app/payload-live-preview/[file]/route.ts
+import { createRuntimeAssetRoute } from 'payload-live-preview/nextjs';
+import { livePreviewOptions } from '../../live-preview';
+
+export const { GET } = createRuntimeAssetRoute(livePreviewOptions);
+```
+
+The layout then passes the same object to `livePreviewScriptProps()`. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`. The bootstrap loads it with `integrity` and `crossorigin="anonymous"`; the managed CSP already allows `'self'`, and under `strictDynamic` the nonce on the bootstrap covers the script it inserts.
+
+Move the route file and set `assetPath` together if the app is not served from the site root — the bootstrap requests exactly what `assetPath` says. With `runtime: LEAN_RUNTIME` both sides must see that option too, since the artifact decides the hash. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 
 ## Headers on preview requests
 
 The adapter middleware runs `authorizePreview` on requests carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true`). When the hook authorizes, it merges `frame-ancestors` for the admin origin into the CSP and marks the response `private, no-store`; a refusal leaves the response untouched.
 
-Behind a reverse proxy the dev server sees a different origin than the browser
-does. Next then rejects the admin panel's own server functions as cross-site, so
-add the public hostname to `allowedDevOrigins` in `next.config.ts`:
+Two of those headers are pure configuration, and `withLivePreview` writes them:
 
 ```ts
-const nextConfig: NextConfig = {
-  allowedDevOrigins: ['cms.example.com'],
-};
+// next.config.ts
+import { withLivePreview } from 'payload-live-preview/nextjs';
+
+export default withLivePreview(nextConfig, {
+  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+});
 ```
+
+It adds `frame-ancestors` and `private, no-store` for requests carrying preview intent, appending to a `headers()` you already have rather than replacing it, and adds the admin's host to `allowedDevOrigins` — behind a reverse proxy the dev server sees a different origin than the browser does, and Next then rejects the admin panel's own server functions as cross-site.
+
+It is not a substitute for the middleware. A config header cannot run `authorizePreview`, so the policy it writes is gated on intent alone, and it appends a second `Content-Security-Policy` rather than merging into one you already send. A site with its own CSP, or one that must not frame on unauthorized intent, uses `createLivePreviewMiddleware` below and skips `withLivePreview`.
 
 ```ts
 // middleware.ts — on Next.js 16 the file is proxy.ts and the export is named `proxy`

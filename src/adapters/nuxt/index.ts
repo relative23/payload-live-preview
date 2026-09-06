@@ -9,3 +9,4 @@ export {
   type FragmentRenderInput,
   type VueComponentLike,
 } from './fragments';
+export { createRuntimeAssetRoute } from './asset-route';

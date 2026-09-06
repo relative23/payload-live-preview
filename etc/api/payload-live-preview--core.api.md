@@ -830,15 +830,11 @@ export interface PreviewBindings {
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @public (undocumented)
-export interface PreviewBindingsCommonOptions {
-    readonly owner?: string;
-}
-
 // @public
-export interface PreviewBindingsOptions extends PreviewBindingsCommonOptions {
+export interface PreviewBindingsOptions {
     // (undocumented)
     readonly authorization: AuthorizedPreviewContext | null;
+    readonly owner?: string;
 }
 
 // @public

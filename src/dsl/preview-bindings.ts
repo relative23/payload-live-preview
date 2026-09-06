@@ -42,14 +42,11 @@ export type SuppressedBinding = Readonly<Record<string, never>>;
 
 const SUPPRESSED: SuppressedBinding = Object.freeze({});
 
-export interface PreviewBindingsCommonOptions {
+/** The verdict from `authorizePreviewRequest()`, or `null` for a public response. Only a branded context authorizes emission. */
+export interface PreviewBindingsOptions {
+  readonly authorization: AuthorizedPreviewContext | null;
   /** Document this subtree belongs to, emitted as `data-payload-owner`; needed with `scopeBindingsByOwner`. */
   readonly owner?: string;
-}
-
-/** The verdict from `authorizePreviewRequest()`, or `null` for a public response. Only a branded context authorizes emission. */
-export interface PreviewBindingsOptions extends PreviewBindingsCommonOptions {
-  readonly authorization: AuthorizedPreviewContext | null;
 }
 
 /** Request-scoped binding helpers carrying one authorization decision. */

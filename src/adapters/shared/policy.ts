@@ -13,15 +13,13 @@ import {
 import type { PreviewAuthorizationOutcome } from '@security/preview-verdict';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
-import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
+import { wrapWithScriptTag } from '@inline/generator';
+// Delivery is decided in one place; the policy caches whatever that produced.
+import { renderScriptBody } from './response';
 import { hasPreviewIntent, type PreviewRequestLike } from './preview-request';
 import { warnOnce } from './dev-warning';
 import { runAuthorizeHook, type BoundAuthorizeHook } from './authorize-hook';
-import {
-  inlineScriptConfig,
-  resolvePolicyOptions,
-  type PreviewPolicyOptions,
-} from './policy-options';
+import { resolvePolicyOptions, type PreviewPolicyOptions } from './policy-options';
 import { assertStrictConfiguration } from './strict';
 
 export type { PreviewAuthorizationHookResult } from './options';
@@ -146,7 +144,7 @@ export function createPreviewPolicy(options: PreviewPolicyOptions): PreviewPolic
   const autoInject = options.autoInject ?? true;
   let body: string | undefined;
   const scriptBody = (): string => {
-    body ??= generateInlineScript(inlineScriptConfig(options));
+    body ??= renderScriptBody(options);
     return body;
   };
   return {

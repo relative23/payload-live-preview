@@ -27,6 +27,8 @@
     "src/adapters/sveltekit/index.ts",
     "src/adapters/react/index.ts",
     "src/adapters/vue/index.ts",
+    "src/adapters/nuxt/module.ts",
+    "src/codegen/annotate/entry.ts",
     "src/doctor/index.ts",
     "src/migrate/index.ts",
     "src/doctor/cli.ts",

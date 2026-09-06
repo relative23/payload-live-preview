@@ -89,7 +89,7 @@ function setupLoaderMode(ctx: AstroConfigSetupContext, options: LivePreviewAstro
     );
   }
 
-  const asset = loaderAsset(ctx.config?.base ?? '/');
+  const asset = loaderAsset(ctx.config?.base ?? '/', options.runtime);
 
   ctx.injectScript(
     'head-inline',

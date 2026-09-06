@@ -9,6 +9,8 @@ export const LEAN_RUNTIME: RuntimeArtifact;
 
 // @public
 export interface RuntimeArtifact {
+    readonly contentHash: string;
+    readonly integrity: string;
     // (undocumented)
     readonly profile: 'lean';
     // (undocumented)

@@ -1,0 +1,28 @@
+---
+/**
+ * A page with no binding attributes in it. `livePreviewAnnotate()` (see
+ * astro.config.mjs) rewrites `<h1>{page.title}</h1>` into a call to the
+ * request-scoped helper, so the attributes exist only for a preview the
+ * middleware authorized — a public response carries none.
+ *
+ * Nothing here is generated: this is what a site writes.
+ */
+export const prerender = false;
+
+const page = {
+  title: 'Annotated title',
+  subtitle: 'Annotated subtitle',
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Annotated</title>
+  </head>
+  <body>
+    <h1>{page.title}</h1>
+    <p>{page.subtitle}</p>
+    <footer data-testid="stamp">{Date.now()}</footer>
+  </body>
+</html>

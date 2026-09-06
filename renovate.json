@@ -9,6 +9,12 @@
       "groupName": "dev dependencies (non-major)"
     },
     {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["major"],
+      "groupName": null,
+      "description": "A devDependency major gets its own pull request rather than joining the grouped non-major one. The bundler we develop against decides what our tree-shaking gate measures, and on 2026-09-06 vite sat a major behind every fixture lockfile without anything saying so; npm run compat:check now fails on that, and this is the other half — a proposal early, the gate late."
+    },
+    {
       "matchPackageNames": ["typescript"],
       "allowedVersions": "<6.0.0",
       "description": "TS 6/7 blocked until ts-morph (public peer), tsup dts, and typescript-eslint support the new compiler"

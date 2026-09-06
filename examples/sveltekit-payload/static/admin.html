@@ -119,7 +119,7 @@
       // parameter only selects an entry, so a crafted `?target=` has no path to
       // `iframe.src` at all. A mock admin is the first integration a reader
       // copies, so it models the check a real one needs.
-      const ROUTES = ['/', '/owners'];
+      const ROUTES = ['/', '/owners', '/asset'];
       const requested = new URLSearchParams(window.location.search).get('target');
       const target = ROUTES.find((route) => route === requested) ?? ROUTES[0];
       fetch(`/preview-token?path=${encodeURIComponent(target)}`)

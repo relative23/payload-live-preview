@@ -4,18 +4,22 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-C2MVprCN.js';
-import { b } from '../../fragment-endpoint-C2MVprCN.js';
-import { c } from '../../fragment-endpoint-C2MVprCN.js';
-import { F } from '../../fragment-endpoint-C2MVprCN.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-C2MVprCN.js';
-import { L as LivePreviewLocals } from '../../locals-C-vH0grp.js';
-import { P as PreviewAdapterOptions } from '../../options-DzP-8PDb.js';
+import { a } from '../../fragment-endpoint-C7C9DLY5.js';
+import { b } from '../../fragment-endpoint-C7C9DLY5.js';
+import { b as b_2 } from '../../locals-DKuOkp7J.js';
+import { c } from '../../fragment-endpoint-C7C9DLY5.js';
+import { F } from '../../fragment-endpoint-C7C9DLY5.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-C7C9DLY5.js';
+import { L as LivePreviewLocals } from '../../locals-DKuOkp7J.js';
+import { P as PreviewAdapterOptions } from '../../options-DxeFRGkV.js';
 
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (event: {
     readonly request: Request;
 }) => Promise<Response>;
+
+// @public
+export function createRuntimeAssetRoute(options?: LivePreviewSvelteKitOptions): RuntimeAssetRoute;
 
 // @public (undocumented)
 export type FragmentEndpointOptions = F<SvelteComponentLike>;
@@ -51,18 +55,28 @@ interface ResolveOptions {
 }
 
 // @public
+export interface RuntimeAssetRoute {
+    // (undocumented)
+    readonly GET: (event: {
+        readonly request: Request;
+    }) => Response;
+}
+
+// @public
 export type SvelteComponentLike = object;
 
-// @public (undocumented)
-export type SvelteKitHandle = (input: {
-    readonly event: SvelteKitRequestEvent;
-    readonly resolve: SvelteKitResolve;
+// Warning: (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
+//
+// @public
+export type SvelteKitHandle = <Event extends SvelteKitRequestEvent>(input: {
+    readonly event: Event;
+    readonly resolve: SvelteKitResolve<Event>;
 }) => Promise<Response>;
 
 // @public (undocumented)
 interface SvelteKitRequestEvent {
     // (undocumented)
-    readonly locals: Record<string, unknown>;
+    readonly locals: b_2;
     // (undocumented)
     readonly request: Request;
 }
@@ -70,12 +84,11 @@ interface SvelteKitRequestEvent {
 // Warning: (ae-forgotten-export) The symbol "ResolveOptions" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-type SvelteKitResolve = (event: SvelteKitRequestEvent, opts?: ResolveOptions) => Promise<Response>;
+type SvelteKitResolve<Event> = (event: Event, opts?: ResolveOptions) => Response | Promise<Response>;
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/sveltekit/index.d.ts:24:5 - (ae-forgotten-export) The symbol "SvelteKitRequestEvent" needs to be exported by the entry point index.d.ts
-// dist/adapters/sveltekit/index.d.ts:25:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:33:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -17,7 +17,11 @@
  * docs/options.md and LP0104 in docs/troubleshooting.md.
  */
 
-import { RUNTIME_LEAN_SOURCE } from './inline/runtime-lean.generated';
+import {
+  RUNTIME_LEAN_CONTENT_HASH,
+  RUNTIME_LEAN_INTEGRITY,
+  RUNTIME_LEAN_SOURCE,
+} from './inline/runtime-lean.generated';
 import type { RuntimeArtifact } from './types/inline-config';
 
 export type { RuntimeArtifact } from './types/inline-config';
@@ -26,4 +30,6 @@ export type { RuntimeArtifact } from './types/inline-config';
 export const LEAN_RUNTIME: RuntimeArtifact = Object.freeze({
   profile: 'lean',
   source: RUNTIME_LEAN_SOURCE,
+  contentHash: RUNTIME_LEAN_CONTENT_HASH,
+  integrity: RUNTIME_LEAN_INTEGRITY,
 });

@@ -5,6 +5,55 @@ field's value in every update and writes it into that element. Everything
 else on this page refines what "writes" means: which renderer, which
 attribute, which locale, which document.
 
+## How much markup this actually needs
+
+Start here, because the honest answer is "less than the rest of this page
+suggests". Three routes, and the first one is usually the right one:
+
+| Your page is                                       | Start with                 | Markup for a component |
+| -------------------------------------------------- | -------------------------- | ---------------------- |
+| server-rendered (Astro SSR, Next, SvelteKit, Nuxt) | one boundary per component | **one attribute**      |
+| static, no server at request time                  | field bindings             | one per field          |
+| client-rendered React or Vue                       | the hook or composable     | none                   |
+
+A **boundary** marks a region your server can render again from the unsaved
+form state. One attribute, and everything inside it is as correct as a full
+page render — conditional sections, derived values, custom blocks, a
+component's own logic:
+
+```astro
+<section data-payload-fragment="hero" data-payload-depends="title,subtitle,body">
+  <Hero {...page} />
+</section>
+```
+
+The same component with field bindings instead, which is what the rest of this
+page is about:
+
+```astro
+<h1 data-payload-field="title">{page.title}</h1>
+{page.subtitle && <p class="lede" data-payload-field="subtitle">{page.subtitle}</p>}
+<div data-payload-field="body" data-payload-richtext>{body}</div>
+<p>{wordCount(page.body)} words</p>
+```
+
+Three lines against twelve, and the boundary version also fixes what the
+bindings cannot: the `subtitle` paragraph does not exist while the field is
+empty, so an editor filling it sees nothing, and the word count is derived, so
+no field names it.
+
+**What the boundary costs.** A route that renders it — `createFragmentEndpoint()`
+in your framework, authorized like the page — and therefore a server at request
+time ([hybrid.md](hybrid.md)). A static build has none, which is why field
+bindings exist and why they are not going anywhere.
+
+**Why you will still want field bindings inside a boundary.** A server render
+replaces the region; a patch writes into the element that is already there. For
+a field an editor types into while looking at it, the patch keeps focus, the
+caret and scroll position. So: boundary for the component, bindings for the two
+or three fields being edited. Both at once is the normal case — the bindings
+inside a boundary are also its fallback when the server cannot render.
+
 ## Attribute reference
 
 | Attribute                      | Purpose                                                                                                                                                                                                                                         | Example                                            |
@@ -301,3 +350,38 @@ Everything else is listed with a reason and left alone:
 A missing binding costs an editor one invisible edit; a wrong one writes a value
 into the wrong element on every keystroke. That asymmetry is why the tool reports
 rather than guesses.
+
+### Annotating at build time instead
+
+The codemod writes the attribute into the file, where it is part of every
+response. `livePreviewAnnotate()` writes the same decision as a call instead,
+resolved per request against the authorization the adapter published — so the
+template stays as its author wrote it and a public response carries no
+`data-payload-*` at all.
+
+```js
+// astro.config.mjs
+import { livePreviewAnnotate } from 'payload-live-preview/annotate';
+
+export default defineConfig({
+  vite: { plugins: [livePreviewAnnotate({ inventory })] },
+});
+```
+
+```astro
+<h1>{page.title}</h1>   →   <h1 {...__lpPreview.bind('title')}>{page.title}</h1>
+```
+
+`inventory` is what `generateTypes()` returns, or the file `pll-codegen
+--inventory` writes; only the field paths are read. The helper is built once per
+file from `Astro.locals`, which is why this is Astro-only: the rewrite needs a
+template whose own scope reaches the request context, and a Svelte or Vue
+component's does not — there the verdict would have to travel through `load` or
+a serialized payload, where a function cannot go. Both routes decide what is
+safe in the same scanner, so they annotate the same places and refuse the same
+ones; the table above applies unchanged.
+
+A statically built page has no request to authorize, so it emits nothing.
+`allowPublicBindings: true` writes the plain attribute there instead — the same
+output as the codemod, and the same disclosure, said out loud rather than
+arrived at.

@@ -10,6 +10,25 @@ Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin 
 npm install payload-live-preview
 ```
 
+## The short setup
+
+One line in `nuxt.config.ts`, if every option is data:
+
+```ts
+export default defineNuxtConfig({
+  modules: ['payload-live-preview/nuxt-module'],
+  livePreview: {
+    allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+    serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+    mergeDepth: 1,
+  },
+});
+```
+
+The module writes a Nitro plugin into `.nuxt/` and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
+
+What it cannot carry is a function. The options are serialized into the generated plugin, so `authorizePreview` and `shouldInject` are not part of the module's option type — and under the strict 2.0 default the plugin refuses to start without `authorizePreview`. The short setup is therefore the shape for `defaults: 'v1'` and for a preview that authorizes elsewhere; everything else writes the plugin below, which is three lines rather than one.
+
 ## One options object
 
 The plugin and the handler share their options, so write them once:
@@ -58,6 +77,32 @@ import { livePreviewOptions } from '../utils/live-preview';
 
 export default defineEventHandler(defineLivePreviewServerHandler(livePreviewOptions));
 ```
+
+## The runtime as a cached asset
+
+`delivery: 'asset'` replaces the inlined runtime with a bootstrap of a few hundred bytes that fetches it once the page is in a preview context. It is data, so the short setup can carry it:
+
+```ts
+// lib/live-preview.ts — one object for both halves
+export const livePreviewOptions = {
+  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+  delivery: 'asset',
+} as const;
+```
+
+```ts
+// server/routes/payload-live-preview/[file].get.ts
+import { createRuntimeAssetRoute } from 'payload-live-preview/nuxt';
+import { livePreviewOptions } from '../../../lib/live-preview';
+
+const asset = createRuntimeAssetRoute(livePreviewOptions);
+
+export default defineEventHandler((event) => asset(toWebRequest(event)));
+```
+
+`nuxt.config.ts` then reads `livePreview: livePreviewOptions`, or the hand-written plugin takes the same object. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
+
+Move the route folder and set `assetPath` together if the app is not served from the site root. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 
 ## Read `event.context`
 

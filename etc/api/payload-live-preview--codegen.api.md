@@ -10,7 +10,23 @@ import { Project } from 'ts-morph';
 export const ANNOTATABLE_EXTENSIONS: readonly string[];
 
 // @public
-export function annotatablePaths(inventory: PreviewInventory): ReadonlySet<string>;
+export function annotatablePaths(inventory: AnnotatableSchema): ReadonlySet<string>;
+
+// @public
+export interface AnnotatableSchema {
+    // (undocumented)
+    readonly collections: readonly {
+        readonly fields: readonly {
+            readonly path: string;
+        }[];
+    }[];
+    // (undocumented)
+    readonly globals: readonly {
+        readonly fields: readonly {
+            readonly path: string;
+        }[];
+    }[];
+}
 
 // @public (undocumented)
 export interface AnnotateFileResult {

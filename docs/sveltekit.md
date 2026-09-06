@@ -12,6 +12,8 @@ npm install payload-live-preview
 
 ## The handle
 
+There is no separate setup step. SvelteKit already has one place where a request passes through server code, and `livePreviewHandle` is a handle like any other — the export below is the whole integration: injection, CSP and authorization.
+
 ```ts
 // src/hooks.server.ts
 import { env } from '$env/dynamic/private';
@@ -34,6 +36,24 @@ export const handle = livePreviewHandle({
 ```
 
 Compose it with `sequence()` next to other hooks; it never short-circuits the chain. `authorizePreview` runs on requests carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true`); a refusal leaves the response exactly as rendered. The strict default also requires `https:` admin origins in production and no referer trust. The three strategies and what each one binds: [authorization.md](authorization.md).
+
+## The runtime as a cached asset
+
+The handle inlines the runtime by default. `delivery: 'asset'` puts a bootstrap of a few hundred bytes there instead, which fetches the runtime only once the page finds itself in a preview context:
+
+```ts
+// src/routes/payload-live-preview/[file]/+server.ts
+import { createRuntimeAssetRoute } from 'payload-live-preview/sveltekit';
+import { livePreviewOptions } from '$lib/live-preview';
+
+export const { GET } = createRuntimeAssetRoute(livePreviewOptions);
+```
+
+Give `livePreviewHandle` the same object with `delivery: 'asset'` on it. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
+
+A handle sees the request, so the choice can be per route. The example splits on the pathname: `/asset` gets the bootstrap, everything else the inlined runtime, from two handles that differ in that one option. Authorization is untouched either way — an unauthorized request gets neither.
+
+Move the route folder and set `assetPath` together if the app is not served from the site root. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 
 ## Types for `event.locals`
 

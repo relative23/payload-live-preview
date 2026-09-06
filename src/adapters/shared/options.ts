@@ -67,6 +67,22 @@ export interface PreviewAdapterOptions<Req = Request> {
   /** Scroll the preview to the field being edited. Default `false`. */
   readonly revealEditedField?: boolean;
   /**
+   * How the runtime reaches the page. `'inline'` (default) puts it in the
+   * response: nothing to mount, nothing to cache. `'asset'` injects a few
+   * hundred bytes of bootstrap instead, which fetches the runtime as a
+   * content-hashed, SRI-verified file — `immutable` for a year, so every
+   * further preview page pays nothing for it. It needs the asset route
+   * mounted; each adapter's page says where. (Astro publishes that file from
+   * its own build instead: `mode: 'loader'` there.)
+   */
+  readonly delivery?: 'inline' | 'asset';
+  /**
+   * Where that asset route is mounted, as an absolute path. Default
+   * `/payload-live-preview`. Set it when the app is not served from the site
+   * root, so the bootstrap requests the path the framework actually routes.
+   */
+  readonly assetPath?: string;
+  /**
    * A runtime artifact to inject instead of the full one — `LEAN_RUNTIME` from
    * `payload-live-preview/lean`, which is about 5.5 KB gzip smaller and reports
    * LP0104 when a page needs a feature it left out (docs/options.md). Importing

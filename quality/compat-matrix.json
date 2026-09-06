@@ -11,27 +11,35 @@
           "version": "7.2.1",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
-          "job": "E2E"
+          "job": "E2E",
+          "vite": "^8.0.13"
         },
         {
           "major": 6,
           "source": "astro-matrix",
           "browsers": ["chromium"],
-          "job": "Astro matrix"
+          "job": "Astro matrix",
+          "vite": "^7.3.2"
         },
         {
           "major": 5,
           "source": "astro-matrix",
           "browsers": ["chromium"],
-          "job": "Astro matrix"
+          "job": "Astro matrix",
+          "vite": "^6.4.1"
         },
         {
           "major": 4,
           "source": "astro-matrix",
           "browsers": ["chromium"],
-          "job": "Astro matrix"
+          "job": "Astro matrix",
+          "vite": "^5.4.11"
         }
-      ]
+      ],
+      "vite": {
+        "from": "astro",
+        "field": "dependencies"
+      }
     },
     {
       "name": "Next.js",
@@ -57,9 +65,14 @@
           "version": "2.70.2",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
-          "job": "E2E"
+          "job": "E2E",
+          "vite": "^5.0.3 || ^6.0.0 || ^7.0.0-beta.0 || ^8.0.0"
         }
-      ]
+      ],
+      "vite": {
+        "from": "@sveltejs/kit",
+        "field": "peerDependencies"
+      }
     },
     {
       "name": "Nuxt",
@@ -71,9 +84,14 @@
           "version": "3.21.11",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
-          "job": "E2E"
+          "job": "E2E",
+          "vite": "^7.3.6"
         }
-      ]
+      ],
+      "vite": {
+        "from": "@nuxt/vite-builder",
+        "field": "dependencies"
+      }
     }
   ],
   "node": {
@@ -107,5 +125,8 @@
       "how": "weekly protocol watch against @payloadcms/live-preview@canary, early warning only",
       "source": "watch"
     }
-  ]
+  ],
+  "vite": {
+    "measured": "2026-09-06"
+  }
 }

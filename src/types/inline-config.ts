@@ -76,10 +76,19 @@ export interface InlineScriptConfig {
   readonly runtime?: RuntimeArtifact;
 }
 
-/** A runtime build this package produces; `source` is the IIFE the page runs. */
+/**
+ * A runtime build this package produces. `source` is the IIFE the page runs;
+ * the two digests describe the same bytes as a servable asset, so asset
+ * delivery can hash-name and SRI-verify whichever artifact was chosen without
+ * hashing anything at request time.
+ */
 export interface RuntimeArtifact {
   readonly profile: 'lean';
   readonly source: string;
+  /** Short content hash, for the asset's file name. */
+  readonly contentHash: string;
+  /** `sha384-…`, for the bootstrap's `integrity` attribute. */
+  readonly integrity: string;
 }
 
 /** Keys that travel in the wire tuple, in slot order. */

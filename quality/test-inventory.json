@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 274,
-    "suites": 580,
-    "tests": 2371,
+    "files": 286,
+    "suites": 602,
+    "tests": 2455,
     "benchmarks": 12
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 21,
-      "suites": 29,
-      "tests": 84,
+      "files": 26,
+      "suites": 34,
+      "tests": 104,
       "benchmarks": 0
     },
     "integration": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 226,
-      "suites": 516,
-      "tests": 2184,
+      "files": 233,
+      "suites": 533,
+      "tests": 2248,
       "benchmarks": 0
     }
   },
@@ -100,6 +100,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/annotate-build.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -152,6 +159,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/nextjs-asset-delivery.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/nextjs-fragment.spec.ts",
       "group": "e2e",
       "suites": 1,
@@ -162,6 +176,13 @@
       "path": "tests/e2e/specs/nextjs-live-preview.spec.ts",
       "group": "e2e",
       "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/nuxt-asset-delivery.spec.ts",
+      "group": "e2e",
+      "suites": 1,
       "tests": 4,
       "benchmarks": 0
     },
@@ -187,6 +208,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/public-response.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/reveal.spec.ts",
       "group": "e2e",
       "suites": 1,
@@ -209,6 +237,13 @@
     },
     {
       "path": "tests/e2e/specs/structural-morph.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/sveltekit-asset-delivery.spec.ts",
       "group": "e2e",
       "suites": 1,
       "tests": 4,
@@ -404,6 +439,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/asset-delivery.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 13,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/astro-fragments.test.ts",
       "group": "unit",
       "suites": 4,
@@ -565,6 +607,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/zero-config.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 10,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/api-contracts.test.ts",
       "group": "unit",
       "suites": 1,
@@ -611,6 +660,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/codegen/annotate-plugin.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -1737,7 +1793,7 @@
       "path": "tests/unit/quality/architecture-policy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -1752,6 +1808,27 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/compare-scope.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/compat-vite.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 10,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/complexity-budget.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -1815,6 +1892,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/serialize-source.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {

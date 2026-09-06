@@ -194,6 +194,7 @@ export type { ProtocolProfile, ProtocolProfileName } from './core/protocol-profi
 
 // Typed binding DSL — pair with codegen-emitted schema interfaces
 export { bind, bindByPath, createPreviewBindings } from './dsl';
+export { previewBindingsFromLocals } from './adapters/shared/locals';
 export type {
   BindOptions,
   FieldBindingAttributes,
@@ -204,7 +205,6 @@ export type {
   OwnerBindingAttributes,
   PreviewBindings,
   PreviewBindingsOptions,
-  PreviewBindingsCommonOptions,
   SuppressedBinding,
   ValueAt,
 } from './dsl';

@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "//": [
+    "The reviewed size of this package's surface: what a reader has to hold in",
+    "their head, counted the way `scripts/check-complexity.ts` counts it.",
+    "",
+    "Limits are the exact current numbers, with no headroom on purpose. Byte",
+    "budgets carry ~1 % because compression is not byte-stable; a count is, and",
+    "headroom here would just be room to grow into without saying so. Raising a",
+    "number is a two-line change: the number, and why it moved."
+  ],
+  "totals": {
+    "publicDeclarations": {
+      "limit": 653,
+      "why": "Every exported name across all API reports. The number a consumer's editor offers them, and the number this package has to keep meaning something. 2026-09-06: +12 for the two zero-config setups — `withLivePreview()` for Next.js and the Nuxt module — which exist to remove lines from a consumer's project, not to add names to it. +5 for asset delivery: a route factory in each of the three adapters, plus what a route file re-exports in the two that name it. +13 for the build-time annotator, nine of them its own entry. 2026-09-06 (R9): −5, two concepts with no remaining reason — `PreviewBindingsCommonOptions`, a one-member base left behind when its sibling options type was removed in 2.0, and `AnnotatableEntry`, which had one member and one use."
+    },
+    "entrySubpaths": {
+      "limit": 25,
+      "why": "Import specifiers in the manifest. Each one is a decision a reader makes before writing a line of code, so a new entry needs a reason a sentence can hold. 2026-09-06: +1 for `./nuxt-module`, which Nuxt loads by specifier from `modules: []` and so cannot live behind an existing entry. +1 for `./annotate`, which is separate so a build plugin does not drag `ts-morph` into a project."
+    },
+    "adapterOptions": {
+      "limit": 32,
+      "why": "Members of `PreviewAdapterOptions`: what every adapter takes. The single most-read type in the package. 2026-09-06: +2, `delivery` and `assetPath` — one concept, but the second is the path both halves must agree on, and folding it into the first would hide that."
+    },
+    "inlineOptions": {
+      "limit": 23,
+      "why": "Members of `InlineScriptConfig`: what the generated script carries. Most of them travel in the positional wire tuple, which is append-only."
+    },
+    "diagnosticCodes": {
+      "limit": 40,
+      "why": "LP codes. A code is a promise to explain one situation; forty is a table someone can skim, and a hundred would be a table nobody reads."
+    },
+    "sourceModules": {
+      "limit": 238,
+      "why": "Source modules in the architecture graph. Files stay under 500 lines, so this is the other half of that rule: many small files are only better than few large ones while the count itself stays legible. 2026-09-06: +2, the Nuxt module and the Next.js config wrapper; +2, the shared runtime-asset descriptor and the Next.js asset route; +2, the SvelteKit and Nuxt ones; +2, the annotator plugin and its entry."
+    }
+  },
+  "entries": {
+    "payload-live-preview.api.md": {
+      "limit": 162,
+      "why": "The root barrel: the client, the generator, the renderers, the DSL and the plugin surface in one import. The largest number here on purpose — and the one to watch, because every entry below re-exports from it."
+    },
+    "payload-live-preview--core.api.md": {
+      "limit": 99,
+      "why": "The runtime without the generator and the built-in plugins."
+    },
+    "payload-live-preview--server.api.md": {
+      "limit": 55,
+      "why": "Everything a server decides with: authorization, tokens, document reads, gated bindings, and reading a verdict back off locals."
+    },
+    "payload-live-preview--client.api.md": {
+      "limit": 52,
+      "why": "`LivePreviewClient` and what its options and events name."
+    },
+    "payload-live-preview--plugins.api.md": {
+      "limit": 41,
+      "why": "The manager, the contract and the built-in plugins."
+    },
+    "payload-live-preview--fragment.api.md": {
+      "limit": 32,
+      "why": "The browser half of the fragment and route strategies."
+    },
+    "payload-live-preview--structural.api.md": {
+      "limit": 31,
+      "why": "The keyed morph and the structural array renderer."
+    },
+    "payload-live-preview--codegen.api.md": {
+      "limit": 25,
+      "why": "Type generation and the annotate surface, including the schema shape the annotator reads."
+    },
+    "payload-live-preview--astro.api.md": {
+      "limit": 22,
+      "why": "The integration, the middleware and the fragment endpoint."
+    },
+    "payload-live-preview--nextjs.api.md": {
+      "limit": 21,
+      "why": "The middleware, the script props, the fragment endpoint, `withLivePreview()` for next.config.ts, and the runtime asset route."
+    },
+    "payload-live-preview--lexical.api.md": {
+      "limit": 17,
+      "why": "The Lexical renderer and its node registry."
+    },
+    "payload-live-preview--nuxt.api.md": {
+      "limit": 17,
+      "why": "The Nitro plugin, the handler, the fragment endpoint and the runtime asset route."
+    },
+    "payload-live-preview--doctor.api.md": {
+      "limit": 15,
+      "why": "`runDoctor()` and the probe analysis as a library."
+    },
+    "payload-live-preview--sveltekit.api.md": {
+      "limit": 14,
+      "why": "The handle, the fragment endpoint and the runtime asset route."
+    },
+    "payload-live-preview--migrate.api.md": {
+      "limit": 11,
+      "why": "`migrateSource()` and the codemod list."
+    },
+    "payload-live-preview--annotate.api.md": {
+      "limit": 8,
+      "why": "The build-time annotator: the plugin, the transform behind it, and the schema shape it reads. No ts-morph, which is why it is not part of `./codegen`."
+    },
+    "payload-live-preview--payload.api.md": {
+      "limit": 8,
+      "why": "`buildLivePreviewUrl()` and its options, for payload.config.ts."
+    },
+    "payload-live-preview--nuxt-module.api.md": {
+      "limit": 7,
+      "why": "The Nuxt module and the shapes it duck-types off Nuxt, so the package does not depend on `nuxt` to adapt it."
+    },
+    "payload-live-preview--vue.api.md": {
+      "limit": 6,
+      "why": "The composable, its options and the four refs it returns."
+    },
+    "payload-live-preview--react.api.md": {
+      "limit": 5,
+      "why": "The hook, its options and the snapshot it returns."
+    },
+    "payload-live-preview--codegen--astro.api.md": {
+      "limit": 2,
+      "why": "The Astro integration that runs type generation on start and in dev."
+    },
+    "payload-live-preview--lean.api.md": {
+      "limit": 2,
+      "why": "The lean runtime artifact as a value, and the type that describes one."
+    },
+    "payload-live-preview--astro--middleware-entry.api.md": {
+      "limit": 1,
+      "why": "The entry the Astro integration registers as middleware; it reads its options from a virtual module."
+    }
+  }
+}

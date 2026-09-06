@@ -36,6 +36,7 @@ export {
   type PreviewSignal,
 } from '@adapters/shared/preview-request';
 export { bind, bindByPath, createPreviewBindings } from '@dsl/index';
+export { previewBindingsFromLocals } from '@adapters/shared/locals';
 export type {
   BindOptions,
   FieldBindingAttributes,
@@ -45,7 +46,6 @@ export type {
   FragmentBoundaryOptions,
   OwnerBindingAttributes,
   PreviewBindings,
-  PreviewBindingsCommonOptions,
   PreviewBindingsOptions,
   SuppressedBinding,
   ValueAt,

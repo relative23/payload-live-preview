@@ -4,18 +4,21 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-C2MVprCN.js';
-import { b } from '../../fragment-endpoint-C2MVprCN.js';
-import { c } from '../../fragment-endpoint-C2MVprCN.js';
-import { F } from '../../fragment-endpoint-C2MVprCN.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-C2MVprCN.js';
-import { P as PreviewAdapterOptions } from '../../options-DzP-8PDb.js';
+import { a } from '../../fragment-endpoint-C7C9DLY5.js';
+import { b } from '../../fragment-endpoint-C7C9DLY5.js';
+import { c } from '../../fragment-endpoint-C7C9DLY5.js';
+import { F } from '../../fragment-endpoint-C7C9DLY5.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-C7C9DLY5.js';
+import { P as PreviewAdapterOptions } from '../../options-DxeFRGkV.js';
 
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (request: Request) => Promise<Response>;
 
 // @public
 export function createLivePreviewMiddleware(options?: LivePreviewNextOptions): (request: Request, response: Response) => Promise<Response>;
+
+// @public
+export function createRuntimeAssetRoute(options?: LivePreviewNextOptions): RuntimeAssetRoute;
 
 // @public
 export function defineFragment<Props extends object>(component: (props: Props) => unknown, props: (input: FragmentRenderInput) => Props | Promise<Props>): FragmentRegistryEntry<Props>;
@@ -51,7 +54,39 @@ export function livePreviewScriptProps(options?: LivePreviewNextOptions & {
     readonly nonce?: string;
 }): LivePreviewScriptProps;
 
+// @public
+export interface NextConfigLike {
+    // (undocumented)
+    readonly [option: string]: unknown;
+    // (undocumented)
+    readonly allowedDevOrigins?: readonly string[];
+    // (undocumented)
+    readonly headers?: () => Promise<readonly NextHeaderRule[]> | readonly NextHeaderRule[];
+}
+
+// @public (undocumented)
+export interface NextHeaderRule {
+    // (undocumented)
+    readonly [option: string]: unknown;
+    // (undocumented)
+    readonly has?: readonly {
+        readonly type: string;
+        readonly key: string;
+        readonly value?: string;
+    }[];
+    // (undocumented)
+    readonly headers: readonly {
+        readonly key: string;
+        readonly value: string;
+    }[];
+    // (undocumented)
+    readonly source: string;
+}
+
 export { PreviewAdapterOptions }
+
+// @public
+export function previewHeaderRules(options: WithLivePreviewOptions): readonly NextHeaderRule[];
 
 // @public
 export type ReactComponentLike = (props: never) => unknown;
@@ -60,6 +95,22 @@ export type ReactComponentLike = (props: never) => unknown;
 export function renderLivePreviewScript(options?: LivePreviewNextOptions & {
     readonly nonce?: string;
 }): string;
+
+// @public
+export interface RuntimeAssetRoute {
+    // (undocumented)
+    readonly GET: (request: Request) => Response;
+}
+
+// @public
+export function withLivePreview(nextConfig: NextConfigLike, options: WithLivePreviewOptions): NextConfigLike;
+
+// @public (undocumented)
+export interface WithLivePreviewOptions {
+    readonly allowDevOrigins?: boolean;
+    readonly allowedOrigins: readonly string[];
+    readonly previewQueryParams?: readonly string[];
+}
 
 // (No @packageDocumentation comment for this package)
 

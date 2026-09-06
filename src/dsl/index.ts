@@ -6,7 +6,6 @@ export {
   type OwnerBindingAttributes,
   type PreviewBindings,
   type PreviewBindingsOptions,
-  type PreviewBindingsCommonOptions,
   type SuppressedBinding,
 } from './preview-bindings';
 export type { FieldName, FieldPath, ValueAt } from './paths';

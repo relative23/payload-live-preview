@@ -9,3 +9,4 @@ export {
   type FragmentRenderInput,
   type SvelteComponentLike,
 } from './fragments';
+export { createRuntimeAssetRoute, type RuntimeAssetRoute } from './asset-route';

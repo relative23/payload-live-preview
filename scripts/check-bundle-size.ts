@@ -80,9 +80,28 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-06 (Ü11): every row that embeds the runtime carries the LP0503
   // message with it (see bundle-budgets.ts); `fragment.js` moves for the
   // strategy warnings it now shares with the runtime.
-  'adapters/astro/index.js': { raw: 142_500, gzip: 44_300, brotli: 38_400 },
-  'adapters/astro/middleware-entry.js': { raw: 129_200, gzip: 40_000, brotli: 34_600 },
-  'adapters/nextjs/index.js': { raw: 138_600, gzip: 42_900, brotli: 37_100 },
+  //
+  // 2026-09-06 (R5, `delivery: 'asset'`): every adapter entry rises ~500 B gzip.
+  // The bootstrap source and the asset descriptor now sit in the shared script
+  // path, so all four adapters can serve the runtime as a cached file instead
+  // of embedding it — Astro's own loader mode reads the same descriptor rather
+  // than a second copy. These are server bundles; the bytes this buys back are
+  // the ~38 KB gzip a preview page no longer carries on its second load. The
+  // `lean.*` rows rise ~100 B gzip for the artifact's own two digests, without
+  // which it could be embedded but never served.
+  //
+  // 2026-09-06 (R6): the SvelteKit and Nuxt rows rise ~270 B gzip for their own
+  // asset routes — the shared response builder was already in the bundle, so
+  // this is the route shape each framework wants and nothing more.
+  //
+  // 2026-09-06 (R8, the build-time annotator): `annotate.js` is a new row and a
+  // small one — the plugin is the scanner plus a rewrite, and the scanner is
+  // regular expressions. It carries no ts-morph, which is the reason it is an
+  // entry of its own rather than part of `./codegen`.
+  'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
+  'adapters/astro/index.js': { raw: 143_150, gzip: 44_450, brotli: 38_480 },
+  'adapters/astro/middleware-entry.js': { raw: 129_850, gzip: 40_360, brotli: 34_900 },
+  'adapters/nextjs/index.js': { raw: 141_400, gzip: 43_950, brotli: 38_030 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -92,8 +111,16 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // figures.
   'adapters/react/index.js': { raw: 14_250, gzip: 4_700, brotli: 4_260 },
   'adapters/vue/index.js': { raw: 14_000, gzip: 4_690, brotli: 4_220 },
-  'adapters/nuxt/index.js': { raw: 139_200, gzip: 43_100, brotli: 37_250 },
-  'adapters/sveltekit/index.js': { raw: 138_100, gzip: 42_800, brotli: 36_950 },
+  //
+  // 2026-09-06 (R4, zero-config setup): one new row. `adapters/nuxt/module.js`
+  // is the build-time Nuxt module — a few hundred bytes, because all it does is
+  // write a plugin into `.nuxt/` and register its path; the runtime it pulls in
+  // is the existing `./nuxt` entry, which the generated plugin imports. The Next
+  // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
+  // frame-ancestors builder it shares with the middleware.
+  'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
+  'adapters/nuxt/index.js': { raw: 140_900, gzip: 43_830, brotli: 37_930 },
+  'adapters/sveltekit/index.js': { raw: 139_900, gzip: 43_560, brotli: 37_700 },
   //
   // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
   // scanner, its refusal reasons and the `annotate` subcommand. It is a build
@@ -114,14 +141,16 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
   'payload.js': { raw: 1_080, gzip: 575, brotli: 515 },
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
-  'server.cjs': { raw: 12_750, gzip: 4_720, brotli: 4_260 },
-  'server.js': { raw: 12_650, gzip: 4_715, brotli: 4_250 },
+  // 2026-09-06 (R8): +~110 B raw for `previewBindingsFromLocals`, the one-line
+  // helper the build-time annotator writes a call to.
+  'server.cjs': { raw: 12_950, gzip: 4_780, brotli: 4_310 },
+  'server.js': { raw: 12_830, gzip: 4_775, brotli: 4_300 },
   'client.cjs': { raw: 111_500, gzip: 34_600, brotli: 30_200 },
   'client.js': { raw: 111_400, gzip: 34_600, brotli: 30_170 },
   'structural.cjs': { raw: 18_600, gzip: 6_500, brotli: 5_950 },
   'structural.js': { raw: 18_600, gzip: 6_500, brotli: 5_950 },
-  'lean.cjs': { raw: 80_600, gzip: 25_150, brotli: 22_400 },
-  'lean.js': { raw: 80_600, gzip: 25_150, brotli: 22_400 },
+  'lean.cjs': { raw: 80_600, gzip: 25_250, brotli: 22_480 },
+  'lean.js': { raw: 80_600, gzip: 25_250, brotli: 22_480 },
   'lexical.cjs': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
   'lexical.js': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
   //

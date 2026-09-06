@@ -1,5 +1,6 @@
 /** What a decision publishes for templates on `locals` (Astro, SvelteKit) or `event.context` (Nuxt). */
 
+import { createPreviewBindings, type PreviewBindings } from '@dsl/preview-bindings';
 import type { PreviewAuthorizationOutcome } from '@security/preview-verdict';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import type { PreviewDecision } from './policy';
@@ -35,9 +36,20 @@ export const AUTHORIZATION_LOCALS_KEY =
 export const AUTHORIZATION_OUTCOME_LOCALS_KEY =
   'livePreviewAuthorizationOutcome' satisfies keyof LivePreviewLocals;
 
-// The adapters assign through the interface's own keys, so the published
-// type cannot drift from what the code writes.
-type LivePreviewLocalsSink = { -readonly [K in keyof LivePreviewLocals]: LivePreviewLocals[K] };
+/**
+ * What an adapter needs of a framework's request context: the three keys it
+ * writes, and nothing else.
+ *
+ * This is what the adapters' event types declare rather than
+ * `Record<string, unknown>`. A framework's own `App.Locals` is an interface
+ * without an index signature, so it is not assignable to a record — which made
+ * composing our handle with SvelteKit's `Handle` type fail to compile, even
+ * though the values matched. The adapters assign through the interface's own
+ * keys, so the published type cannot drift from what the code writes either.
+ */
+export type LivePreviewLocalsSink = {
+  -readonly [K in keyof LivePreviewLocals]: LivePreviewLocals[K];
+};
 
 /** Publish the nonce alone — a prerendered page has no request to decide for. */
 export function exposeNonce(locals: LivePreviewLocalsSink, nonce: string): void {
@@ -53,4 +65,31 @@ export function exposeDecision(
   if (decision.exposeNonce || !decision.isPreview) locals.livePreviewNonce = nonce;
   if (decision.authorization !== null) locals.livePreviewAuthorization = decision.authorization;
   if (decision.outcome !== undefined) locals.livePreviewAuthorizationOutcome = decision.outcome;
+}
+
+/**
+ * The binding helpers for one request, read straight off whatever the framework
+ * calls locals — `Astro.locals`, SvelteKit's `event.locals`, Nuxt's
+ * `event.context`.
+ *
+ * `createPreviewBindings({ authorization: locals.livePreviewAuthorization })`
+ * says the same thing, and a template that spells it out is welcome to. This
+ * exists because generated code should not have to: the build-time annotator
+ * writes one call per component, and a helper that takes `unknown` needs no
+ * `App.Locals` declaration in the project it writes into. The verdict is
+ * checked, not trusted — only a context `authorizePreviewRequest()` produced
+ * emits anything (ADR 0006).
+ */
+export function previewBindingsFromLocals(
+  locals: unknown,
+  options: { readonly owner?: string } = {},
+): PreviewBindings {
+  const value =
+    typeof locals === 'object' && locals !== null
+      ? (locals as Record<string, unknown>)[AUTHORIZATION_LOCALS_KEY]
+      : undefined;
+  return createPreviewBindings({
+    authorization: (value ?? null) as AuthorizedPreviewContext | null,
+    ...(options.owner !== undefined ? { owner: options.owner } : {}),
+  });
 }

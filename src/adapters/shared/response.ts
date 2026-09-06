@@ -3,7 +3,8 @@
  * glue every adapter repeats: hook binding and the manual script tag.
  */
 
-import { generateInlineScript, wrapWithScriptTag } from '@inline/generator';
+import { generateInlineScript, generateLoaderScript, wrapWithScriptTag } from '@inline/generator';
+import { runtimeAsset } from './runtime-asset';
 import { HTML_CONTENT_TYPE, injectIntoHead } from './html-inject';
 import { inlineScriptConfig, type PreviewPolicyOptions } from './policy-options';
 import type { PreviewDecision, PreviewDecisionHooks, PreviewPolicy } from './policy';
@@ -30,9 +31,16 @@ export function bindDecisionHooks<Req>(
 /**
  * The script body alone, for a consumer that builds the element itself — a JSX
  * framework cannot render a tag that arrives as a string.
+ *
+ * The one place delivery is decided, so every adapter answers `delivery:
+ * 'asset'` the same way: the bootstrap plus the URL and integrity of whichever
+ * artifact was configured, and never the runtime itself.
  */
 export function renderScriptBody(options: PreviewPolicyOptions): string {
-  return generateInlineScript(inlineScriptConfig(options));
+  const config = inlineScriptConfig(options);
+  if (options.delivery !== 'asset') return generateInlineScript(config);
+  const asset = runtimeAsset(options);
+  return generateLoaderScript(config, { runtimeSrc: asset.urlPath, integrity: asset.integrity });
 }
 
 /** The `<script>` tag for manual embedding, with `nonce` when given. */

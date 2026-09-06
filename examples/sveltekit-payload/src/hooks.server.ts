@@ -12,12 +12,21 @@
  * `defaults: 'v2'` implies `strict`: the handle refuses to start without the
  * hook and requires https admin origins outside development; the example
  * runs under `vite dev`, where http://localhost is allowed.
+ *
+ * Two handles, differing in one option. Everything is delivered inline except
+ * `/asset`, which carries the bootstrap and fetches the runtime from
+ * `src/routes/payload-live-preview/[file]` — so one dev server shows both
+ * deliveries, and the split is per route because a handle sees the request.
  */
-import { livePreviewHandle } from 'payload-live-preview/sveltekit';
+import type { Handle } from '@sveltejs/kit';
+import {
+  livePreviewHandle,
+  type LivePreviewSvelteKitOptions,
+} from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest } from 'payload-live-preview';
 import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview';
 
-export const handle = livePreviewHandle({
+const options = {
   allowedOrigins: ['http://localhost:4175'],
   debug: true,
   debounceMs: 25,
@@ -35,10 +44,18 @@ export const handle = livePreviewHandle({
   // query-only intent, no referrer trust, updates only from the window that
   // framed or opened the page, unchanged bindings skipped.
   defaults: 'v2',
-  authorizePreview: (request) =>
+  authorizePreview: (request: Request) =>
     authorizePreviewRequest(request, {
       type: 'signed-token',
       secret: PREVIEW_TOKEN_SECRET,
       audience: PREVIEW_AUDIENCE,
     }),
-});
+} satisfies LivePreviewSvelteKitOptions;
+
+export const assetOptions = { ...options, delivery: 'asset' } as const;
+
+const inline = livePreviewHandle(options);
+const asset = livePreviewHandle(assetOptions);
+
+export const handle: Handle = (input) =>
+  input.event.url.pathname.startsWith('/asset') ? asset(input) : inline(input);

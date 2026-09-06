@@ -8,7 +8,7 @@
 
 > **Live preview for Payload CMS in Astro** — and any other server-rendered or static frontend (SvelteKit, Nuxt, Next.js, plain HTML).
 
-**The missing piece for Astro + Payload.** The official live-preview packages are React and Vue hooks: they re-render a hydrated component tree, so they cannot touch server-produced Astro markup. This package makes the admin's real-time preview work where no client framework owns the page. Annotate your markup with `data-payload-field`, add one line to `astro.config.mjs`, and edits stream into the preview iframe as the editor types. No rebuild, no reload, no React.
+**The missing piece for Astro + Payload.** The official live-preview packages are React and Vue hooks: they re-render a hydrated component tree, so they cannot touch server-produced Astro markup. This package makes the admin's real-time preview work where no client framework owns the page. Add one line to `astro.config.mjs`, mark what should update — one attribute per component on a server-rendered page, per field on a static one — and edits stream into the preview iframe as the editor types. No rebuild, no reload, no React.
 
 The runtime is framework-agnostic: one script drives Astro, SvelteKit, Nuxt, Next.js and plain HTML. Astro is the first-class, end-to-end-tested path.
 
@@ -41,6 +41,8 @@ The runtime is framework-agnostic: one script drives Astro, SvelteKit, Nuxt, Nex
 | Nuxt      | 3.x                   | 3.21.11 (chromium, firefox, webkit)                                               |
 
 Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
+
+Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 2 → 5/6/7/8, Nuxt 3 → 7), measured 2026-09-06. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
 - Payload 2.x: captured-message integration tests and fieldSchemaJSON typing.
 - Payload 3.85.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
@@ -118,13 +120,23 @@ export default defineConfig({
 });
 ```
 
-Annotate the elements you want bound:
+Then mark what should update. On a server-rendered page that is one attribute per component — the region is rendered again from the unsaved form state, so everything in it stays correct, conditional sections and derived values included:
+
+```astro
+<section data-payload-fragment="hero" data-payload-depends="title,subtitle,body">
+  <Hero {...page} />
+</section>
+```
+
+On a static build there is no server to render it, so the fields are bound individually — and inside a boundary too, for the ones an editor types into while watching, because a patch keeps focus and the caret where a re-render would not:
 
 ```astro
 <h1 data-payload-field="title">{title}</h1>
 <div data-payload-field="body">…server-rendered rich text…</div>
 <img data-payload-field="hero" alt={alt} src={url} />
 ```
+
+Which to reach for, and what each costs: [docs/bindings.md](docs/bindings.md#how-much-markup-this-actually-needs). `pll-codegen annotate` writes the unambiguous bindings for you and reports the rest.
 
 That is it: the inline script detects the admin's iframe and starts patching. Rich text is detected from the value shape; `data-payload-richtext` only forces it. Payload 3.x posts raw form values, so relationship and upload fields arrive as IDs until `serverURL` with `mergeDepth` re-fetches the populated document ([docs/options.md](docs/options.md)). Injection modes, request-time middleware, authorization and the initial draft read: [docs/astro.md](docs/astro.md).
 

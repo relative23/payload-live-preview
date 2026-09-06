@@ -12,6 +12,12 @@ The **route** strategy refreshes the whole route when nothing smaller is
 safe. The protocol and its abuse model are recorded in
 [ADR 0011 — The fragment protocol and its abuse model](architecture/0011-fragment-protocol-and-abuse-model.md).
 
+A boundary is also the least markup this package can be used with: one
+attribute per component instead of one per field, with the fidelity of a full
+render inside it. That trade — and when field bindings are still the better
+answer — is
+[bindings.md](bindings.md#how-much-markup-this-actually-needs).
+
 ## Marking a boundary
 
 ```astro

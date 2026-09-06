@@ -27,6 +27,19 @@ export interface ArchitectureViolation {
 }
 
 const SERVER_ONLY_DOMAINS = new Set(['codegen', 'payload', 'server', 'migrate', 'doctor']);
+
+/**
+ * Modules that run at build time inside a framework's own toolchain, though
+ * they live in a domain that otherwise ships to browsers. Listing one here says
+ * two things at once: it may use Node builtins, and nothing browser-facing may
+ * import it — the server-boundary check reads this set too, so an accidental
+ * import from the runtime fails the same way an import of `src/server` would.
+ */
+const SERVER_ONLY_MODULES: ReadonlySet<string> = new Set([
+  // The Nuxt module: Nuxt runs it in its build process, and it resolves the
+  // shipped Nitro plugin's path from its own module URL.
+  'src/adapters/nuxt/module.ts',
+]);
 const NODE_BUILTINS = new Set(
   builtinModules.flatMap((module) => [
     module,
@@ -207,6 +220,11 @@ function isNodeBuiltin(specifier: string): boolean {
   return NODE_BUILTINS.has(specifier);
 }
 
+/** True for code that only ever runs on a server or in a build, never in a page. */
+function isServerOnly(path: string): boolean {
+  return SERVER_ONLY_DOMAINS.has(domainFor(path)) || SERVER_ONLY_MODULES.has(path);
+}
+
 function findRuntimeCycles(
   modules: readonly ArchitectureModule[],
 ): readonly ArchitectureViolation[] {
@@ -283,6 +301,7 @@ export function findArchitectureViolations(
 
   for (const module of modules) {
     const sourceDomain = domainFor(module.path);
+    const sourceIsServerOnly = isServerOnly(module.path);
     for (const dependency of module.dependencies) {
       if (dependency.target === undefined && isInternalSourceSpecifier(dependency.specifier)) {
         violations.push({
@@ -294,7 +313,7 @@ export function findArchitectureViolations(
       }
       if (dependency.kind === 'type') continue;
 
-      if (isNodeBuiltin(dependency.specifier) && !SERVER_ONLY_DOMAINS.has(sourceDomain)) {
+      if (isNodeBuiltin(dependency.specifier) && !sourceIsServerOnly) {
         violations.push({
           kind: 'browser-node-builtin',
           module: module.path,
@@ -305,7 +324,7 @@ export function findArchitectureViolations(
 
       if (dependency.target === undefined) continue;
       const targetDomain = domainFor(dependency.target);
-      if (!SERVER_ONLY_DOMAINS.has(sourceDomain) && SERVER_ONLY_DOMAINS.has(targetDomain)) {
+      if (!sourceIsServerOnly && isServerOnly(dependency.target)) {
         violations.push({
           kind: 'server-boundary',
           module: module.path,

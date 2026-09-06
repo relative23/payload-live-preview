@@ -199,15 +199,16 @@ export interface PreviewBindings {
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @public (undocumented)
-export interface PreviewBindingsCommonOptions {
+// @public
+export function previewBindingsFromLocals(locals: unknown, options?: {
     readonly owner?: string;
-}
+}): PreviewBindings;
 
 // @public
-export interface PreviewBindingsOptions extends PreviewBindingsCommonOptions {
+export interface PreviewBindingsOptions {
     // (undocumented)
     readonly authorization: AuthorizedPreviewContext | null;
+    readonly owner?: string;
 }
 
 // @public

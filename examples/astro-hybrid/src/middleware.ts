@@ -1,7 +1,7 @@
 import { defineMiddleware, sequence } from 'astro:middleware';
 import { createLivePreviewMiddleware } from 'payload-live-preview/astro';
-import { hasPreviewIntent } from 'payload-live-preview/server';
-import { ADMIN_ORIGINS, mintToken } from './preview';
+import { authorizePreviewRequest, hasPreviewIntent } from 'payload-live-preview/server';
+import { ADMIN_ORIGINS, mintToken, strategy } from './preview';
 
 /** Whether the request is a preview framed by a trusted admin origin. */
 function fromTrustedAdmin(request: Request): boolean {
@@ -79,11 +79,23 @@ const withRouteFallback = createLivePreviewMiddleware({
   onUnboundChange: 'route',
 });
 
+/**
+ * `/annotated` alone: the same options plus the hook, because that page carries
+ * no binding attributes of its own. `livePreviewAnnotate()` rewrote them into
+ * calls against `Astro.locals.livePreviewAuthorization`, and only a middleware
+ * that runs `authorizePreview` puts a verdict there.
+ */
+const withAuthorization = createLivePreviewMiddleware({
+  ...COMMON,
+  fragments: { endpoint: '/payload/fragment' },
+  authorizePreview: (request) => authorizePreviewRequest(request, strategy),
+});
+
 export const onRequest = sequence(
   establishPreviewToken,
-  defineMiddleware((context, next) =>
-    context.url.pathname.startsWith('/unbound')
-      ? withRouteFallback(context, next)
-      : withFragments(context, next),
-  ),
+  defineMiddleware((context, next) => {
+    if (context.url.pathname.startsWith('/unbound')) return withRouteFallback(context, next);
+    if (context.url.pathname.startsWith('/annotated')) return withAuthorization(context, next);
+    return withFragments(context, next);
+  }),
 );
