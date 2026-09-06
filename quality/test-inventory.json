@@ -19,7 +19,7 @@
   "totals": {
     "files": 289,
     "suites": 605,
-    "tests": 2472,
+    "tests": 2473,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 236,
       "suites": 536,
-      "tests": 2265,
+      "tests": 2266,
       "benchmarks": 0
     }
   },
@@ -561,7 +561,7 @@
       "path": "tests/unit/adapters/policy-authorization.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 27,
+      "tests": 28,
       "benchmarks": 0
     },
     {

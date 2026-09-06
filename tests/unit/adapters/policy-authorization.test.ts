@@ -199,6 +199,27 @@ describe("decide — without a hook (defaults: 'v1')", () => {
 });
 
 describe('strict', () => {
+  it('names the way out, because every rule here is new in 2.0', () => {
+    // The process that stops is one that worked on 1.x. A rule without an exit
+    // leaves an upgrader to discover that a staged path exists at all.
+    const messages = [
+      () => createPreviewPolicy({ strict: true, allowedOrigins: [ADMIN] }),
+      () => createPreviewPolicy({ strict: true, authorizePreview: () => null }),
+    ].map((build) => {
+      try {
+        build();
+        return '';
+      } catch (error) {
+        return (error as Error).message;
+      }
+    });
+
+    for (const message of messages) {
+      expect(message).toContain("defaults: 'v1'");
+      expect(message).toContain('docs/migration.md');
+    }
+  });
+
   const hook = () => null;
 
   it('refuses to start without authorizePreview', () => {
