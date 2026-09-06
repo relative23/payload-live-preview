@@ -55,8 +55,8 @@ function start(): void {
     renderers: { text: textRenderer() },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],
-    warn: (message: string) => {
-      warnings.push(message);
+    warn: (...args: unknown[]) => {
+      warnings.push(args.map((arg) => String(arg)).join(' '));
     },
     debounceMs: 0,
     disableVisibilityGate: true,

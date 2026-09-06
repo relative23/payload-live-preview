@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 274,
-    "suites": 579,
-    "tests": 2370,
+    "suites": 580,
+    "tests": 2371,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 226,
-      "suites": 515,
-      "tests": 2183,
+      "suites": 516,
+      "tests": 2184,
       "benchmarks": 0
     }
   },
@@ -728,8 +728,8 @@
     {
       "path": "tests/unit/core/data-merger-merge.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 19,
+      "suites": 2,
+      "tests": 20,
       "benchmarks": 0
     },
     {

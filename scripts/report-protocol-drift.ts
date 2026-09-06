@@ -48,7 +48,7 @@ export function issueBody(report: DriftReport): string {
 
 /** A cell that cannot break the table, however the assertion phrased itself. */
 function escapeCell(value: string): string {
-  return value.replace(/\|/gu, '\\|').replace(/\r?\n/gu, ' ');
+  return value.replace(/\\/gu, '\\\\').replace(/\|/gu, '\\|').replace(/\r?\n/gu, ' ');
 }
 
 function gh(args: readonly string[]): string {

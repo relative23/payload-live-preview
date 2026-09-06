@@ -2,6 +2,25 @@ import { describe, expect, it, vi } from 'vitest';
 import { DataMerger, type MergeRequest } from '@core/data-merger';
 import { deferred, jsonResponse } from './data-merger-harness';
 
+describe('the base URL keeps no trailing slash', () => {
+  /**
+   * A run of slashes is input the page supplies, so trimming them may not
+   * backtrack: `/\/+$/` takes quadratic time on the last row.
+   */
+  it.each([
+    ['no slash', 'https://cms.example.com'],
+    ['one slash', 'https://cms.example.com/'],
+    ['several slashes', 'https://cms.example.com///'],
+    ['a pathological run', `https://cms.example.com${'/'.repeat(50_000)}`],
+  ])('%s', async (_case, serverURL) => {
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse({ title: 'merged' }));
+    const merger = new DataMerger({ serverURL, fetchFn });
+    await merger.merge({ collectionSlug: 'posts', data: { id: '42' } });
+    const [url] = fetchFn.mock.calls[0] as [string];
+    expect(url.startsWith('https://cms.example.com/api/posts/42')).toBe(true);
+  });
+});
+
 describe('DataMerger.merge', () => {
   it('replicates the official request shape for collections', async () => {
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse({ title: 'merged' }));
