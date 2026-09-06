@@ -142,10 +142,35 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // measurement plus the cushion this file already documents — raw and gzip
   // tight because they reproduce, brotli ~120 B (~1 % on the two small
   // `lexical.*` rows, where 120 would be 2.4 % of the artifact).
+  //
+  // Corrected 2026-09-07 (Z19). Two notes above blame brotli for a build that
+  // was not reproducible. Brotli is deterministic; the artifact was not.
+  // `RUNTIME_BUILD_INFO.generatedAt` held a wall clock, and `index.js` and
+  // `index.cjs` are the only two entries that carry it — same raw length, same
+  // gzip, six different bytes, which is a substitution only brotli can see. The
+  // two CI figures quoted at the top (45 915, then 45 959) are that same effect
+  // on that same file, not two answers from one compressor.
+  // `npm run build:runtime` now derives SOURCE_DATE_EPOCH from the tested commit,
+  // the way `.github/workflows/build.yml` already did, so two builds of one
+  // commit are byte-identical on a developer machine as well.
+  //
+  // Three rows kept cushion that only the noise had justified and go back to
+  // their measurement plus the documented ~120 B: `adapters/nextjs/index.js`
+  // 38 720 → 38 690 (measured 38 567), `client.cjs` 30 710 → 30 700 (30 572),
+  // `index.cjs` 50 220 → 50 160 (50 035). The other rows that raise had lifted —
+  // `adapters/nuxt`, `adapters/sveltekit`, `client.js`, `core.js`, `lean.*` —
+  // already sit between 100 and 125 B over their measurement: LP-2's real growth
+  // spent what LP-1 had banked, and there is nothing left there to take back.
+  //
+  // The cushion itself stays, for the one difference this host cannot measure:
+  // the brotli library in CI's Node. Node 22.22.1 and 24.19.0 compress these
+  // artifacts to the same byte here — both ship brotli 1.2.0 — so it may be
+  // worth nothing, but that is a measurement for a machine that can see both
+  // sides, not a reason to shave every row now.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
   'adapters/astro/index.js': { raw: 145_050, gzip: 45_190, brotli: 39_170 },
   'adapters/astro/middleware-entry.js': { raw: 131_720, gzip: 41_080, brotli: 35_540 },
-  'adapters/nextjs/index.js': { raw: 143_300, gzip: 44_690, brotli: 38_720 },
+  'adapters/nextjs/index.js': { raw: 143_300, gzip: 44_690, brotli: 38_690 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -178,7 +203,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
   'core.cjs': { raw: 118_530, gzip: 37_230, brotli: 32_460 },
   'core.js': { raw: 118_000, gzip: 37_150, brotli: 32_380 },
-  'index.cjs': { raw: 252_150, gzip: 77_500, brotli: 50_220 },
+  'index.cjs': { raw: 252_150, gzip: 77_500, brotli: 50_160 },
   'index.js': { raw: 251_530, gzip: 77_910, brotli: 50_100 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
@@ -189,7 +214,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // helper the build-time annotator writes a call to.
   'server.cjs': { raw: 12_950, gzip: 4_780, brotli: 4_310 },
   'server.js': { raw: 12_830, gzip: 4_775, brotli: 4_300 },
-  'client.cjs': { raw: 112_760, gzip: 35_150, brotli: 30_710 },
+  'client.cjs': { raw: 112_760, gzip: 35_150, brotli: 30_700 },
   'client.js': { raw: 112_680, gzip: 35_130, brotli: 30_700 },
   'structural.cjs': { raw: 19_414, gzip: 6_859, brotli: 6_218 },
   'structural.js': { raw: 19_368, gzip: 6_858, brotli: 6_213 },

@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 290,
-    "suites": 609,
-    "tests": 2485,
+    "files": 291,
+    "suites": 610,
+    "tests": 2487,
     "benchmarks": 12
   },
   "groups": {
@@ -42,9 +42,9 @@
       "benchmarks": 0
     },
     "integration": {
-      "files": 19,
-      "suites": 22,
-      "tests": 96,
+      "files": 20,
+      "suites": 23,
+      "tests": 98,
       "benchmarks": 0
     },
     "real-payload": {
@@ -338,6 +338,13 @@
       "group": "integration",
       "suites": 1,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/reproducible-runtime-build.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {

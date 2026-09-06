@@ -13,7 +13,7 @@ describe('release bundle budgets', () => {
     expect(INLINE_BUDGET).toEqual({ raw: 99_550, gzip: 31_200, brotli: 27_680 });
     expect(INLINE_LEAN_BUDGET).toEqual({ raw: 81_920, gzip: 25_650, brotli: 22_850 });
     expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 106_000, gzip: 33_300, brotli: 29_390 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 110_930, gzip: 34_975, brotli: 30_910 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 110_930, gzip: 34_975, brotli: 30_870 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

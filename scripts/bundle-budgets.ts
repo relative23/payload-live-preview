@@ -113,6 +113,19 @@ export type BundleBudget = BundleMeasurement;
 // and 49 785 B for `index.js`. A row sitting 24 B under its ceiling is a coin
 // flip, not a budget.
 //
+// Corrected the same day: the observation was right, the explanation was not.
+// Brotli is deterministic; the artifact was not. Two builds had the same raw
+// length and the same gzip but six different bytes, all of them inside
+// `RUNTIME_BUILD_INFO.generatedAt` — a wall clock embedded in the runtime that
+// `index.js` and `index.cjs` carry. A substitution of equal length is invisible
+// to raw and to gzip and visible to brotli, which is why only brotli looked
+// unstable. `npm run build:runtime` now derives SOURCE_DATE_EPOCH from the
+// tested commit the way `.github/workflows/build.yml` already did, so two builds
+// of one commit are byte-identical on a developer machine as well
+// (`tests/integration/reproducible-runtime-build.test.ts`). The cushion stays
+// for the one difference this host cannot measure — the brotli library in CI's
+// Node — not for a build that moved under its own feet.
+//
 // 2026-09-07 (LP-2, keeping a block the registry cannot render): every artifact
 // that embeds the runtime rises +672 B raw / ~245 B gzip / ~190 B brotli — the
 // lean profile +643, which is the same code minus what it shares with the morph
@@ -169,7 +182,12 @@ export const INLINE_LEAN_BUDGET = { raw: 81_920, gzip: 25_650, brotli: 22_850 } 
 // does not reproduce gets its cushion back.
 // Raised 2026-09-07 (LP-2): raw 110 147 → 110 930 (measured 110 812), gzip
 // 34 697 → 34 975 (measured 34 927), brotli 30 690 → 30 910 (measured 30 748).
-export const INLINE_FRAGMENT_BUDGET = { raw: 110_930, gzip: 34_975, brotli: 30_910 } as const;
+// Lowered 2026-09-07 (Z19): brotli 30 910 → 30 870, measured 30 748 on a build
+// that now reproduces. Of the four inline profiles this one had kept the widest
+// cushion — 162 B where the file documents ~120 — because it had the most room
+// when the noise was paid for. The other three sit between 115 and 121 B over
+// their measurement and stay where LP-2 left them.
+export const INLINE_FRAGMENT_BUDGET = { raw: 110_930, gzip: 34_975, brotli: 30_870 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
