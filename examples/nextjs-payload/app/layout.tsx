@@ -1,22 +1,23 @@
 /**
- * Root layout — embeds the live preview inline script exactly as
- * documented in the README's "Next.js (App Router)" section: the
- * script is generated on the server with `generateInlineScript()` and
- * placed in `<head>` via `dangerouslySetInnerHTML`, so it is part of
- * the SSR HTML (Next middleware cannot inject into the body).
+ * Root layout — carries the live preview runtime, as documented in
+ * docs/nextjs.md: the script is part of the SSR HTML, because Next
+ * middleware cannot inject into the body.
  *
  * No `serverURL` is configured: this fixture has no real Payload
  * backend, updates come straight from the mock admin's postMessage.
  */
 import type { ReactNode } from 'react';
-import { generateInlineScript } from 'payload-live-preview';
+import { livePreviewScriptProps } from 'payload-live-preview/nextjs';
 
-const previewScript = generateInlineScript({
+const previewScript = livePreviewScriptProps({
   allowedOrigins: ['http://localhost:4174'],
   debug: true,
   debounceMs: 25,
   // Reveal the edited section — exercised by reveal-nextjs.spec.ts.
   revealEditedField: true,
+  // Server-rendered boundaries: /hybrid marks one, every other page has none
+  // and is patched as before. Exercised by nextjs-fragment.spec.ts.
+  fragments: { endpoint: '/payload/fragment' },
 });
 
 const styles = `
@@ -68,7 +69,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: previewScript }} />
+        <script {...previewScript} />
         <style dangerouslySetInnerHTML={{ __html: styles }} />
       </head>
       <body>{children}</body>

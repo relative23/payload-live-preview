@@ -27,11 +27,19 @@ export function bindDecisionHooks<Req>(
   };
 }
 
+/**
+ * The script body alone, for a consumer that builds the element itself — a JSX
+ * framework cannot render a tag that arrives as a string.
+ */
+export function renderScriptBody(options: PreviewPolicyOptions): string {
+  return generateInlineScript(inlineScriptConfig(options));
+}
+
 /** The `<script>` tag for manual embedding, with `nonce` when given. */
 export function renderScriptTag(
   options: PreviewPolicyOptions & { readonly nonce?: string },
 ): string {
-  const body = generateInlineScript(inlineScriptConfig(options));
+  const body = renderScriptBody(options);
   return wrapWithScriptTag(body, options.nonce !== undefined ? { nonce: options.nonce } : {});
 }
 

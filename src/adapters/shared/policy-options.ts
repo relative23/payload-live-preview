@@ -16,10 +16,7 @@ import type { PreviewSignal } from './preview-request';
 import type { PreviewAdapterOptions } from './options';
 
 /** The structural subset of any adapter's options the policy reads; hooks are bound per request. */
-export interface PreviewPolicyOptions extends PreviewAdapterOptions<never> {
-  /** Server-rendered fragment boundaries (ADR 0011): the same-origin endpoint the runtime posts to. */
-  readonly fragments?: { readonly endpoint: string };
-}
+export type PreviewPolicyOptions = PreviewAdapterOptions<never>;
 
 /** The options after the `defaults` profile: explicit options win, the profile fills the rest. */
 export interface ResolvedPolicyOptions {
@@ -88,6 +85,13 @@ export function inlineScriptConfig(
     ...(resolved.sanitizerPolicy !== undefined
       ? { sanitizerPolicy: resolved.sanitizerPolicy }
       : {}),
+    ...(options.runtime !== undefined ? { runtime: options.runtime } : {}),
     ...(options.fragments !== undefined ? { fragmentEndpoint: options.fragments.endpoint } : {}),
+    // Only when no endpoint is configured: that prelude carries the route
+    // strategy already, and asking for both would emit the larger one twice.
+    ...(options.routeStrategy === true && options.fragments === undefined
+      ? { routeStrategy: true }
+      : {}),
+    ...(options.onUnboundChange !== undefined ? { onUnboundChange: options.onUnboundChange } : {}),
   };
 }

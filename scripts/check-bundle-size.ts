@@ -1,11 +1,14 @@
 import { access, readdir, readFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { LEAN_RUNTIME } from '../src/lean';
 import { generateInlineScript } from '../src/inline/generator';
 import {
   findBudgetViolations,
   INLINE_BUDGET,
+  INLINE_LEAN_BUDGET,
   INLINE_FRAGMENT_BUDGET,
+  INLINE_ROUTE_BUDGET,
   measureBundle,
   type BundleBudget,
   type BundleMeasurement,
@@ -43,39 +46,94 @@ const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // and gzip output, 56–100 B over this host. Every brotli row therefore keeps
   // about 120 B over the local figure, still under the 2 % the improvement
   // hint allows; raw and gzip rows stay tight because they reproduce.
-  'adapters/astro/index.js': { raw: 130_750, gzip: 41_500, brotli: 36_350 },
-  'adapters/astro/middleware-entry.js': { raw: 117_250, gzip: 37_300, brotli: 32_650 },
-  'adapters/nextjs/index.js': { raw: 117_000, gzip: 37_250, brotli: 32_600 },
-  'adapters/nuxt/index.js': { raw: 117_650, gzip: 37_450, brotli: 32_750 },
-  'adapters/sveltekit/index.js': { raw: 116_750, gzip: 37_200, brotli: 32_550 },
+  //
+  // 2026-09-06: every row that embeds the inline runtime rises by the ~660 B
+  // gzip `onUnboundChange` costs it (see bundle-budgets.ts) — the adapters, the
+  // client, core and the root barrel. The Next row additionally carries
+  // `livePreviewScriptProps()`, a few dozen bytes. `doctor-cli.js` moves for the
+  // runtime source it embeds for its readiness probe, nothing of its own.
+  //
+  // 2026-09-06 (fragment endpoint for Next.js): the Next row rises ~10 KB raw /
+  // ~3.1 KB gzip because that entry now carries the fragment endpoint —
+  // authorization, the protocol parser, limits, the registry lookup. It is the
+  // same code the Astro entry already carried; a project that never imports
+  // `createFragmentEndpoint` does not ship it — the `createLivePreviewMiddleware`
+  // fixture in check-tree-shaking.ts measures ~2.4 KB gzip less than this row. The Astro row rises ~200 B raw for the module boundary the
+  // move introduces (the endpoint no longer inlines into its one caller).
+  //
+  // 2026-09-06 (fragment endpoint for SvelteKit and Nuxt, `preview.boundary()`):
+  // those two adapter rows rise ~10 KB raw / ~3 KB gzip for the endpoint they
+  // now carry, exactly as the Next row did — a project that never imports
+  // `createFragmentEndpoint` still ships none of it. `core.*`, `index.*` and
+  // `server.*` rise ~650 B raw / ~270 B gzip for `createPreviewBindings().boundary()`:
+  // the registry-id and key checks, and the attribute record it builds.
+  //
+  // 2026-09-06 (Ü9, the lean runtime): `lean.*` are new rows — the second
+  // artifact as a value, which is almost entirely the embedded script. It sits
+  // behind its own subpath so only a project that imports it carries those
+  // bytes; behind a `profile: 'lean'` option instead, the same artifact landed
+  // in every adapter entry and measured +24 KB gzip each. Every row that embeds
+  // the runtime rises ~90 B raw for the profile's own code: the LP0104 message,
+  // the renderers that report it, and the two strategy warnings the lean build
+  // keeps as shared functions.
+  //
+  // 2026-09-06 (Ü11): every row that embeds the runtime carries the LP0503
+  // message with it (see bundle-budgets.ts); `fragment.js` moves for the
+  // strategy warnings it now shares with the runtime.
+  'adapters/astro/index.js': { raw: 142_500, gzip: 44_300, brotli: 38_400 },
+  'adapters/astro/middleware-entry.js': { raw: 129_200, gzip: 40_000, brotli: 34_600 },
+  'adapters/nextjs/index.js': { raw: 138_600, gzip: 42_900, brotli: 37_100 },
+  //
+  // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
+  // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
+  // detector and the merger — the document half of the runtime — and nothing
+  // that touches an element, which is why each is a third of an adapter row.
+  // They share every module but their reactivity, hence the near-identical
+  // figures.
+  'adapters/react/index.js': { raw: 14_250, gzip: 4_700, brotli: 4_260 },
+  'adapters/vue/index.js': { raw: 14_000, gzip: 4_690, brotli: 4_220 },
+  'adapters/nuxt/index.js': { raw: 139_200, gzip: 43_100, brotli: 37_250 },
+  'adapters/sveltekit/index.js': { raw: 138_100, gzip: 42_800, brotli: 36_950 },
+  //
+  // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
+  // scanner, its refusal reasons and the `annotate` subcommand. It is a build
+  // tool; no page and no adapter bundle sees any of it.
   'codegen-astro.js': { raw: 12_950, gzip: 4_550, brotli: 4_100 },
-  'codegen-cli.js': { raw: 14_550, gzip: 5_000, brotli: 4_500 },
-  'codegen.cjs': { raw: 12_450, gzip: 4_250, brotli: 3_860 },
-  'codegen.js': { raw: 12_300, gzip: 4_250, brotli: 3_850 },
-  'doctor-cli.js': { raw: 32_750, gzip: 12_000, brotli: 10_750 },
+  'codegen-cli.js': { raw: 20_100, gzip: 6_950, brotli: 6_270 },
+  'codegen.cjs': { raw: 15_300, gzip: 5_400, brotli: 4_890 },
+  'codegen.js': { raw: 15_200, gzip: 5_380, brotli: 4_890 },
+  'doctor-cli.js': { raw: 33_150, gzip: 12_140, brotli: 10_780 },
   'doctor.js': { raw: 13_100, gzip: 5_500, brotli: 4_750 },
   'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
-  'core.cjs': { raw: 111_700, gzip: 34_950, brotli: 30_600 },
-  'core.js': { raw: 111_200, gzip: 34_900, brotli: 30_500 },
-  'index.cjs': { raw: 232_050, gzip: 71_800, brotli: 47_050 },
-  'index.js': { raw: 231_450, gzip: 71_950, brotli: 46_100 },
+  'core.cjs': { raw: 117_300, gzip: 36_650, brotli: 31_900 },
+  'core.js': { raw: 116_800, gzip: 36_600, brotli: 31_850 },
+  'index.cjs': { raw: 249_400, gzip: 76_200, brotli: 49_450 },
+  'index.js': { raw: 248_800, gzip: 76_300, brotli: 49_400 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
   'payload.js': { raw: 1_080, gzip: 575, brotli: 515 },
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
-  'server.cjs': { raw: 12_000, gzip: 4_450, brotli: 4_050 },
-  'server.js': { raw: 11_850, gzip: 4_400, brotli: 4_050 },
-  'client.cjs': { raw: 106_600, gzip: 33_200, brotli: 29_050 },
-  'client.js': { raw: 106_550, gzip: 33_150, brotli: 29_000 },
+  'server.cjs': { raw: 12_750, gzip: 4_720, brotli: 4_260 },
+  'server.js': { raw: 12_650, gzip: 4_715, brotli: 4_250 },
+  'client.cjs': { raw: 111_500, gzip: 34_600, brotli: 30_200 },
+  'client.js': { raw: 111_400, gzip: 34_600, brotli: 30_170 },
   'structural.cjs': { raw: 18_600, gzip: 6_500, brotli: 5_950 },
   'structural.js': { raw: 18_600, gzip: 6_500, brotli: 5_950 },
+  'lean.cjs': { raw: 80_600, gzip: 25_150, brotli: 22_400 },
+  'lean.js': { raw: 80_600, gzip: 25_150, brotli: 22_400 },
   'lexical.cjs': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
   'lexical.js': { raw: 15_700, gzip: 5_350, brotli: 4_800 },
-  'plugins.cjs': { raw: 15_550, gzip: 5_650, brotli: 5_000 },
-  'plugins.js': { raw: 15_550, gzip: 5_650, brotli: 5_000 },
-  'fragment.cjs': { raw: 13_950, gzip: 5_350, brotli: 4_700 },
-  'fragment.js': { raw: 13_850, gzip: 5_300, brotli: 4_700 },
+  //
+  // 2026-09-06 (Ü10): `plugins.*` rise ~2 900 raw / ~1 150 gzip for the
+  // unbound-fields overlay — the development panel that lists the fields an
+  // update carried and the page cannot show. It is a plugin precisely so this
+  // row moves and `INLINE_BUDGET` does not: no page carries it unless its own
+  // code asks for it.
+  'plugins.cjs': { raw: 18_600, gzip: 6_880, brotli: 6_050 },
+  'plugins.js': { raw: 18_600, gzip: 6_880, brotli: 6_050 },
+  'fragment.cjs': { raw: 13_950, gzip: 5_380, brotli: 4_740 },
+  'fragment.js': { raw: 13_900, gzip: 5_360, brotli: 4_720 },
 };
 
 const STABLE_EXPORT_NAMES: Readonly<Record<string, readonly string[]>> = {
@@ -280,6 +338,16 @@ async function main(): Promise<void> {
     'default inline script',
     measureBundle(generateInlineScript()),
     INLINE_BUDGET,
+  );
+  failures += printMeasurement(
+    'inline script, lean profile',
+    measureBundle(generateInlineScript({ runtime: LEAN_RUNTIME })),
+    INLINE_LEAN_BUDGET,
+  );
+  failures += printMeasurement(
+    'inline script with the route strategy',
+    measureBundle(generateInlineScript({ routeStrategy: true })),
+    INLINE_ROUTE_BUDGET,
   );
   failures += printMeasurement(
     'inline script with fragments',

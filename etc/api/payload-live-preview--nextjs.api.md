@@ -4,15 +4,57 @@
 
 ```ts
 
-import { b as PreviewAdapterOptions } from '../../options-Dm3M0ZKq.js';
+import { a } from '../../fragment-endpoint-C2MVprCN.js';
+import { b } from '../../fragment-endpoint-C2MVprCN.js';
+import { c } from '../../fragment-endpoint-C2MVprCN.js';
+import { F } from '../../fragment-endpoint-C2MVprCN.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-C2MVprCN.js';
+import { P as PreviewAdapterOptions } from '../../options-DzP-8PDb.js';
+
+// @public
+export function createFragmentEndpoint(options: FragmentEndpointOptions): (request: Request) => Promise<Response>;
 
 // @public
 export function createLivePreviewMiddleware(options?: LivePreviewNextOptions): (request: Request, response: Response) => Promise<Response>;
 
 // @public
+export function defineFragment<Props extends object>(component: (props: Props) => unknown, props: (input: FragmentRenderInput) => Props | Promise<Props>): FragmentRegistryEntry<Props>;
+
+// @public (undocumented)
+export type FragmentEndpointOptions = F<ReactComponentLike>;
+
+// @public (undocumented)
+export type FragmentRegistry = a<ReactComponentLike>;
+
+// @public (undocumented)
+export type FragmentRegistryEntry<Props extends object = object> = b<ReactComponentLike, Props>;
+
+// @public (undocumented)
+export type FragmentRenderer = c<ReactComponentLike>;
+
+export { FragmentRenderInput }
+
+// @public
 export type LivePreviewNextOptions = PreviewAdapterOptions;
 
+// @public
+export interface LivePreviewScriptProps {
+    // (undocumented)
+    readonly dangerouslySetInnerHTML: {
+        readonly __html: string;
+    };
+    readonly nonce?: string;
+}
+
+// @public
+export function livePreviewScriptProps(options?: LivePreviewNextOptions & {
+    readonly nonce?: string;
+}): LivePreviewScriptProps;
+
 export { PreviewAdapterOptions }
+
+// @public
+export type ReactComponentLike = (props: never) => unknown;
 
 // @public
 export function renderLivePreviewScript(options?: LivePreviewNextOptions & {

@@ -25,12 +25,27 @@
  * soft-fail early warning, `@canary`.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const PACKAGE = process.env['PROTOCOL_WATCH_PACKAGE'] ?? '@payloadcms/live-preview@latest';
+
+/**
+ * Where the failures are written for `scripts/report-protocol-drift.ts`, which
+ * turns them into an issue. A file rather than the log, because the report has
+ * to name each check and what it saw — parsing console output for that would be
+ * a second, weaker copy of this script's own knowledge.
+ */
+const REPORT_PATH = process.env['PROTOCOL_WATCH_REPORT'] ?? 'protocol-drift.json';
+
+/** The shape `report-protocol-drift.ts` reads; both sides are held by its test. */
+export interface DriftReport {
+  readonly package: string;
+  readonly checkedAt: string;
+  readonly failures: readonly Failure[];
+}
 
 interface Failure {
   readonly check: string;
@@ -203,6 +218,12 @@ async function main(): Promise<void> {
     );
 
     if (failures.length > 0) {
+      const report: DriftReport = {
+        package: PACKAGE,
+        checkedAt: new Date().toISOString(),
+        failures,
+      };
+      writeFileSync(REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
       console.error('[protocol-watch] PROTOCOL DRIFT DETECTED (executed behaviour changed):');
       for (const f of failures) console.error(`  ✗ ${f.check} — got ${f.detail}`);
       console.error(

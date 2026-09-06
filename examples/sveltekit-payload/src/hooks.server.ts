@@ -28,6 +28,9 @@ export const handle = livePreviewHandle({
   // Two documents may share a field name on one page (`/owners`); an update
   // names its document and patches only that one.
   scopeBindingsByOwner: true,
+  // Server-rendered boundaries: /hybrid marks one, every other route has none
+  // and is patched as before. Exercised by sveltekit-fragment.spec.ts.
+  fragments: { endpoint: '/payload/fragment' },
   // Every 2.0 default that exists today (ADR 0007): strict configuration,
   // query-only intent, no referrer trust, updates only from the window that
   // framed or opened the page, unchanged bindings skipped.

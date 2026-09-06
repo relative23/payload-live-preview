@@ -20,6 +20,9 @@ export default defineNitroPlugin(
     debug: true,
     debounceMs: 25,
     revealEditedField: true,
+    // Server-rendered boundaries: /hybrid marks one, every other page has none
+    // and is patched as before. Exercised by nuxt-fragment.spec.ts.
+    fragments: { endpoint: '/payload/fragment' },
     // Staged on the 1.x profile: this fixture exercises the runtime mechanics.
     // The v2 defaults with a real authorized context are shown by the SvelteKit
     // fixture (defaults: 'v2' + authorizePreview) and the real-payload suites.

@@ -15,6 +15,28 @@ export interface OwnerBindingAttributes {
   readonly 'data-payload-owner': string;
 }
 
+/** The attributes marking a server-rendered boundary (ADR 0011, docs/hybrid.md). */
+export interface FragmentBoundaryAttributes {
+  readonly 'data-payload-fragment': string;
+  readonly 'data-payload-fragment-key'?: string;
+  readonly 'data-payload-depends'?: string;
+}
+
+export interface FragmentBoundaryOptions {
+  /** Distinguishes boundaries when one registry id renders several on a page. */
+  readonly key?: string;
+  /** The fields that re-render the boundary. Without it, every update does. */
+  readonly dependsOn?: readonly string[];
+}
+
+/**
+ * Stricter than the endpoint's own check, which accepts either case: an id is
+ * written here, and one that only differs in case from the registry key is a
+ * boundary that silently never renders.
+ */
+const REGISTRY_ID = /^[a-z][a-z0-9-]{0,63}$/u;
+const MAX_KEY_LENGTH = 128;
+
 /** No attributes at all: an unauthorized response is byte-identical to one that never knew about live preview. */
 export type SuppressedBinding = Readonly<Record<string, never>>;
 
@@ -47,6 +69,41 @@ export interface PreviewBindings {
   ) => FieldBindingAttributes | SuppressedBinding;
   /** Owner marker for this subtree, or nothing while unauthorized or without an owner. */
   owner: () => OwnerBindingAttributes | SuppressedBinding;
+  /**
+   * A server-rendered boundary, or nothing while unauthorized — the id and the
+   * fields it depends on describe the content model as much as a binding does.
+   * The registry behind `id` is the endpoint's (docs/hybrid.md).
+   */
+  boundary: (
+    id: string,
+    options?: FragmentBoundaryOptions,
+  ) => FragmentBoundaryAttributes | SuppressedBinding;
+}
+
+/** Built whether or not the response is authorized, so a bad id fails everywhere, not only in preview. */
+function boundaryAttributes(
+  id: string,
+  options: FragmentBoundaryOptions,
+): FragmentBoundaryAttributes {
+  if (!REGISTRY_ID.test(id)) {
+    throw new RangeError(
+      `createPreviewBindings().boundary(): "${id}" is not a registry id — lowercase, starting ` +
+        'with a letter, then letters, digits or hyphens (max 64). The runtime would post it and ' +
+        'the endpoint would refuse it.',
+    );
+  }
+  const key = options.key;
+  if (key !== undefined && (key.length === 0 || key.length > MAX_KEY_LENGTH)) {
+    throw new RangeError(
+      `createPreviewBindings().boundary(): the key for "${id}" must be 1 to ${String(MAX_KEY_LENGTH)} characters.`,
+    );
+  }
+  const dependsOn = options.dependsOn ?? [];
+  return {
+    'data-payload-fragment': id,
+    ...(key !== undefined ? { 'data-payload-fragment-key': key } : {}),
+    ...(dependsOn.length > 0 ? { 'data-payload-depends': dependsOn.join(',') } : {}),
+  };
 }
 
 /** Request-scoped `bind`, `bindByPath` and `owner`, all suppressed unless `authorization` is a real context. */
@@ -71,5 +128,12 @@ export function createPreviewBindings(options: PreviewBindingsOptions): PreviewB
       authorized ? bindByPath<T>(picker, bindOptions) : SUPPRESSED,
     owner: (): OwnerBindingAttributes | SuppressedBinding =>
       authorized && owner !== undefined ? { 'data-payload-owner': owner } : SUPPRESSED,
+    boundary: (
+      id: string,
+      boundaryOptions: FragmentBoundaryOptions = {},
+    ): FragmentBoundaryAttributes | SuppressedBinding => {
+      const attributes = boundaryAttributes(id, boundaryOptions);
+      return authorized ? attributes : SUPPRESSED;
+    },
   });
 }

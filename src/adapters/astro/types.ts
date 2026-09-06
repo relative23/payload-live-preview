@@ -14,6 +14,4 @@ export interface LivePreviewAstroOptions extends PreviewAdapterOptions {
    * delivery.
    */
   readonly mode?: 'inline' | 'loader' | 'middleware';
-  /** Same-origin path of the route exporting `createFragmentEndpoint()`; the runtime then renders every boundary through it (ADR 0011). */
-  readonly fragments?: { readonly endpoint: string };
 }

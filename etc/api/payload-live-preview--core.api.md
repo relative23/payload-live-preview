@@ -67,6 +67,7 @@ export interface CachedElement {
     readonly explicitFieldType?: boolean;
     readonly fieldName: string;
     readonly fieldType: RendererKey;
+    readonly format?: string;
     readonly fragmentBoundary?: Element;
     readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;
@@ -155,6 +156,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly NoTrustedOrigin: "LP0101";
     readonly ReferrerOnlyTrust: "LP0102";
     readonly PluginIncompatible: "LP0103";
+    readonly ProfileFeatureOmitted: "LP0104";
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly VisibilityGateDeferred: "LP0301";
@@ -165,8 +167,10 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly StructuralDuplicateKey: "LP0405";
     readonly StructuralUnstableKeys: "LP0406";
     readonly UnsupportedStrategy: "LP0407";
+    readonly UnknownValueFormat: "LP0408";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
+    readonly ProtocolShapeUnknown: "LP0503";
     readonly HandlerThrew: "LP0601";
     readonly TransformThrew: "LP0602";
     readonly RendererThrew: "LP0603";
@@ -186,6 +190,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly FragmentSuperseded: "LP0804";
     readonly RouteRefreshLoop: "LP0805";
     readonly FragmentStrategyUnavailable: "LP0806";
+    readonly UnboundChangeRefresh: "LP0807";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
 }>;
@@ -270,6 +275,22 @@ type FieldTransform = (value: unknown, context: {
 
 // @public
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';
+
+// @public
+export interface FragmentBoundaryAttributes {
+    // (undocumented)
+    readonly 'data-payload-depends'?: string;
+    // (undocumented)
+    readonly 'data-payload-fragment': string;
+    // (undocumented)
+    readonly 'data-payload-fragment-key'?: string;
+}
+
+// @public (undocumented)
+export interface FragmentBoundaryOptions {
+    readonly dependsOn?: readonly string[];
+    readonly key?: string;
+}
 
 // @public
 export interface FragmentContext {
@@ -805,6 +826,7 @@ export interface PreviewBindings {
     readonly authorized: boolean;
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
     bindByPath: <T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
+    boundary: (id: string, options?: FragmentBoundaryOptions) => FragmentBoundaryAttributes | SuppressedBinding;
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 

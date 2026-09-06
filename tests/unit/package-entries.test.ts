@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   CORE_ENTRY,
+  DIRECTIVE_ENTRIES,
   DUAL_FORMAT_ENTRIES,
   ESM_ONLY_ENTRIES,
   STANDALONE_ENTRIES,
@@ -27,7 +28,10 @@ const DUAL: Record<string, string> = {
   ...STANDALONE_ENTRIES,
   ...CORE_ENTRY,
 };
-const ALL: Record<string, string> = { ...DUAL, ...ESM_ONLY_ENTRIES };
+const DIRECTIVE: Record<string, string> = Object.fromEntries(
+  Object.entries(DIRECTIVE_ENTRIES).map(([name, entry]) => [name, entry.source]),
+);
+const ALL: Record<string, string> = { ...DUAL, ...ESM_ONLY_ENTRIES, ...DIRECTIVE };
 
 function entryName(distPath: string): string {
   return distPath.replace(/^\.\/dist\//u, '').replace(/\.(?:js|cjs|d\.ts|d\.cts)$/u, '');
@@ -70,10 +74,21 @@ describe('package entries', () => {
     }
   });
 
-  it('the focused entries are exactly the five documented ones', () => {
+  it('an entry with a module directive is built alone, so its banner reaches only that file', () => {
+    // A banner applies to every entry in a tsup profile: two directive entries
+    // in one profile would put `'use client'` on both.
+    for (const [name, entry] of Object.entries(DIRECTIVE_ENTRIES)) {
+      expect(entry.directive, name).toMatch(/^'use [a-z]+';$/u);
+      expect(ESM_ONLY_ENTRIES).not.toHaveProperty(name);
+      expect(DUAL).not.toHaveProperty(name);
+    }
+  });
+
+  it('the focused entries are exactly the documented ones', () => {
     expect(Object.keys(STANDALONE_ENTRIES).sort()).toEqual([
       'client',
       'fragment',
+      'lean',
       'lexical',
       'plugins',
       'server',

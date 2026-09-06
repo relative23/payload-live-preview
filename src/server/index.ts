@@ -41,6 +41,8 @@ export type {
   FieldBindingAttributes,
   FieldName,
   FieldPath,
+  FragmentBoundaryAttributes,
+  FragmentBoundaryOptions,
   OwnerBindingAttributes,
   PreviewBindings,
   PreviewBindingsCommonOptions,

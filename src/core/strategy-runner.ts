@@ -7,9 +7,12 @@ import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { trustedHtml } from '@security/trusted-types';
 import { bindingValue } from './field-value';
 import { morphElement } from './morph';
+import { DIAGNOSTIC_CODES } from './diagnostic-codes';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
 import type { FragmentContext, FragmentStrategy, RouteStrategy } from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
+import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
+import { createFieldAddressability, SYSTEM_FIELD_NAMES, type OwnerScope } from './unbound-fields';
 import type { CachedElement } from './types';
 
 /** What the pipeline lends the runner. */
@@ -51,6 +54,28 @@ export class StrategyRunner {
       covers: (target) =>
         target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
     };
+  }
+
+  /**
+   * Whether this revision changed a field the page cannot patch, which makes
+   * the whole route the only honest answer. Opt-in through `onUnboundChange`;
+   * the baseline message is skipped, because there every field counts as
+   * changed and the page has just been rendered from them anyway.
+   */
+  hasUnboundChange(transaction: UpdateTransaction, ownerKeys: OwnerScope): boolean {
+    const { deps } = this;
+    if (deps.onUnboundChange !== 'route' || transaction.baseline) return false;
+    const isAddressable = createFieldAddressability(deps.cache, transaction.locale, ownerKeys);
+    for (const fieldName of transaction.touched) {
+      if (SYSTEM_FIELD_NAMES.has(fieldName) || isAddressable(fieldName)) continue;
+      deps.log(
+        'route',
+        DIAGNOSTIC_CODES.UnboundChangeRefresh,
+        `field "${fieldName}" has no binding; refreshing the route`,
+      );
+      return true;
+    }
+    return false;
   }
 
   /** Whether a touched field is bound to an element the route owns. */
@@ -227,20 +252,12 @@ export class StrategyRunner {
 
   /** LP0806, once: a fragment boundary with no handler is patched instead. */
   warnFragmentFallback(target: CachedElement): void {
-    if (this.state.warnedFragmentFallback) return;
-    this.state.warnedFragmentFallback = true;
-    this.deps.warn(
-      `[live-preview] LP0806: "${target.fieldName}" asks for the fragment strategy but no handler is configured; patching instead`,
-    );
+    warnFragmentFallback(this.deps, this.state, target);
   }
 
   /** LP0407, once per element: an unknown strategy is left alone, not guessed at. */
   warnUnsupportedStrategy(target: CachedElement): void {
-    if (this.state.warnedStrategy.has(target.element)) return;
-    this.state.warnedStrategy.add(target.element);
-    this.deps.warn(
-      `[live-preview] LP0407: "${target.fieldName}" asks for strategy "${String(target.strategy)}"; only patch, fragment and route exist`,
-    );
+    warnUnsupportedStrategy(this.deps, this.state, target);
   }
 
   /** The deterministic fallback: patch the boundary's own bindings from the same revision. */

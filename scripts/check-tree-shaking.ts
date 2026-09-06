@@ -27,7 +27,23 @@ interface Fixture {
   readonly why: string;
 }
 
-/** Measured 2026-08-27; headroom ~1.5 %. */
+/**
+ * Measured 2026-08-27; headroom ~1.5 %.
+ *
+ * The three client rows and the generator row rose twice on 2026-09-06: for the
+ * lean profile's own code (the LP0104 message, the renderers that report it, the two
+ * strategy warnings as shared functions). The lean artifact itself is not in any
+ * of them: it lives behind `payload-live-preview/lean`, measured below. Then
+ * again for LP0503, the line a page prints when a trusted admin sends a message
+ * this runtime does not recognise.
+ *
+ * The three rows carrying the inline runtime were raised on 2026-09-06 for the
+ * ~660 B gzip `onUnboundChange` costs it (see bundle-budgets.ts). The generator
+ * row moved furthest because it also gained the route prelude alongside the
+ * fragment one — a second copy of the runtime's own strategy source, which the
+ * generator embeds whole and cannot shake. Raised again the same day for
+ * `data-payload-format`.
+ */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
     from: 'payload-live-preview',
@@ -47,21 +63,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 36_450,
+    gzip: 38_400,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 33_800,
-    why: 'the generator carries the inline runtime source and nothing of the client',
+    gzip: 36_350,
+    why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 36_450,
+    gzip: 38_400,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -77,6 +93,34 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
     gzip: 1_495,
     why: 'the keyed morph alone, without the array renderer',
+  },
+  {
+    from: 'payload-live-preview/nextjs',
+    symbol: 'createLivePreviewMiddleware',
+    use: 'export const out = createLivePreviewMiddleware({});',
+    gzip: 40_700,
+    why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it',
+  },
+  {
+    from: 'payload-live-preview/lean',
+    symbol: 'LEAN_RUNTIME',
+    use: 'export const out = LEAN_RUNTIME.source.length;',
+    gzip: 25_150,
+    why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
+  },
+  {
+    from: 'payload-live-preview/react',
+    symbol: 'useLivePreviewDocument',
+    use: 'export const out = useLivePreviewDocument;',
+    gzip: 5_290,
+    why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
+  },
+  {
+    from: 'payload-live-preview/vue',
+    symbol: 'useLivePreviewDocument',
+    use: 'export const out = useLivePreviewDocument;',
+    gzip: 5_290,
+    why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {
     from: 'payload-live-preview/plugins',
@@ -103,7 +147,9 @@ async function bundle(consumer: string, fixture: Fixture): Promise<string> {
       minify: 'esbuild',
       target: 'es2022',
       lib: { entry, formats: ['es'], fileName: 'out' },
-      rollupOptions: { external: ['ts-morph'] },
+      // The optional peers a fixture must not inline: measuring React would
+      // measure React, not what this package ships.
+      rollupOptions: { external: ['ts-morph', 'react', 'vue'] },
     },
   });
   const outputs = Array.isArray(result) ? result : [result];

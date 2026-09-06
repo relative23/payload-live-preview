@@ -60,6 +60,8 @@ export interface CachedElement {
   readonly arraySeparator?: string;
   /** Optional locale code locked onto this element (overrides the global locale). */
   readonly locale?: string;
+  /** Raw `data-payload-format`; the date and number renderers read the vocabulary. */
+  readonly format?: string;
   /** The document this binding belongs to, from the nearest `data-payload-owner`. */
   readonly owner?: string;
 }

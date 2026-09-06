@@ -8,6 +8,7 @@ import type { DefaultsProfile, EventSourcePolicy } from '@core/defaults-profile'
 import type { PreviewAuthorization } from '@security/preview-verdict';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import type { PreviewSignal } from './preview-request';
+import type { RuntimeArtifact } from '@/types/inline-config';
 
 /**
  * What `authorizePreview` may resolve to; anything that is not a context
@@ -65,6 +66,33 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly skipUnchanged?: boolean;
   /** Scroll the preview to the field being edited. Default `false`. */
   readonly revealEditedField?: boolean;
+  /**
+   * A runtime artifact to inject instead of the full one — `LEAN_RUNTIME` from
+   * `payload-live-preview/lean`, which is about 5.5 KB gzip smaller and reports
+   * LP0104 when a page needs a feature it left out (docs/options.md). Importing
+   * it is what puts those bytes in your build; the default costs nothing.
+   */
+  readonly runtime?: RuntimeArtifact;
+  /**
+   * Server-rendered fragment boundaries (ADR 0011): the same-origin path of
+   * the route exporting `createFragmentEndpoint()`. The runtime then renders
+   * every `data-payload-fragment` boundary through it, and its prelude carries
+   * the route strategy as well. Default: none, and boundaries are patched.
+   */
+  readonly fragments?: { readonly endpoint: string };
+  /**
+   * Carry the route strategy: a binding in `<head>` or one marked
+   * `data-payload-strategy="route"` then refreshes the route. Implied by
+   * `fragments`, whose prelude already contains it. Default `false`.
+   */
+  readonly routeStrategy?: boolean;
+  /**
+   * What to do when a revision changes a field the page has no binding for.
+   * `'route'` refreshes the whole route rather than losing the edit; it needs a
+   * route strategy, so set `routeStrategy` or `fragments` with it. Default
+   * `'ignore'`.
+   */
+  readonly onUnboundChange?: 'ignore' | 'route';
   /** Patch only the bindings of the document an update names (`data-payload-owner`). Default `false`. */
   readonly scopeBindingsByOwner?: boolean;
   /** Sanitizer for rich text and HTML writes. Default `'strict'`; `defaults: 'v1'` restores `'compat'`. */

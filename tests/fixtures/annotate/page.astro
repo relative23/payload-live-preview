@@ -1,0 +1,28 @@
+---
+import Hero from '../components/Hero.astro';
+const page = await fetchPage();
+---
+
+<article>
+  <h1>{page.title}</h1>
+  <p class="lede">{page.subtitle}</p>
+  <p>{page.hero.eyebrow}</p>
+
+  <!-- Already annotated by hand: left exactly as it is. -->
+  <p data-payload-field="body">{page.body}</p>
+
+  <!-- Text beside the value: a binding here would eat the rest of the line. -->
+  <p>Published {page.publishedAt}</p>
+
+  <!-- Derived: no single field to name. -->
+  <p>{formatDate(page.publishedAt)}</p>
+
+  <!-- Not in the schema. -->
+  <p>{page.internalNote}</p>
+
+  <!-- A loop item: nothing connects `slide` to the `slides` field. -->
+  {page.slides.map((slide) => <li>{slide.caption}</li>)}
+
+  <!-- A component's props are its own business. -->
+  <Hero title={page.title} />
+</article>

@@ -24,6 +24,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   ReferrerOnlyTrust: 'LP0102',
   /** A plugin declares a runtime range this runtime does not satisfy; it was refused. */
   PluginIncompatible: 'LP0103',
+  /** The page carries the lean runtime and needs a feature that profile leaves out. */
+  ProfileFeatureOmitted: 'LP0104',
 
   /** An update named a field with no binding anchor on the page. */
   OrphanField: 'LP0201',
@@ -47,11 +49,15 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   StructuralUnstableKeys: 'LP0406',
   /** A binding asks for a delivery strategy this release does not have; it is left unchanged. */
   UnsupportedStrategy: 'LP0407',
+  /** `data-payload-format` names a format the vocabulary does not contain; the value was written unformatted. */
+  UnknownValueFormat: 'LP0408',
 
   /** A message was rejected before it reached the update pipeline. */
   MessageRejected: 'LP0501',
   /** A preview token was rejected. */
   TokenRejected: 'LP0502',
+  /** A trusted origin sent a message this protocol version does not recognise. */
+  ProtocolShapeUnknown: 'LP0503',
 
   /** A consumer event handler threw. */
   HandlerThrew: 'LP0601',
@@ -93,6 +99,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   RouteRefreshLoop: 'LP0805',
   /** A boundary asks for the fragment strategy but no fragment handler is configured; it is patched. */
   FragmentStrategyUnavailable: 'LP0806',
+  /** A revision changed a field with no binding; `onUnboundChange: 'route'` refreshed the route. */
+  UnboundChangeRefresh: 'LP0807',
   /** A readiness row is not yet at its 2.0 value; `pll doctor --v2` reports it. */
   V2ReadinessGap: 'LP0709',
   /** The preview runtime is served to anonymous visitors, not only inside the admin frame. */

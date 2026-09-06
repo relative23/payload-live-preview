@@ -18,8 +18,13 @@ import { INLINE_BUDGET } from './bundle-budgets';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 
-/** Local planning notes, not published with the package. */
-const EXCLUDED_DOCS = new Set(['PRIVATE-ROADMAP-TO-2.0.md']);
+/**
+ * Local planning notes, not published with the package. They describe work
+ * that does not exist yet, so holding them to the shipped surface would make
+ * every plan a gate failure. The `PRIVATE-` prefix is the marker; those files
+ * are excluded from git through `.git/info/exclude`.
+ */
+const PRIVATE_DOC_PREFIX = 'PRIVATE-';
 
 export interface DocReference {
   readonly kind: 'entry' | 'diagnostic' | 'class' | 'attribute';
@@ -96,8 +101,11 @@ async function docFiles(): Promise<string[]> {
   const walk = async (dir: string): Promise<void> => {
     for (const entry of await readdir(dir, { withFileTypes: true })) {
       const full = resolve(dir, entry.name);
-      if (entry.isDirectory()) await walk(full);
-      else if (entry.name.endsWith('.md') && !EXCLUDED_DOCS.has(entry.name)) files.push(full);
+      if (entry.isDirectory()) {
+        await walk(full);
+      } else if (entry.name.endsWith('.md') && !entry.name.startsWith(PRIVATE_DOC_PREFIX)) {
+        files.push(full);
+      }
     }
   };
   await walk(resolve(ROOT, 'docs'));

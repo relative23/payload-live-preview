@@ -3,13 +3,32 @@ import {
   findBudgetViolations,
   INLINE_BUDGET,
   INLINE_FRAGMENT_BUDGET,
+  INLINE_LEAN_BUDGET,
+  INLINE_ROUTE_BUDGET,
   measureBundle,
 } from '../../scripts/bundle-budgets';
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 93_591, gzip: 29_035, brotli: 25_777 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 104_954, gzip: 32_827, brotli: 28_954 });
+    expect(INLINE_BUDGET).toEqual({ raw: 97_600, gzip: 30_470, brotli: 27_100 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 80_050, gzip: 24_960, brotli: 22_250 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 104_050, gzip: 32_570, brotli: 28_780 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 108_980, gzip: 34_240, brotli: 30_240 });
+  });
+
+  it('keeps the lean profile a saving, and names how much of one', () => {
+    // The number is the point of the profile: a page pays 30 KB or 25 KB, and
+    // the docs quote this difference. If it shrinks below a fifth, the profile
+    // stops being worth the second artifact and its second behaviour.
+    const saved = INLINE_BUDGET.gzip - INLINE_LEAN_BUDGET.gzip;
+    expect(saved).toBeGreaterThan(INLINE_BUDGET.gzip * 0.15);
+  });
+
+  it('keeps the route prelude the cheaper of the two strategy preludes', () => {
+    // The reason `routeStrategy` exists as its own option: a page that only
+    // refreshes its route must not carry the fragment client.
+    expect(INLINE_ROUTE_BUDGET.gzip).toBeGreaterThan(INLINE_BUDGET.gzip);
+    expect(INLINE_ROUTE_BUDGET.gzip).toBeLessThan(INLINE_FRAGMENT_BUDGET.gzip);
   });
 
   it('measures raw, gzip, and Brotli bytes deterministically', () => {

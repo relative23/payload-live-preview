@@ -9,6 +9,7 @@ dist/
 src/inline/runtime.generated.ts
 src/inline/loader.generated.ts
 src/inline/fragment.generated.ts
+src/inline/route.generated.ts
 
 # IDE
 .idea/

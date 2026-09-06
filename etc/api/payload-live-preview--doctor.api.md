@@ -4,18 +4,18 @@
 
 ```ts
 
-import { e as DIAGNOSTIC_CODES } from './probe-CYtvj_Lm.js';
-import { f as DiagnosticCode } from './probe-CYtvj_Lm.js';
-import { b as DoctorContext } from './probe-CYtvj_Lm.js';
-import { D as DoctorFetch } from './probe-CYtvj_Lm.js';
-import { d as DoctorFinding } from './probe-CYtvj_Lm.js';
-import { g as DoctorLevel } from './probe-CYtvj_Lm.js';
-import { a as DoctorProbe } from './probe-CYtvj_Lm.js';
-import { c as DoctorReport } from './probe-CYtvj_Lm.js';
-import { h as DoctorResponse } from './probe-CYtvj_Lm.js';
-import { l as lowercaseHeaders } from './probe-CYtvj_Lm.js';
-import { r as runDoctor } from './probe-CYtvj_Lm.js';
-import { R as RunDoctorOptions } from './probe-CYtvj_Lm.js';
+import { e as DIAGNOSTIC_CODES } from './probe-ABxs2_gb.js';
+import { f as DiagnosticCode } from './probe-ABxs2_gb.js';
+import { b as DoctorContext } from './probe-ABxs2_gb.js';
+import { D as DoctorFetch } from './probe-ABxs2_gb.js';
+import { d as DoctorFinding } from './probe-ABxs2_gb.js';
+import { g as DoctorLevel } from './probe-ABxs2_gb.js';
+import { a as DoctorProbe } from './probe-ABxs2_gb.js';
+import { c as DoctorReport } from './probe-ABxs2_gb.js';
+import { h as DoctorResponse } from './probe-ABxs2_gb.js';
+import { l as lowercaseHeaders } from './probe-ABxs2_gb.js';
+import { r as runDoctor } from './probe-ABxs2_gb.js';
+import { R as RunDoctorOptions } from './probe-ABxs2_gb.js';
 
 // @public
 export function analyzeProbe(probe: DoctorProbe, context: DoctorContext & {

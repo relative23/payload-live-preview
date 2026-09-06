@@ -1,15 +1,16 @@
 /**
- * Wraps the build-time runtime IIFE with the consumer's configuration; a page
- * with a fragment endpoint gets the fragment prelude ahead of it.
+ * Wraps the build-time runtime IIFE with the consumer's configuration, and
+ * places at most one strategy prelude ahead of it.
  */
 
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
 import { FRAGMENT_SOURCE } from './fragment.generated';
+import { ROUTE_SOURCE } from './route.generated';
 import { LOADER_SOURCE } from './loader.generated';
 import { INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/types/inline-config';
 
-export type { InlineScriptConfig } from '@/types/inline-config';
+export type { InlineScriptConfig, RuntimeArtifact } from '@/types/inline-config';
 
 function assertBuilt(source: string, artifact: string): void {
   if (source.length === 0) {
@@ -21,14 +22,47 @@ function assertBuilt(source: string, artifact: string): void {
 
 /** The inline script body without `<script>` tags; see `wrapWithScriptTag()`. */
 export function generateInlineScript(config: InlineScriptConfig = {}): string {
-  assertBuilt(RUNTIME_SOURCE, 'runtime.generated.ts');
-  return [configStatement(config), ...fragmentPrelude(config), RUNTIME_SOURCE].join('\n');
+  const runtime = runtimeFor(config);
+  return [configStatement(config), ...strategyPrelude(config), runtime].join('\n');
 }
 
-function fragmentPrelude(config: InlineScriptConfig): readonly string[] {
-  if (config.fragmentEndpoint == null) return [];
-  assertBuilt(FRAGMENT_SOURCE, 'fragment.generated.ts');
-  return [FRAGMENT_SOURCE];
+/**
+ * The full runtime, or the artifact the consumer imported. The lean one leaves
+ * out the strategies (docs/options.md), so the two preludes are refused with it
+ * rather than emitted against a runtime that could never answer them.
+ */
+function runtimeFor(config: InlineScriptConfig): string {
+  const artifact = config.runtime;
+  if (artifact === undefined) {
+    assertBuilt(RUNTIME_SOURCE, 'runtime.generated.ts');
+    return RUNTIME_SOURCE;
+  }
+  assertBuilt(artifact.source, `the ${artifact.profile} runtime`);
+  if (config.fragmentEndpoint != null || config.routeStrategy === true) {
+    throw new Error(
+      `[live-preview] the ${artifact.profile} runtime and the fragment or route strategy exclude ` +
+        'each other: it carries no strategy runner, so the prelude would have nothing to talk to. ' +
+        'Drop the runtime option, or drop `fragmentEndpoint`/`routeStrategy`.',
+    );
+  }
+  return artifact.source;
+}
+
+/**
+ * At most one prelude, and the fragment one wins: it already contains the
+ * route strategy, so emitting both would ship that code twice and leave two
+ * globals where the runtime expects the fragment one to be authoritative.
+ */
+function strategyPrelude(config: InlineScriptConfig): readonly string[] {
+  if (config.fragmentEndpoint != null) {
+    assertBuilt(FRAGMENT_SOURCE, 'fragment.generated.ts');
+    return [FRAGMENT_SOURCE];
+  }
+  if (config.routeStrategy === true) {
+    assertBuilt(ROUTE_SOURCE, 'route.generated.ts');
+    return [ROUTE_SOURCE];
+  }
+  return [];
 }
 
 // `__LIVE_PREVIEW_CONFIG__` is a public presence signal: consumers' integration
@@ -75,14 +109,14 @@ export function generateLoaderScript(
     configStatement(config),
     `var __LP_RUNTIME_SRC__=${encode(target.runtimeSrc)};`,
     `var __LP_RUNTIME_INTEGRITY__=${encode(target.integrity ?? '')};`,
-    ...fragmentPrelude(config),
+    ...strategyPrelude(config),
     LOADER_SOURCE,
   ].join('\n');
 }
 
 /** Wrap a script body in `<script>`, with the CSP nonce attribute when given. */
 export function wrapWithScriptTag(body: string, options: { nonce?: string } = {}): string {
-  const nonceAttr = options.nonce !== undefined ? ` nonce="${escapeNonce(options.nonce)}"` : '';
+  const nonceAttr = options.nonce !== undefined ? ` nonce="${assertNonce(options.nonce)}"` : '';
   return `<script${nonceAttr}>${body}</script>`;
 }
 
@@ -90,9 +124,14 @@ export function runtimeBuildInfo(): RuntimeBuildInfo {
   return RUNTIME_BUILD_INFO;
 }
 
-function escapeNonce(nonce: string): string {
+/**
+ * A nonce as CSP defines it: base64url characters only. Returned unchanged so
+ * a caller can inline the result. Not re-exported from the package barrel — it
+ * is shared with the adapters, not part of the public surface.
+ */
+export function assertNonce(nonce: string): string {
   if (!/^[A-Za-z0-9+/=_-]+$/.test(nonce)) {
-    throw new RangeError('wrapWithScriptTag: nonce contains invalid characters');
+    throw new RangeError('nonce contains characters CSP does not allow');
   }
   return nonce;
 }

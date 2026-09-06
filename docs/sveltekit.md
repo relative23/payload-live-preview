@@ -96,6 +96,41 @@ export const load: PageServerLoad = async ({ locals, params, request }) => {
 </section>
 ```
 
+## Server-rendered boundaries
+
+A patch reaches what the markup annotates. It cannot create a section the
+template renders only when a field is set, and it cannot run a component's own
+logic. For those, mark the region as a fragment boundary and let the server
+render it from the unsaved form state:
+
+```ts
+// src/routes/payload/fragment/+server.ts
+import { createFragmentEndpoint } from 'payload-live-preview/sveltekit';
+import Hero from '$lib/Hero.svelte';
+import { heroProps } from '$lib/hero';
+import { authorizePreview } from '$lib/authorize-preview';
+
+export const POST = createFragmentEndpoint({
+  authorizePreview,
+  registry: { hero: { component: Hero, props: ({ fields }) => heroProps(fields) } },
+});
+```
+
+Point the script at it — `fragments: { endpoint: '/payload/fragment' }` in the
+handle's options — and mark the region with
+`{...preview.boundary('hero', { dependsOn: ['title', 'subtitle'] })}`, which is
+gated on the same verdict as `preview.bind()`.
+
+Svelte renders through `render()` from `svelte/server`, and the endpoint
+delivers its `body`: `<svelte:head>` output belongs to the document head, which
+the route strategy owns. `svelte` is an optional peer, imported at the first
+render.
+
+A page built around boundaries usually wants `export const csr = false` on that
+route: the runtime writes into the DOM, and a component hydrating afterwards can
+reset what was patched (the caveat below). Registry, limits, the fallback and
+the abuse model: [hybrid.md](hybrid.md).
+
 ## Caveats
 
 - **Hydration.** A component that re-renders a bound element from its own state overwrites the live patch. Bind fields in server-rendered markup, and mark a client-owned root with `data-payload-island` so the runtime never patches or morphs into it ([renderers.md](renderers.md)).
@@ -111,7 +146,7 @@ export const load: PageServerLoad = async ({ locals, params, request }) => {
 
 ## Example
 
-[`examples/sveltekit-payload`](../examples/sveltekit-payload) — `livePreviewHandle()` with the `signed-token` strategy and owner-scoped bindings on SvelteKit 2, run in Chromium, Firefox and WebKit.
+[`examples/sveltekit-payload`](../examples/sveltekit-payload) — `livePreviewHandle()` with the `signed-token` strategy and owner-scoped bindings on SvelteKit 2, and `/hybrid` with its endpoint at `src/routes/payload/fragment/+server.ts`. Run in Chromium, Firefox and WebKit.
 
 ## When something does not update
 

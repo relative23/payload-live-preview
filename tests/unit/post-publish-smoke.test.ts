@@ -25,6 +25,11 @@ describe('published subpath classification', () => {
       './codegen',
       './codegen/astro',
     ]);
+    // A hook imports its framework at module scope, so the smoke installs it.
+    expect(classified.filter(([, kind]) => kind === 'needs-peer').map(([e]) => e)).toEqual([
+      './react',
+      './vue',
+    ]);
   });
 
   it('refuses a subpath the table does not classify', () => {

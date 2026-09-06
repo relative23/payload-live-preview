@@ -2,8 +2,9 @@
 
 import { detectInitialLocale } from '@detection/locale';
 import { getNumberFormat } from '@core/intl-cache';
-import type { FieldRenderer, RenderContext } from '@core/types';
+import type { CachedElement, FieldRenderer, RenderContext } from '@core/types';
 import { isEmptyValue, safeStringify } from './utils';
+import { formatOptionsFor } from './value-format';
 
 const numberRenderer: FieldRenderer = {
   name: 'number',
@@ -23,15 +24,17 @@ const numberRenderer: FieldRenderer = {
       (element as HTMLInputElement).value = String(num);
       return;
     }
-    element.textContent = format(num, context);
+    element.textContent = format(num, target, context);
   },
 };
 
-function format(num: number, context: RenderContext): string {
-  const locale = context.locale ?? detectInitialLocale();
+function format(num: number, target: CachedElement, context: RenderContext): string {
+  const locale = target.locale ?? context.locale ?? detectInitialLocale();
+  const options = formatOptionsFor('number', target.format, target.element, target.fieldName);
   try {
-    return getNumberFormat(locale).format(num);
+    return getNumberFormat(locale, options).format(num);
   } catch {
+    // An `Intl` option this build rejects — an unknown currency, say.
     return String(num);
   }
 }

@@ -20,6 +20,7 @@ export const DUAL_FORMAT_ENTRIES = {
  * `<entry>.d.ts` self-contained.
  */
 export const STANDALONE_ENTRIES = {
+  lean: 'src/lean.ts',
   server: 'src/server/index.ts',
   client: 'src/client-entry.ts',
   structural: 'src/structural-entry.ts',
@@ -45,4 +46,17 @@ export const ESM_ONLY_ENTRIES = {
   'adapters/nextjs/index': 'src/adapters/nextjs/index.ts',
   'adapters/sveltekit/index': 'src/adapters/sveltekit/index.ts',
   'adapters/nuxt/index': 'src/adapters/nuxt/index.ts',
+  'adapters/vue/index': 'src/adapters/vue/index.ts',
+} as const;
+
+/**
+ * Entries whose published file must start with a framework directive.
+ *
+ * The directive cannot live in the source: esbuild drops a module-level one
+ * when it bundles, and a `banner` is dropped with it. `scripts/build-dist.ts`
+ * therefore writes it back through terser's `preamble`, which also shifts the
+ * source map for it. These entries are built with the other ESM-only ones.
+ */
+export const DIRECTIVE_ENTRIES = {
+  'adapters/react/index': { source: 'src/adapters/react/index.ts', directive: "'use client';" },
 } as const;

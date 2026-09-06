@@ -127,4 +127,40 @@ describe('createPreviewBindings — request scoping', () => {
       expect(bindings.bind('title')).toEqual({});
     }
   });
+
+  describe('boundary', () => {
+    it('marks a server-rendered boundary with the fields that re-render it', () => {
+      const preview = createPreviewBindings({ authorization: ctx });
+
+      expect(preview.boundary('hero', { dependsOn: ['title', 'subtitle'] })).toEqual({
+        'data-payload-fragment': 'hero',
+        'data-payload-depends': 'title,subtitle',
+      });
+      expect(preview.boundary('hero')).toEqual({ 'data-payload-fragment': 'hero' });
+      expect(preview.boundary('row', { key: 'b1' })).toEqual({
+        'data-payload-fragment': 'row',
+        'data-payload-fragment-key': 'b1',
+      });
+    });
+
+    it('emits nothing while unauthorized: the id and its fields are the content model too', () => {
+      const anonymous = createPreviewBindings({ authorization: null });
+
+      expect(anonymous.boundary('hero', { dependsOn: ['title'] })).toEqual({});
+    });
+
+    it('refuses an id the endpoint would refuse, authorized or not', () => {
+      // A boundary that never renders is silent in the browser; here it is loud.
+      for (const preview of [
+        createPreviewBindings({ authorization: ctx }),
+        createPreviewBindings({ authorization: null }),
+      ]) {
+        expect(() => preview.boundary('Hero')).toThrow(RangeError);
+        expect(() => preview.boundary('2fast')).toThrow(RangeError);
+        expect(() => preview.boundary('hero/../etc')).toThrow(RangeError);
+        expect(() => preview.boundary('hero', { key: '' })).toThrow(RangeError);
+        expect(() => preview.boundary('hero', { key: 'k'.repeat(129) })).toThrow(RangeError);
+      }
+    });
+  });
 });

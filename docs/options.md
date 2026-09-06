@@ -41,7 +41,9 @@ always wins. The ledger of what changed is
 | `disableReferrerDetection` | yes    | yes           | yes                                                      | —                        | `true`                                              | `false`                              |
 | `disableLocalhostMatching` | yes    | yes           | yes                                                      | —                        | `false`                                             | same                                 |
 | `strategies`               | yes    | —             | —                                                        | —                        | — (patch only)                                      | same                                 |
-| `fragmentEndpoint`         | —      | yes           | as `fragments: { endpoint }`, Astro                      | —                        | — (no fragment client)                              | same                                 |
+| `fragmentEndpoint`         | —      | yes           | as `fragments: { endpoint }`                             | —                        | — (no fragment client)                              | same                                 |
+| `routeStrategy`            | —      | yes           | yes                                                      | —                        | `false`                                             | same                                 |
+| `onUnboundChange`          | yes    | yes           | yes                                                      | —                        | `'ignore'`                                          | same                                 |
 | `resolveRenderer`          | yes    | —             | —                                                        | —                        | —                                                   | same                                 |
 | `renderRichText`           | yes    | —             | —                                                        | —                        | built-in Lexical renderer                           | same                                 |
 | `root`                     | yes    | —             | —                                                        | —                        | `document`                                          | same                                 |
@@ -88,9 +90,36 @@ Notes on the rows that need one:
 - `manageCsp: 'full'` also manages a nonce'd `script-src`; `strictDynamic`
   adds `'strict-dynamic'`, after which CSP 3 ignores `'self'` and host
   sources, so every script on the page must carry the nonce.
+- `runtime` chooses which artifact the page carries. The default is the full
+  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is 24 763 bytes gzip
+  against 30 253 — it leaves out the fragment and route strategies, the keyed
+  morph, the structural arrays, the item templates and the screen-reader
+  announcer, and reports LP0104 when a page needs one of them rather than doing
+  nothing. It is an import rather than a string option so the second artifact
+  lands only in builds that ask for it:
+
+  ```ts
+  import { LEAN_RUNTIME } from 'payload-live-preview/lean';
+
+  livePreview({ runtime: LEAN_RUNTIME, allowedOrigins: [ADMIN] });
+  ```
+
+  The strategies and the lean runtime exclude each other, and the generator says
+  so rather than emitting a prelude with nothing to talk to.
+
 - `fragmentEndpoint` / `fragments` put the fragment client ahead of the runtime
-  in the injected script; the other adapters' option types do not carry it.
-  `LivePreviewClient` takes `strategies` instead ([docs/hybrid.md](hybrid.md)).
+  in the injected script. Every adapter takes `fragments`: the option names a
+  same-origin path the runtime posts to, and which framework serves that path
+  is the endpoint's business, not the option's. `LivePreviewClient` takes
+  `strategies` instead ([docs/hybrid.md](hybrid.md)).
+- `routeStrategy` puts the route strategy alone ahead of the runtime, for a page
+  that wants a route refresh without a fragment endpoint. `fragmentEndpoint`
+  implies it and the two are never emitted together, because the fragment
+  prelude already carries the route strategy.
+- `onUnboundChange: 'route'` refreshes the route when a revision changes a field
+  the page has no binding for, instead of leaving the edit invisible. It needs a
+  route strategy and skips the connection's first message
+  ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
 - `dependencies` and `data-payload-depends` say the same thing from two sides;
   both matter only under `skipUnchanged`. `revealEditedField` is described in
   [docs/reveal.md](reveal.md), `scopeBindingsByOwner` in
@@ -132,6 +161,9 @@ are ESM-only; the rest ship ESM and CommonJS builds.
 | `payload-live-preview/server`                        | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `bind()`. |
 | `payload-live-preview/payload`                       | `buildLivePreviewUrl()` for `payload.config.ts`; imports nothing from `payload`.                            |
 | `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | One framework adapter each.                                                                                 |
+| `payload-live-preview/react`                         | `useLivePreviewDocument()`: the merged document as a hook (needs `react`).                                  |
+| `payload-live-preview/vue`                           | The same as a composable (needs `vue`).                                                                     |
+| `payload-live-preview/lean`                          | `LEAN_RUNTIME`: the smaller runtime artifact, as a value for the `runtime` option.                          |
 | `payload-live-preview/astro/RichText.astro`          | The `RichText` component.                                                                                   |
 | `payload-live-preview/astro/PreviewBoundary.astro`   | The `PreviewBoundary` component.                                                                            |
 | `payload-live-preview/codegen`                       | Type generation from a Payload config (needs `ts-morph`).                                                   |

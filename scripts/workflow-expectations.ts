@@ -6,7 +6,6 @@ import {
   BUILD_RUNTIME,
   NPM_CI,
   NPM_VERSION,
-  READ_ONLY,
   SETUP,
   SETUP_NODE,
   sourceDate,
@@ -164,7 +163,8 @@ const CODSPEED: WorkflowSpec = {
 
 const PROTOCOL_WATCH: WorkflowSpec = {
   name: 'Protocol Watch',
-  permissions: READ_ONLY,
+  // The one workflow that may write an issue, and only that.
+  permissions: { contents: 'read', issues: 'write' },
   jobs: {
     'protocol-watch': {
       continueOnError: '${{ matrix.soft-fail }}',
@@ -173,6 +173,12 @@ const PROTOCOL_WATCH: WorkflowSpec = {
         {
           run: 'npx tsx scripts/check-protocol-drift.ts',
           env: { PROTOCOL_WATCH_PACKAGE: '@payloadcms/live-preview@${{ matrix.dist-tag }}' },
+        },
+        {
+          name: 'File the drift as an issue',
+          run: 'npx tsx scripts/report-protocol-drift.ts',
+          condition: "failure() && matrix.dist-tag == 'latest'",
+          env: { GH_TOKEN: '${{ github.token }}' },
         },
       ],
     },

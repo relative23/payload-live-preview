@@ -34,6 +34,8 @@ export interface UpdateTransaction {
   readonly forceRender: boolean;
   /** Top-level fields whose value changed since the previous message, plus their dependents. */
   touched: ReadonlySet<string>;
+  /** The connection's first message, where every field counts as changed. */
+  baseline: boolean;
   /** Dependents of changed fields; re-applied even when their own value is unchanged. */
   invalidated: ReadonlySet<string>;
   /**
@@ -83,6 +85,8 @@ export interface RuntimeDeps {
   readonly dependencies: Readonly<Record<string, readonly string[]>>;
   readonly strategies: StrategyHandlers;
   readonly revealEditedField: boolean;
+  /** `'route'` turns a change with no binding into a route refresh. */
+  readonly onUnboundChange: 'ignore' | 'route';
 }
 
 export class RuntimeState {
@@ -105,6 +109,8 @@ export class RuntimeState {
   warnedUnattributableMessage = false;
   warnedVisibilityGate = false;
   warnedFragmentFallback = false;
+  /** LP0503 is reported once: a drifting sender repeats the same shape on every keystroke. */
+  warnedProtocolShape = false;
   /** Identity of the value each element last applied; reset when the markup is re-rendered. */
   lastAppliedIdentity = new WeakMap<Element, string>();
   /** What each owned field was last seen with, for the reveal decision only. */

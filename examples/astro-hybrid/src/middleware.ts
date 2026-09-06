@@ -46,21 +46,44 @@ const establishPreviewToken = defineMiddleware(async (context, next) => {
   return next();
 });
 
-// The page injects the runtime on preview intent; authorization is the
-// fragment endpoint's, satisfied by the URL token (bench, and the real admin
-// after the redirect above).
+// The page injects on intent and does not gate injection on authorization —
+// the real cross-origin admin shares no session with this fixture, and
+// authorization lives at the fragment endpoint instead. `defaults: 'v1'`
+// keeps injection ungated (2.0's strict default would require
+// authorizePreview here); the endpoint stays strict via its own strategy.
+const COMMON = {
+  defaults: 'v1',
+  allowedOrigins: ADMIN_ORIGINS,
+  debug: true,
+  debounceMs: 25,
+} as const;
+
+/** Every route but `/unbound`: the fragment client, and no route fallback. */
+const withFragments = createLivePreviewMiddleware({
+  ...COMMON,
+  fragments: { endpoint: '/payload/fragment' },
+});
+
+/**
+ * `/unbound` alone: the route strategy without a fragment endpoint, and the
+ * fallback that refreshes the route when a revision changes a field the page
+ * has no binding for.
+ *
+ * A second middleware rather than one option more on the first: adapter options
+ * are per site, and turning the fallback on for every route would change what
+ * the fragment spec measures — a route refresh where it expects a patch.
+ */
+const withRouteFallback = createLivePreviewMiddleware({
+  ...COMMON,
+  routeStrategy: true,
+  onUnboundChange: 'route',
+});
+
 export const onRequest = sequence(
   establishPreviewToken,
-  createLivePreviewMiddleware({
-    // The page injects on intent and does not gate injection on authorization —
-    // the real cross-origin admin shares no session with this fixture, and
-    // authorization lives at the fragment endpoint instead. `defaults: 'v1'`
-    // keeps injection ungated (2.0's strict default would require
-    // authorizePreview here); the endpoint stays strict via its own strategy.
-    defaults: 'v1',
-    allowedOrigins: ADMIN_ORIGINS,
-    fragments: { endpoint: '/payload/fragment' },
-    debug: true,
-    debounceMs: 25,
-  }),
+  defineMiddleware((context, next) =>
+    context.url.pathname.startsWith('/unbound')
+      ? withRouteFallback(context, next)
+      : withFragments(context, next),
+  ),
 );

@@ -6,8 +6,9 @@
 
 import { detectInitialLocale } from '@detection/locale';
 import { getDateTimeFormat } from '@core/intl-cache';
-import type { FieldRenderer, RenderContext } from '@core/types';
+import type { CachedElement, FieldRenderer, RenderContext } from '@core/types';
 import { isEmptyValue, safeStringify } from './utils';
+import { formatOptionsFor } from './value-format';
 
 const dateRenderer: FieldRenderer = {
   name: 'date',
@@ -34,14 +35,22 @@ const dateRenderer: FieldRenderer = {
     if (element.tagName === 'TIME') {
       element.setAttribute('datetime', valid ? date.toISOString() : fallback);
     }
-    element.textContent = valid ? formatDate(date, context) : fallback;
+    element.textContent = valid ? formatDate(date, target, context) : fallback;
   },
 };
 
-function formatDate(date: Date, context: RenderContext): string {
-  const locale = context.locale ?? detectInitialLocale();
+const DEFAULT_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+};
+
+function formatDate(date: Date, target: CachedElement, context: RenderContext): string {
+  const locale = target.locale ?? context.locale ?? detectInitialLocale();
+  const options =
+    formatOptionsFor('date', target.format, target.element, target.fieldName) ??
+    DEFAULT_DATE_OPTIONS;
   try {
-    return getDateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+    return getDateTimeFormat(locale, options).format(date);
   } catch {
     return date.toISOString();
   }

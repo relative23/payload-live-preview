@@ -50,6 +50,7 @@ export {
   wrapWithScriptTag,
   runtimeBuildInfo,
   type InlineScriptConfig,
+  type RuntimeArtifact,
 } from './inline/generator';
 
 // Security primitives (consumers building their own CSP)
@@ -198,6 +199,8 @@ export type {
   FieldBindingAttributes,
   FieldName,
   FieldPath,
+  FragmentBoundaryAttributes,
+  FragmentBoundaryOptions,
   OwnerBindingAttributes,
   PreviewBindings,
   PreviewBindingsOptions,

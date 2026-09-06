@@ -95,9 +95,53 @@ const bindings = useState('preview-bindings', () => {
 
 On a public response the helpers return empty objects, and the markup carries no `data-payload-*` attribute at all. The initial draft read is server code — `definePreview()` from `payload-live-preview/server` — and a Nitro route that serves the page's data is its own request, so it authorizes that request with the same strategy; [authorization.md](authorization.md) has the read.
 
+## Server-rendered boundaries
+
+A patch reaches what the markup annotates. It cannot create a section the
+template renders only when a field is set, and it cannot run a component's own
+logic. For those, mark the region as a fragment boundary and let the server
+render it from the unsaved form state:
+
+```ts
+// server/routes/payload/fragment.post.ts
+import { createFragmentEndpoint } from 'payload-live-preview/nuxt';
+import Hero from '../../../components/Hero.vue';
+import { heroProps } from '../../../lib/hero';
+
+const endpoint = createFragmentEndpoint({
+  authorize: { type: 'signed-token', secret: TOKEN_SECRET, audience: SITE_ORIGIN },
+  registry: { hero: { component: Hero, props: ({ fields }) => heroProps(fields) } },
+});
+
+export default defineEventHandler((event) => endpoint(toWebRequest(event)));
+```
+
+The binding takes a `Request`, which is what `toWebRequest()` makes of the H3
+event; this package therefore needs no `h3` dependency to describe its own
+signature. Point the script at the route — `fragments: { endpoint:
+'/payload/fragment' }` in the plugin's options — and mark the region with
+`data-payload-fragment="hero"`.
+
+Vue renders through `renderToString()` from `vue/server-renderer`, one SSR app
+per render. `vue` is an optional peer imported at the first render.
+
+The component is rendered inside the Nitro bundle, and Nitro's rollup does not
+know single-file components. Add the plugin once:
+
+```ts
+// nuxt.config.ts
+import vue from '@vitejs/plugin-vue';
+export default defineNuxtConfig({ nitro: { rollupConfig: { plugins: [vue()] } } });
+```
+
+Without it the server build fails on the first `.vue` import from `server/`. The
+alternative is a `defineComponent` in a `.ts` file, which Nitro reads as it is.
+Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
+
 ## Caveats
 
 - **Hydrated components.** The runtime patches the server-rendered markup. A Vue component that re-renders a bound node overwrites the patch: bind fields in server-rendered regions, mark a client-owned root with `data-payload-island` ([renderers.md](renderers.md)), or use the official `@payloadcms/live-preview-vue` composable inside client components.
+- **Hydration and boundaries.** The same applies to a fragment boundary, with one extra wrinkle: hydration resets what Vue owns, so a boundary the server re-rendered _before_ the page finished hydrating is thrown away — the runtime rendered it, `inspect().fragments.rendered` counts it, and the markup is gone. Once hydrated, Vue is idle and a morph survives. Put boundaries in markup Vue does not own (a server component, or a region marked `data-payload-island` for the runtime to own alone) if an update can arrive that early.
 - **Array templates.** Vue reads `{{ … }}` as its own interpolation, so an inline template is silently empty. Bind it as a string:
 
 ```vue
@@ -112,7 +156,7 @@ const template = '<li><a data-payload-href="url">{{title}}</a></li>';
 
 ## Example
 
-[`examples/nuxt-payload`](../examples/nuxt-payload) — `livePreviewNitroPlugin()` on Nuxt 3, run in Chromium, Firefox and WebKit.
+[`examples/nuxt-payload`](../examples/nuxt-payload) — `livePreviewNitroPlugin()` on Nuxt 3, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
 
 ## When something does not update
 

@@ -16,7 +16,7 @@ The runtime is framework-agnostic: one script drives Astro, SvelteKit, Nuxt, Nex
 
 ## Highlights
 
-- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 29 KB gzip; the adapters for Astro, Next.js, SvelteKit and Nuxt only decide when to deliver it.
+- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 30 KB gzip — 25 KB with the lean artifact ([docs/options.md](docs/options.md)); the adapters for Astro, Next.js, SvelteKit and Nuxt only decide when to deliver it.
 - **Payload 3.x native.** `serverURL` re-fetches the populated document after every edit, like the official client, so relationship and upload fields render as content rather than as IDs.
 - **Complete Lexical renderer.** 16 node types including `upload`, `relationship`, `block`, `autolink`, tabs, indent and RTL, with automatic rich-text detection: `data-payload-field` alone is enough.
 - **Authorization before anything privileged.** Draft reads, runtime injection, CSP changes and binding attributes follow one verified decision per request; the client-controlled intent signals never unlock anything.
@@ -50,7 +50,7 @@ Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Ever
 
 <!-- compat-matrix:end -->
 
-**When to use the official packages instead.** A client-rendered React or Vue app is better served by [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue`: they re-render your real component tree and ship in lockstep with Payload. This package covers everything those hooks cannot: Astro, static and server-rendered pages, SvelteKit and Nuxt markup, plain HTML. What is shared, what is not, and running both on one page: [docs/interop.md](docs/interop.md).
+**A client-rendered app wants a hook.** `payload-live-preview/react` and `payload-live-preview/vue` are ones: `useLivePreviewDocument()` returns the merged document and re-renders your tree, with this package's merge underneath — one request at a time, the newer answer winning, an HTTP error refused instead of becoming the document, and a cache per call ([docs/react.md](docs/react.md), [docs/vue.md](docs/vue.md)). The official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` hooks ship in lockstep with Payload and remain the safe default if that matters more to you; running either alongside the DOM runtime on one page: [docs/interop.md](docs/interop.md).
 
 ## Install
 
@@ -137,7 +137,7 @@ That is it: the inline script detects the admin's iframe and starts patching. Ri
 
 ## Patch, fragment, route
 
-A binding is patched in place by default. A `data-payload-fragment` boundary is rendered by your server from the unsaved form state instead — conditional sections, derived values, custom blocks, the component's own logic — and morphed in with focus and visitor state intact; the runtime posts the fields to a same-origin endpoint built with `createFragmentEndpoint()` and patches the boundary's own bindings when the server cannot render. A binding in `<head>`, or one marked `data-payload-strategy="route"`, refreshes the whole route once per revision with scroll and focus kept. Markup, endpoint, deployment requirements and the abuse model: [docs/hybrid.md](docs/hybrid.md).
+A binding is patched in place by default. A `data-payload-fragment` boundary is rendered by your server from the unsaved form state instead — conditional sections, derived values, custom blocks, the component's own logic — and morphed in with focus and visitor state intact; the runtime posts the fields to a same-origin endpoint built with `createFragmentEndpoint()`, which every adapter entry exports — Astro renders through its container API, Next.js through `react-dom/server`, SvelteKit through `svelte/server`, Nuxt through `vue/server-renderer` — and patches the boundary's own bindings when the server cannot render. A binding in `<head>`, or one marked `data-payload-strategy="route"`, refreshes the whole route once per revision with scroll and focus kept. Markup, endpoint, deployment requirements and the abuse model: [docs/hybrid.md](docs/hybrid.md).
 
 ## Events and plugins
 
@@ -176,7 +176,7 @@ Full details in [docs/security.md](docs/security.md). Report vulnerabilities per
 
 The reading path, with a glossary: [docs/README.md](docs/README.md).
 
-- Framework guides: [Astro](docs/astro.md) · [Next.js](docs/nextjs.md) · [SvelteKit](docs/sveltekit.md) · [Nuxt](docs/nuxt.md) · [Plain HTML](docs/html.md)
+- Framework guides: [Astro](docs/astro.md) · [Next.js](docs/nextjs.md) · [SvelteKit](docs/sveltekit.md) · [Nuxt](docs/nuxt.md) · [Plain HTML](docs/html.md) · [React hook](docs/react.md) · [Vue composable](docs/vue.md)
 - [docs/bindings.md](docs/bindings.md) — data attributes, field types, owners, typed bindings and codegen
 - [docs/options.md](docs/options.md) — package entries, every option and its default, Payload 3.x population
 - [docs/authorization.md](docs/authorization.md) — strategies, signed tokens, the initial draft read

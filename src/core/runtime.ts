@@ -9,7 +9,7 @@
 import { type INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/types/inline-config';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from './lifecycle';
-import type { FragmentStrategy, RouteStrategy } from './strategies';
+import { resolveStrategyPreludes } from './strategy-preludes';
 import { OriginDetector } from '@detection/origin';
 import { isInPreviewContext, isInIframe, isInPopup } from '@detection/environment';
 import { bindNavigationLifecycle } from './navigation-lifecycle';
@@ -25,13 +25,6 @@ type ConfigTupleOf<K extends readonly (keyof InlineScriptConfig)[]> = {
 type RuntimeBuildConfig = ConfigTupleOf<typeof INLINE_CONFIG_KEYS>;
 
 declare const __LIVE_PREVIEW_CONFIG__: RuntimeBuildConfig;
-/** Left by the fragment prelude; looked up by `typeof` so a page without it carries none of that client. */
-declare const __LIVE_PREVIEW_FRAGMENT__:
-  | {
-      createFragmentStrategy: (options: { endpoint: string }) => FragmentStrategy;
-      createRouteStrategy: () => RouteStrategy;
-    }
-  | undefined;
 
 import { buildBuiltinRenderers } from '@field-types/index';
 
@@ -85,18 +78,13 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     sanitizerPolicy = 'strict',
     fragmentEndpoint,
     revealEditedField = false,
+    _routeStrategy = false,
+    onUnboundChange = 'ignore',
   ] = readBuildConfig();
-  const strategies =
-    typeof __LIVE_PREVIEW_FRAGMENT__ !== 'undefined' &&
-    typeof fragmentEndpoint === 'string' &&
-    fragmentEndpoint.length > 0
-      ? {
-          fragment: __LIVE_PREVIEW_FRAGMENT__.createFragmentStrategy({
-            endpoint: fragmentEndpoint,
-          }),
-          route: __LIVE_PREVIEW_FRAGMENT__.createRouteStrategy(),
-        }
-      : undefined;
+  // `routeStrategy` is destructured only to hold its wire slot: it decides
+  // which prelude the generator emitted, and the prelude's presence is what the
+  // runtime can observe.
+  const strategies = resolveStrategyPreludes(fragmentEndpoint);
 
   const detector = new OriginDetector({
     additionalOrigins,
@@ -144,6 +132,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     scopeBindingsByOwner,
     skipUnchanged,
     revealEditedField,
+    onUnboundChange,
     sanitizerPolicy,
     ...(strategies !== undefined ? { strategies } : {}),
     onHeartbeatTimeout: () => {

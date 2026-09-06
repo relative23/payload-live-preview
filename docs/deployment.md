@@ -107,6 +107,28 @@ Two things behave differently where `process` does not exist:
 `pll doctor`, `pll migrate` and `pll-codegen` are Node command-line tools and
 are not part of the deployed application.
 
+## A smaller runtime for pages that need less
+
+Every page that carries the runtime carries 30 253 bytes gzip of it. A site
+whose preview needs neither server-rendered boundaries nor keyed arrays can
+carry 24 763 instead:
+
+```ts
+import { LEAN_RUNTIME } from 'payload-live-preview/lean';
+
+livePreview({ runtime: LEAN_RUNTIME, allowedOrigins: [ADMIN] });
+```
+
+What it leaves out — the fragment and route strategies, the keyed morph, the
+structural arrays, the item templates, the screen-reader announcer — and what a
+page is told when it needs one anyway (LP0104): [options.md](options.md) and
+[troubleshooting.md](troubleshooting.md). Everything else is the same runtime:
+the same message bus, the same origin rules, the same merge, the same renderers
+for text, numbers, dates, images, uploads, relationships and rich text.
+
+The import is what puts the artifact in your build, so a project that stays on
+the default ships nothing extra.
+
 ## A static site with the fragment endpoint as a service
 
 A hybrid preview renders `data-payload-fragment` boundaries on the server, and

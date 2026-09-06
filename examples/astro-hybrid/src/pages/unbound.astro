@@ -1,0 +1,29 @@
+---
+/**
+ * The route fallback for a change nothing binds (`onUnboundChange: 'route'`).
+ *
+ * `title` is bound, `tagline` is not — deliberately: it is the field an editor
+ * can change without the page having anywhere to put it. With the fallback on,
+ * that revision refreshes the whole route instead of doing nothing.
+ *
+ * The stamp changes on every server render, so a spec can tell a refresh from a
+ * patch without reading counters.
+ */
+export const prerender = false;
+import { heroProps } from '../document';
+
+const document = heroProps({});
+const tagline = 'Nothing binds this line';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Route fallback</title>
+  </head>
+  <body>
+    <p data-testid="route-stamp">{Date.now()}</p>
+    <h1 data-payload-field="title" data-testid="title">{document.title}</h1>
+    <p data-testid="tagline">{tagline}</p>
+  </body>
+</html>

@@ -17,30 +17,37 @@ import type { RevealWindow } from './reveal';
 import { type RuntimeDeps, type RuntimeState, type UpdateTransaction } from './runtime-state';
 import { resolveStrategy } from './strategies';
 import { StrategyRunner } from './strategy-runner';
+import { createLeanStrategyRunner, type StrategyRunnerLike } from './strategy-runner-lean';
 import { observeThenableResult } from './thenable';
 import type { CachedElement } from './types';
 import type { FlushStats, ScheduledUpdate } from './update-scheduler';
 import { valueIdentity } from './value-identity';
 
 export class UpdatePipeline {
-  private readonly strategies: StrategyRunner;
+  private readonly strategies: StrategyRunnerLike;
 
   constructor(
     private readonly deps: RuntimeDeps,
     private readonly state: RuntimeState,
     rebuildCache: () => void,
   ) {
-    this.strategies = new StrategyRunner(deps, state, {
-      reapply: (transaction, data) => {
-        this.scheduleAllFields(transaction, data);
-      },
-      transform: (target, value, allFields, isCurrent) =>
-        this.transformForBinding(target, value, allFields, isCurrent),
-      rebuildCache,
-      revealPending: (transaction) => {
-        this.revealPending(transaction);
-      },
-    });
+    // The profile decides, and esbuild folds the branch: the lean build drops
+    // the real runner and everything only it reached — the morph, the fragment
+    // client's server half, the route refresh (./profile, build-flags.d.ts).
+    this.strategies =
+      typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__
+        ? createLeanStrategyRunner(deps, state)
+        : new StrategyRunner(deps, state, {
+            reapply: (transaction, data) => {
+              this.scheduleAllFields(transaction, data);
+            },
+            transform: (target, value, allFields, isCurrent) =>
+              this.transformForBinding(target, value, allFields, isCurrent),
+            rebuildCache,
+            revealPending: (transaction) => {
+              this.revealPending(transaction);
+            },
+          });
   }
 
   /** Message-bus callback for every shape-valid update. */
@@ -78,6 +85,7 @@ export class UpdatePipeline {
       receivedAt: Date.now(),
       forceRender: relationshipEdited,
       touched: new Set(),
+      baseline: false,
       invalidated: new Set(),
       revealTarget: undefined,
       revealIdentities: [],
@@ -147,6 +155,7 @@ export class UpdatePipeline {
     const dependencies = mergeDependencyMaps(deps.dependencies, deps.cache.dependencyMap());
     const changes = state.changes.diff(fields, dependencies);
     transaction.invalidated = changes.invalidated;
+    transaction.baseline = changes.baseline;
     transaction.touched = new Set([...changes.changed, ...changes.invalidated]);
     this.scheduleAllFields(transaction, data);
   }
@@ -186,7 +195,9 @@ export class UpdatePipeline {
     if (
       route !== undefined &&
       !transaction.routeRefreshed &&
-      (route.plan(deps.root, touched) || this.strategies.hasRouteBinding(touched))
+      (route.plan(deps.root, touched) ||
+        this.strategies.hasRouteBinding(touched) ||
+        this.strategies.hasUnboundChange(transaction, ownerKeys))
     ) {
       void this.strategies.refreshRoute(transaction, data, route);
       return;

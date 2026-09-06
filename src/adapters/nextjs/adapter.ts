@@ -1,11 +1,18 @@
 /**
- * Next.js adapter. `renderLivePreviewScript()` in the root layout is the
- * primary wiring: `NextResponse.next()` carries no body, so the middleware
- * only injects into responses that actually carry HTML.
+ * Next.js adapter. The script goes into the root layout, because
+ * `NextResponse.next()` carries no body for the middleware to inject into:
+ * `livePreviewScriptProps()` for the App Router's JSX, `renderLivePreviewScript()`
+ * for HTML a server assembles as a string.
  */
 
 import { createPreviewPolicy } from '@adapters/shared/policy';
-import { applyDecision, bindDecisionHooks, renderScriptTag } from '@adapters/shared/response';
+import {
+  applyDecision,
+  bindDecisionHooks,
+  renderScriptBody,
+  renderScriptTag,
+} from '@adapters/shared/response';
+import { assertNonce } from '@inline/generator';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
@@ -29,7 +36,38 @@ export function createLivePreviewMiddleware(
   };
 }
 
-/** The `<script>` tag for `app/layout.tsx`; pass the nonce your CSP uses. */
+/** What a `<script>` element needs to carry the runtime; see `livePreviewScriptProps`. */
+export interface LivePreviewScriptProps {
+  readonly dangerouslySetInnerHTML: { readonly __html: string };
+  /** Present only when a nonce was passed, so React omits the attribute otherwise. */
+  readonly nonce?: string;
+}
+
+/**
+ * Props for the `<script>` in `app/layout.tsx`:
+ *
+ * ```tsx
+ * <script {...livePreviewScriptProps({ allowedOrigins: [ADMIN], serverURL: ADMIN, mergeDepth: 1 })} />
+ * ```
+ *
+ * The nonce stays a prop rather than going into the body, because that is where
+ * the framework — and any CSP handling built on it — expects the attribute.
+ */
+export function livePreviewScriptProps(
+  options: LivePreviewNextOptions & { readonly nonce?: string } = {},
+): LivePreviewScriptProps {
+  const html = renderScriptBody(options);
+  if (options.nonce === undefined) return { dangerouslySetInnerHTML: { __html: html } };
+  return {
+    dangerouslySetInnerHTML: { __html: html },
+    nonce: assertNonce(options.nonce),
+  };
+}
+
+/**
+ * The complete `<script>` tag, for HTML a server builds as a string. A JSX
+ * framework cannot render it — use `livePreviewScriptProps()` there.
+ */
 export function renderLivePreviewScript(
   options: LivePreviewNextOptions & { readonly nonce?: string } = {},
 ): string {

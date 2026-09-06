@@ -44,6 +44,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0102: 'Any framing site is trusted. Set `allowedOrigins` and serve a `frame-ancestors` CSP.',
   LP0103:
     "The plugin's `compat` range does not include this runtime version, so it was not registered. Upgrade the plugin or the package until the ranges meet.",
+  LP0104:
+    "The page was built with `profile: 'lean'`, and that runtime does not carry the feature the markup asks for — the elements stay as the server rendered them. Drop the option for the full runtime, or remove the markup that needs it.",
   LP0201:
     'Render the binding anchor unconditionally so an edit to an initially empty field has somewhere to land; `data-payload-boundary` keeps a hidden anchor for it.',
   LP0202:
@@ -66,6 +68,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'The reason is one of origin, shape, type, token and is visible with `debug: true`. An origin reason means `allowedOrigins` does not list the sender.',
   LP0502:
     'Your `validateToken` refused the token or threw — a throwing validator fails closed. Check the token the admin sends and the validator.',
+  LP0503:
+    "The admin at an allowed origin posted a message whose shape this runtime does not recognise — a newer Payload, a custom sender, or a genuine bug. Nothing was applied. Check that the package version matches the admin's, and report it if it does: the wire format is mirrored by hand here, and this code exists to make that drift visible rather than silent.",
   LP0601: 'Your `on(...)` handler threw; the runtime continued. Fix the handler.',
   LP0602: 'Your transform threw; the original value was kept. Fix the transform.',
   LP0603:
@@ -103,8 +107,12 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0804: 'It belonged to a superseded revision; nothing was applied. Nothing to do.',
   LP0805:
     'The same revision asked for a second refresh; the guard refused it. Nothing to do; `inspect().route.loopStopped` counts them.',
+  LP0408:
+    'Use one of the known formats — `date`, `date:short|medium|long|full`, `time`, `datetime`, `number`, `number:0-4`, `currency:XXX`, `percent` — or drop the attribute and format on the server behind a fragment.',
   LP0806:
     'Configure `fragments: { endpoint }` on the adapter so boundaries render on the server; until then they are patched.',
+  LP0807:
+    "Informational: the field has no `data-payload-field` anywhere on the page, so the route was refreshed instead of patched. Bind the field to patch it in place, or set `onUnboundChange: 'ignore'` to accept the stale value.",
 });
 
 /**

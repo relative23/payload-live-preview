@@ -33,10 +33,12 @@ import {
 import { checkPackedImportSmokes } from './package-smoke-imports';
 import {
   CODEGEN_EXPORT_NAMES,
+  PEER_REQUIRED_EXPORT_NAMES,
   findPackedContentFailures,
   findPackedTargetFailures,
 } from './package-smoke-manifest';
 import {
+  readReviewedPeerVersion,
   readReviewedTsMorphVersion,
   verifyRepositoryPreconditions,
 } from './package-smoke-repository';
@@ -139,9 +141,37 @@ async function main(): Promise<void> {
         `codegen consumer inherited a maintainer dependency:\n${detailFor(codegenLeakProbe)}`,
       );
     }
+    // The `./react` and `./vue` entries import their framework at module scope —
+    // a hook cannot load one lazily — so they are imported here rather than in
+    // the peer-free consumer, where they would rightly fail.
+    const peerConsumer = resolve(temporaryRoot, 'peer-consumer');
+    await initializeConsumer(peerConsumer, {
+      react: await readReviewedPeerVersion('react'),
+      vue: await readReviewedPeerVersion('vue'),
+    });
+    const hookPeerInstall = bootstrapDeclaredPeersStrictly(peerConsumer);
+    if (hookPeerInstall.status !== 0) {
+      throw new Error(
+        `installing the exact reviewed hook peer failed:\n${detailFor(hookPeerInstall)}`,
+      );
+    }
+    const peerInstall = installStrictly(peerConsumer, [tarball]);
+    if (peerInstall.status !== 0) {
+      throw new Error(
+        `installing the packed archive with its declared hook peer failed:\n${detailFor(peerInstall)}`,
+      );
+    }
+
     const codegenPackageRoot = resolve(codegenConsumer, 'node_modules/payload-live-preview');
-    const packageRootForEntry = (entry: TypedApiEntry): string =>
-      CODEGEN_EXPORT_NAMES.has(entry.exportName) ? codegenPackageRoot : packageRoot;
+    // Each entry's declarations are extracted where its peers resolve: the
+    // codegen consumer has `ts-morph`, the peer consumer has the frameworks the
+    // hooks type against, and everything else needs neither.
+    const peerPackageRoot = resolve(peerConsumer, 'node_modules/payload-live-preview');
+    const packageRootForEntry = (entry: TypedApiEntry): string => {
+      if (CODEGEN_EXPORT_NAMES.has(entry.exportName)) return codegenPackageRoot;
+      if (PEER_REQUIRED_EXPORT_NAMES.has(entry.exportName)) return peerPackageRoot;
+      return packageRoot;
+    };
 
     const apiReportFailures = await checkApiReports({
       apiConfigPath: API_EXTRACTOR_CONFIG,
@@ -168,6 +198,7 @@ async function main(): Promise<void> {
       ...(await checkPackedImportSmokes({
         consumer,
         codegenConsumer,
+        peerConsumer,
         codegenPackageRoot,
         packageName,
         manifestValue,

@@ -18,7 +18,7 @@
       // parameter only selects an entry. A mock admin is the first integration a
       // reader copies, so it models the check a real one needs — and there is no
       // path for a crafted `?target=` to reach `src` at all.
-      const PAGES = ['/index.html', '/reveal.html'];
+      const PAGES = ['/index.html', '/reveal.html', '/overlay.html', '/overlay-quiet.html'];
       const requested = new URLSearchParams(location.search).get('target');
       document.getElementById('preview').src = PAGES.find((page) => page === requested) ?? PAGES[0];
     </script>
