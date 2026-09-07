@@ -186,10 +186,27 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   //
   // `doctor.js` keeps its brotli row: 4 762 measured against 4 803, it did not
   // cross. `fragment.js` and `plugins.*` did not cross at all.
+  //
+  // 2026-09-07 (Z4, merge only when it adds something): every row that embeds
+  // the runtime rises +2 712 B raw / ~830 B gzip / ~700 B brotli, the root
+  // barrel +5 418 raw because it carries the runtime twice. Thirteen rows
+  // crossed; every other row is untouched, because nothing outside the runtime
+  // moved.
+  //
+  // This is the largest single raise in this file, and it is the only one so far
+  // that buys a request back rather than a behaviour. Until now every accepted
+  // message cost one authenticated POST to Payload's REST API — 18 messages, 18
+  // requests, in all five scenarios the interaction budget measures, and 19 of
+  // them on a page that had not a single binding to render the answer into. A
+  // plain text field now costs none of them, a page nobody binds costs none, and
+  // a burst on a relationship or a rich-text field costs two: one that opens it
+  // and one that closes it. The bytes are the decision that tells those apart
+  // (`src/core/merge-need.ts`) and the window a burst shares; the reasoning is in
+  // bundle-budgets.ts.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
-  'adapters/astro/index.js': { raw: 146_400, gzip: 45_620, brotli: 39_430 },
-  'adapters/astro/middleware-entry.js': { raw: 133_080, gzip: 41_510, brotli: 35_940 },
-  'adapters/nextjs/index.js': { raw: 144_660, gzip: 45_110, brotli: 39_070 },
+  'adapters/astro/index.js': { raw: 149_110, gzip: 46_450, brotli: 40_220 },
+  'adapters/astro/middleware-entry.js': { raw: 135_800, gzip: 42_340, brotli: 36_650 },
+  'adapters/nextjs/index.js': { raw: 147_370, gzip: 45_950, brotli: 39_780 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -207,8 +224,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
   // frame-ancestors builder it shares with the middleware.
   'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
-  'adapters/nuxt/index.js': { raw: 144_120, gzip: 44_990, brotli: 38_940 },
-  'adapters/sveltekit/index.js': { raw: 143_150, gzip: 44_720, brotli: 38_670 },
+  'adapters/nuxt/index.js': { raw: 146_840, gzip: 45_820, brotli: 39_620 },
+  'adapters/sveltekit/index.js': { raw: 145_860, gzip: 45_540, brotli: 39_340 },
   //
   // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
   // scanner, its refusal reasons and the `annotate` subcommand. It is a build
@@ -220,10 +237,10 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'doctor-cli.js': { raw: 33_150, gzip: 12_140, brotli: 10_780 },
   'doctor.js': { raw: 13_200, gzip: 5_520, brotli: 4_803 },
   'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
-  'core.cjs': { raw: 119_800, gzip: 37_660, brotli: 32_800 },
-  'core.js': { raw: 119_270, gzip: 37_590, brotli: 32_770 },
-  'index.cjs': { raw: 254_710, gzip: 78_720, brotli: 50_760 },
-  'index.js': { raw: 254_090, gzip: 78_750, brotli: 50_670 },
+  'core.cjs': { raw: 122_510, gzip: 38_530, brotli: 33_520 },
+  'core.js': { raw: 121_980, gzip: 38_440, brotli: 33_440 },
+  'index.cjs': { raw: 260_130, gzip: 80_400, brotli: 51_550 },
+  'index.js': { raw: 259_510, gzip: 80_460, brotli: 51_630 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
@@ -233,12 +250,12 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // helper the build-time annotator writes a call to.
   'server.cjs': { raw: 12_950, gzip: 4_780, brotli: 4_310 },
   'server.js': { raw: 12_830, gzip: 4_775, brotli: 4_300 },
-  'client.cjs': { raw: 114_030, gzip: 35_580, brotli: 31_060 },
-  'client.js': { raw: 113_960, gzip: 35_570, brotli: 31_050 },
+  'client.cjs': { raw: 116_730, gzip: 36_440, brotli: 31_750 },
+  'client.js': { raw: 116_660, gzip: 36_430, brotli: 31_760 },
   'structural.cjs': { raw: 19_414, gzip: 6_859, brotli: 6_218 },
   'structural.js': { raw: 19_368, gzip: 6_858, brotli: 6_213 },
-  'lean.cjs': { raw: 83_180, gzip: 26_240, brotli: 23_360 },
-  'lean.js': { raw: 83_170, gzip: 26_230, brotli: 23_350 },
+  'lean.cjs': { raw: 85_900, gzip: 27_060, brotli: 24_130 },
+  'lean.js': { raw: 85_890, gzip: 27_060, brotli: 24_090 },
   'lexical.cjs': { raw: 16_575, gzip: 5_690, brotli: 5_150 },
   'lexical.js': { raw: 16_545, gzip: 5_700, brotli: 5_135 },
   //

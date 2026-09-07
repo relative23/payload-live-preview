@@ -130,7 +130,7 @@ Notes on the rows that need one:
 - `delivery: 'asset'` replaces the inlined runtime with a bootstrap of a few
   hundred bytes that fetches it as `<assetPath>/runtime.<hash>.js` — but only
   once it finds itself in a preview context. Measured on the Next.js fixture:
-  679 bytes in the page instead of 97 546, and one response the browser may
+  679 bytes in the page instead of 100 258, and one response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
   integrity check and what a proxy must not do to the file are in
@@ -241,11 +241,23 @@ are ESM-only; the rest ship ESM and CommonJS builds.
 ## `serverURL` and `mergeDepth`
 
 Payload 3.x posts raw form values on every edit, so relationship and upload
-fields arrive as bare ids. With `serverURL` set, the runtime re-fetches each
+fields arrive as bare ids. With `serverURL` set, the runtime re-fetches the
 update through the Payload REST API (`POST` with
 `X-Payload-HTTP-Method-Override: GET`, `credentials: 'include'` — the same
 request the official client makes) and renders the populated document; on
-failure it renders the raw values. `mergeDepth` has no default: every
+failure it renders the raw values.
+
+It asks only when the answer can change what the page shows. A page whose every
+binding renders a plain scalar of a top-level field, and a page with no binding,
+no island, no `data-payload-fragment` boundary and no `beforeUpdate`/`afterUpdate`
+listener, never merge at all; a message that moved no field anything populates is
+answered from its own values over the document the last merge resolved. What is
+left costs one request that opens a burst of edits and one that closes it — the
+window is `debounceMs`, and `debounceMs: 0` turns it off. A field that names a
+document keeps the value the last merge resolved until the new one arrives, so a
+bare id never reaches the page. One consequence worth knowing: on a page that
+reads no populated value, an `afterRead` hook that rewrites a scalar no longer
+reaches the preview between saves. `mergeDepth` has no default: every
 adapter, `generateInlineScript()` and `LivePreviewClient` throw when
 `serverURL` is set without it (`0` means no population), and `defaults: 'v1'`
 restores the 1.x default of `1`. The depth must match the `depth` of the

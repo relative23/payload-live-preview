@@ -60,7 +60,11 @@ function hasBinding(cache: ElementCache, fieldName: string, ownerKeys: OwnerScop
  * makes it addressable. The diff names top-level fields only, so without this
  * every group and array on the page would look unbound.
  */
-function hasBindingBelow(cache: ElementCache, fieldName: string, ownerKeys: OwnerScope): boolean {
+export function hasBindingBelow(
+  cache: ElementCache,
+  fieldName: string,
+  ownerKeys: OwnerScope,
+): boolean {
   const prefix = `${fieldName}.`;
   for (const [boundName, bindings] of cache.entries()) {
     if (!boundName.startsWith(prefix)) continue;

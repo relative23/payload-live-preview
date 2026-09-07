@@ -49,7 +49,8 @@ export interface FlushStats {
   readonly data?: PayloadLivePreviewData;
 }
 
-const DEFAULT_DEBOUNCE_MS = 50;
+/** Exported so the merge behind a burst of writes can share the window that batches them. */
+export const DEFAULT_DEBOUNCE_MS = 50;
 /** Exported so `pll doctor` can prove its own copy of the number has not drifted. */
 export const DEFAULT_VISIBILITY_THRESHOLD = 50;
 

@@ -6,8 +6,9 @@
 import type { PayloadLivePreviewData, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 import { buildSchemaIndex } from '@schema/index';
 import { isBindingInScope, messageOwnerKeys, readDocumentId } from './binding-owner';
+import type { MergeResult } from './data-merger';
 import { mergeDependencyMaps } from './dependencies';
-import { bindingValue } from './field-value';
+import { bindingIdentity, bindingValue } from './field-value';
 import { dispatchIslandUpdate } from './islands';
 import { type MessageRevision, sameRevision } from './message-bus';
 import { diagnoseOrphanFields } from './orphan-diagnostics';
@@ -21,7 +22,9 @@ import { createLeanStrategyRunner, type StrategyRunnerLike } from './strategy-ru
 import { observeThenableResult } from './thenable';
 import type { CachedElement } from './types';
 import type { FlushStats, ScheduledUpdate } from './update-scheduler';
-import { valueIdentity } from './value-identity';
+
+/** A refinement moved no field: it completes values the revision already applied. */
+const NOTHING_CHANGED: ReadonlySet<string> = new Set();
 
 export class UpdatePipeline {
   private readonly strategies: StrategyRunnerLike;
@@ -130,16 +133,7 @@ export class UpdatePipeline {
     const { deps, state } = this;
     const fields = await this.resolveIncomingFields(transaction);
     if (fields === null || !state.isCurrent(transaction)) return;
-    const { message } = transaction;
-    const data: PayloadLivePreviewData = {
-      fields,
-      ...(transaction.schema !== undefined ? { schema: transaction.schema } : {}),
-      ...(typeof message.globalSlug === 'string' ? { globalSlug: message.globalSlug } : {}),
-      ...(typeof message.collectionSlug === 'string'
-        ? { collectionSlug: message.collectionSlug }
-        : {}),
-      ...(transaction.locale !== undefined ? { locale: transaction.locale } : {}),
-    };
+    const data = this.dataFor(transaction, fields);
     if (deps.emitter.listenerCount('beforeUpdate') > 0) {
       const completed = await deps.emitter.emitWhile(
         'beforeUpdate',
@@ -157,15 +151,48 @@ export class UpdatePipeline {
       );
       if (!completed || transaction.cancelled || !state.isCurrent(transaction)) return;
     }
+    this.applyFields(transaction, data, false);
+  }
+
+  private dataFor(
+    transaction: UpdateTransaction,
+    fields: Record<string, unknown>,
+  ): PayloadLivePreviewData {
+    const { message } = transaction;
+    return {
+      fields,
+      ...(transaction.schema !== undefined ? { schema: transaction.schema } : {}),
+      ...(typeof message.globalSlug === 'string' ? { globalSlug: message.globalSlug } : {}),
+      ...(typeof message.collectionSlug === 'string'
+        ? { collectionSlug: message.collectionSlug }
+        : {}),
+      ...(transaction.locale !== undefined ? { locale: transaction.locale } : {}),
+    };
+  }
+
+  /**
+   * Diff against what the page last showed, then schedule. A refinement is the
+   * populated answer to values this revision already applied: it keeps the diff
+   * in step without letting population count as an edit, because no strategy
+   * may be planned a second time for one message.
+   */
+  private applyFields(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    refined: boolean,
+  ): void {
+    const { deps, state } = this;
     const dependencies = mergeDependencyMaps(deps.dependencies, deps.cache.dependencyMap());
-    const changes = state.changes.diff(fields, dependencies);
-    transaction.invalidated = changes.invalidated;
+    const changes = state.changes.diff(data.fields, dependencies);
     transaction.baseline = changes.baseline;
-    transaction.touched = new Set([...changes.changed, ...changes.invalidated]);
+    transaction.invalidated = refined ? NOTHING_CHANGED : changes.invalidated;
+    transaction.touched = refined
+      ? NOTHING_CHANGED
+      : new Set([...changes.changed, ...changes.invalidated]);
     this.scheduleAllFields(transaction, data);
   }
 
-  /** The merged document when a `DataMerger` is configured, else the raw form values; `null` when superseded. */
+  /** The document to render: merged when the server has something to add, else the message's own values; `null` when superseded. */
   private async resolveIncomingFields(
     transaction: UpdateTransaction,
   ): Promise<Record<string, unknown> | null> {
@@ -176,17 +203,43 @@ export class UpdatePipeline {
     if (detectProtocolProfile(state.protocol.observed).populatesRelationships === 'admin') {
       return raw;
     }
+    const plan = state.merges.decide(deps, transaction);
+    if (!plan.merge) return plan.fields;
     const { message } = transaction;
-    const result = await deps.merger.merge({
+    const coalesced = state.merges.request(deps.merger, deps.mergeWindowMs, {
       collectionSlug: message.collectionSlug,
       globalSlug: message.globalSlug,
       data: raw,
       locale: transaction.locale,
     });
+    // A request the burst shares is not one the page waits for: it renders what
+    // it already has, and the answer refines it when the window closes.
+    if (!coalesced.leading) {
+      void this.applyMerged(transaction, coalesced.result).catch((error: unknown) => {
+        deps.log('update failed:', error);
+      });
+      return plan.fields;
+    }
+    const result = await coalesced.result;
     if (!state.isCurrent(transaction)) return null;
-    if (result.status === 'merged') return result.doc;
+    if (result.status === 'merged') {
+      state.merges.recordMerged(result.doc);
+      return result.doc;
+    }
     if (result.status === 'superseded') return null;
-    return raw;
+    return plan.fields;
+  }
+
+  /** Whoever is still current when the shared merge lands gets the populated document. */
+  private async applyMerged(
+    transaction: UpdateTransaction,
+    pending: Promise<MergeResult>,
+  ): Promise<void> {
+    const { state } = this;
+    const result = await pending;
+    if (result.status !== 'merged' || !state.isCurrent(transaction)) return;
+    state.merges.recordMerged(result.doc);
+    this.applyFields(transaction, this.dataFor(transaction, result.doc), true);
   }
 
   scheduleAllFields(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
@@ -221,7 +274,8 @@ export class UpdatePipeline {
         if (plan?.covers(target) === true) {
           // Resolving the value is only worth it when something reveals.
           if (deps.revealEditedField) {
-            state.revealLedger.note(transaction, target, this.rawValue(transaction, target, data));
+            const raw = bindingValue(data.fields, target, fieldName, transaction.locale);
+            state.revealLedger.note(transaction, target, raw);
           }
           continue;
         }
@@ -288,14 +342,6 @@ export class UpdatePipeline {
       state.complete(transaction);
       this.revealPending(transaction);
     }
-  }
-
-  private rawValue(
-    transaction: UpdateTransaction,
-    target: CachedElement,
-    data: PayloadLivePreviewData,
-  ): unknown {
-    return bindingValue(data.fields, target, target.fieldName, transaction.locale);
   }
 
   /** Owner keys this update may address; `false` when scoping is off, `null` when the message names no document. */
@@ -449,25 +495,4 @@ export class UpdatePipeline {
     const key = `${target.owner ?? ''} ${target.fieldName}`;
     return this.state.revealer.reveal(key, element, win);
   }
-}
-
-/** Identity of everything a binding renders: its value plus any sibling href/src/alt fields. */
-function bindingIdentity(
-  target: CachedElement,
-  value: unknown,
-  fields: Record<string, unknown>,
-  locale: string | undefined,
-): string | undefined {
-  const own = valueIdentity(value);
-  if (own === undefined) return undefined;
-  const siblings = [target.hrefField, target.srcField, target.altField];
-  let combined = own;
-  for (const sibling of siblings) {
-    if (sibling === undefined || sibling.length === 0) continue;
-    const resolved = bindingValue(fields, target, sibling, locale);
-    const identity = valueIdentity(resolved);
-    if (identity === undefined) return undefined;
-    combined += `|${sibling}=${identity}`;
-  }
-  return combined;
 }

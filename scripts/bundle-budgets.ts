@@ -171,7 +171,38 @@ export type BundleBudget = BundleMeasurement;
 //
 // Raised 2026-09-07 (Z3): raw 99 550 → 100 840 (measured 100 731), gzip 31 200 →
 // 31 620 (measured 31 572), brotli 27 680 → 28 090 (measured 27 965).
-export const INLINE_BUDGET = { raw: 100_840, gzip: 31_620, brotli: 28_090 } as const;
+//
+// 2026-09-07 (Z4, merge only when it adds something): every artifact that embeds
+// the runtime rises +2 712 B raw / ~830 B gzip / ~700 B brotli, the lean profile
+// +2 716, measured against the same build without the change. Two parts, each
+// measured on its own by building the change minus that part: the decision
+// itself 1 333 B (`src/core/merge-need.ts` — what the page reads, what one
+// changed field is worth, and the document carried over from the last answer),
+// the window a burst of requests shares 1 013 B, and the remaining 462 B the
+// pipeline plumbing both need (the resolved document as its own step, the
+// refinement pass, the window on the runtime's dependencies).
+//
+// What the bytes buy is a request per keystroke. Every accepted message cost one
+// authenticated POST to Payload's REST API to have its relationships populated —
+// 18 messages, 18 requests, and 19 of them on a page with no binding at all,
+// where nobody could read the answer. The runtime now asks only when the answer
+// can change what the page shows: a plain text field costs nothing, a page of
+// plain scalar bindings costs nothing, and a burst on a relationship or a
+// rich-text field costs two requests instead of eighteen — one that opens it,
+// one that closes it. That last line must not fall to zero, and the tests
+// (`tests/unit/core/merge-need.test.ts`) count it: without a request the page
+// would show a document id where its title belongs.
+//
+// It is in the runtime rather than behind an option because the decision needs
+// the binding cache, the message diff and the last resolved document at once,
+// and because a page that pays for it is every page: the runtime that does not
+// carry it is the one that never merges, and that one has no `dataMerge` and
+// makes no request either way. A project that turns the debounce off turns the
+// window off with it and keeps the two skips.
+//
+// Raised 2026-09-07 (Z4): raw 100 840 → 103 550 (measured 103 443), gzip 31 620 →
+// 32 450 (measured 32 397), brotli 28 090 → 28 750 (measured 28 630).
+export const INLINE_BUDGET = { raw: 103_550, gzip: 32_450, brotli: 28_750 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -204,7 +235,12 @@ export const INLINE_BUDGET = { raw: 100_840, gzip: 31_620, brotli: 28_090 } as c
 // it has no strategy runner, so `escalateUnfaithful` there is a function that
 // returns. That is the 396 B between +1 303 and +907, and it is why a lean page
 // gets LP0411 in its log and no refresh.
-export const INLINE_LEAN_BUDGET = { raw: 82_830, gzip: 25_990, brotli: 23_120 } as const;
+// Raised 2026-09-07 (Z4): raw 82 830 → 85 540 (measured 85 454), gzip 25 990 →
+// 26 820 (measured 26 775), brotli 23 120 → 23 850 (measured 23 721). The lean
+// profile pays the same 2 716 B as the full one and gets the same thing back:
+// the merge is not one of the features it leaves out, so neither is the decision
+// about whether to make it.
+export const INLINE_LEAN_BUDGET = { raw: 85_540, gzip: 26_820, brotli: 23_850 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
@@ -223,7 +259,12 @@ export const INLINE_LEAN_BUDGET = { raw: 82_830, gzip: 25_990, brotli: 23_120 } 
 // the profile the escalation is actually for: with both preludes present a
 // finding inside a boundary goes to the fragment endpoint and only one outside
 // every boundary reaches the route.
-export const INLINE_FRAGMENT_BUDGET = { raw: 112_210, gzip: 35_390, brotli: 31_240 } as const;
+// Raised 2026-09-07 (Z4): raw 112 210 → 114 930 (measured 114 806), gzip 35 390 →
+// 36 220 (measured 36 163), brotli 31 240 → 31 900 (measured 31 775). A boundary
+// is rendered by a server that is handed exactly these fields, so this profile
+// is also the one where a page with no binding at all still has a consumer — and
+// the decision asks the DOM for a boundary before it decides that it has none.
+export const INLINE_FRAGMENT_BUDGET = { raw: 114_930, gzip: 36_220, brotli: 31_900 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -244,7 +285,14 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 112_210, gzip: 35_390, brotli: 31_2
 // Raised 2026-09-07 (Z3): raw 106 000 → 107 280 (measured 107 168), gzip 33 300
 // → 33 730 (measured 33 675), brotli 29 390 → 29 780 (measured 29 658). Both
 // prelude profiles move by the same 1 303 B as the runtime they wrap.
-export const INLINE_ROUTE_BUDGET = { raw: 107_280, gzip: 33_730, brotli: 29_780 } as const;
+// Raised 2026-09-07 (Z4): raw 107 280 → 109 990 (measured 109 880), gzip 33 730 →
+// 34 540 (measured 34 490), brotli 29 780 → 30 470 (measured 30 342). Both
+// prelude profiles move by the same 2 712 B as the runtime they wrap. The route
+// prelude is the one this decision deliberately does not count as a reason to
+// ask: a refresh re-renders the page from the server and never reads the merged
+// values, so a page whose only answer to an edit is a route refresh now makes no
+// REST request at all.
+export const INLINE_ROUTE_BUDGET = { raw: 109_990, gzip: 34_540, brotli: 30_470 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

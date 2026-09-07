@@ -1,4 +1,11 @@
-/** Field-path resolution for bindings and sibling-field metadata, prototype-safe. */
+/**
+ * Field-path resolution for bindings and sibling-field metadata, prototype-safe,
+ * and the identity of everything one binding renders — which is the same
+ * question one step later, because the siblings are part of the answer.
+ */
+
+import type { CachedElement } from './types';
+import { valueIdentity } from './value-identity';
 
 const BLOCKED_KEYS: ReadonlySet<string> = new Set(['__proto__', 'prototype', 'constructor']);
 
@@ -62,4 +69,25 @@ export function bindingValue(
     target.locale ?? fallbackLocale,
     target.locale !== undefined,
   );
+}
+
+/** Identity of everything a binding renders: its value plus any sibling href/src/alt fields. */
+export function bindingIdentity(
+  target: CachedElement,
+  value: unknown,
+  fields: Record<string, unknown>,
+  locale: string | undefined,
+): string | undefined {
+  const own = valueIdentity(value);
+  if (own === undefined) return undefined;
+  const siblings = [target.hrefField, target.srcField, target.altField];
+  let combined = own;
+  for (const sibling of siblings) {
+    if (sibling === undefined || sibling.length === 0) continue;
+    const resolved = bindingValue(fields, target, sibling, locale);
+    const identity = valueIdentity(resolved);
+    if (identity === undefined) return undefined;
+    combined += `|${sibling}=${identity}`;
+  }
+  return combined;
 }

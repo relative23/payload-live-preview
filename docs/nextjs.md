@@ -43,13 +43,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 Compute the props once at module scope, as above: the configuration does not
 change per request, and the script body is the same bytes every time.
 
-The script stays inert outside the admin's preview iframe, but it does ship to everyone: a layout renders for every visitor, and Next.js middleware cannot inject into a body, so there is no request-time gate to put in front of it. That is about 30 KB gzip on every public page. `delivery: 'asset'` below replaces those bytes with a 679-byte bootstrap that fetches nothing outside a preview; rendering the script in a dynamic layout only after the authorization below succeeded removes them entirely. What each choice costs a visitor, measured per framework: [deployment.md](deployment.md#what-a-public-visitor-pays).
+The script stays inert outside the admin's preview iframe, but it does ship to everyone: a layout renders for every visitor, and Next.js middleware cannot inject into a body, so there is no request-time gate to put in front of it. That is about 32 KB gzip on every public page. `delivery: 'asset'` below replaces those bytes with a 679-byte bootstrap that fetches nothing outside a preview; rendering the script in a dynamic layout only after the authorization below succeeded removes them entirely. What each choice costs a visitor, measured per framework: [deployment.md](deployment.md#what-a-public-visitor-pays).
 
 `livePreviewScriptProps()` takes a `nonce` for a CSP you manage yourself, and puts it where the framework expects it — a prop, not markup inside the body. `renderLivePreviewScript()` returns the complete `<script>` tag instead, for HTML a server assembles as a string; JSX cannot render that.
 
 ## The runtime as a cached asset
 
-Those ~30 KB gzip are in every page. `delivery: 'asset'` puts a bootstrap there instead — 679 bytes measured on the example — which fetches the runtime only once the page finds itself in a preview context:
+Those ~32 KB gzip are in every page. `delivery: 'asset'` puts a bootstrap there instead — 679 bytes measured on the example — which fetches the runtime only once the page finds itself in a preview context:
 
 ```ts
 // app/live-preview.ts — the one thing the layout and the route must agree on

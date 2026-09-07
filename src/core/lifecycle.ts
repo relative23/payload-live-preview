@@ -23,7 +23,7 @@ import { RuntimeState, type RuntimeDeps } from './runtime-state';
 import { ConnectionState, HeartbeatTimer } from './state';
 import type { CachedElement } from './types';
 import { UpdatePipeline } from './update-pipeline';
-import { UpdateScheduler } from './update-scheduler';
+import { DEFAULT_DEBOUNCE_MS, UpdateScheduler } from './update-scheduler';
 
 export type { RuntimeOptions } from './runtime-options';
 export { resolveFieldValue } from './field-value';
@@ -156,6 +156,7 @@ export class LivePreviewRuntime {
               ...(merge.fetchFn !== undefined ? { fetchFn: merge.fetchFn } : {}),
               log,
             }),
+      mergeWindowMs: options.debounceMs ?? DEFAULT_DEBOUNCE_MS,
       scopeBindingsByOwner: options.scopeBindingsByOwner === true,
       lockedOrigin: options.lockedOrigin ?? ((): undefined => undefined),
       skipUnchanged: options.skipUnchanged === true,
@@ -305,6 +306,7 @@ export class LivePreviewRuntime {
     });
     this.runCleanup(() => {
       deps.merger?.destroy();
+      state.merges.destroy();
     });
     deps.cache.clear();
     return deps.connection.markDisconnected();
@@ -419,6 +421,7 @@ export class LivePreviewRuntime {
     state.activeUpdate = null;
     if (active !== null) deps.scheduler.cancelRevision(active.revision);
     deps.merger?.destroy();
+    state.merges.destroy();
     const wasConnected = deps.connection.markDisconnected();
     // Release the origin lock before the disconnect event: a listener may
     // reconnect from another allow-listed origin synchronously.

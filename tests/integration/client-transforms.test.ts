@@ -39,8 +39,11 @@ describe('LivePreviewClient — transforms', () => {
   });
 
   it('passes merged values through transforms while allFields stays the merged snapshot', async () => {
+    // The dotted binding is what makes this page read a populated value; a page
+    // of plain scalars is answered without asking the server at all (LP-3).
     document.body.innerHTML =
-      '<p data-payload-field="title">old</p><span data-payload-field="sibling"></span>';
+      '<p data-payload-field="title">old</p><span data-payload-field="sibling"></span>' +
+      '<span data-payload-field="venue.title"></span>';
     const mergedFields = {
       id: 'post-1',
       title: 'merged title',

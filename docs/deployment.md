@@ -42,7 +42,7 @@ preview answers every request with `Cache-Control: private, no-store`
 By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. Measured on the
-Next.js fixture, that is 679 bytes in the page instead of 97 546.
+Next.js fixture, that is 679 bytes in the page instead of 100 258.
 
 Two ways in, because the frameworks differ in who can serve a file:
 
@@ -84,7 +84,7 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The runtime is about 97.5 KB of JavaScript (30 KB gzip). The number that
+The runtime is about 103.5 KB of JavaScript (32 KB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
 rather than by the framework. Three outcomes, each pinned by an E2E case in
 `tests/e2e/specs/public-response.spec.ts` so this table cannot drift from the

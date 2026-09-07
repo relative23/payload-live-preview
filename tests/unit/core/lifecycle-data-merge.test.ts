@@ -2,9 +2,17 @@ import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { deferred, fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
+/**
+ * Every page here reads a populated value. Without one the runtime answers the
+ * message from the panel's own values and never asks the server (LP-3), and
+ * these cases are about what happens when it does ask: the URL it builds, the
+ * answer it keeps, and the answer it throws away.
+ */
+const POPULATED = '<span data-payload-field="venue.title"></span>';
+
 describe('dataMerge option (Payload 3.x REST merging)', () => {
   it('preserves an explicit API route and zero population depth', async () => {
-    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
     const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(JSON.stringify({ id: 'post-1', title: 'merged title' }), {
         status: 200,
@@ -42,7 +50,7 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     // Dropping the early return here does not change what lands in the DOM —
     // the revision is superseded either way — so only the absence of a failure
     // tells a clean stop from one that throws its way out of the pipeline.
-    document.body.innerHTML = '<h1 data-payload-field="title">initial</h1>';
+    document.body.innerHTML = `<h1 data-payload-field="title">initial</h1>${POPULATED}`;
     const response = deferred<Response>();
     const log = vi.fn();
     const runtime = makeRuntime({
@@ -68,7 +76,7 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     // Nothing awaits the pipeline, so without a boundary a throw here would
     // surface as an unhandled rejection: a console error the host cannot
     // attribute, and a process exit under `--unhandled-rejections=strict`.
-    document.body.innerHTML = '<h1 data-payload-field="title">initial</h1>';
+    document.body.innerHTML = `<h1 data-payload-field="title">initial</h1>${POPULATED}`;
     const log = vi.fn();
     const hostile: Record<string, readonly string[]> = {};
     Object.defineProperty(hostile, 'title', {
@@ -88,7 +96,7 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
   });
 
   it('discards an abort-ignoring merge response after runtime destroy', async () => {
-    document.body.innerHTML = '<h1 data-payload-field="title">initial</h1>';
+    document.body.innerHTML = `<h1 data-payload-field="title">initial</h1>${POPULATED}`;
     const response = deferred<Response>();
     const fetchFn = vi.fn<typeof fetch>(() => response.promise);
     const emitter = new EventEmitter();
@@ -120,7 +128,7 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     expect(afterUpdate).not.toHaveBeenCalled();
   });
   it('discards an abort-ignoring merge from an expired heartbeat generation', async () => {
-    document.body.innerHTML = '<h1 data-payload-field="title">initial</h1>';
+    document.body.innerHTML = `<h1 data-payload-field="title">initial</h1>${POPULATED}`;
     const oldResponse = deferred<Response>();
     const fetchFn = vi
       .fn<typeof fetch>()
@@ -139,7 +147,9 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     fireMessage({
       type: 'payload-live-preview',
       collectionSlug: 'posts',
-      data: { id: '1', title: 'expired raw' },
+      // The venue moves with the title: a message that changes nothing the
+      // server populates is answered without asking it (LP-3).
+      data: { id: '1', title: 'expired raw', venue: 'venue-1' },
     });
     const oldSignal = fetchFn.mock.calls[0]?.[1]?.signal;
     await vi.advanceTimersByTimeAsync(100);
@@ -148,7 +158,7 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     fireMessage({
       type: 'payload-live-preview',
       collectionSlug: 'posts',
-      data: { id: '1', title: 'current raw' },
+      data: { id: '1', title: 'current raw', venue: 'venue-2' },
     });
     await vi.advanceTimersByTimeAsync(50);
     expect(document.querySelector('h1')?.textContent).toBe('current merged');
@@ -167,7 +177,7 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     runtime.destroy();
   });
   it('discards an older merge result even when fetch ignores its abort signal', async () => {
-    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
     const first = deferred<Response>();
     const second = deferred<Response>();
     const fetchFn = vi
@@ -186,13 +196,13 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     fireMessage({
       type: 'payload-live-preview',
       collectionSlug: 'posts',
-      data: { id: '1', title: 'raw A' },
+      data: { id: '1', title: 'raw A', venue: 'venue-1' },
     });
     await Promise.resolve();
     fireMessage({
       type: 'payload-live-preview',
       collectionSlug: 'posts',
-      data: { id: '1', title: 'raw B' },
+      data: { id: '1', title: 'raw B', venue: 'venue-2' },
     });
     second.resolve(new Response(JSON.stringify({ id: '1', title: 'merged B' })));
     await vi.advanceTimersByTimeAsync(50);
@@ -205,7 +215,7 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     runtime.destroy();
   });
   it('renders the merged document instead of the raw form values', async () => {
-    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ id: '1', title: 'merged title' }), {
         status: 200,
@@ -227,7 +237,7 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     runtime.destroy();
   });
   it('falls back to raw values when the merge fetch fails', async () => {
-    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
     const fetchFn = vi.fn().mockRejectedValue(new TypeError('offline'));
     const runtime = makeRuntime({
       dataMerge: { serverURL: 'https://cms.example.com', fetchFn: fetchFn as typeof fetch },
@@ -243,7 +253,7 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     runtime.destroy();
   });
   it('skips merging entirely for messages without slugs', async () => {
-    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
     const fetchFn = vi.fn();
     const runtime = makeRuntime({
       dataMerge: { serverURL: 'https://cms.example.com', fetchFn: fetchFn as typeof fetch },

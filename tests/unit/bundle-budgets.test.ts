@@ -10,14 +10,14 @@ import {
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 100_840, gzip: 31_620, brotli: 28_090 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 82_830, gzip: 25_990, brotli: 23_120 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 107_280, gzip: 33_730, brotli: 29_780 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 112_210, gzip: 35_390, brotli: 31_240 });
+    expect(INLINE_BUDGET).toEqual({ raw: 103_550, gzip: 32_450, brotli: 28_750 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 85_540, gzip: 26_820, brotli: 23_850 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 109_990, gzip: 34_540, brotli: 30_470 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 114_930, gzip: 36_220, brotli: 31_900 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {
-    // The number is the point of the profile: a page pays 30 KB or 25 KB, and
+    // The number is the point of the profile: a page pays 32 KB or 26 KB, and
     // the docs quote this difference. If it shrinks below a fifth, the profile
     // stops being worth the second artifact and its second behaviour.
     const saved = INLINE_BUDGET.gzip - INLINE_LEAN_BUDGET.gzip;

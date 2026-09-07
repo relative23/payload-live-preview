@@ -12,6 +12,7 @@ import type { ElementCache } from './cache';
 import type { DataMerger } from './data-merger';
 import type { UnfaithfulPatchMode } from './fidelity';
 import { FieldChangeTracker } from './field-changes';
+import { MergeNeed } from './merge-need';
 import type { MessageBus, MessageRevision } from './message-bus';
 import type { ObserverManager } from './observers';
 import { ProtocolTracker } from './protocol-tracker';
@@ -81,6 +82,8 @@ export interface RuntimeDeps {
   readonly warn: (...args: unknown[]) => void;
   readonly a11y: A11yAnnouncer | null;
   readonly merger: DataMerger | null;
+  /** How long a burst of messages may share one merge; the scheduler's debounce window. */
+  readonly mergeWindowMs: number;
   readonly scopeBindingsByOwner: boolean;
   readonly lockedOrigin: () => string | undefined;
   readonly skipUnchanged: boolean;
@@ -128,6 +131,7 @@ export class RuntimeState {
   readonly readyTimers: ReturnType<typeof setTimeout>[] = [];
   readonly revealer = new FieldRevealer();
   readonly changes = new FieldChangeTracker();
+  readonly merges = new MergeNeed();
   readonly protocol = new ProtocolTracker();
   readonly relationships = new RelationshipTracker();
 
