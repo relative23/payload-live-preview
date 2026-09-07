@@ -1,12 +1,14 @@
 /**
  * The route strategy: when a revision touches what no smaller strategy can
- * render, fetch the route again and morph it in place. A refresh inside
- * `minIntervalMs` is refused as LP0805. See ADR 0011.
+ * render, ask the host's own router to re-render it, or else fetch the route
+ * again and morph it in place. A refresh inside `minIntervalMs` is refused as
+ * LP0805 and handed back for a trailing run. See ADR 0011.
  */
 
 import { morphElement, OWNED_ATTRIBUTE } from '@core/morph';
 import { KEY_ATTRIBUTE } from '@core/structural-applier';
 import { parseDependencyList } from '@core/dependencies';
+import { readRouteRefresh } from '@core/route-refresh';
 import { FRAGMENT_ATTRIBUTE, type RouteContext, type RouteStrategy } from '@core/strategies';
 import { errorMessage, linkedTimeout } from './abort';
 import { FRAGMENT_KEY_ATTRIBUTE } from './boundary';
@@ -22,7 +24,7 @@ export interface RouteStrategyOptions {
   readonly fetch?: (url: string, init?: RequestInit) => Promise<Response>;
   /** Per-refresh timeout. Default 8000 ms. */
   readonly timeoutMs?: number;
-  /** Shortest gap between two refreshes; one inside it is refused with LP0805. Default 1000 ms. */
+  /** Shortest gap between two refreshes; one inside it is refused with LP0805 and run when the gap closes. Default 1000 ms. */
   readonly minIntervalMs?: number;
   /** The document to refresh; defaults to `document`. */
   readonly document?: Document;
@@ -115,12 +117,17 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
     },
     async refresh(context: RouteContext) {
       const now = Date.now();
-      if (now - lastRefreshAt < minIntervalMs) {
+      const waitMs = minIntervalMs - (now - lastRefreshAt);
+      if (waitMs > 0) {
+        // The window paces the server; it does not decide what the editor gets
+        // to see. Handing the request back means the change that ended a burst
+        // still arrives, instead of waiting for a keystroke that never comes.
+        context.retryAfter?.(waitMs);
         context.log(
           'LP0805',
           `route refresh for revision ${String(context.revision)} refused: the previous one was ${String(now - lastRefreshAt)} ms ago`,
         );
-        return 'failed';
+        return 'refused';
       }
       lastRefreshAt = now;
       const live = options.document ?? document;
@@ -137,6 +144,18 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
         return 'failed';
       };
       try {
+        const hostRefresh = readRouteRefresh();
+        if (hostRefresh !== undefined) {
+          // The host owns this DOM: it re-renders the route itself, so there is
+          // no second HTML request and no morph over a reconciler's own nodes.
+          // Awaited, because the runtime re-applies the revision straight after.
+          try {
+            await hostRefresh();
+          } catch (error) {
+            return failure(error);
+          }
+          return context.isCurrent() ? 'refreshed' : 'superseded';
+        }
         let response: Response;
         try {
           response = await (options.fetch ?? fetch)(where.href, {

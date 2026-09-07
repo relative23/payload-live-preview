@@ -9,7 +9,7 @@ import { bindingValue } from './field-value';
 import { morphElement } from './morph';
 import { DIAGNOSTIC_CODES } from './diagnostic-codes';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
-import type { FragmentContext, FragmentStrategy, RouteStrategy } from './strategies';
+import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
 import { createFieldAddressability, SYSTEM_FIELD_NAMES, type OwnerScope } from './unbound-fields';
@@ -210,9 +210,8 @@ export class StrategyRunner {
     strategy: RouteStrategy,
   ): Promise<void> {
     const { deps, state } = this;
-    const stats = state.routeStats;
     if (transaction.routeRefreshed) {
-      stats.loopStopped += 1;
+      state.routeStats.loopStopped += 1;
       deps.log(
         'route',
         'LP0805',
@@ -220,11 +219,44 @@ export class StrategyRunner {
       );
       return;
     }
+    // A refusal counts as asked as well: the trailing run below is this
+    // revision's one refresh, and nothing else may start a second.
     transaction.routeRefreshed = true;
+    await this.runRoute(transaction, data, strategy);
+  }
+
+  /**
+   * The trailing run of a refused refresh: the strategy's window closes and the
+   * request it held back runs, once. It cannot loop — a refresh re-renders the
+   * page from the server and produces no message, so nothing asks again.
+   */
+  private armRouteRetry(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    strategy: RouteStrategy,
+    delayMs: number,
+  ): void {
+    const { state } = this;
+    if (state.routeRetry !== null) clearTimeout(state.routeRetry);
+    state.routeRetry = setTimeout(() => {
+      state.routeRetry = null;
+      if (!state.isCurrent(transaction)) return;
+      void this.runRoute(transaction, data, strategy);
+    }, delayMs);
+  }
+
+  /** One trip through the strategy, whether the revision asked for it or the window did. */
+  private async runRoute(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    strategy: RouteStrategy,
+  ): Promise<void> {
+    const { deps, state } = this;
+    const stats = state.routeStats;
     const controller = new AbortController();
     state.routeController = controller;
     const isCurrent = (): boolean => state.isCurrent(transaction) && !controller.signal.aborted;
-    let outcome: 'refreshed' | 'failed' | 'superseded';
+    let outcome: RouteOutcome;
     try {
       outcome = await strategy.refresh({
         revision: transaction.revision.revision,
@@ -233,6 +265,9 @@ export class StrategyRunner {
         isCurrent,
         log: (code, detail) => {
           deps.log('route', code, detail);
+        },
+        retryAfter: (delayMs) => {
+          this.armRouteRetry(transaction, data, strategy, delayMs);
         },
       });
     } catch (error) {
@@ -267,7 +302,12 @@ export class StrategyRunner {
       }
       return;
     }
+    // A refusal is a pause, not a breakage; counting the two together is how
+    // `failed: 3` came to stand in an inspection where nothing was wrong.
     if (outcome === 'failed') stats.failed += 1;
+    else if (outcome === 'refused') stats.refused += 1;
+    // Either way the page shows what it can now: the window holds back the
+    // server, not the bindings this revision could already have written.
     this.host.reapply(transaction, data);
   }
 

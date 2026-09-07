@@ -411,7 +411,15 @@ Several dirty fields in one revision are coalesced: each boundary renders
 once if any of its `data-payload-depends` (or, without it, any field)
 changed, the runtime `dependencies` option counts (a boundary depending on a
 derived field re-renders when its source changes), and the route refreshes
-once. `inspect().route` reports `{ handler, refreshes, failed, loopStopped }`.
+once. `inspect().route` reports
+`{ handler, refreshes, failed, refused, loopStopped }`.
+
+The strategy refreshes at most once per `minIntervalMs` (1 000 ms). A request
+inside that window is not dropped: it is counted in `refused`, the page is
+patched with what it can show in the meantime, and the refresh runs once when
+the window closes — so the keystroke that ends a burst still reaches the
+preview. A newer revision takes that pending run over, because its message
+carries the older one's values too.
 
 ## Islands on the same page
 

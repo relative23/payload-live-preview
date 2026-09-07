@@ -106,7 +106,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     "401/403 — the page's authorization did not hold for the endpoint; patched instead. The endpoint verifies the same token or session as the page, so it must receive it too (same origin, cookies, query).",
   LP0804: 'It belonged to a superseded revision; nothing was applied. Nothing to do.',
   LP0805:
-    'The same revision asked for a second refresh; the guard refused it. Nothing to do; `inspect().route.loopStopped` counts them.',
+    "Two different refusals share this code, and neither loses an edit. A second refresh for one revision is the loop guard, counted in `inspect().route.loopStopped`. A refresh inside the strategy's `minIntervalMs` is the brake: it is counted in `inspect().route.refused` and run once when the window closes, and the page is patched meanwhile. Nothing to do in either case.",
   LP0408:
     'Use one of the known formats — `date`, `date:short|medium|long|full`, `time`, `datetime`, `number`, `number:0-4`, `currency:XXX`, `percent` — or drop the attribute and format on the server behind a fragment.',
   LP0409:

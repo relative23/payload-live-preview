@@ -30,6 +30,12 @@ export interface InteractionScenario {
   readonly keystroke: (step: number) => Record<string, unknown>;
   /** Absent where the edit has nothing to become visible in — which is itself the finding. */
   readonly probe?: LatencyProbe;
+  /**
+   * Give this page the real route strategy, with its HTML answered locally, and
+   * count what one burst of typing costs it. Only the scenario whose finding is
+   * about the route asks for it: the strategy changes what the other four do.
+   */
+  readonly routeStrategy?: true;
   readonly why: string;
 }
 
@@ -114,6 +120,23 @@ export const UNBOUND_FIELD: InteractionScenario = {
   why: 'nothing on the page can show this field, so every request the edit costs is spent on nothing',
 };
 
+/**
+ * LP-5. The page binds three fields and the editor types into a fourth, so the
+ * only honest answer is the server's own render of the route. The strategy
+ * paces that at one refresh per second; what the audit measured was that
+ * everything inside the second was simply dropped, so the change that ended a
+ * burst never arrived. The count here is what a burst may cost *and* the proof
+ * that its last keystroke still reaches the preview.
+ */
+export const UNBOUND_FIELD_WITH_ROUTE: InteractionScenario = {
+  name: 'unbound field on a page that refreshes its route',
+  page: BOUND_PAGE,
+  base: { ...SAVED, seoTitle: 'Demo' },
+  keystroke: (step) => ({ ...SAVED, seoTitle: `Demo ${step}` }),
+  routeStrategy: true,
+  why: 'LP-5: the keystroke that ends a burst is the one the brake used to swallow',
+};
+
 export const PAGE_WITHOUT_BINDINGS: InteractionScenario = {
   name: 'page without bindings',
   page: `
@@ -131,6 +154,7 @@ export const SCENARIOS: readonly InteractionScenario[] = [
   RICH_TEXT,
   RELATIONSHIP_FIELD,
   UNBOUND_FIELD,
+  UNBOUND_FIELD_WITH_ROUTE,
   PAGE_WITHOUT_BINDINGS,
 ];
 

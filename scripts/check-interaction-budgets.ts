@@ -33,6 +33,13 @@ const LATENCY_WARMUP = 10;
 const LATENCY_GAP_MS = 40;
 /** Long enough for the debounce deadline (4 x 50 ms) to have fired. */
 const SETTLE_MS = 300;
+/**
+ * Long enough for the route strategy's own minimum interval (1 000 ms) to close
+ * on the last refusal of the burst, so the trailing refresh is inside the
+ * measurement rather than after it. Measuring a shorter window would report the
+ * bug this row exists to hold shut.
+ */
+const ROUTE_SETTLE_MS = 1_600;
 const PROBE_TIMEOUT_MS = 5_000;
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -85,6 +92,7 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
 });
 const win = installDom(dom);
 const { LivePreviewClient } = await import('../src/client-entry');
+const { createRouteStrategy } = await import('../src/fragment/index');
 
 /** Post one update the way the Admin does, with the event that follows every autosave. */
 function post(fields: Record<string, unknown>, relationshipEvent: boolean): void {
@@ -129,15 +137,44 @@ function percentile(sorted: readonly number[], p: number): number {
 
 interface Session {
   readonly requests: () => number;
-  readonly resetRequests: () => void;
+  /** Route refreshes the strategy actually performed; 0 on a page without one. */
+  readonly refreshes: () => number;
+  readonly reset: () => void;
   readonly destroy: () => Promise<void>;
+}
+
+/**
+ * The route as this page's own server would answer it: the same markup, because
+ * the count is the finding here and a changing page would only add noise to it.
+ */
+function routeResponse(scenario: InteractionScenario): Response {
+  return new Response(
+    `<!doctype html><html><head><title>preview</title></head><body>${scenario.page}</body></html>`,
+    { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } },
+  );
 }
 
 /** One client on one scenario page, merging against the modelled endpoint. */
 function openPage(scenario: InteractionScenario): Session {
   win.document.body.innerHTML = scenario.page;
   let requests = 0;
+  let refreshes = 0;
+  const strategies =
+    scenario.routeStrategy === true
+      ? {
+          route: createRouteStrategy({
+            fetch: () => {
+              refreshes += 1;
+              return Promise.resolve(routeResponse(scenario));
+            },
+            document: win.document,
+            location: { href: PREVIEW },
+            window: { scrollX: 0, scrollY: 0, scrollTo: () => undefined },
+          }),
+        }
+      : undefined;
   const client = new LivePreviewClient({
+    ...(strategies === undefined ? {} : { strategies }),
     allowedOrigins: [ADMIN],
     serverURL: ADMIN,
     // The runtime's debug log is on by default outside production; a gate
@@ -163,28 +200,32 @@ function openPage(scenario: InteractionScenario): Session {
   if (!client.inspect().started) throw new Error(`${scenario.name}: the runtime did not start`);
   return {
     requests: () => requests,
-    resetRequests: () => {
+    refreshes: () => refreshes,
+    reset: () => {
       requests = 0;
+      refreshes = 0;
     },
     destroy: () => client.destroy(),
   };
 }
 
-/** The audit's typing pattern, and the number of merge requests it costs. */
-async function measureRequests(scenario: InteractionScenario): Promise<number> {
+/** The audit's typing pattern, and what it costs in merge requests and route refreshes. */
+async function measureBurst(
+  scenario: InteractionScenario,
+): Promise<{ requests: number; refreshes: number }> {
   const session = openPage(scenario);
   try {
     // The saved document first: it is what the server already rendered, which
     // is what makes everything after it an edit rather than a first impression.
     post(scenario.base, false);
     await sleep(SETTLE_MS);
-    session.resetRequests();
+    session.reset();
     for (let step = 0; step < KEYSTROKES; step += 1) {
       post(scenario.keystroke(step), true);
       await sleep(KEYSTROKE_INTERVAL_MS);
     }
-    await sleep(SETTLE_MS);
-    return session.requests();
+    await sleep(scenario.routeStrategy === true ? ROUTE_SETTLE_MS : SETTLE_MS);
+    return { requests: session.requests(), refreshes: session.refreshes() };
   } finally {
     await session.destroy();
   }
@@ -221,10 +262,11 @@ async function measureLatency(scenario: InteractionScenario): Promise<readonly n
 }
 
 async function measure(scenario: InteractionScenario): Promise<InteractionMeasurement> {
-  const requests = await measureRequests(scenario);
+  const { requests, refreshes } = await measureBurst(scenario);
+  const routed = scenario.routeStrategy === true ? { routeRefreshes: refreshes } : {};
   const samples = [...(await measureLatency(scenario))].sort((a, b) => a - b);
-  if (samples.length === 0) return { requests };
-  return { requests, p50Ms: percentile(samples, 50), p95Ms: percentile(samples, 95) };
+  if (samples.length === 0) return { requests, ...routed };
+  return { requests, ...routed, p50Ms: percentile(samples, 50), p95Ms: percentile(samples, 95) };
 }
 
 function report(
@@ -237,8 +279,12 @@ function report(
     measurement.p95Ms === undefined
       ? 'no visible change'
       : `${measurement.p50Ms?.toFixed(1) ?? '?'} ms p50 / ${measurement.p95Ms.toFixed(1)} ms p95`;
+  const refreshes =
+    measurement.routeRefreshes === undefined
+      ? ''
+      : ` / ${String(measurement.routeRefreshes)} route refreshes`;
   console.log(
-    `${violations.length === 0 ? 'PASS' : 'FAIL'} ${scenario.name}: ${measurement.requests} requests / ${latency}`,
+    `${violations.length === 0 ? 'PASS' : 'FAIL'} ${scenario.name}: ${measurement.requests} requests${refreshes} / ${latency}`,
   );
   for (const violation of violations) {
     console.error(`  ${violation.metric} ${violation.actual}: ${violation.reason}`);

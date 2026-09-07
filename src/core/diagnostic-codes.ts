@@ -101,7 +101,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   FragmentUnauthorized: 'LP0803',
   /** A fragment response arrived for a revision that was already superseded and was discarded. */
   FragmentSuperseded: 'LP0804',
-  /** A route refresh was requested again for the same revision; the loop guard stopped it. */
+  /** A route refresh was refused: the loop guard, or the strategy's minimum interval. */
   RouteRefreshLoop: 'LP0805',
   /** A boundary asks for the fragment strategy but no fragment handler is configured; it is patched. */
   FragmentStrategyUnavailable: 'LP0806',

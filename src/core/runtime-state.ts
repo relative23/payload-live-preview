@@ -125,9 +125,11 @@ export class RuntimeState {
   /** What each owned field was last seen with, for the reveal decision only. */
   readonly revealLedger = new RevealLedger();
   readonly fragmentStats = { rendered: 0, failed: 0, superseded: 0 };
-  readonly routeStats = { refreshes: 0, failed: 0, loopStopped: 0 };
+  readonly routeStats = { refreshes: 0, failed: 0, refused: 0, loopStopped: 0 };
   fragmentController: AbortController | null = null;
   routeController: AbortController | null = null;
+  /** The trailing run a refused refresh asked for; at most one, and always the newest. */
+  routeRetry: ReturnType<typeof setTimeout> | null = null;
   readonly readyTimers: ReturnType<typeof setTimeout>[] = [];
   readonly revealer = new FieldRevealer();
   readonly changes = new FieldChangeTracker();
@@ -151,8 +153,17 @@ export class RuntimeState {
     this.completedCount += 1;
   }
 
-  /** Abort in-flight strategy work; a newer revision or a stop supersedes it. */
+  /**
+   * Abort in-flight strategy work; a newer revision or a stop supersedes it.
+   * The trailing route refresh goes with it: the revision that asked for it is
+   * no longer the one on screen, and the newer one decides for itself — its
+   * message carries the older one's values too.
+   */
   abortStrategies(): void {
+    if (this.routeRetry !== null) {
+      clearTimeout(this.routeRetry);
+      this.routeRetry = null;
+    }
     for (const key of ['fragmentController', 'routeController'] as const) {
       const controller = this[key];
       if (controller === null) continue;

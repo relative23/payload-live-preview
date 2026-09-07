@@ -406,13 +406,13 @@ export interface InspectionRevisions {
 
 // @public
 export interface InspectionRoute {
-    // (undocumented)
     readonly failed: number;
     // (undocumented)
     readonly handler: boolean;
     readonly loopStopped: number;
     // (undocumented)
     readonly refreshes: number;
+    readonly refused: number;
 }
 
 // @public
@@ -868,6 +868,9 @@ export interface ProtocolProfile {
 export type ProtocolProfileName = 'unknown' | 'payload-2' | 'payload-3';
 
 // @public
+export function registerRouteRefresh(refresh: RouteRefresh): () => void;
+
+// @public
 export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
@@ -895,17 +898,24 @@ export interface RouteContext {
     readonly log: (code: DiagnosticCode, detail: string) => void;
     // (undocumented)
     readonly receivedAt: number;
+    readonly retryAfter?: (delayMs: number) => void;
     // (undocumented)
     readonly revision: number;
     readonly signal: AbortSignal;
 }
 
 // @public
+export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
+
+// @public
+export type RouteRefresh = () => void | Promise<void>;
+
+// @public
 export interface RouteStrategy {
     // (undocumented)
     readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
     // (undocumented)
-    readonly refresh: (context: RouteContext) => Promise<'refreshed' | 'failed' | 'superseded'>;
+    readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 
 // Warning: (ae-forgotten-export) The symbol "SanitizeOptions" needs to be exported by the entry point core.d.ts

@@ -126,6 +126,16 @@ The two are complementary:
   its root `data-payload-island` so the runtime leaves it alone
   ([interop.md](interop.md)).
 
+## Lending the runtime your router
+
+`<LivePreviewRouteRefresh refresh={...} />` hands the DOM runtime the host
+router's refresh, so a route update is a re-render React performs rather than
+server HTML this package morphs over the reconciler's nodes. It renders
+nothing, registers while it is mounted, and gives the registration back on
+unmount; without it the route strategy fetches and morphs as before. Wiring for
+Next's App Router: [nextjs.md](nextjs.md). Outside React the same seam is
+`registerRouteRefresh()`.
+
 ## Vue
 
 The same composable, the same session, the same seven cases:

@@ -16,6 +16,7 @@ import {
   RICH_TEXT,
   TEXT_FIELD,
   UNBOUND_FIELD,
+  UNBOUND_FIELD_WITH_ROUTE,
 } from './interaction-scenarios';
 
 /**
@@ -67,6 +68,12 @@ export interface InteractionBudget {
    * measurement that comes in under budget is news and not slack.
    */
   readonly requests: number;
+  /**
+   * Route refreshes the same burst may cost, on the one page that has a route
+   * strategy. Exact for the same reason, and in both directions: too many is a
+   * brake that stopped braking, too few is a change the brake swallowed.
+   */
+  readonly routeRefreshes?: number;
   /** Absent where the edit has nothing to make visible; the requests are then the whole finding. */
   readonly latency?: LatencyBudget;
   /** What this row buys, in one sentence — the row is a decision, not an observation. */
@@ -75,12 +82,13 @@ export interface InteractionBudget {
 
 export interface InteractionMeasurement {
   readonly requests: number;
+  readonly routeRefreshes?: number;
   readonly p50Ms?: number;
   readonly p95Ms?: number;
 }
 
 export interface InteractionViolation {
-  readonly metric: 'requests' | 'p95 latency';
+  readonly metric: 'requests' | 'route refreshes' | 'p95 latency';
   readonly actual: string;
   readonly reason: string;
 }
@@ -149,6 +157,27 @@ export const INTERACTION_BUDGETS: readonly InteractionBudget[] = [
     why: 'a field the page has already reported it cannot show now costs nothing to type into',
   },
   {
+    scenario: UNBOUND_FIELD_WITH_ROUTE.name,
+    requests: 0,
+    routeRefreshes: 2,
+    // LP-5, and the row that says what the brake is for. The same page as above,
+    // given the route strategy it would have in a real project: the server's own
+    // render is the only thing that can show a field nothing binds.
+    //
+    // Two, and both halves matter. Not eighteen, because the strategy paces
+    // itself at one refresh per 1 000 ms and 18 keystrokes 30 ms apart fit
+    // inside one window — that part always worked. Not one, because what the
+    // window held back used to be dropped: the audit typed two unbound changes
+    // 286 ms apart, saw one refresh and one refusal, and the second change never
+    // reached the preview at all. The refused request is now run once when the
+    // window closes, which is the second refresh here and the whole finding.
+    //
+    // Still 0 merge requests: a refresh re-renders the page from the server and
+    // reads none of the populated values a merge would resolve, so it is not a
+    // reason to ask for one (Z4).
+    why: 'LP-5: a burst costs one refresh that opens the window and one that closes it, and nothing is lost in between',
+  },
+  {
     scenario: PAGE_WITHOUT_BINDINGS.name,
     requests: 0,
     // LP-4, closed. The audit counted 19 POSTs on 17 keystrokes from a page
@@ -173,6 +202,19 @@ export function findInteractionViolations(
         measurement.requests > budget.requests
           ? `above the ${budget.requests} this scenario is allowed`
           : `below the ${budget.requests} written down — record the improvement here`,
+    });
+  }
+  if (measurement.routeRefreshes !== budget.routeRefreshes) {
+    violations.push({
+      metric: 'route refreshes',
+      actual:
+        measurement.routeRefreshes === undefined
+          ? 'not measured'
+          : String(measurement.routeRefreshes),
+      reason:
+        budget.routeRefreshes === undefined
+          ? 'the scenario refreshed a route the budget says nothing about'
+          : `not the ${String(budget.routeRefreshes)} this scenario is allowed — too many is a brake that stopped braking, too few is a change it swallowed`,
     });
   }
   const { latency } = budget;

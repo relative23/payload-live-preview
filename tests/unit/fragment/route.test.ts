@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRouteStrategy, isRouteBound, ROUTE_REFRESH_HEADER } from '@fragment/index';
 import type { RouteContext } from '@core/strategies';
+import { registerRouteRefresh } from '@core/route-refresh';
 
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 const logs: string[] = [];
@@ -114,8 +115,9 @@ describe('refresh', () => {
     document.head.innerHTML = '';
   });
 
-  it('refuses a second refresh inside the minimum interval with LP0805', async () => {
+  it('refuses a refresh inside the minimum interval and hands it back for the trailing run', async () => {
     logs.length = 0;
+    const retries: number[] = [];
     const strategy = createRouteStrategy({
       fetch: vi.fn<FetchLike>(() => Promise.resolve(html('<p></p>'))),
       location: { href: 'https://site.example.com/' },
@@ -123,8 +125,35 @@ describe('refresh', () => {
       minIntervalMs: 1_000,
     });
     expect(await strategy.refresh(context())).toBe('refreshed');
-    expect(await strategy.refresh(context({ revision: 4 }))).toBe('failed');
+    expect(
+      await strategy.refresh(
+        context({
+          revision: 4,
+          retryAfter: (delayMs) => {
+            retries.push(delayMs);
+          },
+        }),
+      ),
+    ).toBe('refused');
     expect(logs.some((line) => line.startsWith('LP0805'))).toBe(true);
+    // The window is a rate limit, not a filter: what it holds back it hands back,
+    // and it asks for the rest of the window rather than a whole new one.
+    expect(retries).toHaveLength(1);
+    expect(retries[0]).toBeGreaterThan(0);
+    expect(retries[0]).toBeLessThanOrEqual(1_000);
+  });
+
+  it('refuses without a trailing run when the caller offers none, and never fetches', async () => {
+    const fetchFn = vi.fn<FetchLike>(() => Promise.resolve(html('<p></p>')));
+    const strategy = createRouteStrategy({
+      fetch: fetchFn,
+      location: { href: 'https://site.example.com/' },
+      window: { scrollX: 0, scrollY: 0, scrollTo: () => {} },
+      minIntervalMs: 1_000,
+    });
+    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(await strategy.refresh(context({ revision: 4 }))).toBe('refused');
+    expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 
   it('fails with LP0802 on a non-HTML answer and LP0801 on a network error; abort is superseded', async () => {
@@ -352,5 +381,66 @@ describe('route refresh — timeout and head elements it does not own', () => {
     expect(document.querySelector('link[rel="stylesheet"]')?.getAttribute('href')).toBe('/old.css');
     expect(document.querySelector('link[rel="icon"]')).not.toBeNull();
     document.head.innerHTML = '';
+  });
+});
+
+/**
+ * LP-6: on a page whose DOM belongs to a reconciler, morphing fresh HTML into
+ * it is working against the framework — once observed as `removeChild` on
+ * `null` inside React's commit phase. A host that lends the runtime its own
+ * refresh gets that instead, and the HTML request disappears with the morph.
+ */
+describe('refresh — a host that owns its own DOM', () => {
+  afterEach(() => {
+    (window as unknown as Record<string, unknown>)['__livePreviewRouteRefresh'] = undefined;
+  });
+
+  it('runs the registered refresh, waits for it, and makes no request of its own', async () => {
+    const fetchFn = vi.fn<FetchLike>(() => Promise.resolve(html('<p>fetched</p>')));
+    document.body.innerHTML = '<p data-testid="layout">old</p>';
+    let settle = (): void => {};
+    const refresh = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          settle = () => {
+            document.querySelector('[data-testid="layout"]')!.textContent = 'router render';
+            resolve();
+          };
+        }),
+    );
+    registerRouteRefresh(refresh);
+    const strategy = createRouteStrategy({ ...BASE, fetch: fetchFn });
+    const pending = strategy.refresh(context());
+    await Promise.resolve();
+    // Nothing has been reported yet: the runtime re-applies the revision on the
+    // fresh markup, so it may not hear "refreshed" before the markup is there.
+    expect(document.querySelector('[data-testid="layout"]')?.textContent).toBe('old');
+    settle();
+    expect(await pending).toBe('refreshed');
+    expect(document.querySelector('[data-testid="layout"]')?.textContent).toBe('router render');
+    expect(fetchFn).not.toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a registered refresh that throws as LP0801 and does not fall back to a fetch', async () => {
+    logs.length = 0;
+    const fetchFn = vi.fn<FetchLike>(() => Promise.resolve(html('<p>fetched</p>')));
+    registerRouteRefresh(() => {
+      throw new Error('router exploded');
+    });
+    const strategy = createRouteStrategy({ ...BASE, fetch: fetchFn });
+    expect(await strategy.refresh(context())).toBe('failed');
+    expect(logs.at(-1)).toBe('LP0801 router exploded');
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('fetches again once the registration is undone', async () => {
+    const fetchFn = vi.fn<FetchLike>(() => Promise.resolve(html('<p>fetched</p>')));
+    document.body.innerHTML = '<p data-testid="layout">old</p>';
+    const undo = registerRouteRefresh(() => {});
+    undo();
+    const strategy = createRouteStrategy({ ...BASE, fetch: fetchFn });
+    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 });

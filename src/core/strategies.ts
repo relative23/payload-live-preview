@@ -74,7 +74,22 @@ export interface RouteContext {
   readonly signal: AbortSignal;
   readonly isCurrent: () => boolean;
   readonly log: (code: DiagnosticCode, detail: string) => void;
+  /**
+   * Ask to be run again in `delayMs`, once. A strategy that refuses a refresh
+   * because it is rate-limiting itself uses this: the window is a rate limit
+   * and not a filter, so what falls inside it still has to reach the preview.
+   * The runtime runs at most one such request, and only while the revision that
+   * asked is still the current one.
+   */
+  readonly retryAfter?: (delayMs: number) => void;
 }
+
+/**
+ * What one refresh did. `refused` is the strategy's own brake and not a
+ * failure — it is counted separately, because a number that mixes a planned
+ * pause with a broken request cannot be read.
+ */
+export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
 
 /**
  * Whether a revision needs the whole route re-rendered, and how. After a
@@ -83,7 +98,7 @@ export interface RouteContext {
  */
 export interface RouteStrategy {
   readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
-  readonly refresh: (context: RouteContext) => Promise<'refreshed' | 'failed' | 'superseded'>;
+  readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 
 export interface StrategyHandlers {

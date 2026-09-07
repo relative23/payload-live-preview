@@ -97,7 +97,14 @@ interface Fixture {
  * runtime-carrying row, and only one of the five had that little left:
  * `LEAN_RUNTIME` 27 060 -> 27 100 (measured 27 062). The other four sit between
  * 5 and 21 B under their ceilings and stay where Z4 left them. What the bytes
- * buy is 50 ms off a keystroke; see bundle-budgets.ts.
+ * buy is 50 ms off a keystroke; see bundle-budgets.ts. *
+ * 2026-09-07 (Z6): the trailing run of a refused route refresh and the counter
+ * that stops calling it a failure cost ~100 B gzip in every runtime-carrying
+ * row: `initLivePreview` from the barrel 40 570 -> 40 700 (measured 40 663),
+ * from `./core` 40 530 -> 40 670 (40 630), the generator 38 270 -> 38 650
+ * (38 598) and the Next.js middleware 43 120 -> 43 460 (43 414). `LEAN_RUNTIME`
+ * holds at 27 100 (27 098): the lean profile has no route strategy, and all it
+ * pays is the cancelled timer's slot in the runtime state.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -118,21 +125,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 40_570,
+    gzip: 40_700,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 38_270,
+    gzip: 38_650,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 40_530,
+    gzip: 40_670,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -153,7 +160,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 43_120,
+    gzip: 43_460,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 297,
-    "suites": 618,
-    "tests": 2527,
+    "files": 298,
+    "suites": 621,
+    "tests": 2539,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 241,
-      "suites": 546,
-      "tests": 2308,
+      "files": 242,
+      "suites": 549,
+      "tests": 2320,
       "benchmarks": 0
     }
   },
@@ -604,6 +604,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/react-route-refresh.test.tsx",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -1218,8 +1225,8 @@
     {
       "path": "tests/unit/core/route-strategy.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 14,
+      "suites": 4,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -1554,8 +1561,8 @@
     {
       "path": "tests/unit/fragment/route.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 12,
+      "suites": 6,
+      "tests": 16,
       "benchmarks": 0
     },
     {

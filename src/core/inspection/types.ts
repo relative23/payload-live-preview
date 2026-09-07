@@ -124,7 +124,7 @@ export interface LivePreviewInspection {
   readonly plugins: readonly PluginInspection[];
   /** Server-rendered fragment boundaries: whether a handler exists and what happened to renders. */
   readonly fragments: InspectionFragments;
-  /** Route refreshes: whether a strategy exists, how many ran, failed, or were stopped by the loop guard. */
+  /** Route refreshes: whether a strategy exists, how many ran, failed, were paced, or were stopped by the loop guard. */
   readonly route: InspectionRoute;
 }
 
@@ -132,7 +132,14 @@ export interface LivePreviewInspection {
 export interface InspectionRoute {
   readonly handler: boolean;
   readonly refreshes: number;
+  /** Refreshes that broke: the request, the answer, or the morph. */
   readonly failed: number;
+  /**
+   * Refreshes the strategy's own minimum interval held back (LP0805). Each is
+   * run once the window closes unless a newer revision takes its place, so this
+   * counts pacing and not loss — and it is deliberately not `failed`.
+   */
+  readonly refused: number;
   /** Second refresh requests for one revision, refused with LP0805. */
   readonly loopStopped: number;
 }

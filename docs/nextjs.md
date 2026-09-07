@@ -186,6 +186,33 @@ Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
 
 The runtime writes into the DOM; React does not know. A client component that re-renders a bound element after hydration overwrites the patch with its own props. Bind fields in server components and static markup, keep interactive components free of bindings, or mark a hydrated root with `data-payload-island` so the runtime never patches or morphs into it ([renderers.md](renderers.md)).
 
+## Route refreshes without a morph
+
+A field nothing binds — and a section the template renders only under a
+condition — can only be shown by the server's own render of the route. The
+route strategy fetches that render and morphs it into the living page, which on
+a Next page means writing into DOM React's reconciler owns. Give it the
+router's own refresh instead and there is no morph and no second HTML request:
+
+```tsx
+// app/live-preview-refresh.tsx
+'use client';
+import { useRouter } from 'next/navigation';
+import { LivePreviewRouteRefresh } from 'payload-live-preview/react';
+
+export function LivePreviewRefresh() {
+  return <LivePreviewRouteRefresh refresh={useRouter().refresh} />;
+}
+```
+
+Render it once inside the root layout, beside the script. It takes the refresh
+as a prop rather than importing `next/navigation` itself, so this package does
+not depend on Next; the same component serves any router with a refresh of that
+shape, and `registerRouteRefresh()` from `payload-live-preview` is the same seam
+without React.
+
+When it is not there, the strategy fetches and morphs as before.
+
 ## Example
 
 [`examples/nextjs-payload`](../examples/nextjs-payload) — the root layout with

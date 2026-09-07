@@ -226,7 +226,19 @@ export type BundleBudget = BundleMeasurement;
 // Raised 2026-09-07 (Z5): raw 103 550 → 103 720 (measured 103 615). gzip and
 // brotli still hold and stay where Z4 left them — gzip by one byte, which the
 // next task in this runtime will have to raise.
-export const INLINE_BUDGET = { raw: 103_720, gzip: 32_450, brotli: 28_750 } as const;
+// Raised 2026-09-07 (Z6): raw 103 720 → 104 160 (measured 104 051), gzip 32 450 →
+// 32 610 (measured 32 568), brotli 28 750 → 28 950 (measured 28 829). The 331 B
+// are the trailing run of a refused route refresh and the counter that stops
+// calling it a failure. The audit measured two unbound changes 286 ms apart
+// against a 1 000 ms minimum interval: one refresh, one refusal, and nothing
+// afterwards — an editor who stopped typing there never saw the second change.
+// The refusal now asks the runtime to run it once when the window closes, and
+// the runtime holds at most one such request, always the newest.
+//
+// It is in the runtime and not in the prelude because the timer belongs to the
+// revision, not to the request: the runtime is what knows whether the revision
+// that asked is still the one on screen, and a newer one cancels it.
+export const INLINE_BUDGET = { raw: 104_160, gzip: 32_610, brotli: 28_950 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -267,7 +279,12 @@ export const INLINE_BUDGET = { raw: 103_720, gzip: 32_450, brotli: 28_750 } as c
 // Raised 2026-09-07 (Z5): raw 85 540 → 85 720 (measured 85 626). The scheduler
 // is the machine itself, not a feature, so the lean profile pays the same 172 B
 // and a lean page's keystroke lands in the same frame. gzip and brotli hold.
-export const INLINE_LEAN_BUDGET = { raw: 85_720, gzip: 26_820, brotli: 23_850 } as const;
+// Raised 2026-09-07 (Z6): raw 85 720 → 85 830 (measured 85 740), gzip 26 820 →
+// 26 880 (measured 26 850). Brotli holds. The lean profile has no route strategy
+// to refuse anything, and pays 20 B all the same: the cancelled timer lives in
+// the runtime state every profile carries, and paying for the slot is cheaper
+// than a second shape of that object.
+export const INLINE_LEAN_BUDGET = { raw: 85_830, gzip: 26_880, brotli: 23_850 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
@@ -293,7 +310,12 @@ export const INLINE_LEAN_BUDGET = { raw: 85_720, gzip: 26_820, brotli: 23_850 } 
 // the decision asks the DOM for a boundary before it decides that it has none.
 // Raised 2026-09-07 (Z5): raw 114 930 → 115 100 (measured 114 978). Both prelude
 // profiles move by the same 172 B as the runtime they wrap; gzip and brotli hold.
-export const INLINE_FRAGMENT_BUDGET = { raw: 115_100, gzip: 36_220, brotli: 31_900 } as const;
+// Raised 2026-09-07 (Z6): raw 115 100 → 115 790 (measured 115 668), gzip 36 220 →
+// 36 460 (measured 36 420), brotli 31 900 → 32 150 (measured 32 022). Both
+// prelude profiles move by the runtime's 331 B plus the 237 B the route strategy
+// itself grew: the trailing hand-back, and the branch that prefers a host's own
+// router refresh to fetching the route and morphing it.
+export const INLINE_FRAGMENT_BUDGET = { raw: 115_790, gzip: 36_460, brotli: 32_150 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -326,7 +348,14 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 115_100, gzip: 36_220, brotli: 31_9
 // write matters least and is still worth its bytes: a route refresh is a
 // server round trip either way, and the patch that lands before it is what the
 // editor sees in the meantime.
-export const INLINE_ROUTE_BUDGET = { raw: 110_170, gzip: 34_590, brotli: 30_470 } as const;
+// Raised 2026-09-07 (Z6): raw 110 170 → 110 860 (measured 110 744), gzip 34 590 →
+// 34 800 (measured 34 756), brotli 30 470 → 30 710 (measured 30 584). This is the
+// profile the change is for. Of the 574 B, 237 are the strategy's own: a refusal
+// hands the request back instead of dropping it, and a page that has registered
+// a router refresh gets a re-render the framework performs rather than HTML this
+// package morphs over a reconciler's nodes — which also removes the second HTML
+// request from every refresh such a page makes.
+export const INLINE_ROUTE_BUDGET = { raw: 110_860, gzip: 34_800, brotli: 30_710 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

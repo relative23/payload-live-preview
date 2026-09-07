@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
-import { resolveStrategy, type RouteStrategy } from '@core/strategies';
+import { resolveStrategy, type RouteContext, type RouteStrategy } from '@core/strategies';
 import type { FieldRenderer } from '@core/types';
 
 /**
@@ -323,5 +323,105 @@ describe('onUnboundChange', () => {
     post({ footer: 'Patched', headline: 'nothing binds this' });
     await done;
     expect(document.querySelector('[data-payload-field="footer"]')?.textContent).toBe('Patched');
+  });
+});
+
+/**
+ * LP-5. The audit measured two unbound changes 286 ms apart against a 1 000 ms
+ * minimum interval: one refresh, one refusal, and nothing afterwards. An editor
+ * who stops typing there never sees the second change. The refusal was also
+ * counted as a failure, which is how `failed: 3` came to stand in an
+ * `inspect()` where nothing had gone wrong.
+ */
+describe('the route brake', () => {
+  /** Long enough that three messages land inside it, short enough to wait out. */
+  const WINDOW_MS = 200;
+
+  beforeEach(() => {
+    document.head.innerHTML = '';
+  });
+
+  const sleep = (ms: number): Promise<void> =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+
+  /** The real strategy's brake: one refresh per window, the rest handed back. */
+  function brakingRoute(): RouteStrategy & { refreshes: number } {
+    let lastAt = Number.NEGATIVE_INFINITY;
+    const strategy = {
+      refreshes: 0,
+      plan: () => false,
+      refresh: (context: RouteContext) => {
+        const waitMs = WINDOW_MS - (Date.now() - lastAt);
+        if (waitMs > 0) {
+          context.retryAfter?.(waitMs);
+          return Promise.resolve('refused' as const);
+        }
+        lastAt = Date.now();
+        strategy.refreshes += 1;
+        document.querySelector('[data-testid="layout"]')!.textContent =
+          'server render #' + String(strategy.refreshes);
+        return Promise.resolve('refreshed' as const);
+      },
+    };
+    return strategy;
+  }
+
+  /** The connection's first message, and the one unbound change that spends the window. */
+  async function refuseTheSecond(
+    route: RouteStrategy & { refreshes: number },
+  ): Promise<LivePreviewRuntime> {
+    const rt = start(route, { onUnboundChange: 'route' });
+    const connected = afterUpdates(['patch']);
+    post({ footer: 'Old' });
+    await connected;
+    const refreshed = afterUpdates(['route']);
+    post({ footer: 'Old', headline: 'one' });
+    await refreshed;
+    expect(route.refreshes).toBe(1);
+    const patched = afterUpdates(['patch']);
+    post({ footer: 'Second', headline: 'two' });
+    await patched;
+    return rt;
+  }
+
+  it('counts a refusal apart from a failure and patches the revision without waiting', async () => {
+    const route = brakingRoute();
+    const rt = await refuseTheSecond(route);
+    expect(rt.inspect().route).toMatchObject({ refreshes: 1, refused: 1, failed: 0 });
+    // The window holds back the server, not the page: what can be patched is
+    // patched now, which is what the refusal already did before the trailing run.
+    expect(document.querySelector('[data-payload-field="footer"]')?.textContent).toBe('Second');
+  });
+
+  it('runs the refused refresh once when the window closes', async () => {
+    const route = brakingRoute();
+    const rt = await refuseTheSecond(route);
+    await sleep(WINDOW_MS + 100);
+    expect(route.refreshes).toBe(2);
+    expect(document.querySelector('[data-testid="layout"]')?.textContent).toBe('server render #2');
+    expect(rt.inspect().route).toMatchObject({ refreshes: 2, refused: 1, loopStopped: 0 });
+  });
+
+  it('keeps a single trailing run when a newer revision is refused as well', async () => {
+    const route = brakingRoute();
+    const rt = await refuseTheSecond(route);
+    const patched = afterUpdates(['patch']);
+    post({ footer: 'Third', headline: 'three' });
+    await patched;
+    await sleep(WINDOW_MS + 100);
+    // Two refusals, one trailing run: the newer revision takes the slot from the
+    // older, because its message carries the older one's values as well.
+    expect(rt.inspect().route).toMatchObject({ refreshes: 2, refused: 2 });
+    expect(document.querySelector('[data-payload-field="footer"]')?.textContent).toBe('Third');
+  });
+
+  it('drops the trailing run when the runtime stops before the window closes', async () => {
+    const route = brakingRoute();
+    const rt = await refuseTheSecond(route);
+    rt.destroy();
+    await sleep(WINDOW_MS + 100);
+    expect(route.refreshes).toBe(1);
   });
 });
