@@ -129,8 +129,9 @@ Notes on the rows that need one:
   tag with `renderLivePreviewScript()` (Astro, Next.js, Nuxt).
 - `delivery: 'asset'` replaces the inlined runtime with a bootstrap of a few
   hundred bytes that fetches it as `<assetPath>/runtime.<hash>.js` — but only
-  once it finds itself in a preview context. Measured on the Next.js fixture:
-  679 bytes in the page instead of 100 258, and one response the browser may
+  once it finds itself in a preview context. Measured on the Next.js fixture by
+  `tests/e2e/specs/public-response.spec.ts`: 696 bytes in the page instead of
+  115 031, and one response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
   integrity check and what a proxy must not do to the file are in

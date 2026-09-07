@@ -43,7 +43,7 @@ By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. Measured on the
 Next.js fixture, that is a 696-byte `<script>` element in the page instead of a
-108 994-byte one.
+115 031-byte one.
 
 Two ways in, because the frameworks differ in who can serve a file:
 
@@ -85,21 +85,22 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The runtime is about 97.5 KB of JavaScript (30 KB gzip). The number that
+The runtime is about 103.5 KB of JavaScript (32 KB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
 rather than by the framework. Three outcomes, each pinned to the byte by an E2E
 case in `tests/e2e/specs/public-response.spec.ts` against the budgets in
 `tests/fixtures/delivery-budgets.ts`, so this table cannot drift from the
-fixtures. The bytes are the whole `<script>` element, tag included, as measured
-on a request with no cookie and no preview intent:
+fixtures. Every number below is measured, not computed: it is the whole
+`<script>` element, tag included, read off a request with no cookie and no
+preview intent.
 
 | Setup                                                 | A public visitor receives | Bytes          | Why                                                                               |
 | ----------------------------------------------------- | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
 | SvelteKit handle, Nuxt Nitro plugin, Astro middleware | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
 | Next.js, `delivery: 'asset'`                          | the bootstrap             | 696, twice     | the root layout renders for everyone; what it renders is the bootstrap            |
 | Astro static build, `mode: 'loader'`                  | the bootstrap             | 762            | a static page has no request to decide for, so the check happens in the browser   |
-| Astro static build, `mode: 'inline'`                  | the whole runtime         | 97 672         | nothing decides and nothing is deferred                                           |
-| Next.js, script in the root layout                    | the whole runtime         | 108 994, twice | a layout renders for every visitor, and Next middleware cannot inject into a body |
+| Astro static build, `mode: 'inline'`                  | the whole runtime         | 103 709        | nothing decides and nothing is deferred                                           |
+| Next.js, script in the root layout                    | the whole runtime         | 115 031, twice | a layout renders for every visitor, and Next middleware cannot inject into a body |
 
 The bootstrap is the same code in either row that carries it — the byte
 difference is the configuration in front of it — and all it does is check

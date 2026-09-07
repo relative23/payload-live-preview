@@ -145,10 +145,13 @@ export const PROTOCOL_MODEL: readonly ProtocolMessage[] = [
   },
 ];
 
-/** A task that can delete an exception. An exception naming none is itself a defect. */
-export const TASKS_THAT_REMOVE_EXCEPTIONS: Readonly<Record<string, string>> = {
-  Z1: 'bind forceRender to the event instead of to the field being non-empty',
-};
+/**
+ * A task that can delete an exception. An exception naming none is itself a
+ * defect, so this is the vocabulary `SEMANTIC_EXCEPTIONS` may draw on — and it
+ * is empty today because that book is. Z1 stood here until it landed; whoever
+ * writes the next exception writes its task in beside it.
+ */
+export const TASKS_THAT_REMOVE_EXCEPTIONS: Readonly<Record<string, string>> = {};
 
 export interface SemanticException {
   readonly field: string;
@@ -159,17 +162,14 @@ export interface SemanticException {
   readonly observed: string;
 }
 
-export const SEMANTIC_EXCEPTIONS: readonly SemanticException[] = [
-  {
-    field: 'externallyUpdatedRelationship',
-    finding: 'LP-1',
-    task: 'Z1',
-    observed:
-      'Every non-empty value becomes `forceRender: true` and a `relationshipUpdate` ' +
-      'event, so after the first save `skipUnchanged` is off for the rest of the ' +
-      'session and a plugin listener gets an event per keystroke.',
-  },
-];
+/**
+ * Empty, and that is a result rather than an oversight: LP-1 stood here from the
+ * day this file was written until Z1 bound `forceRender` to the event instead of
+ * to the field being non-empty. The two rows it hung on now measure the fixed
+ * behaviour, and an exception left standing over a fixed defect would make the
+ * gate say something untrue about the runtime.
+ */
+export const SEMANTIC_EXCEPTIONS: readonly SemanticException[] = [];
 
 /** What one replay of a corpus through the real runtime yields. */
 export interface SemanticMeasurement {
@@ -258,23 +258,23 @@ export const SEMANTIC_BUDGETS: readonly SemanticBudget[] = [
   {
     corpus: '3.88.0',
     metric: 'relationshipUpdates',
-    exactly: 4,
+    exactly: 0,
     reason:
-      'One event per carrying message, because the runtime reads a level as an edge. ' +
-      'Z1 makes this 1 — the single distinct identity — or 0 once "another document" ' +
-      'is also required, since this one is the previewed document.',
-    exception: 'LP-1',
+      'Four messages carry the field and none of them is an event, because all four ' +
+      'name the previewed document itself and Z1 requires a different one. The 0 is ' +
+      'held against the 4 above it: the level is still repeated in every message, and ' +
+      'a runtime that goes back to reading it as an edge reads 4 here again.',
   },
   {
     corpus: '3.88.0',
     metric: 'skippedAfterSave',
-    exactly: 0,
+    exactly: 8,
     reason:
-      'Every post-save message leaves at least one bound field untouched — one of them ' +
-      'repeats its predecessor whole — and not one of those writes is skipped, because ' +
-      '`forceRender` is on for all four. Before the save the same replay skips 14. Z1 ' +
-      'raises this number; the run stays red until it is recorded.',
-    exception: 'LP-1',
+      'Eight writes the post-save messages no longer make. Each of those messages ' +
+      'leaves at least one bound field untouched — one repeats its predecessor whole — ' +
+      'and `skipUnchanged` now stays on across the save, so the untouched ones are ' +
+      'skipped as they are before it. This is the number that falls back to 0 if a ' +
+      'save ever turns unconditional re-rendering on again.',
   },
 ];
 

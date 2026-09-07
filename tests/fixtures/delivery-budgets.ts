@@ -73,11 +73,14 @@ export interface DeliveryMeasurement {
  * repository happens to sit in. The totals are measured and printed instead.
  *
  * **gzip**, which is what actually crosses the wire. It is not byte-stable
- * across Node majors: the same 97 672-byte inline script compresses to 30 497
- * bytes under Node 24 and 30 520 under Node 22, the version CI runs. A gate
- * demanding an exact gzip figure would be red on a runner and green here for a
- * reason nobody can act on. Raw bytes reproduce exactly, and gzip is a function
- * of them, so holding raw catches every change gzip would.
+ * across Node majors: measured on 6 September, one and the same 97 672-byte
+ * inline script compressed to 30 497 bytes under Node 24 and 30 520 under Node
+ * 22, the version CI runs. A gate demanding an exact gzip figure would be red on
+ * a runner and green here for a reason nobody can act on. Raw bytes reproduce
+ * exactly, and gzip is a function of them, so holding raw catches every change
+ * gzip would. (That script is 103 709 bytes and 32 551 gzip today, Node 24 —
+ * the runtime grew with Z3, Z4 and Z5, and no number in this table moved,
+ * because none of them is the runtime's size.)
  */
 
 export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
@@ -108,8 +111,10 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     // The yardstick: 17 bytes of tag and 109 bytes of config in front of the
     // whole runtime, delivered to everyone. Nothing decides and nothing is
     // deferred, so this row measures what the other rows are avoiding —
-    // 97 672 bytes today. It is honest rather than wrong: an option named
-    // `inline` promises exactly this.
+    // 103 709 bytes today, up from 97 672 on 6 September because Z3, Z4 and Z5
+    // added code. The 126 did not move, and that is the construction working:
+    // this row holds the delivery, not the runtime. It is honest rather than
+    // wrong: an option named `inline` promises exactly this.
     why: 'the price of deferring nothing, so every other row has something to be measured against',
   },
   {
@@ -136,10 +141,12 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     overheadBytes: 11_448,
     // LP-8, held as a number. A root layout renders for every visitor and Next
     // middleware cannot inject into a body, so the documented wiring hands the
-    // whole runtime to anyone who loads any page — 108 994 bytes in the element,
+    // whole runtime to anyone who loads any page — 115 031 bytes in the element,
     // and again in the flight payload React writes underneath it, which is why
-    // `scriptElements` is 2 and the response is 242 868 bytes. The 11 448 above
-    // the runtime are the config and the fragment prelude this fixture asks for.
+    // `scriptElements` is 2 and the response is 255 278 bytes. The 11 448 above
+    // the runtime are the config and the fragment prelude this fixture asks for,
+    // and they are what this row holds: the element grew by 6 037 bytes with the
+    // runtime between 6 and 7 September and the budget did not move a byte.
     //
     // Z8 is the row that empties it: an async server component that awaits the
     // authorization verdict renders nothing at all for a request without preview
@@ -156,7 +163,7 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     scriptElements: 2,
     overheadBytes: 696,
     // The same layout, the same shell, one option apart: 696 bytes instead of
-    // 108 994. It is the answer available today, and it is not zero — the layout
+    // 115 031. It is the answer available today, and it is not zero — the layout
     // still renders for everyone, so the bootstrap still ships, and Next still
     // repeats it in the flight payload. That gap between 696 and 0 is what Z8
     // closes; this row is what proves the gap is small but real.

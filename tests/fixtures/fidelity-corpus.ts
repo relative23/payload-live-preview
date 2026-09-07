@@ -153,16 +153,37 @@ export const KNOWN_DIVERGENCES: readonly KnownDivergence[] = [
   {
     case: STATIC_FORCED_RENDER.name,
     signature: 'text|article > p > time[field=publishedAt] > #text:1',
-    task: 'Z3',
-    why: 'the server printed the stored ISO string and the date renderer prints a formatted one; the runtime cannot know how the template formatted a value and must escalate rather than guess',
+    // Moved from Z3 to Z20 once Z3 had measured it. Escalating is what Z3 does
+    // to a patch it cannot make faithfully, and this patch is made: the runtime
+    // writes the ISO string successfully. Escalation then makes it worse rather
+    // than better — the route redraws the server's format and the re-apply
+    // overwrites it again — so what is needed is a diagnostic naming
+    // `data-payload-format`, which is Z20.
+    task: 'Z20',
+    why: 'the server printed the stored ISO string and the date renderer prints a formatted one; the runtime cannot know how the template formatted a value, and escalating overwrites the server format a second time instead of keeping it',
   },
   {
     case: STATIC_FORCED_RENDER.name,
     signature: 'attribute|article > ul[field=tags] > li @data-astro-cid',
-    task: 'Z3',
-    why: "the array template rebuilds the list items without Astro's scoped-style marker, so the patched list is styled differently from the one the server sent",
+    // Moved from Z3 to Z22 for a sharper reason: Z3 cannot see this one at all.
+    // Every escalation Z3 added is triggered by a write that could not be made,
+    // and this write succeeds — the list is rebuilt, correctly, and differs from
+    // the server's anyway. It is the class the runtime cannot detect by itself,
+    // because detecting it needs the server's version, which only this oracle
+    // has. Z22 copies the template element's attributes instead.
+    task: 'Z22',
+    why: "the array template rebuilds the list items without Astro's scoped-style marker, so the patched list is styled differently from the one the server sent — and the write itself succeeds, so no escalation can notice",
   },
 ];
 
 /** Work items an exception may name; the oracle rejects any other value. */
-export const TASKS_THAT_REMOVE_EXCEPTIONS = ['Z2', 'Z3', 'Z4', 'Z5', 'Z6', 'Z7'] as const;
+export const TASKS_THAT_REMOVE_EXCEPTIONS = [
+  'Z2',
+  'Z3',
+  'Z4',
+  'Z5',
+  'Z6',
+  'Z7',
+  'Z20',
+  'Z22',
+] as const;
