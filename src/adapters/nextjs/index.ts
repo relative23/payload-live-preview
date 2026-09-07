@@ -18,3 +18,8 @@ export {
   type WithLivePreviewOptions,
 } from './config';
 export { createRuntimeAssetRoute, type RuntimeAssetRoute } from './asset-route';
+export {
+  LivePreviewScript,
+  type LivePreviewScriptComponentProps,
+  type LivePreviewScriptElement,
+} from './script-component';

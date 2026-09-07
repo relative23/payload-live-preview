@@ -78,9 +78,11 @@ export interface DeliveryMeasurement {
  * 22, the version CI runs. A gate demanding an exact gzip figure would be red on
  * a runner and green here for a reason nobody can act on. Raw bytes reproduce
  * exactly, and gzip is a function of them, so holding raw catches every change
- * gzip would. (That script is 103 709 bytes and 32 551 gzip today, Node 24 —
- * the runtime grew with Z3, Z4 and Z5, and no number in this table moved,
- * because none of them is the runtime's size.)
+ * gzip would. (The runtime inside that script is 104 711 bytes and 32 834 gzip
+ * today, Node 24 — it grew again with Z6, Z7 and Z22 after Z3, Z4 and Z5, and
+ * the only number in this table that moved for any of them is the Next inline
+ * row's, which does not hold the runtime either; the paragraph on that row says
+ * what did move.)
  */
 
 export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
@@ -138,21 +140,38 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     carries: 'runtime',
     bindings: true,
     scriptElements: 2,
-    overheadBytes: 11_448,
+    overheadBytes: 11_702,
     // LP-8, held as a number. A root layout renders for every visitor and Next
-    // middleware cannot inject into a body, so the documented wiring hands the
-    // whole runtime to anyone who loads any page — 115 031 bytes in the element,
+    // middleware cannot inject into a body, so this fixture's wiring hands the
+    // whole runtime to anyone who loads any page — 116 413 bytes in the element,
     // and again in the flight payload React writes underneath it, which is why
-    // `scriptElements` is 2 and the response is 255 278 bytes. The 11 448 above
-    // the runtime are the config and the fragment prelude this fixture asks for,
-    // and they are what this row holds: the element grew by 6 037 bytes with the
-    // runtime between 6 and 7 September and the budget did not move a byte.
+    // `scriptElements` is 2 and the response is 258 148 bytes.
     //
-    // Z8 is the row that empties it: an async server component that awaits the
-    // authorization verdict renders nothing at all for a request without preview
-    // intent. When it lands, all four numbers in this row become the middleware
-    // row's — `nothing`, 0, 0 — and until they do, this line is the receipt.
-    why: 'LP-8: the one path that hands the whole runtime to the public, twice, and the one Z8 sets to zero',
+    // The 11 702 above the runtime are the tag, the 103-byte config statement
+    // and the 11 580-byte fragment prelude this fixture asks for. That is the
+    // one number in this table that has moved since 6 September, from 11 448:
+    // the prelude bundles `src/fragment/`, so Z6's retry-after and refused
+    // counter and Z22's array template inheritance are inside it. The runtime
+    // grew by 7 165 bytes over the same days and this row did not notice, which
+    // is the construction working — the budget holds the delivery, and the
+    // prelude is part of the delivery.
+    //
+    // Z8 built the component that empties this row — `<LivePreviewScript />` in
+    // the nextjs entry, which awaits the authorization verdict and renders
+    // nothing at all for a request without one. What it could not do is switch
+    // this fixture over: `examples/` is out of the lane's reach (docs/PRIVATE-
+    // LOOP.md), and the switch is not one line — five specs frame this app's `/`
+    // with no session and no intent, so the fixture needs an `authorizePreview`
+    // and a mock admin that carries a token, the way the SvelteKit one does.
+    // Until a maintainer makes that change this line stays the receipt, ratcheted
+    // to what the delivery actually charges; the component's own proof that an
+    // authorized request still gets the runtime and an anonymous one gets
+    // nothing is `tests/unit/adapters/nextjs-script-component.test.ts`. When the
+    // fixture flips, all four numbers here become the middleware row's —
+    // `nothing`, 0, 0 — and the second script element goes with them: a flight
+    // payload can only repeat what was rendered, so nothing rendered is nothing
+    // repeated, and the double delivery stops being a number worth holding.
+    why: 'LP-8: the one path that hands the whole runtime to the public, twice, and the one <LivePreviewScript /> empties as soon as a fixture renders it',
   },
   {
     name: 'Next.js, delivery: asset',
@@ -163,10 +182,12 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     scriptElements: 2,
     overheadBytes: 696,
     // The same layout, the same shell, one option apart: 696 bytes instead of
-    // 115 031. It is the answer available today, and it is not zero — the layout
-    // still renders for everyone, so the bootstrap still ships, and Next still
-    // repeats it in the flight payload. That gap between 696 and 0 is what Z8
-    // closes; this row is what proves the gap is small but real.
+    // 116 413. It is what an option alone can do, and it is not zero — the
+    // layout still renders for everyone, so the bootstrap still ships, and Next
+    // still repeats it in the flight payload. That gap between 696 and 0 is the
+    // one `<LivePreviewScript />` closes, and closing it takes a component
+    // rather than an option, because only a component can decline to render;
+    // this row is what proves the gap is small but real.
     why: 'what a Next page can do without changing its architecture, and the 696 bytes that still remain',
   },
   {

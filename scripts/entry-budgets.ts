@@ -279,7 +279,25 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
   'adapters/astro/index.js': { raw: 150_940, gzip: 47_335, brotli: 40_735 },
   'adapters/astro/middleware-entry.js': { raw: 137_640, gzip: 43_215, brotli: 37_145 },
-  'adapters/nextjs/index.js': { raw: 149_200, gzip: 46_790, brotli: 40_290 },
+  //
+  // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
+  // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
+  // `<LivePreviewScript />` — the policy call, the decision branch and the
+  // element it builds. Nothing else in the package sees it: `react` is reached
+  // through a lazy dynamic import, so no entry gains a static dependency, and
+  // `check-tree-shaking.ts` still measures 43 990 gzip for a project that
+  // imports only `createLivePreviewMiddleware`. The brotli row rises with them
+  // even though it did not cross: it sat 21 B under its ceiling after Z19
+  // trimmed it, and this file has already said once that 21 B is a coin flip
+  // rather than a budget on the one measurement CI's Node can disagree about.
+  // Back to the documented ~120 B.
+  //
+  // The bytes buy the only delivery in this package that can decline to render.
+  // A root layout renders for every visitor and the two synchronous helpers
+  // cannot wait for a verdict, so LP-8 measured 195 342 of 254 707 bytes of
+  // runtime on a request with no cookie; an async component awaits
+  // `authorizePreview` and renders nothing for it.
+  'adapters/nextjs/index.js': { raw: 149_400, gzip: 46_850, brotli: 40_390 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin

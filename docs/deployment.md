@@ -85,7 +85,7 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The runtime is about 103.5 KB of JavaScript (32 KB gzip). The number that
+The runtime is about 104.7 KB of JavaScript (32.8 KB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
 rather than by the framework. Three outcomes, each pinned to the byte by an E2E
 case in `tests/e2e/specs/public-response.spec.ts` against the budgets in
@@ -94,13 +94,13 @@ fixtures. Every number below is measured, not computed: it is the whole
 `<script>` element, tag included, read off a request with no cookie and no
 preview intent.
 
-| Setup                                                 | A public visitor receives | Bytes          | Why                                                                               |
-| ----------------------------------------------------- | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
-| SvelteKit handle, Nuxt Nitro plugin, Astro middleware | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
-| Next.js, `delivery: 'asset'`                          | the bootstrap             | 696, twice     | the root layout renders for everyone; what it renders is the bootstrap            |
-| Astro static build, `mode: 'loader'`                  | the bootstrap             | 762            | a static page has no request to decide for, so the check happens in the browser   |
-| Astro static build, `mode: 'inline'`                  | the whole runtime         | 103 709        | nothing decides and nothing is deferred                                           |
-| Next.js, script in the root layout                    | the whole runtime         | 115 031, twice | a layout renders for every visitor, and Next middleware cannot inject into a body |
+| Setup                                                  | A public visitor receives | Bytes          | Why                                                                               |
+| ------------------------------------------------------ | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
+| SvelteKit handle, Nuxt Nitro plugin, Astro middleware  | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
+| Next.js, `delivery: 'asset'`                           | the bootstrap             | 696, twice     | the root layout renders for everyone; what it renders is the bootstrap            |
+| Astro static build, `mode: 'loader'`                   | the bootstrap             | 762            | a static page has no request to decide for, so the check happens in the browser   |
+| Astro static build, `mode: 'inline'`                   | the whole runtime         | 104 837        | nothing decides and nothing is deferred                                           |
+| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 116 413, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
 
 The bootstrap is the same code in either row that carries it — the byte
 difference is the configuration in front of it — and all it does is check
@@ -109,14 +109,31 @@ nothing and fetches nothing. So a visitor to a statically built site pays under
 one per cent of what the inline build costs them, and a visitor to a site whose
 server decides pays nothing at all.
 
+762 bytes is the floor of this table, and it is not zero. A page built ahead of
+time has no request to decide for, so the check has to travel with the page;
+`mode: 'loader'` is the one delivery here that cannot reach zero, and saying so
+is more useful than a smaller number that stops being true the moment somebody
+measures it. Every other delivery can, because something of ours runs while the
+request is still open.
+
 "Twice" is Next's doing, not ours: a script in a layout is rendered once into
 the HTML and once more into the RSC flight payload underneath it, escaped and
 therefore slightly larger the second time. A Next page ships its delivery two
 times, which is what makes the choice between those two rows the widest in the
 table.
 
-Two ways to move a row up:
+Three ways to move a row up:
 
+- **A Next.js layout or page**: render `<LivePreviewScript />` from
+  `payload-live-preview/nextjs` instead of spreading
+  `livePreviewScriptProps()`. It is an async server component, so it can await
+  the authorization verdict and render nothing — not a bootstrap, nothing — for
+  a request that is not an authorized preview. It is the only way a Next page
+  reaches the top row, because it is the only one that can decline to render
+  ([nextjs.md](nextjs.md)). This row is not in the table above: no fixture is
+  wired that way yet, so it is held by
+  `tests/unit/adapters/nextjs-script-component.test.ts` rather than by the E2E
+  budgets, and it is named here as a way rather than as a measurement.
 - **A page whose script is rendered for everyone**: switch it to
   `delivery: 'asset'` (Next.js, SvelteKit, Nuxt) or `mode: 'loader'` (Astro).
   The bootstrap replaces the runtime, and the runtime is fetched only inside a

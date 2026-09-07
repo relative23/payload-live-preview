@@ -41,6 +41,25 @@ export { FragmentRenderInput }
 export type LivePreviewNextOptions = PreviewAdapterOptions;
 
 // @public
+export function LivePreviewScript(props: LivePreviewScriptComponentProps): Promise<LivePreviewScriptElement | null>;
+
+// @public
+export interface LivePreviewScriptComponentProps extends LivePreviewNextOptions {
+    readonly nonce?: string;
+    readonly request: Request | Promise<Request>;
+}
+
+// @public
+export interface LivePreviewScriptElement {
+    // (undocumented)
+    readonly key: null;
+    // (undocumented)
+    readonly props: LivePreviewScriptProps;
+    // (undocumented)
+    readonly type: 'script';
+}
+
+// @public
 export interface LivePreviewScriptProps {
     // (undocumented)
     readonly dangerouslySetInnerHTML: {

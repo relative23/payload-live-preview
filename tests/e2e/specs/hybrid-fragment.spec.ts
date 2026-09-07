@@ -24,6 +24,7 @@ interface RouteStats {
   handler: boolean;
   refreshes: number;
   failed: number;
+  refused: number;
   loopStopped: number;
 }
 interface Api {

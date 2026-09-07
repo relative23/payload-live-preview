@@ -12,6 +12,81 @@ Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin 
 npm install payload-live-preview
 ```
 
+## Which of the three ways to deliver it
+
+The script can reach the page three ways, and they charge a visitor who is not
+an editor three different amounts. The bottom two rows are measured per request
+— no cookie, no preview intent — by an E2E case against
+`tests/fixtures/delivery-budgets.ts`; the top row is held by
+`tests/unit/adapters/nextjs-script-component.test.ts`, because no example app is
+wired that way yet.
+
+| Way                                                       | A public visitor receives | Pick it when                                                                  |
+| --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| `<LivePreviewScript />`, an async server component        | nothing                   | the default: the render can await an authorization verdict                    |
+| `livePreviewScriptProps()` with `delivery: 'asset'`       | a 696-byte bootstrap      | the script is built once at module scope and the page has no verdict to await |
+| `livePreviewScriptProps()` or `renderLivePreviewScript()` | the whole runtime         | a page that is not gated at all, or HTML a server assembles as a string       |
+
+## Nothing for a public visitor
+
+`<LivePreviewScript />` is an async server component. It runs the same policy
+the middleware runs — intent, then `authorizePreview` — and renders nothing at
+all for a request that is not an authorized preview. Not a bootstrap: nothing.
+
+```tsx
+// app/layout.tsx
+import type { ReactNode } from 'react';
+import { headers } from 'next/headers';
+import { LivePreviewScript } from 'payload-live-preview/nextjs';
+import { authorizePreviewRequest } from 'payload-live-preview/server';
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <LivePreviewScript
+          request={new Request(process.env.SITE_ORIGIN!, { headers: await headers() })}
+          // A layout cannot see the query string (below), so the verdict is the gate.
+          inject="always"
+          allowedOrigins={[process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!]}
+          serverURL={process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!}
+          mergeDepth={1}
+          authorizePreview={(request) =>
+            authorizePreviewRequest(request, {
+              type: 'payload-session',
+              serverURL: process.env.PAYLOAD_URL!,
+            })
+          }
+        />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+It takes the request as a prop rather than calling `next/headers` itself, so
+this package still does not depend on Next — the same reason
+`<LivePreviewRouteRefresh />` takes the router's refresh as one. A `Request` is
+what `authorizePreview` and `shouldInject` already receive from the middleware,
+so one options object serves both.
+
+**Next gives a server component the request headers and cookies, but not its
+URL.** A layout therefore cannot see `?preview=true`, and the default intent
+signal — `previewSignals: ['query']` — cannot fire there. Two ways round it:
+
+- `inject="always"`, as above. Intent is skipped and `authorizePreview` is the
+  only gate, which is the stricter reading anyway: intent is client-controlled
+  and never authorization ([authorization.md](authorization.md)).
+- Render the component in a **page** instead, which does get `searchParams`, and
+  pass the real URL: `new Request(url, { headers: await headers() })`. Intent
+  then works as the cheap pre-filter it is, and the `signed-token` strategy —
+  which binds a token to a path — has the path it needs.
+
+The element carries a `nonce` prop for a CSP you manage yourself, and it is
+rendered only when the script is. Everything else on it is the adapter options
+below.
+
 ## The script in the root layout
 
 Next.js middleware cannot inject into the HTML body — `NextResponse.next()` carries no body — so the script is part of the rendered HTML:
@@ -43,7 +118,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 Compute the props once at module scope, as above: the configuration does not
 change per request, and the script body is the same bytes every time.
 
-The script stays inert outside the admin's preview iframe, but it does ship to everyone: a layout renders for every visitor, and Next.js middleware cannot inject into a body, so there is no request-time gate to put in front of it. That is about 35 KB gzip on every public page, measured. `delivery: 'asset'` below replaces those bytes with a 696-byte bootstrap script that fetches nothing outside a preview; rendering the script in a dynamic layout only after the authorization below succeeded removes them entirely. What each choice costs a visitor, measured per framework: [deployment.md](deployment.md#what-a-public-visitor-pays).
+The script stays inert outside the admin's preview iframe, but written this way it ships to everyone: `livePreviewScriptProps()` is synchronous, so it cannot wait for a verdict and does not try. That is about 32 KB gzip on every public page, and Next renders it twice — once into the HTML, once more into the RSC flight payload. `<LivePreviewScript />` above is the version that waits and charges a public visitor nothing; `delivery: 'asset'` below is the version that keeps the module-scope props and replaces the runtime with a 696-byte bootstrap. What each choice costs a visitor, measured per framework: [deployment.md](deployment.md#what-a-public-visitor-pays).
 
 `livePreviewScriptProps()` takes a `nonce` for a CSP you manage yourself, and puts it where the framework expects it — a prop, not markup inside the body. `renderLivePreviewScript()` returns the complete `<script>` tag instead, for HTML a server assembles as a string; JSX cannot render that.
 

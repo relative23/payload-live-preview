@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 298,
-    "suites": 623,
-    "tests": 2553,
+    "files": 299,
+    "suites": 624,
+    "tests": 2562,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 242,
-      "suites": 551,
-      "tests": 2334,
+      "files": 243,
+      "suites": 552,
+      "tests": 2343,
       "benchmarks": 0
     }
   },
@@ -541,6 +541,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/nextjs-script-component.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 9,
       "benchmarks": 0
     },
     {
