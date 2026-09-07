@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 298,
-    "suites": 621,
-    "tests": 2539,
+    "suites": 622,
+    "tests": 2546,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 242,
-      "suites": 549,
-      "tests": 2320,
+      "suites": 550,
+      "tests": 2327,
       "benchmarks": 0
     }
   },
@@ -987,8 +987,8 @@
     {
       "path": "tests/unit/core/lifecycle-orphan-fields.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 11,
+      "suites": 2,
+      "tests": 18,
       "benchmarks": 0
     },
     {

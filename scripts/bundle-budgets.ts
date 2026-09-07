@@ -238,7 +238,33 @@ export type BundleBudget = BundleMeasurement;
 // It is in the runtime and not in the prelude because the timer belongs to the
 // revision, not to the request: the runtime is what knows whether the revision
 // that asked is still the one on screen, and a newer one cancels it.
-export const INLINE_BUDGET = { raw: 104_160, gzip: 32_610, brotli: 28_950 } as const;
+//
+// 2026-09-07 (Z7, LP0201 one level down): every artifact that embeds the
+// runtime rises +244 B raw / ~80 B gzip / ~55 B brotli, measured against the
+// same build without the change. It is the descent itself — a group the page
+// addresses nowhere is opened once and its scalars are named with the path a
+// binding would carry — plus the report becoming a function because two call
+// sites now share it.
+//
+// What the bytes buy is a diagnostic that has caught up with the runtime.
+// Dotted bindings have worked since 1.x (`venue.title`), and LP0201 looked at
+// the top level only: an edit to `admission.priceFrom` stayed invisible in the
+// preview and `orphanFields` never named it — the audit read
+// `[endsAt, generateSlug, slug, startsAt, state]` and had to find the real
+// cause by hand. The descent stops at one level and skips arrays, because
+// deeper the shape is a rich-text tree more often than a group and a missing
+// anchor inside an array is a template decision.
+//
+// It costs what it costs in every page because the diagnostic is in the update
+// pipeline, where the message and the binding cache meet; there is no seam
+// behind which a page could leave it. The restraint that keeps it small is also
+// the one that keeps it honest: only a group `createFieldAddressability` already
+// calls unaddressable is opened, which is the same field `onUnfaithfulPatch`
+// escalates on, so the two cannot drift apart.
+//
+// Raised 2026-09-07 (Z7): raw 104_160 → 104_410 (measured 104_295), gzip
+// 32_610 → 32_690 (measured 32_641). Brotli holds at 91 B of cushion.
+export const INLINE_BUDGET = { raw: 104_410, gzip: 32_690, brotli: 28_950 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -284,7 +310,11 @@ export const INLINE_BUDGET = { raw: 104_160, gzip: 32_610, brotli: 28_950 } as c
 // to refuse anything, and pays 20 B all the same: the cancelled timer lives in
 // the runtime state every profile carries, and paying for the slot is cheaper
 // than a second shape of that object.
-export const INLINE_LEAN_BUDGET = { raw: 85_830, gzip: 26_880, brotli: 23_850 } as const;
+// Raised 2026-09-07 (Z7): raw 85_830 → 86_100 (measured 85_984), gzip 26_880 →
+// 26_970 (measured 26_924), brotli 23_850 → 23_990 (measured 23_864). The lean
+// profile pays the same 244 B as the full one: the update pipeline is the
+// machine itself, and LP0201 sits in it.
+export const INLINE_LEAN_BUDGET = { raw: 86_100, gzip: 26_970, brotli: 23_990 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
@@ -315,7 +345,10 @@ export const INLINE_LEAN_BUDGET = { raw: 85_830, gzip: 26_880, brotli: 23_850 } 
 // prelude profiles move by the runtime's 331 B plus the 237 B the route strategy
 // itself grew: the trailing hand-back, and the branch that prefers a host's own
 // router refresh to fetching the route and morphing it.
-export const INLINE_FRAGMENT_BUDGET = { raw: 115_790, gzip: 36_460, brotli: 32_150 } as const;
+// Raised 2026-09-07 (Z7): raw 115_790 → 116_030 (measured 115_912), gzip
+// 36_460 → 36_560 (measured 36_511). Brotli holds. Both prelude profiles move
+// by the runtime's 244 B and nothing of their own.
+export const INLINE_FRAGMENT_BUDGET = { raw: 116_030, gzip: 36_560, brotli: 32_150 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -355,7 +388,11 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 115_790, gzip: 36_460, brotli: 32_1
 // a router refresh gets a re-render the framework performs rather than HTML this
 // package morphs over a reconciler's nodes — which also removes the second HTML
 // request from every refresh such a page makes.
-export const INLINE_ROUTE_BUDGET = { raw: 110_860, gzip: 34_800, brotli: 30_710 } as const;
+// Raised 2026-09-07 (Z7): raw 110_860 → 111_100 (measured 110_988), gzip
+// 34_800 → 34_890 (measured 34_841). Brotli holds. The route profile is the one
+// that acts on an unbound change; now the console names the field inside the
+// group it refreshed the page for.
+export const INLINE_ROUTE_BUDGET = { raw: 111_100, gzip: 34_890, brotli: 30_710 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

@@ -171,6 +171,12 @@ field nowhere to land (`LP0201`). Render the anchor unconditionally:
 <div data-payload-field="subtitle">{subtitle ?? ''}</div>
 ```
 
+The warning reaches one level into a group: a document with an unbound
+`admission` group names `admission.priceFrom`, the path a binding would carry,
+rather than the object around it. A group with a binding on any path inside it
+counts as addressed and is not reported, and arrays are left alone — an array
+item without an anchor is a template decision.
+
 `PreviewBoundary` renders that anchor with `data-payload-boundary`: as an
 empty `hidden` element while the value is empty, so a visitor and a screen
 reader see nothing, and the runtime removes `hidden` when an update fills the
