@@ -8,7 +8,12 @@
 
 import { sanitizeHtmlWithPolicy, type SanitizerPolicyMode } from '@security/sanitizer';
 import { trustedHtml } from '@security/trusted-types';
-import { interpolateArrayTemplate } from './array-template';
+import {
+  inheritItemAttributes,
+  interpolateArrayTemplate,
+  sharedItemAttributes,
+  type InheritedAttribute,
+} from './array-template';
 import { safeStringify } from '@field-types/utils';
 import { diffArray, type ArrayPatch } from '@schema/diff';
 import { morphElement } from './morph';
@@ -182,6 +187,9 @@ function prepareReconciliation(
 ): readonly ReconciliationEntry[] | null {
   const { template, nextItems, forceRender = false, store, sanitizerPolicy } = env;
   const memory = store.get(container);
+  // Read before anything is rendered: what the current items share is what the
+  // template cannot say, and an inserted item has no predecessor of its own.
+  const shared = sharedItemAttributes(container);
   const initialChildren = Array.from(container.children);
   const keyedChildren = indexByAttribute(initialChildren, KEY_ATTRIBUTE);
   const reserved = new Set<Element>();
@@ -198,7 +206,7 @@ function prepareReconciliation(
     const replace = plan.replaces.has(index);
     const needsRender = forceRender || plan.renders.has(index) || live === null;
     const rendered = needsRender
-      ? renderItem(container.ownerDocument, template, value, index, sanitizerPolicy)
+      ? renderItem(container.ownerDocument, template, value, index, sanitizerPolicy, shared)
       : undefined;
     if (rendered === null) return null;
     const nestedSlots =
@@ -355,6 +363,7 @@ function renderItem(
   value: unknown,
   index: number,
   policy: SanitizerPolicyMode | undefined,
+  shared: readonly InheritedAttribute[],
 ): Element | null {
   const filled = interpolateArrayTemplate(template, value, index, safeStringify);
   const safe = sanitizeHtmlWithPolicy(filled, policy, templateSanitizeOptions(template));
@@ -362,6 +371,9 @@ function renderItem(
   host.innerHTML = trustedHtml(safe);
   const first = host.content.firstElementChild;
   if (!first) return null;
+  // Before the morph, which strips from the live item every attribute the
+  // rendered one lacks: the marker has to be on this side to survive.
+  inheritItemAttributes(first, shared);
   const key = readKey(value);
   if (key !== undefined) first.setAttribute(KEY_ATTRIBUTE, key);
   return first;

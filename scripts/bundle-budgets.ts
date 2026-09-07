@@ -264,7 +264,34 @@ export type BundleBudget = BundleMeasurement;
 //
 // Raised 2026-09-07 (Z7): raw 104_160 → 104_410 (measured 104_295), gzip
 // 32_610 → 32_690 (measured 32_641). Brotli holds at 91 B of cushion.
-export const INLINE_BUDGET = { raw: 104_410, gzip: 32_690, brotli: 28_950 } as const;
+//
+// 2026-09-07 (Z22, an item rebuilt from a template keeps what the template
+// cannot carry): the full inline profile rises +448 B raw / ~157 B gzip /
+// ~105 B brotli, the lean profile +25, measured against the same build without
+// the change. The 25 are the attribute rule becoming a shared predicate
+// (`isWritableAttribute`); the lean profile carries neither array renderer, so
+// it pays for the rule and nothing for the fix.
+//
+// What the bytes buy is the one class of defect the runtime cannot detect by
+// itself. Every escalation Z3 added hangs on a write that could not be made;
+// here the write succeeds — the list is rebuilt, correctly — and still differs
+// from what the server would have sent, because the framework's scoped-style
+// marker (`data-astro-cid-…`, `data-v-…`, Svelte's class) lives in the markup
+// the compiler wrote and not in the author's item template. The fidelity oracle
+// measured it on the Astro fixture: the patched `<ul data-payload-field="tags">`
+// was styled differently from the server's, and nothing in the runtime could
+// notice, because noticing needs the server's version. The rebuilt item now
+// inherits what every item in the list already carried, minus what no write of
+// ours may set. Naming no framework is the point: what identifies these
+// attributes is that the whole list has them with the same value.
+//
+// The exception in `tests/fixtures/fidelity-corpus.ts` is deleted, and the
+// oracle is green without it — a difference that stopped happening fails the
+// gate as loudly as a new one, so this is the acceptance and not a claim.
+//
+// Raised 2026-09-07 (Z22): raw 104_410 → 104_860 (measured 104_743), gzip
+// 32_690 → 32_845 (measured 32_798), brotli 28_950 → 29_090 (measured 28_964).
+export const INLINE_BUDGET = { raw: 104_860, gzip: 32_845, brotli: 29_090 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -314,6 +341,10 @@ export const INLINE_BUDGET = { raw: 104_410, gzip: 32_690, brotli: 28_950 } as c
 // 26_970 (measured 26_924), brotli 23_850 → 23_990 (measured 23_864). The lean
 // profile pays the same 244 B as the full one: the update pipeline is the
 // machine itself, and LP0201 sits in it.
+// Holds 2026-09-07 (Z22): raw 86_009, gzip 26_932, brotli 23_880, all three
+// still under. The lean profile leaves out the array renderers and the
+// structural applier, so the only thing it pays for is the 25 B of shared
+// attribute rule — and a lean page never rebuilds a list to begin with.
 export const INLINE_LEAN_BUDGET = { raw: 86_100, gzip: 26_970, brotli: 23_990 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
@@ -348,7 +379,11 @@ export const INLINE_LEAN_BUDGET = { raw: 86_100, gzip: 26_970, brotli: 23_990 } 
 // Raised 2026-09-07 (Z7): raw 115_790 → 116_030 (measured 115_912), gzip
 // 36_460 → 36_560 (measured 36_511). Brotli holds. Both prelude profiles move
 // by the runtime's 244 B and nothing of their own.
-export const INLINE_FRAGMENT_BUDGET = { raw: 116_030, gzip: 36_560, brotli: 32_150 } as const;
+// Raised 2026-09-07 (Z22): raw 116_030 → 116_480 (measured 116_360), gzip
+// 36_560 → 36_620 (measured 36_574), brotli 32_150 → 32_230 (measured 32_108).
+// The brotli row did not cross; the growth left it 42 B under, and this file
+// keeps ~120 for the one difference it cannot measure here.
+export const INLINE_FRAGMENT_BUDGET = { raw: 116_480, gzip: 36_620, brotli: 32_230 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -392,7 +427,10 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 116_030, gzip: 36_560, brotli: 32_1
 // 34_800 → 34_890 (measured 34_841). Brotli holds. The route profile is the one
 // that acts on an unbound change; now the console names the field inside the
 // group it refreshed the page for.
-export const INLINE_ROUTE_BUDGET = { raw: 111_100, gzip: 34_890, brotli: 30_710 } as const;
+// Raised 2026-09-07 (Z22): raw 111_100 → 111_550 (measured 111_436), gzip
+// 34_890 → 35_040 (measured 34_995), brotli 30_710 → 30_890 (measured 30_767).
+// Both prelude profiles move by the runtime's 448 B and nothing of their own.
+export const INLINE_ROUTE_BUDGET = { raw: 111_550, gzip: 35_040, brotli: 30_890 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

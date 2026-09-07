@@ -134,3 +134,93 @@ describe('array renderer', () => {
     expect(el.textContent).toBe('a, b');
   });
 });
+
+/**
+ * The fidelity oracle measured this on the Astro fixture: the rebuilt `<li>`
+ * elements lost `data-astro-cid-…`, the marker the scoped styles hang on, so
+ * the patched list was styled differently from the one the server sent — and
+ * the write itself succeeded, so nothing in the runtime could notice.
+ */
+describe('array renderer — what the item template does not carry', () => {
+  function list(itemsHtml: string): HTMLUListElement {
+    const ul = document.createElement('ul');
+    ul.innerHTML = itemsHtml;
+    return ul;
+  }
+
+  function render(el: Element, value: unknown, template = '<li>{{value}}</li>'): void {
+    rendererNamed('array').render(
+      makeTarget(el, { arrayTemplate: template }),
+      value,
+      emptyContext(),
+    );
+  }
+
+  it("keeps the framework's scoped-style marker on every rebuilt item", () => {
+    const ul = list(
+      '<li data-astro-cid-j7pv25f6>astro</li><li data-astro-cid-j7pv25f6>payload</li>',
+    );
+
+    render(ul, ['astro', 'payload', 'live-preview']);
+
+    expect([...ul.children].map((li) => li.getAttribute('data-astro-cid-j7pv25f6'))).toEqual([
+      '',
+      '',
+      '',
+    ]);
+  });
+
+  it('carries a scoped class the same way, without knowing which framework wrote it', () => {
+    const svelte = list('<li class="svelte-1abcde">one</li><li class="svelte-1abcde">two</li>');
+    const vue = list('<li data-v-7ba5bd90>one</li>');
+
+    render(svelte, ['one', 'two']);
+    render(vue, ['one', 'two']);
+
+    expect([...svelte.children].map((li) => li.getAttribute('class'))).toEqual([
+      'svelte-1abcde',
+      'svelte-1abcde',
+    ]);
+    expect([...vue.children].map((li) => li.getAttribute('data-v-7ba5bd90'))).toEqual(['', '']);
+  });
+
+  it("carries only what every item shares, never one row's own state", () => {
+    const ul = list(
+      '<li data-astro-cid-x data-index="0">one</li><li data-astro-cid-x data-index="1">two</li>',
+    );
+
+    render(ul, ['one', 'two']);
+
+    expect(ul.children[0]?.hasAttribute('data-index')).toBe(false);
+    expect(ul.children[0]?.getAttribute('data-astro-cid-x')).toBe('');
+  });
+
+  it('leaves the template in charge of an attribute it writes itself', () => {
+    const ul = list('<li class="old">one</li>');
+
+    render(ul, ['one'], '<li class="new">{{value}}</li>');
+
+    expect(ul.children[0]?.getAttribute('class')).toBe('new');
+  });
+
+  it('refuses the attributes no write of ours may set', () => {
+    const ul = list(
+      '<li id="first" name="row" style="color:red" onclick="boom()" data-payload-key="7">one</li>',
+    );
+
+    render(ul, ['one']);
+
+    const item = ul.children[0];
+    for (const name of ['id', 'name', 'style', 'onclick', 'data-payload-key']) {
+      expect(item?.hasAttribute(name), `${name} must not be carried over`).toBe(false);
+    }
+  });
+
+  it('has nothing to carry when the list starts empty', () => {
+    const ul = list('');
+
+    render(ul, ['one']);
+
+    expect(ul.children[0]?.attributes).toHaveLength(0);
+  });
+});

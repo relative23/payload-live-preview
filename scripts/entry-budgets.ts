@@ -259,10 +259,27 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // is not a budget — it is the coin flip this file already refused once, for
   // the one difference this host cannot measure (the brotli library in CI's
   // Node). Every other brotli row still sits 60 B or more under.
+  //
+  // 2026-09-07 (Z22, an item rebuilt from a template keeps what the template
+  // cannot carry): every row that embeds the runtime rises +448 B raw / ~430 B
+  // gzip / ~200 B brotli, `core.*` and `client.*` +430, the root barrel +876
+  // because it carries the runtime twice, and `structural.*` +523 — that entry
+  // is the applier itself, so the change is a larger share of it. Eleven rows
+  // crossed all three metrics and `structural.*` two; `lean.*` hold on every
+  // one, because the lean artifact carries neither array renderer and pays only
+  // the 25 B of shared attribute rule.
+  //
+  // The bytes buy the class of defect the runtime cannot see: a write that
+  // succeeds and still differs from the server's markup. An item rebuilt from
+  // `data-payload-array-template` carried what the author wrote and nothing the
+  // framework's compiler had put around it — Astro's `data-astro-cid-…`, Vue's
+  // `data-v-…`, Svelte's class — so the patched list lost its scoped styling
+  // while every check passed. See bundle-budgets.ts; the acceptance is the
+  // fidelity oracle green with that exception deleted.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
-  'adapters/astro/index.js': { raw: 150_490, gzip: 46_900, brotli: 40_560 },
-  'adapters/astro/middleware-entry.js': { raw: 137_190, gzip: 42_780, brotli: 36_930 },
-  'adapters/nextjs/index.js': { raw: 148_750, gzip: 46_370, brotli: 40_140 },
+  'adapters/astro/index.js': { raw: 150_940, gzip: 47_335, brotli: 40_735 },
+  'adapters/astro/middleware-entry.js': { raw: 137_640, gzip: 43_215, brotli: 37_145 },
+  'adapters/nextjs/index.js': { raw: 149_200, gzip: 46_790, brotli: 40_290 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -280,8 +297,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
   // frame-ancestors builder it shares with the middleware.
   'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
-  'adapters/nuxt/index.js': { raw: 148_220, gzip: 46_250, brotli: 39_970 },
-  'adapters/sveltekit/index.js': { raw: 147_250, gzip: 45_980, brotli: 39_660 },
+  'adapters/nuxt/index.js': { raw: 148_670, gzip: 46_670, brotli: 40_185 },
+  'adapters/sveltekit/index.js': { raw: 147_700, gzip: 46_415, brotli: 39_925 },
   //
   // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
   // scanner, its refusal reasons and the `annotate` subcommand. It is a build
@@ -293,10 +310,10 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'doctor-cli.js': { raw: 33_150, gzip: 12_140, brotli: 10_780 },
   'doctor.js': { raw: 13_200, gzip: 5_520, brotli: 4_803 },
   'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
-  'core.cjs': { raw: 123_560, gzip: 38_820, brotli: 33_730 },
-  'core.js': { raw: 123_020, gzip: 38_750, brotli: 33_640 },
-  'index.cjs': { raw: 262_470, gzip: 81_140, brotli: 52_180 },
-  'index.js': { raw: 261_840, gzip: 81_150, brotli: 52_140 },
+  'core.cjs': { raw: 123_990, gzip: 38_980, brotli: 33_935 },
+  'core.js': { raw: 123_450, gzip: 38_895, brotli: 33_785 },
+  'index.cjs': { raw: 263_340, gzip: 81_720, brotli: 52_435 },
+  'index.js': { raw: 262_720, gzip: 81_730, brotli: 52_420 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
@@ -306,10 +323,10 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // helper the build-time annotator writes a call to.
   'server.cjs': { raw: 12_950, gzip: 4_780, brotli: 4_310 },
   'server.js': { raw: 12_830, gzip: 4_775, brotli: 4_300 },
-  'client.cjs': { raw: 117_790, gzip: 36_740, brotli: 31_960 },
-  'client.js': { raw: 117_710, gzip: 36_730, brotli: 31_960 },
-  'structural.cjs': { raw: 19_414, gzip: 6_859, brotli: 6_218 },
-  'structural.js': { raw: 19_368, gzip: 6_858, brotli: 6_213 },
+  'client.cjs': { raw: 118_220, gzip: 36_900, brotli: 32_160 },
+  'client.js': { raw: 118_140, gzip: 36_890, brotli: 32_140 },
+  'structural.cjs': { raw: 19_975, gzip: 7_050, brotli: 6_340 },
+  'structural.js': { raw: 19_930, gzip: 7_050, brotli: 6_345 },
   'lean.cjs': { raw: 86_450, gzip: 27_220, brotli: 24_240 },
   'lean.js': { raw: 86_450, gzip: 27_220, brotli: 24_230 },
   'lexical.cjs': { raw: 16_575, gzip: 5_690, brotli: 5_150 },

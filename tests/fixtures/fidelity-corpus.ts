@@ -162,18 +162,6 @@ export const KNOWN_DIVERGENCES: readonly KnownDivergence[] = [
     task: 'Z20',
     why: 'the server printed the stored ISO string and the date renderer prints a formatted one; the runtime cannot know how the template formatted a value, and escalating overwrites the server format a second time instead of keeping it',
   },
-  {
-    case: STATIC_FORCED_RENDER.name,
-    signature: 'attribute|article > ul[field=tags] > li @data-astro-cid',
-    // Moved from Z3 to Z22 for a sharper reason: Z3 cannot see this one at all.
-    // Every escalation Z3 added is triggered by a write that could not be made,
-    // and this write succeeds — the list is rebuilt, correctly, and differs from
-    // the server's anyway. It is the class the runtime cannot detect by itself,
-    // because detecting it needs the server's version, which only this oracle
-    // has. Z22 copies the template element's attributes instead.
-    task: 'Z22',
-    why: "the array template rebuilds the list items without Astro's scoped-style marker, so the patched list is styled differently from the one the server sent — and the write itself succeeds, so no escalation can notice",
-  },
 ];
 
 /** Work items an exception may name; the oracle rejects any other value. */
