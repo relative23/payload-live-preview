@@ -265,7 +265,10 @@ test.describe('hybrid fragment preview', () => {
     await expect(frame.getByTestId('hero-title')).toHaveText('Two');
     const stats = await route(frame);
     expect(stats.refreshes).toBe(1);
-    expect(stats.failed).toBe(1);
+    // The brake held the second revision back; that is `refused`, and since Z6
+    // it is no longer counted as `failed` — nothing here broke.
+    expect(stats.refused).toBe(1);
+    expect(stats.failed).toBe(0);
   });
 
   test('an island on the same page re-renders itself from the bridge event; neither patch nor fragment touches it', async ({
