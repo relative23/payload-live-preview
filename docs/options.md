@@ -183,6 +183,12 @@ Notes on the rows that need one:
   rendered from them ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
   `onUnboundChange` is the 2.0 name for the same decision and still decides when
   it is given — `'route'` means `'escalate'` — until it is removed in 3.0.
+- `debounceMs` is the window a burst of messages shares, not a delay on every
+  one: the first write of a quiet phase is applied on the next animation frame
+  and opens the window, and everything that arrives inside it is coalesced into
+  one flush when it closes. Typing therefore costs one frame at the start of a
+  phrase and one at the end of it, not 50 ms per keystroke. `debounceMs: 0`
+  removes the window entirely — and with it the merge coalescing that shares it.
 - `dependencies` and `data-payload-depends` say the same thing from two sides;
   both matter only under `skipUnchanged`. `revealEditedField` is described in
   [docs/reveal.md](reveal.md), `scopeBindingsByOwner` in

@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 294,
-    "suites": 615,
-    "tests": 2513,
+    "files": 296,
+    "suites": 617,
+    "tests": 2522,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 239,
-      "suites": 544,
-      "tests": 2299,
+      "files": 241,
+      "suites": 546,
+      "tests": 2308,
       "benchmarks": 0
     }
   },
@@ -880,6 +880,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/leading-apply.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/lean-profile-runner.test.ts",
       "group": "unit",
       "suites": 1,
@@ -1297,6 +1304,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/update-scheduler-leading.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {

@@ -92,6 +92,12 @@ interface Fixture {
  * 42 280 -> 43 120 (43 059) and `LEAN_RUNTIME` 26 240 -> 27 060 (27 018). The
  * same ~830 B gzip every artifact with the runtime pays; what it buys is in
  * bundle-budgets.ts, and it is a request per keystroke rather than a behaviour.
+ *
+ * 2026-09-07 (Z5): the leading write of a quiet phase costs ~50 B gzip in every
+ * runtime-carrying row, and only one of the five had that little left:
+ * `LEAN_RUNTIME` 27 060 -> 27 100 (measured 27 062). The other four sit between
+ * 5 and 21 B under their ceilings and stay where Z4 left them. What the bytes
+ * buy is 50 ms off a keystroke; see bundle-budgets.ts.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -154,7 +160,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 27_060,
+    gzip: 27_100,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

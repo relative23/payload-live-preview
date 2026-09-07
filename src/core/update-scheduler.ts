@@ -1,6 +1,9 @@
 /**
  * Debounce, frame batching and off-screen replay for scheduled writes. The
- * scheduler never touches the DOM; the injected `apply` callback does.
+ * first write of a quiet phase does not wait for the window: it goes out on the
+ * next frame and opens the window that batches the rest of the burst, so an
+ * isolated keystroke costs a frame instead of a whole debounce. The scheduler
+ * never touches the DOM; the injected `apply` callback does.
  */
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
@@ -22,7 +25,7 @@ export interface ScheduledUpdate {
 export type ApplyUpdate = (update: ScheduledUpdate) => void;
 
 export interface UpdateSchedulerOptions {
-  /** Debounce window in ms. Default 50. */
+  /** Debounce window in ms; the write that opens it does not wait for it. Default 50. */
   readonly debounceMs?: number;
   /** Longest a flush may be postponed by continuous scheduling. Default `4 * debounceMs`. */
   readonly maxWaitMs?: number;
@@ -82,6 +85,8 @@ export class UpdateScheduler {
   private deadlineTimer: ReturnType<typeof setTimeout> | null = null;
   private frameHandle: number | null = null;
   private frameToken = 0;
+  /** End of the window the leading write opened; inside it a write waits for the debounce. */
+  private windowUntil = 0;
   private activeRevision: MessageRevision | null = null;
   private activeRevisionCancelled = false;
 
@@ -207,6 +212,8 @@ export class UpdateScheduler {
     this.clearWork();
     this.activeRevision = null;
     this.activeRevisionCancelled = false;
+    // A restarted scheduler is a quiet page again, not the tail of a burst.
+    this.windowUntil = 0;
   }
 
   get pendingCount(): number {
@@ -226,6 +233,17 @@ export class UpdateScheduler {
   }
 
   private armDebounce(): void {
+    const now = Date.now();
+    const opensTheWindow = now >= this.windowUntil;
+    this.windowUntil = now + this.debounceMs;
+    // The debounce coalesces a burst, and the write that opens one is not yet a
+    // burst: it costs a frame, and the window it opens batches what follows.
+    // With the merge gone from the common path (see `MergeNeed`), that frame is
+    // the whole distance between a keystroke and the page.
+    if (opensTheWindow) {
+      this.requestFrame();
+      return;
+    }
     const token = (this.debounceToken += 1);
     const timer = this.debounceTimer;
     this.debounceTimer = null;
@@ -235,7 +253,9 @@ export class UpdateScheduler {
     const next = setTimeout(() => {
       if (this.debounceToken !== token) return;
       this.debounceTimer = null;
-      this.requestFrame();
+      // The window a leading write opened is usually already empty when it
+      // closes; flushing then would report a write nobody made.
+      if (this.pending.size > 0) this.requestFrame();
     }, this.debounceMs);
     if (this.debounceToken === token) this.debounceTimer = next;
     // Continuous scheduling (key repeat) must not postpone the flush forever.

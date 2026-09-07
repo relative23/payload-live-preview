@@ -94,16 +94,26 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
     });
     runtime.start();
 
+    // The first message of a quiet phase is applied on the next frame, so the
+    // write that can still be discarded is the one the window holds after it.
     fireMessage({
       type: 'payload-live-preview',
       data: { title_de: 'Deutsch', title_fr: 'Français' },
+    });
+    await vi.advanceTimersByTimeAsync(20);
+    expect(element.textContent).toBe('Deutsch');
+    afterUpdate.mockClear();
+
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title_de: 'Deutsch, zweite Fassung', title_fr: 'Français, deuxième' },
     });
     await flushMicrotasks();
     element.setAttribute('data-payload-locale', 'fr');
     await flushMicrotasks();
     await vi.advanceTimersByTimeAsync(300);
 
-    expect(element.textContent).toBe('initial');
+    expect(element.textContent).toBe('Deutsch');
     expect(afterUpdate).not.toHaveBeenCalled();
     runtime.destroy();
   });

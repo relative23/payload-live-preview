@@ -36,7 +36,16 @@ element changed, one changed field per message. The frame's MutationObserver
 supplies the mutation time and the following `requestAnimationFrame` the paint
 proxy — the earliest instant the new text can be on screen, not the
 compositor's own timestamp. 200 samples per scenario after 20 warm-up
-messages; the fixture's debounce is 25 ms and is included.
+messages; the fixture's debounce is 25 ms.
+
+Whether a sample pays that 25 ms depends on when it arrives. Since 2026-09-07
+the first write of a quiet phase skips the window and the rest of the burst
+waits for it, and this spec sends the next message as soon as the previous one
+has painted — a gap of roughly 20–30 ms, which is the driver's own round trip
+and sits on the boundary. Most samples here are therefore burst messages and do
+pay it. The keystroke that does not is measured in jsdom instead, by
+`npm run test:interaction`, where the cadence is controlled: 16.6 ms p95
+against 66.6 ms before.
 
 Measured 2026-08-27 on the maintainer host, `skipUnchanged` off (the fixture's
 default):
@@ -46,6 +55,13 @@ default):
 |      300 | 18.6 ms | 39.6 ms | 41.2 ms |      22.8 ms |       100 ms |
 |    1,000 | 30.3 ms | 44.9 ms | 87.6 ms |      28.1 ms |       100 ms |
 |    5,000 | 43.0 ms | 64.3 ms | 83.9 ms |      40.6 ms |       100 ms |
+
+Re-measured 2026-09-07, four runs, on the same host: 27.1–27.4 ms p50 and
+34.3–34.7 ms p95 at 300 bindings, 28.8–29.8 / 52.3–52.7 at 1,000, and
+42.8–44.1 / 49.0–52.8 at 5,000. One further run, on a cold machine whose driver
+round trip ran longer than the 25 ms window, measured 15.3 / 22.5 at 300
+bindings — that is the same page with the leading write actually exercised, and
+the reason the paragraph above says what the cadence decides.
 
 The p50 grows with the page because every binding is resolved and rendered on
 every message even though one changed — that is the cost `skipUnchanged`

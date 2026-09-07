@@ -13,47 +13,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import type { FieldRenderer } from '@core/types';
 import { fireMessage, makeRuntime, textRenderer } from './lifecycle-startup-harness';
+import { mergingFetch, relationshipRenderer, VENUES } from './populating-server-harness';
 
 const KEYSTROKES = 18;
 const KEYSTROKE_MS = 30;
 const WINDOW_MS = 50;
-
-/** The venue the merge resolves; the raw message carries its id alone. */
-const VENUES: Record<string, unknown> = {
-  'venue-1': { id: 'venue-1', title: 'Halle Sieben', url: '/venues/halle-sieben' },
-  'venue-2': { id: 'venue-2', title: 'Halle Acht', url: '/venues/halle-acht' },
-};
-
-/** A server that populates what Payload's panel posts as bare ids. */
-function mergingFetch(): ReturnType<typeof vi.fn> {
-  return vi.fn((_url: string, init?: RequestInit) => {
-    const sent = typeof init?.body === 'string' ? init.body : '{}';
-    const body = JSON.parse(sent) as { data: Record<string, unknown> };
-    const doc: Record<string, unknown> = { ...body.data };
-    const venue = doc['venue'];
-    if (typeof venue === 'string') doc['venue'] = VENUES[venue] ?? { id: venue };
-    return Promise.resolve(
-      new Response(JSON.stringify(doc), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      }),
-    );
-  });
-}
-
-function relationshipRenderer(): FieldRenderer {
-  return {
-    name: 'relationship',
-    render(target, value) {
-      const record =
-        typeof value === 'object' && value !== null
-          ? (value as { title?: string; id?: string })
-          : undefined;
-      target.element.textContent =
-        record === undefined ? String(value) : (record.title ?? record.id ?? '');
-    },
-  };
-}
 
 function richTextRenderer(): FieldRenderer {
   return {

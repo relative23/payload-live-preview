@@ -202,7 +202,31 @@ export type BundleBudget = BundleMeasurement;
 //
 // Raised 2026-09-07 (Z4): raw 100 840 → 103 550 (measured 103 443), gzip 31 620 →
 // 32 450 (measured 32 397), brotli 28 090 → 28 750 (measured 28 630).
-export const INLINE_BUDGET = { raw: 103_550, gzip: 32_450, brotli: 28_750 } as const;
+//
+// 2026-09-07 (Z5, the write that opens a quiet phase): every artifact that
+// embeds the runtime rises +172 B raw / ~50 B gzip / ~50 B brotli, measured
+// against the same build without the change. It is one timestamp, one
+// comparison and one branch in the scheduler, plus the guard that keeps a
+// window from flushing a buffer its own leading write already emptied.
+//
+// What the bytes buy is 50 ms. Until now a keystroke waited out the whole
+// debounce before anything reached the DOM — 66.6 ms p95 in the jsdom
+// interaction gate, of which 50 was a window with nothing to coalesce, because
+// the first message of a quiet phase is alone in it by definition. The first
+// write now goes out on the next frame and opens the window that batches the
+// rest of the burst: 16.6 ms p95, one animation frame, and the debounce still
+// does what it was for. This is only reachable because Z4 took the merge out of
+// the common path — a leading write that had to wait for a REST round trip
+// would be a frame plus the network, which is what it was replacing.
+//
+// It is not an option because the choice it makes is not one a page can state
+// per edit: the burst a debounce exists for begins with a write that is not yet
+// a burst. A page that sets `debounceMs: 0` has no window and is unaffected.
+//
+// Raised 2026-09-07 (Z5): raw 103 550 → 103 720 (measured 103 615). gzip and
+// brotli still hold and stay where Z4 left them — gzip by one byte, which the
+// next task in this runtime will have to raise.
+export const INLINE_BUDGET = { raw: 103_720, gzip: 32_450, brotli: 28_750 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -240,7 +264,10 @@ export const INLINE_BUDGET = { raw: 103_550, gzip: 32_450, brotli: 28_750 } as c
 // profile pays the same 2 716 B as the full one and gets the same thing back:
 // the merge is not one of the features it leaves out, so neither is the decision
 // about whether to make it.
-export const INLINE_LEAN_BUDGET = { raw: 85_540, gzip: 26_820, brotli: 23_850 } as const;
+// Raised 2026-09-07 (Z5): raw 85 540 → 85 720 (measured 85 626). The scheduler
+// is the machine itself, not a feature, so the lean profile pays the same 172 B
+// and a lean page's keystroke lands in the same frame. gzip and brotli hold.
+export const INLINE_LEAN_BUDGET = { raw: 85_720, gzip: 26_820, brotli: 23_850 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
@@ -264,7 +291,9 @@ export const INLINE_LEAN_BUDGET = { raw: 85_540, gzip: 26_820, brotli: 23_850 } 
 // is rendered by a server that is handed exactly these fields, so this profile
 // is also the one where a page with no binding at all still has a consumer — and
 // the decision asks the DOM for a boundary before it decides that it has none.
-export const INLINE_FRAGMENT_BUDGET = { raw: 114_930, gzip: 36_220, brotli: 31_900 } as const;
+// Raised 2026-09-07 (Z5): raw 114 930 → 115 100 (measured 114 978). Both prelude
+// profiles move by the same 172 B as the runtime they wrap; gzip and brotli hold.
+export const INLINE_FRAGMENT_BUDGET = { raw: 115_100, gzip: 36_220, brotli: 31_900 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -292,7 +321,12 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 114_930, gzip: 36_220, brotli: 31_9
 // ask: a refresh re-renders the page from the server and never reads the merged
 // values, so a page whose only answer to an edit is a route refresh now makes no
 // REST request at all.
-export const INLINE_ROUTE_BUDGET = { raw: 109_990, gzip: 34_540, brotli: 30_470 } as const;
+// Raised 2026-09-07 (Z5): raw 109 990 → 110 170 (measured 110 052), gzip 34 540 →
+// 34 590 (measured 34 541). Brotli holds. This is the profile where the leading
+// write matters least and is still worth its bytes: a route refresh is a
+// server round trip either way, and the patch that lands before it is what the
+// editor sees in the meantime.
+export const INLINE_ROUTE_BUDGET = { raw: 110_170, gzip: 34_590, brotli: 30_470 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

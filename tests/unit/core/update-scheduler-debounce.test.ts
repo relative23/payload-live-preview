@@ -30,6 +30,10 @@ describe('UpdateScheduler — debounce and frame batching', () => {
       cancelFrame: () => {},
     });
     const el = document.createElement('p');
+    // The first write of a quiet phase leads and lands at once; the debounce is
+    // what everything inside the window it opened waits for.
+    scheduler.schedule(update(entry(el), 'opens the window'));
+    apply.mockClear();
     scheduler.schedule(update(entry(el), 'hello'));
     expect(apply).not.toHaveBeenCalled();
     vi.advanceTimersByTime(20);
@@ -71,6 +75,12 @@ describe('UpdateScheduler — debounce and frame batching', () => {
       onFlush,
     });
     const target = entry(document.createElement('p'));
+    // A write is only buffered once the window is open, and the write that
+    // opens it leads: this one lands, and A and B are what the debounce holds.
+    scheduler.schedule(update(target, 'opens the window'));
+    frames.shift()?.(0);
+    apply.mockClear();
+    onFlush.mockClear();
     scheduler.schedule(update(target, 'A'));
     vi.advanceTimersByTime(50);
     const ineffectiveClearTimeout = vi
@@ -107,6 +117,10 @@ describe('UpdateScheduler — debounce and frame batching', () => {
       onFlush,
     });
     const target = entry(document.createElement('p'));
+    // Both windows have to be opened by a leading write, before and after the
+    // destroy: only what a window holds can have a debounce callback at all.
+    scheduler.schedule(update(target, 'opens the window'));
+    frames.shift()?.(0);
     scheduler.schedule(update(target, 'A'));
     vi.advanceTimersByTime(50);
     const ineffectiveClearTimeout = vi
@@ -115,6 +129,10 @@ describe('UpdateScheduler — debounce and frame batching', () => {
 
     try {
       scheduler.destroy();
+      scheduler.schedule(update(target, 'reopens the window'));
+      frames.shift()?.(0);
+      apply.mockClear();
+      onFlush.mockClear();
       scheduler.schedule(update(target, 'B'));
       vi.advanceTimersByTime(50);
       expect(frames).toHaveLength(0);
@@ -208,6 +226,9 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     });
     const el = document.createElement('p');
     const ce = entry(el);
+    // The leading write lands on its own; what the window holds is coalesced.
+    scheduler.schedule(update(ce, 'opens the window'));
+    apply.mockClear();
     scheduler.schedule(update(ce, 'a'));
     scheduler.schedule(update(ce, 'b'));
     scheduler.schedule(update(ce, 'c'));
@@ -230,6 +251,8 @@ describe('UpdateScheduler — debounce and frame batching', () => {
       cancelFrame: () => {},
     });
     const el = document.createElement('p');
+    scheduler.schedule(update(entry(el), 'opens the window'));
+    apply.mockClear();
     scheduler.schedule(update(entry(el), 'v'));
     const stats = scheduler.flushNow();
     expect(stats.applied).toBe(1);

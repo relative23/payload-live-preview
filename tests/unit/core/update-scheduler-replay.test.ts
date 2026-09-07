@@ -322,6 +322,10 @@ describe('UpdateScheduler — offscreen replay queue', () => {
       ...oldTarget,
       targetAttribute: 'data-pending-target',
     };
+    // The leading write of a quiet phase lands before anything can retarget it;
+    // this one opens the window so the work under test is still buffered.
+    scheduler.schedule(update(oldTarget, 'opens the window'));
+    apply.mockClear();
     scheduler.schedule(update(oldTarget, 'pending'));
 
     scheduler.retarget(pendingTarget);
