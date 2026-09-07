@@ -54,7 +54,10 @@ function afterUpdates(sources: readonly string[]): Promise<void> {
 }
 function start(
   route?: RouteStrategy,
-  extra: { onUnboundChange?: 'ignore' | 'route' } = {},
+  extra: {
+    onUnboundChange?: 'ignore' | 'route';
+    onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
+  } = {},
 ): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
     renderers: { text: textRenderer },
@@ -202,10 +205,12 @@ describe('route strategy', () => {
 });
 
 /**
- * `onUnboundChange: 'route'` — the guarantee that this package is never worse
- * than a framework hook that re-renders everything. A field the page does not
- * bind cannot be patched; without this the edit is simply lost until the next
- * navigation.
+ * The unbound change — the guarantee that this package is never worse than a
+ * framework hook that re-renders everything. A field the page does not bind
+ * cannot be patched; without this the edit is simply lost until the next
+ * navigation. 2.0 asked for it with `onUnboundChange: 'route'`; since Z3 it is
+ * what `onUnfaithfulPatch` does unless it is told otherwise, and the old name
+ * still decides when it is given.
  */
 describe('onUnboundChange', () => {
   // The shared fixture binds `title` inside <head>, which `resolveStrategy`
@@ -271,9 +276,19 @@ describe('onUnboundChange', () => {
     expect(document.querySelector('[data-payload-field="footer"]')?.textContent).toBe('Patched');
   });
 
-  it('ignores unbound changes by default, as 2.0 shipped', async () => {
+  it('refreshes without being asked to, which is the change 2.0 did not make', async () => {
     const route = passiveRoute();
     start(route);
+    await connect(route);
+    const done = afterUpdates(['route']);
+    post({ footer: 'Patched', headline: 'still nothing binds this' });
+    await done;
+    expect(route.refreshes).toBe(1);
+  });
+
+  it("ignores them again when the page says onUnfaithfulPatch: 'ignore'", async () => {
+    const route = passiveRoute();
+    start(route, { onUnfaithfulPatch: 'ignore' });
     await connect(route);
     const done = afterUpdates(['patch']);
     post({ footer: 'Patched', headline: 'still nothing binds this' });

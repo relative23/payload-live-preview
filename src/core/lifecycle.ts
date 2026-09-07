@@ -10,6 +10,7 @@ import { ElementCache } from './cache';
 import { DataMerger } from './data-merger';
 import type { DiagnosticCode } from './diagnostic-codes';
 import { isolateDiagnostic, noopDiagnostic, safeConsoleWarn } from './diagnostics';
+import { resolveUnfaithfulPatchMode } from './fidelity';
 import { buildInspection } from './inspection/snapshot';
 import type { LivePreviewInspection } from './inspection/types';
 import { markNoWriteCallback } from './internal-outcome';
@@ -161,7 +162,7 @@ export class LivePreviewRuntime {
       dependencies: options.dependencies ?? {},
       strategies: options.strategies ?? {},
       revealEditedField: options.revealEditedField === true,
-      onUnboundChange: options.onUnboundChange ?? 'ignore',
+      onUnfaithfulPatch: resolveUnfaithfulPatchMode(options),
     };
     this.writer = new BindingWriter(this.deps, this.state);
     this.pipeline = new UpdatePipeline(this.deps, this.state, () => {

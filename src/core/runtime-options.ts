@@ -49,10 +49,21 @@ export interface RuntimeOptions {
   /** Scroll the preview to the field being edited when its value changes. */
   readonly revealEditedField?: boolean;
   /**
-   * What to do when a revision changes a field the page has no binding for.
-   * `'ignore'` (the default) leaves it, as 2.0 shipped; `'route'` refreshes the
-   * whole route instead of patching, so the edit is never silently lost. Needs
-   * a route strategy — see `strategies` and `routeStrategy`.
+   * What to do when the runtime knows a patch cannot reach what the server
+   * would have drawn — a renderer that cannot represent the value, a Lexical
+   * block whose markup the write has to drop, a changed field with no binding
+   * at all. `'escalate'` (the default) has a server draw the region instead:
+   * the fragment strategy when a boundary covers it, the route otherwise.
+   * `'warn'` reports LP0411 and keeps the patch; `'ignore'` keeps it silently.
+   * Escalating needs a strategy — see `strategies` and `routeStrategy`.
+   */
+  readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
+  /**
+   * The 2.0 name for the same decision, kept until 3.0. `'route'` means
+   * `onUnfaithfulPatch: 'escalate'`, `'ignore'` means `'ignore'`.
+   *
+   * @deprecated Renamed to `onUnfaithfulPatch`, which also covers the patches
+   * that fail for reasons other than a missing binding.
    */
   readonly onUnboundChange?: 'ignore' | 'route';
   /**

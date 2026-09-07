@@ -380,6 +380,14 @@ export class UpdatePipeline {
     // off-screen one the visibility gate deferred, and scrolling to it is what replays it.
     this.revealPending(transaction);
     if (!isCurrent()) return;
+    // Before the applied check, because a flush that applied nothing is exactly
+    // the one whose every renderer refused its value.
+    const unfaithful = state.unfaithfulPatches;
+    if (unfaithful.length > 0) {
+      state.unfaithfulPatches = [];
+      if (data !== undefined) this.strategies.escalateUnfaithful(transaction, data, unfaithful);
+      if (!isCurrent()) return;
+    }
     if (stats.applied === 0 || data === undefined) return;
     deps.a11y?.announceUpdate(stats.applied);
     if (!isCurrent()) return;

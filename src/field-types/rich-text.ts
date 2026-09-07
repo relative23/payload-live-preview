@@ -5,7 +5,9 @@
  *
  * The Lexical write keeps the markup the server rendered for a block the
  * registry cannot render, rather than replacing it with the empty placeholder
- * the node renderer produces for one (LP0410).
+ * the node renderer produces for one (LP0410). Where the two trees do not line
+ * up there is nothing to keep, and the write says so through
+ * `context.reportUnfaithful` — that is the case `onUnfaithfulPatch` escalates.
  */
 
 import { isLexicalContent, lexicalToHtml, type LexicalRenderOptions } from '@lexical/render';
@@ -40,7 +42,9 @@ const richTextRenderer: FieldRenderer = {
     }
     if (isLexicalContent(value)) {
       const lexical = lexicalToHtml(value, UNSANITISED);
-      writeKeepingUnrenderedBlocks(element, sanitizeHtmlWithPolicy(lexical, policy));
+      if (!writeKeepingUnrenderedBlocks(element, sanitizeHtmlWithPolicy(lexical, policy))) {
+        context.reportUnfaithful?.(target, 'lost the markup the server drew for a block');
+      }
       return;
     }
     if (typeof value === 'string') {
@@ -56,16 +60,25 @@ const richTextRenderer: FieldRenderer = {
  * unrendered block's placeholder stands over into the new tree first. Every
  * pairing is resolved before the first move: a move takes a child out of the
  * live element, which would shift the position each later one is read at.
+ *
+ * `false` when a placeholder is still standing over markup the element had —
+ * the descent found no counterpart for it, so this write is about to lose what
+ * the server drew for that block. An element that had nothing to lose (a
+ * container the page left empty) is not that case.
  */
-function writeKeepingUnrenderedBlocks(element: Element, html: string): void {
+function writeKeepingUnrenderedBlocks(element: Element, html: string): boolean {
+  const hadMarkup = element.firstElementChild !== null;
   const rendered = element.cloneNode(false) as Element;
   rendered.innerHTML = trustedHtml(html);
+  let kept = true;
   if (rendered.querySelector(UNRENDERED_BLOCK_SELECTOR) !== null) {
-    const kept: [placeholder: Element, live: Element][] = [];
-    pairUnrenderedBlocks(element, rendered, kept);
-    for (const [placeholder, live] of kept) placeholder.replaceWith(live);
+    const pairs: [placeholder: Element, live: Element][] = [];
+    pairUnrenderedBlocks(element, rendered, pairs);
+    for (const [placeholder, live] of pairs) placeholder.replaceWith(live);
+    kept = !hadMarkup || rendered.querySelector(UNRENDERED_BLOCK_SELECTOR) === null;
   }
   element.replaceChildren(...rendered.childNodes);
+  return kept;
 }
 
 /**

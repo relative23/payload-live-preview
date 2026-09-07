@@ -20,8 +20,11 @@ Every update passes through the same stages before a renderer sees a value:
 
 Renderers therefore receive the populated, transformed value. `context`
 carries `allFields` (the whole transformed update), `locale`, the field
-`schema` when the admin sent one, and `renderRichText` when the client was
-configured with one.
+`schema` when the admin sent one, `renderRichText` when the client was
+configured with one, and `reportUnfaithful(target, reason)` — call it when your
+renderer can only approximate the value, and `onUnfaithfulPatch` asks a server
+to draw that region instead of leaving the approximation on the page
+([docs/options.md](options.md)).
 
 ## Choosing a renderer
 

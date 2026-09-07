@@ -43,7 +43,8 @@ always wins. The ledger of what changed is
 | `strategies`               | yes    | —             | —                                                        | —                        | — (patch only)                                      | same                                 |
 | `fragmentEndpoint`         | —      | yes           | as `fragments: { endpoint }`                             | —                        | — (no fragment client)                              | same                                 |
 | `routeStrategy`            | —      | yes           | yes                                                      | —                        | `false`                                             | same                                 |
-| `onUnboundChange`          | yes    | yes           | yes                                                      | —                        | `'ignore'`                                          | same                                 |
+| `onUnfaithfulPatch`        | yes    | yes           | yes                                                      | —                        | `'escalate'`                                        | same                                 |
+| `onUnboundChange`          | yes    | yes           | yes                                                      | —                        | — (alias, deprecated)                               | same                                 |
 | `resolveRenderer`          | yes    | —             | —                                                        | —                        | —                                                   | same                                 |
 | `renderRichText`           | yes    | —             | —                                                        | —                        | built-in Lexical renderer                           | same                                 |
 | `root`                     | yes    | —             | —                                                        | —                        | `document`                                          | same                                 |
@@ -92,7 +93,7 @@ forty-five rows.
   the page and the injected script has to be allowed to run, without the package
   ever loosening a policy the site already sends.
 - **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
-  `routeStrategy`, `onUnboundChange`, `strategies`, `dependencies`. Three
+  `routeStrategy`, `onUnfaithfulPatch`, `strategies`, `dependencies`. Three
   strategies exist because patching cannot create markup and a route refresh
   cannot be done per keystroke
   ([overview](architecture/overview.md#the-five-objects)).
@@ -171,10 +172,17 @@ Notes on the rows that need one:
   that wants a route refresh without a fragment endpoint. `fragmentEndpoint`
   implies it and the two are never emitted together, because the fragment
   prelude already carries the route strategy.
-- `onUnboundChange: 'route'` refreshes the route when a revision changes a field
-  the page has no binding for, instead of leaving the edit invisible. It needs a
-  route strategy and skips the connection's first message
-  ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
+- `onUnfaithfulPatch` decides what happens when the runtime knows a patch cannot
+  reach what the server would have drawn: a value no renderer can represent, a
+  Lexical block whose markup the write has to drop, or a changed field the page
+  has no binding for at all. `'escalate'`, the default, hands the region to the
+  fragment strategy when a boundary covers it and to the route otherwise, so it
+  does nothing without `fragments` or `routeStrategy`; `'warn'` reports LP0411
+  and keeps the patch; `'ignore'` keeps it silently. It skips the connection's
+  first message, where every field counts as changed and the page has just been
+  rendered from them ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
+  `onUnboundChange` is the 2.0 name for the same decision and still decides when
+  it is given — `'route'` means `'escalate'` — until it is removed in 3.0.
 - `dependencies` and `data-payload-depends` say the same thing from two sides;
   both matter only under `skipUnchanged`. `revealEditedField` is described in
   [docs/reveal.md](reveal.md), `scopeBindingsByOwner` in

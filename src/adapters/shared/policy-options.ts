@@ -92,6 +92,10 @@ export function inlineScriptConfig(
     ...(options.routeStrategy === true && options.fragments === undefined
       ? { routeStrategy: true }
       : {}),
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 name is carried through exactly here
     ...(options.onUnboundChange !== undefined ? { onUnboundChange: options.onUnboundChange } : {}),
+    ...(options.onUnfaithfulPatch !== undefined
+      ? { onUnfaithfulPatch: options.onUnfaithfulPatch }
+      : {}),
   };
 }

@@ -10,6 +10,7 @@ import type { SanitizerPolicyMode } from '@security/sanitizer';
 import type { A11yAnnouncer } from './a11y';
 import type { ElementCache } from './cache';
 import type { DataMerger } from './data-merger';
+import type { UnfaithfulPatchMode } from './fidelity';
 import { FieldChangeTracker } from './field-changes';
 import type { MessageBus, MessageRevision } from './message-bus';
 import type { ObserverManager } from './observers';
@@ -86,8 +87,8 @@ export interface RuntimeDeps {
   readonly dependencies: Readonly<Record<string, readonly string[]>>;
   readonly strategies: StrategyHandlers;
   readonly revealEditedField: boolean;
-  /** `'route'` turns a change with no binding into a route refresh. */
-  readonly onUnboundChange: 'ignore' | 'route';
+  /** What to do about a patch the runtime knows cannot match the server's render. */
+  readonly onUnfaithfulPatch: UnfaithfulPatchMode;
 }
 
 export class RuntimeState {
@@ -112,6 +113,10 @@ export class RuntimeState {
   warnedFragmentFallback = false;
   /** LP0503 is reported once: a drifting sender repeats the same shape on every keystroke. */
   warnedProtocolShape = false;
+  /** LP0411 is reported once per element; the markup that causes it does not change. */
+  readonly reportedUnfaithful = new WeakSet<Element>();
+  /** Bindings this revision could not patch faithfully, drained by the flush that escalates them. */
+  unfaithfulPatches: CachedElement[] = [];
   /** Identity of the value each element last applied; reset when the markup is re-rendered. */
   lastAppliedIdentity = new WeakMap<Element, string>();
   /** What each owned field was last seen with, for the reveal decision only. */

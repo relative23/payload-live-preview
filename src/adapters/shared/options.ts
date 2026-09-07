@@ -103,12 +103,21 @@ export interface PreviewAdapterOptions<Req = Request> {
    */
   readonly routeStrategy?: boolean;
   /**
-   * What to do when a revision changes a field the page has no binding for.
-   * `'route'` refreshes the whole route rather than losing the edit; it needs a
-   * route strategy, so set `routeStrategy` or `fragments` with it. Default
-   * `'ignore'`.
+   * The 2.0 name for `onUnfaithfulPatch`, kept until 3.0. `'route'` means
+   * `'escalate'`, `'ignore'` means `'ignore'`.
+   *
+   * @deprecated Renamed to `onUnfaithfulPatch`.
    */
   readonly onUnboundChange?: 'ignore' | 'route';
+  /**
+   * What to do when the runtime knows a patch cannot reach what the server
+   * would have drawn — a value no renderer can represent, a Lexical block whose
+   * markup the write drops, a changed field with no binding at all.
+   * `'escalate'` (the default) has a server draw the region instead, so it
+   * needs `routeStrategy` or `fragments` to do anything. `'warn'` reports
+   * LP0411 and keeps the patch; `'ignore'` keeps it silently.
+   */
+  readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
   /** Patch only the bindings of the document an update names (`data-payload-owner`). Default `false`. */
   readonly scopeBindingsByOwner?: boolean;
   /** Sanitizer for rich text and HTML writes. Default `'strict'`; `defaults: 'v1'` restores `'compat'`. */

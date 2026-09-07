@@ -174,6 +174,7 @@ export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
+    readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
     readonly sanitizerPolicy?: SanitizerPolicyMode;
     readonly schema: PayloadFieldSchema | undefined;
 }

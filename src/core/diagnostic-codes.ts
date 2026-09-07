@@ -55,6 +55,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   SanitizerDroppedAttribute: 'LP0409',
   /** A Lexical block has no renderer; the markup the server rendered for it is kept instead. */
   UnrenderedBlockKept: 'LP0410',
+  /** A patch cannot reach what the server would have drawn; `onUnfaithfulPatch` decided what happens next. */
+  UnfaithfulPatch: 'LP0411',
 
   /** A message was rejected before it reached the update pipeline. */
   MessageRejected: 'LP0501',
@@ -103,7 +105,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   RouteRefreshLoop: 'LP0805',
   /** A boundary asks for the fragment strategy but no fragment handler is configured; it is patched. */
   FragmentStrategyUnavailable: 'LP0806',
-  /** A revision changed a field with no binding; `onUnboundChange: 'route'` refreshed the route. */
+  /** A revision changed a field with no binding; `onUnfaithfulPatch` refreshed the route. */
   UnboundChangeRefresh: 'LP0807',
   /** A readiness row is not yet at its 2.0 value; `pll doctor --v2` reports it. */
   V2ReadinessGap: 'LP0709',

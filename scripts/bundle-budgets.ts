@@ -146,7 +146,32 @@ export type BundleBudget = BundleMeasurement;
 //
 // Raised 2026-09-07 (LP-2): raw 98 930 → 99 550 (measured 99 449), gzip 30 918 →
 // 31 200 (measured 31 156), brotli 27 500 → 27 680 (measured 27 559).
-export const INLINE_BUDGET = { raw: 99_550, gzip: 31_200, brotli: 27_680 } as const;
+//
+// 2026-09-07 (Z3, escalate instead of degrade): every artifact that embeds the
+// runtime rises +1 303 B raw / ~440 B gzip / ~390 B brotli, the lean profile
+// +907, measured against the same build without the change. Four things,
+// measured apart: the fidelity verdict itself and its LP0411 line 380 B, the
+// escalation (fragment when a boundary covers the finding, route otherwise)
+// 248 B, the plan-over-chosen-boundaries the escalation shares with
+// `planFragments` 131 B, the flush that drains the queue 132 B; the rest is the
+// two reporting sites in the writer, the one in the rich-text write, and two
+// fields on the runtime state.
+//
+// What the bytes buy is the difference between "as complete as the annotation"
+// and "never worse than the route". The runtime already knew, and threw away,
+// three facts: a renderer that refused the value it was handed (LP0402 said so
+// and nothing acted on it), a Lexical block whose server markup the write had
+// to drop because the two trees do not line up (Z2 left exactly this case
+// degrading), and a changed field with no anchor anywhere. Each of those leaves
+// the page showing something the server would not have drawn. They now escalate
+// to whichever strategy can draw the region, once per element — and a page with
+// no strategy at all pays these bytes for nothing but the diagnostic, which is
+// the same trade `onUnboundChange` already made and the reason both live in the
+// runtime rather than behind the strategy seam.
+//
+// Raised 2026-09-07 (Z3): raw 99 550 → 100 840 (measured 100 731), gzip 31 200 →
+// 31 620 (measured 31 572), brotli 27 680 → 28 090 (measured 27 965).
+export const INLINE_BUDGET = { raw: 100_840, gzip: 31_620, brotli: 28_090 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -173,7 +198,13 @@ export const INLINE_BUDGET = { raw: 99_550, gzip: 31_200, brotli: 27_680 } as co
 // 25 650 (measured 25 620), brotli 22 660 → 22 850 (measured 22 735). The lean
 // profile leaves out the morph and the structural applier; it does not leave out
 // the rich-text renderer, and that is where a block's server markup is kept.
-export const INLINE_LEAN_BUDGET = { raw: 81_920, gzip: 25_650, brotli: 22_850 } as const;
+// Raised 2026-09-07 (Z3): raw 81 920 → 82 830 (measured 82 738), gzip 25 650 →
+// 25 990 (measured 25 951), brotli 22 850 → 23 120 (measured 23 000). The lean
+// profile carries the verdict and the reporting and leaves out the escalation:
+// it has no strategy runner, so `escalateUnfaithful` there is a function that
+// returns. That is the 396 B between +1 303 and +907, and it is why a lean page
+// gets LP0411 in its log and no refresh.
+export const INLINE_LEAN_BUDGET = { raw: 82_830, gzip: 25_990, brotli: 23_120 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
@@ -187,7 +218,12 @@ export const INLINE_LEAN_BUDGET = { raw: 81_920, gzip: 25_650, brotli: 22_850 } 
 // cushion — 162 B where the file documents ~120 — because it had the most room
 // when the noise was paid for. The other three sit between 115 and 121 B over
 // their measurement and stay where LP-2 left them.
-export const INLINE_FRAGMENT_BUDGET = { raw: 110_930, gzip: 34_975, brotli: 30_870 } as const;
+// Raised 2026-09-07 (Z3): raw 110 930 → 112 210 (measured 112 094), gzip 34 975
+// → 35 390 (measured 35 339), brotli 30 870 → 31 240 (measured 31 111). This is
+// the profile the escalation is actually for: with both preludes present a
+// finding inside a boundary goes to the fragment endpoint and only one outside
+// every boundary reaches the route.
+export const INLINE_FRAGMENT_BUDGET = { raw: 112_210, gzip: 35_390, brotli: 31_240 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -205,7 +241,10 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 110_930, gzip: 34_975, brotli: 30_8
 // Raised 2026-09-07 (LP-2): raw 105 380 → 106 000 (measured 105 886), gzip
 // 33 070 → 33 300 (measured 33 258), brotli 29 180 → 29 390 (measured 29 271).
 // Both prelude profiles move by the same 672 B as the runtime they wrap.
-export const INLINE_ROUTE_BUDGET = { raw: 106_000, gzip: 33_300, brotli: 29_390 } as const;
+// Raised 2026-09-07 (Z3): raw 106 000 → 107 280 (measured 107 168), gzip 33 300
+// → 33 730 (measured 33 675), brotli 29 390 → 29 780 (measured 29 658). Both
+// prelude profiles move by the same 1 303 B as the runtime they wrap.
+export const INLINE_ROUTE_BUDGET = { raw: 107_280, gzip: 33_730, brotli: 29_780 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

@@ -46,25 +46,46 @@ export class StrategyRunner {
   planFragments(touched: ReadonlySet<string>): FragmentPlan | null {
     const strategy = this.deps.strategies.fragment;
     if (strategy === undefined) return null;
-    const boundaries = strategy.plan(this.deps.root, touched);
-    const covered = new Set(boundaries);
-    return {
-      boundaries,
-      strategy,
-      covers: (target) =>
-        target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
-    };
+    return planBoundaries(strategy, strategy.plan(this.deps.root, touched));
   }
 
   /**
-   * Whether this revision changed a field the page cannot patch, which makes
-   * the whole route the only honest answer. Opt-in through `onUnboundChange`;
-   * the baseline message is skipped, because there every field counts as
+   * Hand the bindings this revision could not patch faithfully to a server:
+   * the fragment strategy when a boundary covers every one of them, the route
+   * otherwise. All of them or none — a boundary renders its own region, so a
+   * finding outside every boundary is only answered by the whole route.
+   *
+   * A revision that already refreshed the route is left alone: the second
+   * request would fetch the bytes the first one just brought.
+   */
+  escalateUnfaithful(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    targets: readonly CachedElement[],
+  ): void {
+    if (transaction.routeRefreshed) return;
+    const { fragment, route } = this.deps.strategies;
+    const boundaries = fragment === undefined ? undefined : coveringBoundaries(targets);
+    if (fragment !== undefined && boundaries !== undefined) {
+      transaction.pendingFragments += boundaries.length;
+      void this.runFragments(transaction, data, planBoundaries(fragment, boundaries));
+      return;
+    }
+    if (route !== undefined) void this.refreshRoute(transaction, data, route);
+  }
+
+  /**
+   * Whether this revision changed a field the page cannot patch — one with no
+   * anchor anywhere, which is also how a section the template renders only
+   * under a condition looks from here. The whole route is then the only honest
+   * answer, and `'warn'` needs nothing extra: LP0201 already names the field.
+   *
+   * The baseline message is skipped, because there every field counts as
    * changed and the page has just been rendered from them anyway.
    */
   hasUnboundChange(transaction: UpdateTransaction, ownerKeys: OwnerScope): boolean {
     const { deps } = this;
-    if (deps.onUnboundChange !== 'route' || transaction.baseline) return false;
+    if (deps.onUnfaithfulPatch !== 'escalate' || transaction.baseline) return false;
     const isAddressable = createFieldAddressability(deps.cache, transaction.locale, ownerKeys);
     for (const fieldName of transaction.touched) {
       if (SYSTEM_FIELD_NAMES.has(fieldName) || isAddressable(fieldName)) continue;
@@ -281,6 +302,28 @@ export class StrategyRunner {
       }
     }
   }
+}
+
+/** The distinct boundaries around `targets`, or `undefined` when one sits outside them all. */
+function coveringBoundaries(targets: readonly CachedElement[]): Element[] | undefined {
+  const boundaries: Element[] = [];
+  for (const target of targets) {
+    const boundary = target.fragmentBoundary;
+    if (boundary === undefined) return undefined;
+    if (!boundaries.includes(boundary)) boundaries.push(boundary);
+  }
+  return boundaries;
+}
+
+/** A plan over boundaries already chosen, whichever question chose them. */
+function planBoundaries(strategy: FragmentStrategy, boundaries: readonly Element[]): FragmentPlan {
+  const covered = new Set(boundaries);
+  return {
+    boundaries,
+    strategy,
+    covers: (target) =>
+      target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
+  };
 }
 
 /** Morph server-rendered HTML into the boundary, keeping focus and visitor state. */

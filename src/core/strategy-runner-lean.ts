@@ -19,6 +19,7 @@ import type { CachedElement } from './types';
 export type StrategyRunnerLike = Pick<
   StrategyRunner,
   | 'planFragments'
+  | 'escalateUnfaithful'
   | 'hasUnboundChange'
   | 'hasRouteBinding'
   | 'runFragments'
@@ -33,6 +34,9 @@ export function createLeanStrategyRunner(
 ): StrategyRunnerLike {
   return {
     planFragments: (): null => null,
+    // Nothing to escalate to. The pipeline still drains its queue, so a page
+    // that keeps producing findings does not keep producing entries.
+    escalateUnfaithful: (): void => undefined,
     hasUnboundChange: (): boolean => false,
     hasRouteBinding: (): boolean => false,
     runFragments: (): Promise<void> => Promise.resolve(),

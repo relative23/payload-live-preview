@@ -4,8 +4,8 @@
 
 ```ts
 
-import { a } from '../../options-DxeFRGkV.js';
-import { P } from '../../options-DxeFRGkV.js';
+import { a } from '../../options-eet7rO9G.js';
+import { P } from '../../options-eet7rO9G.js';
 
 // @public
 function livePreviewModule(inlineOptions: LivePreviewModuleOptions | undefined, nuxt: NuxtLike): void;

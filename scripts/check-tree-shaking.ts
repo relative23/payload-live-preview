@@ -37,6 +37,13 @@ interface Fixture {
  * again for LP0503, the line a page prints when a trusted admin sends a message
  * this runtime does not recognise.
  *
+ * 2026-09-07 (Z3): the four rows that carry the runtime and the lean row rise
+ * for the fidelity verdict — `initLivePreview` from the barrel 39 236 → 39 650
+ * (measured 39 588), from `./core` 39 211 → 39 590 (39 532), the generator
+ * 37 151 → 37 440 (37 383), the Next.js middleware 42 011 → 42 280 (42 221) and
+ * `LEAN_RUNTIME` 25 890 → 26 240 (26 198). Same ~440 B gzip as every other row
+ * that embeds the runtime; the reason is in bundle-budgets.ts.
+ *
  * The three rows carrying the inline runtime were raised on 2026-09-06 for the
  * ~660 B gzip `onUnboundChange` costs it (see bundle-budgets.ts). The generator
  * row moved furthest because it also gained the route prelude alongside the
@@ -97,21 +104,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 39_236,
+    gzip: 39_650,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 37_151,
+    gzip: 37_440,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 39_211,
+    gzip: 39_590,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -132,14 +139,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 42_011,
+    gzip: 42_280,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 25_890,
+    gzip: 26_240,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

@@ -2,7 +2,7 @@
  * Whether an incoming field has somewhere on the page to land.
  *
  * Two callers ask, for different reasons: LP0201 reports a field that never
- * has an anchor, and `onUnboundChange` decides whether a revision needs the
+ * has an anchor, and `onUnfaithfulPatch` decides whether a revision needs the
  * whole route. They have to answer the same way, so the lookup lives here
  * rather than in either of them — the locale suffix Payload appends, the owner
  * scope, and the fact that the diff names top-level fields while a binding may

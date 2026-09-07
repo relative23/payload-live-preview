@@ -116,7 +116,9 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0806:
     'Configure `fragments: { endpoint }` on the adapter so boundaries render on the server; until then they are patched.',
   LP0807:
-    "Informational: the field has no `data-payload-field` anywhere on the page, so the route was refreshed instead of patched. Bind the field to patch it in place, or set `onUnboundChange: 'ignore'` to accept the stale value.",
+    "Informational: the field has no `data-payload-field` anywhere on the page, so the route was refreshed instead of patched. Bind the field to patch it in place, or set `onUnfaithfulPatch: 'ignore'` to accept the stale value.",
+  LP0411:
+    "The value could not be written the way the server wrote it: no renderer accepted it, or a Lexical block with no renderer replaced markup the server had rendered. Under the default `onUnfaithfulPatch: 'escalate'` the enclosing fragment boundary is re-rendered, or the whole route when none covers it — so a page with neither `fragments` nor `routeStrategy` keeps the patch and this stays a note. Register the renderer the message names, or accept the escalation.",
 });
 
 /**

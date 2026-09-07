@@ -170,6 +170,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnknownValueFormat: "LP0408";
     readonly SanitizerDroppedAttribute: "LP0409";
     readonly UnrenderedBlockKept: "LP0410";
+    readonly UnfaithfulPatch: "LP0411";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
@@ -871,6 +872,7 @@ export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
+    readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
     readonly sanitizerPolicy?: SanitizerPolicyMode;
     readonly schema: PayloadFieldSchema | undefined;
 }

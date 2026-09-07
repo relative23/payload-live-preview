@@ -3,7 +3,7 @@
  * cause is a template that renders the anchor only when the field is non-empty.
  *
  * Reported once per field name, because the cause is the markup rather than the
- * edit. `onUnboundChange` acts on the same fact per revision; both read the
+ * edit. `onUnfaithfulPatch` acts on the same fact per revision; both read the
  * addressability rules from `unbound-fields.ts`.
  */
 

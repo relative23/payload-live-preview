@@ -52,11 +52,20 @@ export interface InlineScriptConfig {
    */
   readonly routeStrategy?: boolean;
   /**
-   * What to do when a revision changes a field the page has no binding for.
-   * `'route'` refreshes the whole route rather than losing the edit, and needs
-   * a route strategy. Default `'ignore'`.
+   * The 2.0 name for `onUnfaithfulPatch`, kept until 3.0. `'route'` means
+   * `'escalate'`, `'ignore'` means `'ignore'`.
+   *
+   * @deprecated Renamed to `onUnfaithfulPatch`.
    */
   readonly onUnboundChange?: 'ignore' | 'route';
+  /**
+   * What to do when the runtime knows a patch cannot reach what the server
+   * would have drawn. `'escalate'` (the default) hands the region to the
+   * fragment strategy when a boundary covers it and to the route otherwise, so
+   * it needs `fragmentEndpoint` or `routeStrategy` to do anything. `'warn'`
+   * reports LP0411 and keeps the patch; `'ignore'` keeps it silently.
+   */
+  readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
   /** Which defaults the omitted options fall back to. Not serialized: `'v1'` only relaxes the generator's `mergeDepth` check. */
   readonly defaults?: DefaultsProfile;
   /**
@@ -114,4 +123,5 @@ export const INLINE_CONFIG_KEYS = [
   'revealEditedField',
   'routeStrategy',
   'onUnboundChange',
+  'onUnfaithfulPatch',
 ] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'defaults' | 'runtime'>[];

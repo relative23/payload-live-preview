@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 291,
-    "suites": 610,
-    "tests": 2487,
+    "files": 293,
+    "suites": 614,
+    "tests": 2502,
     "benchmarks": 12
   },
   "groups": {
@@ -42,9 +42,9 @@
       "benchmarks": 0
     },
     "integration": {
-      "files": 20,
-      "suites": 23,
-      "tests": 98,
+      "files": 21,
+      "suites": 24,
+      "tests": 101,
       "benchmarks": 0
     },
     "real-payload": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 237,
-      "suites": 540,
-      "tests": 2276,
+      "files": 238,
+      "suites": 543,
+      "tests": 2288,
       "benchmarks": 0
     }
   },
@@ -394,6 +394,13 @@
       "group": "integration",
       "suites": 1,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/runtime-unfaithful-patch.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -1191,7 +1198,7 @@
       "path": "tests/unit/core/route-strategy.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -1255,6 +1262,13 @@
       "group": "unit",
       "suites": 5,
       "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/unfaithful-patch.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 11,
       "benchmarks": 0
     },
     {
