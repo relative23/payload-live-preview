@@ -207,7 +207,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build:runtime": "tsx scripts/build-runtime.ts",
+    "build:runtime": "node -e \"const c=require('node:child_process'),e={...process.env};if(!e.SOURCE_DATE_EPOCH){const g=c.spawnSync('git',['show','-s','--format=%ct','HEAD'],{encoding:'utf8'});if(g.status===0)e.SOURCE_DATE_EPOCH=g.stdout.trim()}process.exit(c.spawnSync(process.execPath,['--import','tsx',process.argv[1]],{stdio:'inherit',env:e}).status??1)\" scripts/build-runtime.ts",
     "build": "npm run build:runtime && tsx scripts/build-dist.ts && npm run build:assets && npm run test:bundle && npm run test:treeshake && npm run test:edge && npm run test:interaction && npm run test:protocol-semantics",
     "build:assets": "node -e \"const fs=require('node:fs');for(const f of ['RichText','PreviewBoundary'])fs.copyFileSync('src/adapters/astro/'+f+'.astro','dist/adapters/astro/'+f+'.astro')\"",
     "dev": "tsup --watch",
