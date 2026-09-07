@@ -3,7 +3,8 @@
   Mock Payload admin — emulates the postMessage protocol so the demo
   works without a real Payload backend. Static HTML served from
   Next.js `public/`; the logic is a 1:1 copy of the Astro example's
-  admin.astro.
+  admin.astro, plus the preview credential this fixture's root layout
+  requires (see `/preview-session` and app/preview.ts).
 
   Visit /admin.html in dev mode and type into the inputs to see
   updates flow into the iframe in real time. The exact same flow
@@ -103,11 +104,28 @@
       </label>
     </form>
 
-    <iframe id="preview" src="/" data-testid="preview-frame" title="Live preview"></iframe>
+    <iframe id="preview" data-testid="preview-frame" title="Live preview"></iframe>
 
     <script>
       const form = document.getElementById('admin-form');
       const iframe = document.getElementById('preview');
+      // A real Payload admin gets a preview credential from its
+      // `livePreview.url` callback. This fixture has no Payload, so it enters
+      // through the example's own `/preview-session`, which mints a signed
+      // token and writes it into a cookie before redirecting to the framed
+      // page. The cookie is the credential the root layout reads: Next hands a
+      // server component the request headers but not its URL, so a token in the
+      // query would be invisible to it. Without the cookie the page is a public
+      // response — no runtime, nothing to preview.
+      // `?target=/reveal` frames another route of this site (tests use it). The
+      // framed route comes out of this list, never out of the query: the
+      // parameter only selects an entry, so a crafted `?target=` has no path to
+      // `iframe.src` at all. A mock admin is the first integration a reader
+      // copies, so it models the check a real one needs.
+      const ROUTES = ['/', '/reveal'];
+      const requested = new URLSearchParams(window.location.search).get('target');
+      const target = ROUTES.find((route) => route === requested) ?? ROUTES[0];
+      iframe.src = `/preview-session?to=${encodeURIComponent(target)}`;
 
       function buildData() {
         const fd = new FormData(form);

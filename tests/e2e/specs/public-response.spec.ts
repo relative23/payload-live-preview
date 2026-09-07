@@ -6,7 +6,9 @@ import {
   runtimeArtifact,
 } from '../helpers/delivery';
 import {
+  AUTHORIZED_NEXT_DELIVERY,
   DELIVERY_BUDGETS,
+  NEXT_PREVIEW_ENTRY,
   findDeliveryViolations,
   type DeliveryBudget,
 } from '../../fixtures/delivery-budgets';
@@ -33,6 +35,11 @@ import {
  *
  * A page that is not gated is not a defect here; being wrong about which case a
  * setup falls into, or about what it charges, would be.
+ *
+ * One test in the file asks with a credential rather than without one, and it is
+ * the reason the zeros above it can be read as wins: a delivery that renders
+ * nothing for everybody scores `nothing / 0 / 0` too. `AUTHORIZED_NEXT_DELIVERY`
+ * holds what the same Next path still charges an editor, to the byte.
  */
 
 /** The bootstrap names the runtime it defers, so a public response can be checked for not fetching it. */
@@ -77,16 +84,42 @@ test.describe('what a public response costs', () => {
     }
   });
 
+  test('the same layout hands an authorized editor the whole runtime', async ({ request }) => {
+    // The counter-proof. A component that returned `null` to everyone would
+    // score `nothing / 0 / 0` on the row above and look like a win; this asks
+    // the same path with the credential the fixture's `/preview-session` mints
+    // and holds the answer to the byte, in both directions.
+    const entry = await request.get(NEXT_PREVIEW_ENTRY);
+    expect(entry.status(), 'the fixture minted a preview credential').toBe(200);
+
+    const measurement = await measureDelivery(
+      request,
+      AUTHORIZED_NEXT_DELIVERY,
+      await runtimeArtifact(request),
+    );
+    const violations = findDeliveryViolations(measurement, AUTHORIZED_NEXT_DELIVERY);
+
+    expect(
+      violations.map(({ metric, actual, reason }) => `${metric} ${actual}: ${reason}`),
+      `${AUTHORIZED_NEXT_DELIVERY.why}\nmeasured: ${describeDelivery(measurement)}`,
+    ).toEqual([]);
+  });
+
   test('the bootstrap is a rounding error against the runtime it defers', async ({ request }) => {
     const artifact = await runtimeArtifact(request);
     const assetBudget = DELIVERY_BUDGETS[4]!;
+    // Both halves as an editor gets them: the inline row is zero for the public
+    // now, and comparing an option against a page that renders nothing would
+    // compare the gate, not the delivery. The credential puts the two back on
+    // the same footing — same fixture, same shell, one option apart.
+    expect((await request.get(NEXT_PREVIEW_ENTRY)).status()).toBe(200);
     const asset = await measureDelivery(request, assetBudget, artifact);
-    const inline = await measureDelivery(request, DELIVERY_BUDGETS[3]!, artifact);
+    const inline = await measureDelivery(request, AUTHORIZED_NEXT_DELIVERY, artifact);
     const { html } = await publicResponse(request, `${assetBudget.app}${assetBudget.path}`);
 
-    // Same fixture, same shell, one option apart. The claim in deployment.md is
-    // "0.7 % of what the inline build costs", so hold it under one per cent
-    // rather than at a byte count that moves with the runtime.
+    // The claim in deployment.md is "0.7 % of what the inline build costs", so
+    // hold it under one per cent rather than at a byte count that moves with
+    // the runtime.
     expect(asset.emittedBytes * 100).toBeLessThan(inline.emittedBytes);
     expect(BOOTSTRAP_URL.test(html), 'the bootstrap names the runtime it will fetch').toBe(true);
   });

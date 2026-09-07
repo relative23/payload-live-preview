@@ -97,10 +97,20 @@ preview intent.
 | Setup                                                  | A public visitor receives | Bytes          | Why                                                                               |
 | ------------------------------------------------------ | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
 | SvelteKit handle, Nuxt Nitro plugin, Astro middleware  | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
+| Next.js, `<LivePreviewScript />` in the root layout    | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
 | Next.js, `delivery: 'asset'`                           | the bootstrap             | 696, twice     | the root layout renders for everyone; what it renders is the bootstrap            |
 | Astro static build, `mode: 'loader'`                   | the bootstrap             | 762            | a static page has no request to decide for, so the check happens in the browser   |
 | Astro static build, `mode: 'inline'`                   | the whole runtime         | 104 837        | nothing decides and nothing is deferred                                           |
 | Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 116 413, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
+
+The last row is the one exception to "no cookie, no preview intent": no fixture
+serves it to the public any longer, because the Next example moved to the second
+row. What is measured there now is the same layout answering an _authorized_
+editor — same helper, same bytes, one request apart from the zero above it. It
+stays in the table because a synchronous helper in a root layout is what most
+Next projects have today, and this is what it costs them. That is also the shape
+of the win: the component did not make the delivery cheaper, it stopped the
+public paying for it.
 
 The bootstrap is the same code in either row that carries it — the byte
 difference is the configuration in front of it — and all it does is check
@@ -130,10 +140,10 @@ Three ways to move a row up:
   the authorization verdict and render nothing — not a bootstrap, nothing — for
   a request that is not an authorized preview. It is the only way a Next page
   reaches the top row, because it is the only one that can decline to render
-  ([nextjs.md](nextjs.md)). This row is not in the table above: no fixture is
-  wired that way yet, so it is held by
-  `tests/unit/adapters/nextjs-script-component.test.ts` rather than by the E2E
-  budgets, and it is named here as a way rather than as a measurement.
+  ([nextjs.md](nextjs.md)). Note that a layout is handed the request headers and
+  cookies but not its URL, so `?preview=true` is invisible there: use
+  `inject: 'always'` and let `authorizePreview` be the single gate, or render the
+  component in a page, which does get `searchParams`.
 - **A page whose script is rendered for everyone**: switch it to
   `delivery: 'asset'` (Next.js, SvelteKit, Nuxt) or `mode: 'loader'` (Astro).
   The bootstrap replaces the runtime, and the runtime is fetched only inside a

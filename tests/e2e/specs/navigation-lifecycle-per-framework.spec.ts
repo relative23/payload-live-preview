@@ -13,6 +13,10 @@ import { requirePreviewFrame } from '../helpers/preview';
  * Each fixture is addressed absolutely because Playwright's baseURL is the
  * astro fixture; a case is skipped when its server is not part of this run
  * (PLP_E2E_SERVERS), so the file is safe in any single-fixture job.
+ *
+ * Every admin mock frames a page its own site will actually preview: the Next
+ * one enters through `/preview-session` first, because its root layout renders
+ * the runtime only for a request carrying the credential that route mints.
  */
 
 interface Framework {

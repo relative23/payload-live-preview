@@ -7,6 +7,13 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * covers the protocol in depth; what is asserted here is that the same endpoint
  * renders React on the server, and that the three outcomes a page depends on —
  * rendered, refused, failed — reach the browser the same way they do there.
+ *
+ * Two credentials are in play, because the fixture reads the request twice. The
+ * host frames through `/preview-session`, whose cookie is what the gated root
+ * layout verifies before it renders the runtime at all; the route-bound token in
+ * the framed URL is what the endpoint verifies per boundary render. `?unauthorized=1`
+ * omits only the second, so the page below still previews and the refusal under
+ * test is the fragment request's.
  */
 
 const APP = 'http://localhost:4174';
@@ -69,7 +76,7 @@ test.describe('fragment preview (Next.js)', () => {
     expect(stats.rendered).toBe(0);
   });
 
-  test('an unauthorized page renders nothing on the server and is patched instead', async ({
+  test('a boundary with no token of its own renders nothing and is patched instead', async ({
     page,
   }) => {
     const frame = await open(page, '?unauthorized=1');

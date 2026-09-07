@@ -68,11 +68,14 @@ const TARGETS: readonly RevealTarget[] = [
     handle: '__livePreview',
   },
   {
+    // `?target=` rather than `frameSrc`: this fixture's admin enters through
+    // `/preview-session`, which mints the credential the gated root layout
+    // verifies, and a frame src written over it afterwards would be a race
+    // between the test and the admin's own navigation.
     name: 'nextjs — inline delivery, React',
     server: 'nextjs',
     admin: 'http://localhost:4174/admin.html',
     path: '/reveal',
-    frameSrc: '/reveal',
     handle: '__livePreview',
     // React hydrates after the runtime starts. On a slow runner it lands
     // between the reveal and the assertion and resets the scroll position,

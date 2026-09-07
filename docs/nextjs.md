@@ -15,11 +15,13 @@ npm install payload-live-preview
 ## Which of the three ways to deliver it
 
 The script can reach the page three ways, and they charge a visitor who is not
-an editor three different amounts. The bottom two rows are measured per request
-— no cookie, no preview intent — by an E2E case against
-`tests/fixtures/delivery-budgets.ts`; the top row is held by
-`tests/unit/adapters/nextjs-script-component.test.ts`, because no example app is
-wired that way yet.
+an editor three different amounts. The first two are measured per request — no
+cookie, no preview intent — by an E2E case against
+`tests/fixtures/delivery-budgets.ts`, and the first is measured a second time
+_with_ a credential, because a component that rendered nothing for everybody
+would score zero on the first measurement too. The third is what that same
+credential is charged: the helper builds the same bytes either way, and the only
+question the component answers is who receives them.
 
 | Way                                                       | A public visitor receives | Pick it when                                                                  |
 | --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
@@ -290,11 +292,15 @@ When it is not there, the strategy fetches and morphs as before.
 
 ## Example
 
-[`examples/nextjs-payload`](../examples/nextjs-payload) — the root layout with
-`livePreviewScriptProps()` on Next.js 16, and `/hybrid` with its route handler
-at `app/payload/fragment/route.ts`: a section the server renders only when the
-field is set, a value derived from another, and the same bindings as the
-fallback when the render fails. Run in Chromium, Firefox and WebKit.
+[`examples/nextjs-payload`](../examples/nextjs-payload) on Next.js 16 — the
+`(inline)` root layout with `<LivePreviewScript />`, `inject: 'always'` and a
+signed-token `authorizePreview`, so an anonymous request to any of its pages
+carries no runtime at all; the `(asset)` root layout with
+`livePreviewScriptProps()` and `delivery: 'asset'`, for the comparison; and
+`/hybrid` with its route handler at `app/payload/fragment/route.ts`: a section
+the server renders only when the field is set, a value derived from another, and
+the same bindings as the fallback when the render fails. Run in Chromium,
+Firefox and WebKit.
 
 ## When something does not update
 
