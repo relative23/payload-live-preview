@@ -6,14 +6,17 @@
  */
 
 import { builtinModules } from 'node:module';
+import type { CapabilityKind } from './architecture-capabilities';
 import {
   isInternalSourceSpecifier,
   type ArchitectureDependency,
   type ArchitectureModule,
 } from './architecture-graph';
+import { TRUSTED_CORE_POLICY_FILE, type TrustedCorePolicy } from './trusted-core-policy';
 
 export type ArchitectureViolationKind =
   | 'browser-node-builtin'
+  | 'capability'
   | 'layer-boundary'
   | 'runtime-cycle'
   | 'server-boundary'
@@ -344,5 +347,84 @@ export function findArchitectureViolations(
   }
 
   violations.push(...findRuntimeCycles(modules));
+  return violations.sort((left, right) => left.message.localeCompare(right.message));
+}
+
+/**
+ * Attribute writes are held site by site — most set `role` or `aria-*` to a
+ * constant — so outside the core they are the sink inventory's business, not
+ * a module-level capability to review.
+ */
+const SITE_LEVEL_KINDS: ReadonlySet<CapabilityKind> = new Set(['attribute-sink']);
+
+/**
+ * Every module holds exactly the capabilities the reviewed policy says it
+ * holds. A core module's list is exact in both directions; a module outside
+ * the core must be reviewed for each capability it holds, may never hold a
+ * core-only one, and a review that names a capability the module no longer
+ * holds is stale. So a `fetch` that appears in a renderer fails here, and so
+ * does one that quietly leaves the module its review was written for.
+ */
+export function findCapabilityViolations(
+  modules: readonly ArchitectureModule[],
+  policy: TrustedCorePolicy,
+): readonly ArchitectureViolation[] {
+  const violations: ArchitectureViolation[] = [];
+  const report = (module: string, message: string): void => {
+    violations.push({ kind: 'capability', module, message });
+  };
+  const coreOnly = new Set(policy.coreOnly);
+
+  for (const module of modules) {
+    const held = new Set(module.capabilities.map(({ kind }) => kind));
+    const core = policy.core.modules[module.path];
+    if (core !== undefined) {
+      for (const kind of held) {
+        if (!core.includes(kind)) {
+          report(
+            module.path,
+            `${module.path} holds ${kind}, which ${TRUSTED_CORE_POLICY_FILE} does not list for it`,
+          );
+        }
+      }
+      for (const kind of core) {
+        if (!held.has(kind)) {
+          report(
+            module.path,
+            `${module.path} no longer holds ${kind}; remove it from ${TRUSTED_CORE_POLICY_FILE}`,
+          );
+        }
+      }
+      continue;
+    }
+    const reviewed = policy.outsideCore[module.path];
+    for (const kind of held) {
+      if (SITE_LEVEL_KINDS.has(kind)) continue;
+      if (coreOnly.has(kind)) {
+        report(module.path, `${module.path} holds ${kind}, which only the trusted core may hold`);
+      } else if (reviewed?.capabilities.includes(kind) !== true) {
+        report(
+          module.path,
+          `${module.path} holds ${kind} and is neither in the trusted core nor reviewed for it in ${TRUSTED_CORE_POLICY_FILE}`,
+        );
+      }
+    }
+    if (reviewed === undefined) continue;
+    for (const kind of reviewed.capabilities) {
+      if (!held.has(kind)) {
+        report(
+          module.path,
+          `${module.path} no longer holds ${kind}; its review in ${TRUSTED_CORE_POLICY_FILE} is stale`,
+        );
+      }
+    }
+  }
+
+  const present = new Set(modules.map(({ path }) => path));
+  for (const path of [...Object.keys(policy.core.modules), ...Object.keys(policy.outsideCore)]) {
+    if (!present.has(path)) {
+      report(path, `${TRUSTED_CORE_POLICY_FILE} names ${path}, which does not exist`);
+    }
+  }
   return violations.sort((left, right) => left.message.localeCompare(right.message));
 }

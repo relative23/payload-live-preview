@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "//": [
+    "The trusted core: the modules a reader has to trust before handing this",
+    "package a page, and the evidence that nothing else needs that trust.",
+    "",
+    "A module is in the core because it holds a capability the page's owner",
+    "would ask about: it reads a message from another window, sends a request",
+    "with the visitor's cookies, creates the Trusted Types policy, or writes a",
+    "value from the wire into an attribute. The primitives those modules defer",
+    "to (the escape helpers, the URL check) are in with them: the sanitizer is",
+    "only as good as `isSafeUrl`. Modules that hold a capability but stay",
+    "outside are listed under `outsideCore` with the reason each one stays",
+    "there; a module that holds one and is listed nowhere fails the gate.",
+    "",
+    "`scripts/check-trusted-core.ts` counts the lines and `scripts/architecture-",
+    "rules.ts` holds every module to the capabilities written here. Numbers",
+    "are the exact current measurement, no headroom, as in complexity-budget.json."
+  ],
+  "core": {
+    "modules": {
+      "src/core/message-bus.ts": ["message-ingress", "message-egress"],
+      "src/core/message-guards.ts": [],
+      "src/core/data-merger.ts": ["network", "credentialed-request"],
+      "src/core/attribute-binding.ts": ["attribute-sink"],
+      "src/security/sanitizer.ts": ["html-sink", "attribute-sink"],
+      "src/security/trusted-types.ts": ["trusted-types-policy"],
+      "src/security/escape.ts": [],
+      "src/security/url-validator.ts": []
+    },
+    "lines": {
+      "limit": 1392,
+      "why": "Measured on 2026-09-10, `wc -l` over the eight modules: 398 + 98 + 217 + 68 + 448 + 68 + 50 + 45. The plan asked for at most 1 000 and this is not it, so the number is a finding, not a target met. What makes it large is not a second responsibility: 133 of the sanitizer's 448 lines are the allow-lists a reader has to read anyway (which tags, which attributes), and about 150 of the bus's 398 are the queue that commits token verdicts in arrival order (ADR 0004) — moving either into a file of its own would leave the reader the same lines in two places. Without blank and comment lines the same eight modules are 1 087. The plan also named `binding-writer.ts` (196 lines); it is outside because it holds no capability — its two exits are `applyAttributeBinding` and a renderer, both held by the gates below — and `docs/audit.md` reads it first after the core for that reason."
+    },
+    "dependencies": {
+      "src/core/diagnostics.ts": "Wraps a consumer's logger so a diagnostic that throws cannot become a second failure; 38 lines, no capability.",
+      "src/core/protocol-version.ts": "The protocol version constant the `ready` handshake announces, and the capability table read off the wire (ADR 0010); the bus takes only the constant.",
+      "src/core/thenable.ts": "Assimilates a thenable a synchronous callback returned, so a rejected promise from consumer code does not surface as unhandled; 14 lines.",
+      "src/schema/parser.ts": "Validates `fieldSchemaJSON` entry by entry; a malformed entry is dropped and a throw becomes an empty schema. It decides which renderer a field gets, never what is written.",
+      "src/security/sanitizer-report.ts": "LP0409, the once-per-name warning that the strict sanitizer removed an attribute the 1.x default kept. A report, never a behaviour: the attribute stays removed whether or not the warning prints."
+    }
+  },
+  "coreOnly": ["message-ingress", "credentialed-request", "trusted-types-policy"],
+  "outsideCore": {
+    "src/client/preview-focus.ts": {
+      "capabilities": ["message-egress"],
+      "why": "The admin-side reporter for reveal tier 2: posts `{ type, field }` to the preview window at its exact origin, never `'*'`. It runs in the admin, not in the page, and carries a field name, never a value."
+    },
+    "src/core/loader.ts": {
+      "capabilities": ["script-load"],
+      "why": "The static-delivery bootstrap: one `<script>` whose `src` and `integrity` are build-time constants the generator prepends. Nothing from the page or the wire reaches the URL."
+    },
+    "src/core/strategy-runner.ts": {
+      "capabilities": ["html-sink"],
+      "why": "Morphs a fragment the page's own server rendered into its boundary, parsed into a `<template>` first. Sanitising it would strip the page's own legitimate markup; the sink inventory records it as `trusted-origin`."
+    },
+    "src/core/structural-applier.ts": {
+      "capabilities": ["html-sink"],
+      "why": "Parses an item the sanitizer already cleaned into a `<template>` so it can be adopted; `sanitised` in the sink inventory, and inert twice over."
+    },
+    "src/field-types/array.ts": {
+      "capabilities": ["html-sink"],
+      "why": "Renderer; feeds `trustedHtml()` from `sanitizeHtmlWithPolicy()` and nothing else, per site in the sink inventory."
+    },
+    "src/field-types/html.ts": {
+      "capabilities": ["html-sink"],
+      "why": "Renderer; feeds `trustedHtml()` from `sanitizeHtmlWithPolicy()` and nothing else, per site in the sink inventory."
+    },
+    "src/field-types/rich-text.ts": {
+      "capabilities": ["html-sink"],
+      "why": "Renderer; every site feeds `trustedHtml()` a string the sanitizer produced with the instance's policy, including the one that parses a sanitised string into a detached clone."
+    },
+    "src/field-types/text.ts": {
+      "capabilities": ["html-sink"],
+      "why": "Renderer; feeds `trustedHtml()` from `escapeAndLinebreak()`, which escapes before it inserts `<br>`; `escaped` in the sink inventory."
+    },
+    "src/field-types/upload.ts": {
+      "capabilities": ["html-sink"],
+      "why": "Renderer; builds one `<a>` from `escapeHtmlAttribute()` and `escapeHtml()` around a URL that passed `isSafeUrl`; `escaped` in the sink inventory."
+    },
+    "src/fragment/handler.ts": {
+      "capabilities": ["network"],
+      "why": "POST to the page's own fragment endpoint with `credentials: 'same-origin'`; the JSON that comes back is validated before any of it reaches a boundary (ADR 0011)."
+    },
+    "src/fragment/route.ts": {
+      "capabilities": ["network", "html-parse"],
+      "why": "GET of the page's own route, same-origin, `cache: 'no-store'`; the HTML is parsed by `DOMParser` into an inert document, then morphed. The server that answers is the one that rendered the page."
+    },
+    "src/plugins/built-in/document-save.ts": {
+      "capabilities": ["network", "navigation"],
+      "why": "Opt-in plugin: on a document event it POSTs to the revalidation URL the consumer configured, or reloads the page. Neither runs unless the page author registered it."
+    },
+    "src/security/preview-session.ts": {
+      "capabilities": ["network"],
+      "why": "Server-side: forwards exactly one named cookie to `<serverURL>/api/<users>/me`. Never in a page; the browser runtime does not contain it."
+    },
+    "src/server/preview.ts": {
+      "capabilities": ["network"],
+      "why": "Server-side draft read through the REST API, with the headers the authorized context carries. Never in a page."
+    },
+    "src/doctor/probe.ts": {
+      "capabilities": ["network"],
+      "why": "`pll doctor`, a maintainer tool run from a shell against a deployment; redirects are reported, not followed, and the body is capped."
+    }
+  }
+}

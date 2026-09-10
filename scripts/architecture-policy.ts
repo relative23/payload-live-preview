@@ -6,12 +6,17 @@
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readArchitectureModules } from './architecture-graph';
-import { findArchitectureViolations } from './architecture-rules';
+import { findArchitectureViolations, findCapabilityViolations } from './architecture-rules';
+import { readTrustedCorePolicy } from './trusted-core-policy';
 
 async function main(): Promise<void> {
   const repositoryRoot = resolve(import.meta.dirname, '..');
   const modules = await readArchitectureModules(repositoryRoot);
-  const violations = findArchitectureViolations(modules);
+  const policy = await readTrustedCorePolicy(repositoryRoot);
+  const violations = [
+    ...findArchitectureViolations(modules),
+    ...findCapabilityViolations(modules, policy),
+  ];
   if (violations.length > 0) {
     throw new Error(
       `architecture policy failed:\n${violations.map(({ message }) => `- ${message}`).join('\n')}`,
@@ -22,8 +27,10 @@ async function main(): Promise<void> {
       count + module.dependencies.filter(({ kind, target }) => kind === 'runtime' && target).length,
     0,
   );
+  const capabilityHolders = modules.filter(({ capabilities }) => capabilities.length > 0).length;
   console.log(
-    `Architecture policy passed: ${String(modules.length)} modules, ${String(runtimeEdges)} runtime edges, no layer violations or cycles.`,
+    `Architecture policy passed: ${String(modules.length)} modules, ${String(runtimeEdges)} runtime edges, ` +
+      `no layer violations or cycles; ${String(capabilityHolders)} modules hold a capability, every one reviewed.`,
   );
 }
 

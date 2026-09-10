@@ -13,11 +13,12 @@ const dependency = (target: string) => ({ specifier: target, target, kind: 'runt
 describe('architecture policy', () => {
   it('rejects a runtime cycle while allowing erased type-only edges', () => {
     const modules: readonly ArchitectureModule[] = [
-      { path: 'src/core/a.ts', dependencies: [dependency('src/core/b.ts')] },
-      { path: 'src/core/b.ts', dependencies: [dependency('src/core/a.ts')] },
+      { path: 'src/core/a.ts', dependencies: [dependency('src/core/b.ts')], capabilities: [] },
+      { path: 'src/core/b.ts', dependencies: [dependency('src/core/a.ts')], capabilities: [] },
       {
         path: 'src/core/type-user.ts',
         dependencies: [{ specifier: './a', target: 'src/core/a.ts', kind: 'type' }],
+        capabilities: [],
       },
     ];
 
@@ -26,14 +27,23 @@ describe('architecture policy', () => {
 
   it('rejects upward layer imports, browser-to-server imports and Node builtins', () => {
     const modules: readonly ArchitectureModule[] = [
-      { path: 'src/core/runtime.ts', dependencies: [dependency('src/adapters/astro/index.ts')] },
-      { path: 'src/client/index.ts', dependencies: [dependency('src/codegen/index.ts')] },
+      {
+        path: 'src/core/runtime.ts',
+        dependencies: [dependency('src/adapters/astro/index.ts')],
+        capabilities: [],
+      },
+      {
+        path: 'src/client/index.ts',
+        dependencies: [dependency('src/codegen/index.ts')],
+        capabilities: [],
+      },
       {
         path: 'src/security/csp.ts',
         dependencies: [{ specifier: 'node:fs', kind: 'runtime' }],
+        capabilities: [],
       },
-      { path: 'src/adapters/astro/index.ts', dependencies: [] },
-      { path: 'src/codegen/index.ts', dependencies: [] },
+      { path: 'src/adapters/astro/index.ts', dependencies: [], capabilities: [] },
+      { path: 'src/codegen/index.ts', dependencies: [], capabilities: [] },
     ];
 
     const kinds = findArchitectureViolations(modules).map(({ kind }) => kind);
@@ -51,10 +61,12 @@ describe('architecture policy', () => {
       {
         path: 'src/adapters/nuxt/module.ts',
         dependencies: [{ specifier: 'node:path', kind: 'runtime' }],
+        capabilities: [],
       },
       {
         path: 'src/adapters/nuxt/adapter.ts',
         dependencies: [dependency('src/adapters/nuxt/module.ts')],
+        capabilities: [],
       },
     ];
 

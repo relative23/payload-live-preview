@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 304,
-    "suites": 633,
-    "tests": 2604,
+    "files": 305,
+    "suites": 637,
+    "tests": 2617,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 247,
-      "suites": 560,
-      "tests": 2379,
+      "files": 248,
+      "suites": 564,
+      "tests": 2392,
       "benchmarks": 0
     }
   },
@@ -2025,6 +2025,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/trusted-core.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 13,
       "benchmarks": 0
     },
     {
