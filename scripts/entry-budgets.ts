@@ -393,8 +393,13 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // update carried and the page cannot show. It is a plugin precisely so this
   // row moves and `INLINE_BUDGET` does not: no page carries it unless its own
   // code asks for it.
-  'plugins.cjs': { raw: 19_264, gzip: 7_096, brotli: 6_309 },
-  'plugins.js': { raw: 19_240, gzip: 7_086, brotli: 6_293 },
+  // The `plugins.*` brotli rows carry ~100 B over their measurement rather than
+  // the ~130 the runtime-carrying rows keep: this entry embeds no runtime, so
+  // the epoch that moves `generatedAt` cannot move it, and at 6 KB the wider
+  // cushion is over the 2 % the improvement hint allows (measured after the
+  // Z9 commit: 6 179 / 6 163).
+  'plugins.cjs': { raw: 19_264, gzip: 7_096, brotli: 6_280 },
+  'plugins.js': { raw: 19_240, gzip: 7_086, brotli: 6_265 },
   'fragment.cjs': { raw: 14_180, gzip: 5_500, brotli: 4_870 },
   'fragment.js': { raw: 14_120, gzip: 5_460, brotli: 4_840 },
 };
