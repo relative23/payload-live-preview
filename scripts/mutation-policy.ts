@@ -237,7 +237,11 @@ export function evaluateMutationReport(
       `[policy] unsupported policy schemaVersion ${String(policy.schemaVersion)}; expected 1`,
     );
   }
-  if (policy.profile !== 'pr-critical' && policy.profile !== 'nightly-critical') {
+  if (
+    policy.profile !== 'pr-critical' &&
+    policy.profile !== 'nightly-critical' &&
+    policy.profile !== 'core-critical'
+  ) {
     violations.push(`[policy] unsupported mutation profile ${policy.profile}`);
   }
   violations.push(...findProfileViolations(report, policy, sources));

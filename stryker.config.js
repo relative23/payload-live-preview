@@ -11,8 +11,8 @@ const root = import.meta.url.startsWith('file:')
 
 const scope = process.env['STRYKER_SCOPE'] ?? 'pr';
 
-if (scope !== 'pr' && scope !== 'nightly') {
-  throw new Error(`Unknown STRYKER_SCOPE "${scope}"; expected "pr" or "nightly"`);
+if (scope !== 'pr' && scope !== 'nightly' && scope !== 'core') {
+  throw new Error(`Unknown STRYKER_SCOPE "${scope}"; expected "pr", "nightly" or "core"`);
 }
 
 /**
@@ -90,10 +90,25 @@ const prMutate = [
 const coveragePolicy = JSON.parse(readFileSync(join(root, 'quality/coverage-policy.json'), 'utf8'));
 const criticalFiles = Object.keys(coveragePolicy.criticalFiles ?? {});
 const nightlyMutate = [...new Set([...criticalFiles, ...prMutate, 'src/core/a11y.ts'])].sort();
+/**
+ * The trusted core (`quality/trusted-core.json`): the eight modules a reader
+ * has to trust before handing the package a page, mutated on their own so the
+ * figure `docs/audit.md` quotes is theirs and not the average of sixty files.
+ * The target is every mutant killed; the policy file holds the measured score.
+ */
+const coreMutate = Object.keys(
+  JSON.parse(readFileSync(join(root, 'quality/trusted-core.json'), 'utf8')).core.modules,
+).sort();
 const suffix = shard === undefined ? '' : `-shard${String(shard.index)}`;
 
+function mutateFor(selected) {
+  if (selected === 'nightly') return shardOf(nightlyMutate, shard);
+  if (selected === 'core') return coreMutate;
+  return prMutate;
+}
+
 export default {
-  mutate: scope === 'nightly' ? shardOf(nightlyMutate, shard) : prMutate,
+  mutate: mutateFor(scope),
   testRunner: 'vitest',
   vitest: {
     configFile: 'vitest.stryker.config.ts',
@@ -133,12 +148,22 @@ export default {
           low: 90,
           break: 90,
         }
-      : {
-          // The report policy applies the exact reviewed ratchet. This lower
-          // Stryker-native floor still fails early if that policy step is ever
-          // accidentally omitted by an ad-hoc runner.
-          high: 75,
-          low: 70,
-          break: 70,
-        },
+      : scope === 'core'
+        ? {
+            // 100 is the target and `high` says so; `break` is only the early
+            // floor for a runner that skips the policy step, as for nightly.
+            // The first measurement was 88.40, so 90 would have failed every
+            // run natively while the policy held the exact score.
+            high: 100,
+            low: 95,
+            break: 80,
+          }
+        : {
+            // The report policy applies the exact reviewed ratchet. This lower
+            // Stryker-native floor still fails early if that policy step is ever
+            // accidentally omitted by an ad-hoc runner.
+            high: 75,
+            low: 70,
+            break: 70,
+          },
 };

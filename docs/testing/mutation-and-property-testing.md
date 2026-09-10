@@ -43,6 +43,19 @@ risk classifications from drifting apart:
 STRYKER_SCOPE=nightly npx stryker run stryker.config.js
 ```
 
+The core profile mutates the trusted core alone — the eight modules
+`quality/trusted-core.json` names, read from that file so the two lists cannot
+drift — because the figure the audit page quotes has to be the core's own
+and not the average of sixty files. Its target is every mutant
+killed; `quality/mutation-policy-core.json` holds the measured score, and the
+survivors it records are findings, each either a missing test or a line that
+does not belong in the core. It is run by hand, not by a workflow:
+
+```sh
+STRYKER_SCOPE=core npx stryker run stryker.config.js
+npm run test:mutation:policy:core
+```
+
 The PR profile is a hard 90% gate, with 90–95% shown as its improvement band. The
 critical Nightly profile has a defensive native Stryker floor of 70%; the stricter
 machine-readable report policy pins its exact reviewed score, scope, and terminal

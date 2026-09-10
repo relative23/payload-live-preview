@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "profile": "core-critical",
+  "report": {
+    "schemaVersion": "1.0",
+    "framework": {
+      "name": "StrykerJS",
+      "version": "9.6.1"
+    },
+    "strykerConfigFile": "stryker.config.js",
+    "vitestConfigFile": "vitest.stryker.config.ts",
+    "testRunner": "vitest",
+    "coverageAnalysis": "perTest",
+    "incremental": false,
+    "thresholds": {
+      "high": 100,
+      "low": 95,
+      "break": 80
+    }
+  },
+  "scope": [
+    "src/core/attribute-binding.ts",
+    "src/core/data-merger.ts",
+    "src/core/message-bus.ts",
+    "src/core/message-guards.ts",
+    "src/security/escape.ts",
+    "src/security/sanitizer.ts",
+    "src/security/trusted-types.ts",
+    "src/security/url-validator.ts"
+  ],
+  "baseline": {
+    "total": 1345,
+    "mutationScoreMinimum": 88.4,
+    "mutationScorePrecision": 2,
+    "mutationScoreDriftMutants": 0,
+    "noCoverageMaximum": 5,
+    "timeoutMaximum": 11,
+    "errorMaximum": 0,
+    "ignoredMaximum": 0
+  }
+}

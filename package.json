@@ -244,6 +244,7 @@
     "test:property": "vitest run tests/unit/property",
     "test:mutation": "stryker run stryker.config.js",
     "test:mutation:policy:pr": "tsx scripts/mutation-policy.ts --policy quality/mutation-policy-pr.json --report test-results/stryker-pr.json",
+    "test:mutation:policy:core": "tsx scripts/mutation-policy.ts --policy quality/mutation-policy-core.json --report test-results/stryker-core.json",
     "test:mutation:policy": "tsx scripts/mutation-policy.ts",
     "test:leak": "node --expose-gc --import tsx scripts/leak-soak.ts",
     "test:leak:quick": "node --expose-gc --import tsx scripts/leak-soak.ts --quick",
