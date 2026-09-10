@@ -19,7 +19,7 @@
   "totals": {
     "files": 307,
     "suites": 641,
-    "tests": 2632,
+    "tests": 2649,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 250,
       "suites": 568,
-      "tests": 2407,
+      "tests": 2424,
       "benchmarks": 0
     }
   },
@@ -834,14 +834,14 @@
       "path": "tests/unit/core/data-merger-can-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 11,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/core/data-merger-merge-failures.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -1093,7 +1093,7 @@
       "path": "tests/unit/core/message-bus-origin.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 10,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -1121,7 +1121,7 @@
       "path": "tests/unit/core/message-bus-source.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 7,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -1135,7 +1135,7 @@
       "path": "tests/unit/core/message-bus-token-ordering.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 9,
+      "tests": 11,
       "benchmarks": 0
     },
     {

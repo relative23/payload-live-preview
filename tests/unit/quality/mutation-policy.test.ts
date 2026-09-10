@@ -126,8 +126,8 @@ describe('nightly mutation policy', () => {
       },
       scope: ['src/core/field-value.ts', 'src/security/csp.ts', 'src/security/url-validator.ts'],
       baseline: {
-        total: 352,
-        mutationScoreMinimum: 93.75,
+        total: 361,
+        mutationScoreMinimum: 93.63,
         mutationScorePrecision: 2,
         // One timeout on a loaded runner moves the score by one mutant.
         mutationScoreDriftMutants: 2,

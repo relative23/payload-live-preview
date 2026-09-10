@@ -145,48 +145,53 @@ interface Fixture {
  * (42 671), the generator 40 034 -> 40 336 (40 281) and the Next.js middleware
  * 44 879 -> 45 179 (45 124). `LEAN_RUNTIME` holds at 27 747 (27 728): the
  * lean profile has no route strategy. See bundle-budgets.ts.
+ *
+ * 2026-09-11 (Z28): ten rows fall with the runtime and the helpers it shares,
+ * each to its measurement plus the cushion it carried — `escapeHtml` from `payload-live-preview` 224 → 214 (210); `lexicalToHtml` from `payload-live-preview` 5_145 → 5_080 (5_078); `initLivePreview` from `payload-live-preview` 42_775 → 42_577 (42_527); `generateInlineScript` from `payload-live-preview` 40_336 → 40_202 (40_147); `initLivePreview` from `payload-live-preview/core` 42_721 → 42_537 (42_487); `lexicalToHtml` from `payload-live-preview/lexical` 5_275 → 5_203 (5_200); `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 45_179 → 45_046 (44_991); `LEAN_RUNTIME` from `payload-live-preview/lean` 27_747 → 27_587 (27_568); `useLivePreviewDocument` from `payload-live-preview/react` 5_322 → 5_180 (5_100); `useLivePreviewDocument` from `payload-live-preview/vue` 5_311 → 5_176 (5_096).
+ * The bytes are lines the trusted core's mutation run showed no test could
+ * reach; see bundle-budgets.ts.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
     from: 'payload-live-preview',
     symbol: 'escapeHtml',
     use: 'export const out = escapeHtml(String(Date.now()));',
-    gzip: 224,
+    gzip: 214,
     why: 'a pure helper from the root barrel: the barrel itself costs nothing',
   },
   {
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_145,
+    gzip: 5_080,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 42_775,
+    gzip: 42_577,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 40_336,
+    gzip: 40_202,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 42_721,
+    gzip: 42_537,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_275,
+    gzip: 5_203,
     why: 'the Lexical renderer from its focused entry',
   },
   {
@@ -200,28 +205,28 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 45_179,
+    gzip: 45_046,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 27_747,
+    gzip: 27_587,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_322,
+    gzip: 5_180,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_311,
+    gzip: 5_176,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {

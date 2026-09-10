@@ -84,6 +84,31 @@ describe("MessageBus — sourcePolicy 'parent-or-opener'", () => {
     detach();
   });
 
+  it('refuses a third window when the page has an opener', () => {
+    const opener = {};
+    const page = fakeWindow({ opener });
+    const { onUpdate, onInvalid, detach } = bus('parent-or-opener', page);
+    page.dispatchEvent(messageFrom({}));
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(onInvalid).toHaveBeenCalledWith('source', TRUSTED);
+    detach();
+  });
+
+  it('refuses an event without a source even when the window has no opener at all', () => {
+    // `source` is undefined on a synthetic event, and `opener` is undefined on
+    // a stand-in that never had one; two undefineds are not a sender.
+    const page = new EventTarget() as unknown as Window;
+    Object.defineProperties(page, {
+      parent: { value: page, configurable: true },
+      opener: { value: undefined, configurable: true },
+    });
+    const { onUpdate, onInvalid, detach } = bus('parent-or-opener', page);
+    page.dispatchEvent(messageFrom(undefined));
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(onInvalid).toHaveBeenCalledWith('source', TRUSTED);
+    detach();
+  });
+
   it('checks the origin first, so a wrong origin is still reported as "origin"', () => {
     const parent = {};
     const page = fakeWindow({ parent });

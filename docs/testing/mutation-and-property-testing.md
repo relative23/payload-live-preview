@@ -108,9 +108,11 @@ current implementation and remain visible in every report:
 - seven CSP mutants alter an early-return/default/empty-token branch whose fallback
   serializes the same policy, or change an impossible zero whitespace index after
   leading ASCII whitespace has already been removed; and
-- six URL mutants remove redundant empty/protocol-relative checks, a safe-URL guard
-  implied by the following anchored patterns, or a regex repetition whose match is
-  intentionally prefix-based.
+- two URL mutants (since 2026-09-11, six before): the empty check after trimming,
+  which the URL parse and the relative-path pattern refuse anyway, and a regex
+  repetition whose match is intentionally prefix-based. The other four — the empty
+  check before trimming and the safe-URL guard the external-URL patterns imply —
+  were lines the trusted-core mutation run showed no test could reach, and are gone.
 
 One surviving CSP string mutant shortens the Web-Crypto remediation text while
 retaining both the Node 18 and fail-closed security guidance. It is a diagnostic

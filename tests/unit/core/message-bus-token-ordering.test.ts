@@ -299,6 +299,81 @@ describe('MessageBus — token validation ordering', () => {
     expect(dispatched).toEqual(['new']);
     bus.detach();
   });
+  it('keeps an update that arrives during a partial drain behind the ones already waiting', async () => {
+    const verdicts = new Map<string, ReturnType<typeof deferred<boolean>>>();
+    const dispatched: string[] = [];
+    const bus = new MessageBus(() => true, {
+      onUpdate: (message) => {
+        dispatched.push(String(message.data?.['id']));
+      },
+      onDocumentEvent: () => undefined,
+      validateToken: (token) => {
+        if (token === 'C') return true;
+        const verdict = deferred<boolean>();
+        verdicts.set(String(token), verdict);
+        return verdict.promise;
+      },
+    });
+    bus.attach();
+    for (const id of ['A', 'B']) {
+      window.dispatchEvent(
+        makeMessage({ type: 'payload-live-preview', data: { id }, previewToken: id }, TRUSTED),
+      );
+    }
+
+    verdicts.get('A')?.resolve(true);
+    await flushMicrotasks();
+    expect(dispatched).toEqual(['A']);
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { id: 'C' }, previewToken: 'C' }, TRUSTED),
+    );
+    expect(dispatched).toEqual(['A']);
+
+    verdicts.get('B')?.resolve(true);
+    await flushMicrotasks();
+    expect(dispatched).toEqual(['A', 'B', 'C']);
+    bus.detach();
+  });
+  it('delivers each update once when the matcher dispatches a message while the queue drains', async () => {
+    // The matcher is consulted at ingress and again when the head drains. A
+    // matcher that dispatches a second message during the drain-time consult
+    // starts a nested drain, which commits the head; the outer drain must
+    // then find the head gone and not commit it a second time.
+    const first = deferred<boolean>();
+    const dispatched: string[] = [];
+    let consults = 0;
+    const bus = new MessageBus(
+      () => {
+        consults += 1;
+        if (consults === 2) {
+          window.dispatchEvent(
+            makeMessage(
+              { type: 'payload-live-preview', data: { id: 'B' }, previewToken: 'B' },
+              TRUSTED,
+            ),
+          );
+        }
+        return true;
+      },
+      {
+        onUpdate: (message) => {
+          dispatched.push(String(message.data?.['id']));
+        },
+        onDocumentEvent: () => undefined,
+        validateToken: (token) => (token === 'A' ? first.promise : true),
+      },
+    );
+    bus.attach();
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { id: 'A' }, previewToken: 'A' }, TRUSTED),
+    );
+
+    first.resolve(true);
+    await flushMicrotasks();
+
+    expect(dispatched).toEqual(['A', 'B']);
+    bus.detach();
+  });
   it('does not let ingress matcher re-entry contaminate the fresh validation queue', async () => {
     const oldVerdict = deferred<boolean>();
     const validated: string[] = [];

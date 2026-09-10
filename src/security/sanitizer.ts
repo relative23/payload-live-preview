@@ -249,13 +249,12 @@ function resolvePolicy(
     };
   }
   const allowed = new Set(ALLOWED_TAGS);
-  for (const tag of options.additionalAllowedTags ?? []) allowed.add(tag);
+  options.additionalAllowedTags?.forEach((tag) => allowed.add(tag));
   if (options.allowFormControls === true) for (const tag of FORM_CONTROLS) allowed.add(tag);
   const attrMap = new Map<string, ReadonlySet<string>>();
   for (const [tag, attrs] of Object.entries(ATTR_BY_TAG)) attrMap.set(tag, attrs);
   for (const [tag, attrs] of Object.entries(options.additionalAllowedAttributes ?? {})) {
-    const existing = attrMap.get(tag);
-    const merged = new Set(existing ?? []);
+    const merged = new Set(attrMap.get(tag));
     for (const attr of attrs) merged.add(attr);
     attrMap.set(tag, merged);
   }
@@ -265,7 +264,7 @@ function resolvePolicy(
     allowFormControls: options.allowFormControls === true,
     templateMode: options.templateMode === true,
     mode,
-    allowedData: new Set((options.allowedDataAttributes ?? []).map((name) => name.toLowerCase())),
+    allowedData: new Set(options.allowedDataAttributes?.map((name) => name.toLowerCase())),
   };
 }
 
@@ -361,11 +360,7 @@ function sanitizeElement(element: Element, policy: ResolvedPolicy): void {
 
   if (!policy.allowedTags.has(tag)) {
     sanitizeFragment(element, policy);
-    const parent = element.parentNode;
-    if (parent) {
-      while (element.firstChild) parent.insertBefore(element.firstChild, element);
-      element.remove();
-    }
+    element.replaceWith(...element.childNodes);
     return;
   }
 
@@ -424,8 +419,8 @@ function isSafeSrcset(value: string): boolean {
   for (const candidate of value.split(',')) {
     const trimmed = candidate.trim();
     if (trimmed.length === 0) continue;
-    const descriptorStart = trimmed.search(/\s/);
-    const url = descriptorStart === -1 ? trimmed : trimmed.slice(0, descriptorStart);
+    // The URL ends at the first whitespace; what follows is the descriptor.
+    const [url = trimmed] = trimmed.split(/\s/, 1);
     if (!isSafeUrl(url)) return false;
   }
   return true;

@@ -298,7 +298,86 @@ describe('MessageBus — origin and source policy', () => {
     target.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: {} }, TRUSTED));
 
     expect(remove).toHaveBeenCalledOnce();
+    expect(remove).toHaveBeenCalledWith('message', expect.any(Function));
     expect(onUpdate).not.toHaveBeenCalled();
+  });
+  it('can be attached again after addEventListener failed', () => {
+    bus.detach();
+    const failing = new EventTarget();
+    Object.defineProperty(failing, 'addEventListener', {
+      value: (): void => {
+        throw new Error('refused');
+      },
+    });
+    expect(() => {
+      bus.attach(failing as unknown as Window);
+    }).toThrow('refused');
+
+    const working = new EventTarget() as unknown as Window;
+    bus.attach(working);
+    working.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: {} }, TRUSTED));
+    expect(onUpdate).toHaveBeenCalledOnce();
+  });
+  it('keeps a newer attachment made from inside a failing addEventListener', () => {
+    // The hook detaches and re-attaches elsewhere, then the original
+    // registration throws: the rollback must not undo the newer attachment.
+    bus.detach();
+    const other = new EventTarget() as unknown as Window;
+    const failing = new EventTarget();
+    Object.defineProperty(failing, 'addEventListener', {
+      value: (): void => {
+        bus.detach();
+        bus.attach(other);
+        throw new Error('refused');
+      },
+    });
+    expect(() => {
+      bus.attach(failing as unknown as Window);
+    }).toThrow('refused');
+
+    other.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: {} }, TRUSTED));
+    expect(onUpdate).toHaveBeenCalledOnce();
+  });
+  it('removes exactly the listener it added, by type and identity', () => {
+    bus.detach();
+    const target = new EventTarget();
+    const added: unknown[] = [];
+    const removed: unknown[][] = [];
+    const nativeAdd = target.addEventListener.bind(target);
+    Object.defineProperties(target, {
+      addEventListener: {
+        value: (type: string, listener: EventListenerOrEventListenerObject): void => {
+          added.push(listener);
+          nativeAdd(type, listener);
+        },
+      },
+      removeEventListener: {
+        value: (...args: unknown[]): void => {
+          removed.push(args);
+        },
+      },
+    });
+
+    bus.attach(target as unknown as Window);
+    bus.detach();
+
+    expect(removed).toEqual([['message', added[0]]]);
+  });
+  it('delivers nothing when the matcher detaches the bus while approving', () => {
+    bus.detach();
+    const detaching = new MessageBus(
+      () => {
+        detaching.detach();
+        return true;
+      },
+      { onUpdate, onDocumentEvent, onInvalid },
+    );
+    detaching.attach();
+
+    window.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: { id: 'x' } }, TRUSTED));
+
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(onInvalid).not.toHaveBeenCalled();
   });
   it('keeps a newer same-target attachment created reentrantly by addEventListener', () => {
     bus.detach();

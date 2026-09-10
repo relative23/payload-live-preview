@@ -41,12 +41,11 @@ function resolvePolicy(): TrustedHtmlPolicyLike | null {
   if (policyOverride !== undefined) return policyOverride;
   if (autoPolicy !== undefined) return autoPolicy;
   const api = factory();
-  if (api === undefined) {
-    autoPolicy = null;
-    return null;
-  }
   try {
-    autoPolicy = api.createPolicy(TRUSTED_TYPES_POLICY_NAME, { createHTML: (input) => input });
+    autoPolicy =
+      api === undefined
+        ? null
+        : api.createPolicy(TRUSTED_TYPES_POLICY_NAME, { createHTML: (input) => input });
   } catch {
     // The site's `trusted-types` directive does not list this name; the
     // sink assignment will surface the enforcement error.

@@ -27,15 +27,15 @@ The modules that answer them are the **trusted core**:
 
 | Module                          |     Lines | Decides                                                                        |
 | ------------------------------- | --------: | ------------------------------------------------------------------------------ |
-| `src/core/message-guards.ts`    |        98 | which shapes are a message at all                                              |
-| `src/core/message-bus.ts`       |       398 | which window may send, in which order verdicts commit, when a callback may run |
-| `src/core/data-merger.ts`       |       217 | the one request that carries cookies: to where, with what, and which one wins  |
+| `src/core/message-guards.ts`    |        95 | which shapes are a message at all                                              |
+| `src/core/message-bus.ts`       |       386 | which window may send, in which order verdicts commit, when a callback may run |
+| `src/core/data-merger.ts`       |       202 | the one request that carries cookies: to where, with what, and which one wins  |
 | `src/core/attribute-binding.ts` |        68 | which attribute a remote value may become                                      |
-| `src/security/url-validator.ts` |        45 | which URL is a URL                                                             |
-| `src/security/escape.ts`        |        50 | how text becomes markup without becoming markup                                |
-| `src/security/sanitizer.ts`     |       448 | which tags and attributes CMS content keeps                                    |
+| `src/security/url-validator.ts` |        44 | which URL is a URL                                                             |
+| `src/security/escape.ts`        |        48 | how text becomes markup without becoming markup                                |
+| `src/security/sanitizer.ts`     |       443 | which tags and attributes CMS content keeps                                    |
 | `src/security/trusted-types.ts` |        68 | the one policy every HTML sink goes through                                    |
-| **Total**                       | **1 392** | 1 087 without blank and comment lines; 41 exported names                       |
+| **Total**                       | **1 354** | 1 032 without blank and comment lines; 41 exported names                       |
 
 The boundary is not a feeling about which files are important. A module is in
 the core because it **holds a capability**: it listens to messages, sends a
@@ -103,12 +103,15 @@ function that is handed `fetch` under another name. The core's own imports are
 held exact so that this stays a short list to check by hand.
 
 A thousand lines is about what one reader holds in one sitting, and that was
-the size this core set out to be. It is 1 392, and the difference is not a
+the size this core set out to be. It is 1 354, and the difference is not a
 second responsibility hiding in the list:
 133 of the sanitizer's lines are the allow-lists a reader has to read anyway,
-and about 150 of the bus's are the queue that commits token verdicts in arrival
+and about 130 of the bus's are the queue that commits token verdicts in arrival
 order. Moving either into a file of its own would leave the reader the same
-lines in two places. The number stands as measured.
+lines in two places. The number stands as measured; it was 1 392 when this
+page was written, and the core's own mutation run then showed 39 lines no
+test could reach — guards a later check repeated, a fallback nothing could
+hit, probes the encoding call makes itself — which are gone.
 
 ## The core in reading order
 
@@ -166,15 +169,17 @@ ordering, generations) and the fast-check models in
   `/globals/<slug>`, as a POST with `X-Payload-HTTP-Method-Override: GET`, and
   nowhere else; `serverURL` loses its trailing slashes without a regular
   expression that could backtrack.
-- **M2** A slug or id with `/`, `\`, `?`, `#`, a control character, `.`/`..`,
-  an empty string or over its length limit never becomes a URL segment; a
-  request that cannot be merged returns `unavailable` without a fetch
-  (`isSafeSlug`, `isSafeId`).
+- **M2** A slug or id with `/`, `\`, a control character, a lone surrogate,
+  `.`/`..`, an empty string or over its length limit (128 for a slug, 512 for
+  an id) never becomes a URL segment, and a slug with `?` or `#` does not
+  either — an id may carry them, encoded; a request that cannot be merged
+  returns `unavailable` without a fetch (`endpointOf`, `isPathSegment`).
 - **M3** `credentials: 'include'` appears here and in no other browser module
   (gate 2, core-only).
 - **M4** The newest merge wins: a newer call aborts the one in flight, and a
   response that arrives after being superseded is dropped even if a fetch shim
-  ignored the signal (`attempt`, `isAborted`).
+  ignored the signal — the attempt counter alone decides, since nothing but
+  this class aborts the signal and only after the counter moved (`attempt`).
 - **M5** A non-OK response, a non-object body or an exception is
   `unavailable` — the raw values are shown, never a partial document or an
   error body.
