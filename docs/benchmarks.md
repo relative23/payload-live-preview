@@ -40,12 +40,18 @@ messages; the fixture's debounce is 25 ms.
 
 Whether a sample pays that 25 ms depends on when it arrives. Since 2026-09-07
 the first write of a quiet phase skips the window and the rest of the burst
-waits for it, and this spec sends the next message as soon as the previous one
-has painted — a gap of roughly 20–30 ms, which is the driver's own round trip
-and sits on the boundary. Most samples here are therefore burst messages and do
-pay it. The keystroke that does not is measured in jsdom instead, by
-`npm run test:interaction`, where the cadence is controlled: 16.6 ms p95
-against 66.6 ms before.
+waits for it. Since 2026-09-10 the spec waits out the window between samples,
+so every measured message is the first of a quiet phase — a keystroke after a
+pause, which is what an editor actually does. It asserts that cadence rather
+than assuming it: the smallest gap between two messages must exceed the
+fixture's debounce, read from the fixture's own config.
+
+Before that pause the spec sent the next message the instant the previous one
+had painted, so the gap was the driver's own round trip — 5 to 30 ms against a
+25 ms window. Every sample but the first was therefore a burst message, and on
+which side of the window it fell depended on how loaded the machine was. That
+is why the 2026-08-27 and 2026-09-07 tables below disagree with each other and
+with the one after them: they measured the driver as much as the runtime.
 
 Measured 2026-08-27 on the maintainer host, `skipUnchanged` off (the fixture's
 default):
@@ -62,6 +68,28 @@ Re-measured 2026-09-07, four runs, on the same host: 27.1–27.4 ms p50 and
 round trip ran longer than the 25 ms window, measured 15.3 / 22.5 at 300
 bindings — that is the same page with the leading write actually exercised, and
 the reason the paragraph above says what the cadence decides.
+
+Re-measured 2026-09-10 on a faster host, with the pause, three runs. The
+"before" column is the same host and the same three runs without it, and it is
+the spread rather than the median that the pause fixes:
+
+| Bindings | before (3 runs, p50/p95)          | after (3 runs, p50/p95)           |
+| -------: | --------------------------------- | --------------------------------- |
+|      300 | 13.8/31.0 · 21.2/38.8 · 20.8/38.0 | 9.2/19.2 · 10.0/19.5 · 9.8/19.4   |
+|    1,000 | 23.5/36.7 · 24.1/35.5 · 23.5/36.5 | 6.5/12.3 · 5.6/11.6 · 6.4/11.8    |
+|    5,000 | 16.4/31.0 · 16.4/30.3 · 16.3/30.2 | 16.0/20.1 · 15.7/19.9 · 16.2/20.3 |
+
+The 5,000-binding row barely moves because its driver round trip was already
+longer than the window — those samples were quiet-phase messages by accident,
+which is also why that page used to measure _faster_ than the 1,000-binding one.
+
+One caveat on the absolute figures, which the pause did not introduce and does
+not fix: the post time is read in the host document and the paint time in the
+preview frame, and the two do not share a time origin. The frame's is later by
+however long its navigation took — 6.4 ms on this host, and different per
+scenario page — so every number here is low by that much. It was inside the
+noise while the samples were bursts; at these latencies it is not, and a
+mutation p95 can come out negative.
 
 The p50 grows with the page because every binding is resolved and rendered on
 every message even though one changed — that is the cost `skipUnchanged`

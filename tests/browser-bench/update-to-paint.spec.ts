@@ -14,6 +14,16 @@
  * earliest instant at which the new text can be on screen; it is not the
  * compositor's own timestamp, and the report says so.
  *
+ * Between two samples the driver waits out the fixture's debounce window. An
+ * editor types, stops, and looks; the message after the pause is the one whose
+ * latency they feel, and the scheduler answers it in the next frame instead of
+ * at the end of a window. Until 2026-09-10 this file sent the next message the
+ * instant the previous one had painted, so the gap was the driver's own round
+ * trip — 5 to 30 ms against a 25 ms window — and every sample but the first
+ * was a burst message. The numbers then said whether the driver was fast that
+ * day, not what the runtime does, and the assertion below is what keeps that
+ * from coming back.
+ *
  * Trend, not gate. Each scenario is reported against the roadmap's stated
  * budget (scalar update-to-paint p95 ≤ 100 ms with the default 50 ms
  * debounce; the fixture uses 25 ms). The only assertions are that
@@ -21,12 +31,34 @@
  * timing is not a fact a pull request should fail on.
  */
 
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { expect, test, type Frame, type Page } from '@playwright/test';
 
 const WARMUP = 20;
 const SAMPLES = 200;
 const BUDGET_P95_MS = 100;
+
+/**
+ * The fixture's own debounce window, read from its config rather than copied,
+ * so a change there cannot leave the cadence below silently wrong.
+ */
+const FIXTURE_DEBOUNCE_MS = readFixtureDebounce();
+
+/**
+ * The quiet the next message waits out. An editor types, stops, looks; the
+ * message that follows a pause is the one whose latency they feel, and the
+ * scheduler treats it differently from the rest of a burst. Twice the window
+ * clears it whatever the timer's coarseness, and the driver's own round trip
+ * is added on top — so a sample can only be quieter than this, never louder.
+ */
+const PAUSE_MS = FIXTURE_DEBOUNCE_MS * 2;
+
+function readFixtureDebounce(): number {
+  const source = readFileSync('examples/astro-payload/astro.config.mjs', 'utf8');
+  const match = /debounceMs:\s*(\d+)/u.exec(source);
+  if (match?.[1] === undefined) throw new Error('the fixture no longer states a debounceMs');
+  return Number(match[1]);
+}
 
 interface Sample {
   readonly postToMutationMs: number;
@@ -40,6 +72,8 @@ interface ScenarioReport {
   readonly p95: number;
   readonly max: number;
   readonly mutationP95: number;
+  /** Median idle time between one message and the next, in the host's clock. */
+  readonly gapP50: number;
   readonly budgetP95: number;
   readonly withinBudget: boolean;
 }
@@ -112,19 +146,24 @@ async function installProbe(frame: Frame): Promise<void> {
   });
 }
 
-/** Post one update from the host and register its send time with the probe. */
-async function sendTimed(page: Page, value: string): Promise<void> {
-  await page.evaluate((text) => {
+/**
+ * Post one update from the host, register its send time with the probe, and
+ * hand that time back so the caller can measure the gap to the next message.
+ */
+async function sendTimed(page: Page, value: string): Promise<number> {
+  return page.evaluate((text) => {
     const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
     if (frame?.contentWindow == null) throw new Error('preview frame is unavailable');
     const w = frame.contentWindow as Window & {
       __bench?: { pending: Map<string, number> };
     };
-    w.__bench?.pending.set(text, performance.now());
+    const postedAt = performance.now();
+    w.__bench?.pending.set(text, postedAt);
     frame.contentWindow.postMessage(
       { type: 'payload-live-preview', data: { f0: text } },
       window.location.origin,
     );
+    return postedAt;
   }, value);
 }
 
@@ -161,9 +200,11 @@ function registerScenario(count: number): void {
 
     // Warm the parser, JIT and caches before measuring; the first messages on
     // a cold page are a different population.
+    let postedAt = 0;
     for (let index = 0; index < WARMUP; index += 1) {
-      await sendTimed(page, `warm-${String(index)}`);
+      postedAt = await sendTimed(page, `warm-${String(index)}`);
       await expect(first).toHaveText(`warm-${String(index)}`);
+      await page.waitForTimeout(PAUSE_MS);
     }
     // A measurement lands one animation frame after the text does, and
     // `toHaveText` returns as soon as the text is there. Without draining the
@@ -172,12 +213,16 @@ function registerScenario(count: number): void {
     await drainFrames(frame);
     const warm = (await collect(frame)).length;
 
+    const gaps: number[] = [];
     for (let index = 0; index < SAMPLES; index += 1) {
       const value = `sample-${String(index)}`;
-      await sendTimed(page, value);
+      const previousPost = postedAt;
+      postedAt = await sendTimed(page, value);
+      gaps.push(postedAt - previousPost);
       // Awaiting the DOM keeps messages from coalescing in the debounce, so
       // each sample measures one message, which is what a keystroke is.
       await expect(first).toHaveText(value);
+      await page.waitForTimeout(PAUSE_MS);
     }
 
     // The same boundary at the other end: the last sample of the measured run
@@ -187,9 +232,18 @@ function registerScenario(count: number): void {
     const samples = (await collect(frame)).slice(warm);
     expect(samples.length, 'every sample produced a measurement').toBe(SAMPLES);
     expect(errors).toEqual([]);
+    // What separates an editor's keystroke from a burst is the quiet before
+    // it. Assert the cadence rather than trusting it: a sample that arrived
+    // inside the window its predecessor opened is a burst message, and the
+    // number it produced answers a different question than this file asks.
+    expect(
+      Math.min(...gaps),
+      `every message must arrive after the fixture's ${String(FIXTURE_DEBOUNCE_MS)} ms window closed`,
+    ).toBeGreaterThan(FIXTURE_DEBOUNCE_MS);
 
     const paint = samples.map((s) => s.postToPaintMs).sort((a, b) => a - b);
     const mutation = samples.map((s) => s.postToMutationMs).sort((a, b) => a - b);
+    const gap = [...gaps].sort((a, b) => a - b);
     const report: ScenarioReport = {
       bindings: count,
       samples: samples.length,
@@ -197,6 +251,7 @@ function registerScenario(count: number): void {
       p95: percentile(paint, 95),
       max: paint[paint.length - 1] ?? Number.NaN,
       mutationP95: percentile(mutation, 95),
+      gapP50: percentile(gap, 50),
       budgetP95: BUDGET_P95_MS,
       withinBudget: percentile(paint, 95) <= BUDGET_P95_MS,
     };
@@ -204,7 +259,8 @@ function registerScenario(count: number): void {
     console.log(
       `[bench] ${String(count).padStart(5)} bindings  p50 ${report.p50.toFixed(1)} ms  ` +
         `p95 ${report.p95.toFixed(1)} ms  max ${report.max.toFixed(1)} ms  ` +
-        `(mutation p95 ${report.mutationP95.toFixed(1)} ms)  ` +
+        `(mutation p95 ${report.mutationP95.toFixed(1)} ms, ` +
+        `gap p50 ${report.gapP50.toFixed(1)} ms)  ` +
         `${report.withinBudget ? 'within' : 'OVER'} the ${String(BUDGET_P95_MS)} ms p95 budget`,
     );
   });
