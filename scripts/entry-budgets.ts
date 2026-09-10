@@ -346,7 +346,17 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
   'core.cjs': { raw: 124_890, gzip: 39_290, brotli: 34_120 },
   'core.js': { raw: 124_340, gzip: 39_210, brotli: 34_090 },
-  'index.cjs': { raw: 265_230, gzip: 82_420, brotli: 52_740 },
+  //
+  // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
+  // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a
+  // measurement taken *before* the commit — and the epoch that pins the build
+  // (Z19) is the commit's own timestamp, so committing moved `generatedAt`,
+  // same length, different bytes: 52 647 brotli at the previous commit's epoch,
+  // 52 761 at this one's, from an unchanged tree. Two builds of one commit are
+  // identical; a build before the commit and one after are not. A brotli
+  // cushion below that swing is a coin flip at every commit boundary, which is
+  // why the cushion is what it is. raw and gzip do not move with the epoch.
+  'index.cjs': { raw: 265_230, gzip: 82_420, brotli: 52_880 },
   'index.js': { raw: 264_600, gzip: 82_410, brotli: 52_690 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
