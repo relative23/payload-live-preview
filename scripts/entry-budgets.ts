@@ -6,7 +6,7 @@
  * that reads it (files stay under 500 lines).
  */
 
-import type { BundleBudget } from './bundle-budgets';
+import type { BundleBudget } from './bundle-measure';
 
 // Budgets include narrow headroom for patch-level correctness fixes while still
 // failing the unminified 1.0.4 artifacts. Public names and source maps are retained.
@@ -304,9 +304,21 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // them back, is in bundle-budgets.ts. Every crossed row goes to its
   // measurement plus the usual cushion (raw ~110, gzip ~50, brotli ~130); a
   // metric that still held is left where it was.
+  //
+  // 2026-09-10 (Z25, the diagnostic table leaves the runtime): every row that
+  // embeds the runtime falls −1 287 B raw / ~−520 B gzip / ~−370–450 B brotli,
+  // `index.*` −1 302 because the barrel carries the runtime as the string the
+  // generator embeds as well. The bytes were the frozen `DIAGNOSTIC_CODES`
+  // record, pulled into the inline runtime since Z6 by one property read in
+  // the strategy runner (see bundle-budgets.ts). Seven rows go down to their
+  // new measurement plus the cushion this file documents: the four adapters,
+  // the Astro middleware entry and the two root barrels. `client.*` and
+  // `core.*` export the table themselves and moved by 11–15 B raw, `lean.*`
+  // never carried it, `doctor-cli.js` embeds an artifact that did not change;
+  // all of those stay where they were.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
-  'adapters/astro/index.js': { raw: 155_789, gzip: 48_773, brotli: 42_052 },
-  'adapters/astro/middleware-entry.js': { raw: 142_490, gzip: 44_618, brotli: 38_540 },
+  'adapters/astro/index.js': { raw: 154_502, gzip: 48_218, brotli: 41_681 },
+  'adapters/astro/middleware-entry.js': { raw: 141_203, gzip: 44_091, brotli: 38_088 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -325,7 +337,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // cannot wait for a verdict, so LP-8 measured 195 342 of 254 707 bytes of
   // runtime on a request with no cookie; an async component awaits
   // `authorizePreview` and renders nothing for it.
-  'adapters/nextjs/index.js': { raw: 154_341, gzip: 48_300, brotli: 41_748 },
+  'adapters/nextjs/index.js': { raw: 153_054, gzip: 47_771, brotli: 41_303 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -343,8 +355,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
   // frame-ancestors builder it shares with the middleware.
   'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
-  'adapters/nuxt/index.js': { raw: 153_519, gzip: 48_090, brotli: 41_503 },
-  'adapters/sveltekit/index.js': { raw: 152_546, gzip: 47_826, brotli: 41_263 },
+  'adapters/nuxt/index.js': { raw: 152_232, gzip: 47_564, brotli: 41_171 },
+  'adapters/sveltekit/index.js': { raw: 151_259, gzip: 47_295, brotli: 40_868 },
   //
   // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
   // scanner, its refusal reasons and the `annotate` subcommand. It is a build
@@ -368,8 +380,11 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // identical; a build before the commit and one after are not. A brotli
   // cushion below that swing is a coin flip at every commit boundary, which is
   // why the cushion is what it is. raw and gzip do not move with the epoch.
-  'index.cjs': { raw: 273_220, gzip: 84_912, brotli: 54_518 },
-  'index.js': { raw: 272_595, gzip: 84_938, brotli: 54_395 },
+  // 2026-09-10 (Z25): both barrels −1 302 raw (see above); the brotli rows go
+  // to their measurement before the commit plus the ~130 B the paragraph above
+  // asks for, `index.js` from a 32 B margin that had been a coin flip since Z9.
+  'index.cjs': { raw: 271_918, gzip: 84_395, brotli: 54_489 },
+  'index.js': { raw: 271_293, gzip: 84_431, brotli: 54_436 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },

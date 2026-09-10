@@ -5,6 +5,7 @@ import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import type { FieldRenderer } from '@core/types';
 import { DIAGNOSTIC_CODES } from '@core/diagnostic-codes';
+import { RUNTIME_SOURCE } from '@inline/runtime.generated';
 
 // process.cwd() is the repository root under vitest, as the quality tests assume.
 const SRC = resolve(process.cwd(), 'src');
@@ -22,11 +23,11 @@ function sourceFiles(directory: string, found: string[] = []): string[] {
   return found;
 }
 
-/** Codes as they are actually written at reporting sites, by file. */
 /**
  * Codes each source file reports, whether written as a literal or through the
- * registry — referencing `DIAGNOSTIC_CODES.X` is the better style and must
- * count as an emitter just the same.
+ * registry. A server-side tool may read `DIAGNOSTIC_CODES.X` and must count as
+ * an emitter just the same; a browser-side site writes the literal, for the
+ * reason the registry's header gives and the test below holds.
  */
 function emittedCodes(): Map<string, Set<string>> {
   const byFile = new Map<string, Set<string>>();
@@ -92,6 +93,19 @@ describe('registry against the code actually shipped', () => {
 
   it('keeps LP0604 reserved rather than reassigned', () => {
     expect(REGISTERED.has('LP0604')).toBe(false);
+  });
+
+  it('ships no copy of the table in the inline runtime', () => {
+    // The registry's header: a browser-side site writes the literal, because
+    // one `DIAGNOSTIC_CODES.X` read pulls the whole frozen table into the
+    // artifact every page pays for — 1 287 B raw, from Z6 until Z25. A row of
+    // the table is `Name:"LPnnnn"` once minified; a bare name is not enough
+    // of a tell, because `onUnfaithfulPatch` and `warnedOrphanFields` carry
+    // four of them as substrings.
+    const rows = Object.entries(DIAGNOSTIC_CODES).filter(([name, code]) =>
+      new RegExp(`["']?${name}["']?\\s*:\\s*["']${code}["']`, 'u').test(RUNTIME_SOURCE),
+    );
+    expect(rows).toEqual([]);
   });
 });
 

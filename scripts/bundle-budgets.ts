@@ -1,12 +1,9 @@
-import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib';
-
-export interface BundleMeasurement {
-  readonly raw: number;
-  readonly gzip: number;
-  readonly brotli: number;
-}
-
-export type BundleBudget = BundleMeasurement;
+/**
+ * The inline-profile byte budgets, and the log of why each number is what it
+ * is. The measurement itself is in `bundle-measure.ts`, moved out when this
+ * log reached the 500-line limit the way `entry-budgets.ts` did before it —
+ * every reason recorded here stays where the notes that cite it point.
+ */
 
 /** Exact inline transfer-size ceilings used by the release gate. */
 // Set 2026-08-28 after the 2.0 correctness pass: 26 910 → 28 736 gzip. The
@@ -322,7 +319,15 @@ export type BundleBudget = BundleMeasurement;
 // that leaves `autoBind` off, because the search needs the cache, locale, owner
 // scope and observers, none of which cross the strategy seam; a prelude emitted
 // only for a page that turns it on is the way to get the bytes back.
-export const INLINE_BUDGET = { raw: 109_615, gzip: 34_532, brotli: 30_509 } as const;
+// Lowered 2026-09-10 (Z25): raw 109_615 → 108_328 (measured 108_218), gzip
+// 34_532 → 34_010 (33_960), brotli 30_509 → 30_061 (29_931). The −1 287 B raw
+// is the frozen diagnostic-code table, which had shipped in every page since
+// Z6: one `DIAGNOSTIC_CODES.UnboundChangeRefresh` read in the strategy runner
+// pulled the whole record in, against the rule in the registry's own header.
+// The site writes the literal now, like every other browser-side site, and a
+// test holds the artifact free of the table's rows. The lean profile never
+// carried it — it has no strategy runner — and does not move.
+export const INLINE_BUDGET = { raw: 108_328, gzip: 34_010, brotli: 30_061 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -417,7 +422,10 @@ export const INLINE_LEAN_BUDGET = { raw: 87_386, gzip: 27_502, brotli: 24_417 } 
 // The brotli row did not cross; the growth left it 42 B under, and this file
 // keeps ~120 for the one difference it cannot measure here.
 // Raised 2026-09-10 (Z9): the runtime's own +3 913 B raw; the prelude did not move.
-export const INLINE_FRAGMENT_BUDGET = { raw: 121_260, gzip: 38_386, brotli: 33_758 } as const;
+// Lowered 2026-09-10 (Z25): raw 121_260 → 119_973 (measured 119_863), gzip
+// 38_386 → 37_868 (37_818), brotli 33_758 → 33_275 (33_145) — the runtime's
+// own −1 287 B, the diagnostic table; the prelude did not move.
+export const INLINE_FRAGMENT_BUDGET = { raw: 119_973, gzip: 37_868, brotli: 33_275 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -465,36 +473,7 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 121_260, gzip: 38_386, brotli: 33_7
 // 34_890 → 35_040 (measured 34_995), brotli 30_710 → 30_890 (measured 30_767).
 // Both prelude profiles move by the runtime's 448 B and nothing of their own.
 // Raised 2026-09-10 (Z9): the runtime's own +3 913 B raw; the prelude did not move.
-export const INLINE_ROUTE_BUDGET = { raw: 116_308, gzip: 36_730, brotli: 32_306 } as const;
-
-export interface BudgetViolation {
-  readonly metric: keyof BundleMeasurement;
-  readonly actual: number;
-  readonly limit: number;
-}
-
-/** Measure the exact bytes used by the release-size gate. */
-export function measureBundle(input: string | Uint8Array): BundleMeasurement {
-  const bytes = typeof input === 'string' ? Buffer.from(input) : Buffer.from(input);
-  return {
-    raw: bytes.byteLength,
-    gzip: gzipSync(bytes, { level: 9 }).byteLength,
-    brotli: brotliCompressSync(bytes, {
-      params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
-    }).byteLength,
-  };
-}
-
-/** Return every exceeded dimension rather than hiding failures behind the first one. */
-export function findBudgetViolations(
-  measurement: BundleMeasurement,
-  budget: BundleBudget,
-): readonly BudgetViolation[] {
-  const violations: BudgetViolation[] = [];
-  for (const metric of ['raw', 'gzip', 'brotli'] as const) {
-    if (measurement[metric] > budget[metric]) {
-      violations.push({ metric, actual: measurement[metric], limit: budget[metric] });
-    }
-  }
-  return violations;
-}
+// Lowered 2026-09-10 (Z25): raw 116_308 → 115_021 (measured 114_911), gzip
+// 36_730 → 36_205 (36_155), brotli 32_306 → 31_885 (31_755) — the runtime's
+// own −1 287 B, the diagnostic table; the prelude did not move.
+export const INLINE_ROUTE_BUDGET = { raw: 115_021, gzip: 36_205, brotli: 31_885 } as const;

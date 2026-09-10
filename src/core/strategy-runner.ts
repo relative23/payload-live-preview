@@ -7,7 +7,6 @@ import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { trustedHtml } from '@security/trusted-types';
 import { bindingValue } from './field-value';
 import { morphElement } from './morph';
-import { DIAGNOSTIC_CODES } from './diagnostic-codes';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
 import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
@@ -89,11 +88,7 @@ export class StrategyRunner {
     const isAddressable = createFieldAddressability(deps.cache, transaction.locale, ownerKeys);
     for (const fieldName of transaction.touched) {
       if (SYSTEM_FIELD_NAMES.has(fieldName) || isAddressable(fieldName)) continue;
-      deps.log(
-        'route',
-        DIAGNOSTIC_CODES.UnboundChangeRefresh,
-        `field "${fieldName}" has no binding; refreshing the route`,
-      );
+      deps.log('route', 'LP0807', `field "${fieldName}" has no binding; refreshing the route`);
       return true;
     }
     return false;

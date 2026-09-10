@@ -5,7 +5,9 @@
  *
  * Browser-side reporting sites write the literal (`code: 'LP0603'`) rather than
  * reading it from this record: the frozen table would then ship in the inline
- * runtime for the sake of six characters. Server-side tools may import it.
+ * runtime for the sake of six characters — it did, 1 287 B in every page, for
+ * the one read Z6 left in the strategy runner, and `diagnostic-codes.test.ts`
+ * now holds the artifact free of it. Server-side tools may import it.
  */
 
 /**

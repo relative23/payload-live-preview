@@ -1,19 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
-  findBudgetViolations,
   INLINE_BUDGET,
   INLINE_FRAGMENT_BUDGET,
   INLINE_LEAN_BUDGET,
   INLINE_ROUTE_BUDGET,
-  measureBundle,
 } from '../../scripts/bundle-budgets';
+import { findBudgetViolations, measureBundle } from '../../scripts/bundle-measure';
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 109_615, gzip: 34_532, brotli: 30_509 });
+    expect(INLINE_BUDGET).toEqual({ raw: 108_328, gzip: 34_010, brotli: 30_061 });
     expect(INLINE_LEAN_BUDGET).toEqual({ raw: 87_386, gzip: 27_502, brotli: 24_417 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 116_308, gzip: 36_730, brotli: 32_306 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 121_260, gzip: 38_386, brotli: 33_758 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 115_021, gzip: 36_205, brotli: 31_885 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 119_973, gzip: 37_868, brotli: 33_275 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

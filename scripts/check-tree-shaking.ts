@@ -131,6 +131,13 @@ interface Fixture {
  * carries the option, the marker and the LP0104 line but not the search. What
  * the bytes buy, and the seam that would take them out of a page that leaves
  * the option off, is in bundle-budgets.ts.
+ *
+ * 2026-09-10 (Z25): the frozen diagnostic-code table leaves the runtime, and
+ * the four rows that carry the full one fall ~520 B gzip — `initLivePreview`
+ * from the barrel 42 916 -> 42 402 (measured 42 352), from `./core` 42 862 ->
+ * 42 352 (42 302), the generator 40 558 -> 40 034 (39 984) and the Next.js
+ * middleware 45 408 -> 44 879 (44 829). `LEAN_RUNTIME` holds at 27 747
+ * (27 697): the lean profile never carried the table. See bundle-budgets.ts.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -151,21 +158,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 42_916,
+    gzip: 42_402,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 40_558,
+    gzip: 40_034,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 42_862,
+    gzip: 42_352,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -186,7 +193,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 45_408,
+    gzip: 44_879,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

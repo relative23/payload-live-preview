@@ -19,7 +19,7 @@
   "totals": {
     "files": 303,
     "suites": 632,
-    "tests": 2598,
+    "tests": 2599,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 246,
       "suites": 559,
-      "tests": 2373,
+      "tests": 2374,
       "benchmarks": 0
     }
   },
@@ -855,7 +855,7 @@
       "path": "tests/unit/core/diagnostic-codes.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 15,
+      "tests": 16,
       "benchmarks": 0
     },
     {
