@@ -21,9 +21,10 @@ import {
 
 export type { AnnotationCandidate, AnnotationRefusal } from './scan';
 
-/** Templates this scanner understands; a `.vue` template uses `{{ … }}` and is not one yet. */
+/** Templates this scanner understands; a `.vue` template uses `{{ … }}` and is not one yet. @internal */
 export const ANNOTATABLE_EXTENSIONS: readonly string[] = ['.astro', '.jsx', '.tsx', '.svelte'];
 
+/** @internal */
 export interface AnnotateFileResult {
   readonly file: string;
   /** The annotated source; identical to the input when nothing was added. */
@@ -33,6 +34,7 @@ export interface AnnotateFileResult {
   readonly changed: boolean;
 }
 
+/** @internal */
 export interface AnnotateResult {
   readonly files: readonly AnnotateFileResult[];
   readonly annotationCount: number;
@@ -41,6 +43,7 @@ export interface AnnotateResult {
   readonly written: boolean;
 }
 
+/** @internal */
 export interface AnnotateOptions {
   /** Template files to read. */
   readonly files: readonly string[];
@@ -77,6 +80,7 @@ export interface AnnotatableSchema {
  * is how the runtime resolves them; a template writes `slide.caption` inside a
  * loop, where nothing connects `slide` to `slides`. Those paths are therefore
  * kept out: the scanner would otherwise match a name that only looks right.
+ * @internal
  */
 export function annotatablePaths(inventory: AnnotatableSchema): ReadonlySet<string> {
   const paths = new Set<string>();
@@ -88,6 +92,7 @@ export function annotatablePaths(inventory: AnnotatableSchema): ReadonlySet<stri
   return paths;
 }
 
+/** @internal */
 export async function annotateTemplates(options: AnnotateOptions): Promise<AnnotateResult> {
   const read = options.io?.read ?? ((path: string) => readFile(path, 'utf8'));
   const write =
@@ -119,7 +124,7 @@ export async function annotateTemplates(options: AnnotateOptions): Promise<Annot
   };
 }
 
-/** The report, one line per annotation and per refusal, in file order. */
+/** The report, one line per annotation and per refusal, in file order. @internal */
 export function formatAnnotateReport(result: AnnotateResult): string {
   const lines: string[] = [];
   for (const file of result.files) {

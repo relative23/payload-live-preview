@@ -19,17 +19,20 @@ import { diffArray, type ArrayPatch } from '@schema/diff';
 import { morphElement } from './morph';
 import { templateSanitizeOptions } from './template-sanitize';
 
+/** @internal */
 export const KEY_ATTRIBUTE = 'data-payload-key';
 const NESTED_KEY_ATTRIBUTE = 'data-payload-nested-key';
 const NESTED_TEMPLATE_ATTRIBUTE = 'data-payload-nested-template';
 
-/** Last value seen per item key, per container; owned by the caller so instances never share it. */
+/** Last value seen per item key, per container; owned by the caller so instances never share it. @internal */
 export type StructuralStore = WeakMap<Element, Map<string, unknown>>;
 
+/** @internal */
 export function createStructuralStore(): StructuralStore {
   return new WeakMap<Element, Map<string, unknown>>();
 }
 
+/** @internal */
 export interface StructuralApplyOptions {
   readonly template: string;
   readonly container: Element;
@@ -52,6 +55,7 @@ export interface StructuralApplyOptions {
  * Returns `true` for a DOM mutation, `false` for an already-current tree, and
  * `null` when an item's markup has no sanitized element root — preflighted
  * before any mutation, so the previous DOM and memory stay intact.
+ * @internal
  */
 export function applyStructuralPatches(options: StructuralApplyOptions): boolean | null {
   const plan = prepareStructuralPlan(options.container, options.patches, options);

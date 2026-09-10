@@ -3,6 +3,7 @@ import type { DoctorReport } from './types';
 
 const LEVEL_LABEL = { error: 'ERROR', warning: 'WARN ', info: 'INFO ' } as const;
 
+/** @internal */
 export function formatReport(report: DoctorReport): string {
   const lines: string[] = [`pll doctor — ${report.url}`, ''];
   if (report.findings.length === 0) {

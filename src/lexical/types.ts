@@ -3,7 +3,7 @@
  * other property is forwarded opaquely to the renderer for that node type.
  */
 
-/** Lexical text-format bitmask; flags combine (`BOLD | ITALIC === 3`). */
+/** Lexical text-format bitmask; flags combine (`BOLD | ITALIC === 3`). @internal */
 export const TextFormat = {
   BOLD: 1,
   ITALIC: 2,

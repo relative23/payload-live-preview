@@ -2,9 +2,11 @@
  * Hydrated islands own their subtree, so the runtime never patches inside one.
  * Instead every flush dispatches `payload-live-preview:update` on each island
  * root with the update in `detail`. `data-payload-island="patch"` opts back in.
+ * @internal
  */
 
 export const ISLAND_EVENT = 'payload-live-preview:update';
+/** @internal */
 export const ISLAND_ATTRIBUTE = 'data-payload-island';
 export const ISLAND_SELECTOR = `astro-island, [${ISLAND_ATTRIBUTE}]`;
 
@@ -28,7 +30,7 @@ export function isIslandBoundary(element: Element): boolean {
   return isIslandRoot(element) && !islandAllowsPatching(element);
 }
 
-/** Whether `element` (or an ancestor) is an island that did not opt into patching. */
+/** Whether `element` (or an ancestor) is an island that did not opt into patching. @internal */
 export function isInsideIsland(element: Element): boolean {
   let current: Element | null = element;
   while (current !== null) {

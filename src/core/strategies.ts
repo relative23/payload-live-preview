@@ -10,7 +10,7 @@ import type { DiagnosticCode } from './diagnostic-codes';
 /** What produced an update: the runtime's DOM patching, a server-rendered fragment, or a route refresh. */
 export type UpdateSource = 'patch' | 'fragment' | 'route';
 
-/** Marks a server-rendered boundary; the value is the registry id the server may render. */
+/** Marks a server-rendered boundary; the value is the registry id the server may render. @internal */
 export const FRAGMENT_ATTRIBUTE = 'data-payload-fragment';
 
 /** The nearest fragment boundary enclosing `element` (the element itself included). */
@@ -112,6 +112,7 @@ const STRATEGY_ATTRIBUTE = 'data-payload-strategy';
  * Explicit `data-payload-strategy` wins; otherwise a binding inside a fragment
  * boundary belongs to the fragment, one in `<head>` to the route, the rest is
  * patched. An unknown explicit value resolves to `undefined` (LP0407).
+ * @internal
  */
 export function resolveStrategy(element: Element): UpdateSource | undefined {
   const explicit = element.getAttribute(STRATEGY_ATTRIBUTE);

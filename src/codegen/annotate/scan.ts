@@ -22,7 +22,7 @@
  * The shape above is unambiguous enough to scan for.
  */
 
-/** A place that can carry a binding, with the attribute it should get. */
+/** A place that can carry a binding, with the attribute it should get. @internal */
 export interface AnnotationCandidate {
   /** Offset where the attribute is inserted, inside the opening tag. */
   readonly insertAt: number;

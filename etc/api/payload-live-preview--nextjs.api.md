@@ -26,13 +26,13 @@ export function defineFragment<Props extends object>(component: (props: Props) =
 // @public (undocumented)
 export type FragmentEndpointOptions = F<ReactComponentLike>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRegistry = a<ReactComponentLike>;
 
 // @public (undocumented)
 export type FragmentRegistryEntry<Props extends object = object> = b<ReactComponentLike, Props>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRenderer = c<ReactComponentLike>;
 
 export { FragmentRenderInput }
@@ -104,7 +104,7 @@ export interface NextHeaderRule {
 
 export { PreviewAdapterOptions }
 
-// @public
+// @internal
 export function previewHeaderRules(options: WithLivePreviewOptions): readonly NextHeaderRule[];
 
 // @public

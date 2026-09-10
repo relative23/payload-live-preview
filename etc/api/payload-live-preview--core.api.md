@@ -50,7 +50,7 @@ export interface BindOptions {
 // @public
 export function buildFrameAncestors(options?: FrameAncestorsOptions): string;
 
-// @public
+// @internal
 export function buildScriptSrcWithNonce(nonce: string, options?: {
     readonly self?: boolean;
     readonly extra?: readonly string[];
@@ -116,7 +116,7 @@ export const CAPABILITY_DECLARATIONS: {
 // @public (undocumented)
 export const CAPABILITY_DOCUMENTATION: Readonly<Record<ProtocolCapability, CapabilityDocumentation>>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface CapabilityDeclaration {
     readonly observed?: 'schema' | 'locale' | 'preview-token' | 'document-event' | 'relationship-event';
     readonly since: number;
@@ -128,13 +128,13 @@ export interface CapabilityDocumentation {
     readonly gates: string;
 }
 
-// @public
+// @internal
 export type CapabilitySource = 'version' | 'observed';
 
 // @public
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
-// @public
+// @internal (undocumented)
 export const CORE_ENTRY = true;
 
 // @public
@@ -146,7 +146,7 @@ export type CustomRendererKey = `${string}:${string}`;
 // @public
 export type DefaultsProfile = 'v1' | 'v2';
 
-// @public
+// @internal (undocumented)
 export function detectInitialLocale(): string;
 
 // @public
@@ -206,7 +206,7 @@ export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_C
 // @public
 export function escapeHtml(text: string): string;
 
-// @public
+// @internal
 export function escapeHtmlAttribute(value: string): string;
 
 // @public
@@ -258,7 +258,7 @@ export type FieldName<T> = Extract<keyof T, string>;
 
 // Warning: (ae-forgotten-export) The symbol "Prev" needs to be exported by the entry point core.d.ts
 //
-// @public
+// @internal
 export type FieldPath<T, Depth extends 0 | 1 | 2 | 3 = 3> = Depth extends 0 ? never : T extends readonly (infer U)[] ? FieldPath<U, Prev<Depth>> : T extends object ? {
     [K in Extract<keyof T, string>]: K | (T[K] extends object ? `${K}.${FieldPath<T[K], Prev<Depth>>}` : never);
 }[Extract<keyof T, string>] : never;
@@ -348,10 +348,10 @@ export interface FrameAncestorsOptions {
     readonly self?: boolean;
 }
 
-// @public
+// @internal
 export function generateCspNonce(bytes?: number): string;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function hasCapability(negotiation: ProtocolNegotiation, capability: ProtocolCapability): boolean;
 
 // @public
@@ -443,25 +443,25 @@ export interface InspectionScheduler {
 // @public
 export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext;
 
-// @public
+// @internal
 export function isDevMode(): boolean;
 
 // @public
 export function isExternalHttpUrl(url: string): boolean;
 
-// @public
+// @internal
 export function isInIframe(): boolean;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function isInPopup(): boolean;
 
-// @public
+// @internal
 export function isInPreviewContext(): boolean;
 
-// @public
+// @internal
 export function isInsideIsland(element: Element): boolean;
 
-// @public
+// @internal
 export const ISLAND_EVENT = "payload-live-preview:update";
 
 // @public (undocumented)
@@ -479,7 +479,7 @@ export interface IslandUpdateDetail {
 // @public
 export function isSafeUrl(url: unknown): boolean;
 
-// @public
+// @internal
 export const LIBRARY_PROTOCOL_VERSION = 4;
 
 // @public
@@ -852,7 +852,7 @@ export interface PreviewBindingsOptions {
     readonly owner?: string;
 }
 
-// @public
+// @internal
 export const PROTOCOL_CAPABILITIES: readonly ProtocolCapability[];
 
 // @public (undocumented)
@@ -959,7 +959,7 @@ export type SanitizerPolicyMode = 'compat' | 'strict';
 
 // Warning: (ae-forgotten-export) The symbol "WebCryptoLike" needs to be exported by the entry point core.d.ts
 //
-// @public
+// @internal
 export function setCspCrypto(crypto: WebCryptoLike | null): void;
 
 // @public
@@ -982,10 +982,10 @@ export type Unsubscribe = () => void;
 // @public
 export type UpdateSource = 'patch' | 'fragment' | 'route';
 
-// @public
+// @internal
 export type ValueAt<T, P extends string> = P extends `${infer Head}.${infer Rest}` ? Head extends keyof T ? T[Head] extends readonly (infer U)[] ? ValueAt<U, Rest> : T[Head] extends object ? ValueAt<T[Head], Rest> : unknown : unknown : P extends keyof T ? T[P] : unknown;
 
-// @public
+// @internal (undocumented)
 export const VERSION: string;
 
 // @public

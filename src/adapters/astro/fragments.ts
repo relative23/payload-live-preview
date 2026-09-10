@@ -22,7 +22,9 @@ export type FragmentRegistryEntry<Props extends object = object> = SharedRegistr
   AstroComponentLike,
   Props
 >;
+/** @internal */
 export type FragmentRegistry = SharedRegistry<AstroComponentLike>;
+/** @internal */
 export type FragmentRenderer = SharedRenderer<AstroComponentLike>;
 export type FragmentEndpointOptions = SharedOptions<AstroComponentLike>;
 

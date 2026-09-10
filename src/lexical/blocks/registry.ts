@@ -20,10 +20,12 @@ export function registerBlockRenderer(blockType: string, renderer: BlockRenderer
   registry.set(blockType, renderer);
 }
 
+/** @internal */
 export function lookupBlockRenderer(blockType: string): BlockRenderer | undefined {
   return registry.get(blockType);
 }
 
+/** @internal */
 export function registeredBlockTypes(): readonly string[] {
   return [...registry.keys()];
 }

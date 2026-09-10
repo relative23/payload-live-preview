@@ -100,6 +100,7 @@ function extractSlugList(
   return out;
 }
 
+/** @internal */
 export function extractSchema(options: ExtractSchemaOptions): ExtractedSchema {
   const project =
     options.project ??

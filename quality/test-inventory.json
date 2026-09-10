@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 305,
-    "suites": 638,
-    "tests": 2621,
+    "files": 306,
+    "suites": 639,
+    "tests": 2627,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 248,
-      "suites": 565,
-      "tests": 2396,
+      "files": 249,
+      "suites": 566,
+      "tests": 2402,
       "benchmarks": 0
     }
   },
@@ -1940,7 +1940,7 @@
       "path": "tests/unit/quality/complexity-budget.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2015,6 +2015,13 @@
     },
     {
       "path": "tests/unit/quality/size-budget-notice.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/surface-usage.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 5,

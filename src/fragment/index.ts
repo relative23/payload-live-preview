@@ -56,6 +56,7 @@ export {
  * The strategy the runtime drives, built on a per-boundary handler: plan the
  * boundaries, render each, morph a success, patch a failure. A late or
  * aborted render is dropped, never applied.
+ * @internal
  */
 export function fragmentStrategyFrom(handler: FragmentHandler): FragmentStrategy {
   return {

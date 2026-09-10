@@ -16,6 +16,7 @@ interface TrustedTypesFactoryLike {
   ): TrustedHtmlPolicyLike;
 }
 
+/** @internal */
 export const TRUSTED_TYPES_POLICY_NAME = 'payload-live-preview';
 
 let policyOverride: TrustedHtmlPolicyLike | null | undefined;
@@ -54,7 +55,7 @@ function resolvePolicy(): TrustedHtmlPolicyLike | null {
   return autoPolicy;
 }
 
-/** `html` as a `TrustedHTML` when a policy exists, else the string. Typed `string` for `innerHTML`. */
+/** `html` as a `TrustedHTML` when a policy exists, else the string. Typed `string` for `innerHTML`. @internal */
 export function trustedHtml(html: string): string {
   const policy = resolvePolicy();
   if (policy === null) return html;

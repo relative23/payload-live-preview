@@ -21,6 +21,7 @@ export interface LexicalRenderOptions {
 
 let warnedNoSanitizer = false;
 
+/** @internal */
 export function isLexicalContent(value: unknown): value is LexicalRoot {
   if (typeof value !== 'object' || value === null) return false;
   if (!('root' in value)) return false;

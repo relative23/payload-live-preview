@@ -10,7 +10,7 @@ import { b } from '../../fragment-endpoint-DHoYlTJF.js';
 import { c } from '../../fragment-endpoint-DHoYlTJF.js';
 import { F } from '../../fragment-endpoint-DHoYlTJF.js';
 import { d as FragmentRenderInput } from '../../fragment-endpoint-DHoYlTJF.js';
-import { L as LivePreviewLocals } from '../../locals-CZI6K7g_.js';
+import { L as LivePreviewLocals } from '../../locals-2YPp_z3b.js';
 import { P as PreviewAdapterOptions } from '../../options-05kr6xUG.js';
 
 // @public
@@ -22,7 +22,7 @@ export function createFragmentEndpoint(options: FragmentEndpointOptions): (reque
 // @public
 export function createRuntimeAssetRoute(options?: LivePreviewNuxtOptions): (request: Request) => Response;
 
-// @public
+// @internal
 export const DECISION_CONTEXT_KEY = "livePreviewDecision";
 
 // @public
@@ -31,13 +31,13 @@ export function defineLivePreviewServerHandler(options?: LivePreviewNuxtOptions)
 // @public (undocumented)
 export type FragmentEndpointOptions = F<VueComponentLike>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRegistry = a<VueComponentLike>;
 
 // @public (undocumented)
 export type FragmentRegistryEntry<Props extends object = object> = b<VueComponentLike, Props>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRenderer = c<VueComponentLike>;
 
 export { FragmentRenderInput }

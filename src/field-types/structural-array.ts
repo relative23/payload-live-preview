@@ -24,6 +24,7 @@ interface StructuralRenderState {
 
 type WarnedCodes = WeakMap<Element, Set<string>>;
 
+/** @internal */
 export function createStructuralArrayRenderer(): FieldRenderer {
   const states = new WeakMap<Element, StructuralRenderState>();
   const warnedContainers = new WeakSet<Element>();

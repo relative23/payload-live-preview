@@ -48,9 +48,39 @@ export interface ComplexityViolation {
   readonly limit: number;
 }
 
-/** Public declarations in one API report: the reviewed names an entry exports. */
+export interface DeclarationCounts {
+  /** Names a project is meant to import: everything an example imports or a guide names, and what those signatures reach. */
+  readonly public: number;
+  /** Names the entry exports for the package's own tests and modules, marked `@internal` (scripts/surface-usage.ts). */
+  readonly internal: number;
+}
+
+/**
+ * Declarations in one API report, split by release tag. API Extractor writes
+ * the tag on the line before each declaration, so an `export` line inherits
+ * the tag that immediately precedes it and an untagged one counts as public.
+ */
+export function countDeclarations(report: string): DeclarationCounts {
+  let publicCount = 0;
+  let internalCount = 0;
+  let internalNext = false;
+  for (const line of report.split('\n')) {
+    if (line.startsWith('// @')) {
+      internalNext = line.startsWith('// @internal');
+      continue;
+    }
+    if (line.startsWith('export ')) {
+      if (internalNext) internalCount += 1;
+      else publicCount += 1;
+      internalNext = false;
+    }
+  }
+  return { public: publicCount, internal: internalCount };
+}
+
+/** Public declarations in one API report: the reviewed names an entry exports for a project to use. */
 export function countPublicDeclarations(report: string): number {
-  return [...report.matchAll(/^export /gmu)].length;
+  return countDeclarations(report).public;
 }
 
 /**
@@ -79,9 +109,12 @@ export function countInterfaceMembers(source: string, name: string): number {
 
 export async function measureComplexity(): Promise<ComplexityMeasurement> {
   const entries: Record<string, number> = {};
+  let internalDeclarations = 0;
   for (const file of (await readdir(API_REPORTS)).sort()) {
     if (!file.endsWith('.api.md')) continue;
-    entries[file] = countPublicDeclarations(await readFile(resolve(API_REPORTS, file), 'utf8'));
+    const counts = countDeclarations(await readFile(resolve(API_REPORTS, file), 'utf8'));
+    entries[file] = counts.public;
+    internalDeclarations += counts.internal;
   }
   const manifest = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
     exports: Record<string, unknown>;
@@ -99,6 +132,7 @@ export async function measureComplexity(): Promise<ComplexityMeasurement> {
   return {
     totals: {
       publicDeclarations: Object.values(entries).reduce((sum, count) => sum + count, 0),
+      internalDeclarations,
       // `./package.json` is not one of them: it exports the manifest so
       // tooling can read the installed version, not a surface a reader chooses
       // between before writing a line of code.
@@ -168,7 +202,8 @@ async function main(): Promise<void> {
   }
   const { totals } = measurement;
   console.log(
-    `Complexity budget passed: ${String(totals['publicDeclarations'])} public declarations across ` +
+    `Complexity budget passed: ${String(totals['publicDeclarations'])} public and ` +
+      `${String(totals['internalDeclarations'])} internal declarations across ` +
       `${String(totals['entrySubpaths'])} entries, ${String(totals['adapterOptions'])} adapter options, ` +
       `${String(totals['inlineOptions'])} inline options, ${String(totals['diagnosticCodes'])} codes, ` +
       `${String(totals['sourceModules'])} modules.`,

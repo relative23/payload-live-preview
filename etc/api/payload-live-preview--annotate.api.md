@@ -29,7 +29,7 @@ export interface AnnotatePluginOptions {
     readonly readFile?: (path: string) => string;
 }
 
-// @public
+// @internal
 export function annotateSource(code: string, options: AnnotatePluginOptions): {
     readonly code: string;
     readonly refusals: readonly AnnotationRefusal[];
@@ -48,7 +48,7 @@ export interface AnnotateVitePlugin {
     readonly name: string;
 }
 
-// @public
+// @internal
 export interface AnnotationCandidate {
     readonly insertAt: number;
     readonly line: number;
@@ -69,7 +69,7 @@ export interface AnnotationRefusal {
 // @public
 export function livePreviewAnnotate(options: AnnotatePluginOptions): AnnotateVitePlugin;
 
-// @public
+// @internal
 export function splitFrontmatter(code: string): {
     readonly frontmatter: string;
     readonly bodyOffset: number;

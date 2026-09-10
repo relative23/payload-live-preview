@@ -8,6 +8,7 @@ export interface FocusReportTarget {
   postMessage: (message: unknown, targetOrigin: string) => void;
 }
 
+/** @internal */
 export interface PreviewFocusMessage {
   readonly type: 'payload-live-preview-focus';
   readonly field: string;

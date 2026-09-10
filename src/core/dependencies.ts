@@ -3,6 +3,7 @@
  * other way round (`data-payload-depends="price"` on the element bound to
  * `priceLabel`) because an author names what a binding needs; the runtime
  * option is keyed by source because the scheduler asks what changed.
+ * @internal
  */
 
 export type DependencyMap = Readonly<Record<string, readonly string[]>>;
@@ -10,6 +11,7 @@ export type DependencyMap = Readonly<Record<string, readonly string[]>>;
 /**
  * Field names from an attribute value. Separators are commas and
  * whitespace; empty entries are dropped; order is kept, duplicates removed.
+ * @internal
  */
 export function parseDependencyList(value: string | null | undefined): readonly string[] {
   if (value === null || value === undefined) return [];
@@ -27,6 +29,7 @@ export function parseDependencyList(value: string | null | undefined): readonly 
 /**
  * Merge dependency maps (source → dependents). Later maps add to earlier
  * ones; a dependent is listed once per source.
+ * @internal
  */
 export function mergeDependencyMaps(...maps: readonly DependencyMap[]): DependencyMap {
   const merged = new Map<string, Set<string>>();
@@ -48,6 +51,7 @@ export function mergeDependencyMaps(...maps: readonly DependencyMap[]): Dependen
 /**
  * The map an element's `data-payload-depends` contributes: every declared
  * source points at this binding's field.
+ * @internal
  */
 export function dependencyMapFromBinding(
   fieldName: string,

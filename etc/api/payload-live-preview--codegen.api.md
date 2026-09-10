@@ -6,10 +6,10 @@
 
 import { Project } from 'ts-morph';
 
-// @public
+// @internal
 export const ANNOTATABLE_EXTENSIONS: readonly string[];
 
-// @public
+// @internal
 export function annotatablePaths(inventory: AnnotatableSchema): ReadonlySet<string>;
 
 // @public
@@ -28,7 +28,7 @@ export interface AnnotatableSchema {
     }[];
 }
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface AnnotateFileResult {
     // (undocumented)
     readonly annotations: readonly AnnotationCandidate[];
@@ -41,7 +41,7 @@ export interface AnnotateFileResult {
     readonly refusals: readonly AnnotationRefusal[];
 }
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface AnnotateOptions {
     readonly cwd?: string;
     readonly files: readonly string[];
@@ -53,7 +53,7 @@ export interface AnnotateOptions {
     readonly write?: boolean;
 }
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface AnnotateResult {
     // (undocumented)
     readonly annotationCount: number;
@@ -64,10 +64,10 @@ export interface AnnotateResult {
     readonly written: boolean;
 }
 
-// @public (undocumented)
+// @internal (undocumented)
 export function annotateTemplates(options: AnnotateOptions): Promise<AnnotateResult>;
 
-// @public
+// @internal
 export interface AnnotationCandidate {
     readonly insertAt: number;
     readonly line: number;
@@ -85,10 +85,10 @@ export interface AnnotationRefusal {
     readonly reason: string;
 }
 
-// @public
+// @internal
 export function buildPreviewInventory(schema: ExtractedSchema): PreviewInventory;
 
-// @public
+// @internal
 export function checkPreviewBindings(inventory: PreviewInventory, bindings: readonly PreviewBindingReference[], options?: PreviewCoverageOptions): readonly string[];
 
 // @public (undocumented)
@@ -99,7 +99,7 @@ interface EmitOptions {
 
 // Warning: (ae-forgotten-export) The symbol "EmitOptions" needs to be exported by the entry point codegen.d.ts
 //
-// @public (undocumented)
+// @internal (undocumented)
 export function emitTypes(schema: ExtractedSchema, options?: EmitOptions): string;
 
 // Warning: (ae-forgotten-export) The symbol "ExtractedFieldBase" needs to be exported by the entry point codegen.d.ts
@@ -226,7 +226,7 @@ interface ExtractedUploadField extends ExtractedFieldBase {
 
 // Warning: (ae-forgotten-export) The symbol "ExtractSchemaOptions" needs to be exported by the entry point codegen.d.ts
 //
-// @public (undocumented)
+// @internal (undocumented)
 export function extractSchema(options: ExtractSchemaOptions): ExtractedSchema;
 
 // @public
@@ -236,7 +236,7 @@ interface ExtractSchemaOptions {
     readonly tsConfigFilePath?: string;
 }
 
-// @public
+// @internal
 export function formatAnnotateReport(result: AnnotateResult): string;
 
 // @public
@@ -262,7 +262,7 @@ export interface GenerateTypesResult {
     readonly schema: ExtractedSchema;
 }
 
-// @public
+// @internal
 export interface PreviewBindingReference {
     // (undocumented)
     readonly kind: 'global' | 'collection';
@@ -273,7 +273,7 @@ export interface PreviewBindingReference {
     readonly source?: string;
 }
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface PreviewCoverageOptions {
     readonly reportUnbound?: boolean;
 }

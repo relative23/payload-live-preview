@@ -120,6 +120,7 @@ export function wrapWithScriptTag(body: string, options: { nonce?: string } = {}
   return `<script${nonceAttr}>${body}</script>`;
 }
 
+/** @internal */
 export function runtimeBuildInfo(): RuntimeBuildInfo {
   return RUNTIME_BUILD_INFO;
 }

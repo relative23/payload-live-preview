@@ -64,13 +64,14 @@ export interface NuxtLike {
   readonly hook: (name: 'nitro:config', handler: (config: NitroConfigLike) => void) => void;
 }
 
-/** The generated plugin's name in `.nuxt/`, distinctive enough to recognise in a build listing. */
+/** The generated plugin's name in `.nuxt/`, distinctive enough to recognise in a build listing. @internal */
 export const PLUGIN_FILENAME = 'payload-live-preview-nitro-plugin.mjs';
 
 /**
  * The generated plugin: an import of the public adapter entry and a call with
  * the options. Nothing framework-private, so a reader who opens the file in
  * `.nuxt/` sees the hand-written setup they would otherwise have typed.
+ * @internal
  */
 export function pluginSource(options: LivePreviewModuleOptions): string {
   return [

@@ -547,7 +547,7 @@ export interface PluginInspection {
     readonly version: string | undefined;
 }
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface PreviewFocusMessage {
     // (undocumented)
     readonly field: string;

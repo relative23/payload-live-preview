@@ -18,6 +18,7 @@
  */
 
 export { VERSION } from './version';
+/** @internal */
 export const CORE_ENTRY = true;
 
 // High-level client — without the heavyweight built-in plugins.

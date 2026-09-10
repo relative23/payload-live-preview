@@ -55,7 +55,7 @@ const BUTTON_STYLE =
   'display:block;width:100%;text-align:left;margin:2px 0;padding:2px 4px;border:0;border-radius:3px;' +
   'background:#222;color:#7fd1ff;font:inherit;cursor:pointer;';
 
-/** The document this update named, minus everything the page can already show. */
+/** The document this update named, minus everything the page can already show. @internal */
 export function unboundFieldNames(
   fields: Readonly<Record<string, unknown>>,
   boundNames: Iterable<string>,

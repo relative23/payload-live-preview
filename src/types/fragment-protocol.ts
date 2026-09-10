@@ -4,10 +4,12 @@
  * names code, paths or templates. See ADR 0011.
  */
 
-/** Bumped when the request or response shape changes incompatibly. */
+/** Bumped when the request or response shape changes incompatibly. @internal */
 export const FRAGMENT_PROTOCOL_VERSION = 1;
+/** @internal */
 export const FRAGMENT_VERSION_HEADER = 'x-payload-fragment-version';
 
+/** @internal */
 export interface FragmentRequestBody {
   /** Registry id of the boundary (`data-payload-fragment`). */
   readonly fragment: string;
@@ -25,6 +27,7 @@ export interface FragmentRequestBody {
   readonly fields: Readonly<Record<string, unknown>>;
 }
 
+/** @internal */
 export interface FragmentResponseBody {
   /** The boundary's new inner HTML. */
   readonly html: string;
@@ -55,7 +58,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Shape check for a request body; `null` when it is not one. */
+/** Shape check for a request body; `null` when it is not one. @internal */
 export function parseFragmentRequest(value: unknown): FragmentRequestBody | null {
   if (!isRecord(value)) return null;
   const fragment = value['fragment'];
@@ -100,7 +103,7 @@ export function parseFragmentRequest(value: unknown): FragmentRequestBody | null
   };
 }
 
-/** Shape check for a response body; `null` when it is not one. */
+/** Shape check for a response body; `null` when it is not one. @internal */
 export function parseFragmentResponse(value: unknown): FragmentResponseBody | null {
   if (!isRecord(value)) return null;
   const { html, boundary, revision, metadata } = value;

@@ -34,7 +34,9 @@ export type FragmentRegistryEntry<Props extends object = object> = SharedRegistr
   ReactComponentLike,
   Props
 >;
+/** @internal */
 export type FragmentRegistry = SharedRegistry<ReactComponentLike>;
+/** @internal */
 export type FragmentRenderer = SharedRenderer<ReactComponentLike>;
 export type FragmentEndpointOptions = SharedOptions<ReactComponentLike>;
 

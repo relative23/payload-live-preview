@@ -62,7 +62,7 @@ interface NitroAppLike {
 
 export type NitroHandler = (event: H3EventLike) => Promise<Response | undefined>;
 
-/** Where the server handler leaves its decision for the plugin, on `event.context`. */
+/** Where the server handler leaves its decision for the plugin, on `event.context`. @internal */
 export const DECISION_CONTEXT_KEY = 'livePreviewDecision';
 
 interface StashedDecision {

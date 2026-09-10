@@ -36,7 +36,7 @@ const ATTR_ESCAPES: Readonly<Record<string, string>> = Object.freeze({
 
 const ATTR_ESCAPE_PATTERN = /[&<>"']/g;
 
-/** Escape a value for a *quoted* HTML attribute, leaving URL characters intact; it validates no scheme, so run `isSafeUrl()` on `href`/`src` first. */
+/** Escape a value for a *quoted* HTML attribute, leaving URL characters intact; it validates no scheme, so run `isSafeUrl()` on `href`/`src` first. @internal */
 export function escapeHtmlAttribute(value: string): string {
   if (value === '') return '';
   // The character class and the map are coupled: every match is a key.

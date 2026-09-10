@@ -61,7 +61,7 @@ function hostOf(origin: string): string | undefined {
   }
 }
 
-/** One rule per intent parameter: Next matches `has` entries as a conjunction. */
+/** One rule per intent parameter: Next matches `has` entries as a conjunction. @internal */
 export function previewHeaderRules(options: WithLivePreviewOptions): readonly NextHeaderRule[] {
   const frameAncestors = buildFrameAncestors({ origins: options.allowedOrigins });
   return (options.previewQueryParams ?? DEFAULT_QUERY_PARAMS).map((key) => ({

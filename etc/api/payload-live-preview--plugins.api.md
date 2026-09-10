@@ -424,7 +424,7 @@ export type RichTextRenderer = (value: unknown, context: {
 // @public
 export type SanitizerPolicyMode = 'compat' | 'strict';
 
-// @public
+// @internal
 export function unboundFieldNames(fields: Readonly<Record<string, unknown>>, boundNames: Iterable<string>, locale?: string): readonly string[];
 
 // @public

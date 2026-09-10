@@ -16,7 +16,7 @@ import { FRAGMENT_KEY_ATTRIBUTE } from './boundary';
 const STRATEGY_ATTRIBUTE = 'data-payload-strategy';
 const FIELD_ATTRIBUTE = 'data-payload-field';
 const DEPENDS_ATTRIBUTE = 'data-payload-depends';
-/** Sent with every refresh so a server can tell a preview refresh from navigation. */
+/** Sent with every refresh so a server can tell a preview refresh from navigation. @internal */
 export const ROUTE_REFRESH_HEADER = 'x-payload-live-preview';
 
 export interface RouteStrategyOptions {
@@ -41,7 +41,7 @@ export interface RouteStrategyOptions {
 const DEFAULT_TIMEOUT_MS = 8_000;
 const DEFAULT_MIN_INTERVAL_MS = 1_000;
 
-/** An explicit `data-payload-strategy="route"`, or a binding in `<head>`. */
+/** An explicit `data-payload-strategy="route"`, or a binding in `<head>`. @internal */
 export function isRouteBound(element: Element): boolean {
   const explicit = element.getAttribute(STRATEGY_ATTRIBUTE);
   if (explicit !== null) return explicit === 'route';

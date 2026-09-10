@@ -13,7 +13,7 @@ export interface PayloadMedia {
   >;
 }
 
-/** `TSlug` is a phantom marker codegen uses to record the target collection; the runtime shape is identical. */
+/** `TSlug` is a phantom marker codegen uses to record the target collection; the runtime shape is identical. @internal */
 export interface PayloadRelationship<TSlug extends string = string> {
   readonly id?: string | number;
   readonly title?: string;

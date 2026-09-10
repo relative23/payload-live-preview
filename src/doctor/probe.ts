@@ -30,7 +30,7 @@ export interface DefaultFetchOptions {
   readonly maxBodyBytes?: number;
 }
 
-/** Header names lowercased; every check downstream reads a lowercase key. */
+/** Header names lowercased; every check downstream reads a lowercase key. @internal */
 export function lowercaseHeaders(headers: Headers): Record<string, string> {
   const out: Record<string, string> = {};
   headers.forEach((value, key) => {

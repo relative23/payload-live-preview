@@ -9,6 +9,7 @@
 import { ISLAND_ATTRIBUTE } from './islands';
 
 export { ISLAND_ATTRIBUTE };
+/** @internal */
 export const OWNED_ATTRIBUTE = 'data-payload-owned';
 
 /** Attributes the CMS controls only when the template names them (ADR 0008 §3). */
@@ -32,6 +33,7 @@ function keyOf(element: Element, options: MorphOptions): string | undefined {
   return undefined;
 }
 
+/** @internal */
 export function isMorphBoundary(element: Element): boolean {
   if (element.tagName.toLowerCase().includes('-')) return true;
   if (element.hasAttribute(ISLAND_ATTRIBUTE) || element.hasAttribute(OWNED_ATTRIBUTE)) return true;
@@ -39,7 +41,7 @@ export function isMorphBoundary(element: Element): boolean {
   return editable !== null && editable !== 'false';
 }
 
-/** Whether `live` can be edited toward `rendered` instead of being replaced by it. */
+/** Whether `live` can be edited toward `rendered` instead of being replaced by it. @internal */
 export function isMorphCompatible(live: Element, rendered: Element): boolean {
   return (
     live.tagName === rendered.tagName &&

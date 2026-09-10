@@ -28,7 +28,9 @@ export type FragmentRegistryEntry<Props extends object = object> = SharedRegistr
   SvelteComponentLike,
   Props
 >;
+/** @internal */
 export type FragmentRegistry = SharedRegistry<SvelteComponentLike>;
+/** @internal */
 export type FragmentRenderer = SharedRenderer<SvelteComponentLike>;
 export type FragmentEndpointOptions = SharedOptions<SvelteComponentLike>;
 

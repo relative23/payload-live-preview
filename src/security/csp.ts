@@ -43,12 +43,12 @@ interface WebCryptoLike {
 
 let cryptoOverride: WebCryptoLike | undefined;
 
-/** Supply a Web Crypto implementation for runtimes without `globalThis.crypto`; `null` clears it. */
+/** Supply a Web Crypto implementation for runtimes without `globalThis.crypto`; `null` clears it. @internal */
 export function setCspCrypto(crypto: WebCryptoLike | null): void {
   cryptoOverride = crypto ?? undefined;
 }
 
-/** A base64url nonce of `bytes` random bytes (default 16); throws without Web Crypto, since a predictable nonce silently defeats the CSP. */
+/** A base64url nonce of `bytes` random bytes (default 16); throws without Web Crypto, since a predictable nonce silently defeats the CSP. @internal */
 export function generateCspNonce(bytes: number = DEFAULT_NONCE_BYTES): string {
   if (!Number.isInteger(bytes) || bytes < 8) {
     throw new RangeError(`generateCspNonce: bytes must be an integer >= 8, got ${String(bytes)}`);
@@ -112,6 +112,7 @@ export function buildFrameAncestors(options: FrameAncestorsOptions = {}): string
  * A `script-src` value permitting one nonce plus optional extra sources.
  * `'strict-dynamic'` is opt-in: it makes CSP 3 browsers ignore `'self'` and
  * host sources, so every script on the page must then carry the nonce.
+ * @internal
  */
 export function buildScriptSrcWithNonce(
   nonce: string,

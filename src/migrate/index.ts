@@ -29,7 +29,7 @@ export type {
 const PACKAGE_REFERENCE =
   /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)['"]payload-live-preview(?:\/[^'"]*)?['"]/u;
 
-/** Whether the source names the package in an `import`, `import()` or `require()`. */
+/** Whether the source names the package in an `import`, `import()` or `require()`. @internal */
 export function importsThisPackage(source: string): boolean {
   return PACKAGE_REFERENCE.test(source);
 }
@@ -46,6 +46,7 @@ const IMPLEMENTATIONS: readonly CodemodImplementation[] = [
  * The codemods in the order they run. Each is idempotent. Metadata only: the
  * rewrite is internal, so importing this entry's types does not require
  * `ts-morph`, which is needed only to run `pll migrate`.
+ * @internal
  */
 export const CODEMODS: readonly Codemod[] = IMPLEMENTATIONS;
 

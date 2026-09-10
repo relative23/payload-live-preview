@@ -53,10 +53,10 @@ export interface NuxtTemplateLike {
     readonly write: boolean;
 }
 
-// @public
+// @internal
 export const PLUGIN_FILENAME = "payload-live-preview-nitro-plugin.mjs";
 
-// @public
+// @internal
 export function pluginSource(options: LivePreviewModuleOptions): string;
 
 // (No @packageDocumentation comment for this package)

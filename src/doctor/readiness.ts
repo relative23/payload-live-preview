@@ -72,7 +72,7 @@ function gap(title: string, detail: string, remedy: string): DoctorFinding {
   return { code: 'LP0709', level: 'warning', title, detail, remedy };
 }
 
-/** One `LP0709` finding per runtime row not yet at its 2.0 value; `null` slots count as unset. */
+/** One `LP0709` finding per runtime row not yet at its 2.0 value; `null` slots count as unset. @internal */
 export function analyzeV2Readiness(probe: DoctorProbe): readonly DoctorFinding[] {
   const config = readInlineConfig(probe.previewResponse.body);
   if (config === undefined) {

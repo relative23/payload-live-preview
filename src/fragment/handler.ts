@@ -128,6 +128,7 @@ async function readBoundedText(
   return text + decoder.decode();
 }
 
+/** @internal */
 export function createFragmentHandler(options: FragmentStrategyOptions): FragmentHandler {
   const endpoint = sameOriginPath(options.endpoint);
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;

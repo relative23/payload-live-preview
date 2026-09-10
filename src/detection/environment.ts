@@ -2,6 +2,7 @@
  * Where the runtime is running: framed, opened, or on a developer's machine.
  * Nothing reads bundler-injected variables; a Vite consumer passes
  * `import.meta.env.X` explicitly (docs/astro.md).
+ * @internal
  */
 
 export function isInIframe(): boolean {
@@ -14,17 +15,18 @@ export function isInIframe(): boolean {
   }
 }
 
+/** @internal */
 export function isInPopup(): boolean {
   if (typeof window === 'undefined') return false;
   return window.opener != null;
 }
 
-/** An iframe or a popup; top-level navigation never starts the preview. */
+/** An iframe or a popup; top-level navigation never starts the preview. @internal */
 export function isInPreviewContext(): boolean {
   return isInIframe() || isInPopup();
 }
 
-/** Under Node, `NODE_ENV !== 'production'`; in a browser the hostname, which is the only signal a bundle has. */
+/** Under Node, `NODE_ENV !== 'production'`; in a browser the hostname, which is the only signal a bundle has. @internal */
 export function isDevMode(): boolean {
   const nodeEnv = readNodeEnv();
   if (nodeEnv !== undefined) return nodeEnv !== 'production';

@@ -31,7 +31,9 @@ export type FragmentRegistryEntry<Props extends object = object> = SharedRegistr
   VueComponentLike,
   Props
 >;
+/** @internal */
 export type FragmentRegistry = SharedRegistry<VueComponentLike>;
+/** @internal */
 export type FragmentRenderer = SharedRenderer<VueComponentLike>;
 export type FragmentEndpointOptions = SharedOptions<VueComponentLike>;
 

@@ -21,6 +21,7 @@ export function register(type: string, renderer: NodeRenderer): void {
   registry.set(type, renderer);
 }
 
+/** @internal */
 export function lookup(type: string): NodeRenderer | undefined {
   return registry.get(type) ?? BUILTIN_NODE_RENDERERS[type];
 }
