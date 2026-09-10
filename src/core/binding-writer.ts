@@ -9,7 +9,7 @@ import { definedOnly } from '@/types/defined-only';
 import { sameRevision } from './message-bus';
 import { lookupSchema, payloadTypeToRenderer } from '@schema/index';
 import { applyAttributeBinding } from './attribute-binding';
-import { reportUnfaithfulPatch } from './fidelity';
+import { reportServerFormatting, reportUnfaithfulPatch, watchServerFormatting } from './fidelity';
 import { rendererUsesNoWriteOutcome } from './internal-outcome';
 import { type RuntimeDeps, type RuntimeState, type UpdateTransaction } from './runtime-state';
 import type { CachedElement, FieldRenderer, RenderContext, RendererKey } from './types';
@@ -89,6 +89,10 @@ export class BindingWriter {
           return false;
         }
       } else if (renderer !== undefined) {
+        // Read before the write, because afterwards the template's own reading
+        // of this value is gone (Z20). Costs nothing unless this is the first
+        // write to a binding a formatting renderer owns.
+        const shown = watchServerFormatting(deps, state, target, type);
         const outcome = invokeRenderer(renderer, target, value, context);
         if (outcome === false && rendererUsesNoWriteOutcome(renderer)) {
           // The renderer refused the value it was given, so the element still
@@ -97,6 +101,7 @@ export class BindingWriter {
           reportUnfaithfulPatch(deps, state, target, `is a value ${renderer.name} cannot render`);
           return false;
         }
+        if (shown !== undefined) reportServerFormatting(deps, target, shown);
       } else {
         deps.log('no renderer for', type);
         reportUnfaithfulPatch(deps, state, target, `has no renderer for "${type}"`);

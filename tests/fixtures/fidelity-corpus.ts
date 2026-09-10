@@ -160,7 +160,11 @@ export const KNOWN_DIVERGENCES: readonly KnownDivergence[] = [
     // overwrites it again — so what is needed is a diagnostic naming
     // `data-payload-format`, which is Z20.
     task: 'Z20',
-    why: 'the server printed the stored ISO string and the date renderer prints a formatted one; the runtime cannot know how the template formatted a value, and escalating overwrites the server format a second time instead of keeping it',
+    // Z20 made it audible without making it go away, which is the right order:
+    // the runtime cannot pick between the two formats, so it names both and
+    // points at the attribute that decides. The line leaves when a
+    // `data-payload-format` on this `<time>` makes the two agree.
+    why: 'the server printed the stored ISO string and the date renderer prints a formatted one; the runtime cannot know how the template formatted a value, and escalating overwrites the server format a second time instead of keeping it. Reported since Z20 as LP0412 on the first write to the binding; the difference itself only goes away once the markup carries data-payload-format',
   },
 ];
 

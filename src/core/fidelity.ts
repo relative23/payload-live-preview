@@ -72,3 +72,75 @@ export function reportUnfaithfulPatch(
   deps.log('LP0411', target.fieldName, reason);
   state.unfaithfulPatches.push(target);
 }
+
+/**
+ * Renderers that turn a stored value into a presentation, so the template that
+ * printed the same field had to choose one too. A `text` binding whose content
+ * differs is an edit; a `date`, `number` or `checkbox` binding whose content
+ * differs is two answers to the question the runtime cannot ask —
+ * `data-payload-format` is where the answer belongs.
+ */
+const FORMATTING_RENDERERS: ReadonlySet<string> = new Set(['date', 'number', 'checkbox']);
+
+/** Cap on either reading in the message: a diagnostic is a pointer, not a dump. */
+const EXCERPT = 40;
+
+/**
+ * What the element shows, when a difference there would be worth reporting —
+ * `undefined` when it would not, so an ordinary page pays one `Set` lookup per
+ * binding and reads no DOM at all.
+ *
+ * Called before the renderer writes, and only for the first write to a
+ * binding: after that the element holds the runtime's own output, and
+ * comparing it with the runtime's next output says nothing about the template.
+ */
+export function watchServerFormatting(
+  deps: RuntimeDeps,
+  state: RuntimeState,
+  target: CachedElement,
+  type: string,
+): string | undefined {
+  if (deps.onUnfaithfulPatch === 'ignore') return undefined;
+  if (target.format !== undefined || !FORMATTING_RENDERERS.has(type)) return undefined;
+  if (state.checkedServerFormat.has(target.element)) return undefined;
+  state.checkedServerFormat.add(target.element);
+  const shown = shownValue(target.element);
+  // An empty anchor lost nothing, and the boundary case (LP0201) is elsewhere.
+  return shown.trim().length > 0 ? shown : undefined;
+}
+
+/**
+ * Called once the renderer has written: both readings of the same value now
+ * exist, and if they differ the page no longer matches the server.
+ *
+ * It reports and stops there. Escalating would hand the region to the route,
+ * which redraws the template's format, which the re-apply overwrites again —
+ * measured under Z3 — so the honest move is to name the two candidates and the
+ * attribute that settles either of them.
+ */
+export function reportServerFormatting(
+  deps: RuntimeDeps,
+  target: CachedElement,
+  before: string,
+): void {
+  const after = shownValue(target.element);
+  if (after === before) return;
+  deps.warn(
+    `[live-preview] LP0412: "${target.fieldName}" showed ${excerpt(before)}, the patch wrote ` +
+      `${excerpt(after)} — either an edit that arrived before the preview connected, or a ` +
+      'template that formats this value differently. Set data-payload-format to match it.',
+  );
+}
+
+/** The channel the date, number and checkbox renderers write. */
+function shownValue(element: Element): string {
+  if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+    return (element as HTMLInputElement).value;
+  }
+  return element.textContent;
+}
+
+function excerpt(value: string): string {
+  const text = value.trim();
+  return JSON.stringify(text.length > EXCERPT ? `${text.slice(0, EXCERPT)}…` : text);
+}

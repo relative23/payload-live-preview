@@ -57,6 +57,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   UnrenderedBlockKept: 'LP0410',
   /** A patch cannot reach what the server would have drawn; `onUnfaithfulPatch` decided what happens next. */
   UnfaithfulPatch: 'LP0411',
+  /** The first write to a date, number or checkbox binding replaced a different reading of the same value. */
+  ServerFormatReplaced: 'LP0412',
 
   /** A message was rejected before it reached the update pipeline. */
   MessageRejected: 'LP0501',

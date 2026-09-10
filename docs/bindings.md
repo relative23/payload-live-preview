@@ -114,6 +114,16 @@ The locale is the element's `data-payload-locale`, else the message's, else the
 document's `lang`. A `<time>` keeps the ISO instant in its `datetime` attribute
 whatever the label says.
 
+Leaving the attribute off is not neutral: the renderer still has to pick a
+format, and if the template picked a different one the preview stops matching
+the page the server would send. The runtime cannot tell which of the two is
+right — the element's text is the only evidence it has, and the first message of
+a connection may already carry unsaved edits — so it says what it saw instead of
+guessing. The first write to a date, number or checkbox binding without this
+attribute is held against what the element showed, and a difference is reported
+once as [`LP0412`](troubleshooting.md#diagnostic-codes) with both readings in
+it. Setting `data-payload-format` to the format the template uses ends it.
+
 Three things it does not do. It formats the amount it is given, so a field
 holding minor units renders as minor units — dividing would be data shaping, and
 the runtime cannot know which fields are cents. It formats in the visitor's time

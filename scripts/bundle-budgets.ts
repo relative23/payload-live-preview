@@ -291,7 +291,29 @@ export type BundleBudget = BundleMeasurement;
 //
 // Raised 2026-09-07 (Z22): raw 104_410 → 104_860 (measured 104_743), gzip
 // 32_690 → 32_845 (measured 32_798), brotli 28_950 → 29_090 (measured 28_964).
-export const INLINE_BUDGET = { raw: 104_860, gzip: 32_845, brotli: 29_090 } as const;
+//
+// Raised 2026-09-10 (Z20): raw 104_860 → 105_700 (measured 105_592), gzip
+// 32_845 → 33_170 (measured 33_122), brotli 29_090 → 29_340 (measured 29_212).
+// The +851 B raw in every artifact that embeds the runtime is LP0412, and it is
+// the most expensive diagnostic in the runtime so far. Nearly a third of it is
+// the message itself: it has to print both readings of the same value, because
+// the whole finding is that they differ and only a human can say which is right.
+//
+// What it buys is the oldest entry in the oracle's ledger. A `<time>` bound to
+// `publishedAt` shows what the template printed — in all four shipped fixtures
+// the stored ISO instant — and the date renderer writes a formatted one over
+// it. The patch succeeds, so nothing in Z3's escalation path sees it, and the
+// preview stops matching the server without a sound. Z3 measured that
+// escalating makes it worse (the route redraws the template's format and the
+// re-apply overwrites it again) and that withholding needs a judgement the
+// runtime cannot make (the first message may already carry unsaved edits), so
+// what is left is to say it, once per binding, before the reading is gone.
+//
+// The cost is bounded on purpose. The check runs only on the first write to a
+// binding a formatting renderer owns (`date`, `number`, `checkbox`) that has no
+// `data-payload-format`, so a page of text bindings reads no DOM for it at all,
+// and a 5 000-binding page pays one `WeakSet` lookup per binding, once.
+export const INLINE_BUDGET = { raw: 105_700, gzip: 33_170, brotli: 29_340 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -345,7 +367,7 @@ export const INLINE_BUDGET = { raw: 104_860, gzip: 32_845, brotli: 29_090 } as c
 // still under. The lean profile leaves out the array renderers and the
 // structural applier, so the only thing it pays for is the 25 B of shared
 // attribute rule — and a lean page never rebuilds a list to begin with.
-export const INLINE_LEAN_BUDGET = { raw: 86_100, gzip: 26_970, brotli: 23_990 } as const;
+export const INLINE_LEAN_BUDGET = { raw: 86_920, gzip: 27_260, brotli: 24_230 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
@@ -383,7 +405,7 @@ export const INLINE_LEAN_BUDGET = { raw: 86_100, gzip: 26_970, brotli: 23_990 } 
 // 36_560 → 36_620 (measured 36_574), brotli 32_150 → 32_230 (measured 32_108).
 // The brotli row did not cross; the growth left it 42 B under, and this file
 // keeps ~120 for the one difference it cannot measure here.
-export const INLINE_FRAGMENT_BUDGET = { raw: 116_480, gzip: 36_620, brotli: 32_230 } as const;
+export const INLINE_FRAGMENT_BUDGET = { raw: 117_330, gzip: 36_960, brotli: 32_490 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -430,7 +452,7 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 116_480, gzip: 36_620, brotli: 32_2
 // Raised 2026-09-07 (Z22): raw 111_100 → 111_550 (measured 111_436), gzip
 // 34_890 → 35_040 (measured 34_995), brotli 30_710 → 30_890 (measured 30_767).
 // Both prelude profiles move by the runtime's 448 B and nothing of their own.
-export const INLINE_ROUTE_BUDGET = { raw: 111_550, gzip: 35_040, brotli: 30_890 } as const;
+export const INLINE_ROUTE_BUDGET = { raw: 112_400, gzip: 35_380, brotli: 31_140 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

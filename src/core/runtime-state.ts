@@ -118,6 +118,8 @@ export class RuntimeState {
   warnedProtocolShape = false;
   /** LP0411 is reported once per element; the markup that causes it does not change. */
   readonly reportedUnfaithful = new WeakSet<Element>();
+  /** Bindings whose first write has already been held against what the template printed (LP0412). */
+  readonly checkedServerFormat = new WeakSet<Element>();
   /** Bindings this revision could not patch faithfully, drained by the flush that escalates them. */
   unfaithfulPatches: CachedElement[] = [];
   /** Identity of the value each element last applied; reset when the markup is re-rendered. */

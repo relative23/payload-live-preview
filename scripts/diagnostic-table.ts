@@ -64,6 +64,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'The source generates keys per message, so the morph cannot retain nodes across updates. Key items by a stable field, or accept a re-render per update.',
   LP0407:
     'Only `patch`, `fragment` and `route` exist; fix the `data-payload-strategy` value. The element is left unchanged.',
+  LP0412:
+    'The template printed this value one way and the renderer another, so the preview no longer matches the server. Set `data-payload-format` to the format the template uses — or, when the difference was an edit that arrived before the preview connected, nothing is wrong and the next message settles it.',
   LP0501:
     'The reason is one of origin, shape, type, token and is visible with `debug: true`. An origin reason means `allowedOrigins` does not list the sender.',
   LP0502:

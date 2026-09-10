@@ -355,7 +355,13 @@ describe('the route brake', () => {
       refresh: (context: RouteContext) => {
         const waitMs = WINDOW_MS - (Date.now() - lastAt);
         if (waitMs > 0) {
-          context.retryAfter?.(waitMs);
+          // One millisecond past the window, not exactly on it. `setTimeout`
+          // may wake a hair before the `Date.now()` delta it was given, and a
+          // brake asked to retry at the boundary then refuses its own trailing
+          // run and re-arms — twice the refusals for the same one refresh. The
+          // runtime is not the flaky part; a brake that leaves itself no margin
+          // is, and a real one would not.
+          context.retryAfter?.(waitMs + 1);
           return Promise.resolve('refused' as const);
         }
         lastAt = Date.now();
