@@ -14,14 +14,16 @@ npm install payload-live-preview
 
 ## Which of the three ways to deliver it
 
-The script can reach the page three ways, and they charge a visitor who is not
-an editor three different amounts. The first two are measured per request — no
-cookie, no preview intent — by an E2E case against
-`tests/fixtures/delivery-budgets.ts`, and the first is measured a second time
-_with_ a credential, because a component that rendered nothing for everybody
-would score zero on the first measurement too. The third is what that same
-credential is charged: the helper builds the same bytes either way, and the only
-question the component answers is who receives them.
+Next.js middleware cannot inject into the HTML body — `NextResponse.next()`
+carries no body — so the script is part of the rendered HTML, and the layout or
+page that owns `<head>` decides who receives it. It can reach the page three
+ways, and they charge a visitor who is not an editor three different amounts.
+The first two are measured per request — no cookie, no preview intent — by an
+E2E case against `tests/fixtures/delivery-budgets.ts`, and the first is
+measured a second time _with_ a credential, because a component that rendered
+nothing for everybody would score zero on the first measurement too. The third
+is what that same credential is charged: the helper builds the same bytes
+either way, and the only question the component answers is who receives them.
 
 | Way                                                       | A public visitor receives | Pick it when                                                                  |
 | --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
@@ -89,9 +91,42 @@ The element carries a `nonce` prop for a CSP you manage yourself, and it is
 rendered only when the script is. Everything else on it is the adapter options
 below.
 
+## The runtime as a cached asset
+
+When the script is built once at module scope and there is no verdict to
+await, `delivery: 'asset'` puts a bootstrap in the page instead of the runtime —
+a 696-byte `<script>` element, measured on the example, rendered twice like
+anything else in a layout's head — which fetches the runtime only once the page
+finds itself in a preview context:
+
+```ts
+// app/live-preview.ts — the one thing the layout and the route must agree on
+export const livePreviewOptions = {
+  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+  serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+  mergeDepth: 1,
+  delivery: 'asset',
+} as const;
+```
+
+```ts
+// app/payload-live-preview/[file]/route.ts
+import { createRuntimeAssetRoute } from 'payload-live-preview/nextjs';
+import { livePreviewOptions } from '../../live-preview';
+
+export const { GET } = createRuntimeAssetRoute(livePreviewOptions);
+```
+
+The layout spreads the same object into `livePreviewScriptProps()` — the
+synchronous helper the next section shows — so both sides name the same file.
+The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`. The bootstrap loads it with `integrity` and `crossorigin="anonymous"`; the managed CSP already allows `'self'`, and under `strictDynamic` the nonce on the bootstrap covers the script it inserts.
+
+Move the route file and set `assetPath` together if the app is not served from the site root — the bootstrap requests exactly what `assetPath` says. With `runtime: LEAN_RUNTIME` both sides must see that option too, since the artifact decides the hash. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
+
 ## The script in the root layout
 
-Next.js middleware cannot inject into the HTML body — `NextResponse.next()` carries no body — so the script is part of the rendered HTML:
+`livePreviewScriptProps()` builds the same `<script>` the component renders,
+for whoever is asking:
 
 ```tsx
 // app/layout.tsx
@@ -120,35 +155,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 Compute the props once at module scope, as above: the configuration does not
 change per request, and the script body is the same bytes every time.
 
-The script stays inert outside the admin's preview iframe, but written this way it ships to everyone: `livePreviewScriptProps()` is synchronous, so it cannot wait for a verdict and does not try. That is about 32 KB gzip on every public page, and Next renders it twice — once into the HTML, once more into the RSC flight payload. `<LivePreviewScript />` above is the version that waits and charges a public visitor nothing; `delivery: 'asset'` below is the version that keeps the module-scope props and replaces the runtime with a 696-byte bootstrap. What each choice costs a visitor, measured per framework: [deployment.md](deployment.md#what-a-public-visitor-pays).
+The script stays inert outside the admin's preview iframe, but written this
+way it ships to everyone: `livePreviewScriptProps()` is synchronous, so it
+cannot wait for a verdict and does not try. Measured on the example while its
+layout was still written like this: a 116 413-byte `<script>` element in a
+258 227-byte response to a request with no cookie and no preview intent — and
+Next renders it twice, once into the HTML and once more into the RSC flight
+payload, so the runtime was most of what an anonymous visitor received. The
+same request answers 15 327 bytes with `<LivePreviewScript />`. That component
+is the version of this layout that waits; `delivery: 'asset'` above is the
+version that keeps the module-scope props and replaces the runtime with the
+696-byte bootstrap. What each choice costs a visitor, measured per framework:
+[deployment.md](deployment.md#what-a-public-visitor-pays).
 
 `livePreviewScriptProps()` takes a `nonce` for a CSP you manage yourself, and puts it where the framework expects it — a prop, not markup inside the body. `renderLivePreviewScript()` returns the complete `<script>` tag instead, for HTML a server assembles as a string; JSX cannot render that.
-
-## The runtime as a cached asset
-
-Those ~35 KB gzip are in every page. `delivery: 'asset'` puts a bootstrap there instead — a 696-byte `<script>` element measured on the example — which fetches the runtime only once the page finds itself in a preview context:
-
-```ts
-// app/live-preview.ts — the one thing the layout and the route must agree on
-export const livePreviewOptions = {
-  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
-  serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
-  mergeDepth: 1,
-  delivery: 'asset',
-} as const;
-```
-
-```ts
-// app/payload-live-preview/[file]/route.ts
-import { createRuntimeAssetRoute } from 'payload-live-preview/nextjs';
-import { livePreviewOptions } from '../../live-preview';
-
-export const { GET } = createRuntimeAssetRoute(livePreviewOptions);
-```
-
-The layout then passes the same object to `livePreviewScriptProps()`. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`. The bootstrap loads it with `integrity` and `crossorigin="anonymous"`; the managed CSP already allows `'self'`, and under `strictDynamic` the nonce on the bootstrap covers the script it inserts.
-
-Move the route file and set `assetPath` together if the app is not served from the site root — the bootstrap requests exactly what `assetPath` says. With `runtime: LEAN_RUNTIME` both sides must see that option too, since the artifact decides the hash. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 
 ## Headers on preview requests
 

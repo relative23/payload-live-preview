@@ -43,7 +43,10 @@ By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. Measured on the
 Next.js fixture, that is a 696-byte `<script>` element in the page instead of a
-115 031-byte one.
+116 413-byte one. On Next it is the second step down, not the first: a layout
+that can await the verdict renders `<LivePreviewScript />` and sends a public
+visitor nothing at all ([nextjs.md](nextjs.md#nothing-for-a-public-visitor));
+the asset is for a script built at module scope, with no verdict to await.
 
 Two ways in, because the frameworks differ in who can serve a file:
 
