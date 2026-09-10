@@ -5,7 +5,7 @@
 
 import type { PayloadLivePreviewData, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 import { buildSchemaIndex } from '@schema/index';
-import { adoptUniqueBindings } from './auto-bind';
+import { adoptUniqueBindings, restoreUniqueBindings } from './auto-bind';
 import { isBindingInScope, messageOwnerKeys, readDocumentId } from './binding-owner';
 import type { MergeResult } from './data-merger';
 import { mergeDependencyMaps } from './dependencies';
@@ -49,6 +49,9 @@ export class UpdatePipeline {
             transform: (target, value, allFields, isCurrent) =>
               transformForBinding(deps, target, value, allFields, isCurrent),
             rebuildCache,
+            restoreGuesses: (transaction, data) => {
+              this.restoreGuesses(transaction, data);
+            },
             revealPending: (transaction) => {
               this.revealPending(transaction);
             },
@@ -353,6 +356,23 @@ export class UpdatePipeline {
     if (scheduled === 0 && transaction.pendingFragments === 0) {
       state.complete(transaction);
       this.revealPending(transaction);
+    }
+  }
+
+  /**
+   * The route re-rendered the page without the stamps a guess lives by; look
+   * for the baseline's guesses again, and for nothing else (ADR 0014).
+   */
+  private restoreGuesses(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
+    const { deps, state } = this;
+    if (deps.autoBind === 'off' || state.autoBindGuesses === null) return;
+    // Nothing reaches this in the lean build, which has no route strategy. A
+    // folded branch, not an early return: esbuild drops the branch before
+    // linking and a statement after `return` only after it, and the search's
+    // module was in the lean artifact until the guard took this shape.
+    if (!(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__)) {
+      const scope = this.ownerKeysForUpdate(transaction, data.fields);
+      restoreUniqueBindings(deps, state, data.fields, transaction.locale, scope);
     }
   }
 

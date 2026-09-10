@@ -161,3 +161,18 @@ writes to the wrong element is worse than an attribute someone has to type.
 - If F1 or F2 comes out badly, the right outcome is to record the measurement
   and leave Integrationsaufwand at its current score. A guess that writes to
   the wrong element is worse than an attribute someone has to type.
+- **A route refresh lost every guess once, and this is how it was closed.**
+  The refresh morphs the page toward the server's own markup, which carries
+  no stamp; measured on 2026-09-10 (Z26), two guesses were gone after the
+  first refresh and every later edit to a guessed field fetched the route
+  again instead of patching. Since then the runtime looks for the baseline's
+  own guesses again on the fresh markup, once per refresh — by the value each
+  was found by and by the field's value in the revision, because the server
+  may have rendered either — and for nothing else: §1 holds for every field
+  the first message did not bind, so a refresh is not a second baseline. The
+  other way, a stamp that survives the morph, was measured and is wrong: the
+  morph pairs unkeyed siblings of one kind by position, and a paragraph the
+  server inserted before a guessed one took the guess with it. What is not
+  closed: a fragment render inside a boundary strips a guess in that boundary
+  the same way, and only the next route refresh brings it back — on a page
+  with `fragments` and no route strategy the guess is lost for good.

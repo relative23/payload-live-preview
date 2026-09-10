@@ -24,6 +24,8 @@ export interface StrategyHost {
     isCurrent: () => boolean,
   ) => unknown;
   readonly rebuildCache: () => void;
+  /** The route re-rendered the page without the stamps a guess lives by; look for the baseline's guesses again (ADR 0014). */
+  readonly restoreGuesses: (transaction: UpdateTransaction, data: PayloadLivePreviewData) => void;
   /** Scroll to the binding this revision marked, if it has not been revealed yet. */
   readonly revealPending: (transaction: UpdateTransaction) => void;
 }
@@ -275,6 +277,9 @@ export class StrategyRunner {
       stats.refreshes += 1;
       // The route rendered the saved document; nothing on the page is "last applied" any more.
       state.lastAppliedIdentity = new WeakMap();
+      // The fresh markup carries no stamp: the guesses go back on before the
+      // cache is rebuilt from it, or the rebuild would not know them.
+      this.host.restoreGuesses(transaction, data);
       this.host.rebuildCache();
       if (!isCurrent()) return;
       this.host.reapply(transaction, data);

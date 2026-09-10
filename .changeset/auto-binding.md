@@ -17,3 +17,9 @@ unbound-fields overlay with the attribute to paste. A declared
 `data-payload-field` always wins; `data-payload-no-bind` keeps a subtree out.
 The option is off by default and is accepted by the client, the inline script
 and every adapter (ADR 0014).
+
+A route refresh keeps the guesses. The refresh morphs the page toward the
+server's markup, which carries no stamp, so the runtime looks for the guesses
+it already made on the fresh markup — by the value each was found by and by the
+field's current value — and for nothing else; a field the first message did not
+bind is not bound by a refresh either.

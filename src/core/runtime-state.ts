@@ -8,7 +8,7 @@ import type { EventEmitter } from '@events/emitter';
 import type { SchemaIndex } from '@schema/index';
 import type { SanitizerPolicyMode } from '@security/sanitizer';
 import type { A11yAnnouncer } from './a11y';
-import type { AutoBindMode } from './auto-bind';
+import type { AutoBindMode, KeptGuesses } from './auto-bind';
 import type { ElementCache } from './cache';
 import type { DataMerger } from './data-merger';
 import type { UnfaithfulPatchMode } from './fidelity';
@@ -127,6 +127,8 @@ export class RuntimeState {
   unfaithfulPatches: CachedElement[] = [];
   /** What the one auto-binding search cost, for `inspect()`; `undefined` until it ran. */
   autoBindSearchMs: number | undefined = undefined;
+  /** What that search bound, looked for again after a route refresh (ADR 0014); `null` until it ran. */
+  autoBindGuesses: KeptGuesses | null = null;
   /** Identity of the value each element last applied; reset when the markup is re-rendered. */
   lastAppliedIdentity = new WeakMap<Element, string>();
   /** What each owned field was last seen with, for the reveal decision only. */

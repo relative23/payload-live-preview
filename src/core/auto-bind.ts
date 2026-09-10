@@ -87,9 +87,22 @@ export interface AutoBindCandidate {
 }
 
 /** A value's owner: the field, and whether it is an upload (matched by its `url` against an `<img>`). */
-interface Claim {
+export interface Claim {
   readonly field: string;
   readonly media: boolean;
+}
+
+/**
+ * What the baseline search adopted, kept for the server re-render a route
+ * refresh morphs the page toward: that markup carries no stamp, so the guesses
+ * are looked for again there — these fields, by these values — and nothing
+ * else is. ADR 0014 §1 still holds for everything the baseline did not find.
+ */
+export interface KeptGuesses {
+  /** The fields the guesses bound, a folded second field (`data-payload-href`, `data-payload-alt`) included. */
+  readonly fields: ReadonlySet<string>;
+  /** The texts they were found by, each claiming its field. */
+  readonly values: ReadonlyMap<string, Claim>;
 }
 
 /** Whether a scalar is worth looking for: the short and shapeless ones match by accident. */
@@ -297,12 +310,16 @@ export function findUniqueBindings(
   locale: string | undefined,
   minLength = AUTO_BIND_MIN_LENGTH,
 ): AutoBindCandidate[] {
-  const search: Search = {
-    values: bindableValues(fields, locale, minLength),
-    byElement: new Map(),
-    byField: new Map(),
-  };
-  if (search.values.size > 0 && !isBoundary(root)) walk(root, search);
+  return searchUnique(root, bindableValues(fields, locale, minLength));
+}
+
+/** The search proper, over a value table already decided on. */
+function searchUnique(
+  root: Element,
+  values: ReadonlyMap<string, Claim | null>,
+): AutoBindCandidate[] {
+  const search: Search = { values, byElement: new Map(), byField: new Map() };
+  if (values.size > 0 && !isBoundary(root)) walk(root, search);
   const unique = (field: string): boolean => search.byField.get(field)?.size === 1;
   const candidates: AutoBindCandidate[] = [];
   for (const [element, hits] of search.byElement) {
@@ -337,8 +354,52 @@ export function adoptUniqueBindings(
 ): number {
   const started = performance.now();
   const root = searchRoot(deps.root);
-  let guessed = 0;
-  const candidates = root === null ? [] : findUniqueBindings(root, fields, locale);
+  const values = bindableValues(fields, locale);
+  const adopted =
+    root === null ? [] : adopt(deps, searchUnique(root, values), ownerKeys, 'on the first message');
+  state.autoBindGuesses = keep(values, adopted);
+  state.autoBindSearchMs = performance.now() - started;
+  return adopted.length;
+}
+
+/**
+ * After a route refresh: the server's markup carries no stamp, so the guesses
+ * the baseline made are gone from the page. Look for them again, by the value
+ * each was found by and by the field's value in this revision — the server
+ * may have rendered either, the document as it was saved or a draft it
+ * autosaved since. A field found by both, on two elements, is ambiguous and
+ * stays unbound. Nothing the baseline did not bind is looked for: a second
+ * baseline would be a second chance at a wrong match, and the first one is
+ * the only moment the page is known to show the document (ADR 0014 §1).
+ */
+export function restoreUniqueBindings(
+  deps: RuntimeDeps,
+  state: RuntimeState,
+  fields: Readonly<Record<string, unknown>>,
+  locale: string | undefined,
+  ownerKeys: OwnerScope,
+): number {
+  const kept = state.autoBindGuesses;
+  const root = searchRoot(deps.root);
+  if (kept === null || kept.fields.size === 0 || root === null) return 0;
+  const values = new Map<string, Claim | null>(kept.values);
+  for (const [text, claim] of bindableValues(fields, locale)) {
+    if (claim === null || !kept.fields.has(claim.field)) continue;
+    const known = values.get(text);
+    if (known === undefined) values.set(text, claim);
+    else if (known?.field !== claim.field) values.set(text, null);
+  }
+  return adopt(deps, searchUnique(root, values), ownerKeys, 'after a route refresh').length;
+}
+
+/** Stamp the candidates, register them, say so; returns the ones that became bindings. */
+function adopt(
+  deps: RuntimeDeps,
+  candidates: readonly AutoBindCandidate[],
+  ownerKeys: OwnerScope,
+  when: string,
+): AutoBindCandidate[] {
+  const adopted: AutoBindCandidate[] = [];
   for (const candidate of candidates) {
     const { element } = candidate;
     if (element.hasAttribute(FIELD_ATTRIBUTE)) continue;
@@ -361,9 +422,29 @@ export function adoptUniqueBindings(
       `<${element.tagName.toLowerCase()}>`,
       candidate.attribute ?? 'text',
       JSON.stringify(candidate.matched),
+      when,
     );
-    guessed += 1;
+    adopted.push(candidate);
   }
-  state.autoBindSearchMs = performance.now() - started;
-  return guessed;
+  return adopted;
+}
+
+/** The fields the adopted guesses bound, and the values that found them. */
+function keep(
+  values: ReadonlyMap<string, Claim | null>,
+  adopted: readonly AutoBindCandidate[],
+): KeptGuesses {
+  const fields = new Set<string>();
+  for (const { fieldName, stamps } of adopted) {
+    fields.add(fieldName);
+    for (const name of [HREF_ATTRIBUTE, ALT_ATTRIBUTE]) {
+      const folded = stamps[name];
+      if (folded !== undefined) fields.add(folded);
+    }
+  }
+  const kept = new Map<string, Claim>();
+  for (const [text, claim] of values) {
+    if (claim !== null && fields.has(claim.field)) kept.set(text, claim);
+  }
+  return { fields, values: kept };
 }

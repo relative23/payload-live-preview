@@ -327,7 +327,16 @@
 // The site writes the literal now, like every other browser-side site, and a
 // test holds the artifact free of the table's rows. The lean profile never
 // carried it — it has no strategy runner — and does not move.
-export const INLINE_BUDGET = { raw: 108_328, gzip: 34_010, brotli: 30_061 } as const;
+// Raised 2026-09-10 (Z26): raw 108_328 → 109_249 (measured 109_128), gzip
+// 34_010 → 34_313 (34_258), brotli 30_061 → 30_290 (30_142). The +910 B raw
+// is what a route refresh needs to keep the guesses auto-binding made: the
+// fresh markup carries no stamp, so the search runs once more over it — for
+// the fields the baseline bound, by the value each was found by and by the
+// revision's value, and for nothing else (ADR 0014, Consequences). A stamp
+// that survives the morph would have been cheaper and is wrong: the morph
+// pairs unkeyed siblings by position, and a paragraph the server inserted took
+// the guess with it. Paid by a page with `autoBind` off, for Z9's reason.
+export const INLINE_BUDGET = { raw: 109_249, gzip: 34_313, brotli: 30_290 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -383,7 +392,11 @@ export const INLINE_BUDGET = { raw: 108_328, gzip: 34_010, brotli: 30_061 } as c
 // attribute rule — and a lean page never rebuilds a list to begin with.
 // Raised 2026-09-10 (Z9): raw 86_920 → 87_386 (measured 87_276), gzip 27_260 →
 // 27_502 (27_452), brotli 24_230 → 24_417 (24_287); the search is not in it.
-export const INLINE_LEAN_BUDGET = { raw: 87_386, gzip: 27_502, brotli: 24_417 } as const;
+// Raised 2026-09-10 (Z26): raw 87_386 → 87_501 (measured 87_391), gzip 27_502
+// → 27_533 (27_483), brotli 24_417 → 24_455 (24_325). The lean profile has no
+// route strategy and never restores a guess; the 115 B are the slot in the
+// runtime state and the pipeline's folded method — the search stays out.
+export const INLINE_LEAN_BUDGET = { raw: 87_501, gzip: 27_533, brotli: 24_455 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
@@ -425,7 +438,10 @@ export const INLINE_LEAN_BUDGET = { raw: 87_386, gzip: 27_502, brotli: 24_417 } 
 // Lowered 2026-09-10 (Z25): raw 121_260 → 119_973 (measured 119_863), gzip
 // 38_386 → 37_868 (37_818), brotli 33_758 → 33_275 (33_145) — the runtime's
 // own −1 287 B, the diagnostic table; the prelude did not move.
-export const INLINE_FRAGMENT_BUDGET = { raw: 119_973, gzip: 37_868, brotli: 33_275 } as const;
+// Raised 2026-09-10 (Z26): raw 119_973 → 120_894 (measured 120_773), gzip
+// 37_868 → 38_164 (38_109), brotli 33_275 → 33_526 (33_399) — the runtime's
+// own +910 B; the prelude did not move.
+export const INLINE_FRAGMENT_BUDGET = { raw: 120_894, gzip: 38_164, brotli: 33_526 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -476,4 +492,7 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 119_973, gzip: 37_868, brotli: 33_2
 // Lowered 2026-09-10 (Z25): raw 116_308 → 115_021 (measured 114_911), gzip
 // 36_730 → 36_205 (36_155), brotli 32_306 → 31_885 (31_755) — the runtime's
 // own −1 287 B, the diagnostic table; the prelude did not move.
-export const INLINE_ROUTE_BUDGET = { raw: 115_021, gzip: 36_205, brotli: 31_885 } as const;
+// Raised 2026-09-10 (Z26): raw 115_021 → 115_942 (measured 115_821), gzip
+// 36_205 → 36_492 (36_437), brotli 31_885 → 32_081 (31_934) — the runtime's
+// own +910 B, in the profile whose refresh strips the stamps they restore.
+export const INLINE_ROUTE_BUDGET = { raw: 115_942, gzip: 36_492, brotli: 32_081 } as const;

@@ -190,6 +190,8 @@ Notes on the rows that need one:
   connection's first message, once: a scalar whose value is the whole content
   of exactly one element in the body is bound to that element as if
   `data-payload-field` stood there, and everything else stays unbound. A
+  route refresh keeps those guesses — the fresh markup is searched for them
+  again, and for nothing else. A
   declared attribute always wins, `data-payload-no-bind` keeps a subtree out,
   and every guess is stamped `data-payload-guessed` and listed in
   `inspect().bindings.guessed`. Off by default; what it finds and what it must

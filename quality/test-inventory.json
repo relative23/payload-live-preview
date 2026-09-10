@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 303,
-    "suites": 632,
-    "tests": 2599,
+    "files": 304,
+    "suites": 633,
+    "tests": 2604,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 246,
-      "suites": 559,
-      "tests": 2374,
+      "files": 247,
+      "suites": 560,
+      "tests": 2379,
       "benchmarks": 0
     }
   },
@@ -779,6 +779,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/auto-bind-refresh.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {

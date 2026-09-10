@@ -138,6 +138,13 @@ interface Fixture {
  * 42 352 (42 302), the generator 40 558 -> 40 034 (39 984) and the Next.js
  * middleware 45 408 -> 44 879 (44 829). `LEAN_RUNTIME` holds at 27 747
  * (27 697): the lean profile never carried the table. See bundle-budgets.ts.
+ *
+ * 2026-09-10 (Z26): keeping a guess through a route refresh costs ~300 B gzip
+ * in the four rows that carry the full runtime — `initLivePreview` from the
+ * barrel 42 402 -> 42 775 (measured 42 725), from `./core` 42 352 -> 42 721
+ * (42 671), the generator 40 034 -> 40 336 (40 281) and the Next.js middleware
+ * 44 879 -> 45 179 (45 124). `LEAN_RUNTIME` holds at 27 747 (27 728): the
+ * lean profile has no route strategy. See bundle-budgets.ts.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -158,21 +165,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 42_402,
+    gzip: 42_775,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 40_034,
+    gzip: 40_336,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 42_352,
+    gzip: 42_721,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -193,7 +200,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 44_879,
+    gzip: 45_179,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
