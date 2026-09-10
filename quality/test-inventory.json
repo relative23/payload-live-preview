@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 307,
-    "suites": 641,
-    "tests": 2649,
+    "files": 308,
+    "suites": 645,
+    "tests": 2665,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 250,
-      "suites": 568,
-      "tests": 2424,
+      "files": 251,
+      "suites": 572,
+      "tests": 2440,
       "benchmarks": 0
     }
   },
@@ -778,7 +778,7 @@
       "path": "tests/unit/core/attribute-binding.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -1143,6 +1143,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 17,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/message-guards.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2171,14 +2178,14 @@
       "path": "tests/unit/security/sanitizer.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 37,
+      "tests": 39,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/security/trusted-types.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 5,
+      "tests": 7,
       "benchmarks": 0
     },
     {
