@@ -42,6 +42,12 @@ export interface CapabilityUse {
   /** The expression at the site, whitespace collapsed; sink inventories key on it. */
   readonly site: string;
   readonly line: number;
+  /**
+   * For an attribute sink, the attribute written when the code names it:
+   * the literal in `setAttribute('href', …)`, the property in `img.src = …`,
+   * `style` for any `.style.… =`. Absent when the name is computed.
+   */
+  readonly attribute?: string;
 }
 
 const GLOBAL_IDENTIFIERS: ReadonlyMap<string, CapabilityKind> = new Map([
@@ -131,7 +137,12 @@ function enclosingStatement(node: Node): Node {
 export function capabilityUsesIn(sourceFile: SourceFile): readonly CapabilityUse[] {
   const uses: CapabilityUse[] = [];
   const seen = new Set<string>();
-  const record = (kind: CapabilityKind, node: Node, site: Node = node): void => {
+  const record = (
+    kind: CapabilityKind,
+    node: Node,
+    site: Node = node,
+    attribute?: string,
+  ): void => {
     const line = node.getStartLineNumber();
     const text = collapsed(site);
     const key = SITE_KEYED_KINDS.has(kind)
@@ -139,7 +150,7 @@ export function capabilityUsesIn(sourceFile: SourceFile): readonly CapabilityUse
       : `${kind}:${String(line)}`;
     if (seen.has(key)) return;
     seen.add(key);
-    uses.push({ kind, site: text, line });
+    uses.push({ kind, site: text, line, ...(attribute === undefined ? {} : { attribute }) });
   };
 
   sourceFile.forEachDescendant((node) => {
@@ -169,7 +180,8 @@ export function capabilityUsesIn(sourceFile: SourceFile): readonly CapabilityUse
     }
     if (Node.isCallExpression(node)) {
       const kind = callCapability(node);
-      if (kind !== undefined) record(kind, node);
+      if (kind === 'attribute-sink') record(kind, node, node, firstArgumentLiteral(node));
+      else if (kind !== undefined) record(kind, node);
       return;
     }
     if (Node.isBinaryExpression(node) && node.getOperatorToken().getText() === '=') {
@@ -182,12 +194,12 @@ export function capabilityUsesIn(sourceFile: SourceFile): readonly CapabilityUse
       else if (property === 'onmessage') record('message-ingress', node);
       else if (property === 'href' && receiver.getText().endsWith('location')) {
         record('navigation', node);
-      } else if (URL_PROPERTIES.has(property)) record('attribute-sink', node);
+      } else if (URL_PROPERTIES.has(property)) record('attribute-sink', node, node, property);
       else if (
         property === 'cssText' ||
         (Node.isPropertyAccessExpression(receiver) && receiver.getName() === 'style')
       ) {
-        record('attribute-sink', node);
+        record('attribute-sink', node, node, 'style');
       }
     }
   });
