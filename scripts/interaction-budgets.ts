@@ -11,6 +11,7 @@
  */
 
 import {
+  AUTO_BOUND_PAGE,
   PAGE_WITHOUT_BINDINGS,
   RELATIONSHIP_FIELD,
   RICH_TEXT,
@@ -76,6 +77,14 @@ export interface InteractionBudget {
   readonly routeRefreshes?: number;
   /** Absent where the edit has nothing to make visible; the requests are then the whole finding. */
   readonly latency?: LatencyBudget;
+  /**
+   * What the one auto-binding search on the first message may cost, in ms
+   * (ADR 0014, F3). A ceiling only: it is paid once per connection, not per
+   * keystroke, so it may exceed the frame a keystroke gets — but it is stated
+   * here rather than absorbed, and a search that starts costing a page load
+   * fails this row.
+   */
+  readonly baselineSearchMs?: number;
   /** What this row buys, in one sentence — the row is a decision, not an observation. */
   readonly why: string;
 }
@@ -85,10 +94,12 @@ export interface InteractionMeasurement {
   readonly routeRefreshes?: number;
   readonly p50Ms?: number;
   readonly p95Ms?: number;
+  /** What the auto-binding search cost on the first message; only measured where the scenario asks for it. */
+  readonly baselineSearchMs?: number;
 }
 
 export interface InteractionViolation {
-  readonly metric: 'requests' | 'route refreshes' | 'p95 latency';
+  readonly metric: 'requests' | 'route refreshes' | 'p95 latency' | 'baseline search';
   readonly actual: string;
   readonly reason: string;
 }
@@ -186,6 +197,27 @@ export const INTERACTION_BUDGETS: readonly InteractionBudget[] = [
     // that could not have used the answer. The row stays to hold it there.
     why: 'LP-4: a page with no bindings asks the server nothing, and this 0 is what keeps it that way',
   },
+  {
+    scenario: AUTO_BOUND_PAGE.name,
+    requests: 0,
+    latency: { ceilingMs: 30, floorMs: 12 },
+    baselineSearchMs: 25,
+    // ADR 0014, F3. The same page as the plain-text row with its three
+    // attributes removed and 1 000 paragraphs around it, run with
+    // `autoBind: 'unique'`. Two things are held here. The keystroke is the
+    // plain-text row's keystroke, because once the first message has found the
+    // `<h1>` it is a binding like any other — the same frame, the same zero
+    // requests. And the first message itself is measured: one pass over the
+    // body's elements against the three values, once per connection, cold.
+    // Measured 2.4–2.5 ms in jsdom on this host for 1 003 elements, three runs;
+    // the first cut of the walk, over `children` and `attributes`, measured
+    // 26.0 ms on the same page, which is what jsdom's live collections cost and
+    // why the walk uses sibling pointers. The ceiling is ten times the
+    // measurement because the cost is paid once and a page load absorbs it,
+    // while a search that grew to a page load's worth of milliseconds would be
+    // a different algorithm and should have to say so here.
+    why: 'ADR 0014: a page with no attributes pays for its bindings once, on connect, and the number stands here',
+  },
 ];
 
 /** Both directions: a budget that only stops regressions lets an unrecorded win rot. */
@@ -216,6 +248,28 @@ export function findInteractionViolations(
           ? 'the scenario refreshed a route the budget says nothing about'
           : `not the ${String(budget.routeRefreshes)} this scenario is allowed — too many is a brake that stopped braking, too few is a change it swallowed`,
     });
+  }
+  if (budget.baselineSearchMs !== undefined || measurement.baselineSearchMs !== undefined) {
+    const searched = measurement.baselineSearchMs;
+    if (searched === undefined) {
+      violations.push({
+        metric: 'baseline search',
+        actual: 'not measured',
+        reason: 'the budget states a search cost the scenario never ran',
+      });
+    } else if (budget.baselineSearchMs === undefined) {
+      violations.push({
+        metric: 'baseline search',
+        actual: `${searched.toFixed(1)} ms`,
+        reason: 'the scenario searched for bindings and the budget says nothing about it',
+      });
+    } else if (searched > budget.baselineSearchMs) {
+      violations.push({
+        metric: 'baseline search',
+        actual: `${searched.toFixed(1)} ms`,
+        reason: `above the ${String(budget.baselineSearchMs)} ms ceiling for the one search on the first message`,
+      });
+    }
   }
   const { latency } = budget;
   const p95 = measurement.p95Ms;

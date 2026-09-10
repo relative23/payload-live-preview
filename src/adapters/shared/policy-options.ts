@@ -97,5 +97,6 @@ export function inlineScriptConfig(
     ...(options.onUnfaithfulPatch !== undefined
       ? { onUnfaithfulPatch: options.onUnfaithfulPatch }
       : {}),
+    ...(options.autoBind !== undefined ? { autoBind: options.autoBind } : {}),
   };
 }

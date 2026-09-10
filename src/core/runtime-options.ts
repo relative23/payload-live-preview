@@ -49,6 +49,18 @@ export interface RuntimeOptions {
   /** Scroll the preview to the field being edited when its value changes. */
   readonly revealEditedField?: boolean;
   /**
+   * Let the runtime find bindings by value (ADR 0014). Under `'unique'` the
+   * connection's first message is searched for once: a scalar field whose
+   * value is the whole content of exactly one element in the body — its only
+   * text node, or one attribute the writer may set — is bound to that element
+   * as if `data-payload-field` had been written there. Anything else stays
+   * unbound. A declared `data-payload-field` always wins, a subtree marked
+   * `data-payload-no-bind` is never entered, and every guess is stamped
+   * `data-payload-guessed` so `inspect().bindings.guessed` can list it.
+   * Default `'off'`.
+   */
+  readonly autoBind?: 'off' | 'unique';
+  /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn — a renderer that cannot represent the value, a Lexical
    * block whose markup the write has to drop, a changed field with no binding

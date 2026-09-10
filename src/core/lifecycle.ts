@@ -164,6 +164,7 @@ export class LivePreviewRuntime {
       strategies: options.strategies ?? {},
       revealEditedField: options.revealEditedField === true,
       onUnfaithfulPatch: resolveUnfaithfulPatchMode(options),
+      autoBind: options.autoBind ?? 'off',
     };
     this.writer = new BindingWriter(this.deps, this.state);
     this.pipeline = new UpdatePipeline(this.deps, this.state, () => {

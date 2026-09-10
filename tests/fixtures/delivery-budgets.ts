@@ -236,6 +236,12 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * Not a row of `DELIVERY_BUDGETS`, because every row there is by definition a
  * response to a request without a cookie. This one is the opposite request, and
  * `findDeliveryViolations` reads it exactly the same way.
+ *
+ * 2026-09-10 (Z9): 11 702 → 11 730. The 28 bytes are in the fragment prelude,
+ * not in the runtime the subtraction removes: `src/fragment/boundary.ts`
+ * carries `src/core/islands.ts`, and the island-boundary test there became a
+ * function of its own so the auto-binding search and the cache filter share
+ * one rule (ADR 0014 §2). Nothing in the fixture or its delivery moved.
  */
 export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   name: 'Next.js, script in the root layout, authorized editor',
@@ -244,7 +250,7 @@ export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   carries: 'runtime',
   bindings: true,
   scriptElements: 2,
-  overheadBytes: 11_702,
+  overheadBytes: 11_730,
   why: 'the same layout still hands an authorized editor the whole runtime — the zero above is a decision, not a broken adapter',
 };
 

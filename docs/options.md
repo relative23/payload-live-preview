@@ -45,6 +45,7 @@ always wins. The ledger of what changed is
 | `routeStrategy`            | —      | yes           | yes                                                      | —                        | `false`                                             | same                                 |
 | `onUnfaithfulPatch`        | yes    | yes           | yes                                                      | —                        | `'escalate'`                                        | same                                 |
 | `onUnboundChange`          | yes    | yes           | yes                                                      | —                        | — (alias, deprecated)                               | same                                 |
+| `autoBind`                 | yes    | yes           | yes                                                      | —                        | `'off'`                                             | same                                 |
 | `resolveRenderer`          | yes    | —             | —                                                        | —                        | —                                                   | same                                 |
 | `renderRichText`           | yes    | —             | —                                                        | —                        | built-in Lexical renderer                           | same                                 |
 | `root`                     | yes    | —             | —                                                        | —                        | `document`                                          | same                                 |
@@ -93,10 +94,11 @@ forty-five rows.
   the page and the injected script has to be allowed to run, without the package
   ever loosening a policy the site already sends.
 - **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
-  `routeStrategy`, `onUnfaithfulPatch`, `strategies`, `dependencies`. Three
-  strategies exist because patching cannot create markup and a route refresh
-  cannot be done per keystroke
-  ([overview](architecture/overview.md#the-five-objects)).
+  `routeStrategy`, `onUnfaithfulPatch`, `strategies`, `dependencies`,
+  `autoBind`. Three strategies exist because patching cannot create markup and
+  a route refresh cannot be done per keystroke
+  ([overview](architecture/overview.md#the-five-objects)); `autoBind` is how a
+  page with no `data-payload-field` at all gets its bindings.
 - **What the page does with a value** — `sanitizerPolicy`, `resolveRenderer`,
   `renderRichText`, `revealEditedField`, `scopeBindingsByOwner`. Unsaved editor
   input is untrusted input; the rest is how a site renders what it already
@@ -150,9 +152,9 @@ Notes on the rows that need one:
 - `runtime` chooses which artifact the page carries. The default is the full
   one; `LEAN_RUNTIME` from `payload-live-preview/lean` is 24 763 bytes gzip
   against 30 253 — it leaves out the fragment and route strategies, the keyed
-  morph, the structural arrays, the item templates and the screen-reader
-  announcer, and reports LP0104 when a page needs one of them rather than doing
-  nothing. It is an import rather than a string option so the second artifact
+  morph, the structural arrays, the item templates, the screen-reader
+  announcer and auto-binding, and reports LP0104 when a page needs one of them
+  rather than doing nothing. It is an import rather than a string option so the second artifact
   lands only in builds that ask for it:
 
   ```ts
@@ -184,6 +186,15 @@ Notes on the rows that need one:
   rendered from them ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
   `onUnboundChange` is the 2.0 name for the same decision and still decides when
   it is given — `'route'` means `'escalate'` — until it is removed in 3.0.
+- `autoBind: 'unique'` lets the runtime find bindings by value on the
+  connection's first message, once: a scalar whose value is the whole content
+  of exactly one element in the body is bound to that element as if
+  `data-payload-field` stood there, and everything else stays unbound. A
+  declared attribute always wins, `data-payload-no-bind` keeps a subtree out,
+  and every guess is stamped `data-payload-guessed` and listed in
+  `inspect().bindings.guessed`. Off by default; what it finds and what it must
+  never find are in [docs/bindings.md](bindings.md#letting-the-runtime-find-bindings-by-value)
+  and [ADR 0014](architecture/0014-auto-binding.md).
 - `debounceMs` is the window a burst of messages shares, not a delay on every
   one: the first write of a quiet phase is applied on the next animation frame
   and opens the window, and everything that arrives inside it is coalesced into

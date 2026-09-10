@@ -4,22 +4,22 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-BsRZao4M.js';
-import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-BhqkscU4.js';
-import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-BhqkscU4.js';
-import { b } from '../../fragment-endpoint-BsRZao4M.js';
-import { c } from '../../fragment-endpoint-BsRZao4M.js';
-import { c as createLivePreviewMiddleware } from '../../middleware-B_T4ebOz.js';
-import { F } from '../../fragment-endpoint-BsRZao4M.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-BsRZao4M.js';
-import { h as hasPreviewIntent } from '../../options-eet7rO9G.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-B_T4ebOz.js';
-import { L as LivePreviewLocals } from '../../locals-BhqkscU4.js';
-import { a as LivePreviewMiddleware } from '../../middleware-B_T4ebOz.js';
-import { N as NONCE_LOCALS_KEY } from '../../locals-BhqkscU4.js';
-import { P as PreviewAdapterOptions } from '../../options-eet7rO9G.js';
-import { a as PreviewRequestLike } from '../../options-eet7rO9G.js';
-import { b as PreviewRequestOptions } from '../../options-eet7rO9G.js';
+import { a } from '../../fragment-endpoint-DHoYlTJF.js';
+import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-CZI6K7g_.js';
+import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-CZI6K7g_.js';
+import { b } from '../../fragment-endpoint-DHoYlTJF.js';
+import { c } from '../../fragment-endpoint-DHoYlTJF.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-CW9EY5WL.js';
+import { F } from '../../fragment-endpoint-DHoYlTJF.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-DHoYlTJF.js';
+import { h as hasPreviewIntent } from '../../options-05kr6xUG.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-CW9EY5WL.js';
+import { L as LivePreviewLocals } from '../../locals-CZI6K7g_.js';
+import { a as LivePreviewMiddleware } from '../../middleware-CW9EY5WL.js';
+import { N as NONCE_LOCALS_KEY } from '../../locals-CZI6K7g_.js';
+import { P as PreviewAdapterOptions } from '../../options-05kr6xUG.js';
+import { a as PreviewRequestLike } from '../../options-05kr6xUG.js';
+import { b as PreviewRequestOptions } from '../../options-05kr6xUG.js';
 
 // @public
 export type AstroComponentLike = object;

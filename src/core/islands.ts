@@ -23,11 +23,16 @@ function islandAllowsPatching(island: Element): boolean {
   return island.getAttribute(ISLAND_ATTRIBUTE) === 'patch';
 }
 
+/** Whether `element` itself is an island root that did not opt into patching. */
+export function isIslandBoundary(element: Element): boolean {
+  return isIslandRoot(element) && !islandAllowsPatching(element);
+}
+
 /** Whether `element` (or an ancestor) is an island that did not opt into patching. */
 export function isInsideIsland(element: Element): boolean {
   let current: Element | null = element;
   while (current !== null) {
-    if (isIslandRoot(current) && !islandAllowsPatching(current)) return true;
+    if (isIslandBoundary(current)) return true;
     current = current.parentElement;
   }
   return false;

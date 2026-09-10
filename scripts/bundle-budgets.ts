@@ -313,7 +313,16 @@ export type BundleBudget = BundleMeasurement;
 // binding a formatting renderer owns (`date`, `number`, `checkbox`) that has no
 // `data-payload-format`, so a page of text bindings reads no DOM for it at all,
 // and a 5 000-binding page pays one `WeakSet` lookup per binding, once.
-export const INLINE_BUDGET = { raw: 105_700, gzip: 33_170, brotli: 29_340 } as const;
+// Raised 2026-09-10 (Z9): raw 105_700 → 109_615 (measured 109_505), gzip
+// 33_170 → 34_532 (34_482), brotli 29_340 → 30_509 (30_379). +3 913 B raw /
+// ~1 360 gzip against Z20 is auto-binding (ADR 0014): the one search on the
+// first message — value table, shape rules, the measured floor, the walk with
+// its boundaries, per-element uniqueness, the two-fields idioms, the stamping —
+// plus the option slot, the marker and two inspection fields. Paid by a page
+// that leaves `autoBind` off, because the search needs the cache, locale, owner
+// scope and observers, none of which cross the strategy seam; a prelude emitted
+// only for a page that turns it on is the way to get the bytes back.
+export const INLINE_BUDGET = { raw: 109_615, gzip: 34_532, brotli: 30_509 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -367,7 +376,9 @@ export const INLINE_BUDGET = { raw: 105_700, gzip: 33_170, brotli: 29_340 } as c
 // still under. The lean profile leaves out the array renderers and the
 // structural applier, so the only thing it pays for is the 25 B of shared
 // attribute rule — and a lean page never rebuilds a list to begin with.
-export const INLINE_LEAN_BUDGET = { raw: 86_920, gzip: 27_260, brotli: 24_230 } as const;
+// Raised 2026-09-10 (Z9): raw 86_920 → 87_386 (measured 87_276), gzip 27_260 →
+// 27_502 (27_452), brotli 24_230 → 24_417 (24_287); the search is not in it.
+export const INLINE_LEAN_BUDGET = { raw: 87_386, gzip: 27_502, brotli: 24_417 } as const;
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
 // by the bounded streaming reader that replaced an unbounded `response.text()`.
@@ -405,7 +416,8 @@ export const INLINE_LEAN_BUDGET = { raw: 86_920, gzip: 27_260, brotli: 24_230 } 
 // 36_560 → 36_620 (measured 36_574), brotli 32_150 → 32_230 (measured 32_108).
 // The brotli row did not cross; the growth left it 42 B under, and this file
 // keeps ~120 for the one difference it cannot measure here.
-export const INLINE_FRAGMENT_BUDGET = { raw: 117_330, gzip: 36_960, brotli: 32_490 } as const;
+// Raised 2026-09-10 (Z9): the runtime's own +3 913 B raw; the prelude did not move.
+export const INLINE_FRAGMENT_BUDGET = { raw: 121_260, gzip: 38_386, brotli: 33_758 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -452,7 +464,8 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 117_330, gzip: 36_960, brotli: 32_4
 // Raised 2026-09-07 (Z22): raw 111_100 → 111_550 (measured 111_436), gzip
 // 34_890 → 35_040 (measured 34_995), brotli 30_710 → 30_890 (measured 30_767).
 // Both prelude profiles move by the runtime's 448 B and nothing of their own.
-export const INLINE_ROUTE_BUDGET = { raw: 112_400, gzip: 35_380, brotli: 31_140 } as const;
+// Raised 2026-09-10 (Z9): the runtime's own +3 913 B raw; the prelude did not move.
+export const INLINE_ROUTE_BUDGET = { raw: 116_308, gzip: 36_730, brotli: 32_306 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;

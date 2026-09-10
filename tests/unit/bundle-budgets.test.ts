@@ -10,10 +10,10 @@ import {
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 105_700, gzip: 33_170, brotli: 29_340 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 86_920, gzip: 27_260, brotli: 24_230 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 112_400, gzip: 35_380, brotli: 31_140 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 117_330, gzip: 36_960, brotli: 32_490 });
+    expect(INLINE_BUDGET).toEqual({ raw: 109_615, gzip: 34_532, brotli: 30_509 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 87_386, gzip: 27_502, brotli: 24_417 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 116_308, gzip: 36_730, brotli: 32_306 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 121_260, gzip: 38_386, brotli: 33_758 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

@@ -292,9 +292,21 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // and gzip output on the next build. Brotli is not byte-stable here — the
   // note above says so for the same reason — so it goes to 34 120, the usual
   // ~120 B over the measurement, rather than back onto a three-byte margin.
+  //
+  // 2026-09-10 (Z9, auto-binding): every row that embeds the runtime rises
+  // +3 913 B raw / ~1 360 B gzip / ~1 170 B brotli, `index.*` about twice that
+  // because the barrel carries the runtime as code and as the string the
+  // generator embeds, `lean.*` +~450 raw / ~200 gzip for the option slot, the
+  // marker the cache reads, the two inspection fields and the LP0104 line —
+  // the search itself is not in the lean artifact — and `plugins.*` +~550 raw
+  // / ~150 gzip for the overlay's second heading. Measured against the same
+  // build without the change; the reason for the bytes, and the way to get
+  // them back, is in bundle-budgets.ts. Every crossed row goes to its
+  // measurement plus the usual cushion (raw ~110, gzip ~50, brotli ~130); a
+  // metric that still held is left where it was.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
-  'adapters/astro/index.js': { raw: 151_830, gzip: 47_680, brotli: 41_000 },
-  'adapters/astro/middleware-entry.js': { raw: 138_520, gzip: 43_560, brotli: 37_390 },
+  'adapters/astro/index.js': { raw: 155_789, gzip: 48_773, brotli: 42_052 },
+  'adapters/astro/middleware-entry.js': { raw: 142_490, gzip: 44_618, brotli: 38_540 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -313,7 +325,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // cannot wait for a verdict, so LP-8 measured 195 342 of 254 707 bytes of
   // runtime on a request with no cookie; an async component awaits
   // `authorizePreview` and renders nothing for it.
-  'adapters/nextjs/index.js': { raw: 150_380, gzip: 47_230, brotli: 40_590 },
+  'adapters/nextjs/index.js': { raw: 154_341, gzip: 48_300, brotli: 41_748 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -331,8 +343,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
   // frame-ancestors builder it shares with the middleware.
   'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
-  'adapters/nuxt/index.js': { raw: 149_560, gzip: 47_020, brotli: 40_410 },
-  'adapters/sveltekit/index.js': { raw: 148_590, gzip: 46_770, brotli: 40_160 },
+  'adapters/nuxt/index.js': { raw: 153_519, gzip: 48_090, brotli: 41_503 },
+  'adapters/sveltekit/index.js': { raw: 152_546, gzip: 47_826, brotli: 41_263 },
   //
   // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
   // scanner, its refusal reasons and the `annotate` subcommand. It is a build
@@ -344,8 +356,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'doctor-cli.js': { raw: 33_150, gzip: 12_140, brotli: 10_780 },
   'doctor.js': { raw: 13_230, gzip: 5_540, brotli: 4_803 },
   'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
-  'core.cjs': { raw: 124_890, gzip: 39_290, brotli: 34_120 },
-  'core.js': { raw: 124_340, gzip: 39_210, brotli: 34_090 },
+  'core.cjs': { raw: 129_066, gzip: 40_743, brotli: 35_322 },
+  'core.js': { raw: 128_523, gzip: 40_674, brotli: 35_229 },
   //
   // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
   // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a
@@ -356,8 +368,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // identical; a build before the commit and one after are not. A brotli
   // cushion below that swing is a coin flip at every commit boundary, which is
   // why the cushion is what it is. raw and gzip do not move with the epoch.
-  'index.cjs': { raw: 265_230, gzip: 82_420, brotli: 52_880 },
-  'index.js': { raw: 264_600, gzip: 82_410, brotli: 52_690 },
+  'index.cjs': { raw: 273_220, gzip: 84_912, brotli: 54_518 },
+  'index.js': { raw: 272_595, gzip: 84_938, brotli: 54_395 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
@@ -367,12 +379,12 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // helper the build-time annotator writes a call to.
   'server.cjs': { raw: 12_950, gzip: 4_780, brotli: 4_310 },
   'server.js': { raw: 12_830, gzip: 4_775, brotli: 4_300 },
-  'client.cjs': { raw: 119_110, gzip: 37_190, brotli: 32_380 },
-  'client.js': { raw: 119_030, gzip: 37_170, brotli: 32_380 },
+  'client.cjs': { raw: 123_295, gzip: 38_648, brotli: 33_622 },
+  'client.js': { raw: 123_214, gzip: 38_636, brotli: 33_577 },
   'structural.cjs': { raw: 19_975, gzip: 7_050, brotli: 6_340 },
   'structural.js': { raw: 19_930, gzip: 7_050, brotli: 6_345 },
-  'lean.cjs': { raw: 87_280, gzip: 27_510, brotli: 24_450 },
-  'lean.js': { raw: 87_270, gzip: 27_500, brotli: 24_460 },
+  'lean.cjs': { raw: 87_745, gzip: 27_745, brotli: 24_647 },
+  'lean.js': { raw: 87_734, gzip: 27_739, brotli: 24_645 },
   'lexical.cjs': { raw: 16_575, gzip: 5_690, brotli: 5_150 },
   'lexical.js': { raw: 16_545, gzip: 5_700, brotli: 5_135 },
   //
@@ -381,8 +393,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // update carried and the page cannot show. It is a plugin precisely so this
   // row moves and `INLINE_BUDGET` does not: no page carries it unless its own
   // code asks for it.
-  'plugins.cjs': { raw: 18_600, gzip: 6_900, brotli: 6_050 },
-  'plugins.js': { raw: 18_600, gzip: 6_880, brotli: 6_050 },
+  'plugins.cjs': { raw: 19_264, gzip: 7_096, brotli: 6_309 },
+  'plugins.js': { raw: 19_240, gzip: 7_086, brotli: 6_293 },
   'fragment.cjs': { raw: 14_180, gzip: 5_500, brotli: 4_870 },
   'fragment.js': { raw: 14_120, gzip: 5_460, brotli: 4_840 },
 };

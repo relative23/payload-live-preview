@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 300,
-    "suites": 626,
-    "tests": 2572,
+    "files": 303,
+    "suites": 632,
+    "tests": 2598,
     "benchmarks": 12
   },
   "groups": {
@@ -36,9 +36,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 27,
-      "suites": 35,
-      "tests": 110,
+      "files": 28,
+      "suites": 36,
+      "tests": 115,
       "benchmarks": 0
     },
     "integration": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 244,
-      "suites": 554,
-      "tests": 2352,
+      "files": 246,
+      "suites": 559,
+      "tests": 2373,
       "benchmarks": 0
     }
   },
@@ -107,6 +107,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/auto-bind-hit-rate.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -772,6 +779,20 @@
       "group": "unit",
       "suites": 1,
       "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/auto-bind-traps.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/auto-bind.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -1814,7 +1835,7 @@
       "path": "tests/unit/plugins/unbound-fields-overlay.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 9,
+      "tests": 11,
       "benchmarks": 0
     },
     {

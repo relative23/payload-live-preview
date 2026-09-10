@@ -32,6 +32,12 @@ export const OWNER_ATTRIBUTE = 'data-payload-owner';
 export const DEPENDS_ATTRIBUTE = 'data-payload-depends';
 export const STRATEGY_ATTRIBUTE = 'data-payload-strategy';
 export const BOUNDARY_ATTRIBUTE = 'data-payload-boundary';
+/**
+ * Written by the runtime, never by a template: the value an auto-binding
+ * matched on (ADR 0014). Its presence is what tells a guessed binding from a
+ * declared one, in `inspect()` and in the overlay.
+ */
+export const GUESSED_ATTRIBUTE = 'data-payload-guessed';
 export const INPUT_TYPE_ATTRIBUTE = 'type';
 
 /**
@@ -274,6 +280,7 @@ export class ElementCache {
     const owner = resolveBindingOwner(element);
     const dependsOn = parseDependencyList(element.getAttribute(DEPENDS_ATTRIBUTE));
     const strategy = element.getAttribute(STRATEGY_ATTRIBUTE);
+    const guessed = element.getAttribute(GUESSED_ATTRIBUTE);
     const fragmentBoundary = enclosingFragment(element);
     return {
       element,
@@ -294,6 +301,7 @@ export class ElementCache {
       ...(dependsOn.length > 0 ? { dependsOn } : {}),
       ...(strategy !== null && strategy.length > 0 ? { strategy } : {}),
       ...(element.hasAttribute(BOUNDARY_ATTRIBUTE) ? { hidesWhenEmpty: true } : {}),
+      ...(guessed !== null ? { guessed } : {}),
     };
   }
 }

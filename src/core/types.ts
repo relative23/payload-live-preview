@@ -64,6 +64,12 @@ export interface CachedElement {
   readonly format?: string;
   /** The document this binding belongs to, from the nearest `data-payload-owner`. */
   readonly owner?: string;
+  /**
+   * The value an auto-binding matched on (`data-payload-guessed`), for a
+   * binding the runtime found by value rather than one the template declared.
+   * Absent for a declared binding.
+   */
+  readonly guessed?: string;
 }
 
 /** What a renderer is given; `allFields` lets it resolve a sibling field. */

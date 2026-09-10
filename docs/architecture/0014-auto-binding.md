@@ -61,15 +61,25 @@ It is therefore constrained the way a guess should be:
 
 - **Never** inside `<script>`, `<style>`, `<template>`, `<title>`, a form
   control's value, a `contenteditable` subtree, a shadow root, or an element
-  or ancestor carrying the opt-out attribute (Z9's first commit names it; the
-  docs gate rightly refuses an attribute name the code does not define yet).
+  or ancestor carrying the opt-out attribute. Z9's first commit named it
+  `data-payload-no-bind` (`src/core/auto-bind.ts`); until then this record
+  left the name open on purpose, because the docs gate rightly refuses an
+  attribute name the code does not define. `data-payload-owned` and an island
+  are boundaries here as they are for the morph, and the search stays in the
+  body — a `<head>` binding needs the attribute and the route strategy.
 - **Never** an attribute other than the ones `isWritableAttribute` already
   admits (Z22 extracted it; there is no second rule).
 - **Never** a value shorter than a floor, and never one that is only digits,
   a boolean, an enum-looking token or a locale code — those match by accident.
-  The floor is a measurement, not a guess: see _Acceptance_.
-- **Never** silently. `inspect().bindings` marks every guessed binding as
-  guessed, and the dev overlay shows them apart from the declared ones.
+  The floor is a measurement, not a guess: 13, the shortest length at which
+  no page in the trap corpus binds anything (`AUTO_BIND_MIN_LENGTH`, with the
+  sweep in its comment).
+- **Never** silently. Every guess is written onto its element as the
+  attributes a template would have carried plus `data-payload-guessed`
+  holding the value that matched, so a cache rebuild finds it again like any
+  binding and the page itself answers "why did this element change?".
+  `inspect().bindings.guessed` lists them with that value, and the dev overlay
+  shows them apart from the declared ones.
 
 An explicit `data-payload-field` always wins, both as an anchor and as a
 veto: a page that carries one attribute is not thereby opted into guessing

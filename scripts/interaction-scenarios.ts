@@ -36,6 +36,12 @@ export interface InteractionScenario {
    * about the route asks for it: the strategy changes what the other four do.
    */
   readonly routeStrategy?: true;
+  /**
+   * Run the client with `autoBind: 'unique'` (ADR 0014). The page then carries
+   * no `data-payload-field` at all, and the first message has to find the
+   * bindings the other scenarios declare — once, at a cost this gate states.
+   */
+  readonly autoBind?: 'unique';
   readonly why: string;
 }
 
@@ -137,6 +143,30 @@ export const UNBOUND_FIELD_WITH_ROUTE: InteractionScenario = {
   why: 'LP-5: the keystroke that ends a burst is the one the brake used to swallow',
 };
 
+/**
+ * The bound page with every attribute removed and a body's worth of other text
+ * around it: 1 000 paragraphs the search has to read and reject, the way a
+ * long article, a navigation and a footer would surround the three fields on
+ * a real page. The keystroke after the first message is the plain-text row's
+ * keystroke — a guessed binding is a binding — and the number this row adds is
+ * what that first message costs.
+ */
+export const AUTO_BOUND_PAGE: InteractionScenario = {
+  name: 'auto-bound page',
+  page: `
+    <article>
+      <h1>Hello from the demo</h1>
+      <p>Type in the admin panel to see live updates.</p>
+      <span>12</span>
+    </article>
+    <section>${Array.from({ length: 1_000 }, (_, i) => `<p>Paragraph ${String(i)} of the surrounding page, which the search reads and rejects.</p>`).join('')}</section>`,
+  base: SAVED,
+  keystroke: (step) => ({ ...SAVED, title: `Hello from the demo ${step}` }),
+  probe: { selector: 'article > h1', expect: (step) => `demo ${step}` },
+  autoBind: 'unique',
+  why: 'ADR 0014, F3: what the one search on the first message costs, on a page with a body around the fields',
+};
+
 export const PAGE_WITHOUT_BINDINGS: InteractionScenario = {
   name: 'page without bindings',
   page: `
@@ -156,6 +186,7 @@ export const SCENARIOS: readonly InteractionScenario[] = [
   UNBOUND_FIELD,
   UNBOUND_FIELD_WITH_ROUTE,
   PAGE_WITHOUT_BINDINGS,
+  AUTO_BOUND_PAGE,
 ];
 
 /**

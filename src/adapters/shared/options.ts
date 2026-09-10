@@ -118,6 +118,13 @@ export interface PreviewAdapterOptions<Req = Request> {
    * LP0411 and keeps the patch; `'ignore'` keeps it silently.
    */
   readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
+  /**
+   * Find bindings by value on the connection's first message (ADR 0014): a
+   * scalar whose value is the whole content of exactly one element is bound
+   * to it as if `data-payload-field` stood there; a declared attribute always
+   * wins and `data-payload-no-bind` keeps a subtree out. Default `'off'`.
+   */
+  readonly autoBind?: 'off' | 'unique';
   /** Patch only the bindings of the document an update names (`data-payload-owner`). Default `false`. */
   readonly scopeBindingsByOwner?: boolean;
   /** Sanitizer for rich text and HTML writes. Default `'strict'`; `defaults: 'v1'` restores `'compat'`. */

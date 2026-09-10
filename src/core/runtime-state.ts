@@ -8,6 +8,7 @@ import type { EventEmitter } from '@events/emitter';
 import type { SchemaIndex } from '@schema/index';
 import type { SanitizerPolicyMode } from '@security/sanitizer';
 import type { A11yAnnouncer } from './a11y';
+import type { AutoBindMode } from './auto-bind';
 import type { ElementCache } from './cache';
 import type { DataMerger } from './data-merger';
 import type { UnfaithfulPatchMode } from './fidelity';
@@ -92,6 +93,8 @@ export interface RuntimeDeps {
   readonly revealEditedField: boolean;
   /** What to do about a patch the runtime knows cannot match the server's render. */
   readonly onUnfaithfulPatch: UnfaithfulPatchMode;
+  /** Whether the first message is searched for bindings by value (ADR 0014). */
+  readonly autoBind: AutoBindMode;
 }
 
 export class RuntimeState {
@@ -122,6 +125,8 @@ export class RuntimeState {
   readonly checkedServerFormat = new WeakSet<Element>();
   /** Bindings this revision could not patch faithfully, drained by the flush that escalates them. */
   unfaithfulPatches: CachedElement[] = [];
+  /** What the one auto-binding search cost, for `inspect()`; `undefined` until it ran. */
+  autoBindSearchMs: number | undefined = undefined;
   /** Identity of the value each element last applied; reset when the markup is re-rendered. */
   lastAppliedIdentity = new WeakMap<Element, string>();
   /** What each owned field was last seen with, for the reveal decision only. */

@@ -102,6 +102,9 @@ describe('inspect() on a started runtime', () => {
     expect(snapshot.bindings.fieldNames).toEqual(['subtitle', 'title']);
     expect(snapshot.bindings.owners).toEqual(['collection:services:73', 'global:homepage']);
     expect(snapshot.bindings.ownerScoped).toBe(false);
+    // Nothing guessed under the default, and no search to report the cost of.
+    expect(snapshot.bindings.guessed).toEqual([]);
+    expect(snapshot.bindings.autoBind).toEqual({ mode: 'off', searchMs: undefined });
     expect(snapshot.renderers).toEqual(['text']);
     expect(snapshot.origins.trusted).toEqual([TRUSTED]);
     runtime.destroy();

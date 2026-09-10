@@ -8,6 +8,12 @@
  * markup. This puts the same answer in the preview, with the attribute to paste
  * one click away.
  *
+ * Since ADR 0014 it answers a second question the same way: which bindings the
+ * runtime *guessed* (`autoBind: 'unique'`) rather than read from the template.
+ * Those are listed apart, with the value each one matched on, so an element
+ * that changes without an attribute in the source is never a mystery — and
+ * the button offers the attribute that would make the guess a declaration.
+ *
  * It is a plugin, not part of the runtime: the inline artifact every page
  * carries must not grow by a development tool (the budget in
  * `scripts/bundle-budgets.ts` is the proof). Register it on a client you build
@@ -15,10 +21,10 @@
  */
 
 import type { LivePreviewPlugin, PluginDisposer } from '../types';
+import { FIELD_ATTRIBUTE, GUESSED_ATTRIBUTE } from '@core/cache';
 import { createNameAddressability, SYSTEM_FIELD_NAMES } from '@core/unbound-fields';
 
 const ELEMENT_ID = 'payload-live-preview-unbound';
-const FIELD_ATTRIBUTE = 'data-payload-field';
 
 export interface UnboundFieldsOverlayOptions {
   /**
@@ -70,6 +76,23 @@ function boundNamesIn(root: Document | Element): string[] {
   return names;
 }
 
+export interface GuessedBinding {
+  readonly field: string;
+  /** The value the runtime found the element by. */
+  readonly matched: string;
+}
+
+/** The bindings the runtime stamped on the page itself, in document order. */
+export function guessedBindingsIn(root: Document | Element): readonly GuessedBinding[] {
+  const guessed: GuessedBinding[] = [];
+  for (const element of root.querySelectorAll(`[${GUESSED_ATTRIBUTE}]`)) {
+    const field = element.getAttribute(FIELD_ATTRIBUTE);
+    if (field === null || field.length === 0) continue;
+    guessed.push({ field, matched: element.getAttribute(GUESSED_ATTRIBUTE) ?? '' });
+  }
+  return guessed;
+}
+
 function hostDocument(root: Document | Element): Document | null {
   return root.nodeType === 9 ? (root as Document) : root.ownerDocument;
 }
@@ -97,8 +120,22 @@ function selectInstead(doc: Document, text: string): void {
 }
 
 interface Overlay {
-  readonly update: (names: readonly string[]) => void;
+  readonly update: (names: readonly string[], guessed: readonly GuessedBinding[]) => void;
   readonly destroy: PluginDisposer;
+}
+
+/** One click copies the attribute to paste into the template. */
+function copyButton(doc: Document, field: string, label: string): HTMLButtonElement {
+  const button = doc.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  button.setAttribute('style', BUTTON_STYLE);
+  button.title = `Copy ${FIELD_ATTRIBUTE}="${field}"`;
+  button.addEventListener('click', () => {
+    copy(doc, `${FIELD_ATTRIBUTE}="${field}"`);
+    button.textContent = `${label} ✓`;
+  });
+  return button;
 }
 
 function mountOverlay(root: Document | Element, position: string): Overlay | null {
@@ -111,15 +148,24 @@ function mountOverlay(root: Document | Element, position: string): Overlay | nul
   // no binding scan should ever reach into it.
   panel.setAttribute('aria-hidden', 'true');
   panel.hidden = true;
-  const title = doc.createElement('div');
-  title.textContent = 'Unbound fields';
-  title.setAttribute('style', 'font-weight:600;margin-bottom:4px;');
+  const heading = (text: string): HTMLElement => {
+    const title = doc.createElement('div');
+    title.textContent = text;
+    title.setAttribute('style', 'font-weight:600;margin-bottom:4px;');
+    return title;
+  };
+  const unboundTitle = heading('Unbound fields');
   const list = doc.createElement('div');
-  panel.append(title, list);
+  // Apart from the unbound ones on purpose: a guessed field is bound, but by
+  // the runtime's reading of the page, not by the template's say-so.
+  const guessedTitle = heading('Guessed bindings');
+  guessedTitle.setAttribute('data-testid', 'guessed-bindings');
+  const guessedList = doc.createElement('div');
+  panel.append(unboundTitle, list, guessedTitle, guessedList);
   doc.body.append(panel);
 
   return {
-    update: (names) => {
+    update: (names, guessed) => {
       // A page that rewrote its body (a framework re-render, a route morph)
       // took the panel with it and may have left a serialized copy behind.
       // Re-attaching the real one is cheaper than watching for the rewrite.
@@ -127,20 +173,15 @@ function mountOverlay(root: Document | Element, position: string): Overlay | nul
         doc.getElementById(ELEMENT_ID)?.remove();
         doc.body.append(panel);
       }
-      panel.hidden = names.length === 0;
-      list.replaceChildren();
-      for (const name of names) {
-        const button = doc.createElement('button');
-        button.type = 'button';
-        button.textContent = name;
-        button.setAttribute('style', BUTTON_STYLE);
-        button.title = `Copy ${FIELD_ATTRIBUTE}="${name}"`;
-        button.addEventListener('click', () => {
-          copy(doc, `${FIELD_ATTRIBUTE}="${name}"`);
-          button.textContent = `${name} ✓`;
-        });
-        list.append(button);
-      }
+      panel.hidden = names.length === 0 && guessed.length === 0;
+      unboundTitle.hidden = names.length === 0;
+      list.replaceChildren(...names.map((name) => copyButton(doc, name, name)));
+      guessedTitle.hidden = guessed.length === 0;
+      guessedList.replaceChildren(
+        ...guessed.map(({ field, matched }) =>
+          copyButton(doc, field, `${field} ← ${JSON.stringify(matched)}`),
+        ),
+      );
     },
     destroy: () => {
       panel.remove();
@@ -175,8 +216,10 @@ export function createUnboundFieldsOverlayPlugin(
       ctx.registerCleanup?.(overlay.destroy);
       ctx.events.on('afterUpdate', (e) => {
         const names = unboundFieldNames(e.data.fields, boundNamesIn(root), e.data.locale);
-        overlay.update(names);
+        const guessed = guessedBindingsIn(root);
+        overlay.update(names, guessed);
         if (names.length > 0) ctx.log('unbound:', names.join(', '));
+        if (guessed.length > 0) ctx.log('guessed:', guessed.map((g) => g.field).join(', '));
       });
     },
   };

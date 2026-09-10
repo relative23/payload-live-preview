@@ -16,6 +16,7 @@ export interface CachedElement {
     readonly fieldType: RendererKey;
     readonly format?: string;
     readonly fragmentBoundary?: Element;
+    readonly guessed?: string;
     readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;
     readonly locale?: string;
@@ -182,9 +183,18 @@ export function initLivePreview(config?: LivePreviewClientConfig): LivePreviewCl
 // @public
 export interface InspectionBindings {
     readonly absentFields: readonly string[];
+    readonly autoBind: {
+        readonly mode: 'off' | 'unique';
+        readonly searchMs: number | undefined;
+    };
     readonly elements: number;
     readonly fieldNames: readonly string[];
     readonly fields: number;
+    readonly guessed: readonly {
+        readonly field: string;
+        readonly matched: string;
+        readonly attribute: string | undefined;
+    }[];
     readonly orphanFields: readonly string[];
     readonly owners: readonly string[];
     readonly ownerScoped: boolean;
@@ -280,6 +290,7 @@ export interface LivePreviewClientConfig {
     readonly a11yLocale?: string;
     readonly allowedOrigins?: readonly string[];
     readonly apiRoute?: string;
+    readonly autoBind?: 'off' | 'unique';
     readonly autoStart?: boolean;
     readonly debounceMs?: number;
     readonly debug?: boolean;

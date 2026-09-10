@@ -66,6 +66,12 @@ export interface InlineScriptConfig {
    * reports LP0411 and keeps the patch; `'ignore'` keeps it silently.
    */
   readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
+  /**
+   * Find bindings by value on the connection's first message (ADR 0014): a
+   * scalar whose value is the whole content of exactly one element is bound
+   * to it as if `data-payload-field` stood there. Default `'off'`.
+   */
+  readonly autoBind?: 'off' | 'unique';
   /** Which defaults the omitted options fall back to. Not serialized: `'v1'` only relaxes the generator's `mergeDepth` check. */
   readonly defaults?: DefaultsProfile;
   /**
@@ -124,4 +130,5 @@ export const INLINE_CONFIG_KEYS = [
   'routeStrategy',
   'onUnboundChange',
   'onUnfaithfulPatch',
+  'autoBind',
 ] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'defaults' | 'runtime'>[];

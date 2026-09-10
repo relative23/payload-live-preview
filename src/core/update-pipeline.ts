@@ -5,6 +5,7 @@
 
 import type { PayloadLivePreviewData, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 import { buildSchemaIndex } from '@schema/index';
+import { adoptUniqueBindings } from './auto-bind';
 import { isBindingInScope, messageOwnerKeys, readDocumentId } from './binding-owner';
 import type { MergeResult } from './data-merger';
 import { mergeDependencyMaps } from './dependencies';
@@ -12,6 +13,7 @@ import { bindingIdentity, bindingValue } from './field-value';
 import { dispatchIslandUpdate } from './islands';
 import { type MessageRevision, sameRevision } from './message-bus';
 import { diagnoseOrphanFields } from './orphan-diagnostics';
+import { reportOmittedFeature } from './profile';
 import { detectProtocolProfile } from './protocol-profile';
 import { observeCapabilities } from './protocol-version';
 import type { RevealWindow } from './reveal';
@@ -19,7 +21,7 @@ import { type RuntimeDeps, type RuntimeState, type UpdateTransaction } from './r
 import { resolveStrategy } from './strategies';
 import { StrategyRunner } from './strategy-runner';
 import { createLeanStrategyRunner, type StrategyRunnerLike } from './strategy-runner-lean';
-import { observeThenableResult } from './thenable';
+import { transformForBinding } from './transform-value';
 import type { CachedElement } from './types';
 import type { FlushStats, ScheduledUpdate } from './update-scheduler';
 
@@ -45,7 +47,7 @@ export class UpdatePipeline {
               this.scheduleAllFields(transaction, data);
             },
             transform: (target, value, allFields, isCurrent) =>
-              this.transformForBinding(target, value, allFields, isCurrent),
+              transformForBinding(deps, target, value, allFields, isCurrent),
             rebuildCache,
             revealPending: (transaction) => {
               this.revealPending(transaction);
@@ -184,6 +186,16 @@ export class UpdatePipeline {
     const { deps, state } = this;
     const dependencies = mergeDependencyMaps(deps.dependencies, deps.cache.dependencyMap());
     const changes = state.changes.diff(data.fields, dependencies);
+    if (changes.baseline && !refined && deps.autoBind !== 'off') {
+      // Once, on the message that describes what the server rendered (ADR 0014
+      // §1). The lean profile leaves the search out; esbuild folds the branch.
+      if (typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__) {
+        reportOmittedFeature('auto-binding');
+      } else {
+        const scope = this.ownerKeysForUpdate(transaction, data.fields);
+        adoptUniqueBindings(deps, state, data.fields, transaction.locale, scope);
+      }
+    }
     transaction.baseline = changes.baseline;
     transaction.invalidated = refined ? NOTHING_CHANGED : changes.invalidated;
     transaction.touched = refined
@@ -295,7 +307,7 @@ export class UpdatePipeline {
         // one that landed may still be the field whose reveal was superseded.
         if (deps.revealEditedField) state.revealLedger.note(transaction, target, value);
         if (!isCurrent()) return;
-        const transformed = this.transformForBinding(target, value, data.fields, isCurrent);
+        const transformed = transformForBinding(deps, target, value, data.fields, isCurrent);
         if (!isCurrent()) return;
         // A binding renders its own value *and* the sibling fields bound to
         // href/src/alt, so its identity must cover them: otherwise an edit to
@@ -365,38 +377,6 @@ export class UpdatePipeline {
       );
     }
     return keys;
-  }
-
-  /** Transforms are plugin code: frozen into the scheduler entry, errors reported, never awaited. */
-  private transformForBinding(
-    target: CachedElement,
-    originalValue: unknown,
-    allFields: Record<string, unknown>,
-    isCurrent: () => boolean,
-  ): unknown {
-    const transform = this.deps.transformValue;
-    if (transform === undefined) return originalValue;
-    try {
-      const transformed = transform(
-        target.fieldName,
-        originalValue,
-        { element: target.element, allFields },
-        isCurrent,
-      );
-      const returnedThenable = observeThenableResult(transformed);
-      if (!isCurrent()) return originalValue;
-      if (returnedThenable) {
-        throw new TypeError(
-          `Transform for "${target.fieldName}" returned a thenable; transforms must be synchronous`,
-        );
-      }
-      return transformed;
-    } catch (err) {
-      if (!isCurrent()) return originalValue;
-      const error = err instanceof Error ? err : new Error(String(err));
-      void this.deps.emitter.emit('error', { error, context: 'transform', code: 'LP0602' });
-      return originalValue;
-    }
   }
 
   /** Scheduler callback after every flush, including one that applied nothing. */

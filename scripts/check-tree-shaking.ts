@@ -122,6 +122,15 @@ interface Fixture {
  * `LEAN_RUNTIME` holds at 27 220 (27 174): the lean profile has no array
  * renderer and no structural applier, so all it pays is the shared attribute
  * rule. What the bytes buy is in bundle-budgets.ts.
+ *
+ * 2026-09-10 (Z9): auto-binding costs ~1 360 B gzip in the four rows that carry
+ * the full runtime — `initLivePreview` from the barrel 41 330 -> 42 920
+ * (measured 42 866), from `./core` 41 290 -> 42 860 (42 812), the generator
+ * 39 500 -> 40 560 (40 508) and the Next.js middleware 44 330 -> 45 410
+ * (45 358) — and ~190 B in `LEAN_RUNTIME` 27 510 -> 27 750 (27 697), which
+ * carries the option, the marker and the LP0104 line but not the search. What
+ * the bytes buy, and the seam that would take them out of a page that leaves
+ * the option off, is in bundle-budgets.ts.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -142,21 +151,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 41_330,
+    gzip: 42_916,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 39_500,
+    gzip: 40_558,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 41_290,
+    gzip: 42_862,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -177,14 +186,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 44_330,
+    gzip: 45_408,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 27_510,
+    gzip: 27_747,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

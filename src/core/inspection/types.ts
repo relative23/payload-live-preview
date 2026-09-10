@@ -81,6 +81,23 @@ export interface InspectionBindings {
   readonly ownerScoped: boolean;
   /** Distinct document owners currently on the page, sorted. */
   readonly owners: readonly string[];
+  /**
+   * Bindings the runtime found by value on the connection's first message
+   * (`autoBind: 'unique'`, ADR 0014), sorted by field, each with the value it
+   * matched on and the attribute it matched in — `undefined` for a text match.
+   * These are the elements that change without a `data-payload-field` in the
+   * template; every one of them carries `data-payload-guessed` in the DOM.
+   */
+  readonly guessed: readonly {
+    readonly field: string;
+    readonly matched: string;
+    readonly attribute: string | undefined;
+  }[];
+  /** `autoBind` as configured, and what the one search cost; `searchMs` is `undefined` until it ran. */
+  readonly autoBind: {
+    readonly mode: 'off' | 'unique';
+    readonly searchMs: number | undefined;
+  };
 }
 
 /** Scheduler work in progress. */

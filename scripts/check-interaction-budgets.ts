@@ -139,6 +139,8 @@ interface Session {
   readonly requests: () => number;
   /** Route refreshes the strategy actually performed; 0 on a page without one. */
   readonly refreshes: () => number;
+  /** What the auto-binding search cost on the first message; `undefined` until it ran, or where it never runs. */
+  readonly searchMs: () => number | undefined;
   readonly reset: () => void;
   readonly destroy: () => Promise<void>;
 }
@@ -175,6 +177,7 @@ function openPage(scenario: InteractionScenario): Session {
       : undefined;
   const client = new LivePreviewClient({
     ...(strategies === undefined ? {} : { strategies }),
+    ...(scenario.autoBind === undefined ? {} : { autoBind: scenario.autoBind }),
     allowedOrigins: [ADMIN],
     serverURL: ADMIN,
     // The runtime's debug log is on by default outside production; a gate
@@ -201,6 +204,7 @@ function openPage(scenario: InteractionScenario): Session {
   return {
     requests: () => requests,
     refreshes: () => refreshes,
+    searchMs: () => client.inspect().bindings.autoBind.searchMs,
     reset: () => {
       requests = 0;
       refreshes = 0;
@@ -212,20 +216,23 @@ function openPage(scenario: InteractionScenario): Session {
 /** The audit's typing pattern, and what it costs in merge requests and route refreshes. */
 async function measureBurst(
   scenario: InteractionScenario,
-): Promise<{ requests: number; refreshes: number }> {
+): Promise<{ requests: number; refreshes: number; searchMs: number | undefined }> {
   const session = openPage(scenario);
   try {
     // The saved document first: it is what the server already rendered, which
     // is what makes everything after it an edit rather than a first impression.
     post(scenario.base, false);
     await sleep(SETTLE_MS);
+    // Read after the first message and before the burst: the search runs on
+    // that message alone, and it is the one cost here that is paid once.
+    const searchMs = session.searchMs();
     session.reset();
     for (let step = 0; step < KEYSTROKES; step += 1) {
       post(scenario.keystroke(step), true);
       await sleep(KEYSTROKE_INTERVAL_MS);
     }
     await sleep(scenario.routeStrategy === true ? ROUTE_SETTLE_MS : SETTLE_MS);
-    return { requests: session.requests(), refreshes: session.refreshes() };
+    return { requests: session.requests(), refreshes: session.refreshes(), searchMs };
   } finally {
     await session.destroy();
   }
@@ -262,11 +269,18 @@ async function measureLatency(scenario: InteractionScenario): Promise<readonly n
 }
 
 async function measure(scenario: InteractionScenario): Promise<InteractionMeasurement> {
-  const { requests, refreshes } = await measureBurst(scenario);
+  const { requests, refreshes, searchMs } = await measureBurst(scenario);
   const routed = scenario.routeStrategy === true ? { routeRefreshes: refreshes } : {};
+  const searched = searchMs === undefined ? {} : { baselineSearchMs: searchMs };
   const samples = [...(await measureLatency(scenario))].sort((a, b) => a - b);
-  if (samples.length === 0) return { requests, ...routed };
-  return { requests, ...routed, p50Ms: percentile(samples, 50), p95Ms: percentile(samples, 95) };
+  if (samples.length === 0) return { requests, ...routed, ...searched };
+  return {
+    requests,
+    ...routed,
+    ...searched,
+    p50Ms: percentile(samples, 50),
+    p95Ms: percentile(samples, 95),
+  };
 }
 
 function report(
@@ -283,8 +297,12 @@ function report(
     measurement.routeRefreshes === undefined
       ? ''
       : ` / ${String(measurement.routeRefreshes)} route refreshes`;
+  const searched =
+    measurement.baselineSearchMs === undefined
+      ? ''
+      : ` / ${measurement.baselineSearchMs.toFixed(1)} ms baseline search`;
   console.log(
-    `${violations.length === 0 ? 'PASS' : 'FAIL'} ${scenario.name}: ${measurement.requests} requests${refreshes} / ${latency}`,
+    `${violations.length === 0 ? 'PASS' : 'FAIL'} ${scenario.name}: ${measurement.requests} requests${refreshes} / ${latency}${searched}`,
   );
   for (const violation of violations) {
     console.error(`  ${violation.metric} ${violation.actual}: ${violation.reason}`);
