@@ -26,6 +26,35 @@ describe('MessageBus — token validation', () => {
     window.dispatchEvent(makeMessage({ type: 'payload-live-preview', ready: true }, TRUSTED));
     expect(onUpdate).toHaveBeenCalledOnce();
   });
+  it('validates a ready message that carries data: only the data-less handshake passes without a token', () => {
+    // `ready` announces that the page listens; `data` is an update. A message
+    // that says both is an update wearing the handshake's clothes, and with
+    // the validator rejecting everything it must not reach `onUpdate`.
+    const validateToken = vi.fn(() => false);
+    const { bus, onUpdate, onInvalid } = withValidator(validateToken);
+    window.dispatchEvent(
+      makeMessage(
+        { type: 'payload-live-preview', ready: true, data: { title: 'smuggled' } },
+        TRUSTED,
+      ),
+    );
+    expect(validateToken).toHaveBeenCalledWith(undefined, TRUSTED);
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(onInvalid).toHaveBeenCalledWith('token', TRUSTED);
+    bus.detach();
+  });
+  it.each([
+    ['no ready flag', { type: 'payload-live-preview', globalSlug: 'homepage' }],
+    ['ready: false', { type: 'payload-live-preview', ready: false }],
+  ])('validates a data-less message that is not the handshake (%s)', (_case, message) => {
+    const validateToken = vi.fn(() => false);
+    const { bus, onUpdate, onInvalid } = withValidator(validateToken);
+    window.dispatchEvent(makeMessage(message, TRUSTED));
+    expect(validateToken).toHaveBeenCalledOnce();
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(onInvalid).toHaveBeenCalledWith('token', TRUSTED);
+    bus.detach();
+  });
   it('normalizes nullable optional fields before classifying a ready handshake', () => {
     const validateToken = vi.fn(() => false);
     const { bus, onUpdate, onInvalid } = withValidator(validateToken);
