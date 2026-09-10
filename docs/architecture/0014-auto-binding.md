@@ -176,3 +176,16 @@ writes to the wrong element is worse than an attribute someone has to type.
   closed: a fragment render inside a boundary strips a guess in that boundary
   the same way, and only the next route refresh brings it back — on a page
   with `fragments` and no route strategy the guess is lost for good.
+- **Measured on a real project, the rule finds less than on the fixtures, and
+  the reason is a mirror, not a miss.** On the four fixtures the search finds
+  5 of 8 declared bindings (Z9); on the Halle Sieben demo it found 3 of 17
+  (Z17, 2026-09-10), and 0 of 11 on the magazine and programme pages. The SEO
+  plugin copies `title` into `meta.title` and `excerpt`/`subtitle` into
+  `meta.description`, value for value, and §1's duplicate rule then binds
+  nothing: a value two fields share is searched for neither, because the
+  runtime cannot tell which field the element shows. The two guesses it did
+  make outside declared elements were both right (`admission.ticketUrl` on a
+  link's `href`). The rule is correct and the number is honest; what a later
+  revision may add is a notion of a _mirror_ — a field whose value is, by
+  configuration, a copy of another's — so that a duplicate with a known source
+  is not a competitor. Until then the demo keeps its attributes.

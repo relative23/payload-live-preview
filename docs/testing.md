@@ -227,6 +227,14 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   only be room to grow into without saying so. Raising one is two lines: the
   number, and why it moved. It is the byte budget's counterpart for the thing a
   reader pays instead of bandwidth.
+- `scripts/check-trusted-core.ts` · part of `npm run test:architecture` — the
+  eight modules a reader has to trust before handing the package a page, held
+  at their measured line count and their reviewed imports from outside
+  ([quality/trusted-core.json](../quality/trusted-core.json)). The capability
+  rules beside it in `architecture-rules.ts` and `sink-rules.ts` say which
+  module may listen, fetch, create the Trusted Types policy or write markup,
+  and hold every sink site to [scripts/sink-inventory.ts](../scripts/sink-inventory.ts).
+  What the core is and why is [docs/audit.md](audit.md).
 - `scripts/compat-table.ts` · `npm run compat:check` — the README
   compatibility table is rendered from `quality/compat-matrix.json`; the check
   fails when the table, a fixture lockfile or the CI workflow matrix disagree.
