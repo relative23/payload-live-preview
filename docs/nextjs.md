@@ -73,7 +73,9 @@ It takes the request as a prop rather than calling `next/headers` itself, so
 this package still does not depend on Next — the same reason
 `<LivePreviewRouteRefresh />` takes the router's refresh as one. A `Request` is
 what `authorizePreview` and `shouldInject` already receive from the middleware,
-so one options object serves both.
+so one options object serves both. Reading `headers()` makes the layout
+dynamic, and that is what lets it decide per request: a page prerendered at
+build time has no request to decide for, and takes the asset route below.
 
 **Next gives a server component the request headers and cookies, but not its
 URL.** A layout therefore cannot see `?preview=true`, and the default intent
