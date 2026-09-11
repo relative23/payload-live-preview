@@ -15,6 +15,10 @@
     "raised limit is red no matter how good its reason (ADR 0013 §6); a fix that",
     "lowers one is still welcome. Unset today: there is no release candidate."
   ],
+  "frozen": {
+    "since": "v2.0.0-rc.1",
+    "why": "ADR 0013 §6: from the first release candidate until 2.0.0 is on npm the branch takes fixes and nothing else. Changesets carries the beta's number on, so the first candidate is rc.1, not rc.0; there is no rc.0."
+  },
   "totals": {
     "publicDeclarations": {
       "limit": 552,
