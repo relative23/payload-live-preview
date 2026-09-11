@@ -256,3 +256,96 @@ its own measurement.
 - The Next adapter's script grows by the bytes of the wire slot in inline
   delivery, and the bootstrap by the arming in asset delivery (431 → 743 B).
   The delivery budgets move by exactly that and say so.
+
+## Addendum, 2026-09-11 — Vue, and the Nuxt adapter
+
+**Status:** Accepted • the later decision the record above left open, measured
+the same day on `examples/nuxt-payload` (`/` framed by the mock admin, warm dev
+server, the runtime as a fetched asset, times from the frame's navigation start).
+
+| t (ms) | what happened                                                                                              |
+| -----: | ---------------------------------------------------------------------------------------------------------- |
+|   10.4 | the bootstrap appends the runtime asset; the document is parsed by 10.9                                    |
+|   17.9 | the runtime starts (`readyState` is already `interactive`) and posts `ready`; the admin answers at 18.4    |
+|   25.5 | the runtime writes `title`, `hero.alt`, `body`, `publishedAt` and `tags` into the server-rendered elements |
+|   88.5 | Nuxt's entry evaluates (`window.useNuxtApp` is set); `DOMContentLoaded` at 89.2                            |
+|   92.7 | `app:beforeMount`; `hydrate()` walks the tree and repairs every written value back to the server's         |
+|   93.7 | `Hydration completed but contains mismatches.` (`console.error`, development builds only; no `pageerror`)  |
+|   94.8 | `mount()` returns: `container.__vue_app__ = app` on `#__nuxt`, the element that holds the bindings         |
+|   94.9 | `app:mounted`, `page:finish`, `app:suspense:resolve`; the observer delivers the repairs                    |
+|  517.7 | the admin answers the runtime's second `ready` and the document is written again — onto the same elements  |
+
+The counter-tests, as for React: an admin that never answers `ready` — no
+repair, nothing to repair. An admin that answers once, 3 s after `ready` — the
+write lands at 3 019 ms and stays. So it is our write that comes too early, and
+what mends it today is the mock admin answering every `ready` the runtime
+re-posts at 500, 1 000 and 2 000 ms. Payload's admin does not: its provider
+sets `appIsReady` on the first `ready` and sends on that state change and on
+form input (`@payloadcms/ui` 3.88, `elements/LivePreview/Window`), so a second
+`ready` sends nothing, and on a real page the first document is quietly gone
+until the editor types.
+
+### What Vue gives, measured
+
+| signal                                                       | fires                                     | usable                                                                                                   |
+| ------------------------------------------------------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `container.__vue_app__ = app` (`runtime-core`, `mount`)      | 94.8 ms, right after `hydrate()` returned | **yes** — unconditional, every build; an accessor on `Element.prototype` sees the assignment, no polling |
+| `data-v-app` on the container                                | never on an SSR page                      | no — `createApp().mount` sets it, `createSSRApp()`'s does not (`runtime-dom`)                            |
+| `__VUE_DEVTOOLS_GLOBAL_HOOK__` → `app:init`                  | 87.1 ms, same tick as `__vue_app__`       | no — development builds and `__VUE_PROD_DEVTOOLS__` only                                                 |
+| a `MutationObserver` on the container                        | nothing on a clean hydration              | no                                                                                                       |
+| `window.useNuxtApp` → `app:mounted` / `app:suspense:resolve` | 88.5 ms set; hooks at 94.9                | precise for Nuxt, but Nuxt's, set before the mount, and `useNuxtApp()` needs Nuxt's context from outside |
+
+One more thing measured, on a page added for the measurement and not kept: a
+setup that awaits real time (`await new Promise(r => setTimeout(r, 400))`) is
+mounted at 494 ms and hydrates its subtree at 895 ms, when the root Suspense
+resolves — a write between the two is repaired at 895 ms. A setup that awaits
+`useFetch`/`useAsyncData` during hydration resolves from the payload in a
+microtask (`/hybrid-host`: subtree at +0.1 ms) and is not this case. Nuxt marks
+the gap: `isHydrating` is `true` until the Suspense resolves, cleared
+synchronously as it does and before `app:suspense:resolve` runs
+(`deferHydration`, `nuxt-root.vue`).
+
+### Decision
+
+The Nuxt adapter declares `hydration: 'vue'` on every script it emits — the
+plugin, `renderLivePreviewScript()`, and so the module — under §1's rule: a
+second framework is a second value in the same slot (23), never a boolean.
+
+Under it the runtime waits, as in §3, until **Vue has mounted an app around a
+binding**: `src/core/hydration-vue.ts` puts an accessor for `__vue_app__` on
+`Element.prototype` before Vue can mount, files the app on the element as the
+assignment would have, and settles on the first container that holds a
+binding — a widget mounted beside the page is not ours (F3, in its Vue form).
+Because the signal is state and not an event, asset delivery needs no armed
+bootstrap: a runtime that evaluates after the mount finds the own property on
+an ancestor of its first binding. When the app is a Nuxt app whose
+`$nuxt.isHydrating` is still `true` at the mount, the runtime waits for
+`app:suspense:resolve` as well — race-free, because Nuxt clears the flag before
+the hook runs, so a page whose Suspense resolved inside `hydrate()` settles at
+once. The cap, LP0607 (now naming the mount it waited for) and
+`inspect().hydration` (`mode: 'vue'`) are §4's.
+
+### What counts as failure, for Vue
+
+F1, F5, F6 and F7 apply as written; the static fixtures and the interaction
+budgets measure byte-for-byte what they did. F2 does not arise (state, not an
+event). F3 is the widget case above. F4's shape is a tool that puts its own
+accessor on the prototype first: the runtime leaves it alone and falls back to
+the cap. New:
+
+**F8 — the mount is not the hydration.** A Vue app that is not Nuxt and hydrates
+a subtree after `mount()` (an async component under a Suspense of its own)
+settles the wait at the mount; a write before the subtree hydrates is repaired
+once, as before this addendum. Nuxt is covered through `isHydrating`; plain Vue
+has no equivalent flag, and this record does not invent one.
+_Measured by:_ the Nuxt case, above; the unit tests hold both branches.
+
+**F9 — an app mounted into a `ShadowRoot`.** Not an `Element`, so the accessor
+does not see the assignment; the cap applies. Hydrating into a shadow root is
+not a Nuxt shape.
+
+The revert Vue makes is quiet, so the E2E evidence is the history of `hero.alt`
+on the fixture, recorded from before the frame's scripts run: before this
+addendum `["Hero image", "Mountains at dusk", "Hero image"]` — the write, the
+repair, the admin's second message; after it `["Hero image"]`, no
+`Hydration completed` line, `inspect().hydration` = `{ vue, committed }`.

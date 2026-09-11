@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { HYDRATION_SLOT } from '@core/hydration';
+import { VUE_APP_PROPERTY, VUE_HYDRATION_SLOT } from '@core/hydration-vue';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
 /**
@@ -204,6 +205,179 @@ describe('startup on a page that declares React hydration', () => {
     expect(sendReady).toHaveBeenCalledTimes(1);
     expect(win.__REACT_DEVTOOLS_GLOBAL_HOOK__).toBeUndefined();
     expect(runtime.inspect().hydration).toEqual({ mode: 'off', state: 'idle' });
+    runtime.destroy();
+  });
+});
+
+/**
+ * The addendum to ADR 0015: with `hydration: 'vue'` the runtime does not start
+ * until Vue has mounted an app around a binding — the assignment
+ * `container.__vue_app__ = app` that `runtime-core` makes after `hydrate()`,
+ * which is where the write it would otherwise have made is quietly put back.
+ */
+type VueWindow = Window & { [VUE_HYDRATION_SLOT]?: unknown };
+
+function vueMounts(container: Element, app: unknown = {}): void {
+  (container as unknown as Record<string, unknown>)[VUE_APP_PROPERTY] = app;
+}
+
+function nuxtPage(): Element {
+  const container = document.getElementById('__nuxt');
+  if (container === null) throw new Error('fixture missing');
+  return container;
+}
+
+describe('startup on a page that declares Vue hydration', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(Element.prototype, VUE_APP_PROPERTY);
+    (window as VueWindow)[VUE_HYDRATION_SLOT] = undefined;
+  });
+
+  it('posts no ready and applies no message until Vue has mounted the app around the bindings', async () => {
+    document.body.innerHTML = '<div id="__nuxt"><h1 data-payload-field="title">server</h1></div>';
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'vue', sendReady });
+
+    expect(runtime.start()).toBe(true);
+    expect(sendReady).not.toHaveBeenCalled();
+    expect(runtime.cache.elementCount).toBe(0);
+    expect(runtime.inspect().hydration).toEqual({ mode: 'vue', state: 'waiting' });
+
+    fireMessage({ type: 'payload-live-preview', data: { title: 'too early' } });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('server');
+
+    vueMounts(nuxtPage());
+
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    expect(runtime.cache.elementCount).toBe(1);
+    expect(runtime.inspect().hydration).toEqual({ mode: 'vue', state: 'committed' });
+    fireMessage({ type: 'payload-live-preview', data: { title: 'after hydration' } });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('after hydration');
+
+    runtime.destroy();
+  });
+
+  it('arms the accessor at start(), before Vue can mount, and not on a React page', () => {
+    document.body.innerHTML = '<div id="__nuxt"><h1 data-payload-field="title">server</h1></div>';
+    const runtime = makeRuntime({ hydration: 'vue' });
+    expect(Object.getOwnPropertyDescriptor(Element.prototype, VUE_APP_PROPERTY)).toBeUndefined();
+
+    runtime.start();
+
+    expect(typeof Object.getOwnPropertyDescriptor(Element.prototype, VUE_APP_PROPERTY)?.set).toBe(
+      'function',
+    );
+    expect(win.__REACT_DEVTOOLS_GLOBAL_HOOK__).toBeUndefined();
+    runtime.destroy();
+  });
+
+  it('keeps waiting through the mount of an app that holds no binding', () => {
+    document.body.innerHTML =
+      '<div id="__nuxt"><h1 data-payload-field="title">server</h1></div><div id="widget"><p>chat</p></div>';
+    const widget = document.getElementById('widget');
+    if (widget === null) throw new Error('fixture missing');
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'vue', sendReady });
+    runtime.start();
+
+    vueMounts(widget);
+    expect(sendReady).not.toHaveBeenCalled();
+    expect(runtime.inspect().hydration.state).toBe('waiting');
+
+    vueMounts(nuxtPage());
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    runtime.destroy();
+  });
+
+  it('starts at once when Vue mounted before the runtime evaluated — asset delivery', () => {
+    document.body.innerHTML = '<div id="__nuxt"><h1 data-payload-field="title">server</h1></div>';
+    vueMounts(nuxtPage());
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'vue', sendReady });
+
+    runtime.start();
+
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    expect(runtime.inspect().hydration).toEqual({ mode: 'vue', state: 'committed' });
+    runtime.destroy();
+  });
+
+  it('waits for the Suspense of a Nuxt app that is still hydrating when it mounts', () => {
+    document.body.innerHTML = '<div id="__nuxt"><h1 data-payload-field="title">server</h1></div>';
+    const handlers: (() => void)[] = [];
+    const app = {
+      $nuxt: {
+        isHydrating: true,
+        hook: (name: string, fn: () => void) => {
+          if (name === 'app:suspense:resolve') handlers.push(fn);
+        },
+      },
+    };
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'vue', sendReady });
+    runtime.start();
+
+    vueMounts(nuxtPage(), app);
+    expect(sendReady).not.toHaveBeenCalled();
+
+    app.$nuxt.isHydrating = false;
+    for (const handler of handlers) handler();
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    expect(runtime.inspect().hydration.state).toBe('committed');
+    runtime.destroy();
+  });
+
+  it('starts at the cap, once, and says so with LP0607 naming the mount it waited for', async () => {
+    document.body.innerHTML = '<div id="__nuxt"><h1 data-payload-field="title">server</h1></div>';
+    const sendReady = vi.fn();
+    const warn = vi.fn();
+    const runtime = makeRuntime({ hydration: 'vue', sendReady, warn });
+    runtime.start();
+
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(sendReady).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('LP0607');
+    expect(String(warn.mock.calls[0]?.[0])).toContain('no Vue mount');
+    expect(runtime.inspect().hydration).toEqual({ mode: 'vue', state: 'timed-out' });
+
+    vueMounts(nuxtPage());
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(runtime.inspect().hydration.state).toBe('timed-out');
+    runtime.destroy();
+  });
+
+  it('destroy() while waiting cancels the pending startup', async () => {
+    document.body.innerHTML = '<div id="__nuxt"><h1 data-payload-field="title">server</h1></div>';
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'vue', sendReady });
+    runtime.start();
+    runtime.destroy();
+
+    vueMounts(nuxtPage());
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(sendReady).not.toHaveBeenCalled();
+  });
+
+  it('a restart after the mount starts at once — a bfcache restore does not wait again', () => {
+    document.body.innerHTML = '<div id="__nuxt"><h1 data-payload-field="title">server</h1></div>';
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'vue', sendReady });
+    runtime.start();
+    vueMounts(nuxtPage());
+    expect(sendReady).toHaveBeenCalledTimes(1);
+
+    runtime.suspend();
+    expect(runtime.start()).toBe(true);
+
+    expect(sendReady).toHaveBeenCalledTimes(2);
+    expect(runtime.inspect().hydration.state).toBe('committed');
     runtime.destroy();
   });
 });

@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 311,
-    "suites": 655,
-    "tests": 2727,
+    "files": 312,
+    "suites": 660,
+    "tests": 2755,
     "benchmarks": 12
   },
   "groups": {
@@ -37,8 +37,8 @@
     },
     "e2e": {
       "files": 28,
-      "suites": 37,
-      "tests": 116,
+      "suites": 38,
+      "tests": 117,
       "benchmarks": 0
     },
     "integration": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 254,
-      "suites": 581,
-      "tests": 2501,
+      "files": 255,
+      "suites": 585,
+      "tests": 2528,
       "benchmarks": 0
     }
   },
@@ -210,8 +210,8 @@
     {
       "path": "tests/e2e/specs/nuxt-live-preview.spec.ts",
       "group": "e2e",
-      "suites": 2,
-      "tests": 4,
+      "suites": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -574,8 +574,8 @@
     {
       "path": "tests/unit/adapters/nuxt.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 19,
+      "suites": 7,
+      "tests": 22,
       "benchmarks": 0
     },
     {
@@ -915,6 +915,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/hydration-vue.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 15,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/hydration.test.ts",
       "group": "unit",
       "suites": 2,
@@ -1029,8 +1036,8 @@
     {
       "path": "tests/unit/core/lifecycle-hydration.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 9,
+      "suites": 2,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -1667,7 +1674,7 @@
       "path": "tests/unit/inline-loader.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 12,
+      "tests": 13,
       "benchmarks": 0
     },
     {

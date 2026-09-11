@@ -14,12 +14,23 @@ import {
 import { applyCspHeaders, bindDecisionHooks, renderScriptTag } from '@adapters/shared/response';
 import { exposeDecision } from '@adapters/shared/locals';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
+import type { PageFacts } from '@adapters/shared/policy-options';
 import type { PreviewRequestLike } from '@adapters/shared/preview-request';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
 export type { LivePreviewLocals } from '@adapters/shared/locals';
 
 export type LivePreviewNuxtOptions = PreviewAdapterOptions<PreviewRequestLike>;
+
+/**
+ * A Nuxt page is a Vue app, so every script this adapter emits declares that
+ * Vue hydrates it (ADR 0015): the runtime then holds its first write until Vue
+ * has mounted the app around the bindings — and, while Nuxt is still hydrating
+ * a Suspense, until that has resolved — instead of writing into markup Vue's
+ * hydration is about to repair. Knowledge the adapter has, not an option a
+ * project sets.
+ */
+const VUE_PAGE: PageFacts = { hydration: 'vue' };
 
 interface HeadersLike {
   get(name: string): string | null;
@@ -78,7 +89,7 @@ interface StashedDecision {
 export function livePreviewNitroPlugin(
   options: LivePreviewNuxtOptions = {},
 ): (nitroApp: NitroAppLike) => void {
-  const policy = createPreviewPolicy(options);
+  const policy = createPreviewPolicy(options, VUE_PAGE);
   return (nitroApp) => {
     nitroApp.hooks.hook('render:html', async (html, { event }) => {
       const { decision, nonce } = await decideFor(event, policy, options);
@@ -97,7 +108,7 @@ export function livePreviewNitroPlugin(
  * `event.context`. Give it the plugin's options; the plugin reuses its verdict.
  */
 export function defineLivePreviewServerHandler(options: LivePreviewNuxtOptions = {}): NitroHandler {
-  const policy = createPreviewPolicy(options);
+  const policy = createPreviewPolicy(options, VUE_PAGE);
   return async (event: H3EventLike) => {
     await decideFor(event, policy, options);
     // `undefined` tells Nitro to continue with the next handler.
@@ -125,7 +136,7 @@ async function decideFor(
 export function renderLivePreviewScript(
   options: LivePreviewNuxtOptions & { readonly nonce?: string } = {},
 ): string {
-  return renderScriptTag(options);
+  return renderScriptTag(options, VUE_PAGE);
 }
 
 /** The CSP header value for consumers that set the header themselves; it builds and never gates, so `manageCsp: false` still yields frame-ancestors. */

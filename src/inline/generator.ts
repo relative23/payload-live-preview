@@ -119,8 +119,10 @@ export function generateLoaderScript(
  * The bootstrap, or the one armed for React's first commit (ADR 0015 F2): the
  * inline runtime is the first script in `<head>` and arms the signal itself,
  * while a fetched asset may evaluate after `react-dom` has, when it is too
- * late — so on a page that declares hydration the bootstrap arms before it
- * fetches. One script either way, never a prelude ahead of the plain one.
+ * late — so on a page that declares React the bootstrap arms before it
+ * fetches. One script either way, never a prelude ahead of the plain one. A
+ * page that declares Vue takes the plain one: Vue's mount leaves state on the
+ * container that a late runtime can still read (`core/hydration-vue`).
  */
 function loaderFor(config: InlineScriptConfig): string {
   if (config.hydration === 'react') {

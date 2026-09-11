@@ -65,10 +65,12 @@ export interface RuntimeOptions {
    * `'react'` the runtime does not start — no cache, no listener, no `ready` —
    * until React has committed a root that holds a binding, so its first write
    * lands on markup React keeps rather than on markup React is about to
-   * compare with its own render and throw away. Capped at five seconds, then
-   * LP0607. The Next.js adapter sets it; nothing else does by default.
+   * compare with its own render and throw away; under `'vue'` until Vue has
+   * mounted an app around a binding (and, on Nuxt, hydrated its Suspense), so
+   * the write is not put back by Vue's repair. Capped at five seconds, then
+   * LP0607. The Next.js and Nuxt adapters set it; nothing else does by default.
    */
-  readonly hydration?: 'react';
+  readonly hydration?: 'react' | 'vue';
   /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn — a renderer that cannot represent the value, a Lexical

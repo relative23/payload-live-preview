@@ -117,6 +117,17 @@ describe('generateLoaderScript — substitution', () => {
     expect(plain).toBe(generateLoaderScript({}, TARGET));
   });
 
+  it('emits the plain bootstrap for a page that declares Vue: the mount is state a late runtime can read', () => {
+    const vue = generateLoaderScript({ hydration: 'vue' }, TARGET);
+    const plain = generateLoaderScript({}, TARGET);
+
+    expect(vue).not.toContain('__REACT_DEVTOOLS_GLOBAL_HOOK__');
+    expect(vue).not.toContain('__vue_app__');
+    // Only the config statement differs: the slot the runtime reads.
+    expect(vue.split('\n').slice(1)).toEqual(plain.split('\n').slice(1));
+    expect(vue).toContain('"vue"');
+  });
+
   it('escapes `<` in the asset URL so `</script>` cannot break the tag', () => {
     const script = generateLoaderScript({}, { runtimeSrc: '/x</script><b>.js' });
     expect(script).not.toContain('</script>');

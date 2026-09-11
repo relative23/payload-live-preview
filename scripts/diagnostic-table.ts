@@ -81,7 +81,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0606:
     'Posting the `ready` handshake threw (`error` event, context `ready`); without it the admin never sends the document. Read the attached error: the built-in sender tolerates a malformed origin, so the cause is the host window or a custom `sendReady`.',
   LP0607:
-    "The page declared `hydration: 'react'` (the Next.js adapter does) and React committed no tree holding a binding within five seconds, so the runtime started as it would on a static page; a hydration that completes later regenerates the tree and reverts the first write, once. Usually the client bundle failed to load or was very slow — check the network panel. On a page React does not hydrate at all, drop the option from `generateInlineScript()`. `inspect().hydration.state` reads `timed-out`.",
+    "The page declared `hydration: 'react'` (the Next.js adapter does) or `'vue'` (the Nuxt adapter does) and, within five seconds, React committed no tree holding a binding or Vue mounted no app around one, so the runtime started as it would on a static page; a hydration that completes later regenerates the tree, or repairs it, and reverts the first write, once. Usually the client bundle failed to load or was very slow — check the network panel. On a page nothing hydrates, drop the option from `generateInlineScript()`. `inspect().hydration.state` reads `timed-out`.",
   LP0701:
     'If you use an adapter, check its `inject` mode and whether a proxy strips `Sec-Fetch-Dest`. If you start the client yourself, this line is expected.',
   LP0702:

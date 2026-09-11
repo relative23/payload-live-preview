@@ -25,7 +25,8 @@
  * slot, read late, the way the route-refresh seam does.
  */
 
-export type HydrationMode = 'react';
+/** The framework whose first commit the start waits for; `./hydration-vue` reads the second. */
+export type HydrationMode = 'react' | 'vue';
 export type HydrationOutcome = 'committed' | 'timed-out';
 export type HydrationState = 'idle' | 'waiting' | HydrationOutcome;
 
@@ -55,11 +56,19 @@ export const BINDING_SELECTOR = '[data-payload-field]';
  * after. Recording rather than judging keeps the armed bootstrap to the bytes
  * the delivery budgets hold a bootstrap to.
  */
-interface HydrationSignal {
+interface HydrationSignal extends HydrationWait {
   armed: boolean;
-  committed: boolean;
   commits: unknown[];
   onCommit: ((container: unknown) => void) | undefined;
+}
+
+/**
+ * What a wait shares whichever framework it is for: whether the framework has
+ * taken the tree over, and who is waiting to hear it. The Vue observer keeps
+ * one of its own (`./hydration-vue`); the cap and the cancel are the same.
+ */
+export interface HydrationWait {
+  committed: boolean;
   waiters: (() => void)[];
 }
 
@@ -156,40 +165,29 @@ function ownsBindings(container: unknown): boolean {
   return node?.nodeType === 9 || node?.querySelector?.(BINDING_SELECTOR) != null;
 }
 
-function settle(signal: HydrationSignal): void {
+/** The framework has taken the tree over: every waiter hears it, once. */
+export function settle(signal: HydrationWait): void {
   signal.committed = true;
   const waiters = signal.waiters;
   signal.waiters = [];
   for (const waiter of waiters) waiter();
 }
 
-function forget(signal: HydrationSignal, waiter: () => void): void {
+function forget(signal: HydrationWait, waiter: () => void): void {
   const index = signal.waiters.indexOf(waiter);
   if (index >= 0) signal.waiters.splice(index, 1);
 }
 
 /**
- * Call back once React has committed a root that holds a binding, or after
- * `capMs` without one. Arms the signal if nothing has yet. Returns `null`
- * without calling back when the commit already happened — a bfcache restore
- * does not wait again — and otherwise a cancel for a runtime that stops waiting.
+ * Call back once the signal settles, or after `capMs` without it. Returns
+ * `null` without calling back when it already has — a bfcache restore does
+ * not wait again — and otherwise a cancel for a runtime that stops waiting.
  */
-export function whenReactCommitted(
+export function awaitSettled(
+  signal: HydrationWait,
   onSettled: (outcome: HydrationOutcome) => void,
-  capMs = HYDRATION_WAIT_CAP_MS,
+  capMs: number,
 ): (() => void) | null {
-  armReactCommitSignal();
-  const signal = signalSlot();
-  if (signal === undefined) return null;
-  if (signal.onCommit === undefined) {
-    // The runtime is the one that can judge a commit; the bootstrap may have
-    // recorded some before it ran. The backlog first, then every commit live.
-    const judge = (container: unknown): void => {
-      if (!signal.committed && ownsBindings(container)) settle(signal);
-    };
-    signal.onCommit = judge;
-    for (const container of signal.commits.splice(0)) judge(container);
-  }
   if (signal.committed) return null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   const waiter = (): void => {
@@ -208,4 +206,27 @@ export function whenReactCommitted(
     timer = null;
     forget(signal, waiter);
   };
+}
+
+/**
+ * Call back once React has committed a root that holds a binding, or after
+ * `capMs` without one. Arms the signal if nothing has yet.
+ */
+export function whenReactCommitted(
+  onSettled: (outcome: HydrationOutcome) => void,
+  capMs = HYDRATION_WAIT_CAP_MS,
+): (() => void) | null {
+  armReactCommitSignal();
+  const signal = signalSlot();
+  if (signal === undefined) return null;
+  if (signal.onCommit === undefined) {
+    // The runtime is the one that can judge a commit; the bootstrap may have
+    // recorded some before it ran. The backlog first, then every commit live.
+    const judge = (container: unknown): void => {
+      if (!signal.committed && ownsBindings(container)) settle(signal);
+    };
+    signal.onCommit = judge;
+    for (const container of signal.commits.splice(0)) judge(container);
+  }
+  return awaitSettled(signal, onSettled, capMs);
 }

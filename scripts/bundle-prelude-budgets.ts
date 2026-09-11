@@ -63,7 +63,10 @@
 // Raised 2026-09-11 (Z27): raw 121_143 → 123_068 (measured 122_938), gzip 38_302 → 39_010
 // (38_954), brotli 33_647 → 34_239 (34_109) — the runtime's own +1 925 B (see
 // INLINE_BUDGET); the prelude did not move.
-export const INLINE_FRAGMENT_BUDGET = { raw: 123_068, gzip: 39_010, brotli: 34_239 } as const;
+// Raised 2026-09-11 (Z31): raw 123_068 → 124_153 (measured 124_023), gzip 39_010 → 39_338
+// (39_282), brotli 34_239 → 34_589 (34_427) — the runtime's own +1 085 B (see
+// INLINE_BUDGET); the prelude did not move.
+export const INLINE_FRAGMENT_BUDGET = { raw: 124_153, gzip: 39_338, brotli: 34_589 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -130,4 +133,7 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 123_068, gzip: 39_010, brotli: 34_2
 // Raised 2026-09-11 (Z27): raw 116_191 → 118_116 (measured 117_986), gzip 36_631 → 37_344
 // (37_288), brotli 32_212 → 32_848 (32_701) — the runtime's own +1 925 B (see
 // INLINE_BUDGET); the prelude did not move.
-export const INLINE_ROUTE_BUDGET = { raw: 118_116, gzip: 37_344, brotli: 32_848 } as const;
+// Raised 2026-09-11 (Z31): raw 118_116 → 119_201 (measured 119_071), gzip 37_344 → 37_673
+// (37_617), brotli 32_848 → 33_153 (32_991) — the runtime's own +1 085 B (see
+// INLINE_BUDGET); the prelude did not move.
+export const INLINE_ROUTE_BUDGET = { raw: 119_201, gzip: 37_673, brotli: 33_153 } as const;

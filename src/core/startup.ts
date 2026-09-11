@@ -1,6 +1,7 @@
 /**
  * When the runtime may start: after the document has parsed, and on a page
- * that declares hydration after React's first commit — or the cap (ADR 0015).
+ * that declares hydration after the framework's first commit — React's, or
+ * Vue's mount — or the cap (ADR 0015).
  *
  * `lifecycle.ts` owns the resources a start acquires and how a failed one is
  * rolled back; this module owns only the waiting. It moved out when the
@@ -19,6 +20,7 @@ import {
   type HydrationOutcome,
   type HydrationState,
 } from './hydration';
+import { armVueMountSignal, whenVueMounted } from './hydration-vue';
 
 /** What the startup chain needs from the runtime. */
 export interface StartupHost {
@@ -42,8 +44,9 @@ export interface StartupHost {
  * and the chain continues through `later` once the wait ends.
  */
 export function startWhenReady(host: StartupHost): void {
-  // Armed before anything defers: React may evaluate before DOMContentLoaded.
-  if (host.hydration !== undefined) armReactCommitSignal();
+  // Armed before anything defers: the framework may evaluate before DOMContentLoaded.
+  if (host.hydration === 'react') armReactCommitSignal();
+  else if (host.hydration === 'vue') armVueMountSignal();
   const { root } = host;
   if (!isDocumentRoot(root) || root.readyState !== 'loading') {
     startAfterParse(host);
@@ -67,11 +70,15 @@ function startAfterParse(host: StartupHost): void {
     host.startNow();
     return;
   }
-  const pending = whenReactCommitted((outcome) => {
+  const onSettled = (outcome: HydrationOutcome): void => {
     host.later(() => {
       startHydrated(host, outcome);
     });
-  });
+  };
+  const pending =
+    host.hydration === 'react'
+      ? whenReactCommitted(onSettled)
+      : whenVueMounted(host.root, onSettled);
   // Already committed — a bfcache restore does not wait again.
   if (pending === null) {
     startHydrated(host, 'committed');
@@ -85,7 +92,7 @@ function startHydrated(host: StartupHost, outcome: HydrationOutcome): void {
   host.hydrated(outcome);
   if (outcome === 'timed-out') {
     host.warn(
-      `[live-preview] LP0607: no React commit in ${String(HYDRATION_WAIT_CAP_MS)} ms; started without waiting for hydration.`,
+      `[live-preview] LP0607: no ${host.hydration === 'react' ? 'React commit' : 'Vue mount'} in ${String(HYDRATION_WAIT_CAP_MS)} ms; started without waiting for hydration.`,
     );
   }
   host.startNow();

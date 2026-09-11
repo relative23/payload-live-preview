@@ -147,11 +147,12 @@ export interface LivePreviewInspection {
   readonly fidelity: InspectionFidelity;
   /**
    * Whether the page declared a framework that hydrates it, and how far the
-   * wait for its first commit got (ADR 0015). `waiting` is why a preview on a
-   * Next page is not connected yet; `timed-out` is LP0607.
+   * wait for its first commit — React's, or Vue's mount — got (ADR 0015).
+   * `waiting` is why a preview on a Next or Nuxt page is not connected yet;
+   * `timed-out` is LP0607.
    */
   readonly hydration: {
-    readonly mode: 'off' | 'react';
+    readonly mode: 'off' | 'react' | 'vue';
     readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
   };
 }

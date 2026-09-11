@@ -396,7 +396,21 @@
 // the first draft measured +1 633 with a hook that lacked the `renderers` map
 // Fast Refresh walks — and that hook stopped the Next fixture from hydrating
 // at all, so the map and a per-renderer id came back for +290.
-export const INLINE_BUDGET = { raw: 111_423, gzip: 35_158, brotli: 31_094 } as const;
+// Raised 2026-09-11 (Z31): raw 111_423 → 112_508 (measured 112_378), gzip 35_158 → 35_490
+// (35_434), brotli 31_094 → 31_376 (31_214). The +1 085 B raw is the wait for Vue
+// (ADR 0015, addendum). On a Nuxt page the runtime wrote the admin's document
+// at 25 ms and Vue's hydration repaired every value back to the server's at
+// 94 ms, quietly; what mended it was the mock admin answering the runtime's
+// second `ready`, which Payload's admin does not. The Nuxt adapter now sets
+// `hydration: 'vue'`, the second value of Z27's slot, and under it the
+// runtime does not start until Vue has mounted the app around a binding: an
+// accessor on `Element.prototype` for the `__vue_app__` property Vue assigns
+// as `mount()` returns, the walk a late runtime makes up from its first
+// binding, and the Suspense wait for a Nuxt app still hydrating at the mount
+// (`hydration-vue.ts`); cap and waiters are shared with React's wait. The
+// bytes are Vue's and Nuxt's names and the accessor's property calls, which
+// no minifier shortens. Every profile pays it: the wait sits in `start()`.
+export const INLINE_BUDGET = { raw: 112_508, gzip: 35_490, brotli: 31_376 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -472,7 +486,10 @@ export const INLINE_BUDGET = { raw: 111_423, gzip: 35_158, brotli: 31_094 } as c
 // (28_306), brotli 24_571 → 25_233 (25_086). The same wait as the full profile
 // (see INLINE_BUDGET): it is in `start()`, which every profile runs, and a
 // lean runtime on a Next page has the same hydration ahead of it.
-export const INLINE_LEAN_BUDGET = { raw: 89_606, gzip: 28_359, brotli: 25_233 } as const;
+// Raised 2026-09-11 (Z31): raw 89_606 → 90_700 (measured 90_570), gzip 28_359 → 28_684
+// (28_628), brotli 25_233 → 25_526 (25_364). The same wait as the full profile
+// (see INLINE_BUDGET): it is in `start()`, which a lean runtime on a Nuxt page runs too.
+export const INLINE_LEAN_BUDGET = { raw: 90_700, gzip: 28_684, brotli: 25_526 } as const;
 
 // The two prelude profiles, each the runtime plus a prelude that moves on its own,
 // keep their budgets and their log in bundle-prelude-budgets.ts: this log reached

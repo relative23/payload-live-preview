@@ -77,11 +77,13 @@ export interface InlineScriptConfig {
    * runtime holds its first write until React has committed the tree that
    * holds the bindings — otherwise React finds markup it did not render,
    * throws `Hydration failed` and regenerates the tree, and the write is gone.
-   * The Next.js adapter sets it on every script it emits; a page built by hand
-   * with `generateInlineScript()` may. Omitted: the runtime starts on
-   * `DOMContentLoaded`, as on a static page.
+   * Under `'vue'` it holds the write until Vue has mounted the app around them
+   * — otherwise Vue's hydration repairs the write back to the server's value,
+   * quietly. The Next.js and Nuxt adapters set it on every script they emit; a
+   * page built by hand with `generateInlineScript()` may. Omitted: the runtime
+   * starts on `DOMContentLoaded`, as on a static page.
    */
-  readonly hydration?: 'react';
+  readonly hydration?: 'react' | 'vue';
   /** Which defaults the omitted options fall back to. Not serialized: `'v1'` only relaxes the generator's `mergeDepth` check. */
   readonly defaults?: DefaultsProfile;
   /**

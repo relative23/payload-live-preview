@@ -107,6 +107,8 @@ describe('generateInlineScript', () => {
     expect(config.slice(0, 23).every((value) => value === undefined)).toBe(true);
     expect(script).not.toContain('var __LIVE_PREVIEW_HYDRATION__=');
     expect(generateInlineScript()).not.toContain('var __LIVE_PREVIEW_HYDRATION__=');
+    // The second framework is a second value in the same slot, not a second slot.
+    expect(generatedConfig(generateInlineScript({ hydration: 'vue' }))[23]).toBe('vue');
   });
 
   it('emits the route prelude alone when routeStrategy is set without a fragment endpoint', () => {
