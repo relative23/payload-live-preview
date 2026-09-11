@@ -67,7 +67,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0412:
     'The template printed this value one way and the renderer another, so the preview no longer matches the server. Set `data-payload-format` to the format the template uses — or, when the difference was an edit that arrived before the preview connected, nothing is wrong and the next message settles it.',
   LP0501:
-    'The reason is one of origin, shape, type, token and is visible with `debug: true`. An origin reason means `allowedOrigins` does not list the sender.',
+    "The reason is one of origin, shape, type, token, source. Most are visible only with `debug: true`; a source reason is reported once without it, because that default changed. An origin reason means `allowedOrigins` does not list the sender. A source reason means the message came from a window that is neither this page's parent nor its opener — `eventSourcePolicy` is `'parent-or-opener'` since 2.0, where 1.x accepted any window on a trusted origin; set `eventSourcePolicy: 'any'` if your admin posts from elsewhere.",
   LP0502:
     'Your `validateToken` refused the token or threw — a throwing validator fails closed. Check the token the admin sends and the validator.',
   LP0503:

@@ -4,22 +4,23 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-DHoYlTJF.js';
-import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-2YPp_z3b.js';
-import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-2YPp_z3b.js';
-import { b } from '../../fragment-endpoint-DHoYlTJF.js';
-import { c } from '../../fragment-endpoint-DHoYlTJF.js';
-import { c as createLivePreviewMiddleware } from '../../middleware-B2gRVIpb.js';
-import { F } from '../../fragment-endpoint-DHoYlTJF.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-DHoYlTJF.js';
-import { h as hasPreviewIntent } from '../../options-05kr6xUG.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-B2gRVIpb.js';
-import { L as LivePreviewLocals } from '../../locals-2YPp_z3b.js';
-import { a as LivePreviewMiddleware } from '../../middleware-B2gRVIpb.js';
-import { N as NONCE_LOCALS_KEY } from '../../locals-2YPp_z3b.js';
-import { P as PreviewAdapterOptions } from '../../options-05kr6xUG.js';
-import { a as PreviewRequestLike } from '../../options-05kr6xUG.js';
-import { b as PreviewRequestOptions } from '../../options-05kr6xUG.js';
+import { a } from '../../fragment-endpoint-ByV68yew.js';
+import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-Dq8174og.js';
+import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-Dq8174og.js';
+import { b } from '../../fragment-endpoint-ByV68yew.js';
+import { c } from '../../fragment-endpoint-ByV68yew.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-DhXwbEX0.js';
+import { F } from '../../fragment-endpoint-ByV68yew.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-ByV68yew.js';
+import { h as hasPreviewIntent } from '../../options-CO1iXz__.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-DhXwbEX0.js';
+import { L as LivePreviewLocals } from '../../locals-Dq8174og.js';
+import { a as LivePreviewMiddleware } from '../../middleware-DhXwbEX0.js';
+import { N as NONCE_LOCALS_KEY } from '../../locals-Dq8174og.js';
+import { P as PreviewAdapterOptions } from '../../options-CO1iXz__.js';
+import { a as PreviewRequestLike } from '../../options-CO1iXz__.js';
+import { b as PreviewRequestOptions } from '../../options-CO1iXz__.js';
+import { c as PreviewSignal } from '../../options-CO1iXz__.js';
 
 // @public
 export type AstroComponentLike = object;
@@ -99,6 +100,9 @@ export { FragmentRenderInput }
 
 export { hasPreviewIntent }
 
+// @public @deprecated (undocumented)
+export const isPreviewRequest: typeof hasPreviewIntent;
+
 // @public
 export function livePreview(options?: LivePreviewAstroOptions): AstroIntegrationLike;
 
@@ -115,6 +119,8 @@ export { PreviewAdapterOptions }
 export { PreviewRequestLike }
 
 export { PreviewRequestOptions }
+
+export { PreviewSignal }
 
 // @public
 export function renderLivePreviewScript(options?: RenderScriptOptions): string;
@@ -165,10 +171,10 @@ interface VitePluginLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/astro/index.d.ts:31:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:31:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:50:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:61:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:32:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:32:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:51:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:62:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -9,6 +9,8 @@ import {
   type FetchLike,
   type PayloadSessionStrategy,
   type PreviewAuthorizationRequest,
+  type PreviewTokenReplayChecks,
+  type PreviewTokenReplayStore,
   type SignedTokenStrategy,
   type SubtleCryptoLike,
 } from '@security/preview-authorization';
@@ -294,12 +296,13 @@ describe('signed-token strategy', () => {
     ).toBe('invalid');
   });
 
-  it('consults the replay store once verified and refuses a seen id', async () => {
+  it('consumes the id once verified and refuses a seen id', async () => {
     const used = new Set<string>();
-    const replay = {
-      isUsed: (id: string) => used.has(id),
-      markUsed: (id: string) => {
+    const replay: PreviewTokenReplayStore = {
+      consume: (id) => {
+        if (used.has(id)) return false;
         used.add(id);
+        return true;
       },
     };
     const url = `${SITE}/page?previewToken=${await token()}`;
@@ -316,6 +319,79 @@ describe('signed-token strategy', () => {
       replay,
     });
     expect(used.size).toBe(1);
+  });
+
+  it('admits exactly one of two requests that arrive together', async () => {
+    // An atomic store decides before it yields; the async wait models the
+    // round trip to Redis or a database and does not reopen the decision.
+    const used = new Set<string>();
+    const replay: PreviewTokenReplayStore = {
+      consume: async (id) => {
+        const first = !used.has(id);
+        used.add(id);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        return first;
+      },
+    };
+    const url = `${SITE}/page?previewToken=${await token()}`;
+    const outcomes = (
+      await Promise.all([
+        authorizePreviewRequest(request(url), { ...strategy, replay }),
+        authorizePreviewRequest(request(url), { ...strategy, replay }),
+      ])
+    ).map((result) => result.outcome);
+    expect(outcomes.sort()).toEqual(['authorized', 'replayed']);
+  });
+
+  it('fails closed on a consume that does not answer true, and unavailable on a throw', async () => {
+    const url = `${SITE}/page?previewToken=${await token()}`;
+    const forgotten = { consume: () => undefined as unknown as boolean };
+    expect(
+      (await authorizePreviewRequest(request(url), { ...strategy, replay: forgotten })).outcome,
+    ).toBe('replayed');
+    const down: PreviewTokenReplayStore = {
+      consume: () => {
+        throw new Error('ECONNREFUSED');
+      },
+    };
+    expect(
+      (await authorizePreviewRequest(request(url), { ...strategy, replay: down })).outcome,
+    ).toBe('unavailable');
+  });
+
+  it('still accepts the deprecated two-step shape, which the 1.x review showed cannot be atomic', async () => {
+    // The 1.x store: a read, then a write. Sequential requests are refused
+    // as before. Two that arrive together both pass the read before either
+    // writes; the test pins that behaviour so the deprecation says something
+    // true rather than cosmetic.
+    const used = new Set<string>();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the deprecation is what this test holds
+    const replay: PreviewTokenReplayChecks = {
+      isUsed: async (id) => {
+        // Read at the moment of the query; the answer arrives a round trip later.
+        const seen = used.has(id);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        return seen;
+      },
+      markUsed: (id) => {
+        used.add(id);
+      },
+    };
+    const url = `${SITE}/page?previewToken=${await token()}`;
+    expect((await authorizePreviewRequest(request(url), { ...strategy, replay })).outcome).toBe(
+      'authorized',
+    );
+    expect((await authorizePreviewRequest(request(url), { ...strategy, replay })).outcome).toBe(
+      'replayed',
+    );
+    used.clear();
+    const together = (
+      await Promise.all([
+        authorizePreviewRequest(request(url), { ...strategy, replay }),
+        authorizePreviewRequest(request(url), { ...strategy, replay }),
+      ])
+    ).map((result) => result.outcome);
+    expect(together).toEqual(['authorized', 'authorized']);
   });
 
   it('caps the lifetime at one hour and refuses a short secret at construction', async () => {

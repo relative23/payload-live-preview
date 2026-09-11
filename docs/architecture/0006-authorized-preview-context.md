@@ -136,7 +136,12 @@ Why these bindings:
 - **`jti`** enables replay detection where an application chooses to store
   seen ids (`replay` option). The package does not ship a store — a store is a
   deployment decision (memory per process is useless behind a load balancer) —
-  and says so instead of pretending.
+  and says so instead of pretending. The store's contract is one atomic
+  `consume(id, expiresAt)`: a check-and-record in one step, `true` on first
+  use. The 1.x contract was `isUsed` then `markUsed`, and a review of 1.8.1
+  pointed out what two steps mean — two requests with the same token that
+  arrive together both pass the check before either records. That shape is
+  accepted until 3.0 and deprecated for that reason.
 
 Not bound: client IP (breaks behind mobile carriers and proxies), user agent
 (free to forge, breaks on browser updates). Long-lived bearer tokens are not

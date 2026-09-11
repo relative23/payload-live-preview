@@ -16,7 +16,11 @@ export {
   hasPreviewIntent,
   type PreviewRequestLike,
   type PreviewRequestOptions,
+  type PreviewSignal,
 } from '@adapters/shared/preview-request';
+// 1.8.1 exported this name from `./astro` as well as from the root.
+// eslint-disable-next-line @typescript-eslint/no-deprecated -- the alias exists to be re-exported
+export { isPreviewRequest } from '@adapters/shared/preview-request-legacy';
 export {
   createFragmentEndpoint,
   type AstroComponentLike,

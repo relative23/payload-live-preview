@@ -396,6 +396,8 @@
 // the first draft measured +1 633 with a hook that lacked the `renderers` map
 // Fast Refresh walks — and that hook stopped the Next fixture from hydrating
 // at all, so the map and a per-renderer id came back for +290.
+// Raised 2026-09-11 (merge of main #64/#65): raw 112_508 → 112_943 (measured
+// 112_813), gzip 35_490 → 35_658 (35_602) — the measured difference, cushions kept.
 // Raised 2026-09-11 (Z31): raw 111_423 → 112_508 (measured 112_378), gzip 35_158 → 35_490
 // (35_434), brotli 31_094 → 31_376 (31_214). The +1 085 B raw is the wait for Vue
 // (ADR 0015, addendum). On a Nuxt page the runtime wrote the admin's document
@@ -410,7 +412,7 @@
 // (`hydration-vue.ts`); cap and waiters are shared with React's wait. The
 // bytes are Vue's and Nuxt's names and the accessor's property calls, which
 // no minifier shortens. Every profile pays it: the wait sits in `start()`.
-export const INLINE_BUDGET = { raw: 112_508, gzip: 35_490, brotli: 31_376 } as const;
+export const INLINE_BUDGET = { raw: 112_943, gzip: 35_658, brotli: 31_514 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -489,7 +491,7 @@ export const INLINE_BUDGET = { raw: 112_508, gzip: 35_490, brotli: 31_376 } as c
 // Raised 2026-09-11 (Z31): raw 89_606 → 90_700 (measured 90_570), gzip 28_359 → 28_684
 // (28_628), brotli 25_233 → 25_526 (25_364). The same wait as the full profile
 // (see INLINE_BUDGET): it is in `start()`, which a lean runtime on a Nuxt page runs too.
-export const INLINE_LEAN_BUDGET = { raw: 90_700, gzip: 28_684, brotli: 25_526 } as const;
+export const INLINE_LEAN_BUDGET = { raw: 91_135, gzip: 28_845, brotli: 25_664 } as const;
 
 // The two prelude profiles, each the runtime plus a prelude that moves on its own,
 // keep their budgets and their log in bundle-prelude-budgets.ts: this log reached

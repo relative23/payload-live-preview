@@ -198,6 +198,10 @@ interface Fixture {
  * runtime reads, so the generator carries no third bootstrap. The Lexical,
  * React and Vue rows do not move — the composable never runs `start()`. Each
  * to its measurement plus the cushion it carried; see bundle-budgets.ts.
+ *
+ * 2026-09-11 (merge of main #64/#65): the five gzip rows that carry the runtime
+ * rise by the measured difference between the last green build (36fd5ec) and
+ * the merged tree (+120…190 B gzip); each keeps the cushion it carried.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -218,21 +222,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 44_187,
+    gzip: 44_366,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 41_520,
+    gzip: 41_698,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 44_160,
+    gzip: 44_334,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -253,14 +257,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 46_707,
+    gzip: 46_955,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 28_909,
+    gzip: 29_064,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
