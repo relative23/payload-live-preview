@@ -27,8 +27,9 @@ exactly that artifact by run id and name, reruns the package gate with
 
 `scripts/release-gate.ts` runs after every completed CI run and on
 `workflow_dispatch` with a `run_id`. It accepts only a completed, successful CI
-`push` run on `main` of this repository whose head is an ancestor of
-`origin/main`, reads `package.json` at that commit, and asks the registry:
+`push` run of this repository on a release branch — `main` or `release/1.x`,
+listed once as `RELEASE_BRANCHES` — whose head is an ancestor of that branch on
+`origin`, reads `package.json` at that commit, and asks the registry:
 
 - the version is not on npm → **publish**;
 - it is, and `.changeset/` holds changesets → **Version PR**
@@ -37,8 +38,13 @@ exactly that artifact by run id and name, reruns the package gate with
 - the GitHub Release exists → nothing; a tag on another commit → an error.
 
 The Version PR job additionally requires the tested commit to still be the tip
-of `main`, because `changesets/action` branches from `github.sha`. The publish
-job does not: a newer push must not block an artifact the gate has proven.
+of `main`, because `changesets/action` branches from `github.sha`. Under
+`workflow_run` that is always the tip of `main`, and a step cannot change it:
+the runner writes `GITHUB_SHA` from the `github` context over any step `env`.
+A maintenance branch therefore gets no Version PR — with changesets there and
+its version already on npm, the gate fails and names the hand step (§7). The
+publish job does not require the tip: a newer push must not block an artifact
+the gate has proven.
 
 ### 3. Publish is byte-identical and reconciles rather than repeats
 

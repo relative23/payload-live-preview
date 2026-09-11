@@ -14,9 +14,32 @@ export interface CommandResult {
 
 export type CommandRunner = (executable: string, args: readonly string[]) => CommandResult;
 
+/**
+ * Branches whose certified CI push runs may release, in one place: `main`
+ * carries the current major, `release/1.x` security fixes for 1.x (ADR 0013
+ * §7). The gate condition in `.github/workflows/release.yml` repeats the list;
+ * `scripts/workflow-expectations.ts` derives that condition from this one.
+ */
+export const RELEASE_BRANCHES = ['main', 'release/1.x'] as const;
+
+type ReleaseBranch = (typeof RELEASE_BRANCHES)[number];
+
+/**
+ * The one branch `changesets/action` can version. It resets its version branch
+ * to `github.sha`, which under `workflow_run` is always the default branch's
+ * tip, and the runner writes `GITHUB_SHA` over any step `env`; on another
+ * branch it would open a Version PR carrying main's tree.
+ */
+const VERSION_PR_BRANCH: ReleaseBranch = 'main';
+
+function isReleaseBranch(value: unknown): value is ReleaseBranch {
+  return (RELEASE_BRANCHES as readonly unknown[]).includes(value);
+}
+
 export interface CertifiedRun {
   readonly id: number;
   readonly headSha: string;
+  readonly branch: ReleaseBranch;
 }
 
 export interface ReleaseFacts {
@@ -48,14 +71,13 @@ function detail(result: CommandResult): string {
   return output.length > 2_000 ? output.slice(-2_000) : output;
 }
 
-/** Accept only a completed, successful CI push run on this repository's main branch. */
+/** Accept only a completed, successful CI push run on a release branch of this repository. */
 export function certifiedRunFrom(run: unknown, repository: string): CertifiedRun {
   if (!isRecord(run)) throw new Error('workflow run payload is not an object');
   const headRepository = isRecord(run['head_repository']) ? run['head_repository'] : {};
   const expectations: readonly (readonly [string, unknown, unknown])[] = [
     ['name', run['name'], 'CI'],
     ['event', run['event'], 'push'],
-    ['head_branch', run['head_branch'], 'main'],
     ['status', run['status'], 'completed'],
     ['conclusion', run['conclusion'], 'success'],
     ['head_repository', headRepository['full_name'], repository],
@@ -67,6 +89,13 @@ export function certifiedRunFrom(run: unknown, repository: string): CertifiedRun
       );
     }
   }
+  const branch = run['head_branch'];
+  if (!isReleaseBranch(branch)) {
+    throw new Error(
+      `run is not a certified CI run: head_branch is ${JSON.stringify(branch)}, expected one of ` +
+        RELEASE_BRANCHES.map((candidate) => JSON.stringify(candidate)).join(', '),
+    );
+  }
   const id = run['id'];
   const headSha = run['head_sha'];
   if (typeof id !== 'number' || !Number.isSafeInteger(id)) {
@@ -75,7 +104,7 @@ export function certifiedRunFrom(run: unknown, repository: string): CertifiedRun
   if (typeof headSha !== 'string' || !SHA_PATTERN.test(headSha)) {
     throw new Error('workflow run head_sha is not a 40-character commit');
   }
-  return { id, headSha };
+  return { id, headSha, branch };
 }
 
 /**
@@ -186,7 +215,7 @@ function readReleaseFacts(environment: ReleaseGateEnvironment, sha: string): Rel
   };
 }
 
-/** Resolve the certified run, prove it is on main, and decide the release action. */
+/** Resolve the certified run, prove it is on its branch, and decide the release action. */
 export function runReleaseGate(environment: ReleaseGateEnvironment): ReleaseGateOutputs {
   const { run, repository, runId } = environment;
   if (!/^[0-9]+$/u.test(runId)) {
@@ -196,15 +225,27 @@ export function runReleaseGate(environment: ReleaseGateEnvironment): ReleaseGate
   if (lookup.status !== 0) throw new Error(`cannot read workflow run ${runId}:\n${detail(lookup)}`);
   const certified = certifiedRunFrom(JSON.parse(lookup.stdout), repository);
 
-  const ancestry = run('git', ['merge-base', '--is-ancestor', certified.headSha, 'origin/main']);
+  const ancestry = run('git', [
+    'merge-base',
+    '--is-ancestor',
+    certified.headSha,
+    `origin/${certified.branch}`,
+  ]);
   if (ancestry.status !== 0) {
-    throw new Error(`tested commit ${certified.headSha} is not on main; refusing to release it`);
+    throw new Error(
+      `tested commit ${certified.headSha} is not on ${certified.branch}; refusing to release it`,
+    );
   }
 
-  const action = decideReleaseAction(
-    readReleaseFacts(environment, certified.headSha),
-    certified.headSha,
-  );
+  const facts = readReleaseFacts(environment, certified.headSha);
+  const action = decideReleaseAction(facts, certified.headSha);
+  if (action === 'version-pr' && certified.branch !== VERSION_PR_BRANCH) {
+    throw new Error(
+      `${certified.branch} has changesets but ${facts.version} is already on npm, and a Version PR ` +
+        `is opened on ${VERSION_PR_BRANCH} only. Version this branch by hand: run "npm run version" ` +
+        `on a branch from ${certified.branch}, commit it as "chore: release" and merge it there.`,
+    );
+  }
   return {
     run_id: String(certified.id),
     tested_sha: certified.headSha,

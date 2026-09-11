@@ -1,7 +1,8 @@
 name: Release
 
-# A successful CI run on main certifies its head commit; this workflow either
-# opens the Version PR or publishes the exact artifact that run produced.
+# A successful CI push run on main or release/1.x certifies its head commit;
+# this workflow either opens the Version PR or publishes the exact artifact that
+# run produced. The branches are listed once, in scripts/release-gate.ts.
 # `workflow_dispatch` re-enters a certified run whose release was skipped
 # (for example because a newer push landed while its CI was still running).
 on:
@@ -11,10 +12,12 @@ on:
   workflow_dispatch:
     inputs:
       run_id:
-        description: Id of a successful CI push run on main to release.
+        description: Id of a successful CI push run on main or release/1.x to release.
         required: true
         type: string
 
+# One release at a time per branch, so main and release/1.x never wait on each
+# other. A dispatched re-entry runs on main's ref and queues with main.
 concurrency:
   group: release-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: false
@@ -28,7 +31,8 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_branch == 'main' &&
+      (github.event.workflow_run.head_branch == 'main' ||
+      github.event.workflow_run.head_branch == 'release/1.x') &&
       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     permissions:
@@ -67,8 +71,10 @@ jobs:
   version:
     name: Create or update Version PR
     needs: gate
-    # changesets/action branches from github.sha, so the Version PR is only
-    # correct when the tested commit is still the tip of main.
+    # changesets/action resets its version branch to github.sha, which under
+    # workflow_run is the tip of main; the runner writes GITHUB_SHA over any
+    # step env. The Version PR is only correct when the tested commit is still
+    # that tip, so release/1.x is versioned by hand and the gate says so.
     if: >-
       needs.gate.outputs.version_pr == 'true' &&
       needs.gate.outputs.tested_sha == github.sha
@@ -109,8 +115,8 @@ jobs:
   publish:
     name: Publish verified version
     needs: gate
-    # The gate has proven the tested commit is on main and its version is
-    # still unpublished; a newer push to main must not block this artifact.
+    # The gate has proven the tested commit is on its branch and its version is
+    # still unpublished; a newer push must not block this artifact.
     if: needs.gate.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
