@@ -59,7 +59,8 @@ Each row is an entry of the readiness table in
 `pll migrate` handles the first four:
 
 - `isPreviewRequest()` → `hasPreviewIntent()` — same signature. The old name is
-  a deprecated alias, removed in 3.0, so a 1.x project compiles against 2.0
+  a deprecated alias, removed in 3.0, on both entries that exported it (the root
+  and `payload-live-preview/astro`), so a 1.x project compiles against 2.0
   unchanged; the codemod renames it when you want the new one.
 - `hasPreviewIntent(request, { adminOrigins })` → `{ allowedOrigins }` — the
   name everything else uses; `adminOrigins` is a deprecated alias that is
@@ -89,6 +90,14 @@ Not a codemod target, because TypeScript reports each of them:
 - If you consume `payload-live-preview/migrate` as a library, `Codemod` no
   longer carries `apply`, so importing its types no longer drags in `ts-morph`.
 
+Reported by neither, because the old shape still compiles and still works:
+
+- `signed-token` `replay: { isUsed, markUsed }` → `{ consume }` — one
+  check-and-record step (`true` on first use) instead of a read and a write
+  that two simultaneous requests can both slip between. The two-method shape
+  is deprecated with that reason and removed in 3.0; `docs/security.md` has a
+  Redis example.
+
 ### Before / after
 
 ```ts
@@ -116,12 +125,24 @@ The rows above announce themselves: a refused preview, a missing binding, a
 correct, so nothing errors and nothing logs — walk this list once against your
 own site.
 
-One of them does warn now. `LP0409` names any attribute the strict sanitizer
+Two of them warn now. `LP0409` names any attribute the strict sanitizer
 removes that `'compat'` would have kept — `id`, `name`, and every `data-*` — the
 first time it happens, with the reason that applies to that attribute. It exists
 because this was the one 2.0 change an upgrading project could not discover
 except by looking: measured on a real 1.8.1 site, a `data-*` attribute driving a
 CSS selector disappeared the moment an editor typed, in the preview only.
+
+`LP0501` does the same for the other default that flipped. `eventSourcePolicy`
+is `'parent-or-opener'` since 2.0, where 1.x accepted any window on a trusted
+origin, so an arrangement whose admin posts from somewhere other than the window
+that framed or opened the page stops updating — and the refusal used to reach
+the debug log only. It is now reported once, naming the option. Set
+`eventSourcePolicy: 'any'` to keep the 1.x behaviour.
+
+`skipUnchanged` also flipped, from `false` to `true`, and deliberately gets no
+report: it skips writes whose value did not change, which is a cost decision
+rather than a visible one, and `inspect().revisions.skippedUnchanged` counts
+them for anyone who wants the number.
 
 **Rich text markup is classes, not data attributes.** The strict sanitizer
 strips `data-*`, so the Lexical renderer emits classes instead:

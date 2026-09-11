@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 288,
-    "suites": 604,
-    "tests": 2467,
+    "files": 289,
+    "suites": 605,
+    "tests": 2477,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 235,
-      "suites": 535,
-      "tests": 2260,
+      "files": 236,
+      "suites": 536,
+      "tests": 2270,
       "benchmarks": 0
     }
   },
@@ -561,7 +561,7 @@
       "path": "tests/unit/adapters/policy-authorization.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 27,
+      "tests": 28,
       "benchmarks": 0
     },
     {
@@ -835,6 +835,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/foreign-source-report.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -1975,7 +1982,7 @@
       "path": "tests/unit/security/preview-authorization.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 21,
+      "tests": 24,
       "benchmarks": 0
     },
     {
@@ -1989,7 +1996,7 @@
       "path": "tests/unit/security/preview-token-failure-paths.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 16,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -2080,7 +2087,7 @@
       "path": "tests/unit/upgrade-from-1x.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     }
   ]

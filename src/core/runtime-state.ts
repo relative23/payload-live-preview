@@ -111,6 +111,14 @@ export class RuntimeState {
   warnedFragmentFallback = false;
   /** LP0503 is reported once: a drifting sender repeats the same shape on every keystroke. */
   warnedProtocolShape = false;
+
+  /**
+   * Whether the first message refused for coming from the wrong window has been
+   * reported. `eventSourcePolicy` flipped from `'any'` to `'parent-or-opener'`
+   * in 2.0, so a 1.x arrangement that posts from anywhere else stops working on
+   * upgrade — silently, because a refusal only reaches the debug log.
+   */
+  warnedForeignSource = false;
   /** Identity of the value each element last applied; reset when the markup is re-rendered. */
   lastAppliedIdentity = new WeakMap<Element, string>();
   /** What each owned field was last seen with, for the reveal decision only. */

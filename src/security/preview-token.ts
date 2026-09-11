@@ -42,6 +42,23 @@ export type PreviewTokenTransport =
  * a load balancer, so the store is a deployment decision.
  */
 export interface PreviewTokenReplayStore {
+  /**
+   * Record `id` as used until `expiresAt` and say whether this call was the
+   * first: `true` admits the token, anything else refuses it as `replayed`, a
+   * throw refuses it as `unavailable`. Check and record in one step (Redis
+   * `SET NX PX`, a unique insert): a read followed by a write lets two requests
+   * that carry the same token and arrive together both pass.
+   */
+  consume(id: string, expiresAt: number): Promise<boolean> | boolean;
+}
+
+/**
+ * @deprecated The 1.x store shape, removed in 3.0. Its two calls cannot be one
+ * step, so two requests with the same token that arrive together both pass
+ * `isUsed` before either reaches `markUsed`. Implement
+ * {@link PreviewTokenReplayStore.consume} instead.
+ */
+export interface PreviewTokenReplayChecks {
   isUsed(id: string): Promise<boolean> | boolean;
   markUsed(id: string, expiresAt: number): Promise<void> | void;
 }
@@ -58,7 +75,8 @@ export interface SignedTokenStrategy {
   readonly transport?: PreviewTokenTransport;
   /** Resolve the request's locale for the `loc` binding. Unset: tokens with `loc` are refused as `wrong-locale`. */
   readonly locale?: (request: PreviewAuthorizationRequest) => string | undefined;
-  readonly replay?: PreviewTokenReplayStore;
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 1.x shape is accepted until 3.0
+  readonly replay?: PreviewTokenReplayStore | PreviewTokenReplayChecks;
   readonly crypto?: SubtleCryptoLike;
   readonly now?: () => number;
 }
@@ -282,12 +300,13 @@ export async function authorizeToken(
     if (locale !== claims.loc) return refused('wrong-locale');
   }
   if (strategy.replay !== undefined) {
+    let first: boolean;
     try {
-      if (await strategy.replay.isUsed(claims.jti)) return refused('replayed');
-      await strategy.replay.markUsed(claims.jti, claims.exp);
+      first = await consumeTokenId(strategy.replay, claims.jti, claims.exp);
     } catch {
       return refused('unavailable');
     }
+    if (!first) return refused('replayed');
   }
   return {
     authorized: true,
@@ -305,4 +324,26 @@ export async function authorizeToken(
       payloadHeaders: {},
     }),
   };
+}
+
+/**
+ * `true` when `id` was not seen before. A store that returns anything but
+ * `true` from `consume` refuses the token: fail closed, since a forgotten
+ * return would otherwise admit every replay. The 1.x shape keeps its two
+ * steps and its race; that is why it is deprecated rather than emulated.
+ */
+async function consumeTokenId(
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 1.x shape is accepted until 3.0
+  store: PreviewTokenReplayStore | PreviewTokenReplayChecks,
+  id: string,
+  expiresAt: number,
+): Promise<boolean> {
+  if ('consume' in store) {
+    // The store is consumer code; its answer is a value, not a type.
+    const answer: unknown = await store.consume(id, expiresAt);
+    return answer === true;
+  }
+  if (await store.isUsed(id)) return false;
+  await store.markUsed(id, expiresAt);
+  return true;
 }
