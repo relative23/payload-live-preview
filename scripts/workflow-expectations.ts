@@ -1,6 +1,7 @@
 /** The reviewed shape of the release, benchmark and protocol-watch workflows. */
 
 import type { WorkflowSpec } from './workflow-contracts';
+import { RELEASE_BRANCHES } from './release-gate';
 import { BUILD, CI, CRITICAL_GATES, DEEP_QUALITY } from './workflow-expectations-ci';
 import {
   BUILD_RUNTIME,
@@ -15,6 +16,11 @@ import {
 } from './workflow-expectations-shared';
 
 const TESTED_SHA = '${{ needs.gate.outputs.tested_sha }}';
+// The gate condition repeats RELEASE_BRANCHES. Deriving it here means a branch
+// added to the list fails this contract until release.yml accepts it as well.
+const RELEASE_BRANCH_CONDITION = RELEASE_BRANCHES.map(
+  (branch) => `github.event.workflow_run.head_branch == '${branch}'`,
+).join(' || ');
 const RELEASE: WorkflowSpec = {
   name: 'Release',
   on: {
@@ -22,7 +28,7 @@ const RELEASE: WorkflowSpec = {
     workflow_dispatch: {
       inputs: {
         run_id: {
-          description: 'Id of a successful CI push run on main to release.',
+          description: `Id of a successful CI push run on ${RELEASE_BRANCHES.join(' or ')} to release.`,
           required: true,
           type: 'string',
         },
@@ -40,7 +46,7 @@ const RELEASE: WorkflowSpec = {
         "github.event_name == 'workflow_dispatch' || " +
         "(github.event.workflow_run.conclusion == 'success' && " +
         "github.event.workflow_run.event == 'push' && " +
-        "github.event.workflow_run.head_branch == 'main' && " +
+        `(${RELEASE_BRANCH_CONDITION}) && ` +
         'github.event.workflow_run.head_repository.full_name == github.repository)',
       permissions: { actions: 'read', contents: 'read' },
       steps: [
@@ -118,7 +124,11 @@ const RELEASE: WorkflowSpec = {
         },
         {
           run: 'npx tsx scripts/github-release.ts',
-          env: { GH_TOKEN: '${{ github.token }}', PACKAGE_SOURCE_COMMIT: TESTED_SHA },
+          env: {
+            DIST_TAG: '${{ steps.publish.outputs.dist_tag }}',
+            GH_TOKEN: '${{ github.token }}',
+            PACKAGE_SOURCE_COMMIT: TESTED_SHA,
+          },
         },
         { run: 'npm run test:smoke' },
       ],

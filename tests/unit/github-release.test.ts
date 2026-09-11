@@ -134,6 +134,7 @@ describe('publishing the GitHub release', () => {
     const plan = publishGithubRelease({
       repository: 'o/r',
       version: '2.0.0',
+      distTag: 'latest',
       testedSha: TESTED,
       changelog: CHANGELOG,
       run,
@@ -155,12 +156,30 @@ describe('publishing the GitHub release', () => {
     publishGithubRelease({
       repository: 'o/r',
       version: '2.0.0-beta.1',
+      distTag: 'beta',
       testedSha: TESTED,
       changelog: CHANGELOG.replaceAll('2.0.0', '2.0.0-beta.1'),
       run: prerelease.run,
       writeNotes: () => '/tmp/notes.md',
     });
     expect(prerelease.commands.at(-1)).toContain('--prerelease');
+    expect(prerelease.commands.at(-1)).toContain('--latest=false');
+  });
+
+  it('leaves GitHub Latest on the current major when npm published elsewhere', () => {
+    const { commands, run } = world({ local: TESTED });
+    publishGithubRelease({
+      repository: 'o/r',
+      version: '1.9.0',
+      distTag: 'legacy',
+      testedSha: TESTED,
+      changelog: CHANGELOG,
+      run,
+      writeNotes: () => '/tmp/notes.md',
+    });
+    expect(commands.at(-1)).toBe(
+      'gh release create v1.9.0 --verify-tag --title v1.9.0 --notes-file /tmp/notes.md --latest=false',
+    );
   });
 
   it('does nothing when the tag is on origin and the release exists', () => {
@@ -169,6 +188,7 @@ describe('publishing the GitHub release', () => {
       publishGithubRelease({
         repository: 'o/r',
         version: '2.0.0',
+        distTag: 'latest',
         testedSha: TESTED,
         changelog: CHANGELOG,
         run,
@@ -191,6 +211,7 @@ describe('publishing the GitHub release', () => {
       publishGithubRelease({
         repository: 'o/r',
         version: '2.0.0',
+        distTag: 'latest',
         testedSha: TESTED,
         changelog: CHANGELOG,
         run,
