@@ -19,7 +19,7 @@
   "totals": {
     "files": 311,
     "suites": 655,
-    "tests": 2721,
+    "tests": 2727,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 254,
       "suites": 581,
-      "tests": 2495,
+      "tests": 2501,
       "benchmarks": 0
     }
   },
@@ -603,7 +603,7 @@
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 26,
+      "tests": 29,
       "benchmarks": 0
     },
     {
@@ -988,7 +988,7 @@
       "path": "tests/unit/core/lifecycle-data-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 9,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -1373,7 +1373,7 @@
       "path": "tests/unit/core/update-pipeline.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 12,
+      "tests": 13,
       "benchmarks": 0
     },
     {

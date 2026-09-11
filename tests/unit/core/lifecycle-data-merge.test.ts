@@ -252,6 +252,88 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     expect(document.querySelector('h1')?.textContent).toBe('raw title');
     runtime.destroy();
   });
+  it('does not ask the server for a document a Payload 2.x admin populates itself', async () => {
+    // A 2.x admin posts `fieldSchemaJSON` and populated relationships; a
+    // request would only fetch what the message already carries.
+    document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
+    const fetchFn = vi.fn();
+    const runtime = makeRuntime({
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn: fetchFn as typeof fetch },
+    });
+    runtime.start();
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      fieldSchemaJSON: [],
+      data: { id: '1', title: 'populated by the admin' },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(fetchFn).not.toHaveBeenCalled();
+    expect(document.querySelector('h1')?.textContent).toBe('populated by the admin');
+    runtime.destroy();
+  });
+
+  it('logs a refinement that fails after the shared merge lands, and keeps the leading write', async () => {
+    // Inside a burst the page renders the message's own values and the one
+    // request the burst shares refines them when the window closes. Nothing
+    // awaits that refinement, so a throw in it has the same boundary as the
+    // leading path: logged, never an unhandled rejection.
+    document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
+    const log = vi.fn();
+    const fetchFn = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ id: '1', title: 'merged' }))),
+      );
+    let armed = false;
+    const hostile: Record<string, readonly string[]> = {};
+    Object.defineProperty(hostile, 'title', {
+      enumerable: true,
+      get(): readonly string[] {
+        if (armed) throw new Error('dependency map exploded');
+        return [];
+      },
+    });
+    const runtime = makeRuntime({
+      log,
+      debounceMs: 50,
+      dependencies: hostile,
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn: fetchFn as typeof fetch },
+    });
+    runtime.start();
+
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: '1', title: 'first' },
+    });
+    // The leading write lands in a frame, well inside the 50 ms window.
+    await vi.advanceTimersByTimeAsync(20);
+    expect(document.querySelector('h1')?.textContent).toBe('merged');
+    // Still inside the window: a structure the server may complete makes this
+    // message ask, and the request it gets is the shared one.
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: '1', title: 'leading', tags: ['x'] },
+    });
+    await vi.advanceTimersByTimeAsync(20);
+    // Inside the window the page keeps what the leading write put there; the
+    // burst's own values and its shared request both land when it closes.
+    expect(document.querySelector('h1')?.textContent).toBe('merged');
+    expect(log.mock.calls.flat().join(' ')).not.toContain('update failed');
+
+    armed = true;
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(log.mock.calls.flat().join(' ')).toContain('update failed');
+    // The burst's own values flushed; the refinement that would have replaced
+    // them failed before it scheduled anything.
+    expect(document.querySelector('h1')?.textContent).toBe('leading');
+    runtime.destroy();
+  });
+
   it('skips merging entirely for messages without slugs', async () => {
     document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
     const fetchFn = vi.fn();

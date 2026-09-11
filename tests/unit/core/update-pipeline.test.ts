@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type LivePreviewRuntime } from '@core/lifecycle';
 import type { FragmentStrategy, RouteStrategy } from '@core/strategies';
 import {
@@ -243,6 +243,29 @@ describe('reveal', () => {
     post({ title: 't', footer: 'e' }, { extra: { globalSlug: 'home' } });
     await settled();
     expect(scrolled).toEqual(['footer']);
+  });
+
+  it('logs a reveal that throws instead of letting it take the update down', async () => {
+    // A host may override scrollIntoView, or the element may sit in a frame
+    // the reveal cannot scroll; the write already landed and stays.
+    const log = vi.fn();
+    harness = startRuntime({
+      renderers: { text: textRenderer({ sink: writes, record: 'fieldName' }) },
+      revealEditedField: true,
+      enableA11y: false,
+      eventSourcePolicy: 'any',
+      log,
+    });
+    const title = document.querySelector('[data-payload-field="title"]');
+    if (title === null) throw new Error('fixture missing');
+    title.scrollIntoView = () => {
+      throw new Error('scroll exploded');
+    };
+    await update({ title: 'a', footer: 'b' });
+    await update({ title: 'edited', footer: 'b' });
+    expect(text('title')).toBe('edited');
+    expect(scrolled).toEqual([]);
+    expect(log).toHaveBeenCalledWith('reveal', expect.any(Error));
   });
 
   it('treats an element new to the page as baseline, not as an edit', async () => {
