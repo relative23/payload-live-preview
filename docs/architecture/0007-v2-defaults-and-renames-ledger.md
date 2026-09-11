@@ -76,3 +76,62 @@ A consumer's own `isPreviewRequest` is therefore left alone. Where a rewrite
 would be visible outside the file — an object shorthand, a re-export, a call
 whose options are not a literal — the codemod reports `file:line` and changes
 nothing in that file, and the CLI exits `3`.
+
+## Addendum — app two: Next.js and React, 1.8.1 → 2.0 (2026-09-11)
+
+The 2.0 gate is "migration verified in two materially different apps". App one
+is Sala (Astro 7, SSR): `pll migrate` rewrote its one affected file, and its 667
+tests and `astro check` pass on the 2.0 build. There is no second 1.x consumer,
+so app two is this repository's Next.js fixture as it stood at `v1.8.1` — a 1.x
+consumer in shape and framework. It was taken out with
+`git archive v1.8.1 examples/nextjs-payload`, given the packed 2.0 build in
+place of its `file:../..` dependency, and upgraded the way
+[migration.md](../migration.md) says.
+
+| Step                                                     | Result                                                                                                                                                                                                                    |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pll migrate`, dry run and `--write`                     | 3 source files read, **0 rewritten, 0 conflicts**, exit 0                                                                                                                                                                 |
+| `tsc --noEmit`, `next build`                             | exit 0, exit 0                                                                                                                                                                                                            |
+| the Next.js live-preview scenarios, app as migrated, dev | **4 of 5**, twice. React throws `Hydration failed` on every framed load and regenerates the tree, and the first write goes with it until the admin sends again; `inspect().hydration` is `{ mode: 'off', state: 'idle' }` |
+| after one added line, `next dev` and `next start`        | **5 of 5** each, no page error, `inspect().hydration` `{ mode: 'react', state: 'committed' }`, `inspect().fidelity` `{ mode: 'escalate', unfaithful: 0, escalated: 0, fields: [] }`                                       |
+
+The line is `hydration: 'react'` in the options the root layout passes to
+`generateInlineScript()` ([ADR 0015](0015-first-write-after-hydration.md)). The
+app imports a single name from the package, and 2.0 still exports it:
+`generateInlineScript`, from the root entry, which is what the 1.8.1 README told
+a Next.js site to use. The Next.js adapter writes the same value into every
+script it emits — `livePreviewScriptProps()` with the same options serializes a
+byte-identical configuration — so rendering through the adapter is the other
+way to the same result. Under `next start` the unedited app won the race on the
+measuring machine (the write at 64–67 ms stayed, both runs); in development it
+lost both runs. The line turns an order that depends on timing into one the
+runtime guarantees.
+
+**What the upgrade does not deliver**, held against today's fixture: the bound
+page is the same file byte for byte (`app/(inline)/page.tsx`), and the options
+both layouts set agree. The upgraded app still sends the runtime to every
+visitor — an anonymous `GET /` under `next start` is 244 804 B, the runtime
+inline and again in the RSC payload, where today's fixture renders nothing for
+that request through `<LivePreviewScript />` and `authorizePreview` — and it has
+no fragment strategy and no reveal. `pll doctor --v2` says so (`LP0704`,
+`LP0710`, no error-level finding). None of this is a 2.0 requirement for a
+script built by hand: `strict` governs the adapters, and this app never used
+one.
+
+**Why the two apps count as two.** Sala's integration is server code: an Astro
+SSR middleware with its own authorization, calling `isPreviewRequest()` and
+`createPreviewBindings()`, and it uses neither an adapter nor the inline
+runtime. Its upgrade was a rename in that middleware. App two has no server glue
+at all: a React Server Component layout that builds the inline runtime by hand,
+and a page React hydrates. Its upgrade renamed nothing and needed the one
+runtime option that exists because React hydrates. Between them, the codemod's
+rename path and the runtime's hydration path have each been through a real 1.x
+app.
+
+`tests/unit/migrate/app-two-nextjs-1.8.1.test.ts` keeps this from being a story
+told once. It runs the codemod over the checked-in 1.8.1 files
+(`tests/migration/nextjs-1.8.1/source/`) and holds the result against the
+upgraded state (`expected/`) and against today's fixture. A codemod that starts
+touching the app, a name it imports going missing, the one line no longer
+making the difference, or the fixture's page or shared options drifting turns
+it red.

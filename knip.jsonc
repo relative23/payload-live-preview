@@ -49,6 +49,10 @@
   // knip otherwise reports that it would not follow imports in a file type the
   // project excludes. A `.vue` file under these paths would be followed.
   "project": ["src/**/*.{ts,vue}", "scripts/**/*.ts", "tests/**/*.{ts,tsx,vue}", "*.config.ts"],
+  // A 1.x consumer's files, kept byte for byte and read as text by the
+  // migration tests: they import the published package and React, which this
+  // project neither lists nor resolves, and nothing here imports them.
+  "ignore": ["tests/migration/**"],
   // Cycles and layer direction belong to scripts/architecture-policy.ts. Knip
   // remains responsible for dead files/exports and dependency drift.
   "include": ["files", "dependencies", "unlisted", "unresolved", "exports", "types", "duplicates"],

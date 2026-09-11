@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 313,
-    "suites": 662,
-    "tests": 2772,
+    "files": 314,
+    "suites": 663,
+    "tests": 2779,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 256,
-      "suites": 587,
-      "tests": 2545,
+      "files": 257,
+      "suites": 588,
+      "tests": 2552,
       "benchmarks": 0
     }
   },
@@ -1731,6 +1731,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/app-two-nextjs-1.8.1.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
       "benchmarks": 0
     },
     {
