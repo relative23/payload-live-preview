@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 97,
-    "suites": 294,
-    "tests": 1494,
+    "files": 100,
+    "suites": 301,
+    "tests": 1517,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 81,
-      "suites": 265,
-      "tests": 1398,
+      "files": 84,
+      "suites": 272,
+      "tests": 1421,
       "benchmarks": 0
     }
   },
@@ -502,6 +502,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/github-release.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
@@ -593,6 +600,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/post-publish-smoke.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/preview-fetch.test.ts",
       "group": "unit",
       "suites": 2,
@@ -623,8 +637,8 @@
     {
       "path": "tests/unit/publish-artifact.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 11,
+      "suites": 5,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -681,6 +695,13 @@
       "group": "unit",
       "suites": 5,
       "tests": 52,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/release-version.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {

@@ -121,6 +121,7 @@
     "test:bench:codspeed": "vitest bench --run --config vitest.bench.config.ts",
     "test:bundle": "tsx scripts/check-bundle-size.ts",
     "test:package": "tsx scripts/check-package.ts",
+    "test:smoke": "tsx scripts/post-publish-smoke.ts",
     "test:coverage": "vitest run --coverage",
     "test:coverage:diff": "tsx scripts/coverage-policy.ts",
     "test:policy": "tsx scripts/test-policy.ts",

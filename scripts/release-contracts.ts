@@ -516,8 +516,8 @@ function findNonImmutableActionReferences(workflow: string, label: string): read
 function findCiWorkflowViolations(workflow: string): readonly string[] {
   const violations: string[] = [...findNonImmutableActionReferences(workflow, 'CI')];
   if (!has(workflow, /name:\s*CI(?:\s|$)/)) violations.push('CI workflow is not named CI');
-  if (!has(workflow, /push:\s*branches:\s*\[\s*main\s*\]/)) {
-    violations.push('CI does not run for pushes to main');
+  if (!has(workflow, /push:\s*branches:\s*\[\s*main,\s*release\/1\.x\s*\]/)) {
+    violations.push('CI does not run for pushes to main and release/1.x');
   }
   if (
     !has(
@@ -717,10 +717,12 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
     const block = jobBlock(workflow, name);
     if (block === undefined) continue;
     const condition = jobCondition(block).replace(/\s+/gu, ' ').trim();
-    const isMainPush =
-      condition === "github.event_name == 'push' && github.ref == 'refs/heads/main'";
-    if (!isMainPush) {
-      violations.push(`CI ${name} job is not restricted to main-branch pushes`);
+    // Both branches publish, so both certify with the full release gates.
+    const isReleaseBranchPush =
+      condition ===
+      "github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/1.x')";
+    if (!isReleaseBranchPush) {
+      violations.push(`CI ${name} job is not restricted to release-branch pushes`);
     }
   }
 

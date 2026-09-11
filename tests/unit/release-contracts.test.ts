@@ -1115,19 +1115,19 @@ describe('release workflow exact-commit contract', () => {
     const criticalOnPr = replaceInWorkflowJob(
       ciWorkflow,
       'critical-mutation',
-      "    if: github.event_name == 'push' && github.ref == 'refs/heads/main'",
+      "    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/1.x')",
       "    if: github.event_name == 'pull_request'",
     );
     const criticalOnAnyPush = replaceInWorkflowJob(
       ciWorkflow,
       'critical-mutation',
-      "    if: github.event_name == 'push' && github.ref == 'refs/heads/main'",
+      "    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/1.x')",
       "    if: github.event_name == 'push'",
     );
     const criticalWithOr = replaceInWorkflowJob(
       ciWorkflow,
       'critical-mutation',
-      "    if: github.event_name == 'push' && github.ref == 'refs/heads/main'",
+      "    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/1.x')",
       "    if: github.event_name == 'push' || github.ref == 'refs/heads/main'",
     );
     const withoutCriticalPolicy = replaceInWorkflowJob(
@@ -1150,13 +1150,13 @@ describe('release workflow exact-commit contract', () => {
     );
 
     expect(findReleaseWorkflowViolations(release, criticalOnPr)).toContain(
-      'CI critical-mutation job is not restricted to main-branch pushes',
+      'CI critical-mutation job is not restricted to release-branch pushes',
     );
     expect(findReleaseWorkflowViolations(release, criticalOnAnyPush)).toContain(
-      'CI critical-mutation job is not restricted to main-branch pushes',
+      'CI critical-mutation job is not restricted to release-branch pushes',
     );
     expect(findReleaseWorkflowViolations(release, criticalWithOr)).toContain(
-      'CI critical-mutation job is not restricted to main-branch pushes',
+      'CI critical-mutation job is not restricted to release-branch pushes',
     );
     expect(findReleaseWorkflowViolations(release, withoutCriticalPolicy)).toContain(
       'CI critical-mutation job does not enforce the reviewed critical mutation policy',
