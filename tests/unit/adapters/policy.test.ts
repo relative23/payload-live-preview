@@ -81,6 +81,12 @@ describe('normalizeCspMode', () => {
 });
 
 describe('inlineScriptConfig', () => {
+  const LEAN = {
+    profile: 'lean',
+    source: '',
+    contentHash: 'c0ffee',
+    integrity: 'sha384-x',
+  } as const;
   // Each row is one adapter option and the key it travels under. An option the
   // adapter drops here never reaches the runtime, and nothing else notices.
   const WIRE = [
@@ -105,6 +111,11 @@ describe('inlineScriptConfig', () => {
     ['eventSourcePolicy', 'any', 'eventSourcePolicy', 'any'],
     ['sanitizerPolicy', 'compat', 'sanitizerPolicy', 'compat'],
     ['fragments', { endpoint: '/payload/fragment' }, 'fragmentEndpoint', '/payload/fragment'],
+    ['runtime', LEAN, 'runtime', LEAN],
+    ['routeStrategy', true, 'routeStrategy', true],
+    ['onUnboundChange', 'route', 'onUnboundChange', 'route'],
+    ['onUnfaithfulPatch', 'warn', 'onUnfaithfulPatch', 'warn'],
+    ['autoBind', 'unique', 'autoBind', 'unique'],
   ] as const;
 
   it.each(WIRE)('puts %s on the wire', (option, value, wireKey, wireValue) => {
@@ -129,6 +140,22 @@ describe('inlineScriptConfig', () => {
     expect(inlineScriptConfig({ inject: 'always', manageCsp: 'full', autoInject: false })).toEqual(
       {},
     );
+  });
+
+  it('drops routeStrategy once fragments carry it, so the larger prelude is not emitted twice', () => {
+    const fragments = { endpoint: '/payload/fragment' };
+    expect(inlineScriptConfig({ fragments, routeStrategy: true })).toEqual({
+      fragmentEndpoint: '/payload/fragment',
+    });
+  });
+
+  it('puts what the adapter knows about the page on the wire beside what was configured', () => {
+    // Hydration is a fact the adapter states, never an option a project sets.
+    expect(inlineScriptConfig({ debug: true }, { hydration: 'react' })).toEqual({
+      debug: true,
+      hydration: 'react',
+    });
+    expect(inlineScriptConfig({}, {})).toEqual({});
   });
 });
 

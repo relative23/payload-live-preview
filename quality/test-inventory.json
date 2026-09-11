@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 311,
-    "suites": 655,
-    "tests": 2721,
+    "files": 312,
+    "suites": 658,
+    "tests": 2727,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 254,
-      "suites": 581,
-      "tests": 2495,
+      "files": 255,
+      "suites": 584,
+      "tests": 2501,
       "benchmarks": 0
     }
   },
@@ -603,7 +603,7 @@
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 26,
+      "tests": 28,
       "benchmarks": 0
     },
     {
@@ -1367,6 +1367,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/update-pipeline-failure-paths.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {
