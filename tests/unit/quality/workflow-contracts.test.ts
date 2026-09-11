@@ -230,6 +230,13 @@ describe('workflow contracts', () => {
         'release.yml job publish step uses actions/download-artifact with.run-id is not "${{ needs.gate.outputs.run_id }}"',
     },
     {
+      label: 'a gate that no longer accepts the 1.x maintenance branch',
+      file: 'release.yml',
+      original: " ||\n      github.event.workflow_run.head_branch == 'release/1.x')",
+      replacement: ')',
+      violation: 'release.yml job gate does not use the reviewed condition',
+    },
+    {
       label: 'a gate without workflow-run provenance checks',
       file: 'release.yml',
       original: 'github.event.workflow_run.head_repository.full_name == github.repository)',

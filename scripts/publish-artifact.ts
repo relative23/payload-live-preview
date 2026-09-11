@@ -1,7 +1,7 @@
 /** Publish and reconcile only the package archive certified by the CI manifest. */
 
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { appendFile, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,15 +15,10 @@ import {
   type PackageArtifactManifest,
 } from './package-artifact';
 import { sanitizeNpmScriptEnvironment } from './release-contracts';
+import { distTagForVersion, isPackageVersion, releaseTagForVersion } from './release-version';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const NPM_REGISTRY = 'https://registry.npmjs.org';
-const STABLE_SEMVER_PATTERN = /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/u;
-// A changesets prerelease: `X.Y.Z-<label>.<n>` (e.g. `2.0.0-beta.0`). The
-// label becomes the npm dist-tag, so a prerelease never lands on `latest`.
-const PRERELEASE_SEMVER_PATTERN =
-  /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)-([a-z][a-z0-9]*)\.(?:0|[1-9][0-9]*)$/u;
-
 interface CommandResult {
   readonly stdout: string;
   readonly stderr: string;
@@ -187,39 +182,21 @@ export async function publishCertifiedArtifact(
 }
 
 /**
- * The npm dist-tag for a version: `latest` for a stable release, and the
- * prerelease label (`beta`, `rc`, …) for a prerelease, so a `2.0.0-beta.0`
- * publishes under `beta` and `npm install <pkg>` keeps resolving the stable
- * `latest`. Any version that is neither shape is refused (fail-closed).
+ * The value of a single-field `npm view … --json`. npm 11 prints the value
+ * itself, npm 12 the same value inside a one-element array; the repository
+ * pins npm 12 and a 1.x branch keeps npm 11, so both shapes are read. Anything
+ * else is not one value and stays as it is, for the caller to refuse.
  */
-export function distTagForVersion(version: string): string {
-  if (STABLE_SEMVER_PATTERN.test(version)) return 'latest';
-  const prerelease = PRERELEASE_SEMVER_PATTERN.exec(version);
-  if (prerelease === null) throw new Error(`invalid package version: ${version}`);
-  return prerelease[1] ?? 'next';
+function singleViewValue(value: unknown): unknown {
+  return Array.isArray(value) && value.length === 1 ? (value[0] as unknown) : value;
 }
 
-export function releaseTagForVersion(version: string): string {
-  if (!STABLE_SEMVER_PATTERN.test(version) && !PRERELEASE_SEMVER_PATTERN.test(version)) {
-    throw new Error(`invalid package version: ${version}`);
-  }
-  return `v${version}`;
-}
-
-function readRegistryState(name: string, version: string): RegistryArtifactState {
-  const result = run('npm', [
-    'view',
-    `${name}@${version}`,
-    'dist.integrity',
-    '--json',
-    '--prefer-online',
-    '--registry',
-    NPM_REGISTRY,
-  ]);
+/** The registry state of one exact version, from `npm view <pkg>@<version> dist.integrity --json`. */
+export function registryStateFrom(result: CommandResult): RegistryArtifactState {
   if (result.status === 0) {
     let integrity: unknown;
     try {
-      integrity = JSON.parse(result.stdout);
+      integrity = singleViewValue(JSON.parse(result.stdout));
     } catch (error: unknown) {
       throw new Error(`npm returned malformed registry integrity: ${String(error)}`, {
         cause: error,
@@ -232,6 +209,62 @@ function readRegistryState(name: string, version: string): RegistryArtifactState
   }
   if (/\bE404\b/u.test(`${result.stdout}\n${result.stderr}`)) return { kind: 'missing' };
   throw new Error(`npm registry lookup failed closed:\n${detail(result)}`);
+}
+
+/**
+ * The version the registry serves as `latest`, from
+ * `npm view <pkg> dist-tags.latest --json`, or `undefined` for a package it has
+ * never seen. Read once, before anything is published, and not retried: this
+ * is not the read-after-write delay the propagation wait exists for, npm
+ * already retries transient network failures itself, and a run that stops
+ * here has changed nothing and is re-entered with the same CI run id.
+ */
+export function registryLatestFrom(result: CommandResult): string | undefined {
+  if (result.status === 0) {
+    if (result.stdout.trim().length === 0) return undefined;
+    let latest: unknown;
+    try {
+      latest = singleViewValue(JSON.parse(result.stdout));
+    } catch (error: unknown) {
+      throw new Error(`npm returned a malformed latest dist-tag: ${String(error)}`, {
+        cause: error,
+      });
+    }
+    if (typeof latest !== 'string' || !isPackageVersion(latest)) {
+      throw new Error(`npm registry serves no version as latest: ${JSON.stringify(latest)}`);
+    }
+    return latest;
+  }
+  if (/\bE404\b/u.test(`${result.stdout}\n${result.stderr}`)) return undefined;
+  throw new Error(`npm registry lookup of latest failed closed:\n${detail(result)}`);
+}
+
+function readLatestVersion(name: string): string | undefined {
+  return registryLatestFrom(
+    run('npm', [
+      'view',
+      name,
+      'dist-tags.latest',
+      '--json',
+      '--prefer-online',
+      '--registry',
+      NPM_REGISTRY,
+    ]),
+  );
+}
+
+function readRegistryState(name: string, version: string): RegistryArtifactState {
+  return registryStateFrom(
+    run('npm', [
+      'view',
+      `${name}@${version}`,
+      'dist.integrity',
+      '--json',
+      '--prefer-online',
+      '--registry',
+      NPM_REGISTRY,
+    ]),
+  );
 }
 
 async function verifyRegistryArchive(
@@ -377,10 +410,8 @@ async function main(): Promise<void> {
     throw new Error('repository package identity/toolchain is malformed');
   }
   const npmVersion = packageManager.slice('npm@'.length);
-  // Derive (and validate) the npm dist-tag: `latest` for a stable release,
-  // the prerelease label (e.g. `beta`) for a prerelease. Fail-closed on any
-  // other shape.
-  const distTag = distTagForVersion(version);
+  // A malformed version is refused before anything reads the registry.
+  releaseTagForVersion(version);
   const actualNpm = run('npm', ['--version']);
   if (actualNpm.status !== 0 || actualNpm.stdout.trim() !== npmVersion) {
     throw new Error(`release requires npm ${npmVersion}:\n${detail(actualNpm)}`);
@@ -391,6 +422,9 @@ async function main(): Promise<void> {
     throw new Error('PACKAGE_SOURCE_COMMIT and SOURCE_DATE_EPOCH are required for release');
   }
   exactHeadCommit(sourceCommit);
+  const latest = readLatestVersion(name);
+  const distTag = distTagForVersion(version, latest);
+  console.log(`[release] ${version} publishes under ${distTag} (latest is ${latest ?? 'unset'})`);
 
   const evidence = await inspectPackageArchive(
     tarball,
@@ -437,6 +471,9 @@ async function main(): Promise<void> {
     console.log(`[release] npm already had ${name}@${version} with the certified integrity`);
   }
   console.log(`[release] npm registry archive exactly matches ${evidence.sha256}`);
+  // The GitHub Release step marks the release Latest only when npm did.
+  const outputPath = process.env['GITHUB_OUTPUT'];
+  if (outputPath !== undefined) await appendFile(outputPath, `dist_tag=${distTag}\n`);
 }
 
 const invokedPath = process.argv[1] === undefined ? undefined : resolve(process.argv[1]);

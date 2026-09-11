@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 314,
-    "suites": 663,
-    "tests": 2780,
+    "files": 315,
+    "suites": 666,
+    "tests": 2796,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 257,
-      "suites": 588,
-      "tests": 2553,
+      "files": 258,
+      "suites": 591,
+      "tests": 2569,
       "benchmarks": 0
     }
   },
@@ -1653,7 +1653,7 @@
       "path": "tests/unit/github-release.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -1946,8 +1946,8 @@
     {
       "path": "tests/unit/publish-artifact.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 13,
+      "suites": 5,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -2115,7 +2115,14 @@
       "path": "tests/unit/release-gate.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 15,
+      "tests": 21,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/release-version.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {

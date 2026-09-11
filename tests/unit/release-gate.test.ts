@@ -45,11 +45,13 @@ interface FakeWorld {
   readonly registry?: CommandResult;
   readonly tagSha?: string;
   readonly release?: CommandResult;
+  readonly commands?: string[];
 }
 
 function runner(world: FakeWorld): (executable: string, args: readonly string[]) => CommandResult {
   return (executable, args) => {
     const command = `${executable} ${args.join(' ')}`;
+    world.commands?.push(command);
     if (command.startsWith('gh api') && command.includes('/actions/runs/')) {
       return ok(JSON.stringify(world.run ?? run()));
     }
@@ -73,7 +75,32 @@ function runner(world: FakeWorld): (executable: string, args: readonly string[])
 
 describe('certified run resolution', () => {
   it('accepts a completed, successful CI push run on main from this repository', () => {
-    expect(certifiedRunFrom(run(), REPOSITORY)).toEqual({ id: 42, headSha: TESTED });
+    expect(certifiedRunFrom(run(), REPOSITORY)).toEqual({
+      id: 42,
+      headSha: TESTED,
+      branch: 'main',
+    });
+  });
+
+  it('accepts the same run from the 1.x maintenance branch and names the branch', () => {
+    expect(certifiedRunFrom(run({ head_branch: 'release/1.x' }), REPOSITORY)).toEqual({
+      id: 42,
+      headSha: TESTED,
+      branch: 'release/1.x',
+    });
+  });
+
+  it('refuses every other branch, however close its name', () => {
+    for (const branch of [
+      'release/2.x',
+      'release/1.x-backport',
+      'changeset-release/release/1.x',
+      'Main',
+    ]) {
+      expect(() => certifiedRunFrom(run({ head_branch: branch }), REPOSITORY)).toThrow(
+        /head_branch/u,
+      );
+    }
   });
 
   it.each([
@@ -157,6 +184,61 @@ describe('release gate run', () => {
       publish: 'true',
       version_pr: 'false',
     });
+  });
+
+  it('proves ancestry against the branch the run came from', () => {
+    const commands: string[] = [];
+    runReleaseGate({
+      repository: REPOSITORY,
+      runId: '42',
+      run: runner({
+        run: run({ head_branch: 'release/1.x' }),
+        manifest: { name: 'pkg', version: '1.8.2' },
+        commands,
+      }),
+    });
+    expect(commands).toContain(`git merge-base --is-ancestor ${TESTED} origin/release/1.x`);
+    expect(commands.some((command) => command.includes('origin/main'))).toBe(false);
+  });
+
+  it('publishes an unpublished 1.x version certified on release/1.x', () => {
+    expect(
+      runReleaseGate({
+        repository: REPOSITORY,
+        runId: '42',
+        run: runner({
+          run: run({ head_branch: 'release/1.x' }),
+          manifest: { name: 'pkg', version: '1.8.2' },
+        }),
+      }),
+    ).toEqual({ run_id: '42', tested_sha: TESTED, publish: 'true', version_pr: 'false' });
+  });
+
+  it('refuses a 1.x commit that is not on release/1.x', () => {
+    expect(() =>
+      runReleaseGate({
+        repository: REPOSITORY,
+        runId: '42',
+        run: runner({ run: run({ head_branch: 'release/1.x' }), ancestor: false }),
+      }),
+    ).toThrow(/not on release\/1\.x/u);
+  });
+
+  // changesets/action resets its version branch to github.sha, the tip of main
+  // under workflow_run; on release/1.x it would open a PR carrying main's tree.
+  it('names the hand step instead of asking for a Version PR on a maintenance branch', () => {
+    expect(() =>
+      runReleaseGate({
+        repository: REPOSITORY,
+        runId: '42',
+        run: runner({
+          run: run({ head_branch: 'release/1.x' }),
+          manifest: { name: 'pkg', version: '1.8.1' },
+          registry: ok('1.8.1\n'),
+          changesets: '.changeset/README.md\n.changeset/fix.md\n',
+        }),
+      }),
+    ).toThrow(/npm run version/u);
   });
 
   it('refuses a certified commit that is not an ancestor of main', () => {

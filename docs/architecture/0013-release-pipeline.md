@@ -27,8 +27,9 @@ exactly that artifact by run id and name, reruns the package gate with
 
 `scripts/release-gate.ts` runs after every completed CI run and on
 `workflow_dispatch` with a `run_id`. It accepts only a completed, successful CI
-`push` run on `main` of this repository whose head is an ancestor of
-`origin/main`, reads `package.json` at that commit, and asks the registry:
+`push` run of this repository on a release branch — `main` or `release/1.x`,
+listed once as `RELEASE_BRANCHES` — whose head is an ancestor of that branch on
+`origin`, reads `package.json` at that commit, and asks the registry:
 
 - the version is not on npm → **publish**;
 - it is, and `.changeset/` holds changesets → **Version PR**
@@ -37,8 +38,13 @@ exactly that artifact by run id and name, reruns the package gate with
 - the GitHub Release exists → nothing; a tag on another commit → an error.
 
 The Version PR job additionally requires the tested commit to still be the tip
-of `main`, because `changesets/action` branches from `github.sha`. The publish
-job does not: a newer push must not block an artifact the gate has proven.
+of `main`, because `changesets/action` branches from `github.sha`. Under
+`workflow_run` that is always the tip of `main`, and a step cannot change it:
+the runner writes `GITHUB_SHA` from the `github` context over any step `env`.
+A maintenance branch therefore gets no Version PR — with changesets there and
+its version already on npm, the gate fails and names the hand step (§7). The
+publish job does not require the tip: a newer push must not block an artifact
+the gate has proven.
 
 ### 3. Publish is byte-identical and reconciles rather than repeats
 
@@ -54,13 +60,30 @@ created; `scripts/github-release.ts` pushes it and creates the GitHub Release
 from the CHANGELOG section, reconciling in the same way — a tag or release
 already on the tested commit is accepted, one on another commit is an error.
 
-### 4. Prereleases publish under their label
+### 4. The dist-tag follows the version and the registry's `latest`
 
-The dist-tag is derived from the version and nothing else: `X.Y.Z` → `latest`;
-`X.Y.Z-<label>.<n>`, the shape Changesets pre mode produces → `<label>`, so
-`2.0.0-beta.0` lands on `beta` and `npm install` keeps resolving the stable
-release. A version of any other shape is refused. The GitHub Release is marked
-prerelease when the version carries a hyphen.
+npm moves a dist-tag to whatever is published under it, so the tag decides what
+`npm install payload-live-preview` resolves. `distTagForVersion()` in
+`scripts/publish-artifact.ts` takes the version and the version the registry
+serves as `latest`:
+
+- `X.Y.Z-<label>.<n>`, the shape Changesets pre mode produces → `<label>`, so
+  `2.0.0-beta.0` lands on `beta` and installs keep resolving the stable release;
+- a stable version whose major is below the major of `latest` → `legacy`, so a
+  1.x security fix published after 2.0.0 cannot take `latest` back (§7);
+- a stable version below `latest` in the same major → refused, it would move
+  `latest` backwards;
+- any other stable version → `latest`, and so does the first publish of a
+  package that has no `latest` yet.
+
+A version of any other shape is refused. `latest` is read once, before anything
+is published (`registryLatestFrom()`), and not retried: it is not the
+read-after-write delay the wait in §3 exists for, npm retries transient network
+failures itself, and a run that stops there has changed nothing. The publisher
+hands its tag to the next step as the `dist_tag` output; `scripts/github-release.ts`
+marks the GitHub Release prerelease when the version carries a hyphen and passes
+`--latest=false` whenever the tag is not `latest`, so GitHub's Latest label
+follows npm's.
 
 ### 5. Versions are bumped by the script, never by hand
 
@@ -107,7 +130,7 @@ held by seven unit cases (`tests/unit/quality/complexity-budget.test.ts`).
 exactly 90 days before it, when 2.0.0 looked days away; the second half keeps
 the window from shrinking with every day the release slips.
 
-Measured on 2026-09-11, a 1.x fix could not ship:
+Measured on 2026-09-11, before the work below, a 1.x fix could not ship:
 
 - There is no `release/1.x` branch. The last 1.x release is `v1.8.1`
   (`c23d5de`), which carries no `.changeset/pre.json` and `baseBranch: main`.
@@ -129,44 +152,65 @@ Measured on 2026-09-11, a 1.x fix could not ship:
 - `scripts/github-release.ts` does not pass `--latest=false`, so whether a
   1.8.2 Release takes GitHub's Latest label from 2.0.0 is left to GitHub.
 
-The way, once the steps below exist:
+The way:
 
 1. The fix lands on `main` first, with its regression test. 1.x gets a
    backport, never a fix 2.x lacks.
-2. The branch is cut once from the last 1.x tag and protected like `main`:
-
-   ```sh
-   git fetch origin --tags
-   git switch -c release/1.x v1.8.1
-   git push -u origin release/1.x
-   ```
-
+2. `release/1.x` was cut once from `v1.8.1` and is protected like `main`, with
+   the check names its own `ci.yml` produces — `Build`, where `main` requires
+   `Build / Build`.
 3. On that branch Changesets stay in normal mode — there is no pre mode to
    exit — with `baseBranch: "release/1.x"`. A backport is
-   `git cherry-pick -x <sha>` plus a `patch` changeset; the Version PR makes
-   it `1.8.2`.
-4. A 1.x version is published under the dist-tag `legacy`. `1.x` is not
+   `git cherry-pick -x <sha>` plus a `patch` changeset (a `minor` where the fix
+   adds a contract), and `npm run version` in the same pull request: the Version PR exists on `main` only (§2), so on
+   `release/1.x` the release commit is made by hand. A changeset merged there
+   without it makes the Release run fail with that instruction.
+4. A 1.x version is published under the dist-tag `legacy` (§4). `1.x` is not
    possible: npm refuses a dist-tag that parses as a semver range (npm 12.0.2,
-   `dist-tag` and `publish --tag`). The rule that serves both periods is "a
-   stable version whose major is below the major `latest` serves goes to
-   `legacy`": before 2.0.0 a 1.8.2 still lands on `latest`, after it on
-   `legacy`. If a 1.x release ever reaches `latest`, the repair is
-   `npm dist-tag add payload-live-preview@<2.x version> latest`.
+   `dist-tag` and `publish --tag`). Before 2.0.0 a 1.8.2 still lands on
+   `latest`, after it on `legacy`. If a 1.x release ever reaches `latest`, the
+   repair is `npm dist-tag add payload-live-preview@<2.x version> latest`.
 
-Missing before step 2 is worth taking, and not made here, because each is a
-workflow or release-script change:
+Done on 2026-09-11, the list this section named as missing:
 
-- `ci.yml` on the branch runs on `release/1.x`.
+- `ci.yml` on `release/1.x` runs for its pushes and pull requests, the
+  release-critical gates included, and the branch's own package gate accepts
+  that (`2c5b746` on `release/1.x`).
 - `release.yml` and `scripts/release-gate.ts` on `main` accept `release/1.x`
-  beside `main`: the `gate` condition, `certifiedRunFrom()`, the ancestry check
-  against the run's own branch, and a Version PR condition that compares with
-  that branch's tip instead of `github.sha`.
-- `distTagForVersion()` takes the registry's `latest` as a second input and
-  returns `legacy` by the rule above.
-- `scripts/github-release.ts` passes `--latest=false` for that case.
-- The branch gets the publish tooling the job calls — `github-release.ts`,
-  `post-publish-smoke.ts` with `test:smoke`, and the new dist-tag rule — in
-  one commit before the first backport.
+  beside `main`: `RELEASE_BRANCHES` is the one list, `certifiedRunFrom()` checks
+  membership, ancestry is proven against the run's own branch, and the workflow
+  contract derives the gate condition from the list (`dfdddbb`). The Version PR
+  condition keeps `github.sha`: `changesets/action` resets its version branch to
+  that commit, so it is the one tip a Version PR can be correct for; for
+  `release/1.x` the gate names the hand step instead.
+- `distTagForVersion()` takes the registry's `latest` and returns `legacy` by
+  the rule in §4, and `scripts/github-release.ts` passes `--latest=false`
+  whenever the dist-tag is not `latest` (`296ad46`).
+- The branch carries the tooling the publish job calls, in one commit (`2c5b746`):
+  `publish-artifact.ts` and `release-version.ts` as on `main`,
+  `github-release.ts` with its two runner types declared locally, and
+  `post-publish-smoke.ts` with the 1.8.1 export map and `test:smoke`. Run against
+  the published `1.8.1`, `npm run test:smoke` passed.
+- Found on the way: npm 12 prints a single-field `npm view --json` as a
+  one-element array, so the post-publish integrity check refused a correct
+  answer; both shapes are read now (`69c9b1a`).
+
+Open:
+
+- The 1.8.1 tree fails its own audit gates today, and the branch inherits
+  that: `npm audit --audit-level=high` finds two high advisories in transitive
+  dev dependencies at the root (`fast-uri`, `js-yaml`) and high or critical
+  ones in four fixtures (`astro` and `next` directly; `sharp`, `svgo`,
+  `js-yaml`, `fast-uri`). `Lint & Typecheck`, the three `E2E` jobs,
+  `Real Payload E2E` and the release Chromium soak stop at that step, before
+  their tests, so no pull request
+  into `release/1.x` can merge until those lockfiles are refreshed. Every
+  advisory has a fix without `--force`; it is a dependency change on a
+  security branch, and a decision of its own.
+- No backport has been made. The first candidate is the replay-race fix from
+  #64; on 1.x it is a minor, because `consume()` is a new contract.
+- A re-entry by `workflow_dispatch` runs on main's ref, so a 1.x run re-entered
+  that way shares main's concurrency group and queues with it.
 
 ## Consequences
 

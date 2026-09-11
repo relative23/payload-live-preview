@@ -129,7 +129,10 @@ may reconcile a matching npm version with a missing tag/release, but a registry
 version with different bytes fails closed. A prerelease (`X.Y.Z-<label>.<n>`,
 the shape Changesets pre mode produces) publishes under the dist-tag named by
 its label — `2.0.0-beta.0` lands on `beta` — so `npm install` keeps resolving
-`latest`; a version of any other shape is refused. The pipeline is ADR
+`latest`. A stable version is compared with the version the registry serves as
+`latest`: a lower major publishes under `legacy`, so a 1.x security fix after
+2.0.0 cannot take `latest` back, and a lower version in the same major is
+refused. A version of any other shape is refused. The pipeline is ADR
 [0013](architecture/0013-release-pipeline.md).
 
 ## Quality map

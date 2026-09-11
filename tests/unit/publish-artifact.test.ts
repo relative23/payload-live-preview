@@ -6,9 +6,10 @@ import {
   type PropagationClock,
   publishCertifiedArtifact,
   registryArtifactAction,
-  releaseTagForVersion,
-  distTagForVersion,
+  registryLatestFrom,
+  registryStateFrom,
 } from '../../scripts/publish-artifact';
+import { distTagForVersion } from '../../scripts/release-version';
 
 describe('exact artifact publisher', () => {
   it('publishes only an absent version and reconciles only an identical registry artifact', () => {
@@ -98,27 +99,75 @@ describe('exact artifact publisher', () => {
     ]);
   });
 
-  it('tags stable and prerelease git releases, and refuses a non-version', () => {
-    expect(releaseTagForVersion('1.0.4')).toBe('v1.0.4');
-    expect(releaseTagForVersion('2.0.0-beta.1')).toBe('v2.0.0-beta.1');
-    expect(() => releaseTagForVersion('latest')).toThrow(/version/u);
-  });
-
-  it('routes a prerelease to its own npm dist-tag and never to latest', () => {
-    expect(distTagForVersion('1.0.4')).toBe('latest');
-    expect(distTagForVersion('2.0.0')).toBe('latest');
-    expect(distTagForVersion('2.0.0-beta.0')).toBe('beta');
-    expect(distTagForVersion('2.0.0-rc.3')).toBe('rc');
-    expect(() => distTagForVersion('not-a-version')).toThrow(/version/u);
-  });
-
   it('publishes a prerelease archive under its label tag', () => {
     const args = exactPublishArguments(
       '/tmp/x-2.0.0-beta.0.tgz',
-      distTagForVersion('2.0.0-beta.0'),
+      distTagForVersion('2.0.0-beta.0', '1.8.1'),
     );
     const tagIndex = args.indexOf('--tag');
     expect(args[tagIndex + 1]).toBe('beta');
+  });
+});
+
+describe('registry integrity lookup', () => {
+  const INTEGRITY = 'sha512-abc';
+  const ok = (stdout: string) => ({ status: 0, stdout, stderr: '' });
+
+  it('reads the integrity npm 11 prints as a JSON string', () => {
+    expect(registryStateFrom(ok(`"${INTEGRITY}"\n`))).toEqual({
+      kind: 'published',
+      integrity: INTEGRITY,
+    });
+  });
+
+  // npm 12.0.2 wraps a single-field `npm view --json` in an array, npm 11.16.0
+  // did not. The repository pins npm 12 since #57; a 1.x branch keeps npm 11.
+  it('reads the one-element array npm 12 prints for the same view', () => {
+    expect(registryStateFrom(ok(`[\n  "${INTEGRITY}"\n]\n`))).toEqual({
+      kind: 'published',
+      integrity: INTEGRITY,
+    });
+  });
+
+  it('refuses anything that is not exactly one SHA-512 integrity', () => {
+    expect(() => registryStateFrom(ok('["sha512-a", "sha512-b"]'))).toThrow(/SHA-512/u);
+    expect(() => registryStateFrom(ok('"sha1-abc"'))).toThrow(/SHA-512/u);
+    expect(() => registryStateFrom(ok('not json'))).toThrow(/malformed/u);
+  });
+
+  it('treats only E404 as missing and fails closed on everything else', () => {
+    expect(registryStateFrom({ status: 1, stdout: '', stderr: 'npm error code E404' })).toEqual({
+      kind: 'missing',
+    });
+    expect(() =>
+      registryStateFrom({ status: 1, stdout: '', stderr: 'npm error code ECONNRESET' }),
+    ).toThrow(/failed closed/u);
+  });
+});
+
+describe('registry latest lookup', () => {
+  it('reads latest in the npm 11 and the npm 12 shape', () => {
+    expect(registryLatestFrom({ status: 0, stdout: '"1.8.1"\n', stderr: '' })).toBe('1.8.1');
+    expect(registryLatestFrom({ status: 0, stdout: '[\n  "1.8.1"\n]\n', stderr: '' })).toBe(
+      '1.8.1',
+    );
+  });
+
+  it('reads a package the registry has never seen as having no latest', () => {
+    expect(
+      registryLatestFrom({ status: 1, stdout: '', stderr: 'npm error code E404' }),
+    ).toBeUndefined();
+    expect(registryLatestFrom({ status: 0, stdout: '\n', stderr: '' })).toBeUndefined();
+  });
+
+  it('fails closed on anything else', () => {
+    expect(() =>
+      registryLatestFrom({ status: 1, stdout: '', stderr: 'npm error code ETIMEDOUT' }),
+    ).toThrow(/failed closed/u);
+    expect(() =>
+      registryLatestFrom({ status: 0, stdout: '["1.8.1", "2.0.0"]', stderr: '' }),
+    ).toThrow(/no version as latest/u);
+    expect(() => registryLatestFrom({ status: 0, stdout: '{', stderr: '' })).toThrow(/malformed/u);
   });
 });
 

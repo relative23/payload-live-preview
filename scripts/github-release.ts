@@ -5,7 +5,7 @@ import { readFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { releaseTagForVersion } from './publish-artifact';
+import { releaseTagForVersion } from './release-version';
 import type { CommandResult, CommandRunner } from './release-gate';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -82,6 +82,8 @@ export function planGithubRelease(
 export interface GithubReleaseEnvironment {
   readonly repository: string;
   readonly version: string;
+  /** The dist-tag the publisher used (its `dist_tag` output). */
+  readonly distTag: string;
   readonly testedSha: string;
   readonly changelog: string;
   readonly run: CommandRunner;
@@ -129,6 +131,9 @@ export function publishGithubRelease(environment: GithubReleaseEnvironment): Git
     const notes = environment.writeNotes(changelogSection(environment.changelog, version));
     const args = ['release', 'create', tag, '--verify-tag', '--title', tag, '--notes-file', notes];
     if (version.includes('-')) args.push('--prerelease');
+    // npm decided where this version lives; the Release follows it, so a 1.x
+    // fix published under `legacy` never takes GitHub's Latest label.
+    if (environment.distTag !== 'latest') args.push('--latest=false');
     const created = run('gh', args);
     if (created.status !== 0) {
       throw new Error(`creating the GitHub Release failed:\n${detail(created)}`);
@@ -146,8 +151,14 @@ function spawn(executable: string, args: readonly string[]): CommandResult {
 function main(): void {
   const repository = process.env['GITHUB_REPOSITORY'];
   const testedSha = process.env['PACKAGE_SOURCE_COMMIT'];
-  if (repository === undefined || testedSha === undefined) {
-    throw new Error('GITHUB_REPOSITORY and PACKAGE_SOURCE_COMMIT are required');
+  const distTag = process.env['DIST_TAG'];
+  if (
+    repository === undefined ||
+    testedSha === undefined ||
+    distTag === undefined ||
+    distTag.length === 0
+  ) {
+    throw new Error('GITHUB_REPOSITORY, PACKAGE_SOURCE_COMMIT and DIST_TAG are required');
   }
   const manifest = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as {
     version?: unknown;
@@ -158,6 +169,7 @@ function main(): void {
     const plan = publishGithubRelease({
       repository,
       version: manifest.version,
+      distTag,
       testedSha,
       changelog: readFileSync(resolve(ROOT, 'CHANGELOG.md'), 'utf8'),
       run: spawn,
