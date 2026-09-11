@@ -70,6 +70,104 @@ the root lockfile and the four `file:../..` fixture lockfiles. The package gate
 rejects a lockfile whose identity lags `package.json`, so a manual `npm version`
 cannot reach npm.
 
+### 6. The first release candidate freezes the scope (added 2026-09-11)
+
+From the first `v2.0.0-rc.*` tag until `2.0.0` is on npm, the branch takes
+fixes and nothing else:
+
+- Changesets are `patch`. A `minor` or `major` changeset is scope, and scope
+  waits for the next minor.
+- No new option. `PreviewAdapterOptions` and `InlineScriptConfig` keep their
+  member counts, and with the second so does `INLINE_CONFIG_KEYS`: every wire
+  key is a member of that interface (`satisfies` holds it), so a new slot cannot
+  appear without a new member.
+- No new public declaration, entry subpath, diagnostic code or source module.
+  A fix that lowers one of these numbers is still welcome.
+
+The rule is mechanical where it can be. `quality/complexity-budget.json` takes
+`"frozen": { "since": "<tag>", "why": "…" }` in the commit that tags the first
+candidate; `npx tsx scripts/check-complexity.ts --freeze` writes the limits of
+that moment to `quality/complexity-budget.frozen.json`, committed beside it.
+From then on `npm run check` fails on any limit above its frozen value and on
+any metric the snapshot never saw, whatever the reason written next to the
+number. The reference is a committed file rather than `git show <tag>:…`
+because CI checks out one commit without tags, and a branch that raised a limit
+would otherwise compare the raise with itself at `HEAD`. The freeze is lifted in
+the commit that opens the next minor: remove `frozen` and the snapshot together.
+
+What stays a reading rule: the changeset type — review reads `.changeset/*.md`
+— and the start of the freeze itself, which is the same decision as tagging
+`rc.0`. Today there is no release candidate; `frozen` is unset and the gate is
+held by seven unit cases (`tests/unit/quality/complexity-budget.test.ts`).
+
+### 7. 1.x security fixes: the way (added 2026-09-11)
+
+`SECURITY.md` promises 1.x security fixes until 2026-12-04 or 90 days after
+2.0.0 is published, whichever is later. The date was written on 2026-09-05,
+exactly 90 days before it, when 2.0.0 looked days away; the second half keeps
+the window from shrinking with every day the release slips.
+
+Measured on 2026-09-11, a 1.x fix could not ship:
+
+- There is no `release/1.x` branch. The last 1.x release is `v1.8.1`
+  (`c23d5de`), which carries no `.changeset/pre.json` and `baseBranch: main`.
+- CI runs on `main` only (`ci.yml`, here and at `v1.8.1`), and the release
+  accepts `main` only, three times: the `gate` job's `head_branch == 'main'`,
+  `certifiedRunFrom()` in `scripts/release-gate.ts`, and its ancestry check
+  against `origin/main`. `workflow_run` runs the workflow file of the default
+  branch, so a `release.yml` on another branch is never the one that runs; and
+  the Version PR job compares the tested commit with `github.sha`, which under
+  `workflow_run` is the tip of `main` and never a 1.x commit.
+- The dist-tag follows the version alone (§4), so a stable `1.8.2` goes to
+  `latest`, and npm moves `latest` to whatever was published last. After
+  2.0.0, `npm install payload-live-preview` would resolve 1.x again. The tree
+  at `v1.8.1` passes `--tag latest` literally.
+- The publish job calls two things the `v1.8.1` tree does not have:
+  `scripts/github-release.ts` and `npm run test:smoke`. The artifact half
+  fits — that CI uploads `release-candidate-<sha>` and its package gate takes
+  a tarball.
+- `scripts/github-release.ts` does not pass `--latest=false`, so whether a
+  1.8.2 Release takes GitHub's Latest label from 2.0.0 is left to GitHub.
+
+The way, once the steps below exist:
+
+1. The fix lands on `main` first, with its regression test. 1.x gets a
+   backport, never a fix 2.x lacks.
+2. The branch is cut once from the last 1.x tag and protected like `main`:
+
+   ```sh
+   git fetch origin --tags
+   git switch -c release/1.x v1.8.1
+   git push -u origin release/1.x
+   ```
+
+3. On that branch Changesets stay in normal mode — there is no pre mode to
+   exit — with `baseBranch: "release/1.x"`. A backport is
+   `git cherry-pick -x <sha>` plus a `patch` changeset; the Version PR makes
+   it `1.8.2`.
+4. A 1.x version is published under the dist-tag `legacy`. `1.x` is not
+   possible: npm refuses a dist-tag that parses as a semver range (npm 12.0.2,
+   `dist-tag` and `publish --tag`). The rule that serves both periods is "a
+   stable version whose major is below the major `latest` serves goes to
+   `legacy`": before 2.0.0 a 1.8.2 still lands on `latest`, after it on
+   `legacy`. If a 1.x release ever reaches `latest`, the repair is
+   `npm dist-tag add payload-live-preview@<2.x version> latest`.
+
+Missing before step 2 is worth taking, and not made here, because each is a
+workflow or release-script change:
+
+- `ci.yml` on the branch runs on `release/1.x`.
+- `release.yml` and `scripts/release-gate.ts` on `main` accept `release/1.x`
+  beside `main`: the `gate` condition, `certifiedRunFrom()`, the ancestry check
+  against the run's own branch, and a Version PR condition that compares with
+  that branch's tip instead of `github.sha`.
+- `distTagForVersion()` takes the registry's `latest` as a second input and
+  returns `legacy` by the rule above.
+- `scripts/github-release.ts` passes `--latest=false` for that case.
+- The branch gets the publish tooling the job calls — `github-release.ts`,
+  `post-publish-smoke.ts` with `test:smoke`, and the new dist-tag rule — in
+  one commit before the first backport.
+
 ## Consequences
 
 - What is on npm is what CI tested, provably: manifest and registry archive are
