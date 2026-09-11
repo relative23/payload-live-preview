@@ -35,8 +35,8 @@ The runtime is framework-agnostic: one script drives Astro, SvelteKit, Nuxt, Nex
 
 | Framework | Supported             | Tested in CI on every push (version, browsers)                                    |
 | --------- | --------------------- | --------------------------------------------------------------------------------- |
-| Astro     | >=4.0.0 <8.0.0        | 7.2.1 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
-| Next.js   | App Router, 15 and 16 | 16.3.0 (chromium, firefox, webkit)                                                |
+| Astro     | >=4.0.0 <8.0.0        | 7.3.2 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
+| Next.js   | App Router, 15 and 16 | 16.3.4 (chromium, firefox, webkit)                                                |
 | SvelteKit | 2.x                   | 2.70.2 (chromium, firefox, webkit)                                                |
 | Nuxt      | 3.x                   | 3.21.11 (chromium, firefox, webkit)                                               |
 
