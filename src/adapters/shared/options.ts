@@ -4,7 +4,7 @@
  * are the 2.0 table; `defaults: 'v1'` values are noted where they differ.
  */
 
-import type { DefaultsProfile, EventSourcePolicy } from '@core/defaults-profile';
+import type { DefaultsProfile, EventSourcePolicy } from '@/types/defaults-profile';
 import type { PreviewAuthorization } from '@security/preview-verdict';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import type { PreviewSignal } from './preview-request';

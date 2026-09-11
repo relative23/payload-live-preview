@@ -4,6 +4,7 @@
  */
 
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
+import { V1_RUNTIME_DEFAULTS } from '@/types/defaults-profile';
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
 import { FRAGMENT_SOURCE } from './fragment.generated';
 import { ROUTE_SOURCE } from './route.generated';
@@ -75,14 +76,26 @@ function configStatement(config: InlineScriptConfig): string {
 /** The positional wire literal the runtime destructures; shared by the inline script and the loader. */
 function buildConfigLiteral(config: InlineScriptConfig): string {
   assertMergeDepthExplicit(config);
+  const profile = profileSlots(config);
   // `null` counts as omitted, and omitted slots stay empty (`[,,1]`): a JSON
-  // `null` would bypass the runtime's destructuring defaults.
-  const values: unknown[] = INLINE_CONFIG_KEYS.map((key) => config[key] ?? undefined);
-  while (values.length > 0 && values.at(-1) === undefined) values.pop();
+  // `null` would bypass the runtime's destructuring defaults. The last slot is
+  // always written, so there is no trailing hole to trim.
+  const values: unknown[] = INLINE_CONFIG_KEYS.map((key) => config[key] ?? profile[key]);
   // `<` is escaped so a value containing `</script>` cannot end the tag.
   return `[${values
     .map((value) => (value === undefined ? '' : JSON.stringify(value)))
     .join(',')}]`.replace(/</g, '\\u003C');
+}
+
+/**
+ * What the `defaults` profile puts on the wire. The runtime's own fallbacks are
+ * the 2.0 rows, so `'v2'` fills nothing and `'v1'` has to write its four; the
+ * profile itself goes into the last slot either way, so a reader of the served
+ * page learns which generation an empty slot belongs to (ADR 0007).
+ */
+function profileSlots(config: InlineScriptConfig): Partial<InlineScriptConfig> {
+  const defaults = config.defaults ?? 'v2';
+  return defaults === 'v1' ? { ...V1_RUNTIME_DEFAULTS, defaults } : { defaults };
 }
 
 /** Where the runtime asset lives, and how the browser should verify it. */

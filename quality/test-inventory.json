@@ -19,7 +19,7 @@
   "totals": {
     "files": 315,
     "suites": 666,
-    "tests": 2796,
+    "tests": 2803,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 258,
       "suites": 591,
-      "tests": 2569,
+      "tests": 2576,
       "benchmarks": 0
     }
   },
@@ -859,13 +859,6 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/core/defaults-profile.test.ts",
-      "group": "unit",
-      "suites": 2,
-      "tests": 6,
-      "benchmarks": 0
-    },
-    {
       "path": "tests/unit/core/diagnostic-codes.test.ts",
       "group": "unit",
       "suites": 4,
@@ -1506,7 +1499,7 @@
       "path": "tests/unit/doctor/v2-readiness.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 8,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -1667,7 +1660,7 @@
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 30,
+      "tests": 33,
       "benchmarks": 0
     },
     {
@@ -2263,6 +2256,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/types/defaults-profile.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
       "benchmarks": 0
     },
     {

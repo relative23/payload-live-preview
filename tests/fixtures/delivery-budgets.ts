@@ -94,13 +94,18 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     carries: 'bootstrap',
     bindings: true,
     scriptElements: 1,
-    overheadBytes: 762,
+    overheadBytes: 772,
     // A static page has no request to decide for, so the decision moves into the
     // browser: 762 bytes that ask whether this document is framed or was opened
     // by an admin and, outside a preview, fetch nothing. This is the floor of
     // the whole table and it is not zero — a build has nobody to ask. Z8 leaves
     // it standing on purpose, which is why it is written down as a floor and not
     // as a defect.
+    //
+    // 2026-09-11 (Z37): 762 → 772. The ten bytes are the `defaults` marker every
+    // script carries now — `"v2"` in slot 24, behind the six empty slots after
+    // `revealEditedField` — so `pll doctor --v2` reads what an empty slot means
+    // instead of guessing. The bootstrap did not move.
     why: 'the floor for a page built ahead of time: the check has to travel with the page',
   },
   {
@@ -110,7 +115,7 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     carries: 'runtime',
     bindings: true,
     scriptElements: 1,
-    overheadBytes: 126,
+    overheadBytes: 136,
     // The yardstick: 17 bytes of tag and 109 bytes of config in front of the
     // whole runtime, delivered to everyone. Nothing decides and nothing is
     // deferred, so this row measures what the other rows are avoiding —
@@ -118,6 +123,9 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     // added code. The 126 did not move, and that is the construction working:
     // this row holds the delivery, not the runtime. It is honest rather than
     // wrong: an option named `inline` promises exactly this.
+    //
+    // 2026-09-11 (Z37): 126 → 136, the config 109 → 119 bytes — the same
+    // `defaults` marker as the loader row above, and nothing else.
     why: 'the price of deferring nothing, so every other row has something to be measured against',
   },
   {
@@ -173,7 +181,7 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     carries: 'bootstrap',
     bindings: true,
     scriptElements: 2,
-    overheadBytes: 1_326,
+    overheadBytes: 1_331,
     // Deliberately left on the synchronous helper after the row above moved off
     // it, because it is the only thing that still measures what an option alone
     // can do: the same layout, the same shell, one option apart — 696 bytes
@@ -190,7 +198,10 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     // 431 → `loader-react.generated.ts` 1 036) and 25 the wire slot with the
     // empty slots before it. The plain bootstrap — the Astro row above — did
     // not move: a static page pays nothing for a framework it does not run.
-    why: 'what an option alone can do for a Next page, and the 1 326 bytes that a component is needed to remove',
+    //
+    // 2026-09-11 (Z37): 1 326 → 1 331, the `defaults` marker straight behind the
+    // hydration slot: `,"v2"`.
+    why: 'what an option alone can do for a Next page, and the 1 331 bytes that a component is needed to remove',
   },
   {
     name: 'Nuxt, Nitro plugin, delivery: asset',
@@ -257,6 +268,10 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * behind the five empty slots between it and the fragment endpoint (ADR
  * 0015) — in one element, since the subtraction reads the first. The
  * runtime it removes grew too, and this number did not move for that.
+ *
+ * 2026-09-11 (Z37): 11 742 → 11 747, the same five bytes as the asset row:
+ * the `defaults` marker in slot 24, which tells `pll doctor --v2` what the
+ * empty slots before it mean.
  */
 export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   name: 'Next.js, script in the root layout, authorized editor',
@@ -265,7 +280,7 @@ export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   carries: 'runtime',
   bindings: true,
   scriptElements: 2,
-  overheadBytes: 11_742,
+  overheadBytes: 11_747,
   why: 'the same layout still hands an authorized editor the whole runtime — the zero above is a decision, not a broken adapter',
 };
 

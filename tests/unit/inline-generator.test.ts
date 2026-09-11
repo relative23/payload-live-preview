@@ -8,6 +8,7 @@ import {
   type InlineScriptConfig,
 } from '@inline/generator';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
+import { LEAN_RUNTIME } from '@/lean';
 
 class InlineIntersectionObserver implements IntersectionObserver {
   readonly root: Element | Document | null = null;
@@ -39,7 +40,7 @@ describe('generateInlineScript', () => {
 
   it('emits a self-contained string without redundant build metadata', () => {
     const script = generateInlineScript();
-    expect(script.startsWith('var __LIVE_PREVIEW_CONFIG__=[];\n')).toBe(true);
+    expect(script.startsWith(`var __LIVE_PREVIEW_CONFIG__=[${','.repeat(24)}"v2"];\n`)).toBe(true);
     expect(script).not.toContain(runtimeBuildInfo().generatedAt);
   });
 
@@ -61,7 +62,8 @@ describe('generateInlineScript', () => {
 
   it('does not duplicate runtime defaults in the generated config', () => {
     const script = generateInlineScript();
-    expect(generatedConfig(script)).toEqual([]);
+    // Every slot empty but the last, which names the defaults they resolve to.
+    expect(generatedConfig(script)).toEqual([...Array<undefined>(24).fill(undefined), 'v2']);
   });
 
   it('carries owner scoping in its own trailing wire slot', () => {
@@ -70,7 +72,7 @@ describe('generateInlineScript', () => {
 
     // Appending keeps every existing slot at its established index, so a page
     // still serving an older config literal keeps its meaning.
-    expect(config).toHaveLength(14);
+    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
     expect(config[13]).toBe(true);
     expect(config.slice(0, 13).every((value) => value === undefined)).toBe(true);
   });
@@ -79,7 +81,7 @@ describe('generateInlineScript', () => {
     const script = generateInlineScript({ skipUnchanged: true });
     const config = generatedConfig(script);
 
-    expect(config).toHaveLength(15);
+    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
     expect(config[14]).toBe(true);
     expect(config.slice(0, 14).every((value) => value === undefined)).toBe(true);
   });
@@ -88,7 +90,7 @@ describe('generateInlineScript', () => {
     const script = generateInlineScript({ fragmentEndpoint: '/payload/fragment' });
     const config = generatedConfig(script);
 
-    expect(config).toHaveLength(18);
+    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
     expect(config[17]).toBe('/payload/fragment');
     expect(config.slice(0, 17).every((value) => value === undefined)).toBe(true);
     expect(script).not.toBe(generateInlineScript());
@@ -102,7 +104,7 @@ describe('generateInlineScript', () => {
     const script = generateInlineScript({ hydration: 'react' });
     const config = generatedConfig(script);
 
-    expect(config).toHaveLength(24);
+    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
     expect(config[23]).toBe('react');
     expect(config.slice(0, 23).every((value) => value === undefined)).toBe(true);
     expect(script).not.toContain('var __LIVE_PREVIEW_HYDRATION__=');
@@ -115,7 +117,7 @@ describe('generateInlineScript', () => {
     const script = generateInlineScript({ routeStrategy: true });
     const config = generatedConfig(script);
 
-    expect(config).toHaveLength(20);
+    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
     expect(config[19]).toBe(true);
     expect(script).toContain('var __LIVE_PREVIEW_ROUTE__=');
     expect(script).not.toContain('var __LIVE_PREVIEW_FRAGMENT__=');
@@ -179,9 +181,11 @@ describe('generateInlineScript', () => {
     const v1 = generatedConfig(
       generateInlineScript({ serverURL: 'https://cms.example.com', defaults: 'v1' }),
     );
-    // `defaults` is not a wire slot: the runtime's own defaults stay the v2 rows.
-    expect(v1).toHaveLength(2);
+    // Until Z37 this tuple had two elements — `defaults` was no wire slot, so a
+    // `'v1'` page ran the 2.0 rows. The omitted depth still falls to the runtime's 1.
     expect(v1[1]).toBe('https://cms.example.com');
+    expect(v1[3]).toBeUndefined();
+    expect(v1.at(-1)).toBe('v1');
   });
 
   it('treats null like an omitted option', () => {
@@ -191,7 +195,7 @@ describe('generateInlineScript', () => {
       debug: true,
     } as unknown as InlineScriptConfig;
     const config = generatedConfig(generateInlineScript(nullish));
-    expect(config).toHaveLength(5);
+    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
     expect(config.slice(0, 4).every((value) => value === undefined)).toBe(true);
     expect(config[4]).toBe(true);
     expect(generateInlineScript(nullish).split('\n', 1)[0]).not.toContain('null');
@@ -204,7 +208,7 @@ describe('generateInlineScript', () => {
   });
 
   it('writes the slots in INLINE_CONFIG_KEYS order, the one table the runtime destructures', () => {
-    expect(INLINE_CONFIG_KEYS).toHaveLength(24);
+    expect(INLINE_CONFIG_KEYS).toHaveLength(25);
     expect(INLINE_CONFIG_KEYS.indexOf('fragmentEndpoint')).toBe(17);
     expect(INLINE_CONFIG_KEYS.indexOf('revealEditedField')).toBe(18);
     expect(INLINE_CONFIG_KEYS.indexOf('routeStrategy')).toBe(19);
@@ -212,12 +216,72 @@ describe('generateInlineScript', () => {
     expect(INLINE_CONFIG_KEYS.indexOf('onUnfaithfulPatch')).toBe(21);
     expect(INLINE_CONFIG_KEYS.indexOf('autoBind')).toBe(22);
     expect(INLINE_CONFIG_KEYS.indexOf('hydration')).toBe(23);
+    expect(INLINE_CONFIG_KEYS.indexOf('defaults')).toBe(24);
     const every = Object.fromEntries(
       INLINE_CONFIG_KEYS.map((key, index) => [key, `slot-${String(index)}`]),
     ) as unknown as InlineScriptConfig;
     expect(generatedConfig(generateInlineScript({ ...every, mergeDepth: 1 }))).toEqual(
       INLINE_CONFIG_KEYS.map((key, index) => (key === 'mergeDepth' ? 1 : `slot-${String(index)}`)),
     );
+  });
+
+  it('names the defaults it resolved against in the last slot, always', () => {
+    const slot = INLINE_CONFIG_KEYS.indexOf('defaults');
+    expect(slot).toBe(INLINE_CONFIG_KEYS.length - 1);
+    expect(generatedConfig(generateInlineScript())[slot]).toBe('v2');
+    expect(generatedConfig(generateInlineScript({ defaults: 'v2' }))[slot]).toBe('v2');
+    expect(generatedConfig(generateInlineScript({ defaults: 'v1' }))[slot]).toBe('v1');
+  });
+
+  it("writes the 1.x runtime rows under `defaults: 'v1'`: the runtime's own fallbacks are the 2.0 ones", () => {
+    // Measured before Z37: `{ defaults: 'v1' }` wrote `[]`, the bytes of the
+    // 2.0 default, so the page ran the strict rows it had opted out of.
+    const row = (config: unknown[], key: (typeof INLINE_CONFIG_KEYS)[number]): unknown =>
+      config[INLINE_CONFIG_KEYS.indexOf(key)];
+    const v1 = generatedConfig(generateInlineScript({ defaults: 'v1' }));
+    expect(row(v1, 'disableReferrerDetection')).toBe(false);
+    expect(row(v1, 'skipUnchanged')).toBe(false);
+    expect(row(v1, 'eventSourcePolicy')).toBe('any');
+    expect(row(v1, 'sanitizerPolicy')).toBe('compat');
+
+    // An explicit option wins over the profile, `null` included as omitted.
+    const mixed = generatedConfig(
+      generateInlineScript({
+        defaults: 'v1',
+        sanitizerPolicy: 'strict',
+        skipUnchanged: null,
+      } as unknown as InlineScriptConfig),
+    );
+    expect(row(mixed, 'sanitizerPolicy')).toBe('strict');
+    expect(row(mixed, 'skipUnchanged')).toBe(false);
+
+    // The 2.0 rows stay off the wire: the runtime already defaults to them.
+    expect(
+      generatedConfig(generateInlineScript())
+        .slice(0, -1)
+        .every((v) => v === undefined),
+    ).toBe(true);
+  });
+
+  it('carries the marker on every path that writes a configuration', () => {
+    const paths: Readonly<Record<string, string>> = {
+      inline: generateInlineScript(),
+      lean: generateInlineScript({ runtime: LEAN_RUNTIME }),
+      'fragment prelude': generateInlineScript({ fragmentEndpoint: '/payload/fragment' }),
+      'route prelude': generateInlineScript({ routeStrategy: true }),
+      loader: generateLoaderScript({}, { runtimeSrc: '/runtime.js' }),
+      'loader armed for React': generateLoaderScript(
+        { hydration: 'react' },
+        { runtimeSrc: '/runtime.js' },
+      ),
+      "loader, `defaults: 'v1'`": generateLoaderScript(
+        { defaults: 'v1' },
+        { runtimeSrc: '/runtime.js' },
+      ),
+    };
+    for (const [path, script] of Object.entries(paths)) {
+      expect(generatedConfig(script).at(-1), path).toBe(path.includes("'v1'") ? 'v1' : 'v2');
+    }
   });
 
   it('serializes explicit falsy overrides instead of dropping them', () => {

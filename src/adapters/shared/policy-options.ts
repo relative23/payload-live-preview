@@ -10,7 +10,7 @@ import {
   adapterDefaultsFor,
   runtimeDefaultsFor,
   V2_RUNTIME_DEFAULTS,
-} from '@core/defaults-profile';
+} from '@/types/defaults-profile';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import type { InlineScriptConfig } from '@/types/inline-config';
 import type { PreviewSignal } from './preview-request';
@@ -66,7 +66,8 @@ export function inlineScriptConfig(
   assertMergeDepthExplicit(options);
   const resolved = resolvePolicyOptions(options);
   return {
-    // Not a wire slot: it tells the generator an omitted `mergeDepth` is deliberate.
+    // The generator names it in the last slot and, under `'v1'`, reads an
+    // omitted `mergeDepth` as deliberate.
     ...(options.defaults !== undefined ? { defaults: options.defaults } : {}),
     ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
     ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),

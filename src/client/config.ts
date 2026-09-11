@@ -9,7 +9,7 @@ import {
   runtimeDefaultsFor,
   type DefaultsProfile,
   type EventSourcePolicy,
-} from '@core/defaults-profile';
+} from '@/types/defaults-profile';
 
 export interface LivePreviewClientConfig {
   /** Explicit trusted admin origins. */
