@@ -68,11 +68,14 @@ export class StrategyRunner {
     const { fragment, route } = this.deps.strategies;
     const boundaries = fragment === undefined ? undefined : coveringBoundaries(targets);
     if (fragment !== undefined && boundaries !== undefined) {
+      this.state.escalatedCount += targets.length;
       transaction.pendingFragments += boundaries.length;
       void this.runFragments(transaction, data, planBoundaries(fragment, boundaries));
       return;
     }
-    if (route !== undefined) void this.refreshRoute(transaction, data, route);
+    if (route === undefined) return;
+    this.state.escalatedCount += targets.length;
+    void this.refreshRoute(transaction, data, route);
   }
 
   /**

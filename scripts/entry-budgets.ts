@@ -338,9 +338,21 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // bundle-budgets.ts. All 19 rows that moved go down to their measurement
   // plus the cushion each carried; the brotli rows that embed the runtime keep
   // at least the ~130 B the epoch swing above asks for.
+  //
+  // 2026-09-11 (Z30, the block verdict spoken by the write): every row that
+  // embeds the runtime rises +764 B raw / ~+183 B gzip / ~+100–250 B brotli
+  // (`client.*` and `core.*` +836, which carry the source as well; `index.*`
+  // +1 600, the runtime twice), `lexical.*` falls −124 raw / ~−43 gzip — the
+  // warn-once left the node renderer for the write — and `doctor.js`,
+  // `fragment.*` and `plugins.*` move +29 raw for the frozen table's new row
+  // (LP0413). The bytes are the two texts and the verdict behind them, the
+  // listener the render context carries to the block renderer, and the three
+  // counters `inspect().fidelity` reads; see bundle-budgets.ts. Every row goes
+  // to its measurement plus the cushion it carried; the brotli rows that embed
+  // the runtime keep at least the ~130 B the epoch swing above asks for.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
-  'adapters/astro/index.js': { raw: 154_604, gzip: 48_383, brotli: 41_784 },
-  'adapters/astro/middleware-entry.js': { raw: 141_305, gzip: 44_252, brotli: 38_197 },
+  'adapters/astro/index.js': { raw: 155_368, gzip: 48_566, brotli: 41_941 },
+  'adapters/astro/middleware-entry.js': { raw: 142_069, gzip: 44_437, brotli: 38_450 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -359,7 +371,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // cannot wait for a verdict, so LP-8 measured 195 342 of 254 707 bytes of
   // runtime on a request with no cookie; an async component awaits
   // `authorizePreview` and renders nothing for it.
-  'adapters/nextjs/index.js': { raw: 153_156, gzip: 47_940, brotli: 41_414 },
+  'adapters/nextjs/index.js': { raw: 153_920, gzip: 48_123, brotli: 41_621 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -377,8 +389,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
   // frame-ancestors builder it shares with the middleware.
   'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
-  'adapters/nuxt/index.js': { raw: 152_334, gzip: 47_732, brotli: 41_240 },
-  'adapters/sveltekit/index.js': { raw: 151_361, gzip: 47_465, brotli: 41_037 },
+  'adapters/nuxt/index.js': { raw: 153_098, gzip: 47_915, brotli: 41_396 },
+  'adapters/sveltekit/index.js': { raw: 152_125, gzip: 47_649, brotli: 41_230 },
   //
   // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
   // scanner, its refusal reasons and the `annotate` subcommand. It is a build
@@ -387,11 +399,11 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'codegen-cli.js': { raw: 20_100, gzip: 6_950, brotli: 6_270 },
   'codegen.cjs': { raw: 15_300, gzip: 5_400, brotli: 4_890 },
   'codegen.js': { raw: 15_200, gzip: 5_380, brotli: 4_890 },
-  'doctor-cli.js': { raw: 33_150, gzip: 12_140, brotli: 10_780 },
-  'doctor.js': { raw: 13_230, gzip: 5_540, brotli: 4_803 },
+  'doctor-cli.js': { raw: 33_179, gzip: 12_150, brotli: 10_813 },
+  'doctor.js': { raw: 13_259, gzip: 5_550, brotli: 4_816 },
   'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
-  'core.cjs': { raw: 129_240, gzip: 40_886, brotli: 35_513 },
-  'core.js': { raw: 128_701, gzip: 40_818, brotli: 35_401 },
+  'core.cjs': { raw: 130_076, gzip: 41_134, brotli: 35_671 },
+  'core.js': { raw: 129_537, gzip: 41_053, brotli: 35_578 },
   //
   // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
   // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a
@@ -405,8 +417,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-10 (Z25): both barrels −1 302 raw (see above); the brotli rows go
   // to their measurement before the commit plus the ~130 B the paragraph above
   // asks for, `index.js` from a 32 B margin that had been a coin flip since Z9.
-  'index.cjs': { raw: 272_209, gzip: 84_731, brotli: 54_647 },
-  'index.js': { raw: 271_584, gzip: 84_758, brotli: 54_693 },
+  'index.cjs': { raw: 273_809, gzip: 85_160, brotli: 54_869 },
+  'index.js': { raw: 273_184, gzip: 85_183, brotli: 54_966 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
@@ -416,14 +428,14 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // helper the build-time annotator writes a call to.
   'server.cjs': { raw: 12_950, gzip: 4_780, brotli: 4_310 },
   'server.js': { raw: 12_830, gzip: 4_775, brotli: 4_300 },
-  'client.cjs': { raw: 123_469, gzip: 38_816, brotli: 33_779 },
-  'client.js': { raw: 123_388, gzip: 38_804, brotli: 33_691 },
+  'client.cjs': { raw: 124_305, gzip: 39_055, brotli: 33_972 },
+  'client.js': { raw: 124_224, gzip: 39_042, brotli: 33_859 },
   'structural.cjs': { raw: 19_821, gzip: 7_018, brotli: 6_322 },
   'structural.js': { raw: 19_776, gzip: 7_019, brotli: 6_326 },
-  'lean.cjs': { raw: 87_041, gzip: 27_617, brotli: 24_589 },
-  'lean.js': { raw: 87_030, gzip: 27_611, brotli: 24_583 },
-  'lexical.cjs': { raw: 16_431, gzip: 5_643, brotli: 5_105 },
-  'lexical.js': { raw: 16_401, gzip: 5_652, brotli: 5_102 },
+  'lean.cjs': { raw: 87_731, gzip: 27_790, brotli: 24_716 },
+  'lean.js': { raw: 87_720, gzip: 27_784, brotli: 24_711 },
+  'lexical.cjs': { raw: 16_307, gzip: 5_602, brotli: 5_072 },
+  'lexical.js': { raw: 16_278, gzip: 5_606, brotli: 5_079 },
   //
   // 2026-09-06 (Ü10): `plugins.*` rise ~2 900 raw / ~1 150 gzip for the
   // unbound-fields overlay — the development panel that lists the fields an
@@ -435,8 +447,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // the epoch that moves `generatedAt` cannot move it, and at 6 KB the wider
   // cushion is over the 2 % the improvement hint allows (measured after the
   // Z9 commit: 6 179 / 6 163).
-  'plugins.cjs': { raw: 19_264, gzip: 7_096, brotli: 6_280 },
-  'plugins.js': { raw: 19_240, gzip: 7_086, brotli: 6_265 },
-  'fragment.cjs': { raw: 14_180, gzip: 5_500, brotli: 4_870 },
-  'fragment.js': { raw: 14_120, gzip: 5_460, brotli: 4_840 },
+  'plugins.cjs': { raw: 19_293, gzip: 7_106, brotli: 6_283 },
+  'plugins.js': { raw: 19_269, gzip: 7_092, brotli: 6_282 },
+  'fragment.cjs': { raw: 14_209, gzip: 5_510, brotli: 4_873 },
+  'fragment.js': { raw: 14_149, gzip: 5_469, brotli: 4_847 },
 };

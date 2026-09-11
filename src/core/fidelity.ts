@@ -55,6 +55,10 @@ export function resolveUnfaithfulPatchMode(options: UnfaithfulPatchOptions): Unf
  * cause is the markup or the value's shape, so the next message would report
  * the same thing. Under `'escalate'` that also stops a value the renderer keeps
  * refusing from becoming one route refresh per keystroke.
+ *
+ * Counted under every mode, before the mode decides anything: `inspect()` has
+ * to be able to say "three patches fell short, none was escalated" on the page
+ * whose owner chose `'ignore'` as much as on the one that has no strategy.
  */
 export function reportUnfaithfulPatch(
   deps: RuntimeDeps,
@@ -62,9 +66,12 @@ export function reportUnfaithfulPatch(
   target: CachedElement,
   reason: string,
 ): void {
-  const mode = deps.onUnfaithfulPatch;
-  if (mode === 'ignore' || state.reportedUnfaithful.has(target.element)) return;
+  if (state.reportedUnfaithful.has(target.element)) return;
   state.reportedUnfaithful.add(target.element);
+  state.unfaithfulCount += 1;
+  state.unfaithfulFields.add(target.fieldName);
+  const mode = deps.onUnfaithfulPatch;
+  if (mode === 'ignore') return;
   if (mode === 'warn') {
     deps.warn(`[live-preview] LP0411: "${target.fieldName}" ${reason}`);
     return;

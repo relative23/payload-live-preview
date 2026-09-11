@@ -143,6 +143,25 @@ export interface LivePreviewInspection {
   readonly fragments: InspectionFragments;
   /** Route refreshes: whether a strategy exists, how many ran, failed, were paced, or were stopped by the loop guard. */
   readonly route: InspectionRoute;
+  /** Patches the runtime knew could not match the server's render, and what became of them. */
+  readonly fidelity: InspectionFidelity;
+}
+
+/**
+ * The fidelity verdicts as `inspect()` reports them (LP0411). A positive
+ * `unfaithful` beside `escalated: 0` is a page that keeps a degraded patch —
+ * because `mode` says so, or because neither `fragments.handler` nor
+ * `route.handler` is there to escalate to.
+ */
+export interface InspectionFidelity {
+  /** `onUnfaithfulPatch` as resolved from both of its names. */
+  readonly mode: 'ignore' | 'warn' | 'escalate';
+  /** Bindings reported unfaithful since start — once per element, like LP0411, and under every mode. */
+  readonly unfaithful: number;
+  /** Of those, how many were handed to the fragment or route strategy. */
+  readonly escalated: number;
+  /** The field names behind `unfaithful`, sorted. Cumulative. */
+  readonly fields: readonly string[];
 }
 
 /** The route strategy as `inspect()` reports it. */

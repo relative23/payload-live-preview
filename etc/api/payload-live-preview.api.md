@@ -218,6 +218,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnrenderedBlockKept: "LP0410";
     readonly UnfaithfulPatch: "LP0411";
     readonly ServerFormatReplaced: "LP0412";
+    readonly UnrenderedBlockLost: "LP0413";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
@@ -498,6 +499,14 @@ export interface InspectionBindings {
 }
 
 // @public
+export interface InspectionFidelity {
+    readonly escalated: number;
+    readonly fields: readonly string[];
+    readonly mode: 'ignore' | 'warn' | 'escalate';
+    readonly unfaithful: number;
+}
+
+// @public
 export interface InspectionFragments {
     // (undocumented)
     readonly failed: number;
@@ -640,6 +649,7 @@ export interface LexicalNode {
 
 // @public
 interface LexicalRenderOptions {
+    readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string) => void;
     readonly sanitize?: boolean;
 }
 
@@ -794,6 +804,7 @@ export interface LivePreviewEventMap {
 export interface LivePreviewInspection {
     // (undocumented)
     readonly bindings: InspectionBindings;
+    readonly fidelity: InspectionFidelity;
     readonly fragments: InspectionFragments;
     // (undocumented)
     readonly origins: InspectionOrigins;

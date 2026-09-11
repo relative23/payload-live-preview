@@ -9,10 +9,10 @@ import { findBudgetViolations, measureBundle } from '../../scripts/bundle-measur
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 108_432, gzip: 34_173, brotli: 30_253 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 86_684, gzip: 27_371, brotli: 24_348 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 115_125, gzip: 36_355, brotli: 31_972 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 120_077, gzip: 38_026, brotli: 33_416 });
+    expect(INLINE_BUDGET).toEqual({ raw: 109_196, gzip: 34_353, brotli: 30_350 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 87_374, gzip: 27_544, brotli: 24_489 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 115_889, gzip: 36_539, brotli: 32_143 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 120_841, gzip: 38_207, brotli: 33_575 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

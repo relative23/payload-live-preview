@@ -184,6 +184,9 @@ Notes on the rows that need one:
   and keeps the patch; `'ignore'` keeps it silently. It skips the connection's
   first message, where every field counts as changed and the page has just been
   rendered from them ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
+  `inspect().fidelity` counts the findings under every mode — `unfaithful`,
+  and `escalated` for the ones a strategy took — so a page that has nowhere to
+  escalate to shows the gap rather than hiding it.
   `onUnboundChange` is the 2.0 name for the same decision and still decides when
   it is given — `'route'` means `'escalate'` — until it is removed in 3.0.
 - `autoBind: 'unique'` lets the runtime find bindings by value on the

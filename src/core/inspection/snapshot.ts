@@ -59,6 +59,12 @@ export function buildInspection(deps: RuntimeDeps, state: RuntimeState): LivePre
       autoBind: { mode: deps.autoBind, searchMs: state.autoBindSearchMs },
     },
     route: { handler: deps.strategies.route !== undefined, ...state.routeStats },
+    fidelity: {
+      mode: deps.onUnfaithfulPatch,
+      unfaithful: state.unfaithfulCount,
+      escalated: state.escalatedCount,
+      fields: [...state.unfaithfulFields].sort(),
+    },
     fragments: {
       handler: deps.strategies.fragment !== undefined,
       inFlight: active?.pendingFragments ?? 0,

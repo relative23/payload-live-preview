@@ -5,22 +5,25 @@
  *
  * The Lexical write keeps the markup the server rendered for a block the
  * registry cannot render, rather than replacing it with the empty placeholder
- * the node renderer produces for one (LP0410). Where the two trees do not line
- * up there is nothing to keep, and the write says so through
- * `context.reportUnfaithful` — that is the case `onUnfaithfulPatch` escalates.
+ * the node renderer produces for one. The verdict is spoken here, after the
+ * write, because only the write knows it: LP0410 when the server's markup
+ * stands, LP0413 when the two trees did not line up and it is gone — and the
+ * second goes through `context.reportUnfaithful` too, which is the case
+ * `onUnfaithfulPatch` escalates.
  */
 
-import { isLexicalContent, lexicalToHtml, type LexicalRenderOptions } from '@lexical/render';
+import { isLexicalContent, lexicalToHtml } from '@lexical/render';
 import { UNRENDERED_BLOCK_SELECTOR } from '@lexical/nodes/block';
 import { trustedHtml } from '@security/trusted-types';
 import { sanitizeHtmlWithPolicy } from '@security/sanitizer';
+import { safeConsoleWarn } from '@core/diagnostics';
 import { markNoWriteCallback } from '@core/internal-outcome';
-import type { FieldRenderer } from '@core/types';
+import type { CachedElement, FieldRenderer, RenderContext } from '@core/types';
 import { isEmptyValue } from './utils';
 
-// Lexical would otherwise sanitise with the process default; the sink below
-// does it with the instance's policy instead.
-const UNSANITISED: LexicalRenderOptions = { sanitize: false };
+/** Block slugs already reported, one set per verdict: a block kept once may still be lost later. */
+const warnedKept = new Set<string>();
+const warnedLost = new Set<string>();
 
 const richTextRenderer: FieldRenderer = {
   name: 'richText',
@@ -41,9 +44,23 @@ const richTextRenderer: FieldRenderer = {
       return;
     }
     if (isLexicalContent(value)) {
-      const lexical = lexicalToHtml(value, UNSANITISED);
-      if (!writeKeepingUnrenderedBlocks(element, sanitizeHtmlWithPolicy(lexical, policy))) {
-        context.reportUnfaithful?.(target, 'lost the markup the server drew for a block');
+      // Slug by placeholder class: the class is what the write finds standing.
+      const unrendered = new Map<string, string>();
+      const lexical = lexicalToHtml(value, {
+        // Lexical would otherwise sanitise with the process default; the sink
+        // below does it with the instance's policy instead.
+        sanitize: false,
+        onUnrenderedBlock: (blockType, placeholderClass) => {
+          unrendered.set(placeholderClass, blockType);
+        },
+      });
+      const verdicts = writeKeepingUnrenderedBlocks(
+        element,
+        sanitizeHtmlWithPolicy(lexical, policy),
+      );
+      for (const [placeholderClass, lost] of verdicts) {
+        const blockType = unrendered.get(placeholderClass);
+        if (blockType !== undefined) reportUnrenderedBlock(target, context, blockType, lost);
       }
       return;
     }
@@ -61,24 +78,35 @@ const richTextRenderer: FieldRenderer = {
  * pairing is resolved before the first move: a move takes a child out of the
  * live element, which would shift the position each later one is read at.
  *
- * `false` when a placeholder is still standing over markup the element had —
- * the descent found no counterpart for it, so this write is about to lose what
- * the server drew for that block. An element that had nothing to lose (a
- * container the page left empty) is not that case.
+ * Returns a verdict per placeholder class: `false` where a live element that
+ * was not itself a placeholder took the placeholder's place, `true` where one
+ * is still standing over markup the element had — the descent found no
+ * counterpart, so this write lost what the server drew for that block. No
+ * verdict where there was nothing to keep: a container the page left empty,
+ * or a placeholder an earlier write put there, whose loss was reported then.
  */
-function writeKeepingUnrenderedBlocks(element: Element, html: string): boolean {
-  const hadMarkup = element.firstElementChild !== null;
+function writeKeepingUnrenderedBlocks(
+  element: Element,
+  html: string,
+): ReadonlyMap<string, boolean> {
   const rendered = element.cloneNode(false) as Element;
   rendered.innerHTML = trustedHtml(html);
-  let kept = true;
-  if (rendered.querySelector(UNRENDERED_BLOCK_SELECTOR) !== null) {
+  const verdicts = new Map<string, boolean>();
+  const placeholders = rendered.querySelectorAll(UNRENDERED_BLOCK_SELECTOR);
+  if (placeholders.length > 0 && element.firstElementChild !== null) {
     const pairs: [placeholder: Element, live: Element][] = [];
     pairUnrenderedBlocks(element, rendered, pairs);
-    for (const [placeholder, live] of pairs) placeholder.replaceWith(live);
-    kept = !hadMarkup || rendered.querySelector(UNRENDERED_BLOCK_SELECTOR) === null;
+    for (const [placeholder, live] of pairs) {
+      placeholder.replaceWith(live);
+      if (!live.matches(UNRENDERED_BLOCK_SELECTOR)) verdicts.set(placeholder.className, false);
+    }
+    // A placeholder the moves left in the tree is one no live element answered for.
+    for (const placeholder of placeholders) {
+      if (placeholder.parentNode !== null) verdicts.set(placeholder.className, true);
+    }
   }
   element.replaceChildren(...rendered.childNodes);
-  return kept;
+  return verdicts;
 }
 
 /**
@@ -103,6 +131,39 @@ function pairUnrenderedBlocks(
     liveChild = liveChild.nextElementSibling;
     renderedChild = renderedChild.nextElementSibling;
   }
+}
+
+/**
+ * Say what became of a block nobody registered a renderer for, once per slug
+ * and verdict. Not through the runtime's `warn` option: a renderer has no
+ * channel to it, and `RenderContext` carries the one thing that matters more —
+ * the report that lets a strategy redraw the region the write just degraded.
+ */
+function reportUnrenderedBlock(
+  target: CachedElement,
+  context: RenderContext,
+  blockType: string,
+  lost: boolean,
+): void {
+  if (lost) {
+    context.reportUnfaithful?.(target, `lost the markup the server drew for block "${blockType}"`);
+  }
+  const warned = lost ? warnedLost : warnedKept;
+  if (warned.has(blockType)) return;
+  warned.add(blockType);
+  safeConsoleWarn(
+    `[live-preview] ${
+      lost
+        ? `LP0413: no renderer for block "${blockType}", and the markup the server rendered for it is lost.`
+        : `LP0410: no renderer for block "${blockType}"; keeping what the server rendered for it.`
+    } Register one with registerBlockRenderer().`,
+  );
+}
+
+/** Test-only: let LP0410 and LP0413 fire again. */
+export function __resetBlockWarningsForTests(): void {
+  warnedKept.clear();
+  warnedLost.clear();
 }
 
 export { richTextRenderer };

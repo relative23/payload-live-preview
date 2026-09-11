@@ -37,6 +37,7 @@ export interface LexicalNode {
 
 // @public
 export interface LexicalRenderOptions {
+    readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string) => void;
     readonly sanitize?: boolean;
 }
 
@@ -82,6 +83,7 @@ export function registerLexicalNode(type: string, renderer: NodeRenderer): void;
 
 // @public
 export interface RenderNodeContext {
+    readonly onUnrenderedBlock?: ((blockType: string, placeholderClass: string) => void) | undefined;
     readonly renderChildren: (children: readonly LexicalNode[]) => string;
     readonly resolveAlignment: (node: LexicalNode) => string | undefined;
     readonly resolveIndent: (node: LexicalNode) => number;

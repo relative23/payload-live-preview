@@ -346,7 +346,23 @@
 // empty check and the guard `isExternalHttpUrl` implied itself, and the
 // sanitizer's unwrap loop (`replaceWith`). Behaviour is unchanged; the tests
 // that hold each removed line's property are in the same commit.
-export const INLINE_BUDGET = { raw: 108_432, gzip: 34_173, brotli: 30_253 } as const;
+// Raised 2026-09-11 (Z30): raw 108_432 → 109_196 (measured 109_075), gzip 34_173 → 34_353
+// (34_298), brotli 30_253 → 30_350 (30_202). The +764 B raw is the line about a
+// block nobody registered a renderer for, spoken where it can be true. LP0410
+// was reported by the node renderer while it produced the placeholder — before
+// the write knew whether the pairing would find the server's markup — so on a
+// page where it did not, the console said "keeping what the server rendered"
+// while the image was being deleted (measured on the demo, Z30). The renderer
+// now only names the slug through the render context (`onUnrenderedBlock`, one
+// context per document instead of a shared one), and the write judges each
+// placeholder once it has moved what it could: LP0410 where a live element
+// took the placeholder's place, the new LP0413 where one is still standing
+// over markup the element had, and no line where there was nothing to keep.
+// The second verdict is what `reportUnfaithful` was already told; it now also
+// reaches the console. The rest is `inspect().fidelity` — three counters in the
+// runtime state (`unfaithful`, `escalated`, the field names), counted before
+// the mode decides anything, so a page with no strategy shows the gap.
+export const INLINE_BUDGET = { raw: 109_196, gzip: 34_353, brotli: 30_350 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -409,7 +425,13 @@ export const INLINE_BUDGET = { raw: 108_432, gzip: 34_173, brotli: 30_253 } as c
 // Lowered 2026-09-11 (Z28): raw 87_501 → 86_684 (measured 86_574), gzip 27_533 → 27_371
 // (27_321), brotli 24_455 → 24_348 (24_218) — the same −817 B: every line that went
 // is in a module the lean profile carries too (see INLINE_BUDGET).
-export const INLINE_LEAN_BUDGET = { raw: 86_684, gzip: 27_371, brotli: 24_348 } as const;
+// Raised 2026-09-11 (Z30): raw 86_684 → 87_374 (measured 87_264), gzip 27_371 → 27_544
+// (27_494), brotli 24_348 → 24_489 (24_359). The lean profile carries the rich-text
+// renderer and the fidelity ledger, so it pays for the verdict and the two
+// texts like the full one; the 74 B it does not pay are the `escalated` count
+// in the strategy runner it has no copy of — its `inspect().fidelity.escalated`
+// is always 0, which is the truth about that profile.
+export const INLINE_LEAN_BUDGET = { raw: 87_374, gzip: 27_544, brotli: 24_489 } as const;
 
 // The two prelude profiles, each the runtime plus a prelude that moves on its own,
 // keep their budgets and their log in bundle-prelude-budgets.ts: this log reached

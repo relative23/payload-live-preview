@@ -54,7 +54,10 @@
 // Lowered 2026-09-11 (Z28): raw 120_894 → 120_077 (measured 119_956), gzip 38_164 → 38_026
 // (37_971), brotli 33_526 → 33_416 (33_286) — the runtime's own −817 B (see
 // INLINE_BUDGET); the prelude did not move.
-export const INLINE_FRAGMENT_BUDGET = { raw: 120_077, gzip: 38_026, brotli: 33_416 } as const;
+// Raised 2026-09-11 (Z30): raw 120_077 → 120_841 (measured 120_720), gzip 38_026 → 38_207
+// (38_152), brotli 33_416 → 33_575 (33_445) — the runtime's own +764 B (see
+// INLINE_BUDGET); the prelude did not move.
+export const INLINE_FRAGMENT_BUDGET = { raw: 120_841, gzip: 38_207, brotli: 33_575 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -111,4 +114,8 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 120_077, gzip: 38_026, brotli: 33_4
 // Lowered 2026-09-11 (Z28): raw 115_942 → 115_125 (measured 115_004), gzip 36_492 → 36_355
 // (36_300), brotli 32_081 → 31_972 (31_825) — the runtime's own −817 B (see
 // INLINE_BUDGET); the prelude did not move.
-export const INLINE_ROUTE_BUDGET = { raw: 115_125, gzip: 36_355, brotli: 31_972 } as const;
+// Raised 2026-09-11 (Z30): raw 115_125 → 115_889 (measured 115_768), gzip 36_355 → 36_539
+// (36_484), brotli 31_972 → 32_143 (31_996) — the runtime's own +764 B (see
+// INLINE_BUDGET); the prelude did not move. This is the profile in which the
+// LP0413 verdict has somewhere to go: the route redraws the region.
+export const INLINE_ROUTE_BUDGET = { raw: 115_889, gzip: 36_539, brotli: 32_143 } as const;

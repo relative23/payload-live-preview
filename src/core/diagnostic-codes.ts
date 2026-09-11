@@ -61,6 +61,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   UnfaithfulPatch: 'LP0411',
   /** The first write to a date, number or checkbox binding replaced a different reading of the same value. */
   ServerFormatReplaced: 'LP0412',
+  /** A Lexical block has no renderer, and the write could not keep the markup the server rendered for it; it is gone. */
+  UnrenderedBlockLost: 'LP0413',
 
   /** A message was rejected before it reached the update pipeline. */
   MessageRejected: 'LP0501',

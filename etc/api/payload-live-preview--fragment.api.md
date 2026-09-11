@@ -40,6 +40,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnrenderedBlockKept: "LP0410";
     readonly UnfaithfulPatch: "LP0411";
     readonly ServerFormatReplaced: "LP0412";
+    readonly UnrenderedBlockLost: "LP0413";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";

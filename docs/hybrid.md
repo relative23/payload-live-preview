@@ -363,6 +363,10 @@ same findings, reported as `LP0411`, with the patch left where it is.
   revision's fragments settled, next to the `source: 'patch'` one for the
   rest of the page.
 - `inspect().fragments`: `{ handler, inFlight, rendered, failed, superseded }`.
+- `inspect().fidelity`: `{ mode, unfaithful, escalated, fields }` — the patches
+  the runtime knew could not match the server (LP0411), and how many of them a
+  strategy was handed. `unfaithful` above `escalated` with both `handler`s
+  `false` is a page that keeps degraded patches for want of a strategy.
 - Codes: `LP0801` request failed (network, timeout, 5xx) · `LP0802`
   response invalid (type, shape, size, wrong boundary) · `LP0803` endpoint
   refused (401/403) · `LP0804` a late response for a superseded revision

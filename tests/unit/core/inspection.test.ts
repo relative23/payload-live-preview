@@ -86,6 +86,14 @@ describe('inspect() before the runtime starts', () => {
       active: undefined,
     });
     expect(snapshot.scheduler.lastFlush).toBeUndefined();
+    // Nothing fell short yet, and the mode is the default: the reading a
+    // page with no strategy shows right up to its first unfaithful patch.
+    expect(snapshot.fidelity).toEqual({
+      mode: 'escalate',
+      unfaithful: 0,
+      escalated: 0,
+      fields: [],
+    });
     runtime.destroy();
   });
 });

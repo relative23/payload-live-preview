@@ -125,6 +125,10 @@ export class RuntimeState {
   readonly checkedServerFormat = new WeakSet<Element>();
   /** Bindings this revision could not patch faithfully, drained by the flush that escalates them. */
   unfaithfulPatches: CachedElement[] = [];
+  /** Every binding ever reported unfaithful, and how many of them a strategy was handed; `inspect().fidelity`. */
+  unfaithfulCount = 0;
+  escalatedCount = 0;
+  readonly unfaithfulFields = new Set<string>();
   /** What the one auto-binding search cost, for `inspect()`; `undefined` until it ran. */
   autoBindSearchMs: number | undefined = undefined;
   /** What that search bound, looked for again after a route refresh (ADR 0014); `null` until it ran. */

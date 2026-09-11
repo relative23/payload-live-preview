@@ -6,7 +6,9 @@
  * That element is a placeholder, not a rendering. `UNRENDERED_BLOCK_SELECTOR`
  * names it so the write path can keep the markup the server already rendered
  * for the block in its place, instead of replacing a figure and its image with
- * an empty div (LP0410).
+ * an empty div (LP0410). Whether that succeeds is decided there, not here: this
+ * renderer only tells the context which slug it had no renderer for, and the
+ * write says what became of it (LP0410 kept, LP0413 lost).
  */
 
 import { lookupBlockRenderer } from '../blocks/registry';
@@ -21,8 +23,6 @@ import { asRecord, sanitizeIdent } from '../value-shapes';
  */
 export const UNRENDERED_BLOCK_SELECTOR = '.lp-block:empty,.lp-inline-block:empty';
 
-const warnedBlockTypes = new Set<string>();
-
 function renderBlockNode(
   node: LexicalNode,
   ctx: RenderNodeContext,
@@ -32,33 +32,15 @@ function renderBlockNode(
   const fields = asRecord(node['fields']) ?? {};
   const blockType = typeof fields['blockType'] === 'string' ? fields['blockType'] : '';
   const slug = sanitizeIdent(blockType);
+  const classes = slug === '' ? baseClass : `${baseClass} ${baseClass}--${slug}`;
   if (blockType !== '') {
     const custom = lookupBlockRenderer(blockType) ?? lookupBlockRenderer(slug);
     if (custom) return custom(fields, { renderChildren: ctx.renderChildren });
-    warnMissingRendererOnce(blockType);
+    // The real slug is known only here — the class carries `sanitizeIdent(slug)`,
+    // and a hint that names the wrong one to register is no hint.
+    ctx.onUnrenderedBlock?.(blockType, classes);
   }
-  const classes = slug === '' ? baseClass : `${baseClass} ${baseClass}--${slug}`;
   return `<${tag} class="${classes}"></${tag}>`;
-}
-
-// This layer may not import `@core/diagnostics` (architecture policy), so the
-// warn-once lives here, the same shape as the one in `../render.ts`. It is not
-// routed through the runtime's `warn` option for that reason.
-function warnMissingRendererOnce(blockType: string): void {
-  if (warnedBlockTypes.has(blockType)) return;
-  warnedBlockTypes.add(blockType);
-  try {
-    console.warn(
-      `[live-preview] LP0410: no renderer for block "${blockType}"; keeping what the server rendered for it. Register one with registerBlockRenderer().`,
-    );
-  } catch {
-    // Diagnostics never become a second failure.
-  }
-}
-
-/** Test-only: let LP0410 fire again. */
-export function __resetBlockWarningsForTests(): void {
-  warnedBlockTypes.clear();
 }
 
 const blockRenderer: NodeRenderer = (node, ctx) => renderBlockNode(node, ctx, 'div', 'lp-block');

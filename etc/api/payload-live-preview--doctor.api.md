@@ -4,18 +4,18 @@
 
 ```ts
 
-import { e as DIAGNOSTIC_CODES } from './probe-BqafijCX.js';
-import { f as DiagnosticCode } from './probe-BqafijCX.js';
-import { b as DoctorContext } from './probe-BqafijCX.js';
-import { D as DoctorFetch } from './probe-BqafijCX.js';
-import { d as DoctorFinding } from './probe-BqafijCX.js';
-import { g as DoctorLevel } from './probe-BqafijCX.js';
-import { a as DoctorProbe } from './probe-BqafijCX.js';
-import { c as DoctorReport } from './probe-BqafijCX.js';
-import { h as DoctorResponse } from './probe-BqafijCX.js';
-import { l as lowercaseHeaders } from './probe-BqafijCX.js';
-import { r as runDoctor } from './probe-BqafijCX.js';
-import { R as RunDoctorOptions } from './probe-BqafijCX.js';
+import { e as DIAGNOSTIC_CODES } from './probe-BBbMkYUx.js';
+import { f as DiagnosticCode } from './probe-BBbMkYUx.js';
+import { b as DoctorContext } from './probe-BBbMkYUx.js';
+import { D as DoctorFetch } from './probe-BBbMkYUx.js';
+import { d as DoctorFinding } from './probe-BBbMkYUx.js';
+import { g as DoctorLevel } from './probe-BBbMkYUx.js';
+import { a as DoctorProbe } from './probe-BBbMkYUx.js';
+import { c as DoctorReport } from './probe-BBbMkYUx.js';
+import { h as DoctorResponse } from './probe-BBbMkYUx.js';
+import { l as lowercaseHeaders } from './probe-BBbMkYUx.js';
+import { r as runDoctor } from './probe-BBbMkYUx.js';
+import { R as RunDoctorOptions } from './probe-BBbMkYUx.js';
 
 // @public
 export function analyzeProbe(probe: DoctorProbe, context: DoctorContext & {

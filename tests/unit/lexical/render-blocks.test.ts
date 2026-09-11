@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { lexicalToHtml } from '@lexical/render';
-import { __resetBlockWarningsForTests } from '@lexical/nodes/block';
 import { registerBlockRenderer, __resetBlockRegistryForTests } from '@lexical/blocks/registry';
 import { setSanitizerPolicy } from '@security/sanitizer';
 import { makeRoot, paragraphWith } from './helpers';
@@ -271,7 +270,6 @@ describe('lexicalToHtml — block', () => {
   let warn: ReturnType<typeof silenceWarn>;
 
   beforeEach(() => {
-    __resetBlockWarningsForTests();
     __resetBlockRegistryForTests();
     warn = silenceWarn();
   });
@@ -312,23 +310,63 @@ describe('lexicalToHtml — block', () => {
     expect(html).toBe('<div class="lp-block lp-block--callout"></div>');
   });
 
-  it('reports LP0410 once per block type, naming the slug to register', () => {
-    const doc = makeRoot([{ type: 'block', fields: { blockType: 'mediaBlock' } }]);
-    lexicalToHtml(doc, RAW);
-    lexicalToHtml(doc, RAW);
-    lexicalToHtml(makeRoot([{ type: 'block', fields: { blockType: 'otherBlock' } }]), RAW);
-    const messages = warn.mock.calls.map((call) => String(call[0]));
-    expect(messages).toHaveLength(2);
-    expect(messages[0]).toContain('LP0410');
-    expect(messages[0]).toContain('"mediaBlock"');
-    expect(messages[1]).toContain('"otherBlock"');
+  // The verdict on a block nobody registered belongs to the write, which is
+  // the one place that knows whether the server's markup survived (LP0410) or
+  // not (LP0413). Rendering only names the slug — the real one, because the
+  // class carries `sanitizeIdent(slug)` and a hint to register "mediablock"
+  // would name a block that does not exist.
+  it('names each block it has no renderer for, with the class its placeholder carries', () => {
+    const seen: [string, string][] = [];
+    const doc = makeRoot([
+      { type: 'block', fields: { blockType: 'mediaBlock' } },
+      { type: 'paragraph', children: [{ type: 'inlineBlock', fields: { blockType: 'Badge' } }] },
+      { type: 'block', fields: { blockType: 'mediaBlock' } },
+    ]);
+    lexicalToHtml(doc, { ...RAW, onUnrenderedBlock: (type, cls) => seen.push([type, cls]) });
+    expect(seen).toEqual([
+      ['mediaBlock', 'lp-block lp-block--mediablock'],
+      ['Badge', 'lp-inline-block lp-inline-block--badge'],
+      ['mediaBlock', 'lp-block lp-block--mediablock'],
+    ]);
+  });
+
+  it('reaches a block nested in what a registered one rendered', () => {
+    registerBlockRenderer(
+      'wrapper',
+      (fields, ctx) => `<section>${ctx.renderChildren(fields['children'] as never)}</section>`,
+    );
+    const seen: string[] = [];
+    lexicalToHtml(
+      makeRoot([
+        {
+          type: 'block',
+          fields: {
+            blockType: 'wrapper',
+            children: [{ type: 'block', fields: { blockType: 'inner' } }],
+          },
+        },
+      ]),
+      { ...RAW, onUnrenderedBlock: (type) => seen.push(type) },
+    );
+    expect(seen).toEqual(['inner']);
   });
 
   it('says nothing for a block it can render', () => {
     registerBlockRenderer('quoteBlock', () => '<blockquote>q</blockquote>');
+    const seen: string[] = [];
     expect(
-      lexicalToHtml(makeRoot([{ type: 'block', fields: { blockType: 'quoteBlock' } }]), RAW),
+      lexicalToHtml(makeRoot([{ type: 'block', fields: { blockType: 'quoteBlock' } }]), {
+        ...RAW,
+        onUnrenderedBlock: (type) => seen.push(type),
+      }),
     ).toBe('<blockquote>q</blockquote>');
+    expect(seen).toEqual([]);
+  });
+
+  it('warns nothing itself, with or without a listener', () => {
+    const doc = makeRoot([{ type: 'block', fields: { blockType: 'mediaBlock' } }]);
+    lexicalToHtml(doc, RAW);
+    lexicalToHtml(doc, { ...RAW, onUnrenderedBlock: () => {} });
     expect(warn).not.toHaveBeenCalled();
   });
 });

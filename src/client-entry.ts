@@ -39,6 +39,7 @@ export type {
   InspectionScheduler,
   LivePreviewInspection,
   PluginInspection,
+  InspectionFidelity,
   InspectionFragments,
   InspectionRoute,
 } from './core/inspection/types';

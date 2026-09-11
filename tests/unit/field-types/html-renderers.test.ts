@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setSanitizerPolicy } from '@security/sanitizer';
 import { registerBlockRenderer } from '@lexical/blocks/registry';
+import { __resetBlockWarningsForTests } from '@field-types/rich-text';
 import type { RichTextRenderer } from '@core/types';
 import { emptyContext, makeTarget, rendererNamed } from './helpers';
 
@@ -84,10 +85,12 @@ describe('richText renderer', () => {
   // LP-2: the empty placeholder for a block without a renderer used to be
   // written over markup the server had already rendered for that block.
   describe('a block the registry cannot render', () => {
-    // LP0410 goes to the console, warn-once per block type; these cases are
-    // about the DOM, and `render-blocks.test.ts` is about the warning.
+    // LP0410 and LP0413 go to the console, warn-once per block type and
+    // verdict; most cases here are about the DOM, and the last three about
+    // the verdict the write speaks once it knows it.
     let warn: ReturnType<typeof silenceWarn>;
     beforeEach(() => {
+      __resetBlockWarningsForTests();
       warn = silenceWarn();
     });
     afterEach(() => {
@@ -147,6 +150,55 @@ describe('richText renderer', () => {
       );
       expect([...el.querySelectorAll('figure')].map((f) => f.id)).toEqual(['one', 'two']);
       expect(el.querySelector('p')?.textContent).toBe('between');
+    });
+
+    // Z30: the verdict is spoken by the write, after it. Before, the renderer
+    // said "keeping" while the write was about to lose the block.
+    it('reports a block it lost through the context, once the write is done', () => {
+      const el = document.createElement('div');
+      // The server dropped the empty outro paragraph: two children against three.
+      el.innerHTML = '<p>old</p><figure><img src="https://cdn.example.com/a.jpg"></figure>';
+      const seen: string[] = [];
+      const reportUnfaithful = vi.fn((_target: unknown, reason: string) => {
+        seen.push(`${reason} | ${el.innerHTML}`);
+      });
+      rendererNamed('richText').render(makeTarget(el), mediaDocument, {
+        ...emptyContext(),
+        reportUnfaithful,
+      });
+      expect(reportUnfaithful).toHaveBeenCalledTimes(1);
+      // At the time of the report the placeholder already stands on the page.
+      expect(seen[0]).toBe(
+        'lost the markup the server drew for block "mediaBlock" | ' +
+          '<p>intro</p><div class="lp-block lp-block--mediablock"></div><p>outro</p>',
+      );
+      const warned = warn.mock.calls.map(String).join(' ');
+      expect(warned).toContain('LP0413');
+      expect(warned).not.toContain('LP0410');
+    });
+
+    it('reports nothing for a container the page left empty', () => {
+      const el = document.createElement('div');
+      const reportUnfaithful = vi.fn();
+      rendererNamed('richText').render(makeTarget(el), mediaDocument, {
+        ...emptyContext(),
+        reportUnfaithful,
+      });
+      expect(el.querySelector('.lp-block')).not.toBeNull();
+      expect(reportUnfaithful).not.toHaveBeenCalled();
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('does not call a placeholder answered by an earlier placeholder "kept"', () => {
+      const el = document.createElement('div');
+      el.innerHTML = '<p>old</p><div class="lp-block lp-block--mediablock"></div><p>old</p>';
+      const reportUnfaithful = vi.fn();
+      rendererNamed('richText').render(makeTarget(el), mediaDocument, {
+        ...emptyContext(),
+        reportUnfaithful,
+      });
+      expect(reportUnfaithful).not.toHaveBeenCalled();
+      expect(warn).not.toHaveBeenCalled();
     });
 
     it('keeps an inline block nested inside a paragraph', () => {

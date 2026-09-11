@@ -26,6 +26,7 @@ export type {
   InspectionProtocol,
   InspectionRevisions,
   PluginInspection,
+  InspectionFidelity,
   InspectionFragments,
   InspectionRoute,
   InspectionScheduler,

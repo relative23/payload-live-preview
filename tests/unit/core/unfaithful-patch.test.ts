@@ -82,6 +82,13 @@ describe('a value the binding cannot represent', () => {
 
     expect(route.refreshes).toBe(1);
     expect(runtime.inspect().route.refreshes).toBe(1);
+    // The verdict and its outcome, as a reader of the page sees them.
+    expect(runtime.inspect().fidelity).toEqual({
+      mode: 'escalate',
+      unfaithful: 1,
+      escalated: 1,
+      fields: ['title'],
+    });
     runtime.destroy();
   });
 
@@ -128,6 +135,13 @@ describe('a value the binding cannot represent', () => {
     await connectThenEdit({ title: 'Typed in the admin' });
 
     expect(route.refreshes).toBe(0);
+    // Counted all the same: the mode decides what is done, not what is seen.
+    expect(runtime.inspect().fidelity).toEqual({
+      mode: 'ignore',
+      unfaithful: 1,
+      escalated: 0,
+      fields: ['title'],
+    });
     runtime.destroy();
   });
 
@@ -158,6 +172,11 @@ describe('a value the binding cannot represent', () => {
 
     // The consumer's markup survives, exactly as before Z3.
     expect(document.querySelector('.mark')?.textContent).toBe('Server rendered');
+    // What `inspect()` says on that page: the patch fell short, nothing was
+    // asked to redraw it, and `route.handler` beside it says why.
+    const { fidelity, route } = runtime.inspect();
+    expect(fidelity).toEqual({ mode: 'escalate', unfaithful: 1, escalated: 0, fields: ['title'] });
+    expect(route.handler).toBe(false);
     runtime.destroy();
   });
 });

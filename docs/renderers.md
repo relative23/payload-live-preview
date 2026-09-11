@@ -168,8 +168,14 @@ element standing in its position in the live markup and leaves that element
 alone, so the `<figure>` your own server rendered for a `mediaBlock` survives an
 edit to another field. Pairing is positional — the server writes no id to match
 on — and stops where the child counts disagree, at which point the empty
-placeholder is written after all. Either way the runtime reports `LP0410` once
-per slug, naming the one to register.
+placeholder is written after all.
+
+The write says which of the two happened, once per slug, after it knows:
+`LP0410` when the server's markup stands, `LP0413` when it is gone. The second
+is also a finding for `onUnfaithfulPatch` — the region is handed to the fragment
+or route strategy when the page has one — and `inspect().fidelity` counts it
+whether or not anything could be done about it. A container the page left empty
+gets the placeholder and neither line: there was nothing to keep.
 
 ### The sanitizer adds `target="_blank"` itself
 

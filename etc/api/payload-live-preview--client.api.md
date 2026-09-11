@@ -60,6 +60,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnrenderedBlockKept: "LP0410";
     readonly UnfaithfulPatch: "LP0411";
     readonly ServerFormatReplaced: "LP0412";
+    readonly UnrenderedBlockLost: "LP0413";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
@@ -198,6 +199,14 @@ export interface InspectionBindings {
     readonly orphanFields: readonly string[];
     readonly owners: readonly string[];
     readonly ownerScoped: boolean;
+}
+
+// @public
+export interface InspectionFidelity {
+    readonly escalated: number;
+    readonly fields: readonly string[];
+    readonly mode: 'ignore' | 'warn' | 'escalate';
+    readonly unfaithful: number;
 }
 
 // @public
@@ -390,6 +399,7 @@ export interface LivePreviewEventMap {
 export interface LivePreviewInspection {
     // (undocumented)
     readonly bindings: InspectionBindings;
+    readonly fidelity: InspectionFidelity;
     readonly fragments: InspectionFragments;
     // (undocumented)
     readonly origins: InspectionOrigins;
