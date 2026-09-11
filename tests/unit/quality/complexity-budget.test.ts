@@ -19,6 +19,15 @@ import {
  * counting is right, and the reviewed file matches what is actually there.
  */
 
+/** The same budget with the freeze taken off: the "freeze off" cases must not depend on the committed state. */
+function withoutFreeze(reviewed: ComplexityBudget): ComplexityBudget {
+  return {
+    schemaVersion: reviewed.schemaVersion,
+    totals: reviewed.totals,
+    entries: reviewed.entries,
+  };
+}
+
 async function budget(): Promise<ComplexityBudget> {
   return JSON.parse(
     await readFile(resolve('quality/complexity-budget.json'), 'utf8'),
@@ -159,10 +168,22 @@ describe('the freeze after the first release candidate', () => {
   const freeze = { since: 'v2.0.0-rc.0', why: 'a release candidate takes patch changes only' };
 
   it('is not consulted while the budget is not frozen', async () => {
-    const reviewed = await budget();
+    const unfrozen = withoutFreeze(await budget());
 
-    expect(reviewed.frozen).toBeUndefined();
-    expect(findFreezeViolations(reviewed, undefined)).toEqual([]);
+    expect(unfrozen.frozen).toBeUndefined();
+    expect(findFreezeViolations(unfrozen, undefined)).toEqual([]);
+  });
+
+  it('holds the committed budget to the snapshot taken when the freeze began', async () => {
+    // Frozen since the first release candidate (ADR 0013 §6): the committed
+    // limits and the committed snapshot must name the same tag and agree.
+    const reviewed = await budget();
+    const snapshot = JSON.parse(
+      await readFile(resolve('quality/complexity-budget.frozen.json'), 'utf8'),
+    ) as ReturnType<typeof freezeSnapshotFrom>;
+
+    expect(reviewed.frozen?.since).toBe(snapshot.since);
+    expect(findFreezeViolations(reviewed, snapshot)).toEqual([]);
   });
 
   it('accepts limits that did not move since the freeze', async () => {
@@ -256,6 +277,6 @@ describe('the freeze after the first release candidate', () => {
     expect(Object.keys(snapshot.totals)).toEqual(Object.keys(reviewed.totals));
     expect(Object.keys(snapshot.entries)).toEqual(Object.keys(reviewed.entries));
     expect(snapshot.totals['diagnosticCodes']).toBe(reviewed.totals['diagnosticCodes']!.limit);
-    expect(() => freezeSnapshotFrom(reviewed)).toThrow(/frozen/u);
+    expect(() => freezeSnapshotFrom(withoutFreeze(reviewed))).toThrow(/frozen/u);
   });
 });

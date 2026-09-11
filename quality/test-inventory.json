@@ -19,7 +19,7 @@
   "totals": {
     "files": 314,
     "suites": 663,
-    "tests": 2779,
+    "tests": 2780,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 257,
       "suites": 588,
-      "tests": 2552,
+      "tests": 2553,
       "benchmarks": 0
     }
   },
@@ -1989,7 +1989,7 @@
       "path": "tests/unit/quality/complexity-budget.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 15,
+      "tests": 16,
       "benchmarks": 0
     },
     {
