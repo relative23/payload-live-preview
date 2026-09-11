@@ -393,8 +393,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // runtime rises +1 085 B raw / ~+330 gzip / ~+280 brotli (`index.*` twice, as
   // code and as source); the adapter rows ~+930 raw for the runtime and the page
   // facts the Nuxt adapter threads through — no second bootstrap, Vue's mount is
-  // state a late runtime reads (`hydration-vue.ts`, ADR 0015 addendum). Each row
-  // to its measurement plus the cushion this file documents, brotli reread after the commit.
+  // state a late runtime reads (`hydration-vue.ts`, ADR 0015 addendum). Each row to
+  // its measurement plus the cushion; reread after the commit, `index.cjs` brotli 56_351 → 56_388 (56_258, the epoch, Z19).
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
   'adapters/astro/index.js': { raw: 159_977, gzip: 50_078, brotli: 43_128 },
   'adapters/astro/middleware-entry.js': { raw: 146_655, gzip: 45_926, brotli: 39_571 },
@@ -462,7 +462,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-10 (Z25): both barrels −1 302 raw (see above); the brotli rows go
   // to their measurement before the commit plus the ~130 B the paragraph above
   // asks for, `index.js` from a 32 B margin that had been a coin flip since Z9.
-  'index.cjs': { raw: 280_631, gzip: 87_587, brotli: 56_351 },
+  'index.cjs': { raw: 280_631, gzip: 87_587, brotli: 56_388 },
   'index.js': { raw: 280_005, gzip: 87_588, brotli: 56_341 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
