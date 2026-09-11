@@ -6,10 +6,10 @@ import {
   type PropagationClock,
   publishCertifiedArtifact,
   registryArtifactAction,
+  registryLatestFrom,
   registryStateFrom,
-  releaseTagForVersion,
-  distTagForVersion,
 } from '../../scripts/publish-artifact';
+import { distTagForVersion } from '../../scripts/release-version';
 
 describe('exact artifact publisher', () => {
   it('publishes only an absent version and reconciles only an identical registry artifact', () => {
@@ -99,24 +99,10 @@ describe('exact artifact publisher', () => {
     ]);
   });
 
-  it('tags stable and prerelease git releases, and refuses a non-version', () => {
-    expect(releaseTagForVersion('1.0.4')).toBe('v1.0.4');
-    expect(releaseTagForVersion('2.0.0-beta.1')).toBe('v2.0.0-beta.1');
-    expect(() => releaseTagForVersion('latest')).toThrow(/version/u);
-  });
-
-  it('routes a prerelease to its own npm dist-tag and never to latest', () => {
-    expect(distTagForVersion('1.0.4')).toBe('latest');
-    expect(distTagForVersion('2.0.0')).toBe('latest');
-    expect(distTagForVersion('2.0.0-beta.0')).toBe('beta');
-    expect(distTagForVersion('2.0.0-rc.3')).toBe('rc');
-    expect(() => distTagForVersion('not-a-version')).toThrow(/version/u);
-  });
-
   it('publishes a prerelease archive under its label tag', () => {
     const args = exactPublishArguments(
       '/tmp/x-2.0.0-beta.0.tgz',
-      distTagForVersion('2.0.0-beta.0'),
+      distTagForVersion('2.0.0-beta.0', '1.8.1'),
     );
     const tagIndex = args.indexOf('--tag');
     expect(args[tagIndex + 1]).toBe('beta');
@@ -156,6 +142,32 @@ describe('registry integrity lookup', () => {
     expect(() =>
       registryStateFrom({ status: 1, stdout: '', stderr: 'npm error code ECONNRESET' }),
     ).toThrow(/failed closed/u);
+  });
+});
+
+describe('registry latest lookup', () => {
+  it('reads latest in the npm 11 and the npm 12 shape', () => {
+    expect(registryLatestFrom({ status: 0, stdout: '"1.8.1"\n', stderr: '' })).toBe('1.8.1');
+    expect(registryLatestFrom({ status: 0, stdout: '[\n  "1.8.1"\n]\n', stderr: '' })).toBe(
+      '1.8.1',
+    );
+  });
+
+  it('reads a package the registry has never seen as having no latest', () => {
+    expect(
+      registryLatestFrom({ status: 1, stdout: '', stderr: 'npm error code E404' }),
+    ).toBeUndefined();
+    expect(registryLatestFrom({ status: 0, stdout: '\n', stderr: '' })).toBeUndefined();
+  });
+
+  it('fails closed on anything else', () => {
+    expect(() =>
+      registryLatestFrom({ status: 1, stdout: '', stderr: 'npm error code ETIMEDOUT' }),
+    ).toThrow(/failed closed/u);
+    expect(() =>
+      registryLatestFrom({ status: 0, stdout: '["1.8.1", "2.0.0"]', stderr: '' }),
+    ).toThrow(/no version as latest/u);
+    expect(() => registryLatestFrom({ status: 0, stdout: '{', stderr: '' })).toThrow(/malformed/u);
   });
 });
 

@@ -54,13 +54,30 @@ created; `scripts/github-release.ts` pushes it and creates the GitHub Release
 from the CHANGELOG section, reconciling in the same way — a tag or release
 already on the tested commit is accepted, one on another commit is an error.
 
-### 4. Prereleases publish under their label
+### 4. The dist-tag follows the version and the registry's `latest`
 
-The dist-tag is derived from the version and nothing else: `X.Y.Z` → `latest`;
-`X.Y.Z-<label>.<n>`, the shape Changesets pre mode produces → `<label>`, so
-`2.0.0-beta.0` lands on `beta` and `npm install` keeps resolving the stable
-release. A version of any other shape is refused. The GitHub Release is marked
-prerelease when the version carries a hyphen.
+npm moves a dist-tag to whatever is published under it, so the tag decides what
+`npm install payload-live-preview` resolves. `distTagForVersion()` in
+`scripts/publish-artifact.ts` takes the version and the version the registry
+serves as `latest`:
+
+- `X.Y.Z-<label>.<n>`, the shape Changesets pre mode produces → `<label>`, so
+  `2.0.0-beta.0` lands on `beta` and installs keep resolving the stable release;
+- a stable version whose major is below the major of `latest` → `legacy`, so a
+  1.x security fix published after 2.0.0 cannot take `latest` back (§7);
+- a stable version below `latest` in the same major → refused, it would move
+  `latest` backwards;
+- any other stable version → `latest`, and so does the first publish of a
+  package that has no `latest` yet.
+
+A version of any other shape is refused. `latest` is read once, before anything
+is published (`registryLatestFrom()`), and not retried: it is not the
+read-after-write delay the wait in §3 exists for, npm retries transient network
+failures itself, and a run that stops there has changed nothing. The publisher
+hands its tag to the next step as the `dist_tag` output; `scripts/github-release.ts`
+marks the GitHub Release prerelease when the version carries a hyphen and passes
+`--latest=false` whenever the tag is not `latest`, so GitHub's Latest label
+follows npm's.
 
 ### 5. Versions are bumped by the script, never by hand
 

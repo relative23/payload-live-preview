@@ -206,7 +206,9 @@ Nothing is published from a laptop. From a merge to npm:
    verifies the registry copy, pushes the `v<version>` tag, creates the GitHub
    Release from the CHANGELOG section (`scripts/github-release.ts`) and installs
    the published package from the registry (`npm run test:smoke`). A prerelease
-   (`2.0.0-beta.0`) publishes under its label as dist-tag (`beta`), never `latest`.
+   (`2.0.0-beta.0`) publishes under its label as dist-tag (`beta`), never `latest`;
+   a stable version whose major is below the one `latest` serves publishes under
+   `legacy`, and its GitHub Release is not marked Latest.
 5. A run whose release was skipped — a newer push landed while its CI was
    still running — is re-entered by hand: `gh workflow run release.yml -f run_id=<CI run id>`.
 

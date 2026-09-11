@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { releaseTagForVersion } from './publish-artifact';
+import { releaseTagForVersion } from './release-version';
 
 export interface CommandResult {
   readonly status: number;

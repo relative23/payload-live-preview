@@ -118,7 +118,11 @@ const RELEASE: WorkflowSpec = {
         },
         {
           run: 'npx tsx scripts/github-release.ts',
-          env: { GH_TOKEN: '${{ github.token }}', PACKAGE_SOURCE_COMMIT: TESTED_SHA },
+          env: {
+            DIST_TAG: '${{ steps.publish.outputs.dist_tag }}',
+            GH_TOKEN: '${{ github.token }}',
+            PACKAGE_SOURCE_COMMIT: TESTED_SHA,
+          },
         },
         { run: 'npm run test:smoke' },
       ],

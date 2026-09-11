@@ -174,10 +174,12 @@ jobs:
           fi
           npm run test:package -- --tarball "${tarballs[0]}" --source-commit "$TESTED_SHA"
 
-      # Sends the checked tgz to npm with scripts disabled, then downloads it
-      # from the registry and compares digests and inventory before creating
-      # the local release tag.
+      # Sends the checked tgz to npm with scripts disabled, under the dist-tag
+      # the version and the registry's `latest` decide, then downloads it from
+      # the registry and compares digests and inventory before creating the
+      # local release tag.
       - name: Publish with provenance
+        id: publish
         env:
           NPM_CONFIG_PROVENANCE: 'true'
           PACKAGE_ARTIFACT_DIR: release-artifact
@@ -185,8 +187,11 @@ jobs:
           SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
         run: npm run release
 
+      # The Release follows npm: a version not published under `latest` does
+      # not take GitHub's Latest label.
       - name: Push the release tag and create the GitHub Release
         env:
+          DIST_TAG: ${{ steps.publish.outputs.dist_tag }}
           GH_TOKEN: ${{ github.token }}
           PACKAGE_SOURCE_COMMIT: ${{ needs.gate.outputs.tested_sha }}
         run: npx tsx scripts/github-release.ts
