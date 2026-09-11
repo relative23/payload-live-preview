@@ -227,6 +227,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RendererThrew: "LP0603";
     readonly StartupFailed: "LP0605";
     readonly ReadyFailed: "LP0606";
+    readonly HydrationWaitTimedOut: "LP0607";
     readonly AuditRuntimeMissing: "LP0701";
     readonly AuditNoFrameAncestors: "LP0702";
     readonly AuditFrameOptionsBlocks: "LP0703";
@@ -463,6 +464,7 @@ export interface InlineScriptConfig {
     readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
     readonly fragmentEndpoint?: string;
     readonly heartbeatMs?: number;
+    readonly hydration?: 'react';
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     // @deprecated
@@ -806,6 +808,10 @@ export interface LivePreviewInspection {
     readonly bindings: InspectionBindings;
     readonly fidelity: InspectionFidelity;
     readonly fragments: InspectionFragments;
+    readonly hydration: {
+        readonly mode: 'off' | 'react';
+        readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
+    };
     // (undocumented)
     readonly origins: InspectionOrigins;
     readonly plugins: readonly PluginInspection[];

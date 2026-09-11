@@ -83,6 +83,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RendererThrew: "LP0603";
     readonly StartupFailed: "LP0605";
     readonly ReadyFailed: "LP0606";
+    readonly HydrationWaitTimedOut: "LP0607";
     readonly AuditRuntimeMissing: "LP0701";
     readonly AuditNoFrameAncestors: "LP0702";
     readonly AuditFrameOptionsBlocks: "LP0703";
