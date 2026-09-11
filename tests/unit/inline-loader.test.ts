@@ -25,6 +25,15 @@ function runLoader(
   script: string,
   context: { inIframe: boolean },
 ): { appended: AppendedScript[]; config: unknown } {
+  const sandbox = runLoaderSandbox(script, context);
+  return {
+    appended: sandbox['appended'] as AppendedScript[],
+    config: sandbox['__LIVE_PREVIEW_CONFIG__'],
+  };
+}
+
+/** The sandbox after the script ran, for assertions on what it left on `window`. */
+function runLoaderSandbox(script: string, context: { inIframe: boolean }): Record<string, unknown> {
   const appended: AppendedScript[] = [];
   const head = {
     appendChild(node: AppendedScript) {
@@ -49,9 +58,10 @@ function runLoader(
   sandbox['parent'] = context.inIframe ? { different: true } : sandbox;
   sandbox['opener'] = null;
   sandbox['globalThis'] = sandbox;
+  sandbox['appended'] = appended;
 
   runInNewContext(script, sandbox);
-  return { appended, config: sandbox['__LIVE_PREVIEW_CONFIG__'] };
+  return sandbox;
 }
 
 describe('generateLoaderScript — substitution', () => {
@@ -93,6 +103,20 @@ describe('generateLoaderScript — substitution', () => {
     );
   });
 
+  it('emits the bootstrap armed for React when the page declares hydration, the plain one otherwise', () => {
+    // ADR 0015 F2: the runtime arrives as a fetched asset that may land after
+    // react-dom, so the arming travels with the bootstrap that is in <head> —
+    // as one script, so the bootstrap stays a fraction of what it defers.
+    const declared = generateLoaderScript({ hydration: 'react' }, TARGET);
+    const plain = generateLoaderScript({}, TARGET);
+
+    expect(declared).toContain('__REACT_DEVTOOLS_GLOBAL_HOOK__');
+    expect(declared.split('createElement("script")')).toHaveLength(2);
+    // The static-page floor stays what it was: a page that declares nothing pays nothing.
+    expect(plain).not.toContain('__REACT_DEVTOOLS_GLOBAL_HOOK__');
+    expect(plain).toBe(generateLoaderScript({}, TARGET));
+  });
+
   it('escapes `<` in the asset URL so `</script>` cannot break the tag', () => {
     const script = generateLoaderScript({}, { runtimeSrc: '/x</script><b>.js' });
     expect(script).not.toContain('</script>');
@@ -105,6 +129,23 @@ describe('generateLoaderScript — substitution', () => {
 });
 
 describe('generateLoaderScript — what the browser does with it', () => {
+  it("arms React's hook before it appends the runtime, on a page that declares hydration", () => {
+    const script = generateLoaderScript({ hydration: 'react' }, TARGET);
+    const sandbox = runLoaderSandbox(script, { inIframe: true });
+
+    const hook = sandbox['__REACT_DEVTOOLS_GLOBAL_HOOK__'] as
+      { supportsFiber?: boolean; onCommitFiberRoot?: unknown } | undefined;
+    expect(hook?.supportsFiber).toBe(true);
+    expect(typeof hook?.onCommitFiberRoot).toBe('function');
+    expect(sandbox['appended']).toHaveLength(1);
+    // And not on a page that declared nothing: the hook is React's to find.
+    expect(
+      runLoaderSandbox(generateLoaderScript({}, TARGET), { inIframe: true })[
+        '__REACT_DEVTOOLS_GLOBAL_HOOK__'
+      ],
+    ).toBeUndefined();
+  });
+
   it('appends the runtime, with integrity and crossorigin, inside a preview', () => {
     const { appended, config } = runLoader(generateLoaderScript({}, TARGET), {
       inIframe: true,

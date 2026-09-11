@@ -25,6 +25,32 @@ afterEach(() => {
   });
 });
 
+describe('the bootstrap armed for React (ADR 0015)', () => {
+  it('installs the hook React injects into, then appends the runtime as the plain one does', async () => {
+    stubTopFrame(true);
+    vi.stubGlobal('__LP_RUNTIME_SRC__', '/rt.js');
+    vi.stubGlobal('__LP_RUNTIME_INTEGRITY__', '');
+    // The define the second loader build sets; the plain tests below leave it
+    // undefined and must install no hook.
+    vi.stubGlobal('__REACT_BOOTSTRAP__', true);
+    const hooked = window as Window & {
+      __REACT_DEVTOOLS_GLOBAL_HOOK__?: { supportsFiber?: boolean };
+    };
+    delete hooked.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+
+    await import('@core/loader');
+
+    // Read afresh: the `delete` above narrowed the property for the checker.
+    const installed = (
+      window as Window & { __REACT_DEVTOOLS_GLOBAL_HOOK__?: { supportsFiber?: boolean } }
+    ).__REACT_DEVTOOLS_GLOBAL_HOOK__;
+    expect(installed?.supportsFiber).toBe(true);
+    expect(document.head.querySelector('script')?.getAttribute('src')).toBe('/rt.js');
+    delete hooked.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+    (window as Window & { __livePreviewHydration?: unknown }).__livePreviewHydration = undefined;
+  });
+});
+
 describe('the bootstrap source', () => {
   it('appends nothing when the page is not a preview', async () => {
     stubTopFrame(false);
@@ -34,6 +60,11 @@ describe('the bootstrap source', () => {
     await import('@core/loader');
 
     expect(document.head.querySelectorAll('script')).toHaveLength(0);
+    // Without the define nothing is armed: the hook is React's to find.
+    expect(
+      (window as Window & { __REACT_DEVTOOLS_GLOBAL_HOOK__?: unknown })
+        .__REACT_DEVTOOLS_GLOBAL_HOOK__,
+    ).toBeUndefined();
   });
 
   it('appends the runtime with integrity when the page is a preview', async () => {

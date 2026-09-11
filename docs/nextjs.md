@@ -1,6 +1,6 @@
 # Next.js
 
-For App Router projects on Next.js 15 and 16 whose pages are rendered on the server or at build time. The runtime patches server-rendered markup; a hydrating React tree can revert those patches (see the caveat below).
+For App Router projects on Next.js 15 and 16 whose pages are rendered on the server or at build time. The runtime patches server-rendered markup; its first write waits for React to hydrate, and a client component that re-renders a bound element can still revert a patch (see the caveat below).
 
 > A client-rendered React app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) hook: it re-renders your real component tree, so conditional sections and custom components update with full fidelity. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
 
@@ -28,7 +28,7 @@ either way, and the only question the component answers is who receives them.
 | Way                                                       | A public visitor receives | Pick it when                                                                  |
 | --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
 | `<LivePreviewScript />`, an async server component        | nothing                   | the default: the render can await an authorization verdict                    |
-| `livePreviewScriptProps()` with `delivery: 'asset'`       | a 696-byte bootstrap      | the script is built once at module scope and the page has no verdict to await |
+| `livePreviewScriptProps()` with `delivery: 'asset'`       | a 1 326-byte bootstrap    | the script is built once at module scope and the page has no verdict to await |
 | `livePreviewScriptProps()` or `renderLivePreviewScript()` | the whole runtime         | a page that is not gated at all, or HTML a server assembles as a string       |
 
 ## Nothing for a public visitor
@@ -97,9 +97,10 @@ below.
 
 When the script is built once at module scope and there is no verdict to
 await, `delivery: 'asset'` puts a bootstrap in the page instead of the runtime —
-a 696-byte `<script>` element, measured on the example, rendered twice like
-anything else in a layout's head — which fetches the runtime only once the page
-finds itself in a preview context:
+a 1 326-byte `<script>` element, measured on the example, rendered twice like
+anything else in a layout's head — which arms the wait for React's first
+commit ([hydration caveat](#hydration-caveat)) and fetches the runtime only
+once the page finds itself in a preview context:
 
 ```ts
 // app/live-preview.ts — the one thing the layout and the route must agree on
@@ -167,7 +168,7 @@ payload, so the runtime was most of what an anonymous visitor received. The
 same request answers 15 327 bytes with `<LivePreviewScript />`. That component
 is the version of this layout that waits; `delivery: 'asset'` above is the
 version that keeps the module-scope props and replaces the runtime with the
-696-byte bootstrap. What each choice costs a visitor, measured per framework:
+1 326-byte bootstrap. What each choice costs a visitor, measured per framework:
 [deployment.md](deployment.md#what-a-public-visitor-pays).
 
 `livePreviewScriptProps()` takes a `nonce` for a CSP you manage yourself, and puts it where the framework expects it — a prop, not markup inside the body. `renderLivePreviewScript()` returns the complete `<script>` tag instead, for HTML a server assembles as a string; JSX cannot render that.
@@ -283,7 +284,27 @@ Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
 
 ## Hydration caveat
 
-The runtime writes into the DOM; React does not know. A client component that re-renders a bound element after hydration overwrites the patch with its own props. Bind fields in server components and static markup, keep interactive components free of bindings, or mark a hydrated root with `data-payload-island` so the runtime never patches or morphs into it ([renderers.md](renderers.md)).
+The runtime writes into the DOM; React does not know. Two things follow.
+
+**The first write waits for React.** A Next page is a React tree, and React
+hydrates it after the HTML has been parsed, comparing the server markup with
+what it would have rendered. A value written before that is a mismatch: React
+throws `Hydration failed because the server rendered text didn't match the
+client`, regenerates the tree on the client, and the write is gone. So every
+script this adapter emits declares `hydration: 'react'`, and under it the
+runtime does not start — no `ready`, no listener — until React has committed
+the tree that holds the bindings; the admin's first document then lands on
+markup React keeps. On the example that is 105–115 ms after `DOMContentLoaded`
+on a warm dev server. If React commits nothing within five seconds the runtime
+starts anyway and reports `LP0607`; `inspect().hydration` reads `waiting`,
+`committed` or `timed-out`. How the runtime sees the commit, and what can go
+wrong: [ADR 0015](architecture/0015-first-write-after-hydration.md).
+
+**A client component that re-renders a bound element** after hydration
+overwrites the patch with its own props. Bind fields in server components and
+static markup, keep interactive components free of bindings, or mark a hydrated
+root with `data-payload-island` so the runtime never patches or morphs into it
+([renderers.md](renderers.md)).
 
 ## Route refreshes without a morph
 

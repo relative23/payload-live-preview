@@ -8,7 +8,7 @@
 import { Node, Project, SyntaxKind } from 'ts-morph';
 
 /** Identifiers substituted by `scripts/build-runtime.ts`'s esbuild `define`. */
-export const BUILD_DEFINES = ['__INLINE_BUILD__'] as const;
+export const BUILD_DEFINES = ['__INLINE_BUILD__', '__REACT_BOOTSTRAP__'] as const;
 
 export interface BuildDefineViolation {
   readonly file: string;

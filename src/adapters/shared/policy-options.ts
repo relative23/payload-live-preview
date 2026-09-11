@@ -12,6 +12,7 @@ import {
   V2_RUNTIME_DEFAULTS,
 } from '@core/defaults-profile';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
+import type { InlineScriptConfig } from '@/types/inline-config';
 import type { PreviewSignal } from './preview-request';
 import type { PreviewAdapterOptions } from './options';
 
@@ -50,9 +51,17 @@ export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPol
   };
 }
 
+/**
+ * What an adapter knows about the page beyond what a project configured — today
+ * the framework that hydrates it (ADR 0015). Not an adapter option: a Next page
+ * is a React tree whether or not anyone says so, so the adapter says it.
+ */
+export type PageFacts = Pick<InlineScriptConfig, 'hydration'>;
+
 /** The inline-script configuration; only given options travel, so the runtime's own defaults stay the single source of them. */
 export function inlineScriptConfig(
   options: PreviewPolicyOptions,
+  facts: PageFacts = {},
 ): Parameters<typeof generateInlineScript>[0] {
   assertMergeDepthExplicit(options);
   const resolved = resolvePolicyOptions(options);
@@ -98,5 +107,6 @@ export function inlineScriptConfig(
       ? { onUnfaithfulPatch: options.onUnfaithfulPatch }
       : {}),
     ...(options.autoBind !== undefined ? { autoBind: options.autoBind } : {}),
+    ...(facts.hydration !== undefined ? { hydration: facts.hydration } : {}),
   };
 }

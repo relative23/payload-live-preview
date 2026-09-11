@@ -61,6 +61,15 @@ export interface RuntimeOptions {
    */
   readonly autoBind?: 'off' | 'unique';
   /**
+   * The framework that hydrates this page, when one does (ADR 0015). Under
+   * `'react'` the runtime does not start — no cache, no listener, no `ready` —
+   * until React has committed a root that holds a binding, so its first write
+   * lands on markup React keeps rather than on markup React is about to
+   * compare with its own render and throw away. Capped at five seconds, then
+   * LP0607. The Next.js adapter sets it; nothing else does by default.
+   */
+  readonly hydration?: 'react';
+  /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn — a renderer that cannot represent the value, a Lexical
    * block whose markup the write has to drop, a changed field with no binding

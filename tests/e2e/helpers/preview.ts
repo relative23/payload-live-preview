@@ -75,6 +75,13 @@ export async function post(
   );
 }
 
+/**
+ * Started and listening. `started` is set when `start()` is called; on a page
+ * that declares hydration (ADR 0015) the runtime then still waits for React's
+ * first commit before it attaches its listener, and a message posted in that
+ * window is dropped — so a spec that posts right after this must wait for the
+ * wait to end as well.
+ */
 export async function started(
   frame: Frame,
   handle: RuntimeHandle = '__livePreview',
@@ -83,10 +90,12 @@ export async function started(
     const api = (
       window as unknown as Record<
         string,
-        { inspect: () => { started: boolean } } | null | undefined
+        { inspect: () => { started: boolean; hydration: { state: string } } } | null | undefined
       >
     )[name];
-    return api?.inspect().started ?? false;
+    if (api === null || api === undefined) return false;
+    const snapshot = api.inspect();
+    return snapshot.started && snapshot.hydration.state !== 'waiting';
   }, handle);
 }
 

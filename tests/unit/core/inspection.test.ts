@@ -94,6 +94,8 @@ describe('inspect() before the runtime starts', () => {
       escalated: 0,
       fields: [],
     });
+    // No framework declared, nothing waited for (ADR 0015).
+    expect(snapshot.hydration).toEqual({ mode: 'off', state: 'idle' });
     runtime.destroy();
   });
 });

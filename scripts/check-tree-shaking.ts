@@ -173,6 +173,19 @@ interface Fixture {
  * 27_865 (27_843). The Lexical rows do not move: the wrapper is the write's
  * business, not the renderer's. Each to its measurement plus the cushion it
  * carried; see bundle-budgets.ts.
+ *
+ * 2026-09-11 (Z27): the same five rows rise by the runtime's +1 925 B raw
+ * (~+710 gzip) for the wait for React's first commit (ADR 0015) —
+ * `initLivePreview` from `payload-live-preview` 42_928 → 43_798 (43_746),
+ * `generateInlineScript` 40_477 → 41_192 (41_135; the generator also carries
+ * the bootstrap built armed for React that it emits for a Next asset page),
+ * `initLivePreview` from `payload-live-preview/core` 42_901 → 43_773 (43_721),
+ * `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 45_319 →
+ * 46_374 (46_318; the armed bootstrap and the page facts the adapter threads
+ * through), `LEAN_RUNTIME` from `payload-live-preview/lean` 27_865 → 28_578
+ * (28_556). The Lexical, React and Vue rows do not move: the wait is in
+ * `start()`, which none of them runs. Each to its measurement plus the
+ * cushion it carried; see bundle-budgets.ts.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -193,21 +206,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 42_928,
+    gzip: 43_798,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 40_477,
+    gzip: 41_192,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 42_901,
+    gzip: 43_773,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -228,14 +241,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 45_319,
+    gzip: 46_374,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 27_865,
+    gzip: 28_578,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

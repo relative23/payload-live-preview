@@ -72,6 +72,16 @@ export interface InlineScriptConfig {
    * to it as if `data-payload-field` stood there. Default `'off'`.
    */
   readonly autoBind?: 'off' | 'unique';
+  /**
+   * The framework that hydrates this page (ADR 0015). Under `'react'` the
+   * runtime holds its first write until React has committed the tree that
+   * holds the bindings — otherwise React finds markup it did not render,
+   * throws `Hydration failed` and regenerates the tree, and the write is gone.
+   * The Next.js adapter sets it on every script it emits; a page built by hand
+   * with `generateInlineScript()` may. Omitted: the runtime starts on
+   * `DOMContentLoaded`, as on a static page.
+   */
+  readonly hydration?: 'react';
   /** Which defaults the omitted options fall back to. Not serialized: `'v1'` only relaxes the generator's `mergeDepth` check. */
   readonly defaults?: DefaultsProfile;
   /**
@@ -131,4 +141,5 @@ export const INLINE_CONFIG_KEYS = [
   'onUnboundChange',
   'onUnfaithfulPatch',
   'autoBind',
+  'hydration',
 ] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'defaults' | 'runtime'>[];

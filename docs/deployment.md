@@ -42,8 +42,10 @@ preview answers every request with `Cache-Control: private, no-store`
 By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. Measured on the
-Next.js fixture, that is a 696-byte `<script>` element in the page instead of a
-116 413-byte one. On Next it is the second step down, not the first: a layout
+Next.js fixture, that is a 1 326-byte `<script>` element in the page instead
+of a 116 413-byte one — about one per cent, and more than the Astro row below
+because a Next page's bootstrap also arms the wait for React's first commit
+before it fetches ([ADR 0015](architecture/0015-first-write-after-hydration.md)). On Next it is the second step down, not the first: a layout
 that can await the verdict renders `<LivePreviewScript />` and sends a public
 visitor nothing at all ([nextjs.md](nextjs.md#nothing-for-a-public-visitor));
 the asset is for a script built at module scope, with no verdict to await.
@@ -101,7 +103,7 @@ preview intent.
 | ------------------------------------------------------ | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
 | SvelteKit handle, Nuxt Nitro plugin, Astro middleware  | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
 | Next.js, `<LivePreviewScript />` in the root layout    | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
-| Next.js, `delivery: 'asset'`                           | the bootstrap             | 696, twice     | the root layout renders for everyone; what it renders is the bootstrap            |
+| Next.js, `delivery: 'asset'`                           | the bootstrap             | 1 326, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
 | Astro static build, `mode: 'loader'`                   | the bootstrap             | 762            | a static page has no request to decide for, so the check happens in the browser   |
 | Astro static build, `mode: 'inline'`                   | the whole runtime         | 104 837        | nothing decides and nothing is deferred                                           |
 | Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 116 413, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |

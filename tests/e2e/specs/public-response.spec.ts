@@ -117,10 +117,14 @@ test.describe('what a public response costs', () => {
     const inline = await measureDelivery(request, AUTHORIZED_NEXT_DELIVERY, artifact);
     const { html } = await publicResponse(request, `${assetBudget.app}${assetBudget.path}`);
 
-    // The claim in deployment.md is "0.7 % of what the inline build costs", so
-    // hold it under one per cent rather than at a byte count that moves with
-    // the runtime.
-    expect(asset.emittedBytes * 100).toBeLessThan(inline.emittedBytes);
+    // deployment.md says the bootstrap is about one per cent of what the inline
+    // build costs, so hold it under two rather than at a byte count that moves
+    // with the runtime. Two and not one since Z27: a Next page's bootstrap is
+    // the one built armed for React's first commit (ADR 0015), 605 B on top of
+    // the plain bootstrap — names React reads (`__REACT_DEVTOOLS_GLOBAL_HOOK__`,
+    // `onCommitFiberRoot`, `renderers`) that no minifier can shorten — and
+    // that put it at 1.1 % of the inline delivery it defers.
+    expect(asset.emittedBytes * 50).toBeLessThan(inline.emittedBytes);
     expect(BOOTSTRAP_URL.test(html), 'the bootstrap names the runtime it will fetch').toBe(true);
   });
 

@@ -6,6 +6,7 @@
  * second copy would drift into a preview that silently never starts.
  */
 import { isInPreviewContext } from '@detection/environment';
+import { armReactCommitSignal } from './hydration';
 
 // Declared, never defined: the generator prepends the `var`s. As build-time
 // constants the minifier folds the integrity branch away and every page ships
@@ -29,6 +30,14 @@ function loadRuntime(): void {
   script.async = true;
   document.head.appendChild(script);
 }
+
+// The bootstrap for a page that declares React hydration (ADR 0015) arms the
+// commit signal before it fetches: the runtime is a fetched asset that may
+// evaluate after `react-dom` has, when it is too late to be injected into,
+// while this script is in `<head>` and is not. Built twice from this file —
+// the define folds the arming out of the plain bootstrap, hook and all — so a
+// static page keeps its floor and a React page gets one script, not a prelude.
+if (typeof __REACT_BOOTSTRAP__ !== 'undefined' && __REACT_BOOTSTRAP__) armReactCommitSignal();
 
 if (isInPreviewContext()) {
   loadRuntime();

@@ -12,6 +12,7 @@ import type { AutoBindMode, KeptGuesses } from './auto-bind';
 import type { ElementCache } from './cache';
 import type { DataMerger } from './data-merger';
 import type { UnfaithfulPatchMode } from './fidelity';
+import type { HydrationMode, HydrationState } from './hydration';
 import { FieldChangeTracker } from './field-changes';
 import { MergeNeed } from './merge-need';
 import type { MessageBus, MessageRevision } from './message-bus';
@@ -95,13 +96,18 @@ export interface RuntimeDeps {
   readonly onUnfaithfulPatch: UnfaithfulPatchMode;
   /** Whether the first message is searched for bindings by value (ADR 0014). */
   readonly autoBind: AutoBindMode;
+  /** The framework whose first commit the start waits for (ADR 0015); `undefined` on a page that declared none. */
+  readonly hydration: HydrationMode | undefined;
 }
 
 export class RuntimeState {
   started = false;
   /** Set by `suspend()`; lets `destroy()` finish a suspended instance. */
   suspended = false;
+  /** Cancels a startup still waiting — for `DOMContentLoaded`, or for the framework's first commit (ADR 0015). */
   deferredStart: (() => void) | null = null;
+  /** How far the wait for hydration got; `idle` on a page that declared none. */
+  hydration: HydrationState = 'idle';
   activeUpdate: UpdateTransaction | null = null;
   locale: string | undefined = undefined;
   schema: readonly PayloadFieldSchema[] | undefined = undefined;

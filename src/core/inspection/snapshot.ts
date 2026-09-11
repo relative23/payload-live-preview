@@ -65,6 +65,7 @@ export function buildInspection(deps: RuntimeDeps, state: RuntimeState): LivePre
       escalated: state.escalatedCount,
       fields: [...state.unfaithfulFields].sort(),
     },
+    hydration: { mode: deps.hydration ?? 'off', state: state.hydration },
     fragments: {
       handler: deps.strategies.fragment !== undefined,
       inFlight: active?.pendingFragments ?? 0,

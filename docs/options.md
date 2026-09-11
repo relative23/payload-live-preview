@@ -46,6 +46,7 @@ always wins. The ledger of what changed is
 | `onUnfaithfulPatch`        | yes    | yes           | yes                                                      | —                        | `'escalate'`                                        | same                                 |
 | `onUnboundChange`          | yes    | yes           | yes                                                      | —                        | — (alias, deprecated)                               | same                                 |
 | `autoBind`                 | yes    | yes           | yes                                                      | —                        | `'off'`                                             | same                                 |
+| `hydration`                | yes    | yes           | set by the Next.js adapter                               | —                        | — (start on `DOMContentLoaded`)                     | same                                 |
 | `resolveRenderer`          | yes    | —             | —                                                        | —                        | —                                                   | same                                 |
 | `renderRichText`           | yes    | —             | —                                                        | —                        | built-in Lexical renderer                           | same                                 |
 | `root`                     | yes    | —             | —                                                        | —                        | `document`                                          | same                                 |
@@ -72,7 +73,7 @@ always wins. The ledger of what changed is
 
 Every option is a decision someone had to be able to make differently. Grouped
 by the decision, so the table above can be read as eight questions rather than
-forty-five rows.
+forty-six rows.
 
 - **Which document, and how complete** — `allowedOrigins`, `serverURL`,
   `apiRoute`, `mergeDepth`, `mergeFetch`. Payload 3.x posts raw form values, so
@@ -85,7 +86,8 @@ forty-five rows.
   exactly the mistake this package is built to avoid
   ([ADR 0006](architecture/0006-authorized-preview-context.md)).
 - **How the runtime reaches the page** — `autoInject`, `shouldInject`,
-  `delivery`, `assetPath`, `mode`, `runtime`, `nonce`. A site that renders the
+  `delivery`, `assetPath`, `mode`, `runtime`, `nonce`, and `hydration`, for a
+  page a framework takes over after it is parsed. A site that renders the
   tag itself, one that serves the runtime as a cached asset, and one that ships
   a smaller build all need a different answer, and the wrong default costs
   every visitor bytes ([deployment.md](deployment.md#what-a-public-visitor-pays)).
@@ -132,8 +134,9 @@ Notes on the rows that need one:
 - `delivery: 'asset'` replaces the inlined runtime with a bootstrap of a few
   hundred bytes that fetches it as `<assetPath>/runtime.<hash>.js` — but only
   once it finds itself in a preview context. Measured on the Next.js fixture by
-  `tests/e2e/specs/public-response.spec.ts`: 696 bytes in the page instead of
-  115 031, and one response the browser may
+  `tests/e2e/specs/public-response.spec.ts`: 1 326 bytes in the page (605 of
+  them the arming for React's first commit a Next page needs, ADR 0015)
+  instead of 115 031, and one response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
   integrity check and what a proxy must not do to the file are in
@@ -189,6 +192,13 @@ Notes on the rows that need one:
   escalate to shows the gap rather than hiding it.
   `onUnboundChange` is the 2.0 name for the same decision and still decides when
   it is given — `'route'` means `'escalate'` — until it is removed in 3.0.
+- `hydration: 'react'` holds the runtime's start — no `ready`, no listener —
+  until React has committed the tree that holds the bindings, so the first
+  write lands on markup React keeps instead of on markup React is about to
+  compare with its own render and regenerate
+  ([ADR 0015](architecture/0015-first-write-after-hydration.md)). The Next.js
+  adapter sets it on every script it emits; a page built by hand with
+  `generateInlineScript()` may. Capped at five seconds, then `LP0607`.
 - `autoBind: 'unique'` lets the runtime find bindings by value on the
   connection's first message, once: a scalar whose value is the whole content
   of exactly one element in the body is bound to that element as if

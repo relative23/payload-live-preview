@@ -173,7 +173,7 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     carries: 'bootstrap',
     bindings: true,
     scriptElements: 2,
-    overheadBytes: 696,
+    overheadBytes: 1_326,
     // Deliberately left on the synchronous helper after the row above moved off
     // it, because it is the only thing that still measures what an option alone
     // can do: the same layout, the same shell, one option apart — 696 bytes
@@ -181,7 +181,16 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     // and Next repeats the bootstrap in the flight payload. The gap between 696
     // and 0 is exactly what a component buys over an option, and this row is
     // what keeps that gap measured now that the inline row has crossed it.
-    why: 'what an option alone can do for a Next page, and the 696 bytes that a component is needed to remove',
+    //
+    // 2026-09-11 (Z27): 696 → 1 326. A Next page declares React hydration
+    // (ADR 0015), and the bootstrap for such a page is the one built armed:
+    // it installs the hook React injects into before it fetches the runtime,
+    // because the fetched runtime may evaluate after `react-dom` has, when it
+    // is too late. 605 of the bytes are that arming (`loader.generated.ts`
+    // 431 → `loader-react.generated.ts` 1 036) and 25 the wire slot with the
+    // empty slots before it. The plain bootstrap — the Astro row above — did
+    // not move: a static page pays nothing for a framework it does not run.
+    why: 'what an option alone can do for a Next page, and the 1 326 bytes that a component is needed to remove',
   },
   {
     name: 'Nuxt, Nitro plugin, delivery: asset',
@@ -242,6 +251,12 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * carries `src/core/islands.ts`, and the island-boundary test there became a
  * function of its own so the auto-binding search and the cache filter share
  * one rule (ADR 0014 §2). Nothing in the fixture or its delivery moved.
+ *
+ * 2026-09-11 (Z27): 11 730 → 11 742. The twelve bytes are the wire slot the
+ * Next adapter now writes into every script — `hydration: 'react'`, slot 23,
+ * behind the five empty slots between it and the fragment endpoint (ADR
+ * 0015) — in one element, since the subtraction reads the first. The
+ * runtime it removes grew too, and this number did not move for that.
  */
 export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   name: 'Next.js, script in the root layout, authorized editor',
@@ -250,7 +265,7 @@ export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   carries: 'runtime',
   bindings: true,
   scriptElements: 2,
-  overheadBytes: 11_730,
+  overheadBytes: 11_742,
   why: 'the same layout still hands an authorized editor the whole runtime — the zero above is a decision, not a broken adapter',
 };
 

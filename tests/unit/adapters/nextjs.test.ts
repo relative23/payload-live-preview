@@ -1,9 +1,11 @@
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import {
   createLivePreviewMiddleware,
   livePreviewScriptProps,
   renderLivePreviewScript,
 } from '@adapters/nextjs/index';
+import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 
 const ADMIN = 'https://admin.example.com';
 
@@ -26,6 +28,50 @@ function request(url = 'https://site.example.com/', headers: Record<string, stri
 }
 
 const always = () => createLivePreviewMiddleware({ defaults: 'v1', inject: 'always' });
+
+/** The positional literal the runtime destructures, read back the way the generator test reads it. */
+function wireConfig(script: string): unknown[] {
+  const match = /var __LIVE_PREVIEW_CONFIG__=(\[[^;]*\]);/u.exec(script);
+  if (match?.[1] === undefined) throw new Error('generated config missing');
+  const evaluated = runInNewContext(match[1], {}) as unknown;
+  if (!Array.isArray(evaluated)) throw new Error('generated config is not an array');
+  return evaluated;
+}
+
+const HYDRATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('hydration');
+
+/**
+ * ADR 0015 §1: a Next page is a React tree, so every script this adapter emits
+ * declares `hydration: 'react'` — knowledge the adapter has, not an option a
+ * project sets. The runtime then holds its first write until React has
+ * committed the tree that holds the bindings.
+ */
+describe('what the Next adapter knows about the page', () => {
+  it('declares React hydration in the script props and the rendered tag', () => {
+    const props = livePreviewScriptProps({ allowedOrigins: [ADMIN] });
+    expect(wireConfig(props.dangerouslySetInnerHTML.__html)[HYDRATION_SLOT_INDEX]).toBe('react');
+    expect(
+      wireConfig(renderLivePreviewScript({ allowedOrigins: [ADMIN] }))[HYDRATION_SLOT_INDEX],
+    ).toBe('react');
+  });
+
+  it('declares it in what the middleware injects', async () => {
+    const response = await always()(
+      request('https://site.example.com/?preview=true'),
+      htmlResponse(),
+    );
+    expect(wireConfig(await response.text())[HYDRATION_SLOT_INDEX]).toBe('react');
+  });
+
+  it('emits the bootstrap armed for React under asset delivery', () => {
+    // The fetched runtime may land after react-dom (ADR 0015 F2); the
+    // bootstrap in <head> is what can still arm the signal in time.
+    const props = livePreviewScriptProps({ allowedOrigins: [ADMIN], delivery: 'asset' });
+    const body = props.dangerouslySetInnerHTML.__html;
+    expect(wireConfig(body)[HYDRATION_SLOT_INDEX]).toBe('react');
+    expect(body).toContain('__REACT_DEVTOOLS_GLOBAL_HOOK__');
+  });
+});
 
 /**
  * The App Router path. JSX cannot render a tag that arrives as a string, so a

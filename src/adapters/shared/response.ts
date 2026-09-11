@@ -6,7 +6,7 @@
 import { generateInlineScript, generateLoaderScript, wrapWithScriptTag } from '@inline/generator';
 import { runtimeAsset } from './runtime-asset';
 import { HTML_CONTENT_TYPE, injectIntoHead } from './html-inject';
-import { inlineScriptConfig, type PreviewPolicyOptions } from './policy-options';
+import { inlineScriptConfig, type PageFacts, type PreviewPolicyOptions } from './policy-options';
 import type { PreviewDecision, PreviewDecisionHooks, PreviewPolicy } from './policy';
 import type { PreviewAdapterOptions } from './options';
 
@@ -36,8 +36,8 @@ export function bindDecisionHooks<Req>(
  * 'asset'` the same way: the bootstrap plus the URL and integrity of whichever
  * artifact was configured, and never the runtime itself.
  */
-export function renderScriptBody(options: PreviewPolicyOptions): string {
-  const config = inlineScriptConfig(options);
+export function renderScriptBody(options: PreviewPolicyOptions, facts: PageFacts = {}): string {
+  const config = inlineScriptConfig(options, facts);
   if (options.delivery !== 'asset') return generateInlineScript(config);
   const asset = runtimeAsset(options);
   return generateLoaderScript(config, { runtimeSrc: asset.urlPath, integrity: asset.integrity });
@@ -46,8 +46,9 @@ export function renderScriptBody(options: PreviewPolicyOptions): string {
 /** The `<script>` tag for manual embedding, with `nonce` when given. */
 export function renderScriptTag(
   options: PreviewPolicyOptions & { readonly nonce?: string },
+  facts: PageFacts = {},
 ): string {
-  const body = renderScriptBody(options);
+  const body = renderScriptBody(options, facts);
   return wrapWithScriptTag(body, options.nonce !== undefined ? { nonce: options.nonce } : {});
 }
 

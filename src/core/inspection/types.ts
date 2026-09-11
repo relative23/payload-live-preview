@@ -145,6 +145,15 @@ export interface LivePreviewInspection {
   readonly route: InspectionRoute;
   /** Patches the runtime knew could not match the server's render, and what became of them. */
   readonly fidelity: InspectionFidelity;
+  /**
+   * Whether the page declared a framework that hydrates it, and how far the
+   * wait for its first commit got (ADR 0015). `waiting` is why a preview on a
+   * Next page is not connected yet; `timed-out` is LP0607.
+   */
+  readonly hydration: {
+    readonly mode: 'off' | 'react';
+    readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
+  };
 }
 
 /**

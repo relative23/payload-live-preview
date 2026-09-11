@@ -20,6 +20,7 @@ import { ObserverManager } from './observers';
 import type { ProtocolNegotiation } from './protocol-version';
 import type { RuntimeOptions } from './runtime-options';
 import { RuntimeState, type RuntimeDeps } from './runtime-state';
+import { startWhenReady, type StartupHost } from './startup';
 import { ConnectionState, HeartbeatTimer } from './state';
 import type { CachedElement } from './types';
 import { UpdatePipeline } from './update-pipeline';
@@ -165,6 +166,7 @@ export class LivePreviewRuntime {
       revealEditedField: options.revealEditedField === true,
       onUnfaithfulPatch: resolveUnfaithfulPatchMode(options),
       autoBind: options.autoBind ?? 'off',
+      hydration: options.hydration,
     };
     this.writer = new BindingWriter(this.deps, this.state);
     this.pipeline = new UpdatePipeline(this.deps, this.state, () => {
@@ -175,41 +177,52 @@ export class LivePreviewRuntime {
   /**
    * Build the cache, attach observers and listeners, broadcast `ready`.
    * Returns `false` when already started. While the document is still
-   * parsing the real start waits for `DOMContentLoaded`.
+   * parsing the real start waits for `DOMContentLoaded`; on a page that
+   * declares hydration it then waits for React's first commit as well
+   * (ADR 0015), so the first write lands on markup React keeps.
    */
   start(): boolean {
-    const { state, deps } = this;
+    const { state } = this;
     if (state.isRunning()) return false;
     state.started = true;
     state.suspended = false;
-    if (isDocumentRoot(deps.root) && deps.root.readyState === 'loading') {
-      const onReady = (): void => {
-        if (!state.isRunning()) return;
-        state.deferredStart = null;
-        try {
-          this.startNow();
-        } catch (error) {
-          // start() already returned; roll back and report through the error event.
-          this.rollbackFailedStart();
-          this.reportError(error, 'startup', 'LP0605');
-        }
-      };
-      state.deferredStart = onReady;
-      try {
-        deps.root.addEventListener('DOMContentLoaded', onReady, { once: true });
-      } catch (error) {
-        this.rollbackFailedStart();
-        throw error;
-      }
-      return true;
-    }
     try {
-      this.startNow();
+      startWhenReady(this.startupHost());
       return true;
     } catch (error) {
       this.rollbackFailedStart();
       throw error;
     }
+  }
+
+  /** The runtime as the startup chain sees it (./startup). */
+  private startupHost(): StartupHost {
+    const { state, deps } = this;
+    return {
+      root: deps.root,
+      hydration: deps.hydration,
+      isRunning: () => state.isRunning(),
+      defer: (cancel) => {
+        state.deferredStart = cancel;
+      },
+      later: (step) => {
+        state.deferredStart = null;
+        try {
+          step();
+        } catch (error) {
+          // start() already returned; roll back and report through the error event.
+          this.rollbackFailedStart();
+          this.reportError(error, 'startup', 'LP0605');
+        }
+      },
+      hydrated: (hydration) => {
+        state.hydration = hydration;
+      },
+      warn: deps.warn,
+      startNow: () => {
+        this.startNow();
+      },
+    };
   }
 
   private startNow(): void {
@@ -276,11 +289,7 @@ export class LivePreviewRuntime {
     state.started = false;
     const deferredStart = state.deferredStart;
     state.deferredStart = null;
-    if (deferredStart !== null && isDocumentRoot(deps.root)) {
-      this.runCleanup(() => {
-        deps.root.removeEventListener('DOMContentLoaded', deferredStart);
-      });
-    }
+    if (deferredStart !== null) this.runCleanup(deferredStart);
     for (const handle of state.readyTimers) {
       this.runCleanup(() => {
         clearTimeout(handle);

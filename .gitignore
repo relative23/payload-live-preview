@@ -10,6 +10,7 @@ src/inline/runtime.generated.ts
 src/inline/loader.generated.ts
 src/inline/fragment.generated.ts
 src/inline/route.generated.ts
+src/inline/loader-react.generated.ts
 
 # IDE
 .idea/

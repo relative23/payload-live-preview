@@ -378,7 +378,25 @@
 // a registered block renders is content, and the paragraph typed after it
 // lands beside it). A single rendered element decides nothing; the positional
 // pairing already keeps a lone server-rendered block whole.
-export const INLINE_BUDGET = { raw: 109_498, gzip: 34_447, brotli: 30_432 } as const;
+// Raised 2026-09-11 (Z27): raw 109_498 → 111_423 (measured 111_293), gzip 34_447 → 35_158
+// (35_102), brotli 30_432 → 31_094 (30_932). The +1 925 B raw is the wait for
+// React (ADR 0015). On a Next page the runtime started on `DOMContentLoaded`,
+// posted `ready`, and wrote the admin's document 81 ms before React walked the
+// server markup; React threw `Hydration failed`, regenerated the tree and
+// dropped the write, once per load — the mock admin's replay loop was what
+// kept the fixture green. The runtime now reads a new wire slot, `hydration:
+// 'react'`, that the Next adapter sets, and under it does not start until
+// React has committed a root that holds a binding, observed through the hook
+// React injects into (`__REACT_DEVTOOLS_GLOBAL_HOOK__`, wrapped if a DevTools
+// extension owns it), capped at 5 s with LP0607. The bytes: the hook, the
+// recorder the asset bootstrap shares with it and the commit judgement
+// (`hydration.ts`), the two-stage start the lifecycle handed to `startup.ts`
+// when it crossed 500 lines, the cap message, and `inspect().hydration`.
+// Every profile pays it: the wait sits in `start()`. Pressed once on the way:
+// the first draft measured +1 633 with a hook that lacked the `renderers` map
+// Fast Refresh walks — and that hook stopped the Next fixture from hydrating
+// at all, so the map and a per-renderer id came back for +290.
+export const INLINE_BUDGET = { raw: 111_423, gzip: 35_158, brotli: 31_094 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -450,7 +468,11 @@ export const INLINE_BUDGET = { raw: 109_498, gzip: 34_447, brotli: 30_432 } as c
 // Raised 2026-09-11 (Z29): raw 87_374 → 87_676 (measured 87_557), gzip 27_544 → 27_645
 // (27_592), brotli 24_489 → 24_571 (24_424). The same +293 B as the full profile: the
 // wrapper is recognised in the rich-text renderer, which every profile carries.
-export const INLINE_LEAN_BUDGET = { raw: 87_676, gzip: 27_645, brotli: 24_571 } as const;
+// Raised 2026-09-11 (Z27): raw 87_676 → 89_606 (measured 89_487), gzip 27_645 → 28_359
+// (28_306), brotli 24_571 → 25_233 (25_086). The same wait as the full profile
+// (see INLINE_BUDGET): it is in `start()`, which every profile runs, and a
+// lean runtime on a Next page has the same hydration ahead of it.
+export const INLINE_LEAN_BUDGET = { raw: 89_606, gzip: 28_359, brotli: 25_233 } as const;
 
 // The two prelude profiles, each the runtime plus a prelude that moves on its own,
 // keep their budgets and their log in bundle-prelude-budgets.ts: this log reached

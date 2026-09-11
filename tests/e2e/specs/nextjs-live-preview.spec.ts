@@ -13,9 +13,14 @@
  * the Astro example, and this spec must not depend on it.
  */
 import { expect, test } from '@playwright/test';
+import { requirePreviewFrame } from '../helpers/preview';
 
 const NEXT_ORIGIN = 'http://localhost:4174';
 const ADMIN_URL = `${NEXT_ORIGIN}/admin.html`;
+
+interface HydrationApi {
+  inspect: () => { hydration: { mode: string; state: string } };
+}
 
 test.describe('live preview (Next.js) — admin → iframe updates', () => {
   test('updating the title field in the admin updates the preview iframe', async ({ page }) => {
@@ -75,5 +80,53 @@ test.describe('live preview (Next.js) — origin enforcement', () => {
     await expect(page.locator('[data-payload-field="title"]')).not.toHaveText(
       'attacker-controlled',
     );
+  });
+});
+
+/**
+ * ADR 0015. Measured 2026-09-11 before the guard existed: the mock admin
+ * answers `ready` at once, the runtime wrote the document 81 ms before React
+ * hydrated the page, React threw `Hydration failed because the server rendered
+ * text didn't match the client` and regenerated the tree — the write was gone
+ * until the admin's next message. Once per framed load of `/`, four times per
+ * Chromium run, and no spec listened to `pageerror`, so the suite was green.
+ */
+test.describe('live preview (Next.js) — the first message and React', () => {
+  test('the first write lands after hydration, so React finds the markup it rendered', async ({
+    page,
+  }) => {
+    // The dev server compiles `/` and its client chunk on first request; the
+    // first load warms it so the measured load below is the page as served.
+    await page.goto(ADMIN_URL);
+    const preview = page.frameLocator('[data-testid="preview-frame"]');
+    await expect(preview.locator('[data-payload-field="title"]')).toBeVisible();
+
+    const errors: string[] = [];
+    page.on('pageerror', (error) => {
+      errors.push(error.message);
+    });
+    await page.goto(ADMIN_URL);
+    // The admin's document differs from the server's markup in `hero.alt`
+    // ("Hero image" against "Mountains at dusk"), so a write that landed
+    // shows here — and so would a regeneration that took it back.
+    await expect(preview.locator('[data-payload-field="hero"]')).toHaveAttribute(
+      'alt',
+      'Hero image',
+    );
+    // Long enough for a regeneration to have happened and been reported;
+    // measured, the error came 87 ms after the write.
+    await page.waitForTimeout(500);
+    expect(errors.filter((message) => message.includes('Hydration failed'))).toEqual([]);
+    expect(errors).toEqual([]);
+    await expect(preview.locator('[data-payload-field="hero"]')).toHaveAttribute(
+      'alt',
+      'Hero image',
+    );
+    const frame = requirePreviewFrame(page);
+    const hydration = await frame.evaluate(
+      () =>
+        (window as Window & { __livePreview?: HydrationApi }).__livePreview?.inspect().hydration,
+    );
+    expect(hydration).toEqual({ mode: 'react', state: 'committed' });
   });
 });
