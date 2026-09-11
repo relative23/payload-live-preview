@@ -78,8 +78,23 @@ renderer is a red build, and so is a justification whose site has moved.
 eight modules and nothing else (`STRYKER_SCOPE=core`), with every mutant killed
 as the target. The measured score is in
 [quality/mutation-policy-core.json](../quality/mutation-policy-core.json):
-measured twice on 2026-09-10 with the same verdict for every mutant, 1 345 mutants, 88.40 % killed, 151 survived and 5 never executed by a test, 18 minutes each. A surviving mutant is a finding — a missing assertion or a line
-that does not belong in the core — and the list below says which.
+1 202 mutants on 2026-09-11, 99.17 % killed, 10 survived and none left
+unexecuted by a test, 13 minutes. Each of the ten is on that file's
+`equivalent` list — by file, line, mutator and the text it replaced — with one
+sentence saying why the program does the same with and without it: the three
+on `detach()`'s paired fields, which are set and cleared together; the two
+empty-catch mutants whose `undefined` the callers negate like `false`; the
+guard on an undefined handler that the isolating catch would swallow anyway;
+the two Trusted Types guards a TypeError inside the same try reaches the same
+`null` as; the relative-path pattern's `+`, unanchored at the end; and the
+empty-string return `new URL('')` would throw its way to. The policy fails the
+run when a survivor is missing from the list or a listed one is killed now,
+and the survivors stay visible in the report. The first measurement, on
+2026-09-10, was 1 345 mutants and 88.40 %: of its 167 survivors, five were
+tests that mattered (the header that turns the merge into a read, a body that
+is not a document, `ready` with data, the global `fetch`), 39 lines were
+guards no test could reach and are gone, about a hundred were cheap
+boundary tests, and the ten above are what is left.
 
 These three rest on two that already existed: the layer rules (no upward
 import, no Node builtin in browser code, nothing browser-facing imports the

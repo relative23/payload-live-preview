@@ -47,9 +47,15 @@ The core profile mutates the trusted core alone — the eight modules
 `quality/trusted-core.json` names, read from that file so the two lists cannot
 drift — because the figure the audit page quotes has to be the core's own
 and not the average of sixty files. Its target is every mutant
-killed; `quality/mutation-policy-core.json` holds the measured score, and the
-survivors it records are findings, each either a missing test or a line that
-does not belong in the core. It is run by hand, not by a workflow:
+killed; `quality/mutation-policy-core.json` holds the measured score, and its
+`equivalent` list names every survivor that is left, one entry each: the file,
+line and column, the mutator, the text it replaced and what it put there, and
+one sentence saying why the program does the same with and without it. The
+policy holds the list in both directions — a survivor the list does not name
+fails the run, and so does an entry whose mutant is killed now (a ratchet to
+take), moved, or described with other text — so the score below 100 is not a
+gap but a reviewed remainder, and the survivors stay visible in every report.
+It is run by hand, not by a workflow:
 
 ```sh
 STRYKER_SCOPE=core npx stryker run stryker.config.js

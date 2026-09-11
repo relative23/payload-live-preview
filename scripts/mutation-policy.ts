@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  collapseWhitespace,
   formatList,
   normalizePath,
   normalizeSource,
@@ -11,9 +12,26 @@ import {
   sameStrings,
   sortedUniquePaths,
   summarizeParsedReport,
+  type MutantIdentity,
   type MutationSummary,
   type ParsedMutationReport,
 } from './mutation-report';
+
+/**
+ * One surviving mutant reviewed as equivalent: the program does the same with
+ * and without it, and `why` says in one sentence how. Named by position and by
+ * the text it replaced, so an entry cannot quietly start describing other code.
+ */
+export interface EquivalentMutant {
+  readonly file: string;
+  readonly line: number;
+  readonly column: number;
+  readonly mutator: string;
+  /** The source the mutant replaced, one line, one space between tokens. */
+  readonly original: string;
+  readonly replacement: string;
+  readonly why: string;
+}
 
 export interface MutationPolicy {
   readonly schemaVersion: number;
@@ -50,6 +68,14 @@ export interface MutationPolicy {
     readonly errorMaximum: number;
     readonly ignoredMaximum: number;
   };
+  /**
+   * The survivors reviewed as equivalent, one entry each. When the list is
+   * declared, every surviving or uncovered mutant has to be on it and every
+   * entry has to name a mutant that still survives: a killed one is a ratchet
+   * to take, a missing one a report from other code. Omitted, survivors are
+   * held by the score alone.
+   */
+  readonly equivalent?: readonly EquivalentMutant[];
 }
 
 export interface MutationPolicyResult {
@@ -61,6 +87,8 @@ export interface MutationPolicyResult {
 
 /** The mutated source per file, used to refuse a report from another working tree. */
 export type MutatedSources = ReadonlyMap<string, string>;
+
+const MINIMUM_REASON_LENGTH = 30;
 
 function rounded(value: number, precision: number): number {
   return Number(value.toFixed(precision));
@@ -218,6 +246,89 @@ function findProfileViolations(
   return violations;
 }
 
+function describeMutant(file: string, identity: MutantIdentity): string {
+  return `${file}:${String(identity.line)}:${String(identity.column)} ${identity.mutatorName} (${identity.original} → ${identity.replacement})`;
+}
+
+function describeEntry(entry: EquivalentMutant): string {
+  return `${entry.file}:${String(entry.line)}:${String(entry.column)} ${entry.mutator}`;
+}
+
+function namesMutant(entry: EquivalentMutant, file: string, identity: MutantIdentity): boolean {
+  return (
+    normalizePath(entry.file) === file &&
+    entry.line === identity.line &&
+    entry.column === identity.column &&
+    entry.mutator === identity.mutatorName &&
+    collapseWhitespace(entry.replacement) === identity.replacement
+  );
+}
+
+/**
+ * Holds the reviewed equivalence list against the report: every survivor named,
+ * every name still a survivor, every entry with a sentence and the text it
+ * claims to describe. Survivors stay visible in the report; the list is a
+ * review of them, not an exclusion.
+ */
+export function findEquivalenceViolations(
+  report: ParsedMutationReport,
+  equivalent: readonly EquivalentMutant[],
+): readonly string[] {
+  const violations: string[] = [];
+  const matched = new Set<EquivalentMutant>();
+  for (const [file, mutants] of report.fileMutants) {
+    for (const mutant of mutants) {
+      if (mutant.status !== 'Survived' && mutant.status !== 'NoCoverage') continue;
+      if (mutant.identity === undefined) {
+        violations.push(`[profile] ${file} has a surviving mutant without a location`);
+        continue;
+      }
+      const identity = mutant.identity;
+      const entries = equivalent.filter((entry) => namesMutant(entry, file, identity));
+      if (entries.length === 0) {
+        violations.push(
+          `[regression] ${describeMutant(file, identity)} survives without an equivalence entry`,
+        );
+        continue;
+      }
+      if (entries.length > 1) {
+        violations.push(
+          `[policy] ${describeMutant(file, identity)} has duplicate equivalence entries`,
+        );
+      }
+      for (const entry of entries) {
+        matched.add(entry);
+        if (collapseWhitespace(entry.original) !== identity.original) {
+          violations.push(
+            `[stale] the equivalence entry at ${describeMutant(file, identity)} quotes "${entry.original}"; rerun the review`,
+          );
+        }
+      }
+    }
+  }
+  for (const entry of equivalent) {
+    if (entry.why.trim().length < MINIMUM_REASON_LENGTH) {
+      violations.push(
+        `[policy] the equivalence entry ${describeEntry(entry)} needs a sentence saying why the program does the same`,
+      );
+    }
+    if (matched.has(entry)) continue;
+    const file = normalizePath(entry.file);
+    const killed = (report.fileMutants.get(file) ?? []).some(
+      (mutant) =>
+        mutant.identity !== undefined &&
+        namesMutant(entry, file, mutant.identity) &&
+        (mutant.status === 'Killed' || mutant.status === 'Timeout'),
+    );
+    violations.push(
+      killed
+        ? `[improvement] the equivalence entry ${describeEntry(entry)} is killed now; drop it`
+        : `[stale] the equivalence entry ${describeEntry(entry)} names no mutant in the report`,
+    );
+  }
+  return violations;
+}
+
 /**
  * `sources` is the working tree the report is judged against; a report whose
  * mutated source differs from it describes some other code and is refused.
@@ -292,6 +403,9 @@ export function evaluateMutationReport(
   compareCeiling(violations, notices, 'timeout mutants', summary.timeout, baseline.timeoutMaximum);
   compareRatchetedMaximum(violations, 'error mutants', summary.errors, baseline.errorMaximum);
   compareRatchetedMaximum(violations, 'ignored mutants', summary.ignored, baseline.ignoredMaximum);
+  if (policy.equivalent !== undefined) {
+    violations.push(...findEquivalenceViolations(report, policy.equivalent));
+  }
   return { summary, violations, notices };
 }
 
@@ -346,8 +460,12 @@ async function main(): Promise<void> {
       `mutation policy failed:\n${result.violations.map((violation) => `- ${violation}`).join('\n')}`,
     );
   }
+  const reviewed =
+    policy.equivalent === undefined
+      ? ''
+      : `, ${String(result.summary.survived + result.summary.noCoverage)} survivors each reviewed as equivalent`;
   console.log(
-    `Mutation policy passed: ${String(result.summary.total)} mutants, ${result.summary.mutationScore.toFixed(policy.baseline.mutationScorePrecision)}% score, ${String(result.summary.noCoverage)} no-coverage, ${String(result.summary.timeout)} timeout, ${String(result.summary.errors)} error.`,
+    `Mutation policy passed: ${String(result.summary.total)} mutants, ${result.summary.mutationScore.toFixed(policy.baseline.mutationScorePrecision)}% score, ${String(result.summary.noCoverage)} no-coverage, ${String(result.summary.timeout)} timeout, ${String(result.summary.errors)} error${reviewed}.`,
   );
 }
 

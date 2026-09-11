@@ -25,6 +25,22 @@ export interface MutationSummary {
   readonly mutationScore: number;
 }
 
+/** Where a mutant sits and what it did, for a policy that names mutants one by one. */
+export interface MutantIdentity {
+  readonly line: number;
+  readonly column: number;
+  readonly mutatorName: string;
+  readonly replacement: string;
+  /** The source the mutant replaced, whitespace collapsed. */
+  readonly original: string;
+}
+
+export interface ParsedMutant {
+  readonly status: string;
+  /** Absent when the report carries no location for the mutant. */
+  readonly identity: MutantIdentity | undefined;
+}
+
 export interface ParsedMutationReport {
   readonly schemaVersion: string;
   readonly frameworkName: string;
@@ -44,6 +60,7 @@ export interface ParsedMutationReport {
   readonly excludedMutations: readonly unknown[];
   readonly ignorers: readonly unknown[];
   readonly fileStatuses: ReadonlyMap<string, readonly string[]>;
+  readonly fileMutants: ReadonlyMap<string, readonly ParsedMutant[]>;
   readonly fileSources: ReadonlyMap<string, string>;
 }
 
@@ -90,6 +107,11 @@ export function normalizeSource(source: string): string {
   return source.replaceAll('\r\n', '\n');
 }
 
+/** One line, one space between tokens: the form an equivalence entry quotes. */
+export function collapseWhitespace(text: string): string {
+  return text.replace(/\s+/gu, ' ').trim();
+}
+
 export function sortedUniquePaths(paths: readonly string[], label: string): readonly string[] {
   const normalized = paths.map(normalizePath);
   const unique = new Set(normalized);
@@ -105,6 +127,43 @@ export function formatList(values: readonly string[]): string {
   return `[${values.join(', ')}]`;
 }
 
+/** The text between two 1-based positions of `lines`, the end exclusive, as Stryker locates a mutant. */
+function sliceLocation(
+  lines: readonly string[],
+  start: { readonly line: number; readonly column: number },
+  end: { readonly line: number; readonly column: number },
+): string {
+  const first = lines[start.line - 1] ?? '';
+  if (start.line === end.line) return first.slice(start.column - 1, end.column - 1);
+  const middle = lines.slice(start.line, end.line - 1);
+  const last = (lines[end.line - 1] ?? '').slice(0, end.column - 1);
+  return [first.slice(start.column - 1), ...middle, last].join('\n');
+}
+
+function identityOf(
+  mutant: Record<string, unknown>,
+  lines: readonly string[],
+  label: string,
+): MutantIdentity | undefined {
+  if (mutant['location'] === undefined) return undefined;
+  const location = record(mutant['location'], `${label}.location`);
+  const start = record(location['start'], `${label}.location.start`);
+  const end = record(location['end'], `${label}.location.end`);
+  const position = (point: Record<string, unknown>, name: string) => ({
+    line: numberValue(point['line'], `${name}.line`),
+    column: numberValue(point['column'], `${name}.column`),
+  });
+  const from = position(start, `${label}.location.start`);
+  const to = position(end, `${label}.location.end`);
+  return {
+    line: from.line,
+    column: from.column,
+    mutatorName: stringValue(mutant['mutatorName'], `${label}.mutatorName`),
+    replacement: collapseWhitespace(stringValue(mutant['replacement'], `${label}.replacement`)),
+    original: collapseWhitespace(sliceLocation(lines, from, to)),
+  };
+}
+
 export function parseMutationReport(input: unknown): ParsedMutationReport {
   const report = record(input, 'mutation report');
   const framework = record(report['framework'], 'mutation report.framework');
@@ -114,25 +173,30 @@ export function parseMutationReport(input: unknown): ParsedMutationReport {
   const thresholds = record(config['thresholds'], 'mutation report.config.thresholds');
   const files = record(report['files'], 'mutation report.files');
   const fileStatuses = new Map<string, readonly string[]>();
+  const fileMutants = new Map<string, readonly ParsedMutant[]>();
   const fileSources = new Map<string, string>();
 
   for (const [rawPath, rawFile] of Object.entries(files)) {
     const path = normalizePath(rawPath);
     if (fileStatuses.has(path)) throw new Error(`mutation report has duplicate file ${path}`);
     const file = record(rawFile, `mutation report.files[${rawPath}]`);
+    const source = stringValue(file['source'], `mutation report.files[${rawPath}].source`);
+    const lines = normalizeSource(source).split('\n');
     const mutants = arrayValue(file['mutants'], `mutation report.files[${rawPath}].mutants`);
-    const statuses = mutants.map((rawMutant, index) => {
-      const mutant = record(
-        rawMutant,
-        `mutation report.files[${rawPath}].mutants[${String(index)}]`,
-      );
-      return stringValue(
-        mutant['status'],
-        `mutation report.files[${rawPath}].mutants[${String(index)}].status`,
-      );
+    const parsed = mutants.map((rawMutant, index): ParsedMutant => {
+      const label = `mutation report.files[${rawPath}].mutants[${String(index)}]`;
+      const mutant = record(rawMutant, label);
+      return {
+        status: stringValue(mutant['status'], `${label}.status`),
+        identity: identityOf(mutant, lines, label),
+      };
     });
-    fileStatuses.set(path, statuses);
-    fileSources.set(path, stringValue(file['source'], `mutation report.files[${rawPath}].source`));
+    fileStatuses.set(
+      path,
+      parsed.map((mutant) => mutant.status),
+    );
+    fileMutants.set(path, parsed);
+    fileSources.set(path, source);
   }
 
   return {
@@ -163,6 +227,7 @@ export function parseMutationReport(input: unknown): ParsedMutationReport {
     ),
     ignorers: arrayValue(config['ignorers'], 'mutation report.config.ignorers'),
     fileStatuses,
+    fileMutants,
     fileSources,
   };
 }

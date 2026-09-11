@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 308,
-    "suites": 645,
-    "tests": 2665,
+    "files": 309,
+    "suites": 646,
+    "tests": 2673,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 251,
-      "suites": 572,
-      "tests": 2440,
+      "files": 252,
+      "suites": 573,
+      "tests": 2448,
       "benchmarks": 0
     }
   },
@@ -1983,6 +1983,13 @@
       "group": "unit",
       "suites": 5,
       "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/mutation-equivalence.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
       "benchmarks": 0
     },
     {
