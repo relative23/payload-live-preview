@@ -119,20 +119,32 @@ test.describe('nuxt live preview — the first message and Vue', () => {
       if (window === window.top) return;
       const changes: string[] = [];
       (window as ProbedWindow).__altChanges = changes;
-      new MutationObserver((records) => {
-        for (const record of records) {
-          const target = record.target as Element;
-          const value = target.getAttribute('alt') ?? '';
-          if (target.getAttribute('data-payload-field') === 'hero' && value !== record.oldValue) {
-            changes.push(value);
+      // Firefox runs this once, on the frame's initial document, and keeps the
+      // window when the real one replaces it — an observer attached here would
+      // watch a document nothing writes to. So attach to whatever `document`
+      // is now and again at DOMContentLoaded, once per document; the writes
+      // this test records come after hydration, well after that event.
+      const observed = new WeakSet<Document>();
+      const attach = (): void => {
+        if (observed.has(document)) return;
+        observed.add(document);
+        new MutationObserver((records) => {
+          for (const record of records) {
+            const target = record.target as Element;
+            const value = target.getAttribute('alt') ?? '';
+            if (target.getAttribute('data-payload-field') === 'hero' && value !== record.oldValue) {
+              changes.push(value);
+            }
           }
-        }
-      }).observe(document, {
-        subtree: true,
-        attributes: true,
-        attributeOldValue: true,
-        attributeFilter: ['alt'],
-      });
+        }).observe(document, {
+          subtree: true,
+          attributes: true,
+          attributeOldValue: true,
+          attributeFilter: ['alt'],
+        });
+      };
+      attach();
+      window.addEventListener('DOMContentLoaded', attach);
     });
     const mismatches: string[] = [];
     page.on('console', (message) => {
