@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 315,
-    "suites": 666,
-    "tests": 2803,
+    "suites": 668,
+    "tests": 2810,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 258,
-      "suites": 591,
-      "tests": 2576,
+      "suites": 593,
+      "tests": 2583,
       "benchmarks": 0
     }
   },
@@ -1939,8 +1939,8 @@
     {
       "path": "tests/unit/publish-artifact.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 18,
+      "suites": 7,
+      "tests": 25,
       "benchmarks": 0
     },
     {
