@@ -16,7 +16,7 @@ import type { Carries, DeliveryBudget, DeliveryMeasurement } from '../../fixture
 const CONFIG_PRELUDE = 'var __LIVE_PREVIEW_CONFIG__=';
 /** The bootstrap names the runtime it will fetch, hash and all, in this global. */
 const RUNTIME_SRC = /var __LP_RUNTIME_SRC__="([^"]+)"/u;
-const SCRIPT_ELEMENT = /<script\b[^>]*>([\s\S]*?)<\/script\s*>/giu;
+const SCRIPT_ELEMENT = /<script\b[^>]*>([\s\S]*?)<\/script\b[^>]*>/giu;
 const BINDING_ATTRIBUTE = /\sdata-payload-[a-z-]+="/u;
 
 /**
