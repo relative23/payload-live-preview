@@ -206,20 +206,22 @@ export function releaseTagForVersion(version: string): string {
   return `v${version}`;
 }
 
-function readRegistryState(name: string, version: string): RegistryArtifactState {
-  const result = run('npm', [
-    'view',
-    `${name}@${version}`,
-    'dist.integrity',
-    '--json',
-    '--prefer-online',
-    '--registry',
-    NPM_REGISTRY,
-  ]);
+/**
+ * The value of a single-field `npm view … --json`. npm 11 prints the value
+ * itself, npm 12 the same value inside a one-element array; the repository
+ * pins npm 12 and a 1.x branch keeps npm 11, so both shapes are read. Anything
+ * else is not one value and stays as it is, for the caller to refuse.
+ */
+function singleViewValue(value: unknown): unknown {
+  return Array.isArray(value) && value.length === 1 ? (value[0] as unknown) : value;
+}
+
+/** The registry state of one exact version, from `npm view <pkg>@<version> dist.integrity --json`. */
+export function registryStateFrom(result: CommandResult): RegistryArtifactState {
   if (result.status === 0) {
     let integrity: unknown;
     try {
-      integrity = JSON.parse(result.stdout);
+      integrity = singleViewValue(JSON.parse(result.stdout));
     } catch (error: unknown) {
       throw new Error(`npm returned malformed registry integrity: ${String(error)}`, {
         cause: error,
@@ -232,6 +234,20 @@ function readRegistryState(name: string, version: string): RegistryArtifactState
   }
   if (/\bE404\b/u.test(`${result.stdout}\n${result.stderr}`)) return { kind: 'missing' };
   throw new Error(`npm registry lookup failed closed:\n${detail(result)}`);
+}
+
+function readRegistryState(name: string, version: string): RegistryArtifactState {
+  return registryStateFrom(
+    run('npm', [
+      'view',
+      `${name}@${version}`,
+      'dist.integrity',
+      '--json',
+      '--prefer-online',
+      '--registry',
+      NPM_REGISTRY,
+    ]),
+  );
 }
 
 async function verifyRegistryArchive(

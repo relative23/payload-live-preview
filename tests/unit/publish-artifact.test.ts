@@ -6,6 +6,7 @@ import {
   type PropagationClock,
   publishCertifiedArtifact,
   registryArtifactAction,
+  registryStateFrom,
   releaseTagForVersion,
   distTagForVersion,
 } from '../../scripts/publish-artifact';
@@ -119,6 +120,42 @@ describe('exact artifact publisher', () => {
     );
     const tagIndex = args.indexOf('--tag');
     expect(args[tagIndex + 1]).toBe('beta');
+  });
+});
+
+describe('registry integrity lookup', () => {
+  const INTEGRITY = 'sha512-abc';
+  const ok = (stdout: string) => ({ status: 0, stdout, stderr: '' });
+
+  it('reads the integrity npm 11 prints as a JSON string', () => {
+    expect(registryStateFrom(ok(`"${INTEGRITY}"\n`))).toEqual({
+      kind: 'published',
+      integrity: INTEGRITY,
+    });
+  });
+
+  // npm 12.0.2 wraps a single-field `npm view --json` in an array, npm 11.16.0
+  // did not. The repository pins npm 12 since #57; a 1.x branch keeps npm 11.
+  it('reads the one-element array npm 12 prints for the same view', () => {
+    expect(registryStateFrom(ok(`[\n  "${INTEGRITY}"\n]\n`))).toEqual({
+      kind: 'published',
+      integrity: INTEGRITY,
+    });
+  });
+
+  it('refuses anything that is not exactly one SHA-512 integrity', () => {
+    expect(() => registryStateFrom(ok('["sha512-a", "sha512-b"]'))).toThrow(/SHA-512/u);
+    expect(() => registryStateFrom(ok('"sha1-abc"'))).toThrow(/SHA-512/u);
+    expect(() => registryStateFrom(ok('not json'))).toThrow(/malformed/u);
+  });
+
+  it('treats only E404 as missing and fails closed on everything else', () => {
+    expect(registryStateFrom({ status: 1, stdout: '', stderr: 'npm error code E404' })).toEqual({
+      kind: 'missing',
+    });
+    expect(() =>
+      registryStateFrom({ status: 1, stdout: '', stderr: 'npm error code ECONNRESET' }),
+    ).toThrow(/failed closed/u);
   });
 });
 
