@@ -19,7 +19,7 @@
   "totals": {
     "files": 289,
     "suites": 605,
-    "tests": 2473,
+    "tests": 2477,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 236,
       "suites": 536,
-      "tests": 2266,
+      "tests": 2270,
       "benchmarks": 0
     }
   },
@@ -1982,7 +1982,7 @@
       "path": "tests/unit/security/preview-authorization.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 21,
+      "tests": 24,
       "benchmarks": 0
     },
     {
@@ -1996,7 +1996,7 @@
       "path": "tests/unit/security/preview-token-failure-paths.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 16,
+      "tests": 17,
       "benchmarks": 0
     },
     {

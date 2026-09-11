@@ -344,12 +344,17 @@ export interface PreviewTokenClaims {
     readonly ttlMs?: number;
 }
 
-// @public
-export interface PreviewTokenReplayStore {
+// @public @deprecated (undocumented)
+export interface PreviewTokenReplayChecks {
     // (undocumented)
     isUsed(id: string): Promise<boolean> | boolean;
     // (undocumented)
     markUsed(id: string, expiresAt: number): Promise<void> | void;
+}
+
+// @public
+export interface PreviewTokenReplayStore {
+    consume(id: string, expiresAt: number): Promise<boolean> | boolean;
 }
 
 // @public
@@ -406,7 +411,7 @@ export interface SignedTokenStrategy {
     readonly now?: () => number;
     readonly purpose?: string;
     // (undocumented)
-    readonly replay?: PreviewTokenReplayStore;
+    readonly replay?: PreviewTokenReplayStore | PreviewTokenReplayChecks;
     readonly secret: string | Uint8Array;
     readonly transport?: PreviewTokenTransport;
     // (undocumented)

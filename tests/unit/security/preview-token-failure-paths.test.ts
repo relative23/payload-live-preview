@@ -4,6 +4,7 @@ import {
   authorizePreviewRequest,
   issuePreviewToken,
   type PreviewAuthorizationRequest,
+  type PreviewTokenReplayChecks,
   type PreviewTokenReplayStore,
   type SignedTokenStrategy,
   type SubtleCryptoLike,
@@ -231,7 +232,10 @@ describe('signed tokens at the edges of the accepted input', () => {
 });
 
 describe('signed tokens against a failing replay store', () => {
-  async function authorizeWith(replay: PreviewTokenReplayStore): Promise<string> {
+  async function authorizeWith(
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 1.x shape must keep failing closed until 3.0
+    replay: PreviewTokenReplayStore | PreviewTokenReplayChecks,
+  ): Promise<string> {
     const token = await issuePreviewToken(
       { audience: SITE },
       { secret: SECRET, crypto, now: () => NOW },
@@ -270,5 +274,12 @@ describe('signed tokens against a failing replay store', () => {
         markUsed: () => Promise.resolve(),
       }),
     ).toBe('replayed');
+  });
+
+  it('refuses as unavailable when consume throws, and as replayed when it declines', async () => {
+    expect(await authorizeWith({ consume: () => Promise.reject(new Error('store down')) })).toBe(
+      'unavailable',
+    );
+    expect(await authorizeWith({ consume: () => Promise.resolve(false) })).toBe('replayed');
   });
 });

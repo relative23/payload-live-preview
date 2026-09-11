@@ -11,8 +11,8 @@
   ],
   "totals": {
     "publicDeclarations": {
-      "limit": 656,
-      "why": "Every exported name across all API reports. The number a consumer's editor offers them, and the number this package has to keep meaning something. 2026-09-06: +12 for the two zero-config setups — `withLivePreview()` for Next.js and the Nuxt module — which exist to remove lines from a consumer's project, not to add names to it. +5 for asset delivery: a route factory in each of the three adapters, plus what a route file re-exports in the two that name it. +13 for the build-time annotator, nine of them its own entry. 2026-09-06 (1.x-Upgrade): +3, the 1.x names 2.0 renamed rather than reshaped: `isPreviewRequest` on the two entries that exported it, and `PreviewSignal` back on `./astro`. Measured against the published 1.8.1 declarations entry by entry; everything whose meaning changed stays gone, because an alias there would type something the package no longer produces. 2026-09-06 (R9): −5, two concepts with no remaining reason — `PreviewBindingsCommonOptions`, a one-member base left behind when its sibling options type was removed in 2.0, and `AnnotatableEntry`, which had one member and one use."
+      "limit": 658,
+      "why": "Every exported name across all API reports. The number a consumer's editor offers them, and the number this package has to keep meaning something. 2026-09-06: +12 for the two zero-config setups — `withLivePreview()` for Next.js and the Nuxt module — which exist to remove lines from a consumer's project, not to add names to it. +5 for asset delivery: a route factory in each of the three adapters, plus what a route file re-exports in the two that name it. +13 for the build-time annotator, nine of them its own entry. 2026-09-06 (1.x-Upgrade): +3, the 1.x names 2.0 renamed rather than reshaped: `isPreviewRequest` on the two entries that exported it, and `PreviewSignal` back on `./astro`. Measured against the published 1.8.1 declarations entry by entry; everything whose meaning changed stays gone, because an alias there would type something the package no longer produces. 2026-09-06 (R9): −5, two concepts with no remaining reason — `PreviewBindingsCommonOptions`, a one-member base left behind when its sibling options type was removed in 2.0, and `AnnotatableEntry`, which had one member and one use. 2026-09-11 (atomic replay store): +2, `PreviewTokenReplayChecks` on the root and `./server` — the deprecated 1.x two-step store shape, kept until 3.0 so a store written against 1.x still type-checks, and named so its notice can say why `consume()` replaced it."
     },
     "entrySubpaths": {
       "limit": 25,
@@ -37,16 +37,16 @@
   },
   "entries": {
     "payload-live-preview.api.md": {
-      "limit": 163,
-      "why": "The root barrel: the client, the generator, the renderers, the DSL and the plugin surface in one import. The largest number here on purpose — and the one to watch, because every entry below re-exports from it."
+      "limit": 164,
+      "why": "The root barrel: the client, the generator, the renderers, the DSL and the plugin surface in one import. The largest number here on purpose — and the one to watch, because every entry below re-exports from it. 2026-09-11: +1, the deprecated `PreviewTokenReplayChecks` (see publicDeclarations)."
     },
     "payload-live-preview--core.api.md": {
       "limit": 99,
       "why": "The runtime without the generator and the built-in plugins."
     },
     "payload-live-preview--server.api.md": {
-      "limit": 55,
-      "why": "Everything a server decides with: authorization, tokens, document reads, gated bindings, and reading a verdict back off locals."
+      "limit": 56,
+      "why": "Everything a server decides with: authorization, tokens, document reads, gated bindings, and reading a verdict back off locals. 2026-09-11: +1, the deprecated `PreviewTokenReplayChecks` (see publicDeclarations)."
     },
     "payload-live-preview--client.api.md": {
       "limit": 52,

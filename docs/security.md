@@ -75,6 +75,22 @@ the token in the `x-preview-token` header where you control the fetch, set
 `Referrer-Policy: no-referrer` on preview responses, exclude `previewToken`
 from log formats and error-reporter URLs, and supply a replay store.
 
+A replay store is one method, `consume(id, expiresAt)`, that records the id
+and answers whether this call was the first. It has to check and record in
+one step — Redis `SET key 1 NX PX <ttl>`, a unique insert — because a read
+followed by a write lets two requests that carry the same token and arrive
+together both pass. `true` admits the token; any other answer refuses it as
+`replayed`, a throw as `unavailable`. The 1.x `isUsed`/`markUsed` shape is
+still accepted, deprecated, and removed in 3.0: it is the two-step shape and
+has exactly that race.
+
+```ts
+const replay = {
+  consume: async (id, expiresAt) =>
+    (await redis.set(`preview:${id}`, '1', 'PX', expiresAt - Date.now(), 'NX')) === 'OK',
+};
+```
+
 ## Origin allow-list
 
 Inbound `postMessage` events are dropped unless `event.origin` matches one of:

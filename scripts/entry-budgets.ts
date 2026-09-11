@@ -98,10 +98,15 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-06 (LP0501 aloud): +~430 B raw / ~150 B gzip wherever the runtime
   // is embedded, for the sentence a page prints when a message is refused for
   // coming from the wrong window — the second default 2.0 flipped in silence.
+  //
+  // 2026-09-11 (atomic replay store): the astro and nextjs rows' brotli
+  // figures rise ~40 B for the one helper that accepts `consume()` beside the
+  // deprecated two-step shape; raw and gzip stay under their rows, and the
+  // two brotli rows keep the ~120 B CI headroom described above.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
-  'adapters/astro/index.js': { raw: 144_813, gzip: 45_103, brotli: 38_921 },
+  'adapters/astro/index.js': { raw: 144_813, gzip: 45_103, brotli: 39_080 },
   'adapters/astro/middleware-entry.js': { raw: 131_432, gzip: 40_978, brotli: 35_357 },
-  'adapters/nextjs/index.js': { raw: 143_040, gzip: 44_595, brotli: 38_486 },
+  'adapters/nextjs/index.js': { raw: 143_040, gzip: 44_595, brotli: 38_610 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin

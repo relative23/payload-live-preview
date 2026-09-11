@@ -90,6 +90,14 @@ Not a codemod target, because TypeScript reports each of them:
 - If you consume `payload-live-preview/migrate` as a library, `Codemod` no
   longer carries `apply`, so importing its types no longer drags in `ts-morph`.
 
+Reported by neither, because the old shape still compiles and still works:
+
+- `signed-token` `replay: { isUsed, markUsed }` → `{ consume }` — one
+  check-and-record step (`true` on first use) instead of a read and a write
+  that two simultaneous requests can both slip between. The two-method shape
+  is deprecated with that reason and removed in 3.0; `docs/security.md` has a
+  Redis example.
+
 ### Before / after
 
 ```ts
