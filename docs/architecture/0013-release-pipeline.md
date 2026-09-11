@@ -70,6 +70,36 @@ the root lockfile and the four `file:../..` fixture lockfiles. The package gate
 rejects a lockfile whose identity lags `package.json`, so a manual `npm version`
 cannot reach npm.
 
+### 6. The first release candidate freezes the scope (added 2026-09-11)
+
+From the first `v2.0.0-rc.*` tag until `2.0.0` is on npm, the branch takes
+fixes and nothing else:
+
+- Changesets are `patch`. A `minor` or `major` changeset is scope, and scope
+  waits for the next minor.
+- No new option. `PreviewAdapterOptions` and `InlineScriptConfig` keep their
+  member counts, and with the second so does `INLINE_CONFIG_KEYS`: every wire
+  key is a member of that interface (`satisfies` holds it), so a new slot cannot
+  appear without a new member.
+- No new public declaration, entry subpath, diagnostic code or source module.
+  A fix that lowers one of these numbers is still welcome.
+
+The rule is mechanical where it can be. `quality/complexity-budget.json` takes
+`"frozen": { "since": "<tag>", "why": "…" }` in the commit that tags the first
+candidate; `npx tsx scripts/check-complexity.ts --freeze` writes the limits of
+that moment to `quality/complexity-budget.frozen.json`, committed beside it.
+From then on `npm run check` fails on any limit above its frozen value and on
+any metric the snapshot never saw, whatever the reason written next to the
+number. The reference is a committed file rather than `git show <tag>:…`
+because CI checks out one commit without tags, and a branch that raised a limit
+would otherwise compare the raise with itself at `HEAD`. The freeze is lifted in
+the commit that opens the next minor: remove `frozen` and the snapshot together.
+
+What stays a reading rule: the changeset type — review reads `.changeset/*.md`
+— and the start of the freeze itself, which is the same decision as tagging
+`rc.0`. Today there is no release candidate; `frozen` is unset and the gate is
+held by seven unit cases (`tests/unit/quality/complexity-budget.test.ts`).
+
 ## Consequences
 
 - What is on npm is what CI tested, provably: manifest and registry archive are

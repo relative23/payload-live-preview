@@ -7,7 +7,13 @@
     "Limits are the exact current numbers, with no headroom on purpose. Byte",
     "budgets carry ~1 % because compression is not byte-stable; a count is, and",
     "headroom here would just be room to grow into without saying so. Raising a",
-    "number is a two-line change: the number, and why it moved."
+    "number is a two-line change: the number, and why it moved.",
+    "",
+    "From the first release candidate, `\"frozen\": { \"since\": \"<tag>\", \"why\": \"…\" }`",
+    "sits above `totals`, and `tsx scripts/check-complexity.ts --freeze` writes the",
+    "limits of that moment to `complexity-budget.frozen.json`. Under the freeze a",
+    "raised limit is red no matter how good its reason (ADR 0013 §6); a fix that",
+    "lowers one is still welcome. Unset today: there is no release candidate."
   ],
   "totals": {
     "publicDeclarations": {
