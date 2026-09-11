@@ -16,6 +16,7 @@ import {
 } from './package-artifact';
 import { sanitizeNpmScriptEnvironment } from './release-contracts';
 import { distTagForVersion, isPackageVersion, releaseTagForVersion } from './release-version';
+import { releaseTaggerEnvironment, repositoryHasIdentity } from './release-tagger';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const NPM_REGISTRY = 'https://registry.npmjs.org';
@@ -125,11 +126,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function run(executable: string, args: readonly string[], cwd = ROOT): CommandResult {
+function run(
+  executable: string,
+  args: readonly string[],
+  cwd = ROOT,
+  env = sanitizeNpmScriptEnvironment(process.env),
+): CommandResult {
   const result = spawnSync(executable, args, {
     cwd,
     encoding: 'utf8',
-    env: sanitizeNpmScriptEnvironment(process.env),
+    env,
   });
   if (result.error !== undefined) throw result.error;
   return { stdout: result.stdout, stderr: result.stderr, status: result.status ?? 1 };
@@ -365,6 +371,8 @@ function ensureChangesetsTag(version: string, expectedCommit: string): void {
       ? resolve(ROOT, 'node_modules/.bin/changeset.cmd')
       : resolve(ROOT, 'node_modules/.bin/changeset'),
     ['tag'],
+    ROOT,
+    releaseTaggerEnvironment(sanitizeNpmScriptEnvironment(process.env), repositoryHasIdentity(run)),
   );
   if (changeset.status !== 0) {
     throw new Error(`Changesets could not create the release tag:\n${detail(changeset)}`);
@@ -372,7 +380,10 @@ function ensureChangesetsTag(version: string, expectedCommit: string): void {
   if (changeset.stdout.trim().length > 0) console.log(changeset.stdout.trim());
   const created = run('git', ['rev-parse', '--verify', `refs/tags/${tag}^{commit}`]);
   if (created.status !== 0 || created.stdout.trim() !== expectedCommit) {
-    throw new Error(`Changesets did not create ${tag} at the certified commit`);
+    throw new Error(
+      `Changesets did not create ${tag} at the certified commit; ` +
+        'it reports the tag before git answers, so a refused `git tag` reads as success',
+    );
   }
   if (!changeset.stdout.includes('New tag:')) console.log(`New tag: ${tag}`);
 }
