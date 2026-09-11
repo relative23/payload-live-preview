@@ -97,6 +97,15 @@ Reported by neither, because the old shape still compiles and still works:
   that two simultaneous requests can both slip between. The two-method shape
   is deprecated with that reason and removed in 3.0; `docs/security.md` has a
   Redis example.
+- A script built by hand with `generateInlineScript()` on a page a framework
+  hydrates — the 1.x README's Next.js recipe — does not wait for the
+  hydration, so the first document can land before it and be undone: React
+  regenerates the tree, Vue repairs the value back
+  ([ADR 0015](architecture/0015-first-write-after-hydration.md)). Add
+  `hydration: 'react'` (`'vue'` on a Nuxt page) to its options, or render the
+  script through the framework's adapter, which sets it on every script.
+  Measured on a 1.8.1 Next.js app upgraded to 2.0: in development every framed
+  load lost its first write until the line was added.
 
 ### Before / after
 

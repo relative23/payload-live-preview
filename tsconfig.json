@@ -60,5 +60,7 @@
     }
   },
   "include": ["src/**/*", "tests/**/*", "scripts/**/*", "*.config.ts"],
-  "exclude": ["node_modules", "dist", ".archive", "examples", "**/*.astro"]
+  // `tests/migration` holds a 1.x consumer's files as they were, read as text
+  // by the migration tests; they import the published package, not `src/`.
+  "exclude": ["node_modules", "dist", ".archive", "examples", "tests/migration", "**/*.astro"]
 }

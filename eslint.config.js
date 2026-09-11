@@ -11,6 +11,8 @@ export default tseslint.config(
       '.archive/**',
       'coverage/**',
       'examples/**',
+      // A 1.x consumer's files, kept byte for byte for the migration tests.
+      'tests/migration/**',
       'playwright-report/**',
       'test-results/**',
       '*.config.js',
