@@ -27,6 +27,15 @@ interface RevealTarget {
   readonly handle: RuntimeHandle;
   /** SPA hydration can re-render and revert an applied value. */
   readonly hydrationWaitMs?: number;
+  /**
+   * Set when the framed route needs a preview token the admin mints only for
+   * the routes on its own allowlist: the test mints one for this path through
+   * the fixture's endpoint and writes the frame src, once the admin's own
+   * navigation has landed, so the two never race.
+   */
+  readonly signedFrame?: boolean;
+  /** Sent as `globalSlug`: the fixture scopes bindings by owner, so an update names its document. */
+  readonly globalSlug?: string;
 }
 
 const TARGETS: readonly RevealTarget[] = [
@@ -91,6 +100,18 @@ const TARGETS: readonly RevealTarget[] = [
     handle: '__livePreview',
     hydrationWaitMs: 800,
   },
+  {
+    // The strict fixture: query-only intent plus a token the admin mints for
+    // the routes on its allowlist. `/reveal` is not on it, so the test mints
+    // its own; bindings are scoped by owner, so the update names its document.
+    name: 'sveltekit — inline delivery, Svelte 5',
+    server: 'sveltekit',
+    admin: 'http://localhost:4175/admin.html',
+    path: '/reveal',
+    signedFrame: true,
+    globalSlug: 'reveal',
+    handle: '__livePreview',
+  },
 ];
 
 const PATCHED_HERO = 'Patched hero';
@@ -104,7 +125,7 @@ function bound(page: Page, testId: string) {
 
 async function openReveal(page: Page, target: RevealTarget): Promise<Frame> {
   const admin =
-    target.frameSrc === undefined
+    target.frameSrc === undefined && target.signedFrame !== true
       ? `${target.admin}?target=${encodeURIComponent(target.path)}`
       : target.admin;
   await page.goto(admin);
@@ -114,8 +135,21 @@ async function openReveal(page: Page, target: RevealTarget): Promise<Frame> {
       if (iframe) iframe.src = src;
     }, target.frameSrc);
   }
+  if (target.signedFrame === true) {
+    // The admin frames the first route on its allowlist once it has a token
+    // for it; after that navigation the frame is the test's to point elsewhere.
+    await waitForPreviewFrame(page, 'previewToken=');
+    await page.evaluate(async (path) => {
+      const token = await (await fetch(`/preview-token?path=${encodeURIComponent(path)}`)).text();
+      const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
+      if (iframe) iframe.src = `${path}?preview=true&previewToken=${encodeURIComponent(token)}`;
+    }, target.path);
+  }
 
-  const frame = await waitForPreviewFrame(page, target.frameSrc ?? target.path);
+  const frame = await waitForPreviewFrame(
+    page,
+    target.signedFrame === true ? `${target.path}?` : (target.frameSrc ?? target.path),
+  );
   await waitForStarted(frame, target.handle);
   if (target.hydrationWaitMs !== undefined) await page.waitForTimeout(target.hydrationWaitMs);
   return frame;
@@ -132,26 +166,28 @@ async function apply(
   fields: Record<string, string>,
   testId: string,
   expected: string,
+  globalSlug?: string,
 ): Promise<void> {
   await expect(async () => {
-    await post(page, fields);
+    await post(page, fields, globalSlug === undefined ? {} : { globalSlug });
     await expect(bound(page, testId)).toHaveText(expected, { timeout: 2_000 });
   }).toPass(RETRY);
 }
 
 function registerTarget(target: RevealTarget): void {
   test.describe(`reveal — ${target.name}`, () => {
+    const slug = target.globalSlug;
     test('patches a bound field', async ({ page }) => {
       await openReveal(page, target);
-      await apply(page, { heroTitle: PATCHED_HERO, footer: BASELINE }, 'hero', PATCHED_HERO);
+      await apply(page, { heroTitle: PATCHED_HERO, footer: BASELINE }, 'hero', PATCHED_HERO, slug);
     });
 
     test('editing an off-screen field scrolls it into view', async ({ page }) => {
       const frame = await openReveal(page, target);
-      await apply(page, { heroTitle: 'Top', footer: BASELINE }, 'footer', BASELINE);
+      await apply(page, { heroTitle: 'Top', footer: BASELINE }, 'footer', BASELINE, slug);
       expect(await footerInView(frame), 'footer starts below the fold').toBe(false);
 
-      await apply(page, { heroTitle: 'Top', footer: EDITED }, 'footer', EDITED);
+      await apply(page, { heroTitle: 'Top', footer: EDITED }, 'footer', EDITED, slug);
       await expect.poll(() => footerInView(frame), { timeout: 5_000 }).toBe(true);
     });
   });
@@ -164,3 +200,4 @@ registerTarget(TARGETS[3]!);
 registerTarget(TARGETS[4]!);
 registerTarget(TARGETS[5]!);
 registerTarget(TARGETS[6]!);
+registerTarget(TARGETS[7]!);
