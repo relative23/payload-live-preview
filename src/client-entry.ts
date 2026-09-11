@@ -44,7 +44,7 @@ export type {
   InspectionRoute,
 } from './core/inspection/types';
 export type { ConnectionStatus } from './core/state';
-export type { DefaultsProfile, EventSourcePolicy } from './core/defaults-profile';
+export type { DefaultsProfile, EventSourcePolicy } from './types/defaults-profile';
 export type {
   FieldTransform,
   LivePreviewPlugin,

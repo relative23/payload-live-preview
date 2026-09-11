@@ -7,6 +7,7 @@
  */
 
 import type { BundleBudget } from './bundle-measure';
+import { TOOL_ENTRY_BUDGETS } from './entry-budgets-tools';
 
 // Budgets include narrow headroom for patch-level correctness fixes while still
 // failing the unminified 1.0.4 artifacts. Public names and source maps are retained.
@@ -396,9 +397,13 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // facts the Nuxt adapter threads through — no second bootstrap, Vue's mount is
   // state a late runtime reads (`hydration-vue.ts`, ADR 0015 addendum). Each row to
   // its measurement plus the cushion; reread after the commit, `index.cjs` brotli 56_351 → 56_388 (56_258, the epoch, Z19).
+  // 2026-09-11 (Z37, the script names its defaults): the five adapter rows cross
+  // gzip by 3–21 B, ~+50 B raw — the generator resolves `defaults` and writes it
+  // into the last slot of every script. gzip to the measurement ×1.0014, and
+  // `adapters/nuxt/index.js` brotli, 26 B under, back to the ~130 B cushion.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
-  'adapters/astro/index.js': { raw: 160_643, gzip: 50_365, brotli: 43_359 },
-  'adapters/astro/middleware-entry.js': { raw: 147_201, gzip: 46_172, brotli: 39_778 },
+  'adapters/astro/index.js': { raw: 160_643, gzip: 50_457, brotli: 43_359 },
+  'adapters/astro/middleware-entry.js': { raw: 147_201, gzip: 46_248, brotli: 39_778 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -417,7 +422,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // cannot wait for a verdict, so LP-8 measured 195 342 of 254 707 bytes of
   // runtime on a request with no cookie; an async component awaits
   // `authorizePreview` and renders nothing for it.
-  'adapters/nextjs/index.js': { raw: 159_201, gzip: 49_968, brotli: 43_066 },
+  'adapters/nextjs/index.js': { raw: 159_201, gzip: 50_041, brotli: 43_066 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -435,19 +440,11 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
   // frame-ancestors builder it shares with the middleware.
   'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
-  'adapters/nuxt/index.js': { raw: 158_371, gzip: 49_762, brotli: 42_742 },
-  'adapters/sveltekit/index.js': { raw: 157_361, gzip: 49_464, brotli: 42_479 },
-  //
-  // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
-  // scanner, its refusal reasons and the `annotate` subcommand. It is a build
-  // tool; no page and no adapter bundle sees any of it.
-  'codegen-astro.js': { raw: 12_950, gzip: 4_550, brotli: 4_100 },
-  'codegen-cli.js': { raw: 20_100, gzip: 6_950, brotli: 6_270 },
-  'codegen.cjs': { raw: 15_300, gzip: 5_400, brotli: 4_890 },
-  'codegen.js': { raw: 15_200, gzip: 5_380, brotli: 4_890 },
-  'doctor-cli.js': { raw: 33_179, gzip: 12_150, brotli: 10_813 },
-  'doctor.js': { raw: 13_289, gzip: 5_560, brotli: 4_816 },
-  'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
+  'adapters/nuxt/index.js': { raw: 158_371, gzip: 49_838, brotli: 42_846 },
+  'adapters/sveltekit/index.js': { raw: 157_361, gzip: 49_544, brotli: 42_479 },
+  // The build tools — codegen, the doctor, the codemods — are logged in
+  // `entry-budgets-tools.ts`, split off when this log reached 500 lines (Z37).
+  ...TOOL_ENTRY_BUDGETS,
   'core.cjs': { raw: 133_864, gzip: 42_543, brotli: 36_792 },
   'core.js': { raw: 133_324, gzip: 42_455, brotli: 36_645 },
   //

@@ -99,7 +99,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0708:
     'Point the audit at a route that renders an HTML document. Redirects are reported, not followed, so probe the final URL; a redirect to a login needs a session the probe cannot supply.',
   LP0709:
-    "A runtime row is still at its `defaults: 'v1'` value. Set the option the finding names, or drop `defaults: 'v1'` once the page no longer needs it.",
+    "A runtime row is at its 1.x value — set explicitly, by `defaults: 'v1'`, or read from a script older than 2.0.0-rc.0 that does not name its defaults (an `info` line says so). The finding says which, and what to change.",
   LP0710:
     "Correct for `inject: 'always'`. Under `'preview-only'` it means every request counts as intent: check `previewSignals` and `previewQueryParams`.",
   LP0801:

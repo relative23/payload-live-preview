@@ -31,7 +31,10 @@ codemods are `rename-is-preview-request`, `rename-admin-origins-option`,
 `rename-bindings-authorized-option` and `move-fetch-preview-helpers`.
 
 `pll doctor --v2` reads the served inline configuration and reports each
-runtime row still at its `'v1'` value as `LP0709`. It exits `0` with no
+runtime row still at its `'v1'` value as `LP0709`. A script names the defaults
+it was generated against, so an empty slot counts as that generation's value;
+one without the marker — written by 1.x or `2.0.0-beta.0` — is read as 1.x, and
+an `info` line says so. It exits `0` with no
 error-level findings, `1` if the URL could not be fetched, and `2` on any
 error-level finding; it reports redirects rather than following them, so probe
 the final URL. The full audit is in

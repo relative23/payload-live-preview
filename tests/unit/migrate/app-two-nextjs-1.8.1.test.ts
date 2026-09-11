@@ -136,12 +136,13 @@ describe('app two: the Next.js fixture at v1.8.1, upgraded to 2.0', () => {
     const before = await inlineScriptOptions(join(SOURCE, 'app/layout.tsx'));
     const after = await inlineScriptOptions(join(EXPECTED, 'app/layout.tsx'));
 
-    // Both are the configuration the upgraded app served, read back with curl.
+    // Both are the configuration the upgraded app served, read back with curl —
+    // plus the `defaults` marker every script has carried since (Z37, slot 24).
     expect(configLine(generateInlineScript(before as InlineScriptConfig))).toBe(
-      'var __LIVE_PREVIEW_CONFIG__=[["http://localhost:4174"],,,,true,25];',
+      'var __LIVE_PREVIEW_CONFIG__=[["http://localhost:4174"],,,,true,25,,,,,,,,,,,,,,,,,,,"v2"];',
     );
     expect(configLine(generateInlineScript(after as InlineScriptConfig))).toBe(
-      'var __LIVE_PREVIEW_CONFIG__=[["http://localhost:4174"],,,,true,25,,,,,,,,,,,,,,,,,,"react"];',
+      'var __LIVE_PREVIEW_CONFIG__=[["http://localhost:4174"],,,,true,25,,,,,,,,,,,,,,,,,,"react","v2"];',
     );
   });
 

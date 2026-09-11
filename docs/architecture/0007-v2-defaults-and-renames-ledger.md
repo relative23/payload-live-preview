@@ -135,3 +135,24 @@ upgraded state (`expected/`) and against today's fixture. A codemod that starts
 touching the app, a name it imports going missing, the one line no longer
 making the difference, or the fixture's page or shared options drifting turns
 it red.
+
+## Addendum — the script names its defaults (2026-09-11)
+
+`pll doctor --v2` read an empty slot of the inline configuration as the 1.x
+value, and the 2.0 runtime reads it as the 2.0 one, so every 2.0 page with its
+defaults left alone was reported four rows behind. What an empty slot stands for
+is exactly what 2.0 changed, and nothing in the tuple said which generation had
+written it.
+
+The generator now resolves `defaults` itself and writes the result into a last
+slot (24) of every script: `'v2'`, or `'v1'` when asked for. Under `'v1'` it also
+writes the four 1.x runtime rows. Before, `generateInlineScript({ defaults: 'v1' })`
+wrote the bytes of the 2.0 default and the page ran the 2.0 rows, although this
+ledger and the migration guide said otherwise; the adapters resolved the rows
+themselves and were not affected. The runtime does not read the slot, since
+every row it decides already sits in its own. The doctor does: an empty slot takes
+the value of the named generation, a script without the marker (1.x,
+`2.0.0-beta.0`) is read as 1.x with an `info` line that says so, and a generation
+it does not know is not judged. Reading the package version from the runtime was
+rejected: under asset delivery it is not in the HTML, and a version only stands in
+for the fact the doctor needs.

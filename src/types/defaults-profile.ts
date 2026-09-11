@@ -4,6 +4,10 @@
  * one side — the adapter's request decision or the browser runtime — and a
  * test asserts the profile assigns every readiness row that has an option, so
  * a row added later cannot be forgotten. See ADR 0007.
+ *
+ * It lives in the leaf `types` domain, like `merge-depth.ts`, because the
+ * inline generator resolves the profile too, and the generator is server-side
+ * code that may not reach the browser runtime in `core`.
  */
 
 /** `'v2'` is the 2.0 default; `'v1'` is the 1.x table. */

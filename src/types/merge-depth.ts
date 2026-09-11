@@ -7,7 +7,7 @@
  * "no server" and "no depth".
  */
 
-import type { DefaultsProfile } from '@core/defaults-profile';
+import type { DefaultsProfile } from '@/types/defaults-profile';
 
 /**
  * The population depth is a deliberate choice; the 1.x default of 1 stays only

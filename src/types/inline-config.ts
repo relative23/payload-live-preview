@@ -4,7 +4,7 @@
  * `INLINE_CONFIG_KEYS` is where they agree. Append only, never reorder.
  */
 
-import type { DefaultsProfile } from '@core/defaults-profile';
+import type { DefaultsProfile } from '@/types/defaults-profile';
 
 export interface InlineScriptConfig {
   /** Trusted admin origins, merged with the detected ones. */
@@ -84,7 +84,15 @@ export interface InlineScriptConfig {
    * starts on `DOMContentLoaded`, as on a static page.
    */
   readonly hydration?: 'react' | 'vue';
-  /** Which defaults the omitted options fall back to. Not serialized: `'v1'` only relaxes the generator's `mergeDepth` check. */
+  /**
+   * Which defaults the omitted options fall back to, resolved by the generator
+   * rather than the runtime, whose own fallbacks are the 2.0 rows: `'v1'`
+   * writes its four runtime rows into their slots (an explicit option still
+   * wins) and relaxes the `mergeDepth` check. The resolved value always
+   * travels, in the last slot, so a reader of the served page knows what an
+   * empty slot means instead of guessing it — `pll doctor --v2` reads it. The
+   * runtime does not: every row the profile decides is already in its slot.
+   */
   readonly defaults?: DefaultsProfile;
   /**
    * A runtime artifact to embed instead of the full one — today only
@@ -144,4 +152,5 @@ export const INLINE_CONFIG_KEYS = [
   'onUnfaithfulPatch',
   'autoBind',
   'hydration',
-] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'defaults' | 'runtime'>[];
+  'defaults',
+] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'runtime'>[];

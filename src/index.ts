@@ -107,7 +107,7 @@ export type {
   SubtleCryptoLike,
   VerifierStrategy,
 } from './security/preview-authorization';
-export type { DefaultsProfile, EventSourcePolicy } from './core/defaults-profile';
+export type { DefaultsProfile, EventSourcePolicy } from './types/defaults-profile';
 
 // Server-side preview-request detection — for hand-rolled middleware
 export {

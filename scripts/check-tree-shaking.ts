@@ -202,6 +202,15 @@ interface Fixture {
  * 2026-09-11 (merge of main #64/#65): the five gzip rows that carry the runtime
  * rise by the measured difference between the last green build (36fd5ec) and
  * the merged tree (+120…190 B gzip); each keeps the cushion it carried.
+ *
+ * 2026-09-11 (Z37): the two rows that carry the generator rise for the
+ * `defaults` profile it now resolves itself — the 1.x row table and the
+ * function that writes it, plus the marker in the last slot —
+ * `generateInlineScript` from `payload-live-preview` 41_698 → 41_788
+ * (41_731, +202 raw), `createLivePreviewMiddleware` from
+ * `payload-live-preview/nextjs` 46_955 → 47_038 (46_982, +77 raw). The runtime
+ * did not move, so the rows that carry only the runtime keep theirs. Each to
+ * its measurement plus the cushion it carried.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -229,7 +238,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 41_698,
+    gzip: 41_788,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -257,7 +266,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 46_955,
+    gzip: 47_038,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

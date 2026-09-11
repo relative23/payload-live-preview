@@ -7,7 +7,7 @@ import {
   V2_RUNTIME_DEFAULTS,
   adapterDefaultsFor,
   runtimeDefaultsFor,
-} from '@core/defaults-profile';
+} from '@/types/defaults-profile';
 import { withProfileDefaults } from '@client/config';
 
 /**
