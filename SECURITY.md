@@ -2,11 +2,11 @@
 
 ## Supported versions
 
-| Version            | Supported                             |
-| ------------------ | ------------------------------------- |
-| 2.x                | Yes                                   |
-| 1.x                | Security fixes only, until 2026-12-04 |
-| < 1.0 (alpha/beta) | No                                    |
+| Version            | Supported                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| 2.x                | Yes                                                                                           |
+| 1.x                | Security fixes only, until 2026-12-04 or 90 days after 2.0.0 is published, whichever is later |
+| < 1.0 (alpha/beta) | No                                                                                            |
 
 ## Reporting a vulnerability
 

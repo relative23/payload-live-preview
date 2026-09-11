@@ -6,6 +6,9 @@ import {
   countInterfaceMembers,
   countPublicDeclarations,
   findComplexityViolations,
+  findFreezeViolations,
+  freezeSnapshotFrom,
+  freezeViolationMessage,
   measureComplexity,
   type ComplexityBudget,
 } from '../../../scripts/check-complexity';
@@ -149,5 +152,110 @@ describe('the reviewed budget', () => {
     });
 
     expect(violations.some((entry) => entry.metric.includes('no reviewed budget'))).toBe(true);
+  });
+});
+
+describe('the freeze after the first release candidate', () => {
+  const freeze = { since: 'v2.0.0-rc.0', why: 'a release candidate takes patch changes only' };
+
+  it('is not consulted while the budget is not frozen', async () => {
+    const reviewed = await budget();
+
+    expect(reviewed.frozen).toBeUndefined();
+    expect(findFreezeViolations(reviewed, undefined)).toEqual([]);
+  });
+
+  it('accepts limits that did not move since the freeze', async () => {
+    const reviewed = await budget();
+    const frozen: ComplexityBudget = { ...reviewed, frozen: freeze };
+
+    expect(findFreezeViolations(frozen, freezeSnapshotFrom(frozen))).toEqual([]);
+  });
+
+  it('refuses a raised limit, naming the tag the freeze started at', async () => {
+    const reviewed = await budget();
+    const snapshot = freezeSnapshotFrom({ ...reviewed, frozen: freeze });
+    const raised: ComplexityBudget = {
+      ...reviewed,
+      frozen: freeze,
+      totals: {
+        ...reviewed.totals,
+        diagnosticCodes: {
+          limit: reviewed.totals['diagnosticCodes']!.limit + 1,
+          why: 'a new code',
+        },
+      },
+    };
+
+    const violations = findFreezeViolations(raised, snapshot);
+    expect(violations).toEqual([
+      {
+        metric: 'diagnosticCodes',
+        limit: reviewed.totals['diagnosticCodes']!.limit + 1,
+        frozenLimit: reviewed.totals['diagnosticCodes']!.limit,
+      },
+    ]);
+    const message = freezeViolationMessage(violations[0]!, freeze);
+    expect(message).toContain('v2.0.0-rc.0');
+    expect(message).toContain('diagnosticCodes');
+    expect(message).toMatch(/patch/u);
+  });
+
+  it('refuses a budget for an entry the freeze never saw', async () => {
+    const reviewed = await budget();
+    const snapshot = freezeSnapshotFrom({ ...reviewed, frozen: freeze });
+    const grown: ComplexityBudget = {
+      ...reviewed,
+      frozen: freeze,
+      entries: {
+        ...reviewed.entries,
+        'payload-live-preview--new.api.md': { limit: 1, why: 'a new entry is a new surface' },
+      },
+    };
+
+    expect(findFreezeViolations(grown, snapshot)).toEqual([
+      { metric: 'payload-live-preview--new.api.md', limit: 1, frozenLimit: undefined },
+    ]);
+    expect(freezeViolationMessage(findFreezeViolations(grown, snapshot)[0]!, freeze)).toContain(
+      'v2.0.0-rc.0',
+    );
+  });
+
+  it('lets a limit fall under the freeze', async () => {
+    const reviewed = await budget();
+    const snapshot = freezeSnapshotFrom({ ...reviewed, frozen: freeze });
+    const lowered: ComplexityBudget = {
+      ...reviewed,
+      frozen: freeze,
+      totals: {
+        ...reviewed.totals,
+        diagnosticCodes: {
+          limit: reviewed.totals['diagnosticCodes']!.limit - 1,
+          why: 'one code retired',
+        },
+      },
+    };
+
+    expect(findFreezeViolations(lowered, snapshot)).toEqual([]);
+  });
+
+  it('demands the snapshot the freeze was taken with, not one from another freeze', async () => {
+    const reviewed = await budget();
+    const frozen: ComplexityBudget = { ...reviewed, frozen: freeze };
+    const other = freezeSnapshotFrom({ ...reviewed, frozen: { ...freeze, since: 'v2.0.0-rc.1' } });
+
+    expect(() => findFreezeViolations(frozen, undefined)).toThrow(/--freeze/u);
+    expect(() => findFreezeViolations(frozen, other)).toThrow(/v2\.0\.0-rc\.1/u);
+  });
+
+  it('snapshots only the limits, keyed the way the budget is', async () => {
+    const reviewed = await budget();
+    const snapshot = freezeSnapshotFrom({ ...reviewed, frozen: freeze });
+
+    expect(snapshot.since).toBe('v2.0.0-rc.0');
+    expect(Object.keys(snapshot.totals)).toEqual(Object.keys(reviewed.totals));
+    expect(Object.keys(snapshot.entries)).toEqual(Object.keys(reviewed.entries));
+    expect(snapshot.totals['diagnosticCodes']).toBe(reviewed.totals['diagnosticCodes']!.limit);
+    expect(() => freezeSnapshotFrom(reviewed)).toThrow(/frozen/u);
   });
 });
