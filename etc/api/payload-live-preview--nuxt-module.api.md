@@ -4,8 +4,8 @@
 
 ```ts
 
-import { a } from '../../options-yVq9ejmU.js';
-import { P } from '../../options-yVq9ejmU.js';
+import { a } from '../../options-CO1iXz__.js';
+import { P } from '../../options-CO1iXz__.js';
 
 // @public
 function livePreviewModule(inlineOptions: LivePreviewModuleOptions | undefined, nuxt: NuxtLike): void;
@@ -53,10 +53,10 @@ export interface NuxtTemplateLike {
     readonly write: boolean;
 }
 
-// @public
+// @internal
 export const PLUGIN_FILENAME = "payload-live-preview-nitro-plugin.mjs";
 
-// @public
+// @internal
 export function pluginSource(options: LivePreviewModuleOptions): string;
 
 // (No @packageDocumentation comment for this package)

@@ -1,3 +1,4 @@
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildLivePreviewCsp,
@@ -10,6 +11,7 @@ import { createPreviewPolicy } from '@adapters/shared/policy';
 import { withCspHeader } from '@adapters/shared/response';
 import { authorizePreviewRequest } from '@security/preview-authorization';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
+import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 
 const ADMIN = 'https://admin.example.com';
 
@@ -325,5 +327,49 @@ describe('livePreviewNitroPlugin — sparse Nitro events', () => {
     const nitro = fakeNitro();
     livePreviewNitroPlugin({ defaults: 'v1', allowedOrigins: [ADMIN] })(nitro.app);
     expect(await nitro.render(event('/', { 'sec-fetch-dest': ['iframe'] }))).toHaveLength(1);
+  });
+});
+
+/** The positional literal the runtime destructures, read back the way the generator test reads it. */
+function wireConfig(script: string): unknown[] {
+  const match = /var __LIVE_PREVIEW_CONFIG__=(\[[^;]*\]);/u.exec(script);
+  if (match?.[1] === undefined) throw new Error('generated config missing');
+  const evaluated = runInNewContext(match[1], {}) as unknown;
+  if (!Array.isArray(evaluated)) throw new Error('generated config is not an array');
+  return evaluated;
+}
+
+const HYDRATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('hydration');
+
+/**
+ * ADR 0015, addendum: a Nuxt page is a Vue app, so every script this adapter
+ * emits declares `hydration: 'vue'` — knowledge the adapter has, not an option
+ * a project sets. The runtime then holds its first write until Vue has mounted
+ * the app around the bindings, where its hydration would have put it back.
+ */
+describe('what the Nuxt adapter knows about the page', () => {
+  it('declares Vue hydration in the rendered tag', () => {
+    const script = renderLivePreviewScript({ allowedOrigins: [ADMIN], defaults: 'v1' });
+    expect(wireConfig(script)[HYDRATION_SLOT_INDEX]).toBe('vue');
+  });
+
+  it('declares it in what the plugin injects', async () => {
+    const nitro = fakeNitro();
+    livePreviewNitroPlugin({ allowedOrigins: [ADMIN], defaults: 'v1' })(nitro.app);
+    const head = await nitro.render(event('/?preview=true'));
+    expect(wireConfig(head.join(''))[HYDRATION_SLOT_INDEX]).toBe('vue');
+  });
+
+  it('keeps the plain bootstrap under asset delivery: the mount is state a late runtime reads', async () => {
+    // Unlike React's commit, which is an event the fetched runtime can miss,
+    // Vue leaves the app on its container; nothing has to be armed ahead.
+    const nitro = fakeNitro();
+    livePreviewNitroPlugin({ allowedOrigins: [ADMIN], defaults: 'v1', delivery: 'asset' })(
+      nitro.app,
+    );
+    const head = (await nitro.render(event('/?preview=true'))).join('');
+    expect(wireConfig(head)[HYDRATION_SLOT_INDEX]).toBe('vue');
+    expect(head).toContain('__LP_RUNTIME_SRC__');
+    expect(head).not.toContain('__REACT_DEVTOOLS_GLOBAL_HOOK__');
   });
 });

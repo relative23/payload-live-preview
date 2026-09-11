@@ -12,10 +12,19 @@ export function buildInspection(deps: RuntimeDeps, state: RuntimeState): LivePre
   const flush = state.lastFlush;
   const fieldNames: string[] = [];
   const owners = new Set<string>();
+  const guessed: { field: string; matched: string; attribute: string | undefined }[] = [];
   for (const [fieldName, bindings] of cache.entries()) {
     fieldNames.push(fieldName);
     for (const binding of bindings) {
       if (binding.owner !== undefined) owners.add(binding.owner);
+      if (binding.guessed !== undefined) {
+        guessed.push({
+          field: fieldName,
+          matched: binding.guessed,
+          attribute:
+            binding.targetAttribute ?? (binding.element.tagName === 'IMG' ? 'src' : undefined),
+        });
+      }
     }
   }
   return {
@@ -46,8 +55,17 @@ export function buildInspection(deps: RuntimeDeps, state: RuntimeState): LivePre
       orphanFields: [...state.warnedOrphanFields].sort(),
       ownerScoped: deps.scopeBindingsByOwner,
       owners: [...owners].sort(),
+      guessed: guessed.sort((left, right) => left.field.localeCompare(right.field)),
+      autoBind: { mode: deps.autoBind, searchMs: state.autoBindSearchMs },
     },
     route: { handler: deps.strategies.route !== undefined, ...state.routeStats },
+    fidelity: {
+      mode: deps.onUnfaithfulPatch,
+      unfaithful: state.unfaithfulCount,
+      escalated: state.escalatedCount,
+      fields: [...state.unfaithfulFields].sort(),
+    },
+    hydration: { mode: deps.hydration ?? 'off', state: state.hydration },
     fragments: {
       handler: deps.strategies.fragment !== undefined,
       inFlight: active?.pendingFragments ?? 0,

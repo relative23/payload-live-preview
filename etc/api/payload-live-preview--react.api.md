@@ -15,6 +15,20 @@ export { DocumentSnapshot }
 export { DocumentStatus }
 
 // @public
+export function LivePreviewRouteRefresh(input: LivePreviewRouteRefreshProps): null;
+
+// @public
+export interface LivePreviewRouteRefreshProps {
+    readonly refresh: () => void;
+}
+
+// @public
+export function registerRouteRefresh(refresh: RouteRefresh): () => void;
+
+// @public
+export type RouteRefresh = () => void | Promise<void>;
+
+// @public
 export function useLivePreviewDocument<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSnapshot<T>;
 
 // @public

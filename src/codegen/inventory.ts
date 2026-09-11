@@ -66,7 +66,7 @@ function entry(slug: ExtractedSlug): PreviewInventoryEntry {
   return { slug: slug.slug, typeName: slug.typeName, fields };
 }
 
-/** Flatten an extracted schema into every path a binding may address. */
+/** Flatten an extracted schema into every path a binding may address. @internal */
 export function buildPreviewInventory(schema: ExtractedSchema): PreviewInventory {
   return {
     globals: schema.globals.map(entry),
@@ -74,7 +74,7 @@ export function buildPreviewInventory(schema: ExtractedSchema): PreviewInventory
   };
 }
 
-/** A binding found in consumer markup, however that consumer found it. */
+/** A binding found in consumer markup, however that consumer found it. @internal */
 export interface PreviewBindingReference {
   readonly kind: 'global' | 'collection';
   readonly slug: string;
@@ -83,12 +83,13 @@ export interface PreviewBindingReference {
   readonly source?: string;
 }
 
+/** @internal */
 export interface PreviewCoverageOptions {
   /** Also report schema fields no binding addresses; off, since a page may render a subset. */
   readonly reportUnbound?: boolean;
 }
 
-/** Cross-check bindings the consumer extracted against the inventory. */
+/** Cross-check bindings the consumer extracted against the inventory. @internal */
 export function checkPreviewBindings(
   inventory: PreviewInventory,
   bindings: readonly PreviewBindingReference[],

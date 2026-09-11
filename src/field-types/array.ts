@@ -6,7 +6,11 @@
 
 import { sanitizeHtmlWithPolicy } from '@security/sanitizer';
 import { trustedHtml } from '@security/trusted-types';
-import { interpolateArrayTemplate } from '@core/array-template';
+import {
+  inheritItemAttributes,
+  interpolateArrayTemplate,
+  sharedItemAttributes,
+} from '@core/array-template';
 import { markNoWriteCallback } from '@core/internal-outcome';
 import { templateSanitizeOptions } from '@core/template-sanitize';
 import type { FieldRenderer } from '@core/types';
@@ -26,7 +30,11 @@ const arrayRenderer: FieldRenderer = {
       const html = renderTemplate(template, value);
       const policy = context.sanitizerPolicy;
       const templateOptions = templateSanitizeOptions(template);
+      // Read before the write: the items about to be replaced are the only
+      // record of what the server put on them.
+      const shared = sharedItemAttributes(element);
       element.innerHTML = trustedHtml(sanitizeHtmlWithPolicy(html, policy, templateOptions));
+      for (const item of Array.from(element.children)) inheritItemAttributes(item, shared);
       return;
     }
     element.textContent = value.map(safeStringify).join(target.arraySeparator ?? ', ');

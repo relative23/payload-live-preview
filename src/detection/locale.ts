@@ -2,6 +2,7 @@
 
 const FALLBACK_LOCALE = 'en';
 
+/** @internal */
 export function detectInitialLocale(): string {
   return readHtmlLang() ?? readNavigatorLanguage() ?? FALLBACK_LOCALE;
 }

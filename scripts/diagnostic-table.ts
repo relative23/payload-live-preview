@@ -64,6 +64,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'The source generates keys per message, so the morph cannot retain nodes across updates. Key items by a stable field, or accept a re-render per update.',
   LP0407:
     'Only `patch`, `fragment` and `route` exist; fix the `data-payload-strategy` value. The element is left unchanged.',
+  LP0412:
+    'The template printed this value one way and the renderer another, so the preview no longer matches the server. Set `data-payload-format` to the format the template uses — or, when the difference was an edit that arrived before the preview connected, nothing is wrong and the next message settles it.',
   LP0501:
     "The reason is one of origin, shape, type, token, source. Most are visible only with `debug: true`; a source reason is reported once without it, because that default changed. An origin reason means `allowedOrigins` does not list the sender. A source reason means the message came from a window that is neither this page's parent nor its opener — `eventSourcePolicy` is `'parent-or-opener'` since 2.0, where 1.x accepted any window on a trusted origin; set `eventSourcePolicy: 'any'` if your admin posts from elsewhere.",
   LP0502:
@@ -78,6 +80,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'The runtime could not start once the document was ready and rolled back; the cause is on the `error` event with context `startup` — usually a browser without `MutationObserver`/`IntersectionObserver`, or a document with no `body` yet.',
   LP0606:
     'Posting the `ready` handshake threw (`error` event, context `ready`); without it the admin never sends the document. Read the attached error: the built-in sender tolerates a malformed origin, so the cause is the host window or a custom `sendReady`.',
+  LP0607:
+    "The page declared `hydration: 'react'` (the Next.js adapter does) or `'vue'` (the Nuxt adapter does) and, within five seconds, React committed no tree holding a binding or Vue mounted no app around one, so the runtime started as it would on a static page; a hydration that completes later regenerates the tree, or repairs it, and reverts the first write, once. Usually the client bundle failed to load or was very slow — check the network panel. On a page nothing hydrates, drop the option from `generateInlineScript()`. `inspect().hydration.state` reads `timed-out`.",
   LP0701:
     'If you use an adapter, check its `inject` mode and whether a proxy strips `Sec-Fetch-Dest`. If you start the client yourself, this line is expected.',
   LP0702:
@@ -106,15 +110,21 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     "401/403 — the page's authorization did not hold for the endpoint; patched instead. The endpoint verifies the same token or session as the page, so it must receive it too (same origin, cookies, query).",
   LP0804: 'It belonged to a superseded revision; nothing was applied. Nothing to do.',
   LP0805:
-    'The same revision asked for a second refresh; the guard refused it. Nothing to do; `inspect().route.loopStopped` counts them.',
+    "Two different refusals share this code, and neither loses an edit. A second refresh for one revision is the loop guard, counted in `inspect().route.loopStopped`. A refresh inside the strategy's `minIntervalMs` is the brake: it is counted in `inspect().route.refused` and run once when the window closes, and the page is patched meanwhile. Nothing to do in either case.",
   LP0408:
     'Use one of the known formats — `date`, `date:short|medium|long|full`, `time`, `datetime`, `number`, `number:0-4`, `currency:XXX`, `percent` — or drop the attribute and format on the server behind a fragment.',
   LP0409:
     "Upgrading from 1.x: `sanitizerPolicy` defaults to `'strict'` since 2.0, which drops `id`, `name` and every `data-*` from written markup. Put the hook on an element the template owns, list the attribute in `allowedDataAttributes`, or set `sanitizerPolicy: 'compat'` to keep the 1.x behaviour. `data-payload-*` is refused whatever the policy ([security.md](security.md)).",
+  LP0410:
+    'The block renders as an empty placeholder, and the preview kept what the server rendered for it in its place — this line is spoken by the write, once it has. Call `registerBlockRenderer(slug, …)` (or `registerDefaultBlocks()`) to render it in the browser too. When the write could not keep it, `LP0413` is reported instead; a container the page left empty gets the placeholder and neither line.',
+  LP0413:
+    'The block renders as an empty placeholder, and the live markup and the rendered document did not line up — a paragraph the server dropped, a second wrapper around the field (one `<div class="prose">` around the blocks is understood and kept) — so the placeholder was written over what the server had rendered, and that markup is gone from the preview until the page reloads. This is the case `onUnfaithfulPatch` decides: under the default `\'escalate\'` the enclosing fragment boundary or the whole route is re-rendered by the server when the page has a strategy for it, and `inspect().fidelity` counts the patch either way (`unfaithful` up, `escalated` up only when a strategy took it). Register a renderer with `registerBlockRenderer(slug, …)` so the block is drawn in the browser and nothing has to be kept.',
   LP0806:
     'Configure `fragments: { endpoint }` on the adapter so boundaries render on the server; until then they are patched.',
   LP0807:
-    "Informational: the field has no `data-payload-field` anywhere on the page, so the route was refreshed instead of patched. Bind the field to patch it in place, or set `onUnboundChange: 'ignore'` to accept the stale value.",
+    "Informational: the field has no `data-payload-field` anywhere on the page, so the route was refreshed instead of patched. Bind the field to patch it in place, or set `onUnfaithfulPatch: 'ignore'` to accept the stale value.",
+  LP0411:
+    "The value could not be written the way the server wrote it: no renderer accepted it, or a Lexical block with no renderer replaced markup the server had rendered. Under the default `onUnfaithfulPatch: 'escalate'` the enclosing fragment boundary is re-rendered, or the whole route when none covers it — so a page with neither `fragments` nor `routeStrategy` keeps the patch and this stays a note. Register the renderer the message names, or accept the escalation.",
 });
 
 /**

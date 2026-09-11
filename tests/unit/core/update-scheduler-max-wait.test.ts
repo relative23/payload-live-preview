@@ -55,6 +55,10 @@ describe('UpdateScheduler — max wait', () => {
       cancelFrame: () => {},
     });
     const element = document.createElement('p');
+    // The leading write lands at once and opens the window; the deadline is
+    // about what the window holds while the typing never stops.
+    scheduler.schedule(update(element, 0));
+    apply.mockClear();
     scheduler.schedule(update(element, 1));
     vi.advanceTimersByTime(40);
     scheduler.schedule(update(element, 2));

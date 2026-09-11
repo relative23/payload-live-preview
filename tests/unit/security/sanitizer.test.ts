@@ -246,6 +246,19 @@ describe('sanitizeHtml — allowFormControls (author templates only)', () => {
     ).toBe('<div><input type="text"><button>b</button><textarea>t</textarea></div>');
   });
 
+  it('re-admits option and label, which are unwrapped rather than removed by default', () => {
+    const html = '<label>Name</label><select><option>a</option></select>';
+    expect(sanitizeHtml(html)).toBe('Name');
+    expect(sanitizeHtml(html, { allowFormControls: true })).toBe(html);
+  });
+
+  it('is opt-in only by a literal true, even when other options are set', () => {
+    const html = '<label>Name</label><button>Go</button>';
+    for (const options of [{}, { additionalAllowedTags: ['u'] }, { allowFormControls: false }]) {
+      expect(sanitizeHtml(html, options)).toBe('Name');
+    }
+  });
+
   it('never un-drops form itself, and still strips handlers and unsafe URLs', () => {
     const out = sanitizeHtml(
       '<form action="javascript:x()"><p>inside</p></form><input onclick="y()"><a href="javascript:z()">l</a>',

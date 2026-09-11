@@ -36,6 +36,13 @@ export interface LivePreviewClientConfig {
   readonly skipUnchanged?: boolean;
   /** Scroll the preview to the field being edited when its value changes. Default `false`. */
   readonly revealEditedField?: boolean;
+  /**
+   * Find bindings by value on the connection's first message: a scalar whose
+   * value is the whole content of exactly one element is bound to it as if
+   * `data-payload-field` stood there; every guess is stamped `data-payload-guessed`
+   * and listed in `inspect().bindings.guessed`. Default `'off'`.
+   */
+  readonly autoBind?: 'off' | 'unique';
   /** Fields whose change re-applies other bindings regardless of their own value: `{ price: ['priceLabel'] }`. Used with `skipUnchanged`. */
   readonly dependencies?: Readonly<Record<string, readonly string[]>>;
   /** Strategy handlers beyond patching; `createFragmentStrategy()` from `payload-live-preview/fragment` builds one. */

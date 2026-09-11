@@ -1,6 +1,7 @@
 /**
  * Structural diff for array and blocks fields. Items with an `id` are keyed
  * (moves are detected); without ids the diff is positional.
+ * @internal
  */
 
 export type ArrayPatch =

@@ -63,4 +63,39 @@ describe('applyStructuralPatches — template filling edge cases', () => {
     ]);
     expect([...ul.children].map((element) => element.textContent)).toEqual(['B', 'A after']);
   });
+
+  /**
+   * The same loss the fidelity oracle measured on the plain array renderer: an
+   * item rebuilt from a template carries what the author wrote and nothing the
+   * framework's compiler added around it. Here it also has to survive the
+   * morph, which strips from the live item every attribute the rendered one
+   * does not have.
+   */
+  it('keeps the scoped-style marker the server put on the items it replaces', () => {
+    const previous = [{ id: 'a', label: 'A' }];
+    const next = [
+      { id: 'a', label: 'A edited' },
+      { id: 'b', label: 'B' },
+    ];
+    const ul = makeList('<li>{{label}}</li>', previous);
+    for (const item of ul.children) item.setAttribute('data-astro-cid-j7pv25f6', '');
+
+    applyStructuralPatches({
+      store,
+      template: '<li>{{label}}</li>',
+      container: ul,
+      patches: diffArray(previous, next),
+      nextItems: next,
+    });
+
+    // The morphed item and the inserted one: an insert has no predecessor of
+    // its own, and would be the odd row out without the shared answer.
+    expect(
+      [...ul.children].map((element) => element.getAttribute('data-astro-cid-j7pv25f6')),
+    ).toEqual(['', '']);
+    expect([...ul.children].map((element) => element.getAttribute(KEY_ATTRIBUTE))).toEqual([
+      'a',
+      'b',
+    ]);
+  });
 });

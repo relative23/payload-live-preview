@@ -30,11 +30,14 @@ merge whenever `serverURL` is set — without naming either.
    relationship events were seen, `unknown` until then (merged like 3.x —
    a needless request costs less than a lost population). The lifecycle asks
    the profile, never the version.
-4. `externallyUpdatedRelationship` is handled: the update that carries it
-   fires `relationshipUpdate` and re-renders every bound field even under
-   `skipUnchanged`, because a drawer edit changes populated values, not form
-   values. Payload 4 gets a profile only once its real protocol is in the
-   corpus; nothing is speculated into production code.
+4. `externallyUpdatedRelationship` is handled as an **edge**: the field is a
+   level, so an update fires `relationshipUpdate` and re-renders every bound
+   field under `skipUnchanged` only when the event changed _and_ names a
+   document other than the previewed one. A drawer edit changes populated
+   values, not form values, so that update must not be skipped; a repeat of
+   the same event says nothing new and must be. Payload 4 gets a profile only
+   once its real protocol is in the corpus; nothing is speculated into
+   production code.
 
 ## Consequences
 

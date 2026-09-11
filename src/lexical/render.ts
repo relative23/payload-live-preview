@@ -8,19 +8,22 @@ import { lookup, type RenderNodeContext } from './registry';
 import type { LexicalNode, LexicalRoot } from './types';
 import { resolveAlignment, resolveIndent } from './utils';
 
-const RENDER_CONTEXT: RenderNodeContext = {
-  renderChildren,
-  resolveAlignment,
-  resolveIndent,
-};
-
 export interface LexicalRenderOptions {
   /** Pass the result through `sanitizeHtml()` (default `true`). */
   readonly sanitize?: boolean;
+  /**
+   * Called for every `block` or `inlineBlock` the registry has no renderer
+   * for, with the block's slug as Payload sent it and the class its empty
+   * placeholder carries. The `richText` write listens: it is the one caller
+   * that later knows whether the server's markup for the block survived, so
+   * the diagnostic is spoken there (LP0410, LP0413), not here.
+   */
+  readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string) => void;
 }
 
 let warnedNoSanitizer = false;
 
+/** @internal */
 export function isLexicalContent(value: unknown): value is LexicalRoot {
   if (typeof value !== 'object' || value === null) return false;
   if (!('root' in value)) return false;
@@ -33,7 +36,7 @@ export function isLexicalContent(value: unknown): value is LexicalRoot {
 /** Render a Lexical document to HTML; without `setSanitizerDocument()` the result is unsanitised and warns once. */
 export function lexicalToHtml(content: LexicalRoot, options: LexicalRenderOptions = {}): string {
   if (!isLexicalContent(content)) return '';
-  const html = renderChildren(content.root.children);
+  const html = createContext(options.onUnrenderedBlock).renderChildren(content.root.children);
   if (options.sanitize === false) return html;
   if (hasSanitizerDocument()) return sanitizeHtml(html);
   warnNoSanitizerOnce();
@@ -51,16 +54,31 @@ export function __resetSanitizerWarningForTests(): void {
   warnedNoSanitizer = false;
 }
 
-function renderChildren(children: readonly LexicalNode[]): string {
-  let out = '';
-  for (const child of children) out += renderNode(child);
-  return out;
+/**
+ * One context per document: `renderChildren` closes over it so a nested
+ * block — a `block` inside a list item, an `inlineBlock` inside a paragraph —
+ * reports to the same listener as a top-level one.
+ */
+function createContext(
+  onUnrenderedBlock: RenderNodeContext['onUnrenderedBlock'],
+): RenderNodeContext {
+  const context: RenderNodeContext = {
+    renderChildren: (children) => {
+      let out = '';
+      for (const child of children) out += renderNode(child, context);
+      return out;
+    },
+    resolveAlignment,
+    resolveIndent,
+    onUnrenderedBlock,
+  };
+  return context;
 }
 
-function renderNode(node: LexicalNode): string {
+function renderNode(node: LexicalNode, context: RenderNodeContext): string {
   const renderer = lookup(node.type);
-  if (renderer) return renderer(node, RENDER_CONTEXT);
-  return node.children !== undefined ? renderChildren(node.children) : '';
+  if (renderer) return renderer(node, context);
+  return node.children !== undefined ? context.renderChildren(node.children) : '';
 }
 
 function extractPlainText(node: LexicalNode): string {

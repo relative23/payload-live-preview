@@ -8,6 +8,7 @@ import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './run
 import { FRAGMENT_SOURCE } from './fragment.generated';
 import { ROUTE_SOURCE } from './route.generated';
 import { LOADER_SOURCE } from './loader.generated';
+import { LOADER_REACT_SOURCE } from './loader-react.generated';
 import { INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/types/inline-config';
 
 export type { InlineScriptConfig, RuntimeArtifact } from '@/types/inline-config';
@@ -100,7 +101,7 @@ export function generateLoaderScript(
   config: InlineScriptConfig = {},
   target: LoaderScriptTarget,
 ): string {
-  assertBuilt(LOADER_SOURCE, 'loader.generated.ts');
+  const bootstrap = loaderFor(config);
   if (target.runtimeSrc === '') {
     throw new Error('[live-preview] generateLoaderScript needs a runtimeSrc.');
   }
@@ -110,8 +111,26 @@ export function generateLoaderScript(
     `var __LP_RUNTIME_SRC__=${encode(target.runtimeSrc)};`,
     `var __LP_RUNTIME_INTEGRITY__=${encode(target.integrity ?? '')};`,
     ...strategyPrelude(config),
-    LOADER_SOURCE,
+    bootstrap,
   ].join('\n');
+}
+
+/**
+ * The bootstrap, or the one armed for React's first commit (ADR 0015 F2): the
+ * inline runtime is the first script in `<head>` and arms the signal itself,
+ * while a fetched asset may evaluate after `react-dom` has, when it is too
+ * late — so on a page that declares React the bootstrap arms before it
+ * fetches. One script either way, never a prelude ahead of the plain one. A
+ * page that declares Vue takes the plain one: Vue's mount leaves state on the
+ * container that a late runtime can still read (`core/hydration-vue`).
+ */
+function loaderFor(config: InlineScriptConfig): string {
+  if (config.hydration === 'react') {
+    assertBuilt(LOADER_REACT_SOURCE, 'loader-react.generated.ts');
+    return LOADER_REACT_SOURCE;
+  }
+  assertBuilt(LOADER_SOURCE, 'loader.generated.ts');
+  return LOADER_SOURCE;
 }
 
 /** Wrap a script body in `<script>`, with the CSP nonce attribute when given. */
@@ -120,6 +139,7 @@ export function wrapWithScriptTag(body: string, options: { nonce?: string } = {}
   return `<script${nonceAttr}>${body}</script>`;
 }
 
+/** @internal */
 export function runtimeBuildInfo(): RuntimeBuildInfo {
   return RUNTIME_BUILD_INFO;
 }

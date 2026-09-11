@@ -2,7 +2,7 @@
  * Whether an incoming field has somewhere on the page to land.
  *
  * Two callers ask, for different reasons: LP0201 reports a field that never
- * has an anchor, and `onUnboundChange` decides whether a revision needs the
+ * has an anchor, and `onUnfaithfulPatch` decides whether a revision needs the
  * whole route. They have to answer the same way, so the lookup lives here
  * rather than in either of them — the locale suffix Payload appends, the owner
  * scope, and the fact that the diff names top-level fields while a binding may
@@ -60,7 +60,11 @@ function hasBinding(cache: ElementCache, fieldName: string, ownerKeys: OwnerScop
  * makes it addressable. The diff names top-level fields only, so without this
  * every group and array on the page would look unbound.
  */
-function hasBindingBelow(cache: ElementCache, fieldName: string, ownerKeys: OwnerScope): boolean {
+export function hasBindingBelow(
+  cache: ElementCache,
+  fieldName: string,
+  ownerKeys: OwnerScope,
+): boolean {
   const prefix = `${fieldName}.`;
   for (const [boundName, bindings] of cache.entries()) {
     if (!boundName.startsWith(prefix)) continue;

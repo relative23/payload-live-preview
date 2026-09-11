@@ -111,6 +111,7 @@ export class LivePreviewClient {
         scopeBindingsByOwner: config.scopeBindingsByOwner,
         skipUnchanged: config.skipUnchanged,
         revealEditedField: config.revealEditedField,
+        autoBind: config.autoBind,
         eventSourcePolicy: config.eventSourcePolicy,
         dependencies: config.dependencies,
         strategies: config.strategies,

@@ -62,15 +62,12 @@ Call it from `setup()`, or inside an `effectScope()`. The subscription — a win
 listener and any request in flight — is released when that scope is disposed, and
 a call without one throws rather than leaking both for the life of the page.
 
-## What it does differently
+## Measured against the official package
 
-The same five differences as the React hook, from the same session: a trailing
-slash on `serverURL` still merges, a slow response never overwrites a newer one,
-a failed request keeps the last good document instead of rejecting into nowhere,
-an HTTP error body never becomes the document, and two composables on one page
-have two caches. Each is asserted against
-[`@payloadcms/live-preview`](https://www.npmjs.com/package/@payloadcms/live-preview)
-3.88 as well: [react.md](react.md#what-it-does-differently).
+The same seven cases as the React hook, from the same session and with the same
+results — five where the two packages differ and two where they do not. The
+table, and what each case was measured with, is in
+[react.md](react.md#measured-against-the-official-package).
 
 ## With Nuxt
 

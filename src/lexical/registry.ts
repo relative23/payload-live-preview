@@ -10,6 +10,12 @@ export interface RenderNodeContext {
   readonly resolveAlignment: (node: LexicalNode) => string | undefined;
   /** Indent level of a node, `0` when none. */
   readonly resolveIndent: (node: LexicalNode) => number;
+  /**
+   * Where a `block` or `inlineBlock` without a renderer is reported, with the
+   * slug Payload sent and the class of the placeholder written in its place.
+   * `undefined` on a plain `lexicalToHtml()` call; the `richText` write sets it.
+   */
+  readonly onUnrenderedBlock?: ((blockType: string, placeholderClass: string) => void) | undefined;
 }
 
 export type NodeRenderer = (node: LexicalNode, context: RenderNodeContext) => string;
@@ -21,6 +27,7 @@ export function register(type: string, renderer: NodeRenderer): void {
   registry.set(type, renderer);
 }
 
+/** @internal */
 export function lookup(type: string): NodeRenderer | undefined {
   return registry.get(type) ?? BUILTIN_NODE_RENDERERS[type];
 }

@@ -70,7 +70,15 @@ export interface LivePreviewEventMap {
   /** A `payload-document-event` message arrived (document save). */
   readonly documentSave: { readonly timestamp: number };
 
-  /** A data update carried `externallyUpdatedRelationship`: a related document changed in an admin drawer, so the update re-renders unconditionally. */
+  /**
+   * A save in another document reached the page through
+   * `externallyUpdatedRelationship` — an admin-drawer edit. Fires once per
+   * such save, not once per message: the panel repeats its last document
+   * event in every later message, including its own saves of the previewed
+   * document, and neither of those is news. That update re-renders every
+   * bound field even under `skipUnchanged`, because a drawer edit changes
+   * populated values while the form values stay put.
+   */
   readonly relationshipUpdate: {
     readonly detail: PayloadDocumentEventDetail;
     readonly timestamp: number;

@@ -321,7 +321,8 @@ Patching reaches what the markup annotates. Edit a field with no
 has nowhere to put the new one. A framework hook that re-renders the component
 tree does not have that failure mode, and that is the one thing it does better.
 
-`onUnboundChange: 'route'` closes it:
+A strategy to escalate to closes it, and nothing else is needed — escalating is
+what `onUnfaithfulPatch` does by default:
 
 ```ts
 livePreview({
@@ -329,13 +330,18 @@ livePreview({
   serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
   mergeDepth: 1,
   routeStrategy: true,
-  onUnboundChange: 'route',
 });
 ```
 
 A revision that changes a field no binding covers then refreshes the whole
 route, and the editor sees the edit. Where a binding exists the page is still
 patched in place, with focus and scroll intact.
+
+The same decision covers the other ways a patch falls short of the server's own
+render: a value no renderer can represent, and a Lexical block whose markup the
+write has to drop. Those name an element, so they escalate to the fragment
+boundary around it when there is one, and to the route when there is not — once
+per element, because the cause is the markup rather than the edit.
 
 What counts as covered: a binding on the field, on the same field under the
 message's locale suffix, or on a path inside it — `data-payload-field="hero.eyebrow"`
@@ -347,7 +353,8 @@ field looks changed and the page was just rendered from them.
 The refresh is throttled by the route strategy's own `minIntervalMs` (1 s by
 default), and a revision refreshes at most once — a second attempt is refused
 as `LP0805`. A page that binds little and edits much will still refresh often;
-that is the trade, and `'ignore'` (the default) is the other side of it.
+that is the trade, and `onUnfaithfulPatch: 'warn'` is the other side of it: the
+same findings, reported as `LP0411`, with the patch left where it is.
 
 ## What you observe
 
@@ -356,6 +363,10 @@ that is the trade, and `'ignore'` (the default) is the other side of it.
   revision's fragments settled, next to the `source: 'patch'` one for the
   rest of the page.
 - `inspect().fragments`: `{ handler, inFlight, rendered, failed, superseded }`.
+- `inspect().fidelity`: `{ mode, unfaithful, escalated, fields }` — the patches
+  the runtime knew could not match the server (LP0411), and how many of them a
+  strategy was handed. `unfaithful` above `escalated` with both `handler`s
+  `false` is a page that keeps degraded patches for want of a strategy.
 - Codes: `LP0801` request failed (network, timeout, 5xx) · `LP0802`
   response invalid (type, shape, size, wrong boundary) · `LP0803` endpoint
   refused (401/403) · `LP0804` a late response for a superseded revision
@@ -404,7 +415,15 @@ Several dirty fields in one revision are coalesced: each boundary renders
 once if any of its `data-payload-depends` (or, without it, any field)
 changed, the runtime `dependencies` option counts (a boundary depending on a
 derived field re-renders when its source changes), and the route refreshes
-once. `inspect().route` reports `{ handler, refreshes, failed, loopStopped }`.
+once. `inspect().route` reports
+`{ handler, refreshes, failed, refused, loopStopped }`.
+
+The strategy refreshes at most once per `minIntervalMs` (1 000 ms). A request
+inside that window is not dropped: it is counted in `refused`, the page is
+patched with what it can show in the meantime, and the refresh runs once when
+the window closes — so the keystroke that ends a burst still reaches the
+preview. A newer revision takes that pending run over, because its message
+carries the older one's values too.
 
 ## Islands on the same page
 

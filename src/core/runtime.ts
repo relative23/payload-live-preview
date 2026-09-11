@@ -8,6 +8,7 @@
 
 import { type INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/types/inline-config';
 import { EventEmitter } from '@events/emitter';
+import { resolveUnfaithfulPatchMode } from './fidelity';
 import { LivePreviewRuntime } from './lifecycle';
 import { resolveStrategyPreludes } from './strategy-preludes';
 import { OriginDetector } from '@detection/origin';
@@ -79,7 +80,10 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     fragmentEndpoint,
     revealEditedField = false,
     _routeStrategy = false,
-    onUnboundChange = 'ignore',
+    onUnboundChange,
+    onUnfaithfulPatch,
+    autoBind = 'off',
+    hydration,
   ] = readBuildConfig();
   // `routeStrategy` is destructured only to hold its wire slot: it decides
   // which prelude the generator emitted, and the prelude's presence is what the
@@ -132,7 +136,11 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     scopeBindingsByOwner,
     skipUnchanged,
     revealEditedField,
-    onUnboundChange,
+    // Resolved here rather than passed through as two slots: an empty slot must
+    // not read as a chosen `'ignore'`, and the runtime takes one answer.
+    onUnfaithfulPatch: resolveUnfaithfulPatchMode({ onUnfaithfulPatch, onUnboundChange }),
+    autoBind,
+    ...(hydration !== undefined ? { hydration } : {}),
     sanitizerPolicy,
     ...(strategies !== undefined ? { strategies } : {}),
     onHeartbeatTimeout: () => {

@@ -4,25 +4,25 @@
 
 ```ts
 
-import { e as DIAGNOSTIC_CODES } from './probe-BtM8d43C.js';
-import { f as DiagnosticCode } from './probe-BtM8d43C.js';
-import { b as DoctorContext } from './probe-BtM8d43C.js';
-import { D as DoctorFetch } from './probe-BtM8d43C.js';
-import { d as DoctorFinding } from './probe-BtM8d43C.js';
-import { g as DoctorLevel } from './probe-BtM8d43C.js';
-import { a as DoctorProbe } from './probe-BtM8d43C.js';
-import { c as DoctorReport } from './probe-BtM8d43C.js';
-import { h as DoctorResponse } from './probe-BtM8d43C.js';
-import { l as lowercaseHeaders } from './probe-BtM8d43C.js';
-import { r as runDoctor } from './probe-BtM8d43C.js';
-import { R as RunDoctorOptions } from './probe-BtM8d43C.js';
+import { e as DIAGNOSTIC_CODES } from './probe-5ZLRBSmh.js';
+import { f as DiagnosticCode } from './probe-5ZLRBSmh.js';
+import { b as DoctorContext } from './probe-5ZLRBSmh.js';
+import { D as DoctorFetch } from './probe-5ZLRBSmh.js';
+import { d as DoctorFinding } from './probe-5ZLRBSmh.js';
+import { g as DoctorLevel } from './probe-5ZLRBSmh.js';
+import { a as DoctorProbe } from './probe-5ZLRBSmh.js';
+import { c as DoctorReport } from './probe-5ZLRBSmh.js';
+import { h as DoctorResponse } from './probe-5ZLRBSmh.js';
+import { l as lowercaseHeaders } from './probe-5ZLRBSmh.js';
+import { r as runDoctor } from './probe-5ZLRBSmh.js';
+import { R as RunDoctorOptions } from './probe-5ZLRBSmh.js';
 
 // @public
 export function analyzeProbe(probe: DoctorProbe, context: DoctorContext & {
     readonly v2?: boolean;
 }): DoctorReport;
 
-// @public
+// @internal
 export function analyzeV2Readiness(probe: DoctorProbe): readonly DoctorFinding[];
 
 export { DIAGNOSTIC_CODES }
@@ -43,7 +43,7 @@ export { DoctorReport }
 
 export { DoctorResponse }
 
-// @public
+// @internal (undocumented)
 export function formatReport(report: DoctorReport): string;
 
 export { lowercaseHeaders }

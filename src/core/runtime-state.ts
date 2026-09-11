@@ -8,12 +8,17 @@ import type { EventEmitter } from '@events/emitter';
 import type { SchemaIndex } from '@schema/index';
 import type { SanitizerPolicyMode } from '@security/sanitizer';
 import type { A11yAnnouncer } from './a11y';
+import type { AutoBindMode, KeptGuesses } from './auto-bind';
 import type { ElementCache } from './cache';
 import type { DataMerger } from './data-merger';
+import type { UnfaithfulPatchMode } from './fidelity';
+import type { HydrationMode, HydrationState } from './hydration';
 import { FieldChangeTracker } from './field-changes';
+import { MergeNeed } from './merge-need';
 import type { MessageBus, MessageRevision } from './message-bus';
 import type { ObserverManager } from './observers';
 import { ProtocolTracker } from './protocol-tracker';
+import { RelationshipTracker } from './relationship-tracker';
 import { FieldRevealer } from './reveal';
 import { RevealLedger } from './reveal-ledger';
 import type { RuntimeOptions } from './runtime-options';
@@ -30,7 +35,7 @@ export interface UpdateTransaction {
   readonly schema: readonly PayloadFieldSchema[] | undefined;
   readonly schemaIndex: SchemaIndex | undefined;
   readonly receivedAt: number;
-  /** A relationship edit may change populated values only, so render everything. */
+  /** A save in another document may change populated values only, so render everything. */
   readonly forceRender: boolean;
   /** Top-level fields whose value changed since the previous message, plus their dependents. */
   touched: ReadonlySet<string>;
@@ -79,21 +84,30 @@ export interface RuntimeDeps {
   readonly warn: (...args: unknown[]) => void;
   readonly a11y: A11yAnnouncer | null;
   readonly merger: DataMerger | null;
+  /** How long a burst of messages may share one merge; the scheduler's debounce window. */
+  readonly mergeWindowMs: number;
   readonly scopeBindingsByOwner: boolean;
   readonly lockedOrigin: () => string | undefined;
   readonly skipUnchanged: boolean;
   readonly dependencies: Readonly<Record<string, readonly string[]>>;
   readonly strategies: StrategyHandlers;
   readonly revealEditedField: boolean;
-  /** `'route'` turns a change with no binding into a route refresh. */
-  readonly onUnboundChange: 'ignore' | 'route';
+  /** What to do about a patch the runtime knows cannot match the server's render. */
+  readonly onUnfaithfulPatch: UnfaithfulPatchMode;
+  /** Whether the first message is searched for bindings by value (ADR 0014). */
+  readonly autoBind: AutoBindMode;
+  /** The framework whose first commit the start waits for (ADR 0015); `undefined` on a page that declared none. */
+  readonly hydration: HydrationMode | undefined;
 }
 
 export class RuntimeState {
   started = false;
   /** Set by `suspend()`; lets `destroy()` finish a suspended instance. */
   suspended = false;
+  /** Cancels a startup still waiting — for `DOMContentLoaded`, or for the framework's first commit (ADR 0015). */
   deferredStart: (() => void) | null = null;
+  /** How far the wait for hydration got; `idle` on a page that declared none. */
+  hydration: HydrationState = 'idle';
   activeUpdate: UpdateTransaction | null = null;
   locale: string | undefined = undefined;
   schema: readonly PayloadFieldSchema[] | undefined = undefined;
@@ -111,6 +125,20 @@ export class RuntimeState {
   warnedFragmentFallback = false;
   /** LP0503 is reported once: a drifting sender repeats the same shape on every keystroke. */
   warnedProtocolShape = false;
+  /** LP0411 is reported once per element; the markup that causes it does not change. */
+  readonly reportedUnfaithful = new WeakSet<Element>();
+  /** Bindings whose first write has already been held against what the template printed (LP0412). */
+  readonly checkedServerFormat = new WeakSet<Element>();
+  /** Bindings this revision could not patch faithfully, drained by the flush that escalates them. */
+  unfaithfulPatches: CachedElement[] = [];
+  /** Every binding ever reported unfaithful, and how many of them a strategy was handed; `inspect().fidelity`. */
+  unfaithfulCount = 0;
+  escalatedCount = 0;
+  readonly unfaithfulFields = new Set<string>();
+  /** What the one auto-binding search cost, for `inspect()`; `undefined` until it ran. */
+  autoBindSearchMs: number | undefined = undefined;
+  /** What that search bound, looked for again after a route refresh (ADR 0014); `null` until it ran. */
+  autoBindGuesses: KeptGuesses | null = null;
 
   /**
    * Whether the first message refused for coming from the wrong window has been
@@ -124,13 +152,17 @@ export class RuntimeState {
   /** What each owned field was last seen with, for the reveal decision only. */
   readonly revealLedger = new RevealLedger();
   readonly fragmentStats = { rendered: 0, failed: 0, superseded: 0 };
-  readonly routeStats = { refreshes: 0, failed: 0, loopStopped: 0 };
+  readonly routeStats = { refreshes: 0, failed: 0, refused: 0, loopStopped: 0 };
   fragmentController: AbortController | null = null;
   routeController: AbortController | null = null;
+  /** The trailing run a refused refresh asked for; at most one, and always the newest. */
+  routeRetry: ReturnType<typeof setTimeout> | null = null;
   readonly readyTimers: ReturnType<typeof setTimeout>[] = [];
   readonly revealer = new FieldRevealer();
   readonly changes = new FieldChangeTracker();
+  readonly merges = new MergeNeed();
   readonly protocol = new ProtocolTracker();
+  readonly relationships = new RelationshipTracker();
 
   /** Read through a method: TypeScript keeps a narrowed `started` across the calls that can flip it. */
   isRunning(): boolean {
@@ -148,8 +180,17 @@ export class RuntimeState {
     this.completedCount += 1;
   }
 
-  /** Abort in-flight strategy work; a newer revision or a stop supersedes it. */
+  /**
+   * Abort in-flight strategy work; a newer revision or a stop supersedes it.
+   * The trailing route refresh goes with it: the revision that asked for it is
+   * no longer the one on screen, and the newer one decides for itself — its
+   * message carries the older one's values too.
+   */
   abortStrategies(): void {
+    if (this.routeRetry !== null) {
+      clearTimeout(this.routeRetry);
+      this.routeRetry = null;
+    }
     for (const key of ['fragmentController', 'routeController'] as const) {
       const controller = this[key];
       if (controller === null) continue;

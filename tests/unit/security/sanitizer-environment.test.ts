@@ -28,6 +28,9 @@ describe('SanitizerEnvironmentError', () => {
     delete globalThis.document;
     try {
       expect(() => sanitizeHtml('<p>x</p>')).toThrow(SanitizerEnvironmentError);
+      expect(() => sanitizeHtml('<p>x</p>')).toThrow(
+        'sanitizeHtml needs a DOM; provide one with setSanitizerDocument() during SSR.',
+      );
     } finally {
       globalThis.document = originalDocument;
     }
@@ -130,7 +133,10 @@ describe('the inline-build branches', () => {
     vi.stubGlobal('document', undefined);
     vi.stubGlobal('__INLINE_BUILD__', true);
     try {
-      expect(() => sanitizeHtml('<p>x</p>')).toThrow('sanitizeHtml needs a DOM');
+      // The short message and a plain Error: the SSR class and its remedy
+      // are not in the browser build, and the text must not mention them.
+      expect(() => sanitizeHtml('<p>x</p>')).toThrow(/^sanitizeHtml needs a DOM$/u);
+      expect(() => sanitizeHtml('<p>x</p>')).not.toThrow(SanitizerEnvironmentError);
       expect(hasSanitizerDocument()).toBe(false);
     } finally {
       vi.stubGlobal('document', realDocument);

@@ -26,6 +26,7 @@ export type {
   InspectionProtocol,
   InspectionRevisions,
   PluginInspection,
+  InspectionFidelity,
   InspectionFragments,
   InspectionRoute,
   InspectionScheduler,
@@ -36,10 +37,12 @@ export type {
   FragmentReport,
   FragmentStrategy,
   RouteContext,
+  RouteOutcome,
   RouteStrategy,
   StrategyHandlers,
   UpdateSource,
 } from './core/strategies';
+export { registerRouteRefresh, type RouteRefresh } from './core/route-refresh';
 export type { PayloadDocumentEventDetail } from './types/payload-protocol';
 export { DIAGNOSTIC_CODES, type DiagnosticCode } from './core/diagnostic-codes';
 export type { ConnectionStatus } from './core/state';

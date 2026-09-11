@@ -7,6 +7,7 @@ import {
   normalizeCspMode,
 } from '@adapters/shared/policy';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
+import { LEAN_RUNTIME } from '@/lean';
 
 /** The shared policy's decisions, pinned by name rather than through four framework fixtures. */
 
@@ -105,6 +106,10 @@ describe('inlineScriptConfig', () => {
     ['eventSourcePolicy', 'any', 'eventSourcePolicy', 'any'],
     ['sanitizerPolicy', 'compat', 'sanitizerPolicy', 'compat'],
     ['fragments', { endpoint: '/payload/fragment' }, 'fragmentEndpoint', '/payload/fragment'],
+    ['routeStrategy', true, 'routeStrategy', true],
+    ['onUnboundChange', 'route', 'onUnboundChange', 'route'],
+    ['onUnfaithfulPatch', 'warn', 'onUnfaithfulPatch', 'warn'],
+    ['autoBind', 'unique', 'autoBind', 'unique'],
   ] as const;
 
   it.each(WIRE)('puts %s on the wire', (option, value, wireKey, wireValue) => {
@@ -129,6 +134,26 @@ describe('inlineScriptConfig', () => {
     expect(inlineScriptConfig({ inject: 'always', manageCsp: 'full', autoInject: false })).toEqual(
       {},
     );
+  });
+
+  it('asks for the route prelude only when no fragment endpoint carries the strategy already', () => {
+    // The fragment prelude includes the route strategy; asking for both would
+    // emit the larger one twice.
+    expect(
+      inlineScriptConfig({ routeStrategy: true, fragments: { endpoint: '/payload/fragment' } }),
+    ).toEqual({ fragmentEndpoint: '/payload/fragment' });
+  });
+
+  it('hands the generator the runtime artifact it was given, unserialized', () => {
+    // Not a wire slot: it decides which bytes are emitted, not how they behave.
+    expect(inlineScriptConfig({ runtime: LEAN_RUNTIME })).toEqual({ runtime: LEAN_RUNTIME });
+  });
+
+  it('carries what the adapter knows about the page beside what the project configured', () => {
+    // ADR 0015: the framework that hydrates the page is a fact the adapter
+    // states, never an option a project sets, so it arrives on its own.
+    expect(inlineScriptConfig({}, { hydration: 'react' })).toEqual({ hydration: 'react' });
+    expect(inlineScriptConfig({ debug: true }, {})).toEqual({ debug: true });
   });
 });
 

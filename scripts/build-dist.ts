@@ -47,6 +47,7 @@ const PUBLIC_FUNCTION_NAMES: readonly string[] = [
   'isInPreviewContext',
   'isSafeUrl',
   'negotiateProtocol',
+  'registerRouteRefresh',
   'sanitizeHtml',
   'setCspCrypto',
   'setSanitizerDocument',

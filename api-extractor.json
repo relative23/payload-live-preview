@@ -35,6 +35,14 @@
       "ae-missing-release-tag": {
         "logLevel": "none"
       },
+      // `@internal` marks the names the package exports for its own tests and
+      // modules and no example or guide uses (scripts/surface-usage.ts). The
+      // names stay as they are: the split is a statement in the report, not a
+      // rename, so a project that imported one keeps compiling.
+      "ae-internal-missing-underscore": {
+        "logLevel": "none",
+        "addToApiReportFile": false
+      },
       "ae-forgotten-export": {
         "logLevel": "none",
         "addToApiReportFile": true

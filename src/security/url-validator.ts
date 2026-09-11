@@ -19,7 +19,7 @@ const PARSER_IGNORED = /[\t\n\r]/g;
 
 /** `true` only for absolute `http`/`https`/`mailto`/`tel` URLs, protocol-relative URLs, paths, `#`/`?` fragments and relative paths. */
 export function isSafeUrl(url: unknown): boolean {
-  if (typeof url !== 'string' || url.length === 0) return false;
+  if (typeof url !== 'string') return false;
   const trimmed = url.trim().replace(PARSER_IGNORED, '');
   if (trimmed.length === 0) return false;
   if (DANGEROUS_PROTOCOL_PATTERN.test(trimmed)) return false;
@@ -34,9 +34,8 @@ export function isSafeUrl(url: unknown): boolean {
   }
 }
 
-/** Whether a safe URL points at another HTTP(S) origin, protocol-relative forms included, and so needs `noopener` hardening. */
+/** Whether a URL points at another HTTP(S) origin, protocol-relative forms included, and so needs `noopener` hardening; every URL these two patterns match is one `isSafeUrl` admits. */
 export function isExternalHttpUrl(url: string): boolean {
-  if (!isSafeUrl(url)) return false;
   const trimmed = url.trim().replace(PARSER_IGNORED, '');
   return /^https?:\/\//i.test(trimmed) || PROTOCOL_RELATIVE.test(trimmed);
 }

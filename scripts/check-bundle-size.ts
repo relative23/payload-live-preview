@@ -4,15 +4,17 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { LEAN_RUNTIME } from '../src/lean';
 import { generateInlineScript } from '../src/inline/generator';
 import {
-  findBudgetViolations,
   INLINE_BUDGET,
   INLINE_LEAN_BUDGET,
   INLINE_FRAGMENT_BUDGET,
   INLINE_ROUTE_BUDGET,
+} from './bundle-budgets';
+import {
+  findBudgetViolations,
   measureBundle,
   type BundleBudget,
   type BundleMeasurement,
-} from './bundle-budgets';
+} from './bundle-measure';
 import { ENTRY_BUDGETS } from './entry-budgets';
 import { improvementNotice } from './size-budget-notice';
 

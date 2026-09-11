@@ -46,7 +46,7 @@ function omittedRenderer(name: FieldRenderer['name'], feature: 'structural array
   };
 }
 
-/** One renderer map per client; the stateful text and structural renderers are created fresh each call. */
+/** One renderer map per client; the stateful text and structural renderers are created fresh each call. @internal */
 export function buildBuiltinRenderers(): Readonly<Record<string, FieldRenderer>> {
   // Built per call: a module-level table would pin every renderer into any
   // consumer importing an unrelated symbol from the root barrel.

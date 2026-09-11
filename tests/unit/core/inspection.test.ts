@@ -86,6 +86,16 @@ describe('inspect() before the runtime starts', () => {
       active: undefined,
     });
     expect(snapshot.scheduler.lastFlush).toBeUndefined();
+    // Nothing fell short yet, and the mode is the default: the reading a
+    // page with no strategy shows right up to its first unfaithful patch.
+    expect(snapshot.fidelity).toEqual({
+      mode: 'escalate',
+      unfaithful: 0,
+      escalated: 0,
+      fields: [],
+    });
+    // No framework declared, nothing waited for (ADR 0015).
+    expect(snapshot.hydration).toEqual({ mode: 'off', state: 'idle' });
     runtime.destroy();
   });
 });
@@ -102,6 +112,9 @@ describe('inspect() on a started runtime', () => {
     expect(snapshot.bindings.fieldNames).toEqual(['subtitle', 'title']);
     expect(snapshot.bindings.owners).toEqual(['collection:services:73', 'global:homepage']);
     expect(snapshot.bindings.ownerScoped).toBe(false);
+    // Nothing guessed under the default, and no search to report the cost of.
+    expect(snapshot.bindings.guessed).toEqual([]);
+    expect(snapshot.bindings.autoBind).toEqual({ mode: 'off', searchMs: undefined });
     expect(snapshot.renderers).toEqual(['text']);
     expect(snapshot.origins.trusted).toEqual([TRUSTED]);
     runtime.destroy();

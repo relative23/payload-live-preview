@@ -5,10 +5,11 @@ import { isInsideIsland } from '@core/islands';
 import { parseDependencyList } from '@core/dependencies';
 import { FRAGMENT_ATTRIBUTE } from '@core/strategies';
 
-/** Distinguishes several boundaries of one registry id; unique among siblings. */
+/** Distinguishes several boundaries of one registry id; unique among siblings. @internal */
 export const FRAGMENT_KEY_ATTRIBUTE = 'data-payload-fragment-key';
 const DEPENDS_ATTRIBUTE = 'data-payload-depends';
 
+/** @internal */
 export interface FragmentBoundary {
   readonly element: Element;
   /** Registry id — never a path, module or function name. */
@@ -18,7 +19,7 @@ export interface FragmentBoundary {
   readonly dependsOn: readonly string[];
 }
 
-/** One revision's request to a per-boundary handler. */
+/** One revision's request to a per-boundary handler. @internal */
 export interface StrategyRequest {
   readonly revision: number;
   readonly receivedAt: number;
@@ -30,6 +31,7 @@ export interface StrategyRequest {
   readonly signal: AbortSignal;
 }
 
+/** @internal */
 export type FragmentOutcome =
   | {
       readonly status: 'rendered';
@@ -40,12 +42,13 @@ export type FragmentOutcome =
   | { readonly status: 'failed'; readonly code: DiagnosticCode; readonly reason: string }
   | { readonly status: 'superseded' };
 
-/** Renders one boundary for one revision. Must honour `request.signal`. */
+/** Renders one boundary for one revision. Must honour `request.signal`. @internal */
 export type FragmentHandler = (
   request: StrategyRequest,
   boundary: FragmentBoundary,
 ) => Promise<FragmentOutcome>;
 
+/** @internal */
 export function describeBoundary(element: Element): FragmentBoundary | null {
   const id = element.getAttribute(FRAGMENT_ATTRIBUTE);
   if (id === null || id.length === 0) return null;
@@ -58,7 +61,7 @@ export function describeBoundary(element: Element): FragmentBoundary | null {
   };
 }
 
-/** The boundaries under `root` that `changedFields` touch; one inside an island is the island's business. */
+/** The boundaries under `root` that `changedFields` touch; one inside an island is the island's business. @internal */
 export function collectFragmentBoundaries(
   root: ParentNode,
   changedFields: ReadonlySet<string>,

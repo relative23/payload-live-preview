@@ -10,7 +10,7 @@ import type { DiagnosticCode } from './diagnostic-codes';
 /** What produced an update: the runtime's DOM patching, a server-rendered fragment, or a route refresh. */
 export type UpdateSource = 'patch' | 'fragment' | 'route';
 
-/** Marks a server-rendered boundary; the value is the registry id the server may render. */
+/** Marks a server-rendered boundary; the value is the registry id the server may render. @internal */
 export const FRAGMENT_ATTRIBUTE = 'data-payload-fragment';
 
 /** The nearest fragment boundary enclosing `element` (the element itself included). */
@@ -74,7 +74,22 @@ export interface RouteContext {
   readonly signal: AbortSignal;
   readonly isCurrent: () => boolean;
   readonly log: (code: DiagnosticCode, detail: string) => void;
+  /**
+   * Ask to be run again in `delayMs`, once. A strategy that refuses a refresh
+   * because it is rate-limiting itself uses this: the window is a rate limit
+   * and not a filter, so what falls inside it still has to reach the preview.
+   * The runtime runs at most one such request, and only while the revision that
+   * asked is still the current one.
+   */
+  readonly retryAfter?: (delayMs: number) => void;
 }
+
+/**
+ * What one refresh did. `refused` is the strategy's own brake and not a
+ * failure — it is counted separately, because a number that mixes a planned
+ * pause with a broken request cannot be read.
+ */
+export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
 
 /**
  * Whether a revision needs the whole route re-rendered, and how. After a
@@ -83,7 +98,7 @@ export interface RouteContext {
  */
 export interface RouteStrategy {
   readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
-  readonly refresh: (context: RouteContext) => Promise<'refreshed' | 'failed' | 'superseded'>;
+  readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 
 export interface StrategyHandlers {
@@ -97,6 +112,7 @@ const STRATEGY_ATTRIBUTE = 'data-payload-strategy';
  * Explicit `data-payload-strategy` wins; otherwise a binding inside a fragment
  * boundary belongs to the fragment, one in `<head>` to the route, the rest is
  * patched. An unknown explicit value resolves to `undefined` (LP0407).
+ * @internal
  */
 export function resolveStrategy(element: Element): UpdateSource | undefined {
   const explicit = element.getAttribute(STRATEGY_ATTRIBUTE);

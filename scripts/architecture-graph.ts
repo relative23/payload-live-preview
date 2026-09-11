@@ -8,6 +8,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { posix, relative, resolve } from 'node:path';
 import { Node, Project, SyntaxKind, type ImportDeclaration } from 'ts-morph';
+import { capabilityUsesIn, type CapabilityUse } from './architecture-capabilities';
 
 export type DependencyKind = 'runtime' | 'type';
 
@@ -20,6 +21,8 @@ export interface ArchitectureDependency {
 export interface ArchitectureModule {
   readonly path: string;
   readonly dependencies: readonly ArchitectureDependency[];
+  /** What the module does with the page and the network, read from the same syntax as its imports. */
+  readonly capabilities: readonly CapabilityUse[];
 }
 
 const ALIASES: Readonly<Record<string, string>> = {
@@ -200,7 +203,7 @@ export async function readArchitectureModules(
       });
     }
 
-    modules.push({ path, dependencies });
+    modules.push({ path, dependencies, capabilities: capabilityUsesIn(sourceFile) });
   }
   return modules;
 }

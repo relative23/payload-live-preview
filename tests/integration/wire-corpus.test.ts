@@ -55,7 +55,7 @@ afterEach(() => {
   runtime = undefined;
 });
 
-function start(origin: string): LivePreviewRuntime {
+function start(origin: string, skipUnchanged = false): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
     renderers: buildBuiltinRenderers(),
     originMatcher: (candidate) => candidate === origin,
@@ -65,6 +65,7 @@ function start(origin: string): LivePreviewRuntime {
     heartbeatMs: 10 * 60_000,
     disableVisibilityGate: true,
     enableA11y: false,
+    skipUnchanged,
     warn: () => {},
   });
   runtime.start();
@@ -73,6 +74,21 @@ function start(origin: string): LivePreviewRuntime {
 
 function fire(origin: string, data: unknown): void {
   window.dispatchEvent(new MessageEvent('message', { data, origin }));
+}
+
+/**
+ * Wait until every accepted revision has reached the DOM. Replaying a capture
+ * back to back would supersede each revision before it wrote anything, and a
+ * revision that never wrote skips nothing — the counts would then agree for
+ * the wrong reason. An admin leaves the same gap: a keystroke is further apart
+ * than an animation frame.
+ */
+async function idle(rt: LivePreviewRuntime): Promise<void> {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    const { accepted, completed } = rt.inspect().revisions;
+    if (completed === accepted) return;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
 }
 
 it('the listed captures are exactly the files on disk, and cover a 3.x admin', () => {
@@ -148,5 +164,76 @@ describe.each(CAPTURES)('Payload $version', ({ version }) => {
     });
     for (const message of documentEvents) fire(corpus.adminOrigin, message);
     expect(saves).toBe(documentEvents.length);
+  });
+
+  /**
+   * LP-1, as the recording shows it. Payload fills
+   * `externallyUpdatedRelationship` from `useDocumentEvents().mostRecentUpdate`
+   * — a level that the previewed document's own save raises and that nothing
+   * ever clears again. Every message after a save therefore repeats the same
+   * event, naming the previewed document itself. A capture that never saved
+   * carries none; that zero is kept out loud rather than left invisible.
+   */
+  const carrying = updates.filter(
+    (message) =>
+      message['externallyUpdatedRelationship'] !== null &&
+      message['externallyUpdatedRelationship'] !== undefined,
+  );
+
+  /** Every plain-string field the capture carries, so the replay has something to write. */
+  function boundPage(): string {
+    const names = new Set<string>();
+    for (const message of updates) {
+      for (const [name, value] of Object.entries(message['data'] as Record<string, unknown>)) {
+        if (typeof value === 'string') names.add(name);
+      }
+    }
+    return [...names].map((name) => `<p data-payload-field="${name}"></p>`).join('');
+  }
+
+  async function replay(rt: LivePreviewRuntime, beforeCarrying?: () => void): Promise<void> {
+    for (const message of corpus.messages) {
+      if (
+        message['externallyUpdatedRelationship'] !== null &&
+        message['externallyUpdatedRelationship'] !== undefined
+      ) {
+        beforeCarrying?.();
+      }
+      fire(corpus.adminOrigin, message);
+      await idle(rt);
+    }
+    // The premise of both measurements below.
+    const { accepted, completed } = rt.inspect().revisions;
+    expect(accepted).toBe(updates.length);
+    expect(completed).toBe(accepted);
+  }
+
+  it('the repeated save event is not one relationship edit per keystroke', async () => {
+    document.body.innerHTML = boundPage();
+    const rt = start(corpus.adminOrigin, true);
+    const seen: unknown[] = [];
+    emitter.on('relationshipUpdate', (event) => {
+      seen.push(event.detail);
+    });
+    await replay(rt);
+    // The capture's events all name the previewed document, so a plugin
+    // listener hears nothing: a foreign document is what the event promises.
+    expect(seen).toEqual([]);
+  });
+
+  it('a save does not turn skipUnchanged off for the rest of the session', async () => {
+    document.body.innerHTML = boundPage();
+    const rt = start(corpus.adminOrigin, true);
+    let beforeFirstCarrying: number | undefined;
+    await replay(rt, () => {
+      beforeFirstCarrying ??= rt.inspect().revisions.skippedUnchanged;
+    });
+    if (beforeFirstCarrying === undefined) {
+      expect(carrying).toEqual([]);
+      return;
+    }
+    // Measured from the first carrying message on: the half before the save
+    // skips freely and would hide exactly the half this asserts.
+    expect(rt.inspect().revisions.skippedUnchanged - beforeFirstCarrying).toBeGreaterThan(0);
   });
 });

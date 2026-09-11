@@ -1,7 +1,7 @@
 /** Shapes shared by the codemods, the driver and the runner. Types only. */
 import type { SourceFile } from 'ts-morph';
 
-/** One splice into a script, in source offsets. */
+/** One splice into a script, in source offsets. @internal */
 export interface TextEdit {
   readonly start: number;
   readonly end: number;
@@ -16,7 +16,7 @@ export interface CodemodConflict {
   readonly line?: number;
 }
 
-/** What a codemod wants done to one script. */
+/** What a codemod wants done to one script. @internal */
 export interface CodemodPlan {
   readonly edits: readonly TextEdit[];
   readonly conflicts: readonly CodemodConflict[];

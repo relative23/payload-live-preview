@@ -50,7 +50,7 @@ export interface BindOptions {
 // @public
 export function buildFrameAncestors(options?: FrameAncestorsOptions): string;
 
-// @public
+// @internal
 export function buildScriptSrcWithNonce(nonce: string, options?: {
     readonly self?: boolean;
     readonly extra?: readonly string[];
@@ -69,6 +69,7 @@ export interface CachedElement {
     readonly fieldType: RendererKey;
     readonly format?: string;
     readonly fragmentBoundary?: Element;
+    readonly guessed?: string;
     readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;
     readonly locale?: string;
@@ -115,7 +116,7 @@ export const CAPABILITY_DECLARATIONS: {
 // @public (undocumented)
 export const CAPABILITY_DOCUMENTATION: Readonly<Record<ProtocolCapability, CapabilityDocumentation>>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface CapabilityDeclaration {
     readonly observed?: 'schema' | 'locale' | 'preview-token' | 'document-event' | 'relationship-event';
     readonly since: number;
@@ -127,13 +128,13 @@ export interface CapabilityDocumentation {
     readonly gates: string;
 }
 
-// @public
+// @internal
 export type CapabilitySource = 'version' | 'observed';
 
 // @public
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
-// @public
+// @internal (undocumented)
 export const CORE_ENTRY = true;
 
 // @public
@@ -145,7 +146,7 @@ export type CustomRendererKey = `${string}:${string}`;
 // @public
 export type DefaultsProfile = 'v1' | 'v2';
 
-// @public
+// @internal (undocumented)
 export function detectInitialLocale(): string;
 
 // @public
@@ -169,6 +170,10 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnsupportedStrategy: "LP0407";
     readonly UnknownValueFormat: "LP0408";
     readonly SanitizerDroppedAttribute: "LP0409";
+    readonly UnrenderedBlockKept: "LP0410";
+    readonly UnfaithfulPatch: "LP0411";
+    readonly ServerFormatReplaced: "LP0412";
+    readonly UnrenderedBlockLost: "LP0413";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
@@ -177,6 +182,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RendererThrew: "LP0603";
     readonly StartupFailed: "LP0605";
     readonly ReadyFailed: "LP0606";
+    readonly HydrationWaitTimedOut: "LP0607";
     readonly AuditRuntimeMissing: "LP0701";
     readonly AuditNoFrameAncestors: "LP0702";
     readonly AuditFrameOptionsBlocks: "LP0703";
@@ -202,7 +208,7 @@ export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_C
 // @public
 export function escapeHtml(text: string): string;
 
-// @public
+// @internal
 export function escapeHtmlAttribute(value: string): string;
 
 // @public
@@ -254,7 +260,7 @@ export type FieldName<T> = Extract<keyof T, string>;
 
 // Warning: (ae-forgotten-export) The symbol "Prev" needs to be exported by the entry point core.d.ts
 //
-// @public
+// @internal
 export type FieldPath<T, Depth extends 0 | 1 | 2 | 3 = 3> = Depth extends 0 ? never : T extends readonly (infer U)[] ? FieldPath<U, Prev<Depth>> : T extends object ? {
     [K in Extract<keyof T, string>]: K | (T[K] extends object ? `${K}.${FieldPath<T[K], Prev<Depth>>}` : never);
 }[Extract<keyof T, string>] : never;
@@ -344,10 +350,10 @@ export interface FrameAncestorsOptions {
     readonly self?: boolean;
 }
 
-// @public
+// @internal
 export function generateCspNonce(bytes?: number): string;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function hasCapability(negotiation: ProtocolNegotiation, capability: ProtocolCapability): boolean;
 
 // @public
@@ -356,12 +362,29 @@ export function initLivePreview(config?: LivePreviewClientConfig): LivePreviewCl
 // @public
 export interface InspectionBindings {
     readonly absentFields: readonly string[];
+    readonly autoBind: {
+        readonly mode: 'off' | 'unique';
+        readonly searchMs: number | undefined;
+    };
     readonly elements: number;
     readonly fieldNames: readonly string[];
     readonly fields: number;
+    readonly guessed: readonly {
+        readonly field: string;
+        readonly matched: string;
+        readonly attribute: string | undefined;
+    }[];
     readonly orphanFields: readonly string[];
     readonly owners: readonly string[];
     readonly ownerScoped: boolean;
+}
+
+// @public
+export interface InspectionFidelity {
+    readonly escalated: number;
+    readonly fields: readonly string[];
+    readonly mode: 'ignore' | 'warn' | 'escalate';
+    readonly unfaithful: number;
 }
 
 // @public
@@ -404,13 +427,13 @@ export interface InspectionRevisions {
 
 // @public
 export interface InspectionRoute {
-    // (undocumented)
     readonly failed: number;
     // (undocumented)
     readonly handler: boolean;
     readonly loopStopped: number;
     // (undocumented)
     readonly refreshes: number;
+    readonly refused: number;
 }
 
 // @public
@@ -430,25 +453,25 @@ export interface InspectionScheduler {
 // @public
 export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext;
 
-// @public
+// @internal
 export function isDevMode(): boolean;
 
 // @public
 export function isExternalHttpUrl(url: string): boolean;
 
-// @public
+// @internal
 export function isInIframe(): boolean;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function isInPopup(): boolean;
 
-// @public
+// @internal
 export function isInPreviewContext(): boolean;
 
-// @public
+// @internal
 export function isInsideIsland(element: Element): boolean;
 
-// @public
+// @internal
 export const ISLAND_EVENT = "payload-live-preview:update";
 
 // @public (undocumented)
@@ -466,7 +489,7 @@ export interface IslandUpdateDetail {
 // @public
 export function isSafeUrl(url: unknown): boolean;
 
-// @public
+// @internal
 export const LIBRARY_PROTOCOL_VERSION = 4;
 
 // @public
@@ -498,6 +521,7 @@ export interface LivePreviewClientConfig {
     readonly a11yLocale?: string;
     readonly allowedOrigins?: readonly string[];
     readonly apiRoute?: string;
+    readonly autoBind?: 'off' | 'unique';
     readonly autoStart?: boolean;
     readonly debounceMs?: number;
     readonly debug?: boolean;
@@ -597,7 +621,12 @@ export interface LivePreviewEventMap {
 export interface LivePreviewInspection {
     // (undocumented)
     readonly bindings: InspectionBindings;
+    readonly fidelity: InspectionFidelity;
     readonly fragments: InspectionFragments;
+    readonly hydration: {
+        readonly mode: 'off' | 'react' | 'vue';
+        readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
+    };
     // (undocumented)
     readonly origins: InspectionOrigins;
     readonly plugins: readonly PluginInspection[];
@@ -838,7 +867,7 @@ export interface PreviewBindingsOptions {
     readonly owner?: string;
 }
 
-// @public
+// @internal
 export const PROTOCOL_CAPABILITIES: readonly ProtocolCapability[];
 
 // @public (undocumented)
@@ -866,10 +895,14 @@ export interface ProtocolProfile {
 export type ProtocolProfileName = 'unknown' | 'payload-2' | 'payload-3';
 
 // @public
+export function registerRouteRefresh(refresh: RouteRefresh): () => void;
+
+// @public
 export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
+    readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
     readonly sanitizerPolicy?: SanitizerPolicyMode;
     readonly schema: PayloadFieldSchema | undefined;
 }
@@ -892,17 +925,24 @@ export interface RouteContext {
     readonly log: (code: DiagnosticCode, detail: string) => void;
     // (undocumented)
     readonly receivedAt: number;
+    readonly retryAfter?: (delayMs: number) => void;
     // (undocumented)
     readonly revision: number;
     readonly signal: AbortSignal;
 }
 
 // @public
+export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
+
+// @public
+export type RouteRefresh = () => void | Promise<void>;
+
+// @public
 export interface RouteStrategy {
     // (undocumented)
     readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
     // (undocumented)
-    readonly refresh: (context: RouteContext) => Promise<'refreshed' | 'failed' | 'superseded'>;
+    readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 
 // Warning: (ae-forgotten-export) The symbol "SanitizeOptions" needs to be exported by the entry point core.d.ts
@@ -934,7 +974,7 @@ export type SanitizerPolicyMode = 'compat' | 'strict';
 
 // Warning: (ae-forgotten-export) The symbol "WebCryptoLike" needs to be exported by the entry point core.d.ts
 //
-// @public
+// @internal
 export function setCspCrypto(crypto: WebCryptoLike | null): void;
 
 // @public
@@ -957,10 +997,10 @@ export type Unsubscribe = () => void;
 // @public
 export type UpdateSource = 'patch' | 'fragment' | 'route';
 
-// @public
+// @internal
 export type ValueAt<T, P extends string> = P extends `${infer Head}.${infer Rest}` ? Head extends keyof T ? T[Head] extends readonly (infer U)[] ? ValueAt<U, Rest> : T[Head] extends object ? ValueAt<T[Head], Rest> : unknown : unknown : P extends keyof T ? T[P] : unknown;
 
-// @public
+// @internal (undocumented)
 export const VERSION: string;
 
 // @public

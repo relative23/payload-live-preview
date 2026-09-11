@@ -40,7 +40,7 @@ export interface CodemodLineEdit {
     readonly line: number;
 }
 
-// @public
+// @internal
 export interface CodemodPlan {
     // (undocumented)
     readonly conflicts: readonly CodemodConflict[];
@@ -48,10 +48,10 @@ export interface CodemodPlan {
     readonly edits: readonly TextEdit[];
 }
 
-// @public
+// @internal
 export const CODEMODS: readonly Codemod[];
 
-// @public
+// @internal
 export function importsThisPackage(source: string): boolean;
 
 // @public
@@ -73,7 +73,7 @@ export interface MigrateSourceResult {
     readonly output: string;
 }
 
-// @public
+// @internal
 export interface TextEdit {
     // (undocumented)
     readonly end: number;

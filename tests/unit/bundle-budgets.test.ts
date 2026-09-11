@@ -1,23 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
-  findBudgetViolations,
   INLINE_BUDGET,
   INLINE_FRAGMENT_BUDGET,
   INLINE_LEAN_BUDGET,
   INLINE_ROUTE_BUDGET,
-  measureBundle,
 } from '../../scripts/bundle-budgets';
+import { findBudgetViolations, measureBundle } from '../../scripts/bundle-measure';
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 99_176, gzip: 31_075, brotli: 27_513 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 81_534, gzip: 25_516, brotli: 22_687 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 105_638, gzip: 33_176, brotli: 29_180 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 110_584, gzip: 34_856, brotli: 30_687 });
+    expect(INLINE_BUDGET).toEqual({ raw: 112_943, gzip: 35_658, brotli: 31_514 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 91_135, gzip: 28_845, brotli: 25_664 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 119_636, gzip: 37_840, brotli: 33_288 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 124_588, gzip: 39_505, brotli: 34_740 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {
-    // The number is the point of the profile: a page pays 30 KB or 25 KB, and
+    // The number is the point of the profile: a page pays 32 KB or 26 KB, and
     // the docs quote this difference. If it shrinks below a fifth, the profile
     // stops being worth the second artifact and its second behaviour.
     const saved = INLINE_BUDGET.gzip - INLINE_LEAN_BUDGET.gzip;

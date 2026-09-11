@@ -11,110 +11,114 @@
   ],
   "totals": {
     "publicDeclarations": {
-      "limit": 658,
-      "why": "Every exported name across all API reports. The number a consumer's editor offers them, and the number this package has to keep meaning something. 2026-09-06: +12 for the two zero-config setups — `withLivePreview()` for Next.js and the Nuxt module — which exist to remove lines from a consumer's project, not to add names to it. +5 for asset delivery: a route factory in each of the three adapters, plus what a route file re-exports in the two that name it. +13 for the build-time annotator, nine of them its own entry. 2026-09-06 (1.x-Upgrade): +3, the 1.x names 2.0 renamed rather than reshaped: `isPreviewRequest` on the two entries that exported it, and `PreviewSignal` back on `./astro`. Measured against the published 1.8.1 declarations entry by entry; everything whose meaning changed stays gone, because an alias there would type something the package no longer produces. 2026-09-06 (R9): −5, two concepts with no remaining reason — `PreviewBindingsCommonOptions`, a one-member base left behind when its sibling options type was removed in 2.0, and `AnnotatableEntry`, which had one member and one use. 2026-09-11 (atomic replay store): +2, `PreviewTokenReplayChecks` on the root and `./server` — the deprecated 1.x two-step store shape, kept until 3.0 so a store written against 1.x still type-checks, and named so its notice can say why `consume()` replaced it."
+      "limit": 552,
+      "why": "Every exported name across all API reports. The number a consumer's editor offers them, and the number this package has to keep meaning something. 2026-09-06: +12 for the two zero-config setups — `withLivePreview()` for Next.js and the Nuxt module — which exist to remove lines from a consumer's project, not to add names to it. +5 for asset delivery: a route factory in each of the three adapters, plus what a route file re-exports in the two that name it. +13 for the build-time annotator, nine of them its own entry. 2026-09-06 (1.x-Upgrade): +1, `isPreviewRequest` back as a deprecated alias — measured against the published 1.8.1 surface, it is the only renamed function among the eight names that left, and the alias is what makes a 1.x project compile against 2.0 unchanged. 2026-09-06 (R9): −5, two concepts with no remaining reason — `PreviewBindingsCommonOptions`, a one-member base left behind when its sibling options type was removed in 2.0, and `AnnotatableEntry`, which had one member and one use. 2026-09-07 (Z6): +14 across five reports, and they are four names, not fourteen — `registerRouteRefresh` and its `RouteRefresh` on the root, core, client and react entries, `RouteOutcome` on the five that name `RouteStrategy`, and `LivePreviewRouteRefresh` with its props on `./react` alone. One concept: the host framework re-renders its own route instead of this package morphing fetched HTML over the reconciler's nodes. 2026-09-07 (Z8): +3 on `./nextjs` alone — `LivePreviewScript`, `LivePreviewScriptComponentProps`, `LivePreviewScriptElement`. One concept again: the script as something a server component decides to render, rather than something a synchronous helper builds for whoever asks. It is the only delivery in the package that can charge a public visitor nothing on a framework whose middleware cannot inject into a body. 2026-09-10 (surface split): 671 → 545. The other 126 are `@internal` and counted below; measured first — 34 names the examples import, 173 the guides name, 178 either way, and what those signatures reach — then marked. A name a reader's editor still offers, but one the report now says the package does not promise. 2026-09-11 (Z30): +3, `InspectionFidelity` once in each of the root, core and client entries — one type, read next to `InspectionRoute` in all three; see the entry rows. 2026-09-11 (merge of main #64): +4 — the deprecated `PreviewTokenReplayChecks`, and the 1.x aliases `isPreviewRequest` and `PreviewSignal` on the Astro entry, which main's upgrade path re-exports and the surface split had not seen."
+    },
+    "internalDeclarations": {
+      "limit": 126,
+      "why": "Exported names marked `@internal`: what the entries export for the package's own tests and modules and no example or guide uses — protocol and reconciliation constants, the fragment wire shapes, the structural applier's internals, the codegen and annotate internals, the detection helpers, the CSP helpers nobody documented, `trustedHtml` and `escapeHtmlAttribute`. Held exact like every count here: a name that moves from internal to public is a promise being made and gets written down, and one that moves the other way is a promise withdrawn. 2026-09-10: 126, the first measurement (scripts/surface-usage.ts, then four API Extractor rounds to pull back the 172 names a public signature reaches)."
     },
     "entrySubpaths": {
       "limit": 25,
       "why": "Import specifiers in the manifest. Each one is a decision a reader makes before writing a line of code, so a new entry needs a reason a sentence can hold. 2026-09-06: +1 for `./nuxt-module`, which Nuxt loads by specifier from `modules: []` and so cannot live behind an existing entry. +1 for `./annotate`, which is separate so a build plugin does not drag `ts-morph` into a project."
     },
     "adapterOptions": {
-      "limit": 32,
-      "why": "Members of `PreviewAdapterOptions`: what every adapter takes. The single most-read type in the package. 2026-09-06: +2, `delivery` and `assetPath` — one concept, but the second is the path both halves must agree on, and folding it into the first would hide that."
+      "limit": 34,
+      "why": "Members of `PreviewAdapterOptions`: what every adapter takes. The single most-read type in the package. 2026-09-06: +2, `delivery` and `assetPath` — one concept, but the second is the path both halves must agree on, and folding it into the first would hide that. 2026-09-07: +1, `onUnfaithfulPatch` — the renamed `onUnboundChange`, which stays beside it as a deprecated alias until 3.0. The two are one decision, so this is a name a reader meets twice, not a second thing to understand; the alias goes and the count returns to 32. 2026-09-10 (Z9): +1, `autoBind` — the one option that changes what a page needs in its markup, and therefore one every adapter has to be able to say, because the adapter is where a project that wants no attributes configures the runtime."
     },
     "inlineOptions": {
-      "limit": 23,
-      "why": "Members of `InlineScriptConfig`: what the generated script carries. Most of them travel in the positional wire tuple, which is append-only."
+      "limit": 26,
+      "why": "Members of `InlineScriptConfig`: what the generated script carries. Most of them travel in the positional wire tuple, which is append-only. 2026-09-07: +1, `onUnfaithfulPatch` — its own slot rather than a widened `onUnboundChange`, because the tuple is append-only in both directions: a 2.0 page whose script is already on a CDN keeps writing `'route'` into slot 20 and must keep meaning `'escalate'` by it. 2026-09-10 (Z9): +1, `autoBind`, slot 22 — an omitted slot reads as `'off'`, so a script generated before the option existed keeps meaning what it meant. 2026-09-11 (Z27): +1, `hydration`, slot 23 — the framework that hydrates the page, declared by the Next.js adapter rather than configured by a project (ADR 0015); an omitted slot means a page that starts on `DOMContentLoaded`, so a script generated before the option existed keeps its meaning."
     },
     "diagnosticCodes": {
-      "limit": 41,
-      "why": "LP codes. A code is a promise to explain one situation; forty is a table someone can skim, and a hundred would be a table nobody reads. 2026-09-06: +1 for LP0409, the strict sanitizer reporting an attribute the 1.x default kept — the one 2.0 behaviour change an upgrading project could otherwise only discover by looking."
+      "limit": 46,
+      "why": "LP codes. A code is a promise to explain one situation; forty is a table someone can skim, and a hundred would be a table nobody reads. 2026-09-06: +1 for LP0409, the strict sanitizer reporting an attribute the 1.x default kept — the one 2.0 behaviour change an upgrading project could otherwise only discover by looking. 2026-09-07: +1 for LP0410, a Lexical block with no renderer — the preview now keeps the server's markup for it instead of writing an empty placeholder over it, and a reader who sees an unrendered block needs to be told which slug to register rather than left to compare two page sources. 2026-09-07: +1 for LP0411, a patch the runtime knows cannot match the server's render. It is one code for every reason a patch falls short, because the reader's question is the same in all of them — why did my page reload, or why is this field not what the server shows — and the answer is one sentence plus the field's name. 2026-09-10: +1 for LP0412, the first write to a date, number or checkbox binding replacing a different reading of the same value. It is a separate code from LP0411 because it is a separate situation: LP0411 is a patch that could not be made, this is a patch that was made and still left the page unlike the server's. The reader's question is different too — not \"why did my page reload\" but \"why does this date look different than it did a second ago\" — and so is the answer, which is one attribute in their own markup. 2026-09-11 (Z30): +1 for LP0413, a Lexical block with no renderer whose server markup the write could not keep. It is not folded into LP0410 because the two say opposite things about the same block — kept, lost — and a code that covers both is a code whose text is wrong half the time; measured on the demo, LP0410 said \"keeping\" while the image was deleted. LP0411 still carries the fidelity verdict for the lost case; LP0413 is the block-level line that names the slug. 2026-09-11 (Z27): +1 for LP0607, the wait for React's first commit running out. A code and not a `debug` line, because a preview that connected five seconds late has to say why on the console the editor is looking at, and because the reader's fix is one of two opposite things — a client bundle that did not load, or an option set on a page React never hydrates."
     },
     "sourceModules": {
-      "limit": 240,
-      "why": "Source modules in the architecture graph. Files stay under 500 lines, so this is the other half of that rule: many small files are only better than few large ones while the count itself stays legible. 2026-09-06: +2, the Nuxt module and the Next.js config wrapper; +2, the shared runtime-asset descriptor and the Next.js asset route; +2, the SvelteKit and Nuxt ones; +2, the annotator plugin and its entry; +1, the sanitizer's upgrade report; +1, the quarantine for the deprecated 1.x names."
+      "limit": 252,
+      "why": "Source modules in the architecture graph. Files stay under 500 lines, so this is the other half of that rule: many small files are only better than few large ones while the count itself stays legible. 2026-09-06: +2, the Nuxt module and the Next.js config wrapper; +2, the shared runtime-asset descriptor and the Next.js asset route; +2, the SvelteKit and Nuxt ones; +2, the annotator plugin and its entry; +1, the sanitizer's upgrade report. 2026-09-07: +1, the relationship tracker — reading `externallyUpdatedRelationship` as an edge has two halves (has the event changed, does it name another document) and holds state between messages, so it is a named module beside the other trackers rather than a paragraph inside the pipeline. 2026-09-07: +1, the fidelity verdict — three places decide that a patch cannot reach the server's render (the writer, the rich-text renderer, the strategy runner) and one place has to hold the policy they share, or the option's meaning is spread across three files that cannot see each other. 2026-09-07: +1, the merge decision — whether a message needs the server at all is asked from the binding cache, the raw diff and the last resolved document at once, and it holds the window a burst of requests shares, so it is a module beside the merger it rations rather than three conditions inside the pipeline. 2026-09-07 (Z6): +2. `src/core/route-refresh.ts` is the seam between a host router and the route strategy — the strategy is built by an inline script before any component has mounted, so the two can only meet at a named slot, and the module is where that name and its two directions are written down once. `src/adapters/react/route-refresh.ts` is the component that writes it, which cannot live in the hook's file because it is a different job with a different lifetime. 2026-09-07 (Z8): +1, `src/adapters/nextjs/script-component.ts`. It is the only delivery in this package that can decline to render, and it is a React component rather than a function that returns a string, so it cannot live in `adapter.ts` beside the two synchronous helpers it exists to replace: different shape, different peer (`react`, loaded lazily), different answer to the same question. 2026-09-10 (Z9): +2. `src/core/auto-bind.ts` is the search, its exclusions and the candidate rule — the one place in the package whose correctness is statistical rather than declared (ADR 0014), which is reason enough for it to be a file a reader can audit on its own. `src/core/transform-value.ts` is the plugin boundary on a value's way to its binding, moved out of the update pipeline because the pipeline reached the 500-line limit with the auto-binding hook and the transform is the one block in it that is about consumer code rather than about the update. 2026-09-11 (Z27): +3. `src/core/hydration.ts` is the one place that reads React's instrumentation protocol (ADR 0015 §2) — a heuristic in a package of declared behaviour, audited on its own the way `auto-bind.ts` is. `src/inline/loader-react.generated.ts` is the bootstrap built a second time from `loader.ts` with `__REACT_BOOTSTRAP__` set, armed for React's first commit; the generator emits it for a page that declares hydration in place of the plain one. `src/core/startup.ts` is the wait — for `DOMContentLoaded`, then for the commit — moved out of `lifecycle.ts`, which reached its 500 lines with the second stage: the lifecycle keeps the resources a start acquires and their rollback, the module keeps only when. 2026-09-11 (Z31): +1. `src/core/hydration-vue.ts` reads Vue's bookkeeping the way `hydration.ts` reads React's protocol — a second heuristic for a second framework (ADR 0015, addendum), and one module per protocol so each can be audited against the source it depends on. 2026-09-11 (merge of main #64): +1, `adapters/shared/preview-request-legacy.ts`."
     }
   },
   "entries": {
     "payload-live-preview.api.md": {
-      "limit": 164,
-      "why": "The root barrel: the client, the generator, the renderers, the DSL and the plugin surface in one import. The largest number here on purpose — and the one to watch, because every entry below re-exports from it. 2026-09-11: +1, the deprecated `PreviewTokenReplayChecks` (see publicDeclarations)."
+      "limit": 141,
+      "why": "The root barrel: the client, the generator, the renderers, the DSL and the plugin surface in one import. The largest number here on purpose — and the one to watch, because every entry below re-exports from it. 2026-09-07 (Z6): +3 for the route-refresh seam. 2026-09-10 (surface split): 166 → 139, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal. 2026-09-11 (Z30): +1, `InspectionFidelity` — the `inspect()` section that says how many patches fell short and how many a strategy took; a page with a degraded preview and no strategy had no reading that could say so, and the type is exported beside `InspectionRoute` and `InspectionFragments`, which it is read next to. 2026-09-11 (merge of main #64): +1, the same deprecated name re-exported from the root."
     },
     "payload-live-preview--core.api.md": {
-      "limit": 99,
-      "why": "The runtime without the generator and the built-in plugins."
+      "limit": 83,
+      "why": "The runtime without the generator and the built-in plugins. 2026-09-07 (Z6): +3 for the route-refresh seam — `registerRouteRefresh`, `RouteRefresh`, `RouteOutcome`. 2026-09-10 (surface split): 102 → 82, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal. 2026-09-11 (Z30): +1, `InspectionFidelity` — the `inspect()` section that says how many patches fell short and how many a strategy took; a page with a degraded preview and no strategy had no reading that could say so, and the type is exported beside `InspectionRoute` and `InspectionFragments`, which it is read next to."
     },
     "payload-live-preview--server.api.md": {
-      "limit": 56,
-      "why": "Everything a server decides with: authorization, tokens, document reads, gated bindings, and reading a verdict back off locals. 2026-09-11: +1, the deprecated `PreviewTokenReplayChecks` (see publicDeclarations)."
+      "limit": 53,
+      "why": "Everything a server decides with: authorization, tokens, document reads, gated bindings, and reading a verdict back off locals. 2026-09-10 (surface split): 55 → 52, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal. 2026-09-11 (merge of main #64): +1, the deprecated `PreviewTokenReplayChecks`."
     },
     "payload-live-preview--client.api.md": {
-      "limit": 52,
-      "why": "`LivePreviewClient` and what its options and events name."
+      "limit": 55,
+      "why": "`LivePreviewClient` and what its options and events name. 2026-09-07 (Z6): +3 for the route-refresh seam it shares with the root and core entries. 2026-09-10 (surface split): 55 → 54, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal. 2026-09-11 (Z30): +1, `InspectionFidelity` — the `inspect()` section that says how many patches fell short and how many a strategy took; a page with a degraded preview and no strategy had no reading that could say so, and the type is exported beside `InspectionRoute` and `InspectionFragments`, which it is read next to."
     },
     "payload-live-preview--plugins.api.md": {
-      "limit": 41,
-      "why": "The manager, the contract and the built-in plugins."
+      "limit": 40,
+      "why": "The manager, the contract and the built-in plugins. 2026-09-10 (surface split): 41 → 40, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--fragment.api.md": {
-      "limit": 32,
-      "why": "The browser half of the fragment and route strategies."
+      "limit": 14,
+      "why": "The browser half of the fragment and route strategies. 2026-09-07 (Z6): +1, `RouteOutcome`, which this entry's `RouteStrategy` names in its own signature and would otherwise leave forgotten. 2026-09-10 (surface split): 33 → 14, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--structural.api.md": {
-      "limit": 31,
-      "why": "The keyed morph and the structural array renderer."
+      "limit": 16,
+      "why": "The keyed morph and the structural array renderer. 2026-09-10 (surface split): 31 → 16, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--codegen.api.md": {
-      "limit": 25,
-      "why": "Type generation and the annotate surface, including the schema shape the annotator reads."
+      "limit": 11,
+      "why": "Type generation and the annotate surface, including the schema shape the annotator reads. 2026-09-10 (surface split): 25 → 11, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--astro.api.md": {
-      "limit": 24,
-      "why": "The integration, the middleware, the fragment endpoint, and the two 1.x names this entry exported before the 2.0 rename."
+      "limit": 22,
+      "why": "The integration, the middleware and the fragment endpoint. 2026-09-10 (surface split): 22 → 20, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal. 2026-09-11 (merge of main #64): +2, the 1.x aliases `isPreviewRequest` and `PreviewSignal` the upgrade path re-exports from this entry."
     },
     "payload-live-preview--nextjs.api.md": {
       "limit": 21,
-      "why": "The middleware, the script props, the fragment endpoint, `withLivePreview()` for next.config.ts, and the runtime asset route."
+      "why": "The middleware, the script props, the fragment endpoint, `withLivePreview()` for next.config.ts, and the runtime asset route. 2026-09-07 (Z8): +3, `LivePreviewScript` with the props it takes and the element it resolves to — the async server component that renders nothing for a request without an authorization verdict. One concept, and the two types beside it exist so a JSX consumer can name what it hands over and what comes back without this entry importing React's types. 2026-09-10 (surface split): 24 → 21, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--lexical.api.md": {
-      "limit": 17,
-      "why": "The Lexical renderer and its node registry."
+      "limit": 12,
+      "why": "The Lexical renderer and its node registry. 2026-09-10 (surface split): 17 → 12, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--nuxt.api.md": {
-      "limit": 17,
-      "why": "The Nitro plugin, the handler, the fragment endpoint and the runtime asset route."
+      "limit": 14,
+      "why": "The Nitro plugin, the handler, the fragment endpoint and the runtime asset route. 2026-09-10 (surface split): 17 → 14, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--doctor.api.md": {
-      "limit": 15,
-      "why": "`runDoctor()` and the probe analysis as a library."
+      "limit": 13,
+      "why": "`runDoctor()` and the probe analysis as a library. 2026-09-10 (surface split): 15 → 13, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--sveltekit.api.md": {
-      "limit": 14,
-      "why": "The handle, the fragment endpoint and the runtime asset route."
+      "limit": 12,
+      "why": "The handle, the fragment endpoint and the runtime asset route. 2026-09-10 (surface split): 14 → 12, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--migrate.api.md": {
-      "limit": 11,
-      "why": "`migrateSource()` and the codemod list."
+      "limit": 7,
+      "why": "`migrateSource()` and the codemod list. 2026-09-10 (surface split): 11 → 7, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--annotate.api.md": {
-      "limit": 8,
-      "why": "The build-time annotator: the plugin, the transform behind it, and the schema shape it reads. No ts-morph, which is why it is not part of `./codegen`."
+      "limit": 5,
+      "why": "The build-time annotator: the plugin, the transform behind it, and the schema shape it reads. No ts-morph, which is why it is not part of `./codegen`. 2026-09-10 (surface split): 8 → 5, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--payload.api.md": {
       "limit": 8,
       "why": "`buildLivePreviewUrl()` and its options, for payload.config.ts."
     },
     "payload-live-preview--nuxt-module.api.md": {
-      "limit": 7,
-      "why": "The Nuxt module and the shapes it duck-types off Nuxt, so the package does not depend on `nuxt` to adapt it."
+      "limit": 5,
+      "why": "The Nuxt module and the shapes it duck-types off Nuxt, so the package does not depend on `nuxt` to adapt it. 2026-09-10 (surface split): 7 → 5, the names no example imports and no guide names, now `@internal` in the report (scripts/surface-usage.ts measured the 671 against examples/ and docs/; API Extractor pulled back every name a public signature reaches). Still exported: the tag is a statement in the report, not a removal."
     },
     "payload-live-preview--vue.api.md": {
       "limit": 6,
       "why": "The composable, its options and the four refs it returns."
     },
     "payload-live-preview--react.api.md": {
-      "limit": 5,
-      "why": "The hook, its options and the snapshot it returns."
+      "limit": 9,
+      "why": "The hook, its options and the snapshot it returns. 2026-09-07 (Z6): +4, `<LivePreviewRouteRefresh />` and its props plus the `registerRouteRefresh` seam it re-exports — the entry now has a second job, and it is the one that keeps the route strategy off React's own DOM."
     },
     "payload-live-preview--codegen--astro.api.md": {
       "limit": 2,

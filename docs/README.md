@@ -20,6 +20,7 @@ Related: [renderers.md](renderers.md) (events, transforms, renderers, plugins), 
 - [testing.md](testing.md) — the test tiers, local commands, coverage and mutation policy.
 - [benchmarks.md](benchmarks.md) — hot-path timings, update-to-paint, tree shaking.
 - [architecture/overview.md](architecture/overview.md) — what the package is: two screens, one message, five objects, every rule with its reason.
+- [audit.md](audit.md) — the trusted core: the eight modules a page's owner has to trust, read in order with every invariant named and the gate that holds it.
 - [architecture/README.md](architecture/README.md) — the architecture decision records.
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — development setup, project layout, the checks a change must pass.
 

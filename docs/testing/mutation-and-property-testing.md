@@ -43,6 +43,25 @@ risk classifications from drifting apart:
 STRYKER_SCOPE=nightly npx stryker run stryker.config.js
 ```
 
+The core profile mutates the trusted core alone — the eight modules
+`quality/trusted-core.json` names, read from that file so the two lists cannot
+drift — because the figure the audit page quotes has to be the core's own
+and not the average of sixty files. Its target is every mutant
+killed; `quality/mutation-policy-core.json` holds the measured score, and its
+`equivalent` list names every survivor that is left, one entry each: the file,
+line and column, the mutator, the text it replaced and what it put there, and
+one sentence saying why the program does the same with and without it. The
+policy holds the list in both directions — a survivor the list does not name
+fails the run, and so does an entry whose mutant is killed now (a ratchet to
+take), moved, or described with other text — so the score below 100 is not a
+gap but a reviewed remainder, and the survivors stay visible in every report.
+It is run by hand, not by a workflow:
+
+```sh
+STRYKER_SCOPE=core npx stryker run stryker.config.js
+npm run test:mutation:policy:core
+```
+
 The PR profile is a hard 90% gate, with 90–95% shown as its improvement band. The
 critical Nightly profile has a defensive native Stryker floor of 70%; the stricter
 machine-readable report policy pins its exact reviewed score, scope, and terminal
@@ -95,9 +114,11 @@ current implementation and remain visible in every report:
 - seven CSP mutants alter an early-return/default/empty-token branch whose fallback
   serializes the same policy, or change an impossible zero whitespace index after
   leading ASCII whitespace has already been removed; and
-- six URL mutants remove redundant empty/protocol-relative checks, a safe-URL guard
-  implied by the following anchored patterns, or a regex repetition whose match is
-  intentionally prefix-based.
+- two URL mutants (since 2026-09-11, six before): the empty check after trimming,
+  which the URL parse and the relative-path pattern refuse anyway, and a regex
+  repetition whose match is intentionally prefix-based. The other four — the empty
+  check before trimming and the safe-URL guard the external-URL patterns imply —
+  were lines the trusted-core mutation run showed no test could reach, and are gone.
 
 One surviving CSP string mutant shortens the Web-Crypto remediation text while
 retaining both the Node 18 and fail-closed security guidance. It is a diagnostic

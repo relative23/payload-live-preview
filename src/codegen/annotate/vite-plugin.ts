@@ -73,7 +73,7 @@ export interface AnnotateVitePlugin {
   load(id: string): { code: string; map: null } | null;
 }
 
-/** Everything before the second `---`, and where the template starts. */
+/** Everything before the second `---`, and where the template starts. @internal */
 export function splitFrontmatter(code: string): {
   readonly frontmatter: string;
   readonly bodyOffset: number;
@@ -103,6 +103,7 @@ const isAstro = (id: string): boolean =>
 /**
  * The transform on its own, so a test can call it without a bundler and a
  * caller can see exactly what a file becomes.
+ * @internal
  */
 export function annotateSource(
   code: string,

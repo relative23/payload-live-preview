@@ -4,14 +4,14 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint--EHrklHd.js';
-import { a as a_2 } from '../../options-yVq9ejmU.js';
-import { b } from '../../fragment-endpoint--EHrklHd.js';
-import { c } from '../../fragment-endpoint--EHrklHd.js';
-import { F } from '../../fragment-endpoint--EHrklHd.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint--EHrklHd.js';
-import { L as LivePreviewLocals } from '../../locals-XvdcJaGe.js';
-import { P as PreviewAdapterOptions } from '../../options-yVq9ejmU.js';
+import { a } from '../../fragment-endpoint-ByV68yew.js';
+import { a as a_2 } from '../../options-CO1iXz__.js';
+import { b } from '../../fragment-endpoint-ByV68yew.js';
+import { c } from '../../fragment-endpoint-ByV68yew.js';
+import { F } from '../../fragment-endpoint-ByV68yew.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-ByV68yew.js';
+import { L as LivePreviewLocals } from '../../locals-Dq8174og.js';
+import { P as PreviewAdapterOptions } from '../../options-CO1iXz__.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;
@@ -22,7 +22,7 @@ export function createFragmentEndpoint(options: FragmentEndpointOptions): (reque
 // @public
 export function createRuntimeAssetRoute(options?: LivePreviewNuxtOptions): (request: Request) => Response;
 
-// @public
+// @internal
 export const DECISION_CONTEXT_KEY = "livePreviewDecision";
 
 // @public
@@ -31,13 +31,13 @@ export function defineLivePreviewServerHandler(options?: LivePreviewNuxtOptions)
 // @public (undocumented)
 export type FragmentEndpointOptions = F<VueComponentLike>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRegistry = a<VueComponentLike>;
 
 // @public (undocumented)
 export type FragmentRegistryEntry<Props extends object = object> = b<VueComponentLike, Props>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRenderer = c<VueComponentLike>;
 
 export { FragmentRenderInput }

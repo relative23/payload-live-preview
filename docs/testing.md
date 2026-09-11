@@ -169,6 +169,46 @@ have a budget of zero. Playwright retries may collect diagnostics, but
 - `npm run test:treeshake`, `npm run test:edge`, `npm run test:bundle` — the
   built package as a consumer sees it: one-symbol bundles, a Web-platform-only
   runtime, and size budgets. All three run inside `npm run build`.
+- `scripts/check-interaction-budgets.ts` · `npm run test:interaction` — what one
+  burst of typing costs: the merge requests an 18-keystroke burst makes, and the
+  p95 from a keystroke to the change on the page, per scenario (plain text, rich
+  text, relationship, an unbound field, a page with no bindings at all). The
+  runtime is driven in jsdom against a merge endpoint that answers without delay,
+  so both numbers are the package's own and reproduce run to run; the network
+  half of what an editor waits for is carried by the request count instead. The
+  limits and the reason for each of them are in `scripts/interaction-budgets.ts`.
+  Request counts are exact rather than ceilings, and the latency rows carry a
+  floor as well as a ceiling: an improvement nobody records fails the gate too.
+  Runs inside `npm run build`.
+- `tests/fixtures/protocol-model.ts` · `npm run test:protocol-semantics` — what
+  each field on the wire _means_, and what the runtime must therefore do with
+  it. Two halves. The form half is compared by the protocol watch against the
+  message objects Payload's admin builds, read out of their source. The
+  semantics half replays every wire corpus through the real runtime in jsdom and
+  counts what the meaning implies: how many messages carry
+  `externallyUpdatedRelationship`, how many distinct documents those name, how
+  many `relationshipUpdate` events the runtime emits, and how many writes it
+  still skips as unchanged after a save. Numbers are exact in both directions,
+  and a row whose number is today a known defect carries the finding and the
+  task that removes it. Runs inside `npm run build`.
+- `tests/fixtures/delivery-budgets.ts` · part of `npm run test:e2e` — what an
+  anonymous visitor is charged, per delivery path: how many `<script>` elements
+  of a cookie-less response carry this package, and how many bytes those
+  elements are once the runtime artifact inside them is discounted. The
+  subtraction is what keeps the row a statement about the delivery: the
+  runtime's own size is held by `INLINE_BUDGET`, and repeating it here would
+  make every change to `src/` red in a test file. Both numbers are exact in both
+  directions, so a path that stops charging fails until the win is recorded.
+  `tests/e2e/specs/public-response.spec.ts` runs it against every fixture.
+- `scripts/check-upstream-findings.ts` · `npm run test:upstream-findings` — the
+  seven cases the comparison in `docs/react.md` is built from, re-run on the
+  published `@payloadcms/live-preview` dist that the registry serves today. It
+  packs the dist-tag, imports the real `dist/index.js` into a synthetic window
+  and compares each observation against the one recorded when the comparison was
+  written. Deliberately outside `npm run check` and `npm run build`: it needs the
+  network and someone else's registry. It runs in the nightly protocol watch,
+  where a red run usually means upstream fixed something and a row in
+  `docs/react.md` has to go.
 - `scripts/diagnostic-table.ts` · `npm run diagnostics:check` — the
   diagnostic-code table in `docs/troubleshooting.md` is rendered from
   `src/core/diagnostic-codes.ts`; the check fails on drift, on a code without
@@ -187,6 +227,14 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   only be room to grow into without saying so. Raising one is two lines: the
   number, and why it moved. It is the byte budget's counterpart for the thing a
   reader pays instead of bandwidth.
+- `scripts/check-trusted-core.ts` · part of `npm run test:architecture` — the
+  eight modules a reader has to trust before handing the package a page, held
+  at their measured line count and their reviewed imports from outside
+  ([quality/trusted-core.json](../quality/trusted-core.json)). The capability
+  rules beside it in `architecture-rules.ts` and `sink-rules.ts` say which
+  module may listen, fetch, create the Trusted Types policy or write markup,
+  and hold every sink site to [scripts/sink-inventory.ts](../scripts/sink-inventory.ts).
+  What the core is and why is [docs/audit.md](audit.md).
 - `scripts/compat-table.ts` · `npm run compat:check` — the README
   compatibility table is rendered from `quality/compat-matrix.json`; the check
   fails when the table, a fixture lockfile or the CI workflow matrix disagree.
@@ -266,19 +314,30 @@ What is proven about the Payload wire protocol, from the outside in:
    verbatim from a Payload 3.85 admin through the real `MessageBus` and
    runtime, envelope quirks included: `collectionSlug` absent on a global,
    `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields.
-4. **Weekly protocol watch** (`.github/workflows/protocol-watch.yml`) executes
+4. **Nightly protocol watch** (`.github/workflows/protocol-watch.yml`) executes
    the real `@payloadcms/live-preview@latest` and `@canary` (Payload 4.0
    pre-releases) against the corpus and asserts that their behavior — the
    `ready` handshake, event discriminators, the `mergeData` REST request —
-   still matches the runtime's invariants.
+   still matches the runtime's invariants. It also **reads their sender**: the
+   published package is only the receiver, and the message object goes together
+   in the admin UI, which ships compiled. A treeless fetch of
+   `payloadcms/payload` and an AST walk over the two files that build and type
+   that object are compared against `tests/fixtures/protocol-model.ts`. The
+   second job of the same workflow points `examples/payload-backend` at each
+   channel and runs the real admin E2E against it; `canary` is a major and may
+   not boot, so that row is soft-fail like its wire-format twin. The same job
+   re-runs `npm run test:upstream-findings`, so the comparison in
+   `docs/react.md` is checked against the package a reader would install rather
+   than against the version it was written for.
 
 Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
 quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches
 drift the moment Payload ships it. Per Payload version that means: 2.x is
 covered by captured-message integration tests and `fieldSchemaJSON` typing;
 3.85.0 by a corpus captured from a real admin; 3.88.0 by the real-admin E2E on
-every push plus its corpus; `latest` and the 4.0 pre-releases by the weekly
-watch, the latter as early warning only. The four real-app fixtures cover
+every push plus its corpus; `latest` and the 4.0 pre-releases by the nightly
+watch — wire format, sender source and a real admin — the latter as early
+warning only. The four real-app fixtures cover
 Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all three engines; the Astro
 4–7 peer range is wider than the single-major browser fixture and is backed
 by the `astro-matrix` job.

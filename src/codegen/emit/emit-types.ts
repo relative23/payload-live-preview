@@ -140,6 +140,7 @@ function emitMap(name: string, slugs: readonly ExtractedSlug[], lines: string[])
   lines.push('};', '');
 }
 
+/** @internal */
 export function emitTypes(schema: ExtractedSchema, options: EmitOptions = {}): string {
   const lines: string[] = [options.header ?? DEFAULT_HEADER, ''];
   lines.push('import type { PayloadMedia, PayloadRelationship } from "payload-live-preview";', '');

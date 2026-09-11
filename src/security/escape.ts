@@ -15,7 +15,6 @@ const HTML_ESCAPE_PATTERN = /[&<>"'/`=]/g;
 
 /** Escape `text` for an element body or a *quoted* attribute value; strings only, and unquoted attributes are not covered. */
 export function escapeHtml(text: string): string {
-  if (text === '') return '';
   // The character class and the map are coupled: every match is a key.
   // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
   return text.replace(HTML_ESCAPE_PATTERN, (char) => HTML_ESCAPES[char] as string);
@@ -36,9 +35,8 @@ const ATTR_ESCAPES: Readonly<Record<string, string>> = Object.freeze({
 
 const ATTR_ESCAPE_PATTERN = /[&<>"']/g;
 
-/** Escape a value for a *quoted* HTML attribute, leaving URL characters intact; it validates no scheme, so run `isSafeUrl()` on `href`/`src` first. */
+/** Escape a value for a *quoted* HTML attribute, leaving URL characters intact; it validates no scheme, so run `isSafeUrl()` on `href`/`src` first. @internal */
 export function escapeHtmlAttribute(value: string): string {
-  if (value === '') return '';
   // The character class and the map are coupled: every match is a key.
   // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
   return value.replace(ATTR_ESCAPE_PATTERN, (char) => ATTR_ESCAPES[char] as string);

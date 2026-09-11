@@ -16,6 +16,7 @@ export interface CachedElement {
     readonly fieldType: RendererKey;
     readonly format?: string;
     readonly fragmentBoundary?: Element;
+    readonly guessed?: string;
     readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;
     readonly locale?: string;
@@ -56,6 +57,10 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnsupportedStrategy: "LP0407";
     readonly UnknownValueFormat: "LP0408";
     readonly SanitizerDroppedAttribute: "LP0409";
+    readonly UnrenderedBlockKept: "LP0410";
+    readonly UnfaithfulPatch: "LP0411";
+    readonly ServerFormatReplaced: "LP0412";
+    readonly UnrenderedBlockLost: "LP0413";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
@@ -64,6 +69,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RendererThrew: "LP0603";
     readonly StartupFailed: "LP0605";
     readonly ReadyFailed: "LP0606";
+    readonly HydrationWaitTimedOut: "LP0607";
     readonly AuditRuntimeMissing: "LP0701";
     readonly AuditNoFrameAncestors: "LP0702";
     readonly AuditFrameOptionsBlocks: "LP0703";
@@ -179,12 +185,29 @@ export function initLivePreview(config?: LivePreviewClientConfig): LivePreviewCl
 // @public
 export interface InspectionBindings {
     readonly absentFields: readonly string[];
+    readonly autoBind: {
+        readonly mode: 'off' | 'unique';
+        readonly searchMs: number | undefined;
+    };
     readonly elements: number;
     readonly fieldNames: readonly string[];
     readonly fields: number;
+    readonly guessed: readonly {
+        readonly field: string;
+        readonly matched: string;
+        readonly attribute: string | undefined;
+    }[];
     readonly orphanFields: readonly string[];
     readonly owners: readonly string[];
     readonly ownerScoped: boolean;
+}
+
+// @public
+export interface InspectionFidelity {
+    readonly escalated: number;
+    readonly fields: readonly string[];
+    readonly mode: 'ignore' | 'warn' | 'escalate';
+    readonly unfaithful: number;
 }
 
 // @public
@@ -227,13 +250,13 @@ export interface InspectionRevisions {
 
 // @public
 export interface InspectionRoute {
-    // (undocumented)
     readonly failed: number;
     // (undocumented)
     readonly handler: boolean;
     readonly loopStopped: number;
     // (undocumented)
     readonly refreshes: number;
+    readonly refused: number;
 }
 
 // @public
@@ -277,6 +300,7 @@ export interface LivePreviewClientConfig {
     readonly a11yLocale?: string;
     readonly allowedOrigins?: readonly string[];
     readonly apiRoute?: string;
+    readonly autoBind?: 'off' | 'unique';
     readonly autoStart?: boolean;
     readonly debounceMs?: number;
     readonly debug?: boolean;
@@ -376,7 +400,12 @@ export interface LivePreviewEventMap {
 export interface LivePreviewInspection {
     // (undocumented)
     readonly bindings: InspectionBindings;
+    readonly fidelity: InspectionFidelity;
     readonly fragments: InspectionFragments;
+    readonly hydration: {
+        readonly mode: 'off' | 'react' | 'vue';
+        readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
+    };
     // (undocumented)
     readonly origins: InspectionOrigins;
     readonly plugins: readonly PluginInspection[];
@@ -533,7 +562,7 @@ export interface PluginInspection {
     readonly version: string | undefined;
 }
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface PreviewFocusMessage {
     // (undocumented)
     readonly field: string;
@@ -542,10 +571,14 @@ export interface PreviewFocusMessage {
 }
 
 // @public
+export function registerRouteRefresh(refresh: RouteRefresh): () => void;
+
+// @public
 export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
+    readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
     readonly sanitizerPolicy?: SanitizerPolicyMode;
     readonly schema: PayloadFieldSchema | undefined;
 }
@@ -571,17 +604,24 @@ export interface RouteContext {
     readonly log: (code: DiagnosticCode, detail: string) => void;
     // (undocumented)
     readonly receivedAt: number;
+    readonly retryAfter?: (delayMs: number) => void;
     // (undocumented)
     readonly revision: number;
     readonly signal: AbortSignal;
 }
 
 // @public
+export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
+
+// @public
+export type RouteRefresh = () => void | Promise<void>;
+
+// @public
 export interface RouteStrategy {
     // (undocumented)
     readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
     // (undocumented)
-    readonly refresh: (context: RouteContext) => Promise<'refreshed' | 'failed' | 'superseded'>;
+    readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 
 // @public

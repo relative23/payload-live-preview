@@ -25,14 +25,14 @@ export interface LivePreviewLocals {
   readonly livePreviewAuthorizationOutcome?: PreviewAuthorizationOutcome;
 }
 
-/** The request-scoped nonce, for templates that nonce their own scripts. */
+/** The request-scoped nonce, for templates that nonce their own scripts. @internal */
 export const NONCE_LOCALS_KEY = 'livePreviewNonce' satisfies keyof LivePreviewLocals;
 
-/** The verified `AuthorizedPreviewContext`; absent unless `authorizePreview` authorized. */
+/** The verified `AuthorizedPreviewContext`; absent unless `authorizePreview` authorized. @internal */
 export const AUTHORIZATION_LOCALS_KEY =
   'livePreviewAuthorization' satisfies keyof LivePreviewLocals;
 
-/** The hook's `PreviewAuthorizationOutcome`; absent when no hook ran. */
+/** The hook's `PreviewAuthorizationOutcome`; absent when no hook ran. @internal */
 export const AUTHORIZATION_OUTCOME_LOCALS_KEY =
   'livePreviewAuthorizationOutcome' satisfies keyof LivePreviewLocals;
 
@@ -79,6 +79,7 @@ export function exposeDecision(
  * `App.Locals` declaration in the project it writes into. The verdict is
  * checked, not trusted — only a context `authorizePreviewRequest()` produced
  * emits anything (ADR 0006).
+ * @internal
  */
 export function previewBindingsFromLocals(
   locals: unknown,

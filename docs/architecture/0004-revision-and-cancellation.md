@@ -71,11 +71,10 @@ exception is equivalent to rejection. Consumer callback exceptions are isolated 
 well: `onUpdate`, `onDocumentEvent`, and diagnostics cannot unwind the window
 listener or stop the validation queue from draining.
 
-The ordered queue advances an index rather than shifting its backing array. A fully
-drained or invalidated generation drops the array immediately; long partially drained
-backlogs compact only after a substantial consumed prefix. Dequeue is therefore
-amortized O(1), so an adversarial async-validation backlog cannot turn arrival-order
-correctness into quadratic main-thread work.
+The ordered queue is a singly linked list in arrival order: dequeue unlinks the head,
+and a fully drained or invalidated generation drops the whole chain by forgetting
+head and tail. Dequeue is therefore O(1), so an adversarial async-validation backlog
+cannot turn arrival-order correctness into quadratic main-thread work.
 
 ### 3. The newest accepted revision is the only current revision
 

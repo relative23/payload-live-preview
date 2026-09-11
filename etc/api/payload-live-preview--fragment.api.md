@@ -4,10 +4,10 @@
 
 ```ts
 
-// @public
+// @internal
 export function collectFragmentBoundaries(root: ParentNode, changedFields: ReadonlySet<string>): readonly FragmentBoundary[];
 
-// @public (undocumented)
+// @internal (undocumented)
 export function createFragmentHandler(options: FragmentStrategyOptions): FragmentHandler;
 
 // @public
@@ -16,7 +16,7 @@ export function createFragmentStrategy(options: FragmentStrategyOptions): Fragme
 // @public (undocumented)
 export function createRouteStrategy(options?: RouteStrategyOptions): RouteStrategy;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function describeBoundary(element: Element): FragmentBoundary | null;
 
 // @public
@@ -37,6 +37,10 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnsupportedStrategy: "LP0407";
     readonly UnknownValueFormat: "LP0408";
     readonly SanitizerDroppedAttribute: "LP0409";
+    readonly UnrenderedBlockKept: "LP0410";
+    readonly UnfaithfulPatch: "LP0411";
+    readonly ServerFormatReplaced: "LP0412";
+    readonly UnrenderedBlockLost: "LP0413";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
@@ -45,6 +49,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RendererThrew: "LP0603";
     readonly StartupFailed: "LP0605";
     readonly ReadyFailed: "LP0606";
+    readonly HydrationWaitTimedOut: "LP0607";
     readonly AuditRuntimeMissing: "LP0701";
     readonly AuditNoFrameAncestors: "LP0702";
     readonly AuditFrameOptionsBlocks: "LP0703";
@@ -67,19 +72,19 @@ export const DIAGNOSTIC_CODES: Readonly<{
 // @public
 export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_CODES];
 
-// @public
+// @internal
 export const FRAGMENT_ATTRIBUTE = "data-payload-fragment";
 
-// @public
+// @internal
 export const FRAGMENT_KEY_ATTRIBUTE = "data-payload-fragment-key";
 
-// @public
+// @internal
 export const FRAGMENT_PROTOCOL_VERSION = 1;
 
-// @public (undocumented)
+// @internal (undocumented)
 export const FRAGMENT_VERSION_HEADER = "x-payload-fragment-version";
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface FragmentBoundary {
     readonly dependsOn: readonly string[];
     // (undocumented)
@@ -114,10 +119,10 @@ export interface FragmentContext {
     readonly signal: AbortSignal;
 }
 
-// @public
+// @internal
 export type FragmentHandler = (request: StrategyRequest, boundary: FragmentBoundary) => Promise<FragmentOutcome>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentOutcome = {
     readonly status: 'rendered';
     readonly html: string;
@@ -140,7 +145,7 @@ export interface FragmentReport {
     readonly superseded: number;
 }
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface FragmentRequestBody {
     // (undocumented)
     readonly collectionSlug?: string;
@@ -157,7 +162,7 @@ export interface FragmentRequestBody {
     readonly search: string;
 }
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface FragmentResponseBody {
     // (undocumented)
     readonly boundary: {
@@ -180,7 +185,7 @@ export interface FragmentStrategy {
     readonly render: (context: FragmentContext, boundaries: readonly Element[]) => Promise<FragmentReport>;
 }
 
-// @public
+// @internal
 export function fragmentStrategyFrom(handler: FragmentHandler): FragmentStrategy;
 
 // @public
@@ -197,19 +202,19 @@ export interface FragmentStrategyOptions {
     readonly timeoutMs?: number;
 }
 
-// @public
+// @internal
 export function isRouteBound(element: Element): boolean;
 
-// @public
+// @internal
 export function parseFragmentRequest(value: unknown): FragmentRequestBody | null;
 
-// @public
+// @internal
 export function parseFragmentResponse(value: unknown): FragmentResponseBody | null;
 
-// @public
+// @internal
 export function resolveStrategy(element: Element): UpdateSource | undefined;
 
-// @public
+// @internal
 export const ROUTE_REFRESH_HEADER = "x-payload-live-preview";
 
 // @public
@@ -220,17 +225,21 @@ export interface RouteContext {
     readonly log: (code: DiagnosticCode, detail: string) => void;
     // (undocumented)
     readonly receivedAt: number;
+    readonly retryAfter?: (delayMs: number) => void;
     // (undocumented)
     readonly revision: number;
     readonly signal: AbortSignal;
 }
 
 // @public
+export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
+
+// @public
 export interface RouteStrategy {
     // (undocumented)
     readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
     // (undocumented)
-    readonly refresh: (context: RouteContext) => Promise<'refreshed' | 'failed' | 'superseded'>;
+    readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 
 // @public (undocumented)
@@ -257,7 +266,7 @@ export interface StrategyHandlers {
     readonly route?: RouteStrategy;
 }
 
-// @public
+// @internal
 export interface StrategyRequest {
     // (undocumented)
     readonly collectionSlug: string | undefined;

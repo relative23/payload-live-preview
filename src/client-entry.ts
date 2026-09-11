@@ -39,6 +39,7 @@ export type {
   InspectionScheduler,
   LivePreviewInspection,
   PluginInspection,
+  InspectionFidelity,
   InspectionFragments,
   InspectionRoute,
 } from './core/inspection/types';
@@ -57,10 +58,12 @@ export type {
   FragmentReport,
   FragmentStrategy,
   RouteContext,
+  RouteOutcome,
   RouteStrategy,
   StrategyHandlers,
   UpdateSource,
 } from './core/strategies';
+export { registerRouteRefresh, type RouteRefresh } from './core/route-refresh';
 export type { PayloadDocumentEventDetail } from './types/payload-protocol';
 // `RenderContext.sanitizerPolicy` names it, so the entry has to as well.
 export type { SanitizerPolicyMode } from './security';

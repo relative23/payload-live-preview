@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "profile": "core-critical",
+  "report": {
+    "schemaVersion": "1.0",
+    "framework": {
+      "name": "StrykerJS",
+      "version": "9.6.1"
+    },
+    "strykerConfigFile": "stryker.config.js",
+    "vitestConfigFile": "vitest.stryker.config.ts",
+    "testRunner": "vitest",
+    "coverageAnalysis": "perTest",
+    "incremental": false,
+    "thresholds": {
+      "high": 100,
+      "low": 95,
+      "break": 80
+    }
+  },
+  "scope": [
+    "src/core/attribute-binding.ts",
+    "src/core/data-merger.ts",
+    "src/core/message-bus.ts",
+    "src/core/message-guards.ts",
+    "src/security/escape.ts",
+    "src/security/sanitizer.ts",
+    "src/security/trusted-types.ts",
+    "src/security/url-validator.ts"
+  ],
+  "baseline": {
+    "total": 1202,
+    "mutationScoreMinimum": 99.17,
+    "mutationScorePrecision": 2,
+    "mutationScoreDriftMutants": 0,
+    "noCoverageMaximum": 0,
+    "timeoutMaximum": 10,
+    "errorMaximum": 0,
+    "ignoredMaximum": 0
+  },
+  "equivalent": [
+    {
+      "file": "src/core/message-bus.ts",
+      "line": 144,
+      "column": 9,
+      "mutator": "LogicalOperator",
+      "original": "target === undefined || listener === undefined",
+      "replacement": "target === undefined && listener === undefined",
+      "why": "`attachedTarget` and `boundListener` are assigned as a pair in attach and cleared as a pair in detach and in the rollback, so the two fields are never one defined and one not; `||` and `&&` agree on every state that can occur."
+    },
+    {
+      "file": "src/core/message-bus.ts",
+      "line": 144,
+      "column": 9,
+      "mutator": "ConditionalExpression",
+      "original": "target === undefined",
+      "replacement": "false",
+      "why": "with the target check gone, `listener === undefined` still decides, and the listener is undefined exactly when the target is, because the two are set and cleared together."
+    },
+    {
+      "file": "src/core/message-bus.ts",
+      "line": 144,
+      "column": 33,
+      "mutator": "ConditionalExpression",
+      "original": "listener === undefined",
+      "replacement": "false",
+      "why": "with the listener check gone, `target === undefined` still decides, and the target is undefined exactly when the listener is, because the two are set and cleared together."
+    },
+    {
+      "file": "src/core/message-bus.ts",
+      "line": 335,
+      "column": 13,
+      "mutator": "BlockStatement",
+      "original": "{ return false; }",
+      "replacement": "{}",
+      "why": "an empty catch makes `matchesSource` return `undefined`, and its one caller negates that the same way it negates `false`: the event is refused as `source` either way."
+    },
+    {
+      "file": "src/core/message-bus.ts",
+      "line": 345,
+      "column": 13,
+      "mutator": "BlockStatement",
+      "original": "{ return false; }",
+      "replacement": "{}",
+      "why": "an empty catch makes `matchesOrigin` return `undefined`, and both callers negate that the same way they negate `false`: the message is refused as `origin` either way."
+    },
+    {
+      "file": "src/core/message-bus.ts",
+      "line": 356,
+      "column": 9,
+      "mutator": "ConditionalExpression",
+      "original": "handler === undefined",
+      "replacement": "false",
+      "why": "calling an undefined handler throws a TypeError inside the try that isolates every handler call, so the guard saves a throw the catch would swallow, not a behaviour."
+    },
+    {
+      "file": "src/security/trusted-types.ts",
+      "line": 37,
+      "column": 10,
+      "mutator": "ConditionalExpression",
+      "original": "typeof create === 'function'",
+      "replacement": "true",
+      "why": "an object without `createPolicy` is returned as the factory, and the `createPolicy` call then throws a TypeError inside the try in `resolvePolicy`, whose catch sets the policy to `null` — the value the guard leads to."
+    },
+    {
+      "file": "src/security/trusted-types.ts",
+      "line": 46,
+      "column": 7,
+      "mutator": "ConditionalExpression",
+      "original": "api === undefined",
+      "replacement": "false",
+      "why": "`undefined.createPolicy` throws a TypeError inside the same try, whose catch sets the policy to `null` — the value the branch sets when there is no API."
+    },
+    {
+      "file": "src/security/url-validator.ts",
+      "line": 11,
+      "column": 23,
+      "mutator": "Regex",
+      "original": "/^(?:\\.{1,2}\\/|[a-zA-Z0-9_-]+\\/?)/",
+      "replacement": "/^(?:\\.{1,2}\\/|[a-zA-Z0-9_-]\\/?)/",
+      "why": "the pattern is anchored at the start only, so one class character and a run of them match exactly the same strings: whatever follows the first character is not looked at."
+    },
+    {
+      "file": "src/security/url-validator.ts",
+      "line": 24,
+      "column": 7,
+      "mutator": "ConditionalExpression",
+      "original": "trimmed.length === 0",
+      "replacement": "false",
+      "why": "an empty string reaches `new URL('')`, which throws, and the relative-path pattern does not match it, so the same `false` comes out of the catch; the early return only saves the parse."
+    }
+  ]
+}

@@ -66,7 +66,9 @@ describe('MessageBus — message shapes', () => {
     // Twice: once by the reentrant `detach()`, once by the superseded attempt
     // taking its own listener back. Committing instead of removing drops the
     // second one, and nothing else in the observable behaviour changes.
-    expect(remove.mock.calls.filter((call) => call[1] === superseded)).toHaveLength(2);
+    expect(
+      remove.mock.calls.filter((call) => call[0] === 'message' && call[1] === superseded),
+    ).toHaveLength(2);
     target.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: {} }, TRUSTED));
     expect(onUpdate).toHaveBeenCalledOnce();
   });

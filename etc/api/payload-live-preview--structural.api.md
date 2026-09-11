@@ -4,10 +4,10 @@
 
 ```ts
 
-// @public
+// @internal
 export function applyStructuralPatches(options: StructuralApplyOptions): boolean | null;
 
-// @public
+// @internal
 export type ArrayPatch = {
     readonly kind: 'insert';
     readonly index: number;
@@ -44,6 +44,7 @@ export interface CachedElement {
     readonly fieldType: RendererKey;
     readonly format?: string;
     readonly fragmentBoundary?: Element;
+    readonly guessed?: string;
     readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;
     readonly locale?: string;
@@ -54,19 +55,19 @@ export interface CachedElement {
     readonly targetAttribute?: string;
 }
 
-// @public
+// @internal (undocumented)
 export function createStructuralArrayRenderer(): FieldRenderer;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function createStructuralStore(): StructuralStore;
 
 // @public
 export type CustomRendererKey = `${string}:${string}`;
 
-// @public
+// @internal
 export type DependencyMap = Readonly<Record<string, readonly string[]>>;
 
-// @public
+// @internal
 export function dependencyMapFromBinding(fieldName: string, dependsOn: readonly string[]): DependencyMap;
 
 // @public
@@ -80,19 +81,19 @@ export interface FieldRenderer {
 // @public
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';
 
-// @public (undocumented)
+// @internal (undocumented)
 export const ISLAND_ATTRIBUTE = "data-payload-island";
 
-// @public (undocumented)
+// @internal (undocumented)
 export function isMorphBoundary(element: Element): boolean;
 
-// @public
+// @internal
 export function isMorphCompatible(live: Element, rendered: Element): boolean;
 
-// @public
+// @internal (undocumented)
 export const KEY_ATTRIBUTE = "data-payload-key";
 
-// @public
+// @internal
 export function mergeDependencyMaps(...maps: readonly DependencyMap[]): DependencyMap;
 
 // @public
@@ -105,10 +106,10 @@ export interface MorphOptions {
     readonly retainChildrenOf?: (live: Element, rendered: Element) => boolean;
 }
 
-// @public
+// @internal (undocumented)
 export const OWNED_ATTRIBUTE = "data-payload-owned";
 
-// @public
+// @internal
 export function parseDependencyList(value: string | null | undefined): readonly string[];
 
 // @public (undocumented)
@@ -174,6 +175,7 @@ export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
+    readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
     readonly sanitizerPolicy?: SanitizerPolicyMode;
     readonly schema: PayloadFieldSchema | undefined;
 }
@@ -191,7 +193,7 @@ export type RichTextRenderer = (value: unknown, context: {
 // @public
 export type SanitizerPolicyMode = 'compat' | 'strict';
 
-// @public (undocumented)
+// @internal (undocumented)
 export interface StructuralApplyOptions {
     // (undocumented)
     readonly container: Element;
@@ -207,7 +209,7 @@ export interface StructuralApplyOptions {
     readonly template: string;
 }
 
-// @public
+// @internal
 export type StructuralStore = WeakMap<Element, Map<string, unknown>>;
 
 // @public

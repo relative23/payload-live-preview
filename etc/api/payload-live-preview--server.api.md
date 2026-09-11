@@ -96,7 +96,7 @@ export type FieldName<T> = Extract<keyof T, string>;
 
 // Warning: (ae-forgotten-export) The symbol "Prev" needs to be exported by the entry point server.d.ts
 //
-// @public
+// @internal
 export type FieldPath<T, Depth extends 0 | 1 | 2 | 3 = 3> = Depth extends 0 ? never : T extends readonly (infer U)[] ? FieldPath<U, Prev<Depth>> : T extends object ? {
     [K in Extract<keyof T, string>]: K | (T[K] extends object ? `${K}.${FieldPath<T[K], Prev<Depth>>}` : never);
 }[Extract<keyof T, string>] : never;
@@ -199,7 +199,7 @@ export interface PreviewBindings {
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @public
+// @internal
 export function previewBindingsFromLocals(locals: unknown, options?: {
     readonly owner?: string;
 }): PreviewBindings;
@@ -436,7 +436,7 @@ export interface SubtleCryptoLike {
 // @public
 export type SuppressedBinding = Readonly<Record<string, never>>;
 
-// @public
+// @internal
 export type ValueAt<T, P extends string> = P extends `${infer Head}.${infer Rest}` ? Head extends keyof T ? T[Head] extends readonly (infer U)[] ? ValueAt<U, Rest> : T[Head] extends object ? ValueAt<T[Head], Rest> : unknown : unknown : P extends keyof T ? T[P] : unknown;
 
 // @public

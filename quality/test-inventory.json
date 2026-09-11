@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 289,
-    "suites": 605,
-    "tests": 2477,
+    "files": 313,
+    "suites": 661,
+    "tests": 2765,
     "benchmarks": 12
   },
   "groups": {
@@ -36,15 +36,15 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 26,
-      "suites": 34,
-      "tests": 104,
+      "files": 28,
+      "suites": 38,
+      "tests": 117,
       "benchmarks": 0
     },
     "integration": {
-      "files": 19,
-      "suites": 22,
-      "tests": 94,
+      "files": 21,
+      "suites": 24,
+      "tests": 101,
       "benchmarks": 0
     },
     "real-payload": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 236,
-      "suites": 536,
-      "tests": 2270,
+      "files": 256,
+      "suites": 586,
+      "tests": 2538,
       "benchmarks": 0
     }
   },
@@ -110,9 +110,23 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/auto-bind-hit-rate.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/diagnostics.spec.ts",
       "group": "e2e",
       "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/fidelity-oracle.spec.ts",
+      "group": "e2e",
+      "suites": 1,
       "tests": 4,
       "benchmarks": 0
     },
@@ -175,8 +189,8 @@
     {
       "path": "tests/e2e/specs/nextjs-live-preview.spec.ts",
       "group": "e2e",
-      "suites": 2,
-      "tests": 4,
+      "suites": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -196,8 +210,8 @@
     {
       "path": "tests/e2e/specs/nuxt-live-preview.spec.ts",
       "group": "e2e",
-      "suites": 2,
-      "tests": 4,
+      "suites": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -211,7 +225,7 @@
       "path": "tests/e2e/specs/public-response.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -341,6 +355,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/integration/reproducible-runtime-build.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/integration/runtime-autostart.test.ts",
       "group": "integration",
       "suites": 1,
@@ -390,6 +411,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/integration/runtime-unfaithful-patch.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/integration/runtime-warnings.test.ts",
       "group": "integration",
       "suites": 2,
@@ -407,7 +435,7 @@
       "path": "tests/integration/wire-corpus.test.ts",
       "group": "integration",
       "suites": 1,
-      "tests": 5,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -523,10 +551,17 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/nextjs-script-component.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/nextjs.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 15,
+      "suites": 6,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -539,8 +574,8 @@
     {
       "path": "tests/unit/adapters/nuxt.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 19,
+      "suites": 7,
+      "tests": 22,
       "benchmarks": 0
     },
     {
@@ -568,7 +603,7 @@
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 26,
+      "tests": 29,
       "benchmarks": 0
     },
     {
@@ -583,6 +618,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/react-route-refresh.test.tsx",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -736,7 +778,28 @@
       "path": "tests/unit/core/attribute-binding.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/auto-bind-refresh.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/auto-bind-traps.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/auto-bind.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -771,14 +834,14 @@
       "path": "tests/unit/core/data-merger-can-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 11,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/core/data-merger-merge-failures.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -786,6 +849,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 20,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/data-merger-request.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -799,7 +869,7 @@
       "path": "tests/unit/core/diagnostic-codes.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 15,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -852,6 +922,20 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/hydration-vue.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 15,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/hydration.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 15,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/inspection.test.ts",
       "group": "unit",
       "suites": 5,
@@ -873,10 +957,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/leading-apply.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/lean-profile-runner.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/lexical-block-preservation.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -904,7 +1002,7 @@
       "path": "tests/unit/core/lifecycle-data-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 9,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -943,6 +1041,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/lifecycle-hydration.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 17,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/lifecycle-lexical-detection.test.ts",
       "group": "unit",
       "suites": 1,
@@ -952,8 +1057,8 @@
     {
       "path": "tests/unit/core/lifecycle-orphan-fields.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 11,
+      "suites": 2,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -987,8 +1092,8 @@
     {
       "path": "tests/unit/core/loader-source.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 3,
+      "suites": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -1006,10 +1111,17 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/merge-need.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 11,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/message-bus-origin.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 10,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -1037,7 +1149,7 @@
       "path": "tests/unit/core/message-bus-source.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 7,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -1051,14 +1163,21 @@
       "path": "tests/unit/core/message-bus-token-ordering.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 9,
+      "tests": 11,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/core/message-bus-tokens.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 15,
+      "tests": 17,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/message-guards.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -1125,6 +1244,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/relationship-tracker.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/renderer-api.test.ts",
       "group": "unit",
       "suites": 4,
@@ -1176,8 +1302,15 @@
     {
       "path": "tests/unit/core/route-strategy.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 13,
+      "suites": 4,
+      "tests": 18,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/server-format-divergence.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -1233,7 +1366,7 @@
       "path": "tests/unit/core/structural-applier-templates.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -1244,10 +1377,17 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/unfaithful-patch.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 11,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/update-pipeline.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 12,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -1262,6 +1402,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/update-scheduler-leading.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1393,8 +1540,8 @@
     {
       "path": "tests/unit/field-types/array-renderer.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 13,
+      "suites": 2,
+      "tests": 19,
       "benchmarks": 0
     },
     {
@@ -1407,8 +1554,8 @@
     {
       "path": "tests/unit/field-types/html-renderers.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 14,
+      "suites": 5,
+      "tests": 26,
       "benchmarks": 0
     },
     {
@@ -1498,8 +1645,8 @@
     {
       "path": "tests/unit/fragment/route.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 12,
+      "suites": 6,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -1520,7 +1667,7 @@
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 29,
+      "tests": 30,
       "benchmarks": 0
     },
     {
@@ -1534,7 +1681,7 @@
       "path": "tests/unit/inline-loader.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 10,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -1555,7 +1702,7 @@
       "path": "tests/unit/lexical/render-blocks.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 21,
+      "tests": 25,
       "benchmarks": 0
     },
     {
@@ -1737,7 +1884,7 @@
       "path": "tests/unit/plugins/unbound-fields-overlay.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 9,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -1835,7 +1982,7 @@
       "path": "tests/unit/quality/complexity-budget.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -1867,17 +2014,17 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/quality/html-sink-inventory.test.ts",
+      "path": "tests/unit/quality/mutation-equivalence.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 8,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/quality/mutation-policy.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 19,
+      "tests": 20,
       "benchmarks": 0
     },
     {
@@ -1909,7 +2056,21 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/sink-inventory.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/size-budget-notice.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/surface-usage.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 5,
@@ -1920,6 +2081,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/trusted-core.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -2045,14 +2213,14 @@
       "path": "tests/unit/security/sanitizer.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 37,
+      "tests": 39,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/security/trusted-types.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 5,
+      "tests": 7,
       "benchmarks": 0
     },
     {

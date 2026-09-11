@@ -4,12 +4,13 @@
  * what it can do is read off the messages it sends. See ADR 0010.
  */
 
-/** Bumped only when this library's understanding of the wire format changes. */
+/** Bumped only when this library's understanding of the wire format changes. @internal */
 export const LIBRARY_PROTOCOL_VERSION = 4;
 
-/** How a capability becomes active. */
+/** How a capability becomes active. @internal */
 export type CapabilitySource = 'version' | 'observed';
 
+/** @internal */
 export interface CapabilityDeclaration {
   /** Enabled once the negotiated version reaches this (for announced peers). */
   readonly since: number;
@@ -32,7 +33,7 @@ export const CAPABILITY_DECLARATIONS = {
 
 export type ProtocolCapability = keyof typeof CAPABILITY_DECLARATIONS;
 
-/** Every declared capability, in declaration order. */
+/** Every declared capability, in declaration order. @internal */
 export const PROTOCOL_CAPABILITIES = Object.keys(
   CAPABILITY_DECLARATIONS,
 ) as readonly ProtocolCapability[];
@@ -77,6 +78,7 @@ export function negotiateProtocol(
   };
 }
 
+/** @internal */
 export function hasCapability(
   negotiation: ProtocolNegotiation,
   capability: ProtocolCapability,

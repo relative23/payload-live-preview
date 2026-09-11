@@ -10,6 +10,14 @@ import { expect, test, type Frame, type Page } from '@playwright/test';
  * `tests/integration/wire-corpus.test.ts`; the protocol watch compares the
  * latest official client against it.
  *
+ * The session **must cross a save**. Payload's panel fills
+ * `externallyUpdatedRelationship` from `useDocumentEvents()`, which is a plain
+ * `useState` set on every save and never cleared — so before the first save the
+ * field is `null` in every message, and after it, it is set in every message.
+ * A recording that never saves therefore holds only half the protocol, and the
+ * half it misses is the one LP-1 lives in. The assertion below fails rather
+ * than record that half again.
+ *
  * Runs only with `PLP_RECORD_CORPUS=1` — it writes a file. Without the
  * flag it still runs and asserts the capture would be non-empty, so the
  * recorder itself cannot silently rot.
@@ -93,6 +101,27 @@ test.describe('wire corpus', () => {
     // Let the admin flush its debounced posts.
     await page.waitForTimeout(1_500);
 
+    // Save, then keep typing. Everything the panel posts from here on carries
+    // `externallyUpdatedRelationship` — the document's own save event, because
+    // `mostRecentUpdate` is not scoped to foreign documents and is never
+    // cleared. This second half is the state a real editor spends most of a
+    // session in, and it was missing from every earlier recording.
+    // Payload disables `#action-save` while the form is unmodified, so the
+    // button going disabled again is the admin's own signal that the save
+    // landed — no toast class or REST route to keep in step with its releases.
+    const save = page.locator('#action-save');
+    await save.click();
+    await expect(save).toBeDisabled({ timeout: 30_000 });
+    await page.locator('#field-title').fill('Corpus title after save');
+    await expect(preview.locator('[data-payload-field="title"]')).toHaveText(
+      'Corpus title after save',
+    );
+    await page.locator('#field-subtitle').fill('Corpus subtitle after save');
+    await expect(preview.locator('[data-payload-field="subtitle"]')).toHaveText(
+      'Corpus subtitle after save',
+    );
+    await page.waitForTimeout(1_500);
+
     const frame = previewFrame(page);
     if (!frame) throw new Error('preview frame missing');
     const captured = await frame.evaluate(
@@ -108,6 +137,15 @@ test.describe('wire corpus', () => {
     expect(messages.length).toBeGreaterThan(2);
     const types = new Set(messages.map((entry) => (entry.data as { type: string }).type));
     expect(types).toContain('payload-live-preview');
+    // The half of the protocol an unsaved session cannot show. Asserted with or
+    // without `PLP_RECORD_CORPUS`, so a recorder that stops crossing the save
+    // fails here instead of quietly writing a corpus that cannot see LP-1.
+    const afterSave = messages.filter(
+      (entry) =>
+        (entry.data as { externallyUpdatedRelationship?: unknown }).externallyUpdatedRelationship !=
+        null,
+    );
+    expect(afterSave.length).toBeGreaterThan(0);
 
     if (RECORD) {
       const version = payloadVersion();
@@ -118,7 +156,7 @@ test.describe('wire corpus', () => {
         `${JSON.stringify(
           {
             $comment:
-              'Captured verbatim from a real Payload admin (examples/payload-backend) by tests/real-payload/record-wire-corpus.spec.ts. Do not edit; re-record with PLP_RECORD_CORPUS=1.',
+              'Captured verbatim from a real Payload admin (examples/payload-backend) by tests/real-payload/record-wire-corpus.spec.ts. The session crosses a save, so the messages after it carry externallyUpdatedRelationship. Do not edit; re-record with PLP_RECORD_CORPUS=1.',
             payload: version,
             capturedAt: new Date().toISOString().slice(0, 10),
             adminOrigin: messages[0]?.origin,

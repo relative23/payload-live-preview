@@ -4,23 +4,23 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint--EHrklHd.js';
-import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-XvdcJaGe.js';
-import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-XvdcJaGe.js';
-import { b } from '../../fragment-endpoint--EHrklHd.js';
-import { c } from '../../fragment-endpoint--EHrklHd.js';
-import { c as createLivePreviewMiddleware } from '../../middleware-PpzEMxOt.js';
-import { F } from '../../fragment-endpoint--EHrklHd.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint--EHrklHd.js';
-import { h as hasPreviewIntent } from '../../options-yVq9ejmU.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-PpzEMxOt.js';
-import { L as LivePreviewLocals } from '../../locals-XvdcJaGe.js';
-import { a as LivePreviewMiddleware } from '../../middleware-PpzEMxOt.js';
-import { N as NONCE_LOCALS_KEY } from '../../locals-XvdcJaGe.js';
-import { P as PreviewAdapterOptions } from '../../options-yVq9ejmU.js';
-import { a as PreviewRequestLike } from '../../options-yVq9ejmU.js';
-import { b as PreviewRequestOptions } from '../../options-yVq9ejmU.js';
-import { c as PreviewSignal } from '../../options-yVq9ejmU.js';
+import { a } from '../../fragment-endpoint-ByV68yew.js';
+import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-Dq8174og.js';
+import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-Dq8174og.js';
+import { b } from '../../fragment-endpoint-ByV68yew.js';
+import { c } from '../../fragment-endpoint-ByV68yew.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-DhXwbEX0.js';
+import { F } from '../../fragment-endpoint-ByV68yew.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-ByV68yew.js';
+import { h as hasPreviewIntent } from '../../options-CO1iXz__.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-DhXwbEX0.js';
+import { L as LivePreviewLocals } from '../../locals-Dq8174og.js';
+import { a as LivePreviewMiddleware } from '../../middleware-DhXwbEX0.js';
+import { N as NONCE_LOCALS_KEY } from '../../locals-Dq8174og.js';
+import { P as PreviewAdapterOptions } from '../../options-CO1iXz__.js';
+import { a as PreviewRequestLike } from '../../options-CO1iXz__.js';
+import { b as PreviewRequestOptions } from '../../options-CO1iXz__.js';
+import { c as PreviewSignal } from '../../options-CO1iXz__.js';
 
 // @public
 export type AstroComponentLike = object;
@@ -87,13 +87,13 @@ interface DevResponse {
 // @public (undocumented)
 export type FragmentEndpointOptions = F<AstroComponentLike>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRegistry = a<AstroComponentLike>;
 
 // @public (undocumented)
 export type FragmentRegistryEntry<Props extends object = object> = b<AstroComponentLike, Props>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRenderer = c<AstroComponentLike>;
 
 export { FragmentRenderInput }

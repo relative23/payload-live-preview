@@ -5,12 +5,15 @@
 
 import type { PayloadLivePreviewData, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 import { buildSchemaIndex } from '@schema/index';
+import { adoptUniqueBindings, restoreUniqueBindings } from './auto-bind';
 import { isBindingInScope, messageOwnerKeys, readDocumentId } from './binding-owner';
+import type { MergeResult } from './data-merger';
 import { mergeDependencyMaps } from './dependencies';
-import { bindingValue } from './field-value';
+import { bindingIdentity, bindingValue } from './field-value';
 import { dispatchIslandUpdate } from './islands';
 import { type MessageRevision, sameRevision } from './message-bus';
 import { diagnoseOrphanFields } from './orphan-diagnostics';
+import { reportOmittedFeature } from './profile';
 import { detectProtocolProfile } from './protocol-profile';
 import { observeCapabilities } from './protocol-version';
 import type { RevealWindow } from './reveal';
@@ -18,10 +21,12 @@ import { type RuntimeDeps, type RuntimeState, type UpdateTransaction } from './r
 import { resolveStrategy } from './strategies';
 import { StrategyRunner } from './strategy-runner';
 import { createLeanStrategyRunner, type StrategyRunnerLike } from './strategy-runner-lean';
-import { observeThenableResult } from './thenable';
+import { transformForBinding } from './transform-value';
 import type { CachedElement } from './types';
 import type { FlushStats, ScheduledUpdate } from './update-scheduler';
-import { valueIdentity } from './value-identity';
+
+/** A refinement moved no field: it completes values the revision already applied. */
+const NOTHING_CHANGED: ReadonlySet<string> = new Set();
 
 export class UpdatePipeline {
   private readonly strategies: StrategyRunnerLike;
@@ -42,8 +47,11 @@ export class UpdatePipeline {
               this.scheduleAllFields(transaction, data);
             },
             transform: (target, value, allFields, isCurrent) =>
-              this.transformForBinding(target, value, allFields, isCurrent),
+              transformForBinding(deps, target, value, allFields, isCurrent),
             rebuildCache,
+            restoreGuesses: (transaction, data) => {
+              this.restoreGuesses(transaction, data);
+            },
             revealPending: (transaction) => {
               this.revealPending(transaction);
             },
@@ -66,10 +74,15 @@ export class UpdatePipeline {
       return;
     }
     if (revision === undefined) return;
-    const relationship = message.externallyUpdatedRelationship;
-    const relationshipEdited = typeof relationship === 'object' && relationship !== null;
-    if (relationshipEdited) {
-      void deps.emitter.emit('relationshipUpdate', { detail: relationship, timestamp: Date.now() });
+    // A level, not an edge: the panel repeats its last document event in every
+    // message and never clears it, so only a changed event about a document
+    // other than this one is news (LP-1).
+    const relationshipEdit = state.relationships.edit(message);
+    if (relationshipEdit !== null) {
+      void deps.emitter.emit('relationshipUpdate', {
+        detail: relationshipEdit,
+        timestamp: Date.now(),
+      });
     }
     if (typeof message.locale === 'string') state.locale = message.locale;
     if (Array.isArray(message.fieldSchemaJSON)) {
@@ -83,7 +96,7 @@ export class UpdatePipeline {
       schema: state.schema,
       schemaIndex: state.schemaIndex,
       receivedAt: Date.now(),
-      forceRender: relationshipEdited,
+      forceRender: relationshipEdit !== null,
       touched: new Set(),
       baseline: false,
       invalidated: new Set(),
@@ -125,16 +138,7 @@ export class UpdatePipeline {
     const { deps, state } = this;
     const fields = await this.resolveIncomingFields(transaction);
     if (fields === null || !state.isCurrent(transaction)) return;
-    const { message } = transaction;
-    const data: PayloadLivePreviewData = {
-      fields,
-      ...(transaction.schema !== undefined ? { schema: transaction.schema } : {}),
-      ...(typeof message.globalSlug === 'string' ? { globalSlug: message.globalSlug } : {}),
-      ...(typeof message.collectionSlug === 'string'
-        ? { collectionSlug: message.collectionSlug }
-        : {}),
-      ...(transaction.locale !== undefined ? { locale: transaction.locale } : {}),
-    };
+    const data = this.dataFor(transaction, fields);
     if (deps.emitter.listenerCount('beforeUpdate') > 0) {
       const completed = await deps.emitter.emitWhile(
         'beforeUpdate',
@@ -152,15 +156,58 @@ export class UpdatePipeline {
       );
       if (!completed || transaction.cancelled || !state.isCurrent(transaction)) return;
     }
+    this.applyFields(transaction, data, false);
+  }
+
+  private dataFor(
+    transaction: UpdateTransaction,
+    fields: Record<string, unknown>,
+  ): PayloadLivePreviewData {
+    const { message } = transaction;
+    return {
+      fields,
+      ...(transaction.schema !== undefined ? { schema: transaction.schema } : {}),
+      ...(typeof message.globalSlug === 'string' ? { globalSlug: message.globalSlug } : {}),
+      ...(typeof message.collectionSlug === 'string'
+        ? { collectionSlug: message.collectionSlug }
+        : {}),
+      ...(transaction.locale !== undefined ? { locale: transaction.locale } : {}),
+    };
+  }
+
+  /**
+   * Diff against what the page last showed, then schedule. A refinement is the
+   * populated answer to values this revision already applied: it keeps the diff
+   * in step without letting population count as an edit, because no strategy
+   * may be planned a second time for one message.
+   */
+  private applyFields(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    refined: boolean,
+  ): void {
+    const { deps, state } = this;
     const dependencies = mergeDependencyMaps(deps.dependencies, deps.cache.dependencyMap());
-    const changes = state.changes.diff(fields, dependencies);
-    transaction.invalidated = changes.invalidated;
+    const changes = state.changes.diff(data.fields, dependencies);
+    if (changes.baseline && !refined && deps.autoBind !== 'off') {
+      // Once, on the message that describes what the server rendered (ADR 0014
+      // §1). The lean profile leaves the search out; esbuild folds the branch.
+      if (typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__) {
+        reportOmittedFeature('auto-binding');
+      } else {
+        const scope = this.ownerKeysForUpdate(transaction, data.fields);
+        adoptUniqueBindings(deps, state, data.fields, transaction.locale, scope);
+      }
+    }
     transaction.baseline = changes.baseline;
-    transaction.touched = new Set([...changes.changed, ...changes.invalidated]);
+    transaction.invalidated = refined ? NOTHING_CHANGED : changes.invalidated;
+    transaction.touched = refined
+      ? NOTHING_CHANGED
+      : new Set([...changes.changed, ...changes.invalidated]);
     this.scheduleAllFields(transaction, data);
   }
 
-  /** The merged document when a `DataMerger` is configured, else the raw form values; `null` when superseded. */
+  /** The document to render: merged when the server has something to add, else the message's own values; `null` when superseded. */
   private async resolveIncomingFields(
     transaction: UpdateTransaction,
   ): Promise<Record<string, unknown> | null> {
@@ -171,17 +218,43 @@ export class UpdatePipeline {
     if (detectProtocolProfile(state.protocol.observed).populatesRelationships === 'admin') {
       return raw;
     }
+    const plan = state.merges.decide(deps, transaction);
+    if (!plan.merge) return plan.fields;
     const { message } = transaction;
-    const result = await deps.merger.merge({
+    const coalesced = state.merges.request(deps.merger, deps.mergeWindowMs, {
       collectionSlug: message.collectionSlug,
       globalSlug: message.globalSlug,
       data: raw,
       locale: transaction.locale,
     });
+    // A request the burst shares is not one the page waits for: it renders what
+    // it already has, and the answer refines it when the window closes.
+    if (!coalesced.leading) {
+      void this.applyMerged(transaction, coalesced.result).catch((error: unknown) => {
+        deps.log('update failed:', error);
+      });
+      return plan.fields;
+    }
+    const result = await coalesced.result;
     if (!state.isCurrent(transaction)) return null;
-    if (result.status === 'merged') return result.doc;
+    if (result.status === 'merged') {
+      state.merges.recordMerged(result.doc);
+      return result.doc;
+    }
     if (result.status === 'superseded') return null;
-    return raw;
+    return plan.fields;
+  }
+
+  /** Whoever is still current when the shared merge lands gets the populated document. */
+  private async applyMerged(
+    transaction: UpdateTransaction,
+    pending: Promise<MergeResult>,
+  ): Promise<void> {
+    const { state } = this;
+    const result = await pending;
+    if (result.status !== 'merged' || !state.isCurrent(transaction)) return;
+    state.merges.recordMerged(result.doc);
+    this.applyFields(transaction, this.dataFor(transaction, result.doc), true);
   }
 
   scheduleAllFields(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
@@ -216,7 +289,8 @@ export class UpdatePipeline {
         if (plan?.covers(target) === true) {
           // Resolving the value is only worth it when something reveals.
           if (deps.revealEditedField) {
-            state.revealLedger.note(transaction, target, this.rawValue(transaction, target, data));
+            const raw = bindingValue(data.fields, target, fieldName, transaction.locale);
+            state.revealLedger.note(transaction, target, raw);
           }
           continue;
         }
@@ -236,7 +310,7 @@ export class UpdatePipeline {
         // one that landed may still be the field whose reveal was superseded.
         if (deps.revealEditedField) state.revealLedger.note(transaction, target, value);
         if (!isCurrent()) return;
-        const transformed = this.transformForBinding(target, value, data.fields, isCurrent);
+        const transformed = transformForBinding(deps, target, value, data.fields, isCurrent);
         if (!isCurrent()) return;
         // A binding renders its own value *and* the sibling fields bound to
         // href/src/alt, so its identity must cover them: otherwise an edit to
@@ -285,12 +359,21 @@ export class UpdatePipeline {
     }
   }
 
-  private rawValue(
-    transaction: UpdateTransaction,
-    target: CachedElement,
-    data: PayloadLivePreviewData,
-  ): unknown {
-    return bindingValue(data.fields, target, target.fieldName, transaction.locale);
+  /**
+   * The route re-rendered the page without the stamps a guess lives by; look
+   * for the baseline's guesses again, and for nothing else (ADR 0014).
+   */
+  private restoreGuesses(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
+    const { deps, state } = this;
+    if (deps.autoBind === 'off' || state.autoBindGuesses === null) return;
+    // Nothing reaches this in the lean build, which has no route strategy. A
+    // folded branch, not an early return: esbuild drops the branch before
+    // linking and a statement after `return` only after it, and the search's
+    // module was in the lean artifact until the guard took this shape.
+    if (!(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__)) {
+      const scope = this.ownerKeysForUpdate(transaction, data.fields);
+      restoreUniqueBindings(deps, state, data.fields, transaction.locale, scope);
+    }
   }
 
   /** Owner keys this update may address; `false` when scoping is off, `null` when the message names no document. */
@@ -314,38 +397,6 @@ export class UpdatePipeline {
       );
     }
     return keys;
-  }
-
-  /** Transforms are plugin code: frozen into the scheduler entry, errors reported, never awaited. */
-  private transformForBinding(
-    target: CachedElement,
-    originalValue: unknown,
-    allFields: Record<string, unknown>,
-    isCurrent: () => boolean,
-  ): unknown {
-    const transform = this.deps.transformValue;
-    if (transform === undefined) return originalValue;
-    try {
-      const transformed = transform(
-        target.fieldName,
-        originalValue,
-        { element: target.element, allFields },
-        isCurrent,
-      );
-      const returnedThenable = observeThenableResult(transformed);
-      if (!isCurrent()) return originalValue;
-      if (returnedThenable) {
-        throw new TypeError(
-          `Transform for "${target.fieldName}" returned a thenable; transforms must be synchronous`,
-        );
-      }
-      return transformed;
-    } catch (err) {
-      if (!isCurrent()) return originalValue;
-      const error = err instanceof Error ? err : new Error(String(err));
-      void this.deps.emitter.emit('error', { error, context: 'transform', code: 'LP0602' });
-      return originalValue;
-    }
   }
 
   /** Scheduler callback after every flush, including one that applied nothing. */
@@ -375,6 +426,14 @@ export class UpdatePipeline {
     // off-screen one the visibility gate deferred, and scrolling to it is what replays it.
     this.revealPending(transaction);
     if (!isCurrent()) return;
+    // Before the applied check, because a flush that applied nothing is exactly
+    // the one whose every renderer refused its value.
+    const unfaithful = state.unfaithfulPatches;
+    if (unfaithful.length > 0) {
+      state.unfaithfulPatches = [];
+      if (data !== undefined) this.strategies.escalateUnfaithful(transaction, data, unfaithful);
+      if (!isCurrent()) return;
+    }
     if (stats.applied === 0 || data === undefined) return;
     deps.a11y?.announceUpdate(stats.applied);
     if (!isCurrent()) return;
@@ -436,25 +495,4 @@ export class UpdatePipeline {
     const key = `${target.owner ?? ''} ${target.fieldName}`;
     return this.state.revealer.reveal(key, element, win);
   }
-}
-
-/** Identity of everything a binding renders: its value plus any sibling href/src/alt fields. */
-function bindingIdentity(
-  target: CachedElement,
-  value: unknown,
-  fields: Record<string, unknown>,
-  locale: string | undefined,
-): string | undefined {
-  const own = valueIdentity(value);
-  if (own === undefined) return undefined;
-  const siblings = [target.hrefField, target.srcField, target.altField];
-  let combined = own;
-  for (const sibling of siblings) {
-    if (sibling === undefined || sibling.length === 0) continue;
-    const resolved = bindingValue(fields, target, sibling, locale);
-    const identity = valueIdentity(resolved);
-    if (identity === undefined) return undefined;
-    combined += `|${sibling}=${identity}`;
-  }
-  return combined;
 }

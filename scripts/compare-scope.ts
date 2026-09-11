@@ -26,10 +26,10 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
  * measurement that produces it; a change means this line moves and someone
  * says why in the commit.
  *
- * 795 for the protocol and the merge (theirs: 185), 149 for the hook session
+ * 750 for the protocol and the merge (theirs: 185), 149 for the hook session
  * (their React wrapper is a separate package and not measured here).
  */
-export const REVIEWED_SCOPE_LINES = 944;
+export const REVIEWED_SCOPE_LINES = 899;
 
 interface OurFile {
   readonly file: string;

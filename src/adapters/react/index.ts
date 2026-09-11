@@ -26,6 +26,9 @@ import {
 
 export type { DocumentSessionOptions, DocumentSnapshot, DocumentStatus };
 
+export { LivePreviewRouteRefresh, type LivePreviewRouteRefreshProps } from './route-refresh';
+export { registerRouteRefresh, type RouteRefresh } from '@core/route-refresh';
+
 export interface UseLivePreviewDocumentOptions<T> extends DocumentSessionOptions {
   /** The document the page was rendered from; returned until an update merges. */
   readonly initialData: T;

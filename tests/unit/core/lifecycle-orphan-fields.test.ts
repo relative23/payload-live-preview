@@ -238,3 +238,145 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
     runtime.destroy();
   });
 });
+
+/**
+ * LP-7: a change to `admission.priceFrom` stayed invisible in the preview and
+ * the diagnostic never named it — it only ever looked at the top level, while
+ * the runtime has bound dotted paths all along.
+ */
+describe('LivePreviewRuntime — the orphan-field diagnostic, one level down', () => {
+  function setupRuntime(html: string, warn: (...args: unknown[]) => void): LivePreviewRuntime {
+    document.body.innerHTML = html;
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: (o) => o === TRUSTED,
+      readyTargets: [TRUSTED],
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+      warn,
+    });
+    runtime.start();
+    return runtime;
+  }
+
+  function joinLog(log: ReturnType<typeof vi.fn>): string {
+    return log.mock.calls.map((c) => c.map((a) => String(a)).join(' ')).join('\n');
+  }
+
+  it('names the scalar inside a group nothing on the page binds', async () => {
+    const warn = vi.fn();
+    const runtime = setupRuntime('<h1 data-payload-field="title">old</h1>', warn);
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title: 'new', admission: { priceFrom: 4200, currency: 'EUR' } },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    const output = joinLog(warn);
+    expect(output).toContain('field "admission.priceFrom"');
+    expect(output).toContain('field "admission.currency"');
+    // The same fact without scraping the console, which is where the audit
+    // looked for it and did not find it.
+    expect(runtime.inspect().bindings.orphanFields).toContain('admission.priceFrom');
+    runtime.destroy();
+  });
+
+  it('stays silent about a group the page addresses through a dotted binding', async () => {
+    const warn = vi.fn();
+    const runtime = setupRuntime(
+      '<h1 data-payload-field="title">old</h1><b data-payload-field="admission.priceTo">x</b>',
+      warn,
+    );
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title: 'new', admission: { priceFrom: 4200, priceTo: 5000 } },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    // The whole point of the restraint: `onUnfaithfulPatch` reads the same
+    // predicate and calls this group addressable, so the diagnostic may not
+    // call it unbound.
+    expect(joinLog(warn)).not.toContain('admission');
+    runtime.destroy();
+  });
+
+  it('stops one level down: a scalar two objects deep is not named', async () => {
+    const warn = vi.fn();
+    const runtime = setupRuntime('<h1 data-payload-field="title">old</h1>', warn);
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title: 'new', admission: { fees: { booking: 300 } } },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(joinLog(warn)).not.toContain('admission');
+    runtime.destroy();
+  });
+
+  it('leaves arrays alone, at the top level and inside a group', async () => {
+    const warn = vi.fn();
+    const runtime = setupRuntime('<h1 data-payload-field="title">old</h1>', warn);
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title: 'new', admission: { tiers: ['early', 'late'] }, blocks: [{ label: 'x' }] },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    const output = joinLog(warn);
+    expect(output).not.toContain('admission');
+    expect(output).not.toContain('blocks');
+    runtime.destroy();
+  });
+
+  it('skips the system field names below the top level too', async () => {
+    const warn = vi.fn();
+    const runtime = setupRuntime('<h1 data-payload-field="title">old</h1>', warn);
+    fireMessage({
+      type: 'payload-live-preview',
+      data: {
+        title: 'new',
+        venue: { id: 7, createdAt: '2026-01-01', _status: 'draft', name: 'Halle Sieben' },
+      },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    const output = joinLog(warn);
+    expect(output).toContain('field "venue.name"');
+    expect(output).not.toContain('venue.id');
+    expect(output).not.toContain('venue.createdAt');
+    expect(output).not.toContain('venue._status');
+    runtime.destroy();
+  });
+
+  it('reports a nested name once, like a top-level one', async () => {
+    const warn = vi.fn();
+    const runtime = setupRuntime('<h1 data-payload-field="title">old</h1>', warn);
+    for (let i = 0; i < 4; i += 1) {
+      fireMessage({
+        type: 'payload-live-preview',
+        data: { title: `t${String(i)}`, admission: { priceFrom: 4200 + i } },
+      });
+      await vi.advanceTimersByTimeAsync(50);
+    }
+    expect(joinLog(warn).match(/field "admission\.priceFrom"/g) ?? []).toHaveLength(1);
+    runtime.destroy();
+  });
+
+  it('strips the message locale from the group before naming what is inside it', async () => {
+    const warn = vi.fn();
+    const runtime = setupRuntime('<h1 data-payload-field="title">old</h1>', warn);
+    fireMessage({
+      type: 'payload-live-preview',
+      locale: 'de',
+      data: { title: 'new', admission_de: { priceFrom: 4200 } },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    // `admission.priceFrom` is the binding an author would write; the suffix is
+    // Payload's, and it is stripped above, so it is stripped here too.
+    expect(joinLog(warn)).toContain('field "admission.priceFrom"');
+    runtime.destroy();
+  });
+});

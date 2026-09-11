@@ -16,6 +16,7 @@ interface TrustedTypesFactoryLike {
   ): TrustedHtmlPolicyLike;
 }
 
+/** @internal */
 export const TRUSTED_TYPES_POLICY_NAME = 'payload-live-preview';
 
 let policyOverride: TrustedHtmlPolicyLike | null | undefined;
@@ -40,12 +41,11 @@ function resolvePolicy(): TrustedHtmlPolicyLike | null {
   if (policyOverride !== undefined) return policyOverride;
   if (autoPolicy !== undefined) return autoPolicy;
   const api = factory();
-  if (api === undefined) {
-    autoPolicy = null;
-    return null;
-  }
   try {
-    autoPolicy = api.createPolicy(TRUSTED_TYPES_POLICY_NAME, { createHTML: (input) => input });
+    autoPolicy =
+      api === undefined
+        ? null
+        : api.createPolicy(TRUSTED_TYPES_POLICY_NAME, { createHTML: (input) => input });
   } catch {
     // The site's `trusted-types` directive does not list this name; the
     // sink assignment will surface the enforcement error.
@@ -54,7 +54,7 @@ function resolvePolicy(): TrustedHtmlPolicyLike | null {
   return autoPolicy;
 }
 
-/** `html` as a `TrustedHTML` when a policy exists, else the string. Typed `string` for `innerHTML`. */
+/** `html` as a `TrustedHTML` when a policy exists, else the string. Typed `string` for `innerHTML`. @internal */
 export function trustedHtml(html: string): string {
   const policy = resolvePolicy();
   if (policy === null) return html;

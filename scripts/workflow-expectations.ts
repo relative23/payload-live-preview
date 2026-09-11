@@ -4,6 +4,8 @@ import type { WorkflowSpec } from './workflow-contracts';
 import { BUILD, CI, CRITICAL_GATES, DEEP_QUALITY } from './workflow-expectations-ci';
 import {
   BUILD_RUNTIME,
+  FIXTURE_SETUP,
+  fixtureInstall,
   NPM_CI,
   NPM_VERSION,
   SETUP,
@@ -161,6 +163,7 @@ const CODSPEED: WorkflowSpec = {
   },
 };
 
+const PAYLOAD_CHANNEL = '${{ matrix.dist-tag }}';
 const PROTOCOL_WATCH: WorkflowSpec = {
   name: 'Protocol Watch',
   // The one workflow that may write an issue, and only that.
@@ -172,13 +175,51 @@ const PROTOCOL_WATCH: WorkflowSpec = {
         ...SETUP,
         {
           run: 'npx tsx scripts/check-protocol-drift.ts',
-          env: { PROTOCOL_WATCH_PACKAGE: '@payloadcms/live-preview@${{ matrix.dist-tag }}' },
+          env: { PROTOCOL_WATCH_PACKAGE: `@payloadcms/live-preview@${PAYLOAD_CHANNEL}` },
         },
         {
           name: 'File the drift as an issue',
           run: 'npx tsx scripts/report-protocol-drift.ts',
           condition: "failure() && matrix.dist-tag == 'latest'",
           env: { GH_TOKEN: '${{ github.token }}' },
+        },
+        // After the issue step on purpose: a finding that stops reproducing is
+        // upstream fixing something, which the docs answer, not an issue.
+        {
+          run: 'npm run test:upstream-findings',
+          env: { UPSTREAM_FINDINGS_PACKAGE: `@payloadcms/live-preview@${PAYLOAD_CHANNEL}` },
+        },
+      ],
+    },
+    // The nightly half that needs a running admin: the same E2E CI runs against
+    // the pinned fixture, here against whatever `latest` and `canary` are now.
+    'admin-e2e': {
+      timeoutMinutes: 30,
+      continueOnError: '${{ matrix.soft-fail }}',
+      steps: [
+        ...FIXTURE_SETUP,
+        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'npm run build' },
+        fixtureInstall('astro-payload'),
+        {
+          run:
+            'npm --prefix examples/payload-backend install --no-audit --no-fund ' +
+            `--dangerously-allow-all-scripts "payload@${PAYLOAD_CHANNEL}" ` +
+            `"@payloadcms/next@${PAYLOAD_CHANNEL}" "@payloadcms/db-sqlite@${PAYLOAD_CHANNEL}" ` +
+            `"@payloadcms/richtext-lexical@${PAYLOAD_CHANNEL}"`,
+        },
+        {
+          run: "node -p \"'payload ' + require('./examples/payload-backend/node_modules/payload/package.json').version\"",
+        },
+        { run: 'npm run test:e2e:real-payload' },
+        {
+          uses: 'actions/upload-artifact',
+          condition: 'failure()',
+          with: {
+            name: 'playwright-report-admin-${{ matrix.dist-tag }}',
+            path: 'playwright-report/',
+            'retention-days': '7',
+          },
         },
       ],
     },

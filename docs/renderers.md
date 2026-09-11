@@ -20,8 +20,11 @@ Every update passes through the same stages before a renderer sees a value:
 
 Renderers therefore receive the populated, transformed value. `context`
 carries `allFields` (the whole transformed update), `locale`, the field
-`schema` when the admin sent one, and `renderRichText` when the client was
-configured with one.
+`schema` when the admin sent one, `renderRichText` when the client was
+configured with one, and `reportUnfaithful(target, reason)` — call it when your
+renderer can only approximate the value, and `onUnfaithfulPatch` asks a server
+to draw that region instead of leaving the approximation on the page
+([docs/options.md](options.md)).
 
 ## Choosing a renderer
 
@@ -156,6 +159,28 @@ Alignment and indent are classes, not inline CSS — the sanitizer removes
 `style` under both policies, so a `style="text-align:center"` would never
 reach the page.
 
+### A block with no renderer keeps what the server rendered
+
+The two placeholders above are what `lexicalToHtml()` returns for a `block` or
+`inlineBlock` whose slug nothing registered. In the browser they are usually not
+what the page ends up with: the `richText` write pairs each placeholder with the
+element standing in its position in the live markup and leaves that element
+alone, so the `<figure>` your own server rendered for a `mediaBlock` survives an
+edit to another field. Pairing is positional — the server writes no id to match
+on — and stops where the child counts disagree, at which point the empty
+placeholder is written after all. The one wrapper a template puts around the
+field — `<div class="prose">` around the blocks — is not a disagreement: the
+write pairs inside it and leaves it standing, so the classes the typography
+hangs on survive too. A `<div>` a registered block renders is content, not a
+wrapper, and so is a wrapper that carries a binding of its own.
+
+The write says which of the two happened, once per slug, after it knows:
+`LP0410` when the server's markup stands, `LP0413` when it is gone. The second
+is also a finding for `onUnfaithfulPatch` — the region is handed to the fragment
+or route strategy when the page has one — and `inspect().fidelity` counts it
+whether or not anything could be done about it. A container the page left empty
+gets the placeholder and neither line: there was nothing to keep.
+
 ### The sanitizer adds `target="_blank"` itself
 
 An anchor whose `href` is an external `http(s)` URL leaves the sanitizer with
@@ -231,10 +256,12 @@ Events: `init` · `connect` · `disconnect` · `beforeUpdate` · `afterUpdate` �
 (`'patch'`, `'fragment'` or `'route'`: the strategy that produced the
 update). `fragmentRender` fires per boundary and revision with `status`
 `'rendered'` or `'failed'` and the diagnostic `code`. `relationshipUpdate`
-fires when an update carries `externallyUpdatedRelationship` (a related
-document edited in an admin drawer); that update re-renders every bound field
-even under `skipUnchanged`, because populated values may have changed while
-the form values did not. `error` carries a stable `code`, so a handler can
+fires once per save in a _related_ document (an admin drawer), read off
+`externallyUpdatedRelationship`; that update re-renders every bound field even
+under `skipUnchanged`, because populated values may have changed while the
+form values did not. The panel repeats its last document event in every later
+message, its own saves of the previewed document included — those repeats are
+neither an event nor a re-render. `error` carries a stable `code`, so a handler can
 branch on `DIAGNOSTIC_CODES` without parsing the message.
 
 ## Transforms are synchronous — by decision

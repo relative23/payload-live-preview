@@ -81,6 +81,23 @@ export interface InspectionBindings {
   readonly ownerScoped: boolean;
   /** Distinct document owners currently on the page, sorted. */
   readonly owners: readonly string[];
+  /**
+   * Bindings the runtime found by value on the connection's first message
+   * (`autoBind: 'unique'`, ADR 0014), sorted by field, each with the value it
+   * matched on and the attribute it matched in — `undefined` for a text match.
+   * These are the elements that change without a `data-payload-field` in the
+   * template; every one of them carries `data-payload-guessed` in the DOM.
+   */
+  readonly guessed: readonly {
+    readonly field: string;
+    readonly matched: string;
+    readonly attribute: string | undefined;
+  }[];
+  /** `autoBind` as configured, and what the one search cost; `searchMs` is `undefined` until it ran. */
+  readonly autoBind: {
+    readonly mode: 'off' | 'unique';
+    readonly searchMs: number | undefined;
+  };
 }
 
 /** Scheduler work in progress. */
@@ -124,15 +141,51 @@ export interface LivePreviewInspection {
   readonly plugins: readonly PluginInspection[];
   /** Server-rendered fragment boundaries: whether a handler exists and what happened to renders. */
   readonly fragments: InspectionFragments;
-  /** Route refreshes: whether a strategy exists, how many ran, failed, or were stopped by the loop guard. */
+  /** Route refreshes: whether a strategy exists, how many ran, failed, were paced, or were stopped by the loop guard. */
   readonly route: InspectionRoute;
+  /** Patches the runtime knew could not match the server's render, and what became of them. */
+  readonly fidelity: InspectionFidelity;
+  /**
+   * Whether the page declared a framework that hydrates it, and how far the
+   * wait for its first commit — React's, or Vue's mount — got (ADR 0015).
+   * `waiting` is why a preview on a Next or Nuxt page is not connected yet;
+   * `timed-out` is LP0607.
+   */
+  readonly hydration: {
+    readonly mode: 'off' | 'react' | 'vue';
+    readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
+  };
+}
+
+/**
+ * The fidelity verdicts as `inspect()` reports them (LP0411). A positive
+ * `unfaithful` beside `escalated: 0` is a page that keeps a degraded patch —
+ * because `mode` says so, or because neither `fragments.handler` nor
+ * `route.handler` is there to escalate to.
+ */
+export interface InspectionFidelity {
+  /** `onUnfaithfulPatch` as resolved from both of its names. */
+  readonly mode: 'ignore' | 'warn' | 'escalate';
+  /** Bindings reported unfaithful since start — once per element, like LP0411, and under every mode. */
+  readonly unfaithful: number;
+  /** Of those, how many were handed to the fragment or route strategy. */
+  readonly escalated: number;
+  /** The field names behind `unfaithful`, sorted. Cumulative. */
+  readonly fields: readonly string[];
 }
 
 /** The route strategy as `inspect()` reports it. */
 export interface InspectionRoute {
   readonly handler: boolean;
   readonly refreshes: number;
+  /** Refreshes that broke: the request, the answer, or the morph. */
   readonly failed: number;
+  /**
+   * Refreshes the strategy's own minimum interval held back (LP0805). Each is
+   * run once the window closes unless a newer revision takes its place, so this
+   * counts pacing and not loss — and it is deliberately not `failed`.
+   */
+  readonly refused: number;
   /** Second refresh requests for one revision, refused with LP0805. */
   readonly loopStopped: number;
 }

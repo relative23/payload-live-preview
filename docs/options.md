@@ -43,7 +43,10 @@ always wins. The ledger of what changed is
 | `strategies`               | yes    | —             | —                                                        | —                        | — (patch only)                                      | same                                 |
 | `fragmentEndpoint`         | —      | yes           | as `fragments: { endpoint }`                             | —                        | — (no fragment client)                              | same                                 |
 | `routeStrategy`            | —      | yes           | yes                                                      | —                        | `false`                                             | same                                 |
-| `onUnboundChange`          | yes    | yes           | yes                                                      | —                        | `'ignore'`                                          | same                                 |
+| `onUnfaithfulPatch`        | yes    | yes           | yes                                                      | —                        | `'escalate'`                                        | same                                 |
+| `onUnboundChange`          | yes    | yes           | yes                                                      | —                        | — (alias, deprecated)                               | same                                 |
+| `autoBind`                 | yes    | yes           | yes                                                      | —                        | `'off'`                                             | same                                 |
+| `hydration`                | yes    | yes           | set by the Next.js and Nuxt adapters                     | —                        | — (start on `DOMContentLoaded`)                     | same                                 |
 | `resolveRenderer`          | yes    | —             | —                                                        | —                        | —                                                   | same                                 |
 | `renderRichText`           | yes    | —             | —                                                        | —                        | built-in Lexical renderer                           | same                                 |
 | `root`                     | yes    | —             | —                                                        | —                        | `document`                                          | same                                 |
@@ -70,7 +73,7 @@ always wins. The ledger of what changed is
 
 Every option is a decision someone had to be able to make differently. Grouped
 by the decision, so the table above can be read as eight questions rather than
-forty-five rows.
+forty-six rows.
 
 - **Which document, and how complete** — `allowedOrigins`, `serverURL`,
   `apiRoute`, `mergeDepth`, `mergeFetch`. Payload 3.x posts raw form values, so
@@ -83,7 +86,8 @@ forty-five rows.
   exactly the mistake this package is built to avoid
   ([ADR 0006](architecture/0006-authorized-preview-context.md)).
 - **How the runtime reaches the page** — `autoInject`, `shouldInject`,
-  `delivery`, `assetPath`, `mode`, `runtime`, `nonce`. A site that renders the
+  `delivery`, `assetPath`, `mode`, `runtime`, `nonce`, and `hydration`, for a
+  page a framework takes over after it is parsed. A site that renders the
   tag itself, one that serves the runtime as a cached asset, and one that ships
   a smaller build all need a different answer, and the wrong default costs
   every visitor bytes ([deployment.md](deployment.md#what-a-public-visitor-pays)).
@@ -92,10 +96,11 @@ forty-five rows.
   the page and the injected script has to be allowed to run, without the package
   ever loosening a policy the site already sends.
 - **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
-  `routeStrategy`, `onUnboundChange`, `strategies`, `dependencies`. Three
-  strategies exist because patching cannot create markup and a route refresh
-  cannot be done per keystroke
-  ([overview](architecture/overview.md#the-five-objects)).
+  `routeStrategy`, `onUnfaithfulPatch`, `strategies`, `dependencies`,
+  `autoBind`. Three strategies exist because patching cannot create markup and
+  a route refresh cannot be done per keystroke
+  ([overview](architecture/overview.md#the-five-objects)); `autoBind` is how a
+  page with no `data-payload-field` at all gets its bindings.
 - **What the page does with a value** — `sanitizerPolicy`, `resolveRenderer`,
   `renderRichText`, `revealEditedField`, `scopeBindingsByOwner`. Unsaved editor
   input is untrusted input; the rest is how a site renders what it already
@@ -128,8 +133,10 @@ Notes on the rows that need one:
   tag with `renderLivePreviewScript()` (Astro, Next.js, Nuxt).
 - `delivery: 'asset'` replaces the inlined runtime with a bootstrap of a few
   hundred bytes that fetches it as `<assetPath>/runtime.<hash>.js` — but only
-  once it finds itself in a preview context. Measured on the Next.js fixture:
-  679 bytes in the page instead of 97 546, and one response the browser may
+  once it finds itself in a preview context. Measured on the Next.js fixture by
+  `tests/e2e/specs/public-response.spec.ts`: 1 326 bytes in the page (605 of
+  them the arming for React's first commit a Next page needs, ADR 0015)
+  instead of 115 031, and one response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
   integrity check and what a proxy must not do to the file are in
@@ -148,9 +155,9 @@ Notes on the rows that need one:
 - `runtime` chooses which artifact the page carries. The default is the full
   one; `LEAN_RUNTIME` from `payload-live-preview/lean` is 24 763 bytes gzip
   against 30 253 — it leaves out the fragment and route strategies, the keyed
-  morph, the structural arrays, the item templates and the screen-reader
-  announcer, and reports LP0104 when a page needs one of them rather than doing
-  nothing. It is an import rather than a string option so the second artifact
+  morph, the structural arrays, the item templates, the screen-reader
+  announcer and auto-binding, and reports LP0104 when a page needs one of them
+  rather than doing nothing. It is an import rather than a string option so the second artifact
   lands only in builds that ask for it:
 
   ```ts
@@ -171,10 +178,48 @@ Notes on the rows that need one:
   that wants a route refresh without a fragment endpoint. `fragmentEndpoint`
   implies it and the two are never emitted together, because the fragment
   prelude already carries the route strategy.
-- `onUnboundChange: 'route'` refreshes the route when a revision changes a field
-  the page has no binding for, instead of leaving the edit invisible. It needs a
-  route strategy and skips the connection's first message
-  ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
+- `onUnfaithfulPatch` decides what happens when the runtime knows a patch cannot
+  reach what the server would have drawn: a value no renderer can represent, a
+  Lexical block whose markup the write has to drop, or a changed field the page
+  has no binding for at all. `'escalate'`, the default, hands the region to the
+  fragment strategy when a boundary covers it and to the route otherwise, so it
+  does nothing without `fragments` or `routeStrategy`; `'warn'` reports LP0411
+  and keeps the patch; `'ignore'` keeps it silently. It skips the connection's
+  first message, where every field counts as changed and the page has just been
+  rendered from them ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
+  `inspect().fidelity` counts the findings under every mode — `unfaithful`,
+  and `escalated` for the ones a strategy took — so a page that has nowhere to
+  escalate to shows the gap rather than hiding it.
+  `onUnboundChange` is the 2.0 name for the same decision and still decides when
+  it is given — `'route'` means `'escalate'` — until it is removed in 3.0.
+- `hydration: 'react'` holds the runtime's start — no `ready`, no listener —
+  until React has committed the tree that holds the bindings, so the first
+  write lands on markup React keeps instead of on markup React is about to
+  compare with its own render and regenerate
+  ([ADR 0015](architecture/0015-first-write-after-hydration.md)). The Next.js
+  adapter sets it on every script it emits. `hydration: 'vue'` holds it until
+  Vue has mounted the app around the bindings — and, on Nuxt, until a Suspense
+  still hydrating at the mount has resolved — so the write is not repaired
+  back to the server's value by Vue's hydration; the Nuxt adapter sets it. A
+  page built by hand with `generateInlineScript()` may set either. Capped at
+  five seconds, then `LP0607`.
+- `autoBind: 'unique'` lets the runtime find bindings by value on the
+  connection's first message, once: a scalar whose value is the whole content
+  of exactly one element in the body is bound to that element as if
+  `data-payload-field` stood there, and everything else stays unbound. A
+  route refresh keeps those guesses — the fresh markup is searched for them
+  again, and for nothing else. A
+  declared attribute always wins, `data-payload-no-bind` keeps a subtree out,
+  and every guess is stamped `data-payload-guessed` and listed in
+  `inspect().bindings.guessed`. Off by default; what it finds and what it must
+  never find are in [docs/bindings.md](bindings.md#letting-the-runtime-find-bindings-by-value)
+  and [ADR 0014](architecture/0014-auto-binding.md).
+- `debounceMs` is the window a burst of messages shares, not a delay on every
+  one: the first write of a quiet phase is applied on the next animation frame
+  and opens the window, and everything that arrives inside it is coalesced into
+  one flush when it closes. Typing therefore costs one frame at the start of a
+  phrase and one at the end of it, not 50 ms per keystroke. `debounceMs: 0`
+  removes the window entirely — and with it the merge coalescing that shares it.
 - `dependencies` and `data-payload-depends` say the same thing from two sides;
   both matter only under `skipUnchanged`. `revealEditedField` is described in
   [docs/reveal.md](reveal.md), `scopeBindingsByOwner` in
@@ -233,11 +278,23 @@ are ESM-only; the rest ship ESM and CommonJS builds.
 ## `serverURL` and `mergeDepth`
 
 Payload 3.x posts raw form values on every edit, so relationship and upload
-fields arrive as bare ids. With `serverURL` set, the runtime re-fetches each
+fields arrive as bare ids. With `serverURL` set, the runtime re-fetches the
 update through the Payload REST API (`POST` with
 `X-Payload-HTTP-Method-Override: GET`, `credentials: 'include'` — the same
 request the official client makes) and renders the populated document; on
-failure it renders the raw values. `mergeDepth` has no default: every
+failure it renders the raw values.
+
+It asks only when the answer can change what the page shows. A page whose every
+binding renders a plain scalar of a top-level field, and a page with no binding,
+no island, no `data-payload-fragment` boundary and no `beforeUpdate`/`afterUpdate`
+listener, never merge at all; a message that moved no field anything populates is
+answered from its own values over the document the last merge resolved. What is
+left costs one request that opens a burst of edits and one that closes it — the
+window is `debounceMs`, and `debounceMs: 0` turns it off. A field that names a
+document keeps the value the last merge resolved until the new one arrives, so a
+bare id never reaches the page. One consequence worth knowing: on a page that
+reads no populated value, an `afterRead` hook that rewrites a scalar no longer
+reaches the preview between saves. `mergeDepth` has no default: every
 adapter, `generateInlineScript()` and `LivePreviewClient` throw when
 `serverURL` is set without it (`0` means no population), and `defaults: 'v1'`
 restores the 1.x default of `1`. The depth must match the `depth` of the

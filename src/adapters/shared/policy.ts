@@ -19,7 +19,7 @@ import { renderScriptBody } from './response';
 import { hasPreviewIntent, type PreviewRequestLike } from './preview-request';
 import { warnOnce } from './dev-warning';
 import { runAuthorizeHook, type BoundAuthorizeHook } from './authorize-hook';
-import { resolvePolicyOptions, type PreviewPolicyOptions } from './policy-options';
+import { resolvePolicyOptions, type PageFacts, type PreviewPolicyOptions } from './policy-options';
 import { assertStrictConfiguration } from './strict';
 
 export type { PreviewAuthorizationHookResult } from './options';
@@ -126,7 +126,10 @@ const NONE: PreviewDecision = Object.freeze({
   exposeNonce: false,
 });
 
-export function createPreviewPolicy(options: PreviewPolicyOptions): PreviewPolicy {
+export function createPreviewPolicy(
+  options: PreviewPolicyOptions,
+  facts: PageFacts = {},
+): PreviewPolicy {
   const resolved = resolvePolicyOptions(options);
   assertMergeDepthExplicit(options);
   const authorizes = typeof options.authorizePreview === 'function';
@@ -144,7 +147,7 @@ export function createPreviewPolicy(options: PreviewPolicyOptions): PreviewPolic
   const autoInject = options.autoInject ?? true;
   let body: string | undefined;
   const scriptBody = (): string => {
-    body ??= renderScriptBody(options);
+    body ??= renderScriptBody(options, facts);
     return body;
   };
   return {

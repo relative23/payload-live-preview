@@ -83,7 +83,9 @@ inside a boundary are also its fallback when the server cannot render.
 | `data-payload-fragment-key`    | Distinguishes several boundaries of one id on a page                                                                                                                                                                                            | `data-payload-fragment-key="a"`                    |
 | `data-payload-boundary`        | An empty-field anchor: hidden while the field is empty, shown when it is filled                                                                                                                                                                 | `data-payload-boundary hidden`                     |
 | `data-payload-island`          | A hydrated framework root: never patched or morphed into; `"patch"` opts back in ([docs/renderers.md](renderers.md))                                                                                                                            | `data-payload-island`                              |
-| `data-payload-owned`           | A subtree the site scripts itself: the morph and the head sync leave it alone                                                                                                                                                                   | `data-payload-owned`                               |
+| `data-payload-owned`           | A subtree the site scripts itself: the morph and the head sync leave it alone, and so does `autoBind`                                                                                                                                           | `data-payload-owned`                               |
+| `data-payload-no-bind`         | A subtree `autoBind` never guesses into; a declared binding inside it still works (see below)                                                                                                                                                   | `data-payload-no-bind`                             |
+| `data-payload-guessed`         | Written by the runtime on every binding `autoBind` made, holding the value it matched; never write it yourself                                                                                                                                  | —                                                  |
 
 Binding metadata is live: changing any of these attributes, or an input's
 native `type`, rebuilds the affected bindings after the mutation debounce.
@@ -113,6 +115,16 @@ vocabulary:
 The locale is the element's `data-payload-locale`, else the message's, else the
 document's `lang`. A `<time>` keeps the ISO instant in its `datetime` attribute
 whatever the label says.
+
+Leaving the attribute off is not neutral: the renderer still has to pick a
+format, and if the template picked a different one the preview stops matching
+the page the server would send. The runtime cannot tell which of the two is
+right — the element's text is the only evidence it has, and the first message of
+a connection may already carry unsaved edits — so it says what it saw instead of
+guessing. The first write to a date, number or checkbox binding without this
+attribute is held against what the element showed, and a difference is reported
+once as [`LP0412`](troubleshooting.md#diagnostic-codes) with both readings in
+it. Setting `data-payload-format` to the format the template uses ends it.
 
 Three things it does not do. It formats the amount it is given, so a field
 holding minor units renders as minor units — dividing would be data shaping, and
@@ -171,6 +183,12 @@ field nowhere to land (`LP0201`). Render the anchor unconditionally:
 <div data-payload-field="subtitle">{subtitle ?? ''}</div>
 ```
 
+The warning reaches one level into a group: a document with an unbound
+`admission` group names `admission.priceFrom`, the path a binding would carry,
+rather than the object around it. A group with a binding on any path inside it
+counts as addressed and is not reported, and arrays are left alone — an array
+item without an anchor is a template decision.
+
 `PreviewBoundary` renders that anchor with `data-payload-boundary`: as an
 empty `hidden` element while the value is empty, so a visitor and a screen
 reader see nothing, and the runtime removes `hidden` when an update fills the
@@ -200,6 +218,62 @@ import RichText from 'payload-live-preview/astro/RichText.astro';
 ---
 <RichText value={page.body} field="body" class="prose" />
 ```
+
+## Letting the runtime find bindings by value
+
+`autoBind: 'unique'` (off by default, on the client, the inline script and
+every adapter) is for a page that carries no `data-payload-field` at all. The
+connection's first message describes the document the server has just
+rendered, so in that one moment the runtime looks each scalar field's value up
+in the page. Where the value is the whole content of **exactly one** element —
+its only text node, or one attribute the writer may set, an `<img src>` for an
+upload — that element is bound to the field as if the attribute stood there.
+Where it is found nowhere, more than once, as part of a longer text, or split
+across nodes, nothing is bound, and the field is as unbound as it was: LP0201
+names it, and `onUnfaithfulPatch` escalates an edit to it.
+
+A guess is a binding like any other afterwards, with one difference you can
+see: the element carries `data-payload-guessed` with the value it was found by,
+`inspect().bindings.guessed` lists it apart from the declared ones, and the
+[unbound-fields overlay](../README.md) shows it under its own heading with the
+attribute to paste. Copy that attribute into the template and the guess
+becomes a declaration.
+
+What it never does, so a wrong element is not rewritten on every keystroke:
+
+- It never enters `<script>`, `<style>`, `<template>`, `<title>`, a form
+  control, a `contenteditable` region, a shadow tree, an island, a
+  `data-payload-owned` subtree, the `<head>`, or anything under
+  `data-payload-no-bind` — the attribute to put on a footer, a navigation or
+  a sidebar whose text happens to repeat a field.
+- A declared `data-payload-field` wins, as an anchor and as a veto: the element
+  and its subtree are spoken for. A page that carries one attribute is not
+  thereby opted into guessing for the rest; `autoBind` is what opts in.
+- It never looks for a value shorter than thirteen characters, one that is
+  only digits, a boolean, a single lower-case token (an enum value, a slug) or
+  a locale code — those match by accident. So a `count` of `12` is never
+  guessed; neither is a `status` of `published`.
+- It searches once. A value that first appears in a later message is never
+  bound, because by then the page is what the runtime made it. The one page
+  it searches again is one the server rendered again: a route refresh morphs
+  the page toward markup that carries no stamp, so the runtime then looks for
+  the guesses it already made — by the value each was found by and by the
+  field's current value, since the server may have rendered either — and for
+  nothing else. A refresh once took every guess with it, and each edit to a
+  guessed field after that fetched the route again; that is what closed it.
+  A fragment render inside a boundary still strips a guess in that boundary,
+  and only the next route refresh brings it back.
+
+Two things to know before turning it on. A date or a number it binds inherits
+no `data-payload-format`, so the first write reports
+[`LP0412`](troubleshooting.md#diagnostic-codes) where the template formatted
+the value differently — the diagnostic is the measure of what the guess could
+not know. And a guess rests on the value being unique on the page: a title
+that is also the link text in the navigation is not bound, and a city name
+that only the footer prints would be, were it not for the length floor. The
+trap corpus in `tests/fixtures/auto-bind-traps` is where those cases are
+written down and held; [ADR 0014](architecture/0014-auto-binding.md) is where
+the rule and the four ways it can fail are decided.
 
 ## Pages that preview more than one document
 

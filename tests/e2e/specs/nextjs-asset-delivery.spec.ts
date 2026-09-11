@@ -6,7 +6,9 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * `delivery: 'asset'` through the Next.js adapter. Both fixtures live in
  * `examples/nextjs-payload`: `/` is the inline default, `/asset` carries the
  * bootstrap and fetches the runtime from the route handler in
- * `app/payload-live-preview/[file]`.
+ * `app/payload-live-preview/[file]`. The `(asset)` root layout stays on the
+ * synchronous `livePreviewScriptProps()` on purpose — it is what still measures
+ * what an option alone can do, now that the inline layout gates on a verdict.
  *
  * What is asserted is the trade the option makes. The page gets small, the
  * runtime arrives as one cacheable file whose name is its hash, the browser
@@ -34,8 +36,12 @@ test.describe('asset delivery (Next.js)', () => {
     expect(html).not.toContain(RUNTIME_MARKER);
 
     // The inline half of the same fixture, for the comparison this option
-    // exists for. Both pages are otherwise the same shell, so the difference is
+    // exists for. Its layout is the gated one, so the comparison needs the
+    // credential `/preview-session` mints — without it the inline page renders
+    // no script at all and the difference measured would be the gate rather than
+    // the delivery. Both pages are otherwise the same shell, so what is left is
     // the runtime: about 97 KB of it, against 679 bytes of bootstrap.
+    await pageBody(page, '/preview-session?to=%2F');
     const inline = await pageBody(page, '/?preview=true');
     expect(inline).toContain(RUNTIME_MARKER);
     expect(inline.length - html.length).toBeGreaterThan(90_000);

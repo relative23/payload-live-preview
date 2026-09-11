@@ -24,7 +24,8 @@ export type OmittedFeature =
   | 'array templates'
   | 'server-rendered fragments'
   | 'route refreshes'
-  | 'screen-reader announcements';
+  | 'screen-reader announcements'
+  | 'auto-binding';
 
 const HOW_TO_GET_IT: Readonly<Record<OmittedFeature, string>> = {
   'structural arrays': 'data-payload-type="array" and keyed lists',
@@ -32,6 +33,7 @@ const HOW_TO_GET_IT: Readonly<Record<OmittedFeature, string>> = {
   'server-rendered fragments': 'data-payload-fragment boundaries',
   'route refreshes': 'data-payload-strategy="route" and bindings in <head>',
   'screen-reader announcements': 'the aria-live region',
+  'auto-binding': "autoBind: 'unique'",
 };
 
 const reported = new Set<OmittedFeature>();

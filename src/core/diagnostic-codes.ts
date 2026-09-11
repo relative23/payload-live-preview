@@ -5,7 +5,9 @@
  *
  * Browser-side reporting sites write the literal (`code: 'LP0603'`) rather than
  * reading it from this record: the frozen table would then ship in the inline
- * runtime for the sake of six characters. Server-side tools may import it.
+ * runtime for the sake of six characters — it did, 1 287 B in every page, for
+ * the one read Z6 left in the strategy runner, and `diagnostic-codes.test.ts`
+ * now holds the artifact free of it. Server-side tools may import it.
  */
 
 /**
@@ -53,6 +55,14 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   UnknownValueFormat: 'LP0408',
   /** The strict sanitizer removed an attribute the 1.x `'compat'` policy kept. */
   SanitizerDroppedAttribute: 'LP0409',
+  /** A Lexical block has no renderer; the markup the server rendered for it is kept instead. */
+  UnrenderedBlockKept: 'LP0410',
+  /** A patch cannot reach what the server would have drawn; `onUnfaithfulPatch` decided what happens next. */
+  UnfaithfulPatch: 'LP0411',
+  /** The first write to a date, number or checkbox binding replaced a different reading of the same value. */
+  ServerFormatReplaced: 'LP0412',
+  /** A Lexical block has no renderer, and the write could not keep the markup the server rendered for it; it is gone. */
+  UnrenderedBlockLost: 'LP0413',
 
   /** A message was rejected before it reached the update pipeline. */
   MessageRejected: 'LP0501',
@@ -72,6 +82,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   StartupFailed: 'LP0605',
   /** Sending the ready handshake failed. */
   ReadyFailed: 'LP0606',
+  /** The page declared hydration, but no React commit or Vue mount came within the cap; the runtime started without waiting. */
+  HydrationWaitTimedOut: 'LP0607',
 
   /** The audit found no runtime in a response that carried preview intent. */
   AuditRuntimeMissing: 'LP0701',
@@ -97,11 +109,11 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   FragmentUnauthorized: 'LP0803',
   /** A fragment response arrived for a revision that was already superseded and was discarded. */
   FragmentSuperseded: 'LP0804',
-  /** A route refresh was requested again for the same revision; the loop guard stopped it. */
+  /** A route refresh was refused: the loop guard, or the strategy's minimum interval. */
   RouteRefreshLoop: 'LP0805',
   /** A boundary asks for the fragment strategy but no fragment handler is configured; it is patched. */
   FragmentStrategyUnavailable: 'LP0806',
-  /** A revision changed a field with no binding; `onUnboundChange: 'route'` refreshed the route. */
+  /** A revision changed a field with no binding; `onUnfaithfulPatch` refreshed the route. */
   UnboundChangeRefresh: 'LP0807',
   /** A readiness row is not yet at its 2.0 value; `pll doctor --v2` reports it. */
   V2ReadinessGap: 'LP0709',

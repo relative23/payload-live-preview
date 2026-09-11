@@ -162,15 +162,28 @@ describe('DataMerger.merge', () => {
     const result = await merger.merge({ globalSlug: 'homepage', data: {} });
     expect(result).toEqual({ status: 'unavailable' });
   });
-  it('returns unavailable for non-object response bodies', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(jsonResponse([1, 2, 3]));
-    const merger = new DataMerger({
-      serverURL: 'https://cms.example.com',
-      fetchFn: fetchFn,
-    });
-    const result = await merger.merge({ globalSlug: 'homepage', data: {} });
-    expect(result).toEqual({ status: 'unavailable' });
-  });
+  it.each([
+    ['null', null],
+    ['an array', [1, 2, 3]],
+    ['a string', 'merged'],
+    ['a number', 42],
+    ['a boolean', true],
+  ])(
+    'is unavailable, and says which URL, when the body is %s rather than a document',
+    async (_case, body) => {
+      const log = vi.fn();
+      const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(body));
+      const merger = new DataMerger({ serverURL: 'https://cms.example.com', fetchFn, log });
+
+      await expect(merger.merge({ globalSlug: 'homepage', data: {} })).resolves.toEqual({
+        status: 'unavailable',
+      });
+      expect(log).toHaveBeenCalledWith(
+        'merge invalid',
+        'https://cms.example.com/api/globals/homepage',
+      );
+    },
+  );
   it.each([
     ['HTTP failure', vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({}, 503))],
     ['network failure', vi.fn<typeof fetch>().mockRejectedValue(new TypeError('offline'))],

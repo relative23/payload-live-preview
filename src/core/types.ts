@@ -64,6 +64,12 @@ export interface CachedElement {
   readonly format?: string;
   /** The document this binding belongs to, from the nearest `data-payload-owner`. */
   readonly owner?: string;
+  /**
+   * The value an auto-binding matched on (`data-payload-guessed`), for a
+   * binding the runtime found by value rather than one the template declared.
+   * Absent for a declared binding.
+   */
+  readonly guessed?: string;
 }
 
 /** What a renderer is given; `allFields` lets it resolve a sibling field. */
@@ -81,6 +87,15 @@ export interface RenderContext {
    * Absent, the process default set by `setSanitizerPolicy()` applies.
    */
   readonly sanitizerPolicy?: SanitizerPolicyMode;
+  /**
+   * Say that this write cannot reproduce what the server drew, so
+   * `onUnfaithfulPatch` can have a strategy render the region instead of
+   * leaving a degraded patch on the page. The built-in rich-text renderer
+   * calls it for a Lexical block whose markup it had to drop; a project
+   * renderer may call it for any value it can only approximate. `reason`
+   * completes the sentence 'field "x" …' in LP0411.
+   */
+  readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
 }
 
 /**

@@ -126,8 +126,8 @@ describe('nightly mutation policy', () => {
       },
       scope: ['src/core/field-value.ts', 'src/security/csp.ts', 'src/security/url-validator.ts'],
       baseline: {
-        total: 352,
-        mutationScoreMinimum: 93.75,
+        total: 361,
+        mutationScoreMinimum: 93.63,
         mutationScorePrecision: 2,
         // One timeout on a loaded runner moves the score by one mutant.
         mutationScoreDriftMutants: 2,
@@ -137,6 +137,24 @@ describe('nightly mutation policy', () => {
         ignoredMaximum: 0,
       },
     });
+  });
+
+  it('keeps the checked-in core policy on exactly the trusted core', () => {
+    // The figure docs/audit.md quotes is the core's own, so the scope is the
+    // core's module list and nothing else — read from the same file the
+    // trusted-core gate reads, not copied.
+    const checkedIn = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'quality/mutation-policy-core.json'), 'utf8'),
+    ) as MutationPolicy;
+    const trustedCore = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'quality/trusted-core.json'), 'utf8'),
+    ) as { core: { modules: Record<string, unknown> } };
+
+    expect(checkedIn.profile).toBe('core-critical');
+    expect(checkedIn.report.thresholds).toEqual({ high: 100, low: 95, break: 80 });
+    expect([...checkedIn.scope].sort()).toEqual(Object.keys(trustedCore.core.modules).sort());
+    expect(checkedIn.baseline.errorMaximum).toBe(0);
+    expect(checkedIn.baseline.ignoredMaximum).toBe(0);
   });
 
   it('summarises every terminal mutant class and the Stryker mutation score', () => {

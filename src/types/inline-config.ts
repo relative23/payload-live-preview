@@ -52,11 +52,38 @@ export interface InlineScriptConfig {
    */
   readonly routeStrategy?: boolean;
   /**
-   * What to do when a revision changes a field the page has no binding for.
-   * `'route'` refreshes the whole route rather than losing the edit, and needs
-   * a route strategy. Default `'ignore'`.
+   * The 2.0 name for `onUnfaithfulPatch`, kept until 3.0. `'route'` means
+   * `'escalate'`, `'ignore'` means `'ignore'`.
+   *
+   * @deprecated Renamed to `onUnfaithfulPatch`.
    */
   readonly onUnboundChange?: 'ignore' | 'route';
+  /**
+   * What to do when the runtime knows a patch cannot reach what the server
+   * would have drawn. `'escalate'` (the default) hands the region to the
+   * fragment strategy when a boundary covers it and to the route otherwise, so
+   * it needs `fragmentEndpoint` or `routeStrategy` to do anything. `'warn'`
+   * reports LP0411 and keeps the patch; `'ignore'` keeps it silently.
+   */
+  readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
+  /**
+   * Find bindings by value on the connection's first message (ADR 0014): a
+   * scalar whose value is the whole content of exactly one element is bound
+   * to it as if `data-payload-field` stood there. Default `'off'`.
+   */
+  readonly autoBind?: 'off' | 'unique';
+  /**
+   * The framework that hydrates this page (ADR 0015). Under `'react'` the
+   * runtime holds its first write until React has committed the tree that
+   * holds the bindings — otherwise React finds markup it did not render,
+   * throws `Hydration failed` and regenerates the tree, and the write is gone.
+   * Under `'vue'` it holds the write until Vue has mounted the app around them
+   * — otherwise Vue's hydration repairs the write back to the server's value,
+   * quietly. The Next.js and Nuxt adapters set it on every script they emit; a
+   * page built by hand with `generateInlineScript()` may. Omitted: the runtime
+   * starts on `DOMContentLoaded`, as on a static page.
+   */
+  readonly hydration?: 'react' | 'vue';
   /** Which defaults the omitted options fall back to. Not serialized: `'v1'` only relaxes the generator's `mergeDepth` check. */
   readonly defaults?: DefaultsProfile;
   /**
@@ -114,4 +141,7 @@ export const INLINE_CONFIG_KEYS = [
   'revealEditedField',
   'routeStrategy',
   'onUnboundChange',
+  'onUnfaithfulPatch',
+  'autoBind',
+  'hydration',
 ] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'defaults' | 'runtime'>[];

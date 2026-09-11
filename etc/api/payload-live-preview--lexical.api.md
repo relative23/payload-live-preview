@@ -12,7 +12,7 @@ export interface BlockRenderContext {
 // @public
 export type BlockRenderer = (fields: Record<string, unknown>, context: BlockRenderContext) => string;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function isLexicalContent(value: unknown): value is LexicalRoot;
 
 // @public (undocumented)
@@ -37,6 +37,7 @@ export interface LexicalNode {
 
 // @public
 export interface LexicalRenderOptions {
+    readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string) => void;
     readonly sanitize?: boolean;
 }
 
@@ -59,10 +60,10 @@ export function lexicalToHtml(content: LexicalRoot, options?: LexicalRenderOptio
 // @public
 export function lexicalToPlainText(content: LexicalRoot): string;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function lookupBlockRenderer(blockType: string): BlockRenderer | undefined;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function lookupLexicalNode(type: string): NodeRenderer | undefined;
 
 // @public (undocumented)
@@ -74,7 +75,7 @@ export function registerBlockRenderer(blockType: string, renderer: BlockRenderer
 // @public
 export function registerDefaultBlocks(): void;
 
-// @public (undocumented)
+// @internal (undocumented)
 export function registeredBlockTypes(): readonly string[];
 
 // @public
@@ -82,12 +83,13 @@ export function registerLexicalNode(type: string, renderer: NodeRenderer): void;
 
 // @public
 export interface RenderNodeContext {
+    readonly onUnrenderedBlock?: ((blockType: string, placeholderClass: string) => void) | undefined;
     readonly renderChildren: (children: readonly LexicalNode[]) => string;
     readonly resolveAlignment: (node: LexicalNode) => string | undefined;
     readonly resolveIndent: (node: LexicalNode) => number;
 }
 
-// @public
+// @internal
 export const TextFormat: {
     readonly BOLD: 1;
     readonly ITALIC: 2;

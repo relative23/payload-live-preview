@@ -59,17 +59,16 @@ export interface MessageHandlers {
   ) => boolean | Promise<boolean>;
 }
 
+/** One entry of the validation queue: a singly linked list in arrival order. */
 interface PendingValidation {
   readonly generation: number;
   readonly message: PayloadLivePreviewMessage;
   readonly origin: string;
   readonly messageRevision: MessageRevision | undefined;
-  settled: boolean;
-  approved: boolean;
+  /** `undefined` until the validator settled; only literal `true` approves. */
+  verdict: boolean | undefined;
+  next: PendingValidation | undefined;
 }
-
-/** Compact the consumed queue prefix only once it is both large and at least half the array. */
-const QUEUE_COMPACTION_THRESHOLD = 1_024;
 
 export class MessageBus {
   private readonly matcher: OriginMatcher;
@@ -78,8 +77,8 @@ export class MessageBus {
   private attachedTarget: Window | undefined = undefined;
   private generation = 0;
   private revision = 0;
-  private queue: PendingValidation[] = [];
-  private queueHead = 0;
+  private queueHead: PendingValidation | undefined = undefined;
+  private queueTail: PendingValidation | undefined = undefined;
 
   constructor(matcher: OriginMatcher, handlers: MessageHandlers) {
     this.matcher = matcher;
@@ -95,7 +94,7 @@ export class MessageBus {
       if (!committed || this.boundListener !== listener) return;
       const generation = this.generation;
       try {
-        this.receive(event, generation);
+        this.receive(event, generation, target);
       } catch {
         // A synthetic event can carry throwing accessors; that is a shape failure.
         let origin: string;
@@ -160,7 +159,6 @@ export class MessageBus {
 
   /** Post the `ready` handshake to every target for every origin. */
   static sendReady(targets: readonly Window[], origins: readonly string[]): void {
-    if (targets.length === 0 || origins.length === 0) return;
     const payload: PayloadLivePreviewMessage = {
       type: 'payload-live-preview',
       ready: true,
@@ -177,14 +175,13 @@ export class MessageBus {
     }
   }
 
-  private receive(event: MessageEvent, generation: number): void {
-    if (!this.isCurrentGeneration(generation)) return;
+  private receive(event: MessageEvent, generation: number, target: Window): void {
     const origin = event.origin;
     if (!this.matchesOrigin(origin, generation)) {
       this.reportInvalid('origin', origin, generation);
       return;
     }
-    if (!this.matchesSource(event)) {
+    if (!this.matchesSource(event, target)) {
       this.reportInvalid('source', origin, generation);
       return;
     }
@@ -214,8 +211,7 @@ export class MessageBus {
           this.reportInvalid('shape', origin, generation);
           return;
         }
-        const onFocusField = this.handlers.onFocusField;
-        if (onFocusField !== undefined) this.invokeHandler(generation, onFocusField, field, origin);
+        this.invokeHandler(generation, this.handlers.onFocusField, field, origin);
         return;
       }
       default:
@@ -250,10 +246,10 @@ export class MessageBus {
       message,
       origin,
       messageRevision,
-      settled: false,
-      approved: false,
+      verdict: undefined,
+      next: undefined,
     };
-    this.queue.push(pending);
+    this.enqueue(pending);
     let verdict: unknown;
     try {
       // Invoked eagerly; only the commit waits for earlier queue entries.
@@ -278,15 +274,13 @@ export class MessageBus {
   }
 
   private settleValidation(pending: PendingValidation, approved: boolean): void {
-    if (!this.isCurrentGeneration(pending.generation)) return;
-    pending.approved = approved;
-    pending.settled = true;
+    pending.verdict = approved;
     this.drainQueue(pending.generation);
   }
 
   private drainQueue(generation: number): void {
     while (this.isCurrentGeneration(generation)) {
-      const pending = this.queue[this.queueHead];
+      const pending = this.queueHead;
       if (pending === undefined) return;
       // The matcher may have narrowed since ingress (origin lock); an obsolete
       // origin must not hold the queue head and block the locked origin's work.
@@ -295,9 +289,9 @@ export class MessageBus {
         this.reportInvalid('origin', pending.origin, pending.generation);
         continue;
       }
-      if (!pending.settled) return;
+      if (pending.verdict === undefined) return;
       if (!this.dequeue(pending)) continue;
-      if (pending.approved) {
+      if (pending.verdict) {
         this.commitUpdate(
           pending.message,
           pending.origin,
@@ -316,7 +310,6 @@ export class MessageBus {
     generation: number,
     messageRevision: MessageRevision | undefined,
   ): void {
-    if (!this.isCurrentGeneration(generation)) return;
     if (messageRevision === undefined) {
       this.invokeHandler(generation, this.handlers.onUpdate, message, origin);
     } else {
@@ -325,23 +318,20 @@ export class MessageBus {
   }
 
   private reportInvalid(reason: InvalidReason, origin: string, generation: number): void {
-    if (!this.isCurrentGeneration(generation)) return;
-    const onInvalid = this.handlers.onInvalid;
-    if (onInvalid !== undefined) this.invokeHandler(generation, onInvalid, reason, origin);
+    this.invokeHandler(generation, this.handlers.onInvalid, reason, origin);
   }
 
   /** Under `'parent-or-opener'`, whether the event came from the attached window's parent or opener. */
-  private matchesSource(event: MessageEvent): boolean {
+  private matchesSource(event: MessageEvent, target: Window): boolean {
     if (this.handlers.sourcePolicy !== 'parent-or-opener') return true;
-    const target = this.attachedTarget;
-    if (target === undefined) return false;
     try {
-      const source = event.source;
-      if (source === null) return false;
+      // Only a window is a source: a missing one matches nothing, not even a missing opener.
+      const source: unknown = event.source;
+      if (typeof source !== 'object' || source === null) return false;
       const parent = target.parent;
       if (parent !== target && source === parent) return true;
       const opener: unknown = target.opener;
-      return opener !== null && opener !== undefined && source === opener;
+      return source === opener;
     } catch {
       return false;
     }
@@ -349,9 +339,8 @@ export class MessageBus {
 
   /** Fail-closed: only literal `true` from the matcher, and only within the generation it ran in. */
   private matchesOrigin(origin: string, generation: number): boolean {
-    if (!this.isCurrentGeneration(generation)) return false;
     try {
-      const approved: unknown = this.matcher(origin);
+      const approved: unknown = this.isCurrentGeneration(generation) && this.matcher(origin);
       return approved === true && this.isCurrentGeneration(generation);
     } catch {
       return false;
@@ -361,10 +350,10 @@ export class MessageBus {
   /** Callbacks run only in a current generation and must not unwind the listener or the drain. */
   private invokeHandler<TArgs extends unknown[]>(
     generation: number,
-    handler: (...args: TArgs) => unknown,
+    handler: ((...args: TArgs) => unknown) | undefined,
     ...args: TArgs
   ): void {
-    if (!this.isCurrentGeneration(generation)) return;
+    if (handler === undefined || !this.isCurrentGeneration(generation)) return;
     try {
       observeThenableResult(handler(...args));
     } catch {
@@ -376,23 +365,22 @@ export class MessageBus {
     return this.attachedTarget !== undefined && this.generation === generation;
   }
 
+  private enqueue(pending: PendingValidation): void {
+    if (this.queueTail === undefined) this.queueHead = pending;
+    else this.queueTail.next = pending;
+    this.queueTail = pending;
+  }
+
   /** Advance the head past `expected`, unless a matcher reset the queue meanwhile. */
   private dequeue(expected: PendingValidation): boolean {
-    if (this.queue[this.queueHead] !== expected) return false;
-    this.queueHead += 1;
-    if (this.queueHead === this.queue.length) {
-      this.resetQueue();
-      return true;
-    }
-    if (this.queueHead >= QUEUE_COMPACTION_THRESHOLD && this.queueHead * 2 >= this.queue.length) {
-      this.queue = this.queue.slice(this.queueHead);
-      this.queueHead = 0;
-    }
+    if (this.queueHead !== expected) return false;
+    this.queueHead = expected.next;
+    if (this.queueHead === undefined) this.queueTail = undefined;
     return true;
   }
 
   private resetQueue(): void {
-    this.queue = [];
-    this.queueHead = 0;
+    this.queueHead = undefined;
+    this.queueTail = undefined;
   }
 }

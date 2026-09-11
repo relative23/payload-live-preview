@@ -28,6 +28,7 @@ export interface CachedElement {
     readonly fieldType: RendererKey;
     readonly format?: string;
     readonly fragmentBoundary?: Element;
+    readonly guessed?: string;
     readonly hidesWhenEmpty?: boolean;
     readonly hrefField?: string;
     readonly locale?: string;
@@ -70,6 +71,10 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnsupportedStrategy: "LP0407";
     readonly UnknownValueFormat: "LP0408";
     readonly SanitizerDroppedAttribute: "LP0409";
+    readonly UnrenderedBlockKept: "LP0410";
+    readonly UnfaithfulPatch: "LP0411";
+    readonly ServerFormatReplaced: "LP0412";
+    readonly UnrenderedBlockLost: "LP0413";
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
@@ -78,6 +83,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RendererThrew: "LP0603";
     readonly StartupFailed: "LP0605";
     readonly ReadyFailed: "LP0606";
+    readonly HydrationWaitTimedOut: "LP0607";
     readonly AuditRuntimeMissing: "LP0701";
     readonly AuditNoFrameAncestors: "LP0702";
     readonly AuditFrameOptionsBlocks: "LP0703";
@@ -402,6 +408,7 @@ export interface RenderContext {
     readonly allFields: Record<string, unknown>;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
+    readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
     readonly sanitizerPolicy?: SanitizerPolicyMode;
     readonly schema: PayloadFieldSchema | undefined;
 }
@@ -419,7 +426,7 @@ export type RichTextRenderer = (value: unknown, context: {
 // @public
 export type SanitizerPolicyMode = 'compat' | 'strict';
 
-// @public
+// @internal
 export function unboundFieldNames(fields: Readonly<Record<string, unknown>>, boundNames: Iterable<string>, locale?: string): readonly string[];
 
 // @public

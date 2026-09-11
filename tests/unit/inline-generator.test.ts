@@ -96,6 +96,21 @@ describe('generateInlineScript', () => {
     expect(generateInlineScript()).not.toContain('var __LIVE_PREVIEW_FRAGMENT__=');
   });
 
+  it('carries hydration in its own trailing wire slot; the inline script needs no prelude for it', () => {
+    // ADR 0015: the runtime is the first script in <head> and arms the signal
+    // itself, so the inline script carries the slot and nothing else.
+    const script = generateInlineScript({ hydration: 'react' });
+    const config = generatedConfig(script);
+
+    expect(config).toHaveLength(24);
+    expect(config[23]).toBe('react');
+    expect(config.slice(0, 23).every((value) => value === undefined)).toBe(true);
+    expect(script).not.toContain('var __LIVE_PREVIEW_HYDRATION__=');
+    expect(generateInlineScript()).not.toContain('var __LIVE_PREVIEW_HYDRATION__=');
+    // The second framework is a second value in the same slot, not a second slot.
+    expect(generatedConfig(generateInlineScript({ hydration: 'vue' }))[23]).toBe('vue');
+  });
+
   it('emits the route prelude alone when routeStrategy is set without a fragment endpoint', () => {
     const script = generateInlineScript({ routeStrategy: true });
     const config = generatedConfig(script);
@@ -189,11 +204,14 @@ describe('generateInlineScript', () => {
   });
 
   it('writes the slots in INLINE_CONFIG_KEYS order, the one table the runtime destructures', () => {
-    expect(INLINE_CONFIG_KEYS).toHaveLength(21);
+    expect(INLINE_CONFIG_KEYS).toHaveLength(24);
     expect(INLINE_CONFIG_KEYS.indexOf('fragmentEndpoint')).toBe(17);
     expect(INLINE_CONFIG_KEYS.indexOf('revealEditedField')).toBe(18);
     expect(INLINE_CONFIG_KEYS.indexOf('routeStrategy')).toBe(19);
     expect(INLINE_CONFIG_KEYS.indexOf('onUnboundChange')).toBe(20);
+    expect(INLINE_CONFIG_KEYS.indexOf('onUnfaithfulPatch')).toBe(21);
+    expect(INLINE_CONFIG_KEYS.indexOf('autoBind')).toBe(22);
+    expect(INLINE_CONFIG_KEYS.indexOf('hydration')).toBe(23);
     const every = Object.fromEntries(
       INLINE_CONFIG_KEYS.map((key, index) => [key, `slot-${String(index)}`]),
     ) as unknown as InlineScriptConfig;

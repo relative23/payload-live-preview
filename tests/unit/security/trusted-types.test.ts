@@ -48,6 +48,21 @@ describe('trustedHtml', () => {
     expect(String(b)).toBe('<p>b</p>');
   });
 
+  it('creates the policy under the name a CSP trusted-types directive has to list', () => {
+    const created = installFakeApi();
+    trustedHtml('<p>x</p>');
+    expect(created).toEqual(['payload-live-preview']);
+  });
+
+  it('treats a null or method-less trustedTypes global as no API', () => {
+    for (const candidate of [null, {}, 'trustedTypes', { createPolicy: 'not a function' }]) {
+      __resetTrustedTypesForTests();
+      (globalThis as { trustedTypes?: unknown }).trustedTypes = candidate;
+      expect(() => trustedHtml('<p>x</p>')).not.toThrow();
+      expect(trustedHtml('<p>x</p>')).toBe('<p>x</p>');
+    }
+  });
+
   it('prefers a policy the site handed in, and can be told to pass strings through', () => {
     installFakeApi();
     const mine = { createHTML: vi.fn((input: string) => `mine:${input}`) };

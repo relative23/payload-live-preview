@@ -7,9 +7,8 @@ import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { trustedHtml } from '@security/trusted-types';
 import { bindingValue } from './field-value';
 import { morphElement } from './morph';
-import { DIAGNOSTIC_CODES } from './diagnostic-codes';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
-import type { FragmentContext, FragmentStrategy, RouteStrategy } from './strategies';
+import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
 import { createFieldAddressability, SYSTEM_FIELD_NAMES, type OwnerScope } from './unbound-fields';
@@ -25,6 +24,8 @@ export interface StrategyHost {
     isCurrent: () => boolean,
   ) => unknown;
   readonly rebuildCache: () => void;
+  /** The route re-rendered the page without the stamps a guess lives by; look for the baseline's guesses again (ADR 0014). */
+  readonly restoreGuesses: (transaction: UpdateTransaction, data: PayloadLivePreviewData) => void;
   /** Scroll to the binding this revision marked, if it has not been revealed yet. */
   readonly revealPending: (transaction: UpdateTransaction) => void;
 }
@@ -46,33 +47,53 @@ export class StrategyRunner {
   planFragments(touched: ReadonlySet<string>): FragmentPlan | null {
     const strategy = this.deps.strategies.fragment;
     if (strategy === undefined) return null;
-    const boundaries = strategy.plan(this.deps.root, touched);
-    const covered = new Set(boundaries);
-    return {
-      boundaries,
-      strategy,
-      covers: (target) =>
-        target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
-    };
+    return planBoundaries(strategy, strategy.plan(this.deps.root, touched));
   }
 
   /**
-   * Whether this revision changed a field the page cannot patch, which makes
-   * the whole route the only honest answer. Opt-in through `onUnboundChange`;
-   * the baseline message is skipped, because there every field counts as
+   * Hand the bindings this revision could not patch faithfully to a server:
+   * the fragment strategy when a boundary covers every one of them, the route
+   * otherwise. All of them or none — a boundary renders its own region, so a
+   * finding outside every boundary is only answered by the whole route.
+   *
+   * A revision that already refreshed the route is left alone: the second
+   * request would fetch the bytes the first one just brought.
+   */
+  escalateUnfaithful(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    targets: readonly CachedElement[],
+  ): void {
+    if (transaction.routeRefreshed) return;
+    const { fragment, route } = this.deps.strategies;
+    const boundaries = fragment === undefined ? undefined : coveringBoundaries(targets);
+    if (fragment !== undefined && boundaries !== undefined) {
+      this.state.escalatedCount += targets.length;
+      transaction.pendingFragments += boundaries.length;
+      void this.runFragments(transaction, data, planBoundaries(fragment, boundaries));
+      return;
+    }
+    if (route === undefined) return;
+    this.state.escalatedCount += targets.length;
+    void this.refreshRoute(transaction, data, route);
+  }
+
+  /**
+   * Whether this revision changed a field the page cannot patch — one with no
+   * anchor anywhere, which is also how a section the template renders only
+   * under a condition looks from here. The whole route is then the only honest
+   * answer, and `'warn'` needs nothing extra: LP0201 already names the field.
+   *
+   * The baseline message is skipped, because there every field counts as
    * changed and the page has just been rendered from them anyway.
    */
   hasUnboundChange(transaction: UpdateTransaction, ownerKeys: OwnerScope): boolean {
     const { deps } = this;
-    if (deps.onUnboundChange !== 'route' || transaction.baseline) return false;
+    if (deps.onUnfaithfulPatch !== 'escalate' || transaction.baseline) return false;
     const isAddressable = createFieldAddressability(deps.cache, transaction.locale, ownerKeys);
     for (const fieldName of transaction.touched) {
       if (SYSTEM_FIELD_NAMES.has(fieldName) || isAddressable(fieldName)) continue;
-      deps.log(
-        'route',
-        DIAGNOSTIC_CODES.UnboundChangeRefresh,
-        `field "${fieldName}" has no binding; refreshing the route`,
-      );
+      deps.log('route', 'LP0807', `field "${fieldName}" has no binding; refreshing the route`);
       return true;
     }
     return false;
@@ -189,9 +210,8 @@ export class StrategyRunner {
     strategy: RouteStrategy,
   ): Promise<void> {
     const { deps, state } = this;
-    const stats = state.routeStats;
     if (transaction.routeRefreshed) {
-      stats.loopStopped += 1;
+      state.routeStats.loopStopped += 1;
       deps.log(
         'route',
         'LP0805',
@@ -199,11 +219,44 @@ export class StrategyRunner {
       );
       return;
     }
+    // A refusal counts as asked as well: the trailing run below is this
+    // revision's one refresh, and nothing else may start a second.
     transaction.routeRefreshed = true;
+    await this.runRoute(transaction, data, strategy);
+  }
+
+  /**
+   * The trailing run of a refused refresh: the strategy's window closes and the
+   * request it held back runs, once. It cannot loop — a refresh re-renders the
+   * page from the server and produces no message, so nothing asks again.
+   */
+  private armRouteRetry(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    strategy: RouteStrategy,
+    delayMs: number,
+  ): void {
+    const { state } = this;
+    if (state.routeRetry !== null) clearTimeout(state.routeRetry);
+    state.routeRetry = setTimeout(() => {
+      state.routeRetry = null;
+      if (!state.isCurrent(transaction)) return;
+      void this.runRoute(transaction, data, strategy);
+    }, delayMs);
+  }
+
+  /** One trip through the strategy, whether the revision asked for it or the window did. */
+  private async runRoute(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    strategy: RouteStrategy,
+  ): Promise<void> {
+    const { deps, state } = this;
+    const stats = state.routeStats;
     const controller = new AbortController();
     state.routeController = controller;
     const isCurrent = (): boolean => state.isCurrent(transaction) && !controller.signal.aborted;
-    let outcome: 'refreshed' | 'failed' | 'superseded';
+    let outcome: RouteOutcome;
     try {
       outcome = await strategy.refresh({
         revision: transaction.revision.revision,
@@ -212,6 +265,9 @@ export class StrategyRunner {
         isCurrent,
         log: (code, detail) => {
           deps.log('route', code, detail);
+        },
+        retryAfter: (delayMs) => {
+          this.armRouteRetry(transaction, data, strategy, delayMs);
         },
       });
     } catch (error) {
@@ -224,6 +280,9 @@ export class StrategyRunner {
       stats.refreshes += 1;
       // The route rendered the saved document; nothing on the page is "last applied" any more.
       state.lastAppliedIdentity = new WeakMap();
+      // The fresh markup carries no stamp: the guesses go back on before the
+      // cache is rebuilt from it, or the rebuild would not know them.
+      this.host.restoreGuesses(transaction, data);
       this.host.rebuildCache();
       if (!isCurrent()) return;
       this.host.reapply(transaction, data);
@@ -246,7 +305,12 @@ export class StrategyRunner {
       }
       return;
     }
+    // A refusal is a pause, not a breakage; counting the two together is how
+    // `failed: 3` came to stand in an inspection where nothing was wrong.
     if (outcome === 'failed') stats.failed += 1;
+    else if (outcome === 'refused') stats.refused += 1;
+    // Either way the page shows what it can now: the window holds back the
+    // server, not the bindings this revision could already have written.
     this.host.reapply(transaction, data);
   }
 
@@ -281,6 +345,28 @@ export class StrategyRunner {
       }
     }
   }
+}
+
+/** The distinct boundaries around `targets`, or `undefined` when one sits outside them all. */
+function coveringBoundaries(targets: readonly CachedElement[]): Element[] | undefined {
+  const boundaries: Element[] = [];
+  for (const target of targets) {
+    const boundary = target.fragmentBoundary;
+    if (boundary === undefined) return undefined;
+    if (!boundaries.includes(boundary)) boundaries.push(boundary);
+  }
+  return boundaries;
+}
+
+/** A plan over boundaries already chosen, whichever question chose them. */
+function planBoundaries(strategy: FragmentStrategy, boundaries: readonly Element[]): FragmentPlan {
+  const covered = new Set(boundaries);
+  return {
+    boundaries,
+    strategy,
+    covers: (target) =>
+      target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
+  };
 }
 
 /** Morph server-rendered HTML into the boundary, keeping focus and visitor state. */

@@ -16,8 +16,8 @@ The runtime is framework-agnostic: one script drives Astro, SvelteKit, Nuxt, Nex
 
 ## Highlights
 
-- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 30 KB gzip — 25 KB with the lean artifact ([docs/options.md](docs/options.md)); the adapters for Astro, Next.js, SvelteKit and Nuxt only decide when to deliver it.
-- **Payload 3.x native.** `serverURL` re-fetches the populated document after every edit, like the official client, so relationship and upload fields render as content rather than as IDs.
+- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 34 KB gzip — 26 KB with the lean artifact ([docs/options.md](docs/options.md)); the adapters for Astro, Next.js, SvelteKit and Nuxt only decide when to deliver it.
+- **Payload 3.x native.** `serverURL` re-fetches the populated document, like the official client, so relationship and upload fields render as content rather than as IDs — but only when an edit needs one: typing into a text field costs no request, and a burst on a relationship costs two rather than one per keystroke.
 - **Complete Lexical renderer.** 16 node types including `upload`, `relationship`, `block`, `autolink`, tabs, indent and RTL, with automatic rich-text detection: `data-payload-field` alone is enough.
 - **Authorization before anything privileged.** Draft reads, runtime injection, CSP changes and binding attributes follow one verified decision per request; the client-controlled intent signals never unlock anything.
 - **Strict by default.** Escape-by-default sanitizer, URL and `srcset` validation, policed attribute writes, prototype-pollution guards, per-instance clients, typed bindings with `pll-codegen`.

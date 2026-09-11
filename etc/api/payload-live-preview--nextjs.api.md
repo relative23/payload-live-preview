@@ -4,12 +4,12 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint--EHrklHd.js';
-import { b } from '../../fragment-endpoint--EHrklHd.js';
-import { c } from '../../fragment-endpoint--EHrklHd.js';
-import { F } from '../../fragment-endpoint--EHrklHd.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint--EHrklHd.js';
-import { P as PreviewAdapterOptions } from '../../options-yVq9ejmU.js';
+import { a } from '../../fragment-endpoint-ByV68yew.js';
+import { b } from '../../fragment-endpoint-ByV68yew.js';
+import { c } from '../../fragment-endpoint-ByV68yew.js';
+import { F } from '../../fragment-endpoint-ByV68yew.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-ByV68yew.js';
+import { P as PreviewAdapterOptions } from '../../options-CO1iXz__.js';
 
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (request: Request) => Promise<Response>;
@@ -26,19 +26,38 @@ export function defineFragment<Props extends object>(component: (props: Props) =
 // @public (undocumented)
 export type FragmentEndpointOptions = F<ReactComponentLike>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRegistry = a<ReactComponentLike>;
 
 // @public (undocumented)
 export type FragmentRegistryEntry<Props extends object = object> = b<ReactComponentLike, Props>;
 
-// @public (undocumented)
+// @internal (undocumented)
 export type FragmentRenderer = c<ReactComponentLike>;
 
 export { FragmentRenderInput }
 
 // @public
 export type LivePreviewNextOptions = PreviewAdapterOptions;
+
+// @public
+export function LivePreviewScript(props: LivePreviewScriptComponentProps): Promise<LivePreviewScriptElement | null>;
+
+// @public
+export interface LivePreviewScriptComponentProps extends LivePreviewNextOptions {
+    readonly nonce?: string;
+    readonly request: Request | Promise<Request>;
+}
+
+// @public
+export interface LivePreviewScriptElement {
+    // (undocumented)
+    readonly key: null;
+    // (undocumented)
+    readonly props: LivePreviewScriptProps;
+    // (undocumented)
+    readonly type: 'script';
+}
 
 // @public
 export interface LivePreviewScriptProps {
@@ -85,7 +104,7 @@ export interface NextHeaderRule {
 
 export { PreviewAdapterOptions }
 
-// @public
+// @internal
 export function previewHeaderRules(options: WithLivePreviewOptions): readonly NextHeaderRule[];
 
 // @public

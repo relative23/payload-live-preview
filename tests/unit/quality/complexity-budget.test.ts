@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  countDeclarations,
   countInterfaceMembers,
   countPublicDeclarations,
   findComplexityViolations,
@@ -35,6 +36,26 @@ describe('counting the surface', () => {
     ].join('\n');
 
     // The member inside the interface is not a declaration of its own.
+    expect(countPublicDeclarations(report)).toBe(3);
+  });
+
+  it('counts an @internal name apart from the public ones, by the tag on the line before it', () => {
+    const report = [
+      '// @public',
+      'export function a(): void;',
+      '// @internal (undocumented)',
+      'export const B = 1;',
+      '// @internal',
+      'export interface C {',
+      '    readonly d: string;',
+      '}',
+      '// @public',
+      'export { E }',
+      'export type F = string;',
+    ].join('\n');
+
+    // `F` has no tag line of its own and is public, as API Extractor treats it.
+    expect(countDeclarations(report)).toEqual({ public: 3, internal: 2 });
     expect(countPublicDeclarations(report)).toBe(3);
   });
 

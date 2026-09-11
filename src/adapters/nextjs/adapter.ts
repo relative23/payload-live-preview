@@ -14,10 +14,20 @@ import {
 } from '@adapters/shared/response';
 import { assertNonce } from '@inline/generator';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
+import type { PageFacts } from '@adapters/shared/policy-options';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
 
 export type LivePreviewNextOptions = PreviewAdapterOptions;
+
+/**
+ * A Next page is a React tree, so every script this adapter emits declares
+ * that React hydrates it (ADR 0015): the runtime then holds its first write
+ * until React has committed the tree that holds the bindings, instead of
+ * writing into markup React is about to compare with its own render. Knowledge
+ * the adapter has, not an option a project sets.
+ */
+const REACT_PAGE: PageFacts = { hydration: 'react' };
 
 /**
  * Middleware over the standard `Request`/`Response` pair: on preview intent it
@@ -28,7 +38,7 @@ export type LivePreviewNextOptions = PreviewAdapterOptions;
 export function createLivePreviewMiddleware(
   options: LivePreviewNextOptions = {},
 ): (request: Request, response: Response) => Promise<Response> {
-  const policy = createPreviewPolicy(options);
+  const policy = createPreviewPolicy(options, REACT_PAGE);
   return async (request, response) => {
     const decision = await policy.decide(request, bindDecisionHooks(policy, options, request));
     if (!decision.isPreview) return response;
@@ -56,7 +66,7 @@ export interface LivePreviewScriptProps {
 export function livePreviewScriptProps(
   options: LivePreviewNextOptions & { readonly nonce?: string } = {},
 ): LivePreviewScriptProps {
-  const html = renderScriptBody(options);
+  const html = renderScriptBody(options, REACT_PAGE);
   if (options.nonce === undefined) return { dangerouslySetInnerHTML: { __html: html } };
   return {
     dangerouslySetInnerHTML: { __html: html },
@@ -71,5 +81,5 @@ export function livePreviewScriptProps(
 export function renderLivePreviewScript(
   options: LivePreviewNextOptions & { readonly nonce?: string } = {},
 ): string {
-  return renderScriptTag(options);
+  return renderScriptTag(options, REACT_PAGE);
 }

@@ -42,10 +42,7 @@ export function isDocumentEventMessage(value: {
   return (
     optionalFieldOk(v['action'], (x) => x === 'updated' || x === 'created' || x === 'deleted') &&
     optionalFieldOk(v['slug'], (x) => typeof x === 'string') &&
-    optionalFieldOk(
-      v['id'],
-      (x) => typeof x === 'string' || (typeof x === 'number' && Number.isFinite(x)),
-    )
+    optionalFieldOk(v['id'], (x) => typeof x === 'string' || Number.isFinite(x))
   );
 }
 
