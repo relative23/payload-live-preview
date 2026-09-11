@@ -1,8 +1,8 @@
 {
-  "mode": "exit",
-  "tag": "beta",
+  "mode": "pre",
+  "tag": "rc",
   "initialVersions": {
-    "payload-live-preview": "1.8.1"
+    "payload-live-preview": "2.0.0-beta.0"
   },
   "changesets": [
     "adapter-conformance",

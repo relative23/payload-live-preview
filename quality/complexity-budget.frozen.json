@@ -1,0 +1,37 @@
+{
+  "since": "v2.0.0-rc.1",
+  "totals": {
+    "publicDeclarations": 552,
+    "internalDeclarations": 126,
+    "entrySubpaths": 25,
+    "adapterOptions": 34,
+    "inlineOptions": 26,
+    "diagnosticCodes": 46,
+    "sourceModules": 252
+  },
+  "entries": {
+    "payload-live-preview.api.md": 141,
+    "payload-live-preview--core.api.md": 83,
+    "payload-live-preview--server.api.md": 53,
+    "payload-live-preview--client.api.md": 55,
+    "payload-live-preview--plugins.api.md": 40,
+    "payload-live-preview--fragment.api.md": 14,
+    "payload-live-preview--structural.api.md": 16,
+    "payload-live-preview--codegen.api.md": 11,
+    "payload-live-preview--astro.api.md": 22,
+    "payload-live-preview--nextjs.api.md": 21,
+    "payload-live-preview--lexical.api.md": 12,
+    "payload-live-preview--nuxt.api.md": 14,
+    "payload-live-preview--doctor.api.md": 13,
+    "payload-live-preview--sveltekit.api.md": 12,
+    "payload-live-preview--migrate.api.md": 7,
+    "payload-live-preview--annotate.api.md": 5,
+    "payload-live-preview--payload.api.md": 8,
+    "payload-live-preview--nuxt-module.api.md": 5,
+    "payload-live-preview--vue.api.md": 6,
+    "payload-live-preview--react.api.md": 9,
+    "payload-live-preview--codegen--astro.api.md": 2,
+    "payload-live-preview--lean.api.md": 2,
+    "payload-live-preview--astro--middleware-entry.api.md": 1
+  }
+}
