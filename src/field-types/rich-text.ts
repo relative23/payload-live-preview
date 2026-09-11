@@ -5,17 +5,19 @@
  *
  * The Lexical write keeps the markup the server rendered for a block the
  * registry cannot render, rather than replacing it with the empty placeholder
- * the node renderer produces for one. The verdict is spoken here, after the
- * write, because only the write knows it: LP0410 when the server's markup
- * stands, LP0413 when the two trees did not line up and it is gone — and the
- * second goes through `context.reportUnfaithful` too, which is the case
- * `onUnfaithfulPatch` escalates.
+ * the node renderer produces for one, and it keeps the wrapper a template put
+ * around the whole field. The verdict is spoken here, after the write, because
+ * only the write knows it: LP0410 when the server's markup stands, LP0413 when
+ * the two trees did not line up and it is gone — and the second goes through
+ * `context.reportUnfaithful` too, which is the case `onUnfaithfulPatch`
+ * escalates.
  */
 
 import { isLexicalContent, lexicalToHtml } from '@lexical/render';
 import { UNRENDERED_BLOCK_SELECTOR } from '@lexical/nodes/block';
 import { trustedHtml } from '@security/trusted-types';
 import { sanitizeHtmlWithPolicy } from '@security/sanitizer';
+import { FIELD_ATTRIBUTE } from '@core/cache';
 import { safeConsoleWarn } from '@core/diagnostics';
 import { markNoWriteCallback } from '@core/internal-outcome';
 import type { CachedElement, FieldRenderer, RenderContext } from '@core/types';
@@ -24,6 +26,9 @@ import { isEmptyValue } from './utils';
 /** Block slugs already reported, one set per verdict: a block kept once may still be lost later. */
 const warnedKept = new Set<string>();
 const warnedLost = new Set<string>();
+
+/** The containers a template wraps rich text in; Lexical renders none of them for content. */
+const WRAPPER_TAGS: ReadonlySet<string> = new Set(['DIV', 'SECTION', 'ARTICLE']);
 
 const richTextRenderer: FieldRenderer = {
   name: 'richText',
@@ -91,11 +96,12 @@ function writeKeepingUnrenderedBlocks(
 ): ReadonlyMap<string, boolean> {
   const rendered = element.cloneNode(false) as Element;
   rendered.innerHTML = trustedHtml(html);
+  const target = wrapperOf(element, rendered) ?? element;
   const verdicts = new Map<string, boolean>();
   const placeholders = rendered.querySelectorAll(UNRENDERED_BLOCK_SELECTOR);
-  if (placeholders.length > 0 && element.firstElementChild !== null) {
+  if (placeholders.length > 0 && target.firstElementChild !== null) {
     const pairs: [placeholder: Element, live: Element][] = [];
-    pairUnrenderedBlocks(element, rendered, pairs);
+    pairUnrenderedBlocks(target, rendered, pairs);
     for (const [placeholder, live] of pairs) {
       placeholder.replaceWith(live);
       if (!live.matches(UNRENDERED_BLOCK_SELECTOR)) verdicts.set(placeholder.className, false);
@@ -105,8 +111,34 @@ function writeKeepingUnrenderedBlocks(
       if (placeholder.parentNode !== null) verdicts.set(placeholder.className, true);
     }
   }
-  element.replaceChildren(...rendered.childNodes);
+  target.replaceChildren(...rendered.childNodes);
   return verdicts;
+}
+
+/**
+ * The one wrapper a template puts around rich text when the server renders it
+ * — `<div class="prose">` around the blocks, the usual Tailwind shape — or
+ * `null` when the rendered document is written straight into `element`. The
+ * wrapper stays, because the typography hangs on its class, and the pairing
+ * runs inside it, where the blocks are; without this the live tree had one
+ * child where the rendered one had five, and the descent stopped before it
+ * reached the block (measured on the demo, Z29).
+ *
+ * A wrapper is the element's only child, of a kind Lexical does not render
+ * content as, with no binding of its own, standing where the rendered document
+ * has several elements — and unlike every one of them: a `<div>` a registered
+ * block renders is content, and the paragraph typed after it must not be
+ * written into it. One rendered element says nothing either way, and the
+ * positional pairing already answers for that case.
+ */
+function wrapperOf(element: Element, rendered: Element): Element | null {
+  const child = element.firstElementChild;
+  if (child?.nextElementSibling !== null || rendered.children.length < 2) return null;
+  if (!WRAPPER_TAGS.has(child.tagName) || child.hasAttribute(FIELD_ATTRIBUTE)) return null;
+  for (const block of rendered.children) {
+    if (block.tagName === child.tagName && block.className === child.className) return null;
+  }
+  return child;
 }
 
 /**

@@ -185,15 +185,13 @@ describe('a value the binding cannot represent', () => {
  * Z2 keeps the server's markup for a block with no renderer by pairing each
  * placeholder with the live element in its position. Where the two trees do not
  * line up there is nothing to pair, the empty placeholder is written, and the
- * server's subtree is gone — the one case Z2 left as a known degradation.
+ * server's subtree is gone — the one case Z2 left as a known degradation. (A
+ * wrapper around the field was that case until Z29; a paragraph the server
+ * dropped still is.)
  */
 describe('a Lexical block whose markup the write cannot keep', () => {
   const SERVER_MARKUP =
-    '<div class="prose">' +
-    '<p>intro</p>' +
-    '<figure><img src="https://cdn.example.com/a.jpg" alt="a"></figure>' +
-    '<p>outro</p>' +
-    '</div>';
+    '<p>intro</p>' + '<figure><img src="https://cdn.example.com/a.jpg" alt="a"></figure>';
 
   function documentWith(intro: string): Record<string, unknown> {
     return {
@@ -212,8 +210,8 @@ describe('a Lexical block whose markup the write cannot keep', () => {
 
   it('refreshes the route instead of leaving an empty placeholder behind', async () => {
     __resetBlockRegistryForTests();
-    // A wrapper the server's renderer added: one live child against three
-    // rendered ones, so the descent stops before it reaches the placeholder.
+    // The server dropped the empty outro paragraph: two live children against
+    // three rendered ones, so the descent stops before it reaches the placeholder.
     document.body.innerHTML = `<div data-payload-field="content">${SERVER_MARKUP}</div>`;
     const route = fakeRoute();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

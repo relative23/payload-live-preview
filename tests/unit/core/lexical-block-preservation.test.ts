@@ -246,39 +246,96 @@ describe('a Lexical block whose server markup the write loses', () => {
  *
  * The site's `RichText` component wraps its output in the Tailwind `prose`
  * wrapper, so the bound element has one child where the rendered document has
- * five, and the positional pairing stops before it reaches the block. Z2's
- * fixture had no wrapper; this one does.
+ * five, and the positional pairing stopped before it reached the block. Z2's
+ * fixture had no wrapper; this one does. The pairing now descends into the
+ * wrapper — and the wrapper stays, because the typography hangs on its class.
  */
 describe('a Lexical block inside the wrapper a template puts around rich text', () => {
-  it('loses the block and says so — the finding, until Z29 pairs inside the wrapper', async () => {
+  function mount(): { content: Element; wrapper: Element; figure: Element } {
     document.body.innerHTML = `<div class="mx-auto" data-payload-field="content">${DEMO_SERVER_MARKUP}</div>`;
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const runtime = makeRuntime({ renderers: buildBuiltinRenderers() });
-    runtime.start();
     const content = document.querySelector('[data-payload-field="content"]')!;
     expect(shapeOf(content)).toBe(
       'div.mx-auto[1]( div.prose-h7[5]( p[0] figure.mx-auto[2]( img[0] figcaption[0] ) h2[0] p[0] ul[2]( li[0] li[0] ) ) )',
     );
-    expect(content.querySelectorAll('img')).toHaveLength(1);
+    return {
+      content,
+      wrapper: content.querySelector('.prose-h7')!,
+      figure: content.querySelector('figure')!,
+    };
+  }
+
+  it('keeps the block, and the wrapper it stands in, across an edit to the title', async () => {
+    const { content, wrapper, figure } = mount();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const runtime = makeRuntime({ renderers: buildBuiltinRenderers() });
+    runtime.start();
 
     fireMessage({ type: 'payload-live-preview', data: demoDocument('Die Lichtprobe') });
     await vi.advanceTimersByTimeAsync(50);
     fireMessage({ type: 'payload-live-preview', data: demoDocument('Die Lichtprobe, neu') });
     await vi.advanceTimersByTimeAsync(50);
 
+    // The measured server shape, unchanged — not "the image is back somewhere".
     expect(shapeOf(content)).toBe(
-      'div.mx-auto[5]( p[0] div.lp-block[0] h2[0] p[0] ul[2]( li[0] li[0] ) )',
+      'div.mx-auto[1]( div.prose-h7[5]( p[0] figure.mx-auto[2]( img[0] figcaption[0] ) h2[0] p[0] ul[2]( li[0] li[0] ) ) )',
     );
-    expect(content.querySelectorAll('img')).toHaveLength(0);
+    expect(content.querySelectorAll('img')).toHaveLength(1);
+    // The same elements, not equal ones: the wrapper was written into, the figure moved.
+    expect(content.firstElementChild).toBe(wrapper);
+    expect(content.querySelector('figure')).toBe(figure);
     const warned = warn.mock.calls.map(String).join(' ');
-    expect(warned).toContain('LP0413');
-    expect(warned).not.toContain('LP0410');
+    expect(warned).toContain('LP0410');
+    expect(warned).not.toContain('LP0413');
     expect(runtime.inspect().fidelity).toEqual({
       mode: 'escalate',
-      unfaithful: 1,
+      unfaithful: 0,
       escalated: 0,
-      fields: ['content'],
+      fields: [],
     });
+    warn.mockRestore();
+    runtime.destroy();
+  });
+
+  it('keeps the wrapper on a write that has nothing to pair', async () => {
+    const { content, wrapper } = mount();
+    const runtime = makeRuntime({ renderers: buildBuiltinRenderers() });
+    runtime.start();
+
+    const noBlock = demoDocument('Die Lichtprobe') as {
+      content: { root: { children: unknown[] } };
+    };
+    noBlock.content.root.children.splice(1, 1);
+    fireMessage({ type: 'payload-live-preview', data: noBlock });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(content.firstElementChild).toBe(wrapper);
+    expect(shapeOf(content)).toBe(
+      'div.mx-auto[1]( div.prose-h7[4]( p[0] h2[0] p[0] ul[2]( li[0] li[0] ) ) )',
+    );
+    runtime.destroy();
+  });
+
+  it('loses the block, and says so, when the wrapper itself carries a binding', async () => {
+    // A wrapper bound to another field is that field's element, not a shell
+    // to write into; the pairing stops at the bound element as before.
+    document.body.innerHTML =
+      '<div data-payload-field="content">' +
+      DEMO_SERVER_MARKUP.replace(
+        '<div class="prose-h7">',
+        '<div class="prose-h7" data-payload-field="other">',
+      ) +
+      '</div>';
+    const content = document.querySelector('[data-payload-field="content"]')!;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const runtime = makeRuntime({ renderers: buildBuiltinRenderers() });
+    runtime.start();
+
+    fireMessage({ type: 'payload-live-preview', data: demoDocument('Die Lichtprobe') });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(content.querySelectorAll('img')).toHaveLength(0);
+    expect(warn.mock.calls.map(String).join(' ')).toContain('LP0413');
+    expect(runtime.inspect().fidelity.unfaithful).toBe(1);
     warn.mockRestore();
     runtime.destroy();
   });

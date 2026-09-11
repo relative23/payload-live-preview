@@ -120,13 +120,101 @@ describe('richText renderer', () => {
 
     it('writes the placeholder when the two do not line up', () => {
       const el = document.createElement('div');
-      el.innerHTML =
-        '<div><p>old</p><figure><img src="https://cdn.example.com/a.jpg"></figure></div>';
+      // The server dropped the empty outro paragraph: two children against three.
+      el.innerHTML = '<p>old</p><figure><img src="https://cdn.example.com/a.jpg"></figure>';
       rendererNamed('richText').render(makeTarget(el), mediaDocument, emptyContext());
       expect(el.querySelector('img')).toBeNull();
       expect(el.querySelector('.lp-block')?.outerHTML).toBe(
         '<div class="lp-block lp-block--mediablock"></div>',
       );
+    });
+
+    // Z29: the template's wrapper around the field — `<div class="prose">` —
+    // is where the blocks are, so that is where the pairing runs, and it stays.
+    describe('inside the wrapper a template puts around the field', () => {
+      it('pairs inside the wrapper and keeps it', () => {
+        const el = document.createElement('div');
+        el.innerHTML =
+          '<div class="prose"><p>old</p><figure><img src="https://cdn.example.com/a.jpg"></figure><p>old</p></div>';
+        const wrapper = el.firstElementChild;
+        const figure = el.querySelector('figure');
+        rendererNamed('richText').render(makeTarget(el), mediaDocument, emptyContext());
+        expect(el.firstElementChild).toBe(wrapper);
+        expect(el.children).toHaveLength(1);
+        expect(wrapper?.querySelector('figure')).toBe(figure);
+        expect(wrapper?.children[0]?.textContent).toBe('intro');
+      });
+
+      it('does not take a lone paragraph for a wrapper when the document gains a second', () => {
+        const el = document.createElement('div');
+        el.innerHTML = '<p>only</p>';
+        rendererNamed('richText').render(
+          makeTarget(el),
+          {
+            root: {
+              children: [
+                { type: 'paragraph', children: [{ type: 'text', text: 'one' }] },
+                { type: 'paragraph', children: [{ type: 'text', text: 'two' }] },
+              ],
+            },
+          },
+          emptyContext(),
+        );
+        expect(el.innerHTML).toBe('<p>one</p><p>two</p>');
+      });
+
+      it('does not take a block it rendered itself for a wrapper', () => {
+        // The default `cta` block renders a `<div>`; the editor types a paragraph after it.
+        registerBlockRenderer('cta', () => '<div class="lp-block-cta">go</div>');
+        const el = document.createElement('div');
+        el.innerHTML = '<div class="lp-block-cta">go</div>';
+        rendererNamed('richText').render(
+          makeTarget(el),
+          {
+            root: {
+              children: [
+                { type: 'block', fields: { blockType: 'cta' } },
+                { type: 'paragraph', children: [{ type: 'text', text: 'after' }] },
+              ],
+            },
+          },
+          emptyContext(),
+        );
+        expect(el.innerHTML).toBe('<div class="lp-block-cta">go</div><p>after</p>');
+      });
+
+      it('leaves a wrapper that carries a binding of its own alone', () => {
+        const el = document.createElement('div');
+        el.innerHTML = '<div class="prose" data-payload-field="other"><p>old</p><p>old</p></div>';
+        rendererNamed('richText').render(
+          makeTarget(el),
+          {
+            root: {
+              children: [
+                { type: 'paragraph', children: [{ type: 'text', text: 'one' }] },
+                { type: 'paragraph', children: [{ type: 'text', text: 'two' }] },
+              ],
+            },
+          },
+          emptyContext(),
+        );
+        expect(el.innerHTML).toBe('<p>one</p><p>two</p>');
+      });
+
+      it('does not descend for a document of one element', () => {
+        // One live block-shaped element against one rendered placeholder is the
+        // positional pairing's own case: the server's `<div class="callout">` is kept whole.
+        const el = document.createElement('div');
+        el.innerHTML = '<div class="callout"><strong>Heads up</strong><p>body</p></div>';
+        const callout = el.firstElementChild;
+        rendererNamed('richText').render(
+          makeTarget(el),
+          { root: { children: [{ type: 'block', fields: { blockType: 'callout' } }] } },
+          emptyContext(),
+        );
+        expect(el.firstElementChild).toBe(callout);
+        expect(el.querySelector('strong')?.textContent).toBe('Heads up');
+      });
     });
 
     it('keeps both when two blocks have no renderer', () => {

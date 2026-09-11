@@ -362,7 +362,23 @@
 // reaches the console. The rest is `inspect().fidelity` — three counters in the
 // runtime state (`unfaithful`, `escalated`, the field names), counted before
 // the mode decides anything, so a page with no strategy shows the gap.
-export const INLINE_BUDGET = { raw: 109_196, gzip: 34_353, brotli: 30_350 } as const;
+// Raised 2026-09-11 (Z29): raw 109_196 → 109_498 (measured 109_368), gzip 34_353 → 34_447
+// (34_391), brotli 30_350 → 30_432 (30_270). The +293 B raw is the wrapper the
+// block-keeping write (LP-2, above) could not see. It pairs the bound element's
+// children with the rendered document's positionally and stops where the
+// counts disagree — and a template's `<div class="prose">` around the field is
+// one child where the document has five, so on the demo post the pairing
+// stopped there and the image went after an edit to the title, exactly as
+// before LP-2 (Z29, measured on the demo). The write now finds that wrapper,
+// pairs inside it and writes into it, so the wrapper and the classes the
+// typography hangs on stay. The bytes are the recognition and its two guards:
+// only a `div`, `section` or `article` (Lexical renders content as none of
+// them — a lone paragraph gaining a sibling is not a wrapper), and unlike
+// every top-level element of the rendered document by tag and class (a `<div>`
+// a registered block renders is content, and the paragraph typed after it
+// lands beside it). A single rendered element decides nothing; the positional
+// pairing already keeps a lone server-rendered block whole.
+export const INLINE_BUDGET = { raw: 109_498, gzip: 34_447, brotli: 30_432 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
@@ -431,7 +447,10 @@ export const INLINE_BUDGET = { raw: 109_196, gzip: 34_353, brotli: 30_350 } as c
 // texts like the full one; the 74 B it does not pay are the `escalated` count
 // in the strategy runner it has no copy of — its `inspect().fidelity.escalated`
 // is always 0, which is the truth about that profile.
-export const INLINE_LEAN_BUDGET = { raw: 87_374, gzip: 27_544, brotli: 24_489 } as const;
+// Raised 2026-09-11 (Z29): raw 87_374 → 87_676 (measured 87_557), gzip 27_544 → 27_645
+// (27_592), brotli 24_489 → 24_571 (24_424). The same +293 B as the full profile: the
+// wrapper is recognised in the rich-text renderer, which every profile carries.
+export const INLINE_LEAN_BUDGET = { raw: 87_676, gzip: 27_645, brotli: 24_571 } as const;
 
 // The two prelude profiles, each the runtime plus a prelude that moves on its own,
 // keep their budgets and their log in bundle-prelude-budgets.ts: this log reached

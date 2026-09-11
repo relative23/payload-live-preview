@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 309,
-    "suites": 648,
-    "tests": 2682,
+    "suites": 649,
+    "tests": 2689,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 252,
-      "suites": 575,
-      "tests": 2457,
+      "suites": 576,
+      "tests": 2464,
       "benchmarks": 0
     }
   },
@@ -953,7 +953,7 @@
       "path": "tests/unit/core/lexical-block-preservation.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 6,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -1526,8 +1526,8 @@
     {
       "path": "tests/unit/field-types/html-renderers.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 21,
+      "suites": 5,
+      "tests": 26,
       "benchmarks": 0
     },
     {

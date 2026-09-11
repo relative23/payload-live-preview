@@ -168,7 +168,11 @@ element standing in its position in the live markup and leaves that element
 alone, so the `<figure>` your own server rendered for a `mediaBlock` survives an
 edit to another field. Pairing is positional — the server writes no id to match
 on — and stops where the child counts disagree, at which point the empty
-placeholder is written after all.
+placeholder is written after all. The one wrapper a template puts around the
+field — `<div class="prose">` around the blocks — is not a disagreement: the
+write pairs inside it and leaves it standing, so the classes the typography
+hangs on survive too. A `<div>` a registered block renders is content, not a
+wrapper, and so is a wrapper that carries a binding of its own.
 
 The write says which of the two happened, once per slug, after it knows:
 `LP0410` when the server's markup stands, `LP0413` when it is gone. The second
