@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 315,
-    "suites": 668,
-    "tests": 2811,
+    "suites": 669,
+    "tests": 2812,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 258,
-      "suites": 593,
-      "tests": 2584,
+      "suites": 594,
+      "tests": 2585,
       "benchmarks": 0
     }
   },
@@ -728,8 +728,8 @@
     {
       "path": "tests/unit/codegen/cli.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 7,
+      "suites": 2,
+      "tests": 8,
       "benchmarks": 0
     },
     {

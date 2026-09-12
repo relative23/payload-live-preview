@@ -4,7 +4,7 @@
  * program, so the common shapes are recognised and everything else becomes a
  * diagnostic rather than a silently empty type.
  */
-import { Node, Project, SyntaxKind, type ObjectLiteralExpression, type SourceFile } from 'ts-morph';
+import type { Node, ObjectLiteralExpression, Project, SourceFile } from 'ts-morph';
 import { extractFields } from './extract-field';
 import { toPascalCase } from './names';
 import {
@@ -16,6 +16,8 @@ import {
   reportSkip,
   resolveToArrayLiteral,
   resolveToObjectLiteral,
+  loadTsMorph,
+  tsNode,
   type ExtractContext,
 } from './resolve';
 import type { ExtractedSchema, ExtractedSlug } from './types';
@@ -30,8 +32,8 @@ export interface ExtractSchemaOptions {
 }
 
 function declaredValue(declaration: Node): Node | undefined {
-  if (Node.isExportAssignment(declaration)) return declaration.getExpression();
-  if (Node.isVariableDeclaration(declaration)) return declaration.getInitializer();
+  if (tsNode().isExportAssignment(declaration)) return declaration.getExpression();
+  if (tsNode().isVariableDeclaration(declaration)) return declaration.getInitializer();
   return undefined;
 }
 
@@ -48,9 +50,9 @@ function findConfigLiteral(
     const literal = resolveToObjectLiteral(declaredValue(declaration));
     if (literal !== undefined) return literal;
   }
-  for (const call of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+  for (const call of sourceFile.getDescendantsOfKind(loadTsMorph().SyntaxKind.CallExpression)) {
     const callee = call.getExpression();
-    if (!Node.isIdentifier(callee) || callee.getText() !== 'buildConfig') continue;
+    if (!tsNode().isIdentifier(callee) || callee.getText() !== 'buildConfig') continue;
     const literal = resolveToObjectLiteral(call.getArguments()[0]);
     if (literal !== undefined) return literal;
   }
@@ -104,7 +106,7 @@ function extractSlugList(
 export function extractSchema(options: ExtractSchemaOptions): ExtractedSchema {
   const project =
     options.project ??
-    new Project(
+    new (loadTsMorph().Project)(
       options.tsConfigFilePath !== undefined
         ? { tsConfigFilePath: options.tsConfigFilePath }
         : { skipAddingFilesFromTsConfig: true },

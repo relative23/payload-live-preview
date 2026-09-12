@@ -11,10 +11,25 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-06 (Ü12): the codegen rows carry the annotator — the template
   // scanner, its refusal reasons and the `annotate` subcommand. It is a build
   // tool; no page and no adapter bundle sees any of it.
-  'codegen-astro.js': { raw: 12_950, gzip: 4_550, brotli: 4_100 },
+  //
+  // 2026-09-12: the parser loads `ts-morph` through `createRequire` on first use
+  // instead of importing it, because a static import made `pll-codegen --help`
+  // answer with ERR_MODULE_NOT_FOUND in a project that had not installed the
+  // optional peer. No new code — one different load path — and every entry that
+  // ships the parser pays ~270 B raw for it: the loader, its one sentence, and
+  // the guard indirection. Each moved row to its measurement plus the cushion
+  // (raw ×1.001, gzip ×1.0014, brotli +100); none of these embeds the runtime,
+  // so the epoch cannot move them. `codegen.js`'s brotli ceiling still holds
+  // (measured 4 888) and stays where it is. `codegen-cli.js` is unchanged and
+  // passes at 20 055 / 6 948 / 6 260 — the dynamic import tried first cost
+  // 1 885 B raw there, because materialising the barrel's namespace defeats the
+  // tree-shaking a named import allows, and it did not even work: esbuild hoists
+  // an external import to the top of the bundle out of a dynamically imported
+  // module too, so the binary went on resolving the peer before its first flag.
+  'codegen-astro.js': { raw: 13_070, gzip: 4_610, brotli: 4_240 },
   'codegen-cli.js': { raw: 20_100, gzip: 6_950, brotli: 6_270 },
-  'codegen.cjs': { raw: 15_300, gzip: 5_400, brotli: 4_890 },
-  'codegen.js': { raw: 15_200, gzip: 5_380, brotli: 4_890 },
+  'codegen.cjs': { raw: 15_420, gzip: 5_530, brotli: 5_060 },
+  'codegen.js': { raw: 15_230, gzip: 5_430, brotli: 4_890 },
   //
   // 2026-09-11 (Z37, the doctor reads which defaults a script means):
   // `doctor.js` +2 158 B raw / ~+830 gzip / ~+740 brotli, `doctor-cli.js`

@@ -3,6 +3,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { run } from '@/codegen/cli';
+import { Project } from 'ts-morph';
+import { dirname, relative, resolve as resolvePath } from 'node:path';
+import { existsSync } from 'node:fs';
 
 let workDir: string;
 
@@ -202,5 +205,48 @@ describe('pll-codegen CLI', () => {
     }
     expect(await readFile(outPath, 'utf8')).toBe('export interface Posts { title?: string }\n');
     await expect(readFile(inventoryPath, 'utf8')).rejects.toThrow();
+  });
+});
+
+/**
+ * `ts-morph` is an optional peer, so the entry behind the `pll-codegen` binary
+ * has to be loadable without it: `--help` and a usage error are answers a
+ * consumer gets before installing anything. Only static imports are followed
+ * here, because only they are resolved at load time — that is the difference
+ * between a sentence and `ERR_MODULE_NOT_FOUND` with ten stack frames, which is
+ * what the published 2.0.0-rc.1 answered. `pll migrate` loads the peer on first
+ * use for the same reason (src/migrate/ast.ts).
+ */
+describe('the CLI entry without the optional peer', () => {
+  it('does not reach ts-morph through a static import', () => {
+    const project = new Project({ skipLoadingLibFiles: true, skipFileDependencyResolution: true });
+    const seen = new Set<string>();
+    const reached: string[] = [];
+
+    const sourcePath = (from: string, specifier: string): string | undefined => {
+      if (!specifier.startsWith('.')) return undefined;
+      const base = resolvePath(dirname(from), specifier).replace(/\.js$/u, '');
+      return [`${base}.ts`, `${base}/index.ts`].find((candidate) => existsSync(candidate));
+    };
+
+    const walk = (file: string): void => {
+      if (seen.has(file)) return;
+      seen.add(file);
+      const source = project.addSourceFileAtPath(file);
+      const loadTime = [
+        ...source.getImportDeclarations().filter((declaration) => !declaration.isTypeOnly()),
+        ...source.getExportDeclarations().filter((declaration) => !declaration.isTypeOnly()),
+      ];
+      for (const declaration of loadTime) {
+        const specifier = declaration.getModuleSpecifierValue();
+        if (specifier === undefined) continue;
+        if (specifier === 'ts-morph') reached.push(relative(process.cwd(), file));
+        const next = sourcePath(file, specifier);
+        if (next !== undefined) walk(next);
+      }
+    };
+    walk(resolvePath(process.cwd(), 'src/codegen/cli.ts'));
+
+    expect(reached).toEqual([]);
   });
 });
