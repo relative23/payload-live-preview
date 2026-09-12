@@ -112,7 +112,8 @@ Consumers driving the runtime themselves call it on the client:
 
 ```ts
 const client = initLivePreview({ allowedOrigins: ['https://cms.example.com'] });
-console.log(client.inspect());
+// `null` where the runtime does not start — outside a preview frame, say.
+if (client !== null) console.log(client.inspect());
 ```
 
 | Reading                                                    | What it tells you                                                                                                                                                                                                                                                                                                                             |

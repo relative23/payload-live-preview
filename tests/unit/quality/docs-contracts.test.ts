@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   brokenLinks,
   headingSlugs,
+  esmOnlyListViolations,
   interfaceMembers,
   isKnownName,
+  nullGuardViolations,
   optionTableViolations,
   readSnippetViolations,
   referencesIn,
@@ -212,5 +214,68 @@ describe('the option table against the client interface', () => {
     const text = table(['| `debug` | yes | yes |', '| `hydration` | — | yes |']);
 
     expect(optionTableViolations(text, 'docs/options.md', new Set(['debug']))).toEqual([]);
+  });
+});
+
+describe('snippets that reach through a nullable client', () => {
+  const block = (body: string): string => `\`\`\`ts\n${body}\n\`\`\`\n`;
+
+  it('flags the call the troubleshooting page documented', () => {
+    // initLivePreview() returns null outside a preview frame, so this is
+    // TS18047 under strict — in the paragraph that tells readers what to run.
+    const text = block(
+      "const client = initLivePreview({ allowedOrigins: ['https://cms.example.com'] });\nconsole.log(client.inspect());",
+    );
+
+    expect(nullGuardViolations(text, 'docs/troubleshooting.md')).toEqual([
+      'docs/troubleshooting.md:1 snippet reaches through client from initLivePreview() without checking for null',
+    ]);
+  });
+
+  it.each([
+    ['an explicit comparison', 'if (client !== null) console.log(client.inspect());'],
+    ['optional chaining', 'console.log(client?.inspect());'],
+    ['a truthiness check', 'if (client) { console.log(client.inspect()); }'],
+    ['never reaching through it', 'void client;'],
+  ])('accepts %s', (_case, use) => {
+    const text = block(`const client = initLivePreview({ allowedOrigins: [] });\n${use}`);
+
+    expect(nullGuardViolations(text, 'docs/troubleshooting.md')).toEqual([]);
+  });
+});
+
+describe('the ESM-only paragraph against the manifest', () => {
+  const paragraph = [
+    'The root import carries everything.',
+    '',
+    'The adapters, `codegen/astro`, `doctor` and `migrate` are ESM-only; the rest',
+    'ship ESM and CommonJS builds.',
+    '',
+  ].join('\n');
+
+  it('names the entry that was missing from it', () => {
+    // `require('payload-live-preview/annotate')` fails with
+    // ERR_PACKAGE_PATH_NOT_EXPORTED, while the sentence promised CommonJS.
+    const violations = esmOnlyListViolations(
+      paragraph,
+      'docs/options.md',
+      ['./annotate', './doctor', './migrate'],
+      new Set(),
+    );
+
+    expect(violations).toEqual([
+      'docs/options.md:3 the ESM-only paragraph does not name ./annotate, which the manifest exports without a require condition',
+    ]);
+  });
+
+  it('says nothing about entries a collective term already covers', () => {
+    const violations = esmOnlyListViolations(
+      paragraph,
+      'docs/options.md',
+      ['./astro', './doctor'],
+      new Set(['./astro']),
+    );
+
+    expect(violations).toEqual([]);
   });
 });

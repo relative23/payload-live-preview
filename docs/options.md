@@ -246,8 +246,8 @@ in the route when a page needs the authorization.
 
 The root import carries everything. The focused entries ship the same code as
 smaller, self-contained bundles with their own type declarations. The
-adapters, `codegen/astro`, `doctor`, `migrate` and the `.astro` components
-are ESM-only; the rest ship ESM and CommonJS builds.
+adapters, `annotate`, `codegen/astro`, `doctor`, `migrate` and the `.astro`
+components are ESM-only; the rest ship ESM and CommonJS builds.
 
 | Entry                                                | Contents                                                                                                    |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |

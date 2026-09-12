@@ -71,9 +71,9 @@ increase bought.
 
 The runtime entries ship both `import` and `require`, and so do `./server`,
 `./payload` and `./codegen`. The framework adapters are ESM-only because every
-framework in the peer range is; `./doctor`, `./migrate` and `./codegen/astro`
-are ESM-only because they are tools a maintainer runs, not code a consumer
-bundles. The package is `"type": "module"` with `"sideEffects": false`, which is what lets a bundler
+framework in the peer range is; `./annotate`, `./codegen/astro`, `./doctor` and
+`./migrate` are ESM-only because they are tools a build or a maintainer runs,
+not code a consumer bundles. The package is `"type": "module"` with `"sideEffects": false`, which is what lets a bundler
 drop an unused entry rather than merely not call it.
 
 ### 5. A peer dependency is allowed only where it is optional
