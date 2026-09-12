@@ -202,6 +202,51 @@ export function readSnippetViolations(
   return violations;
 }
 
+/**
+ * The Client column of the options table, against the interface that column
+ * describes. Three rows said `yes` for options `LivePreviewClientConfig` has
+ * never had a member for, so a reader who copied one got TS2353 from their own
+ * build — and no gate read the table. Both directions are checked: a `—` for an
+ * option the client does accept understates the surface just as badly.
+ */
+export function optionTableViolations(
+  text: string,
+  file: string,
+  clientMembers: ReadonlySet<string>,
+): string[] {
+  const violations: string[] = [];
+  const lines = text.split('\n');
+  const header = lines.findIndex(
+    (line) => line.startsWith('| Option') && line.includes('| Client'),
+  );
+  if (header < 0) return violations;
+  const column = lines[header]!.split('|').findIndex((cell) => cell.trim() === 'Client');
+  // The row after the header is the separator; the table ends at the first line
+  // that is not a row, so the other tables on the page are never read.
+  for (let index = header + 2; index < lines.length; index += 1) {
+    const line = lines[index] ?? '';
+    if (!line.startsWith('|')) break;
+    const cells = line.split('|');
+    const name = (cells[1] ?? '').trim().replace(/`/gu, '');
+    const says = (cells[column] ?? '').trim();
+    if (name === '') continue;
+    const accepted = clientMembers.has(name);
+    if (says === 'yes' && !accepted) {
+      violations.push(
+        `${file}:${String(index + 1)} the Client column says yes for ${name}, ` +
+          'which LivePreviewClientConfig does not accept',
+      );
+    }
+    if (says === '—' && accepted) {
+      violations.push(
+        `${file}:${String(index + 1)} the Client column says — for ${name}, ` +
+          'which LivePreviewClientConfig accepts',
+      );
+    }
+  }
+  return violations;
+}
+
 /** GitHub's heading slugs: lower case, punctuation dropped, spaces to hyphens; fenced code is not a heading. */
 export function headingSlugs(text: string): Set<string> {
   const slugs = new Set<string>();
@@ -305,6 +350,8 @@ async function main(): Promise<void> {
     ...[...codeSource.matchAll(/'(LP0\d{3})'/gu)].map((x) => x[1]!),
     ...[...codeSource.matchAll(/\b(LP0\d{3}) is reserved/gu)].map((x) => x[1]!),
   ]);
+  const clientConfig = await readFile(resolve(ROOT, 'src/client/config.ts'), 'utf8');
+  const clientMembers = interfaceMembers(clientConfig, 'LivePreviewClientConfig');
   const preview = await readFile(resolve(ROOT, 'src/server/preview.ts'), 'utf8');
   const shared = interfaceMembers(preview, 'PreviewReadOptions');
   const readMembers: Readonly<Record<string, ReadonlySet<string>>> = {
@@ -331,6 +378,7 @@ async function main(): Promise<void> {
     }
     violations.push(...setupSnippetViolations(text, name));
     violations.push(...readSnippetViolations(text, name, readMembers));
+    violations.push(...optionTableViolations(text, name, clientMembers));
     violations.push(...brokenLinks(text, name, linkTarget(file)));
     if (name === 'README.md') {
       violations.push(...sizeClaimViolations(text, name, INLINE_BUDGET.gzip));

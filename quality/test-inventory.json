@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 315,
-    "suites": 672,
-    "tests": 2818,
+    "suites": 673,
+    "tests": 2821,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 258,
-      "suites": 597,
-      "tests": 2591,
+      "suites": 598,
+      "tests": 2594,
       "benchmarks": 0
     }
   },
@@ -2009,8 +2009,8 @@
     {
       "path": "tests/unit/quality/docs-contracts.test.ts",
       "group": "unit",
-      "suites": 7,
-      "tests": 14,
+      "suites": 8,
+      "tests": 17,
       "benchmarks": 0
     },
     {

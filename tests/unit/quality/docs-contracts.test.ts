@@ -4,6 +4,7 @@ import {
   headingSlugs,
   interfaceMembers,
   isKnownName,
+  optionTableViolations,
   readSnippetViolations,
   referencesIn,
   sizeClaimViolations,
@@ -171,5 +172,45 @@ describe('interface members', () => {
     ].join('\n');
 
     expect([...interfaceMembers(source, 'ReadDocumentOptions')]).toEqual(['collection', 'where']);
+  });
+});
+
+describe('the option table against the client interface', () => {
+  const table = (rows: readonly string[]): string =>
+    [
+      '| Option | Client | Inline script |',
+      '| ------ | ------ | ------------- |',
+      ...rows,
+      '',
+      '## Something else',
+      '',
+      '| Key | Set when |',
+      '| --- | -------- |',
+      '| `livePreviewNonce` | yes |',
+      '',
+    ].join('\n');
+
+  it('flags a yes for an option the client has no member for', () => {
+    // Exactly what `onUnfaithfulPatch`, `onUnboundChange` and `hydration` said
+    // while `LivePreviewClientConfig` rejected all three.
+    const text = table(['| `hydration` | yes | yes |']);
+
+    expect(optionTableViolations(text, 'docs/options.md', new Set(['debug']))).toEqual([
+      'docs/options.md:3 the Client column says yes for hydration, which LivePreviewClientConfig does not accept',
+    ]);
+  });
+
+  it('flags a dash for an option the client does accept', () => {
+    const text = table(['| `debug` | — | yes |']);
+
+    expect(optionTableViolations(text, 'docs/options.md', new Set(['debug']))).toEqual([
+      'docs/options.md:3 the Client column says — for debug, which LivePreviewClientConfig accepts',
+    ]);
+  });
+
+  it('accepts agreeing rows and stops before the next table', () => {
+    const text = table(['| `debug` | yes | yes |', '| `hydration` | — | yes |']);
+
+    expect(optionTableViolations(text, 'docs/options.md', new Set(['debug']))).toEqual([]);
   });
 });
