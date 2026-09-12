@@ -34,6 +34,21 @@ function namesAnotherDocument(
   return id !== undefined && previewedId !== undefined && id !== previewedId;
 }
 
+/**
+ * Whether the revision a new one supersedes still owes the page a drawer edit.
+ *
+ * The edit is news on exactly one message, and the panel posts the repeat in
+ * the same burst: it supersedes the revision that carried the edit before the
+ * server's populated answer arrives, so that answer is dropped, and the repeat
+ * asks for nothing itself. The obligation passes to whoever supersedes it and
+ * stops at the revision that completes.
+ */
+export function owesForceRender(
+  previous: { readonly forceRender: boolean; readonly completed: boolean } | null,
+): boolean {
+  return previous !== null && previous.forceRender && !previous.completed;
+}
+
 /** Remembers the last document event the panel sent, so its repeats are one event. */
 export class RelationshipTracker {
   /**

@@ -334,6 +334,56 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     runtime.destroy();
   });
 
+  it('shows a drawer edit whose message the panel superseded before the answer landed', async () => {
+    // Measured against Payload 3.88 (test run C, finding C1). Saving inside a
+    // relationship drawer posts the same document event twice, back to back.
+    // The first message is the one the event is news on, so it forces the
+    // render and asks the server; the second is the repeat, so it forces
+    // nothing and asks nothing — and it supersedes the first before the
+    // answer arrives. Measured before the fix: three revisions accepted, one
+    // superseded, two fetches, and every write on the page belonged to the
+    // repeat, carrying the document from before the drawer was opened.
+    document.body.innerHTML =
+      '<h1 data-payload-field="title">old</h1><span data-payload-field="author.name">old name</span>';
+    let name = 'Ada Lovelace';
+    const fetchFn = vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ title: 'Typed in the admin', author: { id: 1, name } }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    );
+    const runtime = makeRuntime({
+      debounceMs: 50,
+      skipUnchanged: true,
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn },
+    });
+    runtime.start();
+    const post = (event?: Record<string, unknown>): void => {
+      fireMessage({
+        type: 'payload-live-preview',
+        globalSlug: 'homepage',
+        data: { title: 'Typed in the admin', author: 1 },
+        ...(event === undefined ? {} : { externallyUpdatedRelationship: event }),
+      });
+    };
+
+    post();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(document.querySelector('span')?.textContent).toBe('Ada Lovelace');
+
+    name = 'Edited in a drawer';
+    const drawerSave = { entitySlug: 'authors', operation: 'update', id: 1, updatedAt: 'noon' };
+    post(drawerSave);
+    post(drawerSave);
+    await vi.advanceTimersByTimeAsync(200);
+
+    expect(document.querySelector('span')?.textContent).toBe('Edited in a drawer');
+    expect(runtime.inspect().revisions.superseded).toBe(1);
+    runtime.destroy();
+  });
+
   it('skips merging entirely for messages without slugs', async () => {
     document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
     const fetchFn = vi.fn();

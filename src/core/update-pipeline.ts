@@ -16,6 +16,7 @@ import { diagnoseOrphanFields } from './orphan-diagnostics';
 import { reportOmittedFeature } from './profile';
 import { detectProtocolProfile } from './protocol-profile';
 import { observeCapabilities } from './protocol-version';
+import { owesForceRender } from './relationship-tracker';
 import type { RevealWindow } from './reveal';
 import { type RuntimeDeps, type RuntimeState, type UpdateTransaction } from './runtime-state';
 import { resolveStrategy } from './strategies';
@@ -96,7 +97,7 @@ export class UpdatePipeline {
       schema: state.schema,
       schemaIndex: state.schemaIndex,
       receivedAt: Date.now(),
-      forceRender: relationshipEdit !== null,
+      forceRender: relationshipEdit !== null || owesForceRender(state.activeUpdate),
       touched: new Set(),
       baseline: false,
       invalidated: new Set(),

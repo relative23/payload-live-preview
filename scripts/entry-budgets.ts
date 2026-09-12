@@ -441,7 +441,9 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // frame-ancestors builder it shares with the middleware.
   'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
   'adapters/nuxt/index.js': { raw: 158_371, gzip: 49_838, brotli: 42_846 },
-  'adapters/sveltekit/index.js': { raw: 157_361, gzip: 49_544, brotli: 42_479 },
+  // 2026-09-12 (C1): brotli 42 479 → 42 620, the only metric the drawer-edit fix
+  // crossed — measured 42 500, plus the ~120 B this file documents for brotli.
+  'adapters/sveltekit/index.js': { raw: 157_361, gzip: 49_544, brotli: 42_620 },
   // The build tools — codegen, the doctor, the codemods — are logged in
   // `entry-budgets-tools.ts`, split off when this log reached 500 lines (Z37).
   ...TOOL_ENTRY_BUDGETS,
