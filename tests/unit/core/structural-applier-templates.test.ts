@@ -98,4 +98,37 @@ describe('applyStructuralPatches — template filling edge cases', () => {
       'b',
     ]);
   });
+
+  it('writes nothing where one row lacks a field the other rows carry', () => {
+    const ul = document.createElement('ul');
+    const next = [
+      { id: 1, label: 'Kollektiv Rost', role: 'Live' },
+      { id: 2, label: 'N. Sander' },
+    ];
+
+    applyStructuralPatches({
+      store,
+      template: '<li>{{label}} - {{role}}</li>',
+      container: ul,
+      patches: diffArray([], next),
+      nextItems: next,
+    });
+
+    expect(ul.children[0]?.textContent).toBe('Kollektiv Rost - Live');
+    expect(ul.children[1]?.textContent).toBe('N. Sander - ');
+  });
+  it('keeps a placeholder no row can fill, so a template typo stays visible', () => {
+    const ul = document.createElement('ul');
+    const next = [{ id: 1, label: 'A' }];
+
+    applyStructuralPatches({
+      store,
+      template: '<li>{{label}} {{lable}}</li>',
+      container: ul,
+      patches: diffArray([], next),
+      nextItems: next,
+    });
+
+    expect(ul.children[0]?.textContent).toBe('A {{lable}}');
+  });
 });

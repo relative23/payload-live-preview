@@ -7,6 +7,7 @@
 import { sanitizeHtmlWithPolicy } from '@security/sanitizer';
 import { trustedHtml } from '@security/trusted-types';
 import {
+  collectTemplateKeys,
   inheritItemAttributes,
   interpolateArrayTemplate,
   sharedItemAttributes,
@@ -43,9 +44,10 @@ const arrayRenderer: FieldRenderer = {
 };
 
 function renderTemplate(template: string, items: readonly unknown[]): string {
+  const knownKeys = collectTemplateKeys(items);
   let out = '';
   for (let i = 0; i < items.length; i += 1) {
-    out += interpolateArrayTemplate(template, items[i], i, safeStringify);
+    out += interpolateArrayTemplate(template, items[i], i, safeStringify, knownKeys);
   }
   return out;
 }

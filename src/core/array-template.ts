@@ -22,11 +22,26 @@ function hasOwn(record: object, key: PropertyKey): boolean {
   return Object.prototype.hasOwnProperty.call(record, key);
 }
 
+/**
+ * Every key any item carries. A placeholder naming one of these is a field of
+ * this array, so a row that happens to lack it renders as nothing; a
+ * placeholder no row can fill is a typo in the template and stays visible.
+ */
+export function collectTemplateKeys(items: readonly unknown[]): ReadonlySet<string> {
+  const keys = new Set<string>();
+  for (const item of items) {
+    if (typeof item !== 'object' || item === null) continue;
+    for (const key of Object.keys(item)) keys.add(key);
+  }
+  return keys;
+}
+
 export function interpolateArrayTemplate(
   template: string,
   item: unknown,
   index: number,
   stringify: (value: unknown) => string,
+  knownKeys?: ReadonlySet<string>,
 ): string {
   const record = typeof item === 'object' && item !== null ? item : null;
 
@@ -38,6 +53,10 @@ export function interpolateArrayTemplate(
     }
     if (record === null && key === 'value') return escapeHtml(stringify(item));
     if (key === 'index') return String(index);
+    // A field other rows carry: this one simply has none. Writing the
+    // placeholder would print template syntax on the page, which is what an
+    // editor sees the moment a row is added and not every field is filled in.
+    if (record !== null && knownKeys?.has(key) === true) return '';
     return placeholder;
   });
 }
