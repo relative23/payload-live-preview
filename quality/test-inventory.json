@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 315,
-    "suites": 679,
-    "tests": 2846,
+    "files": 316,
+    "suites": 681,
+    "tests": 2854,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 258,
-      "suites": 604,
-      "tests": 2619,
+      "files": 259,
+      "suites": 606,
+      "tests": 2627,
       "benchmarks": 0
     }
   },
@@ -772,6 +772,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 28,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/array-template.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 8,
       "benchmarks": 0
     },
     {
