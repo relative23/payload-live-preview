@@ -167,13 +167,15 @@ export class StrategyRunner {
       },
       failed: (element, id, key, code, reason) => {
         transaction.pendingFragments -= 1;
+        const detail = `fragment "${id}" fell back to patch: ${reason}`;
+        // Logged where the failure is, not where an exception would have been:
+        // the supplied strategy answers a timeout or a refusal with an outcome
+        // and never throws, so the `catch` around `render()` below is not on
+        // this path and its LP0801 reached no log sink at all.
+        deps.log('fragment', code, detail);
         void emitter.emitWhile(
           'error',
-          {
-            error: new Error(`fragment "${id}" fell back to patch: ${reason}`),
-            context: 'fragment',
-            code,
-          },
+          { error: new Error(detail), context: 'fragment', code },
           isCurrent,
         );
         void emitter.emitWhile(

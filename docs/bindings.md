@@ -132,7 +132,7 @@ the runtime cannot know which fields are cents. It formats in the visitor's time
 zone, which may not be the server's. And there is no relative form ("in 3
 days"): choosing the unit and its rounding is policy rather than formatting, and
 belongs on the server behind a fragment. An unknown value is reported as
-`LP0408` and the value is written unformatted.
+`LP0408` and the default formatting is used instead.
 
 **Svelte and Vue templates.** The `{{field}}` in `data-payload-array-template`
 is read by this package, but Svelte reads `{...}` and Vue reads `{{ ... }}` as

@@ -19,7 +19,7 @@
   "totals": {
     "files": 315,
     "suites": 679,
-    "tests": 2840,
+    "tests": 2843,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 258,
       "suites": 604,
-      "tests": 2613,
+      "tests": 2616,
       "benchmarks": 0
     }
   },
@@ -911,7 +911,7 @@
       "path": "tests/unit/core/fragment-strategy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -995,7 +995,7 @@
       "path": "tests/unit/core/lifecycle-data-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 11,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -1597,7 +1597,7 @@
       "path": "tests/unit/field-types/value-format.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 6,
+      "tests": 7,
       "benchmarks": 0
     },
     {

@@ -4,18 +4,18 @@
 
 ```ts
 
-import { e as DIAGNOSTIC_CODES } from './probe-DlAN6Syc.js';
-import { f as DiagnosticCode } from './probe-DlAN6Syc.js';
-import { b as DoctorContext } from './probe-DlAN6Syc.js';
-import { D as DoctorFetch } from './probe-DlAN6Syc.js';
-import { d as DoctorFinding } from './probe-DlAN6Syc.js';
-import { g as DoctorLevel } from './probe-DlAN6Syc.js';
-import { a as DoctorProbe } from './probe-DlAN6Syc.js';
-import { c as DoctorReport } from './probe-DlAN6Syc.js';
-import { h as DoctorResponse } from './probe-DlAN6Syc.js';
-import { l as lowercaseHeaders } from './probe-DlAN6Syc.js';
-import { r as runDoctor } from './probe-DlAN6Syc.js';
-import { R as RunDoctorOptions } from './probe-DlAN6Syc.js';
+import { e as DIAGNOSTIC_CODES } from './probe-CELeUciC.js';
+import { f as DiagnosticCode } from './probe-CELeUciC.js';
+import { b as DoctorContext } from './probe-CELeUciC.js';
+import { D as DoctorFetch } from './probe-CELeUciC.js';
+import { d as DoctorFinding } from './probe-CELeUciC.js';
+import { g as DoctorLevel } from './probe-CELeUciC.js';
+import { a as DoctorProbe } from './probe-CELeUciC.js';
+import { c as DoctorReport } from './probe-CELeUciC.js';
+import { h as DoctorResponse } from './probe-CELeUciC.js';
+import { l as lowercaseHeaders } from './probe-CELeUciC.js';
+import { r as runDoctor } from './probe-CELeUciC.js';
+import { R as RunDoctorOptions } from './probe-CELeUciC.js';
 
 // @public
 export function analyzeProbe(probe: DoctorProbe, context: DoctorContext & {

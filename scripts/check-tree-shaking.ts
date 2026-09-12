@@ -280,7 +280,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 29_159,
+    gzip: 29_203,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

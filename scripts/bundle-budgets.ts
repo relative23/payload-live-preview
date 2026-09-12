@@ -421,7 +421,7 @@
 // and on a page with no strategy, and that each field it finds is recorded once.
 // `inspect().fidelity` used to answer `0` for exactly the page it was written
 // for — one that binds little, edits much and has nowhere to escalate to.
-export const INLINE_BUDGET = { raw: 113_230, gzip: 35_739, brotli: 31_620 } as const;
+export const INLINE_BUDGET = { raw: 113_330, gzip: 35_739, brotli: 31_620 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the
