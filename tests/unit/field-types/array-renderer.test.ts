@@ -223,4 +223,15 @@ describe('array renderer — what the item template does not carry', () => {
 
     expect(ul.children[0]?.attributes).toHaveLength(0);
   });
+
+  it('leaves a field a row does not carry empty, and keeps an unfillable placeholder', () => {
+    const el = document.createElement('ul');
+    rendererNamed('array').render(
+      makeTarget(el, { arrayTemplate: '<li>{{name}} - {{role}} {{rolle}}</li>' }),
+      [{ name: 'Kollektiv Rost', role: 'Live' }, { name: 'N. Sander' }],
+      emptyContext(),
+    );
+    expect(el.children[0]?.textContent).toBe('Kollektiv Rost - Live {{rolle}}');
+    expect(el.children[1]?.textContent).toBe('N. Sander -  {{rolle}}');
+  });
 });

@@ -421,7 +421,19 @@
 // and on a page with no strategy, and that each field it finds is recorded once.
 // `inspect().fidelity` used to answer `0` for exactly the page it was written
 // for — one that binds little, edits much and has nowhere to escalate to.
-export const INLINE_BUDGET = { raw: 113_330, gzip: 35_739, brotli: 31_620 } as const;
+// Raised 2026-09-12 (B-01): raw 113_330 → 113_506 (measured 113_410), gzip
+// 35_739 → 35_788 (35_777) — the measured difference, cushions kept. The +176 B
+// raw is the fix for a row that lacks one of the template's fields: it wrote the
+// placeholder into the page, which is what an editor saw the moment they added a
+// row. A placeholder no row can fill is still written out, because that one is a
+// typo in the template.
+// The entry rows in entry-budgets.ts move with the same change and are recorded
+// here, because that log sits on its 500-line limit: `core.*` and `client.*`
+// +203 B raw, the two barrels +379, `structural.*` +182, every adapter +176,
+// and the gzip rows by their own measured difference. That file's numbers were
+// raised by exactly the difference between a build of this tree without the
+// change and one with it, so none of it is this host's drift.
+export const INLINE_BUDGET = { raw: 113_506, gzip: 35_788, brotli: 31_620 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

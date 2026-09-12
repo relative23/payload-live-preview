@@ -134,6 +134,11 @@ days"): choosing the unit and its rounding is policy rather than formatting, and
 belongs on the server behind a fragment. An unknown value is reported as
 `LP0408` and the default formatting is used instead.
 
+A placeholder whose field is missing from one row renders as nothing, because a
+row that has not been filled in yet is normal. A placeholder no row carries at
+all is left in the output as written: that is a typo in the template, and the
+page is where you will see it.
+
 **Svelte and Vue templates.** The `{{field}}` in `data-payload-array-template`
 is read by this package, but Svelte reads `{...}` and Vue reads `{{ ... }}` as
 their own interpolation, so the template written inline is a compile error or

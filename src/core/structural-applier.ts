@@ -9,6 +9,7 @@
 import { sanitizeHtmlWithPolicy, type SanitizerPolicyMode } from '@security/sanitizer';
 import { trustedHtml } from '@security/trusted-types';
 import {
+  collectTemplateKeys,
   inheritItemAttributes,
   interpolateArrayTemplate,
   sharedItemAttributes,
@@ -194,6 +195,7 @@ function prepareReconciliation(
   // Read before anything is rendered: what the current items share is what the
   // template cannot say, and an inserted item has no predecessor of its own.
   const shared = sharedItemAttributes(container);
+  const templateKeys = collectTemplateKeys(nextItems);
   const initialChildren = Array.from(container.children);
   const keyedChildren = indexByAttribute(initialChildren, KEY_ATTRIBUTE);
   const reserved = new Set<Element>();
@@ -210,7 +212,15 @@ function prepareReconciliation(
     const replace = plan.replaces.has(index);
     const needsRender = forceRender || plan.renders.has(index) || live === null;
     const rendered = needsRender
-      ? renderItem(container.ownerDocument, template, value, index, sanitizerPolicy, shared)
+      ? renderItem(
+          container.ownerDocument,
+          template,
+          value,
+          index,
+          sanitizerPolicy,
+          shared,
+          templateKeys,
+        )
       : undefined;
     if (rendered === null) return null;
     const nestedSlots =
@@ -368,8 +378,9 @@ function renderItem(
   index: number,
   policy: SanitizerPolicyMode | undefined,
   shared: readonly InheritedAttribute[],
+  knownKeys: ReadonlySet<string>,
 ): Element | null {
-  const filled = interpolateArrayTemplate(template, value, index, safeStringify);
+  const filled = interpolateArrayTemplate(template, value, index, safeStringify, knownKeys);
   const safe = sanitizeHtmlWithPolicy(filled, policy, templateSanitizeOptions(template));
   const host = ownerDocument.createElement('template');
   host.innerHTML = trustedHtml(safe);

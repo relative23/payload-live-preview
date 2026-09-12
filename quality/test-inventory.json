@@ -19,7 +19,7 @@
   "totals": {
     "files": 315,
     "suites": 679,
-    "tests": 2843,
+    "tests": 2846,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 258,
       "suites": 604,
-      "tests": 2616,
+      "tests": 2619,
       "benchmarks": 0
     }
   },
@@ -1359,7 +1359,7 @@
       "path": "tests/unit/core/structural-applier-templates.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -1534,7 +1534,7 @@
       "path": "tests/unit/field-types/array-renderer.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 19,
+      "tests": 20,
       "benchmarks": 0
     },
     {
