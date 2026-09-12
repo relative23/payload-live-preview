@@ -43,7 +43,17 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // +130 on `doctor-cli.js` and ~100 on `doctor.js`, like `plugins.*`: neither
   // embeds the runtime, so the epoch cannot move them, and 130 would put the
   // smaller one over the 2 % the improvement hint allows.
-  'doctor-cli.js': { raw: 35_233, gzip: 12_942, brotli: 11_584 },
   'doctor.js': { raw: 15_449, gzip: 6_389, brotli: 5_632 },
-  'migrate.js': { raw: 13_350, gzip: 4_800, brotli: 4_320 },
+  //
+  // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
+  // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
+  // and one sentence naming the key it cannot place — `+415 B raw` on
+  // `doctor-cli.js` and `+423` on `migrate.js`, which is the same code twice:
+  // the `pll` binary hosts `pll migrate`. The bytes are the finding: the
+  // migrated file used to fail at tsc with TS2353 while the conflicts the run
+  // reported named neither line. Each row to its measurement plus the cushion
+  // (raw ×1.001, gzip ×1.0014); brotli +130 and +100 as in Z37 — neither entry
+  // embeds the runtime, so the epoch cannot move them.
+  'doctor-cli.js': { raw: 35_690, gzip: 13_120, brotli: 11_745 },
+  'migrate.js': { raw: 13_790, gzip: 4_980, brotli: 4_510 },
 };

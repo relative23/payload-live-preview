@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   brokenLinks,
   headingSlugs,
+  interfaceMembers,
   isKnownName,
+  readSnippetViolations,
   referencesIn,
   sizeClaimViolations,
 } from '../../../scripts/docs-contracts';
@@ -121,5 +123,53 @@ describe('the runtime size claim', () => {
     ['is absent', 'no figure here', 29_035, 0],
   ])('%s', (_case, text, budget, count) => {
     expect(sizeClaimViolations(text, 'README.md', budget)).toHaveLength(count);
+  });
+});
+
+describe('read snippets against the interface they call', () => {
+  const members = {
+    fetchDocument: new Set(['collection', 'where', 'authorization']),
+    fetchGlobal: new Set(['global', 'authorization']),
+  };
+
+  it('flags the call docs/migration.md showed for two releases', () => {
+    // `slug` was never a key of these helpers — every 1.x release spelled it
+    // `collection` as well — so the documented call could not compile, and
+    // `pll migrate` was blamed for reproducing what the guide asked for.
+    const text = '```ts\nconst doc = await preview.fetchDocument({ slug, authorization });\n```\n';
+
+    expect(readSnippetViolations(text, 'docs/migration.md', members)).toEqual([
+      'docs/migration.md:1 snippet passes slug to .fetchDocument(), which does not accept it',
+    ]);
+  });
+
+  it('accepts the corrected call, a spread and a nested where', () => {
+    const text = [
+      '```ts',
+      'await preview.fetchDocument({ collection, ...rest });',
+      "await preview.fetchDocument({ collection: 'p', where: { slug: { equals: s } } });",
+      "await preview.fetchGlobal({ global: 'site', authorization });",
+      '```',
+      '',
+    ].join('\n');
+
+    expect(readSnippetViolations(text, 'docs/migration.md', members)).toEqual([]);
+  });
+});
+
+describe('interface members', () => {
+  it('reads one-per-line readonly members and stops at the closing brace', () => {
+    const source = [
+      'export interface ReadDocumentOptions extends PreviewReadOptions {',
+      '  readonly collection: string;',
+      '  readonly where?: PreviewWhere;',
+      '}',
+      'export interface Other {',
+      '  readonly elsewhere: string;',
+      '}',
+      '',
+    ].join('\n');
+
+    expect([...interfaceMembers(source, 'ReadDocumentOptions')]).toEqual(['collection', 'where']);
   });
 });

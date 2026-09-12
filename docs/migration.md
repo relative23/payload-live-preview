@@ -118,7 +118,7 @@ import { isPreviewRequest, fetchPreviewDocument } from 'payload-live-preview';
 if (isPreviewRequest(request)) {
   /* … */
 }
-const doc = await fetchPreviewDocument({ serverURL, slug });
+const doc = await fetchPreviewDocument({ serverURL, collection });
 
 // 2.0 (after `pll migrate --write`, plus definePreview wiring)
 import { hasPreviewIntent } from 'payload-live-preview';
@@ -127,7 +127,7 @@ if (hasPreviewIntent(request)) {
   /* … */
 }
 const preview = definePreview({ serverURL, depth: 2 });
-const doc = await preview.fetchDocument({ slug, authorization });
+const doc = await preview.fetchDocument({ collection, authorization });
 ```
 
 ### Changes nothing warns about

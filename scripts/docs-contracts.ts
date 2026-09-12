@@ -149,6 +149,59 @@ export function setupSnippetViolations(text: string, file: string): string[] {
   return violations;
 }
 
+/**
+ * Members of an exported interface, by name. A regular expression is enough:
+ * these are one-member-per-line `readonly name?: type;` declarations, and the
+ * alternative — a TypeScript program per gate run — buys nothing here.
+ */
+export function interfaceMembers(source: string, name: string): ReadonlySet<string> {
+  const start = source.indexOf(`export interface ${name}`);
+  if (start < 0) throw new Error(`docs contract: interface ${name} not found`);
+  const open = source.indexOf('{', start);
+  let depth = 0;
+  let end = open;
+  for (; end < source.length; end += 1) {
+    if (source[end] === '{') depth += 1;
+    else if (source[end] === '}') {
+      depth -= 1;
+      if (depth === 0) break;
+    }
+  }
+  const body = source.slice(open + 1, end);
+  return new Set([...body.matchAll(/^ {2}readonly ([A-Za-z_]\w*)\??:/gmu)].map((m) => m[1]!));
+}
+
+/**
+ * Option keys a snippet passes to a read, held against the interface that read
+ * accepts. `docs/migration.md` told a reader to write `fetchDocument({ slug })`
+ * for two releases: `slug` was never a key of these helpers — 1.x spelled it
+ * `collection` too — so the line documented a call that cannot compile, and the
+ * migration tool was blamed for reproducing it.
+ */
+export function readSnippetViolations(
+  text: string,
+  file: string,
+  members: Readonly<Record<string, ReadonlySet<string>>>,
+): string[] {
+  const violations: string[] = [];
+  for (const block of text.matchAll(/```[a-z]*\n([\s\S]*?)```/gu)) {
+    const body = block[1] ?? '';
+    for (const [method, accepted] of Object.entries(members)) {
+      for (const call of body.matchAll(new RegExp(`\\.${method}\\(\\{([^}]*)\\}`, 'gu'))) {
+        for (const key of (call[1] ?? '').split(',')) {
+          const name = key.trim().split(':')[0]?.trim() ?? '';
+          if (name === '' || name.startsWith('...') || accepted.has(name)) continue;
+          const line = text.slice(0, block.index).split('\n').length;
+          violations.push(
+            `${file}:${String(line)} snippet passes ${name} to .${method}(), which does not accept it`,
+          );
+        }
+      }
+    }
+  }
+  return violations;
+}
+
 /** GitHub's heading slugs: lower case, punctuation dropped, spaces to hyphens; fenced code is not a heading. */
 export function headingSlugs(text: string): Set<string> {
   const slugs = new Set<string>();
@@ -252,6 +305,12 @@ async function main(): Promise<void> {
     ...[...codeSource.matchAll(/'(LP0\d{3})'/gu)].map((x) => x[1]!),
     ...[...codeSource.matchAll(/\b(LP0\d{3}) is reserved/gu)].map((x) => x[1]!),
   ]);
+  const preview = await readFile(resolve(ROOT, 'src/server/preview.ts'), 'utf8');
+  const shared = interfaceMembers(preview, 'PreviewReadOptions');
+  const readMembers: Readonly<Record<string, ReadonlySet<string>>> = {
+    fetchDocument: new Set([...shared, ...interfaceMembers(preview, 'ReadDocumentOptions')]),
+    fetchGlobal: new Set([...shared, ...interfaceMembers(preview, 'ReadGlobalOptions')]),
+  };
   const classes = await sourceLiterals(/(?<![\w-])lp-[a-z0-9-]*[a-z0-9]/gu);
   const attributes = await sourceLiterals(/(?<![\w-])data-payload-[a-z-]*[a-z]/gu);
   const known: Record<DocReference['kind'], ReadonlySet<string>> = {
@@ -271,6 +330,7 @@ async function main(): Promise<void> {
       violations.push(`${ref.file}:${String(ref.line)} unknown ${ref.kind} "${ref.name}"`);
     }
     violations.push(...setupSnippetViolations(text, name));
+    violations.push(...readSnippetViolations(text, name, readMembers));
     violations.push(...brokenLinks(text, name, linkTarget(file)));
     if (name === 'README.md') {
       violations.push(...sizeClaimViolations(text, name, INLINE_BUDGET.gzip));
