@@ -31,9 +31,14 @@ export interface ExtractSchemaOptions {
   readonly tsConfigFilePath?: string;
 }
 
+/**
+ * What a default export declaration holds. TypeScript only ever declares the
+ * `default` export as an export assignment, an export specifier, or a function
+ * or class declaration — `export default config` keeps the variable's own
+ * declaration out of it — so a variable declaration never arrives here.
+ */
 function declaredValue(declaration: Node): Node | undefined {
   if (tsNode().isExportAssignment(declaration)) return declaration.getExpression();
-  if (tsNode().isVariableDeclaration(declaration)) return declaration.getInitializer();
   return undefined;
 }
 

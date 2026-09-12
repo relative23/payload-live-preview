@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 315,
-    "suites": 677,
-    "tests": 2834,
+    "suites": 679,
+    "tests": 2840,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 258,
-      "suites": 602,
-      "tests": 2607,
+      "suites": 604,
+      "tests": 2613,
       "benchmarks": 0
     }
   },
@@ -728,8 +728,8 @@
     {
       "path": "tests/unit/codegen/cli.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 8,
+      "suites": 3,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -742,8 +742,8 @@
     {
       "path": "tests/unit/codegen/extract-schema-resolution.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 10,
+      "suites": 3,
+      "tests": 15,
       "benchmarks": 0
     },
     {

@@ -250,3 +250,33 @@ describe('the CLI entry without the optional peer', () => {
     expect(reached).toEqual([]);
   });
 });
+
+describe('the parser without the optional peer', () => {
+  it('says how to install ts-morph instead of passing the resolver failure on', async () => {
+    // The sentence the whole lazy load exists for. It can only be seen with the
+    // peer absent, which here means replacing the loader the parser uses.
+    vi.resetModules();
+    // Partial mock: replacing the module wholesale drops its default export,
+    // which the ESM interop needs. Only `createRequire` is swapped.
+    // The fresh graph under test is `resolve.ts`, which takes nothing else from
+    // this module; `default` is supplied because the ESM interop needs one.
+    vi.doMock('node:module', () => {
+      const createRequire = (): (() => never) => () => {
+        const error: NodeJS.ErrnoException = new Error("Cannot find package 'ts-morph'");
+        error.code = 'MODULE_NOT_FOUND';
+        throw error;
+      };
+      return { createRequire, default: { createRequire } };
+    });
+    try {
+      const { loadTsMorph } = await import('@/codegen/parser/resolve');
+
+      expect(() => loadTsMorph()).toThrow(
+        'pll-codegen needs ts-morph: npm install --save-dev ts-morph',
+      );
+    } finally {
+      vi.doUnmock('node:module');
+      vi.resetModules();
+    }
+  });
+});
