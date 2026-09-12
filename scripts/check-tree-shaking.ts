@@ -218,6 +218,14 @@ interface Fixture {
  * (44_437), the generator 41_788 → 41_873 (41_815), the Next.js middleware
  * 47_038 → 47_118 (47_060) and `LEAN_RUNTIME` 29_064 → 29_159 (29_136). The
  * unbound change reaches the fidelity ledger; the reason is in bundle-budgets.ts.
+ * Raised 2026-09-12 (B-01): the barrel 44_520 → 44_621 (measured 44_567), from
+ * `./core` 44_491 → 44_599 (44_545), the generator 41_873 → 42_252 (42_194) and
+ * the Next.js middleware 47_118 → 47_500 (47_442) — each row by its own measured
+ * difference, every cushion kept. An array row that lacks one of the template's
+ * fields writes nothing where it used to write the placeholder itself; the keys
+ * any row carries are collected once per render and both callers pass them down.
+ * `LEAN_RUNTIME`, `morphElement` and the two renderer rows do not move: none of
+ * them pulls in the array path.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -238,21 +246,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 44_520,
+    gzip: 44_621,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 41_873,
+    gzip: 42_252,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 44_491,
+    gzip: 44_599,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -273,7 +281,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 47_118,
+    gzip: 47_500,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
