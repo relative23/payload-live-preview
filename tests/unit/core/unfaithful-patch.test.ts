@@ -293,4 +293,78 @@ describe('a changed field with no binding', () => {
     expect(route.refreshes).toBe(1);
     runtime.destroy();
   });
+
+  /**
+   * Testlauf B, F1: the route refreshed and the editor saw the edit, but
+   * `inspect().fidelity` reported nothing at all — on exactly the page the
+   * reading exists for. Only the element path reached the ledger, and a field
+   * with no binding has no element, so it went past it in every mode.
+   */
+  it('counts the finding, and the escalation that answered it', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">Server rendered</h1>';
+    const route = fakeRoute();
+    const runtime = start({ strategies: { route }, warn: () => {} });
+
+    await connectThenEdit({ title: 'Server rendered', callout: 'the section is not on the page' });
+
+    expect(route.refreshes).toBe(1);
+    expect(runtime.inspect().fidelity).toEqual({
+      mode: 'escalate',
+      unfaithful: 1,
+      escalated: 1,
+      fields: ['callout'],
+    });
+    runtime.destroy();
+  });
+
+  it('counts it on a page with nowhere to escalate to, which is the page it is for', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">Server rendered</h1>';
+    const runtime = start({ warn: () => {} });
+
+    await connectThenEdit({ title: 'Server rendered', callout: 'the section is not on the page' });
+
+    const { fidelity, route } = runtime.inspect();
+    expect(fidelity).toEqual({
+      mode: 'escalate',
+      unfaithful: 1,
+      escalated: 0,
+      fields: ['callout'],
+    });
+    expect(route.handler).toBe(false);
+    runtime.destroy();
+  });
+
+  it("counts it under 'warn' and under 'ignore', where nothing is done about it", async () => {
+    for (const mode of ['warn', 'ignore'] as const) {
+      document.body.innerHTML = '<h1 data-payload-field="title">Server rendered</h1>';
+      const route = fakeRoute();
+      const runtime = start({ strategies: { route }, onUnfaithfulPatch: mode, warn: () => {} });
+
+      await connectThenEdit({ title: 'Server rendered', callout: 'nothing binds this' });
+
+      expect(route.refreshes).toBe(0);
+      expect(runtime.inspect().fidelity).toEqual({
+        mode,
+        unfaithful: 1,
+        escalated: 0,
+        fields: ['callout'],
+      });
+      runtime.destroy();
+    }
+  });
+
+  it('counts one finding per field, however often it is edited', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">Server rendered</h1>';
+    const route = fakeRoute();
+    const runtime = start({ strategies: { route }, warn: () => {} });
+
+    await connectThenEdit(
+      { title: 'Server rendered', callout: 'one' },
+      { title: 'Server rendered', callout: 'two' },
+      { title: 'Server rendered', callout: 'three' },
+    );
+
+    expect(runtime.inspect().fidelity).toMatchObject({ unfaithful: 1, fields: ['callout'] });
+    runtime.destroy();
+  });
 });

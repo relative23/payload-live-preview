@@ -220,6 +220,16 @@ Notes on the rows that need one:
   one flush when it closes. Typing therefore costs one frame at the start of a
   phrase and one at the end of it, not 50 ms per keystroke. `debounceMs: 0`
   removes the window entirely — and with it the merge coalescing that shares it.
+- `intersectionRootMargin` cannot pull a write in ahead of the fold inside a
+  preview iframe. With an implicit root the browser measures the intersection
+  against the top-level viewport and clips it to the frame's own box, and a
+  preview is always framed: measured on a footer at `top: 2347` in a 600 px
+  frame, `'3000px'` and `'0px'` both report `isIntersecting: false` and both
+  defer the write (LP0301). What does work is the replay — the write lands as
+  soon as the element is scrolled into view. `visibilityGateThreshold` does not
+  share the limitation: it counts bindings rather than pixels and decides
+  whether the gate runs at all, so a page that must stay live below the fold
+  raises it or sets `disableVisibilityGate`.
 - `dependencies` and `data-payload-depends` say the same thing from two sides;
   both matter only under `skipUnchanged`. `revealEditedField` is described in
   [docs/reveal.md](reveal.md), `scopeBindingsByOwner` in

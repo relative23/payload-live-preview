@@ -5,13 +5,14 @@
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { trustedHtml } from '@security/trusted-types';
+import { reportUnboundChange } from './fidelity';
 import { bindingValue } from './field-value';
 import { morphElement } from './morph';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
 import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
-import { createFieldAddressability, SYSTEM_FIELD_NAMES, type OwnerScope } from './unbound-fields';
+import { unboundChangedFields, type OwnerScope } from './unbound-fields';
 import type { CachedElement } from './types';
 
 /** What the pipeline lends the runner. */
@@ -82,21 +83,36 @@ export class StrategyRunner {
    * Whether this revision changed a field the page cannot patch — one with no
    * anchor anywhere, which is also how a section the template renders only
    * under a condition looks from here. The whole route is then the only honest
-   * answer, and `'warn'` needs nothing extra: LP0201 already names the field.
+   * answer.
+   *
+   * Asked of every revision rather than only where a refresh could follow it,
+   * because the finding is the same one under every mode and on a page with no
+   * strategy — and that page is what `inspect().fidelity` is read on. What the
+   * mode still decides is what is *done*: `'warn'` adds no line of its own
+   * (LP0201 already names the field) and `'ignore'` keeps the stale value,
+   * exactly as before; only the ledger sees them now.
    *
    * The baseline message is skipped, because there every field counts as
-   * changed and the page has just been rendered from them anyway.
+   * changed and the page has just been rendered from them anyway — and so is
+   * the re-apply after a refresh, which would otherwise report it all twice.
    */
   hasUnboundChange(transaction: UpdateTransaction, ownerKeys: OwnerScope): boolean {
-    const { deps } = this;
-    if (deps.onUnfaithfulPatch !== 'escalate' || transaction.baseline) return false;
-    const isAddressable = createFieldAddressability(deps.cache, transaction.locale, ownerKeys);
-    for (const fieldName of transaction.touched) {
-      if (SYSTEM_FIELD_NAMES.has(fieldName) || isAddressable(fieldName)) continue;
-      deps.log('route', 'LP0807', `field "${fieldName}" has no binding; refreshing the route`);
-      return true;
-    }
-    return false;
+    const { deps, state } = this;
+    if (transaction.baseline || transaction.routeRefreshed) return false;
+    const unbound = unboundChangedFields(
+      deps.cache,
+      transaction.touched,
+      transaction.locale,
+      ownerKeys,
+    );
+    let answered = 0;
+    for (const fieldName of unbound) if (reportUnboundChange(state, fieldName)) answered += 1;
+    const [first] = unbound;
+    if (first === undefined || deps.onUnfaithfulPatch !== 'escalate') return false;
+    if (deps.strategies.route === undefined) return false;
+    deps.log('route', 'LP0807', `field "${first}" has no binding; refreshing the route`);
+    state.escalatedCount += answered;
+    return true;
   }
 
   /** Whether a touched field is bound to an element the route owns. */
