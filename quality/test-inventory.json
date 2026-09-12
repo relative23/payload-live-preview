@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 315,
-    "suites": 675,
-    "tests": 2825,
+    "suites": 676,
+    "tests": 2828,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 258,
-      "suites": 600,
-      "tests": 2598,
+      "suites": 601,
+      "tests": 2601,
       "benchmarks": 0
     }
   },
@@ -1463,8 +1463,8 @@
     {
       "path": "tests/unit/doctor/analyze-framing.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 15,
+      "suites": 5,
+      "tests": 18,
       "benchmarks": 0
     },
     {

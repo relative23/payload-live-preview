@@ -163,17 +163,40 @@ function framingFindings(
     frameOptions !== undefined &&
     (/deny/iu.test(frameOptions) || (/sameorigin/iu.test(frameOptions) && !sameOrigin));
   if (blocks) {
-    findings.push({
-      code: 'LP0703',
-      level: 'error',
-      title: `X-Frame-Options: ${frameOptions} blocks the preview iframe`,
-      detail:
-        'This header is older than CSP and browsers honour it independently. No ' +
-        'frame-ancestors directive can override it.',
-      remedy:
-        'Remove X-Frame-Options for preview responses. It is usually set by a proxy or a ' +
-        'security middleware rather than by the app.',
-    });
+    // `SAMEORIGIN` refuses a frame from *another* origin, so it is a verdict
+    // about this preview only once the admin origin is known. Without --admin
+    // the audit says what it saw and names the condition instead of asserting a
+    // block it cannot have established: where the admin and the site share an
+    // origin, the preview runs. `DENY` needs no origin to be a verdict.
+    const judged = admin !== undefined || /deny/iu.test(frameOptions);
+    findings.push(
+      judged
+        ? {
+            code: 'LP0703',
+            level: 'error',
+            title: `X-Frame-Options: ${frameOptions} blocks the preview iframe`,
+            detail:
+              'This header is older than CSP and browsers honour it independently. No ' +
+              'frame-ancestors directive can override it.',
+            remedy:
+              'Remove X-Frame-Options for preview responses. It is usually set by a proxy ' +
+              'or a security middleware rather than by the app.',
+          }
+        : {
+            code: 'LP0703',
+            level: 'warning',
+            title: `X-Frame-Options: ${frameOptions} blocks every frame from another origin`,
+            detail:
+              'This header is older than CSP and browsers honour it independently, and no ' +
+              'frame-ancestors directive can override it. SAMEORIGIN refuses a frame from ' +
+              'another origin only, and no admin origin was given: whether it blocks this ' +
+              'preview depends on where the admin is served, which this probe cannot see.',
+            remedy:
+              'Re-run with --admin <origin> to have it judged. If the admin is on another ' +
+              'origin, remove X-Frame-Options for preview responses; a proxy or a security ' +
+              'middleware usually sets it.',
+          },
+    );
   }
   return findings;
 }

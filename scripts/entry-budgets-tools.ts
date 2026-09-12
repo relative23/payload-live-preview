@@ -43,7 +43,7 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // +130 on `doctor-cli.js` and ~100 on `doctor.js`, like `plugins.*`: neither
   // embeds the runtime, so the epoch cannot move them, and 130 would put the
   // smaller one over the 2 % the improvement hint allows.
-  'doctor.js': { raw: 15_449, gzip: 6_389, brotli: 5_632 },
+  'doctor.js': { raw: 16_090, gzip: 6_550, brotli: 5_780 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -62,6 +62,14 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // cushions. `doctor-cli.js`'s brotli ceiling still holds (measured 11 732
   // against 11 745) and is left where it is, like `codegen-cli.js` before it: a
   // ceiling that is not red does not move because its neighbours did.
-  'doctor-cli.js': { raw: 36_120, gzip: 13_240, brotli: 11_745 },
+  //
+  // 2026-09-12 (the doctor stops calling SAMEORIGIN a block it cannot have
+  // established): LP0703 carries a second reading now — a warning that names the
+  // condition and asks for `--admin` — so the finding is two texts instead of
+  // one, +598 B raw on `doctor-cli.js` and +624 on `doctor.js`. The bytes are
+  // the correction: the error it replaced was false on every deployment whose
+  // admin shares the origin, and the audit exited 2 on a page with nothing wrong
+  // with it. Same cushions; neither entry embeds the runtime.
+  'doctor-cli.js': { raw: 36_760, gzip: 13_390, brotli: 11_980 },
   'migrate.js': { raw: 14_220, gzip: 5_110, brotli: 4_630 },
 };
