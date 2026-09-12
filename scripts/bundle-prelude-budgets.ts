@@ -68,7 +68,10 @@
 // Raised 2026-09-11 (Z31): raw 123_068 → 124_153 (measured 124_023), gzip 39_010 → 39_338
 // (39_282), brotli 34_239 → 34_589 (34_427) — the runtime's own +1 085 B (see
 // INLINE_BUDGET); the prelude did not move.
-export const INLINE_FRAGMENT_BUDGET = { raw: 124_588, gzip: 39_505, brotli: 34_740 } as const;
+// Raised 2026-09-12 (Testlauf B, F1): raw 124_588 → 124_875 (measured 124_754),
+// gzip 39_505 → 39_588 (39_537), brotli 34_740 → 34_803 (34_631) — the runtime's
+// own +287 B (see INLINE_BUDGET); the prelude did not move.
+export const INLINE_FRAGMENT_BUDGET = { raw: 124_875, gzip: 39_588, brotli: 34_803 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -138,4 +141,8 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 124_588, gzip: 39_505, brotli: 34_7
 // Raised 2026-09-11 (Z31): raw 118_116 → 119_201 (measured 119_071), gzip 37_344 → 37_673
 // (37_617), brotli 32_848 → 33_153 (32_991) — the runtime's own +1 085 B (see
 // INLINE_BUDGET); the prelude did not move.
-export const INLINE_ROUTE_BUDGET = { raw: 119_636, gzip: 37_840, brotli: 33_288 } as const;
+// Raised 2026-09-12 (Testlauf B, F1): raw 119_636 → 119_923 (measured 119_800),
+// gzip 37_840 → 37_925 (37_873), brotli 33_288 → 33_352 (33_187) — the runtime's
+// own +287 B (see INLINE_BUDGET). This is the profile that acts on the finding:
+// the refresh was always taken, only the ledger behind it was empty.
+export const INLINE_ROUTE_BUDGET = { raw: 119_923, gzip: 37_925, brotli: 33_352 } as const;

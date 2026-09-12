@@ -81,6 +81,29 @@ export function reportUnfaithfulPatch(
 }
 
 /**
+ * Record a changed field the page has no binding for: the same judgement one
+ * step earlier, where there is no element to write to and so nothing to queue.
+ * The whole route is the only answer to it, and `StrategyRunner` asks for that
+ * itself.
+ *
+ * Once per field name, for the reason LP0411 is once per element: the cause is
+ * the markup, so the next keystroke into the same field would report the same
+ * thing. Counted under every mode and on a page with no strategy at all —
+ * that page is the one `inspect().fidelity` was written for, and it was the one
+ * page the reading said nothing about.
+ *
+ * No message of its own: LP0201 already names the field, once, from the same
+ * rule. The return value says whether this was the first time, so an escalation
+ * is counted against the findings it answered rather than against a keystroke.
+ */
+export function reportUnboundChange(state: RuntimeState, fieldName: string): boolean {
+  if (state.unfaithfulFields.has(fieldName)) return false;
+  state.unfaithfulFields.add(fieldName);
+  state.unfaithfulCount += 1;
+  return true;
+}
+
+/**
  * Renderers that turn a stored value into a presentation, so the template that
  * printed the same field had to choose one too. A `text` binding whose content
  * differs is an edit; a `date`, `number` or `checkbox` binding whose content

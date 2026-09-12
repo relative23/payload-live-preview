@@ -412,86 +412,22 @@
 // (`hydration-vue.ts`); cap and waiters are shared with React's wait. The
 // bytes are Vue's and Nuxt's names and the accessor's property calls, which
 // no minifier shortens. Every profile pays it: the wait sits in `start()`.
-export const INLINE_BUDGET = { raw: 112_943, gzip: 35_658, brotli: 31_514 } as const;
+// Raised 2026-09-12 (Testlauf B, F1): raw 112_943 → 113_230 (measured 113_126),
+// gzip 35_658 → 35_739 (35_688), brotli 31_514 → 31_620 (31_466) — the measured
+// difference in each metric, cushions kept. The +287 B raw
+// is the second cause of an unfaithful patch reaching the ledger: a changed
+// field with no binding anywhere. The decision was already made on every
+// revision that could refresh; what is new is that it is made under every mode
+// and on a page with no strategy, and that each field it finds is recorded once.
+// `inspect().fidelity` used to answer `0` for exactly the page it was written
+// for — one that binds little, edits much and has nowhere to escalate to.
+export const INLINE_BUDGET = { raw: 113_230, gzip: 35_739, brotli: 31_620 } as const;
 
-/**
- * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
- * the structural applier, the array renderers with their item templates and the
- * screen-reader announcer are not in the artifact at all, and the runtime
- * reports LP0104 when a page needs one of them.
- *
- * 24 763 gzip against the full script's 30 253 — 5 490 bytes, 18 %. The plan
- * that asked for this profile hoped for under 15 000; that is not reachable by
- * leaving features out, because what remains is the machine itself: the message
- * bus, the scheduler, the binding cache, the update pipeline, the merger and
- * the sanitizer are ~19 000 gzip together. Measured in Ü9 of the private
- * roadmap, including the alternative (feature preludes) and why it is worse:
- * a prelude repeats the sanitizer and the schema diff, so a page that uses the
- * feature ends up larger than it is today.
- */
-// Raised 2026-09-07 (LP-1): raw 81 098 → 81 330 (measured 81 206), gzip 25 359 →
-// 25 430 (measured 25 386), brotli 22 557 → 22 660 (measured 22 530). The lean
-// profile leaves out the strategy runner, the morph and the structural applier —
-// it does not leave out the update pipeline, and the level-versus-edge decision
-// lives there. A lean page pays the same 431 B as a full one and gets the same
-// thing back: `skipUnchanged` still works after the editor saves.
-// Raised 2026-09-07 (LP-2): raw 81 330 → 81 920 (measured 81 849), gzip 25 430 →
-// 25 650 (measured 25 620), brotli 22 660 → 22 850 (measured 22 735). The lean
-// profile leaves out the morph and the structural applier; it does not leave out
-// the rich-text renderer, and that is where a block's server markup is kept.
-// Raised 2026-09-07 (Z3): raw 81 920 → 82 830 (measured 82 738), gzip 25 650 →
-// 25 990 (measured 25 951), brotli 22 850 → 23 120 (measured 23 000). The lean
-// profile carries the verdict and the reporting and leaves out the escalation:
-// it has no strategy runner, so `escalateUnfaithful` there is a function that
-// returns. That is the 396 B between +1 303 and +907, and it is why a lean page
-// gets LP0411 in its log and no refresh.
-// Raised 2026-09-07 (Z4): raw 82 830 → 85 540 (measured 85 454), gzip 25 990 →
-// 26 820 (measured 26 775), brotli 23 120 → 23 850 (measured 23 721). The lean
-// profile pays the same 2 716 B as the full one and gets the same thing back:
-// the merge is not one of the features it leaves out, so neither is the decision
-// about whether to make it.
-// Raised 2026-09-07 (Z5): raw 85 540 → 85 720 (measured 85 626). The scheduler
-// is the machine itself, not a feature, so the lean profile pays the same 172 B
-// and a lean page's keystroke lands in the same frame. gzip and brotli hold.
-// Raised 2026-09-07 (Z6): raw 85 720 → 85 830 (measured 85 740), gzip 26 820 →
-// 26 880 (measured 26 850). Brotli holds. The lean profile has no route strategy
-// to refuse anything, and pays 20 B all the same: the cancelled timer lives in
-// the runtime state every profile carries, and paying for the slot is cheaper
-// than a second shape of that object.
-// Raised 2026-09-07 (Z7): raw 85_830 → 86_100 (measured 85_984), gzip 26_880 →
-// 26_970 (measured 26_924), brotli 23_850 → 23_990 (measured 23_864). The lean
-// profile pays the same 244 B as the full one: the update pipeline is the
-// machine itself, and LP0201 sits in it.
-// Holds 2026-09-07 (Z22): raw 86_009, gzip 26_932, brotli 23_880, all three
-// still under. The lean profile leaves out the array renderers and the
-// structural applier, so the only thing it pays for is the 25 B of shared
-// attribute rule — and a lean page never rebuilds a list to begin with.
-// Raised 2026-09-10 (Z9): raw 86_920 → 87_386 (measured 87_276), gzip 27_260 →
-// 27_502 (27_452), brotli 24_230 → 24_417 (24_287); the search is not in it.
-// Raised 2026-09-10 (Z26): raw 87_386 → 87_501 (measured 87_391), gzip 27_502
-// → 27_533 (27_483), brotli 24_417 → 24_455 (24_325). The lean profile has no
-// route strategy and never restores a guess; the 115 B are the slot in the
-// runtime state and the pipeline's folded method — the search stays out.
-// Lowered 2026-09-11 (Z28): raw 87_501 → 86_684 (measured 86_574), gzip 27_533 → 27_371
-// (27_321), brotli 24_455 → 24_348 (24_218) — the same −817 B: every line that went
-// is in a module the lean profile carries too (see INLINE_BUDGET).
-// Raised 2026-09-11 (Z30): raw 86_684 → 87_374 (measured 87_264), gzip 27_371 → 27_544
-// (27_494), brotli 24_348 → 24_489 (24_359). The lean profile carries the rich-text
-// renderer and the fidelity ledger, so it pays for the verdict and the two
-// texts like the full one; the 74 B it does not pay are the `escalated` count
-// in the strategy runner it has no copy of — its `inspect().fidelity.escalated`
-// is always 0, which is the truth about that profile.
-// Raised 2026-09-11 (Z29): raw 87_374 → 87_676 (measured 87_557), gzip 27_544 → 27_645
-// (27_592), brotli 24_489 → 24_571 (24_424). The same +293 B as the full profile: the
-// wrapper is recognised in the rich-text renderer, which every profile carries.
-// Raised 2026-09-11 (Z27): raw 87_676 → 89_606 (measured 89_487), gzip 27_645 → 28_359
-// (28_306), brotli 24_571 → 25_233 (25_086). The same wait as the full profile
-// (see INLINE_BUDGET): it is in `start()`, which every profile runs, and a
-// lean runtime on a Next page has the same hydration ahead of it.
-// Raised 2026-09-11 (Z31): raw 89_606 → 90_700 (measured 90_570), gzip 28_359 → 28_684
-// (28_628), brotli 25_233 → 25_526 (25_364). The same wait as the full profile
-// (see INLINE_BUDGET): it is in `start()`, which a lean runtime on a Nuxt page runs too.
-export const INLINE_LEAN_BUDGET = { raw: 91_135, gzip: 28_845, brotli: 25_664 } as const;
+// The lean profile, the same runtime with its optional halves left out, keeps
+// its budget and its log in bundle-lean-budgets.ts: this log reached the
+// 500-line limit a third time, and a split by profile keeps every note next to
+// the number it explains.
+export { INLINE_LEAN_BUDGET } from './bundle-lean-budgets';
 
 // The two prelude profiles, each the runtime plus a prelude that moves on its own,
 // keep their budgets and their log in bundle-prelude-budgets.ts: this log reached
