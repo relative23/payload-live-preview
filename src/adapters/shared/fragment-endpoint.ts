@@ -131,14 +131,26 @@ function scopeAllows(context: AuthorizedPreviewContext, body: FragmentRequestBod
   return true;
 }
 
+/**
+ * A body that exceeded the limit, as a value no JSON document can be. The two
+ * refusals it separates are both in the abuse model (ADR 0011 §4) and both say
+ * one generic word: "413 body" for a request that was too large to read, and
+ * the shape refusal below for one that was read and is not a request. Folding
+ * them together answered eight bytes of `not json` with "Payload Too Large".
+ */
+const TOO_LARGE = Symbol('body over the limit');
+
+/** The parsed body, `TOO_LARGE` over the limit, or `null` when it is not JSON. */
 async function readBody(request: Request, limit: number): Promise<unknown> {
   const declared = Number(request.headers.get('content-length') ?? '0');
-  if (declared > limit) return null;
+  if (declared > limit) return TOO_LARGE;
   const text = await request.text();
-  if (text.length > limit) return null;
+  if (text.length > limit) return TOO_LARGE;
   try {
     return JSON.parse(text) as unknown;
   } catch {
+    // Not JSON is not a request: `parseFragmentRequest` refuses `null` as the
+    // wrong shape, which is what it is, and no second branch is needed.
     return null;
   }
 }
@@ -206,7 +218,7 @@ export function createFragmentEndpointHandler<Component>(
     const type = request.headers.get('content-type') ?? '';
     if (!type.toLowerCase().startsWith('application/json')) return refuse(415, 'content-type');
     const raw = await readBody(request, bodyLimit);
-    if (raw === null) return refuse(413, 'body');
+    if (raw === TOO_LARGE) return refuse(413, 'body');
     const body = parseFragmentRequest(raw);
     if (body === null) return refuse(400, 'shape');
 

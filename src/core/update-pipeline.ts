@@ -265,12 +265,11 @@ export class UpdatePipeline {
     const { touched } = transaction;
     // A revision that touches the route refreshes it first; the re-apply lands on the fresh markup.
     const route = deps.strategies.route;
+    const unbound = this.strategies.hasUnboundChange(transaction, ownerKeys);
     if (
       route !== undefined &&
       !transaction.routeRefreshed &&
-      (route.plan(deps.root, touched) ||
-        this.strategies.hasRouteBinding(touched) ||
-        this.strategies.hasUnboundChange(transaction, ownerKeys))
+      (unbound || route.plan(deps.root, touched) || this.strategies.hasRouteBinding(touched))
     ) {
       void this.strategies.refreshRoute(transaction, data, route);
       return;
