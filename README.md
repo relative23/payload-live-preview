@@ -46,7 +46,8 @@ Vite 5 through 8: that is what the supported framework majors install (Astro 7 â
 
 - Payload 2.x: captured-message integration tests and fieldSchemaJSON typing.
 - Payload 3.85.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
-- Payload 3.88.0: real admin E2E (examples/payload-backend) on every push, plus a wire corpus captured from it.
+- Payload 3.88.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
+- Payload 3.89.0: real admin E2E (examples/payload-backend) on every push, plus a wire corpus captured from it.
 - Payload latest: weekly protocol watch executes @payloadcms/live-preview@latest against the corpus.
 - Payload 4.0 pre-releases: weekly protocol watch against @payloadcms/live-preview@canary, early warning only.
 

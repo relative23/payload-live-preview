@@ -213,7 +213,7 @@ const PROTOCOL_WATCH: WorkflowSpec = {
         fixtureInstall('astro-payload'),
         {
           run:
-            'npm --prefix examples/payload-backend install --no-audit --no-fund ' +
+            'npm --prefix examples/payload-backend install --no-audit --no-fund --no-package-lock ' +
             `--dangerously-allow-all-scripts "payload@${PAYLOAD_CHANNEL}" ` +
             `"@payloadcms/next@${PAYLOAD_CHANNEL}" "@payloadcms/db-sqlite@${PAYLOAD_CHANNEL}" ` +
             `"@payloadcms/richtext-lexical@${PAYLOAD_CHANNEL}"`,
@@ -222,6 +222,17 @@ const PROTOCOL_WATCH: WorkflowSpec = {
           run: "node -p \"'payload ' + require('./examples/payload-backend/node_modules/payload/package.json').version\"",
         },
         { run: 'npm run test:e2e:real-payload' },
+        {
+          name: 'File the failed admin run as an issue',
+          run: 'npx tsx scripts/report-protocol-drift.ts',
+          condition: "failure() && matrix.dist-tag == 'latest'",
+          env: {
+            GH_TOKEN: '${{ github.token }}',
+            PROTOCOL_WATCH_PACKAGE: `payload@${PAYLOAD_CHANNEL}`,
+            PROTOCOL_WATCH_FALLBACK:
+              'the real admin E2E job failed before its assertions; read the run log',
+          },
+        },
         {
           uses: 'actions/upload-artifact',
           condition: 'failure()',

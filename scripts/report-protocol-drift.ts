@@ -74,12 +74,35 @@ function openIssueNumber(): string | undefined {
   return found.length > 0 ? found : undefined;
 }
 
+/**
+ * The admin half of the watch never writes a drift report: it boots a real
+ * admin against the published Payload and fails before any invariant runs when
+ * the install or the boot goes wrong. That failure is exactly as invisible as
+ * drift, so the job asks for this fallback by name — an unasked-for one would
+ * turn every unrelated red step on the other job into an issue.
+ */
+export function fallbackReport(pkg: string, detail: string): DriftReport {
+  return {
+    package: pkg,
+    checkedAt: new Date().toISOString(),
+    failures: [{ check: 'the real admin run did not reach its assertions', detail }],
+  };
+}
+
 function main(): void {
+  const fallback = process.env['PROTOCOL_WATCH_FALLBACK'];
+  if (!existsSync(REPORT_PATH) && fallback !== undefined && fallback.length > 0) {
+    file(fallbackReport(process.env['PROTOCOL_WATCH_PACKAGE'] ?? 'unknown', fallback));
+    return;
+  }
   if (!existsSync(REPORT_PATH)) {
     console.log(`[protocol-watch] no ${REPORT_PATH}; nothing to report`);
     return;
   }
-  const report = JSON.parse(readFileSync(REPORT_PATH, 'utf8')) as DriftReport;
+  file(JSON.parse(readFileSync(REPORT_PATH, 'utf8')) as DriftReport);
+}
+
+function file(report: DriftReport): void {
   const body = issueBody(report);
   const existing = openIssueNumber();
   if (existing === undefined) {
