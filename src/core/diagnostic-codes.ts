@@ -51,7 +51,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   StructuralUnstableKeys: 'LP0406',
   /** A binding asks for a delivery strategy this release does not have; it is left unchanged. */
   UnsupportedStrategy: 'LP0407',
-  /** `data-payload-format` names a format the vocabulary does not contain; the value was written unformatted. */
+  /** `data-payload-format` names a format the vocabulary does not contain; the default formatting was used instead. */
   UnknownValueFormat: 'LP0408',
   /** The strict sanitizer removed an attribute the 1.x `'compat'` policy kept. */
   SanitizerDroppedAttribute: 'LP0409',

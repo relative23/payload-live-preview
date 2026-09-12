@@ -61,7 +61,7 @@ describe('data-payload-format — numbers', () => {
 });
 
 describe('data-payload-format — a vocabulary it does not know', () => {
-  it('writes the unformatted value and says so once per element', () => {
+  it('keeps the default formatting and says so once per element', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const element = document.createElement('span');
     const target = makeTarget(element, { format: 'date:like-a-poem' });
@@ -71,6 +71,14 @@ describe('data-payload-format — a vocabulary it does not know', () => {
 
     expect(element.textContent).not.toBe('');
     expect(warn.mock.calls.filter((call) => String(call[0]).includes('LP0408'))).toHaveLength(1);
+    warn.mockRestore();
+  });
+
+  it('writes the default formatting, not the raw value', () => {
+    // The sentence LP0408 used to carry said "unformatted"; what is written is
+    // the renderer's own `Intl` default (test run C, C3).
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(render('bogus', 4200, 'number')).toBe('4,200');
     warn.mockRestore();
   });
 

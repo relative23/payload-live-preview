@@ -19,7 +19,7 @@
   "totals": {
     "files": 315,
     "suites": 668,
-    "tests": 2813,
+    "tests": 2814,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 258,
       "suites": 593,
-      "tests": 2586,
+      "tests": 2587,
       "benchmarks": 0
     }
   },
@@ -1597,7 +1597,7 @@
       "path": "tests/unit/field-types/value-format.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 6,
+      "tests": 7,
       "benchmarks": 0
     },
     {

@@ -18,7 +18,7 @@ one an editor changes without seeing anything happen.
 The vocabulary is closed — `date`, `date:short|medium|long|full`, `time`,
 `datetime`, `number`, `number:0-4`, `currency:XXX`, `percent` — because anything
 a page could pass beyond it would be code running inside the preview. An unknown
-value reports `LP0408` once for that element and writes the value unformatted.
+value reports `LP0408` once for that element and keeps the default formatting.
 
 No relative form ("in 3 days"): choosing the unit and its rounding is policy
 rather than formatting.

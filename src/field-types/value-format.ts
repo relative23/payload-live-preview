@@ -29,7 +29,7 @@ const FRACTION_DIGITS = /^[0-4]$/u;
 
 /**
  * `undefined` for a spec this vocabulary does not contain — the caller then
- * writes the unformatted value and reports LP0408 once for that element.
+ * keeps its own default formatting and reports LP0408 once for that element.
  */
 export function parseValueFormat(spec: string): ValueFormat | undefined {
   const separator = spec.indexOf(':');
@@ -90,7 +90,7 @@ export function warnUnknownFormat(element: Element, fieldName: string, spec: str
   warned.add(element);
   safeConsoleWarn(
     `[live-preview] LP0408: data-payload-format="${spec}" on "${fieldName}" is not a ` +
-      'known format; the value was written unformatted. Known: date, date:short|medium|long|full, ' +
+      'known format; the default formatting was used. Known: date, date:short|medium|long|full, ' +
       'time, datetime, number, number:0-4, currency:XXX, percent.',
   );
 }
