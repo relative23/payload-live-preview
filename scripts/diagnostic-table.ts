@@ -87,7 +87,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0702:
     'Let the adapter manage CSP, or add the admin origin to your own `frame-ancestors`. As an error the served policy does not admit `--admin`: add that origin to `allowedOrigins`.',
   LP0703:
-    'Remove `X-Frame-Options` from preview responses; a proxy or a security middleware usually sets it, and no CSP directive overrides it.',
+    'Remove `X-Frame-Options` from preview responses; a proxy or a security middleware usually sets it, and no CSP directive overrides it. As a warning it means the audit was given no `--admin`: `SAMEORIGIN` blocks only a frame from another origin, so pass the admin origin to have it judged.',
   LP0704:
     'Gate binding emission on an authorized preview context with `createPreviewBindings()`; its suppressed form emits nothing at all.',
   LP0705:

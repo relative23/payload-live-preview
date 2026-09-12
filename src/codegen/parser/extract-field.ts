@@ -2,7 +2,7 @@
  * Field-level extraction: one Payload field literal → an `ExtractedField`,
  * recursing into groups, arrays, tabs and blocks.
  */
-import { Node, type ArrayLiteralExpression, type ObjectLiteralExpression } from 'ts-morph';
+import type { ArrayLiteralExpression, ObjectLiteralExpression } from 'ts-morph';
 import { toPascalCase } from './names';
 import {
   expandElements,
@@ -13,6 +13,7 @@ import {
   readStringProperty,
   reportSkip,
   resolveToObjectLiteral,
+  tsNode,
   type ExtractContext,
 } from './resolve';
 import type { ExtractedBlock, ExtractedField, ExtractedScalarField } from './types';
@@ -121,7 +122,7 @@ function readOptions(literal: ObjectLiteralExpression, context: ExtractContext):
   }
   const out: string[] = [];
   for (const element of expandElements(options, context)) {
-    if (Node.isStringLiteral(element)) {
+    if (tsNode().isStringLiteral(element)) {
       out.push(element.getLiteralValue());
       continue;
     }

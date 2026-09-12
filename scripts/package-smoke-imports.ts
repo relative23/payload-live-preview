@@ -150,6 +150,32 @@ function codegenBinary(codegenConsumer: string): string {
     : resolve(codegenConsumer, 'node_modules/.bin/pll-codegen');
 }
 
+/**
+ * The two answers a consumer gets before installing the optional peer: the
+ * help text and a usage error. `ts-morph` is needed to read a Payload config,
+ * not to parse a flag, so an entry that resolves it at load time answers both
+ * with `ERR_MODULE_NOT_FOUND` and a stack trace. Measured against the
+ * published 2.0.0-rc.1, which did exactly that.
+ */
+function checkPeerFreeCli(consumer: string): readonly string[] {
+  const failures: string[] = [];
+  for (const argv of [['--help'], ['annotate', '--help']]) {
+    const help = run(codegenBinary(consumer), argv, consumer);
+    if (help.status !== 0 || !help.stdout.includes('Usage:')) {
+      failures.push(`peer-free CLI \`${argv.join(' ')}\` failed:\n${detailFor(help)}`);
+    }
+  }
+  const generation = run(
+    codegenBinary(consumer),
+    ['--config', 'payload.config.ts', '--out', 'types.ts'],
+    consumer,
+  );
+  if (generation.status !== 1 || !generation.stderr.includes('needs ts-morph')) {
+    failures.push(`peer-free CLI did not name the missing peer:\n${detailFor(generation)}`);
+  }
+  return failures;
+}
+
 async function checkPackedCli(
   codegenConsumer: string,
   codegenPackageRoot: string,
@@ -214,7 +240,7 @@ export async function checkPackedImportSmokes(inputs: {
     [packageSpecifier(inputs.packageName, './codegen')]: ['generateTypes'],
   };
 
-  const failures: string[] = [];
+  const failures: string[] = [...checkPeerFreeCli(inputs.consumer)];
   const esm = run(
     process.execPath,
     [

@@ -143,3 +143,36 @@ describe('X-Frame-Options', () => {
     expect(report.findings.find((f) => f.code === 'LP0703')?.level).toBe('error');
   });
 });
+
+/**
+ * Without `--admin` the audit does not know which origin embeds the preview,
+ * and `SAMEORIGIN` refuses only a frame from *another* origin. On a deployment
+ * where the admin and the site share one — measured on a real Payload app, the
+ * preview running and writes landing — 2.0.0-rc.1 still called it an error and
+ * exited 2. A finding may say what it saw; it may not assert what it cannot
+ * know. `DENY` is the case no origin makes harmless, and stays an error.
+ */
+describe('X-Frame-Options on an anonymous probe', () => {
+  const anonymous = { url: 'https://example.com/' };
+
+  it('warns, rather than errors, when no admin origin was supplied', () => {
+    const report = analyzeProbe(withPreview(BOUND, { 'x-frame-options': 'SAMEORIGIN' }), anonymous);
+
+    const finding = report.findings.find((f) => f.code === 'LP0703');
+    expect(finding?.level).toBe('warning');
+    expect(finding?.detail).toContain('another origin');
+    expect(report.errors).toBe(0);
+  });
+
+  it('names --admin as the way to have it judged', () => {
+    const report = analyzeProbe(withPreview(BOUND, { 'x-frame-options': 'SAMEORIGIN' }), anonymous);
+
+    expect(report.findings.find((f) => f.code === 'LP0703')?.remedy).toContain('--admin');
+  });
+
+  it('still calls DENY an error, which no shared origin makes harmless', () => {
+    const report = analyzeProbe(withPreview(BOUND, { 'x-frame-options': 'DENY' }), anonymous);
+
+    expect(report.findings.find((f) => f.code === 'LP0703')?.level).toBe('error');
+  });
+});

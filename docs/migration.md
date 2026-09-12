@@ -23,8 +23,9 @@ npx pll doctor https://www.example.com/page --admin https://cms.example.com --v2
 if you do not already have it. It rewrites only names a file binds from
 `payload-live-preview`, so an `isPreviewRequest` of your own is left alone.
 Anything it cannot rewrite safely — an object shorthand, a re-export, a call
-whose options are not a literal — is listed as `file:line` and that file is
-left untouched. Exit codes: `0` nothing needs a human, `1` usage error or
+whose options are not a literal — is listed as `file:line`, and only that spot
+is left as it stands: the rest of the file is rewritten as usual, so a run that
+reports conflicts has almost always changed the files it reports. Exit codes: `0` nothing needs a human, `1` usage error or
 missing `ts-morph`, `3` at least one file needs manual attention. `.astro`,
 `.vue` and `.svelte` files are rewritten in their script blocks only. The
 codemods are `rename-is-preview-request`, `rename-admin-origins-option`,
@@ -70,6 +71,10 @@ Each row is an entry of the readiness table in
   removed in 3.0.
 - `createPreviewBindings({ authorized })` → `{ authorization }` — pass the
   context from `authorizePreviewRequest()`; the boolean is no longer accepted.
+  The codemod rewrites `authorized: false` to `authorization: null`, which
+  suppresses every binding exactly as `false` did, and reports any other value
+  as a line for a human: only a real verdict authorizes emission, so there is
+  nothing it could put there for you.
 - `fetchPreviewDocument()` / `fetchPreviewGlobal()` (root) →
   `definePreview({ serverURL, depth }).fetchDocument()` / `.fetchGlobal()`
   from `payload-live-preview/server`; the root helpers are gone, with no alias
@@ -118,7 +123,7 @@ import { isPreviewRequest, fetchPreviewDocument } from 'payload-live-preview';
 if (isPreviewRequest(request)) {
   /* … */
 }
-const doc = await fetchPreviewDocument({ serverURL, slug });
+const doc = await fetchPreviewDocument({ serverURL, collection });
 
 // 2.0 (after `pll migrate --write`, plus definePreview wiring)
 import { hasPreviewIntent } from 'payload-live-preview';
@@ -127,7 +132,7 @@ if (hasPreviewIntent(request)) {
   /* … */
 }
 const preview = definePreview({ serverURL, depth: 2 });
-const doc = await preview.fetchDocument({ slug, authorization });
+const doc = await preview.fetchDocument({ collection, authorization });
 ```
 
 ### Changes nothing warns about

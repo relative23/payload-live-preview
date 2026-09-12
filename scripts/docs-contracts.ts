@@ -149,6 +149,165 @@ export function setupSnippetViolations(text: string, file: string): string[] {
   return violations;
 }
 
+/**
+ * Members of an exported interface, by name. A regular expression is enough:
+ * these are one-member-per-line `readonly name?: type;` declarations, and the
+ * alternative — a TypeScript program per gate run — buys nothing here.
+ */
+export function interfaceMembers(source: string, name: string): ReadonlySet<string> {
+  const start = source.indexOf(`export interface ${name}`);
+  if (start < 0) throw new Error(`docs contract: interface ${name} not found`);
+  const open = source.indexOf('{', start);
+  let depth = 0;
+  let end = open;
+  for (; end < source.length; end += 1) {
+    if (source[end] === '{') depth += 1;
+    else if (source[end] === '}') {
+      depth -= 1;
+      if (depth === 0) break;
+    }
+  }
+  const body = source.slice(open + 1, end);
+  return new Set([...body.matchAll(/^ {2}readonly ([A-Za-z_]\w*)\??:/gmu)].map((m) => m[1]!));
+}
+
+/**
+ * Option keys a snippet passes to a read, held against the interface that read
+ * accepts. `docs/migration.md` told a reader to write `fetchDocument({ slug })`
+ * for two releases: `slug` was never a key of these helpers — 1.x spelled it
+ * `collection` too — so the line documented a call that cannot compile, and the
+ * migration tool was blamed for reproducing it.
+ */
+export function readSnippetViolations(
+  text: string,
+  file: string,
+  members: Readonly<Record<string, ReadonlySet<string>>>,
+): string[] {
+  const violations: string[] = [];
+  for (const block of text.matchAll(/```[a-z]*\n([\s\S]*?)```/gu)) {
+    const body = block[1] ?? '';
+    for (const [method, accepted] of Object.entries(members)) {
+      for (const call of body.matchAll(new RegExp(`\\.${method}\\(\\{([^}]*)\\}`, 'gu'))) {
+        for (const key of (call[1] ?? '').split(',')) {
+          const name = key.trim().split(':')[0]?.trim() ?? '';
+          if (name === '' || name.startsWith('...') || accepted.has(name)) continue;
+          const line = text.slice(0, block.index).split('\n').length;
+          violations.push(
+            `${file}:${String(line)} snippet passes ${name} to .${method}(), which does not accept it`,
+          );
+        }
+      }
+    }
+  }
+  return violations;
+}
+
+/**
+ * The Client column of the options table, against the interface that column
+ * describes. Three rows said `yes` for options `LivePreviewClientConfig` has
+ * never had a member for, so a reader who copied one got TS2353 from their own
+ * build — and no gate read the table. Both directions are checked: a `—` for an
+ * option the client does accept understates the surface just as badly.
+ */
+export function optionTableViolations(
+  text: string,
+  file: string,
+  clientMembers: ReadonlySet<string>,
+): string[] {
+  const violations: string[] = [];
+  const lines = text.split('\n');
+  const header = lines.findIndex(
+    (line) => line.startsWith('| Option') && line.includes('| Client'),
+  );
+  if (header < 0) return violations;
+  const column = lines[header]!.split('|').findIndex((cell) => cell.trim() === 'Client');
+  // The row after the header is the separator; the table ends at the first line
+  // that is not a row, so the other tables on the page are never read.
+  for (let index = header + 2; index < lines.length; index += 1) {
+    const line = lines[index] ?? '';
+    if (!line.startsWith('|')) break;
+    const cells = line.split('|');
+    const name = (cells[1] ?? '').trim().replace(/`/gu, '');
+    const says = (cells[column] ?? '').trim();
+    if (name === '') continue;
+    const accepted = clientMembers.has(name);
+    if (says === 'yes' && !accepted) {
+      violations.push(
+        `${file}:${String(index + 1)} the Client column says yes for ${name}, ` +
+          'which LivePreviewClientConfig does not accept',
+      );
+    }
+    if (says === '—' && accepted) {
+      violations.push(
+        `${file}:${String(index + 1)} the Client column says — for ${name}, ` +
+          'which LivePreviewClientConfig accepts',
+      );
+    }
+  }
+  return violations;
+}
+
+/**
+ * `initLivePreview()` returns `LivePreviewClient | null` — it returns `null`
+ * where the runtime does not start, outside a preview frame — so a snippet that
+ * assigns it and then reaches through the binding does not compile under
+ * `strict` (TS18047). The troubleshooting page told readers to do exactly that.
+ */
+export function nullGuardViolations(text: string, file: string): string[] {
+  const violations: string[] = [];
+  for (const block of text.matchAll(/```[a-z]*\n([\s\S]*?)```/gu)) {
+    const body = block[1] ?? '';
+    const assignment = /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*initLivePreview\(/u.exec(body);
+    if (assignment === null) continue;
+    const name = assignment[1] ?? '';
+    if (!new RegExp(`\\b${name}\\.`, 'u').test(body)) continue;
+    const guarded =
+      new RegExp(`${name}\\s*!==?\\s*null`, 'u').test(body) ||
+      new RegExp(`\\b${name}\\?\\.`, 'u').test(body) ||
+      new RegExp(`if\\s*\\(\\s*${name}\\s*\\)`, 'u').test(body);
+    if (guarded) continue;
+    const line = text.slice(0, block.index).split('\n').length;
+    violations.push(
+      `${file}:${String(line)} snippet reaches through ${name} from initLivePreview() ` +
+        'without checking for null',
+    );
+  }
+  return violations;
+}
+
+/**
+ * The paragraph that says which entries are ESM-only, against the manifest.
+ * `./annotate` was missing from it: `require('payload-live-preview/annotate')`
+ * fails with ERR_PACKAGE_PATH_NOT_EXPORTED, and the sentence said the rest ship
+ * CommonJS too. Entries a collective term already covers are passed in as
+ * `covered`, so the rule reads the sentence the way a reader does.
+ */
+export function esmOnlyListViolations(
+  text: string,
+  file: string,
+  esmOnly: readonly string[],
+  covered: ReadonlySet<string>,
+): string[] {
+  const paragraph = text.split(/\n\s*\n/u).find((candidate) => candidate.includes('are ESM-only'));
+  if (paragraph === undefined) return [];
+  const line = text.slice(0, text.indexOf(paragraph)).split('\n').length;
+  // The pages spell an entry three ways — `doctor`, `./doctor` and the full
+  // specifier — and all three name it for a reader.
+  const named = (entry: string): boolean => {
+    const bare = entry.slice(2);
+    return [`\`${bare}\``, `\`./${bare}\``, `\`payload-live-preview/${bare}\``].some((form) =>
+      paragraph.includes(form),
+    );
+  };
+  return esmOnly
+    .filter((entry) => !covered.has(entry) && !named(entry))
+    .map(
+      (entry) =>
+        `${file}:${String(line)} the ESM-only paragraph does not name ${entry}, ` +
+        'which the manifest exports without a require condition',
+    );
+}
+
 /** GitHub's heading slugs: lower case, punctuation dropped, spaces to hyphens; fenced code is not a heading. */
 export function headingSlugs(text: string): Set<string> {
   const slugs = new Set<string>();
@@ -240,6 +399,8 @@ async function main(): Promise<void> {
   const pkg = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
     exports: Record<string, unknown>;
   };
+  const isRequireable = (value: unknown): boolean =>
+    typeof value === 'object' && value !== null && 'require' in value;
   const entries = new Set(
     Object.keys(pkg.exports).map((key) =>
       key === '.' ? 'payload-live-preview' : `payload-live-preview${key.slice(1)}`,
@@ -252,6 +413,31 @@ async function main(): Promise<void> {
     ...[...codeSource.matchAll(/'(LP0\d{3})'/gu)].map((x) => x[1]!),
     ...[...codeSource.matchAll(/\b(LP0\d{3}) is reserved/gu)].map((x) => x[1]!),
   ]);
+  // Subpaths a collective term in that paragraph already covers: the framework
+  // adapters and the two components a consumer writes into an Astro template.
+  const covered = new Set([
+    './astro',
+    './nextjs',
+    './nuxt',
+    './nuxt-module',
+    './sveltekit',
+    './react',
+    './vue',
+    './astro/middleware-entry',
+    './astro/RichText.astro',
+    './astro/PreviewBoundary.astro',
+  ]);
+  const esmOnly = Object.entries(pkg.exports)
+    .filter(([key, value]) => key !== './package.json' && !isRequireable(value))
+    .map(([key]) => key);
+  const clientConfig = await readFile(resolve(ROOT, 'src/client/config.ts'), 'utf8');
+  const clientMembers = interfaceMembers(clientConfig, 'LivePreviewClientConfig');
+  const preview = await readFile(resolve(ROOT, 'src/server/preview.ts'), 'utf8');
+  const shared = interfaceMembers(preview, 'PreviewReadOptions');
+  const readMembers: Readonly<Record<string, ReadonlySet<string>>> = {
+    fetchDocument: new Set([...shared, ...interfaceMembers(preview, 'ReadDocumentOptions')]),
+    fetchGlobal: new Set([...shared, ...interfaceMembers(preview, 'ReadGlobalOptions')]),
+  };
   const classes = await sourceLiterals(/(?<![\w-])lp-[a-z0-9-]*[a-z0-9]/gu);
   const attributes = await sourceLiterals(/(?<![\w-])data-payload-[a-z-]*[a-z]/gu);
   const known: Record<DocReference['kind'], ReadonlySet<string>> = {
@@ -271,6 +457,10 @@ async function main(): Promise<void> {
       violations.push(`${ref.file}:${String(ref.line)} unknown ${ref.kind} "${ref.name}"`);
     }
     violations.push(...setupSnippetViolations(text, name));
+    violations.push(...readSnippetViolations(text, name, readMembers));
+    violations.push(...optionTableViolations(text, name, clientMembers));
+    violations.push(...nullGuardViolations(text, name));
+    violations.push(...esmOnlyListViolations(text, name, esmOnly, covered));
     violations.push(...brokenLinks(text, name, linkTarget(file)));
     if (name === 'README.md') {
       violations.push(...sizeClaimViolations(text, name, INLINE_BUDGET.gzip));
