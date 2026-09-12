@@ -28,6 +28,7 @@ const TRUSTED = 'https://admin.example.com';
 let emitter: EventEmitter;
 let runtime: LivePreviewRuntime | undefined;
 const warnings: string[] = [];
+const logs: string[] = [];
 const textRenderer: FieldRenderer = {
   name: 'text',
   render(target, value) {
@@ -66,6 +67,9 @@ function start(
     warn: (message) => {
       warnings.push(String(message));
     },
+    log: (...args: unknown[]) => {
+      logs.push(args.map(String).join(' '));
+    },
     ...(fragment === undefined ? {} : { strategies: { fragment: fragmentStrategyFrom(fragment) } }),
   });
   runtime.start();
@@ -81,6 +85,7 @@ beforeEach(() => {
   globalThis.IntersectionObserver = IO;
   emitter = new EventEmitter();
   warnings.length = 0;
+  logs.length = 0;
   document.body.innerHTML = PAGE;
 });
 afterEach(() => {
@@ -216,6 +221,29 @@ describe('fragment strategy', () => {
     await done;
     expect(handler).toHaveBeenCalledTimes(1);
     expect(document.querySelector('section span')?.textContent).toBe('rendered');
+  });
+
+  it('puts a failed boundary on the log sink as well as the error event', async () => {
+    // Measured (test run C, finding C2): a fragment that timed out counted in
+    // `inspect().fragments.failed` and fired the error event carrying LP0801,
+    // and no line reached the runtime's log sink or `console.debug` under
+    // `debug: true`. The supplied strategy answers a timeout with an outcome
+    // instead of throwing, so the only LP0801 the runner logged sat in the
+    // `catch` around `render()`, which that strategy never reaches.
+    const rt = start(() =>
+      Promise.resolve({ status: 'failed', code: 'LP0801', reason: 'timeout after 60 ms' }),
+    );
+    const error = once('error');
+    // The tally is added when `render()` returns, which is after the event the
+    // failure fires, so the revision has to finish before it can be read.
+    const done = once('afterUpdate');
+    post({ title: 'Patched', footer: 'Foot' });
+    await error;
+    await done;
+    expect(logs.filter((line) => line.includes('LP0801'))).toEqual([
+      'fragment LP0801 fragment "hero" fell back to patch: timeout after 60 ms',
+    ]);
+    expect(rt.inspect().fragments.failed).toBe(1);
   });
 
   it('never renders a boundary inside an island', async () => {

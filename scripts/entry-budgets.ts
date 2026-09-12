@@ -403,7 +403,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // `adapters/nuxt/index.js` brotli, 26 B under, back to the ~130 B cushion.
   'annotate.js': { raw: 2_950, gzip: 1_544, brotli: 1_380 },
   'adapters/astro/index.js': { raw: 160_643, gzip: 50_457, brotli: 43_359 },
-  'adapters/astro/middleware-entry.js': { raw: 147_201, gzip: 46_248, brotli: 39_778 },
+  // 2026-09-12 (C2, LP0801 reaches the log): +30 B raw wherever the runtime sits — this row and INLINE_BUDGET raw go to the measurement, `core.js` brotli to measurement plus the documented cushion.
+  'adapters/astro/middleware-entry.js': { raw: 147_212, gzip: 46_248, brotli: 39_778 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -448,7 +449,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // `entry-budgets-tools.ts`, split off when this log reached 500 lines (Z37).
   ...TOOL_ENTRY_BUDGETS,
   'core.cjs': { raw: 133_864, gzip: 42_543, brotli: 36_792 },
-  'core.js': { raw: 133_324, gzip: 42_455, brotli: 36_645 },
+  'core.js': { raw: 133_324, gzip: 42_455, brotli: 36_769 },
   //
   // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
   // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a

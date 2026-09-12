@@ -412,7 +412,7 @@
 // (`hydration-vue.ts`); cap and waiters are shared with React's wait. The
 // bytes are Vue's and Nuxt's names and the accessor's property calls, which
 // no minifier shortens. Every profile pays it: the wait sits in `start()`.
-export const INLINE_BUDGET = { raw: 112_943, gzip: 35_658, brotli: 31_514 } as const;
+export const INLINE_BUDGET = { raw: 112_949, gzip: 35_658, brotli: 31_514 } as const;
 
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,

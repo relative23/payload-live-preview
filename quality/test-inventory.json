@@ -19,7 +19,7 @@
   "totals": {
     "files": 315,
     "suites": 668,
-    "tests": 2812,
+    "tests": 2813,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 258,
       "suites": 593,
-      "tests": 2585,
+      "tests": 2586,
       "benchmarks": 0
     }
   },
@@ -911,7 +911,7 @@
       "path": "tests/unit/core/fragment-strategy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
