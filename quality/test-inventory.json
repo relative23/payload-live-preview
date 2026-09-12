@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 315,
-    "suites": 676,
-    "tests": 2828,
+    "suites": 677,
+    "tests": 2834,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 258,
-      "suites": 601,
-      "tests": 2601,
+      "suites": 602,
+      "tests": 2607,
       "benchmarks": 0
     }
   },
@@ -477,7 +477,7 @@
       "path": "tests/unit/adapters/astro-fragments.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 12,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -959,8 +959,8 @@
     {
       "path": "tests/unit/core/lean-profile-runner.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 2,
+      "suites": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -1373,7 +1373,7 @@
       "path": "tests/unit/core/unfaithful-patch.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 11,
+      "tests": 15,
       "benchmarks": 0
     },
     {

@@ -136,3 +136,24 @@ export function createFieldAddressability(
     return localised.has(fieldName);
   };
 }
+
+/**
+ * The fields a revision changed that the page has nowhere to put: the rule
+ * above, asked of a diff instead of a document. Both profiles ask it — the full
+ * one to decide whether the whole route is the only honest answer, the lean one
+ * because the finding is worth recording even where nothing can act on it — so
+ * it stands here, beside the rule it is made of, rather than in either runner.
+ */
+export function unboundChangedFields(
+  cache: ElementCache,
+  touched: ReadonlySet<string>,
+  locale: string | undefined,
+  ownerKeys: OwnerScope,
+): string[] {
+  const isAddressable = createFieldAddressability(cache, locale, ownerKeys);
+  const unbound: string[] = [];
+  for (const fieldName of touched) {
+    if (!SYSTEM_FIELD_NAMES.has(fieldName) && !isAddressable(fieldName)) unbound.push(fieldName);
+  }
+  return unbound;
+}

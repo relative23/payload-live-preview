@@ -9,10 +9,12 @@
  * protocol client's server half, and the route refresh.
  */
 
+import { reportUnboundChange } from './fidelity';
 import { reportOmittedFeature } from './profile';
 import type { StrategyRunner } from './strategy-runner';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
-import type { RuntimeDeps, RuntimeState } from './runtime-state';
+import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
+import { unboundChangedFields, type OwnerScope } from './unbound-fields';
 import type { CachedElement } from './types';
 
 /** What `UpdatePipeline` calls on a runner; both profiles satisfy it. */
@@ -37,7 +39,21 @@ export function createLeanStrategyRunner(
     // Nothing to escalate to. The pipeline still drains its queue, so a page
     // that keeps producing findings does not keep producing entries.
     escalateUnfaithful: (): void => undefined,
-    hasUnboundChange: (): boolean => false,
+    // Nothing here to escalate to, and the finding is still worth recording:
+    // a page that changes a field it does not bind is the page
+    // `inspect().fidelity` is read on, and `escalated` staying 0 beside it is
+    // the truth about this profile rather than silence about the change.
+    hasUnboundChange: (transaction: UpdateTransaction, ownerKeys: OwnerScope): boolean => {
+      if (transaction.baseline) return false;
+      const unbound = unboundChangedFields(
+        deps.cache,
+        transaction.touched,
+        transaction.locale,
+        ownerKeys,
+      );
+      for (const fieldName of unbound) reportUnboundChange(state, fieldName);
+      return false;
+    },
     hasRouteBinding: (): boolean => false,
     runFragments: (): Promise<void> => Promise.resolve(),
     // A page that carries a route prelude anyway (it can be injected by hand)

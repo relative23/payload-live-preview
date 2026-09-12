@@ -94,3 +94,32 @@ describe('the lean profile picks a runner that renders nothing', () => {
     expect(consoleWarnings.filter((message) => message.includes('LP0104'))).toEqual([]);
   });
 });
+
+/**
+ * Testlauf B, F1. The lean profile has nothing to escalate to, which is exactly
+ * why the reading matters here: a change it cannot patch is one this page will
+ * never show. It used to report nothing at all; it now reports the finding and
+ * a truthful `escalated: 0`.
+ */
+describe('the lean profile counts what it cannot act on', () => {
+  it('records a changed field with no binding, and escalates nothing', async () => {
+    vi.stubGlobal('__LEAN_BUILD__', true);
+    document.body.innerHTML = '<h1 data-payload-field="title">server rendered</h1>';
+    start();
+
+    // The connection's baseline first: there every field counts as changed.
+    post({ title: 'server rendered' });
+    await vi.advanceTimersByTimeAsync(50);
+    post({ title: 'server rendered', tagline: 'nothing binds this' });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(harness!.runtime.inspect().fidelity).toEqual({
+      mode: 'escalate',
+      unfaithful: 1,
+      escalated: 0,
+      fields: ['tagline'],
+    });
+    // No route to refresh, so nothing claims one was refreshed.
+    expect(harness!.logs.filter((line) => line.includes('LP0807'))).toEqual([]);
+  });
+});

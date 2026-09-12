@@ -286,11 +286,15 @@ describe('a Lexical block inside the wrapper a template puts around rich text', 
     const warned = warn.mock.calls.map(String).join(' ');
     expect(warned).toContain('LP0410');
     expect(warned).not.toContain('LP0413');
+    // Nothing about the block fell short. The one finding is the edited field
+    // itself: this page anchors `content` and nothing else, so `title` is a
+    // change nothing binds — the other cause the same ledger counts, and
+    // `escalated: 0` because there is no strategy here to hand it to.
     expect(runtime.inspect().fidelity).toEqual({
       mode: 'escalate',
-      unfaithful: 0,
+      unfaithful: 1,
       escalated: 0,
-      fields: [],
+      fields: ['title'],
     });
     warn.mockRestore();
     runtime.destroy();
