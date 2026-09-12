@@ -162,3 +162,93 @@ describe('what it cannot resolve, it says out loud', () => {
     expect(schema.diagnostics.join('\n')).toContain('it has no string `type`');
   });
 });
+
+/**
+ * Shapes the resolver has always handled and nothing had driven: they became
+ * visible when the parser started loading ts-morph on first use, because the
+ * changed-line gate then asked what covers them. Each one is a config a
+ * consumer can actually write.
+ */
+describe('resolution paths a config reaches by another route', () => {
+  it('falls back to the buildConfig() call when the default export resolves to nothing', () => {
+    const schema = extract({
+      '/payload.config.ts': `
+        const unrelated = helper();
+        const config = buildConfig({
+          collections: [{ slug: 'posts', fields: [{ name: 'title', type: 'text' }] }],
+        });
+        export default missingBinding;
+      `,
+    });
+
+    expect(schema.collections.map((collection) => collection.slug)).toEqual(['posts']);
+    expect(fieldNames(schema)).toEqual(['title']);
+  });
+
+  it('follows a default export in another module to its literal', () => {
+    const schema = extract({
+      '/base.ts': `
+        export default {
+          collections: [{ slug: 'posts', fields: [{ name: 'title', type: 'text' }] }],
+        };
+      `,
+      '/payload.config.ts': `
+        import base from './base';
+        export default base;
+      `,
+    });
+
+    expect(schema.diagnostics).toEqual([]);
+    expect(fieldNames(schema)).toEqual(['title']);
+  });
+
+  it('resolves a collection reached through a property of another object', () => {
+    const schema = extract({
+      '/payload.config.ts': `
+        const groups = {
+          posts: { slug: 'posts', fields: [{ name: 'title', type: 'text' }] },
+        };
+        export default { collections: [groups.posts] };
+      `,
+    });
+
+    expect(schema.diagnostics).toEqual([]);
+    expect(fieldNames(schema)).toEqual(['title']);
+  });
+
+  it('says so when a shorthand names something that is not declared anywhere', () => {
+    // `{ fields }` with no `fields` in scope: the language service has no
+    // definition to offer, so the lookup falls back to the property itself and
+    // the resolver stops rather than looping. A typo a consumer can write.
+    const schema = extract({
+      '/payload.config.ts': `
+        const group = { fields };
+        export default { collections: [{ slug: 'posts', fields: group.fields }] };
+      `,
+    });
+
+    expect(schema.collections.map((collection) => collection.slug)).toEqual(['posts']);
+    expect(schema.diagnostics.join('\n')).toContain('fields');
+  });
+
+  it('reads an explicit false for required and localized', () => {
+    const schema = extract({
+      '/payload.config.ts': `
+        export default {
+          collections: [
+            {
+              slug: 'posts',
+              fields: [{ name: 'title', type: 'text', required: false, localized: false }],
+            },
+          ],
+        };
+      `,
+    });
+
+    expect(schema.collections[0]?.fields[0]).toMatchObject({
+      name: 'title',
+      required: false,
+      localized: false,
+    });
+  });
+});

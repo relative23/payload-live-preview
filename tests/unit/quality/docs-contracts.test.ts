@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   brokenLinks,
   headingSlugs,
+  esmOnlyListViolations,
+  interfaceMembers,
   isKnownName,
+  nullGuardViolations,
+  optionTableViolations,
+  readSnippetViolations,
   referencesIn,
   sizeClaimViolations,
 } from '../../../scripts/docs-contracts';
@@ -121,5 +126,156 @@ describe('the runtime size claim', () => {
     ['is absent', 'no figure here', 29_035, 0],
   ])('%s', (_case, text, budget, count) => {
     expect(sizeClaimViolations(text, 'README.md', budget)).toHaveLength(count);
+  });
+});
+
+describe('read snippets against the interface they call', () => {
+  const members = {
+    fetchDocument: new Set(['collection', 'where', 'authorization']),
+    fetchGlobal: new Set(['global', 'authorization']),
+  };
+
+  it('flags the call docs/migration.md showed for two releases', () => {
+    // `slug` was never a key of these helpers — every 1.x release spelled it
+    // `collection` as well — so the documented call could not compile, and
+    // `pll migrate` was blamed for reproducing what the guide asked for.
+    const text = '```ts\nconst doc = await preview.fetchDocument({ slug, authorization });\n```\n';
+
+    expect(readSnippetViolations(text, 'docs/migration.md', members)).toEqual([
+      'docs/migration.md:1 snippet passes slug to .fetchDocument(), which does not accept it',
+    ]);
+  });
+
+  it('accepts the corrected call, a spread and a nested where', () => {
+    const text = [
+      '```ts',
+      'await preview.fetchDocument({ collection, ...rest });',
+      "await preview.fetchDocument({ collection: 'p', where: { slug: { equals: s } } });",
+      "await preview.fetchGlobal({ global: 'site', authorization });",
+      '```',
+      '',
+    ].join('\n');
+
+    expect(readSnippetViolations(text, 'docs/migration.md', members)).toEqual([]);
+  });
+});
+
+describe('interface members', () => {
+  it('reads one-per-line readonly members and stops at the closing brace', () => {
+    const source = [
+      'export interface ReadDocumentOptions extends PreviewReadOptions {',
+      '  readonly collection: string;',
+      '  readonly where?: PreviewWhere;',
+      '}',
+      'export interface Other {',
+      '  readonly elsewhere: string;',
+      '}',
+      '',
+    ].join('\n');
+
+    expect([...interfaceMembers(source, 'ReadDocumentOptions')]).toEqual(['collection', 'where']);
+  });
+});
+
+describe('the option table against the client interface', () => {
+  const table = (rows: readonly string[]): string =>
+    [
+      '| Option | Client | Inline script |',
+      '| ------ | ------ | ------------- |',
+      ...rows,
+      '',
+      '## Something else',
+      '',
+      '| Key | Set when |',
+      '| --- | -------- |',
+      '| `livePreviewNonce` | yes |',
+      '',
+    ].join('\n');
+
+  it('flags a yes for an option the client has no member for', () => {
+    // Exactly what `onUnfaithfulPatch`, `onUnboundChange` and `hydration` said
+    // while `LivePreviewClientConfig` rejected all three.
+    const text = table(['| `hydration` | yes | yes |']);
+
+    expect(optionTableViolations(text, 'docs/options.md', new Set(['debug']))).toEqual([
+      'docs/options.md:3 the Client column says yes for hydration, which LivePreviewClientConfig does not accept',
+    ]);
+  });
+
+  it('flags a dash for an option the client does accept', () => {
+    const text = table(['| `debug` | — | yes |']);
+
+    expect(optionTableViolations(text, 'docs/options.md', new Set(['debug']))).toEqual([
+      'docs/options.md:3 the Client column says — for debug, which LivePreviewClientConfig accepts',
+    ]);
+  });
+
+  it('accepts agreeing rows and stops before the next table', () => {
+    const text = table(['| `debug` | yes | yes |', '| `hydration` | — | yes |']);
+
+    expect(optionTableViolations(text, 'docs/options.md', new Set(['debug']))).toEqual([]);
+  });
+});
+
+describe('snippets that reach through a nullable client', () => {
+  const block = (body: string): string => `\`\`\`ts\n${body}\n\`\`\`\n`;
+
+  it('flags the call the troubleshooting page documented', () => {
+    // initLivePreview() returns null outside a preview frame, so this is
+    // TS18047 under strict — in the paragraph that tells readers what to run.
+    const text = block(
+      "const client = initLivePreview({ allowedOrigins: ['https://cms.example.com'] });\nconsole.log(client.inspect());",
+    );
+
+    expect(nullGuardViolations(text, 'docs/troubleshooting.md')).toEqual([
+      'docs/troubleshooting.md:1 snippet reaches through client from initLivePreview() without checking for null',
+    ]);
+  });
+
+  it.each([
+    ['an explicit comparison', 'if (client !== null) console.log(client.inspect());'],
+    ['optional chaining', 'console.log(client?.inspect());'],
+    ['a truthiness check', 'if (client) { console.log(client.inspect()); }'],
+    ['never reaching through it', 'void client;'],
+  ])('accepts %s', (_case, use) => {
+    const text = block(`const client = initLivePreview({ allowedOrigins: [] });\n${use}`);
+
+    expect(nullGuardViolations(text, 'docs/troubleshooting.md')).toEqual([]);
+  });
+});
+
+describe('the ESM-only paragraph against the manifest', () => {
+  const paragraph = [
+    'The root import carries everything.',
+    '',
+    'The adapters, `codegen/astro`, `doctor` and `migrate` are ESM-only; the rest',
+    'ship ESM and CommonJS builds.',
+    '',
+  ].join('\n');
+
+  it('names the entry that was missing from it', () => {
+    // `require('payload-live-preview/annotate')` fails with
+    // ERR_PACKAGE_PATH_NOT_EXPORTED, while the sentence promised CommonJS.
+    const violations = esmOnlyListViolations(
+      paragraph,
+      'docs/options.md',
+      ['./annotate', './doctor', './migrate'],
+      new Set(),
+    );
+
+    expect(violations).toEqual([
+      'docs/options.md:3 the ESM-only paragraph does not name ./annotate, which the manifest exports without a require condition',
+    ]);
+  });
+
+  it('says nothing about entries a collective term already covers', () => {
+    const violations = esmOnlyListViolations(
+      paragraph,
+      'docs/options.md',
+      ['./astro', './doctor'],
+      new Set(['./astro']),
+    );
+
+    expect(violations).toEqual([]);
   });
 });

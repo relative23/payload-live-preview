@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 315,
-    "suites": 669,
-    "tests": 2820,
+    "suites": 679,
+    "tests": 2843,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 258,
-      "suites": 594,
-      "tests": 2593,
+      "suites": 604,
+      "tests": 2616,
       "benchmarks": 0
     }
   },
@@ -728,8 +728,8 @@
     {
       "path": "tests/unit/codegen/cli.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 7,
+      "suites": 3,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -742,8 +742,8 @@
     {
       "path": "tests/unit/codegen/extract-schema-resolution.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 10,
+      "suites": 3,
+      "tests": 15,
       "benchmarks": 0
     },
     {
@@ -1463,8 +1463,8 @@
     {
       "path": "tests/unit/doctor/analyze-framing.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 15,
+      "suites": 5,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -1750,8 +1750,8 @@
     {
       "path": "tests/unit/migrate/move-fetch-preview-helpers.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 9,
+      "suites": 3,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -1765,7 +1765,7 @@
       "path": "tests/unit/migrate/rename-bindings-authorized-option.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2009,8 +2009,8 @@
     {
       "path": "tests/unit/quality/docs-contracts.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 11,
+      "suites": 10,
+      "tests": 21,
       "benchmarks": 0
     },
     {

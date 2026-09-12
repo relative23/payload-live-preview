@@ -28,6 +28,17 @@ const METHOD: Readonly<Record<string, string>> = {
 };
 const SERVER_OPTIONS = new Set(['serverURL', 'apiRoute', 'depth']);
 const DROPPED_OPTIONS = new Set(['draft', 'fetchFn']);
+/**
+ * What `ReadDocumentOptions`/`ReadGlobalOptions` accept (src/server/preview.ts).
+ * 1.x spelled the target `collection` and `global` too, so there is no rename to
+ * make here — a key that is in neither set is one this codemod cannot place, and
+ * passing it through unannounced produces a file that does not compile.
+ */
+const SHARED_READ_OPTIONS = ['authorization', 'locale', 'headers', 'signal', 'errorMode'];
+const READ_OPTIONS: Readonly<Record<string, readonly string[]>> = {
+  fetchPreviewDocument: ['collection', 'where', ...SHARED_READ_OPTIONS],
+  fetchPreviewGlobal: ['global', ...SHARED_READ_OPTIONS],
+};
 const DEPTH_TODO =
   'depth: 1 /* TODO(pll migrate): the 1.x default; match the runtime mergeDepth */';
 const AUTHORIZATION_TODO =
@@ -40,7 +51,7 @@ function conflict(line: number, reason: string): CodemodConflict {
 
 interface RewrittenCall {
   readonly edit: TextEdit;
-  readonly note: CodemodConflict;
+  readonly notes: readonly CodemodConflict[];
 }
 
 function rewriteCall(
@@ -61,19 +72,34 @@ function rewriteCall(
   }
   if (!keys.has('depth')) server.push(DEPTH_TODO);
   if (!keys.has('authorization')) read.push(AUTHORIZATION_TODO);
+  const accepted = READ_OPTIONS[imported] ?? [];
+  const unplaceable = [...keys].filter(
+    (key) => !SERVER_OPTIONS.has(key) && !DROPPED_OPTIONS.has(key) && !accepted.includes(key),
+  );
   const typeArguments = call.getTypeArguments().map((argument) => argument.getText());
   const generic = typeArguments.length === 0 ? '' : `<${typeArguments.join(', ')}>`;
   const method = METHOD[imported] ?? imported;
   const text = `definePreview({ ${server.join(', ')} }).${method}${generic}({ ${read.join(', ')} })`;
   const droppedNote = dropped.length === 0 ? '' : `, and ${dropped.join('/')} was dropped`;
-  return {
-    edit: { start: call.getStart(), end: call.getEnd(), text },
-    note: conflict(
-      call.getStartLineNumber(),
+  const line = call.getStartLineNumber();
+  const notes = [
+    conflict(
+      line,
       `${imported}() was rewritten onto definePreview().${method}(); it now returns a ` +
         `PreviewFetchResult (check ok/data) and needs a real authorization for drafts${droppedNote}`,
     ),
-  };
+  ];
+  if (unplaceable.length > 0) {
+    notes.push(
+      conflict(
+        line,
+        `${imported}() was passed ${unplaceable.map((key) => `\`${key}\``).join(', ')}, which ` +
+          `.${method}() does not accept; it takes ${accepted.join(', ')}. The key was carried ` +
+          'over unchanged and will not compile — place it by hand',
+      ),
+    );
+  }
+  return { edit: { start: call.getStart(), end: call.getEnd(), text }, notes };
 }
 
 function importLine(quote: string, names: readonly string[], specifier: string): string {
@@ -194,7 +220,7 @@ function plan(script: SourceFile, bindings: readonly PackageBinding[]): CodemodP
       }
       const rewritten = rewriteCall(call, options, binding.imported);
       edits.push(rewritten.edit);
-      notes.push(rewritten.note);
+      notes.push(...rewritten.notes);
     }
   }
   const serverDeclaration = script

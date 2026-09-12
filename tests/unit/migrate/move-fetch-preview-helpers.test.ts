@@ -50,12 +50,16 @@ describe('move-fetch-preview-helpers: rewriting', () => {
     expect(conflicts[0]?.reason).toContain('draft/fetchFn was dropped');
   });
 
-  it('keeps an existing authorization and the caller-side apiRoute', () => {
+  it('keeps an existing authorization and the caller-side apiRoute, and says `id` has no home', () => {
     const src =
       "import { fetchPreviewDocument } from 'payload-live-preview';\nconst d = await fetchPreviewDocument({ serverURL, apiRoute: '/cms', depth: 0, collection: 'posts', id, authorization });\n";
-    expect(migrateSource(src, ONLY).output).toContain(
+    const { output, conflicts } = migrateSource(src, ONLY);
+    expect(output).toContain(
       "definePreview({ serverURL, apiRoute: '/cms', depth: 0 }).fetchDocument({ collection: 'posts', id, authorization })",
     );
+    // 1.x read one document by `id`; 2.0 reads by `where`, so the key is
+    // carried over and reported rather than silently left to fail at tsc.
+    expect(conflicts.some((conflict) => conflict.reason.includes('`id`'))).toBe(true);
   });
 
   it('does not duplicate definePreview when the server entry already imports it', () => {
@@ -135,5 +139,37 @@ describe('move-fetch-preview-helpers: never leaves a call site without its impor
     expect(
       viaForeign.conflicts.some((c) => c.reason.includes('already binds a definePreview')),
     ).toBe(true);
+  });
+});
+
+/**
+ * 1.x spelled the target `collection` and `global` — every released version did
+ * (v1.6.0 … v1.8.1, `FetchPreviewDocumentOptions.collection`), and 2.0 spells
+ * them the same. So there is no rename to perform here, and a key that is
+ * neither a server option nor one of the 2.0 read options is not something to
+ * guess at: `id` selected a document in 1.x and has no equivalent —
+ * `fetchDocument()` reads by `where` — and `slug` is what docs/migration.md
+ * wrongly suggested. Passing either through silently produces a file that does
+ * not compile (TS2353), which is the one thing a codemod must not leave behind.
+ */
+describe('move-fetch-preview-helpers: keys 2.0 has no home for', () => {
+  it.each([
+    ['slug', "await fetchPreviewDocument({ serverURL, slug: 'posts', depth: 1, authorization });"],
+    [
+      'id',
+      "await fetchPreviewDocument({ serverURL, collection: 'posts', id, depth: 1, authorization });",
+    ],
+  ])('reports %s instead of passing it through', (key, call) => {
+    const src = `import { fetchPreviewDocument } from 'payload-live-preview';\n${call}\n`;
+    const { conflicts } = migrateSource(src, ONLY);
+    expect(conflicts.some((conflict) => conflict.reason.includes(key))).toBe(true);
+  });
+
+  it('names the global read option when fetchGlobal carries the wrong key', () => {
+    const src =
+      "import { fetchPreviewGlobal } from 'payload-live-preview';\n" +
+      "await fetchPreviewGlobal({ serverURL, slug: 'settings', depth: 1, authorization });\n";
+    const { conflicts } = migrateSource(src, ONLY);
+    expect(conflicts.some((conflict) => conflict.reason.includes('slug'))).toBe(true);
   });
 });

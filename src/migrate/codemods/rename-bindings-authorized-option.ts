@@ -8,6 +8,16 @@ const NEW_KEY = 'authorization';
 const BY_HAND =
   `if they carry \`${OLD_KEY}\`, rename it to \`${NEW_KEY}\` and pass the verdict from ` +
   'authorizePreviewRequest()';
+/**
+ * `false` has an exact equivalent — an unauthorized response suppresses every
+ * binding, which is what `null` means — so it is rewritten. Nothing else does:
+ * only a real context from `authorizePreviewRequest()` authorizes emission, and
+ * a boolean left under the new name does not compile (TS2322).
+ */
+const BOOLEAN_REFUSED =
+  `\`${NEW_KEY}\` takes the context from authorizePreviewRequest(); the boolean 1.x ` +
+  'accepted is not. The key was renamed and its value left as it stands — pass the ' +
+  'verdict, or `null` for a public response';
 
 export const renameBindingsAuthorizedOption: CodemodImplementation = {
   id: ID,
@@ -47,8 +57,23 @@ export const renameBindingsAuthorizedOption: CodemodImplementation = {
             continue;
           } else if (Node.isShorthandPropertyAssignment(property)) {
             edits.push(replaceNode(property, `${NEW_KEY}: ${OLD_KEY}`));
+            conflicts.push({
+              codemod: ID,
+              line: property.getStartLineNumber(),
+              reason: BOOLEAN_REFUSED,
+            });
           } else if (Node.isPropertyAssignment(property)) {
+            const value = property.getInitializer();
+            if (value !== undefined && Node.isFalseLiteral(value)) {
+              edits.push(replaceNode(property, `${NEW_KEY}: null`));
+              continue;
+            }
             edits.push(replaceNode(property.getNameNode(), NEW_KEY));
+            conflicts.push({
+              codemod: ID,
+              line: property.getStartLineNumber(),
+              reason: BOOLEAN_REFUSED,
+            });
           }
         }
       }
