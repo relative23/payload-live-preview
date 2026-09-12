@@ -112,6 +112,11 @@
     },
     {
       "version": "3.88.0",
+      "how": "wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts",
+      "source": "corpus"
+    },
+    {
+      "version": "3.89.0",
       "how": "real admin E2E (examples/payload-backend) on every push, plus a wire corpus captured from it",
       "source": "corpus"
     },

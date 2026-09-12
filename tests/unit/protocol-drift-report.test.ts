@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { issueBody } from '../../scripts/report-protocol-drift';
+import { fallbackReport, issueBody } from '../../scripts/report-protocol-drift';
 import { WORKFLOW_EXPECTATIONS } from '../../scripts/workflow-expectations';
 
 /**
@@ -50,6 +50,30 @@ describe('the drift issue', () => {
     // Two escaped pipes plus the three that build the row: the table survives.
     expect(row).toContain('two \\| lines');
     expect(row).not.toContain('\n');
+  });
+});
+
+describe('the fallback the admin half asks for', () => {
+  it('names the package and what went wrong, and only when asked', () => {
+    const report = fallbackReport('payload@latest', 'the boot never finished');
+
+    expect(report.package).toBe('payload@latest');
+    expect(report.failures).toHaveLength(1);
+    expect(report.failures[0]?.detail).toBe('the boot never finished');
+    // The body is the same one a drift report produces, so whoever picks the
+    // issue up lands on the same three files.
+    expect(issueBody(report)).toContain('src/core/message-bus.ts');
+  });
+
+  it('is wired into the admin job on the gate entry only', () => {
+    const watch = WORKFLOW_EXPECTATIONS['protocol-watch.yml'];
+    const steps = watch?.jobs['admin-e2e']?.steps ?? [];
+    const step = steps
+      .filter((candidate) => 'run' in candidate)
+      .find((candidate) => candidate.run.includes('report-protocol-drift'));
+
+    expect(step?.condition).toBe("failure() && matrix.dist-tag == 'latest'");
+    expect(step?.env?.['PROTOCOL_WATCH_FALLBACK']).toBeDefined();
   });
 });
 

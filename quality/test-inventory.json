@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 316,
-    "suites": 681,
-    "tests": 2854,
+    "suites": 682,
+    "tests": 2856,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 259,
-      "suites": 606,
-      "tests": 2627,
+      "suites": 607,
+      "tests": 2629,
       "benchmarks": 0
     }
   },
@@ -1939,8 +1939,8 @@
     {
       "path": "tests/unit/protocol-drift-report.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 4,
+      "suites": 3,
+      "tests": 6,
       "benchmarks": 0
     },
     {
