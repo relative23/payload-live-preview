@@ -188,9 +188,9 @@ export default withLivePreview(nextConfig, {
 });
 ```
 
-It adds `frame-ancestors` and `private, no-store` for requests carrying preview intent, appending to a `headers()` you already have rather than replacing it, and adds the admin's host to `allowedDevOrigins` — behind a reverse proxy the dev server sees a different origin than the browser does, and Next then rejects the admin panel's own server functions as cross-site.
+It marks requests carrying preview intent `private, no-store`, appending its rules to a `headers()` you already have rather than replacing it, and adds the admin's host to `allowedDevOrigins` — behind a reverse proxy the dev server sees a different origin than the browser does, and Next then rejects the admin panel's own server functions as cross-site.
 
-It is not a substitute for the middleware. A config header cannot run `authorizePreview`, so the policy it writes is gated on intent alone, and it appends a second `Content-Security-Policy` rather than merging into one you already send. A site with its own CSP, or one that must not frame on unauthorized intent, uses `createLivePreviewMiddleware` below and skips `withLivePreview`.
+It writes no `Content-Security-Policy`, and it is not a substitute for the middleware. A config rule cannot run `authorizePreview`, so it can never be where a privileged response change is decided; and Next collects every matching rule into one object keyed by header name, so a policy written there would replace the one your site already sends instead of adding to it. Measured on Next.js 16.3.4: a site whose own rule sends `frame-ancestors 'none'` answered an unauthenticated `/?preview=true` with `frame-ancestors 'self' <admin>` alone, its `script-src` gone. `frame-ancestors` for the admin origin therefore comes from `createLivePreviewMiddleware` below, which merges into an existing policy and only for a request it authorized.
 
 ```ts
 // middleware.ts — on Next.js 16 the file is proxy.ts and the export is named `proxy`

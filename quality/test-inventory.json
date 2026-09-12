@@ -19,7 +19,7 @@
   "totals": {
     "files": 315,
     "suites": 668,
-    "tests": 2810,
+    "tests": 2811,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 258,
       "suites": 593,
-      "tests": 2583,
+      "tests": 2584,
       "benchmarks": 0
     }
   },
@@ -652,7 +652,7 @@
       "path": "tests/unit/adapters/zero-config.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 10,
+      "tests": 11,
       "benchmarks": 0
     },
     {

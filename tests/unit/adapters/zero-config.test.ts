@@ -90,7 +90,6 @@ describe('the Nuxt module', () => {
     });
   });
 });
-
 describe('withLivePreview for Next.js', () => {
   const base: NextConfigLike = { reactStrictMode: true };
 
@@ -101,14 +100,37 @@ describe('withLivePreview for Next.js', () => {
     expect(await config.headers?.()).toHaveLength(3);
   });
 
-  it('frames only for requests that carry preview intent', async () => {
+  /**
+   * Measured against Next.js 16.3.4, `next build` + `next start`: a site whose
+   * own rule sends `frame-ancestors 'none'` answered a bare, unauthenticated
+   * `/?preview=true` with `frame-ancestors 'self' https://admin.example.com`
+   * — one header, not two. Next collects every matching rule into one object
+   * keyed by header name (`resHeaders[key] = value`; only `set-cookie` is
+   * pushed) and applies it with `setHeader`, and this package's rules are
+   * appended after the consumer's, so the last write wins. A CSP written here
+   * would therefore not widen `frame-ancestors` — it would drop the site's
+   * whole policy, `script-src` and all, for anyone who appends the query
+   * parameter. A config rule cannot run `authorizePreview`, so it cannot be
+   * the place that decides: CSP belongs to the middleware, where the policy
+   * engine has both intent and a verdict (ADR 0006 §5, F-09).
+   */
+  it('writes no Content-Security-Policy, which a config rule could only clobber', async () => {
+    const rules = (await withLivePreview(base, { allowedOrigins: [ADMIN] }).headers?.()) ?? [];
+
+    expect(rules).not.toHaveLength(0);
+    for (const rule of rules) {
+      const keys = rule.headers.map((header) => header.key.toLowerCase());
+      expect(keys).not.toContain('content-security-policy');
+    }
+  });
+
+  it('marks an intent-bearing request uncacheable, which restricts and grants nothing', async () => {
     const rules = (await withLivePreview(base, { allowedOrigins: [ADMIN] }).headers?.()) ?? [];
 
     for (const rule of rules) {
       expect(rule.has?.[0]?.type).toBe('query');
-      expect(rule.headers[0]?.value).toBe(`frame-ancestors 'self' ${ADMIN}`);
       // A preview response is one visitor's unsaved state.
-      expect(rule.headers[1]).toEqual({ key: 'Cache-Control', value: 'private, no-store' });
+      expect(rule.headers).toEqual([{ key: 'Cache-Control', value: 'private, no-store' }]);
     }
     expect(rules.map((rule) => rule.has?.[0]?.key)).toEqual(['preview', 'draft', 'livePreview']);
   });
@@ -135,7 +157,7 @@ describe('withLivePreview for Next.js', () => {
     expect(rules).toHaveLength(4);
   });
 
-  it('refuses an empty origin list, which would frame nothing', () => {
+  it('refuses an empty origin list, which would leave nothing to configure', () => {
     expect(() => withLivePreview(base, { allowedOrigins: [] })).toThrow(
       /at least one admin origin/u,
     );
