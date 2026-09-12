@@ -121,6 +121,11 @@
       "source": "corpus"
     },
     {
+      "version": "4.0.0-canary.33",
+      "how": "wire corpus captured from a real Payload 4 admin in a one-off upgrade round, replayed in tests/integration/wire-corpus.test.ts; the fixture itself stays on 3.x",
+      "source": "corpus"
+    },
+    {
       "version": "latest",
       "how": "weekly protocol watch executes @payloadcms/live-preview@latest against the corpus",
       "source": "watch"

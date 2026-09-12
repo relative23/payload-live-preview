@@ -26,7 +26,12 @@ const DIRECTORY = resolve('tests/fixtures/wire-corpus');
  * The captures, listed literally so the suite registers statically (test
  * policy) and a new recording has to be named here to count.
  */
-const CAPTURES = [{ version: '3.85.0' }, { version: '3.88.0' }, { version: '3.89.0' }] as const;
+const CAPTURES = [
+  { version: '3.85.0' },
+  { version: '3.88.0' },
+  { version: '3.89.0' },
+  { version: '4.0.0-canary.33' },
+] as const;
 
 function load(version: string): Corpus {
   return JSON.parse(readFileSync(resolve(DIRECTORY, `payload-${version}.json`), 'utf8')) as Corpus;
