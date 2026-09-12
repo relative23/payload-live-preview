@@ -121,9 +121,25 @@ describe('createFragmentEndpoint — refusals carry no information', () => {
     const big = await validBody({ fields: { title: 'x'.repeat(70_000) } });
     expect((await post(big)).status).toBe(413);
     expect((await post({ fragment: '../etc/passwd' })).status).toBe(400);
-    expect((await post(undefined, { raw: '{not json' })).status).toBe(413);
     const deep = await validBody({ fields: JSON.parse('{"a":'.repeat(20) + '1' + '}'.repeat(20)) });
     expect((await post(deep)).status).toBe(400);
+  });
+
+  /**
+   * Testlauf B, F3: eight bytes that are not JSON were refused as
+   * "413 Payload Too Large" — the refusal was right, the reason was not, and a
+   * reason that misleads is the one thing a deliberately generic refusal must
+   * not do. Both words already exist; only which one is spoken changed.
+   */
+  it('tells a body that is not JSON apart from one that is too large', async () => {
+    for (const raw of ['not json', '', '{"fragment":"hero"']) {
+      const response = await post(undefined, { raw });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'shape' });
+    }
+    const tooLarge = await post(await validBody({ fields: { title: 'x'.repeat(70_000) } }));
+    expect(tooLarge.status).toBe(413);
+    expect(await tooLarge.json()).toEqual({ error: 'body' });
   });
 
   it('403 without a valid token, and for a token issued for another route', async () => {
