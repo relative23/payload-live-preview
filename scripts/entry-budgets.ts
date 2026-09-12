@@ -3,7 +3,7 @@
  *
  * Its own module because the log is the point: every raise carries a date and a
  * reason in the reviewer's words, and a table that long crowds out the checker
- * that reads it (files stay under 500 lines).
+ * that reads it (files stay under 600 lines).
  */
 
 import type { BundleBudget } from './bundle-measure';

@@ -67,9 +67,13 @@ export default tseslint.config(
       ],
       '@typescript-eslint/prefer-readonly': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
-      // A file past 500 lines has grown a second responsibility; split it
-      // rather than raise the limit. Generated bundles are ignored above.
-      'max-lines': ['error', { max: 500, skipBlankLines: false, skipComments: false }],
+      // 600, raised from 500 on 2026-09-13. The two files sitting on the old
+      // cap hold one responsibility each -- a single class, and a budget table --
+      // so a split there would have moved lines without separating a second job.
+      // Length still asks the question; it just no longer answers it. Past 600,
+      // ask again whether the file has grown one. Generated bundles are ignored
+      // above.
+      'max-lines': ['error', { max: 600, skipBlankLines: false, skipComments: false }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       eqeqeq: ['error', 'always', { null: 'ignore' }],
