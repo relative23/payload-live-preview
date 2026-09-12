@@ -19,7 +19,7 @@
   "totals": {
     "files": 315,
     "suites": 672,
-    "tests": 2817,
+    "tests": 2818,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 258,
       "suites": 597,
-      "tests": 2590,
+      "tests": 2591,
       "benchmarks": 0
     }
   },
@@ -1765,7 +1765,7 @@
       "path": "tests/unit/migrate/rename-bindings-authorized-option.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {

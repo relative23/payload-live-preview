@@ -60,11 +60,14 @@ async function project(files: Record<string, string>): Promise<void> {
 }
 
 describe('pll migrate', () => {
-  it('dry-runs a clean project with exit 0, naming what each codemod would change', async () => {
+  it('dry-runs a project, naming what each codemod would change', async () => {
+    // Exit 3, not 0: this middleware passes a boolean to createPreviewBindings,
+    // which 2.0 refuses, so one line needs a human. The suite asserted exit 0
+    // here while the migrated file would not have compiled.
     const page = `---\nimport { isPreviewRequest } from 'payload-live-preview';\nconst preview = isPreviewRequest(Astro.request);\n---\n<h1>{preview}</h1>\n`;
     await project({ 'src/middleware.ts': MIDDLEWARE, 'src/pages/index.astro': page });
     const code = await run(['migrate', dir]);
-    expect(code).toBe(0);
+    expect(code).toBe(3);
     expect(out).toContain(
       'would migrate src/middleware.ts (rename-is-preview-request: 2 line(s), rename-bindings-authorized-option: 1 line(s))',
     );
@@ -72,13 +75,13 @@ describe('pll migrate', () => {
       'would migrate src/pages/index.astro (rename-is-preview-request: 2 line(s))',
     );
     expect(out).toContain('Would migrate 2 file(s). Re-run with --write to apply.');
-    expect(out).not.toContain('manual attention');
+    expect(out).toContain('src/middleware.ts:5: `authorization` takes the context from');
     expect(await readFile(join(dir, 'src', 'middleware.ts'), 'utf8')).toBe(MIDDLEWARE);
   });
 
   it('writes with --write and reports migrated files', async () => {
     await project({ 'src/middleware.ts': MIDDLEWARE });
-    expect(await run(['migrate', dir, '--write'])).toBe(0);
+    expect(await run(['migrate', dir, '--write'])).toBe(3);
     expect(out).toContain('migrated src/middleware.ts');
     expect(out).toContain('Migrated 1 file(s).');
     const migrated = await readFile(join(dir, 'src', 'middleware.ts'), 'utf8');
@@ -94,8 +97,11 @@ describe('pll migrate', () => {
     });
     const code = await run(['migrate', dir, '--write']);
     expect(code).toBe(3);
-    expect(out).toContain('2 file(s) need manual attention:');
+    expect(out).toContain('3 file(s) need manual attention:');
     expect(out).toContain('  src/lib/guard.ts:2: this module already binds hasPreviewIntent');
+    expect(out).toContain(
+      '  src/middleware.ts:5: `authorization` takes the context from authorizePreviewRequest()',
+    );
     expect(out).toContain(
       '  src/routes/+page.server.ts:3: fetchPreviewDocument() was rewritten onto definePreview().fetchDocument()',
     );

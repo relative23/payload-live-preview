@@ -54,6 +54,14 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // reported named neither line. Each row to its measurement plus the cushion
   // (raw ×1.001, gzip ×1.0014); brotli +130 and +100 as in Z37 — neither entry
   // embeds the runtime, so the epoch cannot move them.
-  'doctor-cli.js': { raw: 35_690, gzip: 13_120, brotli: 11_745 },
-  'migrate.js': { raw: 13_790, gzip: 4_980, brotli: 4_510 },
+  //
+  // 2026-09-12 (the authorized boolean stops passing under the new name): one
+  // more sentence in the same two entries, +430 B raw each — it names the value
+  // 2.0 refuses where the codemod used to rename the key and leave `true`
+  // standing, which failed at tsc with TS2322 and was reported nowhere. Same
+  // cushions. `doctor-cli.js`'s brotli ceiling still holds (measured 11 732
+  // against 11 745) and is left where it is, like `codegen-cli.js` before it: a
+  // ceiling that is not red does not move because its neighbours did.
+  'doctor-cli.js': { raw: 36_120, gzip: 13_240, brotli: 11_745 },
+  'migrate.js': { raw: 14_220, gzip: 5_110, brotli: 4_630 },
 };

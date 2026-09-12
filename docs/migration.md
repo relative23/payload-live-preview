@@ -70,6 +70,10 @@ Each row is an entry of the readiness table in
   removed in 3.0.
 - `createPreviewBindings({ authorized })` → `{ authorization }` — pass the
   context from `authorizePreviewRequest()`; the boolean is no longer accepted.
+  The codemod rewrites `authorized: false` to `authorization: null`, which
+  suppresses every binding exactly as `false` did, and reports any other value
+  as a line for a human: only a real verdict authorizes emission, so there is
+  nothing it could put there for you.
 - `fetchPreviewDocument()` / `fetchPreviewGlobal()` (root) →
   `definePreview({ serverURL, depth }).fetchDocument()` / `.fetchGlobal()`
   from `payload-live-preview/server`; the root helpers are gone, with no alias
