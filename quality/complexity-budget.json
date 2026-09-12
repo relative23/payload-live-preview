@@ -13,7 +13,7 @@
     "sits above `totals`, and `tsx scripts/check-complexity.ts --freeze` writes the",
     "limits of that moment to `complexity-budget.frozen.json`. Under the freeze a",
     "raised limit is red no matter how good its reason (ADR 0013 §6); a fix that",
-    "lowers one is still welcome. Unset today: there is no release candidate."
+    "lowers one is still welcome. Set since `v2.0.0-rc.1` (#70)."
   ],
   "frozen": {
     "since": "v2.0.0-rc.1",
