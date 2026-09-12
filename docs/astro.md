@@ -47,7 +47,7 @@ export default defineConfig({
 
 ### Injection modes
 
-`mode` selects how the runtime reaches a page.
+`mode` selects how the runtime reaches a page. A static build has no request to decide on, so `'inline'` and `'loader'` are delivery choices and not authorization boundaries: neither changes a response header, carries a nonce or reads a draft, and the injected runtime does not start at all outside a preview frame. What an editor is shown is decided by whatever fetches the draft — see [authorization.md](authorization.md). `'middleware'` is the mode that runs per request, and the one the policy engine gates.
 
 **`'inline'` (the default)** bakes the runtime into every page at build time. It works without a server, and every ordinary visitor downloads about 29 KB gzip for a feature only an editor uses.
 
