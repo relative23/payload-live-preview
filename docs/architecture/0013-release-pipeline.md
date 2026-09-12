@@ -64,7 +64,7 @@ already on the tested commit is accepted, one on another commit is an error.
 
 npm moves a dist-tag to whatever is published under it, so the tag decides what
 `npm install payload-live-preview` resolves. `distTagForVersion()` in
-`scripts/publish-artifact.ts` takes the version and the version the registry
+`scripts/release-version.ts` takes the version and the version the registry
 serves as `latest`:
 
 - `X.Y.Z-<label>.<n>`, the shape Changesets pre mode produces → `<label>`, so
@@ -119,9 +119,13 @@ would otherwise compare the raise with itself at `HEAD`. The freeze is lifted in
 the commit that opens the next minor: remove `frozen` and the snapshot together.
 
 What stays a reading rule: the changeset type — review reads `.changeset/*.md`
-— and the start of the freeze itself, which is the same decision as tagging
-`rc.0`. Today there is no release candidate; `frozen` is unset and the gate is
-held by seven unit cases (`tests/unit/quality/complexity-budget.test.ts`).
+— and the start of the freeze itself, which is the same decision as tagging the
+first candidate. That decision was taken on 2026-09-11 (#70, `509742c`): the
+first candidate is `v2.0.0-rc.1`, not rc.0, because Changesets carries the
+beta's number on when the pre tag changes. `frozen` has named that tag since,
+`quality/complexity-budget.frozen.json` is committed beside the budget, and the
+gate is held by eight unit cases
+(`tests/unit/quality/complexity-budget.test.ts`).
 
 ### 7. 1.x security fixes: the way (added 2026-09-11)
 
@@ -194,21 +198,21 @@ Done on 2026-09-11, the list this section named as missing:
 - Found on the way: npm 12 prints a single-field `npm view --json` as a
   one-element array, so the post-publish integrity check refused a correct
   answer; both shapes are read now (`69c9b1a`).
+- The audit gates the 1.8.1 tree failed are cleared on the branch (`6ae2a31`,
+  #72): `npm audit fix` took every advisory inside the declared ranges,
+  lockfiles only and no manifest change — the root tree (`js-yaml`,
+  `fast-uri`) and the astro, nextjs, nuxt and payload-backend fixtures
+  (`astro`, `next`, `sharp`, `svgo`). Every high and critical audit is 0
+  there, so a pull request into `release/1.x` can merge again.
 
 Open:
 
-- The 1.8.1 tree fails its own audit gates today, and the branch inherits
-  that: `npm audit --audit-level=high` finds two high advisories in transitive
-  dev dependencies at the root (`fast-uri`, `js-yaml`) and high or critical
-  ones in four fixtures (`astro` and `next` directly; `sharp`, `svgo`,
-  `js-yaml`, `fast-uri`). `Lint & Typecheck`, the three `E2E` jobs,
-  `Real Payload E2E` and the release Chromium soak stop at that step, before
-  their tests, so no pull request
-  into `release/1.x` can merge until those lockfiles are refreshed. Every
-  advisory has a fix without `--force`; it is a dependency change on a
-  security branch, and a decision of its own.
-- No backport has been made. The first candidate is the replay-race fix from
-  #64; on 1.x it is a minor, because `consume()` is a new contract.
+- No backport has been made, and the fix that looked like the first candidate
+  is not one: the replay race from #64 does not exist on 1.x. `v1.8.1` carries
+  no `src/security/preview-token.ts` and no `PreviewTokenReplayChecks` — the
+  token layer arrived with 2.0 (`14e967d`, #57) — so a backport would open the
+  gap rather than close it. The way stays unused until a 1.x security fix is
+  found.
 - A re-entry by `workflow_dispatch` runs on main's ref, so a 1.x run re-entered
   that way shares main's concurrency group and queues with it.
 

@@ -79,7 +79,7 @@ const UNMARKED: DoctorFinding = {
   level: 'info',
   title: 'The inline configuration does not say which defaults it was generated against',
   detail:
-    'Scripts carry a `defaults` marker from 2.0.0-rc.0 on; this one has none, so a 1.x or 2.0.0-beta.0 generator wrote it. An empty slot is read as its 1.x value, which is what a 1.x runtime runs.',
+    'Scripts carry a `defaults` marker from 2.0.0-rc.1 on; this one has none, so a 1.x or 2.0.0-beta.0 generator wrote it. An empty slot is read as its 1.x value, which is what a 1.x runtime runs.',
   remedy:
     'On 1.x the warnings stand as written. On 2.0.0-beta.0 an empty slot already runs its 2.0 value, so a warning about one does not apply there; upgrade and run `pll doctor --v2` again to read the marker.',
 };

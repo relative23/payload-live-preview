@@ -149,7 +149,7 @@ describe('analyzeV2Readiness', () => {
     const info = findings.filter((finding) => finding.level === 'info');
     expect(info).toEqual([expect.objectContaining({ code: 'LP0709' })]);
     expect(info[0]?.detail).toContain('`defaults`');
-    expect(`${info[0]?.detail ?? ''} ${info[0]?.remedy ?? ''}`).toContain('2.0.0-rc.0');
+    expect(`${info[0]?.detail ?? ''} ${info[0]?.remedy ?? ''}`).toContain('2.0.0-rc.1');
     expect(info[0]?.remedy).toContain('2.0.0-beta.0');
 
     // 1.8.1 has no `defaults` option, so the way out cannot be one.
