@@ -28,7 +28,8 @@ export const CI: WorkflowSpec = {
   on: { push: { branches: ['main'] }, pull_request: { branches: ['main'] } },
   permissions: READ_ONLY,
   concurrency: {
-    group: '${{ github.workflow }}-${{ github.ref }}',
+    group:
+      "${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}",
     'cancel-in-progress': "${{ github.event_name == 'pull_request' }}",
   },
   jobs: {

@@ -139,6 +139,10 @@ const RELEASE: WorkflowSpec = {
 const CODSPEED_UPLOAD_POLICY = "${{ vars.CODSPEED_REQUIRED != 'true' }}";
 const CODSPEED: WorkflowSpec = {
   name: 'Performance Trends',
+  concurrency: {
+    group: "codspeed-${{ github.event_name == 'pull_request' && github.ref || github.sha }}",
+    'cancel-in-progress': "${{ github.event_name == 'pull_request' }}",
+  },
   jobs: {
     cpu: {
       steps: [
