@@ -8,7 +8,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: codspeed-${{ github.ref }}
+  # Per-sha for a push, so a trend point is never lost to the queue eviction
+  # spelled out in ci.yml; per-ref for a pull request, where superseding the
+  # older run is what we want.
+  group: codspeed-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:

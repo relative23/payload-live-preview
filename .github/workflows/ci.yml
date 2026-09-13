@@ -10,8 +10,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
   # Main runs carry the verdict the Release workflow consumes; never cancel them.
+  # `cancel-in-progress: false` alone does not achieve that: GitHub keeps exactly
+  # one *pending* run per group and cancels it when the next one arrives, so a
+  # merge landing while an earlier main run is still going costs the commit in
+  # between its verdict -- 1c64654 and dca7a18 both died that way, with zero jobs
+  # ever started. A push therefore gets a group of its own, keyed by sha, and so
+  # never queues behind another. Pull requests keep the per-ref group, where
+  # superseding the older run is exactly what we want.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
