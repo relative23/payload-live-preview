@@ -127,6 +127,14 @@ beta's number on when the pre tag changes. `frozen` has named that tag since,
 gate is held by eight unit cases
 (`tests/unit/quality/complexity-budget.test.ts`).
 
+2026-09-14 (2.0.1): the freeze ended when `2.0.0` reached npm, not with the
+next minor as the paragraph above says (#92). `frozen` is gone from
+`quality/complexity-budget.json` and `quality/complexity-budget.frozen.json` is
+deleted, so `npm run check` compares limits with the budget alone again. The
+mechanism stays: `--freeze` and the comparison remain in
+`scripts/check-complexity.ts`, and seven unit cases hold them against a freeze
+the tests set themselves.
+
 ### 7. 1.x security fixes: the way (added 2026-09-11)
 
 `SECURITY.md` promises 1.x security fixes until 2026-12-04 or 90 days after

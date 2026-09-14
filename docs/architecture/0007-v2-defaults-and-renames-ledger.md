@@ -19,6 +19,11 @@ profile is the default, the renamed/moved APIs (entries 1, 7, 9–10) were
 removed, and `serverURL` now requires an explicit `mergeDepth`. `defaults: 'v1'`
 remains through the 2.x line as the staged-migration escape hatch.
 
+2026-09-14 (2.0.1): entry 1 was not removed. `isPreviewRequest` is exported from
+the root entry and from `./astro` as a deprecated alias of `hasPreviewIntent`
+until 3.0 (`src/adapters/shared/preview-request-legacy.ts`), as the ledger row
+says.
+
 ### 1. `defaults: 'v2'` is one switch
 
 Every adapter and the runtime accept `defaults: 'v2'`. It sets every row of

@@ -65,6 +65,9 @@ Both code paths are now produced from `src/core/runtime.ts`:
   triggering run, rechecks it without packing the checkout, and passes that tgz
   directly to npm through trusted publishing. It downloads the registry archive
   and proves exact equality before Changesets may create the tag and GitHub Release.
+  2026-09-14 (2.0.1): Changesets creates only the local tag (`changeset tag` in
+  `scripts/publish-artifact.ts`); `scripts/github-release.ts` pushes it and creates
+  the GitHub Release (ADR 0013 §3).
 
 Both consumers share **every** primitive: cache, observers, message bus, scheduler, state, lifecycle, security stack.
 
