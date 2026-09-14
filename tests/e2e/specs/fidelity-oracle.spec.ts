@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Frame, type Page } from '@playwright/test';
-import { post, started, waitForPreviewFrame } from '../helpers/preview';
+import { ASTRO_ORIGIN, post, started, waitForPreviewFrame } from '../helpers/preview';
 import {
   compareFidelity,
   regionOf,
@@ -31,7 +31,7 @@ import {
  * behaviour changes in either direction.
  */
 
-const STATIC_APP = 'http://localhost:4173';
+const STATIC_APP = ASTRO_ORIGIN;
 const SSR_APP = 'http://localhost:4177';
 const OWNER = { globalSlug: 'home' };
 

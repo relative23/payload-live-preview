@@ -8,6 +8,13 @@ import { expect, type Frame, type Page } from '@playwright/test';
 
 const DEFAULT_TIMEOUT = 15_000;
 
+/**
+ * The Astro fixture's origin. `PLP_E2E_PORT` moves it off 4173 when another
+ * project's server already answers there (playwright.config.ts); a spec that
+ * spells the port out bypasses the override and runs against that server.
+ */
+export const ASTRO_ORIGIN = `http://localhost:${process.env['PLP_E2E_PORT'] ?? '4173'}`;
+
 /** `__lpClient` is the /client import's handle; adapters inject `__livePreview`. */
 export type RuntimeHandle = '__livePreview' | '__lpClient';
 

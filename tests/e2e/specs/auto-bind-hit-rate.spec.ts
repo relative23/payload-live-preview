@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 import { JSDOM } from 'jsdom';
 import { findUniqueBindings } from '../../../src/core/auto-bind';
 import { STATIC_BASELINE } from '../../fixtures/fidelity-corpus';
+import { ASTRO_ORIGIN } from '../helpers/preview';
 
 /**
  * F2 of ADR 0014, measured on the shipped fixtures without changing them: how
@@ -31,7 +32,7 @@ async function sveltekitPreviewUrl(request: APIRequestContext): Promise<string> 
 
 /** The four fixtures render the same document and the same markup, one per framework. */
 const FIXTURES = [
-  { name: 'astro-payload', url: () => Promise.resolve('http://localhost:4173/') },
+  { name: 'astro-payload', url: () => Promise.resolve(`${ASTRO_ORIGIN}/`) },
   { name: 'nextjs-payload', url: () => Promise.resolve('http://localhost:4174/?preview=true') },
   { name: 'sveltekit-payload', url: sveltekitPreviewUrl },
   { name: 'nuxt-payload', url: () => Promise.resolve('http://localhost:4176/?preview=true') },
