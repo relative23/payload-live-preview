@@ -473,8 +473,19 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-10 (Z25): both barrels −1 302 raw (see above); the brotli rows go
   // to their measurement before the commit plus the ~130 B the paragraph above
   // asks for, `index.js` from a 32 B margin that had been a coin flip since Z9.
-  'index.cjs': { raw: 282_649, gzip: 88_571, brotli: 56_952 },
-  'index.js': { raw: 282_025, gzip: 88_558, brotli: 56_798 },
+  // 2026-09-14: `index.js` brotli crossed on main at 56 804 against a 56 798
+  // ceiling — six bytes, from a tree whose raw output is byte-identical. Five
+  // consecutive CI runs measured 56 759 / 56 779 / 56 780 / 56 782 / 56 804 with
+  // raw fixed at 282 014 and gzip moving by one byte: a 45 B brotli swing under
+  // a ceiling sitting 16-39 B above it. That is the coin flip the paragraph
+  // above describes, and Z25's ~130 B cushion had been trimmed back to 19 B
+  // against this host. Both rows go to the highest observed CI figure plus that
+  // cushion. `index.cjs` is raised with it although it has not crossed: it is
+  // the same barrel built twice, 56 837 here against a 56 952 ceiling, so ~90 B
+  // once CI's 20-25 B are added — the same coin, not yet fallen. raw and gzip
+  // keep their numbers; raw reproduces exactly and gzip to a byte.
+  'index.cjs': { raw: 282_649, gzip: 88_571, brotli: 57_090 },
+  'index.js': { raw: 282_025, gzip: 88_558, brotli: 56_934 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
