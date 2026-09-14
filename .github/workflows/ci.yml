@@ -51,6 +51,9 @@ jobs:
       # The generated runtime is a build output, so every check that imports
       # or type-checks it needs it generated first.
       - run: npm run build:runtime
+      # One generated file is committed, and the build just made it again: the
+      # two must be the same bytes, or a version bump has gone stale in it.
+      - run: npm run check:generated
       - run: npm run audit:gate
       - run: npm run typecheck
       - run: npm run lint
