@@ -267,9 +267,12 @@ in whatever it does hand a handler — that is all either binding does.
 - Rate limiting at the edge or proxy for the endpoint path: each request
   renders a component. The endpoint bounds work per request (limits above)
   but does not count requests per client.
-- Same-origin only. Cross-site fetches are refused (`Sec-Fetch-Site`,
-  `Origin`); `allowedOrigins` on the endpoint opens it to a named origin
-  when the preview page is served elsewhere.
+- Same-origin only. A request whose `Sec-Fetch-Site` is anything but
+  `same-origin` (or `none`) is refused before `Origin` is read, and the
+  runtime's fragment client only posts to a path on the page's own origin.
+  `allowedOrigins` on the endpoint admits a named `Origin` only for a client
+  that sends no `Sec-Fetch-Site`; it does not open the endpoint to a preview
+  page served elsewhere.
 
 ## Turning it on in the page
 
@@ -310,7 +313,7 @@ because the endpoint request, the fragment protocol and its abort scaffolding
 stay behind.
 
 That is the option for `data-payload-strategy="route"` and for bindings in
-`<head>` outside Astro, where no `createFragmentEndpoint()` exists yet. Setting
+`<head>` on a page whose script names no fragment endpoint. Setting
 both is not an error and not a double cost: `fragmentEndpoint` wins, and its
 prelude already contains the route strategy.
 
@@ -369,7 +372,8 @@ same findings, reported as `LP0411`, with the patch left where it is.
   the changed fields it had no binding for at all, once per field.
   `unfaithful` above `escalated` with both `handler`s `false` is a page that
   keeps degraded patches for want of a strategy.
-- Codes: `LP0801` request failed (network, timeout, 5xx) · `LP0802`
+- Codes: `LP0801` request failed (network, timeout, or any non-2xx status
+  but 401/403 — the endpoint's own 400, 404, 405, 413, 415 and 500 too) · `LP0802`
   response invalid (type, shape, size, wrong boundary) · `LP0803` endpoint
   refused (401/403) · `LP0804` a late response for a superseded revision
   was discarded · `LP0805` a route refresh was refused by the loop guard ·

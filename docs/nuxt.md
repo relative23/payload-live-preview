@@ -18,6 +18,8 @@ One line in `nuxt.config.ts`, if every option is data:
 export default defineNuxtConfig({
   modules: ['payload-live-preview/nuxt-module'],
   livePreview: {
+    // The module cannot carry authorizePreview (below), so it runs on the 1.x profile.
+    defaults: 'v1',
     allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
     serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
     mergeDepth: 1,
@@ -27,7 +29,7 @@ export default defineNuxtConfig({
 
 The module writes a Nitro plugin into `.nuxt/` and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
 
-What it cannot carry is a function. The options are serialized into the generated plugin, so `authorizePreview` and `shouldInject` are not part of the module's option type — and under the strict 2.0 default the plugin refuses to start without `authorizePreview`. The short setup is therefore the shape for `defaults: 'v1'` and for a preview that authorizes elsewhere; everything else writes the plugin below, which is three lines rather than one.
+What it cannot carry is a function. The options are serialized into the generated plugin, so `authorizePreview` and `shouldInject` are not part of the module's option type — and under the strict 2.0 default the plugin refuses to start without `authorizePreview`. The short setup therefore needs `defaults: 'v1'` (or `strict: false`), and then injects on client-controlled intent alone. A preview under the strict default writes the plugin below with `authorizePreview`, which is three lines rather than one.
 
 ## One options object
 
@@ -64,7 +66,7 @@ import { livePreviewOptions } from '../utils/live-preview';
 export default defineNitroPlugin(livePreviewNitroPlugin(livePreviewOptions));
 ```
 
-It hooks `render:html`. On a request carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true`) it runs `authorizePreview`, and only an authorized decision injects the script, merges the CSP header and marks the response `private, no-store`. With `autoInject: false` it injects nothing; `renderLivePreviewScript()` and `buildLivePreviewCsp()` from `payload-live-preview/nuxt` then produce the tag and the header value for a `render:html` hook of your own, gated on the same decision.
+It hooks `render:html`. On a request carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true` or `1`) it runs `authorizePreview`, and only an authorized decision injects the script, merges the CSP header and marks the response `private, no-store`. With `autoInject: false` it injects nothing; `renderLivePreviewScript()` and `buildLivePreviewCsp()` from `payload-live-preview/nuxt` then produce the tag and the header value for a `render:html` hook of your own, gated on the same decision.
 
 ## The server handler
 
@@ -87,6 +89,7 @@ export default defineEventHandler(defineLivePreviewServerHandler(livePreviewOpti
 export const livePreviewOptions = {
   allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
   delivery: 'asset',
+  defaults: 'v1', // for the module, as in the short setup
 } as const;
 ```
 
@@ -100,7 +103,7 @@ const asset = createRuntimeAssetRoute(livePreviewOptions);
 export default defineEventHandler((event) => asset(toWebRequest(event)));
 ```
 
-`nuxt.config.ts` then reads `livePreview: livePreviewOptions`, or the hand-written plugin takes the same object. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
+`nuxt.config.ts` then reads `livePreview: livePreviewOptions`. Under the strict default, put `delivery: 'asset'` into the hand-written plugin's options object [above](#one-options-object) instead, and hand the route that object. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
 
 Move the route folder and set `assetPath` together if the app is not served from the site root. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 
@@ -185,7 +188,7 @@ Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
 
 ## Caveats
 
-- **Hydration and the first write.** Vue's hydration repairs what differs from its own render, quietly — a value the runtime wrote before it is put back. So every script the plugin emits declares `hydration: 'vue'`, and under it the runtime does not start — no `ready`, no listener — until Vue has mounted the app around the bindings, and until a Suspense still hydrating at that moment has resolved; the admin's first document then lands on markup Vue is done with. On the example that is about 70 ms after the runtime could otherwise have started. A page whose Vue never mounts starts after five seconds and reports `LP0607`; `inspect().hydration` reads `waiting`, `committed` or `timed-out`. How the runtime sees the mount, and what can go wrong: [ADR 0015, addendum](architecture/0015-first-write-after-hydration.md#addendum-2026-09-11-vue-and-the-nuxt-adapter).
+- **Hydration and the first write.** Vue's hydration repairs what differs from its own render, quietly — a value the runtime wrote before it is put back. So every script the plugin emits declares `hydration: 'vue'`, and under it the runtime does not start — no `ready`, no listener — until Vue has mounted the app around the bindings, and until a Suspense still hydrating at that moment has resolved; the admin's first document then lands on markup Vue is done with. On the example that is about 70 ms after the runtime could otherwise have started. A page whose Vue never mounts starts after five seconds and reports `LP0607`; `inspect().hydration` reads `{ mode: 'vue', state }`, with `state` `waiting`, `committed` or `timed-out` (`idle` belongs to a page that declared no hydration). How the runtime sees the mount, and what can go wrong: [ADR 0015, addendum](architecture/0015-first-write-after-hydration.md#addendum-2026-09-11-vue-and-the-nuxt-adapter).
 - **Hydrated components.** The runtime patches the server-rendered markup. A Vue component that re-renders a bound node overwrites the patch: bind fields in server-rendered regions, mark a client-owned root with `data-payload-island` ([renderers.md](renderers.md)), or use the official `@payloadcms/live-preview-vue` composable inside client components.
 - **Hydration and boundaries.** The same applies to a fragment boundary, with one extra wrinkle: hydration resets what Vue owns, so a boundary the server re-rendered _before_ the page finished hydrating is thrown away — the runtime rendered it, `inspect().fragments.rendered` counts it, and the markup is gone. Once hydrated, Vue is idle and a morph survives. Put boundaries in markup Vue does not own (a server component, or a region marked `data-payload-island` for the runtime to own alone) if an update can arrive that early.
 - **Array templates.** Vue reads `{{ … }}` as its own interpolation, so an inline template is silently empty. Bind it as a string:
@@ -202,8 +205,8 @@ const template = '<li><a data-payload-href="url">{{title}}</a></li>';
 
 ## Example
 
-[`examples/nuxt-payload`](../examples/nuxt-payload) — `livePreviewNitroPlugin()` on Nuxt 3, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
+[`examples/nuxt-payload`](../examples/nuxt-payload) — the module `payload-live-preview/nuxt-module` on Nuxt 3, with `delivery: 'asset'` and `defaults: 'v1'`, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
 
 ## When something does not update
 
-`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md).
+`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md). The doctor's preview request carries `?preview=true`; behind `authorizePreview` it needs an editor's credentials, passed as `--header "Cookie: payload-token=…"` or `--header "x-preview-token: …"` (sent with the preview request only, values never printed).

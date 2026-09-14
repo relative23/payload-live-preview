@@ -23,7 +23,7 @@ save-triggered equivalent of this package's route strategy.
   (`type: 'payload-live-preview'`, `data`, `globalSlug`/`collectionSlug`,
   `locale`, `externallyUpdatedRelationship`, and `payload-document-event`).
   Messages captured from real admins are replayed through this runtime in
-  its test suite, and a weekly check executes the official client against
+  its test suite, and a daily check executes the official client against
   the same captures, so the two packages cannot drift apart unnoticed.
 - **The merge.** Payload 3.x posts raw form values; populated relationships
   come from a REST request the official client and this runtime make the
@@ -63,7 +63,10 @@ re-rendering it from the same message.
   beyond the `data-payload-array-template` mustache. A component's own logic
   is available through the fragment strategy instead
   ([hybrid.md](hybrid.md)).
-- Provide React/Vue-specific state (`useLivePreview` returns `isLoading`
-  and the document). The runtime exposes the same facts as events
-  (`beforeUpdate`, `afterUpdate`, `documentSave`, `relationshipUpdate`) and
-  `inspect()`.
+
+Framework state is not on that list: `useLivePreviewDocument()` from
+`payload-live-preview/react` and `payload-live-preview/vue` returns
+`{ data, isLoading, status, error }` (refs, in Vue) for a client-rendered
+component ([react.md](react.md), [vue.md](vue.md)). The DOM runtime exposes the
+same facts as events (`beforeUpdate`, `afterUpdate`, `documentSave`,
+`relationshipUpdate`) and `inspect()`.

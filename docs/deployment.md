@@ -3,6 +3,11 @@
 What a preview response looks like on the wire, what sits between the admin
 and the page, and what each layer must let through. The audit for a deployed
 site is `pll doctor` ([troubleshooting.md](troubleshooting.md#auditing-a-deployment-pll-doctor)).
+Its preview request carries `?preview=true`, the intent a 2.0 adapter counts.
+A preview behind `authorizePreview` refuses that request without an editor's
+credentials, so pass them with `--header "Cookie: payload-token=…"` or
+`--header "x-preview-token: …"`; they go with the preview request only, and
+their values are never printed.
 
 ## Preview responses and caches
 
@@ -42,8 +47,8 @@ preview answers every request with `Cache-Control: private, no-store`
 By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. Measured on the
-Next.js fixture, that is a 1 326-byte `<script>` element in the page instead
-of a 116 413-byte one — about one per cent, and more than the Astro row below
+Next.js fixture, that is a 1 331-byte `<script>` element in the page instead
+of a 125 166-byte one — about one per cent, and more than the Astro row below
 because a Next page's bootstrap also arms the wait for React's first commit
 before it fetches ([ADR 0015](architecture/0015-first-write-after-hydration.md)). On Next it is the second step down, not the first: a layout
 that can await the verdict renders `<LivePreviewScript />` and sends a public
@@ -90,23 +95,26 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The runtime is about 104.7 KB of JavaScript (32.8 KB gzip). The number that
+The runtime is about 113 KB of JavaScript (about 36 KB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
-rather than by the framework. Three outcomes, each pinned to the byte by an E2E
-case in `tests/e2e/specs/public-response.spec.ts` against the budgets in
-`tests/fixtures/delivery-budgets.ts`, so this table cannot drift from the
-fixtures. Every number below is measured, not computed: it is the whole
-`<script>` element, tag included, read off a request with no cookie and no
-preview intent.
+rather than by the framework. Three outcomes, each held by an E2E case in
+`tests/e2e/specs/public-response.spec.ts` against the budgets in
+`tests/fixtures/delivery-budgets.ts`, read off a request with no cookie and no
+preview intent. What that case pins to the byte is the delivery's overhead: the
+`<script>` element, tag included, minus the runtime it embeds. The runtime is
+gated on its own (`INLINE_BUDGET` in `scripts/bundle-budgets.ts`) and grows
+with the package, so the Bytes column is the whole element as this page was
+written: the pinned overhead, plus the 113 419-byte runtime in the two rows that
+carry it.
 
 | Setup                                                  | A public visitor receives | Bytes          | Why                                                                               |
 | ------------------------------------------------------ | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
 | SvelteKit handle, Nuxt Nitro plugin, Astro middleware  | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
 | Next.js, `<LivePreviewScript />` in the root layout    | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
-| Next.js, `delivery: 'asset'`                           | the bootstrap             | 1 326, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
-| Astro static build, `mode: 'loader'`                   | the bootstrap             | 762            | a static page has no request to decide for, so the check happens in the browser   |
-| Astro static build, `mode: 'inline'`                   | the whole runtime         | 104 837        | nothing decides and nothing is deferred                                           |
-| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 116 413, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
+| Next.js, `delivery: 'asset'`                           | the bootstrap             | 1 331, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
+| Astro static build, `mode: 'loader'`                   | the bootstrap             | 772            | a static page has no request to decide for, so the check happens in the browser   |
+| Astro static build, `mode: 'inline'`                   | the whole runtime         | 113 555        | nothing decides and nothing is deferred                                           |
+| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 125 166, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
 
 The last row is the one exception to "no cookie, no preview intent": no fixture
 serves it to the public any longer, because the Next example moved to the second
@@ -117,14 +125,15 @@ Next projects have today, and this is what it costs them. That is also the shape
 of the win: the component did not make the delivery cheaper, it stopped the
 public paying for it.
 
-The bootstrap is the same code in either row that carries it — the byte
-difference is the configuration in front of it — and all it does is check
-whether the page is framed or opened by an admin; outside a preview it does
-nothing and fetches nothing. So a visitor to a statically built site pays under
-one per cent of what the inline build costs them, and a visitor to a site whose
-server decides pays nothing at all.
+The bootstrap in either row that carries it checks whether the page is framed
+or opened by an admin, and outside a preview it fetches nothing. The Next one is
+larger because it also arms the wait for React's first commit, before that
+check; the rest of the difference is the configuration in front of each. So a
+visitor to a statically built site pays under one per cent of what the inline
+build costs them, and a visitor to a site whose server decides pays nothing at
+all.
 
-762 bytes is the floor of this table, and it is not zero. A page built ahead of
+772 bytes is the floor of this table, and it is not zero. A page built ahead of
 time has no request to decide for, so the check has to travel with the page;
 `mode: 'loader'` is the one delivery here that cannot reach zero, and saying so
 is more useful than a smaller number that stops being true the moment somebody
@@ -207,9 +216,9 @@ are not part of the deployed application.
 
 ## A smaller runtime for pages that need less
 
-Every page that carries the runtime carries 30 253 bytes gzip of it. A site
+Every page that carries the runtime carries about 36 KB gzip of it. A site
 whose preview needs neither server-rendered boundaries nor keyed arrays can
-carry 24 763 instead:
+carry about 29 KB instead:
 
 ```ts
 import { LEAN_RUNTIME } from 'payload-live-preview/lean';

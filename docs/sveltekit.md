@@ -35,7 +35,7 @@ export const handle = livePreviewHandle({
 });
 ```
 
-Compose it with `sequence()` next to other hooks; it never short-circuits the chain. `authorizePreview` runs on requests carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true`); a refusal leaves the response exactly as rendered. The strict default also requires `https:` admin origins in production and no referer trust. The three strategies and what each one binds: [authorization.md](authorization.md).
+Compose it with `sequence()` next to other hooks; it never short-circuits the chain. `authorizePreview` runs on requests carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true` or `1`); a refusal leaves the response exactly as rendered. The strict default also requires `https:` admin origins in production and no referer trust. The three strategies and what each one binds: [authorization.md](authorization.md).
 
 ## The runtime as a cached asset
 
@@ -137,9 +137,11 @@ export const POST = createFragmentEndpoint({
 ```
 
 Point the script at it — `fragments: { endpoint: '/payload/fragment' }` in the
-handle's options — and mark the region with
-`{...preview.boundary('hero', { dependsOn: ['title', 'subtitle'] })}`, which is
-gated on the same verdict as `preview.bind()`.
+handle's options — and mark the region with a boundary from the same
+`createPreviewBindings()` object `load` uses above: return
+`boundary: bindings.boundary('hero', { dependsOn: ['title', 'subtitle'] })` and
+spread it as `<section {...data.boundary}>`. It is gated on the same verdict as
+`bindings.bind()`.
 
 Svelte renders through `render()` from `svelte/server`, and the endpoint
 delivers its `body`: `<svelte:head>` output belongs to the document head, which
@@ -170,4 +172,4 @@ the abuse model: [hybrid.md](hybrid.md).
 
 ## When something does not update
 
-`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md).
+`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md). The doctor's preview request carries `?preview=true`; behind `authorizePreview` it needs an editor's credentials, passed as `--header "Cookie: payload-token=…"` or `--header "x-preview-token: …"` (sent with the preview request only, values never printed).

@@ -53,8 +53,9 @@ the page unless `eventSourcePolicy: 'any'` says otherwise.
 
 The four returned values are refs: `data`, `isLoading`, `status`
 (`'idle' | 'live' | 'unavailable'`) and `error`. `data` and `isLoading` are
-Payload's two, with the same meaning — `isLoading` is `true` until the first
-update merges.
+Payload's two names. `isLoading` is `true` until an update settles, turns `true`
+again with every update it accepts, and is `false` once the newest one has merged
+or failed to.
 
 ## Scope
 
