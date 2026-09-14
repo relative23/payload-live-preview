@@ -10,6 +10,8 @@
  * loudly until the win is recorded here.
  */
 
+import { ASTRO_ORIGIN } from '../e2e/helpers/preview';
+
 /** What the delivery put in front of a visitor who is not an editor. */
 export type Carries = 'nothing' | 'bootstrap' | 'runtime';
 
@@ -89,7 +91,7 @@ export interface DeliveryMeasurement {
 export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
   {
     name: 'Astro, static build, mode: loader',
-    app: 'http://localhost:4173',
+    app: ASTRO_ORIGIN,
     path: '/',
     carries: 'bootstrap',
     bindings: true,
