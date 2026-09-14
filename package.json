@@ -218,6 +218,7 @@
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
     "check:fixtures": "tsx scripts/check-fixture-freshness.ts",
+    "check:generated": "tsx scripts/check-generated-runtime.ts",
     "test:e2e:real-payload": "playwright test --config playwright.real-payload.config.ts",
     "test:a11y": "playwright test tests/e2e/specs/accessibility.spec.ts",
     "test:soak": "playwright test --config playwright.soak.config.ts",
@@ -257,7 +258,7 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test:policy && npm run test:architecture && npm run compat:check && npm run diagnostics:check && npm run test",
     "prepublishOnly": "npm run build && npm run check && npm run format:check && npm run test:package",
     "changeset": "changeset",
-    "version": "changeset version && tsx scripts/sync-lockfile-metadata.ts",
+    "version": "changeset version && tsx scripts/sync-lockfile-metadata.ts && npm run build:runtime",
     "release": "tsx scripts/publish-artifact.ts",
     "test:docs": "tsx scripts/docs-contracts.ts"
   },

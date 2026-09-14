@@ -7,9 +7,10 @@ to its failure mode.
 
 ## Local commands
 
-After `npm ci`, generate the ignored inline runtime files
-(`src/inline/runtime.generated.ts`, `loader.generated.ts`,
-`fragment.generated.ts`) once:
+After `npm ci`, generate the inline runtime files once. Five of the six are
+gitignored; `runtime-lean.generated.ts` is committed, and
+[CONTRIBUTING](../CONTRIBUTING.md#the-single-source-runtime) says why and which
+gate keeps it current:
 
 ```sh
 npm run build:runtime
