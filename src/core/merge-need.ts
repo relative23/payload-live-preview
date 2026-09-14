@@ -131,6 +131,12 @@ export class MergeNeed {
   request(merger: DataMerger, windowMs: number, request: MergeRequest): CoalescedMerge {
     const now = Date.now();
     if (now >= this.openUntil) {
+      // The clock has closed the window, but its timer may not have run: a busy
+      // main thread or a throttled engine fires it late. Left queued, that older
+      // request would go out after this one, and `DataMerger` — which keeps the
+      // newest request — would drop this keystroke's answer; measured in WebKit
+      // as a preview one keystroke behind. This request carries the newer values.
+      this.dropQueued();
       this.openUntil = now + windowMs;
       return { leading: true, result: merger.merge(request) };
     }
@@ -149,14 +155,18 @@ export class MergeNeed {
     this.resolved = doc;
   }
 
-  /** Drop a queued request; whoever waits on it keeps what they already rendered. */
   destroy(): void {
+    this.dropQueued();
+    this.openUntil = 0;
+  }
+
+  /** Drop a queued request; whoever waits on it keeps what they already rendered. */
+  private dropQueued(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
     this.queued = null;
     this.pending?.settle({ status: 'superseded' });
     this.pending = null;
-    this.openUntil = 0;
   }
 
   private flush(merger: DataMerger): void {
