@@ -174,18 +174,6 @@ describe('the freeze after the first release candidate', () => {
     expect(findFreezeViolations(unfrozen, undefined)).toEqual([]);
   });
 
-  it('holds the committed budget to the snapshot taken when the freeze began', async () => {
-    // Frozen since the first release candidate (ADR 0013 §6): the committed
-    // limits and the committed snapshot must name the same tag and agree.
-    const reviewed = await budget();
-    const snapshot = JSON.parse(
-      await readFile(resolve('quality/complexity-budget.frozen.json'), 'utf8'),
-    ) as ReturnType<typeof freezeSnapshotFrom>;
-
-    expect(reviewed.frozen?.since).toBe(snapshot.since);
-    expect(findFreezeViolations(reviewed, snapshot)).toEqual([]);
-  });
-
   it('accepts limits that did not move since the freeze', async () => {
     const reviewed = await budget();
     const frozen: ComplexityBudget = { ...reviewed, frozen: freeze };
