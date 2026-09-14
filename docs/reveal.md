@@ -1,9 +1,13 @@
 # Reveal the edited section
 
-While editing in the Payload admin, the preview scrolls to the part of the
-page the editor is writing, so the section under the cursor never gets lost.
-The route strategy brings up the right _page_; this brings up the right
-_section_.
+While editing in the Payload admin, the preview scrolls to the **field** being
+edited, when that field is off-screen. The route strategy brings up the right
+_page_; this brings up the right _field_.
+
+**Per field, not per line.** A field taller than the viewport whose top edge is
+already on screen counts as visible and is never scrolled to, however far below
+the caret sits inside it. A long rich-text body is exactly that case, and this
+feature does not help there — see [What this does not do](#what-this-does-not-do).
 
 Off by default. One option turns it on.
 
@@ -21,8 +25,9 @@ initLivePreview({
 
 When a field's value changes, the preview scrolls that field's bound element
 (`[data-payload-field]`, see [docs/bindings.md](bindings.md)) into view. It
-works with stock Payload — no admin component, no protocol change — because
-"the field whose value changed" is where the cursor is.
+works with stock Payload — no admin component, no protocol change — because the
+field whose value changed is the field the caret is in. _Which part_ of that
+field, it cannot know: the message carries values, not a caret position.
 
 Nested paths work the same way: a binding on `hero.title` or on a field inside
 a block or array is found by its bound path, not only by a top-level field name.
@@ -71,3 +76,24 @@ is a no-op while the preview is closed.
 
 `reportPreviewFocus(target, field, origin)` is the one-shot form for callers
 that already hold the preview window.
+
+## What this does not do
+
+**It does not follow the caret inside a field.** A field is one binding, and the
+only thing either tier puts on the wire is a field _name_ — `payload-live-preview`
+carries values, `payload-live-preview-focus` carries `{ type, field }`. Neither
+carries a caret position, so there is nothing finer to scroll to. A heading or a
+paragraph inside a rich-text body is not separately bound and the runtime cannot
+see it.
+
+**So a long field is the case this misses.** `revealElement` asks whether the
+bound element is off-screen, and a box that starts above the fold and runs far
+past it is on screen by that measure. Measured on a real document (2026-09-13):
+a `description` body 1,740px tall starting at 721px in a 1,389px preview frame —
+its top edge is visible, so the reveal correctly does nothing while the caret
+sits 1,500px further down. Every _other_ field on that page, being shorter than
+the frame, reveals as documented.
+
+If the editor needs the caret followed inside a long body, this feature is not
+the answer today: it would take a caret position on the wire, which is a
+protocol change, an ADR and a compatibility question — not a setting.

@@ -11,11 +11,14 @@
     "astro": "astro"
   },
   "dependencies": {
-    "payload-live-preview": "file:../..",
-    "astro": "^7.2.1"
+    "astro": "^7.2.1",
+    "payload-live-preview": "file:../.."
   },
   "allowScripts": {
     "esbuild@0.28.1": true,
     "fsevents@2.3.3": false
+  },
+  "devDependencies": {
+    "linkedom": "^0.18.13"
   }
 }
