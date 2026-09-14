@@ -40,6 +40,12 @@ export interface Codemod {
 export interface CodemodImplementation extends Codemod {
   /** Plan the rewrite of one parsed script; the driver applies the edits. */
   readonly apply: (script: SourceFile) => CodemodPlan;
+  /**
+   * Said once after a run in which this codemod changed a file: what the rewrite
+   * keeps that a reader of the diff cannot see. Not a conflict — nothing needs a
+   * human, so the exit code does not change.
+   */
+  readonly notice?: string;
 }
 
 /** One changed line, before and after. */

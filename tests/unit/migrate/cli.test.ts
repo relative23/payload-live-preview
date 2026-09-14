@@ -89,6 +89,24 @@ describe('pll migrate', () => {
     expect(migrated).toContain('authorization: context.locals.preview');
   });
 
+  it('says what the rename keeps, without turning a rename that keeps behaviour into manual work', async () => {
+    // Found by a 1.8.1 → 2.0.0 upgrade: hasPreviewIntent() takes isPreviewRequest()'s options and,
+    // without `signals`, its three signals, while the 2.0 adapters count only the query. The
+    // rename kept the looser default, and nothing on the way said so.
+    const guard =
+      "import { isPreviewRequest } from 'payload-live-preview';\nexport const p = (r) => isPreviewRequest(r);\n";
+    await project({ 'src/guard.ts': guard });
+    expect(await run(['migrate', dir])).toBe(0);
+    expect(out).toContain('Sec-Fetch-Dest');
+    expect(out).toContain("{ signals: ['query'] }");
+  });
+
+  it('prints no rename note when nothing was renamed', async () => {
+    await project({ 'src/routes/+page.server.ts': HOOKS });
+    await run(['migrate', dir]);
+    expect(out).not.toContain("{ signals: ['query'] }");
+  });
+
   it('exits 3 and lists file:line when a file needs a human, still applying what is safe', async () => {
     await project({
       'src/middleware.ts': MIDDLEWARE,
