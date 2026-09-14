@@ -53,6 +53,16 @@ function captureStdio(): {
   };
 }
 
+/*
+ * The four cases that go through `run()` load a TypeScript config through
+ * ts-morph, and carry their own deadline for the same reason the property
+ * exploration does in `vitest.config.ts`: the wait is a property of the
+ * machine, not of the code. This file takes ~1s here and 7.5-12.4s on the CI
+ * runner (measured across four main runs); the heaviest case crossed the 5s
+ * default on 2026-09-14 and took main red while asserting nothing about
+ * correctness. The other five cases stay on the default, so a real hang in
+ * them still fails fast.
+ */
 describe('pll-codegen CLI', () => {
   it('writes the generated file and returns 0', async () => {
     const configPath = await writeConfig(`
@@ -76,7 +86,7 @@ describe('pll-codegen CLI', () => {
     } finally {
       restore();
     }
-  });
+  }, 30_000);
 
   it('writes the preview inventory when asked, and not otherwise', async () => {
     const configPath = await writeConfig(`
@@ -116,7 +126,7 @@ describe('pll-codegen CLI', () => {
     } finally {
       restore();
     }
-  });
+  }, 30_000);
 
   it('supports --config=value syntax', async () => {
     const configPath = await writeConfig(`
@@ -134,7 +144,7 @@ describe('pll-codegen CLI', () => {
     } finally {
       restore();
     }
-  });
+  }, 30_000);
 
   it('prints help and returns 0 with --help', async () => {
     const { stdoutSpy, restore } = captureStdio();
@@ -175,7 +185,7 @@ describe('pll-codegen CLI', () => {
       restore();
     }
     expect(await readFile(outPath, 'utf8')).toBe('// the types someone is still importing\n');
-  });
+  }, 30_000);
 
   it('does not replace the types with an empty file when --config is mistyped', async () => {
     await writeConfig(`
