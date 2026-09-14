@@ -51,6 +51,45 @@ describe('runDoctor probing', () => {
     expect(calls[1]?.['Sec-Fetch-Dest']).toBe('iframe');
   });
 
+  it('asks for the preview with ?preview=true, the intent a 2.0 adapter counts, and for the visitor without it', async () => {
+    // A 2.0 adapter counts only the query as intent (previewSignals: ['query']).
+    // With Sec-Fetch-Dest: iframe alone the preview probe was an ordinary request
+    // to such a page, and every default 2.0 deployment reported LP0701.
+    const urls: string[] = [];
+    const fetchImpl: DoctorFetch = (url, init) => {
+      urls.push(url);
+      const isPreview = init.headers['Sec-Fetch-Dest'] === 'iframe';
+      return Promise.resolve({ status: 200, headers: {}, body: isPreview ? BOUND : '<h1>t</h1>' });
+    };
+    await runDoctor({ url: 'https://example.com/blog/x?ref=nav', fetchImpl });
+    expect(urls).toEqual([
+      'https://example.com/blog/x?ref=nav',
+      'https://example.com/blog/x?ref=nav&preview=true',
+    ]);
+  });
+
+  it('keeps an intent parameter the URL already names for the preview, and drops it for the visitor', async () => {
+    const urls: string[] = [];
+    const fetchImpl: DoctorFetch = (url) => {
+      urls.push(url);
+      return Promise.resolve({ status: 200, headers: {}, body: BOUND });
+    };
+    await runDoctor({ url: 'https://example.com/?draft=1', fetchImpl });
+    expect(urls).toEqual(['https://example.com/', 'https://example.com/?draft=1']);
+  });
+
+  it('sends previewHeaders with the preview probe only, so the visitor probe stays anonymous', async () => {
+    const { fetchImpl, calls } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND });
+    await runDoctor({
+      url: 'https://example.com/',
+      fetchImpl,
+      previewHeaders: { Cookie: 'payload-token=abc' },
+    });
+    expect(calls[0]?.['Cookie']).toBeUndefined();
+    expect(calls[1]?.['Cookie']).toBe('payload-token=abc');
+    expect(calls[1]?.['Sec-Fetch-Dest']).toBe('iframe');
+  });
+
   it('reaches a verdict from the two responses', async () => {
     const { fetchImpl } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND }, CSP);
     const report = await runDoctor({ url: 'https://example.com/', adminOrigin: ADMIN, fetchImpl });
@@ -159,6 +198,37 @@ describe('pll doctor output', () => {
     const parsed = JSON.parse(out) as { findings: { code: string }[]; errors: number };
     expect(parsed.errors).toBe(1);
     expect(parsed.findings[0]?.code).toBe('LP0703');
+  });
+
+  it('sends --header and -H with the preview probe and never prints their values', async () => {
+    const { fetchImpl, calls } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND }, CSP);
+    const code = await run(
+      [
+        'doctor',
+        'https://example.com/',
+        '--header',
+        'Cookie: payload-token=s3cret',
+        '-H',
+        'x-preview-token:tok3n',
+        '--json',
+      ],
+      fetchImpl,
+    );
+    expect(code).toBe(0);
+    expect(calls[1]).toMatchObject({ Cookie: 'payload-token=s3cret', 'x-preview-token': 'tok3n' });
+    expect(calls[0]).not.toHaveProperty('Cookie');
+    expect(out).not.toContain('s3cret');
+    expect(out).not.toContain('tok3n');
+  });
+
+  it('refuses a --header that is not "Name: value" before probing anything', async () => {
+    const { fetchImpl, calls } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND });
+    expect(await run(['doctor', 'https://example.com/', '--header', 'no-colon'], fetchImpl)).toBe(
+      1,
+    );
+    expect(await run(['doctor', 'https://example.com/', '--header'], fetchImpl)).toBe(1);
+    expect(calls).toHaveLength(0);
+    expect(err).toContain('--header takes "Name: value"');
   });
 
   it('threads --v2 into the report as LP0709 readiness findings', async () => {

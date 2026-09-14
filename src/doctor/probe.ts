@@ -19,6 +19,49 @@ export interface RunDoctorOptions {
   readonly fetchImpl?: DoctorFetch | undefined;
   /** Also check the served page against the 2.0 readiness table. */
   readonly v2?: boolean;
+  /**
+   * Headers sent with the preview probe only, never with the visitor probe: the
+   * credentials a preview behind `authorizePreview` needs, such as a Payload
+   * session `Cookie` or an `x-preview-token`. Without them a gated page answers
+   * the audit the way it answers any stranger. Their values never reach the report.
+   */
+  readonly previewHeaders?: Readonly<Record<string, string>> | undefined;
+}
+
+/** The query parameters an adapter reads as preview intent (adapters/shared/preview-request.ts). */
+const INTENT_PARAMS = ['preview', 'draft', 'livePreview'] as const;
+
+function isIntentValue(value: string | null): boolean {
+  return value === 'true' || value === '1';
+}
+
+/** The page a visitor requests: whatever intent parameter the caller copied in, removed. */
+function visitorUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    for (const param of INTENT_PARAMS) parsed.searchParams.delete(param);
+    return parsed.href;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * The page the admin's iframe loads. A 2.0 adapter counts only the query as
+ * intent (`previewSignals: ['query']`), and `buildLivePreviewUrl` writes
+ * `preview=true`, so that is what the probe carries unless the URL already names
+ * one of the intent parameters with a value that counts.
+ */
+function previewUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (!INTENT_PARAMS.some((param) => isIntentValue(parsed.searchParams.get(param)))) {
+      parsed.searchParams.set('preview', 'true');
+    }
+    return parsed.href;
+  } catch {
+    return url;
+  }
 }
 
 export const DEFAULT_TIMEOUT_MS = 15_000;
@@ -109,16 +152,19 @@ export function previewReferer(adminOrigin: string): string {
 /** Fetch the URL twice — as a visitor and as the admin's iframe — and audit the difference. */
 export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport> {
   const fetchImpl = options.fetchImpl ?? createDefaultFetch();
-  // No referer on the visitor probe: an admin referer is itself a preview signal.
-  const publicResponse = await fetchImpl(options.url, {
+  // No referer, no intent parameter and no credentials on the visitor probe:
+  // each of them is a preview signal or a way past one.
+  const publicResponse = await fetchImpl(visitorUrl(options.url), {
     headers: {
       Accept: 'text/html',
       'Sec-Fetch-Dest': 'document',
       'Sec-Fetch-Mode': 'navigate',
     },
   });
-  const previewResponse = await fetchImpl(options.url, {
+  const previewResponse = await fetchImpl(previewUrl(options.url), {
     headers: {
+      // The caller's headers first, so they cannot turn the probe into something else.
+      ...options.previewHeaders,
       Accept: 'text/html',
       'Sec-Fetch-Dest': 'iframe',
       'Sec-Fetch-Mode': 'navigate',
@@ -133,6 +179,7 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
       url: options.url,
       adminOrigin: options.adminOrigin,
       ...(options.v2 === true ? { v2: true } : {}),
+      ...(Object.keys(options.previewHeaders ?? {}).length > 0 ? { credentials: true } : {}),
     },
   );
 }
