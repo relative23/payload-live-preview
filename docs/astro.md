@@ -49,7 +49,7 @@ export default defineConfig({
 
 `mode` selects how the runtime reaches a page. A static build has no request to decide on, so `'inline'` and `'loader'` are delivery choices and not authorization boundaries: neither changes a response header, carries a nonce or reads a draft, and the injected runtime does not start at all outside a preview frame. What an editor is shown is decided by whatever fetches the draft — see [authorization.md](authorization.md). `'middleware'` is the mode that runs per request, and the one the policy engine gates.
 
-**`'inline'` (the default)** bakes the runtime into every page at build time. It works without a server, and every ordinary visitor downloads about 36 KB gzip for a feature only an editor uses.
+**`'inline'` (the default)** bakes the runtime into every page at build time. It works without a server, and every ordinary visitor downloads about 35 KB gzip for a feature only an editor uses.
 
 **`'loader'`** keeps the pages small. Each page carries a bootstrap of a few hundred bytes that checks the preview context and fetches the runtime as a content-hashed, SRI-verified asset only inside a preview. The asset is published once at `/_payload-live-preview/runtime.<hash>.js` (below Astro's `base`, when one is set), cached across every page, and identical for every site on the same package version, so it carries no deployment secret. `astro dev` serves the same path from memory. The price is one extra request the first time an editor opens a preview.
 

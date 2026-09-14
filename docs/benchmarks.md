@@ -148,13 +148,13 @@ ceiling the script enforces.
 | ---------------------------------------------------------------- | -------- | ------ |
 | `escapeHtml` from `payload-live-preview`                         | 210 B    | 214    |
 | `lexicalToHtml` from `payload-live-preview`                      | 5,043 B  | 5,045  |
-| `initLivePreview` from `payload-live-preview`                    | 44,584 B | 44,621 |
-| `generateInlineScript` from `payload-live-preview`               | 42,211 B | 42,252 |
-| `initLivePreview` from `payload-live-preview/core`               | 44,561 B | 44,599 |
+| `initLivePreview` from `payload-live-preview`                    | 44,601 B | 44,621 |
+| `generateInlineScript` from `payload-live-preview`               | 42,223 B | 42,252 |
+| `initLivePreview` from `payload-live-preview/core`               | 44,579 B | 44,599 |
 | `lexicalToHtml` from `payload-live-preview/lexical`              | 5,175 B  | 5,178  |
 | `morphElement` from `payload-live-preview/structural`            | 1,469 B  | 1,493  |
-| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 47,458 B | 47,500 |
-| `LEAN_RUNTIME` from `payload-live-preview/lean`                  | 29,173 B | 29,203 |
+| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 47,466 B | 47,500 |
+| `LEAN_RUNTIME` from `payload-live-preview/lean`                  | 29,188 B | 29,203 |
 | `useLivePreviewDocument` from `payload-live-preview/react`       | 5,100 B  | 5,180  |
 | `useLivePreviewDocument` from `payload-live-preview/vue`         | 5,096 B  | 5,176  |
 | `PluginManager` from `payload-live-preview/plugins`              | 3,315 B  | 3,372  |

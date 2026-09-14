@@ -157,8 +157,8 @@ Notes on the rows that need one:
   adds `'strict-dynamic'`, after which CSP 3 ignores `'self'` and host
   sources, so every script on the page must carry the nonce.
 - `runtime` chooses which artifact the page carries. The default is the full
-  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is 28 929 bytes gzip
-  against 35 796 as an inline script — it leaves out the fragment and route strategies, the keyed
+  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is 28 940 bytes gzip
+  against 35 809 as an inline script — it leaves out the fragment and route strategies, the keyed
   morph, the structural arrays, the item templates, the screen-reader
   announcer and auto-binding, and reports LP0104 when a page needs one of them
   rather than doing nothing. It is an import rather than a string option so the second artifact

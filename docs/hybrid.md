@@ -308,7 +308,7 @@ from `payload-live-preview/fragment`.
 A page that wants route refreshes and no server-rendered boundaries sets
 `routeStrategy: true` instead — in `generateInlineScript()` and in every
 adapter's options. The script then carries a second, smaller prelude with the
-route strategy alone: 2 068 bytes gzip against the fragment prelude's 3 791,
+route strategy alone: 2 176 bytes gzip against the fragment prelude's 3 753,
 because the endpoint request, the fragment protocol and its abort scaffolding
 stay behind.
 

@@ -48,7 +48,7 @@ By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. Measured on the
 Next.js fixture, that is a 1 331-byte `<script>` element in the page instead
-of a 125 166-byte one — about one per cent, and more than the Astro row below
+of a 125 215-byte one — about one per cent, and more than the Astro row below
 because a Next page's bootstrap also arms the wait for React's first commit
 before it fetches ([ADR 0015](architecture/0015-first-write-after-hydration.md)). On Next it is the second step down, not the first: a layout
 that can await the verdict renders `<LivePreviewScript />` and sends a public
@@ -95,7 +95,7 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The runtime is about 113 KB of JavaScript (about 36 KB gzip). The number that
+The runtime is about 111 KB of JavaScript (about 35 KB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
 rather than by the framework. Three outcomes, each held by an E2E case in
 `tests/e2e/specs/public-response.spec.ts` against the budgets in
@@ -104,7 +104,7 @@ preview intent. What that case pins to the byte is the delivery's overhead: the
 `<script>` element, tag included, minus the runtime it embeds. The runtime is
 gated on its own (`INLINE_BUDGET` in `scripts/bundle-budgets.ts`) and grows
 with the package, so the Bytes column is the whole element as this page was
-written: the pinned overhead, plus the 113 419-byte runtime in the two rows that
+written: the pinned overhead, plus the 113 468-byte runtime in the two rows that
 carry it.
 
 | Setup                                                  | A public visitor receives | Bytes          | Why                                                                               |
@@ -113,8 +113,8 @@ carry it.
 | Next.js, `<LivePreviewScript />` in the root layout    | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
 | Next.js, `delivery: 'asset'`                           | the bootstrap             | 1 331, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
 | Astro static build, `mode: 'loader'`                   | the bootstrap             | 772            | a static page has no request to decide for, so the check happens in the browser   |
-| Astro static build, `mode: 'inline'`                   | the whole runtime         | 113 555        | nothing decides and nothing is deferred                                           |
-| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 125 166, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
+| Astro static build, `mode: 'inline'`                   | the whole runtime         | 113 604        | nothing decides and nothing is deferred                                           |
+| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 125 215, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
 
 The last row is the one exception to "no cookie, no preview intent": no fixture
 serves it to the public any longer, because the Next example moved to the second
@@ -216,9 +216,9 @@ are not part of the deployed application.
 
 ## A smaller runtime for pages that need less
 
-Every page that carries the runtime carries about 36 KB gzip of it. A site
+Every page that carries the runtime carries about 35 KB gzip of it. A site
 whose preview needs neither server-rendered boundaries nor keyed arrays can
-carry about 29 KB instead:
+carry about 28 KB instead:
 
 ```ts
 import { LEAN_RUNTIME } from 'payload-live-preview/lean';
