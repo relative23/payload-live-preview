@@ -43,7 +43,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // +130 on `doctor-cli.js` and ~100 on `doctor.js`, like `plugins.*`: neither
   // embeds the runtime, so the epoch cannot move them, and 130 would put the
   // smaller one over the 2 % the improvement hint allows.
-  'doctor.js': { raw: 16_090, gzip: 6_550, brotli: 5_780 },
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 16 090 → 17 523 (+1433 B, measured 16 073 → 17 506); gzip 6 550 → 6 963 (+413 B, measured 6 539 → 6 952); brotli 5 780 → 6 143 (measured 6 023, -243 B left; ~120 B as the other brotli rows).
+  'doctor.js': { raw: 17_523, gzip: 6_963, brotli: 6_143 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -70,6 +71,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // the correction: the error it replaced was false on every deployment whose
   // admin shares the origin, and the audit exited 2 on a page with nothing wrong
   // with it. Same cushions; neither entry embeds the runtime.
-  'doctor-cli.js': { raw: 36_760, gzip: 13_390, brotli: 11_980 },
-  'migrate.js': { raw: 14_220, gzip: 5_110, brotli: 4_630 },
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 36 760 → 39 806 (+3046 B, measured 36 718 → 39 764); gzip 13 390 → 14 373 (+983 B, measured 13 371 → 14 354); brotli 11 980 → 12 804 (measured 12 684, -704 B left; ~120 B as the other brotli rows).
+  'doctor-cli.js': { raw: 39_806, gzip: 14_373, brotli: 12_804 },
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
+  'migrate.js': { raw: 14_534, gzip: 5_265, brotli: 4_750 },
 };

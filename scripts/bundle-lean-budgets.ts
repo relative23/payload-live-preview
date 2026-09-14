@@ -90,4 +90,5 @@
 // the page this reading describes. `escalated` stays 0 there, which is the truth
 // about the profile rather than silence about the change.
 // Raised 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 436 → 91 472 (+36 B, measured 91 406 → 91 442).
-export const INLINE_LEAN_BUDGET = { raw: 91_472, gzip: 28_938, brotli: 25_745 } as const;
+// Raised 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 472 → 91 521 (+49 B, measured 91 442 → 91 491); gzip 28 938 → 28 949 (+11 B, measured 28 929 → 28 940).
+export const INLINE_LEAN_BUDGET = { raw: 91_521, gzip: 28_949, brotli: 25_745 } as const;

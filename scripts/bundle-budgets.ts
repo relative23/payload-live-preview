@@ -434,7 +434,8 @@
 // raised by exactly the difference between a build of this tree without the
 // change and one with it, so none of it is this host's drift.
 // Raised 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 35 788 → 35 801 (+13 B, measured 35 783 → 35 796).
-export const INLINE_BUDGET = { raw: 113_506, gzip: 35_801, brotli: 31_620 } as const;
+// Raised 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 113 506 → 113 555 (+49 B, measured 113 479 → 113 528); gzip 35 801 → 35 814 (+13 B, measured 35 796 → 35 809).
+export const INLINE_BUDGET = { raw: 113_555, gzip: 35_814, brotli: 31_620 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the
