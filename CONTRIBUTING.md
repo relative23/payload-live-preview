@@ -77,11 +77,11 @@ matching changeset; it is not a formatter.
 
 ## The single-source runtime
 
-The browser runtime lives in `src/core/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into three files that adapters inline into pages:
+The browser runtime lives in `src/core/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into six files under `src/inline/` that adapters inline into pages:
 
-- `src/inline/runtime.generated.ts`
-- `src/inline/loader.generated.ts`
-- `src/inline/fragment.generated.ts`
+- `runtime.generated.ts` and `runtime-lean.generated.ts` — the full and the lean runtime
+- `loader.generated.ts` and `loader-react.generated.ts` — the bootstrap loader, and its variant that waits for React hydration
+- `fragment.generated.ts` and `route.generated.ts` — the fragment and route preludes
 
 If you touch `src/core/runtime.ts` or anything it imports, regenerate them:
 
@@ -89,7 +89,7 @@ If you touch `src/core/runtime.ts` or anything it imports, regenerate them:
 npm run build:runtime
 ```
 
-All three are build outputs and all three are gitignored. Do not stage them: a
+Five of them are build outputs and gitignored. Do not stage those: a
 committed copy drifts from its source the moment somebody edits the runtime
 without rebuilding, and a stale one is indistinguishable from a reviewed one in
 a diff. `npm run build:runtime` and `npm run build` regenerate them, `pretest`
@@ -97,6 +97,13 @@ regenerates them before `npm test`, and every CI job that type-checks or runs
 tests regenerates them first. The completed build embeds them in the published
 artifacts; consumer installation deliberately runs no package lifecycle build,
 because published archives already contain the reviewed output.
+
+`runtime-lean.generated.ts` is the exception, and it is committed: `src/lean.ts`
+imports it as a module. That is the drift the paragraph above describes, so a
+gate holds it — after `npm run build:runtime`, `npm run check:generated` fails
+when the committed copy is not what the source builds. When a change alters it,
+commit the rebuilt file with that change. It carries the package version as
+well, which is why `npm run version` rebuilds it.
 
 ## Gates and their baselines
 
