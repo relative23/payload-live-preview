@@ -45,6 +45,7 @@ export const CI: WorkflowSpec = {
       steps: [
         ...SETUP,
         BUILD_RUNTIME,
+        { run: 'npm run check:generated' },
         { run: 'npm run audit:gate' },
         { run: 'npm run typecheck' },
         { run: 'npm run lint' },
