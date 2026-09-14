@@ -363,8 +363,9 @@ export function adoptUniqueBindings(
 }
 
 /**
- * After a route refresh: the server's markup carries no stamp, so the guesses
- * the baseline made are gone from the page. Look for them again, by the value
+ * After a server render — a route refresh, or a fragment in its boundary: the
+ * server's markup carries no stamp, so the guesses the baseline made are gone
+ * from what it rendered. Look for them again, by the value
  * each was found by and by the field's value in this revision — the server
  * may have rendered either, the document as it was saved or a draft it
  * autosaved since. A field found by both, on two elements, is ambiguous and
@@ -389,7 +390,7 @@ export function restoreUniqueBindings(
     if (known === undefined) values.set(text, claim);
     else if (known?.field !== claim.field) values.set(text, null);
   }
-  return adopt(deps, searchUnique(root, values), ownerKeys, 'after a route refresh').length;
+  return adopt(deps, searchUnique(root, values), ownerKeys, 'after a server render').length;
 }
 
 /** Stamp the candidates, register them, say so; returns the ones that became bindings. */
