@@ -3,7 +3,7 @@
 ## Reading path
 
 1. **What is this** — the [README](../README.md): what the package does, where it fits next to the official hooks, install, the Payload side.
-2. **Your framework** — [Astro](astro.md) · [Next.js](nextjs.md) · [SvelteKit](sveltekit.md) · [Nuxt](nuxt.md) · [Plain HTML](html.md). Each guide goes from install to a working preview and names its runnable example.
+2. **Your framework** — [Astro](astro.md) · [Next.js](nextjs.md) · [SvelteKit](sveltekit.md) · [Nuxt](nuxt.md) · [Plain HTML](html.md). Each guide goes from install to a working preview and names its runnable example. A client-rendered app takes the [React hook](react.md) or the [Vue composable](vue.md) instead.
 3. [bindings.md](bindings.md) — every `data-payload-*` attribute, the field types, owners for pages with several documents, typed bindings and `pll-codegen`.
 4. [options.md](options.md) — the package entries, every option with its default, `defaults: 'v1'`, Payload 3.x population with `serverURL` and `mergeDepth`.
 5. [authorization.md](authorization.md) — why intent is not authorization, the `payload-session`, `signed-token` and `verifier` strategies, signed preview URLs, the initial draft read with `definePreview()`.

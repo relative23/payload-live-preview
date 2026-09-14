@@ -8,7 +8,7 @@
 
 > **Live preview for Payload CMS in Astro** — and any other server-rendered or static frontend (SvelteKit, Nuxt, Next.js, plain HTML).
 
-**The missing piece for Astro + Payload.** The official live-preview packages are React and Vue hooks: they re-render a hydrated component tree, so they cannot touch server-produced Astro markup. This package makes the admin's real-time preview work where no client framework owns the page. Add one line to `astro.config.mjs`, mark what should update — one attribute per component on a server-rendered page, per field on a static one — and edits stream into the preview iframe as the editor types. No rebuild, no reload, no React.
+**The missing piece for Astro + Payload.** The official live-preview packages are React and Vue hooks: they re-render a hydrated component tree, so they cannot touch server-produced Astro markup. This package makes the admin's real-time preview work where no client framework owns the page. Add one line to `astro.config.mjs`, mark what should update — one attribute per component on a server-rendered page with a fragment endpoint, per field on a static one — and edits stream into the preview iframe as the editor types. No rebuild, no reload, no React.
 
 The runtime is framework-agnostic: one script drives Astro, SvelteKit, Nuxt, Next.js and plain HTML. Astro is the first-class, end-to-end-tested path.
 
@@ -16,10 +16,10 @@ The runtime is framework-agnostic: one script drives Astro, SvelteKit, Nuxt, Nex
 
 ## Highlights
 
-- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 34 KB gzip — 26 KB with the lean artifact ([docs/options.md](docs/options.md)); the adapters for Astro, Next.js, SvelteKit and Nuxt only decide when to deliver it.
+- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 35 KB gzip — 28 KB with the lean artifact ([docs/options.md](docs/options.md)); the adapters for Astro, Next.js, SvelteKit and Nuxt only decide when to deliver it.
 - **Payload 3.x native.** `serverURL` re-fetches the populated document, like the official client, so relationship and upload fields render as content rather than as IDs — but only when an edit needs one: typing into a text field costs no request, and a burst on a relationship costs two rather than one per keystroke.
-- **Complete Lexical renderer.** 16 node types including `upload`, `relationship`, `block`, `autolink`, tabs, indent and RTL, with automatic rich-text detection: `data-payload-field` alone is enough.
-- **Authorization before anything privileged.** Draft reads, runtime injection, CSP changes and binding attributes follow one verified decision per request; the client-controlled intent signals never unlock anything.
+- **Complete Lexical renderer.** 20 node types including `upload`, `relationship`, `block`, `autolink`, tabs, indent and RTL, with automatic rich-text detection: `data-payload-field` alone is enough.
+- **Authorization before anything privileged.** Wherever the runtime is injected at request time, draft reads, runtime injection, CSP changes and binding attributes follow one verified decision per request; Astro's default `inline` and `loader` modes inject at build time into every page, where the runtime does not start outside a preview frame. The client-controlled intent signals never unlock anything.
 - **Strict by default.** Escape-by-default sanitizer, URL and `srcset` validation, policed attribute writes, prototype-pollution guards, per-instance clients, typed bindings with `pll-codegen`.
 
 ## Compatibility
@@ -49,8 +49,8 @@ Vite 5 through 8: that is what the supported framework majors install (Astro 7 �
 - Payload 3.88.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
 - Payload 3.89.0: real admin E2E (examples/payload-backend) on every push, plus a wire corpus captured from it.
 - Payload 4.0.0-canary.33: wire corpus captured from a real Payload 4 admin in a one-off upgrade round, replayed in tests/integration/wire-corpus.test.ts; the fixture itself stays on 3.x.
-- Payload latest: weekly protocol watch executes @payloadcms/live-preview@latest against the corpus.
-- Payload 4.0 pre-releases: weekly protocol watch against @payloadcms/live-preview@canary, early warning only.
+- Payload latest: daily protocol watch executes @payloadcms/live-preview@latest against the corpus.
+- Payload 4.0 pre-releases: daily protocol watch against @payloadcms/live-preview@canary, early warning only.
 
 <!-- compat-matrix:end -->
 
@@ -62,7 +62,7 @@ Vite 5 through 8: that is what the supported framework majors install (Astro 7 �
 npm install payload-live-preview
 ```
 
-Three entries cover most projects. The root `payload-live-preview` carries the client, the inline script generator, the renderers and the plugins. `payload-live-preview/astro`, `/nextjs`, `/sveltekit` and `/nuxt` hold one framework adapter each. `payload-live-preview/server` is the privileged surface for server code: `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()` and `createPreviewBindings()`. The focused entries (`core`, `client`, `lexical`, `structural`, `plugins`, `fragment`, `payload`, `codegen`, `doctor`, `migrate`) are listed in [docs/options.md](docs/options.md).
+Three entries cover most projects. The root `payload-live-preview` carries the client, the inline script generator, the renderers and the plugins. `payload-live-preview/astro`, `/nextjs`, `/sveltekit` and `/nuxt` hold one framework adapter each; `/nuxt-module` registers the Nuxt one from `nuxt.config.ts`. `payload-live-preview/server` is the privileged surface for server code: `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()` and `createPreviewBindings()`. The focused entries (`core`, `client`, `lexical`, `structural`, `plugins`, `fragment`, `lean`, `payload`, `codegen`, `codegen/astro`, `annotate`, `doctor`, `migrate`) are listed in [docs/options.md](docs/options.md).
 
 ## Configure Payload
 
@@ -83,7 +83,7 @@ export default buildConfig({
         globals: {
           homepage: '/',
         },
-        fallback: '/', // new drafts without a slug land here
+        fallback: '/', // unmapped documents, and resolvers that return '', land here
       }),
       breakpoints: [
         { label: 'Mobile', name: 'mobile', width: 375, height: 667 },
@@ -130,6 +130,8 @@ Then mark what should update. On a server-rendered page that is one attribute pe
 </section>
 ```
 
+The attribute needs a renderer behind it: a route exporting `createFragmentEndpoint()` with `authorizePreview` or `authorize`, served at request time (an SSR adapter, `prerender = false` on that route), and its path in the options above as `fragments: { endpoint: '/payload/fragment' }` ([docs/hybrid.md](docs/hybrid.md)). Without `fragments` the bindings inside the boundary are patched instead (`LP0806`), and a boundary with none inside does not update.
+
 On a static build there is no server to render it, so the fields are bound individually — and inside a boundary too, for the ones an editor types into while watching, because a patch keeps focus and the caret where a re-render would not:
 
 ```astro
@@ -151,7 +153,7 @@ That is it: the inline script detects the admin's iframe and starts patching. Ri
 
 ## Patch, fragment, route
 
-A binding is patched in place by default. A `data-payload-fragment` boundary is rendered by your server from the unsaved form state instead — conditional sections, derived values, custom blocks, the component's own logic — and morphed in with focus and visitor state intact; the runtime posts the fields to a same-origin endpoint built with `createFragmentEndpoint()`, which every adapter entry exports — Astro renders through its container API, Next.js through `react-dom/server`, SvelteKit through `svelte/server`, Nuxt through `vue/server-renderer` — and patches the boundary's own bindings when the server cannot render. A binding in `<head>`, or one marked `data-payload-strategy="route"`, refreshes the whole route once per revision with scroll and focus kept. Markup, endpoint, deployment requirements and the abuse model: [docs/hybrid.md](docs/hybrid.md).
+A binding is patched in place by default. A `data-payload-fragment` boundary is rendered by your server from the unsaved form state instead — conditional sections, derived values, custom blocks, the component's own logic — and morphed in with focus and visitor state intact; the runtime posts the fields to the same-origin endpoint named in `fragments: { endpoint }`, built with `createFragmentEndpoint()`, which every adapter entry exports — Astro renders through its container API, Next.js through `react-dom/server`, SvelteKit through `svelte/server`, Nuxt through `vue/server-renderer` — and patches the boundary's own bindings when the server cannot render. With `routeStrategy: true` or `fragments` set, a binding in `<head>`, or one marked `data-payload-strategy="route"`, refreshes the whole route once per revision with scroll and focus kept; without either it is patched like any other. Markup, endpoint, deployment requirements and the abuse model: [docs/hybrid.md](docs/hybrid.md).
 
 ## Events and plugins
 
@@ -169,7 +171,7 @@ Every event, transforms, custom field renderers, the built-in plugins and the pl
 
 ## Security model
 
-- **Preview intent is not authorization.** The query parameter, the iframe destination and the referer are client-controlled; the adapters count the query alone by default. `allowedOrigins` governs browser `postMessage` senders and `shouldInject` filters routes; neither authenticates the request. `authorizePreviewRequest()` does, and that one result controls draft reads, `private, no-store` caching, CSP changes and runtime injection.
+- **Preview intent is not authorization.** The query parameter, the iframe destination and the referer are client-controlled; the adapters count the query alone by default. `allowedOrigins` governs browser `postMessage` senders and `shouldInject` filters routes; neither authenticates the request. `authorizePreviewRequest()` does, and wherever injection happens at request time that one result controls draft reads, `private, no-store` caching, CSP changes and runtime injection. Astro's build-time `inline` and `loader` modes decide nothing per request: every page carries the runtime or its bootstrap.
 - **Origin validation.** Every incoming message is checked against `allowedOrigins`; `document.referrer` is ignored by default, and after the first accepted update the runtime locks to that origin. The adapters merge a `frame-ancestors` policy for the admin origins without clobbering the rest of your CSP.
 - **Sanitization and URL validation.** Lexical and HTML writes pass a DOM sanitizer with a curated allow-list — `<script>`, `<form>`, `<iframe>`, `<svg>`, event handlers and `style` are rejected — and every `href`, `src`, `srcset` and `poster` must be `http(s)`, `mailto:`, `tel:` or relative; external links get `rel="noopener noreferrer"`.
 - **Binding attributes are disclosure.** `data-payload-field` names a CMS field and `data-payload-owner` a document. `createPreviewBindings({ authorization })` suppresses them, companions included, on public responses. Never key CSS off `data-payload-*`.
@@ -184,7 +186,7 @@ Full details in [docs/security.md](docs/security.md). Report vulnerabilities per
 - **The preview iframe refuses to load.** The host sets `X-Frame-Options` or a restrictive `frame-ancestors`. The adapters merge `frame-ancestors` on authorized preview responses; an `X-Frame-Options: DENY` from a proxy must go.
 - **The adapter refuses to start.** The strict default needs `authorizePreview`, a non-empty `allowedOrigins` (`https:` in production) and no referer trust; `defaults: 'v1'` stages a migration one row at a time.
 
-`inspect()` readings, `pll doctor` and every diagnostic code: [docs/troubleshooting.md](docs/troubleshooting.md).
+`inspect()` readings, `pll doctor` and every diagnostic code: [docs/troubleshooting.md](docs/troubleshooting.md). `pll doctor` sends its preview request with `?preview=true`; a preview behind `authorizePreview` is audited with an editor's credential, such as `--header "x-preview-token: …"`.
 
 ## Documentation
 
