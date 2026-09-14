@@ -33,6 +33,27 @@ describe('isInViewport', () => {
   });
 });
 
+describe('a field taller than the viewport', () => {
+  it('counts as visible once its top edge shows, so the reveal leaves it alone', () => {
+    // A long rich-text body: it starts on screen and runs far past the fold.
+    // Measured on a real document (2026-09-13): 1,740px tall, top at 721px in a
+    // 1,389px frame. The caret may sit 1,500px down inside it and the box is
+    // still "in view", because a field is one binding and the runtime has no
+    // finer target — the protocol carries values, not a caret position.
+    const tall = el({ top: 100, bottom: 2400 });
+    expect(isInViewport(tall, win())).toBe(true);
+    expect(revealElement(tall, win())).toBe('already-visible');
+    expect(tall.scrolled).toBe(0);
+  });
+
+  it('is revealed only once its top edge has left the viewport', () => {
+    const scrolledPast = el({ top: -1200, bottom: 1100 });
+    expect(isInViewport(scrolledPast, win())).toBe(true);
+    const fullyAbove = el({ top: -2400, bottom: -100 });
+    expect(revealElement(fullyAbove, win())).toBe('revealed');
+  });
+});
+
 describe('prefersReducedMotion', () => {
   it('reads the media query and tolerates a throwing matchMedia', () => {
     expect(prefersReducedMotion(win({ matchMedia: () => ({ matches: true }) }))).toBe(true);
