@@ -425,7 +425,17 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // cannot wait for a verdict, so LP-8 measured 195 342 of 254 707 bytes of
   // runtime on a request with no cookie; an async component awaits
   // `authorizePreview` and renders nothing for it.
-  'adapters/nextjs/index.js': { raw: 159_664, gzip: 50_454, brotli: 43_127 },
+  //
+  // 2026-09-14 (2.0.0): the release version is four characters shorter than
+  // `2.0.0-rc.1`, and this adapter carries it once. Measured on this host from
+  // the same source, only the version line differing: raw 159 588 → 159 583
+  // (-5), gzip 50 297 → 50 293 (-4), brotli 43 074 → 43 199 (**+125**). A
+  // shorter input compressing worse is the substitution effect this file
+  // already records two notes above; it is why every brotli row keeps a
+  // cushion. Here the shift is 5 B larger than that cushion, so the row goes to
+  // the 2.0.0 measurement plus the documented ~120 B. raw and gzip keep their
+  // numbers: both fell and both stay inside their ceilings.
+  'adapters/nextjs/index.js': { raw: 159_664, gzip: 50_454, brotli: 43_319 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
