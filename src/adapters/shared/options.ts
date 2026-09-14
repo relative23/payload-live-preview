@@ -84,7 +84,8 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly assetPath?: string;
   /**
    * A runtime artifact to inject instead of the full one — `LEAN_RUNTIME` from
-   * `payload-live-preview/lean`, which is about 5.5 KB gzip smaller and reports
+   * `payload-live-preview/lean`, which is several KB gzip smaller (measured in
+   * docs/options.md) and reports
    * LP0104 when a page needs a feature it left out (docs/options.md). Importing
    * it is what puts those bytes in your build; the default costs nothing.
    */

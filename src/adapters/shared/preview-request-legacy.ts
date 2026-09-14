@@ -8,7 +8,7 @@
  *
  * Measured against the published 1.8.1 declarations, entry by entry, not
  * guessed: `isPreviewRequest` was exported from the root **and** from
- * `./astro`, so it is re-exported from both. The other seven names 2.0 dropped
+ * `./astro`, so it is re-exported from both. The six names 2.0 dropped
  * moved behind `definePreview()` or changed shape, where an alias would restore
  * the very defaults the move removed (ADR 0007, ledger rows 1 and 9).
  */

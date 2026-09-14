@@ -9,7 +9,8 @@
  * state: React re-renders the subtree, and focus, scroll and typed values go
  * with it. The DOM runtime is the other side of that trade (docs/react.md).
  *
- * `react` is an optional peer, and this entry is the only one that imports it.
+ * `react` is an optional peer. This entry imports it at module scope; `./nextjs`
+ * loads it, and `react-dom/server`, only at the first render that needs them.
  *
  * The published file starts with `'use client'`. It is not written here because
  * esbuild drops a module directive when it bundles; the build adds it back as a

@@ -19,7 +19,7 @@
  *      null`, and `_status`/`id` sitting alongside real fields.
  *
  * If Payload changes its wire format in a way our runtime can't handle,
- * this test (together with the weekly protocol-watch) is where it
+ * this test (together with the daily protocol watch) is where it
  * surfaces.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
