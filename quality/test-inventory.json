@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 316,
-    "suites": 683,
-    "tests": 2857,
+    "suites": 684,
+    "tests": 2859,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 259,
-      "suites": 608,
-      "tests": 2630,
+      "suites": 609,
+      "tests": 2632,
       "benchmarks": 0
     }
   },
@@ -791,8 +791,8 @@
     {
       "path": "tests/unit/core/auto-bind-refresh.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 5,
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {

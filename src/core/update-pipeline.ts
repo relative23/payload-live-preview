@@ -360,16 +360,17 @@ export class UpdatePipeline {
   }
 
   /**
-   * The route re-rendered the page without the stamps a guess lives by; look
-   * for the baseline's guesses again, and for nothing else (ADR 0014).
+   * A server render — the route, or a fragment boundary — replaced markup
+   * without the stamps a guess lives by; look for the baseline's guesses
+   * again, and for nothing else (ADR 0014).
    */
   private restoreGuesses(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
     const { deps, state } = this;
     if (deps.autoBind === 'off' || state.autoBindGuesses === null) return;
-    // Nothing reaches this in the lean build, which has no route strategy. A
-    // folded branch, not an early return: esbuild drops the branch before
-    // linking and a statement after `return` only after it, and the search's
-    // module was in the lean artifact until the guard took this shape.
+    // Nothing reaches this in the lean build, which renders no route and no
+    // fragment. A folded branch, not an early return: esbuild drops the branch
+    // before linking and a statement after `return` only after it, and the
+    // search's module was in the lean artifact until the guard took this shape.
     if (!(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__)) {
       const scope = this.ownerKeysForUpdate(transaction, data.fields);
       restoreUniqueBindings(deps, state, data.fields, transaction.locale, scope);

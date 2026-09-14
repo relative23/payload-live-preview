@@ -1,14 +1,19 @@
 /**
- * What a route refresh does to a guessed binding (ADR 0014, Z26). The refresh
- * morphs the page toward the server's own markup, and that markup carries no
- * stamp — so every guess the baseline made was gone after the first refresh,
- * and every later edit to a guessed field escalated to another one. Measured
- * here first, then closed: the runtime looks for the baseline's own guesses
- * again on the fresh markup, once per refresh, and for nothing else.
+ * What a server render does to a guessed binding (ADR 0014, Z26). A route
+ * refresh morphs the page toward the server's own markup, and that markup
+ * carries no stamp — so every guess the baseline made was gone after the first
+ * refresh, and every later edit to a guessed field escalated to another one.
+ * Measured here first, then closed: the runtime looks for the baseline's own
+ * guesses again on the fresh markup, once per refresh, and for nothing else.
+ *
+ * A fragment render is the same morph on a smaller region, and it was left
+ * open: the guesses inside the boundary went, and on a page with fragments and
+ * no route strategy nothing ever brought them back.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildBuiltinRenderers } from '@field-types/index';
+import { fragmentStrategyFrom } from '@fragment/index';
 import { createRouteStrategy } from '@fragment/route';
 import { compareFidelity, reportDifferences } from '../../e2e/helpers/fidelity';
 import { AUTO_BIND_TRAPS, editedFields, type AutoBindTrap } from '../../fixtures/auto-bind-traps';
@@ -195,5 +200,86 @@ describe('a guess after the route refreshed', () => {
     };
     for (const trap of AUTO_BIND_TRAPS) await replay(trap);
     expect(bound).toEqual([]);
+  });
+});
+
+const TAGLINE = 'A tagline the boundary renders';
+
+interface FragmentHarness extends RuntimeHarness {
+  /** One call per boundary the handler rendered. */
+  readonly render: ReturnType<typeof vi.fn>;
+}
+
+/**
+ * A fragment strategy and no route strategy: the page where a stripped guess
+ * had nothing to bring it back. The handler answers with `serve()`, markup
+ * with no stamp on it, as a server's own template renders it.
+ */
+function startFragment(body: string, serve: () => string): FragmentHarness {
+  document.body.innerHTML = body;
+  const render = vi.fn(() => Promise.resolve({ status: 'rendered' as const, html: serve() }));
+  const harness = startRuntime({
+    renderers: buildBuiltinRenderers(),
+    autoBind: 'unique',
+    strategies: { fragment: fragmentStrategyFrom(render) },
+  });
+  running = harness;
+  return { ...harness, render };
+}
+
+describe('a guess after a fragment rendered', () => {
+  it('survives the render: the next edit to a guessed field in the boundary is a patch', async () => {
+    let tagline = TAGLINE;
+    const harness = startFragment(
+      `<section data-payload-fragment="hero" data-payload-depends="tagline"><h1>${TITLE}</h1><p>${TAGLINE}</p></section>` +
+        `<footer><p>${SUBTITLE}</p></footer>`,
+      () => `<h1>${TITLE}</h1><p>${tagline}</p>`,
+    );
+
+    await send({ title: TITLE, tagline: TAGLINE, subtitle: SUBTITLE });
+    expect(guessedFields(harness)).toEqual(['subtitle', 'tagline', 'title']);
+
+    // A field the boundary depends on: the server renders the boundary, and
+    // its markup has no stamp on the heading or the paragraph.
+    tagline = 'A tagline the server rendered again';
+    await send({ title: TITLE, tagline, subtitle: SUBTITLE });
+    expect(harness.render).toHaveBeenCalled();
+
+    const renders = harness.render.mock.calls.length;
+    await send({ title: 'Edited after the render', tagline, subtitle: SUBTITLE });
+
+    // The finding, before the fix: the heading still read the server's title
+    // and carried no stamp, and nothing on this page would ever bind it again.
+    const heading = document.querySelector('h1');
+    expect(heading?.textContent).toBe('Edited after the render');
+    expect(heading?.getAttribute('data-payload-guessed')).toBe(TITLE);
+    expect(guessedFields(harness)).toEqual(['subtitle', 'tagline', 'title']);
+    // The title is no dependency of the boundary, so the edit is a patch.
+    expect(harness.render).toHaveBeenCalledTimes(renders);
+    // The guess outside the boundary was never stripped, and is not doubled.
+    expect(document.querySelector('footer p')?.getAttribute('data-payload-guessed')).toBe(SUBTITLE);
+    expect(document.querySelectorAll('[data-payload-guessed]')).toHaveLength(3);
+    harness.runtime.destroy();
+  });
+
+  it('finds nothing new: a value the render brought in stays unbound', async () => {
+    // The render is not a second baseline either (ADR 0014 §1): the kicker
+    // stands alone on the page after it, and still binds nothing.
+    let kicker = '';
+    const harness = startFragment(
+      `<section data-payload-fragment="hero" data-payload-depends="kicker"><h1>${TITLE}</h1></section>`,
+      () => `<h1>${TITLE}</h1>${kicker.length === 0 ? '' : `<p class="kicker">${kicker}</p>`}`,
+    );
+
+    await send({ title: TITLE });
+    kicker = KICKER;
+    await send({ title: TITLE, kicker: KICKER });
+    expect(harness.render).toHaveBeenCalled();
+    await send({ title: 'Edited after the render', kicker: KICKER });
+
+    expect(guessedFields(harness)).toEqual(['title']);
+    expect(document.querySelector('h1')?.textContent).toBe('Edited after the render');
+    expect(document.querySelector('p.kicker')?.hasAttribute('data-payload-field')).toBe(false);
+    harness.runtime.destroy();
   });
 });

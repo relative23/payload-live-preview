@@ -172,10 +172,16 @@ writes to the wrong element is worse than an attribute someone has to type.
   the first message did not bind, so a refresh is not a second baseline. The
   other way, a stamp that survives the morph, was measured and is wrong: the
   morph pairs unkeyed siblings of one kind by position, and a paragraph the
-  server inserted before a guessed one took the guess with it. What is not
-  closed: a fragment render inside a boundary strips a guess in that boundary
-  the same way, and only the next route refresh brings it back — on a page
-  with `fragments` and no route strategy the guess is lost for good.
+  server inserted before a guessed one took the guess with it. A fragment
+  render strips a guess in its boundary the same way, and stayed open until
+  2.0.1; measured then (2026-09-14), it was worse than this record had said:
+  the first message renders the boundary too, so a guess inside one did not
+  outlive that message, and on a page with `fragments` and no route strategy
+  nothing brought it back. The runtime now runs the same search after a
+  rendered fragment, before the revision completes. It was held open on the
+  belief that the search would return to the lean artifact; it does not — the
+  lean profile renders no fragment and has no runner that could call it, and
+  its artifact is byte-identical with and without the change.
 - **Measured on a real project, the rule finds less than on the fixtures, and
   the reason is a mirror, not a miss.** On the four fixtures the search finds
   5 of 8 declared bindings (Z9); on the Halle Sieben demo it found 3 of 17

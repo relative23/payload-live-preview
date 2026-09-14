@@ -260,14 +260,15 @@ What it never does, so a wrong element is not rewritten on every keystroke:
   guessed; neither is a `status` of `published`.
 - It searches once. A value that first appears in a later message is never
   bound, because by then the page is what the runtime made it. The one page
-  it searches again is one the server rendered again: a route refresh morphs
-  the page toward markup that carries no stamp, so the runtime then looks for
-  the guesses it already made — by the value each was found by and by the
-  field's current value, since the server may have rendered either — and for
-  nothing else. A refresh once took every guess with it, and each edit to a
-  guessed field after that fetched the route again; that is what closed it.
-  A fragment render inside a boundary still strips a guess in that boundary,
-  and only the next route refresh brings it back.
+  it searches again is one the server rendered again: a route refresh, or a
+  fragment in its boundary, morphs toward markup that carries no stamp, so the
+  runtime then looks for the guesses it already made — by the value each was
+  found by and by the field's current value, since the server may have
+  rendered either — and for nothing else. A refresh once took every guess with
+  it, and each edit to a guessed field after that fetched the route again;
+  that is what closed it. A fragment render took the guesses in its boundary
+  until 2.0.1, and because the first message renders a boundary too, a guess
+  inside one never outlived that message.
 
 Two things to know before turning it on. A date or a number it binds inherits
 no `data-payload-format`, so the first write reports

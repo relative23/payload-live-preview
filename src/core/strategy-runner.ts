@@ -25,7 +25,7 @@ export interface StrategyHost {
     isCurrent: () => boolean,
   ) => unknown;
   readonly rebuildCache: () => void;
-  /** The route re-rendered the page without the stamps a guess lives by; look for the baseline's guesses again (ADR 0014). */
+  /** A server render — the route, or a fragment boundary — dropped the stamps a guess lives by; look for the baseline's guesses again (ADR 0014). */
   readonly restoreGuesses: (transaction: UpdateTransaction, data: PayloadLivePreviewData) => void;
   /** Scroll to the binding this revision marked, if it has not been revealed yet. */
   readonly revealPending: (transaction: UpdateTransaction) => void;
@@ -201,6 +201,11 @@ export class StrategyRunner {
     if (!isCurrent()) return;
     if (state.fragmentController === controller) state.fragmentController = null;
     transaction.pendingFragments = 0;
+    // A rendered boundary holds the server's markup, which carries no stamp: the
+    // guesses in it go back on, as after a refresh, before the revision counts
+    // as complete. Without this a guess in a boundary did not outlive the first
+    // message, which renders the boundary as well.
+    if (report.rendered > 0) this.host.restoreGuesses(transaction, data);
     if (deps.scheduler.pendingCount === 0) state.complete(transaction);
     // The edited field may be one the server just rendered: its element is only
     // in place now, so this is the earliest point it can be scrolled to.
