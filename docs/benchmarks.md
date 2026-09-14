@@ -53,8 +53,8 @@ which side of the window it fell depended on how loaded the machine was. That
 is why the 2026-08-27 and 2026-09-07 tables below disagree with each other and
 with the one after them: they measured the driver as much as the runtime.
 
-Measured 2026-08-27 on the maintainer host, `skipUnchanged` off (the fixture's
-default):
+Measured 2026-08-27 on the maintainer host. The fixture sets no
+`skipUnchanged`, so it runs under the runtime's default, `true`:
 
 | Bindings |     p50 |     p95 |     max | mutation p95 | budget (p95) |
 | -------: | ------: | ------: | ------: | -----------: | -----------: |
@@ -91,9 +91,9 @@ scenario page — so every number here is low by that much. It was inside the
 noise while the samples were bursts; at these latencies it is not, and a
 mutation p95 can come out negative.
 
-The p50 grows with the page because every binding is resolved and rendered on
-every message even though one changed — that is the cost `skipUnchanged`
-removes. The scheduled deep-quality job runs this nightly as a **trend** and
+The p50 grows with the page because every binding is resolved on every message
+even though one changed. `skipUnchanged`, on in the fixture, skips rendering
+the unchanged ones, not that resolution and comparison. The scheduled deep-quality job runs this nightly as a **trend** and
 keeps ninety days of reports; it asserts only that every sample produced a
 measurement, because timing on a shared runner is not a fact a pull request
 should fail on.
@@ -138,21 +138,26 @@ item is the attribute diff and child walk that retention costs. Measured
 
 ## Tree shaking — what one import costs
 
-Measured 2026-08-27 with `npm run test:treeshake` (`scripts/check-tree-shaking.ts`):
+Measured 2026-09-14 with `npm run test:treeshake` (`scripts/check-tree-shaking.ts`):
 a one-line consumer imports one symbol, Vite bundles it against the built
 package resolved through `node_modules` (so `exports` and `sideEffects`
-apply as after `npm install`), minified, gzip level 9.
+apply as after `npm install`), minified, gzip level 9. The budget is the gzip
+ceiling the script enforces.
 
-| Consumer imports                                      | raw     | gzip     | budget |
-| ----------------------------------------------------- | ------- | -------- | ------ |
-| `escapeHtml` from `payload-live-preview`              | 287 B   | 220 B    | 250    |
-| `lexicalToHtml` from `payload-live-preview`           | 13.6 KB | 4,273 B  | 4,350  |
-| `initLivePreview` from `payload-live-preview`         | 113 KB  | 30,461 B | 31,000 |
-| `generateInlineScript` from `payload-live-preview`    | 79.6 KB | 24,810 B | 25,200 |
-| `initLivePreview` from `payload-live-preview/core`    | 113 KB  | 30,472 B | 31,000 |
-| `lexicalToHtml` from `payload-live-preview/lexical`   | 13.8 KB | 4,383 B  | 4,450  |
-| `morphElement` from `payload-live-preview/structural` | 2.9 KB  | 1,108 B  | 1,150  |
-| `PluginManager` from `payload-live-preview/plugins`   | 13.0 KB | 3,621 B  | 3,700  |
+| Consumer imports                                                 | gzip     | budget |
+| ---------------------------------------------------------------- | -------- | ------ |
+| `escapeHtml` from `payload-live-preview`                         | 210 B    | 214    |
+| `lexicalToHtml` from `payload-live-preview`                      | 5,043 B  | 5,045  |
+| `initLivePreview` from `payload-live-preview`                    | 44,584 B | 44,621 |
+| `generateInlineScript` from `payload-live-preview`               | 42,211 B | 42,252 |
+| `initLivePreview` from `payload-live-preview/core`               | 44,561 B | 44,599 |
+| `lexicalToHtml` from `payload-live-preview/lexical`              | 5,175 B  | 5,178  |
+| `morphElement` from `payload-live-preview/structural`            | 1,469 B  | 1,493  |
+| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 47,458 B | 47,500 |
+| `LEAN_RUNTIME` from `payload-live-preview/lean`                  | 29,173 B | 29,203 |
+| `useLivePreviewDocument` from `payload-live-preview/react`       | 5,100 B  | 5,180  |
+| `useLivePreviewDocument` from `payload-live-preview/vue`         | 5,096 B  | 5,176  |
+| `PluginManager` from `payload-live-preview/plugins`              | 3,315 B  | 3,372  |
 
 Before this measurement existed, every row was 64 KB gzip: the root barrel
 did not tree-shake at all. Three causes, all fixed in the same change:

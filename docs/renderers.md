@@ -136,8 +136,10 @@ carries a scheme is used as written.
 
 ## Class hooks the renderers emit
 
-The sanitizer strips `data-*` and `style` under both policies, so the Lexical
-renderers express everything through classes. Nothing is JSON-serialized into
+The sanitizer strips `style` under both policies and, under the default
+`'strict'`, every `data-*` not listed in `allowedDataAttributes` (`'compat'`
+keeps them all, `data-payload-*` included), so the Lexical renderers express
+everything through classes. Nothing is JSON-serialized into
 an attribute. Style these, or replace the node with `registerLexicalNode` /
 `registerBlockRenderer` from `payload-live-preview/lexical`.
 

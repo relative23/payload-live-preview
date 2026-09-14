@@ -7,10 +7,12 @@ corresponding server or browser boundary verifies them.
 
 ## Preview intent is not HTTP authorization
 
-`hasPreviewIntent()` is an **intent detector**. It checks query parameters
-(`preview`, `draft`, `livePreview`, value `true` or `1`) and, when enabled
-through `previewSignals`, `Sec-Fetch-Dest: iframe` and an admin-origin
-`Referer`. A client can add a query parameter, cause an iframe navigation, or
+`hasPreviewIntent()` is an **intent detector**. Called without `signals` it
+counts all three: query parameters (`preview`, `draft`, `livePreview`, value
+`true` or `1`), `Sec-Fetch-Dest: iframe`, and a `Referer` from one of the
+`allowedOrigins` it is given. The adapters count only the query under their
+2.0 default, `previewSignals: ['query']`; a direct call that should agree with
+them passes `{ signals: ['query'] }`. A client can add a query parameter, cause an iframe navigation, or
 forge/omit request headers outside the browser, so a `true` result proves
 neither identity nor permission to read a draft.
 
@@ -47,10 +49,15 @@ The controls keep deliberately narrow responsibilities:
 | `shouldInject`                                  | Filter script insertion by route/content                                             | Authorization; it does not suppress adapter CSP handling     |
 | `draft` / privileged fetch headers              | Select and authenticate a Payload data request                                       | Verifying the frontend request that chose them               |
 
-`strict` is the default: an adapter refuses to start without
-`authorizePreview`, without explicit `https` admin origins (outside
-development), or with referrer trust — including the trust the `'v1'` signal
-set implies. `defaults: 'v1'` restores the 1.x intent-only behavior, with a
+`strict` is the default: an adapter that decides per request
+(`createLivePreviewMiddleware()`, `livePreviewHandle()`,
+`defineLivePreviewServerHandler()`, `livePreviewNitroPlugin()`) refuses to
+start without `authorizePreview`, without explicit `https` admin origins
+(outside development), or with referrer trust — including the trust the `'v1'`
+signal set implies. Astro's `livePreview()` integration in its default
+`mode: 'inline'` and in `'loader'` injects at build time and checks none of
+this; its `'middleware'` mode refuses the strict default outright, because it
+cannot carry the hook. `defaults: 'v1'` restores the 1.x intent-only behavior, with a
 one-time development warning, for a staged migration.
 
 When verification fails or is unavailable the adapters serve the ordinary
@@ -112,9 +119,10 @@ Note on intent detection and CSP: under the default `previewSignals: ['query']` 
 `MessageBus` validates, before routing:
 
 - `event.data` is an object with a string `type`;
-- `type` is `payload-live-preview` or `payload-document-event` (unknown types → `onInvalid('type')`);
+- `type` is `payload-live-preview`, `payload-document-event` or `payload-live-preview-focus` (unknown types → `onInvalid('type')`);
 - for `payload-live-preview`, a full per-type guard runs: `data` must be a plain object when present (a string/array/number `data` is rejected as `onInvalid('shape')`), and each optional scalar (`locale`, `globalSlug`, `previewToken`, `protocolVersion`, …) must have the right primitive type. `null` on these live-preview optional fields is normalized as absent for compatibility with JSON/proxy round trips;
-- for `payload-document-event`, the stock bare discriminator is valid, while optional `action`, `slug`, and `id` extensions are checked for their documented string/action or finite string/number shapes.
+- for `payload-document-event`, the stock bare discriminator is valid, while optional `action`, `slug`, and `id` extensions are checked for their documented string/action or finite string/number shapes;
+- for `payload-live-preview-focus`, `field` must be a non-empty string (otherwise `onInvalid('shape')`).
 
 So the `PayloadLivePreviewMessage.data?: Record<string, unknown>` contract is enforced at runtime, not merely asserted. When an async preview-token validator is configured, its results are serialized in message-arrival order so a slower validation cannot let a later update overtake an earlier one. Under the default `eventSourcePolicy: 'parent-or-opener'` only the parent or opener window may post at all.
 
@@ -181,7 +189,7 @@ Full `script-src` management is opt-in (`manageCsp: 'full'`): a per-request cryp
 
 ## Policed attribute writes
 
-`data-payload-attribute` bindings write remote-controlled values into attributes. The writer refuses event handlers (`on*`), `style`, `srcdoc`, `formaction`, `form`, `id`, `name`, `is`, `srcset`, non-scalar values, and validates `href`/`src`/`poster`/`cite`/`action` through `isSafeUrl`. A refused write is reported as `LP0401`.
+`data-payload-attribute` bindings write remote-controlled values into attributes. The writer refuses event handlers (`on*`), `style`, `srcdoc`, `formaction`, `form`, `id`, `name`, `is`, `srcset`, `imagesrcset`, non-scalar values, and validates `href`/`src`/`poster`/`cite`/`action`/`xlink:href`/`data` through `isSafeUrl`. A refused write is reported as `LP0401`.
 
 ## DOM clobbering through sanitized `id`, `name` and `data-*`
 

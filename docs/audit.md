@@ -100,7 +100,7 @@ These three rest on two that already existed: the layer rules (no upward
 import, no Node builtin in browser code, nothing browser-facing imports the
 server side) and the API reports under `etc/api/`, which since this audit mark
 every exported name a project is not meant to import as `@internal` —
-545 public names and 126 internal, measured by `scripts/surface-usage.ts` against what the examples import and the guides name, then closed under what every public signature reaches. The names stay exported, so nothing that compiled stops
+552 public names and 126 internal, the split measured by `scripts/surface-usage.ts` against what the examples import and the guides name, then closed under what every public signature reaches. The names stay exported, so nothing that compiled stops
 compiling; the split is a statement in the report, held byte for byte by
 `npm run test:package`.
 

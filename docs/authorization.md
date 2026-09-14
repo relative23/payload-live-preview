@@ -11,7 +11,8 @@ or `{ authorized: false, outcome, context: null }`. The **outcome** is a
 string: `'authorized'`, `'missing-credential'`, `'invalid'`, `'expired'`,
 `'wrong-audience'`, `'wrong-path'`, `'wrong-locale'`, `'wrong-purpose'`,
 `'replayed'` or `'unavailable'`. A refusal is a value, never an exception; only
-a misconfigured strategy throws (`PreviewConfigurationError`), at startup.
+a misconfigured strategy throws (`PreviewConfigurationError`), on its first
+use — the first preview request that reaches the hook, not startup.
 
 The `context` is an `AuthorizedPreviewContext`: frozen, branded, produced
 only there, carrying `strategy`, `subject`, `authorizedAt`, `expiresAt`,
@@ -48,8 +49,10 @@ export const onRequest = createLivePreviewMiddleware({
 
 Options: `serverURL` (required), `usersSlug` (`users`), `cookieName`
 (`payload-token`), `timeoutMs` (`3000`, floor `250`), `maxCookieLength`
-(`4096`). A missing, repeated or malformed cookie is `'missing-credential'`, a
-`401` `'invalid'`, any other failure `'unavailable'`.
+(`4096`). A missing, repeated or malformed cookie is `'missing-credential'`; a
+`401`, or a `/me` answer with no user or with one from another auth collection,
+`'invalid'`; a session whose `exp` has passed `'expired'`; any other failure
+`'unavailable'`.
 
 ### `signed-token`
 
@@ -92,7 +95,10 @@ at one hour). Strategy options: `secret` (at least 32 bytes), `audience`,
 `purpose`, `transport` (`{ kind: 'query', param }`, default `previewToken`,
 or `{ kind: 'header', name }`, default `x-preview-token`), `locale` (a
 resolver; without one a token carrying a locale is `'wrong-locale'`) and
-`replay` (an `isUsed`/`markUsed` store; none is shipped). `scope` carries the
+`replay` (a store whose `consume(id, expiresAt)` checks and records in one
+step, see [docs/security.md](security.md); none is shipped, and the deprecated
+`isUsed`/`markUsed` shape lets two simultaneous requests with one token both
+pass). `scope` carries the
 bindings; `payloadHeaders` is empty, so a draft read sends only what you pass
 as `headers` — a server-side credential of your own, never one from the request.
 
