@@ -48,6 +48,6 @@ export function reportOmittedFeature(feature: OmittedFeature): void {
   safeConsoleWarn(
     `[live-preview] LP0104: this page carries the lean runtime, which leaves out ${feature} ` +
       `(${HOW_TO_GET_IT[feature]}). The elements are left as the server rendered them. ` +
-      `Remove \`profile: 'lean'\` to get the full runtime.`,
+      `Remove \`runtime: LEAN_RUNTIME\` to get the full runtime.`,
   );
 }

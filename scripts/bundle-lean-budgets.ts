@@ -89,4 +89,5 @@
 // question anyway, because a lean page that changes a field it does not bind is
 // the page this reading describes. `escalated` stays 0 there, which is the truth
 // about the profile rather than silence about the change.
-export const INLINE_LEAN_BUDGET = { raw: 91_436, gzip: 28_938, brotli: 25_745 } as const;
+// Raised 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 436 → 91 472 (+36 B, measured 91 406 → 91 442).
+export const INLINE_LEAN_BUDGET = { raw: 91_472, gzip: 28_938, brotli: 25_745 } as const;

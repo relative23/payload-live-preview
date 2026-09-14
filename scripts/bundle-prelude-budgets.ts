@@ -76,7 +76,8 @@
 // Raised 2026-09-14 (2.0.1, guesses in a fragment boundary): raw 125_051 → 125_095
 // (measured 125_077) — the runtime's own +44 B, which the default inline script
 // took inside its cushion; the prelude did not move.
-export const INLINE_FRAGMENT_BUDGET = { raw: 125_095, gzip: 39_588, brotli: 34_803 } as const;
+// Raised 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 125 095 → 125 125 (+30 B, measured 125 077 → 125 107).
+export const INLINE_FRAGMENT_BUDGET = { raw: 125_125, gzip: 39_588, brotli: 34_803 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -155,4 +156,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 125_095, gzip: 39_588, brotli: 34_8
 // prelude did not move.
 // Raised 2026-09-14 (2.0.1, guesses in a fragment boundary): raw 120_099 → 120_143
 // (measured 120_123) — the runtime's own +44 B; the prelude did not move.
-export const INLINE_ROUTE_BUDGET = { raw: 120_143, gzip: 37_970, brotli: 33_352 } as const;
+// Raised 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 120 143 → 120 173 (+30 B, measured 120 123 → 120 153); gzip 37 970 → 37 983 (+13 B, measured 37 960 → 37 973); brotli 33 352 → 33 445 (measured 33 325, 27 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
+export const INLINE_ROUTE_BUDGET = { raw: 120_173, gzip: 37_983, brotli: 33_445 } as const;

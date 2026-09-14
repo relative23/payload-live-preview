@@ -68,7 +68,11 @@ function hostOf(origin: string): string | undefined {
 export function previewHeaderRules(options: WithLivePreviewOptions): readonly NextHeaderRule[] {
   return (options.previewQueryParams ?? DEFAULT_QUERY_PARAMS).map((key) => ({
     source: '/:path*',
-    has: [{ type: 'query', key, value: 'true' }],
+    // Next anchors `value` as a regular expression (`^${value}$`, matchHas in
+    // next/dist/shared/lib/router/utils/prepare-destination). The runtime reads
+    // `true` and `1` as intent, and so must the rule, or `?preview=1` stays
+    // cacheable; the group keeps the anchors around both alternatives.
+    has: [{ type: 'query', key, value: '(?:true|1)' }],
     headers: [
       // A preview response is one visitor's unsaved state; a shared cache must
       // never keep it, and the same rule the adapters apply belongs here. It

@@ -1,25 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { sanitizeHtml, setSanitizerPolicy } from '@security/sanitizer';
+import { sanitizeHtml, setSanitizerPolicy, type SanitizeOptions } from '@security/sanitizer';
 import { resetDroppedAttributeReports } from '@security/sanitizer-report';
 
 /**
  * The one behaviour change a 1.x project cannot see coming.
  *
- * `sanitizerPolicy` defaults to `'strict'` since 2.0; `'compat'` let `id`,
- * `name` and every `data-*` through. The difference only surfaces when a
+ * `sanitizerPolicy` defaults to `'strict'` since 2.0; `'compat'` let `id` and
+ * every `data-*` through, and `name` only where a per-tag list allowed it. The difference only surfaces when a
  * binding writes markup, so an upgraded project loses its own hooks at the
  * moment an editor types — in the preview, silently. Measured on a real 1.8.1
  * consumer, where a `data-*` attribute driving a CSS selector vanished on the
  * first write. LP0409 is what says so.
  */
 
-function warnings(html: string): string[] {
+function warnings(html: string, options?: SanitizeOptions): string[] {
   const seen: string[] = [];
   const spy = vi.spyOn(console, 'warn').mockImplementation((...args: unknown[]) => {
     seen.push(String(args[0]));
   });
   try {
-    sanitizeHtml(html);
+    sanitizeHtml(html, options);
   } finally {
     spy.mockRestore();
   }
@@ -41,14 +41,31 @@ describe('LP0409', () => {
     expect(message).toContain('allowedDataAttributes');
   });
 
-  it('gives `id` and `name` their own reason, not the data-attribute one', () => {
-    const messages = warnings('<div id="a" name="b">x</div>');
+  it('gives `id` its own reason, not the data-attribute one', () => {
+    const messages = warnings('<div id="a">x</div>');
 
-    expect(messages).toHaveLength(2);
-    for (const message of messages) {
-      expect(message).toContain('clobbering');
-      expect(message).not.toContain('allowedDataAttributes');
-    }
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toContain('clobbering');
+    expect(messages[0]).not.toContain('allowedDataAttributes');
+  });
+
+  it('says nothing for `name` where `compat` dropped it as well', () => {
+    // No built-in per-tag list allows `name`, so 1.x removed it too. The
+    // message said `compat` kept it, which sends an upgrader looking for a
+    // regression that is not one.
+    expect(warnings('<a name="b">x</a>')).toEqual([]);
+  });
+
+  it('reports `name` where the configuration lets `compat` keep it', () => {
+    // `additionalAllowedAttributes` re-admits `name` under `compat` and never
+    // under `strict`; there the upgrade did change something.
+    const messages = warnings('<a name="b">x</a>', {
+      additionalAllowedAttributes: { a: ['name'] },
+    });
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toContain('`name`');
+    expect(messages[0]).toContain('clobbering');
   });
 
   it('does not offer `compat` for a binding attribute, which it would not fix', () => {

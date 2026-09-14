@@ -19,7 +19,7 @@
   "totals": {
     "files": 316,
     "suites": 684,
-    "tests": 2859,
+    "tests": 2862,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 259,
       "suites": 609,
-      "tests": 2632,
+      "tests": 2635,
       "benchmarks": 0
     }
   },
@@ -652,7 +652,7 @@
       "path": "tests/unit/adapters/zero-config.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 11,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -2220,7 +2220,7 @@
       "path": "tests/unit/security/sanitizer-upgrade-report.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 7,
+      "tests": 9,
       "benchmarks": 0
     },
     {
