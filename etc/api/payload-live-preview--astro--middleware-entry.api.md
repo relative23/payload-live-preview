@@ -4,7 +4,7 @@
 
 ```ts
 
-import { a } from '../../middleware-Bx9I7PXW.js';
+import { a } from '../../middleware-CWObDO37.js';
 
 // @public
 export const onRequest: a;

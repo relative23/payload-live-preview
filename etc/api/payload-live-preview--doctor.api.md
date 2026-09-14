@@ -4,22 +4,23 @@
 
 ```ts
 
-import { e as DIAGNOSTIC_CODES } from './probe-CELeUciC.js';
-import { f as DiagnosticCode } from './probe-CELeUciC.js';
-import { b as DoctorContext } from './probe-CELeUciC.js';
-import { D as DoctorFetch } from './probe-CELeUciC.js';
-import { d as DoctorFinding } from './probe-CELeUciC.js';
-import { g as DoctorLevel } from './probe-CELeUciC.js';
-import { a as DoctorProbe } from './probe-CELeUciC.js';
-import { c as DoctorReport } from './probe-CELeUciC.js';
-import { h as DoctorResponse } from './probe-CELeUciC.js';
-import { l as lowercaseHeaders } from './probe-CELeUciC.js';
-import { r as runDoctor } from './probe-CELeUciC.js';
-import { R as RunDoctorOptions } from './probe-CELeUciC.js';
+import { e as DIAGNOSTIC_CODES } from './probe-tr-NuoZS.js';
+import { f as DiagnosticCode } from './probe-tr-NuoZS.js';
+import { b as DoctorContext } from './probe-tr-NuoZS.js';
+import { D as DoctorFetch } from './probe-tr-NuoZS.js';
+import { d as DoctorFinding } from './probe-tr-NuoZS.js';
+import { g as DoctorLevel } from './probe-tr-NuoZS.js';
+import { a as DoctorProbe } from './probe-tr-NuoZS.js';
+import { c as DoctorReport } from './probe-tr-NuoZS.js';
+import { h as DoctorResponse } from './probe-tr-NuoZS.js';
+import { l as lowercaseHeaders } from './probe-tr-NuoZS.js';
+import { r as runDoctor } from './probe-tr-NuoZS.js';
+import { R as RunDoctorOptions } from './probe-tr-NuoZS.js';
 
 // @public
 export function analyzeProbe(probe: DoctorProbe, context: DoctorContext & {
     readonly v2?: boolean;
+    readonly credentials?: boolean;
 }): DoctorReport;
 
 // @internal
