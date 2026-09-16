@@ -1,7 +1,7 @@
 {
   "name": "payload-live-preview",
   "version": "2.0.1",
-  "description": "Live preview for Payload CMS in Astro and any SSR/static frontend (SvelteKit, Nuxt, Next.js, plain HTML). Patches the DOM live, no rebuild; React and Vue hooks for client-rendered apps.",
+  "description": "Live preview for Payload CMS on server-rendered and static frontends (Astro, Next.js, SvelteKit, Nuxt, plain HTML): DOM patches, server-rendered fragments, React and Vue hooks. Strict by default, zero dependencies.",
   "author": "relative23",
   "license": "MIT",
   "type": "module",

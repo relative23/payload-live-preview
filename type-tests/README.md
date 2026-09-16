@@ -13,7 +13,8 @@ tree.
 - Both consumers use NodeNext, strict mode, `exactOptionalPropertyTypes`,
   `noUncheckedIndexedAccess`, and `skipLibCheck: false`.
 
-Run the fail-closed package gate with `npm run test:package`. When a reviewed public API
+Run the fail-closed package gate with `npm run test:package` after `npm run build`: it
+packs whatever `dist/` holds and builds nothing itself. When a reviewed public API
 change is intentional, regenerate all manifest-derived reports from the packed archive
 with `npx tsx scripts/check-package.ts --update-api-reports`, review the report diffs,
 then rerun the normal package gate.

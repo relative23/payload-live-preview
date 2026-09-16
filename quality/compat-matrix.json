@@ -44,7 +44,7 @@
     {
       "name": "Next.js",
       "package": "next",
-      "supported": "App Router, 15 and 16",
+      "supported": "App Router, 16",
       "fixture": "examples/nextjs-payload",
       "tested": [
         {
@@ -101,9 +101,9 @@
   },
   "payload": [
     {
-      "version": "2.x",
-      "how": "captured-message integration tests and fieldSchemaJSON typing",
-      "source": "tests"
+      "version": "2.32.3",
+      "how": "wire corpus captured from a real admin in a one-off round (examples/ has no Payload 2 fixture), replayed in tests/integration/wire-corpus.test.ts, plus fieldSchemaJSON typing in tests/integration/schema-driven.test.ts; relationship and upload population is not verified against a real 2.x admin",
+      "source": "corpus"
     },
     {
       "version": "3.85.0",

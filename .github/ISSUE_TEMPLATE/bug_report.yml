@@ -12,7 +12,7 @@ body:
     attributes:
       label: Package version
       description: Output of `npm ls payload-live-preview`
-      placeholder: '2.0.0'
+      placeholder: '2.0.2'
     validations:
       required: true
   - type: dropdown
@@ -24,6 +24,8 @@ body:
         - Next.js
         - SvelteKit
         - Nuxt
+        - React hook (payload-live-preview/react)
+        - Vue composable (payload-live-preview/vue)
         - Plain (core runtime only)
         - Other
     validations:
@@ -46,10 +48,11 @@ body:
     id: strategy
     attributes:
       label: Update strategy
-      description: What the affected elements use (`data-payload-strategy`, or the default).
+      description: What the affected elements use (`data-payload-strategy`, a `data-payload-fragment` boundary, or the default).
       options:
         - patch (default)
-        - replace
+        - fragment (data-payload-fragment boundary)
+        - route (a binding in <head>, or data-payload-strategy="route")
         - structural list (data-payload-structural)
         - island (data-payload-island)
         - not sure
@@ -61,7 +64,7 @@ body:
       label: Authorization mode
       description: How preview requests are authorized on the server (`authorizePreview` / `authorizePreviewRequest`).
       options:
-        - none (intent only, 1.0 behaviour)
+        - "none: intent only (defaults: 'v1' or strict: false), or Astro inline/loader mode"
         - payload-session (cookie forwarded to /api/users/me)
         - signed-token (previewToken)
         - verifier (custom)
@@ -100,5 +103,5 @@ body:
     attributes:
       label: Origin configuration
       options:
-        - label: I have set `allowedOrigins` (or `PAYLOAD_ADMIN_ORIGIN`) correctly, or checked the browser console for `[live-preview]` warnings about dropped messages.
+        - label: 'I have set `allowedOrigins` to the origin of the admin, or reproduced with `debug: true` and checked the preview iframe console for `LP0501` lines (a message from an origin that is not allowed is logged only under `debug`).'
           required: true
