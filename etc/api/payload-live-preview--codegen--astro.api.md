@@ -47,7 +47,7 @@ export function livePreviewCodegen(options: AstroCodegenOptions): AstroIntegrati
 
 // Warnings were encountered during analysis:
 //
-// dist/codegen-astro.d.ts:21:13 - (ae-forgotten-export) The symbol "AstroLogger" needs to be exported by the entry point codegen-astro.d.ts
+// dist/codegen-astro.d.ts:24:13 - (ae-forgotten-export) The symbol "AstroLogger" needs to be exported by the entry point codegen-astro.d.ts
 
 // (No @packageDocumentation comment for this package)
 
