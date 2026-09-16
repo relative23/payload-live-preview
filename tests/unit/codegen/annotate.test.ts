@@ -92,8 +92,8 @@ describe('annotating a template', () => {
       'not a plain field access — a call, an operator or an index cannot be traced to one field',
       // `{page.internalNote}` — the schema has no such field.
       'the schema has no field `internalNote`; the binding would name something that never arrives',
-      // `{slide.caption}` in a loop — nothing connects `slide` to `slides`.
-      'the schema has no field `caption`; the binding would name something that never arrives',
+      // `{slide.caption}` in a loop — an item, not a document field.
+      '`slide` is a loop item — a binding names a field of the document, and `caption` there is a different value, or none',
     ]);
     // The component keeps its props, and the hand-written binding is untouched.
     expect(code).toContain('<Hero title={page.title} />');
@@ -125,6 +125,33 @@ describe('the paths it will bind', () => {
     // `slide.caption` inside a loop, and the two only look alike.
     expect(annotatablePaths(INVENTORY).has('slides.*.caption')).toBe(false);
     expect(annotatablePaths(INVENTORY).has('hero.eyebrow')).toBe(true);
+  });
+});
+
+describe('a loop item whose field shares a name with a document field', () => {
+  // Measured on 2.0.1: `{slide.title}` inside `page.slides.map(...)` became
+  // `bind('title')`, silently, because the scanner dropped the root variable
+  // and `title` is a top-level field. Typing into the page title would then
+  // overwrite every slide heading in the preview.
+  const paths = new Set(['title', 'slides']);
+
+  it.each([
+    ['a .map callback', '{page.slides.map((slide) => <li><h2>{slide.title}</h2></li>)}'],
+    ['a .map callback without parentheses', '{page.slides.map(slide => <h2>{slide.title}</h2>)}'],
+    ['a callback with an index', '{page.slides.map((slide, index) => <h2>{slide.title}</h2>)}'],
+    ['a flatMap callback', '{page.slides.flatMap((slide) => [<h2>{slide.title}</h2>])}'],
+    ['a Svelte each block', '{#each data.slides as slide}<h2>{slide.title}</h2>{/each}'],
+    ['a for…of loop', '{(() => { for (const slide of page.slides) {} })()}<h2>{slide.title}</h2>'],
+  ])('is refused in %s, not bound to the document field', (_label, loop) => {
+    const { candidates, refusals } = scanTemplate(`<h1>{page.title}</h1>${loop}`, { paths });
+
+    expect(candidates.map((candidate) => candidate.path)).toEqual(['title']);
+    expect(refusals).toEqual([
+      expect.objectContaining({
+        expression: 'slide.title',
+        reason: expect.stringContaining('`slide` is a loop item') as unknown as string,
+      }),
+    ]);
   });
 });
 

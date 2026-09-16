@@ -39,7 +39,8 @@ What it annotates:
 
 What it refuses, with a reason per line:
   a value printed beside other text, a call or an operator, a path the schema
-  does not know, an array item inside a loop, and anything already annotated.
+  does not know, and a field printed from a loop item. An element that already
+  carries data-payload-field is left as it is, without a line.
 
 Exit codes:
   0  nothing left to do, or the files were written

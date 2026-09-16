@@ -69,6 +69,31 @@ const MEMBER_CHAIN = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+$/u;
 
 const FIELD_ATTRIBUTE = 'data-payload-field';
 
+/**
+ * Where a template names one array item at a time: a `.map`, `.flatMap` or
+ * `.forEach` callback's first parameter, a `for … of` variable, a Svelte
+ * `{#each … as item}`. A chain rooted at such a name prints an item, and the
+ * item's `title` is not the document's `title`, however alike the paths look.
+ * A name bound this way anywhere in the file is treated as an item everywhere:
+ * refusing one real field access costs a line in the report, binding an item
+ * costs the preview.
+ */
+const LOOP_VARIABLES: readonly RegExp[] = [
+  /\.(?:map|flatMap|forEach)\(\s*(?:async\s+)?\(?\s*([A-Za-z_$][\w$]*)/gu,
+  /\bfor\s*\(\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s+of\b/gu,
+  /\{#each\s[^}]*?\sas\s+([A-Za-z_$][\w$]*)/gu,
+];
+
+function loopVariables(source: string): ReadonlySet<string> {
+  const names = new Set<string>();
+  for (const pattern of LOOP_VARIABLES) {
+    for (const match of source.matchAll(pattern)) {
+      if (match[1] !== undefined) names.add(match[1]);
+    }
+  }
+  return names;
+}
+
 function lineAt(source: string, index: number): number {
   let line = 1;
   for (let position = 0; position < index; position += 1) {
@@ -92,13 +117,21 @@ function describe(expression: string): string {
 }
 
 /** Why this interpolation cannot become a binding, in the words of the report. */
-function refusalReason(expression: string, paths: ReadonlySet<string>): string | undefined {
+function refusalReason(
+  expression: string,
+  paths: ReadonlySet<string>,
+  items: ReadonlySet<string>,
+): string | undefined {
   const trimmed = expression.trim();
   if (trimmed.length === 0) return 'the element is empty';
   if (!MEMBER_CHAIN.test(trimmed)) {
     return 'not a plain field access — a call, an operator or an index cannot be traced to one field';
   }
   const path = pathOf(trimmed);
+  const root = trimmed.slice(0, trimmed.indexOf('.'));
+  if (items.has(root)) {
+    return `\`${root}\` is a loop item — a binding names a field of the document, and \`${path}\` there is a different value, or none`;
+  }
   if (!paths.has(path)) {
     return `the schema has no field \`${path}\`; the binding would name something that never arrives`;
   }
@@ -108,6 +141,7 @@ function refusalReason(expression: string, paths: ReadonlySet<string>): string |
 export function scanTemplate(source: string, options: ScanOptions): ScanResult {
   const candidates: AnnotationCandidate[] = [];
   const refusals: AnnotationRefusal[] = [];
+  const items = loopVariables(source);
   for (const match of source.matchAll(ELEMENT)) {
     const [, tag = '', attributes = '', content = ''] = match;
     const line = lineAt(source, match.index);
@@ -129,7 +163,7 @@ export function scanTemplate(source: string, options: ScanOptions): ScanResult {
       continue;
     }
     const expression = only[1] ?? '';
-    const reason = refusalReason(expression, options.paths);
+    const reason = refusalReason(expression, options.paths, items);
     if (reason !== undefined) {
       refusals.push({ line, reason, expression: describe(expression) });
       continue;
