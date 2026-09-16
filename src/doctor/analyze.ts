@@ -319,8 +319,10 @@ export function analyzeProbe(
               'the request as a preview, or a consumer that starts LivePreviewClient itself.',
             remedy:
               "To audit a gated preview, send what an editor's browser sends: " +
-              "--header 'Cookie: payload-token=…' for a Payload session, or " +
-              "--header 'x-preview-token: …' for a signed token. Otherwise check the adapter's " +
+              "--header 'Cookie: payload-token=…' for a Payload session; for a signed token, " +
+              'the URL with ?previewToken=… (the default transport, dropped from the visitor ' +
+              "request), or --header 'x-preview-token: …' where the strategy sets transport: " +
+              "{ kind: 'header' }. Otherwise check the adapter's " +
               'inject mode and previewSignals; if you start the client yourself, this line is ' +
               'expected.',
           },

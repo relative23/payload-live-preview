@@ -36,6 +36,9 @@ describe('a missing inline runtime is not automatically a fault', () => {
     const finding = report.findings.find((f) => f.code === 'LP0701');
     expect(finding?.detail).toContain('authorizePreview');
     expect(finding?.remedy).toContain('--header');
+    // A signed token travels in the URL by default; the header only with transport: header.
+    expect(finding?.remedy).toContain('?previewToken=');
+    expect(finding?.remedy).toContain("transport: { kind: 'header' }");
   });
 
   it('says the credentials were sent when they were, instead of suggesting them again', () => {

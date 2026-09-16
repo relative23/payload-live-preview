@@ -22,7 +22,8 @@ export interface RunDoctorOptions {
   /**
    * Headers sent with the preview probe only, never with the visitor probe: the
    * credentials a preview behind `authorizePreview` needs, such as a Payload
-   * session `Cookie` or an `x-preview-token`. Without them a gated page answers
+   * session `Cookie`, or an `x-preview-token` where the token strategy reads a
+   * header (a token in the URL is passed in `url` instead). Without them a gated page answers
    * the audit the way it answers any stranger. Their values never reach the report.
    */
   readonly previewHeaders?: Readonly<Record<string, string>> | undefined;
@@ -82,9 +83,18 @@ function decodePart(part: string): readonly [string, string] {
  * would turn `%20` into `+` and add `=` to a bare key, and a page whose query is
  * signed by an edge token would answer a different request than a visitor makes.
  */
+/**
+ * The query parameter the `signed-token` strategy reads by default. A token
+ * audit puts the token in the URL, and it belongs to the preview request only:
+ * in the visitor request it would authorize the "anonymous" probe and, behind a
+ * replay store, spend the token before the preview request arrives.
+ */
+const TOKEN_PARAM = 'previewToken';
+
 function visitorUrl(url: string, params: readonly string[]): string {
   const { base, parts, hash } = splitUrl(url);
-  const kept = parts.filter((part) => !params.includes(decodePart(part)[0]));
+  const dropped = new Set([...params, TOKEN_PARAM]);
+  const kept = parts.filter((part) => !dropped.has(decodePart(part)[0]));
   if (kept.length === parts.length) return url;
   return `${base}${kept.length === 0 ? '' : `?${kept.join('&')}`}${hash}`;
 }

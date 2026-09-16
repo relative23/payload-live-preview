@@ -41,7 +41,7 @@ function addHeader(parsed: ParsedArgs, line: string | undefined): void {
   if (name === undefined || value === undefined) {
     // The value is not echoed: a mistyped header can still hold half a token.
     parsed.usageError ??=
-      'pll doctor: --header takes "Name: value", such as --header "x-preview-token: …"';
+      'pll doctor: --header takes "Name: value", such as --header "Cookie: payload-token=…"';
     return;
   }
   // Header names are case-insensitive; a second spelling would be joined onto
@@ -115,10 +115,13 @@ Options:
                         not merely that a policy exists.
   -H, --header <h>      A header for the preview request only, as "Name: value";
                         repeat it for more. A preview behind authorizePreview
-                        needs an editor's credentials: a Payload session Cookie
-                        or an x-preview-token. The visitor request stays
-                        anonymous and values are never printed, but a shell
-                        keeps them in its history, so prefer a short-lived token.
+                        needs an editor's credentials: a Payload session Cookie,
+                        or an x-preview-token where the token strategy sets
+                        transport: { kind: 'header' }. A signed token travels in
+                        the URL by default, as ?previewToken=…, which the visitor
+                        request drops. The visitor request stays anonymous and
+                        values are never printed, but a shell keeps them in its
+                        history, so prefer a short-lived token.
       --param <name>    A query parameter the deployment reads as preview intent,
                         for an adapter whose previewQueryParams replaces the
                         default preview, draft and livePreview; repeat it for
@@ -136,7 +139,8 @@ Exit codes:
 Examples:
   pll doctor https://example.com/
   pll doctor https://example.com/blog/hello --admin https://cms.example.com
-  pll doctor https://example.com/ --header "x-preview-token: $PREVIEW_TOKEN" --v2
+  pll doctor "https://example.com/?previewToken=$PREVIEW_TOKEN" --v2
+  pll doctor https://example.com/ --header "Cookie: payload-token=$PAYLOAD_TOKEN"
 `;
 
 function isAbsoluteUrl(value: string): boolean {
