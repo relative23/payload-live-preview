@@ -1,5 +1,39 @@
 # payload-live-preview
 
+## 2.0.1
+
+### Patch Changes
+
+- 637d7d8: `pll doctor` can audit the preview 2.0 sets up by default, and `pll migrate` says what the `isPreviewRequest` rename keeps.
+
+  - The preview probe requests the page with `?preview=true`, the intent a 2.0 adapter counts (`previewSignals: ['query']`). It used to send `Sec-Fetch-Dest: iframe` alone, which a 2.0 adapter does not read as intent, so a default 2.0 deployment answered it like an ordinary visit and every audit reported LP0701. The visitor probe drops the intent parameters (`preview`, `draft`, `livePreview`, or the names given with `--param` for an adapter whose `previewQueryParams` replaces them), so the two requests still differ in exactly that; the rest of the query is fetched byte for byte as given.
+  - `--header "Name: value"` (or `-H`, repeatable) sends an editor's credentials with the preview probe only: a Payload session `Cookie` or an `x-preview-token`. A preview behind `authorizePreview`, the strict 2.0 default, answers a request without them exactly like a page that never injects; LP0701 and the LP0709 about an unreadable configuration now name that reading and the option. Values never appear in the report, a header name given twice is refused, and the probe's own headers win over a caller's spelling of them. Programmatic callers pass `previewHeaders` and `previewQueryParams` to `runDoctor()`.
+  - After renaming `isPreviewRequest()` to `hasPreviewIntent()`, `pll migrate` notes that the new name takes the same options and, without `signals`, counts the same three signals, while the 2.0 adapters count only the query: pass `{ signals: ['query'] }` where a call should agree with them. The note does not change the exit code.
+
+- 98fad2f: `autoBind: 'unique'` now keeps the guesses inside a fragment boundary.
+
+  A fragment render morphs its boundary toward the server's markup, and that
+  markup carries no `data-payload-field` stamp, so every guess in the boundary
+  went with it. The first message renders a boundary as well, which means a guess
+  inside one never outlived that message; on a page with `fragments` and no route
+  strategy nothing brought it back, and edits to that field never reached the
+  preview. After a rendered fragment the runtime now looks for the baseline's own
+  guesses again — the search a route refresh already ran — and for nothing else: a
+  value the render brought in is still not bound.
+
+  The lean profile renders no fragments and is unchanged; its runtime is
+  byte-identical.
+
+- 637d7d8: The preview no longer loses the last keystroke when the page is busy.
+
+  While an editor types into a field the server has to populate, the runtime sends one merge request as a burst starts and one as it ends. The end of the window is decided by the clock but sent by a timer, and a timer can run late: a busy main thread, a throttled engine. The last keystroke then went out as a new request first, and the late timer sent the older queued state after it. The answer to the older state replaced the newer one, and the preview showed the second-to-last text until the next keystroke or save. A new request now drops the queued older one before it goes out. What was saved was never affected. Found in WebKit against a real Payload admin; the batching arrived in 2.0.0-rc.1, and 1.8.1 does not have it.
+
+- 637d7d8: A Next.js cache header now follows the runtime's own reading of preview intent, and two diagnostics stop describing things that did not happen.
+
+  - `withLivePreview()` marks `?preview=1`, `?draft=1` and `?livePreview=1` `private, no-store`, as it already did for `=true`. The runtime has always read both `true` and `1` as intent, but Next evaluates a header rule's `value` as an anchored regular expression and the rule named only `true`, so a preview response reached with `=1` could be kept by a shared cache. Measured with `next build` and `next start` on Next.js 16.3.0: `?preview=1` answered `public, max-age=0` before, `private, no-store` after; `?preview=0` and `?preview=x1` stay public.
+  - LP0104 told a page on the lean runtime to remove `profile: 'lean'`, a field of the `LEAN_RUNTIME` artifact that nobody writes. It names `runtime: LEAN_RUNTIME`, the option that delivered it.
+  - LP0409 said the 1.x default (`sanitizerPolicy: 'compat'`) kept `name`. It did not — no built-in per-tag list allows it — so the warning sent an upgrader looking for a regression that was not one. `name` is reported only where `additionalAllowedAttributes` lets `compat` keep it.
+
 ## 2.0.0
 
 ### Major Changes
