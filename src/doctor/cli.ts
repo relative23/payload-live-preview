@@ -6,7 +6,7 @@
  */
 import { runMigrateCommand } from '../migrate/cli';
 import { formatReport } from './format';
-import { describeFailure, runDoctor, type DoctorFetch } from './probe';
+import { describeFailure, redactToken, runDoctor, type DoctorFetch } from './probe';
 
 interface ParsedArgs {
   url: string | undefined;
@@ -201,10 +201,11 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
     });
   } catch (error) {
     const message = describeFailure(error);
+    const shown = redactToken(args.url);
     if (args.json) {
-      process.stdout.write(`${JSON.stringify({ url: args.url, error: message }, undefined, 2)}\n`);
+      process.stdout.write(`${JSON.stringify({ url: shown, error: message }, undefined, 2)}\n`);
     } else {
-      process.stderr.write(`pll doctor: could not probe ${args.url}: ${message}\n`);
+      process.stderr.write(`pll doctor: could not probe ${shown}: ${message}\n`);
     }
     return 1;
   }

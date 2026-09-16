@@ -177,9 +177,10 @@ signed token goes where the `signed-token` strategy reads it: in the URL as
 `?previewToken=…` by default, and as `--header "x-preview-token: …"` only when
 the strategy sets `transport: { kind: 'header' }`. The visitor request drops
 `previewToken` along with the intent parameters, so it stays anonymous and a
-replay store does not spend the token on it. Header values are never printed;
-the URL is, token included, at the top of the report and in `--json`, and a
-shell keeps both in its history, so prefer a short-lived token. A value that is
+replay store does not spend the token on it. Header values are never printed,
+and a token in the URL is shown as `previewToken=…` in the report, in `--json`
+and in a failure line; a shell keeps both in its history, so prefer a
+short-lived token. A value that is
 not `Name: value`, or one header name given twice, is a usage error. `--param <name>` names a query parameter the deployment reads as
 intent, for an adapter whose `previewQueryParams` replaces the default
 `preview`, `draft` and `livePreview`; repeat it for more. `--json` emits the report
@@ -207,9 +208,7 @@ credentials to pass. With credentials `authorizePreview` accepts, the runtime
 and binding findings describe the authorized response; if `LP0701` persists
 with `--header`, the finding counts credentials that were not accepted —
 expired, issued for another page, or not what `authorizePreview` reads — among
-its three readings. A token in the URL does not switch the finding to that
-wording: there, its first reading, a request without credentials, also stands
-for a token that was not accepted.
+its three readings. A token in the URL counts as credentials the same way.
 
 Exit codes: `0` no error-level findings, `1` usage error or the URL could not
 be fetched, `2` at least one error-level finding — so it drops into CI as a

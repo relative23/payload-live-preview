@@ -19,7 +19,7 @@
   "totals": {
     "files": 316,
     "suites": 687,
-    "tests": 2885,
+    "tests": 2889,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 259,
       "suites": 612,
-      "tests": 2658,
+      "tests": 2662,
       "benchmarks": 0
     }
   },
@@ -1478,14 +1478,14 @@
       "path": "tests/unit/doctor/analyze-page.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 16,
+      "tests": 17,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/doctor/cli.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 33,
+      "tests": 36,
       "benchmarks": 0
     },
     {

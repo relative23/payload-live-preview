@@ -95,6 +95,40 @@ describe('runDoctor probing', () => {
     ]);
   });
 
+  it('never prints the token it sends: the report names the URL with the value replaced', async () => {
+    const { fetchImpl } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND }, CSP);
+    const report = await runDoctor({
+      url: 'https://example.com/page?a=1&previewToken=v1.secret.sig#top',
+      fetchImpl,
+    });
+    expect(report.url).toBe('https://example.com/page?a=1&previewToken=…#top');
+    expect(
+      await run(['doctor', 'https://example.com/?previewToken=v1.secret.sig', '--json'], fetchImpl),
+    ).toBe(0);
+    expect(out).not.toContain('v1.secret.sig');
+    expect(out).toContain('previewToken=…');
+  });
+
+  it('keeps the token out of the failure line as well', async () => {
+    const failing: DoctorFetch = () => Promise.reject(new Error('connect ECONNREFUSED'));
+    expect(await run(['doctor', 'https://example.com/?previewToken=v1.secret.sig'], failing)).toBe(
+      1,
+    );
+    expect(
+      await run(['doctor', 'https://example.com/?previewToken=v1.secret.sig', '--json'], failing),
+    ).toBe(1);
+    expect(err + out).not.toContain('v1.secret.sig');
+  });
+
+  it('counts a token in the URL as credentials the preview request carried', async () => {
+    const { fetchImpl } = serverFetch({
+      publicBody: '<h1>t</h1>',
+      previewBody: '<h1 data-payload-field="title">t</h1>',
+    });
+    const report = await runDoctor({ url: 'https://example.com/?previewToken=v1.a.b', fetchImpl });
+    expect(report.findings.find((f) => f.code === 'LP0701')?.detail).toContain('not accepted');
+  });
+
   it('sends previewHeaders with the preview probe only, so the visitor probe stays anonymous', async () => {
     const { fetchImpl, calls } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND });
     await runDoctor({

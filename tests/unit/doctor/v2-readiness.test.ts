@@ -194,5 +194,6 @@ describe('analyzeV2Readiness', () => {
     expect(findings[0]?.level).toBe('info');
     // A preview behind authorizePreview serves no config to a request without credentials.
     expect(findings[0]?.remedy).toContain('--header');
+    expect(findings[0]?.remedy).toContain('?previewToken=');
   });
 });
