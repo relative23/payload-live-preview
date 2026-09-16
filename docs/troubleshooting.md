@@ -174,7 +174,10 @@ without credentials the way it answers any stranger, so pass what an editor's
 browser sends: a Payload session `Cookie` (`payload-token=…`) or an
 `x-preview-token`. The visitor request stays anonymous and header values are
 never printed, but a shell keeps them in its history, so prefer a short-lived
-token. A value that is not `Name: value` is a usage error. `--json` emits the report
+token. A value that is not `Name: value`, or one header name given twice, is a
+usage error. `--param <name>` names a query parameter the deployment reads as
+intent, for an adapter whose `previewQueryParams` replaces the default
+`preview`, `draft` and `livePreview`; repeat it for more. `--json` emits the report
 as data. `--v2` also reads the served inline configuration and reports every
 runtime row still at its `defaults: 'v1'` value as `LP0709` (referrer trust,
 message source, sanitizer policy, `skipUnchanged`). An empty slot counts as the
@@ -182,13 +185,15 @@ value of the defaults the script names; a script without that marker (1.x,
 `2.0.0-beta.0`) is read as 1.x, with an `info` line saying so. The findings are
 `LP0701`–`LP0710` in the table below.
 
-The preview request carries `?preview=true`, the parameter
-`buildLivePreviewUrl()` writes and the only signal the 2.0 adapters count by
-default, unless the URL already sets `preview`, `draft` or `livePreview` to
-`true` or `1`; it also sends `Sec-Fetch-Dest: iframe`, an admin `Referer` when
-`--admin` is given, and every `--header`. The visitor request drops `preview`,
-`draft` and `livePreview` from the URL and sends `Sec-Fetch-Dest: document`,
-no `Referer` and no `--header`. Under
+The preview request carries `?preview=true` (or the first `--param` name),
+the parameter `buildLivePreviewUrl()` writes and the only signal the 2.0
+adapters count by default, unless the URL already sets one of those parameters
+to `true` or `1`; it also sends `Sec-Fetch-Dest: iframe`, an admin `Referer`
+when `--admin` is given, and every `--header`. The visitor request drops those
+parameters from the URL and sends `Sec-Fetch-Dest: document`, no `Referer` and
+no `--header`. The rest of the query goes out byte for byte as given: nothing
+is re-encoded, so a page whose query is signed at the edge sees the request a
+visitor makes. Under
 `strict`, a preview request without credentials is refused like any other, so
 without `--header` an adapter injects nothing and `LP0701` is expected on a
 correctly configured deployment — the framing, header and binding checks are

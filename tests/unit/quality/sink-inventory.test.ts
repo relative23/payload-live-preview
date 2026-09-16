@@ -153,6 +153,7 @@ describe('the reviewed inventory', () => {
     expect(attribute.length).toBeGreaterThan(ATTRIBUTE_SINKS.size);
   }, 30_000);
 
+  // The same scan as above, so the same ceiling.
   it('accounts for every sink in the tree, and for nothing that is not there', async () => {
     const modules = await readArchitectureModules(ROOT);
     expect(
@@ -160,7 +161,7 @@ describe('the reviewed inventory', () => {
         readFileSync(resolve(ROOT, path), 'utf8'),
       ),
     ).toEqual([]);
-  });
+  }, 30_000);
 
   it('keeps the sanitizer as the only sink fed markup it did not check, besides the server render', () => {
     const raw = [...HTML_SINKS.entries()].filter(

@@ -101,6 +101,12 @@ describe('pll migrate', () => {
     expect(out).toContain("{ signals: ['query'] }");
   });
 
+  it('prints every codemod notice the registry declares, so a new one needs no CLI change', async () => {
+    const { CODEMODS } = await import('@migrate/index');
+    const withNotice = CODEMODS.filter((codemod) => codemod.notice !== undefined);
+    expect(withNotice.map((codemod) => codemod.id)).toEqual(['rename-is-preview-request']);
+  });
+
   it('prints no rename note when nothing was renamed', async () => {
     await project({ 'src/routes/+page.server.ts': HOOKS });
     await run(['migrate', dir]);

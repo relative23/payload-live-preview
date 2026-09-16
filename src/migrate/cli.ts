@@ -2,12 +2,8 @@
  * `pll migrate <path> [--write] [--only <id,id>]`, hosted by the `pll` binary.
  * Exit codes: 0 clean, 1 usage or I/O error, 3 when conflicts need a human.
  */
-import { renameIsPreviewRequest } from './codemods/rename-is-preview-request';
+import { CODEMODS } from './index';
 import { runMigrate, type MigrateFileResult } from './runner';
-import type { CodemodImplementation } from './types';
-
-/** The codemods whose rewrite keeps something a diff does not show. */
-const WITH_NOTICE: readonly CodemodImplementation[] = [renameIsPreviewRequest];
 
 export const MIGRATE_HELP = `pll migrate — rewrite 1.x APIs to their 2.0 names and homes (ADR 0007)
 
@@ -99,10 +95,9 @@ export async function runMigrateCommand(argv: readonly string[]): Promise<number
     `\n${args.write ? 'Migrated' : 'Would migrate'} ${String(result.changedCount)} file(s).` +
       `${args.write ? '' : ' Re-run with --write to apply.'}\n`,
   );
-  const applied = new Set(result.files.flatMap((file) => file.edits.map((edit) => edit.codemod)));
-  for (const codemod of WITH_NOTICE) {
-    if (codemod.notice !== undefined && applied.has(codemod.id)) {
-      process.stdout.write(`\nNote (${codemod.id}): ${codemod.notice}\n`);
+  for (const { id, notice } of CODEMODS) {
+    if (notice !== undefined && (result.byCodemod[id] ?? 0) > 0) {
+      process.stdout.write(`\nNote (${id}): ${notice}\n`);
     }
   }
   const conflicted = result.files.filter((file) => file.conflicts.length > 0);

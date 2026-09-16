@@ -26,42 +26,86 @@ export interface RunDoctorOptions {
    * the audit the way it answers any stranger. Their values never reach the report.
    */
   readonly previewHeaders?: Readonly<Record<string, string>> | undefined;
+  /**
+   * The query parameters the deployment reads as preview intent, when its
+   * adapter sets `previewQueryParams`; the same list, since that option replaces
+   * the default `preview`, `draft` and `livePreview`. The first one is what the
+   * preview probe appends as `=true`; none of them reaches the visitor probe.
+   */
+  readonly previewQueryParams?: readonly string[] | undefined;
 }
 
-/** The query parameters an adapter reads as preview intent (adapters/shared/preview-request.ts). */
-const INTENT_PARAMS = ['preview', 'draft', 'livePreview'] as const;
+/**
+ * The query parameters an adapter reads as preview intent by default; the same
+ * list as `DEFAULT_QUERY_PARAMS` in adapters/shared/preview-request.ts, which
+ * `previewQueryParams` replaces rather than extends.
+ */
+const DEFAULT_INTENT_PARAMS: readonly string[] = ['preview', 'draft', 'livePreview'];
 
-function isIntentValue(value: string | null): boolean {
+function isIntentValue(value: string): boolean {
   return value === 'true' || value === '1';
 }
 
-/** The page a visitor requests: whatever intent parameter the caller copied in, removed. */
-function visitorUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    for (const param of INTENT_PARAMS) parsed.searchParams.delete(param);
-    return parsed.href;
-  } catch {
-    return url;
-  }
+/** `key=value` and `#fragment` split off a URL, with the query kept as the caller spelled it. */
+function splitUrl(url: string): {
+  readonly base: string;
+  readonly parts: string[];
+  readonly hash: string;
+} {
+  const hashAt = url.indexOf('#');
+  const hash = hashAt === -1 ? '' : url.slice(hashAt);
+  const beforeHash = hashAt === -1 ? url : url.slice(0, hashAt);
+  const queryAt = beforeHash.indexOf('?');
+  if (queryAt === -1) return { base: beforeHash, parts: [], hash };
+  return {
+    base: beforeHash.slice(0, queryAt),
+    parts: beforeHash.slice(queryAt + 1).split('&'),
+    hash,
+  };
+}
+
+function decodePart(part: string): readonly [string, string] {
+  const at = part.indexOf('=');
+  const decode = (text: string): string => {
+    try {
+      return decodeURIComponent(text.replace(/\+/gu, ' '));
+    } catch {
+      return text;
+    }
+  };
+  return at === -1 ? [decode(part), ''] : [decode(part.slice(0, at)), decode(part.slice(at + 1))];
+}
+
+/**
+ * The page a visitor requests: the intent parameters removed, the rest of the
+ * query byte for byte as given. A query is never re-serialised — `URLSearchParams`
+ * would turn `%20` into `+` and add `=` to a bare key, and a page whose query is
+ * signed by an edge token would answer a different request than a visitor makes.
+ */
+function visitorUrl(url: string, params: readonly string[]): string {
+  const { base, parts, hash } = splitUrl(url);
+  const kept = parts.filter((part) => !params.includes(decodePart(part)[0]));
+  if (kept.length === parts.length) return url;
+  return `${base}${kept.length === 0 ? '' : `?${kept.join('&')}`}${hash}`;
 }
 
 /**
  * The page the admin's iframe loads. A 2.0 adapter counts only the query as
  * intent (`previewSignals: ['query']`), and `buildLivePreviewUrl` writes
- * `preview=true`, so that is what the probe carries unless the URL already names
- * one of the intent parameters with a value that counts.
+ * `preview=true`, so the first intent parameter is appended as `=true` unless the
+ * URL already names one with a value that counts.
  */
-function previewUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    if (!INTENT_PARAMS.some((param) => isIntentValue(parsed.searchParams.get(param)))) {
-      parsed.searchParams.set('preview', 'true');
-    }
-    return parsed.href;
-  } catch {
-    return url;
-  }
+function previewUrl(url: string, params: readonly string[]): string {
+  const { base, parts, hash } = splitUrl(url);
+  const carries = parts.some((part) => {
+    const [key, value] = decodePart(part);
+    return params.includes(key) && isIntentValue(value);
+  });
+  if (carries) return url;
+  const query = parts.join('&');
+  const joiner = query === '' ? '?' : query.endsWith('&') ? '' : '&';
+  const intent = `${encodeURIComponent(params[0] ?? 'preview')}=true`;
+  return `${base}${parts.length === 0 ? '?' : `?${query}${joiner}`}${intent}${hash}`;
 }
 
 export const DEFAULT_TIMEOUT_MS = 15_000;
@@ -168,9 +212,13 @@ function callerHeaders(
 /** Fetch the URL twice — as a visitor and as the admin's iframe — and audit the difference. */
 export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport> {
   const fetchImpl = options.fetchImpl ?? createDefaultFetch();
+  const params =
+    options.previewQueryParams === undefined || options.previewQueryParams.length === 0
+      ? DEFAULT_INTENT_PARAMS
+      : options.previewQueryParams;
   // No referer, no intent parameter and no credentials on the visitor probe:
   // each of them is a preview signal or a way past one.
-  const publicResponse = await fetchImpl(visitorUrl(options.url), {
+  const publicResponse = await fetchImpl(visitorUrl(options.url, params), {
     headers: {
       Accept: 'text/html',
       'Sec-Fetch-Dest': 'document',
@@ -183,8 +231,9 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
     'Sec-Fetch-Mode': 'navigate',
     ...(options.adminOrigin === undefined ? {} : { Referer: previewReferer(options.adminOrigin) }),
   };
-  const previewResponse = await fetchImpl(previewUrl(options.url), {
-    headers: { ...callerHeaders(options.previewHeaders, probeHeaders), ...probeHeaders },
+  const sent = callerHeaders(options.previewHeaders, probeHeaders);
+  const previewResponse = await fetchImpl(previewUrl(options.url, params), {
+    headers: { ...sent, ...probeHeaders },
   });
   return analyzeProbe(
     { publicResponse, previewResponse },
@@ -192,7 +241,7 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
       url: options.url,
       adminOrigin: options.adminOrigin,
       ...(options.v2 === true ? { v2: true } : {}),
-      ...(Object.keys(options.previewHeaders ?? {}).length > 0 ? { credentials: true } : {}),
+      ...(Object.keys(sent).length > 0 ? { credentials: true } : {}),
     },
   );
 }

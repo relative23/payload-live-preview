@@ -66,6 +66,11 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 13  | 2.0.0   | rename  | `hasPreviewIntent(request, { adminOrigins })`                                                             | `{ allowedOrigins }` — the name the adapters, the client, the inline config and `pll doctor` use; `adminOrigins` stays a deprecated alias until 3.0 and loses when both are given          | —                                                         | `rename-admin-origins-option` rewrites the key; both keys at once is a conflict, not a rewrite                |
 | 14  | 2.0.0   | rename  | `CachedElement.boundary`                                                                                  | `CachedElement.hidesWhenEmpty` — the `data-payload-boundary` anchor that hides while its field is empty; the old name read like a fragment boundary                                        | —                                                         | none: a type-level rename that TypeScript reports; only a custom renderer that read the flag is affected      |
 
+2026-09-16 (2.0.1): row 5's "outside local dev" names an exception the runtime
+does not have. `disableReferrerDetection` is `true` everywhere under `'v2'`;
+the localhost matcher is a separate option (`disableLocalhostMatching`), and
+the readiness label and docs/migration.md say "referrer trust off".
+
 ## Addendum — what `pll migrate` automates
 
 Four ledger entries have codemods: 1 (`rename-is-preview-request`), 7

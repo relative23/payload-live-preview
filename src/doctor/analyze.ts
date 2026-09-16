@@ -75,8 +75,11 @@ function describeNonPage(preview: DoctorResponse): DoctorFinding | undefined {
         'resource, usually a login or a canonical host, and judging it would say nothing ' +
         'about this URL.',
       remedy:
-        'Probe the final URL directly. A redirect to a login means the route needs ' +
-        'authentication that a plain probe cannot supply.',
+        'The request carried the intent parameter (?preview=true, or the --param name), the ' +
+        "way the admin's iframe loads the page, so a rule that redirects on that query redirects " +
+        'the iframe too. A redirect to a login means the route needs authentication that a ' +
+        "plain probe cannot supply: pass an editor's credentials with --header. Probe the final " +
+        'URL directly only when the redirect has nothing to do with either.',
     };
   }
   if (preview.status < 200 || preview.status > 299) {

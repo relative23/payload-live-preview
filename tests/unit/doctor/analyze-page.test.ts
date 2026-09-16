@@ -49,6 +49,21 @@ describe('a missing inline runtime is not automatically a fault', () => {
     expect(finding?.remedy).not.toContain("--header 'Cookie");
   });
 
+  it('says that a redirected preview request carried the intent parameter', () => {
+    // "Probe the final URL" alone sent the reader in a circle: the probe appends
+    // the parameter again, and a rule that redirects on it redirects the iframe too.
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({ status: 302, headers: { location: '/page' }, body: '' }),
+      },
+      context,
+    );
+    const finding = report.findings.find((f) => f.code === 'LP0708');
+    expect(finding?.remedy).toContain('preview=true');
+    expect(finding?.remedy).toContain('--header');
+  });
+
   it('keys on the config identifier, which survives minification, not the banner comment', () => {
     const probe = healthy();
     const report = analyzeProbe(
