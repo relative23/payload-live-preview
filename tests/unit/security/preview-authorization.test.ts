@@ -364,27 +364,45 @@ describe('signed-token strategy', () => {
     // as before. Two that arrive together both pass the read before either
     // writes; the test pins that behaviour so the deprecation says something
     // true rather than cosmetic.
-    const used = new Set<string>();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the deprecation is what this test holds
-    const replay: PreviewTokenReplayChecks = {
-      isUsed: async (id) => {
-        // Read at the moment of the query; the answer arrives a round trip later.
-        const seen = used.has(id);
-        await new Promise((resolve) => setTimeout(resolve, 5));
-        return seen;
-      },
-      markUsed: (id) => {
-        used.add(id);
-      },
+    //
+    // The read answers only once `readsBeforeAnswer` requests have read, not
+    // after a timer: with a 5 ms wait the race was decided by how long the
+    // second request's signature check took, and on a loaded CI runner that was
+    // longer than the wait, so the first request marked the token before the
+    // second had read, and the pinned "both pass" came back as "replayed".
+    const store = (
+      readsBeforeAnswer: number,
+    ): // eslint-disable-next-line @typescript-eslint/no-deprecated -- the deprecation is what this test holds
+    PreviewTokenReplayChecks => {
+      const used = new Set<string>();
+      let reads = 0;
+      let release = (): void => {};
+      const everyoneRead = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return {
+        isUsed: async (id) => {
+          // Read at the moment of the query; the answer arrives once the others read too.
+          const seen = used.has(id);
+          reads += 1;
+          if (reads >= readsBeforeAnswer) release();
+          await everyoneRead;
+          return seen;
+        },
+        markUsed: (id) => {
+          used.add(id);
+        },
+      };
     };
     const url = `${SITE}/page?previewToken=${await token()}`;
-    expect((await authorizePreviewRequest(request(url), { ...strategy, replay })).outcome).toBe(
-      'authorized',
-    );
-    expect((await authorizePreviewRequest(request(url), { ...strategy, replay })).outcome).toBe(
-      'replayed',
-    );
-    used.clear();
+    const sequential = store(1);
+    expect(
+      (await authorizePreviewRequest(request(url), { ...strategy, replay: sequential })).outcome,
+    ).toBe('authorized');
+    expect(
+      (await authorizePreviewRequest(request(url), { ...strategy, replay: sequential })).outcome,
+    ).toBe('replayed');
+    const replay = store(2);
     const together = (
       await Promise.all([
         authorizePreviewRequest(request(url), { ...strategy, replay }),
