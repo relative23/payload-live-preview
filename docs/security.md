@@ -141,6 +141,16 @@ their own HTML:
 - **External `<a>` hardened.** Auto-applies `rel="noopener noreferrer"` and `target="_blank"`.
 - **HTML comments removed.**
 
+**One sanitizer document for every entry.** Since 2.0.2 the document given to
+`setSanitizerDocument()` is held on the global object, so one call through the
+root, `payload-live-preview/core` or `payload-live-preview/lexical` (which
+exports the setter too) serves the sanitizer in every entry. Through 2.0.1 the
+document belonged to the entry it was set through, so each entry needed its own
+call, and `payload-live-preview/lexical` had no setter: its `lexicalToHtml()`
+returned unsanitized HTML on a server even after the root's call.
+`setSanitizerPolicy()` is not shared that way; it sets the default of the root
+entry, the only one that exports it.
+
 **Policies.** `sanitizerPolicy: 'strict'` is the default everywhere — the
 browser runtime, `sanitizeHtml()` and SSR `lexicalToHtml()`: it strips `id`
 and `name` (DOM clobbering, below), strips `data-payload-*` (rich text must
@@ -157,12 +167,18 @@ reconciliation attributes survive strict (`templateMode`: `id`, `name`,
 stripped, so a template cannot add a binding), because they are the page
 author's markup and every interpolated value is escaped first.
 
-**Trusted Types.** Every HTML sink — the sanitizer's own parse and the
-rich-text, html, array, upload, text and structural writes — goes through
-one policy named `payload-live-preview`, created on first use where the
-API exists. A site enforcing `require-trusted-types-for 'script'` lists
-that name in its `trusted-types` directive, or hands its own policy to
-`setTrustedTypesPolicy()`.
+**Trusted Types.** Every HTML sink the runtime writes through — the
+sanitizer's own parse, the rich-text, html, array, upload, text and structural
+writes, and the fragment morph — goes through one policy named
+`payload-live-preview`, created on first use where the API exists. A site
+enforcing `require-trusted-types-for 'script'` lists that name in its
+`trusted-types` directive, or hands its own policy to
+`setTrustedTypesPolicy()`. The route strategy's page refresh is outside that
+policy: it parses the fetched page with `DOMParser.parseFromString()` from a
+plain string, so under enforcement that parse throws unless the page's own
+`default` policy admits the string; the refresh then counts as failed
+(`LP0801`) and the revision is patched instead. A host refresh
+registered with `registerRouteRefresh()` parses nothing.
 
 ## URL validation
 

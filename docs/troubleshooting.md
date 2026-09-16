@@ -156,7 +156,8 @@ deployment serve?
 npx pll doctor https://www.example.com/page --admin https://cms.example.com
 npx pll doctor https://www.example.com/page --admin https://cms.example.com --json
 npx pll doctor https://www.example.com/page --v2
-npx pll doctor https://www.example.com/page --header "x-preview-token: $PREVIEW_TOKEN"
+npx pll doctor "https://www.example.com/page?previewToken=$PREVIEW_TOKEN"
+npx pll doctor https://www.example.com/page --header "Cookie: payload-token=$PAYLOAD_TOKEN"
 ```
 
 It fetches the URL twice — once as an ordinary visitor, once the way the
@@ -171,11 +172,15 @@ origin is admitted, not merely that a policy exists.
 `--header "Name: value"` (`-H`) adds a header to the preview request only;
 repeat it for more. A preview behind `authorizePreview` answers a request
 without credentials the way it answers any stranger, so pass what an editor's
-browser sends: a Payload session `Cookie` (`payload-token=…`) or an
-`x-preview-token`. The visitor request stays anonymous and header values are
-never printed, but a shell keeps them in its history, so prefer a short-lived
-token. A value that is not `Name: value`, or one header name given twice, is a
-usage error. `--param <name>` names a query parameter the deployment reads as
+browser sends. A Payload session goes in `--header "Cookie: payload-token=…"`. A
+signed token goes where the `signed-token` strategy reads it: in the URL as
+`?previewToken=…` by default, and as `--header "x-preview-token: …"` only when
+the strategy sets `transport: { kind: 'header' }`. The visitor request drops
+`previewToken` along with the intent parameters, so it stays anonymous and a
+replay store does not spend the token on it. Header values are never printed;
+the URL is, token included, at the top of the report and in `--json`, and a
+shell keeps both in its history, so prefer a short-lived token. A value that is
+not `Name: value`, or one header name given twice, is a usage error. `--param <name>` names a query parameter the deployment reads as
 intent, for an adapter whose `previewQueryParams` replaces the default
 `preview`, `draft` and `livePreview`; repeat it for more. `--json` emits the report
 as data. `--v2` also reads the served inline configuration and reports every
@@ -190,25 +195,29 @@ the parameter `buildLivePreviewUrl()` writes and the only signal the 2.0
 adapters count by default, unless the URL already sets one of those parameters
 to `true` or `1`; it also sends `Sec-Fetch-Dest: iframe`, an admin `Referer`
 when `--admin` is given, and every `--header`. The visitor request drops those
-parameters from the URL and sends `Sec-Fetch-Dest: document`, no `Referer` and
-no `--header`. The rest of the query goes out byte for byte as given: nothing
+parameters and `previewToken` from the URL and sends `Sec-Fetch-Dest: document`,
+no `Referer` and no `--header`. The rest of the query goes out byte for byte as given: nothing
 is re-encoded, so a page whose query is signed at the edge sees the request a
 visitor makes. Under
 `strict`, a preview request without credentials is refused like any other, so
-without `--header` an adapter injects nothing and `LP0701` is expected on a
-correctly configured deployment — the framing, header and binding checks are
-what the audit adds there, and the finding names the credentials to pass. With
-credentials `authorizePreview` accepts, the runtime and binding findings
-describe the authorized response; if `LP0701` persists with `--header`, the
-finding counts credentials that were not accepted — expired, issued for another
-page, or not what `authorizePreview` reads — among its three readings.
+without a `--header` or a token in the URL an adapter injects nothing and
+`LP0701` is expected on a correctly configured deployment — the framing, header
+and binding checks are what the audit adds there, and the finding names the
+credentials to pass. With credentials `authorizePreview` accepts, the runtime
+and binding findings describe the authorized response; if `LP0701` persists
+with `--header`, the finding counts credentials that were not accepted —
+expired, issued for another page, or not what `authorizePreview` reads — among
+its three readings. A token in the URL does not switch the finding to that
+wording: there, its first reading, a request without credentials, also stands
+for a token that was not accepted.
 
 Exit codes: `0` no error-level findings, `1` usage error or the URL could not
 be fetched, `2` at least one error-level finding — so it drops into CI as a
 smoke test against a deploy preview.
 
 The audit makes exactly the two requests it is told to make, sends no
-credentials but the ones passed with `--header`, and reports no telemetry. `analyzeProbe()` is exported from
+credentials but the ones passed with `--header` or in the URL, and reports no
+telemetry. `analyzeProbe()` is exported from
 `payload-live-preview/doctor` for callers who fetch the responses themselves.
 
 ## Diagnostic codes

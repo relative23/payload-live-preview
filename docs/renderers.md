@@ -141,7 +141,8 @@ The sanitizer strips `style` under both policies and, under the default
 keeps them all, `data-payload-*` included), so the Lexical renderers express
 everything through classes. Nothing is JSON-serialized into
 an attribute. Style these, or replace the node with `registerLexicalNode` /
-`registerBlockRenderer` from `payload-live-preview/lexical`.
+`registerBlockRenderer` from `payload-live-preview/lexical` and render with that
+entry's `lexicalToHtml` ([`renderRichText`](#renderrichtext-one-renderer-for-ssr-and-preview)).
 
 | Class                                                               | Emitted by                                                                                |
 | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
@@ -198,8 +199,8 @@ preview to produce exactly that markup, not the package's default. Pass the
 renderer to the client:
 
 ```ts
-import { lexicalToHtml, sanitizeHtml, type LexicalRoot } from 'payload-live-preview';
-import { registerLexicalNode } from 'payload-live-preview/lexical';
+import { sanitizeHtml } from 'payload-live-preview';
+import { lexicalToHtml, registerLexicalNode, type LexicalRoot } from 'payload-live-preview/lexical';
 
 registerLexicalNode(
   'callout',
@@ -210,6 +211,16 @@ export const renderRichText = (value: unknown) => lexicalToHtml(value as Lexical
 // server: sanitizeHtml(renderRichText(doc))
 // client: new LivePreviewClient({ renderRichText })
 ```
+
+`lexicalToHtml` and `registerLexicalNode` come from the same entry on purpose.
+Each package entry is its own bundle, and every entry that carries the Lexical
+renderer has its own node and block registries, so a registration reaches only
+the `lexicalToHtml` of the entry it was imported from: the root's
+`lexicalToHtml` never sees a node registered through
+`payload-live-preview/lexical`. The Astro `<RichText />` component renders
+through the root entry, so block renderers registered with the root's
+`registerBlockRenderer` apply there, and nodes registered with
+`registerLexicalNode` do not.
 
 The runtime passes the renderer's output through the sanitizer. Sanitize the
 server output with the same `sanitizeHtml()` and the two are byte-equal. The
@@ -228,6 +239,14 @@ output is the worse failure. The built-in nodes escape their own output;
 custom nodes are responsible for theirs — see [docs/security.md](security.md).
 Pass `{ sanitize: false }` when the caller sanitizes downstream itself; that
 opts out of the warning too.
+
+Since 2.0.2 one `setSanitizerDocument()` call covers every entry: the document
+set through the root, `payload-live-preview/core` or
+`payload-live-preview/lexical` is the one all entries use, and
+`payload-live-preview/lexical` exports the setter itself. Through 2.0.1 each
+entry kept its own document, so the `lexicalToHtml` from
+`payload-live-preview/lexical` returned unsanitized HTML on a server even after
+the root's setter had run.
 
 The built-in nodes read the shapes `@payloadcms/richtext-lexical` actually
 serializes, not vanilla Lexical's: a link is
@@ -373,9 +392,13 @@ A hydrated framework island — `astro-island`, or any element marked
 `data-payload-island` — owns its subtree. The runtime does not patch a
 binding inside it, and the keyed morph never enters it
 ([ADR 0008 — Keyed morph: what it keeps, what it never crosses](architecture/0008-keyed-morph-ownership.md)).
-Instead, every applied update is dispatched on each island root as a
+Instead, an update is dispatched on each island root as a
 `payload-live-preview:update` DOM event whose `detail` is
-`{ fields, revision, receivedAt, locale }`:
+`{ fields, revision, receivedAt, locale }` — after a patch flush that wrote at
+least one binding outside the islands. An update that writes none dispatches
+nothing: a page whose only bindings sit inside islands gets no event, and under
+`skipUnchanged` (on by default) neither does an edit to a field that only an
+island shows:
 
 ```ts
 // inside a React island

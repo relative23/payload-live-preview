@@ -46,9 +46,12 @@ It is deliberately quiet:
   claims to have changed, so it cannot take the reveal from a field that did.
 - It runs **after** the writes land, so the fragment and route strategies
   scroll to the element they just rendered, not to the one they replaced.
-- On a page previewing **several documents**, it scrolls to the binding owned by
-  the document being edited, even when another document on the page binds the
-  same field name.
+- On a page previewing **several documents**, with `scopeBindingsByOwner` on
+  ([docs/bindings.md](bindings.md#pages-that-preview-more-than-one-document)),
+  it scrolls to the binding owned by the document being edited, even when
+  another document on the page binds the same field name. With it off (the
+  default), every binding of that name receives the edited value, and the first
+  one whose value moved is revealed, whichever document it belongs to.
 
 ## Tier 2 — follow the cursor even without typing (opt-in admin helper)
 
@@ -59,8 +62,11 @@ admin, not the preview page:
 ```ts
 import { createPreviewFocusReporter } from 'payload-live-preview';
 
+// Payload 3.88 renders id="live-preview-iframe"; 3.72 rendered class="live-preview-iframe".
+const PREVIEW_IFRAME = '#live-preview-iframe, iframe.live-preview-iframe';
+
 const report = createPreviewFocusReporter(
-  () => document.querySelector<HTMLIFrameElement>('iframe.live-preview')?.contentWindow ?? null,
+  () => document.querySelector<HTMLIFrameElement>(PREVIEW_IFRAME)?.contentWindow ?? null,
   'https://preview.example.com', // the preview's exact origin — never '*'
 );
 
@@ -70,9 +76,13 @@ const report = createPreviewFocusReporter(
 
 `report(fieldName)` posts a `payload-live-preview-focus` message to the preview;
 the runtime (with `revealEditedField` on) reveals that field with the same
-off-screen / reduced-motion guards. `createPreviewFocusReporter` resolves the
-target per call, so a lazily created iframe is always addressed freshly, and it
-is a no-op while the preview is closed.
+off-screen / reduced-motion guards. A focus message names a field and no
+document, so the runtime reveals the first element bound to that name, and
+`scopeBindingsByOwner` does not narrow the choice. `createPreviewFocusReporter`
+resolves the target per call, so a lazily created iframe is always addressed
+freshly, and it is a no-op while the preview is closed. A preview opened in a
+popup window has no iframe, so the selector finds nothing and nothing is posted;
+for a popup, resolve to the popup's window instead.
 
 `reportPreviewFocus(target, field, origin)` is the one-shot form for callers
 that already hold the preview window.

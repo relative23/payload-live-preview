@@ -328,9 +328,10 @@ A strategy to escalate to closes it, and nothing else is needed — escalating i
 what `onUnfaithfulPatch` does by default:
 
 ```ts
+// astro.config.mjs reads process.env: import.meta.env has no PUBLIC_ variables there (docs/astro.md)
 livePreview({
-  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
-  serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
+  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+  serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
   mergeDepth: 1,
   routeStrategy: true,
 });
@@ -435,10 +436,12 @@ carries the older one's values too.
 
 A hydrated island (`<astro-island>`, `data-payload-island`) keeps owning its
 subtree: patching skips it, a fragment boundary inside it is never planned,
-the route morph stops at it, and it receives every update as a
-`payload-live-preview:update` event to re-render itself — with the official
+the route morph stops at it, and it re-renders itself from a
+`payload-live-preview:update` event — or with the official
 `@payloadcms/live-preview-react`/`-vue` hook if that is what renders it
-([docs/interop.md](interop.md)). Patch boundaries, fragment boundaries and
+([docs/interop.md](interop.md)). The event follows a patch flush that wrote at
+least one binding outside the islands, so an update that writes none sends no
+event ([docs/renderers.md](renderers.md#islands)). Patch boundaries, fragment boundaries and
 hook islands coexist on one page.
 
 ## Revision discipline

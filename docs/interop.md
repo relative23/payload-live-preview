@@ -8,11 +8,11 @@ does not own your components.
 
 ## When to use which
 
-| You have                                                                    | Use                                       | Why                                                                                                                                                                     |
-| --------------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A client-rendered React or Vue app that fetches the document itself         | `@payloadcms/live-preview-react` / `-vue` | The hook hands your components the merged document; re-rendering is what they do anyway.                                                                                |
-| Server-rendered pages (Astro, Next App Router, SvelteKit, Nuxt, plain HTML) | this package                              | The page is HTML; the runtime patches bound elements, keeps focus and visitor state, and needs no client framework.                                                     |
-| Both on one page (islands inside an SSR shell)                              | this package, islands opt in              | A hydrated island keeps owning its subtree; it receives every update as a `payload-live-preview:update` event and re-renders itself (see [renderers.md](renderers.md)). |
+| You have                                                                    | Use                                       | Why                                                                                                                                                                           |
+| --------------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A client-rendered React or Vue app that fetches the document itself         | `@payloadcms/live-preview-react` / `-vue` | The hook hands your components the merged document; re-rendering is what they do anyway.                                                                                      |
+| Server-rendered pages (Astro, Next App Router, SvelteKit, Nuxt, plain HTML) | this package                              | The page is HTML; the runtime patches bound elements, keeps focus and visitor state, and needs no client framework.                                                           |
+| Both on one page (islands inside an SSR shell)                              | this package, islands opt in              | A hydrated island owns its subtree and re-renders on a `payload-live-preview:update` event, which follows a write outside the islands ([renderers.md](renderers.md#islands)). |
 
 For React Server Components, Payload's `RefreshRouteOnSave` is the
 save-triggered equivalent of this package's route strategy.
@@ -29,7 +29,11 @@ save-triggered equivalent of this package's route strategy.
   come from a REST request the official client and this runtime make the
   same way (`serverURL`, `depth`). Payload 2.x posts populated data and a
   `fieldSchemaJSON`; the runtime detects that on the wire
-  (`protocol.profile === 'payload-2'`) and skips the request.
+  (`protocol.profile === 'payload-2'`) and skips the request. A session
+  captured from a real Payload 2.32.3 admin
+  (`tests/fixtures/wire-corpus/payload-2.32.3.json`) is replayed with the 3.x
+  and 4.0 canary captures; it edits text, rich text and an array across a save,
+  and contains no relationship field.
 - **The handshake.** Both post `ready: true` to the admin; the admin answers
   with the current document.
 

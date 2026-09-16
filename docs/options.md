@@ -3,7 +3,8 @@
 One table for every option, and where it is accepted. The columns are the
 four places configuration enters: the programmatic client
 (`LivePreviewClient` / `initLivePreview()`), the inline script
-(`generateInlineScript()` and `generateLoaderScript()`), the adapter option
+(`generateInlineScript()`, or the loader an adapter emits in its place under
+`delivery: 'asset'` or Astro's `mode: 'loader'`), the adapter option
 objects (`livePreview()`, `createLivePreviewMiddleware()`,
 `livePreviewHandle()`, `livePreviewNitroPlugin()`,
 `defineLivePreviewServerHandler()`, the render helpers) and the server read
@@ -258,18 +259,27 @@ in the route when a page needs the authorization.
 
 ## Package entries
 
-The root import carries everything. The focused entries ship the same code as
-smaller, self-contained bundles with their own type declarations. The
-adapters, `annotate`, `codegen/astro`, `doctor`, `migrate` and the `.astro`
-components are ESM-only; the rest ship ESM and CommonJS builds.
+The root import does not carry every export. These live only in a focused
+entry: `definePreview()` in `/server`, `buildLivePreviewUrl()` in `/payload`,
+`LEAN_RUNTIME` in `/lean`, `createFragmentStrategy()` and
+`createRouteStrategy()` in `/fragment`, `PluginManager` and
+`createUnboundFieldsOverlayPlugin()` in `/plugins`, `registerLexicalNode()` and
+`registerDefaultBlocks()` in `/lexical`, and the structural renderer and keyed
+morph in `/structural`. Every entry is a self-contained bundle with its own type
+declarations and its own copy of the code it shares with the others, so a
+Lexical node or block renderer registered through one entry is not seen by
+another ([docs/renderers.md](renderers.md#renderrichtext-one-renderer-for-ssr-and-preview));
+the document given to `setSanitizerDocument()` is held once for all of them
+since 2.0.2. The adapters, `annotate`, `codegen/astro`, `doctor`, `migrate` and
+the `.astro` components are ESM-only; the rest ship ESM and CommonJS builds.
 
 | Entry                                                | Contents                                                                                                                       |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `payload-live-preview`                               | Everything: client, inline script generator, renderers, plugins, authorization, server helpers.                                |
+| `payload-live-preview`                               | Client, inline script generator, renderers, built-in plugins, authorization and binding helpers; not the exports named above.  |
 | `payload-live-preview/core`                          | The client and runtime without the built-in plugin constructors, generator or adapters.                                        |
 | `payload-live-preview/client`                        | `LivePreviewClient` and `initLivePreview()` alone.                                                                             |
 | `payload-live-preview/structural`                    | The structural array renderer, the keyed morph and the `data-payload-depends` helpers.                                         |
-| `payload-live-preview/lexical`                       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`.                                 |
+| `payload-live-preview/lexical`                       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`, `setSanitizerDocument()`.       |
 | `payload-live-preview/plugins`                       | `PluginManager`, plugin types and the built-in plugins.                                                                        |
 | `payload-live-preview/fragment`                      | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                               |
 | `payload-live-preview/server`                        | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `bind()`.                    |

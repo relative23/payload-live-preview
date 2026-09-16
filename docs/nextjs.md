@@ -1,6 +1,8 @@
 # Next.js
 
-For App Router projects on Next.js 15 and 16 whose pages are rendered on the server or at build time. The runtime patches server-rendered markup; its first write waits for React to hydrate, and a client component that re-renders a bound element can still revert a patch (see the caveat below).
+For App Router projects on Next.js 16 whose pages are rendered on the server or at build time. The runtime patches server-rendered markup; its first write waits for React to hydrate, and a client component that re-renders a bound element can still revert a patch (see the caveat below).
+
+Next.js 15 is not supported. `<LivePreviewScript />` and the fragment endpoint load `react` and `react-dom/server` through an import whose specifier is computed at runtime; Turbopack, the default bundler of Next.js 16, resolves it, and webpack, the default of Next.js 15, does not. Measured on 2026-09-17 with Next.js 15.5.25: 30 of the 42 end-to-end cases against [`examples/nextjs-payload`](../examples/nextjs-payload) failed with `Cannot find module 'react'`.
 
 > A client-rendered React app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) hook: it re-renders your real component tree, so conditional sections and custom components update with full fidelity. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
 
@@ -193,7 +195,7 @@ It marks requests carrying preview intent (the same parameters, set to `true` or
 It writes no `Content-Security-Policy`, and it is not a substitute for the middleware. A config rule cannot run `authorizePreview`, so it can never be where a privileged response change is decided; and Next collects every matching rule into one object keyed by header name, so a policy written there would replace the one your site already sends instead of adding to it. Measured on Next.js 16.3.4: a site whose own rule sends `frame-ancestors 'none'` answered an unauthenticated `/?preview=true` with `frame-ancestors 'self' <admin>` alone, its `script-src` gone. `frame-ancestors` for the admin origin therefore comes from `createLivePreviewMiddleware` below, which merges into an existing policy and only for a request it authorized.
 
 ```ts
-// middleware.ts — on Next.js 16 the file is proxy.ts and the export is named `proxy`
+// proxy.ts — Next.js 16's name for middleware.ts, which it still runs with a deprecation warning
 import { NextResponse, type NextRequest } from 'next/server';
 import { createLivePreviewMiddleware } from 'payload-live-preview/nextjs';
 import { authorizePreviewRequest } from 'payload-live-preview/server';
@@ -209,7 +211,7 @@ const livePreview = createLivePreviewMiddleware({
     }),
 });
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   return livePreview(request, NextResponse.next());
 }
 ```
@@ -348,4 +350,4 @@ Firefox and WebKit.
 
 ## When something does not update
 
-`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md). The doctor's preview request carries `?preview=true`; behind `authorizePreview` it needs an editor's credentials, passed as `--header "Cookie: payload-token=…"` or `--header "x-preview-token: …"` (sent with the preview request only, values never printed).
+`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md). The doctor's preview request carries `?preview=true`; behind `authorizePreview` it needs an editor's credentials: a Payload session as `--header "Cookie: payload-token=…"`, a signed token in the URL as `?previewToken=…` (the visitor request drops it), or `--header "x-preview-token: …"` only where the strategy sets `transport: { kind: 'header' }`. Headers go with the preview request only and are never printed; the URL is printed as given.

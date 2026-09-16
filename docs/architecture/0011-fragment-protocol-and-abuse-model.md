@@ -94,6 +94,11 @@ service); the docs say so.
 - The morph never crosses an island: a boundary inside `astro-island` or
   `data-payload-island` is never planned.
 
+2026-09-17 (2.0.2): the Astro endpoint helper is not the only one.
+`createFragmentEndpoint` is exported by `payload-live-preview/nextjs`,
+`payload-live-preview/sveltekit` and `payload-live-preview/nuxt` as well, each
+a binding of the shared handler in `src/adapters/shared/fragment-endpoint.ts`.
+
 ## Consequences
 
 - A page opts in per boundary; everything else keeps patching.
