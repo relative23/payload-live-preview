@@ -116,6 +116,40 @@ describe('setSanitizerDocument — SSR fallback', () => {
   });
 });
 
+describe('one injected document for every copy of the sanitizer', () => {
+  // Every package entry is its own bundle with its own copy of this module:
+  // `payload-live-preview` and `payload-live-preview/lexical` share no module
+  // state. A document supplied through one entry has to reach rich text rendered
+  // through another, or `lexicalToHtml` from `/lexical` returns unsanitised HTML
+  // on a server that did call `setSanitizerDocument()` (measured on 2.0.1).
+  afterEach(() => {
+    setSanitizerDocument(null);
+    vi.resetModules();
+  });
+
+  it('reaches a second instance of the module', async () => {
+    const originalDocument = globalThis.document;
+    let calls = 0;
+    const surrogate = surrogateFor(originalDocument, () => {
+      calls += 1;
+    });
+    vi.resetModules();
+    const other = await import('@security/sanitizer');
+    expect(other.setSanitizerDocument).not.toBe(setSanitizerDocument);
+    Reflect.deleteProperty(globalThis, 'document');
+    try {
+      setSanitizerDocument(surrogate);
+      expect(other.hasSanitizerDocument()).toBe(true);
+      expect(other.sanitizeHtml('<p>hi <script>x</script></p>')).toBe('<p>hi </p>');
+      expect(calls).toBe(1);
+      other.setSanitizerDocument(null);
+      expect(hasSanitizerDocument()).toBe(false);
+    } finally {
+      globalThis.document = originalDocument;
+    }
+  });
+});
+
 describe('the inline-build branches', () => {
   // `__INLINE_BUILD__` is a bundler define, folded away in the shipped runtime.
   // Unbundled it is an ordinary global, so stubbing it reaches the branch the

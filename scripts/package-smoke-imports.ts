@@ -144,6 +144,35 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
   };
 }
 
+/**
+ * Every entry is its own bundle with its own copy of the sanitizer, so a
+ * document supplied through one entry must reach the rich text another renders.
+ * 2.0.1 kept it per copy: `lexicalToHtml` from `/lexical` warned and returned
+ * unsanitised HTML on a server that had called the root's setter. The fake
+ * document counts the one `createElement('template')` a sanitising pass makes.
+ */
+function sharedSanitizerDocumentSource(packageName: string, format: 'esm' | 'cjs'): string {
+  const load = (exportName: string): string =>
+    format === 'esm'
+      ? `await import(${JSON.stringify(packageSpecifier(packageName, exportName))})`
+      : `require(${JSON.stringify(packageSpecifier(packageName, exportName))})`;
+  const body = [
+    `const root = ${load('.')};`,
+    `const lexical = ${load('./lexical')};`,
+    'let calls = 0; const warnings = [];',
+    'console.warn = (message) => { warnings.push(String(message)); };',
+    "root.setSanitizerDocument({ createElement: () => { calls += 1; return { innerHTML: '', content: { childNodes: [] } }; } });",
+    "lexical.lexicalToHtml({ root: { type: 'root', children: [{ type: 'paragraph', children: [{ type: 'text', text: 'x', format: 0 }] }] } });",
+    "if (calls !== 1 || warnings.length > 0) throw new Error('lexicalToHtml from /lexical did not use the document set through the root: ' + calls + ' template(s), ' + JSON.stringify(warnings));",
+    'lexical.setSanitizerDocument(null);',
+    "root.lexicalToHtml({ root: { type: 'root', children: [] } });",
+    "if (calls !== 1 || warnings.length !== 1) throw new Error('clearing through /lexical did not clear the root: ' + calls + ' template(s), ' + warnings.length + ' warning(s)');",
+  ].join(' ');
+  return format === 'esm'
+    ? body
+    : `(async () => { ${body} })().catch((error) => { console.error(error); process.exit(1); });`;
+}
+
 function codegenBinary(codegenConsumer: string): string {
   return process.platform === 'win32'
     ? resolve(codegenConsumer, 'node_modules/.bin/pll-codegen.cmd')
@@ -296,6 +325,23 @@ export async function checkPackedImportSmokes(inputs: {
   );
   if (cjs.status !== 0) {
     failures.push(`peer-free CommonJS import smoke failed:\n${detailFor(cjs)}`);
+  }
+
+  for (const format of ['esm', 'cjs'] as const) {
+    const shared = run(
+      process.execPath,
+      [
+        `--input-type=${format === 'esm' ? 'module' : 'commonjs'}`,
+        '--eval',
+        sharedSanitizerDocumentSource(inputs.packageName, format),
+      ],
+      inputs.consumer,
+    );
+    if (shared.status !== 0) {
+      failures.push(
+        `${format} sanitizer document is not shared across entries:\n${detailFor(shared)}`,
+      );
+    }
   }
 
   const codegenCjs = run(

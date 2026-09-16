@@ -25,6 +25,9 @@ describe('focused entry surfaces', () => {
     expect(typeof lexicalEntry.lexicalToHtml).toBe('function');
     expect(typeof lexicalEntry.isLexicalContent).toBe('function');
     expect(typeof lexicalEntry.registerLexicalNode).toBe('function');
+    // Server rendering through this entry needs a document for the sanitizer,
+    // without importing the root barrel for one setter.
+    expect(typeof lexicalEntry.setSanitizerDocument).toBe('function');
   });
   it('plugins', () => {
     expect(typeof pluginsEntry.PluginManager).toBe('function');
