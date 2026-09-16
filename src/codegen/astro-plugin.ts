@@ -1,7 +1,9 @@
 /**
  * Astro integration: regenerate the types on startup and, during `astro dev`,
- * whenever anything next to the Payload config changes. Paths are relative to
- * Astro's root. Uses `fs.watch`; no watcher dependency.
+ * whenever a .ts, .mts, .cts, .js, .mjs, .cjs or .json file changes in the
+ * Payload config's directory or below it, except under node_modules and the
+ * output file itself. Paths are relative to Astro's root. Uses `fs.watch`; no
+ * watcher dependency.
  */
 import { watch, type FSWatcher } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
@@ -13,7 +15,10 @@ export interface AstroCodegenOptions {
   readonly configPath: string;
   /** Output path for generated types (absolute or relative to Astro's root). */
   readonly outPath: string;
-  /** Re-run when the config or anything beside it changes during `astro dev`. Default `true`. */
+  /**
+   * Re-run during `astro dev` when a .ts, .mts, .cts, .js, .mjs, .cjs or .json
+   * file in or below the config's directory changes. Default `true`.
+   */
   readonly watch?: boolean;
   /** Only log errors. Default `false`. */
   readonly quiet?: boolean;

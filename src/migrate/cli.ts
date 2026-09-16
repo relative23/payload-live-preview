@@ -16,8 +16,15 @@ safely is listed as needing manual attention. Requires ts-morph.
 
 Options:
       --write           Apply the changes (otherwise dry-run)
-      --only <ids>      Run only these codemods (comma-separated)
+      --only <ids>      Run only these codemods (comma-separated); an id not
+                        listed below runs nothing
   -h, --help            Show this help
+
+Codemods, in the order they run:
+  rename-is-preview-request
+  rename-admin-origins-option
+  rename-bindings-authorized-option
+  move-fetch-preview-helpers
 
 Exit codes:
   0  nothing needs a human (changes applied, or would be with --write)

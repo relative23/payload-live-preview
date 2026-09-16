@@ -98,6 +98,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
 }
 
 const HELP_TEXT = `pll doctor — audit what a live-preview deployment actually serves
+pll migrate — rewrite 1.x APIs to their 2.0 names and homes
 
 Usage:
   pll doctor <url> [--admin <origin>] [--header <name: value>]... [--param <name>]... [--json] [--v2]
@@ -109,7 +110,7 @@ parameter, and once the way the Payload admin's iframe loads it, with
 Most findings come from the difference between the two responses. Redirects
 are reported, not followed.
 
-Options:
+Options of pll doctor:
   -a, --admin <origin>  Admin origin the preview is embedded from. Enables the
                         frame-ancestors check to verify the origin is admitted,
                         not merely that a policy exists.
@@ -131,10 +132,12 @@ Options:
       --v2              Also check the page against the 2.0 readiness table
   -h, --help            Show this help
 
-Exit codes:
+Exit codes of pll doctor:
   0  no error-level findings
   1  usage error, or the URL could not be fetched
   2  at least one error-level finding
+
+pll migrate has its own options and exit codes: pll migrate --help
 
 Examples:
   pll doctor https://example.com/

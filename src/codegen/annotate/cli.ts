@@ -27,6 +27,8 @@ export const ANNOTATE_HELP = `pll-codegen annotate — add data-payload-field wh
 Usage:
   pll-codegen annotate <path...> --config <payload.config.ts> [--write]
 
+Requires ts-morph to read the config: npm install --save-dev ts-morph
+
 Options:
   -c, --config <path>   Path to payload.config.ts (required): the schema decides
                         which paths exist

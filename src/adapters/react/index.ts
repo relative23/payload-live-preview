@@ -13,8 +13,9 @@
  * loads it, and `react-dom/server`, only at the first render that needs them.
  *
  * The published file starts with `'use client'`. It is not written here because
- * esbuild drops a module directive when it bundles; the build adds it back as a
- * banner (`DIRECTIVE_ENTRIES` in scripts/package-entries.ts).
+ * esbuild drops a module directive when it bundles, and a banner with it; the
+ * build writes it back through terser's `preamble` (`DIRECTIVE_ENTRIES` in
+ * scripts/package-entries.ts, applied in scripts/build-dist.ts).
  */
 
 import { useRef, useSyncExternalStore } from 'react';

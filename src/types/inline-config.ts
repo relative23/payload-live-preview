@@ -97,14 +97,14 @@ export interface InlineScriptConfig {
   /**
    * A runtime artifact to embed instead of the full one — today only
    * `LEAN_RUNTIME` from `payload-live-preview/lean`, which leaves out the
-   * strategies, the keyed morph, the structural arrays, the item templates and
-   * the announcer (about 5.5 KB gzip less on the page) and reports LP0104 when
-   * a page needs one of them.
+   * strategies, the keyed morph, the structural arrays, the item templates, the
+   * announcer and auto-binding (about 7 KB gzip less on the page) and reports
+   * LP0104 when a page needs one of them.
    *
    * It is an imported value rather than a `profile: 'lean'` string on purpose:
    * a second artifact behind a string option would sit in every build that can
-   * reach the generator, which measured +24 KB gzip in each adapter entry. This
-   * way the bytes follow the import.
+   * reach the generator; measured, it grew each adapter entry by the artifact's
+   * whole size. This way the bytes follow the import.
    *
    * Not serialized: it decides which bytes are emitted, not how they behave.
    */
