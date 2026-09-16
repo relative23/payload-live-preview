@@ -223,8 +223,8 @@ interface ResolvedPolicy {
 let defaultMode: SanitizerPolicyMode = 'strict';
 
 /**
- * The process-wide default for calls without an explicit `policy`. A runtime
- * instance carries its own `sanitizerPolicy` and never writes here (ADR 0002).
+ * The default for calls without an explicit `policy`, per package entry. A
+ * runtime carries its own `sanitizerPolicy` and never writes here (ADR 0002).
  */
 export function setSanitizerPolicy(mode: SanitizerPolicyMode): void {
   defaultMode = mode;

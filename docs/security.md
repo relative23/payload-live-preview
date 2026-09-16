@@ -108,7 +108,7 @@ Inbound `postMessage` events are dropped unless `event.origin` matches one of:
 - The captured `document.referrer` origin — **only as a zero-config fallback when no explicit origins are configured**, and only with `disableReferrerDetection: false` (`defaults: 'v1'`). The referrer names whoever actually framed the page, so it must never widen an explicitly pinned allow-list; the detector enforces this.
 - A localhost pattern (`/^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i`) — only in development.
 
-After the first accepted data-bearing update, the detector **locks** to that exact origin. Subsequent messages from any other origin (including ones in the original allow-list) are dropped.
+After the first accepted data-bearing update, the detector **locks** to that exact origin (the inline runtime and `LivePreviewClient`; the React and Vue hooks keep accepting every allowed origin). Subsequent messages from any other origin (including ones in the original allow-list) are dropped.
 
 ⚠️ **Referrer-fallback mode:** when no explicit origins are configured, referrer detection is on and dev-mode matching is off, the referrer is the only trust source — any site that embeds the preview page in an iframe could then post (sanitized) updates into it. The inline bootstrap logs a console warning (`LP0102`) in this configuration; programmatic clients can inspect their configuration and provide their own diagnostics. Mitigations: set explicit `allowedOrigins`, and serve a `frame-ancestors` CSP so only the admin may frame the page (the adapters do this by default on intent-matched responses; use the authorization boundary above when that response change is protected).
 

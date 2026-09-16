@@ -1,8 +1,8 @@
 /**
  * The Vue composable: Payload's `useLivePreview` shape, with this package's
- * merge underneath — one request at a time, the newer one winning, an HTTP
- * error refused instead of becoming the document, and a cache that belongs to
- * this call alone (ADR 0002).
+ * merge underneath — one request per accepted update, a newer one aborting the
+ * one in flight, an HTTP error refused instead of becoming the document, and a
+ * session that belongs to this call alone (ADR 0002).
  *
  * The same `DocumentSession` the React hook uses; only the reactivity is Vue's.
  * It touches no DOM: a composable re-renders your components, which is the

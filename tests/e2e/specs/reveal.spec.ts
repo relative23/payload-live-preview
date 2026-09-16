@@ -92,7 +92,7 @@ const TARGETS: readonly RevealTarget[] = [
     hydrationWaitMs: 800,
   },
   {
-    name: 'nuxt — inline delivery, Vue',
+    name: 'nuxt — asset delivery, Vue',
     server: 'nuxt',
     admin: 'http://localhost:4176/admin.html',
     path: '/reveal',

@@ -2,7 +2,7 @@
 
 For App Router projects on Next.js 16 whose pages are rendered on the server or at build time. The runtime patches server-rendered markup; its first write waits for React to hydrate, and a client component that re-renders a bound element can still revert a patch (see the caveat below).
 
-Next.js 15 is not supported. `<LivePreviewScript />` and the fragment endpoint load `react` and `react-dom/server` through an import whose specifier is computed at runtime; Turbopack, the default bundler of Next.js 16, resolves it, and webpack, the default of Next.js 15, does not. Measured on 2026-09-17 with Next.js 15.5.25: 30 of the 42 end-to-end cases against [`examples/nextjs-payload`](../examples/nextjs-payload) failed with `Cannot find module 'react'`.
+Next.js 15 is not supported. Measured on 2026-09-17 with Next.js 15.5.25: 30 of the 42 end-to-end cases against [`examples/nextjs-payload`](../examples/nextjs-payload) failed with `Cannot find module 'react'`. `<LivePreviewScript />` and the fragment endpoint load `react` and `react-dom/server` through an import whose specifier is computed at runtime, which Next.js 15's server bundle does not resolve. Next.js 16 is tested with its default bundler, Turbopack; the same pages also answered under `next dev --webpack`, where webpack only warns about the computed import, but that setup is not part of the test run.
 
 > A client-rendered React app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) hook: it re-renders your real component tree, so conditional sections and custom components update with full fidelity. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
 

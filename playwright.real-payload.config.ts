@@ -26,8 +26,9 @@ const browsers = (process.env['PLP_REAL_PAYLOAD_BROWSERS'] ?? 'chromium').split(
  *   - the Astro preview app on :4173 (hosts our injected runtime), and
  *   - the Payload admin on :3001 (points its Live Preview iframe at :4173).
  *
- * The admin's `payload.config.ts` auto-logs-in a seeded editor and resets
- * the homepage global on every boot, so runs are deterministic.
+ * The admin's `payload.config.ts` auto-logs-in a seeded editor and rewrites
+ * the homepage's title, subtitle and tags on every boot, so runs start from the
+ * same text.
  */
 const config: PlaywrightTestConfig = {
   testDir: './tests/real-payload',

@@ -98,7 +98,7 @@ function warnNoSanitizerOnce(): void {
   try {
     console.warn(
       '[live-preview] lexicalToHtml() has no sanitizer document and returned unsanitised HTML; ' +
-        'call setSanitizerDocument() (linkedom/jsdom) for server rendering, see docs/security.md §3.',
+        'call setSanitizerDocument() (linkedom/jsdom) for server rendering, see "HTML sanitization" in docs/security.md.',
     );
   } catch {
     // Diagnostics never become a second failure.
