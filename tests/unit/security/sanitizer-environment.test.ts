@@ -150,6 +150,24 @@ describe('one injected document for every copy of the sanitizer', () => {
   });
 });
 
+describe('the registry key other copies of the package look up', () => {
+  afterEach(() => {
+    setSanitizerDocument(null);
+  });
+
+  it('holds the document under the documented registry name, and clears it there', () => {
+    // A second installed build of the package has its own copy of this module
+    // and finds the document only through this exact name; the name is the
+    // contract between copies, not an implementation detail of one of them.
+    const key = Symbol.for('payload-live-preview.sanitizer-document');
+    const surrogate = surrogateFor(globalThis.document);
+    setSanitizerDocument(surrogate);
+    expect(Reflect.get(globalThis, key)).toBe(surrogate);
+    setSanitizerDocument(null);
+    expect(Reflect.get(globalThis, key)).toBeUndefined();
+  });
+});
+
 describe('the inline-build branches', () => {
   // `__INLINE_BUILD__` is a bundler define, folded away in the shipped runtime.
   // Unbundled it is an ordinary global, so stubbing it reaches the branch the
