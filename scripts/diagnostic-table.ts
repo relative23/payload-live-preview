@@ -45,11 +45,11 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0103:
     "The plugin's `compat` range does not include this runtime version, so it was not registered. Upgrade the plugin or the package until the ranges meet.",
   LP0104:
-    "The page was built with `profile: 'lean'`, and that runtime does not carry the feature the markup asks for — the elements stay as the server rendered them. Drop the option for the full runtime, or remove the markup that needs it.",
+    'The page was delivered with `runtime: LEAN_RUNTIME`, and that runtime does not carry the feature the markup asks for — the elements stay as the server rendered them. Drop the option for the full runtime, or remove the markup that needs it.',
   LP0201:
     'Render the binding anchor unconditionally so an edit to an initially empty field has somewhere to land; `data-payload-boundary` keeps a hidden anchor for it.',
   LP0202:
-    "The message carries neither a global slug nor a collection slug plus `id`, so owner scoping cannot route it; nothing was applied. Check the admin's live-preview setup for that collection, or turn `scopeBindingsByOwner` off on that page.",
+    "The message carries neither a global slug nor a collection slug, so owner scoping cannot route it; nothing was applied. Check the admin's live-preview setup for that collection, or turn `scopeBindingsByOwner` off on that page.",
   LP0301:
     'Raise `visibilityGateThreshold` (or set `disableVisibilityGate`), or accept that below-the-fold updates wait for a scroll.',
   LP0401:
@@ -103,7 +103,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0710:
     "Correct for `inject: 'always'`. Under `'preview-only'` it means every request counts as intent: check `previewSignals` and `previewQueryParams`.",
   LP0801:
-    "Network, timeout or a 5xx from the fragment endpoint; the boundary was patched from the same revision. Check the endpoint's logs and its limits.",
+    "Network, timeout, or any status but 2xx, 401 and 403 from the fragment endpoint (its own 400, 404, 405, 413, 415 and 500 among them); the boundary was patched from the same revision. Check the endpoint's logs and its limits.",
   LP0802:
     'Wrong content type, shape, size or boundary; patched instead. Make sure the request reaches the fragment endpoint itself, not a proxy or an error page.',
   LP0803:
@@ -114,7 +114,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0408:
     'Use one of the known formats — `date`, `date:short|medium|long|full`, `time`, `datetime`, `number`, `number:0-4`, `currency:XXX`, `percent` — or drop the attribute and format on the server behind a fragment.',
   LP0409:
-    "Upgrading from 1.x: `sanitizerPolicy` defaults to `'strict'` since 2.0, which drops `id`, `name` and every `data-*` from written markup. Put the hook on an element the template owns, list the attribute in `allowedDataAttributes`, or set `sanitizerPolicy: 'compat'` to keep the 1.x behaviour. `data-payload-*` is refused whatever the policy ([security.md](security.md)).",
+    "Upgrading from 1.x: `sanitizerPolicy` defaults to `'strict'` since 2.0, which drops `id`, `name` and every `data-*` from written markup. Put the hook on an element the template owns, list the attribute in `allowedDataAttributes`, or set `sanitizerPolicy: 'compat'` to keep the 1.x behaviour. `allowedDataAttributes` cannot admit `data-payload-*`; only `'compat'` keeps it, which lets rich text add a binding ([security.md](security.md)).",
   LP0410:
     'The block renders as an empty placeholder, and the preview kept what the server rendered for it in its place — this line is spoken by the write, once it has. Call `registerBlockRenderer(slug, …)` (or `registerDefaultBlocks()`) to render it in the browser too. When the write could not keep it, `LP0413` is reported instead; a container the page left empty gets the placeholder and neither line.',
   LP0413:

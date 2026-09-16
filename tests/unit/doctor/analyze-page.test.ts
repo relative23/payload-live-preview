@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeProbe } from '@doctor/analyze';
-import { ADMIN, RUNTIME, context, healthy, response } from './fixtures';
+import { ADMIN, RUNTIME, context, healthy, response, withPreview } from './fixtures';
 
 describe('a healthy deployment', () => {
   it('produces no findings at all', () => {
@@ -27,6 +27,41 @@ describe('a missing inline runtime is not automatically a fault', () => {
     expect(finding?.level).toBe('warning');
     expect(report.errors).toBe(0);
     expect(finding?.detail).toContain('LivePreviewClient');
+  });
+
+  it('names a preview behind authorizePreview as a reading, and how to send its credentials', () => {
+    // The strict 2.0 default answers a request without credentials exactly like
+    // a page that never injects, so the audit has to say so and offer the way in.
+    const report = analyzeProbe(withPreview('<h1 data-payload-field="title">t</h1>'), context);
+    const finding = report.findings.find((f) => f.code === 'LP0701');
+    expect(finding?.detail).toContain('authorizePreview');
+    expect(finding?.remedy).toContain('--header');
+  });
+
+  it('says the credentials were sent when they were, instead of suggesting them again', () => {
+    const report = analyzeProbe(withPreview('<h1 data-payload-field="title">t</h1>'), {
+      ...context,
+      credentials: true,
+    });
+    const finding = report.findings.find((f) => f.code === 'LP0701');
+    expect(finding?.detail).toContain('--header');
+    expect(finding?.detail).toContain('not accepted');
+    expect(finding?.remedy).not.toContain("--header 'Cookie");
+  });
+
+  it('says that a redirected preview request carried the intent parameter', () => {
+    // "Probe the final URL" alone sent the reader in a circle: the probe appends
+    // the parameter again, and a rule that redirects on it redirects the iframe too.
+    const report = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({ status: 302, headers: { location: '/page' }, body: '' }),
+      },
+      context,
+    );
+    const finding = report.findings.find((f) => f.code === 'LP0708');
+    expect(finding?.remedy).toContain('preview=true');
+    expect(finding?.remedy).toContain('--header');
   });
 
   it('keys on the config identifier, which survives minification, not the banner comment', () => {

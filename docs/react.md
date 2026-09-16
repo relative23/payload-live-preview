@@ -15,9 +15,10 @@ own `useLivePreview`, with this package's merge underneath.
 npm install payload-live-preview
 ```
 
-`react` is an optional peer this package does not install; the `./react` entry
-is the only one that imports it, and it does so at module scope, as a hook must.
-The published file starts with `'use client'`.
+`react` is an optional peer this package does not install. The `./react` entry
+imports it at module scope, as a hook must; `./nextjs` loads `react`, and
+`react-dom/server` for a fragment endpoint, only at the first render that needs
+it. The published `./react` file starts with `'use client'`.
 
 ## The hook
 
@@ -55,10 +56,11 @@ export function PagePreview({ page }: { page: Page }) {
 | `enableLocalhostMatching` | `true`               | Match `localhost` origins in development                               |
 
 The return value is `{ data, isLoading, status, error }`. `data` and `isLoading`
-are Payload's two, with the same meaning — `isLoading` is `true` until the first
-update merges. `status` is `'idle'` before the first update, `'live'` when the
-newest one merged, `'unavailable'` when it did not; `error` says why, and only
-then.
+are Payload's two names. `isLoading` is `true` until an update settles, turns
+`true` again with every update it accepts, and is `false` once the newest one
+has merged or failed to. `status` is `'idle'` before the first update, `'live'`
+when the newest one merged, `'unavailable'` when it did not; `error` says why,
+and only then.
 
 ## Measured against the official package
 

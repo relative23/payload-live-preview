@@ -4,22 +4,23 @@
 
 ```ts
 
-import { e as DIAGNOSTIC_CODES } from './probe-CELeUciC.js';
-import { f as DiagnosticCode } from './probe-CELeUciC.js';
-import { b as DoctorContext } from './probe-CELeUciC.js';
-import { D as DoctorFetch } from './probe-CELeUciC.js';
-import { d as DoctorFinding } from './probe-CELeUciC.js';
-import { g as DoctorLevel } from './probe-CELeUciC.js';
-import { a as DoctorProbe } from './probe-CELeUciC.js';
-import { c as DoctorReport } from './probe-CELeUciC.js';
-import { h as DoctorResponse } from './probe-CELeUciC.js';
-import { l as lowercaseHeaders } from './probe-CELeUciC.js';
-import { r as runDoctor } from './probe-CELeUciC.js';
-import { R as RunDoctorOptions } from './probe-CELeUciC.js';
+import { e as DIAGNOSTIC_CODES } from './probe-wmvfVEsI.js';
+import { f as DiagnosticCode } from './probe-wmvfVEsI.js';
+import { b as DoctorContext } from './probe-wmvfVEsI.js';
+import { D as DoctorFetch } from './probe-wmvfVEsI.js';
+import { d as DoctorFinding } from './probe-wmvfVEsI.js';
+import { g as DoctorLevel } from './probe-wmvfVEsI.js';
+import { a as DoctorProbe } from './probe-wmvfVEsI.js';
+import { c as DoctorReport } from './probe-wmvfVEsI.js';
+import { h as DoctorResponse } from './probe-wmvfVEsI.js';
+import { l as lowercaseHeaders } from './probe-wmvfVEsI.js';
+import { r as runDoctor } from './probe-wmvfVEsI.js';
+import { R as RunDoctorOptions } from './probe-wmvfVEsI.js';
 
 // @public
 export function analyzeProbe(probe: DoctorProbe, context: DoctorContext & {
     readonly v2?: boolean;
+    readonly credentials?: boolean;
 }): DoctorReport;
 
 // @internal

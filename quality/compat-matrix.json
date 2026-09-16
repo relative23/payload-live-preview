@@ -127,12 +127,12 @@
     },
     {
       "version": "latest",
-      "how": "weekly protocol watch executes @payloadcms/live-preview@latest against the corpus",
+      "how": "daily protocol watch executes @payloadcms/live-preview@latest against the corpus",
       "source": "watch"
     },
     {
       "version": "4.0 pre-releases",
-      "how": "weekly protocol watch against @payloadcms/live-preview@canary, early warning only",
+      "how": "daily protocol watch against @payloadcms/live-preview@canary, early warning only",
       "source": "watch"
     }
   ],

@@ -28,7 +28,7 @@ either way, and the only question the component answers is who receives them.
 | Way                                                       | A public visitor receives | Pick it when                                                                  |
 | --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
 | `<LivePreviewScript />`, an async server component        | nothing                   | the default: the render can await an authorization verdict                    |
-| `livePreviewScriptProps()` with `delivery: 'asset'`       | a 1 326-byte bootstrap    | the script is built once at module scope and the page has no verdict to await |
+| `livePreviewScriptProps()` with `delivery: 'asset'`       | a 1 331-byte bootstrap    | the script is built once at module scope and the page has no verdict to await |
 | `livePreviewScriptProps()` or `renderLivePreviewScript()` | the whole runtime         | a page that is not gated at all, or HTML a server assembles as a string       |
 
 ## Nothing for a public visitor
@@ -97,7 +97,7 @@ below.
 
 When the script is built once at module scope and there is no verdict to
 await, `delivery: 'asset'` puts a bootstrap in the page instead of the runtime —
-a 1 326-byte `<script>` element, measured on the example, rendered twice like
+a 1 331-byte `<script>` element, measured on the example, rendered twice like
 anything else in a layout's head — which arms the wait for React's first
 commit ([hydration caveat](#hydration-caveat)) and fetches the runtime only
 once the page finds itself in a preview context:
@@ -168,16 +168,16 @@ payload, so the runtime was most of what an anonymous visitor received. The
 same request answers 15 327 bytes with `<LivePreviewScript />`. That component
 is the version of this layout that waits; `delivery: 'asset'` above is the
 version that keeps the module-scope props and replaces the runtime with the
-1 326-byte bootstrap. What each choice costs a visitor, measured per framework:
+1 331-byte bootstrap. What each choice costs a visitor, measured per framework:
 [deployment.md](deployment.md#what-a-public-visitor-pays).
 
 `livePreviewScriptProps()` takes a `nonce` for a CSP you manage yourself, and puts it where the framework expects it — a prop, not markup inside the body. `renderLivePreviewScript()` returns the complete `<script>` tag instead, for HTML a server assembles as a string; JSX cannot render that.
 
 ## Headers on preview requests
 
-The adapter middleware runs `authorizePreview` on requests carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true`). When the hook authorizes, it merges `frame-ancestors` for the admin origin into the CSP and marks the response `private, no-store`; a refusal leaves the response untouched.
+The adapter middleware runs `authorizePreview` on requests carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true` or `1`). When the hook authorizes, it merges `frame-ancestors` for the admin origin into the CSP and marks the response `private, no-store`; a refusal leaves the response untouched.
 
-Two of those headers are pure configuration, and `withLivePreview` writes them:
+One of those headers, the cache header, is pure configuration, and `withLivePreview` writes it:
 
 ```ts
 // next.config.ts
@@ -188,7 +188,7 @@ export default withLivePreview(nextConfig, {
 });
 ```
 
-It marks requests carrying preview intent `private, no-store`, appending its rules to a `headers()` you already have rather than replacing it, and adds the admin's host to `allowedDevOrigins` — behind a reverse proxy the dev server sees a different origin than the browser does, and Next then rejects the admin panel's own server functions as cross-site.
+It marks requests carrying preview intent (the same parameters, set to `true` or `1`) `private, no-store`, appending its rules to a `headers()` you already have rather than replacing it, and adds the admin's host to `allowedDevOrigins` — behind a reverse proxy the dev server sees a different origin than the browser does, and Next then rejects the admin panel's own server functions as cross-site.
 
 It writes no `Content-Security-Policy`, and it is not a substitute for the middleware. A config rule cannot run `authorizePreview`, so it can never be where a privileged response change is decided; and Next collects every matching rule into one object keyed by header name, so a policy written there would replace the one your site already sends instead of adding to it. Measured on Next.js 16.3.4: a site whose own rule sends `frame-ancestors 'none'` answered an unauthenticated `/?preview=true` with `frame-ancestors 'self' <admin>` alone, its `script-src` gone. `frame-ancestors` for the admin origin therefore comes from `createLivePreviewMiddleware` below, which merges into an existing policy and only for a request it authorized.
 
@@ -296,8 +296,9 @@ runtime does not start — no `ready`, no listener — until React has committed
 the tree that holds the bindings; the admin's first document then lands on
 markup React keeps. On the example that is 105–115 ms after `DOMContentLoaded`
 on a warm dev server. If React commits nothing within five seconds the runtime
-starts anyway and reports `LP0607`; `inspect().hydration` reads `waiting`,
-`committed` or `timed-out`. How the runtime sees the commit, and what can go
+starts anyway and reports `LP0607`; `inspect().hydration` reads
+`{ mode: 'react', state }`, with `state` `waiting`, `committed` or `timed-out`
+(`idle` belongs to a page that declared no hydration). How the runtime sees the commit, and what can go
 wrong: [ADR 0015](architecture/0015-first-write-after-hydration.md).
 
 **A client component that re-renders a bound element** after hydration
@@ -340,11 +341,11 @@ When it is not there, the strategy fetches and morphs as before.
 signed-token `authorizePreview`, so an anonymous request to any of its pages
 carries no runtime at all; the `(asset)` root layout with
 `livePreviewScriptProps()` and `delivery: 'asset'`, for the comparison; and
-`/hybrid` with its route handler at `app/payload/fragment/route.ts`: a section
+`/hybrid` with its route handler at `app/(inline)/payload/fragment/route.ts`: a section
 the server renders only when the field is set, a value derived from another, and
 the same bindings as the fallback when the render fails. Run in Chromium,
 Firefox and WebKit.
 
 ## When something does not update
 
-`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md).
+`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md). The doctor's preview request carries `?preview=true`; behind `authorizePreview` it needs an editor's credentials, passed as `--header "Cookie: payload-token=…"` or `--header "x-preview-token: …"` (sent with the preview request only, values never printed).

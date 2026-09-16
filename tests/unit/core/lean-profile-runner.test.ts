@@ -77,6 +77,11 @@ describe('the lean profile picks a runner that renders nothing', () => {
     const omitted = consoleWarnings.filter((message) => message.includes('LP0104'));
     expect(omitted).toHaveLength(1);
     expect(omitted[0]).toContain('server-rendered fragments');
+    // It names the option the page was delivered with. `profile: 'lean'` is a
+    // field of the LEAN_RUNTIME artifact, which nobody writes, and removing it
+    // is not a thing anyone can do.
+    expect(omitted[0]).toContain('runtime: LEAN_RUNTIME');
+    expect(omitted[0]).not.toContain("profile: 'lean'");
     // The boundary is not re-rendered, but the binding inside it is still a
     // binding: the lean profile drops the fragment machinery, not the patch.
     expect(document.querySelector('p')?.textContent).toBe('edited again');

@@ -71,7 +71,8 @@ const UNREADABLE: DoctorFinding = {
   title: 'Could not read the inline configuration for a v2 readiness check',
   detail: 'The preview response carried no readable `__LIVE_PREVIEW_CONFIG__` inline script.',
   remedy:
-    'Run this against a page with the inline runtime (not loader mode without a preview context).',
+    'Run this against a page with the inline runtime (not loader mode without a preview context). ' +
+    'A preview behind authorizePreview serves it only to a request with credentials: pass them with --header.',
 };
 
 const UNMARKED: DoctorFinding = {

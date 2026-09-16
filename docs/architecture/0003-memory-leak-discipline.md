@@ -28,6 +28,9 @@ Affected modules:
 - `@core/cache` — `ElementCache` walks the live tree; any per-element annotation goes through WeakMap.
 - `@core/a11y` — a runtime-root-document-keyed lease coordinates the shared live region, reference count, ownership flag, package-owned announcement node, and one bounded clear timer without detaching consumer children.
 - `@core/structural-applier` — `previousItemValues: WeakMap<Element, Map<string, unknown>>` keeps a per-container snapshot for recursive nested-array diffs.
+  2026-09-14 (2.0.1): the map is now `StructuralStore`, the same `WeakMap` type,
+  made by `createStructuralStore()` and owned by its caller — one per renderer in
+  `@field-types/structural-array`.
 - `@field-types/structural-array` — per-renderer `WeakMap<Element, …>` state keeps
   values, template metadata, and the last direct-child key snapshot together;
   `warnedContainers: WeakSet<Element>` follows the same rule.

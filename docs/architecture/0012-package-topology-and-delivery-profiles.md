@@ -37,6 +37,14 @@ reach these, and the check is mechanical: `SERVER_ONLY_DOMAINS` in
 `scripts/architecture-rules.ts` raises `server-boundary` on the import and
 `browser-node-builtin` on a Node builtin outside this group.
 
+2026-09-14 (2.0.1): five entries came after this list. `./lean` (`src/lean.ts`)
+is the lean inline runtime as a value and imports only the generated artifact
+and a type. `./react` and `./vue` live under `src/adapters/` and follow the
+adapter rules. `./annotate` (`src/codegen/annotate/`) is server-only through its
+domain, and `./nuxt-module` (`src/adapters/nuxt/module.ts`) through
+`SERVER_ONLY_MODULES` in the same script, because Nuxt runs it in its build
+process.
+
 Type-only edges are exempt, because they are erased and cannot create runtime
 coupling. That exemption is the reason the rule can stay strict without pushing
 people into duplicating types.
@@ -67,6 +75,13 @@ A budget is raised in the same commit as the feature that spends it, with the
 reason in `scripts/bundle-budgets.ts` — the file reads as a ledger of what each
 increase bought.
 
+2026-09-14 (2.0.1): the inline profile is no longer the only one gated.
+`scripts/check-bundle-size.ts` holds every JavaScript file in `dist/` to a raw,
+gzip and Brotli budget from `ENTRY_BUDGETS` (`scripts/entry-budgets.ts`), and
+fails on a file without one. The inline script is measured four ways —
+`INLINE_BUDGET`, `INLINE_LEAN_BUDGET`, `INLINE_ROUTE_BUDGET` and
+`INLINE_FRAGMENT_BUDGET`, all imported from `scripts/bundle-budgets.ts`.
+
 ### 4. Dual format where a consumer might still be on CommonJS
 
 The runtime entries ship both `import` and `require`, and so do `./server`,
@@ -83,11 +98,15 @@ drop an unused entry rather than merely not call it.
 describes a codemod without its `apply`. An entry that made a peer mandatory
 would tax every consumer for a feature most never use, so it is not done.
 
+2026-09-14 (2.0.1): seven peers are declared now, all of them optional in
+`peerDependenciesMeta`: `astro`, `react`, `react-dom`, `svelte`, `ts-morph`,
+`vite` and `vue`.
+
 ## Consequences
 
-- Each entry has an API report; 18 are committed under `etc/api/`, and a change
-  to a public surface fails the package gate until the report is regenerated and
-  reviewed.
+- Each entry has an API report; 18 are committed under `etc/api/` (23 on
+  2026-09-14, 2.0.1), and a change to a public surface fails the package gate
+  until the report is regenerated and reviewed.
 - Moving a module between groups is a visible event: it changes an API report,
   the architecture verdict, or both.
 - The rules are structural, so they hold for code nobody re-reads. What they

@@ -19,6 +19,11 @@ profile is the default, the renamed/moved APIs (entries 1, 7, 9–10) were
 removed, and `serverURL` now requires an explicit `mergeDepth`. `defaults: 'v1'`
 remains through the 2.x line as the staged-migration escape hatch.
 
+2026-09-14 (2.0.1): entry 1 was not removed. `isPreviewRequest` is exported from
+the root entry and from `./astro` as a deprecated alias of `hasPreviewIntent`
+until 3.0 (`src/adapters/shared/preview-request-legacy.ts`), as the ledger row
+says.
+
 ### 1. `defaults: 'v2'` is one switch
 
 Every adapter and the runtime accept `defaults: 'v2'`. It sets every row of
@@ -60,6 +65,11 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 12  | 1.4.0   | range   | Astro peer `>=4.0.0 <8.0.0`, with 4, 5, 6 and 7 each run in CI (ADR 0009)                                 | unchanged under `'v2'`; 2.0 narrows the range to the majors the CI matrix still runs at release time                                                                                       | the tested majors only                                    | upgrade Astro to a major in the compatibility table before 2.0                                                |
 | 13  | 2.0.0   | rename  | `hasPreviewIntent(request, { adminOrigins })`                                                             | `{ allowedOrigins }` — the name the adapters, the client, the inline config and `pll doctor` use; `adminOrigins` stays a deprecated alias until 3.0 and loses when both are given          | —                                                         | `rename-admin-origins-option` rewrites the key; both keys at once is a conflict, not a rewrite                |
 | 14  | 2.0.0   | rename  | `CachedElement.boundary`                                                                                  | `CachedElement.hidesWhenEmpty` — the `data-payload-boundary` anchor that hides while its field is empty; the old name read like a fragment boundary                                        | —                                                         | none: a type-level rename that TypeScript reports; only a custom renderer that read the flag is affected      |
+
+2026-09-16 (2.0.1): row 5's "outside local dev" names an exception the runtime
+does not have. `disableReferrerDetection` is `true` everywhere under `'v2'`;
+the localhost matcher is a separate option (`disableLocalhostMatching`), and
+the readiness label and docs/migration.md say "referrer trust off".
 
 ## Addendum — what `pll migrate` automates
 

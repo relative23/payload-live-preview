@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 316,
-    "suites": 684,
-    "tests": 2859,
+    "suites": 685,
+    "tests": 2881,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 259,
-      "suites": 609,
-      "tests": 2632,
+      "suites": 610,
+      "tests": 2654,
       "benchmarks": 0
     }
   },
@@ -652,7 +652,7 @@
       "path": "tests/unit/adapters/zero-config.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 11,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -1113,8 +1113,8 @@
     {
       "path": "tests/unit/core/merge-need.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 11,
+      "suites": 2,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -1478,14 +1478,14 @@
       "path": "tests/unit/doctor/analyze-page.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 13,
+      "tests": 16,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/doctor/cli.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 19,
+      "tests": 31,
       "benchmarks": 0
     },
     {
@@ -1744,7 +1744,7 @@
       "path": "tests/unit/migrate/cli.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -2220,7 +2220,7 @@
       "path": "tests/unit/security/sanitizer-upgrade-report.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 7,
+      "tests": 9,
       "benchmarks": 0
     },
     {

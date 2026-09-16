@@ -85,6 +85,13 @@ export const renameIsPreviewRequest: CodemodImplementation = {
   id: ID,
   summary: '`isPreviewRequest()` → `hasPreviewIntent()` (same signature)',
   ledgerEntry: 1,
+  // The rename keeps behaviour, and that is the part worth saying: the 2.0
+  // adapters count only the query, and a renamed call silently does not.
+  notice:
+    'hasPreviewIntent() takes the options isPreviewRequest() took and, without `signals`, counts ' +
+    'the same three: a preview query parameter, Sec-Fetch-Dest: iframe and an admin Referer. The ' +
+    "2.0 adapters count only the query; where a call should agree with them, pass { signals: ['query'] } " +
+    '(docs/migration.md).',
   apply(script) {
     const bindings = packageBindings(script).filter((binding) => binding.imported === OLD_NAME);
     if (bindings.length === 0) return { edits: [], conflicts: [] };

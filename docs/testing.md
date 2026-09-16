@@ -96,9 +96,13 @@ executions. Neither changes the verdict, which is graded on the merged report.
    gives `test-results/stryker-nightly.json`. Run `npm run test:mutation:policy`
    on the same commit; every `[regression]` and `[improvement]` line names a
    number to record.
-5. Record `total`, `mutationScoreMinimum` (two decimals), `noCoverageMaximum`
-   and `timeoutMaximum` from the report under `baseline`. `errorMaximum` and
-   `ignoredMaximum` stay at zero.
+5. Record `total`, `mutationScoreMinimum` (two decimals) and
+   `noCoverageMaximum` from the report under `baseline`. `errorMaximum` and
+   `ignoredMaximum` stay at zero. `timeoutMaximum` is a ceiling, not the
+   report's count: it sits above the measured timeouts with room for a slow
+   runner; fewer print a `[drift]` notice and only more fail. The score passes
+   within `mutationScoreDriftMutants` mutants of the recorded value, and a
+   `[drift]` line for it is a notice, not a number to record.
 6. Refresh the shard weights from the same report (the two commands above) and
    commit `quality/mutation-policy.json`, `quality/mutation-shard-weights.json`
    and the coverage policy together.
@@ -138,18 +142,18 @@ refused. A version of any other shape is refused. The pipeline is ADR
 
 ## Quality map
 
-| Risk                                      | Primary evidence                                                         | Lane           |
-| ----------------------------------------- | ------------------------------------------------------------------------ | -------------- |
-| Type/API compatibility                    | strict `tsc`, negative packed type fixtures, API Extractor reports       | pull request   |
-| Package/module-resolution drift           | exact tgz, publint, ATTW, isolated ESM/CJS/NodeNext consumers            | pull request   |
-| Parser, trust-boundary, and race mistakes | fixed regressions, fast-check properties/models, critical mutation tests | PR + scheduled |
-| Untested edits                            | critical per-file floors and changed-line LCOV gate                      | pull request   |
-| Layer erosion and dead code               | source dependency graph, cycle rules, Knip                               | pull request   |
-| Browser/DOM differences                   | Playwright in Chromium, Firefox, WebKit and a real Payload application   | pull request   |
-| Accessibility regressions                 | semantic live-region assertions and Axe WCAG A/AA scans                  | pull request   |
-| Algorithmic or bundle regressions         | deterministic size/complexity gates and CodSpeed trends                  | PR + trend     |
-| Resource retention                        | exact handle counts, forced-GC Node leak gate, Chromium heap soak        | scheduled      |
-| Protocol ecosystem drift                  | captured real messages and pinned/latest/canary Payload watch            | PR + scheduled |
+| Risk                                      | Primary evidence                                                         | Lane                       |
+| ----------------------------------------- | ------------------------------------------------------------------------ | -------------------------- |
+| Type/API compatibility                    | strict `tsc`, negative packed type fixtures, API Extractor reports       | pull request               |
+| Package/module-resolution drift           | exact tgz, publint, ATTW, isolated ESM/CJS/NodeNext consumers            | pull request               |
+| Parser, trust-boundary, and race mistakes | fixed regressions, fast-check properties/models, critical mutation tests | PR + main push + scheduled |
+| Untested edits                            | critical per-file floors and changed-line LCOV gate                      | pull request               |
+| Layer erosion and dead code               | source dependency graph, cycle rules, Knip                               | pull request               |
+| Browser/DOM differences                   | Playwright in Chromium, Firefox, WebKit and a real Payload application   | pull request               |
+| Accessibility regressions                 | semantic live-region assertions and Axe WCAG A/AA scans                  | pull request               |
+| Algorithmic or bundle regressions         | deterministic size/complexity gates and CodSpeed trends                  | PR + trend                 |
+| Resource retention                        | exact handle counts, forced-GC Node leak gate, Chromium heap soak        | main push + scheduled      |
+| Protocol ecosystem drift                  | captured real messages and pinned/latest/canary Payload watch            | PR + scheduled             |
 
 The machine-readable inventory is [quality/test-inventory.json](../quality/test-inventory.json).
 It is regenerated with `tsx scripts/test-policy.ts --write`; CI fails if it is
@@ -253,20 +257,25 @@ and changed lines have an independent floor. CI compares against the reviewed
 base SHA and fails closed when that SHA or an LCOV source record is unavailable.
 
 Coverage is deliberately complemented by Stryker. The small PR profile protects
-the highest-risk pure boundaries on every change; the scheduled profile expands
-to sanitizer, origin, message ordering, scheduler, and plugin ownership. See
+the highest-risk pure boundaries on every pull request; the release-critical
+profile, run on every push to `main` and on the schedule, expands to sanitizer,
+origin, message ordering, scheduler, and plugin ownership. See
 [mutation and property testing](testing/mutation-and-property-testing.md) for the
 reproducible seeds, profiles, and baseline. A surviving mutant is not waived by
 lowering a threshold: add a meaningful invariant, remove unreachable code, or
-record a narrowly reviewed equivalent mutant with an owner and review date.
+record a narrowly reviewed equivalent mutant — its position, mutator, original
+and replacement text, and why the program does the same either way.
 
 ## Scheduled performance and leak gates
 
 The deep-quality workflow runs 10,000 property cases per property, the expanded
 mutation profile, and 10,000 fully awaited updates in a long-lived runtime under
-forced GC, in addition to repeated start/destroy ownership churn. The Node gate
-requires all owned observers, listeners, timers, and DOM nodes to return to zero
-and both long-session and post-destroy retained heap drift to remain below 2 MiB.
+forced GC, in addition to repeated start/destroy ownership churn. The mutation
+shards, the leak gate and the soak are one reusable workflow,
+`critical-gates.yml`, which CI also calls on every push to `main` (the Release
+Gates job, with the five-minute soak). The Node gate requires all owned
+observers, listeners, timers, and DOM nodes to return to zero and both
+long-session and post-destroy retained heap drift to remain below 2 MiB.
 
 The Chromium soak always performs at least 10,000 real `postMessage` updates. It
 runs for five minutes on ordinary nights and thirty minutes weekly, asserts
@@ -338,11 +347,13 @@ Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
 quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches
 drift the moment Payload ships it. Per Payload version that means: 2.x is
 covered by captured-message integration tests and `fieldSchemaJSON` typing;
-3.85.0 by a corpus captured from a real admin; 3.88.0 by the real-admin E2E on
-every push plus its corpus; `latest` and the 4.0 pre-releases by the nightly
-watch — wire format, sender source and a real admin — the latter as early
-warning only. The four real-app fixtures cover
-Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all three engines; the Astro
+3.85.0 and 3.88.0 by corpora captured from a real admin; 3.89.0 by the
+real-admin E2E on every push plus its corpus; 4.0.0-canary.33 by a corpus
+captured from a real Payload 4 admin in a one-off upgrade round (the fixture
+stays on 3.x); `latest` and the 4.0 pre-releases by the nightly watch — wire
+format, sender source and a real admin — the latter as early warning only. The
+four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all
+three engines; the Astro
 4–7 peer range is wider than the single-major browser fixture and is backed
 by the `astro-matrix` job.
 
@@ -352,11 +363,14 @@ The root barrel tree-shakes, and that is measured rather than declared:
 `npm run test:treeshake` bundles one-symbol consumers with Vite against the
 built package, resolved through `node_modules` so `exports` and `sideEffects`
 apply as after `npm install`, and holds each to a budget. Importing
-`escapeHtml` from the root ships 220 B gzip, `lexicalToHtml` 4.3 KB,
-`initLivePreview` 30.5 KB (the client with its built-in renderers, Lexical
-included), `generateInlineScript` 24.8 KB (the inline runtime source and
+`escapeHtml` from the root ships 210 B gzip, `lexicalToHtml` 5,043 B,
+`initLivePreview` 44,601 B (the client with its built-in renderers, Lexical
+included), `generateInlineScript` 42,223 B (the inline runtime source and
 nothing of the client). The focused entries give a bundler less to look
-through; the bytes are the same. The table and its budgets are in
+through; the bytes barely move — `initLivePreview` from `./core` is 44,579 B,
+`lexicalToHtml` from `./lexical` 5,175 B. The budgets are
+`TREE_SHAKING_FIXTURES` in `scripts/check-tree-shaking.ts`; the first
+measurement, and why the barrel did not tree-shake before it, are in
 [benchmarks.md](benchmarks.md#tree-shaking-what-one-import-costs).
 
 ## Failure handling

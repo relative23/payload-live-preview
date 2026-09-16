@@ -226,6 +226,13 @@ interface Fixture {
  * any row carries are collected once per render and both callers pass them down.
  * `LEAN_RUNTIME`, `morphElement` and the two renderer rows do not move: none of
  * them pulls in the array path.
+ *
+ * 2026-09-14 (2.0.1, three diagnostics): the two Lexical rows rise by +13 gzip,
+ * because `lexicalToHtml` writes through the sanitizer and LP0409 now asks
+ * whether `compat` would have kept `name` before it reports —
+ * `lexicalToHtml` from `payload-live-preview` 5_032 → 5_045 (5_030 → 5_043),
+ * from `payload-live-preview/lexical` 5_165 → 5_178 (5_162 → 5_175). Measured
+ * against origin/main on the same host; each keeps the cushion it carried.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -239,7 +246,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_032,
+    gzip: 5_045,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
@@ -267,7 +274,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_165,
+    gzip: 5_178,
     why: 'the Lexical renderer from its focused entry',
   },
   {

@@ -15,6 +15,50 @@ interface ParsedArgs {
   v2: boolean;
   showHelp: boolean;
   unknown: string[];
+  /** Headers for the preview probe, from every `--header`/`-H`. */
+  headers: Record<string, string>;
+  /** The first `--header` or `--param` that could not be read, as the message to print. */
+  usageError: string | undefined;
+  /** Query parameter names from every `--param`. */
+  params: string[];
+}
+
+/** A query parameter name: no separator, no space, and not the next option. */
+const PARAM_NAME = /^[^\s&=#?-][^\s&=#]*$/u;
+
+/** An HTTP field name (RFC 9110 token), a colon, then the value. */
+const HEADER_LINE = /^([!#$%&'*+.^_`|~0-9A-Za-z-]+):[ \t]*(.*)$/u;
+
+function addHeader(parsed: ParsedArgs, line: string | undefined): void {
+  // A missing value would otherwise read the next argument: `https://example.com/`
+  // matches as name `https`, and `--v2` as no header at all.
+  const match =
+    line === undefined || line.startsWith('-') || isAbsoluteUrl(line)
+      ? null
+      : HEADER_LINE.exec(line);
+  const name = match?.[1];
+  const value = match?.[2];
+  if (name === undefined || value === undefined) {
+    // The value is not echoed: a mistyped header can still hold half a token.
+    parsed.usageError ??=
+      'pll doctor: --header takes "Name: value", such as --header "x-preview-token: …"';
+    return;
+  }
+  // Header names are case-insensitive; a second spelling would be joined onto
+  // the first by fetch, and a repeat would silently replace it.
+  if (Object.keys(parsed.headers).some((given) => given.toLowerCase() === name.toLowerCase())) {
+    parsed.usageError ??= `pll doctor: --header "${name}" is given twice; join the values into one header`;
+    return;
+  }
+  parsed.headers[name] = value;
+}
+
+function addParam(parsed: ParsedArgs, name: string | undefined): void {
+  if (name === undefined || !PARAM_NAME.test(name)) {
+    parsed.usageError ??= 'pll doctor: --param takes a query parameter name, such as --param draft';
+    return;
+  }
+  parsed.params.push(name);
 }
 
 function parseArgs(argv: readonly string[]): ParsedArgs {
@@ -25,6 +69,9 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     v2: false,
     showHelp: false,
     unknown: [],
+    headers: {},
+    usageError: undefined,
+    params: [],
   };
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
@@ -36,6 +83,14 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       parsed.adminOrigin = argv[i + 1];
       i += 1;
     } else if (token.startsWith('--admin=')) parsed.adminOrigin = token.slice('--admin='.length);
+    else if (token === '--header' || token === '-H') {
+      addHeader(parsed, argv[i + 1]);
+      i += 1;
+    } else if (token.startsWith('--header=')) addHeader(parsed, token.slice('--header='.length));
+    else if (token === '--param') {
+      addParam(parsed, argv[i + 1]);
+      i += 1;
+    } else if (token.startsWith('--param=')) addParam(parsed, token.slice('--param='.length));
     else if (token.startsWith('-')) parsed.unknown.push(token);
     else parsed.url ??= token;
   }
@@ -45,17 +100,30 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
 const HELP_TEXT = `pll doctor — audit what a live-preview deployment actually serves
 
 Usage:
-  pll doctor <url> [--admin <origin>] [--json] [--v2]
+  pll doctor <url> [--admin <origin>] [--header <name: value>]... [--param <name>]... [--json] [--v2]
   pll migrate <path> [--write] [--only <id,id>]
 
-The URL is fetched twice: once as an ordinary visitor and once with the
-headers the Payload admin's iframe sends. Most findings come from the
-difference between the two responses. Redirects are reported, not followed.
+The URL is fetched twice: once as an ordinary visitor, without any intent
+parameter, and once the way the Payload admin's iframe loads it, with
+?preview=true and the iframe's headers.
+Most findings come from the difference between the two responses. Redirects
+are reported, not followed.
 
 Options:
   -a, --admin <origin>  Admin origin the preview is embedded from. Enables the
                         frame-ancestors check to verify the origin is admitted,
                         not merely that a policy exists.
+  -H, --header <h>      A header for the preview request only, as "Name: value";
+                        repeat it for more. A preview behind authorizePreview
+                        needs an editor's credentials: a Payload session Cookie
+                        or an x-preview-token. The visitor request stays
+                        anonymous and values are never printed, but a shell
+                        keeps them in its history, so prefer a short-lived token.
+      --param <name>    A query parameter the deployment reads as preview intent,
+                        for an adapter whose previewQueryParams replaces the
+                        default preview, draft and livePreview; repeat it for
+                        more. The first one is what the preview request carries
+                        as <name>=true; none of them reaches the visitor request.
       --json            Emit the report as JSON instead of text
       --v2              Also check the page against the 2.0 readiness table
   -h, --help            Show this help
@@ -68,6 +136,7 @@ Exit codes:
 Examples:
   pll doctor https://example.com/
   pll doctor https://example.com/blog/hello --admin https://cms.example.com
+  pll doctor https://example.com/ --header "x-preview-token: $PREVIEW_TOKEN" --v2
 `;
 
 function isAbsoluteUrl(value: string): boolean {
@@ -103,6 +172,10 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
     process.stderr.write('pll doctor: a URL is required. Try `pll doctor --help`.\n');
     return 1;
   }
+  if (args.usageError !== undefined) {
+    process.stderr.write(`${args.usageError}\n`);
+    return 1;
+  }
   if (args.adminOrigin !== undefined && !isAbsoluteUrl(args.adminOrigin)) {
     process.stderr.write(
       `pll doctor: --admin must be an absolute URL such as https://cms.example.com (got "${args.adminOrigin}")\n`,
@@ -115,6 +188,8 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
       url: args.url,
       ...(args.adminOrigin !== undefined ? { adminOrigin: args.adminOrigin } : {}),
       ...(args.v2 ? { v2: true } : {}),
+      ...(Object.keys(args.headers).length > 0 ? { previewHeaders: args.headers } : {}),
+      ...(args.params.length > 0 ? { previewQueryParams: args.params } : {}),
       ...(fetchImpl !== undefined ? { fetchImpl } : {}),
     });
   } catch (error) {

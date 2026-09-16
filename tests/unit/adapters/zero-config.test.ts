@@ -163,6 +163,24 @@ describe('withLivePreview for Next.js', () => {
     );
   });
 
+  it('matches the intent values the runtime reads, the way Next evaluates `has.value`', () => {
+    // Next anchors the value as a regular expression, `new RegExp(`^${value}$`)`
+    // in matchHas (next/dist/shared/lib/router/utils/prepare-destination.js,
+    // read on 16.3.0). The runtime reads `true` or `1` as intent
+    // (src/adapters/shared/preview-request.ts), so a rule of `'true'` left
+    // `?preview=1` without `private, no-store`. `true|1` unwrapped would anchor
+    // as `^true|1$` and let `x1` through.
+    const rules = previewHeaderRules({ allowedOrigins: [ADMIN] });
+
+    for (const rule of rules) {
+      const matcher = new RegExp(`^${rule.has?.[0]?.value ?? ''}$`, 'u');
+      const matched = ['true', '1', '0', 'false', 'x1', 'truex', ''].filter((value) =>
+        matcher.test(value),
+      );
+      expect(matched).toEqual(['true', '1']);
+    }
+  });
+
   it('lets the intent parameters be narrowed', () => {
     const rules = previewHeaderRules({ allowedOrigins: [ADMIN], previewQueryParams: ['preview'] });
 

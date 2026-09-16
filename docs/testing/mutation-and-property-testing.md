@@ -64,8 +64,9 @@ npm run test:mutation:policy:core
 
 The PR profile is a hard 90% gate, with 90–95% shown as its improvement band. The
 critical Nightly profile has a defensive native Stryker floor of 70%; the stricter
-machine-readable report policy pins its exact reviewed score, scope, and terminal
-status counts. A dry run alone cannot justify either ratchet.
+machine-readable report policy pins its exact scope and total, its reviewed score
+within a drift band, and its terminal status counts. A dry run alone cannot
+justify either ratchet.
 
 Validate the generated reports explicitly after Stryker:
 
@@ -81,9 +82,10 @@ not use cached results. Local repeat runs can opt in explicitly with
 
 There are no blanket mutant exclusions. A surviving mutant must be handled in one of
 three ways: add an invariant that kills it, remove unreachable production code, or
-document the exact mutant and why it is genuinely equivalent. Equivalent-mutant
-records need an owner and a review date; they do not lower the threshold or exclude
-an entire function/file.
+document the exact mutant and why it is genuinely equivalent. An equivalent-mutant
+record in a policy's `equivalent` list names the file, line and column, the
+mutator, the original and replacement text, and one sentence on why; it does not
+lower the threshold or exclude an entire function/file.
 
 ## Initial PR baseline
 
@@ -94,20 +96,27 @@ coverage percentages are not a substitute for mutation evidence.
 - Status: passing hard gate
 - Scope: `src/security/csp.ts`, `src/security/url-validator.ts`,
   `src/core/field-value.ts`
-- Uncached result (2026-08-13): 296 total, 278 killed, 18 survived, zero
+- Current baseline (`quality/mutation-policy-pr.json`, the file that decides):
+  361 total, mutation score 93.63%, zero no-coverage, error and ignored mutants,
+  a timeout ceiling of 2 and a score drift band of 2 mutants.
+- Initial uncached result (2026-08-13): 296 total, 278 killed, 18 survived, zero
   no-coverage, zero timeout, and zero error mutants; mutation score 93.92%.
-- Final related-test run: 569 tests passed in 9 seconds. Complete uncached mutation
-  run: 1 minute 43 seconds with four workers. A preceding run exposed a
-  random-byte-dependent slash replacement survivor; deterministic `+` and `/`
-  inputs now keep the exact 93.92% baseline repeatable.
-- Threshold: 90% break, 90% low, 95% high. The break threshold leaves only a
-  3.92-point calibration margin and therefore detects losing twelve currently
-  killed mutants.
+- Final related-test run of that baseline: 569 tests passed in 9 seconds.
+  Complete uncached mutation run: 1 minute 43 seconds with four workers. A
+  preceding run exposed a random-byte-dependent slash replacement survivor;
+  deterministic `+` and `/` inputs made the 93.92% result repeatable.
+- Threshold: 90% break, 90% low, 95% high. Against 93.63% of 361 mutants the
+  break threshold is crossed after fourteen detected mutants are lost; the report
+  policy fails first, on the third, because it allows a drift of two.
 
 ### Surviving-mutant review
 
-No survivor is ignored by configuration. Seventeen are output-equivalent under the
-current implementation and remain visible in every report:
+No survivor is ignored by configuration. The review below classifies fourteen
+survivors — thirteen output-equivalent and one diagnostic-text mutant — and was
+last revised on 2026-09-11. The current baseline implies 23 survivors (361
+mutants at 93.63%, none uncovered); `quality/mutation-policy-pr.json` declares no
+`equivalent` list, so the survivors are held by the score alone and the ones not
+named here are not classified on this page. All remain visible in every report:
 
 - four field-path control-flow mutants duplicate the preceding direct lookup or the
   next iteration's null/type guard;
@@ -136,9 +145,11 @@ the mutant total, the minimum score, and the no-coverage, timeout, error and
 ignored maxima. `npm run test:mutation:policy` fails on a regression and on an
 improvement alike until a maintainer ratchets the file, so a scope reduction and
 a better score are both visible review events rather than silent changes to the
-quality contract. Earlier baselines — an eight-file slice, then fourteen files —
-are in this file's Git history; their numbers describe a scope that no longer
-exists.
+quality contract. Two numbers are not exact: the score passes within
+`mutationScoreDriftMutants` mutants of the recorded minimum, and
+`timeoutMaximum` is a ceiling — more timeouts fail, fewer print a notice.
+Earlier baselines — an eight-file slice, then fourteen files — are in this
+file's Git history; their numbers describe a scope that no longer exists.
 
 The scope is the union `stryker.config.js` builds: every `criticalFiles` entry of
 `quality/coverage-policy.json`, the three PR-profile files and `src/core/a11y.ts`.

@@ -51,7 +51,7 @@ Each row is an entry of the readiness table in
 | ------------------ | ---------------------------------- | ------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
 | Authorization      | response changes on intent alone   | `authorizePreview` required           | `strict`                                | a page that showed preview to anyone now needs a real editor session or token |
 | Intent signals     | `['query','fetch-dest','referer']` | `['query']`                           | `previewSignals`                        | a flow that relied on the admin referer alone must add `?preview=true`        |
-| Referrer trust     | on                                 | off outside local dev                 | `disableReferrerDetection: true`        | same as above                                                                 |
+| Referrer trust     | on                                 | off                                   | `disableReferrerDetection: true`        | same as above                                                                 |
 | Message source     | any origin-valid window            | parent/opener only                    | `eventSourcePolicy: 'parent-or-opener'` | a custom embedding that posts from another window                             |
 | Unchanged bindings | re-applied                         | skipped                               | `skipUnchanged: true`                   | a renderer with side effects that expected every message                      |
 | Sanitizer          | `id` and every `data-*` pass       | `id`/`name`/`data-payload-*` stripped | `sanitizerPolicy: 'strict'`             | rich text that relies on `id` or `data-*` (list the CSP `trusted-types` name) |
@@ -65,7 +65,13 @@ Each row is an entry of the readiness table in
 - `isPreviewRequest()` → `hasPreviewIntent()` — same signature. The old name is
   a deprecated alias, removed in 3.0, on both entries that exported it (the root
   and `payload-live-preview/astro`), so a 1.x project compiles against 2.0
-  unchanged; the codemod renames it when you want the new one.
+  unchanged; the codemod renames it when you want the new one. The renamed
+  function keeps the 1.x behaviour too: without `signals` it counts all three
+  signals — a preview query parameter, `Sec-Fetch-Dest: iframe` and an admin
+  `Referer` — while the adapters' 2.0 default is `previewSignals: ['query']`.
+  Pass `{ signals: ['query'] }` where a call should agree with the adapters.
+  `pll migrate` prints this as a note whenever it renames the function, dry run
+  included; the exit code does not change.
 - `hasPreviewIntent(request, { adminOrigins })` → `{ allowedOrigins }` — the
   name everything else uses; `adminOrigins` is a deprecated alias that is
   removed in 3.0.
@@ -80,9 +86,9 @@ Each row is an entry of the readiness table in
   from `payload-live-preview/server`; the root helpers are gone, with no alias
   on purpose. They defaulted `depth` to `1` independently of the runtime's
   `mergeDepth`, and a shim would put that mismatch back — the one thing the move
-  exists to remove. Of the eight names 1.8.1's root entry exported and 2.0 does
-  not, these six are that move; the seventh is `isPreviewRequest` above, and the
-  eighth is `CAPABILITY_REQUIREMENTS`, whose shape changed with it.
+  exists to remove. They and their option types are the six names 1.8.1's root
+  entry exported and 2.0 does not; `isPreviewRequest` is still exported as the
+  alias above, and `CAPABILITY_REQUIREMENTS` was not exported by 1.8.1.
 
 Not a codemod target, because TypeScript reports each of them:
 
@@ -125,10 +131,10 @@ if (isPreviewRequest(request)) {
 }
 const doc = await fetchPreviewDocument({ serverURL, collection });
 
-// 2.0 (after `pll migrate --write`, plus definePreview wiring)
+// 2.0 (after `pll migrate --write`, plus definePreview wiring and the adapters' signals)
 import { hasPreviewIntent } from 'payload-live-preview';
 import { definePreview } from 'payload-live-preview/server';
-if (hasPreviewIntent(request)) {
+if (hasPreviewIntent(request, { signals: ['query'] })) {
   /* … */
 }
 const preview = definePreview({ serverURL, depth: 2 });
@@ -143,7 +149,8 @@ correct, so nothing errors and nothing logs — walk this list once against your
 own site.
 
 Two of them warn now. `LP0409` names any attribute the strict sanitizer
-removes that `'compat'` would have kept — `id`, `name`, and every `data-*` — the
+removes that `'compat'` would have kept — `id`, every `data-*`, and `name` where
+`additionalAllowedAttributes` lets `'compat'` keep it — the
 first time it happens, with the reason that applies to that attribute. It exists
 because this was the one 2.0 change an upgrading project could not discover
 except by looking: measured on a real 1.8.1 site, a `data-*` attribute driving a
@@ -190,7 +197,9 @@ bound an address with `data-payload-type="url"` to work around that, drop the
 override.
 
 **Date inputs get local time.** `date` and `datetime-local` inputs receive the
-value in the visitor's time zone, because that is what those inputs mean. Other
+value in the visitor's time zone, because that is what those inputs mean, and
+so does a `time` input bound as a date (`data-payload-type="date"`), as
+`HH:MM`. Other
 elements still get the ISO instant. A test asserting a UTC string in an input
 needs updating; a page that displayed the raw value now shows local time.
 
@@ -213,7 +222,7 @@ clean break from `0.1.0`, without an API shim:
 - `getFrameAncestors()` became `buildFrameAncestors({ self, origins })`;
   `safeSetTextContent()` was removed (`el.textContent = value` does the same).
 - `isSafeUrl('')` returns `false`; the hard-coded `'de'` locale fallback gave
-  way to `navigator.language`, then `<html lang>`, then `'en'`.
+  way to `<html lang>`, then `navigator.language`, then `'en'`.
 
 ## From `@payloadcms/live-preview`
 

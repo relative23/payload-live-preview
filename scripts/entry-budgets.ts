@@ -407,8 +407,12 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-12 (C2, LP0801 reaches the log): +30 B raw wherever the runtime sits — this row and INLINE_BUDGET raw go to the measurement, `core.js` brotli to measurement plus the documented cushion.
   // 2026-09-14 (2.0.1, guesses in a fragment boundary): gzip 50 878 → 50 888, the fix's
   // +10 B (measured 50 870 → 50 880); cushion kept.
-  'adapters/astro/index.js': { raw: 161_256, gzip: 50_888, brotli: 43_515 },
-  'adapters/astro/middleware-entry.js': { raw: 147_776, gzip: 46_671, brotli: 39_900 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 50 888 → 50 901 (+13 B, measured 50 880 → 50 893); brotli 43 515 → 43 631 (measured 43 511, 4 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 161 256 → 161 305 (+49 B, measured 161 217 → 161 266); gzip 50 901 → 50 911 (+10 B, measured 50 893 → 50 903).
+  'adapters/astro/index.js': { raw: 161_305, gzip: 50_911, brotli: 43_631 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
+  'adapters/astro/middleware-entry.js': { raw: 147_825, gzip: 46_681, brotli: 40_030 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -437,7 +441,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // cushion. Here the shift is 5 B larger than that cushion, so the row goes to
   // the 2.0.0 measurement plus the documented ~120 B. raw and gzip keep their
   // numbers: both fell and both stay inside their ceilings.
-  'adapters/nextjs/index.js': { raw: 159_664, gzip: 50_454, brotli: 43_319 },
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 159 664 → 159 713 (+49 B, measured 159 663 → 159 712).
+  'adapters/nextjs/index.js': { raw: 159_713, gzip: 50_454, brotli: 43_319 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -459,13 +464,20 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-14 (2.0.1): brotli 42 955 → 43 092. Its cushion was 4 B (measured 42 951), which
   // brotli's run-to-run swing crosses with no code change; the fix's build measured 42 972 and
   // the row now carries the ~120 B the other brotli rows keep.
-  'adapters/nuxt/index.js': { raw: 158_976, gzip: 50_291, brotli: 43_092 },
-  'adapters/sveltekit/index.js': { raw: 157_966, gzip: 49_998, brotli: 42_740 },
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 158 976 → 159 025 (+49 B, measured 158 943 → 158 992).
+  'adapters/nuxt/index.js': { raw: 159_025, gzip: 50_291, brotli: 43_092 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
+  'adapters/sveltekit/index.js': { raw: 158_015, gzip: 49_998, brotli: 42_835 },
   // The build tools (codegen, doctor, codemods) are logged in `entry-budgets-tools.ts`, split off at 500 lines (Z37).
   ...TOOL_ENTRY_BUDGETS,
   // 2026-09-14 (2.0.1, guesses in a fragment boundary): raw +44 B each, the fix's own bytes; cushions kept.
-  'core.cjs': { raw: 134_511, gzip: 42_707, brotli: 36_884 },
-  'core.js': { raw: 133_971, gzip: 42_628, brotli: 36_811 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 134 511 → 134 545 (+34 B, measured 134 484 → 134 518); brotli 36 884 → 37 002 (measured 36 882, 2 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 134 545 → 134 594 (+49 B, measured 134 518 → 134 567); gzip 42 707 → 42 723 (+16 B, measured 42 705 → 42 721).
+  'core.cjs': { raw: 134_594, gzip: 42_723, brotli: 37_002 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 133 971 → 134 005 (+34 B, measured 133 945 → 133 979).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 134 005 → 134 054 (+49 B, measured 133 979 → 134 028); gzip 42 628 → 42 646 (+18 B, measured 42 628 → 42 646); brotli 36 811 → 36 934 (measured 36 814, -3 B left; ~120 B as the other brotli rows).
+  'core.js': { raw: 134_054, gzip: 42_646, brotli: 36_934 },
   //
   // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
   // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a
@@ -492,8 +504,12 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // keep their numbers; raw reproduces exactly and gzip to a byte.
   // 2026-09-14 (2.0.1, guesses in a fragment boundary): raw +88 B each, twice the 44 B the
   // other rows grew; cushions kept.
-  'index.cjs': { raw: 282_737, gzip: 88_571, brotli: 57_090 },
-  'index.js': { raw: 282_113, gzip: 88_558, brotli: 56_934 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 282 737 → 282 801 (+64 B, measured 282 715 → 282 779); gzip 88 571 → 88 594 (+23 B, measured 88 561 → 88 584).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 282 801 → 282 899 (+98 B, measured 282 779 → 282 877); gzip 88 594 → 88 624 (+30 B, measured 88 583 → 88 613).
+  'index.cjs': { raw: 282_899, gzip: 88_624, brotli: 57_090 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 282 113 → 282 177 (+64 B, measured 282 092 → 282 156); gzip 88 558 → 88 583 (+25 B, measured 88 555 → 88 580).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 282 177 → 282 275 (+98 B, measured 282 156 → 282 254); gzip 88 583 → 88 610 (+27 B, measured 88 580 → 88 607).
+  'index.js': { raw: 282_275, gzip: 88_610, brotli: 56_934 },
   // The two smallest entries are budgeted to 5 bytes rather than 50: at ~1 KB a
   // 50-byte step is 5 % of the artifact, which stops being a budget.
   'payload.cjs': { raw: 1_090, gzip: 575, brotli: 515 },
@@ -504,12 +520,22 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'server.cjs': { raw: 12_950, gzip: 4_780, brotli: 4_310 },
   'server.js': { raw: 12_830, gzip: 4_775, brotli: 4_300 },
   // 2026-09-14 (2.0.1, guesses in a fragment boundary): raw +44 B each, the fix's own bytes; cushions kept.
-  'client.cjs': { raw: 128_734, gzip: 40_643, brotli: 35_222 },
-  'client.js': { raw: 128_653, gzip: 40_630, brotli: 35_116 },
-  'structural.cjs': { raw: 20_003, gzip: 7_018, brotli: 6_322 },
-  'structural.js': { raw: 19_958, gzip: 7_019, brotli: 6_326 },
-  'lean.cjs': { raw: 91_768, gzip: 29_177, brotli: 25_916 },
-  'lean.js': { raw: 91_757, gzip: 29_171, brotli: 25_929 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 734 → 128 768 (+34 B, measured 128 713 → 128 747).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 768 → 128 817 (+49 B, measured 128 747 → 128 796); gzip 40 643 → 40 656 (+13 B, measured 40 635 → 40 648).
+  'client.cjs': { raw: 128_817, gzip: 40_656, brotli: 35_222 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
+  'client.js': { raw: 128_736, gzip: 40_644, brotli: 35_236 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
+  'structural.cjs': { raw: 20_003, gzip: 7_028, brotli: 6_425 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 019 → 7 029 (+10 B, measured 7 014 → 7 024); brotli 6 326 → 6 427 (measured 6 307, 19 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
+  'structural.js': { raw: 19_958, gzip: 7_029, brotli: 6_427 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 768 → 91 802 (+34 B, measured 91 749 → 91 783).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 802 → 91 851 (+49 B, measured 91 783 → 91 832); gzip 29 177 → 29 190 (+13 B, measured 29 171 → 29 184).
+  'lean.cjs': { raw: 91_851, gzip: 29_190, brotli: 25_916 },
+  // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 757 → 91 791 (+34 B, measured 91 738 → 91 772).
+  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 791 → 91 840 (+49 B, measured 91 772 → 91 821); gzip 29 171 → 29 183 (+12 B, measured 29 167 → 29 179).
+  'lean.js': { raw: 91_840, gzip: 29_183, brotli: 25_929 },
   'lexical.cjs': { raw: 16_307, gzip: 5_602, brotli: 5_072 },
   'lexical.js': { raw: 16_278, gzip: 5_606, brotli: 5_079 },
   //

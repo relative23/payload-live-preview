@@ -1,5 +1,6 @@
 import { expect, type APIRequestContext } from '@playwright/test';
 import type { Carries, DeliveryBudget, DeliveryMeasurement } from '../../fixtures/delivery-budgets';
+import { ASTRO_ORIGIN } from './preview';
 
 /**
  * Reads a public response the way an anonymous visitor gets it and takes it
@@ -24,7 +25,7 @@ const BINDING_ATTRIBUTE = /\sdata-payload-[a-z-]+="/u;
  * the same bytes whatever else in the suite is running. Its bootstrap is also
  * the row with the plainest asset route, which makes a failure here readable.
  */
-const ARTIFACT_SOURCE = 'http://localhost:4173';
+const ARTIFACT_SOURCE = ASTRO_ORIGIN;
 
 export interface PublicResponse {
   readonly bytes: Buffer;

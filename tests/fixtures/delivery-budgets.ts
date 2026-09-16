@@ -10,6 +10,8 @@
  * loudly until the win is recorded here.
  */
 
+import { ASTRO_ORIGIN } from '../e2e/helpers/preview';
+
 /** What the delivery put in front of a visitor who is not an editor. */
 export type Carries = 'nothing' | 'bootstrap' | 'runtime';
 
@@ -79,8 +81,8 @@ export interface DeliveryMeasurement {
  * 22, the version CI runs. A gate demanding an exact gzip figure would be red on
  * a runner and green here for a reason nobody can act on. Raw bytes reproduce
  * exactly, and gzip is a function of them, so holding raw catches every change
- * gzip would. (The runtime inside that script is 104 711 bytes and 32 834 gzip
- * today, Node 24 — it grew again with Z6, Z7 and Z22 after Z3, Z4 and Z5, and
+ * gzip would. (The runtime inside that script was 104 711 bytes and 32 834 gzip
+ * when this was written and is 113 468 bytes in 2.0.1 — it grew again with Z6, Z7 and Z22 after Z3, Z4 and Z5, and
  * the only number in this table that moved for any of them is the Next inline
  * row's, which does not hold the runtime either; the paragraph on that row says
  * what did move.)
@@ -89,14 +91,14 @@ export interface DeliveryMeasurement {
 export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
   {
     name: 'Astro, static build, mode: loader',
-    app: 'http://localhost:4173',
+    app: ASTRO_ORIGIN,
     path: '/',
     carries: 'bootstrap',
     bindings: true,
     scriptElements: 1,
     overheadBytes: 772,
     // A static page has no request to decide for, so the decision moves into the
-    // browser: 762 bytes that ask whether this document is framed or was opened
+    // browser: 772 bytes that ask whether this document is framed or was opened
     // by an admin and, outside a preview, fetch nothing. This is the floor of
     // the whole table and it is not zero — a build has nobody to ask. Z8 leaves
     // it standing on purpose, which is why it is written down as a floor and not

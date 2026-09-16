@@ -2,6 +2,7 @@
  * `pll migrate <path> [--write] [--only <id,id>]`, hosted by the `pll` binary.
  * Exit codes: 0 clean, 1 usage or I/O error, 3 when conflicts need a human.
  */
+import { CODEMODS } from './index';
 import { runMigrate, type MigrateFileResult } from './runner';
 
 export const MIGRATE_HELP = `pll migrate — rewrite 1.x APIs to their 2.0 names and homes (ADR 0007)
@@ -94,6 +95,11 @@ export async function runMigrateCommand(argv: readonly string[]): Promise<number
     `\n${args.write ? 'Migrated' : 'Would migrate'} ${String(result.changedCount)} file(s).` +
       `${args.write ? '' : ' Re-run with --write to apply.'}\n`,
   );
+  for (const { id, notice } of CODEMODS) {
+    if (notice !== undefined && (result.byCodemod[id] ?? 0) > 0) {
+      process.stdout.write(`\nNote (${id}): ${notice}\n`);
+    }
+  }
   const conflicted = result.files.filter((file) => file.conflicts.length > 0);
   if (conflicted.length === 0) return 0;
   process.stdout.write(`\n${String(conflicted.length)} file(s) need manual attention:\n`);

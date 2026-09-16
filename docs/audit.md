@@ -33,9 +33,9 @@ The modules that answer them are the **trusted core**:
 | `src/core/attribute-binding.ts` |        68 | which attribute a remote value may become                                      |
 | `src/security/url-validator.ts` |        44 | which URL is a URL                                                             |
 | `src/security/escape.ts`        |        48 | how text becomes markup without becoming markup                                |
-| `src/security/sanitizer.ts`     |       443 | which tags and attributes CMS content keeps                                    |
+| `src/security/sanitizer.ts`     |       445 | which tags and attributes CMS content keeps                                    |
 | `src/security/trusted-types.ts` |        68 | the one policy every HTML sink goes through                                    |
-| **Total**                       | **1 354** | 1 032 without blank and comment lines; 41 exported names                       |
+| **Total**                       | **1 356** | 1 032 without blank and comment lines; 41 exported names                       |
 
 The boundary is not a feeling about which files are important. A module is in
 the core because it **holds a capability**: it listens to messages, sends a
@@ -79,7 +79,9 @@ eight modules and nothing else (`STRYKER_SCOPE=core`), with every mutant killed
 as the target. The measured score is in
 [quality/mutation-policy-core.json](../quality/mutation-policy-core.json):
 1 202 mutants on 2026-09-11, 99.17 % killed, 10 survived and none left
-unexecuted by a test, 13 minutes. Each of the ten is on that file's
+unexecuted by a test, 13 minutes. 2.0.1 adds ten in the sanitizer's `name`
+check for LP0409, all killed: 1 212 mutants, the same ten survivors, the same
+score. Each of the ten is on that file's
 `equivalent` list — by file, line, mutator and the text it replaced — with one
 sentence saying why the program does the same with and without it: the three
 on `detach()`'s paired fields, which are set and cleared together; the two
@@ -100,7 +102,7 @@ These three rest on two that already existed: the layer rules (no upward
 import, no Node builtin in browser code, nothing browser-facing imports the
 server side) and the API reports under `etc/api/`, which since this audit mark
 every exported name a project is not meant to import as `@internal` —
-545 public names and 126 internal, measured by `scripts/surface-usage.ts` against what the examples import and the guides name, then closed under what every public signature reaches. The names stay exported, so nothing that compiled stops
+552 public names and 126 internal, the split measured by `scripts/surface-usage.ts` against what the examples import and the guides name, then closed under what every public signature reaches. The names stay exported, so nothing that compiled stops
 compiling; the split is a statement in the report, held byte for byte by
 `npm run test:package`.
 
@@ -118,7 +120,7 @@ function that is handed `fetch` under another name. The core's own imports are
 held exact so that this stays a short list to check by hand.
 
 A thousand lines is about what one reader holds in one sitting, and that was
-the size this core set out to be. It is 1 354, and the difference is not a
+the size this core set out to be. It is 1 356, and the difference is not a
 second responsibility hiding in the list:
 133 of the sanitizer's lines are the allow-lists a reader has to read anyway,
 and about 130 of the bus's are the queue that commits token verdicts in arrival

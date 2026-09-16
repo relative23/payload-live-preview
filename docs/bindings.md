@@ -50,45 +50,56 @@ bindings exist and why they are not going anywhere.
 **Why you will still want field bindings inside a boundary.** A server render
 replaces the region; a patch writes into the element that is already there. For
 a field an editor types into while looking at it, the patch keeps focus, the
-caret and scroll position. So: boundary for the component, bindings for the two
-or three fields being edited. Both at once is the normal case — the bindings
-inside a boundary are also its fallback when the server cannot render.
+caret and scroll position — as long as the boundary is not rendering that field.
+A boundary re-renders when a field in its `data-payload-depends` changes, and on
+every change when it has none, and the bindings it covers are then left to the
+render instead of patched. So: boundary for the component, with
+`data-payload-depends` naming what only the server can show; bindings for the two
+or three fields being edited, left out of that list. Both at once is the normal
+case — the bindings inside a boundary are also its fallback when the server
+cannot render.
 
 ## Attribute reference
 
-| Attribute                      | Purpose                                                                                                                                                                                                                                         | Example                                            |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `data-payload-field`           | Bind the element to a field path                                                                                                                                                                                                                | `data-payload-field="hero.title"`                  |
-| `data-payload-type`            | Force a renderer (a built-in type or a namespaced custom key)                                                                                                                                                                                   | `data-payload-type="image"`                        |
-| `data-payload-attribute`       | Write the value into an attribute instead of the content. Event handlers, `style`, `srcdoc`, `formaction`, `form`, `id`, `name`, `is`, `srcset` and `imagesrcset` are refused; URL attributes take safe URLs only                               | `data-payload-attribute="datetime"`                |
-| `data-payload-href`            | Read `href` from another field                                                                                                                                                                                                                  | `data-payload-href="ctaUrl"`                       |
-| `data-payload-src`             | Read `src` from another field                                                                                                                                                                                                                   | `data-payload-src="hero.url"`                      |
-| `data-payload-alt`             | Read `alt` from another field                                                                                                                                                                                                                   | `data-payload-alt="hero.alt"`                      |
-| `data-payload-richtext`        | Force Lexical rendering (usually detected from the value)                                                                                                                                                                                       | `data-payload-richtext`                            |
-| `data-payload-html`            | Render the value as sanitized HTML                                                                                                                                                                                                              | `data-payload-html`                                |
-| `data-payload-text`            | Let a text write replace element children. Without it a text binding whose element has element children is skipped with `LP0402`, so a styled wrapper is not destroyed                                                                          | `data-payload-text`                                |
-| `data-payload-array`           | Treat the value as an array                                                                                                                                                                                                                     | `data-payload-array`                               |
-| `data-payload-array-template`  | Markup per array item; `{{field}}` reads the item                                                                                                                                                                                               | `data-payload-array-template="<li>{{title}}</li>"` |
-| `data-payload-array-separator` | Separator for arrays of primitives                                                                                                                                                                                                              | `data-payload-array-separator=" · "`               |
-| `data-payload-structural`      | Diff-based keyed updates for arrays: unaffected items keep their DOM state ([docs/renderers.md](renderers.md))                                                                                                                                  | `data-payload-structural`                          |
-| `data-payload-nested-key`      | Inside an array template: the item field holding a nested array                                                                                                                                                                                 | `data-payload-nested-key="slides"`                 |
-| `data-payload-nested-template` | The template for that nested array's items                                                                                                                                                                                                      | `data-payload-nested-template="<li>{{t}}</li>"`    |
-| `data-payload-key`             | Written by the runtime from each item's `id`; never write it yourself                                                                                                                                                                           | —                                                  |
-| `data-payload-locale`          | Read this locale's value (`field_<locale>`) regardless of the message locale                                                                                                                                                                    | `data-payload-locale="de-AT"`                      |
-| `data-payload-format`          | How a date or number is written; a closed vocabulary, see below                                                                                                                                                                                 | `data-payload-format="currency:EUR"`               |
-| `data-payload-owner`           | The document this subtree belongs to (see below)                                                                                                                                                                                                | `data-payload-owner="global:homepage"`             |
-| `data-payload-depends`         | Fields whose change re-applies this binding under `skipUnchanged`; separated by commas or whitespace                                                                                                                                            | `data-payload-depends="price currency"`            |
-| `data-payload-strategy`        | `patch` (default), `fragment` (server-rendered) or `route` (whole-route refresh); any other value is left alone with `LP0407`. Without it: inside a fragment boundary → fragment, in `<head>` → route, else patch ([docs/hybrid.md](hybrid.md)) | `data-payload-strategy="route"`                    |
-| `data-payload-fragment`        | A fragment boundary; the value is a registry id the endpoint renders                                                                                                                                                                            | `data-payload-fragment="hero"`                     |
-| `data-payload-fragment-key`    | Distinguishes several boundaries of one id on a page                                                                                                                                                                                            | `data-payload-fragment-key="a"`                    |
-| `data-payload-boundary`        | An empty-field anchor: hidden while the field is empty, shown when it is filled                                                                                                                                                                 | `data-payload-boundary hidden`                     |
-| `data-payload-island`          | A hydrated framework root: never patched or morphed into; `"patch"` opts back in ([docs/renderers.md](renderers.md))                                                                                                                            | `data-payload-island`                              |
-| `data-payload-owned`           | A subtree the site scripts itself: the morph and the head sync leave it alone, and so does `autoBind`                                                                                                                                           | `data-payload-owned`                               |
-| `data-payload-no-bind`         | A subtree `autoBind` never guesses into; a declared binding inside it still works (see below)                                                                                                                                                   | `data-payload-no-bind`                             |
-| `data-payload-guessed`         | Written by the runtime on every binding `autoBind` made, holding the value it matched; never write it yourself                                                                                                                                  | —                                                  |
+| Attribute                      | Purpose                                                                                                                                                                                                                                                                             | Example                                            |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `data-payload-field`           | Bind the element to a field path                                                                                                                                                                                                                                                    | `data-payload-field="hero.title"`                  |
+| `data-payload-type`            | Force a renderer (a built-in type or a namespaced custom key)                                                                                                                                                                                                                       | `data-payload-type="image"`                        |
+| `data-payload-attribute`       | Write the value into an attribute instead of the content. Event handlers, `style`, `srcdoc`, `formaction`, `form`, `id`, `name`, `is`, `srcset` and `imagesrcset` are refused; URL attributes take safe URLs only                                                                   | `data-payload-attribute="datetime"`                |
+| `data-payload-href`            | Read `href` from another field                                                                                                                                                                                                                                                      | `data-payload-href="ctaUrl"`                       |
+| `data-payload-src`             | Read `src` from another field                                                                                                                                                                                                                                                       | `data-payload-src="hero.url"`                      |
+| `data-payload-alt`             | Read `alt` from another field                                                                                                                                                                                                                                                       | `data-payload-alt="hero.alt"`                      |
+| `data-payload-richtext`        | Force Lexical rendering (usually detected from the value)                                                                                                                                                                                                                           | `data-payload-richtext`                            |
+| `data-payload-html`            | Render the value as sanitized HTML                                                                                                                                                                                                                                                  | `data-payload-html`                                |
+| `data-payload-text`            | Let a text write replace element children. Without it a text binding whose element has element children is skipped with `LP0402`, so a styled wrapper is not destroyed                                                                                                              | `data-payload-text`                                |
+| `data-payload-array`           | Treat the value as an array                                                                                                                                                                                                                                                         | `data-payload-array`                               |
+| `data-payload-array-template`  | Markup per array item; `{{field}}` reads the item                                                                                                                                                                                                                                   | `data-payload-array-template="<li>{{title}}</li>"` |
+| `data-payload-array-separator` | Separator for arrays of primitives                                                                                                                                                                                                                                                  | `data-payload-array-separator=" · "`               |
+| `data-payload-structural`      | Diff-based keyed updates for arrays: unaffected items keep their DOM state ([docs/renderers.md](renderers.md))                                                                                                                                                                      | `data-payload-structural`                          |
+| `data-payload-nested-key`      | Inside an array template: the item field holding a nested array                                                                                                                                                                                                                     | `data-payload-nested-key="slides"`                 |
+| `data-payload-nested-template` | The template for that nested array's items                                                                                                                                                                                                                                          | `data-payload-nested-template="<li>{{t}}</li>"`    |
+| `data-payload-key`             | The item's `id`, for keyed pairing. The runtime writes it on each item it renders that has an `id`; write it on server-rendered items so the first update pairs them by `id` rather than by position. It never replaces the `id` in the data: an item without one pairs by position | `data-payload-key={item.id}`                       |
+| `data-payload-locale`          | Read this locale's value (`field_<locale>`) regardless of the message locale                                                                                                                                                                                                        | `data-payload-locale="de-AT"`                      |
+| `data-payload-format`          | How a date or number is written; a closed vocabulary, see below                                                                                                                                                                                                                     | `data-payload-format="currency:EUR"`               |
+| `data-payload-owner`           | The document this subtree belongs to (see below)                                                                                                                                                                                                                                    | `data-payload-owner="global:homepage"`             |
+| `data-payload-depends`         | Fields whose change re-applies this binding under `skipUnchanged`; separated by commas or whitespace                                                                                                                                                                                | `data-payload-depends="price currency"`            |
+| `data-payload-strategy`        | `patch` (default), `fragment` (server-rendered) or `route` (whole-route refresh); any other value is left alone with `LP0407`. Without it: inside a fragment boundary → fragment, in `<head>` → route, else patch ([docs/hybrid.md](hybrid.md))                                     | `data-payload-strategy="route"`                    |
+| `data-payload-fragment`        | A fragment boundary; the value is a registry id the endpoint renders                                                                                                                                                                                                                | `data-payload-fragment="hero"`                     |
+| `data-payload-fragment-key`    | Distinguishes several boundaries of one id on a page                                                                                                                                                                                                                                | `data-payload-fragment-key="a"`                    |
+| `data-payload-boundary`        | An empty-field anchor: hidden while the field is empty, shown when it is filled                                                                                                                                                                                                     | `data-payload-boundary hidden`                     |
+| `data-payload-island`          | A hydrated framework root: never patched or morphed into; `"patch"` opts back in ([docs/renderers.md](renderers.md))                                                                                                                                                                | `data-payload-island`                              |
+| `data-payload-owned`           | A subtree the site scripts itself: the morph and the head sync leave it alone, and so does `autoBind`                                                                                                                                                                               | `data-payload-owned`                               |
+| `data-payload-no-bind`         | A subtree `autoBind` never guesses into; a declared binding inside it still works (see below)                                                                                                                                                                                       | `data-payload-no-bind`                             |
+| `data-payload-guessed`         | Written by the runtime on every binding `autoBind` made, holding the value it matched; never write it yourself                                                                                                                                                                      | —                                                  |
 
-Binding metadata is live: changing any of these attributes, or an input's
-native `type`, rebuilds the affected bindings after the mutation debounce.
+Binding metadata is live for the attributes the mutation observer watches:
+`data-payload-field` and `data-payload-owner` anywhere, and on a bound element
+`data-payload-type`, `-attribute`, `-href`, `-src`, `-alt`, `-richtext`,
+`-html`, `-array`, `-array-template`, `-array-separator`, `-structural`,
+`-locale`, `-depends`, `-strategy`, `-boundary` and an input's native `type`.
+Changing one rebuilds the affected bindings after the mutation debounce.
+`data-payload-format`, `data-payload-fragment` and `data-payload-fragment-key`
+are not watched, so changing one rebuilds nothing by itself.
 
 ### Formatting a date or a number
 
@@ -170,8 +181,8 @@ The type comes from `data-payload-type` when set, else from the field schema
 when the admin sends one (Payload 2.x), else from the element: the marker
 attributes (`data-payload-richtext`, `data-payload-html`,
 `data-payload-structural`, `data-payload-array`), then `<img>` → `image`,
-`<a>` → `url`, `<time>` → `date`, `<input type="checkbox|number|date">` →
-`checkbox`, `number`, `date`. Everything else is `text`. Lexical values are
+`<a>` → `url`, `<time>` → `date`, `<input type="checkbox|number">` →
+`checkbox`, `number`, `<input type="date|datetime-local">` → `date`. Everything else is `text`. Lexical values are
 recognized by shape, so `data-payload-field` alone is enough for rich text.
 
 Custom renderers register through the plugin system under a namespaced key
@@ -235,12 +246,14 @@ its only text node, or one attribute the writer may set, an `<img src>` for an
 upload — that element is bound to the field as if the attribute stood there.
 Where it is found nowhere, more than once, as part of a longer text, or split
 across nodes, nothing is bound, and the field is as unbound as it was: LP0201
-names it, and `onUnfaithfulPatch` escalates an edit to it.
+names it once the page has at least one binding, declared or guessed — a page
+left with none gets no LP0201 at all — and `onUnfaithfulPatch` escalates an
+edit to it.
 
 A guess is a binding like any other afterwards, with one difference you can
 see: the element carries `data-payload-guessed` with the value it was found by,
 `inspect().bindings.guessed` lists it apart from the declared ones, and the
-[unbound-fields overlay](../README.md) shows it under its own heading with the
+[unbound-fields overlay](renderers.md#unbound-fields-what-the-page-is-still-missing) shows it under its own heading with the
 attribute to paste. Copy that attribute into the template and the guess
 becomes a declaration.
 
@@ -270,8 +283,10 @@ What it never does, so a wrong element is not rewritten on every keystroke:
   until 2.0.1, and because the first message renders a boundary too, a guess
   inside one never outlived that message.
 
-Two things to know before turning it on. A date or a number it binds inherits
-no `data-payload-format`, so the first write reports
+Two things to know before turning it on. A guess inherits no
+`data-payload-format`. A number is never guessed — only strings are looked for
+— but a date it binds on a `<time>` element (or wherever a Payload 2.x schema
+says `date`) is written by the date renderer, so the first write reports
 [`LP0412`](troubleshooting.md#diagnostic-codes) where the template formatted
 the value differently — the diagnostic is the measure of what the guess could
 not know. And a guess rests on the value being unique on the page: a title
@@ -352,9 +367,11 @@ binding does:
 ```
 
 It writes `data-payload-fragment`, `data-payload-depends` and — with `key` —
-`data-payload-fragment-key`, and nothing at all while unauthorized. An id the
-endpoint would refuse (anything but lowercase `[a-z][a-z0-9-]*`) throws here
-rather than becoming a boundary that silently never renders. What the endpoint
+`data-payload-fragment-key`, and nothing at all while unauthorized. An id
+that is not lowercase `[a-z][a-z0-9-]*` of at most 64 characters throws here
+rather than becoming a boundary that silently never renders. The helper is
+stricter than the endpoint, which accepts either case: an id that differs from
+its registry key only in case would never render. What the endpoint
 does with the id: [hybrid.md](hybrid.md).
 
 Do not key CSS off `data-payload-*`: a selector that reads "no filled
@@ -452,8 +469,8 @@ export default defineConfig({
 <h1>{page.title}</h1>   →   <h1 {...__lpPreview.bind('title')}>{page.title}</h1>
 ```
 
-`inventory` is what `generateTypes()` returns, or the file `pll-codegen
---inventory` writes; only the field paths are read. The helper is built once per
+`inventory` is the `inventory` property of what `generateTypes()` resolves
+to, or the file `pll-codegen --inventory` writes; only the field paths are read. The helper is built once per
 file from `Astro.locals`, which is why this is Astro-only: the rewrite needs a
 template whose own scope reaches the request context, and a Svelte or Vue
 component's does not — there the verdict would have to travel through `load` or

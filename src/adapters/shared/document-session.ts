@@ -134,7 +134,7 @@ export class DocumentSession<T> {
 
   getSnapshot = (): DocumentSnapshot<T> => this.#snapshot;
 
-  /** Server rendering has no window and no messages: the initial document, not loading. */
+  /** Server rendering has no window and no messages: the initial snapshot a client render starts from. */
   getServerSnapshot = (): DocumentSnapshot<T> => this.#initial;
 
   #attach(): void {

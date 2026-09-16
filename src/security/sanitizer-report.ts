@@ -2,7 +2,8 @@
  * LP0409 — what the strict sanitizer removed that the 1.x default kept.
  *
  * `sanitizerPolicy` defaults to `'strict'` since 2.0; before that it was
- * `'compat'`, which let `id`, `name` and every `data-*` through. The difference
+ * `'compat'`, which let `id` and every `data-*` through, and `name` only where
+ * a per-tag list allowed it. The difference
  * only shows when a binding *writes* markup, so a project that upgrades and
  * whose rich text carries its own hooks loses them at the moment an editor
  * types — silently, and in the preview only. Measured on a real consumer: a

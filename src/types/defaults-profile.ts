@@ -20,7 +20,7 @@ export type EventSourcePolicy = 'any' | 'parent-or-opener';
 export const READINESS_ROWS = Object.freeze({
   strict: 'production response changes require an authorized context',
   previewSignals: 'query-only intent signal',
-  disableReferrerDetection: 'referrer trust off outside local dev',
+  disableReferrerDetection: 'referrer trust off',
   eventSourcePolicy: 'messages must come from parent/opener',
   skipUnchanged: 'skip unchanged bindings by default',
   sanitizerPolicy: 'hardened sanitizer id/data-* policy',

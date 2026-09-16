@@ -75,8 +75,11 @@ function describeNonPage(preview: DoctorResponse): DoctorFinding | undefined {
         'resource, usually a login or a canonical host, and judging it would say nothing ' +
         'about this URL.',
       remedy:
-        'Probe the final URL directly. A redirect to a login means the route needs ' +
-        'authentication that a plain probe cannot supply.',
+        'The request carried the intent parameter (?preview=true, or the --param name), the ' +
+        "way the admin's iframe loads the page, so a rule that redirects on that query redirects " +
+        'the iframe too. A redirect to a login means the route needs authentication that a ' +
+        "plain probe cannot supply: pass an editor's credentials with --header. Probe the final " +
+        'URL directly only when the redirect has nothing to do with either.',
     };
   }
   if (preview.status < 200 || preview.status > 299) {
@@ -273,7 +276,11 @@ function bindingFindings(
 /** Audit a probed deployment. */
 export function analyzeProbe(
   probe: DoctorProbe,
-  context: DoctorContext & { readonly v2?: boolean },
+  context: DoctorContext & {
+    readonly v2?: boolean;
+    /** Whether the preview probe carried caller-supplied headers (`--header`). */
+    readonly credentials?: boolean;
+  },
 ): DoctorReport {
   const { publicResponse: pub, previewResponse: preview } = probe;
   const notAPage = describeNonPage(preview);
@@ -283,19 +290,41 @@ export function analyzeProbe(
   const runtimeInPreview = preview.body.includes(RUNTIME_MARKER);
   const findings: DoctorFinding[] = [];
   if (!runtimeInPreview) {
-    findings.push({
-      code: 'LP0701',
-      level: 'warning',
-      title: 'No inline runtime in the preview response',
-      detail:
-        `A request carrying Sec-Fetch-Dest: iframe returned ${String(preview.status)} without ` +
-        'the inline runtime. Two readings, and this audit cannot tell them apart from the ' +
-        'response alone: an adapter that did not recognise the request as a preview, or a ' +
-        'consumer that starts LivePreviewClient itself and never wanted the inline build.',
-      remedy:
-        'If you use an adapter, check its inject mode and whether a proxy strips ' +
-        'Sec-Fetch-Dest. If you start the client yourself, this line is expected.',
-    });
+    findings.push(
+      context.credentials === true
+        ? {
+            code: 'LP0701',
+            level: 'warning',
+            title: 'No inline runtime in the preview response',
+            detail:
+              `The preview request returned ${String(preview.status)} without the inline ` +
+              'runtime, although it carried the headers passed with --header. Three readings: ' +
+              'those credentials were not accepted — expired, issued for another page, or not ' +
+              'what authorizePreview reads — an adapter that did not recognise the request as a ' +
+              'preview, or a consumer that starts LivePreviewClient itself.',
+            remedy:
+              'Check that the credentials are current and are the ones authorizePreview reads; ' +
+              'if you use an adapter, check its inject mode and previewSignals. If you start the ' +
+              'client yourself, this line is expected.',
+          }
+        : {
+            code: 'LP0701',
+            level: 'warning',
+            title: 'No inline runtime in the preview response',
+            detail:
+              `The preview request returned ${String(preview.status)} without the inline ` +
+              'runtime. Three readings, and this audit cannot tell them apart from the response ' +
+              'alone: a preview behind authorizePreview — the strict 2.0 default — which answers ' +
+              'a request without credentials exactly like this, an adapter that did not recognise ' +
+              'the request as a preview, or a consumer that starts LivePreviewClient itself.',
+            remedy:
+              "To audit a gated preview, send what an editor's browser sends: " +
+              "--header 'Cookie: payload-token=…' for a Payload session, or " +
+              "--header 'x-preview-token: …' for a signed token. Otherwise check the adapter's " +
+              'inject mode and previewSignals; if you start the client yourself, this line is ' +
+              'expected.',
+          },
+    );
   }
   findings.push(...framingFindings(preview, runtimeInPreview, context));
   findings.push(

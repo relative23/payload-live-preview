@@ -384,7 +384,9 @@ function sanitizeAttributes(element: Element, tag: string, policy: ResolvedPolic
       // before the allow-list so an extension cannot re-admit them.
       if (name === 'id' || name === 'name' || name.startsWith(BINDING_DATA_PREFIX)) {
         element.removeAttribute(attr.name);
-        reportDroppedAttribute(name);
+        // `compat` kept `name` only where a per-tag list allowed it, so only
+        // there did the upgrade change anything to report.
+        if (name !== 'name' || tagAttrs?.has(name) === true) reportDroppedAttribute(name);
         continue;
       }
       if (name.startsWith(ATTR_DATA_PREFIX)) {

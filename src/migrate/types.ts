@@ -34,6 +34,12 @@ export interface Codemod {
   readonly summary: string;
   /** The ADR 0007 ledger entry this codemod implements. */
   readonly ledgerEntry: number;
+  /**
+   * Said once after a run in which this codemod changed a file: what the rewrite
+   * keeps that a reader of the diff cannot see. Not a conflict — nothing needs a
+   * human, so the exit code does not change.
+   */
+  readonly notice?: string;
 }
 
 /** A codemod with its implementation; internal, so `ts-morph` stays off the public surface. */

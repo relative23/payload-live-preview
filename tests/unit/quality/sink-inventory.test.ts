@@ -135,6 +135,10 @@ describe('the sink gate', () => {
 });
 
 describe('the reviewed inventory', () => {
+  // The scan reads every module through ts-morph: 0.75 s alone on this host and
+  // 1.2 s under coverage, but 5.0 s inside a full parallel coverage run, and the
+  // file took 5.5 s in CI's Coverage job on #93 — against vitest's 5 s default.
+  // That is CPU contention, not a hang, so the ceiling moves, not the test.
   it('finds the sinks at all', async () => {
     // Guards the scanner itself: a scan that silently matched nothing would
     // make the assertion below vacuous.
@@ -147,8 +151,9 @@ describe('the reviewed inventory', () => {
     );
     expect(html.length).toBe(HTML_SINKS.size);
     expect(attribute.length).toBeGreaterThan(ATTRIBUTE_SINKS.size);
-  });
+  }, 30_000);
 
+  // The same scan as above, so the same ceiling.
   it('accounts for every sink in the tree, and for nothing that is not there', async () => {
     const modules = await readArchitectureModules(ROOT);
     expect(
@@ -156,7 +161,7 @@ describe('the reviewed inventory', () => {
         readFileSync(resolve(ROOT, path), 'utf8'),
       ),
     ).toEqual([]);
-  });
+  }, 30_000);
 
   it('keeps the sanitizer as the only sink fed markup it did not check, besides the server render', () => {
     const raw = [...HTML_SINKS.entries()].filter(

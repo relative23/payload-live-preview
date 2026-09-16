@@ -27,7 +27,7 @@ export interface PayloadSessionStrategy {
   readonly cookieName?: string;
   /** Upper bound for the `/me` round trip. Below 250 ms is raised to 250 ms; default 3000. */
   readonly timeoutMs?: number;
-  /** Longest cookie value accepted; longer ones are refused as `invalid`. Default 4096. */
+  /** Longest cookie value accepted; longer ones are refused as `missing-credential`. Default 4096. */
   readonly maxCookieLength?: number;
   readonly fetch?: FetchLike;
   /** Clock, Unix milliseconds. Injectable for tests. */

@@ -9,7 +9,9 @@
  * milliseconds apart, against the default fifty-millisecond window.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DataMerger, type MergeRequest } from '@core/data-merger';
+import { MergeNeed } from '@core/merge-need';
 import { EventEmitter } from '@events/emitter';
 import type { FieldRenderer } from '@core/types';
 import { fireMessage, makeRuntime, textRenderer } from './lifecycle-startup-harness';
@@ -282,5 +284,67 @@ describe('what a keystroke costs (LP-3, LP-4)', () => {
     await vi.advanceTimersByTimeAsync(WINDOW_MS * 8);
 
     expect(fetchFn.mock.calls.length).toBe(1);
+  });
+});
+
+/**
+ * Found on a real admin, in WebKit, while the machine was under load: the
+ * preview showed "…admin-w" after the editor had typed "…admin-webkit", and
+ * stayed there until the next keystroke or save.
+ *
+ * The window is decided by the clock and flushed by a timer. When the timer
+ * runs late — a busy main thread, a throttled engine — the clock has already
+ * closed the window, so the last keystroke goes out as a new leading request,
+ * and only then does the timer send the older queued state behind it.
+ * `DataMerger` keeps the newest request, so it dropped the last keystroke's
+ * answer. The real classes; only `fetch` is fake, and it answers with the data
+ * it was sent.
+ */
+describe('a window timer that runs late', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    vi.setSystemTime(0);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function requestFor(content: string): MergeRequest {
+    return { collectionSlug: 'guides', data: { id: 1, content }, locale: 'de' };
+  }
+
+  function echoFetch(latencyMs: number): typeof fetch {
+    return async (_url, init) => {
+      const body = typeof init?.body === 'string' ? init.body : '{}';
+      const { data } = JSON.parse(body) as { data: Record<string, unknown> };
+      await new Promise((resolve) => setTimeout(resolve, latencyMs));
+      return new Response(JSON.stringify(data), { status: 200 });
+    };
+  }
+
+  it('keeps the last keystroke instead of sending the queued, older state after it', async () => {
+    const merger = new DataMerger({ serverURL: 'https://cms.test', fetchFn: echoFetch(30) });
+    const need = new MergeNeed();
+
+    expect(need.request(merger, WINDOW_MS, requestFor('admin-')).leading).toBe(true);
+    vi.setSystemTime(10);
+    const queued = need.request(merger, WINDOW_MS, requestFor('admin-w'));
+    expect(queued.leading).toBe(false);
+
+    // The clock passes the end of the window before its timer has run.
+    await vi.advanceTimersByTimeAsync(WINDOW_MS - 5);
+    vi.setSystemTime(10 + WINDOW_MS + 1);
+    const last = need.request(merger, WINDOW_MS, requestFor('admin-webkit'));
+    expect(last.leading).toBe(true);
+
+    // Only now does the late timer run.
+    await vi.advanceTimersByTimeAsync(5);
+    const settled = Promise.all([last.result, queued.result]);
+    await vi.advanceTimersByTimeAsync(200);
+    const [lastResult, queuedResult] = await settled;
+
+    expect(lastResult).toEqual({ status: 'merged', doc: { id: 1, content: 'admin-webkit' } });
+    // Whoever waited on the queued request already rendered its own values.
+    expect(queuedResult).toEqual({ status: 'superseded' });
   });
 });
