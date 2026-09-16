@@ -149,6 +149,22 @@ export function previewReferer(adminOrigin: string): string {
   }
 }
 
+/**
+ * The caller's headers without the ones the probe sets itself. Header names are
+ * case-insensitive, and `fetch` combines two spellings of one name into one
+ * comma-joined value, so a caller's `sec-fetch-dest` would otherwise turn the
+ * probe's `iframe` into `document, iframe`. The probe's own headers win.
+ */
+function callerHeaders(
+  headers: Readonly<Record<string, string>> | undefined,
+  own: Readonly<Record<string, string>>,
+): Record<string, string> {
+  const taken = new Set(Object.keys(own).map((name) => name.toLowerCase()));
+  return Object.fromEntries(
+    Object.entries(headers ?? {}).filter(([name]) => !taken.has(name.toLowerCase())),
+  );
+}
+
 /** Fetch the URL twice — as a visitor and as the admin's iframe — and audit the difference. */
 export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport> {
   const fetchImpl = options.fetchImpl ?? createDefaultFetch();
@@ -161,17 +177,14 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
       'Sec-Fetch-Mode': 'navigate',
     },
   });
+  const probeHeaders: Record<string, string> = {
+    Accept: 'text/html',
+    'Sec-Fetch-Dest': 'iframe',
+    'Sec-Fetch-Mode': 'navigate',
+    ...(options.adminOrigin === undefined ? {} : { Referer: previewReferer(options.adminOrigin) }),
+  };
   const previewResponse = await fetchImpl(previewUrl(options.url), {
-    headers: {
-      // The caller's headers first, so they cannot turn the probe into something else.
-      ...options.previewHeaders,
-      Accept: 'text/html',
-      'Sec-Fetch-Dest': 'iframe',
-      'Sec-Fetch-Mode': 'navigate',
-      ...(options.adminOrigin === undefined
-        ? {}
-        : { Referer: previewReferer(options.adminOrigin) }),
-    },
+    headers: { ...callerHeaders(options.previewHeaders, probeHeaders), ...probeHeaders },
   });
   return analyzeProbe(
     { publicResponse, previewResponse },

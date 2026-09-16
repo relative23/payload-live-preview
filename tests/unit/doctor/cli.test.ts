@@ -90,6 +90,23 @@ describe('runDoctor probing', () => {
     expect(calls[1]?.['Sec-Fetch-Dest']).toBe('iframe');
   });
 
+  it('keeps its own probe headers whatever case a previewHeaders entry spells them in', async () => {
+    // Headers are case-insensitive: a caller's `sec-fetch-dest` would otherwise
+    // be combined with the probe's `Sec-Fetch-Dest` into "document, iframe".
+    const { fetchImpl, calls } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND });
+    await runDoctor({
+      url: 'https://example.com/',
+      fetchImpl,
+      previewHeaders: { 'sec-fetch-dest': 'document', accept: '*/*', cookie: 'payload-token=abc' },
+    });
+    expect(calls[1]).toEqual({
+      Accept: 'text/html',
+      'Sec-Fetch-Dest': 'iframe',
+      'Sec-Fetch-Mode': 'navigate',
+      cookie: 'payload-token=abc',
+    });
+  });
+
   it('reaches a verdict from the two responses', async () => {
     const { fetchImpl } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND }, CSP);
     const report = await runDoctor({ url: 'https://example.com/', adminOrigin: ADMIN, fetchImpl });
