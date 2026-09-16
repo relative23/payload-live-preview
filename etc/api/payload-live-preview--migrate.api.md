@@ -8,6 +8,7 @@
 export interface Codemod {
     readonly id: string;
     readonly ledgerEntry: number;
+    readonly notice?: string;
     // (undocumented)
     readonly summary: string;
 }

@@ -45,7 +45,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // smaller one over the 2 % the improvement hint allows.
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 16 090 → 17 523 (+1433 B, measured 16 073 → 17 506); gzip 6 550 → 6 963 (+413 B, measured 6 539 → 6 952); brotli 5 780 → 6 143 (measured 6 023, -243 B left; ~120 B as the other brotli rows).
   // 2026-09-16 (2.0.1: the probe drops a caller header that respells one of its own): raw 17 523 → 17 701 (+178 B, measured 17 506 → 17 684); gzip 6 963 → 7 023 (+60 B, measured 6 952 → 7 012). Same cushions.
-  'doctor.js': { raw: 17_701, gzip: 7_023, brotli: 6_143 },
+  // 2026-09-16 (2.0.1: --param, the byte-for-byte query splice, the duplicate-header refusal): raw 17 701 → 18 619 (+918 B, measured 17 684 → 18 602); gzip 7 023 → 7 378 (+355 B, measured 7 012 → 7 367); brotli 6 143 → 6 513 (measured 6 393, ~120 B as the other brotli rows).
+  'doctor.js': { raw: 18_619, gzip: 7_378, brotli: 6_513 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -74,7 +75,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // with it. Same cushions; neither entry embeds the runtime.
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 36 760 → 39 806 (+3046 B, measured 36 718 → 39 764); gzip 13 390 → 14 373 (+983 B, measured 13 371 → 14 354); brotli 11 980 → 12 804 (measured 12 684, -704 B left; ~120 B as the other brotli rows).
   // 2026-09-16 (2.0.1: the same probe change through the CLI): raw 39 806 → 39 986 (+180 B, measured 39 764 → 39 944); gzip 14 373 → 14 428 (+55 B, measured 14 354 → 14 409). Same cushions.
-  'doctor-cli.js': { raw: 39_986, gzip: 14_428, brotli: 12_804 },
+  // 2026-09-16 (2.0.1: the same through the CLI, plus its --param parsing): raw 39 986 → 41 836 (+1850 B, measured 39 944 → 41 794); gzip 14 428 → 15 011 (+583 B, measured 14 409 → 14 992); brotli 12 804 → 13 388 (measured 13 268, ~120 B).
+  'doctor-cli.js': { raw: 41_836, gzip: 15_011, brotli: 13_388 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   'migrate.js': { raw: 14_534, gzip: 5_265, brotli: 4_750 },
 };
