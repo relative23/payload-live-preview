@@ -1,7 +1,8 @@
 /**
  * Hydrated islands own their subtree, so the runtime never patches inside one.
- * Instead every flush dispatches `payload-live-preview:update` on each island
- * root with the update in `detail`. `data-payload-island="patch"` opts back in.
+ * Instead every flush that carried a change dispatches `payload-live-preview:update`
+ * on each island root with the update in `detail`, whether or not a binding
+ * outside the islands was written. `data-payload-island="patch"` opts back in.
  * @internal
  */
 

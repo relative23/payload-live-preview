@@ -439,9 +439,10 @@ subtree: patching skips it, a fragment boundary inside it is never planned,
 the route morph stops at it, and it re-renders itself from a
 `payload-live-preview:update` event — or with the official
 `@payloadcms/live-preview-react`/`-vue` hook if that is what renders it
-([docs/interop.md](interop.md)). The event follows a patch flush that wrote at
-least one binding outside the islands, so an update that writes none sends no
-event ([docs/renderers.md](renderers.md#islands)). Patch boundaries, fragment boundaries and
+([docs/interop.md](interop.md)). The event follows every flush that carried a
+change, whether or not a binding outside the islands was written — a page whose
+bindings all sit inside islands still hears every edit
+([docs/renderers.md](renderers.md#islands)). Patch boundaries, fragment boundaries and
 hook islands coexist on one page.
 
 ## Revision discipline

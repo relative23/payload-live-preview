@@ -367,9 +367,21 @@ export class UpdatePipeline {
   private restoreGuesses(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
     const { deps, state } = this;
     if (deps.autoBind === 'off' || state.autoBindGuesses === null) return;
+      this.notifyIslands(transaction, data);
     // Nothing reaches this in the lean build, which renders no route and no
     // fragment. A folded branch, not an early return: esbuild drops the branch
     // before linking and a statement after `return` only after it, and the
+  /** Islands hear every revision that carried a change, whether or not a write landed outside them. */
+  private notifyIslands(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
+    if (transaction.touched.size === 0) return;
+    dispatchIslandUpdate(this.deps.cache.islands, {
+      fields: data.fields,
+      revision: transaction.revision.revision,
+      receivedAt: transaction.receivedAt,
+      locale: transaction.locale,
+    });
+  }
+
     // search's module was in the lean artifact until the guard took this shape.
     if (!(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__)) {
       const scope = this.ownerKeysForUpdate(transaction, data.fields);
@@ -435,16 +447,15 @@ export class UpdatePipeline {
       if (data !== undefined) this.strategies.escalateUnfaithful(transaction, data, unfaithful);
       if (!isCurrent()) return;
     }
-    if (stats.applied === 0 || data === undefined) return;
-    deps.a11y?.announceUpdate(stats.applied);
+    if (data === undefined) return;
+    if (stats.applied > 0) deps.a11y?.announceUpdate(stats.applied);
     if (!isCurrent()) return;
-    dispatchIslandUpdate(deps.cache.islands, {
-      fields: data.fields,
-      revision: revision.revision,
-      receivedAt: transaction.receivedAt,
-      locale: transaction.locale,
-    });
-    if (!isCurrent() || deps.emitter.listenerCount('afterUpdate') === 0) return;
+    // With `skipUnchanged` a field only an island shows writes nothing here,
+    // and the island must still hear about it.
+    this.notifyIslands(transaction, data);
+    if (!isCurrent() || stats.applied === 0 || deps.emitter.listenerCount('afterUpdate') === 0) {
+      return;
+    }
     void deps.emitter.emitWhile(
       'afterUpdate',
       {

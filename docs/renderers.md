@@ -394,11 +394,11 @@ binding inside it, and the keyed morph never enters it
 ([ADR 0008 — Keyed morph: what it keeps, what it never crosses](architecture/0008-keyed-morph-ownership.md)).
 Instead, an update is dispatched on each island root as a
 `payload-live-preview:update` DOM event whose `detail` is
-`{ fields, revision, receivedAt, locale }` — after a patch flush that wrote at
-least one binding outside the islands. An update that writes none dispatches
-nothing: a page whose only bindings sit inside islands gets no event, and under
-`skipUnchanged` (on by default) neither does an edit to a field that only an
-island shows:
+`{ fields, revision, receivedAt, locale }` — for every revision that carried a
+change, whether or not a binding outside the islands was written. A page whose
+only bindings sit inside islands hears every edit, and so does an island that
+alone shows the field an editor is typing into, `skipUnchanged` (on by default)
+or not:
 
 ```ts
 // inside a React island
