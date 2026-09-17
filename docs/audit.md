@@ -83,7 +83,9 @@ unexecuted by a test, 13 minutes. 2.0.1 adds ten in the sanitizer's `name`
 check for LP0409, all killed: 1 212 mutants, the same ten survivors, the same
 score. 2.0.2 holds the sanitizer's server document under a registry name, one
 more mutant, killed by a case that pins the name: 1 213 mutants, the same ten
-survivors, 99.18 %. Each of the ten is on that file's
+survivors, 99.18 %. 2.0.3 moves the Trusted Types policy under a registry name
+of its own, five more mutants, the name pinned the same way: 1 218 mutants,
+the same ten survivors, 99.18 %. Each of the ten is on that file's
 `equivalent` list — by file, line, mutator and the text it replaced — with one
 sentence saying why the program does the same with and without it: the three
 on `detach()`'s paired fields, which are set and cleared together; the two
