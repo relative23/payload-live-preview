@@ -71,35 +71,43 @@
 
     <g transform="translate(32,366)">
       <rect width="120" height="30" rx="15" fill="#5ba7ff" opacity="0.16" stroke="#5ba7ff" stroke-opacity="0.5"/>
-      <text x="60" y="20" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="14" fill="#9cc4ff">live · &lt;50 ms</text>
+      <text x="60" y="20" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="14" fill="#9cc4ff">live · no rebuild</text>
     </g>
   </g>
 
   <!-- title block -->
   <text x="72" y="80" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="44" fill="#f2f6ff">payload-live-preview</text>
-  <text x="72" y="116" font-family="DejaVu Sans, sans-serif" font-size="22" fill="#8fa0c8">Framework-agnostic live preview for Payload CMS</text>
+  <text x="72" y="116" font-family="DejaVu Sans, sans-serif" font-size="22" fill="#8fa0c8">Live preview for Payload CMS on server-rendered and static sites</text>
 
   <!-- footer badges -->
   <g font-family="DejaVu Sans Mono, monospace" font-size="16">
     <g transform="translate(72,556)">
-      <rect width="120" height="34" rx="17" fill="#5ba7ff" opacity="0.14"/>
-      <text x="60" y="22" text-anchor="middle" fill="#9cc4ff">Astro-first</text>
+      <rect width="90" height="34" rx="17" fill="#5ba7ff" opacity="0.14"/>
+      <text x="45" y="22" text-anchor="middle" fill="#9cc4ff">Astro</text>
     </g>
-    <g transform="translate(204,556)">
+    <g transform="translate(174,556)">
       <rect width="110" height="34" rx="17" fill="#ffffff" opacity="0.07"/>
       <text x="55" y="22" text-anchor="middle" fill="#8fa0c8">Next.js</text>
     </g>
-    <g transform="translate(326,556)">
+    <g transform="translate(296,556)">
       <rect width="120" height="34" rx="17" fill="#ffffff" opacity="0.07"/>
       <text x="60" y="22" text-anchor="middle" fill="#8fa0c8">SvelteKit</text>
     </g>
-    <g transform="translate(458,556)">
+    <g transform="translate(428,556)">
       <rect width="90" height="34" rx="17" fill="#ffffff" opacity="0.07"/>
       <text x="45" y="22" text-anchor="middle" fill="#8fa0c8">Nuxt</text>
     </g>
-    <g transform="translate(560,556)">
-      <rect width="230" height="34" rx="17" fill="#57d98e" opacity="0.12"/>
-      <text x="115" y="22" text-anchor="middle" fill="#7fe3a8">CSP-safe · sanitized</text>
+    <g transform="translate(530,556)">
+      <rect width="90" height="34" rx="17" fill="#ffffff" opacity="0.07"/>
+      <text x="45" y="22" text-anchor="middle" fill="#8fa0c8">HTML</text>
+    </g>
+    <g transform="translate(632,556)">
+      <rect width="250" height="34" rx="17" fill="#8b7bff" opacity="0.14"/>
+      <text x="125" y="22" text-anchor="middle" fill="#b9b0ff">patch · fragment · route</text>
+    </g>
+    <g transform="translate(894,556)">
+      <rect width="300" height="34" rx="17" fill="#57d98e" opacity="0.12"/>
+      <text x="150" y="22" text-anchor="middle" fill="#7fe3a8">strict by default · zero deps</text>
     </g>
   </g>
 </svg>
