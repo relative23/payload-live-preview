@@ -21,6 +21,8 @@ interface ParsedArgs {
   usageError: string | undefined;
   /** Query parameter names from every `--param`. */
   params: string[];
+  /** The token parameter from `--token-param`, where the strategy reads one other than `previewToken`. */
+  tokenParam: string | undefined;
 }
 
 /** A query parameter name: no separator, no space, and not the next option. */
@@ -61,6 +63,15 @@ function addParam(parsed: ParsedArgs, name: string | undefined): void {
   parsed.params.push(name);
 }
 
+function setTokenParam(parsed: ParsedArgs, name: string | undefined): void {
+  if (name === undefined || !PARAM_NAME.test(name)) {
+    parsed.usageError ??=
+      'pll doctor: --token-param takes a query parameter name, such as --token-param lpt';
+    return;
+  }
+  parsed.tokenParam = name;
+}
+
 function parseArgs(argv: readonly string[]): ParsedArgs {
   const parsed: ParsedArgs = {
     url: undefined,
@@ -72,6 +83,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     headers: {},
     usageError: undefined,
     params: [],
+    tokenParam: undefined,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
@@ -91,7 +103,12 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       addParam(parsed, argv[i + 1]);
       i += 1;
     } else if (token.startsWith('--param=')) addParam(parsed, token.slice('--param='.length));
-    else if (token.startsWith('-')) parsed.unknown.push(token);
+    else if (token === '--token-param') {
+      setTokenParam(parsed, argv[i + 1]);
+      i += 1;
+    } else if (token.startsWith('--token-param=')) {
+      setTokenParam(parsed, token.slice('--token-param='.length));
+    } else if (token.startsWith('-')) parsed.unknown.push(token);
     else parsed.url ??= token;
   }
   return parsed;
@@ -101,7 +118,8 @@ const HELP_TEXT = `pll doctor — audit what a live-preview deployment actually 
 pll migrate — rewrite 1.x APIs to their 2.0 names and homes
 
 Usage:
-  pll doctor <url> [--admin <origin>] [--header <name: value>]... [--param <name>]... [--json] [--v2]
+  pll doctor <url> [--admin <origin>] [--header <name: value>]... [--param <name>]...
+             [--token-param <name>] [--json] [--v2]
   pll migrate <path> [--write] [--only <id,id>]
 
 The URL is fetched twice: once as an ordinary visitor, without any intent
@@ -128,6 +146,10 @@ Options of pll doctor:
                         default preview, draft and livePreview; repeat it for
                         more. The first one is what the preview request carries
                         as <name>=true; none of them reaches the visitor request.
+      --token-param <n> The query parameter the signed-token strategy reads,
+                        where its transport names one other than previewToken.
+                        Treated like previewToken: dropped from the visitor
+                        request, counted as the credential, never printed.
       --json            Emit the report as JSON instead of text
       --v2              Also check the page against the 2.0 readiness table
   -h, --help            Show this help
@@ -197,11 +219,12 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
       ...(args.v2 ? { v2: true } : {}),
       ...(Object.keys(args.headers).length > 0 ? { previewHeaders: args.headers } : {}),
       ...(args.params.length > 0 ? { previewQueryParams: args.params } : {}),
+      ...(args.tokenParam === undefined ? {} : { tokenQueryParam: args.tokenParam }),
       ...(fetchImpl !== undefined ? { fetchImpl } : {}),
     });
   } catch (error) {
     const message = describeFailure(error);
-    const shown = redactToken(args.url);
+    const shown = redactToken(args.url, args.tokenParam);
     if (args.json) {
       process.stdout.write(`${JSON.stringify({ url: shown, error: message }, undefined, 2)}\n`);
     } else {

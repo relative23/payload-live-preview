@@ -34,6 +34,12 @@ export interface RunDoctorOptions {
    * preview probe appends as `=true`; none of them reaches the visitor probe.
    */
   readonly previewQueryParams?: readonly string[] | undefined;
+  /**
+   * The query parameter the `signed-token` strategy reads, when its transport
+   * names one other than `previewToken`. Treated like `previewToken`: dropped
+   * from the visitor probe, counted as the credential, its value never shown.
+   */
+  readonly tokenQueryParam?: string | undefined;
 }
 
 /**
@@ -91,11 +97,11 @@ const TOKEN_PARAM = 'previewToken';
  * credential, so the report, `--json` and the failure line all show this form.
  * @internal
  */
-export function redactToken(url: string): string {
+export function redactToken(url: string, tokenParam: string = TOKEN_PARAM): string {
   const { base, parts, hash } = splitUrl(url);
   const shown = parts.map((part) => {
     const at = part.indexOf('=');
-    return at === -1 || decodePart(part)[0] !== TOKEN_PARAM ? part : `${part.slice(0, at)}=…`;
+    return at === -1 || decodePart(part)[0] !== tokenParam ? part : `${part.slice(0, at)}=…`;
   });
   return shown.some((part, index) => part !== parts[index])
     ? `${base}?${shown.join('&')}${hash}`
@@ -103,10 +109,10 @@ export function redactToken(url: string): string {
 }
 
 /** Whether the URL carries a non-empty token for the preview request. */
-function carriesToken(url: string): boolean {
+function carriesToken(url: string, tokenParam: string): boolean {
   return splitUrl(url).parts.some((part) => {
     const [key, value] = decodePart(part);
-    return key === TOKEN_PARAM && value !== '';
+    return key === tokenParam && value !== '';
   });
 }
 
@@ -116,9 +122,9 @@ function carriesToken(url: string): boolean {
  * would turn `%20` into `+` and add `=` to a bare key, and a page whose query is
  * signed by an edge token would answer a different request than a visitor makes.
  */
-function visitorUrl(url: string, params: readonly string[]): string {
+function visitorUrl(url: string, params: readonly string[], tokenParam: string): string {
   const { base, parts, hash } = splitUrl(url);
-  const dropped = new Set([...params, TOKEN_PARAM]);
+  const dropped = new Set([...params, tokenParam]);
   const kept = parts.filter((part) => !dropped.has(decodePart(part)[0]));
   if (kept.length === parts.length) return url;
   return `${base}${kept.length === 0 ? '' : `?${kept.join('&')}`}${hash}`;
@@ -251,9 +257,10 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
     options.previewQueryParams === undefined || options.previewQueryParams.length === 0
       ? DEFAULT_INTENT_PARAMS
       : options.previewQueryParams;
+  const tokenParam = options.tokenQueryParam ?? TOKEN_PARAM;
   // No referer, no intent parameter and no credentials on the visitor probe:
   // each of them is a preview signal or a way past one.
-  const publicResponse = await fetchImpl(visitorUrl(options.url, params), {
+  const publicResponse = await fetchImpl(visitorUrl(options.url, params, tokenParam), {
     headers: {
       Accept: 'text/html',
       'Sec-Fetch-Dest': 'document',
@@ -273,10 +280,12 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
   return analyzeProbe(
     { publicResponse, previewResponse },
     {
-      url: redactToken(options.url),
+      url: redactToken(options.url, tokenParam),
       adminOrigin: options.adminOrigin,
       ...(options.v2 === true ? { v2: true } : {}),
-      ...(Object.keys(sent).length > 0 || carriesToken(options.url) ? { credentials: true } : {}),
+      ...(Object.keys(sent).length > 0 || carriesToken(options.url, tokenParam)
+        ? { credentials: true }
+        : {}),
     },
   );
 }
