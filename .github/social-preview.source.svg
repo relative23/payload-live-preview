@@ -1,0 +1,98 @@
+<!--
+  Editable source of .github/social-preview.svg. Needs the fonts Barlow (Regular, SemiBold)
+  and IBM Plex Mono (Regular, Medium, SemiBold), both OFL, installed locally. Render:
+    inkscape social-preview.source.svg --export-text-to-path --export-plain-svg --export-filename=social-preview.svg
+    rsvg-convert -w 2560 -h 1280 social-preview.svg -o social-preview.png
+-->
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#1b1b1b"/>
+    </marker>
+    <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#0f7b5f"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="640" fill="#fafaf8"/>
+
+  <!-- left column -->
+  <text x="64" y="88" font-family="IBM Plex Mono" font-weight="500" font-size="16" letter-spacing="0.4" fill="#1b1b1b">payload-live-preview</text>
+  <g font-family="Barlow" font-weight="600" font-size="52" letter-spacing="-0.6" fill="#1b1b1b">
+    <text x="64" y="186">Live preview</text>
+    <text x="64" y="238">for Payload CMS</text>
+    <text x="64" y="290">on server-rendered</text>
+    <text x="64" y="342">and static sites.</text>
+  </g>
+  <text x="64" y="398" font-family="Barlow" font-size="19" fill="#5f6663">Astro · Next.js · SvelteKit · Nuxt · plain HTML</text>
+  <text x="64" y="556" font-family="Barlow" font-size="19" fill="#5f6663">strict by default · zero dependencies</text>
+  <path d="M560 64 V576" stroke="#d9ddda" stroke-width="1"/>
+
+  <!-- row 1: admin -> runtime -->
+  <rect x="600" y="110" width="184" height="84" rx="4" fill="#ffffff" stroke="#1b1b1b" stroke-width="1.25"/>
+  <path d="M600 114 Q600 110 604 110 H780 Q784 110 784 114 V136 H600 Z" fill="#eef2ef"/>
+  <path d="M600 136 H784" stroke="#1b1b1b" stroke-width="1"/>
+  <text x="612" y="128" font-family="Barlow" font-weight="600" font-size="14" fill="#1b1b1b">Payload admin</text>
+  <rect x="724" y="115" width="52" height="16" rx="8" fill="none" stroke="#0f7b5f" stroke-width="1"/>
+  <text x="750" y="127" text-anchor="middle" font-family="IBM Plex Mono" font-weight="500" font-size="10.5" fill="#0f7b5f">editing</text>
+  <text x="612" y="154" font-family="Barlow" font-size="12.5" fill="#5f6663">Title</text>
+  <rect x="612" y="160" width="160" height="26" rx="3" fill="#fafaf8" stroke="#b8bfbb" stroke-width="1"/>
+  <text x="620" y="178" font-family="IBM Plex Mono" font-size="13" fill="#1b1b1b">Summer sale <tspan fill="#0f7b5f" font-weight="600">2026</tspan></text>
+  <rect x="745.8" y="165" width="1.5" height="17" fill="#0f7b5f"/>
+
+  <path d="M786 152 H816" stroke="#1b1b1b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="801" y="104" text-anchor="middle" font-family="IBM Plex Mono" font-size="11.5" fill="#5f6663">postMessage</text>
+
+  <rect x="820" y="110" width="184" height="84" rx="4" fill="#ffffff" stroke="#1b1b1b" stroke-width="1.25"/>
+  <path d="M820 114 Q820 110 824 110 H1000 Q1004 110 1004 114 V136 H820 Z" fill="#eef2ef"/>
+  <path d="M820 136 H1004" stroke="#1b1b1b" stroke-width="1"/>
+  <text x="832" y="128" font-family="Barlow" font-weight="600" font-size="14" fill="#1b1b1b">Runtime in the iframe</text>
+  <text x="832" y="158" font-family="Barlow" font-size="13" fill="#5f6663"><tspan font-family="IBM Plex Mono" font-size="11.5">allowedOrigins</tspan> checked</text>
+  <text x="832" y="178" font-family="Barlow" font-size="13" fill="#5f6663">one strategy per changed field</text>
+
+  <!-- outputs -->
+  <path d="M868 196 C868 300, 695 292, 695 376" fill="none" stroke="#0f7b5f" stroke-width="1.5" marker-end="url(#arrg)"/>
+  <path d="M912 196 V256" fill="none" stroke="#0f7b5f" stroke-width="1.5" marker-end="url(#arrg)"/>
+  <path d="M912 326 V376" fill="none" stroke="#0f7b5f" stroke-width="1.5" marker-end="url(#arrg)"/>
+  <path d="M956 196 C956 300, 1123 292, 1123 376" fill="none" stroke="#0f7b5f" stroke-width="1.5" marker-end="url(#arrg)"/>
+  <g font-family="IBM Plex Mono" font-weight="600" font-size="12" fill="#0f7b5f">
+    <text x="762" y="262" text-anchor="end">patch</text>
+    <text x="1064" y="262">route</text>
+  </g>
+  <text x="922" y="232" font-family="IBM Plex Mono" font-size="11.5" fill="#5f6663">fragment · POST fields</text>
+  <text x="922" y="358" font-family="IBM Plex Mono" font-size="11.5" fill="#5f6663">HTML</text>
+
+  <!-- your server -->
+  <rect x="820" y="258" width="184" height="66" rx="4" fill="#ffffff" stroke="#1b1b1b" stroke-width="1.25" stroke-dasharray="4 3"/>
+  <text x="832" y="280" font-family="Barlow" font-weight="600" font-size="14" fill="#1b1b1b">Your server</text>
+  <text x="832" y="298" font-family="Barlow" font-size="13" fill="#5f6663"><tspan font-family="IBM Plex Mono" font-size="11.5">authorizePreview</tspan>, then</text>
+  <text x="832" y="315" font-family="Barlow" font-size="13" fill="#5f6663">renders the boundary</text>
+
+  <!-- the page -->
+  <rect x="600" y="380" width="616" height="180" rx="4" fill="#ffffff" stroke="#1b1b1b" stroke-width="1.25"/>
+  <path d="M600 384 Q600 380 604 380 H1212 Q1216 380 1216 384 V408 H600 Z" fill="#eef2ef"/>
+  <path d="M600 408 H1216" stroke="#1b1b1b" stroke-width="1"/>
+  <text x="612" y="399" font-family="Barlow" font-weight="600" font-size="14" fill="#1b1b1b">The page</text>
+  <rect x="1162" y="386" width="42" height="16" rx="8" fill="#0f7b5f"/>
+  <text x="1183" y="398" text-anchor="middle" font-family="IBM Plex Mono" font-weight="500" font-size="10.5" fill="#ffffff">live</text>
+  <path d="M790 408 V526 M1030 408 V526 M600 526 H1216" stroke="#d9ddda" stroke-width="1"/>
+
+  <g font-family="IBM Plex Mono" font-size="11.5" fill="#5f6663">
+    <text x="612" y="432">&lt;h1 data-payload-field&gt;</text>
+    <text x="802" y="432">&lt;section data-payload-fragment&gt;</text>
+    <text x="1042" y="432">&lt;head&gt;</text>
+  </g>
+  <g font-family="Barlow" font-weight="600" font-size="16" fill="#1b1b1b">
+    <text x="612" y="468">Summer sale <tspan fill="#0f7b5f">2026</tspan></text>
+    <text x="802" y="468">Hero, rendered again</text>
+    <text x="1042" y="468">Title, meta</text>
+  </g>
+  <g font-family="Barlow" font-size="13" fill="#0f7b5f">
+    <text x="612" y="494">patched in place</text>
+    <text x="612" y="512">focus and caret kept</text>
+    <text x="802" y="494">morphed in</text>
+    <text x="802" y="512">visitor state kept</text>
+    <text x="1042" y="494">route refreshed once</text>
+    <text x="1042" y="512">scroll and focus kept</text>
+  </g>
+  <text x="612" y="546" font-family="Barlow" font-size="13" fill="#5f6663">No rebuild, no reload; every write escaped or sanitized.</text>
+</svg>

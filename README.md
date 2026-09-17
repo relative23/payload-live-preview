@@ -6,6 +6,8 @@
 [![Payload 2.x / 3.x](https://img.shields.io/badge/Payload-2.x%20%2F%203.x-black)](https://payloadcms.com)
 [![npm](https://img.shields.io/npm/v/payload-live-preview?color=cb3837&logo=npm)](https://www.npmjs.com/package/payload-live-preview)
 
+![The Payload admin posts every keystroke; the runtime in the preview iframe patches the bound element in place, has your server render a fragment boundary, or refreshes the route](.github/social-preview.png)
+
 > **Live preview for Payload CMS on server-rendered and static sites** — Astro, Next.js, SvelteKit, Nuxt and plain HTML.
 
 The official live-preview packages are React and Vue hooks: they re-render a hydrated component tree, so they cannot touch markup a server produced. This package makes the admin's real-time preview work where no client framework owns the page. Mark what should update — one attribute per component on a server-rendered page with a fragment endpoint, per field on a static one — and edits reach the preview iframe as the editor types: bound elements are patched in place, fragment boundaries are rendered again by your server. No rebuild, no reload. A client-rendered app gets React and Vue hooks with the same merge underneath. Strict by default, zero runtime dependencies.
