@@ -436,7 +436,8 @@
 // Raised 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 35 788 → 35 801 (+13 B, measured 35 783 → 35 796).
 // Raised 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 113 506 → 113 555 (+49 B, measured 113 479 → 113 528); gzip 35 801 → 35 814 (+13 B, measured 35 796 → 35 809).
 // Raised 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 35 814 → 35 819 (+5 B, measured 35 809 → 35 814).
-export const INLINE_BUDGET = { raw: 113_555, gzip: 35_819, brotli: 31_620 } as const;
+// 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 113 555 → 113 996 (+441 B, measured 113 545 → 113 986); gzip 35 819 → 35 928 (+109 B, measured 35 814 → 35 923); brotli 31 620 → 31 689 (measured 31 602 → 31 629, cushion kept).
+export const INLINE_BUDGET = { raw: 113_996, gzip: 35_928, brotli: 31_689 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the
