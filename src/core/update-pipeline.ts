@@ -267,11 +267,20 @@ export class UpdatePipeline {
     // A revision that touches the route refreshes it first; the re-apply lands on the fresh markup.
     const route = deps.strategies.route;
     const unbound = this.strategies.hasUnboundChange(transaction, ownerKeys);
+    // The refresh an older revision was refused and this one took over: owed
+    // whatever this revision's own diff says, and settled by the run below. A
+    // baseline never carries it: the debt needs a refresh before it, which the
+    // baseline itself never plans.
+    const owed = state.routeRefreshOwed;
     if (
       route !== undefined &&
       !transaction.routeRefreshed &&
-      (unbound || route.plan(deps.root, touched) || this.strategies.hasRouteBinding(touched))
+      (unbound ||
+        owed ||
+        route.plan(deps.root, touched) ||
+        this.strategies.hasRouteBinding(touched))
     ) {
+      state.routeRefreshOwed = false;
       void this.strategies.refreshRoute(transaction, data, route);
       return;
     }
@@ -352,25 +361,16 @@ export class UpdatePipeline {
       void this.strategies.runFragments(transaction, data, plan);
     }
     // Nothing to flush is still this revision reaching its end — and its reveal
-    // point: every write may be unchanged while the reveal is still owed.
+    // point: every write may be unchanged while the reveal is still owed. The
+    // islands still hear it: a page whose bindings all sit inside them schedules
+    // nothing, and the event is how they learn of the edit at all.
     if (scheduled === 0 && transaction.pendingFragments === 0) {
       state.complete(transaction);
       this.revealPending(transaction);
+      this.notifyIslands(transaction, data);
     }
   }
 
-  /**
-   * A server render — the route, or a fragment boundary — replaced markup
-   * without the stamps a guess lives by; look for the baseline's guesses
-   * again, and for nothing else (ADR 0014).
-   */
-  private restoreGuesses(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
-    const { deps, state } = this;
-    if (deps.autoBind === 'off' || state.autoBindGuesses === null) return;
-      this.notifyIslands(transaction, data);
-    // Nothing reaches this in the lean build, which renders no route and no
-    // fragment. A folded branch, not an early return: esbuild drops the branch
-    // before linking and a statement after `return` only after it, and the
   /** Islands hear every revision that carried a change, whether or not a write landed outside them. */
   private notifyIslands(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
     if (transaction.touched.size === 0) return;
@@ -382,6 +382,17 @@ export class UpdatePipeline {
     });
   }
 
+  /**
+   * A server render — the route, or a fragment boundary — replaced markup
+   * without the stamps a guess lives by; look for the baseline's guesses
+   * again, and for nothing else (ADR 0014).
+   */
+  private restoreGuesses(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
+    const { deps, state } = this;
+    if (deps.autoBind === 'off' || state.autoBindGuesses === null) return;
+    // Nothing reaches this in the lean build, which renders no route and no
+    // fragment. A folded branch, not an early return: esbuild drops the branch
+    // before linking and a statement after `return` only after it, and the
     // search's module was in the lean artifact until the guard took this shape.
     if (!(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__)) {
       const scope = this.ownerKeysForUpdate(transaction, data.fields);

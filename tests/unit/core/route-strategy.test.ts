@@ -423,6 +423,23 @@ describe('the route brake', () => {
     expect(document.querySelector('[data-payload-field="footer"]')?.textContent).toBe('Third');
   });
 
+  it('runs the refresh an older revision was owed when a newer one changes only bound fields', async () => {
+    const route = brakingRoute();
+    const rt = await refuseTheSecond(route);
+    // The refused revision changed the unbound headline. This one changes only
+    // the bound footer, so its own diff asks for no refresh, while the page
+    // still shows the headline of the first refresh.
+    const patched = afterUpdates(['patch']);
+    post({ footer: 'Third', headline: 'two' });
+    await patched;
+    await sleep(WINDOW_MS + 100);
+    expect(route.refreshes).toBe(2);
+    expect(document.querySelector('[data-testid="layout"]')?.textContent).toBe('server render #2');
+    // The owed refresh is asked inside the window too, so the brake refuses it
+    // once more before the trailing run: two refusals, one refresh, no loop.
+    expect(rt.inspect().route).toMatchObject({ refreshes: 2, refused: 2, loopStopped: 0 });
+  });
+
   it('drops the trailing run when the runtime stops before the window closes', async () => {
     const route = brakingRoute();
     const rt = await refuseTheSecond(route);
