@@ -32,16 +32,19 @@ import { livePreview } from 'payload-live-preview/astro';
 export default defineConfig({
   integrations: [
     livePreview({
-      allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+      // process.env, not import.meta.env: see below.
+      allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
       // Payload 3.x: re-fetch the populated document so relationship and
       // upload fields render as content, not as IDs.
-      serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
+      serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
       // Required with serverURL: the population depth (0 for none).
       mergeDepth: 1,
     }),
   ],
 });
 ```
+
+Astro evaluates `astro.config.mjs` before it loads `.env`, and `import.meta.env` there carries no `PUBLIC_` variables, so an origin read that way is `undefined`. Read `process.env` instead, with the variable set in the environment that runs `astro dev` or `astro build`, or loaded from `.env` with Vite's `loadEnv()`. Code that Astro builds, such as `src/middleware.ts` below, reads `import.meta.env` as usual.
 
 `allowedOrigins` protects the browser's `postMessage` channel; it does not authorize the HTTP request.
 
@@ -56,7 +59,7 @@ export default defineConfig({
 ```ts
 livePreview({
   mode: 'loader',
-  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
 }),
 ```
 
@@ -68,8 +71,8 @@ Under a strict CSP the asset is a same-origin script with an `integrity` attribu
 livePreview({
   mode: 'middleware',
   strict: false, // intent-only: the query parameter alone triggers injection
-  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
-  serverURL: import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
+  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+  serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
   mergeDepth: 1,
 }),
 ```

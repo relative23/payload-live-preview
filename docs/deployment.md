@@ -5,9 +5,12 @@ and the page, and what each layer must let through. The audit for a deployed
 site is `pll doctor` ([troubleshooting.md](troubleshooting.md#auditing-a-deployment-pll-doctor)).
 Its preview request carries `?preview=true`, the intent a 2.0 adapter counts.
 A preview behind `authorizePreview` refuses that request without an editor's
-credentials, so pass them with `--header "Cookie: payload-token=…"` or
-`--header "x-preview-token: …"`; they go with the preview request only, and
-their values are never printed.
+credentials, so pass them the way the strategy reads them: a Payload session as
+`--header "Cookie: payload-token=…"`, a signed token in the URL
+(`pll doctor "https://www.example.com/page?previewToken=…"`, which the visitor
+request drops), or `--header "x-preview-token: …"` only where the strategy sets
+`transport: { kind: 'header' }`. Headers go with the preview request only and
+their values are never printed; the URL is printed as given.
 
 ## Preview responses and caches
 

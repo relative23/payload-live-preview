@@ -6,7 +6,7 @@
  */
 import { runMigrateCommand } from '../migrate/cli';
 import { formatReport } from './format';
-import { describeFailure, runDoctor, type DoctorFetch } from './probe';
+import { describeFailure, redactToken, runDoctor, type DoctorFetch } from './probe';
 
 interface ParsedArgs {
   url: string | undefined;
@@ -41,7 +41,7 @@ function addHeader(parsed: ParsedArgs, line: string | undefined): void {
   if (name === undefined || value === undefined) {
     // The value is not echoed: a mistyped header can still hold half a token.
     parsed.usageError ??=
-      'pll doctor: --header takes "Name: value", such as --header "x-preview-token: …"';
+      'pll doctor: --header takes "Name: value", such as --header "Cookie: payload-token=…"';
     return;
   }
   // Header names are case-insensitive; a second spelling would be joined onto
@@ -98,6 +98,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
 }
 
 const HELP_TEXT = `pll doctor — audit what a live-preview deployment actually serves
+pll migrate — rewrite 1.x APIs to their 2.0 names and homes
 
 Usage:
   pll doctor <url> [--admin <origin>] [--header <name: value>]... [--param <name>]... [--json] [--v2]
@@ -109,16 +110,19 @@ parameter, and once the way the Payload admin's iframe loads it, with
 Most findings come from the difference between the two responses. Redirects
 are reported, not followed.
 
-Options:
+Options of pll doctor:
   -a, --admin <origin>  Admin origin the preview is embedded from. Enables the
                         frame-ancestors check to verify the origin is admitted,
                         not merely that a policy exists.
   -H, --header <h>      A header for the preview request only, as "Name: value";
                         repeat it for more. A preview behind authorizePreview
-                        needs an editor's credentials: a Payload session Cookie
-                        or an x-preview-token. The visitor request stays
-                        anonymous and values are never printed, but a shell
-                        keeps them in its history, so prefer a short-lived token.
+                        needs an editor's credentials: a Payload session Cookie,
+                        or an x-preview-token where the token strategy sets
+                        transport: { kind: 'header' }. A signed token travels in
+                        the URL by default, as ?previewToken=…, which the visitor
+                        request drops. The visitor request stays anonymous and
+                        values are never printed, but a shell keeps them in its
+                        history, so prefer a short-lived token.
       --param <name>    A query parameter the deployment reads as preview intent,
                         for an adapter whose previewQueryParams replaces the
                         default preview, draft and livePreview; repeat it for
@@ -128,15 +132,18 @@ Options:
       --v2              Also check the page against the 2.0 readiness table
   -h, --help            Show this help
 
-Exit codes:
+Exit codes of pll doctor:
   0  no error-level findings
   1  usage error, or the URL could not be fetched
   2  at least one error-level finding
 
+pll migrate has its own options and exit codes: pll migrate --help
+
 Examples:
   pll doctor https://example.com/
   pll doctor https://example.com/blog/hello --admin https://cms.example.com
-  pll doctor https://example.com/ --header "x-preview-token: $PREVIEW_TOKEN" --v2
+  pll doctor "https://example.com/?previewToken=$PREVIEW_TOKEN" --v2
+  pll doctor https://example.com/ --header "Cookie: payload-token=$PAYLOAD_TOKEN"
 `;
 
 function isAbsoluteUrl(value: string): boolean {
@@ -194,10 +201,11 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
     });
   } catch (error) {
     const message = describeFailure(error);
+    const shown = redactToken(args.url);
     if (args.json) {
-      process.stdout.write(`${JSON.stringify({ url: args.url, error: message }, undefined, 2)}\n`);
+      process.stdout.write(`${JSON.stringify({ url: shown, error: message }, undefined, 2)}\n`);
     } else {
-      process.stderr.write(`pll doctor: could not probe ${args.url}: ${message}\n`);
+      process.stderr.write(`pll doctor: could not probe ${shown}: ${message}\n`);
     }
     return 1;
   }

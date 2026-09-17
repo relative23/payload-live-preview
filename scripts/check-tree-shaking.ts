@@ -233,6 +233,10 @@ interface Fixture {
  * `lexicalToHtml` from `payload-live-preview` 5_032 → 5_045 (5_030 → 5_043),
  * from `payload-live-preview/lexical` 5_165 → 5_178 (5_162 → 5_175). Measured
  * against origin/main on the same host; each keeps the cushion it carried.
+ *
+ * 2026-09-17 (2.0.2): the shared sanitizer document and the longer server
+ * warning reach every consumer that carries the sanitizer, each row rising by
+ * its measured difference against 2.0.1 and keeping its cushion — `lexicalToHtml` from `payload-live-preview` 5_045 → 5_090 (5_043 → 5_088); `initLivePreview` from `payload-live-preview` 44_621 → 44_646 (44_601 → 44_626); `initLivePreview` from `payload-live-preview/core` 44_599 → 44_628 (44_579 → 44_608); `lexicalToHtml` from `payload-live-preview/lexical` 5_178 → 5_219 (5_175 → 5_216).
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -246,14 +250,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_045,
+    gzip: 5_090,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 44_621,
+    gzip: 44_646,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -267,14 +271,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 44_599,
+    gzip: 44_628,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_178,
+    gzip: 5_219,
     why: 'the Lexical renderer from its focused entry',
   },
   {

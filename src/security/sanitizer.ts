@@ -223,8 +223,8 @@ interface ResolvedPolicy {
 let defaultMode: SanitizerPolicyMode = 'strict';
 
 /**
- * The process-wide default for calls without an explicit `policy`. A runtime
- * instance carries its own `sanitizerPolicy` and never writes here (ADR 0002).
+ * The default for calls without an explicit `policy`, per package entry. A
+ * runtime carries its own `sanitizerPolicy` and never writes here (ADR 0002).
  */
 export function setSanitizerPolicy(mode: SanitizerPolicyMode): void {
   defaultMode = mode;
@@ -276,11 +276,18 @@ export interface SanitizerDocument {
   };
 }
 
-let documentOverride: SanitizerDocument | undefined;
+// Held on the realm, not in this module: every package entry is its own bundle
+// with its own copy of this file, and a document supplied through the root has
+// to reach the rich text `payload-live-preview/lexical` renders.
+const DOCUMENT_SLOT: unique symbol = Symbol.for('payload-live-preview.sanitizer-document');
 
-/** Supply a `Document` for SSR, e.g. linkedom's `parseHTML(...).document`; `null` clears it. */
+interface DocumentSlot {
+  [DOCUMENT_SLOT]?: SanitizerDocument | undefined;
+}
+
+/** Supply a `Document` for SSR, e.g. linkedom's `parseHTML(...).document`; `null` clears it, for every entry. */
 export function setSanitizerDocument(doc: SanitizerDocument | null): void {
-  documentOverride = doc ?? undefined;
+  (globalThis as DocumentSlot)[DOCUMENT_SLOT] = doc ?? undefined;
 }
 
 /**
@@ -328,7 +335,8 @@ function environmentError(): Error {
 
 function resolveDocument(): SanitizerDocument | undefined {
   if (typeof __INLINE_BUILD__ === 'undefined' || !__INLINE_BUILD__) {
-    if (documentOverride) return documentOverride;
+    const override = (globalThis as DocumentSlot)[DOCUMENT_SLOT];
+    if (override) return override;
   }
   if (typeof document === 'undefined') return undefined;
   return document;

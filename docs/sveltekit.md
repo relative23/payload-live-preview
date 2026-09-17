@@ -172,4 +172,4 @@ the abuse model: [hybrid.md](hybrid.md).
 
 ## When something does not update
 
-`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md). The doctor's preview request carries `?preview=true`; behind `authorizePreview` it needs an editor's credentials, passed as `--header "Cookie: payload-token=…"` or `--header "x-preview-token: …"` (sent with the preview request only, values never printed).
+`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md). The doctor's preview request carries `?preview=true`; behind `authorizePreview` it needs an editor's credentials: a Payload session as `--header "Cookie: payload-token=…"`, a signed token in the URL as `?previewToken=…` (the visitor request drops it), or `--header "x-preview-token: …"` only where the strategy sets `transport: { kind: 'header' }`. Headers go with the preview request only and are never printed; the URL is printed as given.

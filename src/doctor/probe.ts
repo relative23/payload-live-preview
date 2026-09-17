@@ -22,7 +22,8 @@ export interface RunDoctorOptions {
   /**
    * Headers sent with the preview probe only, never with the visitor probe: the
    * credentials a preview behind `authorizePreview` needs, such as a Payload
-   * session `Cookie` or an `x-preview-token`. Without them a gated page answers
+   * session `Cookie`, or an `x-preview-token` where the token strategy reads a
+   * header (a token in the URL is passed in `url` instead). Without them a gated page answers
    * the audit the way it answers any stranger. Their values never reach the report.
    */
   readonly previewHeaders?: Readonly<Record<string, string>> | undefined;
@@ -77,6 +78,39 @@ function decodePart(part: string): readonly [string, string] {
 }
 
 /**
+ * The query parameter the `signed-token` strategy reads by default. A token
+ * audit puts the token in the URL, and it belongs to the preview request only:
+ * in the visitor request it would authorize the "anonymous" probe and, behind a
+ * replay store, spend the token before the preview request arrives.
+ */
+const TOKEN_PARAM = 'previewToken';
+
+/**
+ * The URL as the audit prints it: the token's value replaced by `…`. Header
+ * values never reach the report, and a token passed in the URL is the same
+ * credential, so the report, `--json` and the failure line all show this form.
+ * @internal
+ */
+export function redactToken(url: string): string {
+  const { base, parts, hash } = splitUrl(url);
+  const shown = parts.map((part) => {
+    const at = part.indexOf('=');
+    return at === -1 || decodePart(part)[0] !== TOKEN_PARAM ? part : `${part.slice(0, at)}=…`;
+  });
+  return shown.some((part, index) => part !== parts[index])
+    ? `${base}?${shown.join('&')}${hash}`
+    : url;
+}
+
+/** Whether the URL carries a non-empty token for the preview request. */
+function carriesToken(url: string): boolean {
+  return splitUrl(url).parts.some((part) => {
+    const [key, value] = decodePart(part);
+    return key === TOKEN_PARAM && value !== '';
+  });
+}
+
+/**
  * The page a visitor requests: the intent parameters removed, the rest of the
  * query byte for byte as given. A query is never re-serialised — `URLSearchParams`
  * would turn `%20` into `+` and add `=` to a bare key, and a page whose query is
@@ -84,7 +118,8 @@ function decodePart(part: string): readonly [string, string] {
  */
 function visitorUrl(url: string, params: readonly string[]): string {
   const { base, parts, hash } = splitUrl(url);
-  const kept = parts.filter((part) => !params.includes(decodePart(part)[0]));
+  const dropped = new Set([...params, TOKEN_PARAM]);
+  const kept = parts.filter((part) => !dropped.has(decodePart(part)[0]));
   if (kept.length === parts.length) return url;
   return `${base}${kept.length === 0 ? '' : `?${kept.join('&')}`}${hash}`;
 }
@@ -238,10 +273,10 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
   return analyzeProbe(
     { publicResponse, previewResponse },
     {
-      url: options.url,
+      url: redactToken(options.url),
       adminOrigin: options.adminOrigin,
       ...(options.v2 === true ? { v2: true } : {}),
-      ...(Object.keys(sent).length > 0 ? { credentials: true } : {}),
+      ...(Object.keys(sent).length > 0 || carriesToken(options.url) ? { credentials: true } : {}),
     },
   );
 }

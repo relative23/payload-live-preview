@@ -5,7 +5,11 @@
  * ```ts
  * export default defineNuxtConfig({
  *   modules: ['payload-live-preview/nuxt-module'],
- *   livePreview: { allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN] },
+ *   livePreview: {
+ *     // The module cannot carry authorizePreview (below), so it runs on the 1.x profile.
+ *     defaults: 'v1',
+ *     allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+ *   },
  * });
  * ```
  *
@@ -23,9 +27,13 @@
  * `srcDir`, so a bare specifier would be looked for under `server/`).
  *
  * That the options are serialized is why `authorizePreview` and `shouldInject`
- * are not part of this type: a function does not survive `JSON.stringify`. A
- * preview that needs either registers `livePreviewNitroPlugin()` by hand,
- * exactly as before (docs/nuxt.md).
+ * are not part of this type: a function does not survive `JSON.stringify`. It
+ * is also why the example sets `defaults: 'v1'`: the generated plugin builds
+ * its policy when Nitro loads it, and the strict 2.0 default throws there
+ * without `authorizePreview`. Under `'v1'` (or `strict: false`) the plugin
+ * injects on client-controlled intent alone. A preview that needs either
+ * function registers `livePreviewNitroPlugin()` by hand, exactly as before
+ * (docs/nuxt.md).
  */
 
 import { join } from 'node:path';

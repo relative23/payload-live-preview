@@ -78,7 +78,7 @@ function describeNonPage(preview: DoctorResponse): DoctorFinding | undefined {
         'The request carried the intent parameter (?preview=true, or the --param name), the ' +
         "way the admin's iframe loads the page, so a rule that redirects on that query redirects " +
         'the iframe too. A redirect to a login means the route needs authentication that a ' +
-        "plain probe cannot supply: pass an editor's credentials with --header. Probe the final " +
+        "plain probe cannot supply: pass an editor's credentials with --header, or a signed token as ?previewToken=… in the URL. Probe the final " +
         'URL directly only when the redirect has nothing to do with either.',
     };
   }
@@ -298,7 +298,7 @@ export function analyzeProbe(
             title: 'No inline runtime in the preview response',
             detail:
               `The preview request returned ${String(preview.status)} without the inline ` +
-              'runtime, although it carried the headers passed with --header. Three readings: ' +
+              'runtime, although it carried credentials (--header, or ?previewToken= in the URL). Three readings: ' +
               'those credentials were not accepted — expired, issued for another page, or not ' +
               'what authorizePreview reads — an adapter that did not recognise the request as a ' +
               'preview, or a consumer that starts LivePreviewClient itself.',
@@ -319,8 +319,10 @@ export function analyzeProbe(
               'the request as a preview, or a consumer that starts LivePreviewClient itself.',
             remedy:
               "To audit a gated preview, send what an editor's browser sends: " +
-              "--header 'Cookie: payload-token=…' for a Payload session, or " +
-              "--header 'x-preview-token: …' for a signed token. Otherwise check the adapter's " +
+              "--header 'Cookie: payload-token=…' for a Payload session; for a signed token, " +
+              'the URL with ?previewToken=… (the default transport, dropped from the visitor ' +
+              "request), or --header 'x-preview-token: …' where the strategy sets transport: " +
+              "{ kind: 'header' }. Otherwise check the adapter's " +
               'inject mode and previewSignals; if you start the client yourself, this line is ' +
               'expected.',
           },

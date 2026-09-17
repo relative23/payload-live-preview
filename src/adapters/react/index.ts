@@ -1,8 +1,8 @@
 /**
  * The React hook: Payload's `useLivePreview` shape, with this package's merge
- * underneath — one request at a time, the newer one winning, an HTTP error
- * refused instead of becoming the document, and a cache that belongs to this
- * hook alone (ADR 0002).
+ * underneath — one request per accepted update, a newer one aborting the one in
+ * flight, an HTTP error refused instead of becoming the document, and a session
+ * that belongs to this hook alone (ADR 0002).
  *
  * It re-renders your component tree, so conditional sections and derived values
  * are as correct as a server render. What it cannot do is keep the visitor's
@@ -13,8 +13,9 @@
  * loads it, and `react-dom/server`, only at the first render that needs them.
  *
  * The published file starts with `'use client'`. It is not written here because
- * esbuild drops a module directive when it bundles; the build adds it back as a
- * banner (`DIRECTIVE_ENTRIES` in scripts/package-entries.ts).
+ * esbuild drops a module directive when it bundles, and a banner with it; the
+ * build writes it back through terser's `preamble` (`DIRECTIVE_ENTRIES` in
+ * scripts/package-entries.ts, applied in scripts/build-dist.ts).
  */
 
 import { useRef, useSyncExternalStore } from 'react';

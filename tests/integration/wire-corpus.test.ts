@@ -27,6 +27,7 @@ const DIRECTORY = resolve('tests/fixtures/wire-corpus');
  * policy) and a new recording has to be named here to count.
  */
 const CAPTURES = [
+  { version: '2.32.3' },
   { version: '3.85.0' },
   { version: '3.88.0' },
   { version: '3.89.0' },
@@ -221,9 +222,21 @@ describe.each(CAPTURES)('Payload $version', ({ version }) => {
       seen.push(event.detail);
     });
     await replay(rt);
-    // The capture's events all name the previewed document, so a plugin
-    // listener hears nothing: a foreign document is what the event promises.
-    expect(seen).toEqual([]);
+    // A 3.x and 4.x message names the document it previews (`globalSlug` or
+    // `collectionSlug`), so the runtime recognises the capture's events as that
+    // document's own save and a plugin listener hears nothing: a foreign document
+    // is what the event promises. A 2.x message names none, and its event carries
+    // only `entitySlug` and `updatedAt`; the runtime then takes the event at its
+    // word (relationship-tracker.ts), which is once per save, never once per
+    // keystroke.
+    const namesItsDocument = updates.some(
+      (message) =>
+        typeof message['globalSlug'] === 'string' || typeof message['collectionSlug'] === 'string',
+    );
+    const saves = new Set(
+      carrying.map((message) => JSON.stringify(message['externallyUpdatedRelationship'])),
+    );
+    expect(seen).toHaveLength(namesItsDocument ? 0 : saves.size);
   });
 
   it('a save does not turn skipUnchanged off for the rest of the session', async () => {

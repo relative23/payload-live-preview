@@ -2,10 +2,10 @@
  * The lean runtime as a value.
  *
  * Importing this entry is what puts the second artifact in your build — about
- * 24 KB gzip of embedded script — so a project that never uses it pays nothing.
+ * 28 KB gzip of embedded script — so a project that never uses it pays nothing.
  * That is why it is an import rather than a `profile: 'lean'` string: measured
  * on this package, a string option put the artifact into every adapter entry
- * and grew each by the same 24 KB.
+ * and grew each by the artifact's whole size.
  *
  * ```ts
  * import { LEAN_RUNTIME } from 'payload-live-preview/lean';
@@ -26,7 +26,7 @@ import type { RuntimeArtifact } from './types/inline-config';
 
 export type { RuntimeArtifact } from './types/inline-config';
 
-/** The lean build: no strategies, no keyed morph, no structural arrays, no item templates, no announcer. */
+/** The lean build: no strategies, no keyed morph, no structural arrays, no item templates, no announcer, no auto-binding. */
 export const LEAN_RUNTIME: RuntimeArtifact = Object.freeze({
   profile: 'lean',
   source: RUNTIME_LEAN_SOURCE,

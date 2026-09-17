@@ -1,0 +1,1618 @@
+{
+  "$comment": "Captured verbatim from a real Payload 2.32.3 admin (a throwaway project with the examples/payload-backend schema, MongoDB, the webpack bundler and richtext-lexical 0.11.4) against examples/astro-payload, on 2026-09-17. The session edits text, rich text and an array and crosses a save. Payload 2 has no fixture in examples/; re-record by hand if 2.x changes.",
+  "payload": "2.32.3",
+  "capturedAt": "2026-09-17",
+  "adminOrigin": "http://localhost:3001",
+  "messages": [
+    {
+      "data": {
+        "title": "Before save 2",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "fieldSchemaJSON": [
+        {
+          "name": "title",
+          "type": "text"
+        },
+        {
+          "name": "subtitle",
+          "type": "text"
+        },
+        {
+          "name": "body",
+          "type": "richText"
+        },
+        {
+          "name": "tags",
+          "fields": [
+            {
+              "name": "label",
+              "type": "text"
+            },
+            {
+              "name": "id",
+              "type": "text"
+            },
+            {
+              "name": "id",
+              "type": "text"
+            }
+          ],
+          "type": "array"
+        },
+        {
+          "name": "updatedAt",
+          "type": "date"
+        },
+        {
+          "name": "createdAt",
+          "type": "date"
+        }
+      ],
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "title": "Before save 2",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "C",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Co",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Cor",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corp",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpu",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus ",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus b",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus bo",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus bod",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body ",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body p",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body pa",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body par",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body para",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body parag",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragr",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragra",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragrap",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph.",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph.",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          },
+          {}
+        ]
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph.",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          },
+          {
+            "id": "6aab13b159ff69cefa0d598c"
+          }
+        ]
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph.",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          },
+          {
+            "id": "6aab13b159ff69cefa0d598c",
+            "label": "corpus-tag"
+          }
+        ]
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph.",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          },
+          {
+            "id": "6aab13b159ff69cefa0d598c",
+            "label": "corpus-tag"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": null,
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph.",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          },
+          {
+            "id": "6aab13b159ff69cefa0d598c",
+            "label": "corpus-tag"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:26.777Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": {
+        "entitySlug": "homepage",
+        "updatedAt": "2026-09-16T22:09:54.415Z"
+      },
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph.",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          },
+          {
+            "id": "6aab13b159ff69cefa0d598c",
+            "label": "corpus-tag"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:54.415Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": {
+        "entitySlug": "homepage",
+        "updatedAt": "2026-09-16T22:09:54.415Z"
+      },
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph.",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title after save",
+        "subtitle": "Corpus subtitle",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          },
+          {
+            "id": "6aab13b159ff69cefa0d598c",
+            "label": "corpus-tag"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:54.415Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": {
+        "entitySlug": "homepage",
+        "updatedAt": "2026-09-16T22:09:54.415Z"
+      },
+      "type": "payload-live-preview"
+    },
+    {
+      "data": {
+        "body": {
+          "root": {
+            "children": [
+              {
+                "children": [
+                  {
+                    "detail": 0,
+                    "format": 0,
+                    "mode": "normal",
+                    "style": "",
+                    "text": "Corpus body paragraph.",
+                    "type": "text",
+                    "version": 1
+                  }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "paragraph",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "root",
+            "version": 1
+          }
+        },
+        "title": "Corpus title after save",
+        "subtitle": "Corpus subtitle after save",
+        "tags": [
+          {
+            "id": "6aab128cd8bd33bad984cab6",
+            "label": "alpha"
+          },
+          {
+            "id": "6aab128cd8bd33bad984cab7",
+            "label": "beta"
+          },
+          {
+            "id": "6aab13b159ff69cefa0d598c",
+            "label": "corpus-tag"
+          }
+        ],
+        "updatedAt": "2026-09-16T22:09:54.415Z",
+        "createdAt": "2026-09-16T22:05:00.779Z"
+      },
+      "externallyUpdatedRelationship": {
+        "entitySlug": "homepage",
+        "updatedAt": "2026-09-16T22:09:54.415Z"
+      },
+      "type": "payload-live-preview"
+    }
+  ]
+}

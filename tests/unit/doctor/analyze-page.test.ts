@@ -36,6 +36,22 @@ describe('a missing inline runtime is not automatically a fault', () => {
     const finding = report.findings.find((f) => f.code === 'LP0701');
     expect(finding?.detail).toContain('authorizePreview');
     expect(finding?.remedy).toContain('--header');
+    // A signed token travels in the URL by default; the header only with transport: header.
+    expect(finding?.remedy).toContain('?previewToken=');
+    expect(finding?.remedy).toContain("transport: { kind: 'header' }");
+  });
+
+  it('points a redirected or config-less gated preview at both ways to send credentials', () => {
+    const redirected = analyzeProbe(
+      {
+        publicResponse: response({ body: '<h1>t</h1>' }),
+        previewResponse: response({ status: 302, headers: { location: '/login' }, body: '' }),
+      },
+      context,
+    );
+    expect(redirected.findings.find((f) => f.code === 'LP0708')?.remedy).toContain(
+      '?previewToken=',
+    );
   });
 
   it('says the credentials were sent when they were, instead of suggesting them again', () => {

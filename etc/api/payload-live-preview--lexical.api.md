@@ -89,6 +89,18 @@ export interface RenderNodeContext {
     readonly resolveIndent: (node: LexicalNode) => number;
 }
 
+// @public
+export interface SanitizerDocument {
+    // (undocumented)
+    createElement: (tagName: string) => {
+        innerHTML: string;
+        readonly content: ParentNode;
+    };
+}
+
+// @public
+export function setSanitizerDocument(doc: SanitizerDocument | null): void;
+
 // @internal
 export const TextFormat: {
     readonly BOLD: 1;

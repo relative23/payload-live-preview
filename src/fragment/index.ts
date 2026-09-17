@@ -1,7 +1,9 @@
 /**
  * `payload-live-preview/fragment` — the fragment and route strategies. The
  * core carries only the seam (`@core/strategies`); this entry owns the
- * orchestration and never sends code, paths or templates. See ADR 0011.
+ * orchestration. A request it sends identifies the page by its own URL and a
+ * boundary by its registry id; it never carries code, templates, import paths
+ * or file paths. See ADR 0011.
  */
 
 import type { FragmentContext, FragmentReport, FragmentStrategy } from '@core/strategies';

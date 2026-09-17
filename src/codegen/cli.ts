@@ -56,8 +56,10 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
 const HELP_TEXT = `pll-codegen — generate TypeScript types from a Payload config
 
 Usage:
-  pll-codegen --config <path> --out <path> [--inventory <path>] [--quiet]
+  pll-codegen --config <path> --out <path> [--inventory <path>] [--tsconfig <path>] [--quiet]
   pll-codegen annotate <path...> --config <path> [--write]
+
+Requires ts-morph to read the config: npm install --save-dev ts-morph
 
 Options:
   -c, --config <path>   Path to payload.config.ts (required)

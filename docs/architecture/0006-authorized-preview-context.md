@@ -102,6 +102,12 @@ the normal case for every public request.
   cookie, mutual TLS at the edge) obtains the same branded verdict without the
   package re-implementing its authentication.
 
+2026-09-17 (2.0.2): the outcome list in this section is one short. The token
+strategy also refuses with `wrong-purpose` when `pur` is not the configured
+purpose (`src/security/preview-token.ts`); §3 lists that check, and
+`PreviewAuthorizationOutcome` (`src/security/preview-verdict.ts`) carries the
+name.
+
 ### 3. Token format and bindings
 
 `v1.<base64url(claims)>.<base64url(HMAC-SHA256(secret, "v1." + claims))>`
@@ -117,6 +123,10 @@ allowance beyond what the issuer set, `aud` equal to the configured audience,
 present, `loc` equal to the resolved request locale when present, and finally
 the optional replay store. Every failure is a distinct outcome. Nothing in the
 token is encrypted: it carries no draft content and no secret, only bindings.
+
+2026-09-17 (2.0.2): the claims also carry `v: 1`. The issuer writes it, and
+claims without it, or with another value, are refused as `invalid`
+(`src/security/preview-token.ts`).
 
 Why these bindings:
 

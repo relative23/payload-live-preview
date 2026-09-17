@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 316,
-    "suites": 685,
-    "tests": 2881,
+    "suites": 688,
+    "tests": 2890,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 259,
-      "suites": 610,
-      "tests": 2654,
+      "suites": 613,
+      "tests": 2663,
       "benchmarks": 0
     }
   },
@@ -714,8 +714,8 @@
     {
       "path": "tests/unit/codegen/annotate.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 8,
+      "suites": 4,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -1478,14 +1478,14 @@
       "path": "tests/unit/doctor/analyze-page.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 16,
+      "tests": 17,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/doctor/cli.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 31,
+      "tests": 36,
       "benchmarks": 0
     },
     {
@@ -2205,8 +2205,8 @@
     {
       "path": "tests/unit/security/sanitizer-environment.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 8,
+      "suites": 5,
+      "tests": 10,
       "benchmarks": 0
     },
     {

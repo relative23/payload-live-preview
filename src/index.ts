@@ -1,5 +1,7 @@
 /**
- * payload-live-preview — the root entry. Every export here is public API.
+ * payload-live-preview — the root entry. Every export here is public API
+ * except the ones tagged `@internal`: those stay exported for the package's
+ * own modules and tests, and a project is not meant to import them.
  *
  * @packageDocumentation
  */

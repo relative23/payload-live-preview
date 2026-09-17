@@ -413,7 +413,7 @@ being edited: [docs/reveal.md](reveal.md).
 ### Annotating an existing template
 
 `pll-codegen annotate` puts `data-payload-field` where a template already prints
-a field, and reports every place it will not guess at:
+a field, and reports the places it will not guess at:
 
 ```bash
 npx pll-codegen annotate src/pages --config ../backend/src/payload.config.ts
@@ -433,16 +433,28 @@ schema has.
 <p>{page.hero.eyebrow}</p>     →  <p data-payload-field="hero.eyebrow">…</p>
 ```
 
-Everything else is listed with a reason and left alone:
+These are left alone and listed with a reason:
 
 | Left alone                                               | Why                                                                                                                         |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `<p>Published {page.date}</p>`                           | A binding replaces the element's whole text, label included. Split the markup first.                                        |
 | `<p>{formatDate(page.date)}</p>`                         | Derived: no single field to name. `data-payload-format` covers dates and numbers ([above](#formatting-a-date-or-a-number)). |
 | `<p>{page.internalNote}</p>`                             | The schema has no such field, so the binding would name something that never arrives.                                       |
-| `{page.slides.map((slide) => <li>{slide.caption}</li>)}` | Nothing connects `slide` to the `slides` field; array items are annotated by hand ([structural arrays](#field-types)).      |
-| `<Hero title={page.title} />`                            | A component's props are its own business.                                                                                   |
-| Anything already annotated                               | Yours wins, always.                                                                                                         |
+| `{page.slides.map((slide) => <li>{slide.caption}</li>)}` | `slide` is a loop item, not the document; array items are annotated by hand ([structural arrays](#field-types)).            |
+
+A loop item is a name bound as the first parameter of a `map`, `flatMap` or
+`forEach` callback, as a `for … of` variable or as a Svelte
+`{#each … as item}` alias. A name bound that way anywhere in a file counts as an
+item everywhere in that file, so a real field access through the same name is
+refused as well; that costs a line in the report, where a wrong binding would
+cost the preview.
+
+Some places are left alone without a line in the report. The scan reads
+lowercase elements only, so a component, `<Hero title={page.title} />` or
+`<Hero>{page.title}</Hero>`, is never looked at: its props and children are its
+own business. An element that already carries `data-payload-field` is skipped:
+yours wins, always. A value printed in an attribute, or in an element that also
+contains other elements, is not read at all.
 
 A missing binding costs an editor one invisible edit; a wrong one writes a value
 into the wrong element on every keystroke. That asymmetry is why the tool reports
@@ -476,7 +488,7 @@ template whose own scope reaches the request context, and a Svelte or Vue
 component's does not — there the verdict would have to travel through `load` or
 a serialized payload, where a function cannot go. Both routes decide what is
 safe in the same scanner, so they annotate the same places and refuse the same
-ones; the table above applies unchanged.
+ones; everything above applies unchanged.
 
 A statically built page has no request to authorize, so it emits nothing.
 `allowPublicBindings: true` writes the plain attribute there instead — the same

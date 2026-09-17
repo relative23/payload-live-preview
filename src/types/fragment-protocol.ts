@@ -1,7 +1,8 @@
 /**
  * The fragment wire protocol: what the browser posts to a fragment endpoint
- * and what it answers. Both sides validate the shape; nothing on the wire
- * names code, paths or templates. See ADR 0011.
+ * and what it answers. Both sides validate the shape. The request names the
+ * page by its own route and query and the boundary by its registry id; nothing
+ * on the wire carries code, templates, import paths or file paths. See ADR 0011.
  */
 
 /** Bumped when the request or response shape changes incompatibly. @internal */

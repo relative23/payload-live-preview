@@ -72,7 +72,7 @@ const UNREADABLE: DoctorFinding = {
   detail: 'The preview response carried no readable `__LIVE_PREVIEW_CONFIG__` inline script.',
   remedy:
     'Run this against a page with the inline runtime (not loader mode without a preview context). ' +
-    'A preview behind authorizePreview serves it only to a request with credentials: pass them with --header.',
+    'A preview behind authorizePreview serves it only to a request with credentials: pass them with --header, or a signed token as ?previewToken=… in the URL.',
 };
 
 const UNMARKED: DoctorFinding = {

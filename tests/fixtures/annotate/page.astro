@@ -20,7 +20,7 @@ const page = await fetchPage();
   <!-- Not in the schema. -->
   <p>{page.internalNote}</p>
 
-  <!-- A loop item: nothing connects `slide` to the `slides` field. -->
+  <!-- A loop item: an item of `slides`, never a field of the document. -->
   {page.slides.map((slide) => <li>{slide.caption}</li>)}
 
   <!-- A component's props are its own business. -->

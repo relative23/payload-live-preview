@@ -149,3 +149,9 @@ WebKit, on the Astro fixture's `/structural` page.
   update only through the island bridge.
 - Diagnostics `LP0404`–`LP0406` join the code table; `pll doctor` reports
   missing keys on structural containers.
+
+2026-09-17 (2.0.2): `pll doctor` does not report missing keys. Its findings are
+`LP0701`–`LP0710` (`src/core/diagnostic-codes.ts`), and nothing in `src/doctor`
+reads `data-payload-key`. A missing, duplicate or unstable key is reported by
+the runtime when an update reaches the list, once per container, as `LP0404`,
+`LP0405` or `LP0406` (`src/field-types/structural-array.ts`).

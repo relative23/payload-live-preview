@@ -108,7 +108,7 @@ Inbound `postMessage` events are dropped unless `event.origin` matches one of:
 - The captured `document.referrer` origin — **only as a zero-config fallback when no explicit origins are configured**, and only with `disableReferrerDetection: false` (`defaults: 'v1'`). The referrer names whoever actually framed the page, so it must never widen an explicitly pinned allow-list; the detector enforces this.
 - A localhost pattern (`/^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i`) — only in development.
 
-After the first accepted data-bearing update, the detector **locks** to that exact origin. Subsequent messages from any other origin (including ones in the original allow-list) are dropped.
+After the first accepted data-bearing update, the detector **locks** to that exact origin (the inline runtime and `LivePreviewClient`; the React and Vue hooks keep accepting every allowed origin). Subsequent messages from any other origin (including ones in the original allow-list) are dropped.
 
 ⚠️ **Referrer-fallback mode:** when no explicit origins are configured, referrer detection is on and dev-mode matching is off, the referrer is the only trust source — any site that embeds the preview page in an iframe could then post (sanitized) updates into it. The inline bootstrap logs a console warning (`LP0102`) in this configuration; programmatic clients can inspect their configuration and provide their own diagnostics. Mitigations: set explicit `allowedOrigins`, and serve a `frame-ancestors` CSP so only the admin may frame the page (the adapters do this by default on intent-matched responses; use the authorization boundary above when that response change is protected).
 
@@ -141,6 +141,16 @@ their own HTML:
 - **External `<a>` hardened.** Auto-applies `rel="noopener noreferrer"` and `target="_blank"`.
 - **HTML comments removed.**
 
+**One sanitizer document for every entry.** Since 2.0.2 the document given to
+`setSanitizerDocument()` is held on the global object, so one call through the
+root, `payload-live-preview/core` or `payload-live-preview/lexical` (which
+exports the setter too) serves the sanitizer in every entry. Through 2.0.1 the
+document belonged to the entry it was set through, so each entry needed its own
+call, and `payload-live-preview/lexical` had no setter: its `lexicalToHtml()`
+returned unsanitized HTML on a server even after the root's call.
+`setSanitizerPolicy()` is not shared that way; it sets the default of the root
+entry, the only one that exports it.
+
 **Policies.** `sanitizerPolicy: 'strict'` is the default everywhere — the
 browser runtime, `sanitizeHtml()` and SSR `lexicalToHtml()`: it strips `id`
 and `name` (DOM clobbering, below), strips `data-payload-*` (rich text must
@@ -157,12 +167,18 @@ reconciliation attributes survive strict (`templateMode`: `id`, `name`,
 stripped, so a template cannot add a binding), because they are the page
 author's markup and every interpolated value is escaped first.
 
-**Trusted Types.** Every HTML sink — the sanitizer's own parse and the
-rich-text, html, array, upload, text and structural writes — goes through
-one policy named `payload-live-preview`, created on first use where the
-API exists. A site enforcing `require-trusted-types-for 'script'` lists
-that name in its `trusted-types` directive, or hands its own policy to
-`setTrustedTypesPolicy()`.
+**Trusted Types.** Every HTML sink the runtime writes through — the
+sanitizer's own parse, the rich-text, html, array, upload, text and structural
+writes, and the fragment morph — goes through one policy named
+`payload-live-preview`, created on first use where the API exists. A site
+enforcing `require-trusted-types-for 'script'` lists that name in its
+`trusted-types` directive, or hands its own policy to
+`setTrustedTypesPolicy()`. The route strategy's page refresh is outside that
+policy: it parses the fetched page with `DOMParser.parseFromString()` from a
+plain string, so under enforcement that parse throws unless the page's own
+`default` policy admits the string; the refresh then counts as failed
+(`LP0801`) and the revision is patched instead. A host refresh
+registered with `registerRouteRefresh()` parses nothing.
 
 ## URL validation
 
