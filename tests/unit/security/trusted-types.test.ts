@@ -120,6 +120,17 @@ describe('two bundles on one page', () => {
     second.__resetTrustedTypesForTests();
   });
 
+  it('holds the policies under the documented registry name', () => {
+    // The name is the contract between the copies: a second bundle finds the
+    // policy only under exactly this symbol.
+    installFakeApi();
+    trustedHtml('<p>a</p>');
+    const slot = Reflect.get(globalThis, Symbol.for('payload-live-preview.trusted-types')) as
+      { auto?: unknown } | undefined;
+    expect(slot?.auto).toBeDefined();
+    expect(slot?.auto).not.toBeNull();
+  });
+
   it('a policy set through one copy reaches the other', async () => {
     installFakeApi();
     setTrustedTypesPolicy({ createHTML: (input) => new FakeTrustedHTML(`custom:${input}`) });
