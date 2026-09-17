@@ -29,8 +29,8 @@
     "src/security/url-validator.ts"
   ],
   "baseline": {
-    "total": 1212,
-    "mutationScoreMinimum": 99.17,
+    "total": 1213,
+    "mutationScoreMinimum": 99.18,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 0,
     "noCoverageMaximum": 0,
