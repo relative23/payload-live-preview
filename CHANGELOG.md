@@ -1,5 +1,25 @@
 # payload-live-preview
 
+## 2.0.2
+
+### Patch Changes
+
+- 46c8696: `pll-codegen annotate` no longer binds a field printed from a loop item to the document field of the same name.
+
+  `{slide.title}` inside `page.slides.map(...)` became `data-payload-field="title"` whenever the document had a top-level `title`, without a line in the report, so typing into the page title overwrote every slide heading in the preview. A name bound as an array item (a `map`, `flatMap` or `forEach` callback parameter, a `for … of` variable, a Svelte `{#each … as item}`) now refuses the field with a reason. The help no longer promises a report line for elements that already carry `data-payload-field`; they are left as they are, as before.
+
+- 46c8696: `pll doctor` audits a signed-token preview the way the strategy reads the token.
+
+  2.0.1 suggested `--header "x-preview-token: …"`, but the `signed-token` strategy reads the token from `?previewToken=` unless its transport is `{ kind: 'header' }`, so that advice audited a refused request. Pass the token in the URL instead; the visitor request now drops `previewToken` along with the intent parameters, so it stays anonymous and a replay store does not spend the token on it. `--header "Cookie: payload-token=…"` remains the way to audit a Payload session.
+
+- 46c8696: A document supplied with `setSanitizerDocument()` now reaches every entry, so `lexicalToHtml` from `payload-live-preview/lexical` sanitizes on a server.
+
+  Every package entry is its own bundle with its own copy of the sanitizer, and the document lived in that copy. A server that called `setSanitizerDocument()` through `payload-live-preview` still got unsanitised HTML, with a warning, from `lexicalToHtml` imported from `payload-live-preview/lexical`, and that entry had no setter of its own. The document is now held once for the whole process, and `payload-live-preview/lexical` exports `setSanitizerDocument` as well.
+
+- 46c8696: The supported versions say what was measured.
+
+  Next.js 15 is no longer listed: on Next.js 15.5 the adapter's pages fail with `Cannot find module 'react'`, because it loads React through a runtime import that webpack, Next.js 15's default bundler, cannot resolve. Next.js 16 is supported and tested. Payload 2.x stays supported, now backed by a wire corpus captured from a real Payload 2.32.3 admin and replayed in the test suite, next to the 3.x and 4.0 captures.
+
 ## 2.0.1
 
 ### Patch Changes
