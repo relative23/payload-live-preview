@@ -53,3 +53,12 @@ Tests assert isolation explicitly (see `tests/unit/events/emitter.test.ts` → "
 | ✅ Tests are deterministic                                                         | No accidental cross-test pollution                                    |
 | ✅ Shared DOM effects are leased                                                   | One client cannot tear down another client's highlight or live region |
 | ⚠️ Marginally larger memory footprint                                              | Acceptable: one client per page is the typical case                   |
+
+2026-09-17 (2.0.2, 2.0.3): two more realm-wide slots, each a registry symbol on
+`globalThis` and each for the same reason — every package entry is its own bundle
+with its own copy of the module, and the thing held is one per page by nature.
+`setSanitizerDocument()` holds the server document `payload-live-preview/lexical`
+sanitises with (`src/security/sanitizer.ts`), and the Trusted Types policy is held
+once because a page's `trusted-types` directive allows the name once
+(`src/security/trusted-types.ts`). Neither carries renderer, transform, origin or
+update state; both stay outside the per-instance rule on purpose.

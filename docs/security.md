@@ -171,10 +171,12 @@ author's markup and every interpolated value is escaped first.
 **Trusted Types.** Every HTML sink the runtime writes through — the
 sanitizer's own parse, the rich-text, html, array, upload, text and structural
 writes, and the fragment morph — goes through one policy named
-`payload-live-preview`, created on first use where the API exists. A site
-enforcing `require-trusted-types-for 'script'` lists that name in its
-`trusted-types` directive, or hands its own policy to
-`setTrustedTypesPolicy()`. The route strategy's page refresh is outside that
+`payload-live-preview`, created on first use where the API exists and held
+once per page: every package entry is its own bundle, and the runtime beside
+`payload-live-preview/lexical` shares the one policy rather than asking for a
+second of the same name. A site enforcing `require-trusted-types-for 'script'`
+lists that name in its `trusted-types` directive, or hands its own policy to
+`setTrustedTypesPolicy()`, which reaches every entry on the page. The route strategy's page refresh is outside that
 policy: it parses the fetched page with `DOMParser.parseFromString()` from a
 plain string, so under enforcement that parse throws unless the page's own
 `default` policy admits the string; the refresh then counts as failed

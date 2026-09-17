@@ -33,9 +33,9 @@ The modules that answer them are the **trusted core**:
 | `src/core/attribute-binding.ts` |        68 | which attribute a remote value may become                                      |
 | `src/security/url-validator.ts` |        44 | which URL is a URL                                                             |
 | `src/security/escape.ts`        |        48 | how text becomes markup without becoming markup                                |
-| `src/security/sanitizer.ts`     |       445 | which tags and attributes CMS content keeps                                    |
-| `src/security/trusted-types.ts` |        68 | the one policy every HTML sink goes through                                    |
-| **Total**                       | **1 356** | 1 032 without blank and comment lines; 41 exported names                       |
+| `src/security/sanitizer.ts`     |       453 | which tags and attributes CMS content keeps                                    |
+| `src/security/trusted-types.ts` |        87 | the one policy every HTML sink goes through                                    |
+| **Total**                       | **1 383** | 1 032 without blank and comment lines; 41 exported names                       |
 
 The boundary is not a feeling about which files are important. A module is in
 the core because it **holds a capability**: it listens to messages, sends a
@@ -122,7 +122,7 @@ function that is handed `fetch` under another name. The core's own imports are
 held exact so that this stays a short list to check by hand.
 
 A thousand lines is about what one reader holds in one sitting, and that was
-the size this core set out to be. It is 1 356, and the difference is not a
+the size this core set out to be. It is 1 383, and the difference is not a
 second responsibility hiding in the list:
 133 of the sanitizer's lines are the allow-lists a reader has to read anyway,
 and about 130 of the bus's are the queue that commits token verdicts in arrival
@@ -289,7 +289,9 @@ fixed-point properties in `tests/unit/property/security.property.test.ts`.
   cannot re-verify from inside what the call sites guarantee. That is why the
   sink inventory exists.
 - **T2** The policy is created on first use and only here (gate 2: the
-  capability is core-only). If the site's `trusted-types` directive does not
+  capability is core-only), and held once per page under a registry symbol on
+  the realm, because every package entry is its own bundle and the directive
+  allows the name once. If the site's `trusted-types` directive does not
   list the name, the sink assignment surfaces the enforcement error rather
   than this module swallowing it.
 - **T3** Without the Trusted Types API, strings pass through unchanged.
