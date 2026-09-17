@@ -9,7 +9,8 @@ corresponding server or browser boundary verifies them.
 
 `hasPreviewIntent()` is an **intent detector**. Called without `signals` it
 counts all three: query parameters (`preview`, `draft`, `livePreview`, value
-`true` or `1`), `Sec-Fetch-Dest: iframe`, and a `Referer` from one of the
+`true` or `1`; of a repeated parameter the last value counts, as a Next.js
+`has` rule reads it), `Sec-Fetch-Dest: iframe`, and a `Referer` from one of the
 `allowedOrigins` it is given. The adapters count only the query under their
 2.0 default, `previewSignals: ['query']`; a direct call that should agree with
 them passes `{ signals: ['query'] }`. A client can add a query parameter, cause an iframe navigation, or
