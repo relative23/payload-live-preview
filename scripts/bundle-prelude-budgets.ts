@@ -163,4 +163,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 125_632, gzip: 39_703, brotli: 34_8
 // Raised 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 120 173 → 120 222 (+49 B, measured 120 153 → 120 202); gzip 37 983 → 37 995 (+12 B, measured 37 973 → 37 985).
 // Raised 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 120 222 → 120 239 (+17 B, measured 120 202 → 120 219); gzip 37 995 → 37 998 (+3 B, measured 37 985 → 37 988).
 // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 120 239 → 120 680 (+441 B, measured 120 219 → 120 660); gzip 37 998 → 38 112 (+114 B, measured 37 988 → 38 102).
-export const INLINE_ROUTE_BUDGET = { raw: 120_680, gzip: 38_112, brotli: 33_445 } as const;
+// 2026-09-18 (2.0.3, the release build): brotli is not byte-stable — CI compressed index.js 2 B over a budget that kept 46 B over the local figure; every brotli row now keeps ~120 B (or under the 2 % notice on a small file) and every gzip row at least 12 B over this host's 2.0.3 measurement: brotli 33 445 → 33 534 (measured 33 414).
+export const INLINE_ROUTE_BUDGET = { raw: 120_680, gzip: 38_112, brotli: 33_534 } as const;
