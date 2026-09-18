@@ -170,6 +170,11 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   framework-specific way to run a request; the per-adapter files keep what is
   genuinely framework-specific (SvelteKit chunks, sparse Nitro events, Astro
   prerender and loader mode).
+- `tests/unit/core/morph-contract.test.ts`, `tests/unit/property/morph-keyed.property.test.ts`
+  and the contract cases in `tests/e2e/specs/structural-morph.spec.ts` — the
+  keyed morph's promises (ADR 0008 §8), one case each: what a retained node
+  keeps, what pairs with what, what is never entered. The engine's mechanics
+  stay in `tests/unit/core/morph.test.ts`.
 - `tests/integration/wire-corpus.test.ts` — replays every capture under
   `tests/fixtures/wire-corpus/` through the real runtime. Record a new Payload
   version with `PLP_RECORD_CORPUS=1 npm run test:e2e:real-payload` after

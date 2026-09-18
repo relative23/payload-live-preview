@@ -155,3 +155,67 @@ WebKit, on the Astro fixture's `/structural` page.
 reads `data-payload-key`. A missing, duplicate or unstable key is reported by
 the runtime when an update reaches the list, once per container, as `LP0404`,
 `LP0405` or `LP0406` (`src/field-types/structural-array.ts`).
+
+### 8. The contract, pinned (2026-09-19)
+
+Sections 1–5 are now a suite rather than a description. A change to the
+engine that moves one of these lines is a change to this record.
+
+- `tests/unit/core/morph-contract.test.ts` — one case per promise, in jsdom,
+  where the DOM rules are the browser's: focus and caret through an edit
+  beside the focused control, with no blur, and back after a keyed move
+  (an input; a textarea with its selection direction); listeners and
+  expandos on a retained element; the visitor's form state against a
+  template that does not name it (checkbox, radio, select, textarea, a typed
+  value under a changed `value` attribute) and the template's `checked`
+  reaching the property only while the visitor has not touched the control;
+  SVG attributes edited in place with `xlink:href` keeping its namespace, no
+  pairing of an element with its namesake in another namespace, HTML inside
+  `foreignObject` retained; React and Vue hydration markers on one side only;
+  a keyed reorder with inserts and removals; an upgraded custom element kept
+  whole (shadow root, private field, attributes, no second
+  `connectedCallback`), `astro-island` and `data-payload-island`, every
+  `contenteditable` spelling but `"false"`, `data-payload-owned`, and a nested
+  fragment whose attributes follow the render while its children stay.
+- `tests/unit/property/morph-keyed.property.test.ts` — for any two keyed
+  lists, the live container ends up equal to the rendered markup, every key
+  that survives keeps its element, and a second morph toward the same markup
+  moves nothing; unkeyed lists get the markup and the idempotence; the
+  focused input of a surviving key keeps focus and caret.
+- `tests/e2e/specs/structural-morph.spec.ts` (§7, extended) — in Chromium,
+  Firefox and WebKit: a textarea's typed text and caret across an edit and
+  across a keyed move; a chosen option and a ticked checkbox across both,
+  with the attributes still the visitor's.
+
+One thing the suite found and this change fixes: the applier that commits a
+structural update places retained items itself, and that placement is the
+same remove-and-insert a keyed move inside the morph is — but it ran outside
+the morph's focus capture, so an editor typing into a control inside an item
+the update moved lost focus and caret, in every browser. The applier now
+captures the focused element before its commit and restores it afterwards,
+with the morph's own pair (`captureFocus`/`restoreFocus`, internal). §1's
+promise holds for the move whoever makes it.
+
+Two facts the suite made explicit:
+
+- **A text selection across an edited text node collapses.** The node is
+  retained, so the selection still points into the live paragraph, but
+  writing `nodeValue` is the DOM's "replace data" over the whole node, and
+  that algorithm moves every range boundary inside the replaced span to its
+  start. A selection over a sibling the edit did not touch is untouched. This
+  is what §1 means by retaining the node and not the offsets; a text diff
+  that kept offsets would be an engine change, not a contract change.
+- **The CMS can open a `<details>` and cannot close one by leaving `open`
+  out.** §3 touches a state attribute only when the rendered element carries
+  it, and an omission carries nothing. A template that needs both states
+  under CMS control has no way to say so today; that is a 2.1 question
+  (a declared state marker), recorded in the private register, not changed
+  here.
+
+One thing the suite could not carry into the browser: the strict sanitizer
+removes `<svg>` and strips `contenteditable` from an author template, so a
+structural item that had either on the server is a drawing or a boundary
+live and neither once re-rendered — the morph replaces it under §4's
+one-sided rule. That is the sanitizer's policy, not the morph's, and belongs
+with the sanitizer corpus (2.1 plan, M3); the fixture page carries neither
+and says why.

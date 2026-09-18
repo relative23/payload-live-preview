@@ -73,3 +73,78 @@ describe('morph switch and template tags (ADR 0008)', () => {
     expect(li.querySelector('b')?.textContent).toBe('<x-evil></x-evil><input onfocus="x()">');
   });
 });
+
+/**
+ * ADR 0008 §1 at the applier: the morph restores focus after a move it makes,
+ * but the applier places items itself, and that placement is a
+ * remove-and-insert too. Found by the browser contract suite: an editor
+ * typing into a moved item lost focus and caret.
+ */
+describe('focus across a keyed move the applier makes', () => {
+  const TEMPLATE = '<li><span class="t">{{title}}</span><textarea class="n"></textarea></li>';
+
+  function seeded() {
+    document.body.innerHTML = '<ul></ul>';
+    const container = document.body.firstElementChild!;
+    const local = createStructuralStore();
+    const initial = [
+      { id: 'a', title: 'A' },
+      { id: 'b', title: 'B' },
+      { id: 'c', title: 'C' },
+    ];
+    applyStructuralPatches({
+      template: TEMPLATE,
+      container,
+      patches: diffArray([], initial),
+      nextItems: initial,
+      store: local,
+      forceRender: true,
+      morph: true,
+    });
+    return { container, local, initial };
+  }
+
+  function reorder(
+    container: Element,
+    local: ReturnType<typeof createStructuralStore>,
+    from: readonly { id: string; title: string }[],
+    to: readonly { id: string; title: string }[],
+  ): void {
+    applyStructuralPatches({
+      template: TEMPLATE,
+      container,
+      patches: diffArray(from, to),
+      nextItems: to,
+      store: local,
+      morph: true,
+    });
+  }
+
+  it('keeps the focused textarea, its text and its caret when its item moves', () => {
+    const { container, local, initial } = seeded();
+    const area = container.querySelector<HTMLTextAreaElement>('li:nth-child(2) textarea')!;
+    area.focus();
+    area.value = 'the visitor wrote this';
+    area.setSelectionRange(4, 11);
+    const moved = [initial[1]!, initial[2]!, { id: 'a', title: 'A, last' }];
+    reorder(container, local, initial, moved);
+    expect(container.firstElementChild?.querySelector('textarea')).toBe(area);
+    expect(document.activeElement).toBe(area);
+    expect(area.value).toBe('the visitor wrote this');
+    expect([area.selectionStart, area.selectionEnd]).toEqual([4, 11]);
+  });
+
+  it('keeps focus on a control outside the list, and does nothing when the focused item was removed', () => {
+    const { container, local, initial } = seeded();
+    const outside = document.createElement('input');
+    document.body.append(outside);
+    outside.focus();
+    reorder(container, local, initial, [initial[2]!, initial[0]!, initial[1]!]);
+    expect(document.activeElement).toBe(outside);
+    const area = container.querySelector<HTMLTextAreaElement>('li:nth-child(2) textarea')!;
+    area.focus();
+    reorder(container, local, [initial[2]!, initial[0]!, initial[1]!], [initial[2]!, initial[1]!]);
+    expect(area.isConnected).toBe(false);
+    expect(document.activeElement).toBe(document.body);
+  });
+});

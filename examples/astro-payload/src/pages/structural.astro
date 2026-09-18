@@ -3,11 +3,15 @@
  * Structural list fixture for the keyed-morph acceptance tests (ADR 0008 §7).
  *
  * Each item carries an `<input>` (focus, selection and typed value must
- * survive an update to the item), a `<details>` (visitor-opened state must
- * survive unless the template says otherwise) and an `<x-counter>` custom
- * element with internal state the morph must never touch. The list is
- * framed by `/bench?target=/structural/`, which is how the E2E posts updates
- * from the parent window.
+ * survive an update to the item), a `<textarea>`, a `<select>` and a checkbox
+ * (what the visitor typed or chose must survive too), a `<details>`
+ * (visitor-opened state must survive unless the template says otherwise) and
+ * an `<x-counter>` custom element with internal state the morph must never
+ * touch. The list is framed by `/bench?target=/structural/`, which is how the
+ * E2E posts updates from the parent window. No `<svg>` and no
+ * `contenteditable` here: the strict sanitizer drops both from an author
+ * template, so their morph contract is pinned in jsdom
+ * (`tests/unit/core/morph-contract.test.ts`), where the DOM rules are the same.
  */
 const initial = [
   { id: 'a', title: 'Alpha' },
@@ -17,6 +21,9 @@ const initial = [
 const template =
   '<li class="row"><span class="t">{{title}}</span>' +
   '<input class="i" aria-label="{{title}}">' +
+  '<textarea class="n" aria-label="note for {{title}}"></textarea>' +
+  '<select class="s" aria-label="pick for {{title}}"><option value="1">one</option><option value="2">two</option></select>' +
+  '<input type="checkbox" class="k" aria-label="flag {{title}}">' +
   '<details><summary>more</summary><p>Details of {{title}}</p></details>' +
   '<x-counter></x-counter></li>';
 ---
@@ -38,6 +45,12 @@ const template =
           <li class="row" data-payload-key={item.id}>
             <span class="t">{item.title}</span>
             <input class="i" aria-label={item.title} />
+            <textarea class="n" aria-label={`note for ${item.title}`} />
+            <select class="s" aria-label={`pick for ${item.title}`}>
+              <option value="1">one</option>
+              <option value="2">two</option>
+            </select>
+            <input type="checkbox" class="k" aria-label={`flag ${item.title}`} />
             <details>
               <summary>more</summary>
               <p>Details of {item.title}</p>
