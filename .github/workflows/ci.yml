@@ -90,6 +90,38 @@ jobs:
       - run: npm run test:unit
       - run: npm run test:integration
 
+  hook-matrix:
+    name: Hooks at the peer floor (React ${{ matrix.react }}, Vue ${{ matrix.vue }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # `react >=18` and `vue >=3.3` are promises the unit job cannot keep on its
+    # own: it runs what the lockfile installs, React 19 and Vue 3.5. This job
+    # installs the floor of each range over the lockfile, without saving it,
+    # and runs the suites that touch the framework — the hook, the route
+    # refresh component and the fragment renderer. compat:check holds the
+    # floors here against the peer ranges and quality/compat-matrix.json.
+    strategy:
+      fail-fast: false
+      matrix:
+        react: ['18.0.0']
+        vue: ['3.3.0']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npm run build:runtime
+      - name: Install the peer floors over the lockfile, without saving them
+        run: npm install --no-save --no-audit --no-fund "react@${{ matrix.react }}" "react-dom@${{ matrix.react }}" "@types/react@${{ matrix.react }}" "@types/react-dom@${{ matrix.react }}" "vue@${{ matrix.vue }}"
+      - name: State what was installed
+        run: node -p "'react ' + require('react/package.json').version + ', react-dom ' + require('react-dom/package.json').version + ', vue ' + require('vue/package.json').version"
+      - name: Run the hook, route-refresh and fragment suites
+        run: npx vitest run tests/unit/adapters/react-hook.test.tsx tests/unit/adapters/react-route-refresh.test.tsx tests/unit/adapters/nextjs-fragments.test.ts tests/unit/adapters/vue-composable.test.ts tests/unit/core/hydration-vue.test.ts tests/unit/adapters/nuxt-fragments.test.ts
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest

@@ -51,6 +51,8 @@ Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Ever
 
 Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 2 → 5/6/7/8, Nuxt 3 → 7), measured 2026-09-06. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
+The React and Vue hooks and the Next.js and Nuxt fragment renderers run twice on every push: at the floor of each peer range, which the `hook-matrix` job installs over the lockfile (React 18.0.0, Vue 3.3.0), and at what the lockfile installs (React 19.2.8, Vue 3.5.42). Svelte is mocked in the SvelteKit fragment suite, so `svelte >=5` is measured only through its fixture.
+
 - Payload 2.32.3: wire corpus captured from a real admin in a one-off round (examples/ has no Payload 2 fixture), replayed in tests/integration/wire-corpus.test.ts, plus fieldSchemaJSON typing in tests/integration/schema-driven.test.ts; relationship and upload population is not verified against a real 2.x admin.
 - Payload 3.85.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
 - Payload 3.88.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
