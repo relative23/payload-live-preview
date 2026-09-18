@@ -65,6 +65,44 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  trusted-core-mutation:
+    name: Trusted Core Mutation
+    runs-on: ubuntu-latest
+    # About 40 minutes beside shards that run up to 150, so it costs runner
+    # minutes and no wall clock. The scope is the eight modules of the trusted
+    # core, graded against a policy the nightly one cannot stand in for: the
+    # nightly report is one score over sixty-odd files, while this one demands
+    # 99.18 % and an `equivalent` entry for every survivor by name. That is the
+    # check that would have caught the registry name no test held in 2.0.3.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npm run build:runtime
+      - name: Mutate the trusted core on its own
+        env:
+          STRYKER_SCOPE: core
+        run: npm run test:mutation
+      - name: Enforce the reviewed trusted-core baseline
+        run: npm run test:mutation:policy:core
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: trusted-core-mutation-report-${{ github.sha }}
+          path: |
+            test-results/stryker-core.json
+            test-results/stryker-core.html
+          if-no-files-found: error
+          retention-days: 14
+
   critical-mutation-baseline:
     name: Release Critical Mutation Baseline
     needs: critical-mutation

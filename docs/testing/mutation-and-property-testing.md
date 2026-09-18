@@ -55,7 +55,19 @@ policy holds the list in both directions — a survivor the list does not name
 fails the run, and so does an entry whose mutant is killed now (a ratchet to
 take), moved, or described with other text — so the score below 100 is not a
 gap but a reviewed remainder, and the survivors stay visible in every report.
-It is run by hand, not by a workflow:
+It runs on every push to `main`, in the Critical Gates workflow beside the six
+nightly shards: about 40 minutes against their 150-minute cap, so it costs
+runner minutes and no wall clock. The nightly report cannot stand in for it —
+that one is a single score over sixty-odd files, while this one asks 99.18 % of
+eight and names every survivor. 2.0.3 is what the gate is for: a registry name
+moved onto the realm, no test held it, and only the core run said so.
+
+Its timeout ceiling is 25 against 10 measured here, for the same reason the
+nightly one is 60 against 23: a loaded runner turns mutants the tests kill
+outright into timeouts, which count as detected and leave the score alone. The
+score minimum and the `equivalent` list stay exact.
+
+By hand, on the same scope:
 
 ```sh
 STRYKER_SCOPE=core npx stryker run stryker.config.js

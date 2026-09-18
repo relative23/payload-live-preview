@@ -271,9 +271,9 @@ and replacement text, and why the program does the same either way.
 The deep-quality workflow runs 10,000 property cases per property, the expanded
 mutation profile, and 10,000 fully awaited updates in a long-lived runtime under
 forced GC, in addition to repeated start/destroy ownership churn. The mutation
-shards, the leak gate and the soak are one reusable workflow,
-`critical-gates.yml`, which CI also calls on every push to `main` (the Release
-Gates job, with the five-minute soak). The Node gate requires all owned
+shards, the trusted-core scope, the leak gate and the soak are one reusable
+workflow, `critical-gates.yml`, which CI also calls on every push to `main` (the
+Release Gates job, with the five-minute soak). The Node gate requires all owned
 observers, listeners, timers, and DOM nodes to return to zero and both
 long-session and post-destroy retained heap drift to remain below 2 MiB.
 

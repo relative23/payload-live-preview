@@ -34,7 +34,7 @@
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 0,
     "noCoverageMaximum": 0,
-    "timeoutMaximum": 10,
+    "timeoutMaximum": 25,
     "errorMaximum": 0,
     "ignoredMaximum": 0
   },
