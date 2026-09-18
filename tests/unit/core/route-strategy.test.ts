@@ -384,8 +384,15 @@ describe('onUnboundChange', () => {
  * `inspect()` where nothing had gone wrong.
  */
 describe('the route brake', () => {
-  /** Long enough that three messages land inside it, short enough to wait out. */
-  const WINDOW_MS = 200;
+  /**
+   * Long enough that three messages land inside it on the CI runner, short
+   * enough to wait out. 200 ms was enough here and not there: under the
+   * mutation shards' initial run (four vitest workers on two cores) the second
+   * message once reached the brake after the window had closed, so nothing was
+   * refused and the trailing run never happened — the runtime was right, the
+   * window was not.
+   */
+  const WINDOW_MS = 1_000;
 
   beforeEach(() => {
     document.head.innerHTML = '';
