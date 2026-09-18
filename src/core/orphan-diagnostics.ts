@@ -1,6 +1,12 @@
 /**
- * LP0201: a scalar field arrived for which the page has no binding. The usual
- * cause is a template that renders the anchor only when the field is non-empty.
+ * A scalar field arrived for which the page has no binding. What that means
+ * depends on the value that came with it, so two codes say two things. An
+ * empty string with no anchor is LP0201: the template most likely renders the
+ * anchor only while the field is non-empty, and an edit has nowhere to land. A
+ * value with no anchor is LP0203: the page does not show this field, which on
+ * a page that renders a subset of the document is the normal case — the line
+ * says where the fact is visible instead of asking for an anchor the page
+ * never meant to have.
  *
  * Reported once per field name, because the cause is the markup rather than the
  * edit. `onUnfaithfulPatch` acts on the same fact per revision; both read the
@@ -39,7 +45,7 @@ export function diagnoseOrphanFields(
     // Only scalars: an unbound relationship or block array is a template
     // decision, not the missing anchor this code is about.
     if (isBindableScalar(value)) {
-      report(context, isAddressable, rawName, locale);
+      report(context, isAddressable, rawName, locale, value);
       continue;
     }
     if (!isPlainObject(value) || isAddressable(rawName)) continue;
@@ -55,7 +61,7 @@ export function diagnoseOrphanFields(
     const group = stripLocaleSuffix(rawName, locale);
     for (const [childName, childValue] of Object.entries(value)) {
       if (!isBindableScalar(childValue) || SYSTEM_FIELD_NAMES.has(childName)) continue;
-      report(context, isAddressable, `${group}.${childName}`, locale);
+      report(context, isAddressable, `${group}.${childName}`, locale, childValue);
     }
   }
 }
@@ -65,13 +71,23 @@ function report(
   isAddressable: FieldAddressability,
   name: string,
   locale: string | undefined,
+  value: unknown,
 ): void {
   const { warned, warn } = context;
   if (warned.has(name) || isAddressable(name)) return;
   warned.add(name);
+  const attribute = `data-payload-field="${stripLocaleSuffix(name, locale)}"`;
+  if (value === '') {
+    warn(
+      `[live-preview] LP0201: no <… ${attribute}> for the empty field "${name}"; ` +
+        'render the anchor unconditionally so edits to an empty field have somewhere to land.',
+    );
+    return;
+  }
   warn(
-    `[live-preview] LP0201: no <… data-payload-field="${stripLocaleSuffix(name, locale)}"> for field "${name}"; ` +
-      'render the anchor unconditionally so edits to an empty field have somewhere to land.',
+    `[live-preview] LP0203: field "${name}" has a value and no <… ${attribute}> on this page; editing it ` +
+      'changes nothing here. Expected where the page shows part of the document: inspect().fidelity.fields ' +
+      'lists these, onUnfaithfulPatch decides whether a server render is asked for.',
   );
 }
 

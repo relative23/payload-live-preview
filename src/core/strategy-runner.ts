@@ -74,9 +74,30 @@ export class StrategyRunner {
       void this.runFragments(transaction, data, planBoundaries(fragment, boundaries));
       return;
     }
-    if (route === undefined) return;
+    if (route === undefined) {
+      // Only 'escalate' queues a patch for this method (fidelity.ts), so the
+      // page that reaches here with no strategy is the one the line is for.
+      this.warnEscalationUnavailable(targets.length);
+      return;
+    }
     this.state.escalatedCount += targets.length;
     void this.refreshRoute(transaction, data, route);
+  }
+
+  /**
+   * The default asks for a server render and this page has nothing to ask.
+   * Said once, with the count that brought it up: a page that keeps producing
+   * findings is the page that needs the line, not one line per finding.
+   */
+  private warnEscalationUnavailable(count: number): void {
+    const { deps, state } = this;
+    if (state.warnedEscalationUnavailable) return;
+    state.warnedEscalationUnavailable = true;
+    deps.warn(
+      `[live-preview] LP0808: onUnfaithfulPatch: 'escalate' has nowhere to go: ${String(count)} field(s) fell short ` +
+        'and no route or fragment strategy is configured. Set routeStrategy: true or fragments: { endpoint }, ' +
+        "or onUnfaithfulPatch: 'warn' to keep the patch and say so.",
+    );
   }
 
   /**
@@ -109,7 +130,10 @@ export class StrategyRunner {
     for (const fieldName of unbound) if (reportUnboundChange(state, fieldName)) answered += 1;
     const [first] = unbound;
     if (first === undefined || deps.onUnfaithfulPatch !== 'escalate') return false;
-    if (deps.strategies.route === undefined) return false;
+    if (deps.strategies.route === undefined) {
+      this.warnEscalationUnavailable(unbound.length);
+      return false;
+    }
     deps.log('route', 'LP0807', `field "${first}" has no binding; refreshing the route`);
     state.escalatedCount += answered;
     return true;

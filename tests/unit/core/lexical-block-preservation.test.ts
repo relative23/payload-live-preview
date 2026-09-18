@@ -187,6 +187,7 @@ describe('a Lexical block whose server markup the write loses', () => {
     const { fidelity, route, fragments } = runtime.inspect();
     expect(fidelity).toEqual({
       mode: 'escalate',
+      canEscalate: false,
       unfaithful: 1,
       escalated: 0,
       fields: ['content'],
@@ -210,6 +211,7 @@ describe('a Lexical block whose server markup the write loses', () => {
     expect(route.refreshes).toBe(1);
     expect(runtime.inspect().fidelity).toEqual({
       mode: 'escalate',
+      canEscalate: true,
       unfaithful: 1,
       escalated: 1,
       fields: ['content'],
@@ -292,6 +294,7 @@ describe('a Lexical block inside the wrapper a template puts around rich text', 
     // `escalated: 0` because there is no strategy here to hand it to.
     expect(runtime.inspect().fidelity).toEqual({
       mode: 'escalate',
+      canEscalate: false,
       unfaithful: 1,
       escalated: 0,
       fields: ['title'],

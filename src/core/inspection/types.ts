@@ -160,12 +160,15 @@ export interface LivePreviewInspection {
 /**
  * The fidelity verdicts as `inspect()` reports them (LP0411). A positive
  * `unfaithful` beside `escalated: 0` is a page that keeps a degraded patch —
- * because `mode` says so, or because neither `fragments.handler` nor
- * `route.handler` is there to escalate to.
+ * because `mode` says so, or because `canEscalate` is false: neither
+ * `fragments.handler` nor `route.handler` is there to escalate to, which the
+ * runtime also says once as LP0808 when `mode` is `'escalate'`.
  */
 export interface InspectionFidelity {
   /** `onUnfaithfulPatch` as resolved from both of its names. */
   readonly mode: 'ignore' | 'warn' | 'escalate';
+  /** Whether a fragment or route strategy exists for `'escalate'` to hand a patch to. */
+  readonly canEscalate: boolean;
   /** Bindings reported unfaithful since start — once per element, like LP0411, and under every mode. */
   readonly unfaithful: number;
   /** Of those, how many were handed to the fragment or route strategy. */

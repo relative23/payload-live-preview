@@ -48,6 +48,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'The page was delivered with `runtime: LEAN_RUNTIME`, and that runtime does not carry the feature the markup asks for — the elements stay as the server rendered them. Drop the option for the full runtime, or remove the markup that needs it.',
   LP0201:
     'Render the binding anchor unconditionally so an edit to an initially empty field has somewhere to land; `data-payload-boundary` keeps a hidden anchor for it.',
+  LP0203:
+    "Expected on a page that shows a subset of the document; nothing to fix unless the page should show the field. `inspect().fidelity.fields` lists such fields and `createUnboundFieldsOverlayPlugin()` from `payload-live-preview/plugins` shows them in the preview. Bind the field to patch it in place, or let `onUnfaithfulPatch: 'escalate'` hand the change to a route or fragment strategy.",
   LP0202:
     "The message carries neither a global slug nor a collection slug, so owner scoping cannot route it; nothing was applied. Check the admin's live-preview setup for that collection, or turn `scopeBindingsByOwner` off on that page.",
   LP0301:
@@ -121,6 +123,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'The block renders as an empty placeholder, and the live markup and the rendered document did not line up — a paragraph the server dropped, a second wrapper around the field (one `<div class="prose">` around the blocks is understood and kept) — so the placeholder was written over what the server had rendered, and that markup is gone from the preview until the page reloads. This is the case `onUnfaithfulPatch` decides: under the default `\'escalate\'` the enclosing fragment boundary or the whole route is re-rendered by the server when the page has a strategy for it, and `inspect().fidelity` counts the patch either way (`unfaithful` up, `escalated` up only when a strategy took it). Register a renderer with `registerBlockRenderer(slug, …)` so the block is drawn in the browser and nothing has to be kept.',
   LP0806:
     'Configure `fragments: { endpoint }` on the adapter so boundaries render on the server; until then they are patched.',
+  LP0808:
+    "Once per session. Set `routeStrategy: true` (an adapter that serves the runtime asset, or the route prelude) or `fragments: { endpoint }` so a server can draw what the patch could not, or set `onUnfaithfulPatch: 'warn'` to keep the patch and say so; `inspect().fidelity.canEscalate` reports which it is.",
   LP0807:
     "Informational: the field has no `data-payload-field` anywhere on the page, so the route was refreshed instead of patched. Bind the field to patch it in place, or set `onUnfaithfulPatch: 'ignore'` to accept the stale value.",
   LP0411:

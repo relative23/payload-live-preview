@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 316,
+    "files": 317,
     "suites": 689,
-    "tests": 2900,
+    "tests": 2904,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 259,
+      "files": 260,
       "suites": 614,
-      "tests": 2673,
+      "tests": 2677,
       "benchmarks": 0
     }
   },
@@ -763,8 +763,8 @@
     {
       "path": "tests/unit/codegen/inventory.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 7,
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -1216,6 +1216,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/orphan-diagnostics.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/protocol-capabilities.test.ts",
       "group": "unit",
       "suites": 2,
@@ -1303,7 +1310,7 @@
       "path": "tests/unit/core/route-strategy.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 19,
+      "tests": 21,
       "benchmarks": 0
     },
     {
@@ -1380,7 +1387,7 @@
       "path": "tests/unit/core/unfaithful-patch.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 15,
+      "tests": 17,
       "benchmarks": 0
     },
     {

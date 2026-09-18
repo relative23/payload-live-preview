@@ -211,7 +211,13 @@ describe('LivePreviewClient — transforms', () => {
         'first-tail:B first',
         'second:B second',
       ]);
-      expect(warn).not.toHaveBeenCalled();
+      // Revision A's orphan line never fires: A was superseded before its
+      // diagnostics ran. What is said is B's own: A brought `orphanA` and B
+      // took it away, a change nothing binds, which the default mode has no
+      // strategy to hand to — LP0808, once.
+      const said = warn.mock.calls.flat().map(String);
+      expect(said.filter((line) => /LP020[13]/.test(line) || line.includes('orphanA'))).toEqual([]);
+      expect(said.filter((line) => line.includes('LP0808'))).toHaveLength(1);
       expect(document.querySelector('[data-payload-field="first"]')?.textContent).toBe('B first');
       expect(document.querySelector('[data-payload-field="second"]')?.textContent).toBe('B second');
     } finally {

@@ -160,6 +160,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly ProfileFeatureOmitted: "LP0104";
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
+    readonly UnboundField: "LP0203";
     readonly VisibilityGateDeferred: "LP0301";
     readonly UnsafeAttributeWrite: "LP0401";
     readonly TextTargetHasChildren: "LP0402";
@@ -198,6 +199,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RouteRefreshLoop: "LP0805";
     readonly FragmentStrategyUnavailable: "LP0806";
     readonly UnboundChangeRefresh: "LP0807";
+    readonly EscalationUnavailable: "LP0808";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
 }>;
@@ -381,6 +383,7 @@ export interface InspectionBindings {
 
 // @public
 export interface InspectionFidelity {
+    readonly canEscalate: boolean;
     readonly escalated: number;
     readonly fields: readonly string[];
     readonly mode: 'ignore' | 'warn' | 'escalate';

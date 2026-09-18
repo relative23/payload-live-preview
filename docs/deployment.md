@@ -98,7 +98,7 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The runtime is about 111 KB of JavaScript (about 35 KB gzip). The number that
+The runtime is about 112 KB of JavaScript (about 35 KB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
 rather than by the framework. Three outcomes, each held by an E2E case in
 `tests/e2e/specs/public-response.spec.ts` against the budgets in
