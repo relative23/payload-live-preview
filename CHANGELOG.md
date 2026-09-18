@@ -1,5 +1,15 @@
 # payload-live-preview
 
+## 2.0.3
+
+### Patch Changes
+
+- 9a79643: `pll doctor --token-param <name>` (`tokenQueryParam` on `runDoctor()`) names the query parameter a `signed-token` strategy reads when its transport is not the default `previewToken`. It is treated like `previewToken`: dropped from the visitor request, counted as the credential, and never printed.
+- 9a79643: `hasPreviewIntent()` reads the last value of a repeated query parameter, as a Next.js `has` rule does. `?preview=true&preview=0` was intent for the adapters and the runtime but not for the `Cache-Control: private, no-store` rule `withLivePreview()` installs, so such a page was injected yet cacheable; the two readings now agree.
+- 9a79643: Hydrated islands receive `payload-live-preview:update` for every revision that carried a change, whether or not a binding outside the islands was written. A page whose bindings all sit inside islands never got the event, and with `skipUnchanged` neither did a field only an island shows.
+- 9a79643: The Trusted Types policy `payload-live-preview` is held once per page and shared by every package entry. A second bundle on the page, `payload-live-preview/lexical` beside the runtime, asked the browser for a policy of the same name, was refused under a `trusted-types` directive without `allow-duplicates`, and fell back to writing strings; `setTrustedTypesPolicy()` reached only the entry it was called through. Both now see the one policy.
+- 9a79643: A route refresh the strategy's minimum interval held back no longer disappears when a newer revision arrives inside the window and changes only bound fields. That revision plans from its own diff, which no longer names the unbound field the older one changed; the runtime now carries the owed refresh over to it, so the keystroke that ends a burst reaches the preview as `docs/hybrid.md` said it did.
+
 ## 2.0.2
 
 ### Patch Changes
