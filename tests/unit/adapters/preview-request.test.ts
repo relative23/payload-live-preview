@@ -13,6 +13,14 @@ describe('hasPreviewIntent', () => {
     expect(hasPreviewIntent(new Request('https://x.test/p?preview='))).toBe(false);
   });
 
+  it('reads the last value of a repeated parameter, as a Next.js has-rule does', () => {
+    // Next matches `has: [{ type: 'query' }]` against the last value of a
+    // repeated key. The runtime and the cache header have to agree on
+    // `?preview=true&preview=0`, or the page is injected yet cacheable.
+    expect(hasPreviewIntent(new Request('https://x.test/p?preview=true&preview=0'))).toBe(false);
+    expect(hasPreviewIntent(new Request('https://x.test/p?preview=0&preview=true'))).toBe(true);
+  });
+
   it('treats Sec-Fetch-Dest: iframe as a preview signal', () => {
     const request = new Request('https://x.test/p', {
       headers: { 'sec-fetch-dest': 'iframe' },

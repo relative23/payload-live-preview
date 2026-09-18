@@ -267,11 +267,20 @@ export class UpdatePipeline {
     // A revision that touches the route refreshes it first; the re-apply lands on the fresh markup.
     const route = deps.strategies.route;
     const unbound = this.strategies.hasUnboundChange(transaction, ownerKeys);
+    // The refresh an older revision was refused and this one took over: owed
+    // whatever this revision's own diff says, and settled by the run below. A
+    // baseline never carries it: the debt needs a refresh before it, which the
+    // baseline itself never plans.
+    const owed = state.routeRefreshOwed;
     if (
       route !== undefined &&
       !transaction.routeRefreshed &&
-      (unbound || route.plan(deps.root, touched) || this.strategies.hasRouteBinding(touched))
+      (unbound ||
+        owed ||
+        route.plan(deps.root, touched) ||
+        this.strategies.hasRouteBinding(touched))
     ) {
+      state.routeRefreshOwed = false;
       void this.strategies.refreshRoute(transaction, data, route);
       return;
     }
@@ -352,11 +361,25 @@ export class UpdatePipeline {
       void this.strategies.runFragments(transaction, data, plan);
     }
     // Nothing to flush is still this revision reaching its end — and its reveal
-    // point: every write may be unchanged while the reveal is still owed.
+    // point: every write may be unchanged while the reveal is still owed. The
+    // islands still hear it: a page whose bindings all sit inside them schedules
+    // nothing, and the event is how they learn of the edit at all.
     if (scheduled === 0 && transaction.pendingFragments === 0) {
       state.complete(transaction);
       this.revealPending(transaction);
+      this.notifyIslands(transaction, data);
     }
+  }
+
+  /** Islands hear every revision that carried a change, whether or not a write landed outside them. */
+  private notifyIslands(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
+    if (transaction.touched.size === 0) return;
+    dispatchIslandUpdate(this.deps.cache.islands, {
+      fields: data.fields,
+      revision: transaction.revision.revision,
+      receivedAt: transaction.receivedAt,
+      locale: transaction.locale,
+    });
   }
 
   /**
@@ -435,16 +458,15 @@ export class UpdatePipeline {
       if (data !== undefined) this.strategies.escalateUnfaithful(transaction, data, unfaithful);
       if (!isCurrent()) return;
     }
-    if (stats.applied === 0 || data === undefined) return;
-    deps.a11y?.announceUpdate(stats.applied);
+    if (data === undefined) return;
+    if (stats.applied > 0) deps.a11y?.announceUpdate(stats.applied);
     if (!isCurrent()) return;
-    dispatchIslandUpdate(deps.cache.islands, {
-      fields: data.fields,
-      revision: revision.revision,
-      receivedAt: transaction.receivedAt,
-      locale: transaction.locale,
-    });
-    if (!isCurrent() || deps.emitter.listenerCount('afterUpdate') === 0) return;
+    // With `skipUnchanged` a field only an island shows writes nothing here,
+    // and the island must still hear about it.
+    this.notifyIslands(transaction, data);
+    if (!isCurrent() || stats.applied === 0 || deps.emitter.listenerCount('afterUpdate') === 0) {
+      return;
+    }
     void deps.emitter.emitWhile(
       'afterUpdate',
       {

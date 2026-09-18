@@ -183,7 +183,10 @@ and in a failure line; a shell keeps both in its history, so prefer a
 short-lived token. A value that is
 not `Name: value`, or one header name given twice, is a usage error. `--param <name>` names a query parameter the deployment reads as
 intent, for an adapter whose `previewQueryParams` replaces the default
-`preview`, `draft` and `livePreview`; repeat it for more. `--json` emits the report
+`preview`, `draft` and `livePreview`; repeat it for more. `--token-param <name>` names
+the query parameter a `signed-token` strategy reads when its transport is not the
+default `previewToken`; it is treated the same way: dropped from the visitor request,
+counted as the credential, never printed. `--json` emits the report
 as data. `--v2` also reads the served inline configuration and reports every
 runtime row still at its `defaults: 'v1'` value as `LP0709` (referrer trust,
 message source, sanitizer policy, `skipUnchanged`). An empty slot counts as the

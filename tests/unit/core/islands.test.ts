@@ -40,6 +40,16 @@ function post(data: Record<string, unknown>, extra: Record<string, unknown> = {}
     }),
   );
 }
+/** Poll for `condition`; an island-only flush emits no `afterUpdate` to await. */
+async function waitFor(condition: () => boolean, timeoutMs = 1_000): Promise<void> {
+  const until = Date.now() + timeoutMs;
+  while (!condition()) {
+    if (Date.now() > until) throw new Error('waitFor: timed out');
+    await new Promise((resolve) => {
+      setTimeout(resolve, 5);
+    });
+  }
+}
 function afterUpdate(): Promise<void> {
   return new Promise((resolve) => {
     emitter.once('afterUpdate', () => {
@@ -47,8 +57,9 @@ function afterUpdate(): Promise<void> {
     });
   });
 }
-function start(): void {
+function start(extra: { skipUnchanged?: boolean } = {}): void {
   runtime = new LivePreviewRuntime({
+    ...extra,
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],
@@ -107,6 +118,60 @@ describe('runtime and islands', () => {
     expect(received[0]?.revision).toBeTypeOf('number');
     expect(received[0]?.receivedAt).toBeTypeOf('number');
     expect(runtime?.inspect().bindings.elements).toBe(1);
+  });
+
+  it('hands an island the update even when nothing outside it was written', async () => {
+    // A page whose only bindings sit inside islands has no patch to apply; the
+    // event is how the island learns of the edit at all.
+    document.body.innerHTML =
+      '<astro-island><p data-payload-field="title">island</p></astro-island>';
+    start();
+    const received: IslandUpdateDetail[] = [];
+    document.querySelector('astro-island')?.addEventListener(ISLAND_EVENT, (event) => {
+      received.push((event as CustomEvent<IslandUpdateDetail>).detail);
+    });
+    post({ title: 'new' });
+    await waitFor(() => received.length === 1);
+    expect(received[0]).toMatchObject({ fields: { title: 'new' } });
+    expect(document.querySelector('astro-island p')?.textContent).toBe('island');
+  });
+
+  it('with skipUnchanged, a field only an island shows still reaches it', async () => {
+    document.body.innerHTML =
+      '<p data-payload-field="title">same</p>' +
+      '<astro-island><span data-payload-field="teaser">old</span></astro-island>';
+    start({ skipUnchanged: true });
+    const received: IslandUpdateDetail[] = [];
+    document.querySelector('astro-island')?.addEventListener(ISLAND_EVENT, (event) => {
+      received.push((event as CustomEvent<IslandUpdateDetail>).detail);
+    });
+    const first = afterUpdate();
+    post({ title: 'same', teaser: 'old' });
+    await first;
+    expect(received).toHaveLength(1);
+    // Only the island's field changes: nothing outside is written, and the
+    // island must still hear about it.
+    post({ title: 'same', teaser: 'new' });
+    await waitFor(() => received.length === 2);
+    expect(received[1]).toMatchObject({ fields: { teaser: 'new' } });
+  });
+
+  it('sends an island nothing for a message that changed no field', async () => {
+    document.body.innerHTML =
+      '<astro-island><p data-payload-field="title">island</p></astro-island>';
+    start();
+    const received: IslandUpdateDetail[] = [];
+    document.querySelector('astro-island')?.addEventListener(ISLAND_EVENT, (event) => {
+      received.push((event as CustomEvent<IslandUpdateDetail>).detail);
+    });
+    post({ title: 'new' });
+    await waitFor(() => received.length === 1);
+    // The same document again: nothing changed, so nothing to re-render.
+    post({ title: 'new' });
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(received).toHaveLength(1);
   });
 
   it('patches inside an island that opted in with data-payload-island="patch" and sends it no event', async () => {

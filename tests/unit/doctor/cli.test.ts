@@ -95,6 +95,46 @@ describe('runDoctor probing', () => {
     ]);
   });
 
+  it('treats a custom token parameter like previewToken when told its name', async () => {
+    // `signed-token` with `transport: { param: 'lpt' }` reads another name. The
+    // visitor probe has to stay anonymous for that name too, it counts as the
+    // credential, and its value stays out of the report.
+    const urls: string[] = [];
+    const fetchImpl: DoctorFetch = (url) => {
+      urls.push(url);
+      return Promise.resolve({ status: 200, headers: {}, body: BOUND });
+    };
+    const report = await runDoctor({
+      url: 'https://example.com/page?lpt=v1.abc.def',
+      fetchImpl,
+      tokenQueryParam: 'lpt',
+    });
+    expect(urls).toEqual([
+      'https://example.com/page',
+      'https://example.com/page?lpt=v1.abc.def&preview=true',
+    ]);
+    const text = formatReport(report);
+    expect(text).toContain('lpt=…');
+    expect(text).not.toContain('v1.abc.def');
+    expect(JSON.stringify(report)).not.toContain('v1.abc.def');
+  });
+
+  it('threads --token-param into the probe and rejects a name that is not one', async () => {
+    const urls: string[] = [];
+    const fetchImpl: DoctorFetch = (url) => {
+      urls.push(url);
+      return Promise.resolve({ status: 200, headers: {}, body: BOUND });
+    };
+    expect(
+      await run(['doctor', 'https://site.test/?lpt=v1.x', '--token-param', 'lpt'], fetchImpl),
+    ).toBe(0);
+    expect(urls[0]).toBe('https://site.test/');
+    expect(await run(['doctor', 'https://site.test/', '--token-param=not a name'], fetchImpl)).toBe(
+      1,
+    );
+    expect(await run(['doctor', 'https://site.test/', '--token-param'], fetchImpl)).toBe(1);
+  });
+
   it('never prints the token it sends: the report names the URL with the value replaced', async () => {
     const { fetchImpl } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND }, CSP);
     const report = await runDoctor({

@@ -157,6 +157,12 @@ export class RuntimeState {
   routeController: AbortController | null = null;
   /** The trailing run a refused refresh asked for; at most one, and always the newest. */
   routeRetry: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * A trailing run a newer revision took over before it ran. That revision
+   * plans from its own diff, which no longer names the field the older one
+   * changed, so the debt is carried here until a refresh runs.
+   */
+  routeRefreshOwed = false;
   readonly readyTimers: ReturnType<typeof setTimeout>[] = [];
   readonly revealer = new FieldRevealer();
   readonly changes = new FieldChangeTracker();
@@ -183,13 +189,15 @@ export class RuntimeState {
   /**
    * Abort in-flight strategy work; a newer revision or a stop supersedes it.
    * The trailing route refresh goes with it: the revision that asked for it is
-   * no longer the one on screen, and the newer one decides for itself — its
-   * message carries the older one's values too.
+   * no longer the one on screen, and the newer one runs it instead — its
+   * message carries the older one's values too, so `routeRefreshOwed` makes
+   * it plan the refresh its own diff would not.
    */
   abortStrategies(): void {
     if (this.routeRetry !== null) {
       clearTimeout(this.routeRetry);
       this.routeRetry = null;
+      this.routeRefreshOwed = true;
     }
     for (const key of ['fragmentController', 'routeController'] as const) {
       const controller = this[key];

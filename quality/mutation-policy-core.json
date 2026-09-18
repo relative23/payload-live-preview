@@ -29,7 +29,7 @@
     "src/security/url-validator.ts"
   ],
   "baseline": {
-    "total": 1213,
+    "total": 1218,
     "mutationScoreMinimum": 99.18,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 0,
@@ -95,7 +95,7 @@
     },
     {
       "file": "src/security/trusted-types.ts",
-      "line": 37,
+      "line": 56,
       "column": 10,
       "mutator": "ConditionalExpression",
       "original": "typeof create === 'function'",
@@ -104,7 +104,7 @@
     },
     {
       "file": "src/security/trusted-types.ts",
-      "line": 46,
+      "line": 66,
       "column": 7,
       "mutator": "ConditionalExpression",
       "original": "api === undefined",

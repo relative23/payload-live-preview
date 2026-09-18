@@ -16,11 +16,16 @@ class FakeTrustedHTML {
   }
 }
 
-function installFakeApi(options: { refuse?: boolean } = {}) {
+function installFakeApi(options: { refuse?: boolean; refuseDuplicates?: boolean } = {}) {
   const created: string[] = [];
   const api = {
     createPolicy: (name: string, rules: { createHTML: (input: string) => string }) => {
       if (options.refuse === true) throw new TypeError(`Policy "${name}" disallowed`);
+      // A browser without `allow-duplicates` in the directive refuses a second
+      // policy of the same name, which is what a second bundle on the page asks for.
+      if (options.refuseDuplicates === true && created.includes(name)) {
+        throw new TypeError(`Policy "${name}" already exists`);
+      }
       created.push(name);
       return { createHTML: (input: string) => new FakeTrustedHTML(rules.createHTML(input)) };
     },
@@ -101,5 +106,37 @@ describe('sinks under an enforcing policy', () => {
     renderers['textarea']?.render(target('textarea'), 'line\nbreak', context);
     expect(createHTML.mock.calls.length).toBeGreaterThanOrEqual(3);
     for (const call of createHTML.mock.calls) expect(call[0]).not.toContain('<script');
+  });
+});
+
+describe('two bundles on one page', () => {
+  it('share the one policy the page allows, instead of the second falling back to strings', async () => {
+    const created = installFakeApi({ refuseDuplicates: true });
+    expect(trustedHtml('<p>a</p>')).toBeInstanceOf(FakeTrustedHTML);
+    vi.resetModules();
+    const second = await import('@security/trusted-types');
+    expect(second.trustedHtml('<p>b</p>')).toBeInstanceOf(FakeTrustedHTML);
+    expect(created).toEqual([TRUSTED_TYPES_POLICY_NAME]);
+    second.__resetTrustedTypesForTests();
+  });
+
+  it('holds the policies under the documented registry name', () => {
+    // The name is the contract between the copies: a second bundle finds the
+    // policy only under exactly this symbol.
+    installFakeApi();
+    trustedHtml('<p>a</p>');
+    const slot = Reflect.get(globalThis, Symbol.for('payload-live-preview.trusted-types')) as
+      { auto?: unknown } | undefined;
+    expect(slot?.auto).toBeDefined();
+    expect(slot?.auto).not.toBeNull();
+  });
+
+  it('a policy set through one copy reaches the other', async () => {
+    installFakeApi();
+    setTrustedTypesPolicy({ createHTML: (input) => new FakeTrustedHTML(`custom:${input}`) });
+    vi.resetModules();
+    const second = await import('@security/trusted-types');
+    expect(second.trustedHtml('<p>b</p>')).toHaveProperty('value', 'custom:<p>b</p>');
+    second.__resetTrustedTypesForTests();
   });
 });

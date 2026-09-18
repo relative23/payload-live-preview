@@ -43,7 +43,10 @@ export function hasPreviewIntent(
     }
     if (url !== undefined) {
       for (const param of queryParams) {
-        const value = url.searchParams.get(param);
+        // The last value of a repeated key, as Next.js matches a `has` rule:
+        // `withLivePreview()` marks the response by that reading, and the two
+        // have to agree on `?preview=true&preview=0`.
+        const value = url.searchParams.getAll(param).at(-1);
         if (value === 'true' || value === '1') return true;
       }
     }
