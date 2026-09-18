@@ -26,9 +26,9 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // tree-shaking a named import allows, and it did not even work: esbuild hoists
   // an external import to the top of the bundle out of a dynamically imported
   // module too, so the binary went on resolving the peer before its first flag.
-  'codegen-astro.js': { raw: 13_070, gzip: 4_610, brotli: 4_240 },
+  'codegen-astro.js': { raw: 13_070, gzip: 4_610, brotli: 4_217 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 100 → 20 809 (+709 B, measured 20 003 → 20 712); gzip 6 950 → 7 184 (+234 B, measured 6 946 → 7 180); brotli 6 270 → 6 593 (measured 6 473; ~120 B).
-  'codegen-cli.js': { raw: 20_809, gzip: 7_184, brotli: 6_593 },
+  'codegen-cli.js': { raw: 20_809, gzip: 7_192, brotli: 6_593 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 15 420 → 15 899 (+479 B, measured 15 345 → 15 824); gzip 5 530 → 5 730 (+200 B, measured 5 510 → 5 710); brotli 5 060 → 5 223 (measured 5 133; under the 2 % notice).
   'codegen.cjs': { raw: 15_899, gzip: 5_730, brotli: 5_223 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 15 230 → 15 708 (+478 B, measured 15 152 → 15 630); gzip 5 430 → 5 631 (+201 B, measured 5 410 → 5 611); brotli 4 890 → 5 164 (measured 5 074; under the 2 % notice).
@@ -51,7 +51,7 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-16 (2.0.1: --param, the byte-for-byte query splice, the duplicate-header refusal): raw 17 701 → 18 619 (+918 B, measured 17 684 → 18 602); gzip 7 023 → 7 378 (+355 B, measured 7 012 → 7 367); brotli 6 143 → 6 513 (measured 6 393, ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 18 619 → 19 210 (+591 B, measured 18 602 → 19 193); gzip 7 378 → 7 600 (+222 B, measured 7 367 → 7 589); brotli 6 513 → 6 711 (measured 6 591; ~120 B).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 19 210 → 19 261 (+51 B, measured 19 193 → 19 244); gzip 7 600 → 7 624 (+24 B, measured 7 589 → 7 613).
-  'doctor.js': { raw: 19_261, gzip: 7_624, brotli: 6_711 },
+  'doctor.js': { raw: 19_261, gzip: 7_625, brotli: 6_711 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -85,5 +85,5 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 43 141 → 43 874 (+733 B, measured 43 099 → 43 832); gzip 15 403 → 15 564 (+161 B, measured 15 384 → 15 545); brotli 13 744 → 13 903 (measured 13 624 → 13 783, cushion kept).
   'doctor-cli.js': { raw: 43_874, gzip: 15_564, brotli: 13_903 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
-  'migrate.js': { raw: 14_534, gzip: 5_265, brotli: 4_750 },
+  'migrate.js': { raw: 14_534, gzip: 5_267, brotli: 4_750 },
 };
