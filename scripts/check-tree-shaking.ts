@@ -250,6 +250,14 @@ interface Fixture {
  * `initLivePreview` from `payload-live-preview/core` 44_773 → 45_057 (measured 44_749 → 45_033);
  * `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 47_651 → 47_970 (measured 47_588 → 47_907);
  * `LEAN_RUNTIME` from `payload-live-preview/lean` 29_366 → 29_531 (measured 29_307 → 29_472).
+ * 2026-09-19 (focus survives a keyed move in a structural list): the applier's
+ * focus capture and restore around its commit, measured against a build of main,
+ * cushions kept:
+ * `initLivePreview` from `payload-live-preview` 45_069 → 45_073 (measured 45_045 → 45_049);
+ * `generateInlineScript` from `payload-live-preview` 42_714 → 42_731 (measured 42_649 → 42_666);
+ * `initLivePreview` from `payload-live-preview/core` 45_057 → 45_059 (measured 45_033 → 45_035);
+ * `morphElement` from `payload-live-preview/structural` 1_493 → 1_487 (measured 1_469 → 1_463);
+ * `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 47_970 → 47_986 (measured 47_903 → 47_919).
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -270,21 +278,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_069,
+    gzip: 45_073,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 42_714,
+    gzip: 42_731,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_057,
+    gzip: 45_059,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -298,14 +306,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_493,
+    gzip: 1_487,
     why: 'the keyed morph alone, without the array renderer',
   },
   {
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 47_970,
+    gzip: 47_986,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

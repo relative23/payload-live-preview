@@ -206,13 +206,19 @@ function indexKeyed(parent: Element, options: MorphOptions): Map<string, Element
   return keyed;
 }
 
-interface FocusSnapshot {
+/** @internal */
+export interface FocusSnapshot {
   readonly element: HTMLElement;
   readonly selection: readonly [number | null, number | null] | null;
 }
 
-/** A keyed move is a remove-and-insert, which blurs; remember what had focus. */
-function captureFocus(live: Element): FocusSnapshot | null {
+/**
+ * A keyed move is a remove-and-insert, which blurs; remember what had focus.
+ * The structural applier moves items itself and uses the same pair around
+ * its commit, so a move it makes keeps focus the way a move the morph makes
+ * does (ADR 0008 §1). @internal
+ */
+export function captureFocus(live: Element): FocusSnapshot | null {
   const active = live.ownerDocument.activeElement;
   if (!(active instanceof HTMLElement) || !live.contains(active)) return null;
   const selection =
@@ -222,7 +228,8 @@ function captureFocus(live: Element): FocusSnapshot | null {
   return { element: active, selection };
 }
 
-function restoreFocus(snapshot: FocusSnapshot | null): void {
+/** @internal */
+export function restoreFocus(snapshot: FocusSnapshot | null): void {
   if (snapshot === null) return;
   const { element, selection } = snapshot;
   if (element.ownerDocument.activeElement === element || !element.isConnected) return;

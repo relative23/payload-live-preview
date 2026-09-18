@@ -17,7 +17,7 @@ import {
 } from './array-template';
 import { safeStringify } from '@field-types/utils';
 import { diffArray, type ArrayPatch } from '@schema/diff';
-import { morphElement } from './morph';
+import { captureFocus, restoreFocus, morphElement } from './morph';
 import { templateSanitizeOptions } from './template-sanitize';
 
 /** @internal */
@@ -125,6 +125,10 @@ function commitStructuralPlan(
   const [container, entries, nextItems] = plan;
   const claimed = new Set<Element>();
   let mutated = false;
+  // Placing a retained item is a remove-and-insert, which blurs whatever the
+  // visitor had focused inside it; the morph does the same for a move it
+  // makes and restores afterwards, so the commit does too.
+  const focus = captureFocus(container);
   for (const [index, live, rendered, nestedSlots, replace] of entries) {
     let node = live;
     if (rendered !== undefined) {
@@ -174,6 +178,7 @@ function commitStructuralPlan(
     child.remove();
     mutated = true;
   }
+  restoreFocus(focus);
   const memory = getMemory(container, store);
   memory.clear();
   for (const value of nextItems) rememberItem(memory, value);
