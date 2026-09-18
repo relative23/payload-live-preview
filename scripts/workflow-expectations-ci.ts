@@ -65,6 +65,25 @@ export const CI: WorkflowSpec = {
         { run: 'npm run test:integration' },
       ],
     },
+    // The peer floors, installed over the lockfile: the unit job runs what the
+    // lockfile installs, which is the top of each range and not its promise.
+    'hook-matrix': {
+      timeoutMinutes: 15,
+      matrix: { react: ['18.0.0'], vue: ['3.3.0'] },
+      steps: [
+        ...PINNED_SETUP,
+        BUILD_RUNTIME,
+        {
+          run: 'npm install --no-save --no-audit --no-fund "react@${{ matrix.react }}" "react-dom@${{ matrix.react }}" "@types/react@${{ matrix.react }}" "@types/react-dom@${{ matrix.react }}" "vue@${{ matrix.vue }}"',
+        },
+        {
+          run: "node -p \"'react ' + require('react/package.json').version + ', react-dom ' + require('react-dom/package.json').version + ', vue ' + require('vue/package.json').version\"",
+        },
+        {
+          run: 'npx vitest run tests/unit/adapters/react-hook.test.tsx tests/unit/adapters/react-route-refresh.test.tsx tests/unit/adapters/nextjs-fragments.test.ts tests/unit/adapters/vue-composable.test.ts tests/unit/core/hydration-vue.test.ts tests/unit/adapters/nuxt-fragments.test.ts',
+        },
+      ],
+    },
     coverage: {
       steps: [
         { uses: 'actions/checkout', with: { 'fetch-depth': '0' } },

@@ -1,5 +1,5 @@
 {
-  "$comment": "What CI actually runs. scripts/compat-table.ts --check holds this file against the fixture lockfiles and the workflow, and the README section it renders against this file. Edit here, then npm run compat:write.",
+  "$comment": "What CI actually runs. scripts/compat-table.ts --check holds this file against the fixture lockfiles and the workflow, and the README section it renders against this file. Edit here, then npm run compat:write. `hooks`: the React and Vue peer floors the hook-matrix job installs over the lockfile (`floor`, held against the peer range and the workflow) and what the lockfile itself installs (`current`, held against package-lock.json).",
   "frameworks": [
     {
       "name": "Astro",
@@ -139,5 +139,33 @@
   "vite": {
     "measured": "2026-09-06",
     "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE — every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 5 through 8. Remove this line when the dev tooling accepts 8."
-  }
+  },
+  "hooks": [
+    {
+      "name": "React",
+      "package": "react",
+      "peer": ">=18",
+      "job": "hook-matrix",
+      "floor": "18.0.0",
+      "current": "19.2.8",
+      "suites": [
+        "tests/unit/adapters/react-hook.test.tsx",
+        "tests/unit/adapters/react-route-refresh.test.tsx",
+        "tests/unit/adapters/nextjs-fragments.test.ts"
+      ]
+    },
+    {
+      "name": "Vue",
+      "package": "vue",
+      "peer": ">=3.3",
+      "job": "hook-matrix",
+      "floor": "3.3.0",
+      "current": "3.5.42",
+      "suites": [
+        "tests/unit/adapters/vue-composable.test.ts",
+        "tests/unit/core/hydration-vue.test.ts",
+        "tests/unit/adapters/nuxt-fragments.test.ts"
+      ]
+    }
+  ]
 }

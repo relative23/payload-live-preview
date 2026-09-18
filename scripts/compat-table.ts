@@ -42,8 +42,23 @@ interface Framework {
   /** Where the framework's Vite range is declared; absent for a framework without one. */
   readonly vite?: { readonly from: string; readonly field: 'dependencies' | 'peerDependencies' };
 }
+/**
+ * A framework the hooks and fragment renderers peer on with an open lower
+ * bound: `floor` is what that bound names and the hook-matrix job installs,
+ * `current` is what the lockfile installs and the unit job runs.
+ */
+interface Hook {
+  readonly name: string;
+  readonly package: string;
+  readonly peer: string;
+  readonly job: string;
+  readonly floor: string;
+  readonly current: string;
+  readonly suites: readonly string[];
+}
 interface Matrix {
   readonly frameworks: readonly Framework[];
+  readonly hooks: readonly Hook[];
   readonly vite?: { readonly measured: string; readonly devBelowNewest?: string };
   readonly node: {
     readonly engines: string;
@@ -78,6 +93,8 @@ export function render(matrix: Matrix, viteLine = ''): string {
     `Node ${matrix.node.engines}; the unit and integration suites run on Node ${matrix.node.tested.join(', ')}. Every version in the table is what the fixture lockfile or the matrix job installs, checked by \`npm run compat:check\`.`,
     '',
     ...(viteLine === '' ? [] : [viteLine, '']),
+    `The React and Vue hooks and the Next.js and Nuxt fragment renderers run twice on every push: at the floor of each peer range, which the \`hook-matrix\` job installs over the lockfile (${matrix.hooks.map((hook) => `${hook.name} ${hook.floor}`).join(', ')}), and at what the lockfile installs (${matrix.hooks.map((hook) => `${hook.name} ${hook.current}`).join(', ')}). Svelte is mocked in the SvelteKit fragment suite, so \`svelte >=5\` is measured only through its fixture.`,
+    '',
     ...payload,
     '',
     END,
@@ -161,6 +178,13 @@ async function refresh(matrix: Matrix): Promise<Matrix> {
   return { ...matrix, vite: { measured: new Date().toISOString().slice(0, 10) } };
 }
 
+/** The lowest version an open-ended peer range (`>=x`, `>=x.y`, `>=x.y.z`) admits. */
+function rangeFloor(range: string): string | undefined {
+  const match = /^>=\s*(\d+)(?:\.(\d+))?(?:\.(\d+))?\s*$/u.exec(range);
+  if (match === null) return undefined;
+  return `${match[1] ?? '0'}.${match[2] ?? '0'}.${match[3] ?? '0'}`;
+}
+
 async function lockfileVersion(fixture: string, name: string): Promise<string | undefined> {
   const lock = JSON.parse(await readFile(resolve(ROOT, fixture, 'package-lock.json'), 'utf8')) as {
     packages?: Record<string, { version?: string }>;
@@ -223,6 +247,32 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
     ),
   );
   problems.push(...viteProblems(await viteFacts(matrix)));
+  for (const hook of matrix.hooks) {
+    const range = manifest.peerDependencies?.[hook.package];
+    if (range !== hook.peer) {
+      problems.push(
+        `${hook.name}: matrix records peer \`${hook.peer}\`, package.json declares \`${String(range)}\``,
+      );
+    }
+    const declaredFloor = range === undefined ? undefined : rangeFloor(range);
+    if (declaredFloor !== hook.floor) {
+      problems.push(
+        `${hook.name}: the peer range starts at ${String(declaredFloor)}, the matrix tests the floor ${hook.floor}`,
+      );
+    }
+    const floors = matrixValues(workflow, hook.job, hook.package).map(String);
+    if (floors.join(',') !== hook.floor) {
+      problems.push(
+        `${hook.name}: matrix says floor ${hook.floor}, workflow job ${hook.job} installs [${floors.join(', ')}]`,
+      );
+    }
+    const installed = await lockfileVersion('.', hook.package);
+    if (installed !== hook.current) {
+      problems.push(
+        `${hook.name}: matrix says the lockfile installs ${hook.current}, it has ${String(installed)}`,
+      );
+    }
+  }
 
   const workflowNode = matrixValues(workflow, 'unit', 'node').map(String);
   if (matrix.node.tested.map(String).join(',') !== workflowNode.join(',')) {

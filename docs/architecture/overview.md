@@ -155,8 +155,12 @@ went wrong without it.
   exactly the majors the matrix installs, and the README table is rendered
   from the record. A range wider than the tests is a promise nobody checked.
   The other framework peers are open lower bounds (`react >=18`,
-  `svelte >=5`, `vue >=3.3`) that CI exercises only at the versions the
-  fixtures install: React 19, Svelte 5, Vue 3.5.
+  `svelte >=5`, `vue >=3.3`). CI runs the React and Vue suites at the floor
+  each range names — 18.0.0 and 3.3.0, installed over the lockfile by the
+  `hook-matrix` job — and at what the lockfile installs, React 19 and Vue 3.5;
+  `compat:check` holds the floors against the ranges. Svelte is mocked in the
+  SvelteKit fragment suite, so its floor is not measured and only the
+  fixture's 5.x is.
   [ADR 0009](0009-astro-peer-range.md)
 - **Reproducible release** — only the artifact a certified CI run produced is
   published, byte for byte, and a rerun reconciles rather than repeats.
