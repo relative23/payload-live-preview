@@ -246,6 +246,19 @@ export const CRITICAL_GATES: WorkflowSpec = {
         },
       ],
     },
+    // The trusted core on its own, beside the shards: same runtime, stricter
+    // policy. The nightly report cannot stand in for it — one score over sixty
+    // files says nothing about eight that carry the capabilities.
+    'trusted-core-mutation': {
+      timeoutMinutes: 90,
+      permissions: READ_ONLY,
+      steps: [
+        ...PINNED_SETUP,
+        BUILD_RUNTIME,
+        { run: 'npm run test:mutation', env: { STRYKER_SCOPE: 'core' } },
+        { run: 'npm run test:mutation:policy:core' },
+      ],
+    },
     'critical-mutation-baseline': {
       needs: ['critical-mutation'],
       timeoutMinutes: 15,
