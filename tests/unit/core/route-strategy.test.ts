@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import { resolveStrategy, type RouteContext, type RouteStrategy } from '@core/strategies';
@@ -385,14 +385,21 @@ describe('onUnboundChange', () => {
  */
 describe('the route brake', () => {
   /**
-   * Long enough that three messages land inside it on the CI runner, short
-   * enough to wait out. 200 ms was enough here and not there: under the
-   * mutation shards' initial run (four vitest workers on two cores) the second
-   * message once reached the brake after the window had closed, so nothing was
-   * refused and the trailing run never happened — the runtime was right, the
-   * window was not.
+   * The real strategy's brake refuses a refresh inside its window and asks
+   * for a retry when the window closes. Modelled here without a clock: a
+   * refresh opens the window; a request from a revision the brake has not
+   * refused yet is refused and re-armed; the request that comes back with
+   * the last refused revision is the trailing run, and is served. That is
+   * the runtime's side of the contract — one trailing run per refusal, a
+   * newer refusal taking the slot, nothing after stop — with no interval a
+   * loaded runner can miss. Two earlier versions waited out a real window
+   * (200 ms, then 1 000 ms) and still failed in the mutation jobs' initial
+   * run, where four vitest workers share two cores: the second message
+   * reached the brake after the window had closed and nothing was refused.
+   * Ordering is by timer expiry, which a stall cannot reorder: the flush a
+   * message asks for expires before a retry armed earlier.
    */
-  const WINDOW_MS = 1_000;
+  const RETRY_MS = 50;
 
   beforeEach(() => {
     document.head.innerHTML = '';
@@ -403,25 +410,20 @@ describe('the route brake', () => {
       setTimeout(resolve, ms);
     });
 
-  /** The real strategy's brake: one refresh per window, the rest handed back. */
   function brakingRoute(): RouteStrategy & { refreshes: number } {
-    let lastAt = Number.NEGATIVE_INFINITY;
+    let open = false;
+    let refusedRevision: number | null = null;
     const strategy = {
       refreshes: 0,
       plan: () => false,
       refresh: (context: RouteContext) => {
-        const waitMs = WINDOW_MS - (Date.now() - lastAt);
-        if (waitMs > 0) {
-          // One millisecond past the window, not exactly on it. `setTimeout`
-          // may wake a hair before the `Date.now()` delta it was given, and a
-          // brake asked to retry at the boundary then refuses its own trailing
-          // run and re-arms — twice the refusals for the same one refresh. The
-          // runtime is not the flaky part; a brake that leaves itself no margin
-          // is, and a real one would not.
-          context.retryAfter?.(waitMs + 1);
+        if (open && context.revision !== refusedRevision) {
+          refusedRevision = context.revision;
+          context.retryAfter?.(RETRY_MS);
           return Promise.resolve('refused' as const);
         }
-        lastAt = Date.now();
+        open = true;
+        refusedRevision = null;
         strategy.refreshes += 1;
         document.querySelector('[data-testid="layout"]')!.textContent =
           'server render #' + String(strategy.refreshes);
@@ -431,7 +433,17 @@ describe('the route brake', () => {
     return strategy;
   }
 
-  /** The connection's first message, and the one unbound change that spends the window. */
+  /** The trailing run has happened when the strategy counts a second refresh. */
+  async function trailingRun(route: { refreshes: number }): Promise<void> {
+    await vi.waitFor(
+      () => {
+        expect(route.refreshes).toBe(2);
+      },
+      { timeout: 5_000, interval: 10 },
+    );
+  }
+
+  /** The connection's first message, and the one unbound change that opens the window. */
   async function refuseTheSecond(
     route: RouteStrategy & { refreshes: number },
   ): Promise<LivePreviewRuntime> {
@@ -461,8 +473,7 @@ describe('the route brake', () => {
   it('runs the refused refresh once when the window closes', async () => {
     const route = brakingRoute();
     const rt = await refuseTheSecond(route);
-    await sleep(WINDOW_MS + 100);
-    expect(route.refreshes).toBe(2);
+    await trailingRun(route);
     expect(document.querySelector('[data-testid="layout"]')?.textContent).toBe('server render #2');
     expect(rt.inspect().route).toMatchObject({ refreshes: 2, refused: 1, loopStopped: 0 });
   });
@@ -473,7 +484,7 @@ describe('the route brake', () => {
     const patched = afterUpdates(['patch']);
     post({ footer: 'Third', headline: 'three' });
     await patched;
-    await sleep(WINDOW_MS + 100);
+    await trailingRun(route);
     // Two refusals, one trailing run: the newer revision takes the slot from the
     // older, because its message carries the older one's values as well.
     expect(rt.inspect().route).toMatchObject({ refreshes: 2, refused: 2 });
@@ -489,8 +500,7 @@ describe('the route brake', () => {
     const patched = afterUpdates(['patch']);
     post({ footer: 'Third', headline: 'two' });
     await patched;
-    await sleep(WINDOW_MS + 100);
-    expect(route.refreshes).toBe(2);
+    await trailingRun(route);
     expect(document.querySelector('[data-testid="layout"]')?.textContent).toBe('server render #2');
     // The owed refresh is asked inside the window too, so the brake refuses it
     // once more before the trailing run: two refusals, one refresh, no loop.
@@ -501,7 +511,7 @@ describe('the route brake', () => {
     const route = brakingRoute();
     const rt = await refuseTheSecond(route);
     rt.destroy();
-    await sleep(WINDOW_MS + 100);
+    await sleep(RETRY_MS * 4);
     expect(route.refreshes).toBe(1);
   });
 });
