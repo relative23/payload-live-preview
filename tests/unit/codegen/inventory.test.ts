@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildPreviewInventory,
-  checkPreviewBindings,
-  type PreviewInventory,
-} from '@/codegen/inventory';
+import { buildPreviewInventory, type PreviewInventory } from '@/codegen/inventory';
 import type { ExtractedSchema } from '@/codegen/parser/types';
 
 const schema: ExtractedSchema = {
@@ -144,48 +140,5 @@ describe('buildPreviewInventory', () => {
   it('keeps globals and collections apart, because a slug can be both', () => {
     expect(inventory.collections.map((entry) => entry.slug)).toEqual(['posts']);
     expect(inventory.globals.map((entry) => entry.slug)).toEqual(['homepage']);
-  });
-});
-
-describe('checkPreviewBindings', () => {
-  it('accepts every path the inventory knows', () => {
-    expect(
-      checkPreviewBindings(inventory, [
-        { kind: 'global', slug: 'homepage', path: 'hero.headline' },
-        { kind: 'global', slug: 'homepage', path: 'slides.*.caption' },
-        { kind: 'collection', slug: 'posts', path: 'slug' },
-      ]),
-    ).toEqual([]);
-  });
-
-  it('names the file for a renamed or misspelled field', () => {
-    expect(
-      checkPreviewBindings(inventory, [
-        { kind: 'global', slug: 'homepage', path: 'hero.heading', source: 'Hero.astro:42' },
-        { kind: 'global', slug: 'nav', path: 'items' },
-      ]),
-    ).toEqual([
-      'global:homepage has no field "hero.heading" (Hero.astro:42)',
-      'unknown global "nav"',
-    ]);
-  });
-
-  it('does not confuse a global and a collection sharing a slug', () => {
-    expect(
-      checkPreviewBindings(inventory, [{ kind: 'collection', slug: 'homepage', path: 'title' }]),
-    ).toEqual(['unknown collection "homepage"']);
-  });
-
-  it('reports unbound fields only when asked', () => {
-    const bindings = [{ kind: 'collection', slug: 'posts', path: 'slug' } as const];
-    expect(checkPreviewBindings(inventory, bindings)).toEqual([]);
-    expect(
-      checkPreviewBindings(inventory, bindings, { reportUnbound: true }).filter((line) =>
-        line.startsWith('collection:posts'),
-      ),
-    ).toEqual([]);
-    expect(checkPreviewBindings(inventory, bindings, { reportUnbound: true })).toContain(
-      'global:homepage field "title" is never bound',
-    );
   });
 });

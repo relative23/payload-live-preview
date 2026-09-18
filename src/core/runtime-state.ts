@@ -123,6 +123,8 @@ export class RuntimeState {
   warnedUnattributableMessage = false;
   warnedVisibilityGate = false;
   warnedFragmentFallback = false;
+  /** LP0808 is said once: escalation was asked for and nothing on the page can do it. */
+  warnedEscalationUnavailable = false;
   /** LP0503 is reported once: a drifting sender repeats the same shape on every keystroke. */
   warnedProtocolShape = false;
   /** LP0411 is reported once per element; the markup that causes it does not change. */

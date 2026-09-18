@@ -91,14 +91,8 @@ export async function generateTypes(options: GenerateTypesOptions): Promise<Gene
   };
 }
 
-export { buildPreviewInventory, checkPreviewBindings } from './inventory';
-export type {
-  PreviewBindingReference,
-  PreviewCoverageOptions,
-  PreviewInventory,
-  PreviewInventoryEntry,
-  PreviewInventoryField,
-} from './inventory';
+export { buildPreviewInventory } from './inventory';
+export type { PreviewInventory, PreviewInventoryEntry, PreviewInventoryField } from './inventory';
 export { extractSchema } from './parser/extract-schema';
 export { emitTypes } from './emit/emit-types';
 export type { ExtractedSchema, ExtractedSlug, ExtractedField } from './parser/types';

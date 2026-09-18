@@ -120,6 +120,7 @@ describe('the lean profile counts what it cannot act on', () => {
 
     expect(harness!.runtime.inspect().fidelity).toEqual({
       mode: 'escalate',
+      canEscalate: false,
       unfaithful: 1,
       escalated: 0,
       fields: ['tagline'],

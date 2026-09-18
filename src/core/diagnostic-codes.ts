@@ -29,10 +29,12 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   /** The page carries the lean runtime and needs a feature that profile leaves out. */
   ProfileFeatureOmitted: 'LP0104',
 
-  /** An update named a field with no binding anchor on the page. */
+  /** An update named an empty field with no binding anchor on the page; an edit to it has nowhere to land. */
   OrphanField: 'LP0201',
   /** Owner scoping is on and the update names no document it could belong to. */
   UnattributableUpdate: 'LP0202',
+  /** An update carried a value for a field the page binds nowhere; editing it changes nothing on this page. */
+  UnboundField: 'LP0203',
 
   /** The visibility gate held offscreen writes back until they scroll into view. */
   VisibilityGateDeferred: 'LP0301',
@@ -115,6 +117,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   FragmentStrategyUnavailable: 'LP0806',
   /** A revision changed a field with no binding; `onUnfaithfulPatch` refreshed the route. */
   UnboundChangeRefresh: 'LP0807',
+  /** `onUnfaithfulPatch: 'escalate'` found no route or fragment strategy to hand an unfaithful patch to; the page keeps it. */
+  EscalationUnavailable: 'LP0808',
   /** A readiness row is not yet at its 2.0 value; `pll doctor --v2` reports it. */
   V2ReadinessGap: 'LP0709',
   /** The preview runtime is served to anonymous visitors, not only inside the admin frame. */

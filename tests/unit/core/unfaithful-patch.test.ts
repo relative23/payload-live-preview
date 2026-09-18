@@ -85,6 +85,7 @@ describe('a value the binding cannot represent', () => {
     // The verdict and its outcome, as a reader of the page sees them.
     expect(runtime.inspect().fidelity).toEqual({
       mode: 'escalate',
+      canEscalate: true,
       unfaithful: 1,
       escalated: 1,
       fields: ['title'],
@@ -104,6 +105,13 @@ describe('a value the binding cannot represent', () => {
       fragment.rendered.map((element) => element.getAttribute('data-payload-fragment')),
     ).toEqual(['hero']);
     expect(route.refreshes).toBe(0);
+    runtime.destroy();
+  });
+
+  it('reports canEscalate for a fragment strategy alone', () => {
+    document.body.innerHTML = `<section data-payload-fragment="hero">${UNWRITABLE_TITLE}</section>`;
+    const runtime = start({ strategies: { fragment: fakeFragment() }, warn: () => {} });
+    expect(runtime.inspect().fidelity.canEscalate).toBe(true);
     runtime.destroy();
   });
 
@@ -138,6 +146,7 @@ describe('a value the binding cannot represent', () => {
     // Counted all the same: the mode decides what is done, not what is seen.
     expect(runtime.inspect().fidelity).toEqual({
       mode: 'ignore',
+      canEscalate: true,
       unfaithful: 1,
       escalated: 0,
       fields: ['title'],
@@ -164,18 +173,54 @@ describe('a value the binding cannot represent', () => {
     runtime.destroy();
   });
 
-  it('does nothing at all when there is no strategy to escalate to', async () => {
+  it("says LP0411 and not LP0808 under 'warn' with no strategy: nothing was meant to be handed over", async () => {
     document.body.innerHTML = UNWRITABLE_TITLE;
-    const runtime = start({ warn: () => {} });
+    const warnings: string[] = [];
+    const runtime = start({
+      onUnfaithfulPatch: 'warn',
+      warn: (...args: unknown[]) => {
+        warnings.push(String(args[0]));
+      },
+    });
 
     await connectThenEdit({ title: 'Typed in the admin' });
+
+    expect(warnings.some((line) => line.includes('LP0411'))).toBe(true);
+    expect(warnings.some((line) => line.includes('LP0808'))).toBe(false);
+    expect(runtime.inspect().fidelity).toMatchObject({ mode: 'warn', canEscalate: false });
+    runtime.destroy();
+  });
+
+  it('does nothing at all when there is no strategy to escalate to, and says so once', async () => {
+    document.body.innerHTML = UNWRITABLE_TITLE;
+    const warnings: string[] = [];
+    const runtime = start({
+      warn: (...args: unknown[]) => {
+        warnings.push(String(args[0]));
+      },
+    });
+
+    await connectThenEdit({ title: 'Typed in the admin' }, { title: 'Typed again' });
+
+    // LP0808 once for the session, with both ways out named.
+    const said = warnings.filter((line) => line.includes('LP0808'));
+    expect(said).toHaveLength(1);
+    expect(said[0]).toContain('1 field(s) fell short');
+    expect(said[0]).toContain('routeStrategy: true');
+    expect(said[0]).toContain("onUnfaithfulPatch: 'warn' to keep the patch and say so");
 
     // The consumer's markup survives, exactly as before Z3.
     expect(document.querySelector('.mark')?.textContent).toBe('Server rendered');
     // What `inspect()` says on that page: the patch fell short, nothing was
     // asked to redraw it, and `route.handler` beside it says why.
     const { fidelity, route } = runtime.inspect();
-    expect(fidelity).toEqual({ mode: 'escalate', unfaithful: 1, escalated: 0, fields: ['title'] });
+    expect(fidelity).toEqual({
+      mode: 'escalate',
+      canEscalate: false,
+      unfaithful: 1,
+      escalated: 0,
+      fields: ['title'],
+    });
     expect(route.handler).toBe(false);
     runtime.destroy();
   });
@@ -310,6 +355,7 @@ describe('a changed field with no binding', () => {
     expect(route.refreshes).toBe(1);
     expect(runtime.inspect().fidelity).toEqual({
       mode: 'escalate',
+      canEscalate: true,
       unfaithful: 1,
       escalated: 1,
       fields: ['callout'],
@@ -326,6 +372,7 @@ describe('a changed field with no binding', () => {
     const { fidelity, route } = runtime.inspect();
     expect(fidelity).toEqual({
       mode: 'escalate',
+      canEscalate: false,
       unfaithful: 1,
       escalated: 0,
       fields: ['callout'],
@@ -345,6 +392,7 @@ describe('a changed field with no binding', () => {
       expect(route.refreshes).toBe(0);
       expect(runtime.inspect().fidelity).toEqual({
         mode,
+        canEscalate: true,
         unfaithful: 1,
         escalated: 0,
         fields: ['callout'],

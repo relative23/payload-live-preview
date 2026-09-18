@@ -90,6 +90,7 @@ describe('inspect() before the runtime starts', () => {
     // page with no strategy shows right up to its first unfaithful patch.
     expect(snapshot.fidelity).toEqual({
       mode: 'escalate',
+      canEscalate: false,
       unfaithful: 0,
       escalated: 0,
       fields: [],

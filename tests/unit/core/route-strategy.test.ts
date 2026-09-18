@@ -57,6 +57,7 @@ function start(
   extra: {
     onUnboundChange?: 'ignore' | 'route';
     onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
+    warn?: (...args: unknown[]) => void;
   } = {},
 ): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
@@ -317,12 +318,61 @@ describe('onUnboundChange', () => {
     expect(rt.inspect().route.loopStopped).toBe(0);
   });
 
-  it('does nothing without a route strategy to run', async () => {
-    start(undefined, { onUnboundChange: 'route' });
+  it('does nothing without a route strategy to run, and says so once (LP0808)', async () => {
+    const warnings: string[] = [];
+    const rt = start(undefined, {
+      onUnboundChange: 'route',
+      warn: (...args) => {
+        warnings.push(String(args[0]));
+      },
+    });
+    expect(rt.inspect().fidelity.canEscalate).toBe(false);
+    // The first message is the page's own document; nothing is unfaithful yet.
+    const baseline = afterUpdates(['patch']);
+    post({ footer: 'Old', headline: 'as rendered' });
+    await baseline;
+    expect(warnings.filter((line) => line.includes('LP0808'))).toHaveLength(0);
     const done = afterUpdates(['patch']);
     post({ footer: 'Patched', headline: 'nothing binds this' });
     await done;
     expect(document.querySelector('[data-payload-field="footer"]')?.textContent).toBe('Patched');
+    const said = warnings.filter((line) => line.includes('LP0808'));
+    expect(said).toHaveLength(1);
+    expect(said[0]).toContain('nowhere to go');
+    expect(said[0]).toContain('routeStrategy: true');
+    // A second unbound change adds to the ledger, not to the console.
+    const again = afterUpdates(['patch']);
+    post({ footer: 'Patched twice', headline: 'still nothing binds this' });
+    await again;
+    expect(warnings.filter((line) => line.includes('LP0808'))).toHaveLength(1);
+    const { fidelity } = rt.inspect();
+    expect(fidelity.unfaithful).toBeGreaterThan(0);
+    expect(fidelity).toMatchObject({ escalated: 0, canEscalate: false });
+  });
+
+  it("stays quiet without a strategy under onUnfaithfulPatch: 'warn' and 'ignore'", async () => {
+    for (const mode of ['warn', 'ignore'] as const) {
+      const warnings: string[] = [];
+      const rt = start(undefined, {
+        onUnfaithfulPatch: mode,
+        warn: (...args) => {
+          warnings.push(String(args[0]));
+        },
+      });
+      const baseline = afterUpdates(['patch']);
+      post({ footer: 'Old', headline: 'as rendered' });
+      await baseline;
+      const done = afterUpdates(['patch']);
+      post({ footer: 'Patched', headline: 'nothing binds this' });
+      await done;
+      expect(warnings.filter((line) => line.includes('LP0808'))).toHaveLength(0);
+      rt.destroy();
+    }
+  });
+
+  it('reports canEscalate once a route strategy is there', () => {
+    const rt = start(fakeRoute(), { onUnboundChange: 'route' });
+    expect(rt.inspect().fidelity.canEscalate).toBe(true);
   });
 });
 

@@ -88,9 +88,6 @@ export interface AnnotationRefusal {
 // @internal
 export function buildPreviewInventory(schema: ExtractedSchema): PreviewInventory;
 
-// @internal
-export function checkPreviewBindings(inventory: PreviewInventory, bindings: readonly PreviewBindingReference[], options?: PreviewCoverageOptions): readonly string[];
-
 // @public (undocumented)
 interface EmitOptions {
     readonly header?: string;
@@ -260,22 +257,6 @@ export interface GenerateTypesResult {
     readonly outFile?: string;
     // (undocumented)
     readonly schema: ExtractedSchema;
-}
-
-// @internal
-export interface PreviewBindingReference {
-    // (undocumented)
-    readonly kind: 'global' | 'collection';
-    // (undocumented)
-    readonly path: string;
-    // (undocumented)
-    readonly slug: string;
-    readonly source?: string;
-}
-
-// @internal (undocumented)
-export interface PreviewCoverageOptions {
-    readonly reportUnbound?: boolean;
 }
 
 // @public (undocumented)

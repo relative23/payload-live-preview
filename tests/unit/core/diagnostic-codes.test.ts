@@ -174,14 +174,15 @@ afterEach(() => {
 });
 
 describe('codes reach the reader', () => {
-  it('stamps LP0201 on the orphan-field warning', async () => {
+  it('stamps LP0203 on a valued field with no binding and LP0201 on an empty one', async () => {
     const warnings: string[] = [];
     const runtime = createRuntime(workingRenderer(), new EventEmitter(), warnings);
     runtime.start();
-    fireUpdate({ nosuchfield: 'x' });
+    fireUpdate({ nosuchfield: 'x', emptyfield: '' });
     await vi.advanceTimersByTimeAsync(50);
 
-    expect(warnings.some((w) => w.includes('LP0201'))).toBe(true);
+    expect(warnings.some((w) => w.includes('LP0203') && w.includes('"nosuchfield"'))).toBe(true);
+    expect(warnings.some((w) => w.includes('LP0201') && w.includes('"emptyfield"'))).toBe(true);
     runtime.destroy();
   });
 

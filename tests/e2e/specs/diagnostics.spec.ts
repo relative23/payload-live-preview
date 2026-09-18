@@ -116,7 +116,9 @@ test.describe('inspect() on the handle an adapter injects', () => {
 });
 
 test.describe('diagnostic codes reach the browser console', () => {
-  test('stamps LP0201 on an update for a field with no binding', async ({ page }) => {
+  test('stamps LP0203 on a valued field with no binding, LP0201 on an empty one', async ({
+    page,
+  }) => {
     const warnings: string[] = [];
     page.on('console', (message) => {
       if (message.type() === 'warning' || message.type() === 'error') {
@@ -134,14 +136,25 @@ test.describe('diagnostic codes reach the browser console', () => {
     // policy accepts it (a self-post would be dropped, correctly).
     await post(page, { thisFieldHasNoAnchor: 'x' });
 
+    // A value with no anchor: the page does not show this field (LP0203).
+    await expect
+      .poll(() => warnings.some((line) => line.includes('LP0203')), {
+        message: 'the unbound-field warning must carry its code',
+      })
+      .toBe(true);
+    expect(warnings.some((line) => line.includes('LP0201'))).toBe(false);
+
+    // An empty value with no anchor: the anchor advice applies (LP0201).
+    await post(page, { emptyFieldHasNoAnchor: '' });
     await expect
       .poll(() => warnings.some((line) => line.includes('LP0201')), {
         message: 'the orphan-field warning must carry its code',
       })
       .toBe(true);
 
-    // And the same fact is readable without scraping the console.
+    // And the same facts are readable without scraping the console.
     const snapshot = await inspect(page);
     expect(snapshot.bindings.orphanFields).toContain('thisFieldHasNoAnchor');
+    expect(snapshot.bindings.orphanFields).toContain('emptyFieldHasNoAnchor');
   });
 });

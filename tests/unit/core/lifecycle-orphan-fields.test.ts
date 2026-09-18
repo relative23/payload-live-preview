@@ -32,7 +32,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
       data: { title: 'new', shortDescription: 'no anchor here' },
     });
     await vi.advanceTimersByTimeAsync(50);
-    expect(joinLog(log)).toMatch(/for field "shortDescription"/);
+    expect(joinLog(log)).toMatch(/field "shortDescription" has a value/);
     runtime.destroy();
   });
   it('does not warn when the field has a binding', async () => {
@@ -59,7 +59,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
       });
       await vi.advanceTimersByTimeAsync(50);
     }
-    const matches = joinLog(log).match(/for field "missing"/g) ?? [];
+    const matches = joinLog(log).match(/field "missing" has a value/g) ?? [];
     expect(matches).toHaveLength(1);
     runtime.destroy();
   });
@@ -182,7 +182,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
       data: { title: 'x', someOrphan: 'value' },
     });
     await vi.advanceTimersByTimeAsync(50);
-    expect(joinLog(warn)).toMatch(/for field "someOrphan"/);
+    expect(joinLog(warn)).toMatch(/field "someOrphan" has a value/);
     runtime.destroy();
   });
   it('keeps later updates functional when the warning callback throws', async () => {
@@ -204,7 +204,9 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
       });
       await vi.advanceTimersByTimeAsync(50);
 
-      expect(warningCalls).toBe(2);
+      // One line per orphan, and LP0808 once: the second message is the first
+      // change the default mode had nowhere to hand to.
+      expect(warningCalls).toBe(3);
       expect(document.querySelector('h1')?.textContent).toBe('second');
       expect(runtime.updateCount).toBe(2);
     } finally {
@@ -233,7 +235,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
       .flatMap((c) => c)
       .map((a) => String(a))
       .join(' ');
-    expect(all).toMatch(/for field "orphanField"/);
+    expect(all).toMatch(/field "orphanField" has a value/);
     consoleWarnSpy.mockRestore();
     runtime.destroy();
   });

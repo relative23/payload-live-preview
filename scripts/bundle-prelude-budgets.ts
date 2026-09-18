@@ -80,7 +80,8 @@
 // Raised 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 125 125 → 125 174 (+49 B, measured 125 107 → 125 156).
 // Raised 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 125 174 → 125 191 (+17 B, measured 125 156 → 125 173).
 // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 125 191 → 125 632 (+441 B, measured 125 173 → 125 614); gzip 39 588 → 39 703 (+115 B, measured 39 567 → 39 682).
-export const INLINE_FRAGMENT_BUDGET = { raw: 125_632, gzip: 39_703, brotli: 34_803 } as const;
+// 2026-09-18 (2.0.4, diagnostics that say what the page does): raw 125_632 → 126_544 (+912 B), gzip 39_703 → 40_004 (+301 B), brotli 34_803 → 35_065 (+262 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, LP0808 once for an escalation with nowhere to go, and `canEscalate`. The log in bundle-budgets.ts has the whole change.
+export const INLINE_FRAGMENT_BUDGET = { raw: 126_544, gzip: 40_004, brotli: 35_065 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -164,4 +165,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 125_632, gzip: 39_703, brotli: 34_8
 // Raised 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 120 222 → 120 239 (+17 B, measured 120 202 → 120 219); gzip 37 995 → 37 998 (+3 B, measured 37 985 → 37 988).
 // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 120 239 → 120 680 (+441 B, measured 120 219 → 120 660); gzip 37 998 → 38 112 (+114 B, measured 37 988 → 38 102).
 // 2026-09-18 (2.0.3, the release build): brotli is not byte-stable — CI compressed index.js 2 B over a budget that kept 46 B over the local figure; every brotli row now keeps ~120 B (or under the 2 % notice on a small file) and every gzip row at least 12 B over this host's 2.0.3 measurement: brotli 33 445 → 33 534 (measured 33 414).
-export const INLINE_ROUTE_BUDGET = { raw: 120_680, gzip: 38_112, brotli: 33_534 } as const;
+// 2026-09-18 (2.0.4, diagnostics that say what the page does): raw 120_680 → 121_592 (+912 B), gzip 38_112 → 38_421 (+309 B), brotli 33_534 → 33_786 (+252 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, LP0808 once for an escalation with nowhere to go, and `canEscalate`. The log in bundle-budgets.ts has the whole change.
+export const INLINE_ROUTE_BUDGET = { raw: 121_592, gzip: 38_421, brotli: 33_786 } as const;

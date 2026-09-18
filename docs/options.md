@@ -188,7 +188,9 @@ Notes on the rows that need one:
   Lexical block whose markup the write has to drop, or a changed field the page
   has no binding for at all. `'escalate'`, the default, hands the region to the
   fragment strategy when a boundary covers it and to the route otherwise, so it
-  does nothing without `fragments` or `routeStrategy`; `'warn'` reports LP0411
+  does nothing without `fragments` or `routeStrategy` — and says so once, as
+  LP0808, the first time it has something to hand over and nothing to hand it
+  to (`inspect().fidelity.canEscalate` reports the same); `'warn'` reports LP0411
   and keeps the patch; `'ignore'` keeps it silently. It skips the connection's
   first message, where every field counts as changed and the page has just been
   rendered from them ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).

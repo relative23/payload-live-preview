@@ -61,6 +61,7 @@ export function buildInspection(deps: RuntimeDeps, state: RuntimeState): LivePre
     route: { handler: deps.strategies.route !== undefined, ...state.routeStats },
     fidelity: {
       mode: deps.onUnfaithfulPatch,
+      canEscalate: deps.strategies.fragment !== undefined || deps.strategies.route !== undefined,
       unfaithful: state.unfaithfulCount,
       escalated: state.escalatedCount,
       fields: [...state.unfaithfulFields].sort(),
