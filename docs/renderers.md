@@ -240,6 +240,10 @@ custom nodes are responsible for theirs — see [docs/security.md](security.md).
 Pass `{ sanitize: false }` when the caller sanitizes downstream itself; that
 opts out of the warning too.
 
+Since 2.1 a render can name its document instead: `lexicalToHtml(value, {
+document })`, and `<RichText document={doc} />` passes it through; two requests
+at once never share one. `setSanitizerDocument()` remains the fallback and is
+deprecated for 3.0.
 Since 2.0.2 one `setSanitizerDocument()` call covers every entry: the document
 set through the root, `payload-live-preview/core` or
 `payload-live-preview/lexical` is the one all entries use, and

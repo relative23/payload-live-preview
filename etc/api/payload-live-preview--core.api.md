@@ -959,6 +959,7 @@ interface SanitizeOptions {
     readonly additionalAllowedTags?: readonly string[];
     readonly allowedDataAttributes?: readonly string[];
     readonly allowFormControls?: boolean;
+    readonly document?: SanitizerDocument;
     readonly policy?: SanitizerPolicyMode;
     readonly templateMode?: boolean;
 }
@@ -980,7 +981,7 @@ export type SanitizerPolicyMode = 'compat' | 'strict';
 // @internal
 export function setCspCrypto(crypto: WebCryptoLike | null): void;
 
-// @public
+// @public @deprecated
 export function setSanitizerDocument(doc: SanitizerDocument | null): void;
 
 // @public (undocumented)

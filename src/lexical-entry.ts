@@ -6,5 +6,6 @@
  */
 
 export * from './lexical';
+// eslint-disable-next-line @typescript-eslint/no-deprecated -- the fallback slot exists to be re-exported until 3.0
 export { setSanitizerDocument, type SanitizerDocument } from './security/sanitizer';
 export type { NodeRenderer, RenderNodeContext } from './lexical/registry';

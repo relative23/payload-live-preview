@@ -37,6 +37,7 @@ export interface LexicalNode {
 
 // @public
 export interface LexicalRenderOptions {
+    readonly document?: SanitizerDocument;
     readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string) => void;
     readonly sanitize?: boolean;
 }
@@ -98,7 +99,7 @@ export interface SanitizerDocument {
     };
 }
 
-// @public
+// @public @deprecated
 export function setSanitizerDocument(doc: SanitizerDocument | null): void;
 
 // @internal

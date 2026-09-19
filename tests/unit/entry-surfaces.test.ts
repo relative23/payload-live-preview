@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- the process-wide document slot is exercised on purpose until 3.0 */
 import { describe, expect, it } from 'vitest';
 import * as clientEntry from '../../src/client-entry';
 import * as structuralEntry from '../../src/structural-entry';

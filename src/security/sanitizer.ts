@@ -200,6 +200,12 @@ export interface SanitizeOptions {
    * never add a binding.
    */
   readonly templateMode?: boolean;
+  /**
+   * The DOM to parse with, for this call: an SSR document such as linkedom's
+   * or jsdom's. Wins over `setSanitizerDocument()` and over the global
+   * `document`, and two callers with two documents never share one.
+   */
+  readonly document?: SanitizerDocument;
 }
 
 /** What `templateMode` keeps under `'strict'`. */
@@ -285,7 +291,15 @@ interface DocumentSlot {
   [DOCUMENT_SLOT]?: SanitizerDocument | undefined;
 }
 
-/** Supply a `Document` for SSR, e.g. linkedom's `parseHTML(...).document`; `null` clears it, for every entry. */
+/**
+ * Supply a `Document` for SSR, e.g. linkedom's `parseHTML(...).document`;
+ * `null` clears it, for every entry. The fallback for a call that names no
+ * document of its own.
+ *
+ * @deprecated Since 2.1 a call names its document: `sanitizeHtml(html, { document })`,
+ * `lexicalToHtml(content, { document })`. The process-wide slot stays until 3.0
+ * (ADR 0007 ledger).
+ */
 export function setSanitizerDocument(doc: SanitizerDocument | null): void {
   (globalThis as DocumentSlot)[DOCUMENT_SLOT] = doc ?? undefined;
 }
@@ -309,7 +323,7 @@ export function sanitizeHtmlWithPolicy(
   policy: SanitizerPolicyMode | undefined,
   options?: SanitizeOptions,
 ): string {
-  const doc = resolveDocument();
+  const doc = options?.document ?? resolveDocument();
   if (!doc) throw environmentError();
   if (html === '') return '';
 

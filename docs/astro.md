@@ -118,6 +118,11 @@ import RichText from 'payload-live-preview/astro/RichText.astro';
 <RichText value={page.body} field="body" class="prose" />
 ```
 
+On a server without a global DOM, pass the document the sanitizer should parse
+with as the `document` prop (linkedom's `parseHTML(...).document`, for example);
+it is per render, so two requests never share one. Without the prop the
+component uses the document `setSanitizerDocument()` supplied.
+
 That is the whole frontend. Open the page inside the admin's preview and edits appear as you type.
 
 ## 4. Point the Payload admin at your Astro URLs

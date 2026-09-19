@@ -3,7 +3,7 @@
  * `type`; an unknown node renders its children so content is never lost.
  */
 
-import { sanitizeHtml, hasSanitizerDocument } from '@security/sanitizer';
+import { sanitizeHtml, hasSanitizerDocument, type SanitizerDocument } from '@security/sanitizer';
 import { lookup, type RenderNodeContext } from './registry';
 import type { LexicalNode, LexicalRoot } from './types';
 import { resolveAlignment, resolveIndent } from './utils';
@@ -11,6 +11,13 @@ import { resolveAlignment, resolveIndent } from './utils';
 export interface LexicalRenderOptions {
   /** Pass the result through `sanitizeHtml()` (default `true`). */
   readonly sanitize?: boolean;
+  /**
+   * The DOM the sanitizer parses with, for this call: an SSR document such as
+   * linkedom's or jsdom's. Without it the document `setSanitizerDocument()`
+   * supplied is used, then the global one; with neither the result is
+   * unsanitised and warns once.
+   */
+  readonly document?: SanitizerDocument;
   /**
    * Called for every `block` or `inlineBlock` the registry has no renderer
    * for, with the block's slug as Payload sent it and the class its empty
@@ -33,11 +40,12 @@ export function isLexicalContent(value: unknown): value is LexicalRoot {
   return Array.isArray(root.children);
 }
 
-/** Render a Lexical document to HTML; without `setSanitizerDocument()` the result is unsanitised and warns once. */
+/** Render a Lexical document to HTML; without a document (`options.document` or `setSanitizerDocument()`) the result is unsanitised and warns once. */
 export function lexicalToHtml(content: LexicalRoot, options: LexicalRenderOptions = {}): string {
   if (!isLexicalContent(content)) return '';
   const html = createContext(options.onUnrenderedBlock).renderChildren(content.root.children);
   if (options.sanitize === false) return html;
+  if (options.document !== undefined) return sanitizeHtml(html, { document: options.document });
   if (hasSanitizerDocument()) return sanitizeHtml(html);
   warnNoSanitizerOnce();
   return html;

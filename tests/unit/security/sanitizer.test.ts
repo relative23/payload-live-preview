@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- the process-wide document slot is exercised on purpose until 3.0 */
 import { describe, expect, it, vi } from 'vitest';
 import { sanitizeHtml, setSanitizerDocument } from '@security/sanitizer';
 
