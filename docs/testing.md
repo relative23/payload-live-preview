@@ -175,6 +175,12 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   keyed morph's promises (ADR 0008 §8), one case each: what a retained node
   keeps, what pairs with what, what is never entered. The engine's mechanics
   stay in `tests/unit/core/morph.test.ts`.
+- `tests/unit/core/session-scope.test.ts` and `scripts/check-resource-inventory.ts`
+  with `quality/resource-inventory.json` — the runtime session's contract (ADR
+  0005, 2.1 note): after `destroy()`, `suspend()` or a failed start no timer,
+  listener or observer is left, counted across fifty sessions; and every
+  acquisition in `src/core` names who releases it, held against the source in
+  the architecture gate.
 - `tests/unit/security/xss-corpus.ts` with `sanitizer-corpus.test.ts` and
   `tests/unit/property/sanitizer-fuzz.property.test.ts` — the sanitizer's
   fence (ADR 0016): 118 vectors and an aimed fuzz under every policy, against

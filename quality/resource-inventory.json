@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "//": "Every acquisition in src/core and who releases it; scripts/check-resource-inventory.ts holds it against the source. Keys are <module>::<trimmed line>.",
+  "sites": {
+    "src/core/observers.ts::mutation = new MutationObserver((mutations) => {": {
+      "release": "scope",
+      "why": "ObserverManager.stop() disconnects it; the session scope owns that stop."
+    },
+    "src/core/observers.ts::intersection = new IntersectionObserver(": {
+      "release": "scope",
+      "why": "ObserverManager.stop() disconnects it; the session scope owns that stop."
+    },
+    "src/core/observers.ts::const timer = setTimeout(() => {": {
+      "release": "scope",
+      "why": "The mutation debounce; ObserverManager.stop() clears it, and the scope owns that stop."
+    },
+    "src/core/navigation-lifecycle.ts::windowTarget?.addEventListener('pagehide', onPageHide);": {
+      "release": "caller",
+      "why": "registerNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
+    },
+    "src/core/navigation-lifecycle.ts::windowTarget?.addEventListener('pageshow', onPageShow);": {
+      "release": "caller",
+      "why": "registerNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
+    },
+    "src/core/navigation-lifecycle.ts::for (const name of softEvents) documentTarget?.addEventListener(name, onSoftNavigation);": {
+      "release": "caller",
+      "why": "registerNavigationLifecycle() returns the disposer that removes every soft-navigation listener; the client calls it on destroy()."
+    },
+    "src/core/message-bus.ts::target.addEventListener('message', listener);": {
+      "release": "scope",
+      "why": "MessageBus.detach() removes it and invalidates the generation; the session scope owns that detach."
+    },
+    "src/core/a11y.ts::const timer = setTimeout(() => {": {
+      "release": "instance",
+      "why": "The announcer's clear-message timer; a11y.detach() on destroy() clears it, and a suspended runtime keeps its announcer."
+    },
+    "src/core/data-merger.ts::controller = new AbortController();": {
+      "release": "scope",
+      "why": "The merge request in flight; DataMerger.destroy() aborts it, and the session scope owns that destroy."
+    },
+    "src/core/hydration.ts::timer = setTimeout(() => {": {
+      "release": "scope",
+      "why": "The cap on the wait for the framework's first commit; the cancel the startup host hands to the scope clears it, and it clears itself when the commit lands."
+    },
+    "src/core/startup.ts::root.addEventListener('DOMContentLoaded', onReady, { once: true });": {
+      "release": "scope",
+      "why": "A once listener; the cancel the startup host hands to the scope removes it if the session ends before the parse does."
+    },
+    "src/core/update-scheduler.ts::setTimeout(() => {": {
+      "release": "scope",
+      "why": "The frame fallback where requestAnimationFrame is missing; fires within a frame, and UpdateScheduler.destroy() cancels a pending one \u2014 the scope owns that destroy."
+    },
+    "src/core/update-scheduler.ts::const next = setTimeout(() => {": {
+      "release": "scope",
+      "why": "The debounce; UpdateScheduler.destroy() clears it, and the scope owns that destroy."
+    },
+    "src/core/update-scheduler.ts::this.deadlineTimer = setTimeout(() => {": {
+      "release": "scope",
+      "why": "The deadline that forces a flush; UpdateScheduler.destroy() clears it, and the scope owns that destroy."
+    },
+    "src/core/strategy-runner.ts::const controller = new AbortController();": {
+      "release": "scope",
+      "why": "A fragment or route request in flight; RuntimeState.abortStrategies() aborts both, and the scope owns that call."
+    },
+    "src/core/strategy-runner.ts::state.routeRetry = setTimeout(() => {": {
+      "release": "scope",
+      "why": "The trailing route run a refusal asked for; RuntimeState.abortStrategies() clears it, and the scope owns that call."
+    },
+    "src/core/runtime.ts::Object.defineProperty(window, '__livePreview', {": {
+      "release": "caller",
+      "why": "The page-wide handle initLivePreview() installs; its own destroy() deletes it, and a handover replaces it (ADR 0011)."
+    },
+    "src/core/merge-need.ts::this.timer = setTimeout(() => {": {
+      "release": "scope",
+      "why": "The merge window's trailing flush; MergeNeed.destroy() clears it, and the scope owns that destroy."
+    },
+    "src/core/state.ts::const handle = setTimeout(() => {": {
+      "release": "scope",
+      "why": "The heartbeat timeout; HeartbeatTimer.stop() clears it, and the scope owns that stop."
+    },
+    "src/core/lifecycle.ts::setTimeout(() => {": {
+      "release": "scope",
+      "why": "The ready-handshake retries; the scope clears every handle in state.readyTimers."
+    },
+    "src/core/lifecycle.ts::this.rootSentinel = new MutationObserver(() => {": {
+      "release": "scope",
+      "why": "Watches for a replaced document.body; the scope disconnects it."
+    },
+    "src/core/hydration-vue.ts::Object.defineProperty(proto, VUE_APP_PROPERTY, {": {
+      "release": "global",
+      "why": "A one-time accessor on Element.prototype that reports Vue's mount; installed once per page, idempotent, and left in place on purpose (ADR 0015, addendum)."
+    },
+    "src/core/hydration-vue.ts::Object.defineProperty(this, VUE_APP_PROPERTY, {": {
+      "release": "global",
+      "why": "The per-element own property the accessor writes when Vue assigns its app; belongs to the page's element, not to a session (ADR 0015, addendum)."
+    }
+  }
+}

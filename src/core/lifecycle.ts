@@ -17,6 +17,7 @@ import { markNoWriteCallback } from './internal-outcome';
 import { isInsideIsland } from './islands';
 import { MessageBus } from './message-bus';
 import { ObserverManager } from './observers';
+import { LifetimeScope } from './lifetime-scope';
 import type { ProtocolNegotiation } from './protocol-version';
 import type { RuntimeOptions } from './runtime-options';
 import { RuntimeState, type RuntimeDeps } from './runtime-state';
@@ -39,6 +40,8 @@ export class LivePreviewRuntime {
   private readonly writer: BindingWriter;
   /** Watches `<html>` for a swapped `<body>` so the observers follow it. */
   private rootSentinel: MutationObserver | null = null;
+  /** The session's resources, released together in reverse order when it ends (ADR 0005, 2.1 note). */
+  private scope: LifetimeScope | null = null;
   private observedRoot: Node | null = null;
 
   constructor(options: RuntimeOptions) {
@@ -199,6 +202,7 @@ export class LivePreviewRuntime {
     if (state.isRunning()) return false;
     state.started = true;
     state.suspended = false;
+    this.openScope();
     try {
       startWhenReady(this.startupHost());
       return true;
@@ -217,6 +221,11 @@ export class LivePreviewRuntime {
       isRunning: () => state.isRunning(),
       defer: (cancel) => {
         state.deferredStart = cancel;
+        this.scope?.own(() => {
+          if (state.deferredStart !== cancel) return;
+          state.deferredStart = null;
+          cancel();
+        });
       },
       later: (step) => {
         state.deferredStart = null;
@@ -296,57 +305,62 @@ export class LivePreviewRuntime {
   }
 
   /** Invalidate first, then release everything startup may have acquired. */
-  private release(): boolean {
+  /**
+   * One scope per session, opened by `start()`. What it holds is the
+   * teardown, in the order it must run — the last entry closes first — so
+   * `destroy()`, `suspend()` and a failed start all release the same way:
+   * mark the session invalid, abort the work in flight, close the scope.
+   */
+  private openScope(): void {
     const { state, deps } = this;
-    state.activeUpdate = null;
-    state.started = false;
-    const deferredStart = state.deferredStart;
-    state.deferredStart = null;
-    if (deferredStart !== null) this.runCleanup(deferredStart);
-    for (const handle of state.readyTimers) {
-      this.runCleanup(() => {
-        clearTimeout(handle);
-      });
-    }
-    state.readyTimers.length = 0;
-    this.runCleanup(() => {
-      deps.heartbeat.stop();
+    const scope = new LifetimeScope(deps.log);
+    scope.own(() => {
+      deps.merger?.destroy();
+      state.merges.destroy();
     });
-    this.runCleanup(() => {
-      deps.bus.detach();
+    scope.own(() => {
+      deps.scheduler.destroy();
     });
-    state.abortStrategies();
-    this.runCleanup(() => {
+    scope.own(() => {
+      deps.observers.stop();
+    });
+    scope.own(() => {
       this.rootSentinel?.disconnect();
       this.rootSentinel = null;
       this.observedRoot = null;
     });
-    this.runCleanup(() => {
-      deps.observers.stop();
+    scope.own(() => {
+      state.abortStrategies();
     });
-    this.runCleanup(() => {
-      deps.scheduler.destroy();
+    scope.own(() => {
+      deps.bus.detach();
     });
-    this.runCleanup(() => {
-      deps.merger?.destroy();
-      state.merges.destroy();
+    scope.own(() => {
+      deps.heartbeat.stop();
     });
+    scope.own(() => {
+      for (const handle of state.readyTimers) clearTimeout(handle);
+      state.readyTimers.length = 0;
+    });
+    this.scope = scope;
+  }
+
+  private release(): boolean {
+    const { state, deps } = this;
+    state.activeUpdate = null;
+    state.started = false;
+    this.scope?.close();
+    this.scope = null;
     deps.cache.clear();
     return deps.connection.markDisconnected();
   }
 
   private rollbackFailedStart(): void {
     this.release();
-    this.runCleanup(() => {
-      this.deps.a11y?.detach();
-    });
-  }
-
-  private runCleanup(cleanup: () => void): void {
     try {
-      cleanup();
+      this.deps.a11y?.detach();
     } catch (error) {
-      this.deps.log('cleanup failed:', error);
+      this.deps.log('runtime cleanup failed:', error);
     }
   }
 
