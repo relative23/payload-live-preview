@@ -4,7 +4,7 @@
 
 ```ts
 
-// @public
+// @beta
 export interface AnnotatableSchema {
     // (undocumented)
     readonly collections: readonly {
@@ -20,7 +20,7 @@ export interface AnnotatableSchema {
     }[];
 }
 
-// @public
+// @beta (undocumented)
 export interface AnnotatePluginOptions {
     readonly allowPublicBindings?: boolean;
     readonly include?: (id: string) => boolean;
@@ -35,7 +35,7 @@ export function annotateSource(code: string, options: AnnotatePluginOptions): {
     readonly refusals: readonly AnnotationRefusal[];
 };
 
-// @public
+// @beta
 export interface AnnotateVitePlugin {
     // (undocumented)
     readonly enforce: 'pre';
@@ -57,7 +57,7 @@ export interface AnnotationCandidate {
     readonly tag: string;
 }
 
-// @public
+// @beta
 export interface AnnotationRefusal {
     readonly expression: string;
     // (undocumented)
@@ -66,7 +66,7 @@ export interface AnnotationRefusal {
     readonly reason: string;
 }
 
-// @public
+// @beta
 export function livePreviewAnnotate(options: AnnotatePluginOptions): AnnotateVitePlugin;
 
 // @internal

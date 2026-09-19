@@ -275,29 +275,41 @@ the document given to `setSanitizerDocument()` is held once for all of them
 since 2.0.2. The adapters, `annotate`, `codegen/astro`, `doctor`, `migrate` and
 the `.astro` components are ESM-only; the rest ship ESM and CommonJS builds.
 
-| Entry                                                | Contents                                                                                                                       |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `payload-live-preview`                               | Client, inline script generator, renderers, built-in plugins, authorization and binding helpers; not the exports named above.  |
-| `payload-live-preview/core`                          | The client and runtime without the built-in plugin constructors, generator or adapters.                                        |
-| `payload-live-preview/client`                        | `LivePreviewClient` and `initLivePreview()` alone.                                                                             |
-| `payload-live-preview/structural`                    | The structural array renderer, the keyed morph and the `data-payload-depends` helpers.                                         |
-| `payload-live-preview/lexical`                       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`, `setSanitizerDocument()`.       |
-| `payload-live-preview/plugins`                       | `PluginManager`, plugin types and the built-in plugins.                                                                        |
-| `payload-live-preview/fragment`                      | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                               |
-| `payload-live-preview/server`                        | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `bind()`.                    |
-| `payload-live-preview/payload`                       | `buildLivePreviewUrl()` for `payload.config.ts`; imports nothing from `payload`.                                               |
-| `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | One framework adapter each.                                                                                                    |
-| `payload-live-preview/nuxt-module`                   | The Nuxt module: registers the Nitro plugin from `nuxt.config.ts`; data options only, no `authorizePreview` or `shouldInject`. |
-| `payload-live-preview/react`                         | `useLivePreviewDocument()`: the merged document as a hook (needs `react`).                                                     |
-| `payload-live-preview/vue`                           | The same as a composable (needs `vue`).                                                                                        |
-| `payload-live-preview/lean`                          | `LEAN_RUNTIME`: the smaller runtime artifact, as a value for the `runtime` option.                                             |
-| `payload-live-preview/annotate`                      | `livePreviewAnnotate()`: the build-time annotator as a Vite plugin. No `ts-morph`.                                             |
-| `payload-live-preview/astro/RichText.astro`          | The `RichText` component.                                                                                                      |
-| `payload-live-preview/astro/PreviewBoundary.astro`   | The `PreviewBoundary` component.                                                                                               |
-| `payload-live-preview/codegen`                       | Type generation from a Payload config (needs `ts-morph`).                                                                      |
-| `payload-live-preview/codegen/astro`                 | `livePreviewCodegen()`: the Astro integration that runs that generation on start and in `astro dev`.                           |
-| `payload-live-preview/doctor`                        | `runDoctor()` and `analyzeProbe()`: the `pll doctor` checks as a library.                                                      |
-| `payload-live-preview/migrate`                       | `migrateSource()` and the codemods behind `pll migrate` (needs `ts-morph`).                                                    |
+Every entry has a stability class, stated here and, for the experimental
+ones, as `@beta` on the declarations in the API reports (`etc/api/*.api.md`):
+
+- **Stable** — semver. A removal or a default change waits for 3.0 and is
+  recorded in the ADR 0007 ledger; a deprecated alias stays until then.
+- **Experimental** — may change in a minor, with a changeset that names the
+  change and how to move; the declarations carry `@beta`.
+- **Tooling** — programmatic access to what the `pll` commands and the build
+  integrations do. It follows the CLI: an option or a finding may change in a
+  minor with a changeset, and the exit codes and the report shapes are the
+  contract.
+
+| Entry                                                | Class        | Contents                                                                                                                                                                    |
+| ---------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payload-live-preview`                               | Stable       | Client, inline script generator, renderers, built-in plugins, authorization and binding helpers; not the exports named above.                                               |
+| `payload-live-preview/core`                          | Stable       | The client and runtime without the built-in plugin constructors, generator or adapters.                                                                                     |
+| `payload-live-preview/client`                        | Stable       | `LivePreviewClient` and `initLivePreview()` alone.                                                                                                                          |
+| `payload-live-preview/structural`                    | Experimental | The structural array renderer, the keyed morph and the `data-payload-depends` helpers; `morphElement()` and `MorphOptions` are `@beta`, the engine behind ADR 0008.         |
+| `payload-live-preview/lexical`                       | Stable       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`, `setSanitizerDocument()`.                                                    |
+| `payload-live-preview/plugins`                       | Stable       | `PluginManager`, plugin types and the built-in plugins.                                                                                                                     |
+| `payload-live-preview/fragment`                      | Stable       | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                                                                            |
+| `payload-live-preview/server`                        | Stable       | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `bind()`.                                                                 |
+| `payload-live-preview/payload`                       | Stable       | `buildLivePreviewUrl()` for `payload.config.ts`; imports nothing from `payload`.                                                                                            |
+| `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | Stable       | One framework adapter each.                                                                                                                                                 |
+| `payload-live-preview/nuxt-module`                   | Stable       | The Nuxt module: registers the Nitro plugin from `nuxt.config.ts`; data options only, no `authorizePreview` or `shouldInject`.                                              |
+| `payload-live-preview/react`                         | Stable       | `useLivePreviewDocument()`: the merged document as a hook (needs `react`).                                                                                                  |
+| `payload-live-preview/vue`                           | Stable       | The same as a composable (needs `vue`).                                                                                                                                     |
+| `payload-live-preview/lean`                          | Experimental | `LEAN_RUNTIME`: the smaller runtime artifact, as a value for the `runtime` option. Passing it is stable; the artifact's fields (`RuntimeArtifact`) may gain one in a minor. |
+| `payload-live-preview/annotate`                      | Experimental | `livePreviewAnnotate()`: the build-time annotator as a Vite plugin (`@beta`). No `ts-morph`.                                                                                |
+| `payload-live-preview/astro/RichText.astro`          | Stable       | The `RichText` component.                                                                                                                                                   |
+| `payload-live-preview/astro/PreviewBoundary.astro`   | Stable       | The `PreviewBoundary` component.                                                                                                                                            |
+| `payload-live-preview/codegen`                       | Tooling      | Type generation from a Payload config (needs `ts-morph`).                                                                                                                   |
+| `payload-live-preview/codegen/astro`                 | Tooling      | `livePreviewCodegen()`: the Astro integration that runs that generation on start and in `astro dev`.                                                                        |
+| `payload-live-preview/doctor`                        | Tooling      | `runDoctor()` and `analyzeProbe()`: the `pll doctor` checks as a library.                                                                                                   |
+| `payload-live-preview/migrate`                       | Tooling      | `migrateSource()` and the codemods behind `pll migrate` (needs `ts-morph`).                                                                                                 |
 
 `payload-live-preview/astro/middleware-entry` also exists; Astro's
 `mode: 'middleware'` registers it and nothing else imports it.

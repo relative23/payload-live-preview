@@ -48,6 +48,7 @@ const IMPORT_LINE = `import { previewBindingsFromLocals as ${IMPORT_ALIAS} } fro
 const HELPER_LINE = `const ${HELPER} = ${IMPORT_ALIAS}(Astro.locals);`;
 const FENCE = '---';
 
+/** @beta */
 export interface AnnotatePluginOptions {
   /** The schema, from `generateTypes().inventory` or the `--inventory` file. */
   readonly inventory: AnnotatableSchema;
@@ -66,7 +67,11 @@ export interface AnnotatePluginOptions {
   readonly readFile?: (path: string) => string;
 }
 
-/** The slice of Vite's plugin shape this uses; three hooks, stable since Vite 5. */
+/**
+ * The slice of Vite's plugin shape this uses; three hooks, stable since Vite 5.
+ *
+ * @beta
+ */
 export interface AnnotateVitePlugin {
   readonly name: string;
   readonly enforce: 'pre';
@@ -136,6 +141,8 @@ export function annotateSource(
  * // astro.config.mjs
  * vite: { plugins: [livePreviewAnnotate({ inventory })] }
  * ```
+ *
+ * @beta
  */
 export function livePreviewAnnotate(options: AnnotatePluginOptions): AnnotateVitePlugin {
   const include = options.include ?? isAstro;

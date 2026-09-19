@@ -96,10 +96,10 @@ export const KEY_ATTRIBUTE = "data-payload-key";
 // @internal
 export function mergeDependencyMaps(...maps: readonly DependencyMap[]): DependencyMap;
 
-// @public
+// @beta
 export function morphElement(live: Element, rendered: Element, options: MorphOptions): Element;
 
-// @public (undocumented)
+// @beta (undocumented)
 export interface MorphOptions {
     readonly keyAttributes: readonly string[];
     readonly onDuplicateKey?: (parent: Element, key: string) => void;

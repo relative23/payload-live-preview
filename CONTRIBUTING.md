@@ -251,6 +251,7 @@ pipeline as a whole is ADR [0013](docs/architecture/0013-release-pipeline.md).
 - Behavior changes require tests (unit tests at minimum; e2e if the change affects iframe/postMessage behavior).
 - Security-sensitive changes (anything under `src/security`, origin detection, or message validation) must include tests in `tests/unit/security`.
 - Update docs under `docs/` and the README when public API or behavior changes.
+- A new public export or option needs an ADR under `docs/architecture/` (or a dated addendum to the record it extends) and a stability class in the package-entries table of `docs/options.md`; an experimental one carries `@beta` on its declaration, which the API reports show. Removals and default changes are 3.0 work and go into the ADR 0007 ledger.
 - Include a changeset when behavior changes (see above).
 
 If you are unsure whether an idea fits, open an issue or a discussion before writing code.
