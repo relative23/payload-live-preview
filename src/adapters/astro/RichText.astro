@@ -37,7 +37,7 @@
  */
 // Self-referencing import so the shipped copy in dist/ resolves
 // through the package exports map in consumer projects.
-import { isLexicalContent, lexicalToHtml } from 'payload-live-preview';
+import { isLexicalContent, lexicalToHtml, type SanitizerDocument } from 'payload-live-preview';
 
 interface Props {
   /** The Lexical value from Payload (may be null/undefined/empty). */
@@ -50,11 +50,19 @@ interface Props {
   /** Wrapper element. Default `div`. */
   as?: string;
   class?: string;
+  /**
+   * The DOM the sanitizer parses with on the server, e.g. linkedom's
+   * `parseHTML(...).document`, for this render. Without it the document
+   * `setSanitizerDocument()` supplied is used.
+   */
+  document?: SanitizerDocument;
 }
 
-const { value, field, as: tag = 'div', class: className } = Astro.props;
+const { value, field, as: tag = 'div', class: className, document: sanitizerDocument } = Astro.props;
 const Tag = tag;
-const html = isLexicalContent(value) ? lexicalToHtml(value) : '';
+const html = isLexicalContent(value)
+  ? lexicalToHtml(value, sanitizerDocument === undefined ? {} : { document: sanitizerDocument })
+  : '';
 ---
 
 <Tag

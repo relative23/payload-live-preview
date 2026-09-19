@@ -146,6 +146,13 @@ their own HTML:
   it would hand the re-parse the page's customized built-in of that name;
   an empty `is` names nothing (found by the XSS corpus, 2.0.6).
 
+**A document per call.** Since 2.1 a call names the DOM it parses with:
+`sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })` and
+the `RichText` Astro component's `document` prop, e.g. linkedom's
+`parseHTML(...).document`. Two requests rendering at once each keep their own;
+nothing is shared through the process. `setSanitizerDocument()` stays as the
+fallback for a call that names none and is deprecated for 3.0 (ADR 0007 ledger).
+
 **One sanitizer document for every entry.** Since 2.0.2 the document given to
 `setSanitizerDocument()` is held on the global object, so one call through the
 root, `payload-live-preview/core` or `payload-live-preview/lexical` (which

@@ -272,7 +272,8 @@ declarations and its own copy of the code it shares with the others, so a
 Lexical node or block renderer registered through one entry is not seen by
 another ([docs/renderers.md](renderers.md#renderrichtext-one-renderer-for-ssr-and-preview));
 the document given to `setSanitizerDocument()` is held once for all of them
-since 2.0.2. The adapters, `annotate`, `codegen/astro`, `doctor`, `migrate` and
+since 2.0.2, and since 2.1 a call names its own (`sanitizeHtml(html, { document })`,
+`lexicalToHtml(content, { document })`). The adapters, `annotate`, `codegen/astro`, `doctor`, `migrate` and
 the `.astro` components are ESM-only; the rest ship ESM and CommonJS builds.
 
 Every entry has a stability class, stated here and, for the experimental

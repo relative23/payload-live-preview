@@ -68,6 +68,7 @@ export {
   isSafeUrl,
   isExternalHttpUrl,
   sanitizeHtml,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the fallback slot exists to be re-exported until 3.0
   setSanitizerDocument,
   setSanitizerPolicy,
   setTrustedTypesPolicy,

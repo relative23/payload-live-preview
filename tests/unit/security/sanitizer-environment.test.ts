@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- the process-wide document slot is exercised on purpose until 3.0 */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   sanitizeHtml,
@@ -193,5 +194,66 @@ describe('the inline-build branches', () => {
     } finally {
       vi.stubGlobal('document', realDocument);
     }
+  });
+});
+
+describe('a document named per call', () => {
+  afterEach(() => {
+    setSanitizerDocument(null);
+  });
+
+  it('wins over the injected slot and over the global document', () => {
+    let perCall = 0;
+    let slot = 0;
+    const own = surrogateFor(document, () => {
+      perCall += 1;
+    });
+    setSanitizerDocument(
+      surrogateFor(document, () => {
+        slot += 1;
+      }),
+    );
+    expect(sanitizeHtml('<p onclick="x()">a</p>', { document: own })).toBe('<p>a</p>');
+    expect([perCall, slot]).toEqual([1, 0]);
+    expect(sanitizeHtml('<p>b</p>')).toBe('<p>b</p>');
+    expect([perCall, slot]).toEqual([1, 1]);
+  });
+
+  it('serves without any slot or global at all', () => {
+    const originalDocument = globalThis.document;
+    const own = surrogateFor(originalDocument);
+    // @ts-expect-error — testing SSR path
+    delete globalThis.document;
+    try {
+      expect(sanitizeHtml('<p>x<script>y()</script></p>', { document: own })).toBe('<p>x</p>');
+      expect(() => sanitizeHtml('<p>x</p>')).toThrow(SanitizerEnvironmentError);
+    } finally {
+      globalThis.document = originalDocument;
+    }
+  });
+
+  it('keeps two documents in flight apart: each call parses in its own', async () => {
+    // Two SSR requests, each with its own DOM, interleaved across awaits: with
+    // a process-wide slot the second would have overwritten the first's
+    // document mid-request. Per call there is nothing to overwrite.
+    const counts = { a: 0, b: 0 };
+    const a = surrogateFor(document, () => {
+      counts.a += 1;
+    });
+    const b = surrogateFor(document, () => {
+      counts.b += 1;
+    });
+    const render = async (doc: typeof a, label: string): Promise<string[]> => {
+      const out: string[] = [];
+      for (let i = 0; i < 3; i += 1) {
+        await Promise.resolve();
+        out.push(sanitizeHtml(`<p data-x="1">${label}${String(i)}</p>`, { document: doc }));
+      }
+      return out;
+    };
+    const [fromA, fromB] = await Promise.all([render(a, 'A'), render(b, 'B')]);
+    expect(fromA).toEqual(['<p>A0</p>', '<p>A1</p>', '<p>A2</p>']);
+    expect(fromB).toEqual(['<p>B0</p>', '<p>B1</p>', '<p>B2</p>']);
+    expect(counts).toEqual({ a: 3, b: 3 });
   });
 });

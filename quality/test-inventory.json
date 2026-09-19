@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 322,
-    "suites": 701,
-    "tests": 2939,
+    "files": 323,
+    "suites": 703,
+    "tests": 2944,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 265,
-      "suites": 626,
-      "tests": 2710,
+      "files": 266,
+      "suites": 628,
+      "tests": 2715,
       "benchmarks": 0
     }
   },
@@ -1727,6 +1727,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/lexical/render-document.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/lexical/render-inline.test.ts",
       "group": "unit",
       "suites": 6,
@@ -2247,8 +2254,8 @@
     {
       "path": "tests/unit/security/sanitizer-environment.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 10,
+      "suites": 6,
+      "tests": 13,
       "benchmarks": 0
     },
     {
