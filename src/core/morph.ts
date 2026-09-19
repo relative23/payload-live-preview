@@ -15,6 +15,7 @@ export const OWNED_ATTRIBUTE = 'data-payload-owned';
 /** Attributes the CMS controls only when the template names them (ADR 0008 §3). */
 const STATE_ATTRIBUTES: ReadonlySet<string> = new Set(['open', 'value', 'checked', 'selected']);
 
+/** @beta */
 export interface MorphOptions {
   /** Attributes that key child elements for pairing, tried in order; unkeyed children pair by position. */
   readonly keyAttributes: readonly string[];
@@ -55,6 +56,8 @@ export function isMorphCompatible(live: Element, rendered: Element): boolean {
  * Morph `live` toward `rendered`. Returns `live` when it was retained, or
  * `rendered` when the two are incompatible and the caller must replace.
  * `rendered` is consumed: its children may move into `live`.
+ *
+ * @beta
  */
 export function morphElement(live: Element, rendered: Element, options: MorphOptions): Element {
   if (!isMorphCompatible(live, rendered)) return rendered;

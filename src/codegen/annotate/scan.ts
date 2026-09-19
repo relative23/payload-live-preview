@@ -33,7 +33,11 @@ export interface AnnotationCandidate {
   readonly tag: string;
 }
 
-/** A place that looks like an output but was left alone, and why. */
+/**
+ * A place that looks like an output but was left alone, and why.
+ *
+ * @beta
+ */
 export interface AnnotationRefusal {
   readonly line: number;
   readonly reason: string;

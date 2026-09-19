@@ -12,7 +12,7 @@ export const ANNOTATABLE_EXTENSIONS: readonly string[];
 // @internal
 export function annotatablePaths(inventory: AnnotatableSchema): ReadonlySet<string>;
 
-// @public
+// @beta
 export interface AnnotatableSchema {
     // (undocumented)
     readonly collections: readonly {
@@ -76,7 +76,7 @@ export interface AnnotationCandidate {
     readonly tag: string;
 }
 
-// @public
+// @beta
 export interface AnnotationRefusal {
     readonly expression: string;
     // (undocumented)

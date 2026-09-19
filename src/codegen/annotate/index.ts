@@ -67,6 +67,8 @@ export interface AnnotateOptions {
  * a project writes by hand. Naming the minimum keeps the build plugin's public
  * surface free of the extracted-field union behind the full inventory — a dozen
  * types a consumer of a Vite plugin has no reason to meet.
+ *
+ * @beta
  */
 export interface AnnotatableSchema {
   readonly globals: readonly { readonly fields: readonly { readonly path: string }[] }[];
