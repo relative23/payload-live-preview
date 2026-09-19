@@ -12,14 +12,8 @@ export {
   type StructuralApplyOptions,
   type StructuralStore,
 } from './core/structural-applier';
-export {
-  ISLAND_ATTRIBUTE,
-  OWNED_ATTRIBUTE,
-  isMorphBoundary,
-  isMorphCompatible,
-  morphElement,
-  type MorphOptions,
-} from './core/morph';
+export { ISLAND_ATTRIBUTE, OWNED_ATTRIBUTE, isMorphBoundary } from './core/islands';
+export { isMorphCompatible, morphElement, type MorphOptions } from './core/morph';
 export {
   dependencyMapFromBinding,
   mergeDependencyMaps,

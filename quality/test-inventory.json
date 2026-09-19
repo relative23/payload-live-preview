@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 326,
-    "suites": 706,
-    "tests": 2955,
+    "suites": 707,
+    "tests": 2957,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 269,
-      "suites": 631,
-      "tests": 2726,
+      "suites": 632,
+      "tests": 2728,
       "benchmarks": 0
     }
   },
@@ -1204,8 +1204,8 @@
     {
       "path": "tests/unit/core/morph-contract.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 19,
+      "suites": 5,
+      "tests": 21,
       "benchmarks": 0
     },
     {

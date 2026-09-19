@@ -1,16 +1,14 @@
 /**
- * Keyed DOM morph: edits a live element toward a freshly rendered one while
- * keeping the live nodes, and with them focus, selection, scroll, playback and
- * listeners. Custom elements, islands, `contenteditable` and
- * `data-payload-owned` subtrees are boundaries the morph never enters.
- * See ADR 0008.
+ * Keyed DOM morph, the engine: edits a live element toward a freshly rendered
+ * one while keeping the live nodes, and with them focus, selection, scroll,
+ * playback and listeners. It pairs children by key or position, synchronises
+ * attributes with the state exception and keeps focus across a move; which
+ * subtrees it never enters is the coordinator's rule, handed in as
+ * `MorphOptions.boundary` and defaulting to the package's (`isMorphBoundary`
+ * in islands.ts). See ADR 0008, §9 for the line between the two.
  */
 
-import { ISLAND_ATTRIBUTE } from './islands';
-
-export { ISLAND_ATTRIBUTE };
-/** @internal */
-export const OWNED_ATTRIBUTE = 'data-payload-owned';
+import { isMorphBoundary } from './islands';
 
 /** Attributes the CMS controls only when the template names them (ADR 0008 §3). */
 const STATE_ATTRIBUTES: ReadonlySet<string> = new Set(['open', 'value', 'checked', 'selected']);
@@ -23,6 +21,12 @@ export interface MorphOptions {
   readonly onDuplicateKey?: (parent: Element, key: string) => void;
   /** Elements whose attributes are synchronised but whose children are left alone (nested structural slots). */
   readonly retainChildrenOf?: (live: Element, rendered: Element) => boolean;
+  /**
+   * The ownership rule: an element this returns `true` for is retained whole
+   * and never entered (ADR 0008 §4). The package's rule — custom elements,
+   * islands, `contenteditable`, `data-payload-owned` — is the default.
+   */
+  readonly boundary?: (element: Element) => boolean;
 }
 
 /** Empty attribute values (boolean markers such as `data-payload-island`) are not keys. */
@@ -34,21 +38,17 @@ function keyOf(element: Element, options: MorphOptions): string | undefined {
   return undefined;
 }
 
-/** @internal */
-export function isMorphBoundary(element: Element): boolean {
-  if (element.tagName.toLowerCase().includes('-')) return true;
-  if (element.hasAttribute(ISLAND_ATTRIBUTE) || element.hasAttribute(OWNED_ATTRIBUTE)) return true;
-  const editable = element.getAttribute('contenteditable');
-  return editable !== null && editable !== 'false';
-}
-
-/** Whether `live` can be edited toward `rendered` instead of being replaced by it. @internal */
-export function isMorphCompatible(live: Element, rendered: Element): boolean {
+/** Whether `live` can be edited toward `rendered` instead of being replaced by it, under `boundary` (the package's rule by default). @internal */
+export function isMorphCompatible(
+  live: Element,
+  rendered: Element,
+  boundary: (element: Element) => boolean = isMorphBoundary,
+): boolean {
   return (
     live.tagName === rendered.tagName &&
     live.namespaceURI === rendered.namespaceURI &&
-    !isMorphBoundary(live) &&
-    !isMorphBoundary(rendered)
+    !boundary(live) &&
+    !boundary(rendered)
   );
 }
 
@@ -60,7 +60,7 @@ export function isMorphCompatible(live: Element, rendered: Element): boolean {
  * @beta
  */
 export function morphElement(live: Element, rendered: Element, options: MorphOptions): Element {
-  if (!isMorphCompatible(live, rendered)) return rendered;
+  if (!isMorphCompatible(live, rendered, options.boundary)) return rendered;
   const focus = captureFocus(live);
   syncAttributes(live, rendered);
   if (options.retainChildrenOf?.(live, rendered) !== true) morphChildren(live, rendered, options);
@@ -173,7 +173,8 @@ function morphChildren(live: Element, rendered: Element, options: MorphOptions):
 function reconcile(candidate: Node, next: Node, options: MorphOptions): Node {
   if (candidate instanceof Element && next instanceof Element) {
     // A compatible boundary stays exactly as it is (ADR 0008 §4).
-    if (isMorphBoundary(candidate) && isMorphBoundary(next)) return candidate;
+    const boundary = options.boundary ?? isMorphBoundary;
+    if (boundary(candidate) && boundary(next)) return candidate;
     return morphElement(candidate, next, options);
   }
   if (candidate.nodeValue !== next.nodeValue) candidate.nodeValue = next.nodeValue;

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { isMorphBoundary, isMorphCompatible, morphElement, syncAttributes } from '@core/morph';
+import { isMorphBoundary } from '@core/islands';
+import { isMorphCompatible, morphElement, syncAttributes } from '@core/morph';
 
 /**
  * ADR 0008 made executable: the morph retains live nodes wherever the

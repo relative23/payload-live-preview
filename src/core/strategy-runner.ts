@@ -7,6 +7,7 @@ import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { trustedHtml } from '@security/trusted-types';
 import { reportUnboundChange } from './fidelity';
 import { bindingValue } from './field-value';
+import { isMorphBoundary } from './islands';
 import { morphElement } from './morph';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
 import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
@@ -422,5 +423,5 @@ function morphFragment(boundary: Element, html: string): void {
   template.innerHTML = trustedHtml(html);
   const rendered = boundary.cloneNode(false) as Element;
   rendered.append(template.content);
-  morphElement(boundary, rendered, { keyAttributes: [KEY_ATTRIBUTE] });
+  morphElement(boundary, rendered, { keyAttributes: [KEY_ATTRIBUTE], boundary: isMorphBoundary });
 }

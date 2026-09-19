@@ -27,7 +27,7 @@ import {
   TYPE_ATTRIBUTE,
   resolveBindingOwner,
 } from './cache';
-import { isIslandBoundary } from './islands';
+import { isIslandBoundary, OWNED_ATTRIBUTE } from './islands';
 import type { RuntimeDeps, RuntimeState } from './runtime-state';
 import { stripLocaleSuffix, SYSTEM_FIELD_NAMES, type OwnerScope } from './unbound-fields';
 
@@ -37,7 +37,6 @@ export type AutoBindMode = 'off' | 'unique';
 /** An author's no: the element and everything under it is never guessed into. */
 export const NO_BIND_ATTRIBUTE = 'data-payload-no-bind';
 /** The morph's boundary (`src/core/morph.ts`) is this search's boundary too: a subtree the site scripts itself. */
-const OWNED_ATTRIBUTE = 'data-payload-owned';
 
 /**
  * Below this many characters a value is not looked for at all. Measured, not

@@ -333,6 +333,43 @@ describe('§2 pairing across namespaces and hydration markers', () => {
   });
 });
 
+describe("§9 the ownership rule is the coordinator's, the engine only obeys it", () => {
+  it('enters a custom element under a rule that owns nothing, and leaves it whole under the package rule', () => {
+    const owned = () => false;
+    const live = mount('<li data-payload-key="a"><x-note title="t1"><i>light</i></x-note></li>');
+    const note = live.firstElementChild!;
+    morphElement(
+      live,
+      el('<li data-payload-key="a"><x-note title="t2"><i>other light</i></x-note></li>'),
+      { ...options, boundary: owned },
+    );
+    // Engine only: the custom element is just another element, edited in place.
+    expect(live.firstElementChild).toBe(note);
+    expect(note.getAttribute('title')).toBe('t2');
+    expect(note.innerHTML).toBe('<i>other light</i>');
+    // The package rule, the default and what every coordinator hands in.
+    morphElement(
+      live,
+      el('<li data-payload-key="a"><x-note title="t3"><i>third</i></x-note></li>'),
+      options,
+    );
+    expect(note.getAttribute('title')).toBe('t2');
+    expect(note.innerHTML).toBe('<i>other light</i>');
+  });
+
+  it('lets a coordinator own more than the package does: a marked region stays as it was', () => {
+    const live = mount('<li data-payload-key="a"><p class="mine">typed</p><p>cms</p></li>');
+    const mine = live.firstElementChild!;
+    morphElement(live, el('<li data-payload-key="a"><p class="mine">cms</p><p>cms 2</p></li>'), {
+      ...options,
+      boundary: (element) => element.classList.contains('mine'),
+    });
+    expect(live.firstElementChild).toBe(mine);
+    expect(mine.textContent).toBe('typed');
+    expect(live.lastElementChild?.textContent).toBe('cms 2');
+  });
+});
+
 describe('§4 boundaries the morph never crosses', () => {
   it('leaves an upgraded custom element whole: its shadow root, its field, its attributes', () => {
     class Note extends HTMLElement {

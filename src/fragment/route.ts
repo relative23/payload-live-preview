@@ -5,7 +5,8 @@
  * LP0805 and handed back for a trailing run. See ADR 0011.
  */
 
-import { morphElement, OWNED_ATTRIBUTE } from '@core/morph';
+import { isMorphBoundary, OWNED_ATTRIBUTE } from '@core/islands';
+import { morphElement } from '@core/morph';
 import { KEY_ATTRIBUTE } from '@core/structural-applier';
 import { parseDependencyList } from '@core/dependencies';
 import { readRouteRefresh } from '@core/route-refresh';
@@ -188,6 +189,7 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
           // the fragment strategy re-renders those for this revision and must
           // not lose the focused input inside one.
           morphElement(live.body, fresh.body, {
+            boundary: isMorphBoundary,
             keyAttributes: [KEY_ATTRIBUTE, FRAGMENT_KEY_ATTRIBUTE, FRAGMENT_ATTRIBUTE],
             retainChildrenOf: (element) => element.hasAttribute(FRAGMENT_ATTRIBUTE),
           });

@@ -219,3 +219,29 @@ live and neither once re-rendered — the morph replaces it under §4's
 one-sided rule. That is the sanitizer's policy, not the morph's, and belongs
 with the sanitizer corpus (2.1 plan, M3); the fixture page carries neither
 and says why.
+
+### 9. Engine and coordinator (2026-09-19)
+
+The 2.1 plan asked for the line between the morph and the rules it obeys to
+be drawn, not for a second engine. It runs here:
+
+- **The engine** (`src/core/morph.ts`) pairs children by key or by position
+  and kind (§2), synchronises attributes with the state exception (§3) and
+  keeps focus across a move (§1). It does not know what an island, a custom
+  element or a `contenteditable` region is: the subtrees it never enters come
+  in as `MorphOptions.boundary`, a predicate.
+- **The coordinators** own the rules. `isMorphBoundary` (§4) lives in
+  `src/core/islands.ts` beside the island attribute it reads and is the
+  default the engine falls back to; the structural applier, the fragment
+  strategy and the route strategy hand it in explicitly, together with the
+  keys (`data-payload-key`, `data-payload-nested-key`) and, for the applier,
+  the nested slots whose children stay (`retainChildrenOf`). Which element to
+  morph toward what, and when to replace instead, is theirs too.
+
+The contract suite runs the engine under a rule of its own (§8, "the
+ownership rule is the coordinator's"): with a rule that owns nothing a custom
+element is edited like any element, with the package rule it is left whole,
+and a coordinator may own more than the package does. `boundary` is `@beta`
+with the rest of `MorphOptions` (`/structural`, Experimental). No path, no
+default and no behaviour changes; a second engine would implement
+`morphElement` and be handed the same rule.
