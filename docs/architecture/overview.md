@@ -177,6 +177,11 @@ went wrong without it.
   seconds regardless (`LP0607`). React throws away a write that came first
   together with the server markup; Vue reverts it.
   [ADR 0015](0015-first-write-after-hydration.md)
+- **The sanitizer's fence** — the in-house sanitizer stays (zero dependencies,
+  one bundle), proven by an XSS corpus and an aimed fuzz under every policy
+  against an oracle that reads no allow-list and against DOMPurify as the
+  reference engine, a devDependency that never ships.
+  [ADR 0016](0016-sanitizer-fenced-not-replaced.md)
 
 ## Where the code is
 

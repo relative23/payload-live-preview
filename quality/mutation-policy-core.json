@@ -29,7 +29,7 @@
     "src/security/url-validator.ts"
   ],
   "baseline": {
-    "total": 1218,
+    "total": 1225,
     "mutationScoreMinimum": 99.18,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 0,
@@ -100,7 +100,7 @@
       "mutator": "ConditionalExpression",
       "original": "typeof create === 'function'",
       "replacement": "true",
-      "why": "an object without `createPolicy` is returned as the factory, and the `createPolicy` call then throws a TypeError inside the try in `resolvePolicy`, whose catch sets the policy to `null` — the value the guard leads to."
+      "why": "an object without `createPolicy` is returned as the factory, and the `createPolicy` call then throws a TypeError inside the try in `resolvePolicy`, whose catch sets the policy to `null` \u2014 the value the guard leads to."
     },
     {
       "file": "src/security/trusted-types.ts",
@@ -109,7 +109,7 @@
       "mutator": "ConditionalExpression",
       "original": "api === undefined",
       "replacement": "false",
-      "why": "`undefined.createPolicy` throws a TypeError inside the same try, whose catch sets the policy to `null` — the value the branch sets when there is no API."
+      "why": "`undefined.createPolicy` throws a TypeError inside the same try, whose catch sets the policy to `null` \u2014 the value the branch sets when there is no API."
     },
     {
       "file": "src/security/url-validator.ts",
