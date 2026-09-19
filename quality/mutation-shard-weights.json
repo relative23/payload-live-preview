@@ -22,6 +22,7 @@
     "src/core/intl-cache.ts": 3821,
     "src/core/islands.ts": 53702,
     "src/core/lifecycle.ts": 466877,
+    "src/core/lifetime-scope.ts": 6000,
     "src/core/loader.ts": 53,
     "src/core/lru.ts": 4356,
     "src/core/message-bus.ts": 703313,

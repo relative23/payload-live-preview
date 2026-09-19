@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 323,
-    "suites": 703,
-    "tests": 2944,
+    "files": 326,
+    "suites": 706,
+    "tests": 2955,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 266,
-      "suites": 628,
-      "tests": 2715,
+      "files": 269,
+      "suites": 631,
+      "tests": 2726,
       "benchmarks": 0
     }
   },
@@ -1069,6 +1069,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/lifecycle-rollback-a11y.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/lifecycle-sanitizer-policy.test.ts",
       "group": "unit",
       "suites": 1,
@@ -1094,6 +1101,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/lifetime-scope.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1332,6 +1346,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/session-scope.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {

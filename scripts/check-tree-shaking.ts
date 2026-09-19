@@ -278,6 +278,14 @@ interface Fixture {
  * `lexicalToHtml` from `payload-live-preview/lexical` 5_291 → 5_502 (measured 5_288 → 5_499);
  * `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 47_998 → 48_026 (measured 47_926 → 47_954);
  * `LEAN_RUNTIME` from `payload-live-preview/lean` 29_539 → 29_560 (measured 29_479 → 29_500).
+ * 2026-09-19 (2.1: one scope per runtime session): the scope class in the
+ * runtime bundle in place of the hand-written cleanup list, measured against a
+ * build of main, cushions kept:
+ * `initLivePreview` from `payload-live-preview` 45_097 → 45_257 (measured 45_073 → 45_233);
+ * `generateInlineScript` from `payload-live-preview` 42_767 → 42_964 (measured 42_702 → 42_899);
+ * `initLivePreview` from `payload-live-preview/core` 45_092 → 45_247 (measured 45_068 → 45_223);
+ * `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 48_026 → 48_249 (measured 47_954 → 48_177);
+ * `LEAN_RUNTIME` from `payload-live-preview/lean` 29_560 → 29_756 (measured 29_500 → 29_696).
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -298,21 +306,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_097,
+    gzip: 45_257,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 42_767,
+    gzip: 42_964,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_092,
+    gzip: 45_247,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -333,14 +341,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 48_026,
+    gzip: 48_249,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 29_560,
+    gzip: 29_756,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

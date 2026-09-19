@@ -102,6 +102,11 @@
       "functions": 100,
       "branches": 90
     },
+    "src/core/lifetime-scope.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/loader.ts": {
       "lines": 100,
       "functions": 100,

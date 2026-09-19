@@ -177,6 +177,12 @@ went wrong without it.
   seconds regardless (`LP0607`). React throws away a write that came first
   together with the server markup; Vue reverts it.
   [ADR 0015](0015-first-write-after-hydration.md)
+- **One scope per session** — the runtime releases everything a session
+  acquired through one `LifetimeScope`, the minimal form of the scope a plugin
+  registration gets, closed by `destroy()`, `suspend()` and a failed start alike; an
+  inventory of every acquisition in the core names who releases it and fails
+  the architecture gate on a new one.
+  [ADR 0005](0005-plugin-resource-ownership.md)
 - **The sanitizer's fence** — the in-house sanitizer stays (zero dependencies,
   one bundle), proven by an XSS corpus and an aimed fuzz under every policy
   against an oracle that reads no allow-list and against DOMPurify as the
