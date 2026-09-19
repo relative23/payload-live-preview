@@ -93,7 +93,7 @@ export function render(matrix: Matrix, viteLine = ''): string {
     `Node ${matrix.node.engines}; the unit and integration suites run on Node ${matrix.node.tested.join(', ')}. Every version in the table is what the fixture lockfile or the matrix job installs, checked by \`npm run compat:check\`.`,
     '',
     ...(viteLine === '' ? [] : [viteLine, '']),
-    `The React and Vue hooks and the Next.js and Nuxt fragment renderers run twice on every push: at the floor of each peer range, which the \`hook-matrix\` job installs over the lockfile (${matrix.hooks.map((hook) => `${hook.name} ${hook.floor}`).join(', ')}), and at what the lockfile installs (${matrix.hooks.map((hook) => `${hook.name} ${hook.current}`).join(', ')}). Svelte is mocked in the SvelteKit fragment suite, so \`svelte >=5\` is measured only through its fixture.`,
+    `The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, which the \`hook-matrix\` job installs over the lockfile (${matrix.hooks.map((hook) => `${hook.name} ${hook.floor}`).join(', ')}), and at what the lockfile installs (${matrix.hooks.map((hook) => `${hook.name} ${hook.current}`).join(', ')}); the SvelteKit renderer is measured against a component compiled by \`svelte/compiler\` and rendered by the real \`svelte/server\`.`,
     '',
     ...payload,
     '',

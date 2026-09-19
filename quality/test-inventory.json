@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 321,
-    "suites": 700,
-    "tests": 2937,
+    "files": 322,
+    "suites": 701,
+    "tests": 2939,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 264,
-      "suites": 625,
-      "tests": 2708,
+      "files": 265,
+      "suites": 626,
+      "tests": 2710,
       "benchmarks": 0
     }
   },
@@ -625,6 +625,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/sveltekit-fragments-real.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {

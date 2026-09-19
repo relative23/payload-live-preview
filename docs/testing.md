@@ -142,19 +142,19 @@ refused. A version of any other shape is refused. The pipeline is ADR
 
 ## Quality map
 
-| Risk                                      | Primary evidence                                                                                | Lane                       |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------- |
-| Type/API compatibility                    | strict `tsc`, negative packed type fixtures, API Extractor reports                              | pull request               |
-| Package/module-resolution drift           | exact tgz, publint, ATTW, isolated ESM/CJS/NodeNext consumers                                   | pull request               |
-| Parser, trust-boundary, and race mistakes | fixed regressions, fast-check properties/models, critical mutation tests                        | PR + main push + scheduled |
-| Untested edits                            | critical per-file floors and changed-line LCOV gate                                             | pull request               |
-| Layer erosion and dead code               | source dependency graph, cycle rules, Knip                                                      | pull request               |
-| Browser/DOM differences                   | Playwright in Chromium, Firefox, WebKit and a real Payload application                          | pull request               |
-| Accessibility regressions                 | semantic live-region assertions and Axe WCAG A/AA scans                                         | pull request               |
-| Algorithmic or bundle regressions         | deterministic size/complexity gates and CodSpeed trends                                         | PR + trend                 |
-| Resource retention                        | exact handle counts, forced-GC Node leak gate, Chromium heap soak                               | main push + scheduled      |
-| Protocol ecosystem drift                  | captured real messages and pinned/latest/canary Payload watch                                   | PR + scheduled             |
-| Peer floors the hooks promise             | React 18.0.0 and Vue 3.3.0 installed over the lockfile; hook, route-refresh and fragment suites | pull request               |
+| Risk                                      | Primary evidence                                                                                                                                                                                                 | Lane                       |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Type/API compatibility                    | strict `tsc`, negative packed type fixtures, API Extractor reports                                                                                                                                               | pull request               |
+| Package/module-resolution drift           | exact tgz, publint, ATTW, isolated ESM/CJS/NodeNext consumers                                                                                                                                                    | pull request               |
+| Parser, trust-boundary, and race mistakes | fixed regressions, fast-check properties/models, critical mutation tests                                                                                                                                         | PR + main push + scheduled |
+| Untested edits                            | critical per-file floors and changed-line LCOV gate                                                                                                                                                              | pull request               |
+| Layer erosion and dead code               | source dependency graph, cycle rules, Knip                                                                                                                                                                       | pull request               |
+| Browser/DOM differences                   | Playwright in Chromium, Firefox, WebKit and a real Payload application                                                                                                                                           | pull request               |
+| Accessibility regressions                 | semantic live-region assertions and Axe WCAG A/AA scans                                                                                                                                                          | pull request               |
+| Algorithmic or bundle regressions         | deterministic size/complexity gates and CodSpeed trends                                                                                                                                                          | PR + trend                 |
+| Resource retention                        | exact handle counts, forced-GC Node leak gate, Chromium heap soak                                                                                                                                                | main push + scheduled      |
+| Protocol ecosystem drift                  | captured real messages and pinned/latest/canary Payload watch                                                                                                                                                    | PR + scheduled             |
+| Peer floors the hooks promise             | React 18.0.0, Vue 3.3.0 and Svelte 5.0.0 installed over the lockfile; hook, route-refresh and fragment suite (the SvelteKit one against a component compiled by `svelte/compiler` and the real `svelte/server`)s | pull request               |
 
 The machine-readable inventory is [quality/test-inventory.json](../quality/test-inventory.json).
 It is regenerated with `tsx scripts/test-policy.ts --write`; CI fails if it is

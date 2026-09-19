@@ -60,10 +60,8 @@ interface SvelteServer {
  */
 const loadSvelte = lazyPeer(async (): Promise<SvelteServer> => {
   try {
-    // This repository does not install `svelte`, so the module has no types
-    // here; `SvelteServer` above is the slice of it this binding uses. The
-    // suppression is expected to fail loudly if the package is ever added.
-    // @ts-expect-error -- optional peer, resolved in the consumer's project
+    // `svelte` is a devDependency for the floor measurement (hook-matrix);
+    // `SvelteServer` above is the slice of it this binding uses.
     return (await import('svelte/server')) as SvelteServer;
   } catch (cause) {
     throw missingPeerError(['svelte'], cause);
