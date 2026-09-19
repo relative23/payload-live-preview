@@ -169,7 +169,8 @@ Held by: the core mutation profile; `tests/unit/core/message-bus-shapes.test.ts`
   attachment, a validation that resolves after `detach()`, a callback that
   runs after `advanceGeneration()` — none of them reaches a handler
   (`isCurrentGeneration`, checked before every handler and after every await;
-  ADR 0004).
+  ADR 0004; the detach case is `discards a pending async verdict after
+detach` in `message-bus-token-generations.test.ts`).
 - **B5** With `validateToken` set, data-bearing updates commit in arrival
   order even when a later verdict resolves first; only a literal `true`
   approves, an error is a rejection, and the data-less `ready` handshake
@@ -316,6 +317,14 @@ Held by: gate 2; the core mutation profile; `tests/unit/security/trusted-types.t
 - **The fragment and route strategies** fetch the page's own origin with
   `credentials: 'same-origin'`; the route's HTML is parsed by `DOMParser` into
   an inert document before the head merge and morph (ADR 0011).
+- **The update pipeline** (`src/core/update-pipeline.ts`) holds no
+  capability, but it holds the order. It re-checks the revision after every
+  await it makes — the merge, then the `beforeUpdate` hooks, which run under
+  `emitWhile` with `isCurrent` as the predicate and are checked once more
+  when they finish — so an older revision whose hook completed late never
+  reaches the scheduler behind a newer one
+  (`tests/unit/core/lifecycle-supersession.test.ts`,
+  `lifecycle-data-merge.test.ts`).
 - **The static bootstrap** creates one `<script>` whose URL and integrity the
   generator baked in.
 - **The server-side authorization** (`src/security/preview-*.ts`, `csp.ts`) is
