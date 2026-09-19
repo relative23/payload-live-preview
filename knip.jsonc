@@ -62,11 +62,13 @@
   "ignoreExportsUsedInFile": true,
   // CLI-resolved tools are invoked through scripts/check-package.ts without a
   // static package import. Keep only those exact dynamic binaries exempt.
-  // `svelte` is an optional peer the SvelteKit fragment binding imports by name
-  // on purpose (module identity in Vite's SSR graph — see
-  // src/adapters/sveltekit/fragments.ts); knip sees the reference and asks for
-  // it to be a real dependency, which is exactly what it must not be.
-  "ignoreDependencies": ["@arethetypeswrong/cli", "publint", "svelte"],
+  // `svelte` is an optional peer for consumers and a devDependency here since
+  // the floor measurement (tests/unit/adapters/sveltekit-fragments-real.test.ts
+  // compiles a component and renders it through the real `svelte/server`).
+  // Its knip plugin is off: this repository has no `.svelte` source of its own,
+  // only the fixtures under examples/, which knip does not walk.
+  "svelte": false,
+  "ignoreDependencies": ["@arethetypeswrong/cli", "publint"],
   // Internal registry constants and helpers intentionally export for tests and
   // source-barrel compatibility. Public/package exports remain entry points and
   // therefore are not globally ignored.
