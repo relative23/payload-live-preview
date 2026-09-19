@@ -138,7 +138,7 @@
   ],
   "vite": {
     "measured": "2026-09-06",
-    "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE — every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 5 through 8. Remove this line when the dev tooling accepts 8."
+    "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE \u2014 every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 5 through 8. Remove this line when the dev tooling accepts 8."
   },
   "hooks": [
     {
@@ -165,6 +165,18 @@
         "tests/unit/adapters/vue-composable.test.ts",
         "tests/unit/core/hydration-vue.test.ts",
         "tests/unit/adapters/nuxt-fragments.test.ts"
+      ]
+    },
+    {
+      "name": "Svelte",
+      "package": "svelte",
+      "peer": ">=5",
+      "job": "hook-matrix",
+      "floor": "5.0.0",
+      "current": "5.56.9",
+      "suites": [
+        "tests/unit/adapters/sveltekit-fragments-real.test.ts",
+        "tests/unit/adapters/sveltekit-fragments.test.ts"
       ]
     }
   ]

@@ -108,4 +108,15 @@ describe('sanitizeHtml — templateMode (page-author item templates)', () => {
     );
     expect(out).toBe('<a id="l">l</a>');
   });
+
+  it('empties `is` instead of removing it: the value is immutable and would be re-serialised', () => {
+    // Removing the attribute leaves the element's `is` value, which the
+    // serialiser writes back; a re-parse would then upgrade the element to
+    // the page's customised built-in of that name (found by the XSS corpus).
+    for (const policy of ['strict', 'compat'] as const) {
+      expect(sanitizeHtml('<p is="x-evil">x</p>', { policy })).toBe('<p is="">x</p>');
+      expect(sanitizeHtml('<p is="">x</p>', { policy })).toBe('<p is="">x</p>');
+    }
+    expect(sanitizeHtml('<p title="t">x</p>')).toBe('<p title="t">x</p>');
+  });
 });

@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 319,
-    "suites": 695,
-    "tests": 2930,
+    "files": 322,
+    "suites": 701,
+    "tests": 2939,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 262,
-      "suites": 620,
-      "tests": 2701,
+      "files": 265,
+      "suites": 626,
+      "tests": 2710,
       "benchmarks": 0
     }
   },
@@ -625,6 +625,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/sveltekit-fragments-real.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -1944,6 +1951,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/property/sanitizer-fuzz.property.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/property/security.property.test.ts",
       "group": "unit",
       "suites": 1,
@@ -2213,7 +2227,7 @@
       "path": "tests/unit/security/sanitizer-attributes.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 10,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -2221,6 +2235,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/sanitizer-corpus.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {
