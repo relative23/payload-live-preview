@@ -386,6 +386,14 @@ function sanitizeAttributes(element: Element, tag: string, policy: ResolvedPolic
       element.removeAttribute(attr.name);
       continue;
     }
+    // A parsed element's `is` value is immutable and the serialiser writes it
+    // back even after the attribute is gone, so removing it would hand the
+    // re-parse the page's customised built-in by name. Emptied instead: an
+    // empty `is` names nothing (docs/security.md §5c).
+    if (name === 'is') {
+      element.setAttribute('is', '');
+      continue;
+    }
     if (policy.mode === 'strict') {
       if (policy.templateMode && TEMPLATE_ATTRIBUTES.has(name)) continue;
       // DOM clobbering and binding injection (docs/security.md §5c). Checked

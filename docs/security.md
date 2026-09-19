@@ -141,6 +141,10 @@ their own HTML:
 - **URL attributes validated.** `href`, `src`, `srcset`, `poster`, `cite` go through `isSafeUrl`.
 - **External `<a>` hardened.** Auto-applies `rel="noopener noreferrer"` and `target="_blank"`.
 - **HTML comments removed.**
+- **`is` emptied, not removed.** A parsed element's `is` value is immutable
+  and the serializer writes it back after the attribute is gone, so removing
+  it would hand the re-parse the page's customized built-in of that name;
+  an empty `is` names nothing (found by the XSS corpus, 2.0.6).
 
 **One sanitizer document for every entry.** Since 2.0.2 the document given to
 `setSanitizerDocument()` is held on the global object, so one call through the
@@ -160,7 +164,9 @@ never add a binding), and passes other `data-*` only when listed in
 so `additionalAllowedAttributes` cannot re-admit them. `'compat'`
 (`defaults: 'v1'`, or `setSanitizerPolicy('compat')`) keeps `id` and every
 `data-*`. Every sanitizer case in the property suite runs under both
-policies. Item templates for structural lists are the one place form
+policies, and since 2.0.6 an XSS corpus of 118 vectors and an aimed fuzz run
+under every policy against an oracle that reads no allow-list and against
+DOMPurify as the reference engine (ADR 0016). Item templates for structural lists are the one place form
 controls are admitted (`allowFormControls`) and the applier's own
 reconciliation attributes survive strict (`templateMode`: `id`, `name`,
 `data-payload-key`, `data-payload-nested-key`,

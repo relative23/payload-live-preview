@@ -279,11 +279,19 @@ Held by: the core mutation profile; `tests/unit/security/escape.test.ts`.
   attributes (`data-payload-key`, `data-payload-nested-key`,
   `data-payload-nested-template`); every other `data-payload-*` is still
   removed, so a template cannot add a binding.
+- **S9** `is` is emptied rather than removed: a parsed element's `is` value is
+  immutable and the serializer writes it back after the attribute is gone, so
+  a removed `is` would reach the re-parse and upgrade the element to the
+  page's customized built-in of that name. An empty `is` names nothing.
 
 Held by: `html-sink` reviewed as `inert-parse` (gate 2); the nightly and core
 mutation profiles; `tests/unit/security/sanitizer*.test.ts` (allow-lists,
-attributes, policy, environment, the LP0409 report) and the sanitizer
-fixed-point properties in `tests/unit/property/security.property.test.ts`.
+attributes, policy, environment, the LP0409 report); the sanitizer
+fixed-point properties in `tests/unit/property/security.property.test.ts`;
+and, since 2.0.6, the XSS corpus (`tests/unit/security/xss-corpus.ts`, run by
+`sanitizer-corpus.test.ts` under every policy against an oracle that reads no
+allow-list, and against DOMPurify as the reference engine) with the aimed
+fuzz in `tests/unit/property/sanitizer-fuzz.property.test.ts` (ADR 0016).
 
 ### 8. `trusted-types.ts` — the one policy
 
