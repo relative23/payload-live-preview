@@ -7,6 +7,7 @@
  * registers no fragment never needs it here.
  */
 import { lazyPeer, missingPeerError } from '@adapters/shared/optional-peer';
+import { withNodeFragmentRequest } from '@adapters/shared/fragment-node-request';
 import {
   createFragmentEndpointHandler,
   type FragmentEndpointOptions as SharedOptions,
@@ -82,10 +83,18 @@ const renderWithSvelte: FragmentRenderer = async (component, props) => {
 /** Build the endpoint; export it as the `POST` of a `+server.ts` route. */
 export function createFragmentEndpoint(
   options: FragmentEndpointOptions,
-): (event: { readonly request: Request }) => Promise<Response> {
+): (event: { readonly request: Request; readonly platform?: unknown }) => Promise<Response> {
   const handler = createFragmentEndpointHandler(options, {
     render: renderWithSvelte,
     rendererName: RENDERER_NAME,
+    overLimitBody: 'drain',
   });
-  return ({ request }) => handler(request);
+  return ({ request, platform }) =>
+    withNodeFragmentRequest(
+      request,
+      typeof platform === 'object' && platform !== null && 'req' in platform
+        ? platform.req
+        : undefined,
+      handler,
+    );
 }

@@ -32,11 +32,9 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        projectService: {
-          // Plain-JS maintainer scripts that run before `npm ci` and therefore
-          // cannot be TypeScript; linted against the default project.
-          allowDefaultProject: ['scripts/*.mjs'],
-        },
+        // Plain-JS runners belong to scripts/tsconfig.json so typed linting
+        // shares a configured project instead of one fallback per file.
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
       globals: {

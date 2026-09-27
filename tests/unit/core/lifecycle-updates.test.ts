@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
-import { TRUSTED, fireMessage, textRenderer } from './lifecycle-harness';
+import type { RouteStrategy } from '@core/strategies';
+import { TRUSTED, deferred, fireMessage, flushMicrotasks, textRenderer } from './lifecycle-harness';
 
 describe('LivePreviewRuntime — applying an update and emitting its events', () => {
   it('builds cache, processes a valid update, applies via renderer', async () => {
@@ -296,6 +297,51 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
     await vi.advanceTimersByTimeAsync(50);
 
     expect(rendered).toEqual(['newer']);
+    runtime.destroy();
+  });
+  it('keeps the update dispatched by an older strategy abort listener current', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">published</p>';
+    const firstRefresh = deferred<'refreshed'>();
+    let refreshes = 0;
+    const route: RouteStrategy = {
+      plan: (_root, changed) => changed.has('routeOnly'),
+      refresh: ({ signal }) => {
+        refreshes += 1;
+        if (refreshes > 1) return Promise.resolve('failed');
+        signal.addEventListener(
+          'abort',
+          () => {
+            fireMessage({ type: 'payload-live-preview', data: { title: 'reentrant newer' } });
+          },
+          { once: true },
+        );
+        return firstRefresh.promise;
+      },
+    };
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: () => true,
+      readyTargets: [],
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+      strategies: { route },
+    });
+    runtime.start();
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title: 'old route work', routeOnly: true },
+    });
+    await flushMicrotasks();
+
+    fireMessage({ type: 'payload-live-preview', data: { title: 'outer older' } });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(document.querySelector('p')?.textContent).toBe('reentrant newer');
+    expect(runtime.inspect().revisions.accepted).toBe(3);
+    firstRefresh.resolve('refreshed');
+    await flushMicrotasks();
     runtime.destroy();
   });
 });

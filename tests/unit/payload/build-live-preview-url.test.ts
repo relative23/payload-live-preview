@@ -11,6 +11,17 @@ function globalArgs(slug: string, data: Record<string, unknown> = {}): LivePrevi
   return { data, globalConfig: { slug } };
 }
 
+function payload2Args(
+  kind: 'collection' | 'global',
+  slug: string,
+  data: Record<string, unknown> = {},
+): LivePreviewUrlArgs {
+  return {
+    data,
+    documentInfo: { [kind]: { slug } },
+  };
+}
+
 describe('buildLivePreviewUrl — 1.0 behaviour', () => {
   const url = buildLivePreviewUrl({
     baseUrl: `${BASE}/`,
@@ -47,6 +58,19 @@ describe('buildLivePreviewUrl — 1.0 behaviour', () => {
     );
   });
 
+  it('accepts Payload 3.89 non-localized callback arguments', () => {
+    const withLocale = buildLivePreviewUrl({
+      baseUrl: BASE,
+      globals: { contact: ({ locale }) => `/${locale ?? 'none'}/contact` },
+    });
+    const args = {
+      ...globalArgs('contact'),
+      locale: { code: undefined, label: '' },
+    } as unknown as LivePreviewUrlArgs;
+
+    expect(withLocale(args)).toBe(`${BASE}/none/contact?preview=true`);
+  });
+
   it('falls back for an unmapped slug and for an empty resolver result', () => {
     expect(url(collectionArgs('unknown'))).toBe(`${BASE}/?preview=true`);
     const empty = buildLivePreviewUrl({ baseUrl: BASE, globals: { blank: () => '' } });
@@ -76,6 +100,22 @@ describe('buildLivePreviewUrl — 1.0 behaviour', () => {
     });
     expect(both(collectionArgs('shared'))).toBe(`${BASE}/from-collection?preview=true`);
     expect(both(globalArgs('shared'))).toBe(`${BASE}/from-global?preview=true`);
+  });
+
+  it('reads the entity slug from Payload 2 documentInfo', () => {
+    expect(url(payload2Args('collection', 'services', { slug: 'thai-massage' }))).toBe(
+      `${BASE}/services/thai-massage?preview=true`,
+    );
+    expect(url(payload2Args('global', 'contact'))).toBe(`${BASE}/de/contact?preview=true`);
+  });
+
+  it('prefers Payload 3 entity config when both callback shapes are present', () => {
+    expect(
+      url({
+        ...payload2Args('collection', 'services', { slug: 'thai-massage' }),
+        globalConfig: { slug: 'homepage' },
+      }),
+    ).toBe(`${BASE}/?preview=true`);
   });
 });
 
@@ -149,6 +189,23 @@ describe('buildLivePreviewUrl — the preview parameter', () => {
   it('is not added twice', () => {
     expect(resolve('/p?preview=true')).toBe(`${BASE}/p?preview=true`);
     expect(resolve('/p?a=1&preview=true#h')).toBe(`${BASE}/p?a=1&preview=true#h`);
+  });
+
+  it('makes the last repeated value true, matching preview-intent parsing', () => {
+    expect(resolve('/p?preview=true&preview=0')).toBe(
+      `${BASE}/p?preview=true&preview=0&preview=true`,
+    );
+    expect(resolve('/p?preview=0&preview=true')).toBe(`${BASE}/p?preview=0&preview=true`);
+  });
+
+  it('encodes a custom parameter name as one query key', () => {
+    const custom = buildLivePreviewUrl({
+      baseUrl: BASE,
+      globals: { g: '/p' },
+      previewParam: 'draft & review',
+    });
+
+    expect(custom(globalArgs('g'))).toBe(`${BASE}/p?draft%20%26%20review=true`);
   });
 
   it('copes with an empty or dangling query', () => {

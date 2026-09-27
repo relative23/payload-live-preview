@@ -181,6 +181,8 @@ export interface InspectionFidelity {
 export interface InspectionRoute {
   readonly handler: boolean;
   readonly refreshes: number;
+  /** Successful refreshes whose server render was not proven to contain the current unsaved revision. */
+  readonly partial: number;
   /** Refreshes that broke: the request, the answer, or the morph. */
   readonly failed: number;
   /**

@@ -101,12 +101,10 @@ export const ATTRIBUTE_SINKS: ReadonlyMap<string, AttributeSinkJustification> = 
   ['src/fragment/route.ts::current.setAttribute(attribute.name, attribute.value)', 'copied'],
   ['src/core/structural-applier.ts::first.setAttribute(KEY_ATTRIBUTE, key)', 'binding-stamp'],
   // The auto-binding search stamps the `data-payload-*` names it derived and
-  // the field it matched (ADR 0014).
+  // the field it matched (ADR 0014). Its rollback journal contains only those
+  // same package-owned names and restores their previous values on supersession.
   ['src/core/auto-bind.ts::element.setAttribute(name, value)', 'binding-stamp'],
-  [
-    'src/core/auto-bind.ts::element.setAttribute(GUESSED_ATTRIBUTE, candidate.matched)',
-    'binding-stamp',
-  ],
+  ['src/core/auto-bind.ts::mutation.element.setAttribute(name, before)', 'binding-stamp'],
   ["src/field-types/url.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
   ["src/field-types/relationship.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
   ["src/field-types/upload.ts::element.setAttribute('href', url)", 'url-validated'],

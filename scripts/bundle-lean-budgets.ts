@@ -98,4 +98,15 @@
 // 2026-09-19 (the sanitizer empties `is`): raw 92_392 → 92_433 (+41 B), gzip 29_229 → 29_238 (+9 B), brotli 25_951 → 25_968 (+17 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, the one line a field with no binding gets. The log in bundle-budgets.ts has the whole change.
 // 2026-09-19 (2.1: the sanitizer document named per call): raw 92_433 → 92_496 (+63 B), gzip 29_238 → 29_261 (+23 B), brotli 25_968 → 25_991 (+23 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, the one line a field with no binding gets. The log in bundle-budgets.ts has the whole change.
 // 2026-09-19 (2.1: one scope per runtime session): raw 92_496 → 93_010 (+514 B), gzip 29_261 → 29_456 (+195 B), brotli 25_991 → 26_162 (+171 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, the one line a field with no binding gets. The log in bundle-budgets.ts has the whole change.
-export const INLINE_LEAN_BUDGET = { raw: 93_010, gzip: 29_456, brotli: 26_162 } as const;
+// 2026-09-24 (2.1, router-commit replay): +904 raw / +205 gzip / +198 brotli in a paired build; the prior cushion stays unchanged. The common measurement and reason are in bundle-budgets.ts.
+// 2026-09-24 (2.1 source freeze): 101_387 raw / 31_675 gzip / 27_959 brotli; the prior 13 B raw, 7 B gzip and 120 B brotli cushions stay unchanged.
+// 2026-09-24 (streamed React hydration): 101_883 raw / 31_806 gzip / 28_126
+// brotli (+496 / +131 / +167); the root-wide dehydrated-boundary scan is
+// common runtime code and the prior 13 B / 7 B / 120 B cushions stay unchanged.
+// 2026-09-24 (H01 route fidelity): 101_883 / 31_806 / 28_126 →
+// 101_893 / 31_814 / 28_097; the prior cushions stay unchanged.
+// 2026-09-25 (H11): +282 raw / +80 gzip / +61 brotli; response identity,
+// measured at the same HEAD epoch, with unchanged cushions (bundle-budgets.ts).
+// 2026-09-27 (PHD-05): shared guarded island handoff and deduplication,
+// measured +167/+105/+118 B; retain 13/7/120 B cushions.
+export const INLINE_LEAN_BUDGET = { raw: 102_355, gzip: 32_006, brotli: 28_396 } as const;

@@ -26,10 +26,17 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
  * measurement that produces it; a change means this line moves and someone
  * says why in the commit.
  *
- * 750 for the protocol and the merge (theirs: 185), 149 for the hook session
+ * 837 for the protocol and the merge (theirs: 185), 149 for the hook session
  * (their React wrapper is a separate package and not measured here).
+ * 2026-09-24: +60 protocol lines retain an already accepted, token-stripped
+ * message for local navigation replay and fence every replay against a newer
+ * generation or reentrant acceptance. That state belongs at ingress because
+ * only the bus knows a message passed origin, source, shape and token checks.
+ * 2026-09-25: +27 code lines bind explicit merge response identities to their
+ * dispatched target, with a reentrant-validation fence. Errors-only documents
+ * remain valid: the installed Payload global REST handler can return one.
  */
-export const REVIEWED_SCOPE_LINES = 899;
+export const REVIEWED_SCOPE_LINES = 986;
 
 interface OurFile {
   readonly file: string;

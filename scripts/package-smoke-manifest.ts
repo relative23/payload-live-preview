@@ -9,6 +9,7 @@ import { basename, relative, resolve, sep } from 'node:path';
 import { exists, isRecord, ROOT, type JsonRecord } from './package-smoke-support';
 
 const PUBLIC_TOP_LEVEL_FILES = new Set(['LICENSE', 'README.md', 'package.json']);
+const INTERNAL_ASSETS = { astroBridge: './dist/adapters/astro/FragmentBridge.astro' } as const;
 const PUBLIC_DIST_SUFFIXES = [
   '.js',
   '.cjs',
@@ -45,7 +46,10 @@ export async function findPackedContentFailures(
 ): Promise<readonly string[]> {
   const failures: string[] = [];
 
-  for (const required of PUBLIC_TOP_LEVEL_FILES) {
+  for (const required of [
+    ...PUBLIC_TOP_LEVEL_FILES,
+    ...Object.values(INTERNAL_ASSETS).map((path) => path.slice(2)),
+  ]) {
     if (!packedFiles.has(required)) failures.push(`missing required package file: ${required}`);
   }
   for (const path of [...packedFiles].sort()) {
@@ -141,6 +145,7 @@ export async function findPackedTargetFailures(
 ): Promise<readonly string[]> {
   const failures: string[] = [];
   const targets = new Map<string, string>();
+  collectManifestTargets(INTERNAL_ASSETS, 'internal', targets);
   for (const field of ['main', 'module', 'types'] as const) {
     collectManifestTargets(manifestValue[field], field, targets);
   }

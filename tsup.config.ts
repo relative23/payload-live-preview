@@ -45,7 +45,9 @@ const SHARED_OPTIONS = {
   // `./vue` entries import statically, because a hook cannot be lazy. All are
   // named external so the build never inlines them — a consumer resolves its
   // own copy.
-  external: ['ts-morph', 'react', 'svelte/server', 'vue', /^virtual:/],
+  // The internal template is copied verbatim; only the consumer's Astro compiler
+  // can turn it into a component compatible with that consumer's Astro version.
+  external: ['ts-morph', 'react', 'svelte/server', 'vue', /^virtual:/, './FragmentBridge.astro'],
   tsconfig: 'tsconfig.json',
 } satisfies Options;
 

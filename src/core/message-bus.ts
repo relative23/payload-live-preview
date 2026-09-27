@@ -42,6 +42,12 @@ export interface MessageHandlers {
     origin: string,
     messageRevision?: MessageRevision,
   ) => void;
+  /** A locally retained, previously accepted update replayed in a new lifecycle generation. */
+  readonly onReplay?: (
+    msg: PayloadLivePreviewMessage,
+    origin: string,
+    messageRevision: MessageRevision,
+  ) => void;
   readonly onDocumentEvent: (msg: PayloadDocumentEventMessage, origin: string) => void;
   /** The admin reports the cursor moved into a field (reveal tier 2). */
   readonly onFocusField?: (field: string, origin: string) => void;
@@ -70,6 +76,25 @@ interface PendingValidation {
   next: PendingValidation | undefined;
 }
 
+interface AcceptedUpdate {
+  readonly generation: number;
+  readonly message: PayloadLivePreviewMessage;
+  readonly origin: string;
+}
+
+/** Keep consumer callbacks from mutating the snapshot reserved for navigation replay. */
+function snapshotForReplay(message: PayloadLivePreviewMessage): PayloadLivePreviewMessage | null {
+  const withoutToken = { ...message };
+  delete withoutToken.previewToken;
+  try {
+    return structuredClone(withoutToken);
+  } catch {
+    // A real postMessage payload is cloneable. A synthetic non-cloneable one
+    // may still be processed once, but retaining it would make replay mutable.
+    return null;
+  }
+}
+
 export class MessageBus {
   private readonly matcher: OriginMatcher;
   private readonly handlers: MessageHandlers;
@@ -79,6 +104,10 @@ export class MessageBus {
   private revision = 0;
   private queueHead: PendingValidation | undefined = undefined;
   private queueTail: PendingValidation | undefined = undefined;
+  private lastAccepted: AcceptedUpdate | undefined = undefined;
+  private replayedGeneration = 0;
+  /** Identity of the newest accepted data commit, including one still crossing the clone boundary. */
+  private latestAcceptedAttempt: object | undefined = undefined;
 
   constructor(matcher: OriginMatcher, handlers: MessageHandlers) {
     this.matcher = matcher;
@@ -155,6 +184,51 @@ export class MessageBus {
     this.generation += 1;
     this.resetQueue();
     return true;
+  }
+
+  /**
+   * Re-dispatch the last data-bearing update under the current generation.
+   * Only an update already accepted in an older generation is eligible; its
+   * preview token is never retained or replayed. @internal
+   */
+  replayLastAccepted(): boolean {
+    const accepted = this.lastAccepted;
+    const generation = this.generation;
+    if (
+      this.attachedTarget === undefined ||
+      accepted === undefined ||
+      accepted.generation >= generation ||
+      this.replayedGeneration === generation
+    ) {
+      return false;
+    }
+    if (!this.matchesOrigin(accepted.origin, generation)) return false;
+    // Origin matching is consumer code and may accept a newer message
+    // reentrantly. Never let the older snapshot run after it.
+    if (this.lastAccepted !== accepted || !this.isCurrentGeneration(generation)) return false;
+    const handler = this.handlers.onReplay;
+    if (handler === undefined) return false;
+    const replay = snapshotForReplay(accepted.message);
+    // Clone again for every replay. Hooks may mutate what they receive, but
+    // the retained copy is the baseline for later navigations too.
+    if (
+      replay === null ||
+      this.lastAccepted !== accepted ||
+      !this.isCurrentGeneration(generation)
+    ) {
+      return false;
+    }
+    this.replayedGeneration = generation;
+    const revision = { generation, revision: (this.revision += 1) };
+    this.invokeHandler(generation, handler, replay, accepted.origin, revision);
+    return true;
+  }
+
+  /** Forget retained document data when the connection expires or the owner is destroyed. @internal */
+  forgetLastAccepted(): void {
+    this.lastAccepted = undefined;
+    this.replayedGeneration = 0;
+    this.latestAcceptedAttempt = undefined;
   }
 
   /** Post the `ready` handshake to every target for every origin. */
@@ -313,6 +387,13 @@ export class MessageBus {
     if (messageRevision === undefined) {
       this.invokeHandler(generation, this.handlers.onUpdate, message, origin);
     } else {
+      const attempt = {};
+      this.latestAcceptedAttempt = attempt;
+      const snapshot = snapshotForReplay(message);
+      // Cloning synthetic input can run accessors. If one accepted a newer
+      // message reentrantly, the older commit must not overwrite or follow it.
+      if (this.latestAcceptedAttempt !== attempt || !this.isCurrentGeneration(generation)) return;
+      this.lastAccepted = snapshot === null ? undefined : { generation, message: snapshot, origin };
       this.invokeHandler(generation, this.handlers.onUpdate, message, origin, messageRevision);
     }
   }

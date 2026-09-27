@@ -2,8 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import type { FieldRenderer } from '@core/types';
+import type { RouteStrategy } from '@core/strategies';
 import { buildBuiltinRenderers } from '@field-types/index';
-import { IO, TRUSTED, fireMessage, flushMicrotasks, textRenderer } from './lifecycle-harness';
+import {
+  IO,
+  TRUSTED,
+  deferred,
+  fireMessage,
+  flushMicrotasks,
+  textRenderer,
+} from './lifecycle-harness';
 
 describe('LivePreviewRuntime — cache refresh', () => {
   it('renders an element once after repeated programmatic cache upserts', async () => {
@@ -72,6 +80,228 @@ describe('LivePreviewRuntime — cache refresh', () => {
     document.body.innerHTML = '<p data-payload-field="a">x</p><p data-payload-field="b">y</p>';
     runtime.refreshCache();
     expect(runtime.cache.fieldCount).toBe(2);
+    runtime.destroy();
+  });
+  it('keeps an accepted snapshot across bfcache suspension for the next route commit', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">published</p>';
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: () => true,
+      readyTargets: [],
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+    });
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { title: 'unsaved before bfcache' } });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(runtime.suspend()).toBe(true);
+    expect(runtime.start()).toBe(true);
+    const element = document.querySelector('p');
+    if (element === null) throw new Error('binding missing');
+    element.textContent = 'published after restore';
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(element.textContent).toBe('unsaved before bfcache');
+    runtime.destroy();
+  });
+  it('follows a replaced document body before replaying a navigation snapshot', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">published</p>';
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: () => true,
+      readyTargets: [],
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+    });
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { title: 'unsaved next route' } });
+    await vi.advanceTimersByTimeAsync(50);
+    const replacement = document.createElement('body');
+    replacement.innerHTML = '<h2 data-payload-field="title">published next route</h2>';
+    document.documentElement.replaceChild(replacement, document.body);
+
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(document.body).toBe(replacement);
+    expect(replacement.querySelector('h2')?.textContent).toBe('unsaved next route');
+    runtime.destroy();
+  });
+  it('does not treat a local replay as heartbeat traffic and forgets it on timeout', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">published</p>';
+    const connect = vi.fn();
+    const emitter = new EventEmitter();
+    emitter.on('connect', connect);
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: () => true,
+      readyTargets: [],
+      emitter,
+      debounceMs: 0,
+      heartbeatMs: 20,
+      disableVisibilityGate: true,
+    });
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { title: 'unsaved' } });
+    await vi.advanceTimersByTimeAsync(5);
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(15);
+
+    expect(connect).toHaveBeenCalledOnce();
+    expect(runtime.status).toBe('disconnected');
+    const element = document.querySelector('p');
+    if (element === null) throw new Error('binding missing');
+    element.textContent = 'published after timeout';
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(50);
+    expect(element.textContent).toBe('published after timeout');
+    runtime.destroy();
+  });
+  it('lets a navigation replay escalate an unsaved field absent from the new route', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">published</p>';
+    const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: () => true,
+      readyTargets: [TRUSTED],
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+      strategies: { route: { plan: () => false, refresh } },
+    });
+    runtime.start();
+    const snapshot = { title: 'unsaved', conditional: 'only in the draft' };
+    fireMessage({ type: 'payload-live-preview', data: snapshot });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(refresh).not.toHaveBeenCalled();
+
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(refresh).toHaveBeenCalledOnce();
+    runtime.destroy();
+  });
+  it('gives auto-binding a baseline search on the navigated route', async () => {
+    const unsaved = 'unsaved navigation title';
+    document.body.innerHTML = '<p data-payload-field="title">published</p>';
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: () => true,
+      readyTargets: [],
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+      autoBind: 'unique',
+    });
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { title: unsaved } });
+    await vi.advanceTimersByTimeAsync(50);
+
+    document.body.innerHTML = `<p>${unsaved}</p>`;
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(document.querySelector('p')?.getAttribute('data-payload-field')).toBe('title');
+    runtime.destroy();
+  });
+  it('supersedes delayed route work before two rapid navigation replays', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">published route one</p>';
+    const oldRoute = deferred<'refreshed'>();
+    let oldSignal: AbortSignal | undefined;
+    let refreshCall = 0;
+    const sendReady = vi.fn();
+    const refresh = vi.fn<RouteStrategy['refresh']>((context) => {
+      refreshCall += 1;
+      if (refreshCall > 1) return Promise.resolve('failed');
+      oldSignal = context.signal;
+      return oldRoute.promise.then((outcome) => {
+        if (context.isCurrent()) document.body.textContent = 'stale old route';
+        return outcome;
+      });
+    });
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: () => true,
+      readyTargets: [TRUSTED],
+      sendReady,
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+      strategies: { route: { plan: () => false, refresh } },
+    });
+    runtime.start();
+    const snapshot = { title: 'unsaved', conditional: 'route-only draft' };
+    fireMessage({ type: 'payload-live-preview', data: snapshot });
+    await vi.advanceTimersByTimeAsync(50);
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { ...snapshot, conditional: 'changed route-only draft' },
+    });
+    await flushMicrotasks();
+    expect(refresh).toHaveBeenCalledOnce();
+
+    document.body.innerHTML = '<p data-payload-field="title">published route two</p>';
+    runtime.navigationCommit();
+    document.body.innerHTML = '<p data-payload-field="title">published route three</p>';
+    runtime.navigationCommit();
+    expect(oldSignal?.aborted).toBe(true);
+    expect(sendReady).toHaveBeenCalledTimes(3);
+
+    oldRoute.resolve('refreshed');
+    await flushMicrotasks();
+    expect(document.body.textContent).toBe('published route three');
+
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('p')?.textContent).toBe('unsaved');
+    runtime.destroy();
+  });
+  it('invalidates a pre-navigation token verdict before asking for the replay', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">published route one</p>';
+    const oldVerdict = deferred<boolean>();
+    const validateToken = vi
+      .fn()
+      .mockImplementationOnce(() => oldVerdict.promise)
+      .mockResolvedValueOnce(true);
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: () => true,
+      readyTargets: [TRUSTED],
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+      validateToken,
+    });
+    runtime.start();
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title: 'stale old route' },
+      previewToken: 'old',
+    });
+    expect(validateToken).toHaveBeenCalledOnce();
+
+    document.body.innerHTML = '<p data-payload-field="title">published route two</p>';
+    runtime.navigationCommit();
+    oldVerdict.resolve(true);
+    await flushMicrotasks();
+    expect(document.querySelector('p')?.textContent).toBe('published route two');
+
+    fireMessage({
+      type: 'payload-live-preview',
+      data: { title: 'current unsaved route' },
+      previewToken: 'current',
+    });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('p')?.textContent).toBe('current unsaved route');
     runtime.destroy();
   });
   it('keeps refreshCache inert after destroy', () => {

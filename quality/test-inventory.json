@@ -9,17 +9,19 @@
   "runnerConfigs": [
     "playwright.bench.config.ts",
     "playwright.config.ts",
+    "playwright.fragment-lifetime.config.ts",
     "playwright.real-payload.config.ts",
     "playwright.soak.config.ts",
+    "playwright.sveltekit-production.config.ts",
     "stryker.config.js",
     "vitest.bench.config.ts",
     "vitest.config.ts",
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 326,
-    "suites": 707,
-    "tests": 2957,
+    "files": 393,
+    "suites": 772,
+    "tests": 3515,
     "benchmarks": 12
   },
   "groups": {
@@ -36,21 +38,21 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 28,
-      "suites": 38,
-      "tests": 119,
+      "files": 41,
+      "suites": 47,
+      "tests": 192,
       "benchmarks": 0
     },
     "integration": {
-      "files": 21,
-      "suites": 24,
-      "tests": 101,
+      "files": 25,
+      "suites": 28,
+      "tests": 110,
       "benchmarks": 0
     },
     "real-payload": {
       "files": 3,
       "suites": 3,
-      "tests": 7,
+      "tests": 9,
       "benchmarks": 0
     },
     "soak": {
@@ -60,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 269,
-      "suites": 632,
-      "tests": 2728,
+      "files": 319,
+      "suites": 684,
+      "tests": 3202,
       "benchmarks": 0
     }
   },
@@ -96,6 +98,62 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/continuation/astro-islands.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/astro-owner.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/astro-react-resources.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/astro-resources.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/html-owner.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/next-host.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/vue-owner.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/lifetime/fragment-lifetime.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/accessibility.spec.ts",
       "group": "e2e",
       "suites": 1,
@@ -107,6 +165,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/astro-soft-navigation.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -131,10 +196,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/fragment-request-bounds.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/h05-astro-context.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/hybrid-fragment.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 11,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -190,7 +269,7 @@
       "path": "tests/e2e/specs/nextjs-live-preview.spec.ts",
       "group": "e2e",
       "suites": 3,
-      "tests": 5,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -211,7 +290,7 @@
       "path": "tests/e2e/specs/nuxt-live-preview.spec.ts",
       "group": "e2e",
       "suites": 3,
-      "tests": 5,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -222,10 +301,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/plain-html-tarball.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/public-response.spec.ts",
       "group": "e2e",
       "suites": 1,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/react-vue-tarball.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -274,7 +367,7 @@
       "path": "tests/e2e/specs/sveltekit-live-preview.spec.ts",
       "group": "e2e",
       "suites": 4,
-      "tests": 10,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -295,7 +388,7 @@
       "path": "tests/integration/client-lifecycle.test.ts",
       "group": "integration",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -345,6 +438,34 @@
       "group": "integration",
       "suites": 2,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/preview-continuation-data-http.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/preview-continuation-http.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/preview-continuation-unsaved.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/preview-continuation.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -400,7 +521,7 @@
       "path": "tests/integration/runtime-preview-context.test.ts",
       "group": "integration",
       "suites": 1,
-      "tests": 14,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -442,7 +563,7 @@
       "path": "tests/real-payload/homepage-live-preview.spec.ts",
       "group": "real-payload",
       "suites": 1,
-      "tests": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -474,10 +595,17 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/astro-default-renderer.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/astro-fragments.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -512,7 +640,7 @@
       "path": "tests/unit/adapters/authorize-preview.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -526,7 +654,42 @@
       "path": "tests/unit/adapters/document-session.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 9,
+      "tests": 11,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/fragment-document-scope.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/fragment-endpoint-bounds-public.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/fragment-endpoint-bounds.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 28,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/fragment-endpoint-lifecycle.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/fragment-node-transport.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -562,6 +725,13 @@
       "group": "unit",
       "suites": 6,
       "tests": 18,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/nuxt-fragment-context.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -617,7 +787,7 @@
       "path": "tests/unit/adapters/react-hook.test.tsx",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -644,15 +814,15 @@
     {
       "path": "tests/unit/adapters/sveltekit.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 7,
+      "suites": 5,
+      "tests": 8,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/vue-composable.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -813,7 +983,7 @@
       "path": "tests/unit/core/auto-bind.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 17,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -873,6 +1043,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/data-merger-response.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/diagnostic-codes.test.ts",
       "group": "unit",
       "suites": 4,
@@ -897,7 +1074,7 @@
       "path": "tests/unit/core/field-changes.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -922,10 +1099,17 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/core/fragment-strategy.test.ts",
+      "path": "tests/unit/core/fragment-island-delivery.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/fragment-strategy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -939,7 +1123,7 @@
       "path": "tests/unit/core/hydration.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 15,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -960,7 +1144,7 @@
       "path": "tests/unit/core/islands.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 6,
+      "tests": 15,
       "benchmarks": 0
     },
     {
@@ -995,28 +1179,28 @@
       "path": "tests/unit/core/lifecycle-cache-refresh.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 11,
+      "tests": 18,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/core/lifecycle-cache-retargeting.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/core/lifecycle-data-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 12,
+      "tests": 13,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/core/lifecycle-deferred-startup.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -1044,7 +1228,7 @@
       "path": "tests/unit/core/lifecycle-heartbeat.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 10,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -1100,7 +1284,7 @@
       "path": "tests/unit/core/lifecycle-updates.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -1163,7 +1347,7 @@
       "path": "tests/unit/core/message-bus-shapes.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -1205,21 +1389,35 @@
       "path": "tests/unit/core/morph-contract.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 21,
+      "tests": 23,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/core/morph.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 24,
+      "tests": 25,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/core/navigation-lifecycle.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/navigation-replay-context.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 15,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/navigation-replay-guards.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1273,6 +1471,13 @@
     },
     {
       "path": "tests/unit/core/public-types.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/relationship-reentrancy.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 2,
@@ -1338,7 +1543,7 @@
       "path": "tests/unit/core/route-strategy.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 21,
+      "tests": 24,
       "benchmarks": 0
     },
     {
@@ -1352,7 +1557,7 @@
       "path": "tests/unit/core/session-scope.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -1366,7 +1571,7 @@
       "path": "tests/unit/core/state.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 11,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -1422,7 +1627,7 @@
       "path": "tests/unit/core/unfaithful-patch.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 17,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -1657,6 +1862,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/fixture-freshness.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/fragment/abort.test.ts",
       "group": "unit",
       "suites": 2,
@@ -1667,14 +1879,14 @@
       "path": "tests/unit/fragment/client.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 14,
+      "tests": 20,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/fragment/gate.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 3,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -1688,7 +1900,7 @@
       "path": "tests/unit/fragment/route.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 16,
+      "tests": 19,
       "benchmarks": 0
     },
     {
@@ -1709,7 +1921,7 @@
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 33,
+      "tests": 34,
       "benchmarks": 0
     },
     {
@@ -1779,7 +1991,7 @@
       "path": "tests/unit/lockfile-metadata.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 12,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -1853,10 +2065,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/package-internal-assets.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/payload/build-live-preview-url.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 16,
+      "tests": 21,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/payload/plugin.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -1951,6 +2177,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/property/fragment-endpoint-bounds.property.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/property/message-bus-model.property.test.ts",
       "group": "unit",
       "suites": 1,
@@ -2017,7 +2250,84 @@
       "path": "tests/unit/quality/architecture-policy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 7,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-host-fixture-config.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-island-csp.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-island-fixture.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-owner-fixture.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-owner-snapshots.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-react-resources.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-resource-fixture-config.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-resource-locals.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-resource-versions.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-response-capture.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/astro-unit-boundary.test.ts",
+      "group": "unit",
+      "suites": 0,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -2042,6 +2352,20 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/compat-evidence.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/compat-version-sync.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/compat-vite.test.ts",
       "group": "unit",
       "suites": 4,
@@ -2059,7 +2383,7 @@
       "path": "tests/unit/quality/config-policy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -2084,6 +2408,34 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/fixture-proxy-lifetime.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/fragment-lifetime-fixture-config.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/h22-documentation-contract.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/html-host-fixture-config.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/mutation-equivalence.test.ts",
       "group": "unit",
       "suites": 1,
@@ -2102,6 +2454,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/nextjs-fixture-preview-config.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -2147,6 +2506,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/sveltekit-fixture-preview-config.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/test-policy.test.ts",
       "group": "unit",
       "suites": 1,
@@ -2158,6 +2524,13 @@
       "group": "unit",
       "suites": 4,
       "tests": 13,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/vue-host-fixture-config.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -2231,10 +2604,101 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/security/preview-continuation-data-lifetime.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-continuation-data.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 19,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-continuation-deadline.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-continuation-reference.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 19,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-continuation-unsaved-lifetime.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-continuation-unsaved.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 17,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-html-host.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-native-request.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-next-host.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 13,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-payload-scope.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-related-drafts.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 19,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-related-lifetime.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/security/preview-session-edges.test.ts",
       "group": "unit",
       "suites": 3,
       "tests": 10,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/preview-session-lifecycle.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -2315,10 +2779,17 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/server/preview-scope.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 14,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/server/preview-server.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 15,
+      "tests": 23,
       "benchmarks": 0
     },
     {

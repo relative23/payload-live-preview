@@ -6,9 +6,24 @@
 /** Arguments Payload passes to `admin.livePreview.url`. */
 export interface LivePreviewUrlArgs {
   readonly data: Record<string, unknown>;
-  readonly locale?: string | { readonly code: string };
+  readonly locale?: string | { readonly code?: string | null; readonly [extra: string]: unknown };
   readonly collectionConfig?: { readonly slug: string };
   readonly globalConfig?: { readonly slug: string };
+  /** Payload 2 identifies the edited entity here instead of through the top-level configs. */
+  readonly documentInfo?: {
+    readonly collection?: {
+      /** Payload 2 inherits this runtime value through a mapped config type. */
+      readonly slug?: string;
+      /** Structural anchor for Payload 2's published sanitized config type. */
+      readonly fields?: unknown;
+    };
+    readonly global?: {
+      /** Payload 2 inherits this runtime value through a mapped config type. */
+      readonly slug?: string;
+      /** Structural anchor for Payload 2's published sanitized config type. */
+      readonly fields?: unknown;
+    };
+  };
   readonly [extra: string]: unknown;
 }
 
@@ -34,7 +49,7 @@ export interface BuildLivePreviewUrlOptions {
   readonly globals?: Readonly<Record<string, PathResolver>>;
   /** Path when no resolver matches or one returns `''` (a draft without a slug). Default `/`. */
   readonly fallback?: string;
-  /** Query parameter signalling preview intent; client-controlled, so it authorizes nothing. Default `'preview'`, `null` disables it. */
+  /** Query parameter signalling preview intent; keep it in the adapter's `previewQueryParams`. Client-controlled, so it authorizes nothing. Default `'preview'`, `null` disables it. */
   readonly previewParam?: string | null;
 }
 
@@ -91,9 +106,10 @@ function withPreviewParam(path: string, name: string): string {
   const beforeHash = hashAt === -1 ? path : path.slice(0, hashAt);
   const queryAt = beforeHash.indexOf('?');
   const query = queryAt === -1 ? '' : beforeHash.slice(queryAt + 1);
-  if (new URLSearchParams(query).get(name) === 'true') return path;
+  const values = new URLSearchParams(query).getAll(name);
+  if (values[values.length - 1] === 'true') return path;
   const separator = queryAt === -1 ? '?' : query.length === 0 || query.endsWith('&') ? '' : '&';
-  return `${beforeHash}${separator}${name}=true${hash}`;
+  return `${beforeHash}${separator}${encodeURIComponent(name)}=true${hash}`;
 }
 
 /** The mapped resolver, or `undefined` when the slug is not mapped; a mapped `null` is a resolver in its own right. */
@@ -101,7 +117,23 @@ function findResolver(
   options: BuildLivePreviewUrlNullableOptions,
   args: LivePreviewUrlArgs,
 ): NullablePathResolver | undefined {
-  const collectionSlug = args.collectionConfig?.slug;
+  // Payload 3's explicit callback arguments win as a pair. Looking through a
+  // stale `documentInfo` when either is present could select the wrong entity.
+  if (args.collectionConfig !== undefined || args.globalConfig !== undefined) {
+    return findResolverBySlug(options, args.collectionConfig?.slug, args.globalConfig?.slug);
+  }
+  return findResolverBySlug(
+    options,
+    args.documentInfo?.collection?.slug,
+    args.documentInfo?.global?.slug,
+  );
+}
+
+function findResolverBySlug(
+  options: BuildLivePreviewUrlNullableOptions,
+  collectionSlug: string | undefined,
+  globalSlug: string | undefined,
+): NullablePathResolver | undefined {
   if (
     collectionSlug !== undefined &&
     options.collections !== undefined &&
@@ -109,7 +141,6 @@ function findResolver(
   ) {
     return options.collections[collectionSlug];
   }
-  const globalSlug = args.globalConfig?.slug;
   if (
     globalSlug !== undefined &&
     options.globals !== undefined &&
@@ -123,5 +154,5 @@ function findResolver(
 function normaliseLocale(locale: LivePreviewUrlArgs['locale']): string | undefined {
   if (locale === undefined) return undefined;
   if (typeof locale === 'string') return locale.length > 0 ? locale : undefined;
-  return locale.code.length > 0 ? locale.code : undefined;
+  return typeof locale.code === 'string' && locale.code.length > 0 ? locale.code : undefined;
 }

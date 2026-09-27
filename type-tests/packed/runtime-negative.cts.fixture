@@ -1,5 +1,6 @@
 import { bind, type FieldRenderer, type LivePreviewClient } from 'payload-live-preview';
 import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { livePreview as payloadLivePreview } from 'payload-live-preview/plugin';
 
 declare const client: LivePreviewClient;
 
@@ -11,5 +12,11 @@ bind<{ title: string }>('subtitle');
 const invalidRenderer: FieldRenderer = { name: 'custom-field', render: () => undefined };
 // @ts-expect-error -- baseUrl remains a string in the require declaration surface
 buildLivePreviewUrl({ baseUrl: 123 });
+// @ts-expect-error -- CommonJS sees the same required string base URL
+payloadLivePreview({});
+// @ts-expect-error -- CommonJS sees the same path-resolver result type
+payloadLivePreview({ baseUrl: 'https://example.com', collections: { posts: () => false } });
+// @ts-expect-error -- CommonJS cannot pass signing material either
+payloadLivePreview({ baseUrl: 'https://example.com', secret: 'must-stay-on-the-server' });
 
 void invalidRenderer;

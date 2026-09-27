@@ -183,6 +183,35 @@ describe('DocumentSession', () => {
     expect(snapshot.error?.message).toContain('403');
   });
 
+  it.each([['a different document ID', { id: 'other-user-document', title: 'Wrong document' }]])(
+    'keeps the last good document after %s, then recovers',
+    async (_name, invalid) => {
+      const good = { id: '1', title: 'Last good' };
+      const recovered = { id: '1', title: 'Recovered' };
+      const fetchFn = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(jsonResponse(good))
+        .mockResolvedValueOnce(jsonResponse(invalid))
+        .mockResolvedValueOnce(jsonResponse(recovered));
+      const session = open({ fetchFn });
+      window.dispatchEvent(update({ title: 'First' }));
+      await until(session, (s) => s.status === 'live');
+      const lastGood = session.getSnapshot().data;
+
+      window.dispatchEvent(update({ title: 'Second' }));
+      const refused = await until(session, (s) => s.status === 'unavailable');
+      expect(refused.data).toBe(lastGood);
+      expect(refused.data).toEqual(good);
+      expect(refused.isLoading).toBe(false);
+      expect(refused.error?.message).toContain('other than a document');
+
+      window.dispatchEvent(update({ title: 'Third' }));
+      const restored = await until(session, (s) => s.status === 'live');
+      expect(restored.data).toEqual(recovered);
+      expect(restored.error).toBeUndefined();
+    },
+  );
+
   it('5. gives two sessions on one page two documents', async () => {
     const first = open({
       fetchFn: (() =>
@@ -230,6 +259,41 @@ describe('DocumentSession', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('discards an in-flight result after detach and can attach again', async () => {
+    let resolveFirst: ((response: Response) => void) | undefined;
+    let call = 0;
+    const fetchFn = vi.fn(() => {
+      const current = call;
+      call += 1;
+      if (current === 0) {
+        return new Promise<Response>((resolve) => {
+          resolveFirst = resolve;
+        });
+      }
+      return Promise.resolve(jsonResponse({ id: '1', title: 'After reattach' }));
+    });
+    const session = createSession({ fetchFn: fetchFn as unknown as typeof fetch });
+    const listener = vi.fn();
+    const stop = session.subscribe(listener);
+
+    window.dispatchEvent(update({ title: 'First' }));
+    await Promise.resolve();
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    stop();
+
+    resolveFirst?.(jsonResponse({ id: '1', title: 'Late result' }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(listener).not.toHaveBeenCalled();
+    expect(session.getSnapshot().data).toEqual(INITIAL);
+
+    release.push(session.subscribe(() => {}));
+    window.dispatchEvent(update({ title: 'Second' }));
+
+    const snapshot = await until(session, (candidate) => candidate.status === 'live');
+    expect(snapshot.data.title).toBe('After reattach');
+    expect(fetchFn).toHaveBeenCalledTimes(2);
   });
 
   it('renders on the server as the document it was given', () => {

@@ -89,11 +89,20 @@ export interface InlineScriptConfig {
    * rather than the runtime, whose own fallbacks are the 2.0 rows: `'v1'`
    * writes its four runtime rows into their slots (an explicit option still
    * wins) and relaxes the `mergeDepth` check. The resolved value always
-   * travels, in the last slot, so a reader of the served page knows what an
+   * travels in slot 24, so a reader of the served page knows what an
    * empty slot means instead of guessing it — `pll doctor --v2` reads it. The
-   * runtime does not: every row the profile decides is already in its slot.
+   * runtime does not use that value: every row the profile decides is already
+   * in its slot. Slot 24 stays fixed as later options are appended.
    */
   readonly defaults?: DefaultsProfile;
+  /**
+   * Document events fired after a client router committed new markup. Each
+   * rebuilds the binding cache and locally reapplies the last accepted state.
+   * Adapter integrations set this from their framework lifecycle. It is a
+   * low-level generator fact, not a `PreviewAdapterOptions` field. Empty by
+   * default.
+   */
+  readonly softNavigationEvents?: readonly string[];
   /**
    * A runtime artifact to embed instead of the full one — today only
    * `LEAN_RUNTIME` from `payload-live-preview/lean`, which leaves out the
@@ -153,4 +162,5 @@ export const INLINE_CONFIG_KEYS = [
   'autoBind',
   'hydration',
   'defaults',
+  'softNavigationEvents',
 ] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'runtime'>[];

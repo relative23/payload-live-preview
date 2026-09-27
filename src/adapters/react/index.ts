@@ -5,9 +5,10 @@
  * that belongs to this hook alone (ADR 0002).
  *
  * It re-renders your component tree, so conditional sections and derived values
- * are as correct as a server render. What it cannot do is keep the visitor's
- * state: React re-renders the subtree, and focus, scroll and typed values go
- * with it. The DOM runtime is the other side of that trade (docs/react.md).
+ * follow the merged document. React preserves component and DOM state while
+ * type, key and position stay stable; a remount or replaced node loses the
+ * state it held. The DOM runtime uses direct writes and a keyed morph instead
+ * (docs/react.md).
  *
  * `react` is an optional peer. This entry imports it at module scope; `./nextjs`
  * loads it, and `react-dom/server`, only at the first render that needs them.
@@ -32,7 +33,7 @@ export { LivePreviewRouteRefresh, type LivePreviewRouteRefreshProps } from './ro
 export { registerRouteRefresh, type RouteRefresh } from '@core/route-refresh';
 
 export interface UseLivePreviewDocumentOptions<T> extends DocumentSessionOptions {
-  /** The document the page was rendered from; returned until an update merges. */
+  /** The document this session starts from; create a new hook instance to switch documents. */
   readonly initialData: T;
 }
 
@@ -42,7 +43,7 @@ export interface UseLivePreviewDocumentOptions<T> extends DocumentSessionOptions
  * ```tsx
  * const { data, status } = useLivePreviewDocument<Page>({
  *   serverURL: process.env.NEXT_PUBLIC_PAYLOAD_URL!,
- *   allowedOrigins: [process.env.NEXT_PUBLIC_PAYLOAD_URL!],
+ *   allowedOrigins: [process.env.NEXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
  *   initialData: page,
  *   depth: 1,
  * });
@@ -87,10 +88,15 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
     String(enableLocalhostMatching ?? ''),
     // A separator no origin, route prefix or policy name can contain.
   ].join(' | ');
-  const held = useRef<{ key: string; session: DocumentSession<T> } | null>(null);
-  if (held.current?.key !== key) {
+  const held = useRef<{
+    key: string;
+    target: Window | undefined;
+    session: DocumentSession<T>;
+  } | null>(null);
+  if (held.current?.key !== key || held.current.target !== target) {
     held.current = {
       key,
+      target,
       session: new DocumentSession<T>(initialData, {
         serverURL,
         ...(apiRoute !== undefined ? { apiRoute } : {}),

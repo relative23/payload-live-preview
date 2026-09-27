@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   PreviewFetchError,
   authorizePreviewRequest,
@@ -9,6 +9,11 @@ import {
 } from '@/server/index';
 
 const CMS = 'https://cms.example.com';
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 async function context(headers: Record<string, string> = { cookie: 'payload-token=abc' }) {
   const result = await authorizePreviewRequest(new Request('https://site.example.com/'), {
@@ -148,9 +153,130 @@ describe('definePreview — where', () => {
     expect(query.get('where[parent][equals]')).toBe('null');
     expect(query.get('where[tags][in]')).toBe('a,2');
   });
+
+  it('keeps an empty scalar array as an explicit query operand', async () => {
+    const query = await queryFor({ tags: { in: [] } });
+    expect(query.has('where[tags][in]')).toBe(true);
+    expect(query.get('where[tags][in]')).toBe('');
+  });
 });
 
 describe('definePreview — failures', () => {
+  it('treats a non-callable host fetch as unavailable', async () => {
+    vi.stubGlobal('fetch', {});
+    expect(
+      await definePreview({ serverURL: CMS, depth: 0 }).fetchGlobal({
+        global: 'homepage',
+        authorization: null,
+      }),
+    ).toMatchObject({ ok: false, reason: 'no-fetch' });
+  });
+
+  it('uses the host fetch when no override is supplied', async () => {
+    const hostFetch = vi.fn(() =>
+      Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ title: 'host' }) }),
+    );
+    vi.stubGlobal('fetch', hostFetch);
+    expect(
+      await definePreview({ serverURL: CMS, depth: 0 }).fetchGlobal({
+        global: 'homepage',
+        authorization: null,
+      }),
+    ).toMatchObject({ ok: true, data: { title: 'host' } });
+    expect(hostFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    null,
+    'offline',
+    0,
+    { name: 'AbortError' },
+    { name: 'TimeoutError' },
+    function TimeoutError() {
+      return undefined;
+    },
+  ])('classifies a transport rejection without assuming an Error (%j)', async (cause) => {
+    const preview = definePreview({
+      serverURL: CMS,
+      depth: 0,
+      // Transports can reject arbitrary values; the public failure result must preserve them.
+      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+      fetch: () => Promise.reject(cause),
+    });
+    const reason =
+      typeof cause === 'object' && cause !== null
+        ? cause.name === 'AbortError'
+          ? 'aborted'
+          : 'timeout'
+        : 'network';
+    expect(await preview.fetchDocument({ collection: 'pages', authorization: null })).toMatchObject(
+      { ok: false, reason, cause },
+    );
+  });
+
+  it('prioritizes external cancellation even when a transport throws a different error', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const preview = definePreview({
+      serverURL: CMS,
+      depth: 0,
+      fetch: () => Promise.reject(new TypeError('closed')),
+    });
+    expect(
+      await preview.fetchGlobal({ global: 'g', authorization: null, signal: controller.signal }),
+    ).toMatchObject({ ok: false, reason: 'aborted' });
+  });
+
+  it.each([null, {}, { docs: undefined }])(
+    'preserves published query absence as null (%j)',
+    async (body) => {
+      const preview = definePreview({ serverURL: CMS, depth: 0, fetch: capture(body).fetch });
+      expect(await preview.fetchDocument({ collection: 'pages', authorization: null })).toEqual({
+        ok: true,
+        data: null,
+        draft: false,
+        status: 200,
+      });
+    },
+  );
+
+  it('reports elapsed time, without treating an omitted errorMode as throwing', async () => {
+    vi.useFakeTimers();
+    const start = Date.now();
+    const onDiagnostic = vi.fn();
+    const preview = definePreview({
+      serverURL: CMS,
+      depth: 0,
+      onDiagnostic,
+      fetch: () => {
+        vi.setSystemTime(start + 7);
+        return Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({}) });
+      },
+    });
+    expect(await preview.fetchDocument({ collection: 'pages', authorization: null })).toMatchObject(
+      { ok: false, reason: 'http' },
+    );
+    expect(onDiagnostic).toHaveBeenCalledExactlyOnceWith({
+      kind: 'failure',
+      reason: 'http',
+      status: 503,
+      draft: false,
+      url: CMS + '/api/pages?depth=0&limit=1',
+      durationMs: 7,
+    });
+  });
+
+  it('keeps typed thrown errors descriptive and retains their original cause', () => {
+    const cause = new Error('transport');
+    for (const status of [undefined, 403]) {
+      const error = new PreviewFetchError('network', CMS, status, cause);
+      expect(error.name).toBe('PreviewFetchError');
+      expect(error.message).toBe(
+        `payload-live-preview: preview read failed (network${status === undefined ? '' : ' 403'}) for ${CMS}`,
+      );
+      expect(error.cause).toBe(cause);
+    }
+  });
   it('reports HTTP, network, invalid JSON and a missing fetch as typed results', async () => {
     const http = definePreview({ serverURL: CMS, depth: 1, fetch: capture({}, 503).fetch });
     expect(await http.fetchGlobal({ global: 'g', authorization: null })).toMatchObject({

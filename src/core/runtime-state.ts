@@ -3,7 +3,11 @@
  * runs (`RuntimeState`). Both are shared by the pipeline collaborators.
  */
 
-import type { PayloadFieldSchema, PayloadLivePreviewMessage } from '@/types/payload-protocol';
+import type {
+  PayloadFieldSchema,
+  PayloadLivePreviewData,
+  PayloadLivePreviewMessage,
+} from '@/types/payload-protocol';
 import type { EventEmitter } from '@events/emitter';
 import type { SchemaIndex } from '@schema/index';
 import type { SanitizerPolicyMode } from '@security/sanitizer';
@@ -37,6 +41,12 @@ export interface UpdateTransaction {
   readonly receivedAt: number;
   /** A save in another document may change populated values only, so render everything. */
   readonly forceRender: boolean;
+  /** Whether this transaction came from a newly accepted remote message and contributes to revision counters. */
+  readonly countsAsUpdate: boolean;
+  /** Latest raw or populated data this revision rendered, retained for late streamed bindings. */
+  renderData: PayloadLivePreviewData | undefined;
+  /** Fragment boundaries already handed to the strategy for this revision. */
+  readonly fragmentBoundariesRun: WeakSet<Element>;
   /** Top-level fields whose value changed since the previous message, plus their dependents. */
   touched: ReadonlySet<string>;
   /** The connection's first message, where every field counts as changed. */
@@ -151,11 +161,16 @@ export class RuntimeState {
   warnedForeignSource = false;
   /** Identity of the value each element last applied; reset when the markup is re-rendered. */
   lastAppliedIdentity = new WeakMap<Element, string>();
+  /** The next full snapshot follows a router commit, not the initial server baseline. */
+  navigationReplayPending = false;
+  /** New bindings streamed into the current navigated document receive its latest accepted data. */
+  navigationBindingReplay = false;
   /** What each owned field was last seen with, for the reveal decision only. */
   readonly revealLedger = new RevealLedger();
   readonly fragmentStats = { rendered: 0, failed: 0, superseded: 0 };
-  readonly routeStats = { refreshes: 0, failed: 0, refused: 0, loopStopped: 0 };
-  fragmentController: AbortController | null = null;
+  readonly routeStats = { refreshes: 0, partial: 0, failed: 0, refused: 0, loopStopped: 0 };
+  /** Every fragment batch still rendering; streamed bindings can start more than one per revision. */
+  readonly fragmentControllers = new Set<AbortController>();
   routeController: AbortController | null = null;
   /** The trailing run a refused refresh asked for; at most one, and always the newest. */
   routeRetry: ReturnType<typeof setTimeout> | null = null;
@@ -185,7 +200,7 @@ export class RuntimeState {
   complete(transaction: UpdateTransaction): void {
     if (transaction.completed) return;
     transaction.completed = true;
-    this.completedCount += 1;
+    if (transaction.countsAsUpdate) this.completedCount += 1;
   }
 
   /**
@@ -201,11 +216,10 @@ export class RuntimeState {
       this.routeRetry = null;
       this.routeRefreshOwed = true;
     }
-    for (const key of ['fragmentController', 'routeController'] as const) {
-      const controller = this[key];
-      if (controller === null) continue;
-      this[key] = null;
-      controller.abort();
-    }
+    for (const controller of this.fragmentControllers) controller.abort();
+    this.fragmentControllers.clear();
+    const route = this.routeController;
+    this.routeController = null;
+    route?.abort();
   }
 }

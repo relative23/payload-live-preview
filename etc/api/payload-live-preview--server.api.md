@@ -22,11 +22,31 @@ export interface AuthorizedPreviewContext {
 }
 
 // @public
+export type AuthorizedPreviewDocument = {
+    readonly kind: 'collection';
+    readonly slug: string;
+    readonly id: string | number;
+} | {
+    readonly kind: 'global';
+    readonly slug: string;
+};
+
+// @public
+export interface AuthorizedPreviewPayloadScope {
+    readonly apiRoute?: string;
+    // (undocumented)
+    readonly document: AuthorizedPreviewDocument;
+    readonly maxDepth: number;
+    readonly serverURL: string;
+}
+
+// @public
 export interface AuthorizedPreviewScope {
     readonly audience?: string;
     // (undocumented)
     readonly locale?: string;
     readonly path?: string;
+    readonly payload?: AuthorizedPreviewPayloadScope;
 }
 
 // @public
@@ -179,6 +199,7 @@ export interface PreviewAuthorizationRequest {
     readonly headers: {
         get(name: string): string | null;
     };
+    readonly signal?: AbortSignal;
     // (undocumented)
     readonly url: string;
 }
@@ -239,7 +260,7 @@ export class PreviewFetchError extends Error {
 }
 
 // @public
-export type PreviewFetchFailureReason = 'http' | 'network' | 'timeout' | 'aborted' | 'invalid-json' | 'no-fetch';
+export type PreviewFetchFailureReason = 'http' | 'network' | 'timeout' | 'aborted' | 'invalid-json' | 'no-fetch' | 'scope';
 
 // @public
 export type PreviewFetchFunction = (input: string, init: {
@@ -391,6 +412,7 @@ export type PreviewWhereValue = string | number | boolean | null | readonly (str
 export interface ReadDocumentOptions extends PreviewReadOptions {
     // (undocumented)
     readonly collection: string;
+    readonly id?: string | number;
     // (undocumented)
     readonly where?: PreviewWhere;
 }

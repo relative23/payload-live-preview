@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
-import { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from '@core/islands';
+import {
+  dispatchIslandUpdate,
+  ISLAND_EVENT,
+  isInsideIsland,
+  type IslandUpdateDetail,
+} from '@core/islands';
 import type { FieldRenderer } from '@core/types';
 
 /**
@@ -57,7 +62,7 @@ function afterUpdate(): Promise<void> {
     });
   });
 }
-function start(extra: { skipUnchanged?: boolean } = {}): void {
+function start(extra: { scopeBindingsByOwner?: boolean; skipUnchanged?: boolean } = {}): void {
   runtime = new LivePreviewRuntime({
     ...extra,
     renderers: { text: textRenderer },
@@ -91,6 +96,23 @@ describe('isInsideIsland', () => {
     expect(isInsideIsland(by('b'))).toBe(true);
     expect(isInsideIsland(by('c'))).toBe(false);
     expect(isInsideIsland(by('d'))).toBe(false);
+  });
+
+  it('does not begin an island fanout after its revision became stale', () => {
+    const island = document.createElement('astro-island');
+    let events = 0;
+    island.addEventListener(ISLAND_EVENT, () => {
+      events += 1;
+    });
+
+    expect(
+      dispatchIslandUpdate(
+        [island],
+        { fields: { title: 'stale' }, revision: 1, receivedAt: 1, locale: undefined },
+        () => false,
+      ),
+    ).toBe(0);
+    expect(events).toBe(0);
   });
 });
 
@@ -134,6 +156,192 @@ describe('runtime and islands', () => {
     await waitFor(() => received.length === 1);
     expect(received[0]).toMatchObject({ fields: { title: 'new' } });
     expect(document.querySelector('astro-island p')?.textContent).toBe('island');
+  });
+
+  it('sends an owned document only to its own islands when owner scoping is on', async () => {
+    document.body.innerHTML =
+      '<astro-island id="own" data-payload-owner="global:home"></astro-island>' +
+      '<astro-island id="foreign" data-payload-owner="global:other"></astro-island>' +
+      '<astro-island id="unowned"></astro-island>';
+    start({ scopeBindingsByOwner: true });
+    const received = new Map<string, IslandUpdateDetail[]>();
+    for (const island of document.querySelectorAll('astro-island')) {
+      const events: IslandUpdateDetail[] = [];
+      received.set(island.id, events);
+      island.addEventListener(ISLAND_EVENT, (event) => {
+        events.push((event as CustomEvent<IslandUpdateDetail>).detail);
+      });
+    }
+
+    post({ title: 'home draft' }, { globalSlug: 'home' });
+    await waitFor(() => received.get('own')?.length === 1);
+
+    expect(received.get('own')).toHaveLength(1);
+    expect(received.get('foreign')).toHaveLength(0);
+    expect(received.get('unowned')).toHaveLength(0);
+  });
+
+  it('keeps island fanout global when owner scoping is off', async () => {
+    document.body.innerHTML =
+      '<astro-island id="own" data-payload-owner="global:home"></astro-island>' +
+      '<astro-island id="foreign" data-payload-owner="global:other"></astro-island>' +
+      '<astro-island id="unowned"></astro-island>';
+    start();
+    const received: string[] = [];
+    for (const island of document.querySelectorAll('astro-island')) {
+      island.addEventListener(ISLAND_EVENT, () => {
+        received.push(island.id);
+      });
+    }
+
+    post({ title: 'home draft' }, { globalSlug: 'home' });
+    await waitFor(() => received.length === 3);
+
+    expect(received).toEqual(['own', 'foreign', 'unowned']);
+  });
+
+  it('owner-filters islands that stream in while Astro hydration is pending', async () => {
+    document.body.innerHTML =
+      '<section data-payload-owner="global:home"><p data-payload-field="title">saved</p></section>';
+    start({ scopeBindingsByOwner: true });
+    const first = afterUpdate();
+    post({ title: 'home draft' }, { globalSlug: 'home' });
+    await first;
+    runtime?.navigationCommit();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+
+    const received = new Map<string, IslandUpdateDetail[]>();
+    for (const [id, owner] of [
+      ['own', 'global:home'],
+      ['foreign', 'global:other'],
+      ['unowned', undefined],
+    ] as const) {
+      const island = document.createElement('astro-island');
+      island.id = id;
+      island.setAttribute('ssr', '');
+      if (owner !== undefined) island.setAttribute('data-payload-owner', owner);
+      const events: IslandUpdateDetail[] = [];
+      received.set(id, events);
+      island.addEventListener(ISLAND_EVENT, (event) => {
+        events.push((event as CustomEvent<IslandUpdateDetail>).detail);
+      });
+      document.body.append(island);
+    }
+    await waitFor(() => runtime?.cache.islands.length === 3);
+    for (const island of document.querySelectorAll('astro-island')) {
+      island.removeAttribute('ssr');
+    }
+    await waitFor(() => received.get('own')?.length === 1);
+
+    expect(received.get('own')?.[0]).toMatchObject({ fields: { title: 'home draft' } });
+    expect(received.get('foreign')).toHaveLength(0);
+    expect(received.get('unowned')).toHaveLength(0);
+  });
+
+  it('replays the retained document when an island retargets to the current owner', async () => {
+    document.body.innerHTML =
+      '<section data-payload-owner="global:home"><p data-payload-field="title">saved</p></section>' +
+      '<astro-island data-payload-owner="global:other"></astro-island>';
+    let cacheRefreshes = 0;
+    emitter.on('cacheRefresh', () => {
+      cacheRefreshes += 1;
+    });
+    start({ scopeBindingsByOwner: true });
+    const island = document.querySelector('astro-island');
+    if (island === null) throw new Error('island missing');
+    const received: IslandUpdateDetail[] = [];
+    island.addEventListener(ISLAND_EVENT, (event) => {
+      received.push((event as CustomEvent<IslandUpdateDetail>).detail);
+    });
+    const first = afterUpdate();
+    post({ title: 'home draft' }, { globalSlug: 'home' });
+    await first;
+    runtime?.navigationCommit();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(received).toHaveLength(0);
+
+    const refreshesBeforeRetarget = cacheRefreshes;
+    island.setAttribute('data-payload-owner', 'global:home');
+    await waitFor(() => cacheRefreshes > refreshesBeforeRetarget);
+    await waitFor(() => received.length === 1);
+
+    expect(received).toHaveLength(1);
+    expect(received[0]).toMatchObject({ fields: { title: 'home draft' } });
+  });
+
+  it('does not replay an owner retarget when owner scoping is off', async () => {
+    document.body.innerHTML = '<astro-island data-payload-owner="global:other"></astro-island>';
+    let cacheRefreshes = 0;
+    emitter.on('cacheRefresh', () => {
+      cacheRefreshes += 1;
+    });
+    start();
+    const island = document.querySelector('astro-island');
+    if (island === null) throw new Error('island missing');
+    const received: IslandUpdateDetail[] = [];
+    island.addEventListener(ISLAND_EVENT, (event) => {
+      received.push((event as CustomEvent<IslandUpdateDetail>).detail);
+    });
+    post({ title: 'home draft' }, { globalSlug: 'home' });
+    await waitFor(() => received.length === 1);
+    runtime?.navigationCommit();
+    await waitFor(() => received.length === 2);
+
+    const refreshesBeforeRetarget = cacheRefreshes;
+    island.setAttribute('data-payload-owner', 'global:home');
+    await waitFor(() => cacheRefreshes > refreshesBeforeRetarget);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 25);
+    });
+
+    expect(received).toHaveLength(2);
+  });
+
+  it('stops a stale island fanout when its first listener accepts a newer document', async () => {
+    document.body.innerHTML =
+      '<astro-island id="first"></astro-island><astro-island id="second"></astro-island>';
+    start();
+    const secondReceived: string[] = [];
+    document.getElementById('first')?.addEventListener(ISLAND_EVENT, (event) => {
+      const detail = (event as CustomEvent<IslandUpdateDetail>).detail;
+      if (detail.fields['title'] === 'older') post({ title: 'newer' });
+    });
+    document.getElementById('second')?.addEventListener(ISLAND_EVENT, (event) => {
+      const detail = (event as CustomEvent<IslandUpdateDetail>).detail;
+      secondReceived.push(String(detail.fields['title']));
+    });
+
+    post({ title: 'older' });
+    await waitFor(() => secondReceived.includes('newer'));
+
+    expect(secondReceived).toEqual(['newer']);
+  });
+
+  it('hands an update received during initial Astro hydration to the hydrated island', async () => {
+    document.body.innerHTML =
+      '<astro-island ssr><p data-payload-field="title">server</p></astro-island>';
+    start();
+    post({ title: 'unsaved while hydrating' });
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+
+    const island = document.querySelector('astro-island');
+    if (island === null) throw new Error('island missing');
+    const received: IslandUpdateDetail[] = [];
+    island.addEventListener(ISLAND_EVENT, (event) => {
+      received.push((event as CustomEvent<IslandUpdateDetail>).detail);
+    });
+    island.removeAttribute('ssr');
+    island.dispatchEvent(new CustomEvent('astro:hydrate'));
+    await waitFor(() => received.length > 0);
+
+    expect(received).toHaveLength(1);
+    expect(received[0]).toMatchObject({ fields: { title: 'unsaved while hydrating' } });
   });
 
   it('with skipUnchanged, a field only an island shows still reaches it', async () => {
@@ -187,5 +395,36 @@ describe('runtime and islands', () => {
     await done;
     expect(document.querySelector('p')?.textContent).toBe('new');
     expect(events).toBe(0);
+  });
+
+  it('rebuilds ownership when data-payload-island toggles between boundary and patch', async () => {
+    document.body.innerHTML = '<div id="dynamic"><p data-payload-field="title">published</p></div>';
+    start();
+    const island = document.getElementById('dynamic');
+    const binding = island?.querySelector('p');
+    if (island === null || binding === null || binding === undefined) {
+      throw new Error('fixture missing');
+    }
+    const received: IslandUpdateDetail[] = [];
+    island.addEventListener(ISLAND_EVENT, (event) => {
+      received.push((event as CustomEvent<IslandUpdateDetail>).detail);
+    });
+
+    island.setAttribute('data-payload-island', '');
+    await waitFor(() => runtime?.cache.islands.includes(island) === true);
+    post({ title: 'owned' });
+    await waitFor(() => received.length === 1);
+
+    expect(binding.textContent).toBe('published');
+    expect(received[0]).toMatchObject({ fields: { title: 'owned' } });
+
+    island.setAttribute('data-payload-island', 'patch');
+    await waitFor(() => runtime?.cache.has(binding) === true);
+    const done = afterUpdate();
+    post({ title: 'patched' });
+    await done;
+
+    expect(binding.textContent).toBe('patched');
+    expect(received).toHaveLength(1);
   });
 });

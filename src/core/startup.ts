@@ -99,6 +99,11 @@ function startHydrated(host: StartupHost, outcome: HydrationOutcome): void {
 }
 
 /** Node types are stable across realms; global constructors are not. */
-function isDocumentRoot(root: Document | Element): root is Document {
+export function isDocumentRoot(root: Document | Element): root is Document {
   return root.nodeType === 9;
+}
+
+/** Unlike lib.dom's declaration, a document running in `<head>` may not have a body yet. */
+export function readDocumentBody(root: Document): HTMLElement | null {
+  return root.body;
 }

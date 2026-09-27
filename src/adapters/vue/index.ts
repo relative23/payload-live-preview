@@ -5,8 +5,9 @@
  * session that belongs to this call alone (ADR 0002).
  *
  * The same `DocumentSession` the React hook uses; only the reactivity is Vue's.
- * It touches no DOM: a composable re-renders your components, which is the
- * other side of the trade the runtime makes (docs/vue.md).
+ * It touches no DOM. Vue preserves component and DOM state while type, key and
+ * position stay stable; a remount or replacement loses the state that node or
+ * component held (docs/vue.md).
  *
  * `vue` is an optional peer. This entry and the Nuxt fragment renderer are the
  * only places that need it.
@@ -23,7 +24,7 @@ import {
 export type { DocumentSessionOptions, DocumentSnapshot, DocumentStatus };
 
 export interface UseLivePreviewDocumentOptions<T> extends DocumentSessionOptions {
-  /** The document the page was rendered from; returned until an update merges. */
+  /** The document this session starts from; create a new composable instance to switch documents. */
   readonly initialData: T;
 }
 
@@ -44,8 +45,8 @@ export interface LivePreviewDocumentRefs<T> {
  * ```vue
  * <script setup lang="ts">
  * const { data, status } = useLivePreviewDocument<Page>({
- *   serverURL: import.meta.env.PUBLIC_PAYLOAD_URL,
- *   allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_URL],
+ *   serverURL: import.meta.env.VITE_PAYLOAD_URL,
+ *   allowedOrigins: [import.meta.env.VITE_PAYLOAD_ADMIN_ORIGIN],
  *   initialData: page,
  *   depth: 1,
  * });

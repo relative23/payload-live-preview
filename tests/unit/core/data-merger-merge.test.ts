@@ -135,14 +135,17 @@ describe('DataMerger.merge', () => {
   });
   it('fails closed before fetching when a slug is invalid', async () => {
     const fetchFn = vi.fn();
+    const log = vi.fn();
     const merger = new DataMerger({
       serverURL: 'https://cms.example.com',
       fetchFn: fetchFn,
+      log,
     });
     await expect(merger.merge({ collectionSlug: '../users', data: { id: '42' } })).resolves.toEqual(
       { status: 'unavailable' },
     );
     expect(fetchFn).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
   });
   it('returns unavailable on HTTP errors so callers fall back to raw values', async () => {
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse({}, 500));

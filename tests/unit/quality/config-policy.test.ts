@@ -30,6 +30,21 @@ describe('test runner policy', () => {
     expect(eslintConfig).toMatch(/ignores:\s*\[[\s\S]*['"]\.stryker-tmp\/\*\*['"]/u);
   });
 
+  it('gives plain-JS runners a configured project without an out-of-project allowance', () => {
+    const scriptsConfig = JSON.parse(readRepositoryFile('scripts/tsconfig.json')) as {
+      extends: string;
+      compilerOptions: { allowJs: boolean };
+      include: string[];
+    };
+    expect(scriptsConfig.extends).toBe('../tsconfig.json');
+    expect(scriptsConfig.compilerOptions.allowJs).toBe(true);
+    expect(scriptsConfig.include).toEqual(['**/*.ts', '*.mjs']);
+    const eslintConfig = readRepositoryFile('eslint.config.js');
+    expect(eslintConfig).toContain('projectService: true');
+    expect(eslintConfig).not.toContain('allowDefaultProject');
+    expect(eslintConfig).not.toContain('maximumDefaultProjectFileMatchCount');
+  });
+
   it('generates the runtime before any test run and never on consumer install', () => {
     const manifest = JSON.parse(readRepositoryFile('package.json')) as {
       scripts: Record<string, string>;
@@ -40,5 +55,14 @@ describe('test runner policy', () => {
     for (const hook of ['preinstall', 'install', 'postinstall', 'prepare', 'prepack', 'postpack']) {
       expect(manifest.scripts[hook]).toBeUndefined();
     }
+  });
+
+  it('moves the soak fixture with the shared local Astro port override', () => {
+    const soakConfig = readRepositoryFile('playwright.soak.config.ts');
+
+    expect(soakConfig).toContain("process.env['PLP_E2E_PORT'] ?? '4173'");
+    expect(soakConfig).toContain('baseURL: `http://localhost:${astroPort}`');
+    expect(soakConfig).toContain('npx astro preview --host --port ${astroPort}');
+    expect(soakConfig).toContain('url: `http://localhost:${astroPort}/admin`');
   });
 });

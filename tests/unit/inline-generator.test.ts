@@ -72,7 +72,7 @@ describe('generateInlineScript', () => {
 
     // Appending keeps every existing slot at its established index, so a page
     // still serving an older config literal keeps its meaning.
-    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
+    expect(config).toHaveLength(25);
     expect(config[13]).toBe(true);
     expect(config.slice(0, 13).every((value) => value === undefined)).toBe(true);
   });
@@ -81,7 +81,7 @@ describe('generateInlineScript', () => {
     const script = generateInlineScript({ skipUnchanged: true });
     const config = generatedConfig(script);
 
-    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
+    expect(config).toHaveLength(25);
     expect(config[14]).toBe(true);
     expect(config.slice(0, 14).every((value) => value === undefined)).toBe(true);
   });
@@ -90,7 +90,7 @@ describe('generateInlineScript', () => {
     const script = generateInlineScript({ fragmentEndpoint: '/payload/fragment' });
     const config = generatedConfig(script);
 
-    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
+    expect(config).toHaveLength(25);
     expect(config[17]).toBe('/payload/fragment');
     expect(config.slice(0, 17).every((value) => value === undefined)).toBe(true);
     expect(script).not.toBe(generateInlineScript());
@@ -104,7 +104,7 @@ describe('generateInlineScript', () => {
     const script = generateInlineScript({ hydration: 'react' });
     const config = generatedConfig(script);
 
-    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
+    expect(config).toHaveLength(25);
     expect(config[23]).toBe('react');
     expect(config.slice(0, 23).every((value) => value === undefined)).toBe(true);
     expect(script).not.toContain('var __LIVE_PREVIEW_HYDRATION__=');
@@ -117,7 +117,7 @@ describe('generateInlineScript', () => {
     const script = generateInlineScript({ routeStrategy: true });
     const config = generatedConfig(script);
 
-    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
+    expect(config).toHaveLength(25);
     expect(config[19]).toBe(true);
     expect(script).toContain('var __LIVE_PREVIEW_ROUTE__=');
     expect(script).not.toContain('var __LIVE_PREVIEW_FRAGMENT__=');
@@ -195,7 +195,7 @@ describe('generateInlineScript', () => {
       debug: true,
     } as unknown as InlineScriptConfig;
     const config = generatedConfig(generateInlineScript(nullish));
-    expect(config).toHaveLength(INLINE_CONFIG_KEYS.length);
+    expect(config).toHaveLength(25);
     expect(config.slice(0, 4).every((value) => value === undefined)).toBe(true);
     expect(config[4]).toBe(true);
     expect(generateInlineScript(nullish).split('\n', 1)[0]).not.toContain('null');
@@ -208,7 +208,7 @@ describe('generateInlineScript', () => {
   });
 
   it('writes the slots in INLINE_CONFIG_KEYS order, the one table the runtime destructures', () => {
-    expect(INLINE_CONFIG_KEYS).toHaveLength(25);
+    expect(INLINE_CONFIG_KEYS).toHaveLength(26);
     expect(INLINE_CONFIG_KEYS.indexOf('fragmentEndpoint')).toBe(17);
     expect(INLINE_CONFIG_KEYS.indexOf('revealEditedField')).toBe(18);
     expect(INLINE_CONFIG_KEYS.indexOf('routeStrategy')).toBe(19);
@@ -217,6 +217,7 @@ describe('generateInlineScript', () => {
     expect(INLINE_CONFIG_KEYS.indexOf('autoBind')).toBe(22);
     expect(INLINE_CONFIG_KEYS.indexOf('hydration')).toBe(23);
     expect(INLINE_CONFIG_KEYS.indexOf('defaults')).toBe(24);
+    expect(INLINE_CONFIG_KEYS.indexOf('softNavigationEvents')).toBe(25);
     const every = Object.fromEntries(
       INLINE_CONFIG_KEYS.map((key, index) => [key, `slot-${String(index)}`]),
     ) as unknown as InlineScriptConfig;
@@ -225,12 +226,20 @@ describe('generateInlineScript', () => {
     );
   });
 
-  it('names the defaults it resolved against in the last slot, always', () => {
+  it('names the defaults it resolved against in slot 24, before appended rows', () => {
     const slot = INLINE_CONFIG_KEYS.indexOf('defaults');
-    expect(slot).toBe(INLINE_CONFIG_KEYS.length - 1);
+    expect(slot).toBe(24);
     expect(generatedConfig(generateInlineScript())[slot]).toBe('v2');
     expect(generatedConfig(generateInlineScript({ defaults: 'v2' }))[slot]).toBe('v2');
     expect(generatedConfig(generateInlineScript({ defaults: 'v1' }))[slot]).toBe('v1');
+  });
+
+  it('appends soft-navigation events without shifting the defaults slot', () => {
+    const config = generatedConfig(
+      generateInlineScript({ softNavigationEvents: ['astro:page-load'] }),
+    );
+    expect(config[24]).toBe('v2');
+    expect(config[25]).toEqual(['astro:page-load']);
   });
 
   it("writes the 1.x runtime rows under `defaults: 'v1'`: the runtime's own fallbacks are the 2.0 ones", () => {

@@ -7,6 +7,7 @@
  */
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
+import { hasSameBindingIdentity } from './cache';
 import { usesNoWriteOutcome } from './internal-outcome';
 import { type MessageRevision, sameRevision } from './message-bus';
 import type { CachedElement } from './types';
@@ -347,7 +348,7 @@ export class UpdateScheduler {
   private retargetBuffer(buffer: Map<Element, BufferEntry>, target: CachedElement): void {
     const entry = buffer.get(target.element);
     if (entry === undefined) return;
-    if (entry.target.fieldName !== target.fieldName || entry.target.locale !== target.locale) {
+    if (!hasSameBindingIdentity(entry.target, target)) {
       buffer.delete(target.element);
       return;
     }

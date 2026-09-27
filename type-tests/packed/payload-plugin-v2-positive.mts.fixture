@@ -1,0 +1,33 @@
+import { livePreview, type LivePreviewBreakpoint } from 'payload-live-preview/plugin';
+import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import type { LivePreviewConfig, Plugin } from 'payload/config';
+
+type PayloadLivePreviewUrl = Exclude<NonNullable<LivePreviewConfig['url']>, string>;
+
+const breakpoint = {
+  name: 'fluid',
+  label: 'Fluid',
+  width: '100%',
+  height: '75vh',
+} satisfies LivePreviewBreakpoint;
+const payloadBreakpoint: NonNullable<LivePreviewConfig['breakpoints']>[number] = breakpoint;
+const transform = livePreview({
+  baseUrl: 'https://site.example',
+  collections: { posts: '/posts' },
+  breakpoints: [breakpoint],
+});
+const payloadPlugin: Plugin = transform;
+const callback: PayloadLivePreviewUrl = buildLivePreviewUrl({
+  baseUrl: 'https://site.example',
+  collections: { posts: ({ data }) => `/posts/${String(data['slug'] ?? '')}` },
+});
+const nullableCallback = buildLivePreviewUrl({
+  baseUrl: 'https://site.example',
+  collections: { posts: ({ data }) => (data['slug'] ? `/posts/${String(data['slug'])}` : null) },
+  fallback: null,
+});
+// Payload 2.32.3's published callback type cannot represent a declined route.
+// @ts-expect-error The nullable helper overload is a Payload 3 callback contract.
+const nullablePayload2Callback: PayloadLivePreviewUrl = nullableCallback;
+
+void [callback, nullablePayload2Callback, payloadBreakpoint, payloadPlugin];

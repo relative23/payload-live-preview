@@ -72,6 +72,55 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     expect(log.mock.calls.flat().join(' ')).not.toContain('update failed');
   });
 
+  it('replays an update dispatched by merge abort after a navigation boundary', async () => {
+    document.body.innerHTML = `<h1 data-payload-field="title">published</h1>${POPULATED}`;
+    const firstResponse = deferred<Response>();
+    const fetchFn = vi.fn<typeof fetch>((_input, init) => {
+      if (fetchFn.mock.calls.length === 1) {
+        init?.signal?.addEventListener(
+          'abort',
+          () => {
+            fireMessage({
+              type: 'payload-live-preview',
+              collectionSlug: 'posts',
+              data: { id: '1', title: 'reentrant newer', venue: 1 },
+            });
+          },
+          { once: true },
+        );
+        return firstResponse.promise;
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({ id: '1', title: 'reentrant newer', venue: { title: 'Venue' } }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      );
+    });
+    const runtime = makeRuntime({
+      debounceMs: 0,
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn },
+    });
+    runtime.start();
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: '1', title: 'old pending merge', venue: 1 },
+    });
+    await Promise.resolve();
+    expect(fetchFn).toHaveBeenCalledOnce();
+
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(document.querySelector('h1')?.textContent).toBe('reentrant newer');
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    firstResponse.resolve(
+      new Response(JSON.stringify({ id: '1', title: 'stale', venue: { title: 'Stale' } })),
+    );
+    runtime.destroy();
+  });
+
   it('logs an unexpected failure in the update pipeline instead of letting it escape', async () => {
     // Nothing awaits the pipeline, so without a boundary a throw here would
     // surface as an unhandled rejection: a console error the host cannot

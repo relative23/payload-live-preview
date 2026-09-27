@@ -75,7 +75,7 @@ describe('refresh', () => {
       location: { href: 'https://site.example.com/page?preview=true' },
       window: { scrollX: 0, scrollY: 400, scrollTo },
     });
-    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(await strategy.refresh(context())).toBe('partial');
     const [url, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('https://site.example.com/page?preview=true');
     expect(init.credentials).toBe('same-origin');
@@ -109,7 +109,7 @@ describe('refresh', () => {
       location: { href: 'https://site.example.com/' },
       window: { scrollX: 0, scrollY: 0, scrollTo: () => {} },
     });
-    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(await strategy.refresh(context())).toBe('partial');
     expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('/new');
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex');
     document.head.innerHTML = '';
@@ -124,7 +124,7 @@ describe('refresh', () => {
       window: { scrollX: 0, scrollY: 0, scrollTo: () => {} },
       minIntervalMs: 1_000,
     });
-    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(await strategy.refresh(context())).toBe('partial');
     expect(
       await strategy.refresh(
         context({
@@ -151,7 +151,7 @@ describe('refresh', () => {
       window: { scrollX: 0, scrollY: 0, scrollTo: () => {} },
       minIntervalMs: 1_000,
     });
-    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(await strategy.refresh(context())).toBe('partial');
     expect(await strategy.refresh(context({ revision: 4 }))).toBe('refused');
     expect(fetchFn).toHaveBeenCalledTimes(1);
   });
@@ -202,6 +202,24 @@ const BASE = {
   window: { scrollX: 0, scrollY: 0, scrollTo: () => {} },
   minIntervalMs: 0,
 };
+
+function managedHeadSnapshot(): readonly string[] {
+  return Array.from(document.head.children)
+    .filter(
+      (element) =>
+        !element.hasAttribute('data-payload-owned') &&
+        ((element.tagName === 'META' &&
+          (element.hasAttribute('name') || element.hasAttribute('property'))) ||
+          (element.tagName === 'LINK' && element.getAttribute('rel') === 'canonical')),
+    )
+    .map((element) => {
+      const attributes = Array.from(element.attributes)
+        .map(({ name, value }) => `${name}=${value}`)
+        .sort()
+        .join('|');
+      return `${element.tagName}:${attributes}`;
+    });
+}
 
 /** An HTML response whose body streams and errors on abort, as a real fetch body does. */
 function streamingHtml(head: string, init?: RequestInit, fail?: Error): Response {
@@ -278,7 +296,7 @@ describe('refresh — head sync and body pairing', () => {
           html('<p>y</p>', '<title>t</title><meta name="description" content="fresh">'),
         ),
     });
-    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(await strategy.refresh(context())).toBe('partial');
     expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
       'fresh',
     );
@@ -287,6 +305,131 @@ describe('refresh — head sync and body pairing', () => {
       'script',
     );
     expect(document.querySelector('meta[charset]')).not.toBeNull();
+    document.head.innerHTML = '';
+  });
+
+  it('matches the ordered managed multiset, including complete attributes, and is idempotent', async () => {
+    document.head.innerHTML =
+      '<title data-live="kept">Old</title>' +
+      '<meta name="og:image" content="/first-old.png" data-stale="yes">' +
+      '<script id="foreign">window.keep = true</script>' +
+      '<meta property="og:image" content="/second-old.png">' +
+      '<link rel="canonical" href="/old" data-stale="yes">';
+    document.body.innerHTML = '<p>old</p>';
+    const foreign = document.getElementById('foreign');
+    const freshHead =
+      '<title data-fresh="ignored">Fresh</title>' +
+      '<meta property="og:image" content="/second.png" data-order="1">' +
+      '<meta property="og:image" content="/first.png" data-order="2">' +
+      '<meta property="og:image" content="/third.png" data-order="3">' +
+      '<link rel="canonical" href="/new" hreflang="en">';
+    const strategy = createRouteStrategy({
+      ...BASE,
+      fetch: () => Promise.resolve(html('<p>fresh</p>', freshHead)),
+    });
+
+    expect(await strategy.refresh(context())).toBe('partial');
+    const expected = Array.from(
+      new DOMParser().parseFromString(`<head>${freshHead}</head>`, 'text/html').head.children,
+    )
+      .filter((element) => element.tagName !== 'TITLE')
+      .map((element) => {
+        const attributes = Array.from(element.attributes)
+          .map(({ name, value }) => `${name}=${value}`)
+          .sort()
+          .join('|');
+        return `${element.tagName}:${attributes}`;
+      });
+    expect(managedHeadSnapshot()).toEqual(expected);
+    expect(document.querySelector('meta[name="og:image"]')).toBeNull();
+    expect(document.querySelector('[data-stale]')).toBeNull();
+    expect(document.getElementById('foreign')).toBe(foreign);
+    expect(document.querySelector('title')?.getAttribute('data-live')).toBe('kept');
+
+    const mutations: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => mutations.push(...records));
+    observer.observe(document.head, { attributes: true, childList: true, subtree: true });
+    expect(await strategy.refresh(context({ revision: 4 }))).toBe('partial');
+    await Promise.resolve();
+    mutations.push(...observer.takeRecords());
+    expect(mutations).toEqual([]);
+    observer.disconnect();
+
+    const remove = createRouteStrategy({
+      ...BASE,
+      fetch: () => Promise.resolve(html('<p>fresh</p>', '<title>Fresh</title>')),
+    });
+    expect(await remove.refresh(context({ revision: 5 }))).toBe('partial');
+    expect(managedHeadSnapshot()).toEqual([]);
+    document.head.innerHTML = '';
+  });
+
+  it('does not move or change owned, security, script, style, nested or noncanonical tags', async () => {
+    document.head.innerHTML =
+      '<title data-payload-owned>Owned title</title>' +
+      '<meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="live-src">' +
+      '<meta property="og:image" content="/owned.png" data-payload-owned>' +
+      '<script id="script">live()</script><style id="style">.live{}</style>' +
+      '<link id="alternate" rel="alternate" href="/live-alt">' +
+      '<link rel="canonical" href="/owned" data-payload-owned>';
+    const nestedHost = document.createElement('div');
+    nestedHost.innerHTML = '<meta name="nested" content="live">';
+    document.head.append(nestedHost);
+    const untouched = Array.from(document.head.children);
+    const strategy = createRouteStrategy({
+      ...BASE,
+      fetch: () =>
+        Promise.resolve(
+          html(
+            '<p>fresh</p>',
+            '<title>Fresh title</title><meta charset="iso-8859-1">' +
+              '<meta http-equiv="Content-Security-Policy" content="fresh-src">' +
+              '<script id="script">fresh()</script><style id="style">.fresh{}</style>' +
+              '<meta property="og:image" content="/fresh.png">' +
+              '<meta name="ignored" content="fresh" data-payload-owned>' +
+              '<link rel="canonical" href="/fresh"><link rel="alternate" href="/fresh-alt">',
+          ),
+        ),
+    });
+
+    expect(await strategy.refresh(context())).toBe('partial');
+    expect(Array.from(document.head.children).slice(0, untouched.length)).toEqual(untouched);
+    expect(document.title).toBe('Owned title');
+    expect(document.querySelector('meta[charset]')?.getAttribute('charset')).toBe('utf-8');
+    expect(document.querySelector('meta[http-equiv]')?.getAttribute('content')).toBe('live-src');
+    expect(document.getElementById('script')?.textContent).toBe('live()');
+    expect(document.getElementById('style')?.textContent).toBe('.live{}');
+    expect(document.getElementById('alternate')?.getAttribute('href')).toBe('/live-alt');
+    expect(nestedHost.querySelector('meta[name="nested"]')?.getAttribute('content')).toBe('live');
+    expect(document.querySelector('meta[name="ignored"]')).toBeNull();
+    expect(document.querySelectorAll('meta[property="og:image"]')).toHaveLength(2);
+    expect(document.querySelectorAll('link[rel="canonical"]')).toHaveLength(2);
+    document.head.innerHTML = '';
+  });
+
+  it('does not let a superseded response replace the newer head', async () => {
+    document.head.innerHTML = '<title>Newer</title><meta property="og:image" content="/newer.png">';
+    document.body.innerHTML = '<p>newer</p>';
+    const mutations: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => mutations.push(...records));
+    observer.observe(document.head, { attributes: true, childList: true, subtree: true });
+    const strategy = createRouteStrategy({
+      ...BASE,
+      fetch: () =>
+        Promise.resolve(
+          html('<p>late</p>', '<title>Late</title><meta property="og:image" content="/late.png">'),
+        ),
+    });
+
+    expect(await strategy.refresh(context({ isCurrent: () => false }))).toBe('superseded');
+    expect(document.title).toBe('Newer');
+    expect(document.querySelector('meta[property="og:image"]')?.getAttribute('content')).toBe(
+      '/newer.png',
+    );
+    await Promise.resolve();
+    mutations.push(...observer.takeRecords());
+    expect(mutations).toEqual([]);
+    observer.disconnect();
     document.head.innerHTML = '';
   });
 
@@ -306,7 +449,7 @@ describe('refresh — head sync and body pairing', () => {
           ),
         ),
     });
-    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(await strategy.refresh(context())).toBe('partial');
     const sections = Array.from(document.body.querySelectorAll('section'));
     expect(sections.map((section) => section.getAttribute('data-payload-fragment-key'))).toEqual([
       'b',
@@ -371,7 +514,7 @@ describe('route refresh — timeout and head elements it does not own', () => {
       window: { scrollX: 0, scrollY: 0, scrollTo: () => {} },
       minIntervalMs: 0,
     });
-    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(await strategy.refresh(context())).toBe('partial');
 
     // Keyed elements are synced; a stylesheet is not something this owns.
     expect(document.title).toBe('Fresh title');
@@ -416,7 +559,7 @@ describe('refresh — a host that owns its own DOM', () => {
     // fresh markup, so it may not hear "refreshed" before the markup is there.
     expect(document.querySelector('[data-testid="layout"]')?.textContent).toBe('old');
     settle();
-    expect(await pending).toBe('refreshed');
+    expect(await pending).toBe('partial');
     expect(document.querySelector('[data-testid="layout"]')?.textContent).toBe('router render');
     expect(fetchFn).not.toHaveBeenCalled();
     expect(refresh).toHaveBeenCalledTimes(1);
@@ -440,7 +583,7 @@ describe('refresh — a host that owns its own DOM', () => {
     const undo = registerRouteRefresh(() => {});
     undo();
     const strategy = createRouteStrategy({ ...BASE, fetch: fetchFn });
-    expect(await strategy.refresh(context())).toBe('refreshed');
+    expect(await strategy.refresh(context())).toBe('partial');
     expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 });

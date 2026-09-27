@@ -5,10 +5,17 @@
  * scheduler so tests can run without the browser observer APIs.
  */
 
-import { BINDING_ATTRIBUTES, FIELD_ATTRIBUTE, OWNER_ATTRIBUTE } from './cache';
+import {
+  BINDING_ATTRIBUTES,
+  FIELD_ATTRIBUTE,
+  NAVIGATION_REPLAY_SELECTOR,
+  OWNER_ATTRIBUTE,
+} from './cache';
+import { ISLAND_ATTRIBUTE, ISLAND_SELECTOR } from './islands';
 
 export interface ObserverCallbacks {
   readonly onStructuralChange: () => void;
+  readonly onIslandHydrated?: (island: Element) => void;
   readonly onVisibilityChange: (element: Element, isVisible: boolean) => void;
 }
 
@@ -21,6 +28,7 @@ export interface ObserverOptions {
 
 const DEFAULT_DEBOUNCE_MS = 100;
 const DEFAULT_ROOT_MARGIN = '200px';
+const ASTRO_SSR_ATTRIBUTE = 'ssr';
 /** `nodeType` is stable across realms; the global `Node` constructor is not. */
 const ELEMENT_NODE = 1;
 
@@ -65,7 +73,7 @@ export class ObserverManager {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: [...BINDING_ATTRIBUTES],
+        attributeFilter: [...BINDING_ATTRIBUTES, ISLAND_ATTRIBUTE, ASTRO_SSR_ATTRIBUTE],
       });
     } catch (error) {
       mutation?.disconnect();
@@ -120,7 +128,14 @@ export class ObserverManager {
   }
 
   private handleMutations(mutations: readonly MutationRecord[], generation: number): void {
-    if (!this.isCurrentGeneration(generation) || !hasStructuralImpact(mutations)) return;
+    if (!this.isCurrentGeneration(generation)) return;
+    for (const mutation of mutations) {
+      const island = hydratedAstroIsland(mutation);
+      if (island === null) continue;
+      this.callbacks.onIslandHydrated?.(island);
+      if (!this.isCurrentGeneration(generation)) return;
+    }
+    if (!hasStructuralImpact(mutations)) return;
     if (this.debounceTimer !== null) clearTimeout(this.debounceTimer);
     const timer = setTimeout(() => {
       if (!this.isCurrentGeneration(generation) || this.debounceTimer !== timer) return;
@@ -153,9 +168,25 @@ export class ObserverManager {
   }
 }
 
+function hydratedAstroIsland(mutation: MutationRecord): Element | null {
+  if (
+    mutation.type !== 'attributes' ||
+    mutation.attributeName !== ASTRO_SSR_ATTRIBUTE ||
+    mutation.target.nodeType !== ELEMENT_NODE
+  ) {
+    return null;
+  }
+  const target = mutation.target as Element;
+  return target.tagName.toLowerCase() === 'astro-island' &&
+    !target.hasAttribute(ASTRO_SSR_ATTRIBUTE)
+    ? target
+    : null;
+}
+
 /** Whether a mutation batch can change what is bound; unrelated DOM activity never rebuilds. */
 function hasStructuralImpact(mutations: readonly MutationRecord[]): boolean {
   for (const m of mutations) {
+    if (m.type === 'attributes' && m.attributeName === ISLAND_ATTRIBUTE) return true;
     if (
       m.type === 'attributes' &&
       m.attributeName !== null &&
@@ -181,6 +212,11 @@ function containsTrackedElement(node: Node): boolean {
   if (node.nodeType !== ELEMENT_NODE) return false;
   const element = node as Element;
   return (
-    element.hasAttribute(FIELD_ATTRIBUTE) || element.querySelector(`[${FIELD_ATTRIBUTE}]`) !== null
+    element.hasAttribute(FIELD_ATTRIBUTE) ||
+    element.matches(ISLAND_SELECTOR) ||
+    element.matches(NAVIGATION_REPLAY_SELECTOR) ||
+    element.querySelector(
+      `[${FIELD_ATTRIBUTE}], ${ISLAND_SELECTOR}, ${NAVIGATION_REPLAY_SELECTOR}`,
+    ) !== null
   );
 }

@@ -21,6 +21,20 @@ function propertyExplorationTimeout(): number | undefined {
 const explorationTimeout = propertyExplorationTimeout();
 
 export default defineConfig({
+  plugins: [
+    {
+      name: 'unit-astro-compiler-boundary',
+      // Related-test discovery walks dynamic imports before test mocks exist.
+      // Only the native packed fixtures compile this exact internal template;
+      // fail closed if a unit test accidentally tries to execute it unmocked.
+      load(id) {
+        if (id !== resolve(import.meta.dirname, 'src/adapters/astro/FragmentBridge.astro')) {
+          return null;
+        }
+        return 'throw new Error("FragmentBridge.astro requires the native Astro compiler; mock it only in unit tests"); export default undefined;';
+      },
+    },
+  ],
   test: {
     environment: 'jsdom',
     globals: false,

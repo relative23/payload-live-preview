@@ -12,6 +12,7 @@ import { withCspHeader } from '@adapters/shared/response';
 import { authorizePreviewRequest } from '@security/preview-authorization';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
+import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
 
 const ADMIN = 'https://admin.example.com';
 
@@ -340,6 +341,7 @@ function wireConfig(script: string): unknown[] {
 }
 
 const HYDRATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('hydration');
+const SOFT_NAVIGATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('softNavigationEvents');
 
 /**
  * ADR 0015, addendum: a Nuxt page is a Vue app, so every script this adapter
@@ -351,6 +353,7 @@ describe('what the Nuxt adapter knows about the page', () => {
   it('declares Vue hydration in the rendered tag', () => {
     const script = renderLivePreviewScript({ allowedOrigins: [ADMIN], defaults: 'v1' });
     expect(wireConfig(script)[HYDRATION_SLOT_INDEX]).toBe('vue');
+    expect(wireConfig(script)[SOFT_NAVIGATION_SLOT_INDEX]).toEqual([NAVIGATION_COMMIT_EVENT]);
   });
 
   it('declares it in what the plugin injects', async () => {
@@ -358,6 +361,9 @@ describe('what the Nuxt adapter knows about the page', () => {
     livePreviewNitroPlugin({ allowedOrigins: [ADMIN], defaults: 'v1' })(nitro.app);
     const head = await nitro.render(event('/?preview=true'));
     expect(wireConfig(head.join(''))[HYDRATION_SLOT_INDEX]).toBe('vue');
+    expect(wireConfig(head.join(''))[SOFT_NAVIGATION_SLOT_INDEX]).toEqual([
+      NAVIGATION_COMMIT_EVENT,
+    ]);
   });
 
   it('keeps the plain bootstrap under asset delivery: the mount is state a late runtime reads', async () => {

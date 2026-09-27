@@ -1,9 +1,10 @@
 /**
  * Keyed DOM morph, the engine: edits a live element toward a freshly rendered
- * one while keeping the live nodes, and with them focus, selection, scroll,
- * playback and listeners. It pairs children by key or position, synchronises
- * attributes with the state exception and keeps focus across a move; which
- * subtrees it never enters is the coordinator's rule, handed in as
+ * one while retaining compatible, paired live nodes. Those nodes keep their
+ * live properties; an incompatible or unpaired node is replaced and loses
+ * them. It pairs children by key or position, synchronises attributes with the
+ * state exception and keeps focus across a retained move; which subtrees it
+ * never enters is the coordinator's rule, handed in as
  * `MorphOptions.boundary` and defaulting to the package's (`isMorphBoundary`
  * in islands.ts). See ADR 0008, §9 for the line between the two.
  */
@@ -22,9 +23,12 @@ export interface MorphOptions {
   /** Elements whose attributes are synchronised but whose children are left alone (nested structural slots). */
   readonly retainChildrenOf?: (live: Element, rendered: Element) => boolean;
   /**
-   * The ownership rule: an element this returns `true` for is retained whole
-   * and never entered (ADR 0008 §4). The package's rule — custom elements,
-   * islands, `contenteditable`, `data-payload-owned` — is the default.
+   * The ownership rule: a structurally compatible live/rendered pair for
+   * which this returns `true` on both sides is retained whole and never
+   * entered (ADR 0008 §4). The package's rule — custom elements, islands,
+   * `contenteditable`, `data-payload-owned` — is the default. A supplied rule
+   * replaces that default; compose it with the exported `isMorphBoundary`
+   * predicate to add package-compatible boundaries.
    */
   readonly boundary?: (element: Element) => boolean;
 }
@@ -60,7 +64,13 @@ export function isMorphCompatible(
  * @beta
  */
 export function morphElement(live: Element, rendered: Element, options: MorphOptions): Element {
-  if (!isMorphCompatible(live, rendered, options.boundary)) return rendered;
+  if (!sameKind(live, rendered)) return rendered;
+  const boundary = options.boundary ?? isMorphBoundary;
+  const liveBoundary = boundary(live);
+  const renderedBoundary = boundary(rendered);
+  if (liveBoundary || renderedBoundary) {
+    return liveBoundary && renderedBoundary ? live : rendered;
+  }
   const focus = captureFocus(live);
   syncAttributes(live, rendered);
   if (options.retainChildrenOf?.(live, rendered) !== true) morphChildren(live, rendered, options);
@@ -172,9 +182,6 @@ function morphChildren(live: Element, rendered: Element, options: MorphOptions):
 /** Retain `candidate` when it can be edited toward `next`; otherwise report `next`. */
 function reconcile(candidate: Node, next: Node, options: MorphOptions): Node {
   if (candidate instanceof Element && next instanceof Element) {
-    // A compatible boundary stays exactly as it is (ADR 0008 §4).
-    const boundary = options.boundary ?? isMorphBoundary;
-    if (boundary(candidate) && boundary(next)) return candidate;
     return morphElement(candidate, next, options);
   }
   if (candidate.nodeValue !== next.nodeValue) candidate.nodeValue = next.nodeValue;

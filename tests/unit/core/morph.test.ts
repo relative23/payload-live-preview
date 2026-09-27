@@ -35,6 +35,20 @@ describe('compatibility and boundaries', () => {
     expect(isMorphBoundary(el('<div></div>'))).toBe(false);
   });
 
+  it('morphs through an island that explicitly opted back into patching', () => {
+    const live = el('<main><div data-payload-island="patch"><span>published</span></div></main>');
+    const span = live.querySelector('span');
+
+    morphElement(
+      live,
+      el('<main><div data-payload-island="patch"><span>draft</span></div></main>'),
+      options,
+    );
+
+    expect(live.querySelector('span')).toBe(span);
+    expect(span?.textContent).toBe('draft');
+  });
+
   it('returns the rendered element when incompatible, without touching the live one', () => {
     const live = el('<li class="keep">a</li>');
     const rendered = el('<div>b</div>');

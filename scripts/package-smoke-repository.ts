@@ -14,7 +14,7 @@ import {
   findMaintainerInstallPolicyViolations,
   findPackageLockMetadataViolations,
   findPackageSmokeIsolationViolations,
-  LOCAL_FILE_PACKAGE_FIXTURES,
+  COPY_INSTALLED_LOCAL_FILE_PACKAGE_FIXTURES,
   MAINTAINER_INSTALL_POLICIES,
 } from './release-contracts';
 import { findWorkflowContractViolations, readWorkflowSources } from './workflow-contracts';
@@ -111,13 +111,15 @@ export async function verifyRepositoryPreconditions(
   if (rootLockMetadata === undefined) {
     throw new Error('root lock metadata is absent from the maintainer policy inventory');
   }
-  const fixtureLockMetadata = LOCAL_FILE_PACKAGE_FIXTURES.map(({ label, directory }) => {
-    const match = installPolicyInputs.find(({ policy }) => policy.directory === directory)?.input;
-    if (match === undefined) {
-      throw new Error(`${label} lock metadata is absent from the maintainer policy inventory`);
-    }
-    return match;
-  });
+  const fixtureLockMetadata = COPY_INSTALLED_LOCAL_FILE_PACKAGE_FIXTURES.map(
+    ({ label, directory, mode }) => {
+      const match = installPolicyInputs.find(({ policy }) => policy.directory === directory)?.input;
+      if (match === undefined) {
+        throw new Error(`${label} lock metadata is absent from the maintainer policy inventory`);
+      }
+      return { ...match, mode };
+    },
+  );
   for (const violation of findPackageLockMetadataViolations({
     root: rootLockMetadata,
     fixtures: fixtureLockMetadata,

@@ -5,6 +5,8 @@
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { trustedHtml } from '@security/trusted-types';
+import { isBindingInScope } from './binding-owner';
+import { resolveBindingOwner } from './cache';
 import { reportUnboundChange } from './fidelity';
 import { bindingValue } from './field-value';
 import { isMorphBoundary } from './islands';
@@ -35,6 +37,7 @@ export interface StrategyHost {
 export interface FragmentPlan {
   readonly boundaries: readonly Element[];
   readonly strategy: FragmentStrategy;
+  readonly ownerKeys: OwnerScope;
   /** Whether a binding sits inside a boundary the strategy renders this revision. */
   readonly covers: (target: CachedElement) => boolean;
 }
@@ -46,10 +49,15 @@ export class StrategyRunner {
     private readonly host: StrategyHost,
   ) {}
 
-  planFragments(touched: ReadonlySet<string>): FragmentPlan | null {
+  planFragments(touched: ReadonlySet<string>, ownerKeys: OwnerScope): FragmentPlan | null {
     const strategy = this.deps.strategies.fragment;
     if (strategy === undefined) return null;
-    return planBoundaries(strategy, strategy.plan(this.deps.root, touched));
+    const planned = strategy.plan(this.deps.root, touched);
+    const boundaries =
+      ownerKeys === false
+        ? planned
+        : planned.filter((boundary) => isBindingInScope(resolveBindingOwner(boundary), ownerKeys));
+    return planBoundaries(strategy, boundaries, ownerKeys);
   }
 
   /**
@@ -65,14 +73,21 @@ export class StrategyRunner {
     transaction: UpdateTransaction,
     data: PayloadLivePreviewData,
     targets: readonly CachedElement[],
+    ownerKeys: OwnerScope,
   ): void {
     if (transaction.routeRefreshed) return;
     const { fragment, route } = this.deps.strategies;
-    const boundaries = fragment === undefined ? undefined : coveringBoundaries(targets);
+    const covered = fragment === undefined ? undefined : coveringBoundaries(targets);
+    const boundaries =
+      covered === undefined ||
+      ownerKeys === false ||
+      covered.every((boundary) => isBindingInScope(resolveBindingOwner(boundary), ownerKeys))
+        ? covered
+        : undefined;
     if (fragment !== undefined && boundaries !== undefined) {
       this.state.escalatedCount += targets.length;
       transaction.pendingFragments += boundaries.length;
-      void this.runFragments(transaction, data, planBoundaries(fragment, boundaries));
+      void this.runFragments(transaction, data, planBoundaries(fragment, boundaries, ownerKeys));
       return;
     }
     if (route === undefined) {
@@ -156,7 +171,11 @@ export class StrategyRunner {
   ): Promise<void> {
     const { deps, state } = this;
     const controller = new AbortController();
-    state.fragmentController = controller;
+    state.fragmentControllers.add(controller);
+    const unsettled = new Set(plan.boundaries);
+    const settle = (boundary: Element): void => {
+      if (unsettled.delete(boundary)) transaction.pendingFragments -= 1;
+    };
     const isCurrent = (): boolean => state.isCurrent(transaction) && !controller.signal.aborted;
     const { emitter } = deps;
     const { message } = transaction;
@@ -177,13 +196,13 @@ export class StrategyRunner {
         deps.log('fragment', code, detail);
       },
       morph: (boundary, html) => {
-        morphFragment(boundary, html);
+        if (isCurrent()) morphFragment(boundary, html);
       },
       patch: (boundary) => {
-        this.patchFallback(transaction, data, boundary);
+        this.patchFallback(transaction, data, boundary, plan.ownerKeys, isCurrent);
       },
       rendered: (element, id, key) => {
-        transaction.pendingFragments -= 1;
+        settle(element);
         void emitter.emitWhile(
           'fragmentRender',
           { element, id, key, status: 'rendered', revision, receivedAt },
@@ -191,7 +210,7 @@ export class StrategyRunner {
         );
       },
       failed: (element, id, key, code, reason) => {
-        transaction.pendingFragments -= 1;
+        settle(element);
         const detail = `fragment "${id}" fell back to patch: ${reason}`;
         // Logged where the failure is, not where an exception would have been:
         // the supplied strategy answers a timeout or a refusal with an outcome
@@ -216,22 +235,26 @@ export class StrategyRunner {
     } catch (error) {
       deps.log('fragment', 'LP0801', error);
       if (isCurrent()) {
-        for (const boundary of plan.boundaries) this.patchFallback(transaction, data, boundary);
+        for (const boundary of plan.boundaries) {
+          this.patchFallback(transaction, data, boundary, plan.ownerKeys, isCurrent);
+        }
         report = { rendered: 0, failed: plan.boundaries.length, superseded: 0 };
       }
     }
     state.fragmentStats.rendered += report.rendered;
     state.fragmentStats.failed += report.failed;
     state.fragmentStats.superseded += report.superseded;
+    state.fragmentControllers.delete(controller);
+    for (const boundary of unsettled) settle(boundary);
     if (!isCurrent()) return;
-    if (state.fragmentController === controller) state.fragmentController = null;
-    transaction.pendingFragments = 0;
     // A rendered boundary holds the server's markup, which carries no stamp: the
     // guesses in it go back on, as after a refresh, before the revision counts
     // as complete. Without this a guess in a boundary did not outlive the first
     // message, which renders the boundary as well.
     if (report.rendered > 0) this.host.restoreGuesses(transaction, data);
-    if (deps.scheduler.pendingCount === 0) state.complete(transaction);
+    if (transaction.pendingFragments === 0 && deps.scheduler.pendingCount === 0) {
+      state.complete(transaction);
+    }
     // The edited field may be one the server just rendered: its element is only
     // in place now, so this is the earliest point it can be scrolled to.
     this.host.revealPending(transaction);
@@ -324,9 +347,10 @@ export class StrategyRunner {
     }
     if (!isCurrent()) return;
     if (state.routeController === controller) state.routeController = null;
-    if (outcome === 'refreshed') {
+    if (outcome === 'refreshed' || outcome === 'partial') {
       stats.refreshes += 1;
-      // The route rendered the saved document; nothing on the page is "last applied" any more.
+      if (outcome === 'partial') stats.partial += 1;
+      // Route markup has no local application identities; every prior stamp is stale.
       state.lastAppliedIdentity = new WeakMap();
       // The fresh markup carries no stamp: the guesses go back on before the
       // cache is rebuilt from it, or the rebuild would not know them.
@@ -339,8 +363,8 @@ export class StrategyRunner {
           'afterUpdate',
           {
             data,
-            // The server re-rendered the whole route, so every binding now on
-            // the page carries fresh markup; the unsaved fields scheduled just
+            // The strategy replaced the whole route, so every binding now on
+            // the page carries new markup; the unsaved fields scheduled just
             // above report themselves in their own `patch` batch.
             updatedCount: deps.cache.elementCount,
             durationMs: Date.now() - transaction.receivedAt,
@@ -377,15 +401,19 @@ export class StrategyRunner {
     transaction: UpdateTransaction,
     data: PayloadLivePreviewData,
     boundary: Element,
+    ownerKeys: OwnerScope,
+    isCurrent: () => boolean,
   ): void {
+    if (!isCurrent()) return;
     for (const [fieldName, bindings] of this.deps.cache.entries()) {
       for (const target of bindings) {
         if (target.fragmentBoundary !== boundary) continue;
+        if (ownerKeys !== false && !isBindingInScope(target.owner, ownerKeys)) continue;
         const value = bindingValue(data.fields, target, fieldName, transaction.locale);
-        if (value === undefined) continue;
+        if (value === undefined || !isCurrent()) continue;
         this.deps.scheduler.schedule({
           target,
-          value: this.host.transform(target, value, data.fields, () => true),
+          value: this.host.transform(target, value, data.fields, isCurrent),
           allFields: data.fields,
           revision: transaction.revision,
           data,
@@ -407,17 +435,22 @@ function coveringBoundaries(targets: readonly CachedElement[]): Element[] | unde
 }
 
 /** A plan over boundaries already chosen, whichever question chose them. */
-function planBoundaries(strategy: FragmentStrategy, boundaries: readonly Element[]): FragmentPlan {
+function planBoundaries(
+  strategy: FragmentStrategy,
+  boundaries: readonly Element[],
+  ownerKeys: OwnerScope,
+): FragmentPlan {
   const covered = new Set(boundaries);
   return {
     boundaries,
     strategy,
+    ownerKeys,
     covers: (target) =>
       target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
   };
 }
 
-/** Morph server-rendered HTML into the boundary, keeping focus and visitor state. */
+/** Morph server-rendered HTML into the boundary; compatible retained nodes keep live state. */
 function morphFragment(boundary: Element, html: string): void {
   const template = boundary.ownerDocument.createElement('template');
   template.innerHTML = trustedHtml(html);

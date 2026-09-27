@@ -34,11 +34,31 @@ export interface AuthorizedPreviewContext {
 }
 
 // @public
+export type AuthorizedPreviewDocument = {
+    readonly kind: 'collection';
+    readonly slug: string;
+    readonly id: string | number;
+} | {
+    readonly kind: 'global';
+    readonly slug: string;
+};
+
+// @public
+export interface AuthorizedPreviewPayloadScope {
+    readonly apiRoute?: string;
+    // (undocumented)
+    readonly document: AuthorizedPreviewDocument;
+    readonly maxDepth: number;
+    readonly serverURL: string;
+}
+
+// @public
 export interface AuthorizedPreviewScope {
     readonly audience?: string;
     // (undocumented)
     readonly locale?: string;
     readonly path?: string;
+    readonly payload?: AuthorizedPreviewPayloadScope;
 }
 
 // @public
@@ -479,6 +499,7 @@ export interface InlineScriptConfig {
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
+    readonly softNavigationEvents?: readonly string[];
     readonly visibilityGateThreshold?: number;
 }
 
@@ -555,6 +576,7 @@ export interface InspectionRoute {
     // (undocumented)
     readonly handler: boolean;
     readonly loopStopped: number;
+    readonly partial: number;
     // (undocumented)
     readonly refreshes: number;
     readonly refused: number;
@@ -692,7 +714,7 @@ export class LivePreviewClient {
     get events(): EventEmitter;
     inspect(): LivePreviewInspection;
     get plugins(): readonly string[];
-    // (undocumented)
+    refreshAfterNavigation(): void;
     refreshCache(): void;
     resume(): boolean;
     start(): boolean;
@@ -857,7 +879,7 @@ export interface NavigationLifecycleOptions {
 
 // @public
 export interface NavigationLifecycleTarget {
-    // (undocumented)
+    refreshAfterNavigation?(): void;
     refreshCache(): void;
     // (undocumented)
     resume(): boolean;
@@ -1126,6 +1148,7 @@ export interface PreviewAuthorizationRequest {
     readonly headers: {
         get(name: string): string | null;
     };
+    readonly signal?: AbortSignal;
     // (undocumented)
     readonly url: string;
 }
@@ -1310,7 +1333,7 @@ export interface RouteContext {
 }
 
 // @public
-export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
+export type RouteOutcome = 'refreshed' | 'partial' | 'failed' | 'refused' | 'superseded';
 
 // @public
 export type RouteRefresh = () => void | Promise<void>;

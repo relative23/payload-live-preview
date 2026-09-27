@@ -4,7 +4,7 @@
  *
  * An empty slot means whatever the generation that wrote the script meant by
  * it, and that is exactly what changed between 1.x and 2.0. So the script
- * names the defaults it was resolved against, in its last slot, and this reads
+ * names the defaults it was resolved against in slot 24, and this reads
  * the answer instead of guessing it. A script without the marker predates it —
  * 1.x or 2.0.0-beta.0 — and is read as 1.x, with a line that says so.
  */

@@ -31,9 +31,9 @@ export interface FragmentContext {
   readonly signal: AbortSignal;
   /** Whether this revision is still the current one. */
   readonly isCurrent: () => boolean;
-  /** Morph server-rendered HTML into a boundary (Trusted Types and the keyed morph apply). */
+  /** Morph server-rendered HTML into a boundary; no-op after supersession (Trusted Types and the keyed morph apply). */
   readonly morph: (boundary: Element, html: string) => void;
-  /** Patch the boundary's own bindings from this revision — the deterministic fallback. */
+  /** Patch the boundary's owned bindings from this revision; no-op after supersession. */
   readonly patch: (boundary: Element) => void;
   /** Debug log through the runtime's logger, with the diagnostic code. */
   readonly log: (code: DiagnosticCode, detail: string) => void;
@@ -85,16 +85,17 @@ export interface RouteContext {
 }
 
 /**
- * What one refresh did. `refused` is the strategy's own brake and not a
- * failure — it is counted separately, because a number that mixes a planned
- * pause with a broken request cannot be read.
+ * What one refresh did. `refreshed` asserts that the strategy rendered the
+ * current unsaved revision. `partial` completed a render whose data source was
+ * not proven current; the runtime still reapplies every binding it can reach.
+ * `refused` is the strategy's own brake and not a failure.
  */
-export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
+export type RouteOutcome = 'refreshed' | 'partial' | 'failed' | 'refused' | 'superseded';
 
 /**
  * Whether a revision needs the whole route re-rendered, and how. After a
- * refresh the runtime rescans and re-applies the revision, so the unsaved
- * state lands on the fresh markup.
+ * refresh the runtime rescans and re-applies the revision, so reachable
+ * unsaved bindings land on the fresh markup.
  */
 export interface RouteStrategy {
   readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;

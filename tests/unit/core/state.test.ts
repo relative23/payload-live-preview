@@ -88,6 +88,36 @@ describe('HeartbeatTimer', () => {
     }).not.toThrow();
   });
 
+  it('resumes only the unexpired remainder after a stop', () => {
+    const onTimeout = vi.fn();
+    const heartbeat = new HeartbeatTimer({ timeoutMs: 100, onTimeout });
+    heartbeat.kick();
+    vi.advanceTimersByTime(30);
+    heartbeat.stop();
+    vi.advanceTimersByTime(50);
+
+    expect(heartbeat.resume()).toBe(false);
+    vi.advanceTimersByTime(19);
+    expect(onTimeout).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onTimeout).toHaveBeenCalledOnce();
+  });
+
+  it('expires synchronously on resume when the stopped deadline passed', () => {
+    const onTimeout = vi.fn();
+    const heartbeat = new HeartbeatTimer({ timeoutMs: 100, onTimeout });
+    heartbeat.kick();
+    vi.advanceTimersByTime(30);
+    heartbeat.stop();
+    vi.advanceTimersByTime(70);
+
+    expect(heartbeat.resume()).toBe(true);
+    expect(onTimeout).toHaveBeenCalledOnce();
+    expect(heartbeat.pending).toBe(false);
+    expect(heartbeat.resume()).toBe(false);
+    expect(onTimeout).toHaveBeenCalledOnce();
+  });
+
   it('is disabled by default — the Payload admin sends no keepalive', () => {
     const onTimeout = vi.fn();
     const heartbeat = new HeartbeatTimer({ onTimeout });
@@ -107,6 +137,7 @@ describe('HeartbeatTimer', () => {
 
   it('tracks lastKickAt', () => {
     const heartbeat = new HeartbeatTimer({ onTimeout: () => {} });
+    expect(heartbeat.lastKickAt).toBe(0);
     const before = Date.now();
     heartbeat.kick();
     expect(heartbeat.lastKickAt).toBeGreaterThanOrEqual(before);

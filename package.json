@@ -1,7 +1,7 @@
 {
   "name": "payload-live-preview",
   "version": "2.0.5",
-  "description": "Live preview for Payload CMS on server-rendered and static frontends (Astro, Next.js, SvelteKit, Nuxt, plain HTML): DOM patches, server-rendered fragments, React and Vue hooks. Strict by default, zero dependencies.",
+  "description": "Live preview for Payload CMS on server-rendered and static frontends: DOM patches, server-rendered fragments, React and Vue hooks. Strict DOM defaults, no direct dependencies; framework entries use optional peers.",
   "author": "relative23",
   "license": "MIT",
   "type": "module",
@@ -116,6 +116,16 @@
         "default": "./dist/payload.cjs"
       }
     },
+    "./plugin": {
+      "import": {
+        "types": "./dist/plugin.d.ts",
+        "default": "./dist/plugin.js"
+      },
+      "require": {
+        "types": "./dist/plugin.d.cts",
+        "default": "./dist/plugin.cjs"
+      }
+    },
     "./server": {
       "import": {
         "types": "./dist/server.d.ts",
@@ -209,7 +219,7 @@
   "scripts": {
     "build:runtime": "node -e \"const c=require('node:child_process'),e={...process.env};if(!e.SOURCE_DATE_EPOCH){const g=c.spawnSync('git',['show','-s','--format=%ct','HEAD'],{encoding:'utf8'});if(g.status===0)e.SOURCE_DATE_EPOCH=g.stdout.trim()}process.exit(c.spawnSync(process.execPath,['--import','tsx',process.argv[1]],{stdio:'inherit',env:e}).status??1)\" scripts/build-runtime.ts",
     "build": "npm run build:runtime && tsx scripts/build-dist.ts && npm run build:assets && npm run test:bundle && npm run test:treeshake && npm run test:edge && npm run test:interaction && npm run test:protocol-semantics",
-    "build:assets": "node -e \"const fs=require('node:fs');for(const f of ['RichText','PreviewBoundary'])fs.copyFileSync('src/adapters/astro/'+f+'.astro','dist/adapters/astro/'+f+'.astro')\"",
+    "build:assets": "node -e \"const fs=require('node:fs');for(const f of ['RichText','PreviewBoundary','FragmentBridge'])fs.copyFileSync('src/adapters/astro/'+f+'.astro','dist/adapters/astro/'+f+'.astro')\"",
     "dev": "tsup --watch",
     "pretest": "npm run build:runtime",
     "test": "vitest run",
@@ -218,9 +228,19 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
+    "test:e2e:next-production": "playwright test --config playwright.next-production.config.ts",
+    "test:e2e:next-continuation": "playwright test --config playwright.next-continuation.config.ts",
+    "test:e2e:sveltekit-continuation": "playwright test --config playwright.sveltekit-continuation.config.ts",
+    "test:e2e:nuxt-continuation": "playwright test --config playwright.nuxt-continuation.config.ts",
+    "test:e2e:astro-continuation": "playwright test --config playwright.astro-continuation.config.ts",
+    "test:e2e:astro-resources": "playwright test --config playwright.astro-resources.config.ts",
+    "test:e2e:html-continuation": "playwright test --config playwright.html-continuation.config.ts",
+    "test:e2e:vue-continuation": "playwright test --config playwright.vue-continuation.config.ts",
+    "test:e2e:sveltekit-production": "playwright test --config playwright.sveltekit-production.config.ts",
     "check:fixtures": "tsx scripts/check-fixture-freshness.ts",
     "check:generated": "tsx scripts/check-generated-runtime.ts",
     "test:e2e:real-payload": "playwright test --config playwright.real-payload.config.ts",
+    "test:acl:real-payload": "tsx scripts/check-payload-acl.ts",
     "test:a11y": "playwright test tests/e2e/specs/accessibility.spec.ts",
     "test:soak": "playwright test --config playwright.soak.config.ts",
     "test:browser-bench": "playwright test --config playwright.bench.config.ts",
@@ -323,6 +343,7 @@
     "astro-live-preview",
     "payload",
     "payload-cms",
+    "payload-plugin",
     "payload-live-preview",
     "live-preview",
     "preview",

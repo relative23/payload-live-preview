@@ -36,6 +36,7 @@ export const ENTRY_REACHABILITY = {
   './doctor': 'import',
   './migrate': 'import',
   './payload': 'import',
+  './plugin': 'import',
   './server': 'import',
   './client': 'import',
   './structural': 'import',

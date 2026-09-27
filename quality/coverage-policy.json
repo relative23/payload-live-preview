@@ -12,6 +12,16 @@
       "functions": 100,
       "branches": 100
     },
+    "src/adapters/shared/fragment-endpoint.ts": {
+      "lines": 97,
+      "functions": 97,
+      "branches": 93
+    },
+    "src/adapters/shared/fragment-node-request.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 95
+    },
     "src/adapters/shared/html-inject.ts": {
       "lines": 100,
       "functions": 100,
@@ -137,6 +147,11 @@
       "functions": 100,
       "branches": 100
     },
+    "src/core/navigation-replay.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 88
+    },
     "src/core/observers.ts": {
       "lines": 96,
       "functions": 100,
@@ -201,6 +216,11 @@
       "lines": 100,
       "functions": 100,
       "branches": 75
+    },
+    "src/core/update-owner.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
     },
     "src/core/update-pipeline.ts": {
       "lines": 98,
@@ -292,6 +312,11 @@
       "functions": 100,
       "branches": 96
     },
+    "src/security/preview-scope.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/security/preview-token.ts": {
       "lines": 100,
       "functions": 100,
@@ -308,6 +333,16 @@
       "branches": 92
     },
     "src/security/url-validator.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/server/preview.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/types/authorized-preview.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100

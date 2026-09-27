@@ -1,12 +1,13 @@
 /**
- * The seven behaviours `docs/react.md` measures this package's hook against,
- * reproduced on the *published* `@payloadcms/live-preview` dist.
+ * Seven recorded behaviours of the published `@payloadcms/live-preview` base
+ * client, reproduced against a requested registry version.
  *
  * `tests/unit/adapters/payload-hook-comparison.test.ts` asserts five of them
- * against the devDependency, in jsdom, inside the suite. This script asks the
- * other half of the question: does the version a user installs *today* still
- * behave that way? It packs the dist-tag from the registry, imports the real
- * `dist/index.js` into a synthetic window and runs each case end to end.
+ * against the devDependency, in jsdom, inside the suite. The case sets overlap;
+ * they are not identical. This script asks whether the requested registry
+ * version still matches these seven records. It packs that version, imports
+ * its real `dist/index.js` into a synthetic window and exercises the base
+ * client. It does not mount an official React or Vue wrapper.
  *
  * It is therefore not part of `npm run check` or `npm run build`. It needs the
  * network and someone else's registry, and a gate that turns red when a mirror
@@ -14,11 +15,10 @@
  * watch, which is where this repository already asks questions about a package
  * it does not own.
  *
- * A red run here is usually *good* news: the recorded observation is what the
- * published package did when the comparison was written, so a mismatch means
- * upstream changed. Then the row in `docs/react.md` and the case in
- * `payload-hook-comparison.test.ts` are stale and go, rather than staying up as
- * a claim about a package that has moved on.
+ * A mismatch means the registry package changed. Its corresponding record must
+ * be reviewed; only an overlapping documentation row or unit case changes with
+ * it. A green run establishes these seven client observations, not every claim
+ * in the hook guides.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -304,15 +304,15 @@ async function main(): Promise<void> {
       );
       for (const line of changed) console.error(`  ✗ ${line}`);
       console.error(
-        '[upstream-findings] A changed observation is upstream news, not a bug here. Re-read the ' +
-          'row in docs/react.md and the case in tests/unit/adapters/payload-hook-comparison.test.ts: ' +
-          'a comparison the other package has outgrown is a claim, and it goes.',
+        '[upstream-findings] A changed observation is upstream news, not a bug here. Review its ' +
+          'record and any overlapping row in docs/react.md or case in ' +
+          'tests/unit/adapters/payload-hook-comparison.test.ts.',
       );
       process.exit(1);
     }
     console.log(
       `[upstream-findings] OK — all ${String(FINDINGS.length)} reproduce on ${version}, ` +
-        'so every row of the comparison in docs/react.md still describes it.',
+        'so the seven recorded base-client observations still describe it.',
     );
   } finally {
     rmSync(workDir, { recursive: true, force: true });

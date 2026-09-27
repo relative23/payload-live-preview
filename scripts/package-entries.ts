@@ -10,6 +10,7 @@ export const DUAL_FORMAT_ENTRIES = {
   index: 'src/index.ts',
   codegen: 'src/codegen/index.ts',
   payload: 'src/payload/index.ts',
+  plugin: 'src/payload/plugin.ts',
 } as const;
 
 /**

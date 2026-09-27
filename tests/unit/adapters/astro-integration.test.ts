@@ -28,6 +28,7 @@ describe('livePreview integration — inline mode', () => {
     const [stage, script] = injectScript.mock.calls[0] as [string, string];
     expect(stage).toBe('head-inline');
     expect(script).toContain('admin.example.com');
+    expect(injectedConfig(script)[25]).toEqual(['astro:page-load']);
   });
 
   it('honours autoInject: false', () => {

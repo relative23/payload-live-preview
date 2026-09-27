@@ -1,3 +1,7 @@
+/**
+ * Executable imports must obey the same boundaries regardless of source syntax.
+ * Small isolated repositories prove the scanner before checking the real graph.
+ */
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,6 +15,56 @@ import { findArchitectureViolations } from '../../../scripts/architecture-rules'
 const dependency = (target: string) => ({ specifier: target, target, kind: 'runtime' as const });
 
 describe('architecture policy', () => {
+  it('tracks compiled Astro frontmatter and template expressions as executable dependencies', async () => {
+    const repository = await mkdtemp(join(tmpdir(), 'plp-architecture-policy-'));
+    try {
+      await mkdir(join(repository, 'src/security'), { recursive: true });
+      await writeFile(
+        join(repository, 'src/security/entry.ts'),
+        "export const load = () => import('./Bridge.astro');",
+      );
+      await writeFile(
+        join(repository, 'src/security/Bridge.astro'),
+        [
+          '---',
+          "import type { AstroInstance } from 'astro';",
+          'const Component = Astro.props.component;',
+          '---',
+          '<Component>{import("node:fs")}{fetch("/")}</Component>',
+        ].join('\n'),
+      );
+      const modules = await readArchitectureModules(repository);
+      expect(modules.find((row) => row.path.endsWith('entry.ts'))?.dependencies[0]?.target).toBe(
+        'src/security/Bridge.astro',
+      );
+      const bridge = modules.find((row) => row.path.endsWith('Bridge.astro'));
+      expect(bridge?.dependencies).toEqual([
+        { specifier: 'astro', kind: 'type' },
+        { specifier: 'node:fs', kind: 'runtime' },
+      ]);
+      expect(bridge?.capabilities.map((row) => row.kind)).toEqual(['network']);
+      expect(findArchitectureViolations(modules).map((row) => row.kind)).toEqual([
+        'browser-node-builtin',
+      ]);
+      await writeFile(
+        join(repository, 'src/security/Bridge.astro'),
+        '---\nconst = broken\n---\n<div />',
+      );
+      await expect(readArchitectureModules(repository)).rejects.toThrow(
+        'Cannot statically inspect Astro template',
+      );
+      await writeFile(
+        join(repository, 'src/security/Bridge.astro'),
+        '---\nconst title = "test";\n---\n<script>fetch("/")</script>',
+      );
+      await expect(readArchitectureModules(repository)).rejects.toThrow(
+        'Cannot statically inspect Astro template',
+      );
+    } finally {
+      await rm(repository, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a runtime cycle while allowing erased type-only edges', () => {
     const modules: readonly ArchitectureModule[] = [
       { path: 'src/core/a.ts', dependencies: [dependency('src/core/b.ts')], capabilities: [] },

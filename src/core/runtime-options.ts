@@ -111,8 +111,9 @@ export interface RuntimeOptions {
   /** `rootMargin` for the IntersectionObserver. */
   readonly intersectionRootMargin?: string;
   /**
-   * Restrict every update to bindings owned by the document the message
-   * describes (`data-payload-owner`). Unowned bindings are then out of scope.
+   * Restrict binding writes, fragment fields and island events to subtrees owned
+   * by the document the message describes (`data-payload-owner`). Unowned
+   * subtrees are then out of scope.
    */
   readonly scopeBindingsByOwner?: boolean;
   /** Which windows may post updates. `defaults: 'v2'` sets `'parent-or-opener'`. */

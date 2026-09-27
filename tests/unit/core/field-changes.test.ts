@@ -45,4 +45,31 @@ describe('FieldChangeTracker', () => {
     tracker.reset();
     expect([...tracker.diff({ a: 1 }, {}).changed]).toEqual(['a']);
   });
+
+  it('does not commit a partial diff when its revision turns stale at any guarded stage', () => {
+    const cases = [
+      { fields: {}, dependencies: {}, staleAt: 1 },
+      { fields: { title: 'draft' }, dependencies: {}, staleAt: 2 },
+      { fields: {}, dependencies: {}, staleAt: 2 },
+      {
+        fields: { title: 'draft' },
+        dependencies: { title: ['slug'] },
+        staleAt: 4,
+      },
+      { fields: { title: 'draft' }, dependencies: {}, staleAt: 4 },
+    ] as const;
+
+    for (const { fields, dependencies, staleAt } of cases) {
+      const tracker = new FieldChangeTracker();
+      let checks = 0;
+      const result = tracker.diff(fields, dependencies, () => {
+        checks += 1;
+        return checks !== staleAt;
+      });
+
+      expect(result).toBeNull();
+      expect(tracker.isBaseline).toBe(true);
+      expect(tracker.diff(fields, dependencies).baseline).toBe(true);
+    }
+  });
 });

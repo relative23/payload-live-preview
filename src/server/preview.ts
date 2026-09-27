@@ -8,6 +8,13 @@ import {
   isAuthorizedPreviewContext,
   type AuthorizedPreviewContext,
 } from '@/types/authorized-preview';
+import {
+  isPayloadScopeCurrent,
+  isPreviewDocumentID,
+  matchesPreviewDocument,
+  matchesPreviewDocumentData,
+  payloadAPIBase,
+} from '@security/preview-scope';
 
 /**
  * A `fetch`-compatible function. The read forwards a session cookie, so it is
@@ -62,7 +69,7 @@ export interface PreviewServerConfig {
 
 /** Why a read did not produce a document. */
 export type PreviewFetchFailureReason =
-  'http' | 'network' | 'timeout' | 'aborted' | 'invalid-json' | 'no-fetch';
+  'http' | 'network' | 'timeout' | 'aborted' | 'invalid-json' | 'no-fetch' | 'scope';
 
 export type PreviewFetchResult<T> =
   | {
@@ -133,6 +140,8 @@ export interface PreviewReadOptions {
 
 export interface ReadDocumentOptions extends PreviewReadOptions {
   readonly collection: string;
+  /** Direct REST document read. Required with `scope.payload`; cannot be combined with `where`. */
+  readonly id?: string | number;
   readonly where?: PreviewWhere;
 }
 
@@ -178,7 +187,7 @@ export function definePreview(config: PreviewServerConfig): PreviewServer {
   const resolved = Object.freeze({ serverURL, apiRoute, depth: config.depth, timeoutMs });
   const runtimeOptions = Object.freeze({ serverURL, apiRoute, mergeDepth: config.depth });
   const base = `${serverURL}${apiRoute}`;
-  const settings: ReadSettings = { config, timeoutMs };
+  const settings: ReadSettings = { config: Object.freeze({ ...config, ...resolved }), timeoutMs };
 
   return Object.freeze({
     config: resolved,
@@ -187,11 +196,28 @@ export function definePreview(config: PreviewServerConfig): PreviewServer {
       options: ReadDocumentOptions,
     ): Promise<PreviewFetchResult<T>> {
       const draft = draftFor(options);
-      const query = params(config.depth, options, draft);
-      query.set('limit', '1');
-      if (options.where !== undefined) appendWhere(query, options.where, ['where']);
-      const url = `${base}/${encodeURIComponent(options.collection)}?${query.toString()}`;
-      const result = await read<{ docs?: T[] }>(settings, url, options, draft);
+      const direct = options.id !== undefined;
+      const allowed =
+        (!direct || (isPreviewDocumentID(options.id) && options.where === undefined)) &&
+        readScopeAllows(settings.config, options, {
+          kind: 'collection',
+          slug: options.collection,
+          id: options.id,
+        });
+      // Reject before traversing a query or encoding its target. In particular,
+      // a scoped caller cannot turn a refused filter into unbounded work.
+      if (!allowed) return read<T>(settings, base, options, draft, false);
+      const query = params(resolved.depth, options, draft);
+      if (!direct) {
+        query.set('limit', '1');
+        if (options.where !== undefined) appendWhere(query, options.where, ['where']);
+      }
+      const id = isPreviewDocumentID(options.id)
+        ? `/${encodeURIComponent(String(options.id))}`
+        : '';
+      const url = `${base}/${encodeURIComponent(options.collection)}${id}?${query.toString()}`;
+      if (direct) return read<T>(settings, url, options, draft, allowed);
+      const result = await read<{ docs?: T[] }>(settings, url, options, draft, allowed);
       if (!result.ok) return result;
       const first = result.data?.docs?.[0];
       return { ok: true, data: first ?? null, draft, status: result.status };
@@ -200,9 +226,15 @@ export function definePreview(config: PreviewServerConfig): PreviewServer {
       options: ReadGlobalOptions,
     ): Promise<PreviewFetchResult<T>> {
       const draft = draftFor(options);
-      const query = params(config.depth, options, draft);
+      const query = params(resolved.depth, options, draft);
       const url = `${base}/globals/${encodeURIComponent(options.global)}?${query.toString()}`;
-      return read<T>(settings, url, options, draft);
+      return read<T>(
+        settings,
+        url,
+        options,
+        draft,
+        readScopeAllows(settings.config, options, { kind: 'global', slug: options.global }),
+      );
     },
   });
 }
@@ -220,6 +252,34 @@ interface ReadAttempt {
   readonly draft: boolean;
   readonly errorMode: 'result' | 'throw';
   readonly startedAt: number;
+}
+
+function readScopeAllows(
+  config: PreviewServerConfig,
+  options: PreviewReadOptions,
+  target: Parameters<typeof matchesPreviewDocument>[1],
+): boolean {
+  const context = isAuthorizedPreviewContext(options.authorization) ? options.authorization : null;
+  const payload = context?.scope.payload;
+  if (payload === undefined || context === null) return true;
+  return (
+    isPayloadScopeCurrent(context) &&
+    (context.scope.locale === undefined || context.scope.locale === options.locale) &&
+    payloadAPIBase(config.serverURL, config.apiRoute) ===
+      payloadAPIBase(payload.serverURL, payload.apiRoute) &&
+    config.depth <= payload.maxDepth &&
+    matchesPreviewDocument(payload.document, target)
+  );
+}
+
+function refuseScope<T>(attempt: ReadAttempt): PreviewFetchResult<T> {
+  return settle(attempt, {
+    ok: false,
+    reason: 'scope',
+    status: undefined,
+    draft: attempt.draft,
+    cause: undefined,
+  });
 }
 
 function draftFor(options: PreviewReadOptions): boolean {
@@ -240,6 +300,7 @@ async function read<T>(
   url: string,
   options: PreviewReadOptions,
   draft: boolean,
+  allowed: boolean,
 ): Promise<PreviewFetchResult<T>> {
   const fetchImpl: PreviewFetchFunction | undefined =
     config.fetch ?? (typeof fetch === 'function' ? fetch : undefined);
@@ -250,6 +311,7 @@ async function read<T>(
     errorMode: options.errorMode ?? 'result',
     startedAt: Date.now(),
   };
+  if (!allowed) return refuseScope(attempt);
   if (fetchImpl === undefined) {
     return settle(attempt, {
       ok: false,
@@ -265,12 +327,14 @@ async function read<T>(
   const context = isAuthorizedPreviewContext(options.authorization) ? options.authorization : null;
   let response: Awaited<ReturnType<PreviewFetchFunction>>;
   try {
+    // HTTP names are case-insensitive: object spread would keep both Cookie
+    // and cookie, which fetch combines instead of choosing the verified one.
+    const headers = new Headers({ accept: 'application/json', ...options.headers });
+    for (const [name, value] of Object.entries(context?.payloadHeaders ?? {})) {
+      headers.set(name, value);
+    }
     response = await fetchImpl(url, {
-      headers: {
-        accept: 'application/json',
-        ...(options.headers ?? {}),
-        ...(context?.payloadHeaders ?? {}),
-      },
+      headers: Object.fromEntries(headers),
       signal,
       cache: 'no-store',
       redirect: 'error',
@@ -283,6 +347,9 @@ async function read<T>(
       draft,
       cause,
     });
+  }
+  if (context?.scope.payload !== undefined && !isPayloadScopeCurrent(context)) {
+    return refuseScope(attempt);
   }
   if (!response.ok) {
     return settle(attempt, {
@@ -304,6 +371,15 @@ async function read<T>(
       draft,
       cause,
     });
+  }
+  if (context?.scope.payload !== undefined && !isPayloadScopeCurrent(context)) {
+    return refuseScope(attempt);
+  }
+  if (
+    context?.scope.payload !== undefined &&
+    !matchesPreviewDocumentData(context.scope.payload.document, body)
+  ) {
+    return refuseScope(attempt);
   }
   return settle(attempt, { ok: true, data: body as T, draft, status: response.status });
 }

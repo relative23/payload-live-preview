@@ -34,7 +34,10 @@ export interface LivePreviewGlobalApi {
   /** The configuration this instance was built from; a different one triggers a handover. */
   readonly configSignature?: string;
   readonly destroy: () => void;
+  /** Re-scan bindings without crossing a navigation boundary. */
   readonly refresh: () => void;
+  /** Commit a router navigation and locally replay the last accepted document. */
+  readonly refreshAfterNavigation: () => void;
   readonly enumerateOrigins: () => readonly string[];
   /** Reachable from the console as `__livePreview.inspect()` — an adapter user has no client object. */
   readonly inspect: () => LivePreviewInspection;
@@ -84,6 +87,8 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     onUnfaithfulPatch,
     autoBind = 'off',
     hydration,
+    _defaults,
+    softNavigationEvents = [],
   ] = readBuildConfig();
   // `routeStrategy` is destructured only to hold its wire slot: it decides
   // which prelude the generator emitted, and the prelude's presence is what the
@@ -165,15 +170,20 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
   existing?.destroy();
 
   // Every adapter injects this entry, so owning the lifecycle here is what makes
-  // bfcache recovery reachable at all. Soft navigation stays unbound: only the
-  // host knows which event its router fires.
-  const unbindLifecycle = bindNavigationLifecycle({
-    suspend: () => runtime.suspend(),
-    resume: () => runtime.start(),
-    refreshCache: () => {
-      runtime.refreshCache();
+  // bfcache recovery and an adapter's declared router event reachable at all.
+  const unbindLifecycle = bindNavigationLifecycle(
+    {
+      suspend: () => runtime.suspend(),
+      resume: () => runtime.start(),
+      refreshCache: () => {
+        runtime.refreshCache();
+      },
+      refreshAfterNavigation: () => {
+        runtime.navigationCommit();
+      },
     },
-  });
+    { softNavigationEvents },
+  );
 
   const api: LivePreviewGlobalApi = Object.freeze({
     version: VERSION,
@@ -188,6 +198,9 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     },
     refresh: () => {
       runtime.refreshCache();
+    },
+    refreshAfterNavigation: () => {
+      runtime.navigationCommit();
     },
     enumerateOrigins: () => detector.enumerate(),
     inspect: () => runtime.inspect(),

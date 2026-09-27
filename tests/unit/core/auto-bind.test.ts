@@ -213,6 +213,48 @@ describe('when it does not search', () => {
 });
 
 describe('telling a guess from a declaration', () => {
+  it('rolls back all guesses superseded by a custom element attribute callback', async () => {
+    const tag = 'x-auto-bind-reentrant';
+    if (customElements.get(tag) === undefined) {
+      customElements.define(
+        tag,
+        class extends HTMLElement {
+          static readonly observedAttributes = ['data-payload-field'];
+
+          attributeChangedCallback(): void {
+            window.dispatchEvent(new CustomEvent('auto-bind-reentrant'));
+          }
+        },
+      );
+    }
+    document.body.innerHTML =
+      '<h1>A prior baseline heading</h1>' +
+      `<${tag}>${TITLE}</${tag}>` +
+      '<p>A newer baseline subtitle</p>';
+    const harness = start();
+    window.addEventListener(
+      'auto-bind-reentrant',
+      () => {
+        post({ subtitle: 'A newer baseline subtitle' });
+      },
+      { once: true },
+    );
+
+    post({ heading: 'A prior baseline heading', title: TITLE });
+    await vi.advanceTimersByTimeAsync(50);
+
+    const stale = document.querySelector(tag);
+    const prior = document.querySelector('h1');
+    const current = document.querySelector('p');
+    expect(prior?.hasAttribute('data-payload-field')).toBe(false);
+    expect(prior?.hasAttribute('data-payload-guessed')).toBe(false);
+    expect(stale?.hasAttribute('data-payload-field')).toBe(false);
+    expect(stale?.hasAttribute('data-payload-guessed')).toBe(false);
+    expect(current?.getAttribute('data-payload-field')).toBe('subtitle');
+    expect(harness.runtime.inspect().bindings.fieldNames).toEqual(['subtitle']);
+    harness.runtime.destroy();
+  });
+
   it('inspect() names the value each guess matched on, apart from the declared bindings', async () => {
     document.body.innerHTML =
       `<h1>${TITLE}</h1><p data-payload-field="subtitle">Declared by the template</p>` +

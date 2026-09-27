@@ -33,6 +33,7 @@ const FIXTURE = join(ROOT, 'examples/nextjs-payload/app');
 
 /** The line the upgrade needed from a human, as measured. */
 const HAND_EDIT = "  hydration: 'react',\n";
+const NEXT_NAVIGATION_EVENT = 'payload-live-preview:navigation';
 
 const read = (path: string): Promise<string> => readFile(path, 'utf8');
 
@@ -153,7 +154,12 @@ describe('app two: the Next.js fixture at v1.8.1, upgraded to 2.0', () => {
 
     expect(hydration).toBe('react');
     expect(configLine(adapter.dangerouslySetInnerHTML.__html)).toBe(
-      configLine(generateInlineScript(after as InlineScriptConfig)),
+      configLine(
+        generateInlineScript({
+          ...(after as InlineScriptConfig),
+          softNavigationEvents: [NEXT_NAVIGATION_EVENT],
+        }),
+      ),
     );
   });
 
@@ -169,9 +175,12 @@ describe('app two: the Next.js fixture at v1.8.1, upgraded to 2.0', () => {
     const byName = (a: string, b: string): number => a.localeCompare(b);
     const shared = Object.keys(upgraded).filter((key) => key in fixture);
 
-    // What both configure, they configure alike.
+    // Stable literal values still agree. The current fixture resolves its
+    // origin once through the shared SITE constant used by every auth caller.
     expect(shared).toEqual(['allowedOrigins', 'debug', 'debounceMs']);
-    expect(pick(fixture, shared)).toEqual(pick(upgraded, shared));
+    expect(pick(fixture, ['debug', 'debounceMs'])).toEqual(pick(upgraded, ['debug', 'debounceMs']));
+    expect(upgraded['allowedOrigins']).toEqual(['http://localhost:4174']);
+    expect(fixture['allowedOrigins']).toEqual([{ reference: 'SITE' }]);
     // `hydration` the fixture leaves to the adapter it renders through.
     expect(Object.keys(upgraded).filter((key) => !(key in fixture))).toEqual(['hydration']);
     // The rest the upgrade does not deliver: a gate that renders nothing for an

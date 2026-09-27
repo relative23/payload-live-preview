@@ -20,11 +20,11 @@ interface Page extends Record<string, unknown> {
 
 const INITIAL: Page = { id: '1', title: 'From the server' };
 
-function update(title: string): MessageEvent {
+function update(title: string, id = '1'): MessageEvent {
   return new MessageEvent('message', {
     origin: ADMIN,
     source: window.parent,
-    data: { type: 'payload-live-preview', collectionSlug: 'pages', data: { id: '1', title } },
+    data: { type: 'payload-live-preview', collectionSlug: 'pages', data: { id, title } },
   });
 }
 
@@ -45,14 +45,14 @@ interface Mounted {
   text: () => string;
 }
 
-function mount(fetchFn: typeof fetch): Mounted {
+function mount(fetchFn: typeof fetch, initialData: Page = INITIAL): Mounted {
   const Preview = defineComponent({
     setup() {
       const { data, isLoading, status, error } = useLivePreviewDocument<Page>({
         serverURL: SERVER,
         allowedOrigins: [ADMIN],
         eventSourcePolicy: 'any',
-        initialData: INITIAL,
+        initialData,
         fetchFn,
       });
       return () =>
@@ -168,5 +168,83 @@ describe('useLivePreviewDocument — Vue', () => {
         initialData: INITIAL,
       }),
     ).toThrow(/needs an effect scope/u);
+  });
+
+  it('does not update its refs when an in-flight response settles after scope disposal', async () => {
+    let resolveRequest: ((response: Response) => void) | undefined;
+    const fetchFn = vi.fn(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveRequest = resolve;
+        }),
+    );
+    let title = (): string => 'scope did not run';
+    const scope = effectScope();
+    scope.run(() => {
+      const { data } = useLivePreviewDocument<Page>({
+        serverURL: SERVER,
+        allowedOrigins: [ADMIN],
+        eventSourcePolicy: 'any',
+        initialData: INITIAL,
+        fetchFn,
+      });
+      title = () => data.value.title;
+    });
+
+    window.dispatchEvent(update('Typed'));
+    await Promise.resolve();
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    scope.stop();
+
+    resolveRequest?.(
+      new Response(JSON.stringify({ id: '1', title: 'Late result' }), {
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    await settle();
+
+    expect(title()).toBe('From the server');
+  });
+
+  it('starts a new document session after unmount and ignores the old late response', async () => {
+    const pageA: Page = { id: '1', title: 'Page A' };
+    const pageB: Page = { id: '2', title: 'Page B' };
+    let resolveOld: ((response: Response) => void) | undefined;
+    let oldSignal: AbortSignal | null | undefined;
+    const oldFetch = vi.fn((_url: string, init?: RequestInit) => {
+      oldSignal = init?.signal;
+      return new Promise<Response>((resolve) => {
+        resolveOld = resolve;
+      });
+    });
+    const newFetch = vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ id: '2', title: 'Page B live' }), {
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    );
+    const first = mount(oldFetch as unknown as typeof fetch, pageA);
+
+    window.dispatchEvent(update('Page A edit'));
+    await Promise.resolve();
+    expect(oldFetch).toHaveBeenCalledTimes(1);
+    first.app.unmount();
+    first.host.remove();
+    expect(oldSignal?.aborted).toBe(true);
+
+    mounted = mount(newFetch, pageB);
+    resolveOld?.(
+      new Response(JSON.stringify({ id: '1', title: 'Late Page A' }), {
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    await settle();
+    expect(mounted.host.querySelector('h1')?.textContent).toBe('Page B');
+
+    window.dispatchEvent(update('Page B edit', '2'));
+    await settle();
+    expect(newFetch).toHaveBeenCalledTimes(1);
+    expect(mounted.host.querySelector('h1')?.textContent).toBe('Page B live');
   });
 });

@@ -38,10 +38,10 @@ function json(
   });
 }
 
-function rendered(html = '<h1>S</h1>', revision = 7, id = 'hero'): Response {
+function rendered(html = '<h1>S</h1>', revision = 7, id = 'hero', key?: string): Response {
   return json({
     html,
-    boundary: { id },
+    boundary: { id, ...(key === undefined ? {} : { key }) },
     revision,
     metadata: { renderedAt: '2026-08-27T00:00:00Z', renderer: 'test' },
   });
@@ -57,7 +57,9 @@ describe('createFragmentStrategy — the request', () => {
   });
 
   it('posts the boundary, the page route and query, the revision and the fields, same-origin with credentials', async () => {
-    const fetchFn = vi.fn<FetchLike>(() => Promise.resolve(rendered()));
+    const fetchFn = vi.fn<FetchLike>(() =>
+      Promise.resolve(rendered('<h1>S</h1>', 7, 'hero', 'k1')),
+    );
     const strategy = createFragmentHandler({
       endpoint: ENDPOINT,
       fetch: fetchFn,
@@ -95,6 +97,73 @@ describe('createFragmentStrategy — the request', () => {
     expect(a).toEqual(b);
     expect(fetchFn).toHaveBeenCalledTimes(1);
     await strategy(request({ revision: 8 }), boundary());
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not share an aborted request with the same revision in a new runtime generation', async () => {
+    let releaseOld: (() => void) | undefined;
+    const fetchFn = vi.fn<FetchLike>((_url, init) => {
+      const rawBody = init?.body;
+      if (typeof rawBody !== 'string') throw new TypeError('request body is not JSON text');
+      const sent = JSON.parse(rawBody) as { globalSlug?: string };
+      if (sent.globalSlug !== 'old-owner') {
+        return Promise.resolve(rendered('<h1>New generation</h1>'));
+      }
+      return new Promise<Response>((resolve) => {
+        releaseOld = () => {
+          resolve(rendered('<h1>Old generation</h1>'));
+        };
+      });
+    });
+    const handler = createFragmentHandler({
+      endpoint: ENDPOINT,
+      fetch: fetchFn,
+      location: LOCATION,
+    });
+    const oldController = new AbortController();
+    const old = handler(
+      request({ signal: oldController.signal, globalSlug: 'old-owner' }),
+      boundary(),
+    );
+    expect(fetchFn).toHaveBeenCalledOnce();
+    oldController.abort();
+
+    const current = handler(
+      request({ signal: new AbortController().signal, globalSlug: 'new-owner' }),
+      boundary(),
+    );
+    releaseOld?.();
+
+    await expect(old).resolves.toEqual({ status: 'superseded' });
+    await expect(current).resolves.toMatchObject({
+      status: 'rendered',
+      html: '<h1>New generation</h1>',
+    });
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not share a request between an absent key and an empty key', async () => {
+    const fetchFn = vi.fn<FetchLike>((_url, init) => {
+      const rawBody = init?.body;
+      if (typeof rawBody !== 'string') throw new TypeError('request body is not JSON text');
+      const sent = JSON.parse(rawBody) as { key?: string };
+      const label = sent.key === undefined ? 'absent' : 'empty';
+      return Promise.resolve(rendered(`<h1>${label}</h1>`, 7, 'hero', sent.key));
+    });
+    const strategy = createFragmentHandler({
+      endpoint: ENDPOINT,
+      fetch: fetchFn,
+      location: LOCATION,
+    });
+    const req = request();
+
+    const [absent, empty] = await Promise.all([
+      strategy(req, boundary('hero')),
+      strategy(req, boundary('hero', '')),
+    ]);
+
+    expect(absent).toMatchObject({ status: 'rendered', html: '<h1>absent</h1>' });
+    expect(empty).toMatchObject({ status: 'rendered', html: '<h1>empty</h1>' });
     expect(fetchFn).toHaveBeenCalledTimes(2);
   });
 
@@ -171,6 +240,101 @@ describe('createFragmentStrategy — the response', () => {
         code: 'LP0802',
       });
     }
+  });
+
+  it.each([
+    ['a different key', 'k1', 'k2'],
+    ['a missing response key', 'k1', undefined],
+    ['an unexpected response key', undefined, 'k1'],
+    ['an empty response key when none was requested', undefined, ''],
+    ['a missing response key when an empty key was requested', '', undefined],
+  ] as const)(
+    'refuses %s as LP0802 without returning HTML',
+    async (_case, requestKey, responseKey) => {
+      const strategy = createFragmentHandler({
+        endpoint: ENDPOINT,
+        location: LOCATION,
+        fetch: vi.fn<FetchLike>(() =>
+          Promise.resolve(rendered('<h1>Wrong boundary</h1>', 7, 'hero', responseKey)),
+        ),
+      });
+
+      expect(await strategy(request(), boundary('hero', requestKey))).toEqual({
+        status: 'failed',
+        code: 'LP0802',
+        reason: 'response is for another boundary',
+      });
+    },
+  );
+
+  it.each([
+    ['two absent keys', undefined, undefined],
+    ['the same non-empty key', 'k1', 'k1'],
+    ['the same empty key', '', ''],
+  ] as const)('renders for %s', async (_case, requestKey, responseKey) => {
+    const strategy = createFragmentHandler({
+      endpoint: ENDPOINT,
+      location: LOCATION,
+      fetch: vi.fn<FetchLike>(() =>
+        Promise.resolve(rendered('<h1>Matching boundary</h1>', 7, 'hero', responseKey)),
+      ),
+    });
+
+    expect(await strategy(request(), boundary('hero', requestKey))).toEqual({
+      status: 'rendered',
+      html: '<h1>Matching boundary</h1>',
+      metadata: { renderedAt: '2026-08-27T00:00:00Z', renderer: 'test' },
+    });
+  });
+
+  it('never morphs mismatched keyed HTML and invokes the patch fallback', async () => {
+    const element = document.createElement('section');
+    element.setAttribute('data-payload-fragment', 'hero');
+    element.setAttribute('data-payload-fragment-key', 'k1');
+    const morph = vi.fn();
+    const patch = vi.fn();
+    const renderedBoundary = vi.fn();
+    const failed = vi.fn();
+    const strategy = createFragmentStrategy({
+      endpoint: ENDPOINT,
+      location: LOCATION,
+      fetch: vi.fn<FetchLike>(() =>
+        Promise.resolve(rendered('<h1 id="wrong-boundary">Wrong</h1>', 7, 'hero', 'k2')),
+      ),
+    });
+
+    const report = await strategy.render(
+      {
+        root: document,
+        revision: 7,
+        receivedAt: 1,
+        fields: { title: 'Current fields' },
+        locale: 'de',
+        collectionSlug: undefined,
+        globalSlug: 'home',
+        signal: new AbortController().signal,
+        isCurrent: () => true,
+        log: vi.fn(),
+        morph,
+        patch,
+        rendered: renderedBoundary,
+        failed,
+      },
+      [element],
+    );
+
+    expect(report).toEqual({ rendered: 0, failed: 1, superseded: 0 });
+    expect(morph).not.toHaveBeenCalled();
+    expect(renderedBoundary).not.toHaveBeenCalled();
+    expect(failed).toHaveBeenCalledWith(
+      element,
+      'hero',
+      'k1',
+      'LP0802',
+      'response is for another boundary',
+    );
+    expect(patch).toHaveBeenCalledOnce();
+    expect(patch).toHaveBeenCalledWith(element);
   });
 
   it('treats a response for another revision as superseded', async () => {
@@ -282,6 +446,49 @@ describe('createFragmentStrategy — cancellation and bounds', () => {
     }
   });
 
+  it('removes queued superseded revisions before the request gate opens', async () => {
+    const held = deferredResponse();
+    const fetchFn = vi.fn<FetchLike>((_url, init) => {
+      if (fetchFn.mock.calls.length === 1) return held.promise;
+      const rawBody = init?.body;
+      if (typeof rawBody !== 'string') throw new TypeError('request body is not JSON text');
+      const sent = JSON.parse(rawBody) as { fragment: string; revision: number };
+      return Promise.resolve(rendered('<h1>Latest</h1>', sent.revision, sent.fragment));
+    });
+    const strategy = createFragmentHandler({
+      endpoint: ENDPOINT,
+      fetch: fetchFn,
+      location: LOCATION,
+      maxConcurrent: 1,
+    });
+    const first = strategy(request({ revision: 1 }), boundary('first'));
+    const controllers = Array.from({ length: 1_000 }, () => new AbortController());
+    let settled = 0;
+    const cancelled = controllers.map((controller, index) =>
+      strategy(
+        request({ revision: index + 2, signal: controller.signal }),
+        boundary(`queued-${String(index)}`),
+      ).then((outcome) => {
+        if (outcome.status === 'superseded') settled += 1;
+        return outcome;
+      }),
+    );
+    for (const controller of controllers) controller.abort();
+    for (let turn = 0; turn < 5; turn += 1) await Promise.resolve();
+    const settledBeforeRelease = settled;
+    const latest = strategy(request({ revision: 2_000 }), boundary('latest'));
+
+    held.resolve(rendered('<h1>First</h1>', 1, 'first'));
+    await expect(first).resolves.toMatchObject({ status: 'rendered' });
+    await expect(latest).resolves.toMatchObject({ status: 'rendered', html: '<h1>Latest</h1>' });
+    await expect(Promise.all(cancelled)).resolves.toEqual(
+      expect.arrayContaining([{ status: 'superseded' }]),
+    );
+
+    expect(settledBeforeRelease).toBe(controllers.length);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
   it('counts the streamed body in bytes, not UTF-16 units, and cuts an oversized answer off as LP0802', async () => {
     // 'ä' is one UTF-16 unit but two bytes: 250 units fit a 400 cap, 500 bytes do not.
     const strategy = createFragmentHandler({
@@ -334,3 +541,14 @@ describe('createFragmentStrategy — cancellation and bounds', () => {
     expect(fetchFn).toHaveBeenCalledOnce();
   });
 });
+
+function deferredResponse(): {
+  readonly promise: Promise<Response>;
+  readonly resolve: (response: Response) => void;
+} {
+  let resolve = (_response: Response): void => undefined;
+  const promise = new Promise<Response>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}

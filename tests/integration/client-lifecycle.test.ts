@@ -83,6 +83,35 @@ describe('LivePreviewClient — lifecycle', () => {
     }
   });
 
+  it('supersedes pre-navigation async work through the public navigation refresh', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">published</h1>';
+    const oldUpdate = deferred<undefined>();
+    let beforeUpdate = 0;
+    const client = new LivePreviewClient(v1Config());
+    client.events.on('beforeUpdate', async () => {
+      beforeUpdate += 1;
+      if (beforeUpdate === 1) await oldUpdate.promise;
+    });
+
+    try {
+      fireUpdate({ title: 'old delayed edit' }).catch(() => undefined);
+      await Promise.resolve();
+      document.querySelector('h1')!.textContent = 'published next route';
+      client.refreshAfterNavigation();
+      fireUpdate({ title: 'new remote edit' }).catch(() => undefined);
+      await vi.advanceTimersByTimeAsync(50);
+      expect(document.querySelector('h1')?.textContent).toBe('new remote edit');
+
+      oldUpdate.resolve(undefined);
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(50);
+      expect(document.querySelector('h1')?.textContent).toBe('new remote edit');
+    } finally {
+      oldUpdate.resolve(undefined);
+      await client.destroy();
+    }
+  });
+
   it('refuses to suspend or resume a client that never started or was destroyed', async () => {
     const client = new LivePreviewClient(v1Config({ autoStart: false }));
     expect(client.suspend()).toBe(false);

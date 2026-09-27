@@ -32,6 +32,12 @@ export type MergeResult =
   | { readonly status: 'superseded' }
   | { readonly status: 'unavailable' };
 
+interface MergeTarget {
+  readonly path: string;
+  readonly field: 'id' | 'globalType';
+  readonly value: string;
+}
+
 function hasControlCharacter(value: string): boolean {
   for (const character of value) {
     // An iterated character always has a code point; 0 keeps the type and fails closed.
@@ -101,21 +107,31 @@ export class DataMerger {
   }
 
   /**
-   * The path under `apiRoute`, or `null` when no safe one exists. A request
+   * The path and its response identity, or `null` when no safe one exists. A request
    * accessor that throws counts as none, and so does a lone surrogate, which
    * `encodeURIComponent` refuses with a `URIError`.
    */
-  private endpointOf(request: MergeRequest): string | null {
+  private endpointOf(request: MergeRequest): MergeTarget | null {
     try {
       // An empty global slug means "collection document" on the wire.
       const globalSlug = request.globalSlug;
       if (globalSlug) {
-        return isSafeSlug(globalSlug) ? `globals/${encodeURIComponent(globalSlug)}` : null;
+        return isSafeSlug(globalSlug)
+          ? {
+              path: `globals/${encodeURIComponent(globalSlug)}`,
+              field: 'globalType',
+              value: globalSlug,
+            }
+          : null;
       }
       const collectionSlug = request.collectionSlug ?? '';
       const id: unknown = request.data['id'];
       if (!isSafeSlug(collectionSlug) || !isSafeId(id)) return null;
-      return `${encodeURIComponent(collectionSlug)}/${encodeURIComponent(String(id))}`;
+      return {
+        path: `${encodeURIComponent(collectionSlug)}/${encodeURIComponent(String(id))}`,
+        field: 'id',
+        value: String(id),
+      };
     } catch {
       return null;
     }
@@ -145,7 +161,7 @@ export class DataMerger {
       if (fetchFn === undefined) return { status: 'unavailable' };
       controller = new AbortController();
       this.inflight = controller;
-      const url = `${this.serverURL}${this.apiRoute}/${endpoint}`;
+      const url = `${this.serverURL}${this.apiRoute}/${endpoint.path}`;
       const response = await fetchFn(url, {
         method: 'POST',
         credentials: 'include',
@@ -175,7 +191,21 @@ export class DataMerger {
         this.log('merge invalid', url);
         return { status: 'unavailable' };
       }
-      return { status: 'merged', doc: merged as Record<string, unknown> };
+      const doc = merged as Record<string, unknown>;
+      // Missing IDs remain compatible with projected responses. An explicit
+      // identity must match the dispatched target, never mutable request data.
+      const identity = doc[endpoint.field];
+      const wrongIdentity =
+        Object.hasOwn(doc, endpoint.field) &&
+        (endpoint.field === 'id'
+          ? !isSafeId(identity) || String(identity) !== endpoint.value
+          : identity !== endpoint.value);
+      if (superseded()) return { status: 'superseded' };
+      if (wrongIdentity) {
+        this.log('merge invalid', url);
+        return { status: 'unavailable' };
+      }
+      return { status: 'merged', doc };
     } catch (error) {
       if (superseded()) return { status: 'superseded' };
       this.log('merge exception', error);

@@ -27,6 +27,22 @@ export const AUTHORIZED_PREVIEW_BRAND_KEY = 'payload-live-preview.authorized-pre
 
 export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
 
+/** One server-authorized Payload document, not a query selected by the browser. */
+export type AuthorizedPreviewDocument =
+  | { readonly kind: 'collection'; readonly slug: string; readonly id: string | number }
+  | { readonly kind: 'global'; readonly slug: string };
+
+/** Opt-in data capability, enforced by the fragment endpoint and `definePreview`. */
+export interface AuthorizedPreviewPayloadScope {
+  /** Payload base URL, distinct from the preview site's audience. */
+  readonly serverURL: string;
+  /** REST prefix, default `/api`. */
+  readonly apiRoute?: string;
+  readonly document: AuthorizedPreviewDocument;
+  /** Maximum requested population depth, not a field-level ACL. */
+  readonly maxDepth: number;
+}
+
 /** What a context is bound to; every field is optional because every strategy binds differently. */
 export interface AuthorizedPreviewScope {
   /** The site origin the credential was issued for. */
@@ -34,6 +50,8 @@ export interface AuthorizedPreviewScope {
   /** The request pathname the credential is valid for. */
   readonly path?: string;
   readonly locale?: string;
+  /** Requires a finite context expiry. Unscoped contexts keep their existing behavior. */
+  readonly payload?: AuthorizedPreviewPayloadScope;
 }
 
 /** The verdict of a successful `authorizePreviewRequest()`: frozen, branded, produced only there. Carry it, do not rebuild it. */
@@ -71,7 +89,17 @@ export function createAuthorizedPreviewContext(
 ): AuthorizedPreviewContext {
   const context = Object.freeze({
     ...fields,
-    scope: Object.freeze({ ...fields.scope }),
+    scope: Object.freeze({
+      ...fields.scope,
+      ...(fields.scope.payload === undefined
+        ? {}
+        : {
+            payload: Object.freeze({
+              ...fields.scope.payload,
+              document: Object.freeze({ ...fields.scope.payload.document }),
+            }),
+          }),
+    }),
     payloadHeaders: Object.freeze({ ...fields.payloadHeaders }),
     [BRAND]: true,
     [AUTHORIZED_PREVIEW_BRAND_KEY]: true,

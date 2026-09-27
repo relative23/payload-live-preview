@@ -92,6 +92,8 @@ export {
 export type {
   AuthorizedPreviewContext,
   AuthorizedPreviewScope,
+  AuthorizedPreviewDocument,
+  AuthorizedPreviewPayloadScope,
   FetchLike,
   IssuePreviewTokenOptions,
   PayloadSessionStrategy,

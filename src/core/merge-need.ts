@@ -155,6 +155,11 @@ export class MergeNeed {
     this.resolved = doc;
   }
 
+  /** Start a navigation replay from a raw baseline while retaining the last complete server document. */
+  resetRawChanges(): void {
+    this.rawChanges.reset();
+  }
+
   destroy(): void {
     this.dropQueued();
     this.openUntil = 0;

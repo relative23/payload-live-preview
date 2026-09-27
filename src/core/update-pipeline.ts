@@ -6,12 +6,12 @@
 import type { PayloadLivePreviewData, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 import { buildSchemaIndex } from '@schema/index';
 import { adoptUniqueBindings, restoreUniqueBindings } from './auto-bind';
-import { isBindingInScope, messageOwnerKeys, readDocumentId } from './binding-owner';
+import { isBindingInScope } from './binding-owner';
 import type { MergeResult } from './data-merger';
 import { mergeDependencyMaps } from './dependencies';
 import { bindingIdentity, bindingValue } from './field-value';
-import { dispatchIslandUpdate } from './islands';
 import { type MessageRevision, sameRevision } from './message-bus';
+import { NavigationReplay } from './navigation-replay';
 import { diagnoseOrphanFields } from './orphan-diagnostics';
 import { reportOmittedFeature } from './profile';
 import { detectProtocolProfile } from './protocol-profile';
@@ -24,6 +24,7 @@ import { StrategyRunner } from './strategy-runner';
 import { createLeanStrategyRunner, type StrategyRunnerLike } from './strategy-runner-lean';
 import { transformForBinding } from './transform-value';
 import type { CachedElement } from './types';
+import { ownerKeysForUpdate } from './update-owner';
 import type { FlushStats, ScheduledUpdate } from './update-scheduler';
 
 /** A refinement moved no field: it completes values the revision already applied. */
@@ -31,15 +32,14 @@ const NOTHING_CHANGED: ReadonlySet<string> = new Set();
 
 export class UpdatePipeline {
   private readonly strategies: StrategyRunnerLike;
+  private readonly navigationReplay: NavigationReplay;
 
   constructor(
     private readonly deps: RuntimeDeps,
     private readonly state: RuntimeState,
     rebuildCache: () => void,
   ) {
-    // The profile decides, and esbuild folds the branch: the lean build drops
-    // the real runner and everything only it reached — the morph, the fragment
-    // client's server half, the route refresh (./profile, build-flags.d.ts).
+    // Esbuild folds this choice; the lean branch drops the server-rendering strategies.
     this.strategies =
       typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__
         ? createLeanStrategyRunner(deps, state)
@@ -57,9 +57,13 @@ export class UpdatePipeline {
               this.revealPending(transaction);
             },
           });
+    this.navigationReplay = new NavigationReplay(deps, state, {
+      schedule: (transaction, data, elements) => {
+        this.scheduleAllFields(transaction, data, elements);
+      },
+    });
   }
 
-  /** Message-bus callback for every shape-valid update. */
   handleUpdate(
     message: PayloadLivePreviewMessage,
     origin: string,
@@ -75,29 +79,68 @@ export class UpdatePipeline {
       return;
     }
     if (revision === undefined) return;
+    this.acceptDataUpdate(message, origin, revision, true);
+  }
+
+  handleReplay(
+    message: PayloadLivePreviewMessage,
+    origin: string,
+    revision: MessageRevision,
+  ): void {
+    if (message.data === undefined) return;
+    this.acceptDataUpdate(message, origin, revision, false);
+  }
+
+  reapplyNavigationBindings(elements: ReadonlySet<Element>): void {
+    this.navigationReplay.reapplyBindings(elements);
+  }
+
+  /** Hand a streamed island only the retained document it has not seen yet. */
+  reapplyNavigationIslands(islands: readonly Element[], hydrationCompleted = false): void {
+    this.navigationReplay.reapplyIslands(islands, hydrationCompleted);
+  }
+
+  private acceptDataUpdate(
+    message: PayloadLivePreviewMessage,
+    origin: string,
+    revision: MessageRevision,
+    countsAsUpdate: boolean,
+  ): void {
+    const { deps, state } = this;
     // A level, not an edge: the panel repeats its last document event in every
     // message and never clears it, so only a changed event about a document
     // other than this one is news (LP-1).
-    const relationshipEdit = state.relationships.edit(message);
-    if (relationshipEdit !== null) {
-      void deps.emitter.emit('relationshipUpdate', {
-        detail: relationshipEdit,
-        timestamp: Date.now(),
-      });
-    }
-    if (typeof message.locale === 'string') state.locale = message.locale;
+    const relationshipInspection = countsAsUpdate ? state.relationships.inspect(message) : null;
+    const locale = typeof message.locale === 'string' ? message.locale : state.locale;
+    let schema = state.schema;
+    let schemaIndex = state.schemaIndex;
     if (Array.isArray(message.fieldSchemaJSON)) {
-      state.schema = message.fieldSchemaJSON;
-      state.schemaIndex = buildSchemaIndex(message.fieldSchemaJSON);
+      schema = message.fieldSchemaJSON;
+      schemaIndex = buildSchemaIndex(message.fieldSchemaJSON);
     }
+    // Schema parsing and synthetic message accessors are trust boundaries. A
+    // newer accepted revision that reentered there already owns the runtime.
+    const incumbent = state.activeUpdate;
+    if (
+      !state.isRunning() ||
+      (incumbent !== null && incumbent.revision.revision > revision.revision)
+    ) {
+      return;
+    }
+    const relationshipEdit =
+      relationshipInspection === null ? null : state.relationships.commit(relationshipInspection);
+    const previous = incumbent;
     const transaction: UpdateTransaction = {
       revision,
       message,
-      locale: state.locale,
-      schema: state.schema,
-      schemaIndex: state.schemaIndex,
+      locale,
+      schema,
+      schemaIndex,
       receivedAt: Date.now(),
-      forceRender: relationshipEdit !== null || owesForceRender(state.activeUpdate),
+      forceRender: relationshipEdit !== null || owesForceRender(previous),
+      countsAsUpdate,
+      renderData: undefined,
+      fragmentBoundariesRun: new WeakSet(),
       touched: new Set(),
       baseline: false,
       invalidated: new Set(),
@@ -109,18 +152,32 @@ export class UpdatePipeline {
       completed: false,
     };
     // Acceptance is the single supersession point. Only a revision that never
-    // reached its terminal state counts as superseded.
-    const previous = state.activeUpdate;
-    state.abortStrategies();
-    if (previous !== null && !previous.completed) state.supersededCount += 1;
+    // reached its terminal state counts as superseded. Publish the new owner
+    // before aborting: an AbortSignal listener may accept a newer revision.
+    state.locale = locale;
+    state.schema = schema;
+    state.schemaIndex = schemaIndex;
+    if (previous !== null && !previous.completed && previous.countsAsUpdate) {
+      state.supersededCount += 1;
+    }
     state.activeUpdate = transaction;
     deps.scheduler.acceptRevision(revision);
-    state.updateCount += 1;
-    if (message.protocolVersion !== undefined) {
+    if (countsAsUpdate) state.updateCount += 1;
+    state.abortStrategies();
+    if (!state.isCurrent(transaction)) return;
+    if (relationshipEdit !== null) {
+      void deps.emitter.emitWhile(
+        'relationshipUpdate',
+        { detail: relationshipEdit, timestamp: Date.now() },
+        () => state.isCurrent(transaction),
+      );
+      if (!state.isCurrent(transaction)) return;
+    }
+    if (countsAsUpdate && message.protocolVersion !== undefined) {
       state.protocol.applyVersion(message.protocolVersion, deps.log);
       if (!state.isCurrent(transaction)) return;
     }
-    if (deps.connection.markConnected()) {
+    if (countsAsUpdate && deps.connection.markConnected()) {
       deps.a11y?.announceConnected();
       void deps.emitter.emit('connect', { origin, timestamp: Date.now() });
       if (!state.isCurrent(transaction)) return;
@@ -188,23 +245,40 @@ export class UpdatePipeline {
     refined: boolean,
   ): void {
     const { deps, state } = this;
-    const dependencies = mergeDependencyMaps(deps.dependencies, deps.cache.dependencyMap());
-    const changes = state.changes.diff(data.fields, dependencies);
-    if (changes.baseline && !refined && deps.autoBind !== 'off') {
+    if (!state.isCurrent(transaction)) return;
+    if (state.changes.isBaseline && !refined && deps.autoBind !== 'off') {
       // Once, on the message that describes what the server rendered (ADR 0014
       // §1). The lean profile leaves the search out; esbuild folds the branch.
       if (typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__) {
         reportOmittedFeature('auto-binding');
       } else {
-        const scope = this.ownerKeysForUpdate(transaction, data.fields);
-        adoptUniqueBindings(deps, state, data.fields, transaction.locale, scope);
+        const scope = ownerKeysForUpdate(deps, state, transaction, data.fields);
+        adoptUniqueBindings(deps, state, data.fields, transaction.locale, scope, () =>
+          state.isCurrent(transaction),
+        );
       }
+      if (!state.isCurrent(transaction)) return;
     }
-    transaction.baseline = changes.baseline;
+    const dependencies = mergeDependencyMaps(deps.dependencies, deps.cache.dependencyMap());
+    if (!state.isCurrent(transaction)) return;
+    const changes = state.changes.diff(data.fields, dependencies, () =>
+      state.isCurrent(transaction),
+    );
+    if (changes === null) return;
+    const navigationReplay = !refined && state.navigationReplayPending;
+    if (navigationReplay) {
+      state.navigationReplayPending = false;
+      state.navigationBindingReplay = true;
+    }
+    // A navigation replay needs the baseline's complete touched set and
+    // auto-binding pass, but it is not the initial connection baseline:
+    // absent unsaved fields may need a fragment or route render now.
+    transaction.baseline = changes.baseline && !navigationReplay;
     transaction.invalidated = refined ? NOTHING_CHANGED : changes.invalidated;
     transaction.touched = refined
       ? NOTHING_CHANGED
       : new Set([...changes.changed, ...changes.invalidated]);
+    transaction.renderData = data;
     this.scheduleAllFields(transaction, data);
   }
 
@@ -258,39 +332,62 @@ export class UpdatePipeline {
     this.applyFields(transaction, this.dataFor(transaction, result.doc), true);
   }
 
-  scheduleAllFields(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
+  scheduleAllFields(
+    transaction: UpdateTransaction,
+    data: PayloadLivePreviewData,
+    onlyElements?: ReadonlySet<Element>,
+  ): void {
     const { deps, state } = this;
     if (!state.isCurrent(transaction)) return;
+    const lateBindings = onlyElements !== undefined;
     const isCurrent = (): boolean => state.isCurrent(transaction);
-    const ownerKeys = this.ownerKeysForUpdate(transaction, data.fields);
+    const ownerKeys = ownerKeysForUpdate(deps, state, transaction, data.fields);
+    if (!isCurrent()) return;
     const { touched } = transaction;
     // A revision that touches the route refreshes it first; the re-apply lands on the fresh markup.
     const route = deps.strategies.route;
-    const unbound = this.strategies.hasUnboundChange(transaction, ownerKeys);
-    // The refresh an older revision was refused and this one took over: owed
-    // whatever this revision's own diff says, and settled by the run below. A
-    // baseline never carries it: the debt needs a refresh before it, which the
-    // baseline itself never plans.
+    if (
+      lateBindings &&
+      route !== undefined &&
+      !transaction.routeRefreshed &&
+      this.navigationReplay.hasLateRouteBinding(onlyElements, ownerKeys, transaction, data)
+    ) {
+      if (isCurrent()) void this.strategies.refreshRoute(transaction, data, route);
+      return;
+    }
+    const unbound = !lateBindings && this.strategies.hasUnboundChange(transaction, ownerKeys);
+    // A revision inherits a refused refresh; a baseline cannot owe one.
     const owed = state.routeRefreshOwed;
     if (
+      !lateBindings &&
       route !== undefined &&
       !transaction.routeRefreshed &&
       (unbound ||
         owed ||
         route.plan(deps.root, touched) ||
-        this.strategies.hasRouteBinding(touched))
+        this.strategies.hasRouteBinding(touched)) &&
+      isCurrent()
     ) {
       state.routeRefreshOwed = false;
       void this.strategies.refreshRoute(transaction, data, route);
       return;
     }
-    const plan = this.strategies.planFragments(touched);
+    const fragmentTouched = lateBindings
+      ? this.navigationReplay.fieldsForElements(onlyElements, touched)
+      : touched;
+    const plan = this.navigationReplay.unrunFragmentPlan(
+      transaction,
+      this.strategies.planFragments(fragmentTouched, ownerKeys),
+      onlyElements,
+    );
+    if (!isCurrent()) return;
     // Only `skipUnchanged` needs it now; the reveal keeps its own ledger.
     const trackIdentity = deps.skipUnchanged;
     let scheduled = 0;
     for (const [fieldName, bindings] of deps.cache.entries()) {
       if (!isCurrent()) return;
       for (const target of bindings) {
+        if (onlyElements !== undefined && !onlyElements.has(target.element)) continue;
         if (ownerKeys !== false && !isBindingInScope(target.owner, ownerKeys)) continue;
         // A binding inside a boundary the server renders is patched only as the
         // fallback — but it can still be the field being edited, so the reveal
@@ -317,7 +414,9 @@ export class UpdatePipeline {
         // Noted before `skipUnchanged` can skip the write: the reveal ledger is
         // its own record, and a binding whose write is unchanged since the last
         // one that landed may still be the field whose reveal was superseded.
-        if (deps.revealEditedField) state.revealLedger.note(transaction, target, value);
+        if (!lateBindings && deps.revealEditedField) {
+          state.revealLedger.note(transaction, target, value);
+        }
         if (!isCurrent()) return;
         const transformed = transformForBinding(deps, target, value, data.fields, isCurrent);
         if (!isCurrent()) return;
@@ -343,30 +442,35 @@ export class UpdatePipeline {
           value: transformed,
           allFields: data.fields,
           revision: transaction.revision,
-          data,
+          ...(lateBindings ? {} : { data }),
           valueIdentity: identity,
         };
         deps.scheduler.schedule(update);
         scheduled += 1;
       }
     }
-    diagnoseOrphanFields(
-      { cache: deps.cache, warned: state.warnedOrphanFields, warn: deps.warn },
-      data.fields,
-      transaction.locale,
-      ownerKeys,
-    );
+    if (!lateBindings) {
+      diagnoseOrphanFields(
+        { cache: deps.cache, warned: state.warnedOrphanFields, warn: deps.warn },
+        data.fields,
+        transaction.locale,
+        ownerKeys,
+      );
+    }
+    if (!isCurrent()) return;
     if (plan !== null && plan.boundaries.length > 0) {
-      transaction.pendingFragments = plan.boundaries.length;
+      for (const boundary of plan.boundaries) transaction.fragmentBoundariesRun.add(boundary);
+      transaction.pendingFragments += plan.boundaries.length;
       void this.strategies.runFragments(transaction, data, plan);
     }
-    // Nothing to flush is still this revision reaching its end — and its reveal
-    // point: every write may be unchanged while the reveal is still owed. The
-    // islands still hear it: a page whose bindings all sit inside them schedules
-    // nothing, and the event is how they learn of the edit at all.
-    if (scheduled === 0 && transaction.pendingFragments === 0) {
-      state.complete(transaction);
-      this.revealPending(transaction);
+    if (lateBindings || !isCurrent()) return;
+    // Islands consume the snapshot, not fragment markup. Only completion and
+    // reveal wait for pending requests or a synchronously scheduled fallback.
+    if (scheduled === 0) {
+      if (transaction.pendingFragments === 0 && deps.scheduler.pendingCount === 0) {
+        state.complete(transaction);
+        this.revealPending(transaction);
+      }
       this.notifyIslands(transaction, data);
     }
   }
@@ -374,12 +478,7 @@ export class UpdatePipeline {
   /** Islands hear every revision that carried a change, whether or not a write landed outside them. */
   private notifyIslands(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
     if (transaction.touched.size === 0) return;
-    dispatchIslandUpdate(this.deps.cache.islands, {
-      fields: data.fields,
-      revision: transaction.revision.revision,
-      receivedAt: transaction.receivedAt,
-      locale: transaction.locale,
-    });
+    this.navigationReplay.dispatchIslands(transaction, data, this.deps.cache.islands);
   }
 
   /**
@@ -395,32 +494,11 @@ export class UpdatePipeline {
     // before linking and a statement after `return` only after it, and the
     // search's module was in the lean artifact until the guard took this shape.
     if (!(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__)) {
-      const scope = this.ownerKeysForUpdate(transaction, data.fields);
-      restoreUniqueBindings(deps, state, data.fields, transaction.locale, scope);
-    }
-  }
-
-  /** Owner keys this update may address; `false` when scoping is off, `null` when the message names no document. */
-  private ownerKeysForUpdate(
-    transaction: UpdateTransaction,
-    fields: Record<string, unknown>,
-  ): readonly string[] | null | false {
-    const { deps, state } = this;
-    if (!deps.scopeBindingsByOwner) return false;
-    const { message } = transaction;
-    const keys = messageOwnerKeys({
-      globalSlug: typeof message.globalSlug === 'string' ? message.globalSlug : undefined,
-      collectionSlug:
-        typeof message.collectionSlug === 'string' ? message.collectionSlug : undefined,
-      documentId: readDocumentId(fields),
-    });
-    if (keys === null && !state.warnedUnattributableMessage) {
-      state.warnedUnattributableMessage = true;
-      deps.warn(
-        '[live-preview] LP0202: scopeBindingsByOwner: update names no document; nothing applied',
+      const scope = ownerKeysForUpdate(deps, state, transaction, data.fields);
+      restoreUniqueBindings(deps, state, data.fields, transaction.locale, scope, () =>
+        state.isCurrent(transaction),
       );
     }
-    return keys;
   }
 
   /** Scheduler callback after every flush, including one that applied nothing. */
@@ -446,23 +524,24 @@ export class UpdatePipeline {
     if (transaction.pendingFragments === 0) state.complete(transaction);
     const isCurrent = (): boolean =>
       state.isCurrent(transaction) && sameRevision(transaction.revision, revision);
-    // Reveal before the applied check: the edited element may be exactly the
-    // off-screen one the visibility gate deferred, and scrolling to it is what replays it.
+    const renderData = data ?? transaction.renderData;
+    // Reveal first: scrolling to a deferred off-screen edit is what replays it.
     this.revealPending(transaction);
     if (!isCurrent()) return;
-    // Before the applied check, because a flush that applied nothing is exactly
-    // the one whose every renderer refused its value.
+    // Before the applied check: a flush that applied nothing is where every renderer refused.
     const unfaithful = state.unfaithfulPatches;
     if (unfaithful.length > 0) {
       state.unfaithfulPatches = [];
-      if (data !== undefined) this.strategies.escalateUnfaithful(transaction, data, unfaithful);
+      if (renderData !== undefined) {
+        const scope = ownerKeysForUpdate(deps, state, transaction, renderData.fields);
+        this.strategies.escalateUnfaithful(transaction, renderData, unfaithful, scope);
+      }
       if (!isCurrent()) return;
     }
     if (data === undefined) return;
     if (stats.applied > 0) deps.a11y?.announceUpdate(stats.applied);
     if (!isCurrent()) return;
-    // With `skipUnchanged` a field only an island shows writes nothing here,
-    // and the island must still hear about it.
+    // An island still needs its event when `skipUnchanged` leaves every outer binding untouched.
     this.notifyIslands(transaction, data);
     if (!isCurrent() || stats.applied === 0 || deps.emitter.listenerCount('afterUpdate') === 0) {
       return;

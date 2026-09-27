@@ -153,6 +153,9 @@ describe('inlineScriptConfig', () => {
     // ADR 0015: the framework that hydrates the page is a fact the adapter
     // states, never an option a project sets, so it arrives on its own.
     expect(inlineScriptConfig({}, { hydration: 'react' })).toEqual({ hydration: 'react' });
+    expect(inlineScriptConfig({}, { softNavigationEvents: ['framework:navigated'] })).toEqual({
+      softNavigationEvents: ['framework:navigated'],
+    });
     expect(inlineScriptConfig({ debug: true }, {})).toEqual({ debug: true });
   });
 });

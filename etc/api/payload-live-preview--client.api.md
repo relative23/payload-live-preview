@@ -257,6 +257,7 @@ export interface InspectionRoute {
     // (undocumented)
     readonly handler: boolean;
     readonly loopStopped: number;
+    readonly partial: number;
     // (undocumented)
     readonly refreshes: number;
     readonly refused: number;
@@ -285,7 +286,7 @@ export class LivePreviewClient {
     get events(): EventEmitter;
     inspect(): LivePreviewInspection;
     get plugins(): readonly string[];
-    // (undocumented)
+    refreshAfterNavigation(): void;
     refreshCache(): void;
     resume(): boolean;
     start(): boolean;
@@ -614,7 +615,7 @@ export interface RouteContext {
 }
 
 // @public
-export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
+export type RouteOutcome = 'refreshed' | 'partial' | 'failed' | 'refused' | 'superseded';
 
 // @public
 export type RouteRefresh = () => void | Promise<void>;

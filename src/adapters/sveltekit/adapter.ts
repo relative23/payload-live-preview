@@ -8,15 +8,24 @@ import { createPreviewPolicy, type PreviewPolicy } from '@adapters/shared/policy
 import { bindDecisionHooks, withCspHeader } from '@adapters/shared/response';
 import { exposeDecision, type LivePreviewLocalsSink } from '@adapters/shared/locals';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
+import type { PageFacts } from '@adapters/shared/policy-options';
+import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
 export type { LivePreviewLocals } from '@adapters/shared/locals';
 
 export type LivePreviewSvelteKitOptions = PreviewAdapterOptions;
 
+const SVELTEKIT_PAGE: PageFacts = {
+  softNavigationEvents: [NAVIGATION_COMMIT_EVENT],
+};
+
 interface SvelteKitRequestEvent {
   readonly request: Request;
   readonly locals: LivePreviewLocalsSink;
+  /** SvelteKit removes its internal data suffix here before hooks run. */
+  readonly url?: URL;
+  readonly isDataRequest?: boolean;
 }
 interface ResolveOptions {
   readonly transformPageChunk?: (input: { html: string; done: boolean }) => string | undefined;
@@ -44,13 +53,11 @@ export type SvelteKitHandle = <Event extends SvelteKitRequestEvent>(input: {
  * then merges CSP and marks the response uncacheable.
  */
 export function livePreviewHandle(options: LivePreviewSvelteKitOptions = {}): SvelteKitHandle {
-  const policy = createPreviewPolicy(options);
+  const policy = createPreviewPolicy(options, SVELTEKIT_PAGE);
   return async ({ event, resolve }) => {
+    const request = previewRequest(event);
     const nonce = policy.nonce();
-    const decision = await policy.decide(
-      event.request,
-      bindDecisionHooks(policy, options, event.request),
-    );
+    const decision = await policy.decide(request, bindDecisionHooks(policy, options, request));
     exposeDecision(event.locals, decision, nonce);
     const transform = decision.inject ? chunk(policy, nonce) : undefined;
     const response = await resolve(
@@ -60,6 +67,12 @@ export function livePreviewHandle(options: LivePreviewSvelteKitOptions = {}): Sv
     if (!decision.inject && decision.cspMode === false) return response;
     return withCspHeader(response, policy, decision, nonce);
   };
+}
+
+/** A client navigation asks for `/__data.json`; authorization belongs to the page URL SvelteKit exposes. */
+function previewRequest(event: SvelteKitRequestEvent): Request {
+  if (event.isDataRequest !== true || event.url === undefined) return event.request;
+  return new Request(event.url, event.request);
 }
 
 type ChunkTransform = NonNullable<ResolveOptions['transformPageChunk']>;

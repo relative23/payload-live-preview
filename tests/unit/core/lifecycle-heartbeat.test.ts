@@ -161,6 +161,37 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
     expect(onHeartbeatTimeout).toHaveBeenCalled();
     runtime.destroy();
   });
+  it('expires a suspended heartbeat before replaying its retained document', async () => {
+    document.body.innerHTML = '<p data-payload-field="x">published</p>';
+    const onHeartbeatTimeout = vi.fn();
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: (origin) => origin === TRUSTED,
+      readyTargets: [TRUSTED],
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 50,
+      disableVisibilityGate: true,
+      onHeartbeatTimeout,
+    });
+    runtime.start();
+    fireMessage({ type: 'payload-live-preview', data: { x: 'unsaved' } });
+    await vi.advanceTimersByTimeAsync(20);
+    expect(document.querySelector('p')?.textContent).toBe('unsaved');
+
+    runtime.suspend();
+    document.body.innerHTML = '<p data-payload-field="x">published after restore</p>';
+    await vi.advanceTimersByTimeAsync(30);
+    runtime.start();
+    await flushMicrotasks();
+
+    expect(onHeartbeatTimeout).toHaveBeenCalledOnce();
+    expect(document.querySelector('p')?.textContent).toBe('published after restore');
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(document.querySelector('p')?.textContent).toBe('published after restore');
+    runtime.destroy();
+  });
   it('does not resend ready after the timeout hook destroys the runtime', async () => {
     document.body.innerHTML = '<p data-payload-field="x">initial</p>';
     const emitter = new EventEmitter();

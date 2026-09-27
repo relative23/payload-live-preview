@@ -123,6 +123,7 @@ describe('merging shard reports', () => {
         incrementalFile: 'test-results/stryker-nightly-shard1-incremental.json',
         jsonReporter: { fileName: 'test-results/stryker-nightly-shard1.json' },
         htmlReporter: { fileName: 'test-results/stryker-nightly-shard1.html' },
+        tempDirName: '/tmp/plp-stryker-shard-1',
       },
     };
     const two = {
@@ -134,6 +135,7 @@ describe('merging shard reports', () => {
         incrementalFile: 'test-results/stryker-nightly-shard2-incremental.json',
         jsonReporter: { fileName: 'test-results/stryker-nightly-shard2.json' },
         htmlReporter: { fileName: 'test-results/stryker-nightly-shard2.html' },
+        tempDirName: '/tmp/plp-stryker-shard-2',
       },
     };
     const merged = mergeMutationReports([one, two]) as {

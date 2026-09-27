@@ -228,6 +228,41 @@ describe('the session scope', () => {
     expectNothingLeft();
   });
 
+  it('refuses a reentrant start while the previous session is still closing', async () => {
+    const reentrantStarts: boolean[] = [];
+    const route: RouteStrategy = {
+      plan: (_root, changed) => changed.has('routeOnly'),
+      refresh: ({ signal }) =>
+        new Promise<'refreshed'>((_resolve, reject) => {
+          signal.addEventListener(
+            'abort',
+            () => {
+              reentrantStarts.push(runtime.start());
+              reject(new Error('aborted'));
+            },
+            { once: true },
+          );
+        }),
+    };
+    const runtime = makeRuntime(new EventEmitter(), route);
+    runtime.start();
+    await vi.advanceTimersByTimeAsync(2_000);
+    post({ title: 'Saved', footer: 'Old' });
+    await vi.advanceTimersByTimeAsync(50);
+    post({ title: 'Saved', footer: 'Old', routeOnly: 'draft' });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(runtime.suspend()).toBe(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(reentrantStarts).toEqual([false]);
+    expectNothingLeft();
+
+    expect(runtime.start()).toBe(true);
+    expect(windowListeners.open()).toBeGreaterThan(0);
+    runtime.destroy();
+    expectNothingLeft();
+  });
+
   it('holds across many sessions: fifty start/update/destroy cycles change no count', async () => {
     for (let cycle = 0; cycle < 50; cycle += 1) {
       const runtime = makeRuntime(new EventEmitter());

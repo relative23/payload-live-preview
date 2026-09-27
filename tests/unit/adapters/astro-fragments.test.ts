@@ -11,7 +11,9 @@ import type { PreviewAuthorizationHookResult } from '@adapters/shared/options';
 // `astro` is a peer this package does not install; the default renderer
 // imports `astro/container` lazily, so the container is stood in for here.
 const container = vi.hoisted(() => ({ create: vi.fn<() => Promise<unknown>>() }));
+const bridge = vi.hoisted(() => ({ component: {} }));
 vi.mock('astro/container', () => ({ experimental_AstroContainer: container }));
+vi.mock('@adapters/astro/FragmentBridge.astro', () => ({ default: bridge.component }));
 
 /** ADR 0011's abuse model: registered boundaries only, authorized and same-origin only, refusals say nothing. */
 
@@ -156,6 +158,27 @@ describe('createFragmentEndpoint — refusals carry no information', () => {
       expect.objectContaining({ route: '/elsewhere' }),
     );
   });
+
+  it.each([
+    ['matching locale', { locale: 'de' }, { locale: 'de' }, 200],
+    ['different locale', { locale: 'de' }, { locale: 'en' }, 403],
+    ['missing locale', { locale: 'de' }, { locale: undefined }, 403],
+    ['unscoped locale', {}, { locale: undefined }, 200],
+  ] as const)(
+    '%s is checked without treating an omitted request locale as a wildcard',
+    async (_label, scope, bodyOverride, status) => {
+      const handler = createFragmentEndpoint({
+        registry,
+        authorize: { type: 'verifier', verify: () => ({ subject: 'editor', scope }) },
+        render,
+      });
+      const body = await validBody(bodyOverride);
+      const response = await handler({ request: fragmentRequest(body) });
+
+      expect(response.status).toBe(status);
+      if (status === 403) expect(await response.json()).toEqual({ error: 'unauthorized' });
+    },
+  );
 
   it('404 for an id that is not in the registry, prototype names included', async () => {
     expect((await post(await validBody({ fragment: 'missing' }))).status).toBe(404);
@@ -334,6 +357,13 @@ describe('createFragmentEndpoint — the default renderer', () => {
       html: '<h1>Hallo (container)</h1>',
       metadata: { renderer: 'astro-container' },
     });
-    expect(renderToString).toHaveBeenCalledWith(Hero, { props: { title: 'Hallo', locale: 'de' } });
+    expect(renderToString).toHaveBeenCalledWith(bridge.component, {
+      locals: {
+        __payloadLivePreviewFragment: {
+          component: Hero,
+          props: { title: 'Hallo', locale: 'de' },
+        },
+      },
+    });
   });
 });

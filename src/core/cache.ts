@@ -11,7 +11,7 @@ import {
   type DependencyMap,
 } from './dependencies';
 import { collectIslands } from './islands';
-import { enclosingFragment, resolveStrategy } from './strategies';
+import { enclosingFragment, FRAGMENT_ATTRIBUTE, resolveStrategy } from './strategies';
 import type { CachedElement, ElementPredicate, FieldType, RendererKey } from './types';
 
 export const FIELD_ATTRIBUTE = 'data-payload-field';
@@ -67,6 +67,8 @@ export const BINDING_ATTRIBUTES: readonly string[] = [
 
 const FIELD_SELECTOR = `[${FIELD_ATTRIBUTE}]`;
 const OWNER_SELECTOR = `[${OWNER_ATTRIBUTE}]`;
+/** Structural strategy roots whose arrival after navigation needs the retained document. @internal */
+export const NAVIGATION_REPLAY_SELECTOR = `[${FRAGMENT_ATTRIBUTE}], [${STRATEGY_ATTRIBUTE}="route"]`;
 
 /** The document a binding belongs to: its nearest `data-payload-owner`, itself included. */
 export function resolveBindingOwner(element: Element): string | undefined {
@@ -120,6 +122,17 @@ export interface ElementCacheOptions {
   readonly filter?: ElementPredicate;
 }
 
+/** Metadata that decides whether buffered work still addresses the same owned strategy target. */
+export function hasSameBindingIdentity(a: CachedElement, b: CachedElement): boolean {
+  return (
+    a.fieldName === b.fieldName &&
+    a.locale === b.locale &&
+    a.owner === b.owner &&
+    a.strategyKind === b.strategyKind &&
+    a.fragmentBoundary === b.fragmentBoundary
+  );
+}
+
 /**
  * Elements share a field name when the same field is rendered in several
  * places; within a field the order is DOM order.
@@ -131,6 +144,8 @@ export class ElementCache {
   private count = 0;
   private dependencies: DependencyMap | null = null;
   private islandRoots: readonly Element[] = [];
+  private ownersByIsland: ReadonlyMap<Element, string | undefined> = new Map();
+  private navigationRoots: readonly Element[] = [];
 
   constructor(options: ElementCacheOptions = {}) {
     this.filter = options.filter ?? alwaysTrue;
@@ -154,6 +169,16 @@ export class ElementCache {
     return this.islandRoots;
   }
 
+  /** Owner identities captured with `islands`; used to detect a live retarget. @internal */
+  get islandOwners(): ReadonlyMap<Element, string | undefined> {
+    return this.ownersByIsland;
+  }
+
+  /** Fieldless strategy roots under the last built root, for navigation replay. */
+  get navigationReplayRoots(): readonly Element[] {
+    return this.navigationRoots;
+  }
+
   buildFromRoot(root: ParentNode): CacheBuildStats {
     const t0 = performance.now();
     this.clear();
@@ -162,6 +187,15 @@ export class ElementCache {
       if (this.add(element) !== undefined) elementCount += 1;
     }
     this.islandRoots = collectIslands(root);
+    this.ownersByIsland = new Map(
+      this.islandRoots.map((island) => [island, resolveBindingOwner(island)]),
+    );
+    this.navigationRoots = [...root.querySelectorAll(NAVIGATION_REPLAY_SELECTOR)].filter(
+      (element) =>
+        this.filter(element) &&
+        (element.hasAttribute(FRAGMENT_ATTRIBUTE) ||
+          (element.getAttribute(FIELD_ATTRIBUTE) ?? '').length === 0),
+    );
     return {
       elementCount,
       fieldCount: this.entriesByField.size,
@@ -235,6 +269,8 @@ export class ElementCache {
     this.count = 0;
     this.dependencies = null;
     this.islandRoots = [];
+    this.ownersByIsland = new Map();
+    this.navigationRoots = [];
   }
 
   /** Replace in place when the field bucket is unchanged, preserving order. */

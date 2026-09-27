@@ -108,6 +108,8 @@ export {
   isAuthorizedPreviewContext,
   type AuthorizedPreviewContext,
   type AuthorizedPreviewScope,
+  type AuthorizedPreviewDocument,
+  type AuthorizedPreviewPayloadScope,
   type PreviewAuthorizationStrategyName,
 } from './types/authorized-preview';
 export type {

@@ -170,6 +170,208 @@ describe('MessageBus — message shapes', () => {
       revision: 3,
     });
   });
+  it('replays one deep tokenless snapshot per advanced generation and keeps revisions monotonic', () => {
+    const onReplay = vi.fn<NonNullable<BusHandlers['onReplay']>>();
+    bus.detach();
+    bus = new MessageBus((origin) => origin === TRUSTED, {
+      onUpdate,
+      onReplay,
+      onDocumentEvent,
+      onInvalid,
+    });
+    bus.attach();
+    const first = {
+      type: 'payload-live-preview' as const,
+      data: { hero: { title: 'retained' } },
+      previewToken: 'do-not-retain',
+    };
+    window.dispatchEvent(makeMessage(first, TRUSTED));
+    first.data.hero.title = 'mutated after acceptance';
+
+    expect(bus.replayLastAccepted()).toBe(false);
+    expect(bus.advanceGeneration()).toBe(true);
+    expect(bus.replayLastAccepted()).toBe(true);
+    expect(bus.replayLastAccepted()).toBe(false);
+    expect(onReplay).toHaveBeenCalledWith(
+      { type: 'payload-live-preview', data: { hero: { title: 'retained' } } },
+      TRUSTED,
+      { generation: 2, revision: 2 },
+    );
+
+    const next = { type: 'payload-live-preview' as const, data: { hero: { title: 'next' } } };
+    window.dispatchEvent(makeMessage(next, TRUSTED));
+    expect(onUpdate).toHaveBeenLastCalledWith(next, TRUSTED, {
+      generation: 2,
+      revision: 3,
+    });
+  });
+  it('gives each replay its own clone instead of exposing the retained snapshot', () => {
+    const replayedTitles: string[] = [];
+    const onReplay = vi.fn<NonNullable<BusHandlers['onReplay']>>((message) => {
+      const hero = message.data?.['hero'] as { title: string };
+      replayedTitles.push(hero.title);
+      hero.title = 'mutated by consumer';
+    });
+    bus.detach();
+    bus = new MessageBus((origin) => origin === TRUSTED, {
+      onUpdate,
+      onReplay,
+      onDocumentEvent,
+      onInvalid,
+    });
+    bus.attach();
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { hero: { title: 'retained' } } }, TRUSTED),
+    );
+
+    bus.advanceGeneration();
+    expect(bus.replayLastAccepted()).toBe(true);
+    bus.advanceGeneration();
+    expect(bus.replayLastAccepted()).toBe(true);
+
+    expect(replayedTitles).toEqual(['retained', 'retained']);
+  });
+  it('does not let an older clone boundary overwrite a reentrant accepted update', () => {
+    const onReplay = vi.fn<NonNullable<BusHandlers['onReplay']>>();
+    bus.detach();
+    bus = new MessageBus((origin) => origin === TRUSTED, {
+      onUpdate,
+      onReplay,
+      onDocumentEvent,
+      onInvalid,
+    });
+    bus.attach();
+    let reentered = false;
+    const newer = { type: 'payload-live-preview' as const, data: { title: 'newer' } };
+    const hero = {} as { title: string };
+    Object.defineProperty(hero, 'title', {
+      enumerable: true,
+      get: () => {
+        if (!reentered) {
+          reentered = true;
+          window.dispatchEvent(makeMessage(newer, TRUSTED));
+        }
+        return 'older';
+      },
+    });
+
+    window.dispatchEvent(makeMessage({ type: 'payload-live-preview', data: { hero } }, TRUSTED));
+
+    expect(onUpdate).toHaveBeenCalledOnce();
+    expect(onUpdate).toHaveBeenCalledWith(newer, TRUSTED, {
+      generation: 1,
+      revision: 2,
+    });
+    bus.advanceGeneration();
+    expect(bus.replayLastAccepted()).toBe(true);
+    expect(onReplay).toHaveBeenCalledWith(newer, TRUSTED, {
+      generation: 2,
+      revision: 3,
+    });
+  });
+  it('abandons a replay when origin matching accepts a newer update reentrantly', () => {
+    const onReplay = vi.fn<NonNullable<BusHandlers['onReplay']>>();
+    const newer = { type: 'payload-live-preview' as const, data: { title: 'newer' } };
+    let reenter = false;
+    bus.detach();
+    bus = new MessageBus(
+      (origin) => {
+        if (reenter) {
+          reenter = false;
+          window.dispatchEvent(makeMessage(newer, TRUSTED));
+        }
+        return origin === TRUSTED;
+      },
+      { onUpdate, onReplay, onDocumentEvent, onInvalid },
+    );
+    bus.attach();
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { title: 'older' } }, TRUSTED),
+    );
+    bus.advanceGeneration();
+
+    reenter = true;
+    expect(bus.replayLastAccepted()).toBe(false);
+    expect(onReplay).not.toHaveBeenCalled();
+
+    bus.advanceGeneration();
+    expect(bus.replayLastAccepted()).toBe(true);
+    expect(onReplay).toHaveBeenCalledWith(newer, TRUSTED, {
+      generation: 3,
+      revision: 3,
+    });
+  });
+  it('does not replay a snapshot whose origin the matcher no longer accepts', () => {
+    const onReplay = vi.fn<NonNullable<BusHandlers['onReplay']>>();
+    let accepted = TRUSTED;
+    bus.detach();
+    bus = new MessageBus((origin) => origin === accepted, {
+      onUpdate,
+      onReplay,
+      onDocumentEvent,
+      onInvalid,
+    });
+    bus.attach();
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { title: 'retained' } }, TRUSTED),
+    );
+    bus.advanceGeneration();
+
+    // An origin lock narrowed the matcher after the snapshot was accepted.
+    accepted = 'https://other-admin.example.com';
+    expect(bus.replayLastAccepted()).toBe(false);
+    expect(onReplay).not.toHaveBeenCalled();
+
+    // The refusal did not claim the generation: the same origin replays once it is accepted again.
+    accepted = TRUSTED;
+    expect(bus.replayLastAccepted()).toBe(true);
+    expect(onReplay).toHaveBeenCalledOnce();
+  });
+  it('reports no replay and consumes no revision without a replay consumer', () => {
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { title: 'retained' } }, TRUSTED),
+    );
+    bus.advanceGeneration();
+
+    expect(bus.replayLastAccepted()).toBe(false);
+
+    const next = { type: 'payload-live-preview' as const, data: { title: 'next' } };
+    window.dispatchEvent(makeMessage(next, TRUSTED));
+    expect(onUpdate).toHaveBeenLastCalledWith(next, TRUSTED, { generation: 2, revision: 2 });
+  });
+  it('forgets the retained snapshot explicitly', () => {
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { title: 'old' } }, TRUSTED),
+    );
+    bus.forgetLastAccepted();
+    bus.advanceGeneration();
+    expect(bus.replayLastAccepted()).toBe(false);
+  });
+  it('processes a synthetic non-cloneable update once without retaining a mutable replay', () => {
+    const onReplay = vi.fn<NonNullable<BusHandlers['onReplay']>>();
+    bus.detach();
+    bus = new MessageBus((origin) => origin === TRUSTED, {
+      onUpdate,
+      onReplay,
+      onDocumentEvent,
+      onInvalid,
+    });
+    bus.attach();
+    const message = {
+      type: 'payload-live-preview' as const,
+      data: { title: 'accepted once', callback: (): void => {} },
+    };
+
+    window.dispatchEvent(makeMessage(message, TRUSTED));
+    expect(onUpdate).toHaveBeenCalledWith(message, TRUSTED, {
+      generation: 1,
+      revision: 1,
+    });
+
+    bus.advanceGeneration();
+    expect(bus.replayLastAccepted()).toBe(false);
+    expect(onReplay).not.toHaveBeenCalled();
+  });
   it('reveals a focused field and rejects a focus message with no field', () => {
     const onFocusField = vi.fn<NonNullable<BusHandlers['onFocusField']>>();
     bus.detach();

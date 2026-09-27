@@ -209,8 +209,14 @@ export class LivePreviewClient {
     await this.#plugins.unregister(name);
   }
 
+  /** Re-scan bindings after replacing markup without crossing a navigation boundary. */
   refreshCache(): void {
     this.#runtime.refreshCache();
+  }
+
+  /** Re-scan bindings and locally replay the last accepted document after a router commit. */
+  refreshAfterNavigation(): void {
+    this.#runtime.navigationCommit();
   }
 
   get events(): EventEmitter {

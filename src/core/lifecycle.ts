@@ -1,12 +1,11 @@
 /**
- * `LivePreviewRuntime` builds the primitives, owns their lifecycle and hands
- * accepted messages to the update pipeline. It never speaks postMessage
- * itself and never walks the DOM during an update. See ADR 0004.
+ * `LivePreviewRuntime` owns the primitives and hands accepted messages to the update pipeline.
+ * It never speaks postMessage or walks the DOM during an update. See ADR 0004.
  */
 
 import { createA11y, defaultSendReady } from './runtime-wiring';
 import { BindingWriter } from './binding-writer';
-import { ElementCache } from './cache';
+import { ElementCache, hasSameBindingIdentity } from './cache';
 import { DataMerger } from './data-merger';
 import type { DiagnosticCode } from './diagnostic-codes';
 import { isolateDiagnostic, noopDiagnostic, safeConsoleWarn } from './diagnostics';
@@ -21,7 +20,7 @@ import { LifetimeScope } from './lifetime-scope';
 import type { ProtocolNegotiation } from './protocol-version';
 import type { RuntimeOptions } from './runtime-options';
 import { RuntimeState, type RuntimeDeps } from './runtime-state';
-import { startWhenReady, type StartupHost } from './startup';
+import { isDocumentRoot, readDocumentBody, startWhenReady, type StartupHost } from './startup';
 import { ConnectionState, HeartbeatTimer } from './state';
 import type { CachedElement } from './types';
 import { UpdatePipeline } from './update-pipeline';
@@ -38,19 +37,20 @@ export class LivePreviewRuntime {
   private readonly state = new RuntimeState();
   private readonly pipeline: UpdatePipeline;
   private readonly writer: BindingWriter;
-  /** Watches `<html>` for a swapped `<body>` so the observers follow it. */
   private rootSentinel: MutationObserver | null = null;
   /** The session's resources, released together in reverse order when it ends (ADR 0005, 2.1 note). */
   private scope: LifetimeScope | null = null;
+  /** Prevent a cleanup callback from opening a session inside the one being torn down. */
+  private closingSession = false;
   private observedRoot: Node | null = null;
+  private replayRetainedOnStart = false;
 
   constructor(options: RuntimeOptions) {
     const { emitter, renderers } = options;
     const log = options.log === undefined ? noopDiagnostic : isolateDiagnostic(options.log);
     const warn = options.warn === undefined ? safeConsoleWarn : isolateDiagnostic(options.warn);
     const root = options.root ?? (typeof document !== 'undefined' ? document : undefined);
-    // Without a document there is nothing to bind. Failing here names the
-    // option; the alternative is a TypeError from the first DOM read in start().
+    // Name the missing option here instead of failing at the first DOM read in start().
     if (root === undefined) throw new Error('LivePreviewRuntime: no document; pass options.root');
     // Bindings inside a hydrated island are the island's business (ADR 0008 §4).
     const cache = new ElementCache({ filter: (element) => !isInsideIsland(element) });
@@ -58,6 +58,9 @@ export class LivePreviewRuntime {
       {
         onStructuralChange: () => {
           this.rebuildCache();
+        },
+        onIslandHydrated: (island) => {
+          this.pipeline.reapplyNavigationIslands([island], true);
         },
         onVisibilityChange: (element, visible) => {
           if (visible) scheduler.notifyVisible(element);
@@ -88,6 +91,9 @@ export class LivePreviewRuntime {
       onUpdate: (message, origin, revision) => {
         this.pipeline.handleUpdate(message, origin, revision);
       },
+      onReplay: (message, origin, revision) => {
+        this.pipeline.handleReplay(message, origin, revision);
+      },
       onDocumentEvent: () => {
         this.state.protocol.observe(['document-events'], log);
         void emitter.emit('documentSave', { timestamp: Date.now() });
@@ -100,9 +106,8 @@ export class LivePreviewRuntime {
           const error = new Error(`Preview token rejected (origin: ${origin})`);
           void emitter.emit('error', { error, context: 'token', code: 'LP0502' });
         }
-        // A trusted origin sending a shape this runtime does not know is
-        // protocol drift, not an attack — and the only place it is visible is
-        // here, so it is said out loud once rather than only under `debug`.
+        // An unknown shape from a trusted origin is protocol drift, not an attack.
+        // Report it here once: without `debug`, no other boundary makes it visible.
         if ((reason === 'shape' || reason === 'type') && !this.state.warnedProtocolShape) {
           this.state.warnedProtocolShape = true;
           warn(
@@ -111,10 +116,8 @@ export class LivePreviewRuntime {
               'ignored. A newer Payload or a custom sender: check that the versions match.',
           );
         }
-        // The one refusal reason whose default changed in 2.0. A page whose
-        // admin posts from somewhere other than the window that framed or
-        // opened it simply stops updating, and the cause is invisible unless
-        // `debug` happens to be on — so it is said once, like LP0503.
+        // This refusal default changed in 2.0. An admin posting from outside the
+        // framing or opening window silently stops updates, so report it once.
         if (reason === 'source' && !this.state.warnedForeignSource) {
           this.state.warnedForeignSource = true;
           warn(
@@ -199,7 +202,8 @@ export class LivePreviewRuntime {
    */
   start(): boolean {
     const { state } = this;
-    if (state.isRunning()) return false;
+    if (state.isRunning() || this.closingSession) return false;
+    if (state.suspended) this.replayRetainedOnStart = true;
     state.started = true;
     state.suspended = false;
     this.openScope();
@@ -263,6 +267,21 @@ export class LivePreviewRuntime {
     deps.bus.attach();
     void deps.emitter.emitWhile('init', { timestamp: Date.now() }, () => state.isRunning());
     if (!state.isRunning()) return;
+    const recoverSuspendedSession = this.replayRetainedOnStart;
+    this.replayRetainedOnStart = false;
+    const suspendedHeartbeatExpired = recoverSuspendedSession && deps.heartbeat.resume();
+    if (!state.isRunning()) return;
+    if (recoverSuspendedSession && !suspendedHeartbeatExpired) {
+      state.routeRefreshOwed = false;
+      state.merges.resetRawChanges();
+      state.unfaithfulPatches = [];
+      state.revealer.reset();
+      state.lastAppliedIdentity = new WeakMap();
+      state.changes.reset();
+      state.navigationReplayPending = true;
+      if (!deps.bus.replayLastAccepted()) state.navigationReplayPending = false;
+      if (!state.isRunning()) return;
+    }
     for (const delay of READY_RETRY_DELAYS_MS) {
       if (!state.isRunning()) return;
       if (delay === 0) {
@@ -297,6 +316,8 @@ export class LivePreviewRuntime {
     if (!state.isRunning() && !state.suspended) return;
     const wasConnected = state.isRunning() ? this.release() : false;
     state.suspended = false;
+    this.replayRetainedOnStart = false;
+    deps.bus.forgetLastAccepted();
     if (wasConnected) {
       void deps.emitter.emit('disconnect', { reason: 'destroy', timestamp: Date.now() });
     }
@@ -304,12 +325,10 @@ export class LivePreviewRuntime {
     void deps.emitter.emit('destroy', { timestamp: Date.now() });
   }
 
-  /** Invalidate first, then release everything startup may have acquired. */
   /**
    * One scope per session, opened by `start()`. What it holds is the
-   * teardown, in the order it must run — the last entry closes first — so
-   * `destroy()`, `suspend()` and a failed start all release the same way:
-   * mark the session invalid, abort the work in flight, close the scope.
+   * teardown in reverse order, so `destroy()`, `suspend()` and failed starts
+   * all invalidate the session, abort in-flight work and close the same scope.
    */
   private openScope(): void {
     const { state, deps } = this;
@@ -348,9 +367,16 @@ export class LivePreviewRuntime {
   private release(): boolean {
     const { state, deps } = this;
     state.activeUpdate = null;
+    state.navigationBindingReplay = false;
     state.started = false;
-    this.scope?.close();
+    const closingScope = this.scope;
     this.scope = null;
+    this.closingSession = true;
+    try {
+      closingScope?.close();
+    } finally {
+      this.closingSession = false;
+    }
     deps.cache.clear();
     return deps.connection.markDisconnected();
   }
@@ -369,6 +395,40 @@ export class LivePreviewRuntime {
     if (!this.state.isRunning()) return;
     this.state.revealer.reset();
     if (!this.followReplacedRoot()) this.rebuildCache();
+  }
+
+  /**
+   * Supersede work owned by the route being left, then rescan and locally
+   * replay the last accepted snapshot. The ordinary public refresh keeps
+   * buffered work; only a confirmed router commit crosses this boundary.
+   * @internal
+   */
+  navigationCommit(): void {
+    const { state, deps } = this;
+    // Before startup owns the bus/cache, its parse/hydration wait scans and sends the handshake.
+    if (!state.isRunning() || state.deferredStart !== null) return;
+    // Finish destructive cleanup before opening the next ingress generation.
+    // Abort/fetch listeners may synchronously post a newer document; the second
+    // cancellation retains it instead of letting this older cleanup tear it down.
+    this.cancelActiveUpdate(true);
+    deps.merger?.destroy();
+    state.merges.destroy();
+    state.abortStrategies();
+    this.cancelActiveUpdate(true);
+    state.routeRefreshOwed = false;
+    state.merges.resetRawChanges();
+    state.unfaithfulPatches = [];
+    state.revealer.reset();
+    // A retained element's previous value identity says nothing about the new route's DOM.
+    state.lastAppliedIdentity = new WeakMap();
+    state.changes.reset();
+    if (!state.isRunning()) return;
+    deps.bus.advanceGeneration();
+    state.navigationReplayPending = true;
+    if (!this.followReplacedRoot()) this.rebuildCache();
+    if (!state.isRunning()) return;
+    deps.bus.replayLastAccepted();
+    if (state.isRunning()) this.sendReadyAfterStart();
   }
 
   /** Some routers swap `document.body` on navigation, leaving observers on a detached node. */
@@ -434,31 +494,53 @@ export class LivePreviewRuntime {
     const { state, deps } = this;
     if (!state.isRunning()) return;
     const previous = new Map<Element, CachedElement>();
+    const previousIslandOwners = deps.cache.islandOwners;
+    const previousNavigationRoots = new Set(deps.cache.navigationReplayRoots);
     for (const entry of deps.cache.values()) {
       previous.set(entry.element, entry);
       deps.observers.unobserveElement(entry.element);
     }
     this.buildCacheAndObserve();
     if (!state.isRunning()) return;
+    const added = new Set<Element>(
+      deps.cache.navigationReplayRoots.filter((root) => !previousNavigationRoots.has(root)),
+    );
     // Buffered work survives only while the same element is bound to the same field.
     for (const entry of deps.cache.values()) {
       const before = previous.get(entry.element);
-      if (before?.fieldName === entry.fieldName) deps.scheduler.retarget(entry);
-      else deps.scheduler.forget(entry.element);
+      if (before !== undefined && hasSameBindingIdentity(before, entry)) {
+        deps.scheduler.retarget(entry);
+      } else {
+        deps.scheduler.forget(entry.element);
+        added.add(entry.element);
+      }
       previous.delete(entry.element);
     }
     for (const removed of previous.values()) deps.scheduler.forget(removed.element);
+    if (added.size > 0) this.pipeline.reapplyNavigationBindings(added);
+    const addedIslands = deps.cache.islands.filter(
+      (island) =>
+        !previousIslandOwners.has(island) ||
+        (deps.scopeBindingsByOwner &&
+          previousIslandOwners.get(island) !== deps.cache.islandOwners.get(island)),
+    );
+    if (addedIslands.length > 0) this.pipeline.reapplyNavigationIslands(addedIslands);
   }
 
   private onHeartbeatTimeout(): void {
     const { state, deps } = this;
     if (!state.isRunning()) return;
-    deps.bus.advanceGeneration();
-    const active = state.activeUpdate;
-    state.activeUpdate = null;
-    if (active !== null) deps.scheduler.cancelRevision(active.revision);
+    // Cleanup belongs to the expiring generation; a synchronous abort listener cannot
+    // reconnect into the generation this same cleanup is about to destroy.
+    this.cancelActiveUpdate(false);
     deps.merger?.destroy();
     state.merges.destroy();
+    state.abortStrategies();
+    this.cancelActiveUpdate(false);
+    if (!state.isRunning()) return;
+    deps.bus.advanceGeneration();
+    deps.bus.forgetLastAccepted();
+    state.navigationBindingReplay = false;
     const wasConnected = deps.connection.markDisconnected();
     // Release the origin lock before the disconnect event: a listener may
     // reconnect from another allow-listed origin synchronously.
@@ -478,6 +560,19 @@ export class LivePreviewRuntime {
       if (!state.isRunning()) return;
     }
     this.sendReadyAfterStart();
+  }
+
+  /** Cancel whichever revision owns work now; cleanup callbacks may install a newer one. */
+  private cancelActiveUpdate(countSuperseded: boolean): void {
+    const { state, deps } = this;
+    const active = state.activeUpdate;
+    state.activeUpdate = null;
+    if (active === null) return;
+    active.cancelled = true;
+    deps.scheduler.cancelRevision(active.revision);
+    if (countSuperseded && !active.completed && active.countsAsUpdate) {
+      state.supersededCount += 1;
+    }
   }
 
   /** Later handshake retries are best-effort and must not escape timer callbacks. */
@@ -501,14 +596,4 @@ export class LivePreviewRuntime {
       this.state.activeUpdate === null
     );
   }
-}
-
-/** Node types are stable across realms; global constructors are not. */
-function isDocumentRoot(root: Document | Element): root is Document {
-  return root.nodeType === 9;
-}
-
-/** lib.dom types body as present; a head-time document has none yet. */
-function readDocumentBody(root: Document): HTMLElement | null {
-  return root.body;
 }

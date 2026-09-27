@@ -1,5 +1,892 @@
 {
-  "$comment": "What CI actually runs. scripts/compat-table.ts --check holds this file against the fixture lockfiles and the workflow, and the README section it renders against this file. Edit here, then npm run compat:write. `hooks`: the React and Vue peer floors the hook-matrix job installs over the lockfile (`floor`, held against the peer range and the workflow) and what the lockfile itself installs (`current`, held against package-lock.json).",
+  "$comment": "What CI actually runs. scripts/compat-table.ts --check holds this file against the fixture lockfiles and the workflow, and the README section it renders against this file. Edit here, then npm run compat:write. `hooks`: the React and Vue peer floors the hook-matrix job installs over the lockfile (`floor`, held against the peer range and the workflow) and what the lockfile itself installs (`current`, held against package-lock.json). `featureEvidence` keeps configured, skipped, open and executed evidence distinct; only a hashed retained result may use `passed`.",
+  "featureEvidenceSchema": 2,
+  "featureEvidence": [
+    {
+      "id": "astro-base-current",
+      "surface": "Astro",
+      "feature": "base live preview and structural updates",
+      "version": {
+        "kind": "exact",
+        "value": "7.3.2",
+        "package": "astro",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/astro-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["tests/e2e/specs/live-preview.spec.ts", "playwright.config.ts"]
+      }
+    },
+    {
+      "id": "astro-base-floor",
+      "surface": "Astro",
+      "feature": "base adapter at the declared framework floor",
+      "version": {
+        "kind": "floor",
+        "value": "4.0.0",
+        "package": "astro",
+        "source": {
+          "kind": "peer-floor"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "mock admin",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "open",
+        "sources": ["package.json", "src/adapters/astro/index.ts"]
+      }
+    },
+    {
+      "id": "astro-base-floating-four",
+      "surface": "Astro",
+      "feature": "base adapter in the floating late-4.x matrix; not an exact-floor result",
+      "version": {
+        "kind": "floor",
+        "value": "4.0.0",
+        "package": "astro",
+        "source": {
+          "kind": "peer-floor"
+        },
+        "configuredRange": "^4"
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "astro-matrix"
+        },
+        "sources": [".github/workflows/ci.yml", "tests/e2e/specs/live-preview.spec.ts"]
+      }
+    },
+    {
+      "id": "astro-fragment-current",
+      "surface": "Astro",
+      "feature": "native fragment rendering",
+      "version": {
+        "kind": "exact",
+        "value": "7.2.9",
+        "package": "astro",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/astro-hybrid"
+        }
+      },
+      "mode": "production",
+      "packageForm": "linked-worktree",
+      "backend": "mock admin and signed fragment endpoint",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["tests/e2e/specs/hybrid-fragment.spec.ts", "src/adapters/astro/fragments.ts"]
+      }
+    },
+    {
+      "id": "astro-fragment-floor",
+      "surface": "Astro",
+      "feature": "native fragment rendering at the Container API floor",
+      "version": {
+        "kind": "floor",
+        "value": "4.9.0",
+        "package": "astro",
+        "source": {
+          "kind": "declared-feature-floor"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "mock admin and signed fragment endpoint",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "open",
+        "sources": ["src/adapters/astro/fragments.ts", "tests/e2e/specs/hybrid-fragment.spec.ts"]
+      }
+    },
+    {
+      "id": "astro-real-payload-current",
+      "surface": "Astro",
+      "feature": "real Payload admin to production preview",
+      "version": {
+        "kind": "exact",
+        "value": "7.3.2",
+        "package": "astro",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/astro-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.89.0 admin",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-e2e"
+        },
+        "sources": ["tests/real-payload/homepage-live-preview.spec.ts"]
+      }
+    },
+    {
+      "id": "next-base-current",
+      "surface": "Next.js",
+      "feature": "base live preview and asset delivery",
+      "version": {
+        "kind": "exact",
+        "value": "16.3.4",
+        "package": "next",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nextjs-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["tests/e2e/specs/nextjs-live-preview.spec.ts", "playwright.config.ts"]
+      }
+    },
+    {
+      "id": "next-fragment-current",
+      "surface": "Next.js",
+      "feature": "synchronous fragment rendering",
+      "version": {
+        "kind": "exact",
+        "value": "16.3.4",
+        "package": "next",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nextjs-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and signed fragment endpoint",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["tests/e2e/specs/nextjs-fragment.spec.ts"]
+      }
+    },
+    {
+      "id": "next-production-lifecycle",
+      "surface": "Next.js",
+      "feature": "production build/start, native navigation and real-admin unsaved output",
+      "version": {
+        "kind": "exact",
+        "value": "16.3.4",
+        "package": "next",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nextjs-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "Payload 3.x admin not yet wired",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "open",
+        "sources": ["examples/nextjs-payload/package.json", "playwright.config.ts"]
+      }
+    },
+    {
+      "id": "sveltekit-base-current",
+      "surface": "SvelteKit",
+      "feature": "server handle, base live preview and asset delivery",
+      "version": {
+        "kind": "exact",
+        "value": "2.70.2",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"]
+      }
+    },
+    {
+      "id": "sveltekit-fragment-current",
+      "surface": "SvelteKit",
+      "feature": "native fragment rendering",
+      "version": {
+        "kind": "exact",
+        "value": "2.70.2",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and signed fragment endpoint",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"]
+      }
+    },
+    {
+      "id": "sveltekit-production-lifecycle",
+      "surface": "SvelteKit",
+      "feature": "production preview, hydrated navigation and real-admin unsaved output",
+      "version": {
+        "kind": "exact",
+        "value": "2.70.2",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "Payload 3.x admin not yet wired",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "open",
+        "sources": ["examples/sveltekit-payload/package.json", "playwright.config.ts"]
+      }
+    },
+    {
+      "id": "nuxt-base-current",
+      "surface": "Nuxt",
+      "feature": "Nitro integration, base live preview and asset delivery",
+      "version": {
+        "kind": "exact",
+        "value": "3.21.11",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"]
+      }
+    },
+    {
+      "id": "nuxt-fragment-current",
+      "surface": "Nuxt",
+      "feature": "native Vue fragment rendering",
+      "version": {
+        "kind": "exact",
+        "value": "3.21.11",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and signed fragment endpoint",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"]
+      }
+    },
+    {
+      "id": "nuxt-production-lifecycle",
+      "surface": "Nuxt",
+      "feature": "production preview, native navigation and real-admin unsaved output",
+      "version": {
+        "kind": "exact",
+        "value": "3.21.11",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "Payload 3.x admin not yet wired",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "open",
+        "sources": ["examples/nuxt-payload/package.json", "playwright.config.ts"]
+      }
+    },
+    {
+      "id": "plain-html-inline-current",
+      "surface": "Plain HTML",
+      "feature": "prebuilt inline runtime",
+      "version": {
+        "kind": "exact",
+        "value": "2.0.5",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "production",
+      "packageForm": "linked-worktree",
+      "backend": "dependency-free mock admin and static server",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["examples/pure-html/package.json", "tests/e2e/specs/lean-profile.spec.ts"]
+      }
+    },
+    {
+      "id": "plain-html-client-current",
+      "surface": "Plain HTML",
+      "feature": "bundled client entry",
+      "version": {
+        "kind": "exact",
+        "value": "2.0.5",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "production",
+      "packageForm": "linked-worktree",
+      "backend": "mock admin and static server",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": ["examples/vanilla-client/package.json", "tests/e2e/specs/reveal.spec.ts"]
+      }
+    },
+    {
+      "id": "plain-html-packed-consumer",
+      "surface": "Plain HTML",
+      "feature": "immutable-tarball build, CSP and authorized service path",
+      "version": {
+        "kind": "exact",
+        "value": "2.0.5",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "authorized renderer service not yet provided",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "open",
+        "sources": ["examples/pure-html/package.json", "scripts/check-package.ts"]
+      }
+    },
+    {
+      "id": "react-hook-floor",
+      "surface": "React hook",
+      "feature": "document merge hook and route-refresh component",
+      "version": {
+        "kind": "floor",
+        "value": "18.0.0",
+        "package": "react",
+        "source": {
+          "kind": "peer-floor"
+        }
+      },
+      "mode": "unit",
+      "packageForm": "workspace-source",
+      "backend": "synthetic document session",
+      "browsers": ["node"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "hook-matrix"
+        },
+        "sources": [
+          "tests/unit/adapters/react-hook.test.tsx",
+          "tests/unit/adapters/react-route-refresh.test.tsx"
+        ]
+      }
+    },
+    {
+      "id": "react-hook-production",
+      "surface": "React hook",
+      "feature": "standalone browser lifecycle and real-admin unsaved output",
+      "version": {
+        "kind": "floor",
+        "value": "18.0.0",
+        "package": "react",
+        "source": {
+          "kind": "peer-floor"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "Payload admin not yet wired",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "open",
+        "sources": ["src/adapters/react/index.ts", "tests/unit/adapters/react-hook.test.tsx"]
+      }
+    },
+    {
+      "id": "vue-composable-floor",
+      "surface": "Vue composable",
+      "feature": "document merge composable",
+      "version": {
+        "kind": "floor",
+        "value": "3.3.0",
+        "package": "vue",
+        "source": {
+          "kind": "peer-floor"
+        }
+      },
+      "mode": "unit",
+      "packageForm": "workspace-source",
+      "backend": "synthetic document session",
+      "browsers": ["node"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "hook-matrix"
+        },
+        "sources": ["tests/unit/adapters/vue-composable.test.ts"]
+      }
+    },
+    {
+      "id": "vue-composable-production",
+      "surface": "Vue composable",
+      "feature": "standalone browser lifecycle and real-admin unsaved output",
+      "version": {
+        "kind": "floor",
+        "value": "3.3.0",
+        "package": "vue",
+        "source": {
+          "kind": "peer-floor"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "Payload admin not yet wired",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "open",
+        "sources": ["src/adapters/vue/index.ts", "tests/unit/adapters/vue-composable.test.ts"]
+      }
+    },
+    {
+      "id": "payload-plugin-types-v2",
+      "surface": "Payload plugin",
+      "feature": "packed config plugin type compatibility",
+      "version": {
+        "kind": "exact",
+        "value": "2.32.3",
+        "package": "payload",
+        "source": {
+          "kind": "script-pin",
+          "file": "scripts/check-package.ts",
+          "identifier": "PAYLOAD_PLUGIN_TYPE_VERSIONS"
+        }
+      },
+      "mode": "package-smoke",
+      "packageForm": "packed-tarball",
+      "backend": "Payload 2.32.3 package declarations",
+      "browsers": ["node"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "build.yml",
+          "job": "build"
+        },
+        "sources": [
+          "scripts/check-package.ts",
+          "scripts/package-smoke-types.ts",
+          "type-tests/packed/payload-plugin-v2-positive.mts.fixture"
+        ]
+      }
+    },
+    {
+      "id": "payload-plugin-types-v3",
+      "surface": "Payload plugin",
+      "feature": "packed config plugin type compatibility",
+      "version": {
+        "kind": "exact",
+        "value": "3.89.0",
+        "package": "payload",
+        "source": {
+          "kind": "script-pin",
+          "file": "scripts/check-package.ts",
+          "identifier": "PAYLOAD_PLUGIN_TYPE_VERSIONS"
+        }
+      },
+      "mode": "package-smoke",
+      "packageForm": "packed-tarball",
+      "backend": "Payload 3.89.0 package declarations",
+      "browsers": ["node"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "build.yml",
+          "job": "build"
+        },
+        "sources": [
+          "scripts/check-package.ts",
+          "scripts/package-smoke-types.ts",
+          "type-tests/packed/payload-plugin-v3-positive.mts.fixture"
+        ]
+      }
+    },
+    {
+      "id": "payload-plugin-real-admin-v3",
+      "surface": "Payload plugin",
+      "feature": "config plugin URL and breakpoint behavior in a real admin",
+      "version": {
+        "kind": "exact",
+        "value": "3.89.0",
+        "package": "payload",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/payload-backend"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.89.0 admin",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-e2e"
+        },
+        "sources": [
+          "examples/payload-backend/payload.config.ts",
+          "tests/real-payload/homepage-live-preview.spec.ts"
+        ]
+      }
+    },
+    {
+      "id": "public-entry-package-smoke",
+      "surface": "Public entries",
+      "feature": "every export-map entry in isolated package consumers",
+      "version": {
+        "kind": "exact",
+        "value": "2.0.5",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "package-smoke",
+      "packageForm": "packed-tarball",
+      "backend": "isolated Node consumers",
+      "browsers": ["node"],
+      "entries": [
+        ".",
+        "./annotate",
+        "./astro",
+        "./astro/PreviewBoundary.astro",
+        "./astro/RichText.astro",
+        "./astro/middleware-entry",
+        "./client",
+        "./codegen",
+        "./codegen/astro",
+        "./core",
+        "./doctor",
+        "./fragment",
+        "./lean",
+        "./lexical",
+        "./migrate",
+        "./nextjs",
+        "./nuxt",
+        "./nuxt-module",
+        "./package.json",
+        "./payload",
+        "./plugin",
+        "./plugins",
+        "./react",
+        "./server",
+        "./structural",
+        "./sveltekit",
+        "./vue"
+      ],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "build.yml",
+          "job": "build"
+        },
+        "sources": ["scripts/check-package.ts", "scripts/package-smoke-imports.ts"]
+      }
+    },
+    {
+      "id": "tooling-package-smoke",
+      "surface": "Tooling",
+      "feature": "code generation, annotation, doctor, migration and executable entrypoints",
+      "version": {
+        "kind": "exact",
+        "value": "2.0.5",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "package-smoke",
+      "packageForm": "packed-tarball",
+      "backend": "isolated Node consumers",
+      "browsers": ["node"],
+      "entries": ["./annotate", "./codegen", "./codegen/astro", "./doctor", "./migrate"],
+      "bins": ["pll", "pll-codegen"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "build.yml",
+          "job": "build"
+        },
+        "sources": ["scripts/check-package.ts", "scripts/package-smoke-imports.ts"]
+      }
+    },
+    {
+      "id": "astro-navigation-replay-current",
+      "surface": "Astro",
+      "feature": "ClientRouter commit and accepted-document replay",
+      "version": {
+        "kind": "exact",
+        "value": "7.2.9",
+        "package": "astro",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/astro-inline"
+        }
+      },
+      "mode": "production",
+      "packageForm": "linked-worktree",
+      "backend": "mock admin and optimized Astro preview",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": [
+          "src/adapters/astro/page-facts.ts",
+          "tests/e2e/specs/astro-soft-navigation.spec.ts",
+          "playwright.config.ts"
+        ]
+      }
+    },
+    {
+      "id": "next-navigation-replay-current",
+      "surface": "Next.js",
+      "feature": "App Router commit, streamed binding and accepted-document replay",
+      "version": {
+        "kind": "exact",
+        "value": "16.3.4",
+        "package": "next",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nextjs-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and native App Router",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": [
+          "examples/nextjs-payload/app/(inline)/soft-navigation/PreviewNavigationBridge.tsx",
+          "tests/e2e/specs/nextjs-live-preview.spec.ts",
+          "playwright.config.ts"
+        ]
+      }
+    },
+    {
+      "id": "sveltekit-navigation-replay-current",
+      "surface": "SvelteKit",
+      "feature": "afterNavigate commit, invalidation and streamed binding replay",
+      "version": {
+        "kind": "exact",
+        "value": "2.70.2",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and hydrated SvelteKit route",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": [
+          "examples/sveltekit-payload/src/routes/navigation/NavigationBridge.svelte",
+          "tests/e2e/specs/sveltekit-live-preview.spec.ts",
+          "playwright.config.ts"
+        ]
+      }
+    },
+    {
+      "id": "nuxt-navigation-replay-current",
+      "surface": "Nuxt",
+      "feature": "route commit, refresh ordering and accepted-document replay",
+      "version": {
+        "kind": "exact",
+        "value": "3.21.11",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and hydrated Nuxt route",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": [
+          "examples/nuxt-payload/plugins/payload-live-preview-navigation.client.ts",
+          "tests/e2e/specs/nuxt-live-preview.spec.ts",
+          "playwright.config.ts"
+        ]
+      }
+    },
+    {
+      "id": "plain-html-manual-navigation-replay",
+      "surface": "Plain HTML",
+      "feature": "manual navigation commit and accepted-document replay",
+      "version": {
+        "kind": "exact",
+        "value": "2.0.5",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "unit",
+      "packageForm": "workspace-source",
+      "backend": "host-owned DOM replacement",
+      "browsers": ["node"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "build.yml",
+          "job": "build"
+        },
+        "sources": [
+          "src/client/index.ts",
+          "tests/integration/client-lifecycle.test.ts",
+          "tests/integration/runtime-preview-context.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "public-navigation-api-package-smoke",
+      "surface": "Public entries",
+      "feature": "client navigation method and inline soft-navigation configuration",
+      "version": {
+        "kind": "exact",
+        "value": "2.0.5",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "package-smoke",
+      "packageForm": "packed-tarball",
+      "backend": "isolated Node consumers",
+      "browsers": ["node"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "build.yml",
+          "job": "build"
+        },
+        "sources": [
+          "etc/api/payload-live-preview--client.api.md",
+          "tests/unit/inline-generator.test.ts",
+          "scripts/check-package.ts"
+        ]
+      }
+    }
+  ],
   "frameworks": [
     {
       "name": "Astro",

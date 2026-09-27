@@ -16,15 +16,19 @@
     },
     "src/core/navigation-lifecycle.ts::windowTarget?.addEventListener('pagehide', onPageHide);": {
       "release": "caller",
-      "why": "registerNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
+      "why": "bindNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
     },
     "src/core/navigation-lifecycle.ts::windowTarget?.addEventListener('pageshow', onPageShow);": {
       "release": "caller",
-      "why": "registerNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
+      "why": "bindNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
     },
     "src/core/navigation-lifecycle.ts::for (const name of softEvents) documentTarget?.addEventListener(name, onSoftNavigation);": {
       "release": "caller",
-      "why": "registerNavigationLifecycle() returns the disposer that removes every soft-navigation listener; the client calls it on destroy()."
+      "why": "The soft-navigation listener refreshes the document after each declared router commit. The returned disposer removes every listener on runtime teardown."
+    },
+    "src/core/navigation-lifecycle.ts::if (observesAstro) documentTarget?.addEventListener(ASTRO_AFTER_SWAP_EVENT, onAstroAfterSwap);": {
+      "release": "caller",
+      "why": "The Astro swap listener distinguishes a client-router commit from Astro's initial page-load signal. The returned disposer removes it on runtime teardown."
     },
     "src/core/message-bus.ts::target.addEventListener('message', listener);": {
       "release": "scope",

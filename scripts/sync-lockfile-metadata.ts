@@ -2,9 +2,9 @@
  * Synchronize package identity metadata after `changeset version`.
  *
  * Changesets updates package.json and CHANGELOG.md but does not keep npm's
- * root lock identity or local `file:../..` fixture entries current. This script
- * updates only those copied name/version fields. It performs no dependency
- * resolution and invokes no package manager.
+ * root lock identity, local `file:../..` fixture entries or compatibility
+ * evidence current. This script updates only those reviewed package-identity
+ * fields. It performs no dependency resolution and invokes no package manager.
  */
 import { randomUUID } from 'node:crypto';
 import { open, readFile, rename, unlink } from 'node:fs/promises';
@@ -15,6 +15,7 @@ import {
   LOCAL_FILE_PACKAGE_FIXTURES,
   LOCAL_PACKAGE_SPECIFIER,
   type PackageLockMetadataDocument,
+  type PackageLockMetadataFixtureDocument,
   type PackageLockMetadataInput,
 } from './release-contracts';
 
@@ -40,7 +41,120 @@ function packageIdentity(manifest: unknown): { readonly name: string; readonly v
   return { name, version };
 }
 
-function fixtureEntry(fixture: PackageLockMetadataDocument, packageName: string): JsonRecord {
+/** Return a clone whose root-package evidence follows the package version. */
+export function synchronizeFeatureEvidenceVersions(
+  matrix: unknown,
+  packageVersion: string,
+): JsonRecord {
+  if (packageVersion.length === 0) throw new TypeError('package version must be non-empty');
+  const synchronized = structuredClone(record(matrix, 'quality/compat-matrix.json'));
+  const evidence = synchronized['featureEvidence'];
+  if (!Array.isArray(evidence)) {
+    throw new TypeError('quality/compat-matrix.json featureEvidence must be an array');
+  }
+  let rootPackageCells = 0;
+  for (const [index, entry] of evidence.entries()) {
+    const cell = record(entry, `quality/compat-matrix.json featureEvidence[${String(index)}]`);
+    const version = record(
+      cell['version'],
+      `quality/compat-matrix.json featureEvidence[${String(index)}].version`,
+    );
+    const source = record(
+      version['source'],
+      `quality/compat-matrix.json featureEvidence[${String(index)}].version.source`,
+    );
+    if (source['kind'] !== 'root-package') continue;
+    version['value'] = packageVersion;
+    rootPackageCells += 1;
+  }
+  if (rootPackageCells === 0) {
+    throw new Error('quality/compat-matrix.json has no root-package feature evidence');
+  }
+  return synchronized;
+}
+
+function escapePattern(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+/** Replace only the JSON string tokens owned by root-package evidence cells. */
+export function synchronizeFeatureEvidenceVersionSource(
+  source: string,
+  packageVersion: string,
+): string {
+  const parsed = record(JSON.parse(source) as unknown, 'quality/compat-matrix.json');
+  const evidence = parsed['featureEvidence'];
+  if (!Array.isArray(evidence)) {
+    throw new TypeError('quality/compat-matrix.json featureEvidence must be an array');
+  }
+  const positions: number[] = [];
+  let cursor = source.indexOf('"featureEvidence"');
+  if (cursor < 0) throw new Error('quality/compat-matrix.json cannot locate featureEvidence');
+  for (const [index, entry] of evidence.entries()) {
+    const cell = record(entry, `quality/compat-matrix.json featureEvidence[${String(index)}]`);
+    const id = cell['id'];
+    if (typeof id !== 'string' || id.length === 0) {
+      throw new TypeError(
+        `quality/compat-matrix.json featureEvidence[${String(index)}].id must be non-empty`,
+      );
+    }
+    const marker = new RegExp(`"id"\\s*:\\s*${escapePattern(JSON.stringify(id))}`, 'u');
+    const match = marker.exec(source.slice(cursor));
+    if (match === null) throw new Error(`quality/compat-matrix.json cannot locate evidence ${id}`);
+    const position = cursor + match.index;
+    positions.push(position);
+    cursor = position + match[0].length;
+  }
+
+  const replacements: { readonly from: number; readonly to: number; readonly value: string }[] = [];
+  for (const [index, entry] of evidence.entries()) {
+    const cell = record(entry, `quality/compat-matrix.json featureEvidence[${String(index)}]`);
+    const version = record(
+      cell['version'],
+      `quality/compat-matrix.json featureEvidence[${String(index)}].version`,
+    );
+    const versionSource = record(
+      version['source'],
+      `quality/compat-matrix.json featureEvidence[${String(index)}].version.source`,
+    );
+    if (versionSource['kind'] !== 'root-package') continue;
+    const start = positions[index];
+    if (start === undefined) throw new Error(`missing evidence source position ${String(index)}`);
+    const end = positions[index + 1] ?? source.length;
+    const cellSource = source.slice(start, end);
+    const value = /"version"\s*:\s*\{[\s\S]*?"value"\s*:\s*("(?:\\.|[^"\\])*")/u.exec(cellSource);
+    const token = value?.[1];
+    if (value === null || token === undefined) {
+      throw new Error(
+        `quality/compat-matrix.json cannot locate version for evidence ${String(cell['id'])}`,
+      );
+    }
+    const tokenOffset = value.index + value[0].lastIndexOf(token);
+    replacements.push({
+      from: start + tokenOffset,
+      to: start + tokenOffset + token.length,
+      value: JSON.stringify(packageVersion),
+    });
+  }
+
+  let synchronized = source;
+  for (const replacement of [...replacements].reverse()) {
+    synchronized =
+      synchronized.slice(0, replacement.from) +
+      replacement.value +
+      synchronized.slice(replacement.to);
+  }
+  const expected = synchronizeFeatureEvidenceVersions(parsed, packageVersion);
+  if (JSON.stringify(JSON.parse(synchronized)) !== JSON.stringify(expected)) {
+    throw new Error('quality/compat-matrix.json source synchronization changed another field');
+  }
+  return synchronized;
+}
+
+function fixtureEntry(
+  fixture: PackageLockMetadataFixtureDocument,
+  packageName: string,
+): JsonRecord {
   const manifest = record(fixture.manifest, `${fixture.label} package.json`);
   const dependencies = record(
     manifest['dependencies'],
@@ -69,12 +183,22 @@ function fixtureEntry(fixture: PackageLockMetadataDocument, packageName: string)
     packages[`node_modules/${packageName}`],
     `${fixture.label} package-lock.json installed entry`,
   );
-  if (installedEntry['resolved'] !== LOCAL_PACKAGE_SPECIFIER) {
-    throw new Error(
-      `${fixture.label} package-lock.json installed entry must resolve to ${LOCAL_PACKAGE_SPECIFIER}`,
-    );
+  if (fixture.mode === 'copy') {
+    if (installedEntry['resolved'] !== LOCAL_PACKAGE_SPECIFIER) {
+      throw new Error(
+        `${fixture.label} package-lock.json installed entry must resolve to ${LOCAL_PACKAGE_SPECIFIER}`,
+      );
+    }
+    return installedEntry;
   }
-  return installedEntry;
+
+  if (installedEntry['resolved'] !== '../..') {
+    throw new Error(`${fixture.label} package-lock.json linked entry must resolve to ../..`);
+  }
+  if (installedEntry['link'] !== true) {
+    throw new Error(`${fixture.label} package-lock.json linked entry must retain link: true`);
+  }
+  return record(packages['../..'], `${fixture.label} package-lock.json linked target`);
 }
 
 /** Return synchronized clones without mutating the caller's parsed documents. */
@@ -87,7 +211,8 @@ export function synchronizePackageLockMetadata(
     );
   }
   for (const [index, expected] of LOCAL_FILE_PACKAGE_FIXTURES.entries()) {
-    if (input.fixtures[index]?.label !== expected.label) {
+    const fixture = input.fixtures[index];
+    if (fixture?.label !== expected.label || fixture.mode !== expected.mode) {
       throw new Error(`local package fixture ${String(index)} must be ${expected.label}`);
     }
   }
@@ -104,7 +229,7 @@ export function synchronizePackageLockMetadata(
 
   const fixtures = input.fixtures.map((fixture) => {
     const lockfile = structuredClone(fixture.lockfile);
-    const synchronizedFixture: PackageLockMetadataDocument = { ...fixture, lockfile };
+    const synchronizedFixture: PackageLockMetadataFixtureDocument = { ...fixture, lockfile };
     fixtureEntry(synchronizedFixture, name)['version'] = version;
     return synchronizedFixture;
   });
@@ -176,7 +301,7 @@ async function loadDocument(
   };
 }
 
-interface PlannedLockfileOutput {
+interface PlannedMetadataOutput {
   readonly targetPath: string;
   readonly temporaryPath: string;
   readonly originalSource: string;
@@ -184,7 +309,7 @@ interface PlannedLockfileOutput {
 }
 
 async function writeAndCloseTemporary(
-  output: PlannedLockfileOutput,
+  output: PlannedMetadataOutput,
   fileOperations: LockfileMetadataFileOperations,
   ownedTemporaryPaths: Set<string>,
 ): Promise<void> {
@@ -216,9 +341,9 @@ async function removeOwnedTemporaries(
 }
 
 /**
- * Synchronize every reviewed lockfile through same-directory temporary files.
- * Each rename is atomic for its own target; the set of lockfiles is deliberately
- * not presented as one cross-file transaction.
+ * Synchronize every reviewed package-metadata file through same-directory
+ * temporary files. Each rename is atomic for its own target; the set of files
+ * is deliberately not presented as one cross-file transaction.
  */
 export async function synchronizePackageLockMetadataFiles(
   repositoryRoot: string,
@@ -232,33 +357,47 @@ export async function synchronizePackageLockMetadataFiles(
     fileOperations.readTextFile(path),
   );
   const fixtures = await Promise.all(
-    LOCAL_FILE_PACKAGE_FIXTURES.map(({ label, directory }) =>
-      loadDocument(label, resolve(repositoryRoot, directory), (path) =>
+    LOCAL_FILE_PACKAGE_FIXTURES.map(async ({ label, directory, mode }) => ({
+      ...(await loadDocument(label, resolve(repositoryRoot, directory), (path) =>
         fileOperations.readTextFile(path),
-      ),
-    ),
+      )),
+      mode,
+    })),
   );
   const synchronized = synchronizePackageLockMetadata({ root, fixtures });
   const outputs = [synchronized.root, ...synchronized.fixtures];
   const inputs = [root, ...fixtures];
-  const planned = outputs.map((output, index): Omit<PlannedLockfileOutput, 'temporaryPath'> => {
-    const input = inputs[index];
-    if (input === undefined) throw new Error(`missing lockfile input ${String(index)}`);
-    const lockfile = record(output.lockfile, `${output.label} package-lock.json`);
-    const serialized = `${JSON.stringify(lockfile, undefined, 2)}\n`;
-    JSON.parse(serialized);
-    return {
-      targetPath: resolve(input.directory, 'package-lock.json'),
-      originalSource: input.lockfileSource,
-      serialized,
-    };
-  });
+  const plannedLockfiles = outputs.map(
+    (output, index): Omit<PlannedMetadataOutput, 'temporaryPath'> => {
+      const input = inputs[index];
+      if (input === undefined) throw new Error(`missing lockfile input ${String(index)}`);
+      const lockfile = record(output.lockfile, `${output.label} package-lock.json`);
+      const serialized = `${JSON.stringify(lockfile, undefined, 2)}\n`;
+      JSON.parse(serialized);
+      return {
+        targetPath: resolve(input.directory, 'package-lock.json'),
+        originalSource: input.lockfileSource,
+        serialized,
+      };
+    },
+  );
+  const matrixPath = resolve(repositoryRoot, 'quality/compat-matrix.json');
+  const matrixSource = await fileOperations.readTextFile(matrixPath);
+  const { version } = packageIdentity(root.manifest);
+  const planned: Omit<PlannedMetadataOutput, 'temporaryPath'>[] = [
+    ...plannedLockfiles,
+    {
+      targetPath: matrixPath,
+      originalSource: matrixSource,
+      serialized: synchronizeFeatureEvidenceVersionSource(matrixSource, version),
+    },
+  ];
   const targetPaths = new Set(planned.map(({ targetPath }) => targetPath));
   if (targetPaths.size !== planned.length) {
-    throw new Error('lockfile metadata outputs must have distinct target paths');
+    throw new Error('package metadata outputs must have distinct target paths');
   }
 
-  const changedOutputs: PlannedLockfileOutput[] = planned
+  const changedOutputs: PlannedMetadataOutput[] = planned
     .filter(({ originalSource, serialized }) => serialized !== originalSource)
     .map((output, index) => ({
       ...output,
@@ -306,7 +445,7 @@ async function main(): Promise<void> {
   console.log(
     changed === 0
       ? '[lockfile-metadata] already synchronized'
-      : `[lockfile-metadata] synchronized ${String(changed)} lockfile(s)`,
+      : `[lockfile-metadata] synchronized ${String(changed)} metadata file(s)`,
   );
 }
 

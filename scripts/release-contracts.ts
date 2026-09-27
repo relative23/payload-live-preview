@@ -112,7 +112,7 @@ export const MAINTAINER_INSTALL_POLICIES = [
   {
     label: 'real Payload fixture',
     directory: 'examples/payload-backend',
-    npmrc: 'strict-allow-scripts=true\n',
+    npmrc: 'strict-allow-scripts=true\ninstall-links=true\n',
     packageManager: REVIEWED_PACKAGE_MANAGER,
     allowScripts: {
       'esbuild@0.25.12': true,
@@ -120,14 +120,44 @@ export const MAINTAINER_INSTALL_POLICIES = [
       'fsevents@2.3.3': false,
     },
   },
+  {
+    label: 'isolated Payload ACL reference',
+    directory: 'tests/fixtures/payload-acl',
+    npmrc: 'strict-allow-scripts=true\n',
+    packageManager: REVIEWED_PACKAGE_MANAGER,
+    allowScripts: {
+      'esbuild@0.18.20': true,
+      'esbuild@0.25.12': true,
+      'esbuild@0.28.2': true,
+      'fsevents@2.3.3': false,
+    },
+  },
 ] as const satisfies readonly MaintainerInstallPolicyProfile[];
 
-/** Fixtures that install this repository through the reviewed local file specifier. */
+export type LocalFilePackageFixtureMode = 'copy' | 'link';
+
+/** Fixtures whose install-links policy materializes a packed package copy. */
+export const COPY_INSTALLED_LOCAL_FILE_PACKAGE_FIXTURES = [
+  { label: 'Astro fixture', directory: 'examples/astro-payload', mode: 'copy' },
+  { label: 'Next.js fixture', directory: 'examples/nextjs-payload', mode: 'copy' },
+  { label: 'SvelteKit fixture', directory: 'examples/sveltekit-payload', mode: 'copy' },
+  { label: 'Nuxt fixture', directory: 'examples/nuxt-payload', mode: 'copy' },
+  { label: 'real Payload fixture', directory: 'examples/payload-backend', mode: 'copy' },
+] as const;
+
+/** Fixtures where npm retains the local package as a symlink to the repository. */
+export const LINKED_LOCAL_FILE_PACKAGE_FIXTURES = [
+  { label: 'Astro hybrid fixture', directory: 'examples/astro-hybrid', mode: 'link' },
+  { label: 'Astro inline fixture', directory: 'examples/astro-inline', mode: 'link' },
+  { label: 'Astro middleware fixture', directory: 'examples/astro-middleware', mode: 'link' },
+  { label: 'plain HTML fixture', directory: 'examples/pure-html', mode: 'link' },
+  { label: 'vanilla client fixture', directory: 'examples/vanilla-client', mode: 'link' },
+] as const;
+
+/** Every fixture that resolves this repository through the reviewed file:../.. specifier. */
 export const LOCAL_FILE_PACKAGE_FIXTURES = [
-  { label: 'Astro fixture', directory: 'examples/astro-payload' },
-  { label: 'Next.js fixture', directory: 'examples/nextjs-payload' },
-  { label: 'SvelteKit fixture', directory: 'examples/sveltekit-payload' },
-  { label: 'Nuxt fixture', directory: 'examples/nuxt-payload' },
+  ...COPY_INSTALLED_LOCAL_FILE_PACKAGE_FIXTURES,
+  ...LINKED_LOCAL_FILE_PACKAGE_FIXTURES,
 ] as const;
 
 export interface PackageLockMetadataDocument {
@@ -136,9 +166,13 @@ export interface PackageLockMetadataDocument {
   readonly lockfile: unknown;
 }
 
+export interface PackageLockMetadataFixtureDocument extends PackageLockMetadataDocument {
+  readonly mode: LocalFilePackageFixtureMode;
+}
+
 export interface PackageLockMetadataInput {
   readonly root: PackageLockMetadataDocument;
-  readonly fixtures: readonly PackageLockMetadataDocument[];
+  readonly fixtures: readonly PackageLockMetadataFixtureDocument[];
 }
 
 type JsonRecord = Record<string, unknown>;
@@ -239,14 +273,30 @@ export function findPackageLockMetadataViolations(
     }
 
     const installedEntry = isRecord(packages) ? packages[installedPath] : undefined;
-    if (!isRecord(installedEntry) || installedEntry['resolved'] !== LOCAL_PACKAGE_SPECIFIER) {
-      violations.push(
-        `${fixture.label}: package-lock.json installed entry must resolve to ${LOCAL_PACKAGE_SPECIFIER}`,
-      );
+    if (fixture.mode === 'copy') {
+      if (!isRecord(installedEntry) || installedEntry['resolved'] !== LOCAL_PACKAGE_SPECIFIER) {
+        violations.push(
+          `${fixture.label}: package-lock.json installed entry must resolve to ${LOCAL_PACKAGE_SPECIFIER}`,
+        );
+      }
+      if (!isRecord(installedEntry) || installedEntry['version'] !== packageVersion) {
+        violations.push(
+          `${fixture.label}: ${LOCAL_PACKAGE_SPECIFIER} lock entry version must match ${packageName}@${packageVersion}; run npm run version`,
+        );
+      }
+      continue;
     }
-    if (!isRecord(installedEntry) || installedEntry['version'] !== packageVersion) {
+
+    if (!isRecord(installedEntry) || installedEntry['resolved'] !== '../..') {
+      violations.push(`${fixture.label}: package-lock.json linked entry must resolve to ../..`);
+    }
+    if (!isRecord(installedEntry) || installedEntry['link'] !== true) {
+      violations.push(`${fixture.label}: package-lock.json linked entry must retain link: true`);
+    }
+    const linkedTarget = isRecord(packages) ? packages['../..'] : undefined;
+    if (!isRecord(linkedTarget) || linkedTarget['version'] !== packageVersion) {
       violations.push(
-        `${fixture.label}: ${LOCAL_PACKAGE_SPECIFIER} lock entry version must match ${packageName}@${packageVersion}; run npm run version`,
+        `${fixture.label}: linked file:../.. target version must match ${packageName}@${packageVersion}; run npm run version`,
       );
     }
   }

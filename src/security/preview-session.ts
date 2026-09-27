@@ -110,20 +110,39 @@ export async function authorizeSession(
   if (value === null) return refused('missing-credential');
   const now = strategy.now ?? Date.now;
   const timeoutMs = Math.max(MIN_TIMEOUT_MS, strategy.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+  // Retain AbortSignal.timeout's refusal of non-integral or non-finite values.
+  if (!Number.isSafeInteger(timeoutMs)) return refused('unavailable');
   const fetchImpl: FetchLike = strategy.fetch ?? globalThis.fetch;
   const usersSlug = encodeURIComponent(strategy.usersSlug ?? DEFAULT_USERS_SLUG);
   const forwarded = `${cookieName}=${value}`;
+  const controller = new AbortController();
+  const abort = (): void => {
+    controller.abort(request.signal?.reason);
+  };
+  const isAborted = (): boolean => controller.signal.aborted;
+  request.signal?.addEventListener('abort', abort, { once: true });
+  if (request.signal?.aborted === true) abort();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   let body: unknown;
   try {
+    if (isAborted()) return refused('unavailable');
+    timer = setTimeout(() => {
+      controller.abort(new DOMException('The operation timed out', 'TimeoutError'));
+    }, timeoutMs);
     // `depth=0`: the verdict needs the user's id, not its populated relations.
     const response = await fetchImpl(`${origin}/api/${usersSlug}/me?depth=0`, {
       headers: { cookie: forwarded, accept: 'application/json' },
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: controller.signal,
     });
+    if (isAborted()) return refused('unavailable');
     if (!response.ok) return refused(response.status === 401 ? 'invalid' : 'unavailable');
     body = await response.json();
+    if (isAborted()) return refused('unavailable');
   } catch {
     return refused('unavailable');
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    request.signal?.removeEventListener('abort', abort);
   }
   const user = readUser(body, strategy.usersSlug ?? DEFAULT_USERS_SLUG);
   if (user === null) return refused('invalid');

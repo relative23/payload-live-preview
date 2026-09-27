@@ -18,11 +18,11 @@ export const OWNED_ATTRIBUTE = 'data-payload-owned';
  * elements own their subtree, islands are a framework's, `contenteditable`
  * is the visitor's, `data-payload-owned` is the site's. The coordinators hand
  * this rule to the engine as `MorphOptions.boundary`; the engine itself only
- * pairs, edits and keeps focus (§9). @internal
+ * pairs, edits and keeps focus (§9). @beta
  */
 export function isMorphBoundary(element: Element): boolean {
   if (element.tagName.toLowerCase().includes('-')) return true;
-  if (element.hasAttribute(ISLAND_ATTRIBUTE) || element.hasAttribute(OWNED_ATTRIBUTE)) return true;
+  if (isIslandBoundary(element) || element.hasAttribute(OWNED_ATTRIBUTE)) return true;
   const editable = element.getAttribute('contenteditable');
   return editable !== null && editable !== 'false';
 }
@@ -66,14 +66,24 @@ export function collectIslands(root: ParentNode): Element[] {
   return islands;
 }
 
+/** Astro keeps `ssr` until the framework listener has finished hydrating. @internal */
+export function isAwaitingIslandHydration(island: Element): boolean {
+  return island.tagName.toLowerCase() === 'astro-island' && island.hasAttribute('ssr');
+}
+
 export function dispatchIslandUpdate(
   islands: readonly Element[],
   detail: IslandUpdateDetail,
+  isCurrent: () => boolean,
 ): number {
+  let dispatched = 0;
   for (const island of islands) {
+    if (!isCurrent()) break;
     island.dispatchEvent(
       new CustomEvent<IslandUpdateDetail>(ISLAND_EVENT, { detail, bubbles: false }),
     );
+    dispatched += 1;
+    if (!isCurrent()) break;
   }
-  return islands.length;
+  return dispatched;
 }

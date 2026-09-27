@@ -11,6 +11,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     expect(api?.version).toMatch(/^\d+\.\d+\.\d+/);
     expect(typeof api?.destroy).toBe('function');
     expect(typeof api?.refresh).toBe('function');
+    expect(typeof api?.refreshAfterNavigation).toBe('function');
     expect(typeof api?.enumerateOrigins).toBe('function');
     expect(typeof api?.inspect).toBe('function');
     expect(window.__livePreview).toBe(api);
@@ -239,6 +240,84 @@ describe('bootstrapInlineRuntime — preview context', () => {
     await vi.advanceTimersByTimeAsync(50);
     expect(document.querySelector('span')?.textContent).toBe('refreshed');
     api?.destroy();
+  });
+  it('keeps refresh cache-only and uses the additive navigation method for replay', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">published</p>';
+    const { MessageBus } = await import('@core/message-bus');
+    const sendReady = vi.spyOn(MessageBus, 'sendReady');
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig({ skipUnchanged: true });
+    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const api = bootstrapInlineRuntime();
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: 'payload-live-preview', data: { title: 'unsaved' } },
+        origin: TRUSTED,
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(50);
+    const element = document.querySelector('p');
+    if (element === null) throw new Error('binding missing');
+    element.textContent = 'published on next route';
+
+    api?.refresh();
+    await vi.advanceTimersByTimeAsync(50);
+    expect(element.textContent).toBe('published on next route');
+    expect(sendReady).toHaveBeenCalledTimes(1);
+
+    api?.refreshAfterNavigation();
+    await vi.advanceTimersByTimeAsync(50);
+    expect(element.textContent).toBe('unsaved');
+    expect(sendReady).toHaveBeenCalledTimes(2);
+    api?.destroy();
+    sendReady.mockRestore();
+  });
+  it('replays the current unsaved state after the configured soft-navigation event', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">first route</h1>';
+    const unsaved = 'unsaved in the admin';
+    const { MessageBus } = await import('@core/message-bus');
+    let answered = false;
+    const sendReady = vi.spyOn(MessageBus, 'sendReady').mockImplementation(() => {
+      if (answered) return;
+      answered = true;
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: 'payload-live-preview', data: { title: unsaved } },
+          origin: TRUSTED,
+        }),
+      );
+    });
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig({ skipUnchanged: true, softNavigationEvents: ['astro:page-load'] });
+    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const api = bootstrapInlineRuntime();
+
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe(unsaved);
+    expect(sendReady).toHaveBeenCalledTimes(1);
+
+    const retained = document.querySelector('h1');
+    if (retained === null) throw new Error('binding missing');
+    // A router may preserve the element but put its server value back. The
+    // repeated snapshot is byte-identical to the previous one, so only a true
+    // navigation replay can beat skipUnchanged here.
+    retained.textContent = 'published on the second route';
+    document.dispatchEvent(new Event('astro:after-swap'));
+    document.dispatchEvent(new Event('astro:page-load'));
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(document.querySelector('h1')).toBe(retained);
+    expect(retained.textContent).toBe(unsaved);
+    // The navigation asks once, but Payload answers only the first startup
+    // handshake. The retained snapshot is replayed locally.
+    expect(sendReady).toHaveBeenCalledTimes(2);
+
+    api?.destroy();
+    document.dispatchEvent(new Event('astro:after-swap'));
+    document.dispatchEvent(new Event('astro:page-load'));
+    await vi.advanceTimersByTimeAsync(50);
+    expect(sendReady).toHaveBeenCalledTimes(2);
+    sendReady.mockRestore();
   });
   it('destroy tears down the listener so subsequent messages are ignored', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">stable</h1>';

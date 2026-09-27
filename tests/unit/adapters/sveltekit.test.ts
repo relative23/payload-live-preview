@@ -1,5 +1,8 @@
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
 import { livePreviewHandle } from '@adapters/sveltekit/index';
+import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
+import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 
 /** The fake `resolve` applies `transformPageChunk` the way SvelteKit does: chunk by chunk, `|| ''`. */
 
@@ -32,6 +35,29 @@ function event(url = 'https://site.example.com/', headers: Record<string, string
 }
 
 const PAGE = '<html><head></head><body>hi</body></html>';
+
+function wireConfig(script: string): unknown[] {
+  const match = /var __LIVE_PREVIEW_CONFIG__=(\[[^;]*\]);/u.exec(script);
+  if (match?.[1] === undefined) throw new Error('generated config missing');
+  const evaluated = runInNewContext(match[1], {}) as unknown;
+  if (!Array.isArray(evaluated)) throw new Error('generated config is not an array');
+  return evaluated;
+}
+
+const SOFT_NAVIGATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('softNavigationEvents');
+
+describe('what the SvelteKit adapter knows about the page', () => {
+  it('listens for the package navigation event in injected pages', async () => {
+    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
+      event: event(),
+      resolve: makeResolve([PAGE]),
+    });
+
+    expect(wireConfig(await response.text())[SOFT_NAVIGATION_SLOT_INDEX]).toEqual([
+      NAVIGATION_COMMIT_EVENT,
+    ]);
+  });
+});
 
 describe('livePreviewHandle — the nonce contract', () => {
   it('writes a nonce to locals on every request, preview or not', async () => {

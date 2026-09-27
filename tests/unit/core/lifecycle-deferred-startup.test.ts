@@ -63,6 +63,26 @@ describe('deferred startup while the document is parsing', () => {
     runtime.destroy();
     readyState.mockRestore();
   });
+  it('folds a pre-start route commit into startup without an early handshake', () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">first route</h1>';
+    const readyState = vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ sendReady });
+    runtime.start();
+
+    document.body.innerHTML = '<h1 data-payload-field="title">committed route</h1>';
+    runtime.navigationCommit();
+    expect(sendReady).not.toHaveBeenCalled();
+    expect(runtime.cache.elementCount).toBe(0);
+
+    readyState.mockReturnValue('interactive');
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+    expect(sendReady).toHaveBeenCalledOnce();
+    expect(runtime.cache.elementCount).toBe(1);
+
+    runtime.destroy();
+    readyState.mockRestore();
+  });
   it('reports LP0605 when the deferred startup itself fails', () => {
     // start() has already returned by the time DOMContentLoaded fires, so a
     // failure here cannot reach its caller and must surface as an error event.

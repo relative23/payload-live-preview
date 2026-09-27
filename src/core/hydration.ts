@@ -15,9 +15,10 @@
  * calls `inject()` if the hook says `supportsFiber`, and from then on
  * `onCommitFiberRoot(rendererId, root)` after every commit — each call guarded
  * by `typeof … === 'function'` and a `try`. The first commit of a root that
- * holds a binding is the moment React has taken the markup over; everything
- * before it is too early, and a commit into a root without a binding (Next's
- * dev overlay commits three times before the app does) is not ours to wait for.
+ * holds a binding and no longer has dehydrated server boundaries is the moment
+ * React has taken the markup over; everything before it is too early, and a
+ * commit into a root without a binding (Next's dev overlay commits three times
+ * before the app does) is not ours to wait for.
  *
  * Two bundles read this: the runtime, which arms the hook when it starts, and
  * the bootstrap for asset delivery (`./loader`, built armed), where the runtime
@@ -50,11 +51,11 @@ export const HYDRATION_SLOT = '__livePreviewHydration';
 export const BINDING_SELECTOR = '[data-payload-field]';
 
 /**
- * What the two bundles share. The bootstrap only records: every container
- * React committed into goes to `commits` until the runtime, which alone knows
- * what a binding is, sets `onCommit` and judges the backlog and everything
- * after. Recording rather than judging keeps the armed bootstrap to the bytes
- * the delivery budgets hold a bootstrap to.
+ * What the two bundles share. The bootstrap only records: every root React
+ * committed goes to `commits` until the runtime, which alone knows what a
+ * binding is, sets `onCommit` and judges the backlog and everything after.
+ * Recording rather than judging keeps the armed bootstrap to the bytes the
+ * delivery budgets hold a bootstrap to.
  */
 interface HydrationSignal extends HydrationWait {
   armed: boolean;
@@ -73,8 +74,16 @@ export interface HydrationWait {
 }
 
 /** The root React hands the hook after a commit; `containerInfo` is the DOM node it rendered into. */
+interface FiberLike {
+  readonly tag?: number;
+  readonly child?: FiberLike | null;
+  readonly sibling?: FiberLike | null;
+  readonly memoizedState?: unknown;
+}
+
 interface FiberRootLike {
   readonly containerInfo?: unknown;
+  readonly current?: FiberLike | null;
 }
 
 /**
@@ -134,9 +143,8 @@ export function armReactCommitSignal(): void {
       // The DevTools backend's failure is not ours to propagate; React would
       // swallow it too.
     }
-    const container = root?.containerInfo;
-    if (signal.onCommit === undefined) signal.commits.push(container);
-    else signal.onCommit(container);
+    if (signal.onCommit === undefined) signal.commits.push(root);
+    else signal.onCommit(root);
   };
 }
 
@@ -163,6 +171,44 @@ function installedHook(): DevToolsHook {
 function ownsBindings(container: unknown): boolean {
   const node = container as Partial<Pick<Element, 'nodeType' | 'querySelector'>> | null | undefined;
   return node?.nodeType === 9 || node?.querySelector?.(BINDING_SELECTOR) != null;
+}
+
+/**
+ * A streamed React root may commit before every server boundary has been
+ * claimed. React 18/19's Suspense fiber (tag 13), and React 19's Activity fiber
+ * (tag 31), keep the server Comment in `memoizedState.dehydrated` until a later
+ * root commit claims it. Starting between those commits lets that later
+ * hydration regenerate markup the runtime has already edited.
+ */
+function hasDehydratedBoundary(root: FiberRootLike): boolean {
+  const pending: FiberLike[] = [];
+  if (root.current !== null && root.current !== undefined) pending.push(root.current);
+  while (pending.length > 0) {
+    const fiber = pending.pop();
+    if (fiber === undefined) continue;
+    const state = fiber.memoizedState;
+    if (
+      (fiber.tag === 13 || fiber.tag === 31) &&
+      typeof state === 'object' &&
+      state !== null &&
+      'dehydrated' in state &&
+      typeof state.dehydrated === 'object' &&
+      state.dehydrated !== null &&
+      'nodeType' in state.dehydrated &&
+      state.dehydrated.nodeType === 8
+    ) {
+      return true;
+    }
+    if (fiber.sibling !== null && fiber.sibling !== undefined) pending.push(fiber.sibling);
+    if (fiber.child !== null && fiber.child !== undefined) pending.push(fiber.child);
+  }
+  return false;
+}
+
+/** A binding-owning root after its streamed server boundaries are all claimed. */
+function ownsHydratedBindings(value: unknown): boolean {
+  const root = value as FiberRootLike | null | undefined;
+  return root != null && ownsBindings(root.containerInfo) && !hasDehydratedBoundary(root);
 }
 
 /** The framework has taken the tree over: every waiter hears it, once. */
@@ -209,8 +255,9 @@ export function awaitSettled(
 }
 
 /**
- * Call back once React has committed a root that holds a binding, or after
- * `capMs` without one. Arms the signal if nothing has yet.
+ * Call back once React has committed a root that holds a binding and no
+ * dehydrated server boundary, or after `capMs` without one. Arms the signal if
+ * nothing has yet.
  */
 export function whenReactCommitted(
   onSettled: (outcome: HydrationOutcome) => void,
@@ -222,11 +269,11 @@ export function whenReactCommitted(
   if (signal.onCommit === undefined) {
     // The runtime is the one that can judge a commit; the bootstrap may have
     // recorded some before it ran. The backlog first, then every commit live.
-    const judge = (container: unknown): void => {
-      if (!signal.committed && ownsBindings(container)) settle(signal);
+    const judge = (root: unknown): void => {
+      if (!signal.committed && ownsHydratedBindings(root)) settle(signal);
     };
     signal.onCommit = judge;
-    for (const container of signal.commits.splice(0)) judge(container);
+    for (const root of signal.commits.splice(0)) judge(root);
   }
   return awaitSettled(signal, onSettled, capMs);
 }

@@ -135,6 +135,16 @@ export function createFragmentHandler(options: FragmentStrategyOptions): Fragmen
   const maxResponseBytes = options.maxResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES;
   const gate = createGate(Math.max(1, options.maxConcurrent ?? DEFAULT_MAX_CONCURRENT));
   const inFlight = new Map<string, Promise<FragmentOutcome>>();
+  const generations = new WeakMap<AbortSignal, number>();
+  let nextGeneration = 0;
+
+  const generationOf = (signal: AbortSignal): number => {
+    const known = generations.get(signal);
+    if (known !== undefined) return known;
+    nextGeneration += 1;
+    generations.set(signal, nextGeneration);
+    return nextGeneration;
+  };
 
   async function render(
     request: StrategyRequest,
@@ -207,7 +217,7 @@ export function createFragmentHandler(options: FragmentStrategyOptions): Fragmen
       }
       const fragment = parseFragmentResponse(parsed);
       if (fragment === null) return failed('LP0802', 'response has the wrong shape');
-      if (fragment.boundary.id !== boundary.id) {
+      if (fragment.boundary.id !== boundary.id || fragment.boundary.key !== boundary.key) {
         return failed('LP0802', 'response is for another boundary');
       }
       if (fragment.revision !== request.revision) return SUPERSEDED;
@@ -218,11 +228,25 @@ export function createFragmentHandler(options: FragmentStrategyOptions): Fragmen
   }
 
   return (request, boundary) => {
-    // Identical boundary and revision share one request: same id and key render the same HTML.
-    const dedupeKey = `${boundary.id} ${boundary.key ?? ''} ${String(request.revision)}`;
+    // Revision numbers restart when a runtime is recreated. Its abort signal is
+    // the internal generation identity, so an old request cannot be shared with
+    // a new document/owner session that happens to use the same number.
+    const dedupeKey = JSON.stringify([
+      generationOf(request.signal),
+      boundary.id,
+      boundary.key,
+      request.revision,
+    ]);
     const shared = inFlight.get(dedupeKey);
     if (shared !== undefined) return shared;
-    const promise = gate(() => render(request, boundary));
+    let started = false;
+    const promise = gate(() => {
+      started = true;
+      return render(request, boundary);
+    }, request.signal).catch((error: unknown): FragmentOutcome => {
+      if (!started && request.signal.aborted) return SUPERSEDED;
+      throw error;
+    });
     inFlight.set(dedupeKey, promise);
     const forget = (): void => {
       if (inFlight.get(dedupeKey) === promise) inFlight.delete(dedupeKey);

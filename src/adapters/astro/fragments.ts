@@ -33,7 +33,14 @@ const RENDERER_NAME = 'astro-container';
 interface ContainerLike {
   renderToString: (
     component: AstroComponentLike,
-    options: { props: Record<string, unknown> },
+    options: {
+      locals: {
+        __payloadLivePreviewFragment: {
+          component: AstroComponentLike;
+          props: Record<string, unknown>;
+        };
+      };
+    },
   ) => Promise<string>;
 }
 
@@ -53,9 +60,17 @@ const loadContainer = lazyPeer(async (): Promise<ContainerLike> => {
   }
 });
 
+// Share the first template load just like container creation, never request data.
+// The literal import is for the consumer's compiler; custom renderers never load it.
+const loadBridge = lazyPeer(async () => (await import('./FragmentBridge.astro')).default);
+
 const renderWithContainer: FragmentRenderer = async (component, props) => {
   const container = await loadContainer();
-  return container.renderToString(component, { props });
+  const FragmentBridge = await loadBridge();
+  // Astro 4.9 has locals but no Container props option.
+  return container.renderToString(FragmentBridge, {
+    locals: { __payloadLivePreviewFragment: { component, props } },
+  });
 };
 
 /** Build the endpoint; export it as the `POST` of a non-prerendered Astro API route. */

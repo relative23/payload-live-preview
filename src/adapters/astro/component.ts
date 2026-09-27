@@ -5,6 +5,7 @@
 
 import { renderScriptTag } from '@adapters/shared/response';
 import type { LivePreviewAstroOptions } from './types';
+import { ASTRO_PAGE } from './page-facts';
 
 export interface RenderScriptOptions extends LivePreviewAstroOptions {
   /** CSP nonce for the tag; read it from `Astro.locals.livePreviewNonce`. */
@@ -13,5 +14,5 @@ export interface RenderScriptOptions extends LivePreviewAstroOptions {
 
 /** The complete `<script>` tag, for `<Fragment set:html={renderLivePreviewScript(...)} />`. */
 export function renderLivePreviewScript(options: RenderScriptOptions = {}): string {
-  return renderScriptTag(options);
+  return renderScriptTag(options, ASTRO_PAGE);
 }

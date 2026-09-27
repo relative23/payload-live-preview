@@ -20,14 +20,22 @@ interface Hook {
   supportsFiber?: boolean;
   renderers?: Map<number, unknown>;
   inject?: (internals: unknown) => number;
-  onCommitFiberRoot?: (
-    rendererId: number,
-    root: { containerInfo: Node },
-    ...rest: unknown[]
-  ) => void;
+  onCommitFiberRoot?: (rendererId: number, root: FiberRoot, ...rest: unknown[]) => void;
   onCommitFiberUnmount?: () => void;
   onPostCommitFiberRoot?: () => void;
   checkDCE?: () => void;
+}
+
+interface Fiber {
+  tag?: number;
+  child?: Fiber | null;
+  sibling?: Fiber | null;
+  memoizedState?: unknown;
+}
+
+interface FiberRoot {
+  containerInfo: Node;
+  current?: Fiber;
 }
 
 type HookWindow = Window & {
@@ -46,6 +54,10 @@ function hook(): Hook {
 /** What React does after a commit: one call, renderer id first, the root second. */
 function commit(containerInfo: Node): void {
   hook().onCommitFiberRoot?.(1, { containerInfo }, undefined, false);
+}
+
+function commitRoot(root: FiberRoot): void {
+  hook().onCommitFiberRoot?.(1, root, undefined, false);
 }
 
 beforeEach(() => {
@@ -133,6 +145,80 @@ describe('waiting for the commit', () => {
     commit(document);
 
     expect(settled).toHaveBeenCalledTimes(1);
+    expect(settled).toHaveBeenCalledWith('committed');
+  });
+
+  it('waits for a later root commit while a streamed Suspense boundary is dehydrated', () => {
+    // Measured on the Next 16 App Router fixture: its first Document commit
+    // held the binding but three nested Suspense fibers were still dehydrated.
+    // Starting on that commit let the admin write between React's commits;
+    // the final hydration commit then regenerated the server title over it.
+    const settled = vi.fn();
+    whenReactCommitted(settled);
+
+    commitRoot({
+      containerInfo: document,
+      current: {
+        child: {
+          tag: 13,
+          memoizedState: { dehydrated: document.createComment('$') },
+          child: {
+            tag: 0,
+            sibling: {
+              tag: 31,
+              memoizedState: { dehydrated: document.createComment('&') },
+            },
+          },
+        },
+      },
+    });
+    expect(settled).not.toHaveBeenCalled();
+
+    commitRoot({
+      containerInfo: document,
+      current: {
+        child: {
+          tag: 13,
+          memoizedState: null,
+          child: { tag: 0, sibling: { tag: 31, memoizedState: null } },
+        },
+      },
+    });
+    expect(settled).toHaveBeenCalledOnce();
+    expect(settled).toHaveBeenCalledWith('committed');
+  });
+
+  it('does not mistake component state or a client Suspense fallback for dehydration', () => {
+    const settled = vi.fn();
+    whenReactCommitted(settled);
+
+    commitRoot({
+      containerInfo: document,
+      current: {
+        tag: 0,
+        memoizedState: { dehydrated: document.createComment('$') },
+        child: { tag: 13, memoizedState: { dehydrated: null } },
+      },
+    });
+
+    expect(settled).toHaveBeenCalledWith('committed');
+  });
+
+  it('keeps waiting for a dehydrated root the bootstrap recorded before subscribing', () => {
+    armReactCommitSignal();
+    commitRoot({
+      containerInfo: document,
+      current: {
+        tag: 13,
+        memoizedState: { dehydrated: document.createComment('$') },
+      },
+    });
+
+    const settled = vi.fn();
+    expect(whenReactCommitted(settled)).not.toBeNull();
+    expect(settled).not.toHaveBeenCalled();
+
+    commitRoot({ containerInfo: document, current: { tag: 13, memoizedState: null } });
     expect(settled).toHaveBeenCalledWith('committed');
   });
 

@@ -15,6 +15,7 @@ import {
 import { assertNonce } from '@inline/generator';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PageFacts } from '@adapters/shared/policy-options';
+import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
 
@@ -27,7 +28,10 @@ export type LivePreviewNextOptions = PreviewAdapterOptions;
  * writing into markup React is about to compare with its own render. Knowledge
  * the adapter has, not an option a project sets.
  */
-const REACT_PAGE: PageFacts = { hydration: 'react' };
+const REACT_PAGE: PageFacts = {
+  hydration: 'react',
+  softNavigationEvents: [NAVIGATION_COMMIT_EVENT],
+};
 
 /**
  * Middleware over the standard `Request`/`Response` pair: on preview intent it

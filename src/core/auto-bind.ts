@@ -350,14 +350,22 @@ export function adoptUniqueBindings(
   fields: Readonly<Record<string, unknown>>,
   locale: string | undefined,
   ownerKeys: OwnerScope,
+  isCurrent: () => boolean,
 ): number {
+  if (!isCurrent()) return 0;
   const started = performance.now();
   const root = searchRoot(deps.root);
   const values = bindableValues(fields, locale);
-  const adopted =
-    root === null ? [] : adopt(deps, searchUnique(root, values), ownerKeys, 'on the first message');
-  state.autoBindGuesses = keep(values, adopted);
-  state.autoBindSearchMs = performance.now() - started;
+  if (!isCurrent()) return 0;
+  const candidates = root === null ? [] : searchUnique(root, values);
+  if (!isCurrent()) return 0;
+  const adopted = adopt(deps, candidates, ownerKeys, 'on the first message', isCurrent);
+  if (!isCurrent()) return 0;
+  const guesses = keep(values, adopted);
+  const elapsed = performance.now() - started;
+  if (!isCurrent()) return 0;
+  state.autoBindGuesses = guesses;
+  state.autoBindSearchMs = elapsed;
   return adopted.length;
 }
 
@@ -378,7 +386,9 @@ export function restoreUniqueBindings(
   fields: Readonly<Record<string, unknown>>,
   locale: string | undefined,
   ownerKeys: OwnerScope,
+  isCurrent: () => boolean,
 ): number {
+  if (!isCurrent()) return 0;
   const kept = state.autoBindGuesses;
   const root = searchRoot(deps.root);
   if (kept === null || kept.fields.size === 0 || root === null) return 0;
@@ -389,7 +399,41 @@ export function restoreUniqueBindings(
     if (known === undefined) values.set(text, claim);
     else if (known?.field !== claim.field) values.set(text, null);
   }
-  return adopt(deps, searchUnique(root, values), ownerKeys, 'after a server render').length;
+  if (!isCurrent()) return 0;
+  const candidates = searchUnique(root, values);
+  if (!isCurrent()) return 0;
+  return adopt(deps, candidates, ownerKeys, 'after a server render', isCurrent).length;
+}
+
+interface AdoptionMutation {
+  readonly element: Element;
+  readonly attributes: {
+    readonly name: string;
+    readonly before: string | null;
+    readonly written: string;
+  }[];
+  cacheTouched: boolean;
+  observed: boolean;
+}
+
+/** Undo only values this attempt still owns; a reentrant writer's different value wins. */
+function rollback(deps: RuntimeDeps, mutations: readonly AdoptionMutation[]): void {
+  for (let index = mutations.length - 1; index >= 0; index -= 1) {
+    const mutation = mutations[index];
+    if (mutation === undefined) continue;
+    if (mutation.observed) deps.observers.unobserveElement(mutation.element);
+    for (let attribute = mutation.attributes.length - 1; attribute >= 0; attribute -= 1) {
+      const changed = mutation.attributes[attribute];
+      if (changed === undefined) continue;
+      const { name, before, written } = changed;
+      if (before === written || mutation.element.getAttribute(name) !== written) continue;
+      if (before === null) mutation.element.removeAttribute(name);
+      else mutation.element.setAttribute(name, before);
+    }
+    if (!mutation.cacheTouched) continue;
+    if (mutation.element.hasAttribute(FIELD_ATTRIBUTE)) deps.cache.add(mutation.element);
+    else deps.cache.remove(mutation.element);
+  }
 }
 
 /** Stamp the candidates, register them, say so; returns the ones that became bindings. */
@@ -398,23 +442,51 @@ function adopt(
   candidates: readonly AutoBindCandidate[],
   ownerKeys: OwnerScope,
   when: string,
+  isCurrent: () => boolean,
 ): AutoBindCandidate[] {
   const adopted: AutoBindCandidate[] = [];
+  const mutations: AdoptionMutation[] = [];
+  const abandon = (): AutoBindCandidate[] => {
+    rollback(deps, mutations);
+    return [];
+  };
   for (const candidate of candidates) {
+    if (!isCurrent()) return abandon();
     const { element } = candidate;
     if (element.hasAttribute(FIELD_ATTRIBUTE)) continue;
+    if (!isCurrent()) return abandon();
     // Under owner scoping a guess outside the message's document would never
     // be written to; better to leave it unbound than to bind it to nothing.
     if (ownerKeys !== false && !isBindingInScope(resolveBindingOwner(element), ownerKeys)) continue;
-    for (const [name, value] of Object.entries(candidate.stamps)) element.setAttribute(name, value);
-    element.setAttribute(GUESSED_ATTRIBUTE, candidate.matched);
+    if (!isCurrent()) return abandon();
+    const mutation: AdoptionMutation = {
+      element,
+      attributes: [],
+      cacheTouched: false,
+      observed: false,
+    };
+    mutations.push(mutation);
+    for (const [name, value] of [
+      ...Object.entries(candidate.stamps),
+      [GUESSED_ATTRIBUTE, candidate.matched] as const,
+    ]) {
+      const before = element.getAttribute(name);
+      if (!isCurrent()) return abandon();
+      mutation.attributes.push({ name, before, written: value });
+      element.setAttribute(name, value);
+      if (!isCurrent()) return abandon();
+    }
+    mutation.cacheTouched = true;
     if (deps.cache.add(element) === undefined) {
-      // The cache's own filter refused it; a stamp that is not a binding must not stay.
-      for (const name of Object.keys(candidate.stamps)) element.removeAttribute(name);
-      element.removeAttribute(GUESSED_ATTRIBUTE);
+      // The cache's own filter refused it; restore metadata the unbound element carried before the attempt.
+      rollback(deps, [mutation]);
+      mutations.pop();
       continue;
     }
+    if (!isCurrent()) return abandon();
     deps.observers.observeElement(element);
+    mutation.observed = true;
+    if (!isCurrent()) return abandon();
     deps.log(
       'autoBind',
       candidate.fieldName,
@@ -424,6 +496,7 @@ function adopt(
       JSON.stringify(candidate.matched),
       when,
     );
+    if (!isCurrent()) return abandon();
     adopted.push(candidate);
   }
   return adopted;

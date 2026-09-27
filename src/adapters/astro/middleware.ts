@@ -8,6 +8,7 @@ import { createPreviewPolicy } from '@adapters/shared/policy';
 import { applyDecision, bindDecisionHooks } from '@adapters/shared/response';
 import { exposeDecision, exposeNonce, type LivePreviewLocalsSink } from '@adapters/shared/locals';
 import type { LivePreviewAstroOptions } from './types';
+import { ASTRO_PAGE } from './page-facts';
 
 export {
   AUTHORIZATION_LOCALS_KEY,
@@ -33,7 +34,7 @@ export type LivePreviewMiddleware = (
 export function createLivePreviewMiddleware(
   options: LivePreviewAstroOptions = {},
 ): LivePreviewMiddleware {
-  const policy = createPreviewPolicy(options);
+  const policy = createPreviewPolicy(options, ASTRO_PAGE);
   return async (context, next) => {
     const nonce = policy.nonce();
     if (context.isPrerendered === true) {

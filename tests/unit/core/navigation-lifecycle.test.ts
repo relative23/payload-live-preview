@@ -38,10 +38,10 @@ describe('bindNavigationLifecycle', () => {
     const unbind = bindNavigationLifecycle(client, {
       windowTarget,
       documentTarget,
-      softNavigationEvents: ['astro:page-load'],
+      softNavigationEvents: ['framework:navigated'],
     });
 
-    documentTarget.dispatchEvent(new Event('astro:page-load'));
+    documentTarget.dispatchEvent(new Event('framework:navigated'));
     expect(client.refreshCache).toHaveBeenCalledOnce();
 
     // Nothing is bound by default: the package cannot know which framework is
@@ -50,6 +50,106 @@ describe('bindNavigationLifecycle', () => {
     expect(client.refreshCache).toHaveBeenCalledOnce();
 
     unbind();
+  });
+
+  it('uses the navigation-specific handoff without also running the compatibility fallback', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = new EventTarget();
+    const client = { ...target(), refreshAfterNavigation: vi.fn() };
+    const unbind = bindNavigationLifecycle(client, {
+      windowTarget,
+      documentTarget,
+      softNavigationEvents: ['payload-live-preview:navigation'],
+    });
+
+    documentTarget.dispatchEvent(new Event('payload-live-preview:navigation'));
+
+    expect(client.refreshAfterNavigation).toHaveBeenCalledOnce();
+    expect(client.refreshCache).not.toHaveBeenCalled();
+    unbind();
+  });
+
+  it('does not delay an explicit router commit while the initial page is still loading', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = new EventTarget();
+    Object.defineProperty(documentTarget, 'readyState', {
+      configurable: true,
+      value: 'loading',
+    });
+    const client = { ...target(), refreshAfterNavigation: vi.fn() };
+    const unbind = bindNavigationLifecycle(client, {
+      windowTarget,
+      documentTarget,
+      softNavigationEvents: ['payload-live-preview:navigation'],
+    });
+
+    documentTarget.dispatchEvent(new Event('payload-live-preview:navigation'));
+
+    expect(client.refreshAfterNavigation).toHaveBeenCalledOnce();
+    unbind();
+  });
+
+  it('ignores Astro initial page-load but accepts a pre-load client-router commit', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = new EventTarget();
+    Object.defineProperty(documentTarget, 'readyState', {
+      configurable: true,
+      value: 'loading',
+    });
+    const client = target();
+    const unbind = bindNavigationLifecycle(client, {
+      windowTarget,
+      documentTarget,
+      softNavigationEvents: ['astro:page-load'],
+    });
+    documentTarget.dispatchEvent(new Event('astro:page-load'));
+    expect(client.refreshCache).not.toHaveBeenCalled();
+
+    documentTarget.dispatchEvent(new Event('astro:after-swap'));
+    documentTarget.dispatchEvent(new Event('astro:page-load'));
+    expect(client.refreshCache).toHaveBeenCalledOnce();
+    unbind();
+  });
+
+  it('guards only the initial Astro signal in a mixed event list', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = new EventTarget();
+    Object.defineProperty(documentTarget, 'readyState', {
+      configurable: true,
+      value: 'loading',
+    });
+    const client = { ...target(), refreshAfterNavigation: vi.fn() };
+    const unbind = bindNavigationLifecycle(client, {
+      windowTarget,
+      documentTarget,
+      softNavigationEvents: ['astro:page-load', 'payload-live-preview:navigation'],
+    });
+
+    documentTarget.dispatchEvent(new Event('payload-live-preview:navigation'));
+    documentTarget.dispatchEvent(new Event('astro:page-load'));
+    expect(client.refreshAfterNavigation).toHaveBeenCalledOnce();
+
+    documentTarget.dispatchEvent(new Event('astro:after-swap'));
+    documentTarget.dispatchEvent(new Event('astro:page-load'));
+    expect(client.refreshAfterNavigation).toHaveBeenCalledTimes(2);
+    unbind();
+  });
+
+  it('removes Astro arm and commit listeners on teardown', () => {
+    const windowTarget = new EventTarget();
+    const documentTarget = new EventTarget();
+    const client = target();
+    const unbind = bindNavigationLifecycle(client, {
+      windowTarget,
+      documentTarget,
+      softNavigationEvents: ['astro:page-load'],
+    });
+
+    unbind();
+    documentTarget.dispatchEvent(new Event('astro:after-swap'));
+    documentTarget.dispatchEvent(new Event('astro:page-load'));
+
+    expect(client.refreshCache).not.toHaveBeenCalled();
   });
 
   it('binds nothing implicitly when no soft-navigation event is declared', () => {

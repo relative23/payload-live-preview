@@ -205,7 +205,7 @@ interface Fixture {
  *
  * 2026-09-11 (Z37): the two rows that carry the generator rise for the
  * `defaults` profile it now resolves itself — the 1.x row table and the
- * function that writes it, plus the marker in the last slot —
+ * function that writes it, plus the marker in fixed slot 24 —
  * `generateInlineScript` from `payload-live-preview` 41_698 → 41_788
  * (41_731, +202 raw), `createLivePreviewMiddleware` from
  * `payload-live-preview/nextjs` 46_955 → 47_038 (46_982, +77 raw). The runtime
@@ -286,6 +286,57 @@ interface Fixture {
  * `initLivePreview` from `payload-live-preview/core` 45_092 → 45_247 (measured 45_068 → 45_223);
  * `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 48_026 → 48_249 (measured 47_954 → 48_177);
  * `LEAN_RUNTIME` from `payload-live-preview/lean` 29_560 → 29_756 (measured 29_500 → 29_696).
+ * 2026-09-22 (2.1: the morph takes its ownership rule): five rows move by the
+ * measured difference between main and this branch under the same epoch,
+ * cushions kept — `initLivePreview` from the root 45_257 → 45_296 (measured
+ * 45_233 → 45_272), `generateInlineScript` 42_964 → 42_653 (42_899 → 42_588),
+ * `initLivePreview` from `./core` 45_247 → 45_274 (45_223 → 45_250),
+ * `morphElement` from `./structural` 1_487 → 1_512 (1_463 → 1_488), and the
+ * Next.js middleware 48_249 → 47_909 (48_177 → 47_837). Moving the boundary
+ * predicate and making the root and keyed-child decisions agree with ADR 0008
+ * are the same bytes recorded in bundle-budgets.ts.
+ * 2026-09-23 (H03/H08/H14/H06 hardening batch): the two generator consumers
+ * move by the measured difference from the post-morph snapshot, with their
+ * existing cushions kept — `generateInlineScript` 42_653 → 43_357 (measured
+ * 42_588 → 43_292) and the Next.js middleware 47_909 → 48_653 (47_837 →
+ * 48_581). These consumers retain the generated fragment and route sources;
+ * the batch adds bounded fragment reads, ordered managed-head reconciliation,
+ * abort-aware waiters and signal-generation identity for fragment deduping.
+ * The focused entry and inline-profile measurements are recorded beside their
+ * budgets in bundle-budgets.ts and bundle-prelude-budgets.ts.
+ * 2026-09-23 (`./plugin`): the new Payload config transform is 1 190 gzip;
+ * its 1 195 B budget keeps the five-byte cushion used by the small entries.
+ * 2026-09-24 (last-value preview intent): the plugin consumer measures 1 204
+ * gzip after the URL helper aligns repeated parameters with the adapters; its
+ * 1 209 B budget keeps that five-byte cushion.
+ * 2026-09-24 (Payload 3's non-localized callback and encoded custom query
+ * key): the same consumer measures 1 223 B gzip; its 1 228 B budget retains
+ * the five-byte cushion.
+ * 2026-09-24 (2.1 source freeze): the eight consumers that carry the changed
+ * runtime, morph or hook session were measured again after the owner-scope and
+ * currentness closure. Each row below moves to that measurement with its prior
+ * cushion; the five unaffected consumers retain their existing ceilings.
+ * 2026-09-24 (streamed React hydration): the five runtime consumers move by
+ * the paired-build difference from that freeze, with their prior cushions
+ * unchanged — root `initLivePreview` 48_025 → 48_218 (+193 B),
+ * `generateInlineScript` 46_016 → 46_156 (+140 B), core `initLivePreview`
+ * 48_014 → 48_205 (+191 B), Next.js middleware 51_297 → 51_432 (+135 B),
+ * and `LEAN_RUNTIME` 31_931 → 32_064 (+133 B). The root-wide dehydrated
+ * boundary scan and its measurement are recorded in ADR 0015 and
+ * bundle-budgets.ts.
+ * 2026-09-24 (H01 route fidelity): the five runtime consumers move by the
+ * exact paired-build gzip difference, keeping their prior cushions — root
+ * `initLivePreview` +25 B, `generateInlineScript` +22 B, core
+ * `initLivePreview` +25 B, Next.js middleware +24 B and `LEAN_RUNTIME` +4 B.
+ * The status and inspection counter that cost these bytes are recorded in ADR
+ * 0018 and bundle-budgets.ts.
+ * 2026-09-25 (H11 explicit response identity, ADR 0004 §4c): paired
+ * measurements add 68–100 B gzip to the seven merger-bearing consumers;
+ * each limit moves by that measured delta with its existing cushion retained.
+ * 2026-09-27 (PHD-05 island handoff/deduplication): paired measurements
+ * against the retained source-built archive add 27/101/34/99/108 B gzip to
+ * root client/generator, core client, Next middleware and lean respectively.
+ * Their 24/65/24/72/60 B cushions stay unchanged; other consumers do not move.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -306,21 +357,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_257,
+    gzip: 48_389,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 42_964,
+    gzip: 46_412,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_247,
+    gzip: 48_384,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -334,35 +385,35 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_487,
+    gzip: 1_557,
     why: 'the keyed morph alone, without the array renderer',
   },
   {
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 48_249,
+    gzip: 51_696,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 29_756,
+    gzip: 32_316,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_180,
+    gzip: 5_563,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_176,
+    gzip: 5_542,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {
@@ -371,6 +422,13 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     use: 'export const out = PluginManager;',
     gzip: 3_372,
     why: 'the plugin manager without the built-in plugins',
+  },
+  {
+    from: 'payload-live-preview/plugin',
+    symbol: 'livePreview',
+    use: "export const out = livePreview({ baseUrl: 'https://site.example.com', fallback: '/' });",
+    gzip: 1_228,
+    why: 'the Payload config transform and URL builder, without Payload itself',
   },
 ];
 

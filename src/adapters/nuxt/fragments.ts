@@ -9,6 +9,7 @@
  * describe its own signature; the one-line wrapper is in docs/nuxt.md.
  */
 import { lazyPeer, missingPeerError } from '@adapters/shared/optional-peer';
+import { withNodeFragmentRequest } from '@adapters/shared/fragment-node-request';
 import {
   createFragmentEndpointHandler,
   type FragmentEndpointOptions as SharedOptions,
@@ -78,14 +79,15 @@ const renderWithVue: FragmentRenderer = async (component, props) => {
  * ```ts
  * // server/routes/payload/fragment.post.ts
  * const endpoint = createFragmentEndpoint({ registry, authorize });
- * export default defineEventHandler((event) => endpoint(toWebRequest(event)));
+ * export default defineEventHandler((event) => endpoint(toWebRequest(event), event));
  * ```
  */
 export function createFragmentEndpoint(
   options: FragmentEndpointOptions,
-): (request: Request) => Promise<Response> {
-  return createFragmentEndpointHandler(options, {
+): (request: Request, event?: { readonly node?: { readonly req?: unknown } }) => Promise<Response> {
+  const handler = createFragmentEndpointHandler(options, {
     render: renderWithVue,
     rendererName: RENDERER_NAME,
   });
+  return (request, event) => withNodeFragmentRequest(request, event?.node?.req, handler);
 }

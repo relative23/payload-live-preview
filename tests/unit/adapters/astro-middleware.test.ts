@@ -141,6 +141,7 @@ describe('renderLivePreviewScript', () => {
     expect(html.startsWith('<script>')).toBe(true);
     expect(html.endsWith('</script>')).toBe(true);
     expect(html).toContain('admin.example.com');
+    expect(html).toContain('"astro:page-load"');
   });
 
   it('adds the nonce when provided', () => {

@@ -8,6 +8,7 @@ import { generateInlineScript, generateLoaderScript } from '@inline/generator';
 import { loaderAsset } from './loader-asset';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
 import type { LivePreviewAstroOptions } from './types';
+import { ASTRO_PAGE } from './page-facts';
 
 // Local shims keep `astro` a runtime-optional peer.
 type ScriptStage = 'head-inline' | 'page' | 'before-hydration' | 'page-ssr';
@@ -67,7 +68,10 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
           setupLoaderMode(ctx, options);
           return;
         }
-        ctx.injectScript('head-inline', generateInlineScript(inlineScriptConfig(options)));
+        ctx.injectScript(
+          'head-inline',
+          generateInlineScript(inlineScriptConfig(options, ASTRO_PAGE)),
+        );
       },
     },
   };
@@ -93,7 +97,7 @@ function setupLoaderMode(ctx: AstroConfigSetupContext, options: LivePreviewAstro
 
   ctx.injectScript(
     'head-inline',
-    generateLoaderScript(inlineScriptConfig(options), {
+    generateLoaderScript(inlineScriptConfig(options, ASTRO_PAGE), {
       runtimeSrc: asset.urlPath,
       integrity: asset.integrity,
     }),

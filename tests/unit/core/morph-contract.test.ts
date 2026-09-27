@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { isMorphBoundary } from '@core/islands';
 import { morphElement, type MorphOptions } from '@core/morph';
 
 /**
@@ -334,6 +335,34 @@ describe('§2 pairing across namespaces and hydration markers', () => {
 });
 
 describe("§9 the ownership rule is the coordinator's, the engine only obeys it", () => {
+  it('retains a compatible root the coordinator owns, without entering it', () => {
+    const live = mount('<p class="mine" title="live">typed</p>');
+    const result = morphElement(live, el('<p class="mine" title="fresh">cms</p>'), {
+      ...options,
+      boundary: (element) => element.classList.contains('mine'),
+    });
+    expect(result).toBe(live);
+    expect(live.outerHTML).toBe('<p class="mine" title="live">typed</p>');
+  });
+
+  it('replaces keyed owned elements whose tag is no longer compatible', () => {
+    const live = mount(
+      '<div><p class="mine" data-payload-key="a">typed</p><span>kept</span></div>',
+    );
+    const owned = live.firstElementChild;
+    morphElement(
+      live,
+      el('<div><section class="mine" data-payload-key="a">cms</section><span>kept</span></div>'),
+      {
+        ...options,
+        boundary: (element) => element.classList.contains('mine'),
+      },
+    );
+    expect(live.firstElementChild).not.toBe(owned);
+    expect(live.firstElementChild?.tagName).toBe('SECTION');
+    expect(live.firstElementChild?.textContent).toBe('cms');
+  });
+
   it('enters a custom element under a rule that owns nothing, and leaves it whole under the package rule', () => {
     const owned = () => false;
     const live = mount('<li data-payload-key="a"><x-note title="t1"><i>light</i></x-note></li>');
@@ -357,15 +386,24 @@ describe("§9 the ownership rule is the coordinator's, the engine only obeys it"
     expect(note.innerHTML).toBe('<i>other light</i>');
   });
 
-  it('lets a coordinator own more than the package does: a marked region stays as it was', () => {
-    const live = mount('<li data-payload-key="a"><p class="mine">typed</p><p>cms</p></li>');
+  it('lets a coordinator extend the package rule: both marked and package-owned regions stay', () => {
+    const live = mount(
+      '<li data-payload-key="a"><p class="mine">typed</p><x-note>private</x-note><p>cms</p></li>',
+    );
     const mine = live.firstElementChild!;
-    morphElement(live, el('<li data-payload-key="a"><p class="mine">cms</p><p>cms 2</p></li>'), {
-      ...options,
-      boundary: (element) => element.classList.contains('mine'),
-    });
+    const note = live.children[1];
+    morphElement(
+      live,
+      el('<li data-payload-key="a"><p class="mine">cms</p><x-note>fresh</x-note><p>cms 2</p></li>'),
+      {
+        ...options,
+        boundary: (element) => isMorphBoundary(element) || element.classList.contains('mine'),
+      },
+    );
     expect(live.firstElementChild).toBe(mine);
     expect(mine.textContent).toBe('typed');
+    expect(live.children[1]).toBe(note);
+    expect(note?.textContent).toBe('private');
     expect(live.lastElementChild?.textContent).toBe('cms 2');
   });
 });

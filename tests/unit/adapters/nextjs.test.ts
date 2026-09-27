@@ -5,6 +5,7 @@ import {
   livePreviewScriptProps,
   renderLivePreviewScript,
 } from '@adapters/nextjs/index';
+import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 
 const ADMIN = 'https://admin.example.com';
@@ -39,6 +40,7 @@ function wireConfig(script: string): unknown[] {
 }
 
 const HYDRATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('hydration');
+const SOFT_NAVIGATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('softNavigationEvents');
 
 /**
  * ADR 0015 §1: a Next page is a React tree, so every script this adapter emits
@@ -50,6 +52,9 @@ describe('what the Next adapter knows about the page', () => {
   it('declares React hydration in the script props and the rendered tag', () => {
     const props = livePreviewScriptProps({ allowedOrigins: [ADMIN] });
     expect(wireConfig(props.dangerouslySetInnerHTML.__html)[HYDRATION_SLOT_INDEX]).toBe('react');
+    expect(wireConfig(props.dangerouslySetInnerHTML.__html)[SOFT_NAVIGATION_SLOT_INDEX]).toEqual([
+      NAVIGATION_COMMIT_EVENT,
+    ]);
     expect(
       wireConfig(renderLivePreviewScript({ allowedOrigins: [ADMIN] }))[HYDRATION_SLOT_INDEX],
     ).toBe('react');
@@ -60,7 +65,9 @@ describe('what the Next adapter knows about the page', () => {
       request('https://site.example.com/?preview=true'),
       htmlResponse(),
     );
-    expect(wireConfig(await response.text())[HYDRATION_SLOT_INDEX]).toBe('react');
+    const config = wireConfig(await response.text());
+    expect(config[HYDRATION_SLOT_INDEX]).toBe('react');
+    expect(config[SOFT_NAVIGATION_SLOT_INDEX]).toEqual([NAVIGATION_COMMIT_EVENT]);
   });
 
   it('emits the bootstrap armed for React under asset delivery', () => {
