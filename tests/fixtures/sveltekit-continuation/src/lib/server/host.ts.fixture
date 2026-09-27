@@ -1,0 +1,34 @@
+/** Server-only host state keeps request decisions in locals, never in this map. An explicit local-test switch prevents accidental deployment. */
+import { env } from '$env/dynamic/private';
+import { readFileSync } from 'node:fs';
+import type { RequestEvent } from '@sveltejs/kit';
+import { createNextHostReference as createHostReference } from '../../../reference.mjs';
+
+let current: { host: ReturnType<typeof createHostReference>; origin: string } | undefined;
+export function fixture() {
+  if (env.PLP_SVELTE_HOST_ENABLED !== 'local-test-only' || !env.PLP_SVELTE_HOST_CONFIG) return null;
+  if (!current) {
+    const options = JSON.parse(readFileSync(env.PLP_SVELTE_HOST_CONFIG, 'utf8'));
+    current = { host: createHostReference({ ...options, enabled: true, fetch }), origin: options.audience };
+  }
+  return current;
+}
+
+export function canonical(event: Pick<RequestEvent, 'request' | 'url'>, suffix = '') {
+  const active = fixture();
+  const { request } = event;
+  if (!active || request.headers.get('host') !== new URL(active.origin).host || request.headers.get('x-forwarded-proto') !== 'https') return null;
+  // Kit normalizes its own data suffix and invalidation query before hooks.
+  // Never strip arbitrary client parameters to manufacture a permitted target.
+  const url = new URL(event.url);
+  if (suffix && !url.pathname.endsWith(suffix)) return null;
+  if (suffix) url.pathname = url.pathname.slice(0, -suffix.length);
+  return new Request(`${active.origin}${url.pathname}${url.search}`, {
+    method: request.method, headers: request.headers, signal: request.signal,
+    ...(request.body ? { body: request.body, duplex: 'half' } : {}),
+  });
+}
+
+export function refused() {
+  return new Response(null, { status: 403, headers: { 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer', vary: 'Cookie' } });
+}

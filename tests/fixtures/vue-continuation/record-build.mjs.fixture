@@ -1,0 +1,35 @@
+/**
+ * Record compiled production bytes and absence of unrelated framework peers.
+ * The resulting asset allowlist comes only from the local build output, never
+ * a request path; private server modules are measured but never served.
+ */
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { copyFileSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const absent = ['nuxt', 'nitropack', 'next', 'react', 'react-dom', 'astro', '@astrojs/node', 'svelte', '@sveltejs/kit', 'payload'];
+for (const name of absent) assert.throws(() => require.resolve(name), { code: 'MODULE_NOT_FOUND' });
+const manifest = JSON.parse(readFileSync('dist/client/.vite/manifest.json', 'utf8'));
+const entries = Object.values(manifest).filter(value => value.isEntry);
+assert.equal(entries.length, 1);
+const assets = readdirSync('dist/client/assets').sort().map(name => {
+  assert.match(name, /^[A-Za-z0-9._-]+\.js$/u);
+  return 'assets/' + name;
+});
+assert.ok(assets.includes(entries[0].file));
+copyFileSync('server.mjs', 'dist/server.mjs');
+writeFileSync('dist/assets.json', JSON.stringify({ entry: entries[0].file, assets }));
+const hashes = {};
+const bytes = {};
+for (const path of [
+  ...assets.map(asset => 'dist/client/' + asset), 'dist/ssr/entry-server.js',
+  'dist/server.mjs', 'html-host.mjs', 'native-request.mjs',
+]) {
+  const contents = readFileSync(path);
+  hashes[path] = createHash('sha256').update(contents).digest('hex');
+  bytes[path] = contents.byteLength;
+}
+const vueEntrySHA256 = createHash('sha256').update(readFileSync(new URL(import.meta.resolve('payload-live-preview/vue')))).digest('hex');
+writeFileSync('dist/build.json', JSON.stringify({ node: process.version, absent, assets, vueEntrySHA256, hashes, bytes }, null, 2));

@@ -8,6 +8,7 @@
  * Payload via a server-side fetch; for the example we hard-code them.
  */
 import '../sanitizer';
+import { ClientRouter } from 'astro:transitions';
 import RichText from 'payload-live-preview/astro/RichText.astro';
 
 const initial = {
@@ -57,6 +58,7 @@ const initial = {
     <meta charset="utf-8" />
     <title>Live Preview Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <ClientRouter />
     <style>
       :root {
         color-scheme: light dark;
@@ -147,6 +149,10 @@ const initial = {
           target="_blank"
           rel="noopener noreferrer">{initial.ctaLabel}</a>
       </p>
+
+      <a href="/soft-navigation/?preview=true" data-testid="real-payload-soft-navigation">
+        Open the second preview route
+      </a>
     </article>
   </body>
 </html>

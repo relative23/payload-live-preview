@@ -1,0 +1,33 @@
+/** Reproduce the declared 4.9.0 floor through the installed package default.
+ * Its ContainerRenderOptions lacks props, so a context override would fail
+ * semantic checking before the actual package path could be observed.
+ */
+import type { APIRoute } from 'astro';
+import { createFragmentEndpoint } from 'payload-live-preview/astro';
+import Blocks from '../../components/Blocks.astro';
+import { canonical, fixture, refused } from '../../server/host';
+
+const handle = createFragmentEndpoint({
+  authorizePreview: async request => {
+    const active = fixture();
+    const target = canonical(request);
+    if (!active || !target) return null;
+    const page = await active.host.page(target);
+    await page.response.body?.cancel();
+    return page.authorization;
+  },
+  registry: {
+    catalog: {
+      component: Blocks,
+      props: input => ({
+        show: input.fields.show === true,
+        title: typeof input.fields.title === 'string' ? input.fields.title : '',
+        delayMs: input.fields.delayMs === 80 ? 80 : 0,
+      }),
+    },
+  },
+});
+export const ALL: APIRoute = ({ request }) => {
+  const target = canonical(request);
+  return target ? handle({ request: target }) : Promise.resolve(refused());
+};

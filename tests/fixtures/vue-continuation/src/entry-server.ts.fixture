@@ -1,0 +1,16 @@
+/**
+ * Native Vue SSR escapes the authorized view before the browser hydrates it.
+ * The attribute serializes presentation data only and cannot terminate its
+ * quoted boundary; the service supplies the fixed public client asset.
+ */
+import { createSSRApp } from 'vue';
+import { renderToString } from 'vue/server-renderer';
+import Preview from './Preview.vue';
+import type { PreviewView } from './types';
+
+export async function render(view: PreviewView): Promise<string> {
+  const markup = await renderToString(createSSRApp(Preview, { ...view }));
+  const entities: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  const encoded = JSON.stringify(view).replace(/[&<>"']/gu, character => entities[character]!);
+  return '<div id="vue-app" data-stopped="false" data-preview-view="' + encoded + '">' + markup + '</div>';
+}

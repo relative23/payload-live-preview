@@ -1,0 +1,9 @@
+---
+/** Native client:load is the positive control, without manual hydrateRoot.
+ * Its effect and button prove the page's actual Astro/React hydration path.
+ */
+import ReactPanel from './ReactPanel';
+---
+<div data-testid="react-control" data-payload-owned>
+  <ReactPanel client:load title="Native Astro React control" authority={{ locale: '', subject: '', path: '' }} />
+</div>

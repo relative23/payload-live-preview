@@ -82,10 +82,10 @@ export interface DeliveryMeasurement {
  * a runner and green here for a reason nobody can act on. Raw bytes reproduce
  * exactly, and gzip is a function of them, so holding raw catches every change
  * gzip would. (The runtime inside that script was 104 711 bytes and 32 834 gzip
- * when this was written and is 113 468 bytes in 2.0.1 — it grew again with Z6, Z7 and Z22 after Z3, Z4 and Z5, and
- * the only number in this table that moved for any of them is the Next inline
- * row's, which does not hold the runtime either; the paragraph on that row says
- * what did move.)
+ * when this was written and was 113 468 bytes in 2.0.1. It grew again with Z6,
+ * Z7 and Z22 after Z3, Z4 and Z5, and the only number in this table that moved
+ * for any of them is the Next inline row's, which does not hold the runtime
+ * either; the paragraph on that row says what did move.)
  */
 
 export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
@@ -96,9 +96,9 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     carries: 'bootstrap',
     bindings: true,
     scriptElements: 1,
-    overheadBytes: 772,
+    overheadBytes: 792,
     // A static page has no request to decide for, so the decision moves into the
-    // browser: 772 bytes that ask whether this document is framed or was opened
+    // browser: 792 bytes that ask whether this document is framed or was opened
     // by an admin and, outside a preview, fetch nothing. This is the floor of
     // the whole table and it is not zero — a build has nobody to ask. Z8 leaves
     // it standing on purpose, which is why it is written down as a floor and not
@@ -108,6 +108,11 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     // script carries now — `"v2"` in slot 24, behind the six empty slots after
     // `revealEditedField` — so `pll doctor --v2` reads what an empty slot means
     // instead of guessing. The bootstrap did not move.
+    //
+    // 2026-09-24 (native router commit replay): 772 → 792. Astro now owns
+    // `astro:page-load` as a page fact and writes it into slot 25, so a client
+    // router commit immediately rebuilds the cache and reapplies the accepted
+    // preview document. The bootstrap itself is unchanged.
     why: 'the floor for a page built ahead of time: the check has to travel with the page',
   },
   {
@@ -117,17 +122,20 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     carries: 'runtime',
     bindings: true,
     scriptElements: 1,
-    overheadBytes: 136,
-    // The yardstick: 17 bytes of tag and 109 bytes of config in front of the
-    // whole runtime, delivered to everyone. Nothing decides and nothing is
-    // deferred, so this row measures what the other rows are avoiding —
-    // 103 709 bytes today, up from 97 672 on 6 September because Z3, Z4 and Z5
-    // added code. The 126 did not move, and that is the construction working:
-    // this row holds the delivery, not the runtime. It is honest rather than
-    // wrong: an option named `inline` promises exactly this.
+    overheadBytes: 156,
+    // The yardstick: 17 bytes of tag and 139 bytes of config and separator in
+    // front of the whole runtime, delivered to everyone. Nothing decides and
+    // nothing is deferred, so this row measures what the other rows avoid. The
+    // element is 125 075 bytes in this build; only its 156-byte delivery is
+    // held here. It is honest rather than wrong: an option named `inline`
+    // promises exactly this.
     //
     // 2026-09-11 (Z37): 126 → 136, the config 109 → 119 bytes — the same
     // `defaults` marker as the loader row above, and nothing else.
+    //
+    // 2026-09-24 (native router commit replay): 136 → 156, the same
+    // `astro:page-load` wire row as the loader delivery. The runtime remains
+    // outside this budget and is still gated independently.
     why: 'the price of deferring nothing, so every other row has something to be measured against',
   },
   {
@@ -172,7 +180,7 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     // same subtraction: `AUTHORIZED_NEXT_DELIVERY` below. A zero that holds for
     // everyone would be a broken adapter rather than a win, so the two rows are
     // read in one file — this one proves the public pays nothing, that one
-    // proves the editor still gets the runtime, down to the 11 702 bytes of tag,
+    // proves the editor still gets the runtime, down to the 12 633 bytes of tag,
     // config statement and fragment prelude this fixture asks for.
     why: 'LP-8 closed: a component that can decline to render is the only thing that gets a Next layout to zero',
   },
@@ -183,7 +191,7 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     carries: 'bootstrap',
     bindings: true,
     scriptElements: 2,
-    overheadBytes: 1_331,
+    overheadBytes: 1_344,
     // Deliberately left on the synchronous helper after the row above moved off
     // it, because it is the only thing that still measures what an option alone
     // can do: the same layout, the same shell, one option apart — 696 bytes
@@ -203,7 +211,15 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     //
     // 2026-09-11 (Z37): 1 326 → 1 331, the `defaults` marker straight behind the
     // hydration slot: `,"v2"`.
-    why: 'what an option alone can do for a Next page, and the 1 331 bytes that a component is needed to remove',
+    //
+    // 2026-09-24 (native router commit replay): 1 331 → 1 367. The adapter
+    // now writes `payload-live-preview:navigation` into slot 25; the host bridge
+    // fires it after an App Router commit so unsaved preview state is replayed.
+    //
+    // 2026-09-24 (streamed React hydration): 1 367 → 1 344. The armed loader
+    // records each FiberRoot rather than only its container, which removes 23 B
+    // while preserving the commit state the runtime must inspect (ADR 0015).
+    why: 'what an option alone can do for a Next page, and the 1 344 bytes that a component is needed to remove',
   },
   {
     name: 'Nuxt, Nitro plugin, delivery: asset',
@@ -248,12 +264,11 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * mints a signed token into a cookie, and `<LivePreviewScript />` verifies it
  * and renders the runtime it declined to render a moment earlier.
  *
- * The numbers are the ones the public row carried before LP-8 was closed, to
- * the byte: 11 702 above the runtime — 17 bytes of tag, the 103-byte config
- * statement and the 11 580-byte fragment prelude this fixture asks for — in two
- * elements, because Next writes the head of a layout into its flight payload as
- * well. Nothing about the delivery got cheaper for an editor; what changed is
- * who is charged.
+ * The current delivery is 12 633 bytes above the runtime: 17 bytes of tag, a
+ * 156-byte config statement, two separators and the 12 458-byte fragment
+ * prelude this fixture asks for. Next writes the element into its flight
+ * payload as well, so the response contains two. Nothing about the delivery
+ * got cheaper for an editor; what changed is who is charged.
  *
  * Not a row of `DELIVERY_BUDGETS`, because every row there is by definition a
  * response to a request without a cookie. This one is the opposite request, and
@@ -274,6 +289,13 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * 2026-09-11 (Z37): 11 742 → 11 747, the same five bytes as the asset row:
  * the `defaults` marker in slot 24, which tells `pll doctor --v2` what the
  * empty slots before it mean.
+ *
+ * 2026-09-24 (navigation replay and fragment hardening): 11 747 → 12 633.
+ * The Next navigation event adds 36 bytes to the config. A clean baseline build
+ * measured the fragment prelude at 11 608 bytes; exact response keys,
+ * session-safe request identity, cancellable gate waiters, ordered head
+ * reconciliation and the two-sided morph boundary rule make it 12 458 bytes,
+ * an 850-byte increase. The runtime remains subtracted from this row.
  */
 export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   name: 'Next.js, script in the root layout, authorized editor',
@@ -282,7 +304,7 @@ export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   carries: 'runtime',
   bindings: true,
   scriptElements: 2,
-  overheadBytes: 11_747,
+  overheadBytes: 12_633,
   why: 'the same layout still hands an authorized editor the whole runtime — the zero above is a decision, not a broken adapter',
 };
 

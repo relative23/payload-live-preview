@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
-import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
+import { NEXT_ORIGIN, post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 /**
  * `delivery: 'asset'` through the Next.js adapter. Both fixtures live in
@@ -16,7 +16,7 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * nothing because the first one's copy is still good.
  */
 
-const APP = 'http://localhost:4174';
+const APP = NEXT_ORIGIN;
 // A diagnostic code the runtime carries and the bootstrap — 679 bytes of
 // context check and one `createElement('script')` — does not.
 const RUNTIME_MARKER = 'LP0101';

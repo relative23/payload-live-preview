@@ -1,0 +1,57 @@
+---
+/**
+ * H05's production probe distinguishes component props from Astro's ambient
+ * request context. It also owns scoped CSS that no ordinary page imports.
+ */
+interface Props {
+  expectedLocale: string;
+  expectedRoute: string;
+  expectedSlug: string;
+  expectedSubject: string;
+  marker: string;
+  delayMs: number;
+}
+
+const {
+  expectedLocale,
+  expectedRoute,
+  expectedSlug,
+  expectedSubject,
+  marker,
+  delayMs,
+} = Astro.props;
+if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+const locals = Astro.locals as {
+  h05Preview?: { locale?: string; subject?: string };
+};
+const requestUrl = new URL(Astro.request.url);
+---
+
+<article
+  data-testid={`h05-probe-${marker}`}
+  data-expected-locale={expectedLocale}
+  data-expected-route={expectedRoute}
+  data-expected-slug={expectedSlug}
+  data-expected-subject={expectedSubject}
+  data-context-path={Astro.url.pathname}
+  data-request-path={requestUrl.pathname}
+  data-param-locale={Astro.params.locale ?? ''}
+  data-param-slug={Astro.params.slug ?? ''}
+  data-local-locale={locals.h05Preview?.locale ?? ''}
+  data-local-subject={locals.h05Preview?.subject ?? ''}
+  data-forwarded-untrusted={Astro.request.headers.get('x-untrusted-local') ?? ''}
+>
+  <p data-testid="h05-marker">{marker}</p>
+  <div data-payload-fragment="h05-empty" data-payload-key={`${marker}:empty`}></div>
+  <section data-payload-fragment="h05-nested" data-payload-key={`${marker}:nested`}>
+    <span data-testid="h05-nested-value">{expectedSlug}</span>
+  </section>
+</article>
+
+<style>
+  article {
+    border-top: 7px solid rgb(13, 110, 253);
+    color: rgb(19, 78, 74);
+  }
+</style>

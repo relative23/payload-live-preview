@@ -1,0 +1,10 @@
+/** Only the server reference holds credentials. Pages receive selected view fields, not the branded authorization context. */
+import type { AuthorizedPreviewContext } from 'payload-live-preview/server';
+export function createNextHostReference(options: unknown): {
+  login(request: Request): Promise<Response>;
+  logout(request: Request): Promise<Response>;
+  exchange(request: Request): Promise<Response>;
+  load(request: Request): Promise<Response>;
+  update(request: Request): Promise<Response>;
+  page(request: Request): Promise<{ response: Response; authorization: AuthorizedPreviewContext | null }>;
+};

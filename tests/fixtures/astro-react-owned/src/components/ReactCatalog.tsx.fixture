@@ -1,0 +1,112 @@
+/**
+ * A finite page-owned root exists before its first visible unsaved branch.
+ * Native hydration subscribes to the page snapshot; only React commits its subtree. The
+ * page's verified presentation identity is never replaced by editor fields.
+ */
+import { createContext, useContext, useLayoutEffect, useRef, useState } from 'react';
+import { readIslandSnapshot, subscribeIslandSnapshot, type IslandSnapshot } from '../client/island-snapshots';
+import type { Authority } from './ReactPanel';
+import './react-panel.css';
+
+const AuthorityContext = createContext<Authority>({ locale: '', subject: '', path: '' });
+interface Snapshot { show: boolean; title: string; revision: number }
+function observe(owner: string, phase: string, revision = 0) {
+  window.dispatchEvent(new CustomEvent('plp:test:owner-lifecycle', { detail: { owner, phase, revision } }));
+}
+function Card({ title }: { title: string }) {
+  const authority = useContext(AuthorityContext);
+  const [count, setCount] = useState(0);
+  return <article className="react-panel" data-testid="owner-card"
+    data-provider-locale={authority.locale} data-provider-subject={authority.subject}
+    data-provider-path={authority.path}>
+    <h2 data-testid="owner-title">{title}</h2>
+    <output data-testid="owner-derived">{Array.from(title).length}</output>
+    <button data-testid="owner-counter" onClick={() => setCount(value => value + 1)}>{count}</button>
+  </article>;
+}
+
+export default function ReactCatalog({ owner, authority, id }: {
+  owner: string; authority: Authority; id: number;
+}) {
+  const root = useRef<HTMLElement>(null);
+  const [ready, setReady] = useState(false);
+  const [work, setWork] = useState(0);
+  const [snapshot, setSnapshot] = useState<Snapshot>({ show: false, title: '', revision: 0 });
+  useLayoutEffect(() => {
+    const island = root.current?.closest('astro-island');
+    const host = island?.closest<HTMLElement>('plp-astro-preview');
+    if (!island || !host) throw new Error('Missing native page owner');
+    const lifetime = new AbortController();
+    let attached: AbortController | undefined;
+    let pending: AbortController | undefined;
+    let epoch = 0;
+    let seen = 0;
+    const cancel = () => { pending?.abort(); pending = undefined; };
+    const receive = (value: IslandSnapshot) => {
+      const { revision } = value;
+      if (revision <= seen) return;
+      seen = revision;
+      cancel();
+      const job = new AbortController();
+      pending = job;
+      const generation = epoch;
+      const next = { show: value.show, title: value.title, revision };
+      const commit = () => {
+        if (job.signal.aborted || generation !== epoch || !host.isConnected || !island.isConnected) return;
+        pending = undefined;
+        setSnapshot(next);
+        setWork(0);
+      };
+      observe(owner, 'receive', revision);
+      // This fixed, bounded application formatter represents cancellable async
+      // work. It neither chooses a module nor reads or grants protected data.
+      if (value.delayed) {
+        setWork(revision);
+        const timer = window.setTimeout(commit, 1000);
+        job.signal.addEventListener('abort', () => {
+          window.clearTimeout(timer);
+          observe(owner, 'abort', revision);
+        }, { once: true });
+      } else commit();
+    };
+    const attach = () => {
+      if (attached) return;
+      epoch++;
+      seen = 0;
+      attached = new AbortController();
+      const unsubscribe = subscribeIslandSnapshot(island, receive);
+      attached.signal.addEventListener('abort', unsubscribe, { once: true });
+      observe(owner, 'attach');
+      // Subscribe before reading so either side of hydration observes the latest
+      // snapshot. This is application state, not a second editor message.
+      const latest = readIslandSnapshot(island);
+      if (latest) receive(latest);
+    };
+    const detach = () => {
+      if (!attached) return;
+      epoch++;
+      cancel();
+      setWork(0);
+      attached.abort();
+      attached = undefined;
+      observe(owner, 'detach');
+    };
+    host.addEventListener('plp:owner-start', attach, { signal: lifetime.signal });
+    host.addEventListener('plp:owner-stop', detach, { signal: lifetime.signal });
+    if (host.isConnected && host.dataset.stopped !== 'true') attach();
+    setReady(true);
+    observe(owner, 'mount');
+    return () => { detach(); lifetime.abort(); observe(owner, 'unmount'); };
+  }, [authority.locale, id, owner]);
+  useLayoutEffect(() => {
+    if (snapshot.revision > 0) observe(owner, 'commit', snapshot.revision);
+  }, [owner, snapshot]);
+  return <section ref={root} data-testid={'owner-' + owner} data-ready={String(ready)}
+    data-owner-id={id} data-owner-locale={authority.locale}
+    data-owner-subject={authority.subject} data-owner-path={authority.path}
+    data-pending={work} data-revision={snapshot.revision}>
+    <AuthorityContext.Provider value={authority}>
+      {snapshot.show && <Card key={String(id)} title={snapshot.title} />}
+    </AuthorityContext.Provider>
+  </section>;
+}

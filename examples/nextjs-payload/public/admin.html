@@ -102,6 +102,10 @@
         Tags (comma separated)
         <input name="tags" value="astro, payload, live-preview" data-testid="tags-input" />
       </label>
+      <label>
+        Show server-only section
+        <input name="showExtra" type="checkbox" data-testid="show-extra-input" />
+      </label>
     </form>
 
     <iframe id="preview" data-testid="preview-frame" title="Live preview"></iframe>
@@ -122,10 +126,11 @@
       // parameter only selects an entry, so a crafted `?target=` has no path to
       // `iframe.src` at all. A mock admin is the first integration a reader
       // copies, so it models the check a real one needs.
-      const ROUTES = ['/', '/reveal'];
+      const ROUTES = ['/', '/reveal', '/route-commit', '/soft-navigation/one'];
       const requested = new URLSearchParams(window.location.search).get('target');
       const target = ROUTES.find((route) => route === requested) ?? ROUTES[0];
       iframe.src = `/preview-session?to=${encodeURIComponent(target)}`;
+      const fixtureNow = new Date();
 
       function buildData() {
         const fd = new FormData(form);
@@ -134,11 +139,12 @@
           subtitle: String(fd.get('subtitle') ?? ''),
           hero: { url: String(fd.get('heroUrl') ?? ''), alt: 'Hero image' },
           count: Number(fd.get('count') ?? 0),
-          publishedAt: new Date().toISOString(),
+          publishedAt: fixtureNow.toISOString(),
           tags: String(fd.get('tags') ?? '')
             .split(',')
             .map((t) => t.trim())
             .filter((t) => t.length > 0),
+          showExtra: fd.get('showExtra') === 'on',
           ctaLabel: String(fd.get('ctaLabel') ?? ''),
           ctaUrl: String(fd.get('ctaUrl') ?? ''),
           body: {
@@ -153,7 +159,7 @@
                   type: 'paragraph',
                   children: [
                     { type: 'text', text: 'Live preview rendered at ' },
-                    { type: 'text', text: new Date().toLocaleTimeString(), format: 1 },
+                    { type: 'text', text: fixtureNow.toLocaleTimeString(), format: 1 },
                   ],
                 },
               ],
@@ -162,13 +168,18 @@
         };
       }
 
+      let currentData = buildData();
+
       function sendUpdate() {
         const message = {
           type: 'payload-live-preview',
-          data: buildData(),
+          data: currentData,
           collectionSlug: 'pages',
           locale: 'en',
         };
+        document.dispatchEvent(
+          new CustomEvent('payload-live-preview:fixture-document', { detail: currentData }),
+        );
         if (iframe.contentWindow) {
           iframe.contentWindow.postMessage(message, window.location.origin);
         }
@@ -176,16 +187,19 @@
 
       let pending = null;
       form.addEventListener('input', () => {
+        currentData = buildData();
         if (pending) clearTimeout(pending);
         pending = setTimeout(sendUpdate, 16);
       });
 
-      // When the preview signals ready, push the initial state so the
-      // user sees their typing instantly mirrored after a refresh.
+      // Payload sends the document for the startup handshake, not every later
+      // ready signal. Matching that matters: navigation replay must be local.
+      let answeredReady = false;
       window.addEventListener('message', (event) => {
         if (event.origin !== window.location.origin) return;
         const data = event.data;
-        if (data && data.type === 'payload-live-preview' && data.ready === true) {
+        if (!answeredReady && data && data.type === 'payload-live-preview' && data.ready === true) {
+          answeredReady = true;
           sendUpdate();
         }
       });
@@ -199,14 +213,16 @@
       // retry. Replaying the current form state on a short, bounded
       // interval makes the fixture deterministic; real Payload admins
       // re-send on every edit, so production is unaffected.
-      const replayUntil = Date.now() + 10_000;
-      const replayTimer = setInterval(() => {
-        if (Date.now() > replayUntil) {
-          clearInterval(replayTimer);
-          return;
-        }
-        sendUpdate();
-      }, 500);
+      if (target !== '/soft-navigation/one') {
+        const replayUntil = Date.now() + 10_000;
+        const replayTimer = setInterval(() => {
+          if (Date.now() > replayUntil) {
+            clearInterval(replayTimer);
+            return;
+          }
+          sendUpdate();
+        }, 500);
+      }
     </script>
   </body>
 </html>

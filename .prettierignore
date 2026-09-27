@@ -13,6 +13,7 @@ examples/**/package-lock.json
 examples/**/.astro/
 examples/**/.next/
 examples/**/.svelte-kit/
+examples/sveltekit-payload/build/
 examples/**/.nuxt/
 examples/**/.output/
 examples/**/next-env.d.ts

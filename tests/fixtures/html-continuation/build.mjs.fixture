@@ -1,0 +1,29 @@
+/**
+ * Plain Node copies the reviewed browser entry and the application modules.
+ * No framework compiler, peer, workspace link or runtime code generation is
+ * required; the build record binds exactly the files served by this consumer.
+ */
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
+const require = createRequire(import.meta.url);
+const absent = ['astro', '@astrojs/node', 'next', 'nuxt', 'react', 'react-dom', 'svelte', '@sveltejs/kit', 'vue', 'vite', 'esbuild', 'payload'];
+for (const name of absent) {
+  assert.throws(() => require.resolve(name), { code: 'MODULE_NOT_FOUND' });
+}
+const client = fileURLToPath(import.meta.resolve('payload-live-preview/client'));
+await mkdir('dist', { recursive: true });
+await copyFile(client, 'dist/client.js');
+await copyFile('preview.mjs', 'dist/preview.js');
+await copyFile('server.mjs', 'dist/server.mjs');
+const hashes = {};
+const bytes = {};
+for (const path of ['dist/client.js', 'dist/preview.js', 'dist/server.mjs', 'html-host.mjs', 'native-request.mjs']) {
+  const contents = await readFile(path);
+  hashes[path] = createHash('sha256').update(contents).digest('hex');
+  bytes[path] = contents.byteLength;
+}
+await writeFile('dist/build.json', JSON.stringify({ node: process.version, absent, hashes, bytes }, null, 2));

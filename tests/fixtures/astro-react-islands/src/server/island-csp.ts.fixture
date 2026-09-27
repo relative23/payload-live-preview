@@ -1,0 +1,27 @@
+/**
+ * Only the fixed, prerendered compiler output contributes CSP hashes. Request
+ * HTML is never hashed and an unexpected pinned build shape fails closed.
+ */
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+let cached: { scripts: string; styles: string } | undefined;
+export function islandCsp() {
+  if (process.env.PLP_ASTRO_ISLAND_CSP !== 'build-hashes') {
+    return { scripts: '', styles: '' };
+  }
+  if (cached) return cached;
+  const html = readFileSync(resolve('dist/client/island-csp-probe/index.html'), 'utf8');
+  if (html.length > 40_000) throw new Error('Unexpected island CSP build size');
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]!);
+  const styles = [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(match => match[1]!);
+  if (scripts.length !== 2 || styles.length !== 1 ||
+      !scripts[0]!.includes('astro:load') || !scripts[1]!.includes('astro-island') ||
+      styles[0] !== 'astro-island,astro-slot,astro-static-slot{display:contents}') {
+    throw new Error('Unexpected island CSP build shape');
+  }
+  const hashes = (values: string[]) => values.map(value =>
+    "'sha256-" + createHash('sha256').update(value).digest('base64') + "'").join(' ');
+  return cached = { scripts: hashes(scripts), styles: hashes(styles) };
+}

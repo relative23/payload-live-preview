@@ -1,0 +1,5 @@
+---
+// The public shell carries neither private data nor a preview runtime import.
+---
+<html lang="en"><head><meta charset="utf-8" /><title>Local host reference</title></head>
+<body><h1>Public shell</h1><iframe id="preview" title="Preview"></iframe></body></html>

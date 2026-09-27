@@ -1,0 +1,16 @@
+/** The packed render hook must reuse Nitro's request-local decision. A missing middleware decision cannot authorize a public request. */
+import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';
+import { fixture } from '../utils/host';
+
+export default defineNitroPlugin(nitro => {
+  livePreviewNitroPlugin({
+    allowedOrigins: [fixture()?.origin ?? 'https://localhost:4286'], defaults: 'v2',
+    autoInject: false, authorizePreview: () => null,
+  })(nitro);
+  nitro.hooks.hook('render:html', (_html, { event }) => {
+    if (event.context.previewView &&
+        (event.context.livePreviewAuthorization ?? null) !== event.context.previewExpectedAuthorization) {
+      throw new Error('Preview decision was not shared within the request');
+    }
+  });
+});

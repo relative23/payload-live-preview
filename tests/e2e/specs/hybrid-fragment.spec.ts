@@ -236,6 +236,37 @@ test.describe('hybrid fragment preview', () => {
     expect(stats.rendered).toBe(0);
   });
 
+  test('a response for another boundary key never morphs its server HTML', async ({ page }) => {
+    const frame = await open(page);
+    let mismatchedResponses = 0;
+    await page.route(`${APP}/payload/fragment`, async (intercepted) => {
+      const response = await intercepted.fetch();
+      const body = (await response.json()) as {
+        boundary: { id: string; key?: string };
+      } & Record<string, unknown>;
+      mismatchedResponses += 1;
+      await intercepted.fulfill({
+        response,
+        json: { ...body, boundary: { ...body.boundary, key: 'another-instance' } },
+      });
+    });
+
+    await post(
+      page,
+      { title: 'Patched after mismatch', subtitle: 'Must not be morphed', body: 'two words' },
+      OWNER,
+    );
+    await expect.poll(() => mismatchedResponses).toBe(1);
+    await expect(frame.getByTestId('hero-title')).toHaveText('Patched after mismatch');
+    await expect(frame.getByTestId('hero-subtitle')).toHaveCount(0);
+    // Derived server output stays at the last accepted render; only direct
+    // bindings receive the deterministic fallback patch.
+    await expect(frame.getByTestId('hero-words')).toHaveText('3 words');
+    const stats = await fragments(frame);
+    expect(stats.failed).toBe(1);
+    expect(stats.rendered).toBe(0);
+  });
+
   test('a head binding refreshes the whole route once, keeps scroll and focus, and the unsaved title lands on the fresh markup', async ({
     page,
   }) => {
@@ -253,6 +284,103 @@ test.describe('hybrid fragment preview', () => {
     // route refresh is covered by the route unit test in jsdom).
     expect(await frame.evaluate(() => window.scrollY)).toBeGreaterThan(500);
     expect((await route(frame)).loopStopped).toBe(0);
+  });
+
+  test('the browser route fallback reconciles repeated managed head tags and leaves foreign ownership alone', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+    await frame.evaluate(() => {
+      document.head.insertAdjacentHTML(
+        'beforeend',
+        '<meta name="og:image" content="/old-name.png" data-stale="yes">' +
+          '<style id="foreign-style">:root{--foreign:1}</style>' +
+          '<meta property="og:image" content="/owned.png" data-payload-owned>' +
+          '<meta property="og:image" content="/old-property.png">' +
+          '<link rel="alternate" href="/old-alt">' +
+          '<link rel="canonical" href="/old" data-stale="yes">' +
+          '<link rel="canonical" href="/owned" data-payload-owned>',
+      );
+    });
+
+    let refreshRequests = 0;
+    await page.route(frame.url(), async (intercepted) => {
+      if (intercepted.request().headers()['x-payload-live-preview'] !== 'route') {
+        await intercepted.continue();
+        return;
+      }
+      refreshRequests += 1;
+      const response = await intercepted.fetch();
+      const body = (await response.text()).replace(
+        /<head>[\s\S]*?<\/head>/u,
+        '<head><meta charset="utf-8"><title data-payload-field="title">Server title</title>' +
+          '<meta property="og:image" content="/one.png" data-order="1">' +
+          '<meta property="og:image" content="/two.png" data-order="2">' +
+          '<meta name="og:image" content="/named.png" data-order="3">' +
+          '<link rel="canonical" href="/fresh" hreflang="en">' +
+          '<style id="fresh-style">:root{--fresh:1}</style>' +
+          '<link rel="alternate" href="/fresh-alt"></head>',
+      );
+      await intercepted.fulfill({ response, body });
+    });
+
+    await post(page, { title: 'Unsaved head title' }, OWNER);
+    await expect.poll(() => refreshRequests).toBe(1);
+    await expect.poll(() => frame.title()).toBe('Unsaved head title');
+    expect(
+      await frame.evaluate(() => {
+        const managed = Array.from(document.head.children)
+          .filter(
+            (element) =>
+              !element.hasAttribute('data-payload-owned') &&
+              ((element.tagName === 'META' &&
+                (element.hasAttribute('name') || element.hasAttribute('property'))) ||
+                (element.tagName === 'LINK' && element.getAttribute('rel') === 'canonical')),
+          )
+          .map((element) => ({
+            tag: element.tagName,
+            attributes: Object.fromEntries(
+              Array.from(element.attributes).map(({ name, value }) => [name, value]),
+            ),
+          }));
+        return {
+          managed,
+          ownedMeta: document.querySelector('meta[data-payload-owned]')?.getAttribute('content'),
+          ownedCanonical: document
+            .querySelector('link[rel="canonical"][data-payload-owned]')
+            ?.getAttribute('href'),
+          foreignStyle: document.getElementById('foreign-style')?.textContent,
+          alternate: document.querySelector('link[rel="alternate"]')?.getAttribute('href'),
+          insertedFreshStyle: document.getElementById('fresh-style') !== null,
+          staleAttributes: document.head.querySelectorAll('[data-stale]').length,
+        };
+      }),
+    ).toEqual({
+      managed: [
+        {
+          tag: 'META',
+          attributes: { property: 'og:image', content: '/one.png', 'data-order': '1' },
+        },
+        {
+          tag: 'META',
+          attributes: { property: 'og:image', content: '/two.png', 'data-order': '2' },
+        },
+        {
+          tag: 'META',
+          attributes: { name: 'og:image', content: '/named.png', 'data-order': '3' },
+        },
+        {
+          tag: 'LINK',
+          attributes: { rel: 'canonical', href: '/fresh', hreflang: 'en' },
+        },
+      ],
+      ownedMeta: '/owned.png',
+      ownedCanonical: '/owned',
+      foreignStyle: ':root{--foreign:1}',
+      alternate: '/old-alt',
+      insertedFreshStyle: false,
+      staleAttributes: 0,
+    });
   });
 
   test('two revisions inside the minimum interval: one route refresh, the second is refused and patched', async ({

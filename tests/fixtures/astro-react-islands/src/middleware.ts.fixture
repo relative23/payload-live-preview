@@ -1,0 +1,43 @@
+/**
+ * One verified page read supplies Astro locals and the packed middleware verdict.
+ * Only a trusted deployment selection allows hashes of the fixed build bootstrap.
+ */
+import { defineMiddleware } from 'astro:middleware';
+import { createLivePreviewMiddleware } from 'payload-live-preview/astro';
+import { fixture, canonical } from './server/host';
+import { islandCsp } from './server/island-csp';
+
+export const onRequest = defineMiddleware(async (context, next) => {
+  if (!context.url.pathname.startsWith('/continuation/')) return next();
+  let response: Response;
+  if (/^\/continuation\/(a|b)\/(en|de)$/.test(context.url.pathname)) {
+    const active = fixture();
+    const request = canonical(context.request);
+    const page = active && request ? await active.host.page(request) : null;
+    context.locals.previewExpectedAuthorization = page?.authorization ?? null;
+    context.locals.previewView = {
+      data: page?.response.ok ? (await page.response.json()).data : null,
+      path: context.url.pathname, locale: context.url.searchParams.get('locale') ?? '',
+      origin: active?.origin ?? 'https://localhost:4287',
+    };
+    const preview = createLivePreviewMiddleware({
+      allowedOrigins: [active?.origin ?? 'https://localhost:4287'], defaults: 'v2',
+      // The custom element owns the runtime; a second injected writer would
+      // compete. Authorization, CSP and strict message ingress stay enabled.
+      autoInject: false, authorizePreview: () => page?.authorization ?? null,
+    });
+    const isPrerendered = 'isPrerendered' in context && context.isPrerendered === true;
+    response = await preview({ request: request ?? context.request, locals: context.locals, isPrerendered }, () => next());
+  } else response = await next();
+  const headers = new Headers(response.headers);
+  headers.set('cache-control', 'private, no-store');
+  headers.set('referrer-policy', 'no-referrer');
+  const origin = fixture()?.origin ?? 'https://localhost:4287';
+  const hashes = islandCsp();
+  headers.set('content-security-policy', "default-src 'self'; script-src 'self' " + hashes.scripts +
+    "; style-src 'self' " + hashes.styles + "; object-src 'none'; base-uri 'none'; frame-ancestors " + origin);
+  const vary = (headers.get('vary') ?? '').split(',').map(value => value.trim()).filter(Boolean);
+  if (!vary.some(value => value.toLowerCase() === 'cookie')) vary.push('Cookie');
+  headers.set('vary', vary.join(', '));
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+});

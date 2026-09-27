@@ -1,0 +1,31 @@
+---
+/** This page-owned positive control hydrates the same React component explicitly.
+ * Its committed effect and working counter distinguish hydration from SSR HTML.
+ */
+import ReactPanel from './ReactPanel';
+const title = 'Page-owned React control';
+const authority = { locale: '', subject: '', path: '' };
+---
+<plp-react-control data-testid="react-control" data-title={title} data-payload-owned>
+  <ReactPanel title={title} authority={authority} />
+</plp-react-control>
+<script>
+  import { createElement } from 'react';
+  import { hydrateRoot, type Root } from 'react-dom/client';
+  import ReactPanel from './ReactPanel';
+  class ReactControl extends HTMLElement {
+    private owner?: Root;
+    connectedCallback() {
+      if (this.owner) return;
+      this.owner = hydrateRoot(this, createElement(ReactPanel, {
+        title: this.dataset.title ?? '', authority: { locale: '', subject: '', path: '' },
+      }));
+    }
+    disconnectedCallback() {
+      this.owner?.unmount();
+      this.owner = undefined;
+      this.dataset.stopped = 'true';
+    }
+  }
+  if (!customElements.get('plp-react-control')) customElements.define('plp-react-control', ReactControl);
+</script>

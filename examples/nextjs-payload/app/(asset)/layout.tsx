@@ -10,9 +10,10 @@ import type { ReactNode } from 'react';
 import { livePreviewScriptProps } from 'payload-live-preview/nextjs';
 import { styles } from '../styles';
 import { assetDelivery } from '../delivery';
+import { SITE } from '../preview';
 
 const previewScript = livePreviewScriptProps({
-  allowedOrigins: ['http://localhost:4174'],
+  allowedOrigins: [SITE],
   debug: true,
   debounceMs: 25,
   ...assetDelivery,

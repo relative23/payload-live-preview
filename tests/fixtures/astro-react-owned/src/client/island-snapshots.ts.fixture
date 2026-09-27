@@ -1,0 +1,76 @@
+/**
+ * A page-owned listener outlives React's deferred hydration, not its preview owner.
+ * Each statically declared island keeps one selected presentation snapshot; no
+ * authority, resource selector or arbitrary editor field is retained here.
+ */
+import type { IslandUpdateDetail } from 'payload-live-preview';
+
+export interface IslandSnapshot {
+  readonly title: string;
+  readonly show: boolean;
+  readonly revision: number;
+  readonly delayed: boolean;
+}
+type Listener = (snapshot: IslandSnapshot) => void;
+interface Channel {
+  latest: IslandSnapshot | undefined;
+  lease: object | undefined;
+  readonly listeners: Set<Listener>;
+}
+const channels = new WeakMap<Element, Channel>();
+function channel(island: Element): Channel {
+  let current = channels.get(island);
+  if (!current) {
+    current = { latest: undefined, lease: undefined, listeners: new Set() };
+    channels.set(island, current);
+  }
+  return current;
+}
+
+export function readIslandSnapshot(island: Element): IslandSnapshot | undefined {
+  return channel(island).latest;
+}
+
+export function subscribeIslandSnapshot(island: Element, listener: Listener): () => void {
+  const current = channel(island);
+  current.listeners.add(listener);
+  return () => { current.listeners.delete(listener); };
+}
+
+export function mountIslandSnapshots(root: HTMLElement, id: number, locale: string): () => void {
+  const lifetime = new AbortController();
+  const lease = {};
+  const islands = [...root.querySelectorAll('astro-island')].filter(island => island.closest('plp-astro-preview') === root);
+  for (const island of islands) {
+    const current = channel(island);
+    current.latest = undefined;
+    current.lease = lease;
+    island.addEventListener('payload-live-preview:update', event => {
+      if (lifetime.signal.aborted || current.lease !== lease || !root.isConnected || !island.isConnected || island.closest('plp-astro-preview') !== root) return;
+      const { fields, locale: incomingLocale, revision } = (event as CustomEvent<IslandUpdateDetail>).detail;
+      if (incomingLocale !== locale || String(fields.id) !== String(id) || !Number.isSafeInteger(revision) || revision <= (current.latest?.revision ?? 0)) return;
+      const snapshot: IslandSnapshot = Object.freeze({
+        title: typeof fields.title === 'string' ? fields.title : '',
+        show: fields.show === true,
+        revision,
+        delayed: fields.ownerDelayMs === 1000,
+      });
+      current.latest = snapshot;
+      for (const listener of [...current.listeners]) {
+        if (lifetime.signal.aborted || current.lease !== lease || current.latest !== snapshot || !root.isConnected || !island.isConnected || island.closest('plp-astro-preview') !== root) break;
+        listener(snapshot);
+      }
+    }, { signal: lifetime.signal });
+  }
+  return () => {
+    if (lifetime.signal.aborted) return;
+    lifetime.abort();
+    for (const island of islands) {
+      const current = channel(island);
+      if (current.lease === lease) {
+        current.latest = undefined;
+        current.lease = undefined;
+      }
+    }
+  };
+}

@@ -2,8 +2,8 @@
  * End-to-end tests for the SvelteKit adapter (`livePreviewHandle`).
  *
  * The fixture is the SvelteKit example under `examples/sveltekit-payload`,
- * expected to be running on port 4175 (`npm --prefix
- * examples/sveltekit-payload run dev`). The static `/admin.html` page
+ * expected at `PLP_SVELTE_ORIGIN`, or the development server on port 4175
+ * when that variable is absent. The static `/admin.html` page
  * emulates the Payload admin: it embeds `/` in an iframe and posts
  * updates whenever the form changes. Because the iframe load carries
  * `Sec-Fetch-Dest: iframe`, the handle's default `'preview-only'`
@@ -15,8 +15,15 @@
  * depend on it.
  */
 import { expect, test } from '@playwright/test';
+import {
+  acceptedRevisions,
+  installNavigationProbe,
+  readNavigationProbe,
+  waitForPreviewFrame,
+  waitForStarted,
+} from '../helpers/preview';
 
-const APP = 'http://localhost:4175';
+const APP = process.env['PLP_SVELTE_ORIGIN'] ?? 'http://localhost:4175';
 
 test.describe('sveltekit live preview — admin → iframe updates', () => {
   test('updating the title field in the admin updates the preview iframe', async ({ page }) => {
@@ -48,6 +55,150 @@ test.describe('sveltekit live preview — admin → iframe updates', () => {
       return win.__pwned === true;
     });
     expect(pwned).toBe(false);
+  });
+
+  test('locally reapplies one unchanged unsaved document after each afterNavigate commit', async ({
+    page,
+  }) => {
+    await page.goto(`${APP}/admin.html?target=/navigation`);
+    const frame = await waitForPreviewFrame(page, '/navigation');
+    const title = frame.locator('[data-payload-field="title"]');
+    await expect(title).toBeVisible();
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            typeof (window as Window & { __livePreviewRouteRefresh?: unknown })
+              .__livePreviewRouteRefresh,
+        ),
+      )
+      .toBe('function');
+    await page.waitForTimeout(2_100);
+    await installNavigationProbe(page);
+
+    await page.getByTestId('title-input').fill('Unsaved across SvelteKit navigation');
+    await expect(title).toHaveText('Unsaved across SvelteKit navigation');
+    await expect.poll(async () => (await readNavigationProbe(page)).documents.length).toBe(1);
+    const accepted = await acceptedRevisions(frame);
+
+    await frame.getByTestId('navigate-two').click();
+    await expect.poll(() => new URL(frame.url()).searchParams.get('step')).toBe('two');
+    await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(1);
+    await expect.poll(async () => (await readNavigationProbe(page)).ready).toBe(1);
+    const firstReplay = await readNavigationProbe(page);
+    expect(firstReplay.documents).toHaveLength(1);
+    expect(firstReplay.titles).toContain('Server title for two');
+    expect(await acceptedRevisions(frame)).toBe(accepted);
+    await expect(title).toHaveText('Unsaved across SvelteKit navigation');
+
+    await frame.evaluate(() => {
+      document.querySelector<HTMLElement>('[data-testid="navigate-slow"]')?.click();
+      document.querySelector<HTMLElement>('[data-testid="navigate-final"]')?.click();
+    });
+    await expect.poll(() => new URL(frame.url()).searchParams.get('step')).toBe('final');
+    await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(2);
+    await expect.poll(async () => (await readNavigationProbe(page)).ready).toBe(2);
+    await page.waitForTimeout(600);
+    const rapidReplay = await readNavigationProbe(page);
+    expect(rapidReplay.documents).toHaveLength(1);
+    expect(rapidReplay.titles).toContain('Server title for final');
+    expect(rapidReplay.titles).not.toContain('Server title for slow');
+    expect(await acceptedRevisions(frame)).toBe(accepted);
+    await expect(title).toHaveText('Unsaved across SvelteKit navigation');
+
+    await frame.getByTestId('navigate-off').click();
+    await expect.poll(() => new URL(frame.url()).searchParams.get('step')).toBe('off');
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            typeof (window as Window & { __livePreviewRouteRefresh?: unknown })
+              .__livePreviewRouteRefresh,
+        ),
+      )
+      .toBe('undefined');
+  });
+
+  test('reapplies the retained document when a streamed load binding arrives', async ({ page }) => {
+    await page.goto(`${APP}/admin.html?target=/navigation`);
+    const frame = await waitForPreviewFrame(page, '/navigation');
+    const title = frame.locator('[data-payload-field="title"]');
+    await expect(title).toBeVisible();
+    await page.waitForTimeout(2_100);
+    await installNavigationProbe(page);
+
+    await page.getByTestId('title-input').fill('Unsaved across a streamed Svelte destination');
+    await expect(title).toHaveText('Unsaved across a streamed Svelte destination');
+    await expect.poll(async () => (await readNavigationProbe(page)).documents.length).toBe(1);
+    const accepted = await acceptedRevisions(frame);
+
+    await frame.getByTestId('navigate-stream').click();
+    await expect.poll(() => new URL(frame.url()).searchParams.get('step')).toBe('stream');
+    await expect(frame.getByTestId('streamed-title-pending')).toBeVisible();
+    await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(1);
+    await expect.poll(async () => (await readNavigationProbe(page)).ready).toBe(1);
+    await expect(title).toHaveText('Unsaved across a streamed Svelte destination');
+
+    await page.waitForTimeout(250);
+    const replay = await readNavigationProbe(page);
+    expect(replay.documents).toHaveLength(1);
+    expect(await acceptedRevisions(frame)).toBe(accepted);
+  });
+
+  test('awaits invalidateAll before reapplying the unsaved document', async ({ page }) => {
+    await page.goto(`${APP}/admin.html?target=/navigation`);
+    const frame = await waitForPreviewFrame(page, '/navigation');
+    await waitForStarted(frame);
+    const title = frame.locator('[data-payload-field="title"]');
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            (
+              window as Window & {
+                __livePreview?: { inspect: () => { revisions: { accepted: number } } };
+              }
+            ).__livePreview?.inspect().revisions.accepted ?? 0,
+        ),
+      )
+      .toBeGreaterThan(0);
+
+    await page.getByTestId('title-input').fill('Unsaved across invalidateAll');
+    await expect(title).toHaveText('Unsaved across invalidateAll');
+    const generation = await frame.getByTestId('navigation-generation').textContent();
+
+    // `subtitle` has no binding on this route. Its unsaved change therefore
+    // enters the route strategy, which must await the native server load before
+    // the same revision is reapplied to the newly keyed heading.
+    await page.getByTestId('subtitle-input').fill('Unsaved and deliberately unbound');
+    await expect(frame.getByTestId('navigation-generation')).not.toHaveText(generation ?? '');
+    await expect(title).toHaveText('Unsaved across invalidateAll');
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            (
+              window as Window & {
+                __livePreview?: {
+                  inspect: () => { route: { refreshes: number; partial: number } };
+                };
+              }
+            ).__livePreview?.inspect().route.refreshes ?? 0,
+        ),
+      )
+      .toBe(1);
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            (
+              window as Window & {
+                __livePreview?: { inspect: () => { route: { partial: number } } };
+              }
+            ).__livePreview?.inspect().route.partial ?? 0,
+        ),
+      )
+      .toBe(1);
   });
 });
 

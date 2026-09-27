@@ -1,0 +1,41 @@
+/** Nitro authorizes and reads once before either SSR or the navigation endpoint. Only the selected presentation object enters Nuxt's payload. */
+import { defineEventHandler, getRequestURL, setHeader } from 'h3';
+import { defineLivePreviewServerHandler } from 'payload-live-preview/nuxt';
+import type { AuthorizedPreviewContext } from 'payload-live-preview/server';
+import type { PreviewDocument } from '../../types/preview';
+import { withNativeHostRequest } from '../../native-request.mjs';
+import { fixture, target } from '../utils/host';
+
+export default defineEventHandler(async (event) => {
+  const path = getRequestURL(event).pathname;
+  if (!path.startsWith('/continuation/')) return;
+  setHeader(event, 'cache-control', 'private, no-store');
+  setHeader(event, 'referrer-policy', 'no-referrer');
+  setHeader(event, 'vary', 'Cookie');
+  if (!/^\/continuation\/(a|b)\/(en|de)(\/page)?$/.test(path)) return;
+  const active = fixture();
+  const url = target(event, path.endsWith('/page') ? '/page' : '');
+  let authorization: AuthorizedPreviewContext | null = null;
+  let data: PreviewDocument | null = null;
+  if (active && url) {
+    const response = await withNativeHostRequest(event.node.req, url, async request => {
+      const result = await active.host.page(request);
+      authorization = result.authorization;
+      return result.response;
+    });
+    if (response.headers.get('connection') === 'close') setHeader(event, 'connection', 'close');
+    if (response.ok) data = (await response.json()).data;
+  }
+  const decide = defineLivePreviewServerHandler({
+    allowedOrigins: [active?.origin ?? 'https://localhost:4286'], defaults: 'v2',
+    // The actual Vue composable owns this tree; an injected DOM writer would compete.
+    autoInject: false, authorizePreview: () => authorization,
+  });
+  await decide(event);
+  event.context.previewExpectedAuthorization = authorization;
+  event.context.previewView = {
+    data: event.context.livePreviewAuthorization ? data : null,
+    path: url?.pathname ?? '', locale: url?.searchParams.get('locale') ?? '',
+    origin: active?.origin ?? 'https://localhost:4286',
+  };
+});

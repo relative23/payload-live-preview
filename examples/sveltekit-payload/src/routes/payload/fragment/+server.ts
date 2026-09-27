@@ -7,7 +7,7 @@ import { createFragmentEndpoint } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest, createPreviewBindings } from 'payload-live-preview';
 import Hero from '$lib/Hero.svelte';
 import { heroProps } from '$lib/hero';
-import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview';
+import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview.server';
 import type { RequestHandler } from './$types';
 
 const endpoint = createFragmentEndpoint({

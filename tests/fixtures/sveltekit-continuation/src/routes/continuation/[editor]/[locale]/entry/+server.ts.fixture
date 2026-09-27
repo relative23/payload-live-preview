@@ -1,0 +1,7 @@
+/** Exchange the one-use header proof at its canonical page target. The redirect and continuation cookie remain token-free in page markup. */
+import type { RequestHandler } from './$types';
+import { fixture, canonical, refused } from '$lib/server/host';
+export const GET: RequestHandler = event => {
+  const request = canonical(event, '/entry');
+  return request ? fixture()!.host.exchange(request) : refused();
+};

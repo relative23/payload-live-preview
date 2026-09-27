@@ -1,0 +1,4 @@
+/** Entry proof is carried in a header and consumed only once. Redirects never include it in the page URL. */
+import type { APIRoute } from 'astro';
+import { dispatch } from '../../../../server/host';
+export const ALL: APIRoute = ({ request }) => dispatch(request, 'exchange', '/entry');

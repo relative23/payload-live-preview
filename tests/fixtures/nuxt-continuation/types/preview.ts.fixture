@@ -1,0 +1,13 @@
+/** Only document data and public presentation scope cross SSR serialization. The branded server context is deliberately absent. */
+export interface PreviewDocument {
+  id: number;
+  title: string;
+  related?: unknown[];
+  files?: unknown[];
+}
+export interface PreviewView {
+  data: PreviewDocument | null;
+  path: string;
+  locale: string;
+  origin: string;
+}

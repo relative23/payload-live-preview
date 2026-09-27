@@ -1,0 +1,20 @@
+<script setup lang="ts">
+/** SSR consumes the real Nitro event; client navigation fetches a fresh bounded view. Hydration alone reuses this request's serialized document, not its authority. */
+import type { PreviewView } from '~/types/preview';
+definePageMeta({ key: route => route.fullPath });
+const route = useRoute();
+const event = useRequestEvent();
+const key = route.fullPath;
+const { data: view } = await useAsyncData<PreviewView>(`preview:${key}`, async () => {
+  if (import.meta.server) return event!.context.previewView as PreviewView;
+  const query = key.includes('?') ? key.slice(key.indexOf('?')) : '';
+  return $fetch<PreviewView>(`${route.path}/page${query}`, { credentials: 'same-origin' });
+}, {
+  // Do not restore a stale authorization result when returning to an earlier URL.
+  getCachedData: (name, app) => app.isHydrating ? app.payload.data[name] : undefined,
+});
+</script>
+<template>
+  <Preview v-if="view?.data" :key="key" :initial-data="view.data" :path="view.path" :locale="view.locale" :origin="view.origin" />
+  <main v-else><h1>Preview unavailable</h1></main>
+</template>

@@ -13,11 +13,12 @@
  * @type {import('next').NextConfig}
  */
 import { withLivePreview } from 'payload-live-preview/nextjs';
+import { PREVIEW_ADMIN_ORIGIN } from './preview-origin.mjs';
 
 export default withLivePreview(
   {},
   {
     // The mock admin is served from this example's own origin (public/admin.html).
-    allowedOrigins: ['http://localhost:4174'],
+    allowedOrigins: [PREVIEW_ADMIN_ORIGIN],
   },
 );

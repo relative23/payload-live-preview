@@ -1,0 +1,11 @@
+/** Native SSR keeps the real Astro request/locals pipeline. Only this loopback proxy is trusted to supply the public HTTPS origin. */
+import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
+
+const origin = new URL(process.env.PLP_ASTRO_ORIGIN ?? 'https://localhost:4287');
+export default defineConfig({
+  output: 'server',
+  adapter: node({ mode: 'standalone' }),
+  trailingSlash: 'never',
+  security: { allowedDomains: [{ protocol: origin.protocol.slice(0, -1), hostname: origin.hostname, port: origin.port }] },
+});

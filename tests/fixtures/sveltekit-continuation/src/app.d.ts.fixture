@@ -1,0 +1,10 @@
+/** Extend server locals without a client authentication store. Load projects only document content across the boundary. */
+import type { LivePreviewLocals } from 'payload-live-preview/sveltekit';
+declare global {
+  namespace App {
+    interface Locals extends LivePreviewLocals {
+      previewData?: { id: number; title: string; related?: unknown[]; files?: unknown[] } | null;
+    }
+  }
+}
+export {};

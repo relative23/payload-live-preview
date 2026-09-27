@@ -1,0 +1,32 @@
+---
+/** This empty boundary starts without a card in the server-rendered DOM.
+ * The first unsaved message must insert the real component, not a placeholder.
+ */
+import type { PreviewView } from '../types';
+import Blocks from './Blocks.astro';
+import Announcer from './Announcer.astro';
+interface Props { view: PreviewView }
+const { view } = Astro.props;
+const { data, path, locale, origin } = view;
+if (!data) throw new Error('Missing authorized document');
+---
+<Announcer />
+<plp-astro-preview data-preview-config={JSON.stringify({ id: data.id, path, locale, origin })}>
+  <output data-testid="ready">mounting</output>
+  <output data-testid="status">idle</output>
+  <output data-testid="renders">0</output>
+  <button data-testid="counter">0</button>
+  <input data-testid="visitor" aria-label="Visitor state" value="Visitor state" />
+  <section data-payload-fragment="catalog" data-payload-fragment-key="primary" data-testid="primary"><Blocks show={false} title={data.title} /></section>
+  <section data-payload-fragment="catalog" data-payload-fragment-key="secondary" data-testid="secondary"><Blocks show={false} title={data.title} /></section>
+  <a href="/" data-testid="navigation">Leave resource page</a>
+</plp-astro-preview>
+<script>
+  import { mountPreview } from '../client/preview';
+  class ResourceOwner extends HTMLElement {
+    stop?: () => void;
+    connectedCallback() { if (!this.stop) this.stop = mountPreview(this); }
+    disconnectedCallback() { this.stop?.(); this.stop = undefined; this.dataset.stopped = 'true'; }
+  }
+  if (!customElements.get('plp-astro-preview')) customElements.define('plp-astro-preview', ResourceOwner);
+</script>

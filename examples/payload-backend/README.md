@@ -11,8 +11,10 @@ What it is:
   database, boots anywhere.
 - A `homepage` **global** with `title`, `subtitle`, `body` (Lexical rich
   text) and a `tags` array — the fields the Astro preview page binds.
-- **Live Preview** enabled for that global, pointing its iframe at the
-  Astro preview app (`FRONTEND_URL`, default `http://localhost:4173`).
+- **Live Preview** configured through the copy-installed
+  `payload-live-preview/plugin`, pointing the `homepage` iframe at the Astro
+  preview app (`FRONTEND_URL`, default `http://localhost:4173`) and adding the
+  `Plugin mobile` toolbar breakpoint.
 - **Auto-login** of a seeded editor (`e2e@example.com` / `test1234`) and
   an `onInit` that creates that user when it is missing and, on every boot,
   writes `title`, `subtitle` and `tags` back to their seeded values, so E2E
@@ -40,7 +42,8 @@ open the homepage global, and toggle **Live Preview**.
 
 The Playwright config (`playwright.real-payload.config.ts`) boots this
 server with `npm run e2e:serve` alongside the Astro preview, then drives
-the real postMessage protocol end to end. From the repo root:
+the real postMessage protocol end to end. It also checks the plugin-produced
+iframe URL and breakpoint. From the repo root:
 
 ```bash
 npm run test:e2e:real-payload

@@ -17,6 +17,7 @@
     "@payloadcms/richtext-lexical": "3.89.0",
     "next": "^16.3.0",
     "payload": "3.89.0",
+    "payload-live-preview": "file:../..",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sharp": "^0.35.3"

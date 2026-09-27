@@ -3,6 +3,7 @@ import path from 'node:path';
 import { buildConfig } from 'payload';
 import { sqliteAdapter } from '@payloadcms/db-sqlite';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
+import { livePreview } from 'payload-live-preview/plugin';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -18,13 +19,14 @@ export default buildConfig({
       password: 'test1234',
       prefillOnly: false,
     },
-    livePreview: {
-      // The admin shows this URL in the preview iframe; our runtime lives
-      // on that page and receives the admin's postMessage updates.
-      url: () => `${FRONTEND_URL}/?preview=true`,
-      globals: ['homepage'],
-    },
   },
+  plugins: [
+    livePreview({
+      baseUrl: FRONTEND_URL,
+      globals: { homepage: '/' },
+      breakpoints: [{ name: 'plugin-mobile', label: 'Plugin mobile', width: 390, height: 844 }],
+    }),
+  ],
   editor: lexicalEditor(),
   db: sqliteAdapter({
     client: { url: process.env.DATABASE_URI || 'file:./e2e.db' },

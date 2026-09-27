@@ -32,7 +32,7 @@ import { styles } from '../styles';
 import { SITE, authorizePreview } from '../preview';
 
 const previewOptions = {
-  allowedOrigins: ['http://localhost:4174'],
+  allowedOrigins: [SITE],
   debug: true,
   debounceMs: 25,
   // Reveal the edited section — exercised by reveal.spec.ts.

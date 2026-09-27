@@ -1,0 +1,8 @@
+/** Forward only document content into load data. The branded context and credentials stay on request-local server state. */
+import type { PageServerLoad } from './$types';
+export const load: PageServerLoad = ({ locals, url }) => ({
+  initialData: locals.livePreviewAuthorization ? locals.previewData : null,
+  path: url.pathname, locale: url.searchParams.get('locale'), origin: url.origin,
+  // Tracking the complete search reruns load on an invalid added query too.
+  key: url.pathname + url.search,
+});

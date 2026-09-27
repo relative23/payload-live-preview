@@ -1,0 +1,2 @@
+<!-- Nuxt retains the application. Each changed page key owns its own preview session. -->
+<template><NuxtPage /></template>

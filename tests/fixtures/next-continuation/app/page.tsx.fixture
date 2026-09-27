@@ -1,0 +1,4 @@
+/** Public shell deliberately has no preview hook or private data. */
+export default function Shell() {
+  return <main><h1>Local continuation fixture</h1><iframe title="Preview" id="preview" /></main>;
+}

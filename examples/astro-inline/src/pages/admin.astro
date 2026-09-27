@@ -6,12 +6,40 @@
 <html lang="en">
   <head><meta charset="utf-8" /><title>Mock admin</title></head>
   <body style="margin:0">
+    <label id="soft-navigation-controls" hidden style="display:block;padding:8px">
+      Unsaved title
+      <input data-testid="soft-navigation-input" value="Unsaved Astro navigation" />
+      <output data-testid="soft-navigation-ready-count">0</output>
+    </label>
     <iframe id="preview" data-testid="preview-frame" title="Live preview"
             style="width:100%;height:600px;border:0"></iframe>
     <script is:inline>
       const requested = new URLSearchParams(location.search).get('target') || '/';
       const target = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
-      document.getElementById('preview').src = target;
+      const frame = document.getElementById('preview');
+      frame.src = target;
+      if (target.startsWith('/soft-navigation/')) {
+        const controls = document.getElementById('soft-navigation-controls');
+        const input = controls.querySelector('input');
+        const count = controls.querySelector('output');
+        let answeredReady = false;
+        controls.hidden = false;
+        const post = () => {
+          frame.contentWindow?.postMessage(
+            { type: 'payload-live-preview', data: { title: input.value } },
+            location.origin,
+          );
+        };
+        input.addEventListener('input', post);
+        window.addEventListener('message', (event) => {
+          if (event.source !== frame.contentWindow || event.data?.ready !== true) return;
+          count.value = String(Number(count.value) + 1);
+          if (!answeredReady) {
+            answeredReady = true;
+            post();
+          }
+        });
+      }
     </script>
   </body>
 </html>

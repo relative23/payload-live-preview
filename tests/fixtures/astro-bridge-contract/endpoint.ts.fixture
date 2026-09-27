@@ -1,0 +1,45 @@
+/**
+ * This local-only route exercises the installed bridge through Astro's compiler.
+ * It accepts no request data and returns only bounded contract verdicts, never
+ * component output or application authority.
+ */
+import { experimental_AstroContainer } from 'astro/container';
+import Bridge from '../../node_modules/payload-live-preview/dist/adapters/astro/FragmentBridge.astro';
+import Blocks from '../components/Blocks.astro';
+
+export const prerender = false;
+export async function GET(): Promise<Response> {
+  const container = await experimental_AstroContainer.create();
+  const invalid: unknown[] = [
+    undefined,
+    null,
+    'forged',
+    {},
+    { component: 'Blocks', props: {} },
+    { component: Blocks, props: null },
+    { component: Blocks, props: [] },
+    { component: Blocks, props: 4 },
+  ];
+  const rejected: boolean[] = [];
+  for (const value of invalid) {
+    const locals: App.Locals = {};
+    Reflect.set(locals, '__payloadLivePreviewFragment', value);
+    try {
+      await container.renderToString(Bridge, { locals });
+      rejected.push(false);
+    } catch (error: unknown) {
+      rejected.push(error instanceof Error && error.message === 'Missing trusted fragment bridge');
+    }
+  }
+  const locals: App.Locals = {};
+  Reflect.set(locals, '__payloadLivePreviewFragment', {
+    component: Blocks,
+    props: { show: true, title: 'Guard <b>title</b>' },
+  });
+  const html = await container.renderToString(Bridge, { locals });
+  return Response.json({
+    rejected,
+    rendered: html.includes('data-testid="resource-card"'),
+    escaped: html.includes('Guard &lt;b&gt;title&lt;/b&gt;') && !html.includes('<b>title</b>'),
+  });
+}

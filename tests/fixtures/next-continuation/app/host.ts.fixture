@@ -1,0 +1,34 @@
+/** Server-only process-local wiring; build and public responses receive no credentials. */
+import 'server-only';
+import { readFileSync } from 'node:fs';
+import { createNextHostReference } from '../reference.mjs';
+
+type Host = ReturnType<typeof createNextHostReference>;
+const state = globalThis as typeof globalThis & { __plpHostFixture?: { host: Host; origin: string } };
+
+export function fixture() {
+  const file = process.env.PLP_NEXT_HOST_CONFIG;
+  if (!file) return null;
+  if (!state.__plpHostFixture) {
+    const options = JSON.parse(readFileSync(file, 'utf8'));
+    if (process.env.PLP_NEXT_HOST_ENABLED !== 'local-test-only') return null;
+    state.__plpHostFixture = { host: createNextHostReference({ ...options, enabled: true, fetch }), origin: options.audience };
+  }
+  return state.__plpHostFixture;
+}
+
+export function canonical(request: Request, suffix = '') {
+  const current = fixture();
+  if (!current || request.headers.get('host') !== new URL(current.origin).host || request.headers.get('x-forwarded-proto') !== 'https') return null;
+  const url = new URL(request.url);
+  if (suffix && !url.pathname.endsWith(suffix)) return null;
+  const path = suffix ? url.pathname.slice(0, -suffix.length) : url.pathname;
+  return new Request(`${current.origin}${path}${url.search}`, {
+    method: request.method, headers: request.headers, signal: request.signal,
+    ...(request.body ? { body: request.body, duplex: 'half' } : {}),
+  });
+}
+
+export function refused() {
+  return new Response(null, { status: 403, headers: { 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer', vary: 'Cookie' } });
+}

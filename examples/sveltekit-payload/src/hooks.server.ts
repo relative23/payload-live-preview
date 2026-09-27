@@ -24,10 +24,10 @@ import {
   type LivePreviewSvelteKitOptions,
 } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest } from 'payload-live-preview';
-import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview';
+import { PREVIEW_ADMIN_ORIGIN, PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview.server';
 
 const options = {
-  allowedOrigins: ['http://localhost:4175'],
+  allowedOrigins: [PREVIEW_ADMIN_ORIGIN],
   debug: true,
   debounceMs: 25,
   // Reveal the edited section. `/reveal` is this fixture's row in

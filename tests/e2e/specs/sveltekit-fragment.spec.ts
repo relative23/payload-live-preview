@@ -9,7 +9,7 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * server, and that the authorization gate covers the boundary markup too.
  */
 
-const APP = 'http://localhost:4175';
+const APP = process.env['PLP_SVELTE_ORIGIN'] ?? 'http://localhost:4175';
 const OWNER = { globalSlug: 'home' };
 
 interface FragmentStats {

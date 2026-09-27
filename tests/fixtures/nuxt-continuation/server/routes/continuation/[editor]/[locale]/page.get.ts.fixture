@@ -1,0 +1,3 @@
+/** This native route retains request-local scope and private response headers. It exposes no credential or token issuer. */
+import { defineEventHandler } from 'h3';
+export default defineEventHandler(event => { return event.context.previewView ?? { data: null, path: '', locale: '', origin: '' }; });

@@ -17,6 +17,7 @@ const OWNER = { globalSlug: 'home' };
 interface RouteStats {
   handler: boolean;
   refreshes: number;
+  partial: number;
   failed: number;
   loopStopped: number;
 }
@@ -48,16 +49,24 @@ async function connect(page: Page, frame: Frame): Promise<void> {
 }
 
 test.describe('a change nothing binds', () => {
-  test('refreshes the route, and the page comes back rendered again', async ({ page }) => {
+  test('reports a saved-only route render as partial and reapplies local fields', async ({
+    page,
+  }) => {
     const frame = await open(page);
     await connect(page, frame);
     const before = await frame.getByTestId('route-stamp').textContent();
 
-    await post(page, { title: 'Hybrid preview', tagline: 'Edited, and bound to nothing' }, OWNER);
+    await post(
+      page,
+      { title: 'Unsaved title after the route render', tagline: 'Edited, and bound to nothing' },
+      OWNER,
+    );
 
     await expect.poll(async () => (await route(frame)).refreshes).toBe(1);
     await expect(frame.getByTestId('route-stamp')).not.toHaveText(before ?? '');
-    expect((await route(frame)).failed).toBe(0);
+    await expect(frame.getByTestId('title')).toHaveText('Unsaved title after the route render');
+    await expect(frame.getByTestId('tagline')).toHaveText('Nothing binds this line');
+    expect(await route(frame)).toMatchObject({ partial: 1, failed: 0 });
   });
 
   test('leaves a revision that only touches bound fields to the patch', async ({ page }) => {

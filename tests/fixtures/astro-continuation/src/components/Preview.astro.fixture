@@ -1,0 +1,36 @@
+---
+// Astro renders escaped values; the connected element later owns just these
+// presentation nodes. Only public scope fields cross the SSR/client boundary.
+import type { PreviewView } from '../types';
+interface Props { view: PreviewView }
+const { view } = Astro.props;
+const { data, path, locale, origin } = view;
+if (!data) throw new Error('Missing authorized document');
+const labels = (values?: unknown[]) => (values ?? []).map(value => typeof value === 'object' && value !== null && 'title' in value ? String(value.title) : `ID:${String(value)}`).join(' | ');
+---
+<plp-astro-preview data-payload-island data-preview-config={JSON.stringify({ id: data.id, path, locale, origin })}>
+  <main>
+    <h1 data-testid="title">{data.title}</h1>
+    <p data-testid="related">{labels(data.related)}</p><p data-testid="files">{labels(data.files)}</p>
+    <output data-testid="ready">mounting</output><output data-testid="status">idle</output>
+    <button data-testid="counter">0</button><input aria-label="Visitor state" data-testid="visitor" value="Visitor state" />
+    <a href={`${path}?locale=${locale}&preview=true`} data-testid="valid-navigation">Reload server data</a>
+    <a href={`${path}?preview=true&locale=${locale}&invalid=1`} data-testid="denied-navigation">Denied navigation</a>
+    <a href={`/?from=${locale}`} data-testid="navigation">Public shell</a>
+  </main>
+</plp-astro-preview>
+<script>
+  import { mountPreview } from '../client/preview';
+  class PreviewOwner extends HTMLElement {
+    stop?: () => void;
+    connectedCallback() {
+      if (!this.stop) this.stop = mountPreview(this);
+    }
+    disconnectedCallback() {
+      this.stop?.();
+      this.stop = undefined;
+      this.dataset.stopped = 'true';
+    }
+  }
+  if (!customElements.get('plp-astro-preview')) customElements.define('plp-astro-preview', PreviewOwner);
+</script>

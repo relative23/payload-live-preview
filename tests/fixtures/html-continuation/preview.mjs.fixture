@@ -1,0 +1,70 @@
+/**
+ * The packed client validates messages; one custom element owns text updates.
+ * Disconnect and native page departure abort work and destroy that client.
+ * Back/forward-cache restoration reloads through current server authorization.
+ */
+import { LivePreviewClient } from './client.js';
+
+class PreviewOwner extends HTMLElement {
+  stop;
+  connectedCallback() {
+    if (this.stop) return;
+    this.dataset.stopped = 'false';
+    const root = this;
+    const { id, path, locale, origin } = JSON.parse(root.dataset.previewConfig);
+    const node = name => root.querySelector('[data-testid="' + name + '"]');
+    const text = (name, value) => { node(name).textContent = value; };
+    const labels = (values = []) => values.map(value =>
+      typeof value === 'object' && value !== null && 'title' in value ? String(value.title) : 'ID:' + String(value),
+    ).join(' | ');
+    const lifetime = new AbortController();
+    let revision = 0;
+    let active;
+    const client = new LivePreviewClient({ allowedOrigins: [origin], defaults: 'v2', autoStart: false, autoBind: 'off', debug: false });
+    client.events.on('beforeUpdate', event => {
+      event.cancel();
+      if (event.data.collectionSlug !== 'articles' || String(event.data.fields.id) !== String(id) || event.data.locale !== locale) return;
+      const expected = ++revision;
+      active?.abort();
+      active = new AbortController();
+      const signal = AbortSignal.any([active.signal, lifetime.signal, AbortSignal.timeout(5_000)]);
+      text('status', 'loading');
+      void (async () => {
+        try {
+          const fields = event.data.fields;
+          const response = await fetch(path + '/data?preview=true&locale=' + locale, {
+            method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', signal,
+            body: JSON.stringify({ version: 1, revision: expected, data: { title: fields.title, related: fields.related, files: fields.files } }),
+          });
+          if (!response.ok) { await response.body?.cancel(); throw new Error('Preview unavailable'); }
+          const envelope = await response.json();
+          if (envelope.version !== 1 || envelope.ok !== true || envelope.revision !== expected || String(envelope.data?.id) !== String(id)) throw new Error('Preview unavailable');
+          if (revision !== expected || signal.aborted || !root.isConnected) return;
+          text('title', envelope.data.title);
+          text('related', labels(envelope.data.related));
+          text('files', labels(envelope.data.files));
+          text('status', 'live');
+        } catch {
+          if (revision === expected && !lifetime.signal.aborted) text('status', 'unavailable');
+        }
+      })();
+    });
+    let count = 0;
+    node('counter').addEventListener('click', () => text('counter', String(++count)), { signal: lifetime.signal });
+    this.stop = () => {
+      revision++;
+      lifetime.abort();
+      active?.abort();
+      void client.destroy();
+      this.stop = undefined;
+      this.dataset.stopped = 'true';
+    };
+    window.addEventListener('pagehide', () => this.stop?.(), { signal: lifetime.signal });
+    client.start();
+    text('status', 'idle');
+    text('ready', 'ready');
+  }
+  disconnectedCallback() { this.stop?.(); }
+}
+customElements.define('plp-html-preview', PreviewOwner);
+window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });

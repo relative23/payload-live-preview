@@ -1,0 +1,23 @@
+import { headers } from 'next/headers';
+import { canonical, fixture } from '../../../host';
+import Preview from '../../../preview';
+export const dynamic = 'force-dynamic';
+export default async function Page({ params, searchParams }: {
+  params: Promise<{ editor: string; locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { editor, locale } = await params;
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(await searchParams)) {
+    for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) query.append(key, item);
+  }
+  const config = fixture();
+  if (!config) return <h1>Preview unavailable</h1>;
+  const path = `/continuation/${encodeURIComponent(editor)}/${encodeURIComponent(locale)}`;
+  const url = `${config.origin}${path}?${query}`;
+  const request = canonical(new Request(url, { headers: await headers() }));
+  const response = request ? await config.host.load(request) : null;
+  if (!response?.ok) return <h1>Preview unavailable</h1>;
+  const result = await response.json();
+  return <Preview key={path} initialData={result.data} path={path} locale={locale} origin={config.origin} />;
+}

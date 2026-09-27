@@ -1,0 +1,46 @@
+/** The packed client supplies strict ingress to one native custom-element owner. Disconnect invalidates pending work and releases the runtime before another route owns the page. */
+import { LivePreviewClient } from 'payload-live-preview/client';
+import type { PreviewDocument } from '../types';
+
+export function mountPreview(root: HTMLElement): () => void {
+  const { id, path, locale, origin } = JSON.parse(root.dataset.previewConfig ?? '{}') as { id: number; path: string; locale: string; origin: string };
+  const node = (name: string) => root.querySelector<HTMLElement>(`[data-testid="${name}"]`)!;
+  const text = (name: string, value: string) => { node(name).textContent = value; };
+  const labels = (values?: unknown[]) => (values ?? []).map(value => typeof value === 'object' && value !== null && 'title' in value ? String(value.title) : `ID:${String(value)}`).join(' | ');
+  const lifetime = new AbortController();
+  let revision = 0;
+  let active: AbortController | undefined;
+  const client = new LivePreviewClient({ allowedOrigins: [origin], defaults: 'v2', autoStart: false, debug: false, autoBind: 'off' });
+  client.events.on('beforeUpdate', event => {
+    event.cancel();
+    if (event.data.collectionSlug !== 'articles' || String(event.data.fields.id) !== String(id) || event.data.locale !== locale) return;
+    const expected = ++revision;
+    active?.abort();
+    active = new AbortController();
+    const signal = AbortSignal.any([active.signal, lifetime.signal, AbortSignal.timeout(5_000)]);
+    text('status', 'loading');
+    void (async () => {
+      try {
+        const fields = event.data.fields;
+        const response = await fetch(`${path}/data?preview=true&locale=${locale}`, {
+          method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', signal,
+          body: JSON.stringify({ version: 1, revision: expected, data: { title: fields.title, related: fields.related, files: fields.files } }),
+        });
+        if (!response.ok) { await response.body?.cancel(); throw new Error('Preview unavailable'); }
+        const envelope = await response.json();
+        if (envelope.version !== 1 || envelope.ok !== true || envelope.revision !== expected || String(envelope.data?.id) !== String(id)) throw new Error('Preview unavailable');
+        if (revision !== expected || signal.aborted || !root.isConnected) return;
+        const data = envelope.data as PreviewDocument;
+        text('title', data.title); text('related', labels(data.related)); text('files', labels(data.files));
+        text('status', 'live');
+      } catch {
+        if (revision === expected && !lifetime.signal.aborted) text('status', 'unavailable');
+      }
+    })();
+  });
+  let count = 0;
+  node('counter').addEventListener('click', () => text('counter', String(++count)), { signal: lifetime.signal });
+  client.start();
+  text('ready', 'ready');
+  return () => { revision++; lifetime.abort(); active?.abort(); void client.destroy(); };
+}

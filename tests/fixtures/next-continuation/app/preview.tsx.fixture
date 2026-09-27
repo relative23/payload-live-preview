@@ -1,0 +1,42 @@
+'use client';
+/** The local envelope bridge reaches the packed React hook and real browser fetch. */
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useLivePreviewDocument } from 'payload-live-preview/react';
+
+type Document = { id: number; title: string; related?: unknown[]; files?: unknown[] };
+function labels(values: unknown[] | undefined) {
+  return (values ?? []).map(value => typeof value === 'object' && value !== null && 'title' in value ? String(value.title) : `ID:${String(value)}`).join(' | ');
+}
+export default function Preview({ initialData, path, locale, origin }: { initialData: Document; path: string; locale: string; origin: string }) {
+  const [count, setCount] = useState(0);
+  const [ready, setReady] = useState(false);
+  useEffect(() => { setReady(true); }, []);
+  const transport = useMemo(() => {
+    let revision = 0;
+    return async (_url: RequestInfo | URL, init?: RequestInit) => {
+      const expected = ++revision;
+      const { data, locale: incomingLocale } = JSON.parse(String(init?.body));
+      if (String(data.id) !== String(initialData.id) || incomingLocale !== locale) throw new Error('Reference identity mismatch');
+      const response = await fetch(`${path}/data?preview=true&locale=${locale}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', signal: init?.signal,
+        body: JSON.stringify({ version: 1, revision: expected, data: { title: data.title, related: data.related, files: data.files } }),
+      });
+      if (!response.ok) { await response.body?.cancel(); return new Response(null, { status: response.status }); }
+      const envelope = await response.json();
+      if (envelope.version !== 1 || envelope.ok !== true || envelope.revision !== expected) throw new Error('Reference revision mismatch');
+      return Response.json(envelope.data);
+    };
+  }, [path, locale, initialData.id]);
+  const { data, status, isLoading } = useLivePreviewDocument({ initialData, serverURL: origin, allowedOrigins: [origin], fetchFn: transport, depth: 2 });
+  return <main>
+    <h1 data-testid="title">{data.title}</h1>
+    <p data-testid="related">{labels(data.related)}</p><p data-testid="files">{labels(data.files)}</p>
+    <output data-testid="ready">{ready ? 'ready' : 'hydrating'}</output>
+    <output data-testid="status">{status === 'idle' ? 'idle' : isLoading ? 'loading' : status}</output>
+    <button data-testid="counter" onClick={() => setCount(count + 1)}>{count}</button>
+    <input data-testid="visitor" defaultValue="Visitor state" />
+    <Link prefetch={false} href={`${path}?preview=true&locale=${locale}&invalid=1`} data-testid="denied-navigation">Denied navigation</Link>
+    <Link prefetch={false} href={`/?from=${locale}`} data-testid="navigation">Public shell</Link>
+  </main>;
+}

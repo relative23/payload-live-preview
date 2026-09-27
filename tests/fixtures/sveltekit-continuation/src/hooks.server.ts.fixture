@@ -1,0 +1,29 @@
+/** The page handle and load share one verified decision and one bounded read. That decision never authorizes another request. */
+import type { Handle } from '@sveltejs/kit';
+import { livePreviewHandle } from 'payload-live-preview/sveltekit';
+import { fixture, canonical } from '$lib/server/host';
+
+export const handle: Handle = async ({ event, resolve }) => {
+  if (!event.url.pathname.startsWith('/continuation/')) return resolve(event);
+  let response: Response;
+  if (event.route.id === '/continuation/[editor]/[locale]') {
+    const active = fixture();
+    const request = canonical(event);
+    const page = active && request ? await active.host.page(request) : null;
+    event.locals.previewData = page?.response.ok ? (await page.response.json()).data : null;
+    const preview = livePreviewHandle({
+      allowedOrigins: [active?.origin ?? 'https://localhost:4285'], defaults: 'v2',
+      // Svelte owns this hydrated island. Its mounted client consumes the
+      // public ingress/event API; a second injected DOM writer is not wanted.
+      autoInject: false, authorizePreview: () => page?.authorization ?? null,
+    });
+    response = await preview({ event, resolve });
+  } else response = await resolve(event);
+  const headers = new Headers(response.headers);
+  headers.set('cache-control', 'private, no-store');
+  headers.set('referrer-policy', 'no-referrer');
+  const vary = (headers.get('vary') ?? '').split(',').map(value => value.trim()).filter(Boolean);
+  if (!vary.some(value => value.toLowerCase() === 'cookie')) vary.push('Cookie');
+  headers.set('vary', vary.join(', '));
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+};

@@ -1,0 +1,47 @@
+/**
+ * The packed client owns ingress and separate trusted Astro fragment writes.
+ * Local attachment signals delimit application React work, never authorization.
+ */
+import { LivePreviewClient } from 'payload-live-preview/client';
+import { createFragmentStrategy } from 'payload-live-preview/fragment';
+import { mountIslandSnapshots } from './island-snapshots';
+
+export function mountPreview(root: HTMLElement): () => void {
+  const { id, locale, origin } = JSON.parse(root.dataset.previewConfig ?? '{}') as { id: number; locale: string; origin: string };
+  const node = (name: string) => root.querySelector<HTMLElement>('[data-testid="' + name + '"]')!;
+  const lifetime = new AbortController();
+  const client = new LivePreviewClient({
+    root, allowedOrigins: [origin], defaults: 'v2', autoStart: false, debug: false,
+    autoBind: 'off', disableLocalhostMatching: true, scopeBindingsByOwner: true,
+    strategies: { fragment: createFragmentStrategy({ endpoint: '/payload/resource-fragment' }) },
+  });
+  // A read-only fixture probe exposes counts, not editor fields or credentials.
+  Object.defineProperty(root, 'previewRevisions', { configurable: true, get: () => client.inspect().revisions });
+  client.events.on('beforeUpdate', event => {
+    if (event.data.collectionSlug !== 'articles' || String(event.data.fields.id) !== String(id) || event.data.locale !== locale) event.cancel();
+  });
+  let renders = 0;
+  client.events.on('fragmentRender', event => {
+    node('status').textContent = event.status;
+    if (event.status === 'rendered') node('renders').textContent = String(++renders);
+  });
+  let count = Number(node('counter').textContent);
+  node('counter').addEventListener('click', () => { node('counter').textContent = String(++count); }, { signal: lifetime.signal });
+  // Subscribe before runtime start; native marker removal is not a React commit.
+  const stopSnapshots = mountIslandSnapshots(root, id, locale);
+  const stop = () => {
+    if (lifetime.signal.aborted) return;
+    root.dataset.stopped = 'true';
+    root.dispatchEvent(new CustomEvent('plp:owner-stop'));
+    stopSnapshots();
+    lifetime.abort();
+    void client.destroy();
+    Reflect.deleteProperty(root, 'previewRevisions');
+  };
+  window.addEventListener('pagehide', stop, { signal: lifetime.signal, once: true });
+  root.dataset.stopped = 'false';
+  root.dispatchEvent(new CustomEvent('plp:owner-start'));
+  try { client.start(); } catch (error) { stop(); throw error; }
+  node('ready').textContent = 'ready';
+  return stop;
+}

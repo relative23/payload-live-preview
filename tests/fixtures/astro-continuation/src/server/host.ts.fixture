@@ -1,0 +1,34 @@
+/** Only server endpoints and middleware import the bounded host store. The fixed local proxy is the authority for HTTPS, never an arbitrary forwarded URL. */
+import { readFileSync } from 'node:fs';
+import { createNextHostReference as createHostReference } from '../../reference.mjs';
+
+let current: { host: ReturnType<typeof createHostReference>; origin: string } | undefined;
+export function fixture() {
+  if (process.env.PLP_ASTRO_HOST_ENABLED !== 'local-test-only' || !process.env.PLP_ASTRO_HOST_CONFIG) return null;
+  if (!current) {
+    const options = JSON.parse(readFileSync(process.env.PLP_ASTRO_HOST_CONFIG, 'utf8'));
+    current = { host: createHostReference({ ...options, enabled: true, fetch }), origin: options.audience };
+  }
+  return current;
+}
+export function canonical(request: Request, suffix = '') {
+  const active = fixture();
+  const url = new URL(request.url);
+  if (!active || request.headers.get('host') !== new URL(active.origin).host || request.headers.get('x-forwarded-proto') !== 'https') return null;
+  if (url.host !== new URL(active.origin).host || (suffix && !url.pathname.endsWith(suffix))) return null;
+  if (suffix) url.pathname = url.pathname.slice(0, -suffix.length);
+  // Strip only the endpoint's own suffix. Client query fields remain visible
+  // to the binding validator; they are never normalized into permission.
+  return new Request(`${active.origin}${url.pathname}${url.search}`, {
+    method: request.method, headers: request.headers, signal: request.signal,
+    ...(request.body ? { body: request.body, duplex: 'half' } : {}),
+  });
+}
+export function refused() {
+  return new Response(null, { status: 403, headers: { 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer', vary: 'Cookie' } });
+}
+export async function dispatch(request: Request, action: 'login' | 'logout' | 'exchange' | 'load' | 'update', suffix = '') {
+  const active = fixture();
+  const target = canonical(request, suffix);
+  return active && target ? active.host[action](target) : refused();
+}

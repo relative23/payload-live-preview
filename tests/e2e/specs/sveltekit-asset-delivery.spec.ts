@@ -12,7 +12,7 @@ import { waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * a token bound to its path, and an asset page without one gets nothing.
  */
 
-const APP = 'http://localhost:4175';
+const APP = process.env['PLP_SVELTE_ORIGIN'] ?? 'http://localhost:4175';
 const RUNTIME_MARKER = 'LP0101';
 const ASSET_URL = /"(\/payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u;
 

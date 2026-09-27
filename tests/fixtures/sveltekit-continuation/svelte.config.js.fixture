@@ -1,0 +1,3 @@
+/** Adapter-node is the measured production target. Never substitute the dev or auto adapter. */
+import adapter from '@sveltejs/adapter-node';
+export default { kit: { adapter: adapter() } };

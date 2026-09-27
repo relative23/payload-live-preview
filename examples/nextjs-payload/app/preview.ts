@@ -19,6 +19,7 @@
  *   cookies but *not* its URL, so `?previewToken=` is invisible there; the one
  *   credential a layout can read is a cookie — `mintSessionToken()`.
  */
+import 'server-only';
 import {
   authorizePreviewRequest,
   extractCookie,
@@ -26,11 +27,16 @@ import {
   type PreviewAuthorization,
   type SignedTokenStrategy,
 } from 'payload-live-preview/server';
+import { PREVIEW_ADMIN_ORIGIN } from '../preview-origin.mjs';
 
-/** Fixture secret — a real site reads it from the environment. */
-const PREVIEW_SECRET = 'nextjs-hybrid-fixture-secret-that-is-long-enough-0';
+const configuredSecret = process.env['PREVIEW_TOKEN_SECRET']?.trim();
+/** Fixture fallback only. A deployed site supplies this through its server environment. */
+const PREVIEW_SECRET =
+  configuredSecret && configuredSecret.length > 0
+    ? configuredSecret
+    : 'nextjs-hybrid-fixture-secret-that-is-long-enough-0';
 
-export const SITE = 'http://localhost:4174';
+export const SITE = PREVIEW_ADMIN_ORIGIN;
 
 /** The cookie `/preview-session` writes and the layout reads back. */
 export const PREVIEW_COOKIE = 'previewToken';

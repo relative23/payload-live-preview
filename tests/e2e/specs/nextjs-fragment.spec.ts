@@ -1,5 +1,5 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
-import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
+import { NEXT_ORIGIN, post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 /**
  * The fragment strategy through the Next.js adapter (`examples/nextjs-payload`,
@@ -16,7 +16,7 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * test is the fragment request's.
  */
 
-const APP = 'http://localhost:4174';
+const APP = NEXT_ORIGIN;
 const OWNER = { globalSlug: 'home' };
 
 interface FragmentStats {

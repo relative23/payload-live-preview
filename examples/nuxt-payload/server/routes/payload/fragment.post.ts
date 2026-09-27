@@ -21,4 +21,4 @@ const endpoint = createFragmentEndpoint({
   },
 });
 
-export default defineEventHandler((event) => endpoint(toWebRequest(event)));
+export default defineEventHandler((event) => endpoint(toWebRequest(event), event));

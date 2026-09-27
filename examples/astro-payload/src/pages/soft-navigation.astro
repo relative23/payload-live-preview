@@ -1,0 +1,26 @@
+---
+/**
+ * Second route for the real-Payload navigation contract. Its published text
+ * differs so the test proves the accepted unsaved snapshot was applied again.
+ */
+import '../sanitizer';
+import { ClientRouter } from 'astro:transitions';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Live Preview Soft Navigation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <ClientRouter />
+  </head>
+  <body style="font:16px/1.5 system-ui,sans-serif;padding:2rem">
+    <main data-testid="real-payload-soft-route">
+      <h1 data-payload-field="title">Published title on the second route</h1>
+      <p data-payload-field="subtitle">Published subtitle on the second route</p>
+      <a href="/?preview=true" data-testid="real-payload-soft-navigation-back">
+        Return to the first preview route
+      </a>
+    </main>
+  </body>
+</html>

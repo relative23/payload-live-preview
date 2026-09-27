@@ -1,0 +1,3 @@
+/** The server-only request bridge borrows the native socket for one bounded call. No framework or credential state crosses this declaration. */
+import type { IncomingMessage } from 'node:http';
+export function withNativeHostRequest(incoming: IncomingMessage, url: URL, handler: (request: Request) => Promise<Response>): Promise<Response>;

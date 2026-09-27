@@ -13,13 +13,23 @@
  * the Astro example, and this spec must not depend on it.
  */
 import { expect, test } from '@playwright/test';
-import { requirePreviewFrame } from '../helpers/preview';
+import {
+  acceptedRevisions,
+  installNavigationProbe,
+  NEXT_ORIGIN,
+  readNavigationProbe,
+  requirePreviewFrame,
+  waitForPreviewFrame,
+} from '../helpers/preview';
 
-const NEXT_ORIGIN = 'http://localhost:4174';
 const ADMIN_URL = `${NEXT_ORIGIN}/admin.html`;
 
 interface HydrationApi {
   inspect: () => { hydration: { mode: string; state: string } };
+}
+
+interface RouteCommitApi {
+  inspect: () => { revisions: { accepted: number }; route: { refreshes: number; partial: number } };
 }
 
 test.describe('live preview (Next.js) — admin → iframe updates', () => {
@@ -52,6 +62,152 @@ test.describe('live preview (Next.js) — admin → iframe updates', () => {
       return win.__pwned === true;
     });
     expect(pwned).toBe(false);
+  });
+
+  test('reapplies an unsaved revision only after the App Router commit', async ({ page }) => {
+    await page.goto(`${ADMIN_URL}?target=/route-commit`);
+    const frame = await waitForPreviewFrame(page, '/route-commit');
+    const generation = frame.getByTestId('server-generation');
+    await expect(generation).toBeVisible();
+    const before = await generation.textContent();
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            typeof (window as Window & { __livePreviewRouteRefresh?: unknown })
+              .__livePreviewRouteRefresh,
+        ),
+      )
+      .toBe('function');
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            (window as Window & { __livePreview?: RouteCommitApi }).__livePreview?.inspect()
+              .revisions.accepted ?? 0,
+        ),
+      )
+      .toBeGreaterThan(0);
+    await page.getByTestId('title-input').fill('Unsaved after the router commit');
+    await page.getByTestId('show-extra-input').check();
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            (window as Window & { __livePreview?: RouteCommitApi }).__livePreview?.inspect().route
+              .refreshes ?? 0,
+        ),
+      )
+      .toBeGreaterThan(0);
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            (window as Window & { __livePreview?: RouteCommitApi }).__livePreview?.inspect().route
+              .partial ?? 0,
+        ),
+      )
+      .toBeGreaterThan(0);
+    await expect(generation).not.toHaveText(before ?? '');
+    await expect(frame.locator('[data-payload-field="title"]')).toHaveText(
+      'Unsaved after the router commit',
+    );
+  });
+
+  test('locally reapplies one unchanged unsaved document after each committed App Router navigation', async ({
+    page,
+  }) => {
+    await page.goto(`${ADMIN_URL}?target=/soft-navigation/one`);
+    const frame = await waitForPreviewFrame(page, '/soft-navigation/one');
+    const title = frame.locator('[data-payload-field="title"]');
+    await expect(title).toBeVisible();
+    await page.waitForTimeout(2_100);
+    await installNavigationProbe(page);
+
+    await page.getByTestId('title-input').fill('Unsaved across Next navigation');
+    await expect(title).toHaveText('Unsaved across Next navigation');
+    await expect.poll(async () => (await readNavigationProbe(page)).documents.length).toBe(1);
+    const accepted = await acceptedRevisions(frame);
+    const firstGeneration = await frame.getByTestId('navigation-generation').textContent();
+
+    await frame.getByTestId('navigate-two').click();
+    await expect.poll(() => new URL(frame.url()).pathname).toBe('/soft-navigation/two');
+    await expect(frame.getByTestId('navigation-generation')).not.toHaveText(firstGeneration ?? '');
+    await expect(title).toHaveText('Unsaved across Next navigation');
+    await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(1);
+    await expect.poll(async () => (await readNavigationProbe(page)).ready).toBe(1);
+    const firstReplay = await readNavigationProbe(page);
+    expect(firstReplay.documents).toHaveLength(1);
+    expect(firstReplay.titles).toContain('Server title for two');
+    expect(await acceptedRevisions(frame)).toBe(accepted);
+
+    await frame.evaluate(() => {
+      document.querySelector<HTMLElement>('[data-testid="navigate-slow"]')?.click();
+      document.querySelector<HTMLElement>('[data-testid="navigate-final"]')?.click();
+    });
+    await expect.poll(() => new URL(frame.url()).pathname).toBe('/soft-navigation/final');
+    await expect(title).toHaveText('Unsaved across Next navigation');
+    await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(2);
+    await expect.poll(async () => (await readNavigationProbe(page)).ready).toBe(2);
+    await page.waitForTimeout(1_000);
+    const rapidReplay = await readNavigationProbe(page);
+    expect(rapidReplay.documents).toHaveLength(1);
+    expect(rapidReplay.titles).toContain('Server title for final');
+    expect(rapidReplay.titles).not.toContain('Server title for slow');
+    expect(await acceptedRevisions(frame)).toBe(accepted);
+
+    await frame.getByTestId('navigate-off').click();
+    await expect.poll(() => new URL(frame.url()).pathname).toBe('/');
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            typeof (window as Window & { __livePreviewRouteRefresh?: unknown })
+              .__livePreviewRouteRefresh,
+        ),
+      )
+      .toBe('undefined');
+  });
+
+  test('reapplies the retained document when a streamed App Router binding arrives', async ({
+    page,
+  }) => {
+    await page.goto(`${ADMIN_URL}?target=/soft-navigation/one`);
+    const frame = await waitForPreviewFrame(page, '/soft-navigation/one');
+    const title = frame.locator('[data-payload-field="title"]');
+    await expect(title).toHaveText('Hello from the demo');
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            typeof (window as Window & { __livePreviewRouteRefresh?: unknown })
+              .__livePreviewRouteRefresh,
+        ),
+      )
+      .toBe('function');
+    await installNavigationProbe(page);
+
+    await page.getByTestId('title-input').fill('Unsaved across a streamed Next destination');
+    await expect(title).toHaveText('Unsaved across a streamed Next destination');
+    await expect.poll(async () => (await readNavigationProbe(page)).documents.length).toBe(1);
+    const accepted = await acceptedRevisions(frame);
+
+    // Dispatch in the frame so WebKit cannot keep Playwright's action promise
+    // open until the RSC response has finished. The trace below, rather than
+    // Next's optional transient fallback, proves the late server binding was
+    // inserted and then received the retained unsaved value.
+    await frame.evaluate(() => {
+      document.querySelector<HTMLElement>('[data-testid="navigate-slow"]')?.click();
+    });
+    await expect.poll(() => new URL(frame.url()).pathname).toBe('/soft-navigation/slow');
+    await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(1);
+    await expect(title).toHaveText('Unsaved across a streamed Next destination');
+
+    await page.waitForTimeout(250);
+    const replay = await readNavigationProbe(page);
+    expect(replay.documents).toHaveLength(1);
+    expect(replay.titles).toContain('Server title for slow');
+    expect(await acceptedRevisions(frame)).toBe(accepted);
   });
 });
 

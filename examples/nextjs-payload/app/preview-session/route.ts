@@ -13,23 +13,24 @@
  * from `ROUTES` is redirected to, and only the query of the request is carried
  * along with it, so a crafted `to` has no way to become an off-site redirect.
  */
-import { PREVIEW_COOKIE, mintSessionToken } from '../preview';
+import { PREVIEW_COOKIE, SITE, mintSessionToken } from '../preview';
 
 /** The pages this fixture frames. `/asset` is not here: its layout is not gated. */
-const ROUTES = ['/', '/reveal', '/hybrid'];
+const ROUTES = ['/', '/reveal', '/hybrid', '/route-commit', '/soft-navigation/one'];
+const COOKIE_SECURITY = new URL(SITE).protocol === 'https:' ? '; Secure' : '';
 
 export async function GET(request: Request): Promise<Response> {
   const requested = new URL(request.url).searchParams.get('to') ?? '/';
   // Parsed against the site so a `//host` or `https://host` value resolves to a
   // pathname we then have to find in the list — it will not be there.
-  const parsed = new URL(requested, 'http://localhost:4174');
+  const parsed = new URL(requested, SITE);
   const route = ROUTES.find((candidate) => candidate === parsed.pathname) ?? '/';
   const token = await mintSessionToken();
   return new Response(null, {
     status: 302,
     headers: {
       location: `${route}${parsed.search}`,
-      'set-cookie': `${PREVIEW_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax`,
+      'set-cookie': `${PREVIEW_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax${COOKIE_SECURITY}`,
       // The token is one editor's credential; no shared cache may keep it.
       'cache-control': 'private, no-store',
     },

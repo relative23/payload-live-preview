@@ -1,0 +1,51 @@
+/**
+ * The explicit Node service owns authorization; Vue receives only its page view.
+ * Only recorded compiled browser assets are public. Private configuration,
+ * native SSR modules and current-user credentials never enter that allowlist.
+ */
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { createHTMLHostReference } from '../html-host.mjs';
+import { withNativeHostRequest } from '../native-request.mjs';
+import { render } from './ssr/entry-server.js';
+
+const config = JSON.parse(readFileSync(process.env.PLP_VUE_HOST_CONFIG, 'utf8'));
+const origin = new URL(config.audience);
+const built = JSON.parse(readFileSync(new URL('./assets.json', import.meta.url), 'utf8'));
+const assets = new Map(built.assets.map(path => {
+  assert.match(path, /^assets\/[A-Za-z0-9._-]+\.js$/u);
+  return ['/' + path, readFileSync(new URL('./client/' + path, import.meta.url))];
+}));
+assert.ok(assets.has('/' + built.entry));
+const handle = createHTMLHostReference({
+  ...config, enabled: process.env.PLP_VUE_HOST_ENABLED === 'local-test-only', fetch,
+}, async view => await render(view) + '<script type="module" src="/' + built.entry + '"></script>');
+const server = createServer((incoming, outgoing) => {
+  void (async () => {
+    try {
+      const url = new URL(incoming.url ?? '/', origin);
+      const trusted = url.origin === origin.origin && incoming.headers.host === origin.host &&
+        incoming.headers['x-forwarded-proto'] === 'https';
+      const asset = trusted && incoming.method === 'GET' ? assets.get(url.pathname) : undefined;
+      if (asset) {
+        outgoing.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'x-content-type-options': 'nosniff' }).end(asset);
+        return;
+      }
+      const response = await withNativeHostRequest(incoming, url, handle);
+      const headers = {};
+      response.headers.forEach((value, name) => { if (name !== 'set-cookie') headers[name] = value; });
+      const cookies = response.headers.getSetCookie();
+      if (cookies.length) headers['set-cookie'] = cookies;
+      outgoing.writeHead(response.status, headers);
+      outgoing.end(Buffer.from(await response.arrayBuffer()));
+    } catch {
+      if (outgoing.headersSent) { outgoing.destroy(); return; }
+      outgoing.writeHead(503, { 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer', vary: 'Cookie' }).end();
+    }
+  })();
+});
+server.listen(Number(process.env.PORT), '127.0.0.1');
+const stop = () => { server.close(); server.closeAllConnections(); };
+process.once('SIGTERM', stop);
+process.once('SIGINT', stop);

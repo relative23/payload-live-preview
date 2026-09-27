@@ -1,0 +1,26 @@
+---
+/** The initially absent card owns real scoped CSS, including a nested component.
+ * Renderer context is supplied per verified request, not copied from form fields.
+ */
+import Badge from './Badge.astro';
+import ReactPanel from './ReactPanel';
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<article data-testid="resource-card" data-context-path={Astro.url.pathname}
+  data-request-path={new URL(Astro.request.url).pathname}
+  data-param-editor={Astro.params.editor ?? ''} data-param-locale={Astro.params.locale ?? ''}
+  data-local-locale={Astro.locals.resourcePreview?.locale ?? ''}
+  data-local-subject={Astro.locals.resourcePreview?.subject ?? ''}
+  data-forwarded-untrusted={Astro.request.headers.get('x-untrusted-local') ?? ''}>
+  <h2 data-testid="resource-title">{title}</h2>
+  <Badge />
+  <ReactPanel title={title} authority={{
+    locale: Astro.locals.resourcePreview?.locale ?? '',
+    subject: Astro.locals.resourcePreview?.subject ?? '',
+    path: Astro.url.pathname,
+  }} />
+</article>
+<style>
+  article { border-top: 7px solid rgb(13, 110, 253); color: rgb(19, 78, 74); }
+</style>
