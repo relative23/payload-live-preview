@@ -48,12 +48,13 @@ time ([hybrid.md](hybrid.md)). A static build has none, which is why field
 bindings exist and why they are not going anywhere.
 
 **Why you will still want field bindings inside a boundary.** A server render
-replaces the region; a patch writes into the element that is already there. For
-a field an editor types into while looking at it, the patch keeps focus, the
-caret and scroll position — as long as the boundary is not rendering that field.
-A boundary re-renders when a field in its `data-payload-depends` changes, and on
-every change when it has none, and the bindings it covers are then left to the
-render instead of patched. So: boundary for the component, with
+produces the target markup; the runtime then morphs the boundary toward it. A
+compatible, paired live node is retained and keeps its live properties. A node
+that changes kind or loses its pairing is replaced and loses that state. A
+direct field patch avoids that reconciliation and writes the element already on
+the page. A boundary renders when a field in its `data-payload-depends` changes,
+and on every change when it has none, and the bindings it covers are then left
+to the render instead of patched. So: boundary for the component, with
 `data-payload-depends` naming what only the server can show; bindings for the two
 or three fields being edited, left out of that list. Both at once is the normal
 case — the bindings inside a boundary are also its fallback when the server
@@ -87,17 +88,20 @@ cannot render.
 | `data-payload-fragment`        | A fragment boundary; the value is a registry id the endpoint renders                                                                                                                                                                                                                | `data-payload-fragment="hero"`                     |
 | `data-payload-fragment-key`    | Distinguishes several boundaries of one id on a page                                                                                                                                                                                                                                | `data-payload-fragment-key="a"`                    |
 | `data-payload-boundary`        | An empty-field anchor: hidden while the field is empty, shown when it is filled                                                                                                                                                                                                     | `data-payload-boundary hidden`                     |
-| `data-payload-island`          | A hydrated framework root: never patched or morphed into; `"patch"` opts back in ([docs/renderers.md](renderers.md))                                                                                                                                                                | `data-payload-island`                              |
+| `data-payload-island`          | A hydrated framework root: direct patching and morph traversal stop by default. `"patch"` removes that island ownership and its update event, but does not override another morph boundary such as a custom element ([docs/renderers.md](renderers.md))                             | `data-payload-island`                              |
 | `data-payload-owned`           | A subtree the site scripts itself: the morph and the head sync leave it alone, and so does `autoBind`                                                                                                                                                                               | `data-payload-owned`                               |
 | `data-payload-no-bind`         | A subtree `autoBind` never guesses into; a declared binding inside it still works (see below)                                                                                                                                                                                       | `data-payload-no-bind`                             |
 | `data-payload-guessed`         | Written by the runtime on every binding `autoBind` made, holding the value it matched; never write it yourself                                                                                                                                                                      | —                                                  |
 
 Binding metadata is live for the attributes the mutation observer watches:
-`data-payload-field` and `data-payload-owner` anywhere, and on a bound element
+`data-payload-field`, `data-payload-owner` and `data-payload-island` anywhere,
+and on a bound element
 `data-payload-type`, `-attribute`, `-href`, `-src`, `-alt`, `-richtext`,
 `-html`, `-array`, `-array-template`, `-array-separator`, `-structural`,
 `-locale`, `-depends`, `-strategy`, `-boundary` and an input's native `type`.
 Changing one rebuilds the affected bindings after the mutation debounce.
+Removing `ssr` from an `astro-island` instead replays the retained snapshot
+after hydration; it does not rebuild unrelated bindings.
 `data-payload-format`, `data-payload-fragment` and `data-payload-fragment-key`
 are not watched, so changing one rebuilds nothing by itself.
 
@@ -322,6 +326,10 @@ collection. Enforcement is the `scopeBindingsByOwner` option
 ([docs/options.md](options.md)), off by default. While it is on:
 
 - an update reaches only bindings owned by the document it names;
+- a fragment strategy receives the update's fields only for a boundary owned
+  by that document; a foreign or unowned outer boundary is not used even when
+  it contains a nested binding that is in scope;
+- an island update event is sent only to island roots owned by that document;
 - a binding without an owner is never updated;
 - an exact `collection:<slug>:<id>` marker stays unreachable while the message
   carries no document id;

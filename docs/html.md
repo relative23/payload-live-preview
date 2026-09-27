@@ -51,8 +51,12 @@ An application with its own bundler starts the client instead of embedding the s
 ```ts
 import { initLivePreview } from 'payload-live-preview/client';
 
-const client = initLivePreview({ allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN] });
+const client = initLivePreview({ allowedOrigins: [import.meta.env.VITE_PAYLOAD_ADMIN_ORIGIN] });
 ```
+
+That name uses Vite's default `VITE_` public prefix. The value is an origin the
+browser must know, not a credential; keep tokens and secrets out of public
+environment variables. With another bundler, use its equivalent public setting.
 
 `client.events`, plugins and custom renderers are in [renderers.md](renderers.md).
 

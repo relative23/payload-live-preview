@@ -18,7 +18,7 @@ from npm and drops `install-links=true` from its `.npmrc`, where it has one.
 | `nuxt-payload`      | The module `payload-live-preview/nuxt-module` with `delivery: 'asset'` and `defaults: 'v1'`                                                     | 4176 | `nuxt-live-preview`, `nuxt-asset-delivery`, `nuxt-fragment`, `navigation-lifecycle-per-framework`, `reveal`, `public-response`, `auto-bind-hit-rate`; E2E                                 | copy                  |
 | `pure-html`         | Static HTML carrying the inline runtime from `generateInlineScript()`, and `LEAN_RUNTIME` on `lean.html`                                        | 4180 | `reveal`, `lean-profile`; E2E                                                                                                                                                             | link                  |
 | `vanilla-client`    | Bundled SPA calling `initLivePreview()` from `payload-live-preview/client`, with the unbound-fields overlay from `payload-live-preview/plugins` | 4181 | `reveal`, `unbound-overlay`; E2E                                                                                                                                                          | link                  |
-| `payload-backend`   | A real Payload admin; does not depend on the package                                                                                            | 3001 | `tests/real-payload/` through `npm run test:e2e:real-payload`; Real Payload E2E, Real Payload E2E (hybrid)                                                                                | —                     |
+| `payload-backend`   | A real Payload admin configured through the copy-installed `payload-live-preview/plugin`                                                        | 3001 | `tests/real-payload/` through `npm run test:e2e:real-payload`; Real Payload E2E, Real Payload E2E (hybrid)                                                                                | copy                  |
 
 The ports, start commands and the name each fixture answers to are in
 `playwright.config.ts` (`payload-backend`: `playwright.real-payload.config.ts`).
@@ -46,11 +46,11 @@ The two values in the last column are the two ways a lockfile records
   ```
 
   `npm ci --prefix examples/<name>` also refreshes it, because it removes
-  `node_modules` before installing. `npm run check:fixtures` hashes
-  `dist/index.js` against each installed copy and names the stale ones.
+  `node_modules` before installing. `npm run check:fixtures` hashes the shipped
+  package payload against each installed copy and names the stale ones.
 
 Keeping both kinds is deliberate: a copy is what a consumer installs, so the
-four copy fixtures exercise the packed layout and the `files` field rather than
+five copy fixtures exercise the packed layout and the `files` field rather than
 the working tree.
 
 `next dev` (Next.js 16) writes `AGENTS.md` and `CLAUDE.md` into

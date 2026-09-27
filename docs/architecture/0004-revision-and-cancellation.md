@@ -173,6 +173,34 @@ field except the one just edited, reverting the editor's other unsaved changes.
 The refresh therefore drops that memory wholesale; the same applies to any
 morph the runtime itself performs.
 
+### 4c. A successful HTTP status is not a document verdict
+
+2026-09-25 (2.1 addendum): the REST merger captures the target identity when it
+builds the outgoing endpoint. A response carrying a collection `id` must match
+that captured ID, comparing strings and numbers by their REST path value. A
+global response carrying `globalType` must match the requested global slug.
+An explicit null, compound or different identity is refused as `unavailable`.
+Mutating the request object while the fetch is pending cannot change the
+identity the response has to satisfy.
+
+Existing projected responses without identity fields remain compatible in
+2.x: their identity cannot be established by this check. An `errors` field
+cannot by itself identify an API failure: the installed Payload 3.89 global
+read operation can return a legitimate unsaved JSON field as the sole property
+of the document, including a non-empty `errors` array. That counterexample
+rules out a schema-free error-envelope heuristic. Distinguishing a wrongly
+HTTP-200 error from this document requires a separate response/schema contract.
+This is a negative identity-mismatch check, not schema validation, proof of
+user access, locale/depth verification, or a replacement for the server's ACL.
+
+Refusal preserves the existing consumer contract: the DOM runtime may use its
+raw-value fallback; `DocumentSession` keeps its last good document and reports
+`unavailable` until a later valid response recovers. Response properties from
+an injected fetch shim may re-enter the merger, so validation rechecks the
+attempt before returning either a document or a refusal. No response body or
+credential is added to diagnostics. The response and session regression suites
+pin these boundaries separately from the H04/H11 authorization continuation.
+
 ### 5. Cancellation is revision-local and terminal
 
 `beforeUpdate` handlers continue to run sequentially in registration order. The
@@ -242,6 +270,28 @@ application batch and emits `afterUpdate` with the same revision and data snapsh
 Consumers may therefore observe more than one `afterUpdate` for a revision when
 visibility gating is active, but never one for stale replay work.
 
+### 7a. Island handoff does not wait for fragment completion
+
+2026-09-27 (PHD-05): a page-owned island renders its own snapshot. When no
+ordinary patch is scheduled, pending fragment requests must not suppress that
+handoff. Completion and reveal still wait for fragment work and any fallback
+patches; an island event does not claim that server HTML has committed.
+
+The pipeline rechecks the transaction after the fragment strategy returns
+control, including synchronous throws and reentrant teardown. The shared
+island dispatcher retains its revision, cancellation and owner checks and
+records delivery per snapshot and target in weak collections. A later fallback
+flush cannot deliver that same snapshot twice to the same island. Claiming
+delivery before calling its listener also fences reentrant fanout. A new
+snapshot or newly discovered target remains eligible; awaiting Astro roots
+are not marked delivered before their event is actually attempted.
+
+The normal regression suite covers held HTTP responses, successful and refused
+responses, rejection, synchronous strategy failure, owner/locale isolation,
+newer revisions, cancellation, suspend and destroy. This is a compatible patch
+with no new public API. It does not establish React listener readiness after
+Astro removes `ssr`; PHD-06 remains a separate application handoff contract.
+
 ### 8. Destroy invalidates before it tears down
 
 `destroy()` first makes the active generation and revision ineligible, then detaches
@@ -285,6 +335,80 @@ leaving the same runtime/client retryable. A failure after a deferred
 runtime `error` event because the original `start()` call has already returned. Once
 startup succeeds, later best-effort ready retries contain transport exceptions rather
 than escaping a timer callback or invalidating an otherwise healthy runtime.
+
+### 9. A host-confirmed navigation commit starts a new generation
+
+2026-09-24 (2.1 addendum): replacing a route's DOM is not an ordinary cache
+refresh. Once the host reports that its router committed the target tree, the
+runtime first cancels work owned by the route being left: the active update and
+its scheduler entries, merge work, fragment and route work, and any trailing
+route-refresh debt. Cleanup callbacks can re-enter the runtime, so active work is
+checked again before the old generation is closed. The runtime then clears the
+change and last-applied baselines, advances the attached `MessageBus` generation,
+rebuilds the binding cache against the committed DOM, and asks the bus for a local
+replay.
+
+That replay is not the old transaction continuing. The retained message is
+dispatched under the new generation with the next monotonic revision and passes
+through the normal merge, hook, planning, scheduling, rendering, and event guards.
+An identical document is therefore eligible to write the route's server-rendered
+values again even with `skipUnchanged`, while a newer message accepted during
+re-entrant cleanup becomes the replay baseline instead. Bindings and islands that
+stream in after the commit receive the active replay snapshot when the cache first
+discovers them; this late handoff is limited to the new targets and does not turn
+the retained document into fresh editor traffic.
+
+An `astro-island` with its `ssr` marker still present is discovered before its
+component listener is ready. The runtime records that root instead of dispatching
+into it. The observer currently treats removal of `ssr` as readiness and delivers
+the current transaction's snapshot, guarded around each dispatch. Native Astro
+7.3.2 / React 19.2.8 measurements on 2026-09-27 disprove that marker as a React
+listener-readiness guarantee: the React integration schedules hydration, Astro
+removes the marker, and the event can arrive before React's layout effect.
+PHD-06 and ADR 0020 retain that unmet pre-hydration delivery contract. A generic
+`data-payload-island` has no corresponding platform
+signal, so the runtime cannot promise replay to a listener installed after the
+event without a separate public readiness contract.
+
+`LivePreviewClient.refreshCache()` and inline `__livePreview.refresh()` keep their
+cache-only contract. They neither cancel a revision nor advance a generation or
+replay a document. `refreshAfterNavigation()` is the additive public seam for a
+host that has observed a router commit. A commit before deferred startup has
+acquired the runtime is folded into normal startup rather than sending an early
+handshake or inventing a replay.
+
+After the replay attempt, the runtime sends one best-effort `ready` message. It
+does not wait for an answer, and correctness does not depend on one: the measured
+Payload 3.89 provider answered the initial readiness message but did not resend the
+document for later readiness messages. `ready` is therefore a recovery hint, not a
+revision, commit acknowledgement, or authorization result.
+
+### 10. Framework adapters declare the commit signal; the host owns its timing
+
+The navigation signal means that the framework has committed the target route DOM
+far enough for the runtime to rebuild its cache. A bridge must emit it after that
+commit, once for each committed navigation. A requested, pending, failed, or
+superseded navigation emits nothing unless it actually commits. The runtime does
+not infer completion by awaiting a `void` refresh callback, observing a fixed
+delay, or reaching into framework-private state.
+
+Astro supplies a package-owned signal: the adapter declares `astro:page-load`, and
+the lifecycle accepts it as a navigation commit only after `astro:after-swap`.
+This rejects Astro's initial `astro:page-load` while still accepting a client-router
+swap that commits before the browser's initial `load` event. The Next.js,
+SvelteKit, and Nuxt adapters declare the package event
+`payload-live-preview:navigation`, but their server integrations cannot observe a
+client commit. The application owns the small bridge that dispatches it. The
+measured fixtures use a React effect after a Next App Router pathname/search
+commit, SvelteKit `afterNavigate` with a non-null `from`, and Nuxt
+`page:loading:end` after a changed `fullPath`.
+
+This event is deliberately narrower than a claim that the whole preview is
+current. It says neither that every streamed descendant has arrived nor that a
+route or fragment strategy reproduced every unsaved server-derived value. It is
+also separate from `registerRouteRefresh`: a navigation bridge identifies the new
+DOM ownership boundary, while each host refresh implementation must establish its
+own completion semantics.
 
 ## Consequences
 
@@ -340,6 +464,44 @@ Deterministic tests control promises, timers, frames, and visibility and cover:
   teardown/restart, merge attempts started by abort listeners, and listener
   registration that throws after attaching; and
 - destroy between every asynchronous stage and its side effect.
+
+The 2.1 navigation addendum is pinned by named tests:
+
+- `tests/unit/core/message-bus-shapes.test.ts` covers the tokenless deep snapshot,
+  one replay per advanced generation, monotonic revisions, re-entrant clone and
+  origin checks, explicit forgetting, and the non-cloneable no-retention path. A
+  matcher that no longer accepts the retained origin, or a bus without a replay
+  consumer, replays nothing and consumes no revision;
+- `tests/unit/core/navigation-replay-guards.test.ts` calls the replay directly: a
+  late observation before any accepted snapshot, or with a transaction that has no
+  rendered data yet, is a synchronous no-op. A late route binding owned by another
+  document, or one whose value read supersedes the transaction, does not refresh;
+- `tests/unit/core/lifecycle-cache-refresh.test.ts`,
+  `tests/unit/core/lifecycle-data-merge.test.ts`, and
+  `tests/integration/client-lifecycle.test.ts` cover cancellation of token, merge,
+  scheduler, and route work at the navigation boundary, including re-entry during
+  abort cleanup and rapid commits;
+- `tests/unit/core/navigation-replay-context.test.ts` covers retained locale,
+  schema, owner scope, late bindings, fragments, routes, and islands without
+  counting relationship ingress twice;
+- `tests/unit/core/islands.test.ts` covers re-entrant island fanout and delivery
+  after Astro removes its hydration marker, including the initial non-navigation
+  path;
+- `tests/unit/core/navigation-lifecycle.test.ts` and the adapter unit suites pin
+  the declared event names, the Astro after-swap/page-load pair, the cache-only
+  compatibility fallback, and listener teardown;
+- `tests/integration/runtime-preview-context.test.ts` distinguishes `refresh()`
+  from `refreshAfterNavigation()` and proves replay does not require a second
+  admin response; and
+- `tests/e2e/specs/astro-soft-navigation.spec.ts`,
+  `tests/e2e/specs/nextjs-live-preview.spec.ts`,
+  `tests/e2e/specs/sveltekit-live-preview.spec.ts`, and
+  `tests/e2e/specs/nuxt-live-preview.spec.ts` exercise the fixture bridges. The
+  Next suite covers commit ordering and a streamed binding; the SvelteKit suite
+  covers `afterNavigate`, a streamed binding, and its separately awaited
+  `invalidateAll`; the Nuxt suite covers repeated committed routes and its
+  separately awaited `refreshNuxtData`. The Astro suite covers ClientRouter
+  replay and teardown.
 
 The invariant for every test is the same: obsolete work may finish computation, but
 it cannot write the DOM or emit a successful `afterUpdate`.

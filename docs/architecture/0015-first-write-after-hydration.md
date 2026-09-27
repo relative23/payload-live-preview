@@ -64,20 +64,23 @@ hook says `supportsFiber`, and from then on calls
 `hook.onCommitFiberRoot(rendererId, root)` after every commit, each call
 guarded by `typeof … === 'function'` and a `try/catch`. React DevTools, and
 every profiler built beside it, read commits this way. It is not a hydration
-API, but a commit is the moment React has taken the tree over, and the first
-commit whose root holds our bindings is the moment before which nothing may be
-written. The probe, run inside the same measurement:
+API, but a qualifying commit is the moment React has taken the tree over. The
+root must hold our bindings, and its committed Fiber tree must have no server
+boundary that is still dehydrated. Nothing may be written before then. The
+probe, run inside the same measurement:
 
-| t (ms) | hook call                                                                                                             |
-| -----: | --------------------------------------------------------------------------------------------------------------------- |
-|   74.8 | `inject` — React has evaluated, 27 ms **after** the first message: the runtime cannot learn "React is coming" in time |
-|  119.8 | `onCommitFiberRoot`, container `NEXTJS-PORTAL` (Next's dev overlay owns a root of its own; no binding inside), ×3     |
-|  149.3 | `onCommitFiberRoot`, container `#document`, holds the bindings — hydration committed (here: failed and regenerated)   |
+| t (ms) | hook call                                                                                                                 |
+| -----: | ------------------------------------------------------------------------------------------------------------------------- |
+|   74.8 | `inject` — React has evaluated, 27 ms **after** the first message: the runtime cannot learn "React is coming" in time     |
+|  119.8 | `onCommitFiberRoot`, container `NEXTJS-PORTAL` (Next's dev overlay owns a root of its own; no binding inside), ×3         |
+|  149.3 | `onCommitFiberRoot`, container `#document`, holds the bindings — qualifying commit (here: after failure and regeneration) |
 
 Two things follow. "Whether" cannot be observed in time and has to be
 **declared** by whoever emits the script. "When" can be observed, but only if
 the observer is in place before `react-dom` evaluates, and only if it ignores
-roots that do not hold a binding — the dev overlay's commits come first.
+roots that do not hold a binding or still contain dehydrated server boundaries.
+The dev overlay's commits come first; streamed App Router commits may come in
+several steps (2026-09-24 addendum).
 
 ### Why the alternatives do not reach the goal
 
@@ -123,7 +126,7 @@ The value names the framework and not a boolean, because the observation in §2
 is React's. A second framework gets a second value and a second observer, or
 none; `true` would promise a generality the runtime does not have.
 
-### 2. Hydrated means: React committed a root that holds a binding
+### 2. Hydrated means: React committed the binding root without a dehydrated boundary
 
 The runtime arms the instrumentation hook before React can evaluate: in inline
 delivery it is itself the first script in `<head>`; in asset delivery the
@@ -138,15 +141,21 @@ with `supportsFiber: true`, a `renderers` map and an `inject` that files each
 renderer under its own id, which is what Fast Refresh walks when it attaches
 (a hook without the map stopped the fixture from hydrating at all, measured)
 — and wraps `onCommitFiberRoot` on the hook that is there, calling the
-previous function first so React DevTools keeps working. The wrapper settles once, on the first
-commit whose `root.containerInfo` is a `Document` or contains an element with
-`data-payload-field`. A root without a binding — the dev overlay's portal, a
-widget — is not ours to wait for. The state lives on one named `window` slot
-so the bootstrap and the runtime, two bundles, share it: the bootstrap only
-records the containers React committed into, and the runtime, which alone
-knows what a binding is, judges the backlog when it subscribes and every
-commit after — so the armed bootstrap stays within the bytes a bootstrap is
-allowed.
+previous function first so React DevTools keeps working. The wrapper settles
+once, on the first commit whose `root.containerInfo` is a `Document` or contains
+an element with `data-payload-field`, and whose committed Fiber tree has no
+dehydrated server boundary. React 18/19 Suspense (tag 13) and React 19 Activity
+(tag 31) carry the server Comment in `memoizedState.dehydrated` until a later
+commit claims it; a `null` value is a client fallback, not pending hydration.
+A root without a binding — the dev overlay's portal, a widget — is not ours to
+wait for.
+
+The state lives on one named `window` slot so the bootstrap and the runtime,
+two bundles, share it. The bootstrap records the Fiber roots React committed,
+and the runtime, which alone knows what a binding is, judges the backlog when
+it subscribes and every commit after. Keeping the root, rather than only its
+container, preserves the boundary state when asset delivery sees a commit
+before the runtime arrives.
 
 ### 3. Until then the runtime does not start
 
@@ -349,3 +358,38 @@ on the fixture, recorded from before the frame's scripts run: before this
 addendum `["Hero image", "Mountains at dusk", "Hero image"]` — the write, the
 repair, the admin's second message; after it `["Hero image"]`, no
 `Hydration completed` line, `inspect().hydration` = `{ vue, committed }`.
+
+## Addendum, 2026-09-24 — streamed React roots need the final boundary commit
+
+**Status:** Accepted • refinement of §2 after a cold Next 16 App Router page
+showed that a root commit is not necessarily the end of hydration.
+
+The `/soft-navigation/one` fixture commits its `Document` while three nested
+Suspense fibers still point at dehydrated server Comments. The old test saw the
+binding in that container and settled immediately. The admin wrote `Hello from
+the demo` at about 221 ms; the final App Router hydration commit followed at
+about 234 ms, regenerated the segment as `Server title for one`, and reported a
+hydration mismatch. `inspect().hydration` still said `committed`, so the
+diagnostic was wrong as well as the page.
+
+The observer now keeps each `FiberRoot` and walks its committed tree before it
+settles. A Suspense or Activity fiber with a non-null Comment in
+`memoizedState.dehydrated` keeps the wait open; the later commit, after React
+clears that state, settles it. Other component state named `dehydrated` is
+ignored by checking the Fiber tag and the Comment shape. This reads the same
+DevTools commit object §2 already accepted, adds no timer, and introduces no
+host-facing API.
+
+The check is deliberately root-wide. Mapping one DOM binding back to its Fiber
+would need another private React seam, while parsing server Comment ranges
+would duplicate React's protocol. An unrelated boundary that stays dehydrated
+can therefore hold the preview until the existing 5 s cap and LP0607. That is a
+visible delay rather than a write into markup React may still replace.
+
+The regression suite holds both orders: a partial root recorded by the asset
+bootstrap before the runtime subscribes, and a partial root observed live.
+After rebuilding and reinstalling the copied package fixture, a run begun with
+a cleared `.next` cache passed 10 fresh-page WebKit repeats. A second run
+against the resulting dev server passed 20 consecutive fresh-page repeats.
+Each run kept the one startup document through initial hydration, then observed
+the slow server destination before replaying the retained unsaved document.

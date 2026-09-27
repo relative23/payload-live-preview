@@ -143,6 +143,70 @@ const bindings = useState('preview-bindings', () => {
 
 On a public response the helpers return empty objects, and the markup carries no `data-payload-*` attribute at all. The initial draft read is server code — `definePreview()` from `payload-live-preview/server` — and a Nitro route that serves the page's data is its own request, so it authorizes that request with the same strategy; [authorization.md](authorization.md) has the read.
 
+## Client navigation and route refreshes
+
+The Nitro adapter arms preview responses for the package's navigation event;
+it does not import Nuxt's client router or install a browser plugin. Add this
+application-owned plugin:
+
+```ts
+// plugins/payload-live-preview-navigation.client.ts
+import { nextTick } from 'vue';
+import { registerRouteRefresh } from 'payload-live-preview';
+
+const NAVIGATION_COMMIT_EVENT = 'payload-live-preview:navigation';
+
+export default defineNuxtPlugin((nuxtApp) => {
+  let committedRoute = nuxtApp.$router.currentRoute.value.fullPath;
+  const removeLoadingEnd = nuxtApp.hook('page:loading:end', () => {
+    const route = nuxtApp.$router.currentRoute.value.fullPath;
+    if (route === committedRoute) return;
+    committedRoute = route;
+    document.dispatchEvent(new Event(NAVIGATION_COMMIT_EVENT));
+  });
+  const removeRefresh = registerRouteRefresh(async () => {
+    await refreshNuxtData();
+    await nextTick();
+  });
+
+  let cleaned = false;
+  const cleanup = (): void => {
+    if (cleaned) return;
+    cleaned = true;
+    removeLoadingEnd();
+    removeRefresh();
+    window.removeEventListener('pagehide', onPageHide);
+  };
+  const onPageHide = (event: PageTransitionEvent): void => {
+    if (!event.persisted) cleanup();
+  };
+
+  window.addEventListener('pagehide', onPageHide);
+  import.meta.hot?.dispose(cleanup);
+});
+```
+
+`page:loading:end` runs after a destination's Suspense has resolved and also
+after a same-page query update, where Nuxt does not emit `page:finish`.
+Comparing `fullPath` skips the initial hook and duplicate finishes, while a
+cancelled navigation never becomes the committed route. The hook reads the
+route immediately so a redirect cannot make an earlier completion claim the
+later route.
+`refreshNuxtData()` settles the current page's `useAsyncData` and
+`useFetch` calls before the runtime reapplies an unsaved document. The cleanup
+keeps a bfcache page intact but unregisters both seams on an ordinary unload or
+hot replacement.
+
+Keep query-carried preview intent and credentials when building Nuxt links or
+calling `navigateTo`. A token scoped to one pathname cannot authorize another:
+for a cross-path navigation, have Payload mint the destination URL or use a
+session or deliberately site-scoped credential instead of reusing that token.
+
+This plugin and its event dispatch are host code, not a Nuxt bridge exported by
+the package. After the event, the runtime rebuilds its bindings and locally
+reapplies the last accepted editor document; it does not require the editor to
+answer another `ready`.
+
 ## Server-rendered boundaries
 
 A patch reaches what the markup annotates. It cannot create a section the
@@ -161,12 +225,15 @@ const endpoint = createFragmentEndpoint({
   registry: { hero: { component: Hero, props: ({ fields }) => heroProps(fields) } },
 });
 
-export default defineEventHandler((event) => endpoint(toWebRequest(event)));
+export default defineEventHandler((event) => endpoint(toWebRequest(event), event));
 ```
 
 The binding takes a `Request`, which is what `toWebRequest()` makes of the H3
-event; this package therefore needs no `h3` dependency to describe its own
-signature. Point the script at the route — `fragments: { endpoint:
+event. Pass that event as the second argument so Node HTTP/1 client disconnects
+reach authorization, props and rendering even after the upload has finished.
+The one-argument form still works with the Web request's signal, but H3 1.x's
+`toWebRequest()` does not link that signal to the socket. No `h3` dependency is
+needed in this package's signature. Point the script at the route — `fragments: { endpoint:
 '/payload/fragment' }` in the plugin's options — and mark the region with
 `data-payload-fragment="hero"`.
 

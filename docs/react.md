@@ -5,9 +5,12 @@ merged document, so your components re-render with it. Same shape as Payload's
 own `useLivePreview`, with this package's merge underneath.
 
 > This is the other half of the package, not a replacement for it. The DOM
-> runtime patches server-rendered markup and keeps the visitor's state; a hook
-> re-renders the tree and loses it. Which to use, and why a page may want both:
-> [renderers.md](renderers.md) and the caveat below.
+> runtime patches server-rendered markup; a hook gives React the new document
+> and lets its reconciler update the client-owned tree. A stable component
+> identity preserves component and DOM state. A changed type, key or position
+> can cause a remount or replacement; the replaced node loses its state. Which
+> owner to use, and why one page may use both: [renderers.md](renderers.md) and
+> the caveat below.
 
 ## Install
 
@@ -29,7 +32,7 @@ import { useLivePreviewDocument } from 'payload-live-preview/react';
 export function PagePreview({ page }: { page: Page }) {
   const { data, isLoading, status, error } = useLivePreviewDocument<Page>({
     serverURL: process.env.NEXT_PUBLIC_PAYLOAD_URL!,
-    allowedOrigins: [process.env.NEXT_PUBLIC_PAYLOAD_URL!],
+    allowedOrigins: [process.env.NEXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
     initialData: page,
     depth: 1,
   });
@@ -44,6 +47,9 @@ export function PagePreview({ page }: { page: Page }) {
 }
 ```
 
+Both `NEXT_PUBLIC_` values ship to the browser. They are origins, not
+credentials; keep preview tokens and other secrets in server-only variables.
+
 | Option                    | Default              | What it does                                                           |
 | ------------------------- | -------------------- | ---------------------------------------------------------------------- |
 | `serverURL`               | required             | Payload origin the update is re-fetched from. A trailing slash is fine |
@@ -55,6 +61,12 @@ export function PagePreview({ page }: { page: Page }) {
 | `enableReferrerDetection` | `false`              | Trust `document.referrer` as an origin source                          |
 | `enableLocalhostMatching` | `true`               | Match `localhost` origins in development                               |
 
+A hook instance owns one document session. A fresh `initialData` object on an
+ordinary re-render does not replace data that already merged. If the same
+component can move from one CMS document to another, remount it with a key that
+includes the document owner and id. This releases the old session and starts a
+new one from the new `initialData`.
+
 The return value is `{ data, isLoading, status, error }`. `data` and `isLoading`
 are Payload's two names. `isLoading` is `true` until an update settles, turns
 `true` again with every update it accepts, and is `false` once the newest one
@@ -64,42 +76,40 @@ and only then.
 
 ## Measured against the official package
 
-`@payloadcms/live-preview` is the right choice for a React app that owns the
-document anyway: one hook, no attributes, and the tree it re-renders is yours.
-What follows is not an argument against that. It is what seven cases did when
-both packages were run through the same input.
+`@payloadcms/live-preview` is Payload's framework-independent message and merge
+client; `@payloadcms/live-preview-react` wraps it for a React app. The official
+wrapper is a natural choice when that app owns the document: one hook, no DOM
+attributes. What follows is not an argument against it. It records five client
+cases where this package's session and Payload's base client received the same
+input.
 
-Every case runs twice in this repository — against this hook in
-[`document-session.test.ts`](../tests/unit/adapters/document-session.test.ts),
-and against `@payloadcms/live-preview` 3.88.0 in
+All five cases run twice in this repository — against the session this hook uses
+in [`document-session.test.ts`](../tests/unit/adapters/document-session.test.ts),
+and against the lockfile's exact `@payloadcms/live-preview` 3.88.0 in
 [`payload-hook-comparison.test.ts`](../tests/unit/adapters/payload-hook-comparison.test.ts),
-which imports the published package rather than describing it.
-`npm run test:upstream-findings` runs the same cases against whatever the
-registry serves today, so a row upstream has since fixed turns red here instead
-of standing as a claim.
+which imports the installed package rather than describing it (last verified
+2026-09-23). These are client-session tests, not React rendering or tarball
+consumer tests.
+
+The scheduled `npm run test:upstream-findings` is a separate drift probe. It
+runs seven low-level observations against the requested registry version; its
+case set overlaps this table but is not identical, and it does not exercise the
+React wrapper.
 
 ### Five where the results differ
 
-| Measured with                                                                  | `@payloadcms/live-preview` 3.88.0                                              | This hook                                                         |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                        |
-| Two messages, the first answered after 80 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands |
-| HTTP 403 with the body `{"errors":[{"message":"Forbidden"}]}`                  | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403  |
-| Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | each keeps its own document (ADR 0002)                            |
-| `collectionSlug: '../../admin'` in the message                                 | request endpoint `../../admin/1`, sent with `credentials: 'include'`           | no request; the merge is refused                                  |
+| Measured with                                                                  | `@payloadcms/live-preview` 3.88.0                                              | This hook                                                          |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                         |
+| Two messages, the first answered after 80 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands  |
+| HTTP 403 with the body `{"errors":[{"message":"Forbidden"}]}`                  | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403   |
+| Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | each keeps its own document (ADR 0002)                             |
+| `fetch` rejecting with `TypeError: Failed to fetch`                            | the rejection escapes the async listener                                       | last good document kept, `status: 'unavailable'`, `error` names it |
 
-### Two the hook does not fix
-
-| Measured with                                       | `@payloadcms/live-preview` 3.88.0                                                                    | This hook                                                          |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `fetch` rejecting with `TypeError: Failed to fetch` | the rejection escapes an async listener nobody awaits; the page keeps the old value and says nothing | last good document kept, `status: 'unavailable'`, `error` names it |
-| A burst of typing, one message per keystroke        | 30 requests on 27 keystrokes, counted in a 3.88 admin                                                | one request per accepted message, with nothing in front of them    |
-
-Neither of those two is a win. The update lost to a failed request is lost in
-both: no retry, and the preview catches up only on the next message. And neither
-package coalesces a burst — the debounce this one has slows the writes the DOM
-runtime makes, not the requests it sends (`npm run test:interaction` records 18
-requests for an 18-keystroke burst), and the hook has no debounce at all.
+The failed update is not retried: this hook reports it and catches up on the
+next message. It also sends one merge request per accepted message. The DOM
+runtime's debounce delays writes, not those requests; `npm run test:interaction`
+records 18 requests for an 18-keystroke burst.
 
 The merge itself is the same protocol: a `POST` to the REST API with
 `X-Payload-HTTP-Method-Override: GET`, which returns the stored document with
@@ -111,15 +121,18 @@ opened the page ([authorization.md](authorization.md) for the wider model).
 
 ## The caveat that decides which one you want
 
-A hook re-renders. React replaces the subtree, and with it goes what the visitor
-was doing: focus, the caret, an open `<details>`, a scroll position inside the
-region, the state of any uncontrolled input. For an editor typing into the admin
-that is usually invisible; for a preview someone is interacting with, it is the
-whole difference.
+A render is not a remount. React preserves component state and usually the
+underlying DOM node while its type, key and position remain stable. It can still
+write controlled values, and a conditional branch, changed key or changed type
+can replace the node. A remount loses state held by that component or DOM node,
+including an uncontrolled value, focus or an inner scroll position.
 
-The DOM runtime writes values into the existing elements instead, which is why
-it keeps all of that — and why it cannot create markup the page did not render.
-The two are complementary:
+The DOM runtime has a different ownership model. A scalar binding writes the
+existing element directly. A fragment or route render is morphed: compatible,
+paired live nodes retain their properties, while incompatible or unpaired nodes
+are replaced and lose them. Direct patches cannot create markup the page did
+not render; React can render conditional markup from the new document. The two
+approaches are complementary:
 
 - **Bindings** (`data-payload-field`) for server-rendered regions.
 - **Fragments** (`data-payload-fragment`) when a region needs its own logic
@@ -140,7 +153,7 @@ Next's App Router: [nextjs.md](nextjs.md). Outside React the same seam is
 
 ## Vue
 
-The same composable, the same session, the same seven cases:
+The same composable, the same session, the same five cases:
 [vue.md](vue.md).
 
 ## Server rendering

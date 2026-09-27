@@ -232,16 +232,25 @@ be drawn, not for a second engine. It runs here:
   in as `MorphOptions.boundary`, a predicate.
 - **The coordinators** own the rules. `isMorphBoundary` (§4) lives in
   `src/core/islands.ts` beside the island attribute it reads and is the
-  default the engine falls back to; the structural applier, the fragment
-  strategy and the route strategy hand it in explicitly, together with the
-  keys (`data-payload-key`, `data-payload-nested-key`) and, for the applier,
-  the nested slots whose children stay (`retainChildrenOf`). Which element to
-  morph toward what, and when to replace instead, is theirs too.
+  default the engine falls back to; it is exported as Experimental from
+  `/structural` so another coordinator can compose the package rule with its
+  own. A supplied `boundary` replaces the default. The structural applier, the
+  fragment strategy and the route strategy hand the package predicate in
+  explicitly, together with the keys (`data-payload-key`,
+  `data-payload-nested-key`) and, for the applier, the nested slots whose
+  children stay (`retainChildrenOf`). Which element to morph toward what, and
+  when to replace instead, is theirs too.
 
 The contract suite runs the engine under a rule of its own (§8, "the
 ownership rule is the coordinator's"): with a rule that owns nothing a custom
 element is edited like any element, with the package rule it is left whole,
 and a coordinator may own more than the package does. `boundary` is `@beta`
-with the rest of `MorphOptions` (`/structural`, Experimental). No path, no
-default and no behaviour changes; a second engine would implement
-`morphElement` and be handed the same rule.
+with the rest of `MorphOptions`; `isMorphBoundary` has the same Experimental
+class (`/structural`). No path or default changes; a second engine would
+implement `morphElement` and be handed the same rule.
+
+The same compatibility rule applies at the engine's root and below it: two
+owned elements are retained only when their tag and namespace match. A
+one-sided boundary or an incompatible keyed pair yields the rendered element.
+Before this option exposed the seam, the direct root and keyed-child paths
+disagreed on those two cases; the contract suite now holds both to §4.

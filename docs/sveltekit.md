@@ -116,6 +116,53 @@ export const load: PageServerLoad = async ({ locals, params, request }) => {
 </section>
 ```
 
+## Client navigation and route refreshes
+
+The handle arms preview responses for the package's navigation event; it does
+not import SvelteKit's browser APIs or install a router hook. Mount this
+application-owned bridge once in a layout that remains present across the
+preview routes:
+
+```svelte
+<!-- src/lib/LivePreviewNavigation.svelte -->
+<script lang="ts">
+  import { afterNavigate, invalidateAll } from '$app/navigation';
+  import { onMount, tick } from 'svelte';
+  import { registerRouteRefresh } from 'payload-live-preview';
+
+  const NAVIGATION_COMMIT_EVENT = 'payload-live-preview:navigation';
+
+  afterNavigate(({ from }) => {
+    if (from === null) return;
+    document.dispatchEvent(new Event(NAVIGATION_COMMIT_EVENT));
+  });
+
+  onMount(() =>
+    registerRouteRefresh(async () => {
+      await invalidateAll();
+      await tick();
+    }),
+  );
+</script>
+```
+
+`afterNavigate` runs once on the initial mount with `from: null`; skipping that
+call avoids a second startup replay. Later calls happen after SvelteKit has
+committed the destination. `registerRouteRefresh()` returns the cleanup that
+`onMount` uses when the bridge unmounts. For an unbound or conditional field,
+`invalidateAll()` settles the route's server and universal loads, `tick()`
+settles the DOM, and only then does the runtime reapply the unsaved document.
+
+The adapter authorizes SvelteKit's internal data requests against `event.url`,
+the normalized page URL rather than its `__data.json` transport path. Keep a
+query-carried preview credential in navigation links; a session cookie needs no
+special URL handling.
+
+The event string and bridge are a host recipe, not a SvelteKit import hidden in
+the package. On a commit the runtime rebuilds its bindings and locally reapplies
+the last accepted editor document, so this does not depend on the editor
+answering another `ready`.
+
 ## Server-rendered boundaries
 
 A patch reaches what the markup annotates. It cannot create a section the
@@ -142,6 +189,12 @@ handle's options — and mark the region with a boundary from the same
 `boundary: bindings.boundary('hero', { dependsOn: ['title', 'subtitle'] })` and
 spread it as `<section {...data.boundary}>`. It is gated on the same verdict as
 `bindings.bind()`.
+
+Pass the complete SvelteKit event if you wrap `POST`. On adapter-node HTTP/1,
+the binding uses `event.platform.req` to detect a disconnect after upload.
+An unfinished body is paused and its refusal response is flushed before the
+connection closes; a fully read body keeps normal connection reuse. Other
+adapters continue to use the Web request's own cancellation signal.
 
 Svelte renders through `render()` from `svelte/server`, and the endpoint
 delivers its `body`: `<svelte:head>` output belongs to the document head, which

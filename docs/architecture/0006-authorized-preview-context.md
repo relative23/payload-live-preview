@@ -216,6 +216,103 @@ configuration error.
   `livePreviewAuthorizationOutcome` next to the context; Nuxt's server
   handler decides before the Vue app renders so pages can read both.
 
+### 5b. Local navigation replay does not create a new authorization grant
+
+2026-09-24 (2.1 addendum): the browser may retain one data-bearing live-preview
+message for local navigation replay, but only after that message passed the
+current bus's origin, source, and shape checks plus any configured token
+validator. Before retaining it, the bus removes `previewToken` and takes a
+structured clone. A synthetic message that cannot be cloned is still eligible
+for its original accepted update but is not retained. Consumer hooks receive
+another clone on every replay, so they cannot mutate the reserved copy.
+
+Replay is a continuation inside the same runtime instance, not another remote
+message. It therefore does not re-run the source or token validator and does
+not mint an `AuthorizedPreviewContext`. It does re-check the current origin
+policy before dispatch. Any package HTTP merge or fragment request caused by
+the replay still crosses that endpoint's existing request-authorization
+boundary. The replay carries no `previewToken`, and package requests do not
+treat retained field data as a credential.
+
+The continuation is bounded by its owner. A navigation advances the bus
+generation and gives the clone a new revision, but keeps the one accepted
+message. Heartbeat expiry and `destroy()` forget it. A back/forward-cache
+restore may replay only after the configured heartbeat's original deadline is
+checked; the replay itself does not refresh that deadline. The default
+`heartbeatMs: 0` disables this clock, so in that configuration the package
+claims page/runtime lifetime, not a TTL. A later best-effort `ready` handshake
+neither authorizes nor extends the retained state.
+
+The store is bounded to one entry, not to a byte size. A newer accepted,
+cloneable message replaces the prior one, but this addendum adds no independent
+size limit to `postMessage`; retaining duplicates the last accepted message
+graph in this page's memory. It creates no server-side or process-global store
+and makes no multi-instance persistence claim.
+
+`tests/unit/core/message-bus-shapes.test.ts` pins token removal, deep cloning,
+one replay per generation, origin re-entry, explicit forgetting, and the
+non-cloneable fallback. `tests/unit/core/lifecycle-cache-refresh.test.ts` pins
+that local replay is not heartbeat traffic and is unavailable after timeout.
+`tests/unit/core/lifecycle-heartbeat.test.ts` covers expiry during suspension
+before replay, and `tests/integration/runtime-preview-context.test.ts` covers
+the one-response admin case without treating `ready` as an authorization or
+data guarantee.
+
+### 5c. Opt-in Payload document capability (2026-09-25)
+
+`scope.payload` is an additive verifier capability: a Payload `serverURL`,
+REST `apiRoute` (default `/api`), one collection/ID or global, and `maxDepth`.
+The verifier must supply a finite expiry. Invalid capabilities are refused,
+not silently converted into unscoped authorization. The context copies and
+freezes both the capability and its document. The site's `scope.audience`
+remains distinct from the Payload origin; neither comes from posted fields.
+
+The shared fragment endpoint checks document kind, slug and collection ID
+before props or rendering. Explicit global identity must also agree. It
+rechecks expiry and any site audience/path, as well as the existing exact
+locale requirement. Numeric IDs compare with their string representation;
+missing or non-scalar collection identity refuses. This does not limit the
+shape or relationship depth of unsaved form fields.
+
+`definePreview` checks the same document and locale plus the actual Payload
+API base and configured depth before forwarding headers. A scoped collection
+read requires explicit `id` and no `where`; it uses the direct document REST
+endpoint. Arbitrary query trees are not rewritten into authorization filters.
+The new direct-ID form is also available without a scope; `id` and `where`
+together, or an invalid ID, refuse. Existing unscoped query reads are unchanged.
+Safe path segments exclude empty/dot segments, separators, URL delimiters,
+percent escapes and control/space characters. This avoids route normalization
+turning a document binding into a different endpoint.
+
+A refusal returns `reason: 'scope'`, no HTTP status and no data, or throws the
+existing `PreviewFetchError` under `errorMode: 'throw'`. It emits one normal
+failure diagnostic, with no credential or capability contents. No public-read
+fallback runs. A capability that expires while the response is pending cannot
+return that response as a success. Read configuration is captured once so the
+advertised runtime depth and the checked request depth cannot diverge.
+
+This is not a replacement for Payload ACLs, nor a universal in-process sandbox.
+Custom renderers, fetch implementations, binding emitters and application
+Local API calls remain trusted code. Related-document field access is Payload's
+responsibility; `maxDepth` only limits the population-depth request. Existing
+contexts without `scope.payload` retain their 2.x behavior. Token claims,
+session strategy defaults and browser delivery do not acquire this capability
+implicitly. ADR 0019 still describes a reference continuation, not a public
+session API or native-framework/real-ACL evidence.
+
+The capability checks, context construction and server read join the critical
+coverage and nightly mutation scope. The first full measurement gives
+`preview-scope.ts` 100/100/98.30 line/function/branch coverage, `preview.ts`
+100/100/96.33 and `authorized-preview.ts` 100/100/100. After mutation-directed
+tests on the same date, the full 3,974-test run measures all three at
+100/100/100 (59/59, 109/109 and 6/6 branches respectively); their ratchets now
+retain that result. Existing ratchets are not lowered.
+Focused mutation evidence does not replace the final whole-nightly baseline.
+The three new shard hints use measured covering-test counts from the
+2026-09-25 focused run (14,875 / 7,194 / 4,321 respectively), pending the
+duration-weighted refresh with the final whole scope. They affect scheduling,
+not which files, mutants or tests run, or their verdict.
+
 ## Consequences
 
 - One verification per request, at the adapter, feeds every privileged
@@ -229,3 +326,6 @@ configuration error.
 - The brand is a type-level promise plus a runtime check, not a cryptographic
   one. Inside the application's own process that is the correct strength: the
   process already holds the secret.
+- Local navigation replay stores one accepted, tokenless message in the page's
+  runtime only. It is not a server snapshot store, a cross-page session, or a
+  replacement for request authorization.

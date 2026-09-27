@@ -5,9 +5,10 @@ things it cannot do: create markup that a template renders only when a
 field is set, and run a component's own logic (derived values, custom
 blocks, conditional sections). The **fragment** strategy asks your server
 to render one component boundary from the unsaved form state and morphs
-the result in — focus, typed values and open `<details>` survive, as with
-every keyed morph
-([ADR 0008 — Keyed morph: what it keeps, what it never crosses](architecture/0008-keyed-morph-ownership.md)).
+the result in. Compatible, paired live nodes are retained, so their focus and
+live properties survive. An incompatible or unpaired node is replaced and its
+state is lost. The exact pairing and ownership rules are in
+[ADR 0008 — Keyed morph: what it keeps, what it never crosses](architecture/0008-keyed-morph-ownership.md).
 The **route** strategy refreshes the whole route when nothing smaller is
 safe. The protocol and its abuse model are recorded in
 [ADR 0011 — The fragment protocol and its abuse model](architecture/0011-fragment-protocol-and-abuse-model.md).
@@ -100,6 +101,138 @@ export const POST = createFragmentEndpoint({
 });
 ```
 
+#### First-use Astro resources
+
+A successful isolated container render does not register the component's CSS
+with the page. On the measured Astro 7.3.2 production path, a component imported
+only by the endpoint produces scoped markup but no matching page stylesheet.
+
+Use a finite, application-owned catalog in both the page and the endpoint.
+Render the catalog wrapper even when the current document contains no blocks;
+the wrapper's static imports then remain in Astro's page build graph:
+
+```astro
+---
+// Blocks.astro
+import Card from './Card.astro';
+interface Props { show: boolean; title: string }
+const { show, title } = Astro.props;
+---
+{show && <Card title={title} />}
+```
+
+The page renders `<Blocks show={false} title="" />` inside its empty fragment
+boundary; its endpoint registers that same `Blocks` component and computes
+`show` and `title` from authorized input. Do not conditionally omit the wrapper
+itself or copy generated scope hashes. For a CSP that requires external CSS,
+set `build: { inlineStylesheets: 'never' }` in the Astro configuration. This
+loads the catalog CSS up front, not on demand. The page and native router own
+its lifetime; removing one preview client does not remove shared CSS.
+
+The executable strict-CSP reference also declares the existing announcer's
+`payload-live-preview-a11y` live region with external CSS before starting the
+client. Otherwise the package's fallback region uses an inline style that a
+`style-src 'self'` policy blocks. Announcements stay enabled in the reference;
+neither the sanitizer nor CSP is relaxed.
+
+See [ADR 0020](architecture/0020-astro-page-owned-resources.md) and
+[the native resource tests](../tests/e2e/continuation/astro-resources.spec.ts).
+This is a measured recipe, not automatic discovery of arbitrary runtime
+assets. The default container still passes props only; request URL, params,
+trusted locals and extra renderer setup require the existing application
+`render` override. Never copy browser-provided locals or headers wholesale.
+This recipe is measured in native production on exact Astro 4.16.19, 5.18.2,
+6.4.8 and 7.3.2 in all three browsers. Astro 4 uses the original
+`ViewTransitions` export for the same native navigation owner. Additional
+framework hydration and untested versions remain separate verification work.
+
+The retained pre-fix archive reproduces a default-renderer bug on exact Astro
+4.9.0: its Container API does not consume `props`, so the endpoint returns
+HTTP 200 without the requested unsaved component. The current source-built
+hardening archive corrects this with an internal Astro-compiled template that
+forwards registry-selected props through fresh Container `locals`. It needs no
+application `render` override, new public entry or extra build configuration.
+The [native contract](../tests/e2e/continuation/astro-resources.spec.ts) runs
+this default path at pinned Astro versions, 4.9.0 included.
+
+For this exact floor, an explicit application renderer can pass the fixed
+catalog's data through the public Container `locals` option. A statically
+imported `.astro` wrapper reads that typed value and passes ordinary props to
+the catalog. The production reference is split into the
+[wrapper](../tests/fixtures/astro-resource-locals/src/components/LocalCatalog.astro.fixture),
+[locals type](../tests/fixtures/astro-resource-locals/src/catalog-env.d.ts.fixture)
+and [endpoint](../tests/fixtures/astro-resource-locals/src/pages/payload/resource-fragment.ts.fixture).
+It validates the registered component identity and data fields, derives context
+from verified authorization, and gives each render fresh locals. It never
+copies browser-selected locals or component names into the container.
+
+This explicit recipe passes the same nine native resource/context/lifetime
+cases on both Astro 4.9.0 and 7.3.2, in Chromium, Firefox and WebKit. The page
+still owns the finite catalog's CSS and live region. It is not selected by the
+package default and was not itself a repair for PHD-04. It remains useful when
+the component needs verified page context. Neither it nor the default bridge
+claims support for arbitrary runtime modules or additional hydration.
+
+The normally built source archive passes the two-revision, resource,
+registry-props and owner-lifetime cases on exact Astro 4.9.0, 4.16.19, 5.18.2,
+6.4.8 and 7.3.2 in Chromium, Firefox and WebKit. It includes the internal
+template and regenerated source maps. Public exports and optional peers are
+unchanged; an explicit custom renderer still avoids loading the default.
+[ADR 0020](architecture/0020-astro-page-owned-resources.md) defines the patch
+boundary. This dirty checkpoint is not a released package. Do not deploy the
+earlier private archive prototype, which still has its experimental stale map.
+Verified page context and additional framework hydration remain separate.
+
+For an additional React child, the native reference pins Astro 7.3.2,
+`@astrojs/react` 6.0.6 and React/React DOM 19.2.8. The app integration alone
+does not configure a separately created fragment container: its explicit
+renderer registers `@astrojs/react/server.js` with the public
+`addServerRenderer` method. See the
+[endpoint](../tests/fixtures/astro-react-resources/src/pages/payload/resource-fragment.ts.fixture)
+and [native contract](../tests/e2e/continuation/astro-react-resources.spec.ts).
+Two unsaved revisions, computed external CSS and verified request-local React
+provider values pass in Chromium, Firefox and WebKit. Omitting that registration
+produces HTTP 500 in the same native fixture.
+
+This produces React server HTML, not an interactive React root in each updated
+fragment. A separate page-owned `hydrateRoot` control confirms that working
+client interaction is observable and survives the fragment updates; it does not
+establish Astro `client:*` hydration after morphing. The page eagerly includes
+the finite shared catalog's CSS. Page providers, executable module names and
+resource URLs are not copied from form data. Post-morph hydration and other
+renderer/version combinations remain explicit acceptance work, not a guarantee
+of this recipe.
+
+A separate native `client:load` probe demonstrates why adding a client renderer
+to the container is not sufficient. The page control hydrates with an explicit
+policy for its build-owned bootstrap, but the fragment emits a source-file
+component path and a bare renderer specifier. Its first React counter does not
+work; a second successful server response leaves the preserved island showing
+the first title. See the [native contract](../tests/e2e/continuation/astro-islands.spec.ts).
+This remains an integration gap, not automatic hydration support.
+
+The finite page-owned native React recipe now has a separate
+[24-case native contract](../tests/e2e/continuation/astro-owner.spec.ts) on
+exact Astro 7.3.2 / `@astrojs/react` 6.0.6 / React 19.2.8. The unreleased
+PHD-05 core correction restores island events beside fragment work without
+duplicate fallback delivery. PHD-06 is application glue: a
+[page-owned store](../tests/fixtures/astro-react-owned/src/client/island-snapshots.ts.fixture)
+subscribes before the preview client starts, and React subscribes before reading
+the latest selected snapshot. Real delayed module loading, newer revisions,
+scope checks, abort, remount and native router disposal pass in three browsers.
+The recipe does not make raw inserted fragment islands interactive or turn
+package completion into a React commit signal. See
+[ADR 0020](architecture/0020-astro-page-owned-resources.md) for finite ownership
+and its limits. Do not substitute
+a dummy text binding or guessed hydration delay for the handoff.
+
+The fragment strategy accepts HTML from the registered trusted server renderer;
+it does not route that HTML through the rich-text sanitizer. Keep component and
+resource selection server-owned and escape editor values. A fragment-render
+event does not acknowledge a React commit. The measured recipe uses finite
+page-owned framework roots that explicitly consume island updates; do not
+execute scripts or resolve browser-selected modules from fragment responses.
+
 ### Next.js
 
 The same endpoint as an App Router route handler. `defineFragment()` pairs a
@@ -178,7 +311,7 @@ const endpoint = createFragmentEndpoint({
   registry: { hero: { component: Hero, props: ({ fields }) => heroProps(fields) } },
 });
 
-export default defineEventHandler((event) => endpoint(toWebRequest(event)));
+export default defineEventHandler((event) => endpoint(toWebRequest(event), event));
 ```
 
 Rendered with `renderToString()` from `vue/server-renderer`, one SSR app per
@@ -243,9 +376,35 @@ in whatever it does hand a handler — that is all either binding does.
   first render and forgotten again if that import failed, so a project that
   installs the peer afterwards is not answered from a stale failure. Pass
   `render` for another component system or for a test.
-- **Limits**: body 64 KiB and render timeout 5 s, configurable through
-  `limits` (`bodyBytes`, `timeoutMs`); field depth 12 is fixed. Every
-  response is `Cache-Control: private, no-store`.
+- **Limits**: the endpoint counts the bytes consumed from the request stream,
+  with a 64 KiB default cap. One 5 s deadline covers the complete body read;
+  props and rendering then receive separate 5 s windows. Configure these with
+  `limits` (`bodyBytes`, `timeoutMs`); field depth 12 is fixed. `Content-Length`
+  can refuse early but cannot bypass the streamed cap. Every response is
+  `Cache-Control: private, no-store`.
+- **Request lifetime**: set `limits.totalTimeoutMs` for one deadline covering
+  body reading, authorization, props and rendering together, for example
+  `limits: { totalTimeoutMs: 6000 }`. It is disabled by default and does not
+  replace the separate `timeoutMs` windows. Values must be positive safe
+  integers no greater than `2147483647`. The handler returns
+  `504 {"error":"timeout"}` at this deadline. A client abort after body reading
+  returns `400 {"error":"request"}`; a disconnected client may never receive
+  that response.
+- **Native HTTP/1 transport**: pass the whole SvelteKit event to its handler,
+  and the H3 event as the Nuxt handler's second argument. These bindings link
+  socket closure to the request lifetime, including after upload. An unread
+  body is paused without cancelling the host's response socket; the refusal
+  uses `Connection: close` so it can flush without draining an unbounded tail.
+  Fully consumed requests retain keep-alive. HTTP/2 and non-Node hosts use
+  their Web request's signal instead; a proxy must propagate disconnects to
+  its upstream connection for the server to observe them.
+- **Cooperative cancellation**: pass `input.signal` from props or a custom
+  renderer into fetches and other work that supports `AbortSignal`. The page
+  request passed to authorization follows the same lifetime. No following
+  phase starts after cancellation, and a late result is not accepted. Work
+  that ignores the signal can continue; synchronous code cannot be interrupted
+  by these timers. Host execution and concurrent-request limits are still
+  required for a hard resource bound.
 - **A render that throws** answers `500 {"error":"render"}` — the reason never
   leaves the server — and logs the boundary's id and the message once per
   process, outside production. Without that line a component that throws on
@@ -338,8 +497,9 @@ livePreview({
 ```
 
 A revision that changes a field no binding covers then refreshes the whole
-route, and the editor sees the edit. Where a binding exists the page is still
-patched in place, with focus and scroll intact.
+route. The built-in strategy reapplies every reachable binding; server-owned
+output stays saved unless the host renderer knows the unsaved revision. Where a
+binding exists the page is still patched in place, with focus and scroll intact.
 
 The same decision covers the other ways a patch falls short of the server's own
 render: a value no renderer can represent, and a Lexical block whose markup the
@@ -374,7 +534,7 @@ same findings, reported as `LP0411`, with the patch left where it is.
   `unfaithful` above `escalated` with both `handler`s `false` is a page that
   keeps degraded patches for want of a strategy.
 - Codes: `LP0801` request failed (network, timeout, or any non-2xx status
-  but 401/403 — the endpoint's own 400, 404, 405, 413, 415 and 500 too) · `LP0802`
+  but 401/403 — the endpoint's own 400, 404, 405, 408, 413, 415 and 500 too) · `LP0802`
   response invalid (type, shape, size, wrong boundary) · `LP0803` endpoint
   refused (401/403) · `LP0804` a late response for a superseded revision
   was discarded · `LP0805` a route refresh was refused by the loop guard ·
@@ -390,16 +550,24 @@ layout, route params, global providers. A binding there — anything in
 refresh**: the runtime fetches the current URL again (same cookies and
 query, header `x-payload-live-preview: route`), syncs `<title>`, `<meta>`
 and the canonical link, morphs `<body>` in place (islands and custom
-elements are boundaries it does not cross; focus, typed values and scroll
-survive), rescans, and re-applies the revision so the unsaved state lands on
-the fresh markup. The head sync mirrors the fresh document both ways: a
-named `<meta>` or the canonical `<link>` that the server no longer renders
-is removed, because the refresh is that server's own render of this URL.
+elements are boundaries it does not cross), rescans, and re-applies the
+revision so the unsaved state lands on the fresh markup. Compatible retained
+nodes keep their live properties, and a retained keyed move restores focus;
+replaced nodes lose their state. The head sync mirrors the fresh document both
+ways: a named `<meta>` or the canonical `<link>` that the server no longer
+renders is removed, because the refresh is that server's own render of this URL.
 Mark a tag your own script owns with `data-payload-owned` and the sync
 leaves it alone in both directions. At most one refresh per revision; a
 second request for the same revision, or one inside `minIntervalMs` (1 s) of
 the previous, is refused with `LP0805` and the elements are patched instead.
 A failed refresh (`LP0801`/`LP0802`) also falls back to patching.
+
+The GET and a registered host refresh receive no live-preview fields. The
+built-in strategy therefore reports `partial`: the runtime reapplies every
+binding it can reach, but conditional, derived, unbound, head, or other
+server-owned output may still reflect saved data. `refreshed` is reserved for
+a custom strategy that can assert its renderer knew the current unsaved
+revision. See [ADR 0018](architecture/0018-route-refresh-fidelity.md).
 
 The route strategy needs no endpoint: with `fragments` configured the
 injected prelude carries it (`createRouteStrategy()` from
@@ -423,7 +591,9 @@ once if any of its `data-payload-depends` (or, without it, any field)
 changed, the runtime `dependencies` option counts (a boundary depending on a
 derived field re-renders when its source changes), and the route refreshes
 once. `inspect().route` reports
-`{ handler, refreshes, failed, refused, loopStopped }`.
+`{ handler, refreshes, partial, failed, refused, loopStopped }`; `partial` is
+the successful subset whose renderer was not proven to know the current
+unsaved revision.
 
 The strategy refreshes at most once per `minIntervalMs` (1 000 ms). A request
 inside that window is not dropped: it is counted in `refused`, the page is

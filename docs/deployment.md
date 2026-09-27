@@ -50,8 +50,8 @@ preview answers every request with `Cache-Control: private, no-store`
 By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. Measured on the
-Next.js fixture, that is a 1 331-byte `<script>` element in the page instead
-of a 125 215-byte one — about one per cent, and more than the Astro row below
+Next.js fixture, that is a 1 367-byte `<script>` element in the page instead
+of a 137 552-byte one — about one per cent, and more than the Astro row below
 because a Next page's bootstrap also arms the wait for React's first commit
 before it fetches ([ADR 0015](architecture/0015-first-write-after-hydration.md)). On Next it is the second step down, not the first: a layout
 that can await the verdict renders `<LivePreviewScript />` and sends a public
@@ -98,7 +98,7 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The runtime is about 112 KB of JavaScript (about 35 KB gzip). The number that
+The runtime is about 125 KB of JavaScript (about 39 KB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
 rather than by the framework. Three outcomes, each held by an E2E case in
 `tests/e2e/specs/public-response.spec.ts` against the budgets in
@@ -107,17 +107,17 @@ preview intent. What that case pins to the byte is the delivery's overhead: the
 `<script>` element, tag included, minus the runtime it embeds. The runtime is
 gated on its own (`INLINE_BUDGET` in `scripts/bundle-budgets.ts`) and grows
 with the package, so the Bytes column is the whole element as this page was
-written: the pinned overhead, plus the 113 468-byte runtime in the two rows that
+written: the pinned overhead, plus the 124 919-byte runtime in the two rows that
 carry it.
 
 | Setup                                                  | A public visitor receives | Bytes          | Why                                                                               |
 | ------------------------------------------------------ | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
 | SvelteKit handle, Nuxt Nitro plugin, Astro middleware  | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
 | Next.js, `<LivePreviewScript />` in the root layout    | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
-| Next.js, `delivery: 'asset'`                           | the bootstrap             | 1 331, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
-| Astro static build, `mode: 'loader'`                   | the bootstrap             | 772            | a static page has no request to decide for, so the check happens in the browser   |
-| Astro static build, `mode: 'inline'`                   | the whole runtime         | 113 604        | nothing decides and nothing is deferred                                           |
-| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 125 215, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
+| Next.js, `delivery: 'asset'`                           | the bootstrap             | 1 367, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
+| Astro static build, `mode: 'loader'`                   | the bootstrap             | 792            | a static page has no request to decide for, so the check happens in the browser   |
+| Astro static build, `mode: 'inline'`                   | the whole runtime         | 125 075        | nothing decides and nothing is deferred                                           |
+| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 137 552, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
 
 The last row is the one exception to "no cookie, no preview intent": no fixture
 serves it to the public any longer, because the Next example moved to the second
@@ -136,7 +136,7 @@ visitor to a statically built site pays under one per cent of what the inline
 build costs them, and a visitor to a site whose server decides pays nothing at
 all.
 
-772 bytes is the floor of this table, and it is not zero. A page built ahead of
+792 bytes is the floor of this table, and it is not zero. A page built ahead of
 time has no request to decide for, so the check has to travel with the page;
 `mode: 'loader'` is the one delivery here that cannot reach zero, and saying so
 is more useful than a smaller number that stops being true the moment somebody
@@ -303,14 +303,15 @@ The runtime binds a document. Three kinds of navigation change what that means:
   body on its own.
 - **Soft navigation inside the body.** View Transitions and client routers
   (Astro's client router, the Next.js, SvelteKit and Nuxt routers) replace
-  parts of the body without a load. The runtime's mutation observer sees
-  bindings appear and vanish and rebuilds the cache after a 100 ms debounce.
-  The inline runtime binds no router event — only the host knows which its
-  router fires — so a page that needs an immediate rebuild calls
-  `__livePreview.refresh()` from its router's after-navigation hook, or
-  passes `softNavigationEvents: ['astro:page-load']` to
-  `bindNavigationLifecycle` when it drives the client itself.
+  parts of the body without a load. Adapter-generated scripts listen for the
+  commit event their integration declares: Astro uses its ClientRouter events,
+  while the Next.js, SvelteKit and Nuxt guides install a small host bridge for
+  the package's navigation event. A hand-written integration can call
+  `__livePreview.refreshAfterNavigation()` after its router commits or pass
+  `softNavigationEvents` to `bindNavigationLifecycle`. Plain `refresh()` only
+  rescans bindings and does not cross a navigation boundary.
 
-While suspended the runtime receives nothing. On restore it sends the `ready`
-handshake again and the admin answers with the current document, so the page
-catches up without an editor's keystroke.
+While suspended the runtime receives nothing. On restore it locally reapplies
+the last fully accepted document, provided the heartbeat deadline did not
+expire, then sends a best-effort `ready` handshake. An expired session forgets
+that snapshot instead of writing stale editor state.

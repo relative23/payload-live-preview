@@ -73,6 +73,11 @@ does not have. `disableReferrerDetection` is `true` everywhere under `'v2'`;
 the localhost matcher is a separate option (`disableLocalhostMatching`), and
 the readiness label and docs/migration.md say "referrer trust off".
 
+2026-09-22 (2.1): `isMorphBoundary` moves from `@internal` to `@beta` with
+`MorphOptions.boundary`, so coordinators can extend the package rule without
+copying it. Row 15's dated `/structural` count is now 14; the recorded count
+stays in the ledger as the baseline it was on 2026-09-19.
+
 ## Addendum — what `pll migrate` automates
 
 Four ledger entries have codemods: 1 (`rename-is-preview-request`), 7

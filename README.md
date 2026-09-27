@@ -10,7 +10,7 @@
 
 > **Live preview for Payload CMS on server-rendered and static sites** — Astro, Next.js, SvelteKit, Nuxt and plain HTML.
 
-The official live-preview packages are React and Vue hooks: they re-render a hydrated component tree, so they cannot touch markup a server produced. This package makes the admin's real-time preview work where no client framework owns the page. Mark what should update — one attribute per component on a server-rendered page with a fragment endpoint, per field on a static one — and edits reach the preview iframe as the editor types: bound elements are patched in place, fragment boundaries are rendered again by your server. No rebuild, no reload. A client-rendered app gets React and Vue hooks with the same merge underneath. Strict by default, zero runtime dependencies.
+Payload publishes the framework-independent `@payloadcms/live-preview` client and the official `@payloadcms/live-preview-react` and `@payloadcms/live-preview-vue` wrappers. Those hooks feed a hydrated component tree; they do not own server markup outside that tree. This package covers that markup. Mark one boundary per server-rendered component, or individual fields on a static page, and edits reach the iframe as the editor types. Scalar patches and successful fragment renders need neither a rebuild nor a full-page reload; a route-level change uses the configured route refresh. Client-rendered apps can instead use this package's React or Vue entry. Its v2 sanitizer and request-time policy defaults are strict; static delivery has no request to authorize. The package has no direct dependencies; framework entries use optional peers.
 
 One runtime serves every framework, and every framework adapter's example app runs end to end in Chromium, Firefox and WebKit on every push to `main` and on pull requests. Astro has the most coverage: the widest version matrix (4.x to 7.x), the only end-to-end tests against a real Payload admin, the `RichText` and `PreviewBoundary` components, and the annotator as a Vite plugin (`pll-codegen annotate` itself also reads `.jsx`, `.tsx` and `.svelte`).
 
@@ -18,7 +18,7 @@ One runtime serves every framework, and every framework adapter's example app ru
 
 ## Highlights
 
-- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 35 KB gzip — 28 KB with the lean artifact, 38 to 40 KB once the route or fragment prelude is appended ([docs/options.md](docs/options.md)). The adapters for Astro, Next.js, SvelteKit and Nuxt deliver it; where they decide per request they also authorize the request, merge `frame-ancestors` into your CSP and mark the changed response `private, no-store`. They provide the fragment endpoint and, outside Astro, the route that serves the runtime asset.
+- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 38 KB gzip — 31 KB with the lean artifact, 40 to 42 KB once the route or fragment prelude is appended ([docs/options.md](docs/options.md)). The adapters for Astro, Next.js, SvelteKit and Nuxt deliver it; where they decide per request they also authorize the request, merge `frame-ancestors` into your CSP and mark the changed response `private, no-store`. They provide the fragment endpoint and, outside Astro, the route that serves the runtime asset.
 - **Patch, fragment, route.** A binding is patched in place; a `data-payload-fragment` boundary is rendered again by your server from the unsaved form state; a patch that fell short, or a change nothing binds, goes to the fragment render or a route refresh when the page has one ([below](#patch-fragment-route)).
 - **Delivery.** Inline, or a bootstrap that fetches the content-hashed, SRI-verified runtime only inside a preview (`delivery: 'asset'`; Astro's static equivalent is `mode: 'loader'`). Where something decides per request — Astro's middleware, `<LivePreviewScript />` in Next.js, the SvelteKit handle, the Nuxt Nitro plugin — a public visitor receives no script at all ([docs/deployment.md](docs/deployment.md#what-a-public-visitor-pays)).
 - **Payload 3.x native.** `serverURL` re-fetches the populated document, like the official client, so relationship and upload fields render as content rather than as IDs — but only when an edit needs one: in the DOM runtime, typing into a text field costs no request, and a burst on a relationship costs two requests, at its start and its end, rather than one per keystroke.
@@ -71,11 +71,54 @@ The framework hooks and fragment renderers run twice on every push: at the floor
 npm install payload-live-preview
 ```
 
-Three entries cover most projects. The root `payload-live-preview` carries the client, the inline script generator, the renderers and four of the five built-in plugins; the unbound-fields overlay and `PluginManager` are on `payload-live-preview/plugins`. `payload-live-preview/astro`, `/nextjs`, `/sveltekit` and `/nuxt` hold one framework adapter each; `/nuxt-module` registers the Nuxt one from `nuxt.config.ts`, and since it cannot carry `authorizePreview` it needs `defaults: 'v1'` or `strict: false` ([docs/nuxt.md](docs/nuxt.md)). `payload-live-preview/server` is the privileged surface for server code: `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()` and `createPreviewBindings()`. The focused entries (`core`, `client`, `lexical`, `structural`, `plugins`, `fragment`, `lean`, `payload`, `codegen`, `codegen/astro`, `annotate`, `doctor`, `migrate`) are listed in [docs/options.md](docs/options.md).
+The root `payload-live-preview` carries the client, the inline script generator, the renderers and four of the five built-in plugins; the unbound-fields overlay and `PluginManager` are on `payload-live-preview/plugins`. `payload-live-preview/plugin` configures Payload's root Live Preview panel, while `/payload` keeps the lower-level URL builder. `payload-live-preview/astro`, `/nextjs`, `/sveltekit` and `/nuxt` hold one framework adapter each; `/nuxt-module` registers the Nuxt one from `nuxt.config.ts`, and since it cannot carry `authorizePreview` it needs `defaults: 'v1'` or `strict: false` ([docs/nuxt.md](docs/nuxt.md)). `payload-live-preview/server` is the privileged surface for server code: `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()` and `createPreviewBindings()`. Every focused entry is listed in [docs/options.md](docs/options.md).
 
 ## Configure Payload
 
-Enable live preview in `payload.config.ts`. The `url` callback maps the edited document to the frontend URL shown in the preview iframe; `buildLivePreviewUrl` replaces the usual lookup-table boilerplate:
+The config plugin enables mapped collections and globals, installs their shared
+URL callback and can set the toolbar breakpoints. It is structural across
+Payload 2.32.3 and 3.x and imports neither version:
+
+```ts
+import { livePreview } from 'payload-live-preview/plugin';
+
+export default buildConfig({
+  plugins: [
+    livePreview({
+      baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:4321',
+      collections: {
+        posts: ({ data }) => `/blog/${String(data['slug'] ?? '')}`,
+        services: ({ data, locale }) => `/${locale ?? 'en'}/services/${String(data['slug'] ?? '')}`,
+      },
+      globals: {
+        homepage: '/',
+      },
+      breakpoints: [
+        { label: 'Mobile', name: 'mobile', width: 375, height: 667 },
+        { label: 'Desktop', name: 'desktop', width: 1440, height: 900 },
+      ],
+    }),
+  ],
+});
+```
+
+Existing root collection/global lists are kept in order and deduplicated with
+the mappings. Existing breakpoints stay when the option is omitted; supplying
+it replaces the list. A competing root URL or a URL on a selected entity that
+already exists when this transform runs is a configuration error. Make this
+transform run after any plugin that may write a Live Preview URL in Payload's
+effective execution order, or compose both routing policies explicitly. The
+complete merge and conflict rules are in [docs/payload.md](docs/payload.md).
+
+Payload 3.89 does not evaluate a function-valued Live Preview URL while a new
+collection document is still in its initial create state. Because this plugin
+needs one function to route several entities, that iframe becomes available
+after the document's first save. If the create screen itself needs a preview,
+omit that collection from the plugin mapping and configure its own string URL
+manually.
+
+Use the lower-level callback when another plugin owns the surrounding config or
+when a document may have no preview route:
 
 ```ts
 import { buildLivePreviewUrl } from 'payload-live-preview/payload';
@@ -86,8 +129,9 @@ export default buildConfig({
       url: buildLivePreviewUrl({
         baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:4321',
         collections: {
-          posts: ({ data }) => `/blog/${String(data.slug ?? '')}`,
-          services: ({ data, locale }) => `/${locale}/services/${String(data.slug ?? '')}`,
+          posts: ({ data }) => `/blog/${String(data['slug'] ?? '')}`,
+          services: ({ data, locale }) =>
+            `/${locale ?? 'en'}/services/${String(data['slug'] ?? '')}`,
         },
         globals: {
           homepage: '/',
@@ -105,9 +149,14 @@ export default buildConfig({
 });
 ```
 
-The helper appends `?preview=true`, one of the query parameters (`preview`, `draft`, `livePreview`) the adapters read as preview intent. The parameter is client-controlled: it selects delivery and never authorizes draft access. A hand-written `url: ({ data, locale, collectionConfig, globalConfig }) => string` callback works the same way; the [official docs](https://payloadcms.com/docs/live-preview/overview) have the full contract. A resolver may return `null` for a document without a route, and `fallback: null` declines every unmapped one; Payload then shows no iframe.
+The helper appends `?preview=true`, one of the query parameters (`preview`, `draft`, `livePreview`) the adapters read as preview intent. The parameter is client-controlled: it selects delivery and never authorizes draft access. A hand-written `url: ({ data, locale, collectionConfig, globalConfig }) => string` callback works the same way; the [official docs](https://payloadcms.com/docs/live-preview/overview) have the full contract. The helper's nullable overload lets a resolver return `null` for a document without a route, and `fallback: null` declines every unmapped one; Payload 3 then shows no iframe. Payload 2.32.3's published callback result is string-only, so use the non-null overload and a string fallback there. The config plugin deliberately stays inside that common contract.
 
-To verify the iframe request without a session cookie crossing origins, mint a short-lived token inside the `url` callback with `issuePreviewToken()` and check it in the adapter with the `signed-token` strategy. [docs/authorization.md](docs/authorization.md) shows both sides, the `payload-session` and `verifier` strategies, and the initial draft read.
+The config plugin accepts no signing secret or token option. Where no session
+cookie crosses origins, the manual `signed-token` URL callback is a Payload 3
+server-side integration only; never put its secret in a Payload 2 callback.
+[docs/authorization.md](docs/authorization.md) explains that boundary, the
+open multi-request token lifecycle, the `payload-session` and `verifier`
+strategies, and the initial draft read.
 
 ## Quick start
 
@@ -142,7 +191,7 @@ Then mark what should update. On a server-rendered page that is one attribute pe
 
 The attribute needs a renderer behind it: a route exporting `createFragmentEndpoint()` with `authorizePreview` or `authorize`, served at request time (an SSR adapter, `prerender = false` on that route), and its path in the options above as `fragments: { endpoint: '/payload/fragment' }` ([docs/hybrid.md](docs/hybrid.md)). Without `fragments` the bindings inside the boundary are patched instead (`LP0806`), and a boundary with none inside does not update.
 
-On a static build there is no server to render it, so the fields are bound individually — and inside a boundary too, for the ones an editor types into while watching, because a patch keeps focus and the caret where a re-render would not:
+On a static build there is no server to render it, so the fields are bound individually — and inside a boundary too. A direct patch retains the target element. A component render or fragment morph can retain it as well when type, key and position stay compatible, but may replace it when they do not:
 
 ```astro
 <h1 data-payload-field="title">{title}</h1>
@@ -163,7 +212,7 @@ That is it: the inline script detects the admin's iframe and starts patching. Ri
 
 ## Patch, fragment, route
 
-A binding is patched in place by default. A `data-payload-fragment` boundary is rendered by your server from the unsaved form state instead — conditional sections, derived values, custom blocks, the component's own logic — and morphed in with focus and visitor state intact; the runtime posts the fields to the same-origin endpoint named in `fragments: { endpoint }`, built with `createFragmentEndpoint()`, which every adapter entry exports — Astro renders through its container API, Next.js through `react-dom/server`, SvelteKit through `svelte/server`, Nuxt through `vue/server-renderer` — and patches the boundary's own bindings when the server cannot render. With `routeStrategy: true` or `fragments` set, a binding in `<head>`, or one marked `data-payload-strategy="route"`, refreshes the whole route once per revision with scroll and focus kept; without either it is patched like any other. The route is matched by top-level field name, so a dotted binding such as `meta.title` refreshes it only with `data-payload-depends="meta"`. Markup, endpoint, deployment requirements and the abuse model: [docs/hybrid.md](docs/hybrid.md).
+A binding is patched in place by default. A `data-payload-fragment` boundary is rendered by your server from the unsaved form state instead — conditional sections, derived values, custom blocks, the component's own logic — and morphed into the page. Compatible retained nodes keep their focus and live properties; a node that changes kind, loses its pairing or crosses an ownership boundary is replaced and loses that state. The runtime posts the fields to the same-origin endpoint named in `fragments: { endpoint }`, built with `createFragmentEndpoint()`, which every adapter entry exports — Astro renders through its container API, Next.js through `react-dom/server`, SvelteKit through `svelte/server`, Nuxt through `vue/server-renderer` — and patches the boundary's own bindings when the server cannot render. With `routeStrategy: true` or `fragments` set, a binding in `<head>`, or one marked `data-payload-strategy="route"`, refreshes the whole route once per revision. The route morph follows the same retention rule and restores focus after a retained keyed move; it does not promise state for replaced nodes. Without either strategy the binding is patched like any other. The route is matched by top-level field name, so a dotted binding such as `meta.title` refreshes it only with `data-payload-depends="meta"`. Markup, endpoint, deployment requirements and the abuse model: [docs/hybrid.md](docs/hybrid.md).
 
 ## Events and plugins
 
@@ -204,6 +253,7 @@ The reading path, with a glossary: [docs/README.md](docs/README.md).
 
 - Framework guides: [Astro](docs/astro.md) · [Next.js](docs/nextjs.md) · [SvelteKit](docs/sveltekit.md) · [Nuxt](docs/nuxt.md) · [Plain HTML](docs/html.md) · [React hook](docs/react.md) · [Vue composable](docs/vue.md)
 - [docs/bindings.md](docs/bindings.md) — data attributes, field types, owners, typed bindings and codegen
+- [docs/payload.md](docs/payload.md) — Payload 2/3 config plugin, merge rules and URL conflicts
 - [docs/options.md](docs/options.md) — package entries, every option and its default, Payload 3.x population
 - [docs/authorization.md](docs/authorization.md) — strategies, signed tokens, the initial draft read
 - [docs/hybrid.md](docs/hybrid.md) — patch, fragment and route

@@ -414,8 +414,29 @@ useEffect(() => {
 }, []);
 ```
 
+An Astro island keeps its `ssr` attribute until hydration has installed the
+component listeners. The runtime holds the current snapshot while that marker
+is present and dispatches it when Astro removes the marker. If another document
+is accepted first, the newly hydrated island receives that newer snapshot.
+
+There is no equivalent readiness signal for a generic
+`data-payload-island`. Its event listener must be installed before the first
+live-preview update that it needs to observe. A component that cannot make that
+guarantee should listen to Payload's window messages through its framework
+integration instead; adding the marker alone does not buffer events for a late
+listener.
+
+With `scopeBindingsByOwner` enabled, the event reaches only an island root
+owned by the document named in the update. Foreign and unowned islands receive
+nothing. During navigation replay, changing an island's live
+`data-payload-owner` marker to the current document replays the retained
+snapshot once; owner markers have no replay effect while scoping is off.
+
 An island that uses Payload's official `useLivePreview` hook needs nothing
 from the bridge: the admin's `postMessage` reaches the window the island
 lives in, and this runtime keeps its hands off the island's DOM. An island
-that wants the runtime's patching after all opts in with
-`data-payload-island="patch"` and receives no event.
+that wants direct binding writes after all opts in with
+`data-payload-island="patch"` and receives no event. On an ordinary element,
+that value also lets the keyed morph enter. It does not override another morph
+boundary: an `astro-island` custom element still owns its subtree under the
+separate custom-element rule.

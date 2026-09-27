@@ -2,7 +2,7 @@
 
 Real-time live preview between the Payload admin and an Astro frontend: edit in the CMS, watch the iframe update. This guide goes from an empty project to a working preview and covers the three ways the runtime reaches a page.
 
-> A hydrated React or Vue app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` hooks. This guide is for Astro and every other server-rendered or static frontend, where those hooks do not apply.
+> Payload's framework-independent [`@payloadcms/live-preview`](https://payloadcms.com/docs/live-preview/client) client powers its official React and Vue wrappers. Use a framework hook where a hydrated client tree owns the output. This guide covers Astro markup outside such a tree; an Astro page may use both.
 
 ## How it works
 
@@ -12,7 +12,7 @@ Payload admin (iframe parent)                 Astro page (iframe)
                                                 bound DOM node in place
 ```
 
-Elements carry `data-payload-field="…"`. The injected runtime detects that it runs inside the admin's preview iframe, listens for the admin's `postMessage` updates and writes them into the DOM. No rebuild, no reload, no client framework.
+Elements carry `data-payload-field="…"`. The injected runtime detects that it runs inside the admin's preview iframe, listens for the admin's `postMessage` updates and writes them into the DOM. A scalar patch needs no rebuild, full-page reload or client framework. Fragment and route strategies can make a server or router request when a patch cannot represent the change.
 
 Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to, `PREVIEW_TOKEN_SECRET` the secret shared with the Payload side for signed tokens.
 
@@ -94,7 +94,9 @@ stay correct without naming a single field. It needs the endpoint from
 
 A static build has no server at request time, so there the fields are bound
 individually — and inside a boundary as well, for the ones an editor types into
-while watching: a patch keeps focus and the caret, a re-render does not.
+while watching. A direct patch keeps the target element. A component render or
+fragment morph also retains state when it keeps that node, but a changed type,
+key or position can replace it.
 
 ```astro
 ---
@@ -219,7 +221,7 @@ Wrap such a component in a `data-payload-fragment` boundary, export an endpoint 
 ## Gotchas
 
 - **Empty fields need an anchor.** If you render a binding only when the field is non-empty, editing a previously-empty field has nowhere to land. Render the node unconditionally (`<div data-payload-field="subtitle">{subtitle ?? ''}</div>`) or use `PreviewBoundary`.
-- **Client islands.** Bind fields in server-rendered regions. A hydrated island that re-renders a bound node overwrites the live patch; mark its root with `data-payload-island` so the runtime never patches or morphs into it ([renderers.md](renderers.md)).
+- **Client islands.** Bind fields in server-rendered regions. A hydrated island that re-renders a bound node overwrites the live patch; mark its root with `data-payload-island` so the runtime never patches or morphs into it. Native `<astro-island>` roots are also boundaries. While Astro keeps their `ssr` marker, the runtime holds the current snapshot and sends it after hydration removes the marker ([renderers.md](renderers.md#islands)).
 - **`Referrer-Policy: no-referrer`** on the admin breaks zero-config origin detection. Set `allowedOrigins` explicitly (you already do).
 - **`serverURL` credentials.** Browser-side REST merging uses `credentials: 'include'`; Payload still has to authorize that request. The initial server-side draft read forwards only the credentials the verified context carries.
 
