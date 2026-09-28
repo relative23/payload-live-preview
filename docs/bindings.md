@@ -330,6 +330,9 @@ collection. Enforcement is the `scopeBindingsByOwner` option
   by that document; a foreign or unowned outer boundary is not used even when
   it contains a nested binding that is in scope;
 - an island update event is sent only to island roots owned by that document;
+- a route marker or a route binding asks for a route refresh only inside that
+  document; a custom `RouteStrategy.plan` receives `context.inScope(element)`
+  as its third argument to make the same decision;
 - a binding without an owner is never updated;
 - an exact `collection:<slug>:<id>` marker stays unreachable while the message
   carries no document id;

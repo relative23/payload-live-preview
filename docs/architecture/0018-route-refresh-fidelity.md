@@ -70,3 +70,20 @@ every server-derived part of the document is current.
   `partial` member when upgrading to 2.1.
 - A future bounded snapshot transport or preview session remains additive. It
   must not silently turn this partial contract into a full-current claim.
+
+## Owner-scoped route planning (2026-09-28)
+
+Under `scopeBindingsByOwner` an update reaches only what the document it names
+owns, but the route planner still received the whole page: a
+`data-payload-strategy="route"` marker or a route binding another document
+owns asked for a refresh of this document's edit, one more request of the
+route for nothing the editor could see (PHD-02). `RouteStrategy.plan` now
+receives a third argument, a `RoutePlanContext` whose `inScope(element)` says
+whether an element belongs to the update; it is `true` everywhere while
+scoping is off. `createRouteStrategy()` skips markers outside the scope, and
+the runtime's own route-binding check applies the same owner rule. A planner
+with two parameters keeps working and plans for markers of every document, as
+before. The late-binding path already checked owners.
+`tests/unit/core/route-owner-scope.test.ts` and
+`tests/e2e/specs/route-owner-scope.spec.ts` pin it; the native case asked for
+one route request on the previous source in three browsers and none now.

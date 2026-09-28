@@ -23,7 +23,7 @@ export type StrategyRunnerLike = Pick<
   | 'planFragments'
   | 'escalateUnfaithful'
   | 'hasUnboundChange'
-  | 'hasRouteBinding'
+  | 'plansRoute'
   | 'runFragments'
   | 'refreshRoute'
   | 'warnFragmentFallback'
@@ -54,7 +54,7 @@ export function createLeanStrategyRunner(
       for (const fieldName of unbound) reportUnboundChange(state, fieldName);
       return false;
     },
-    hasRouteBinding: (): boolean => false,
+    plansRoute: (): boolean => false,
     runFragments: (): Promise<void> => Promise.resolve(),
     // A page that carries a route prelude anyway (it can be injected by hand)
     // still gets no refresh here: this runtime has no code for one.

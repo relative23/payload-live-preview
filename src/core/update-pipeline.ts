@@ -362,10 +362,7 @@ export class UpdatePipeline {
       !lateBindings &&
       route !== undefined &&
       !transaction.routeRefreshed &&
-      (unbound ||
-        owed ||
-        route.plan(deps.root, touched) ||
-        this.strategies.hasRouteBinding(touched)) &&
+      (unbound || owed || this.strategies.plansRoute(route, touched, ownerKeys)) &&
       isCurrent()
     ) {
       state.routeRefreshOwed = false;

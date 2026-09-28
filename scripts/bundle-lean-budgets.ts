@@ -111,4 +111,5 @@
 // measured +167/+105/+118 B; retain 13/7/120 B cushions.
 // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+9/-28 B; same 13/7/120 B cushions.
 // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +193/+51/+28 B; same 13/7/120 B cushions.
-export const INLINE_LEAN_BUDGET = { raw: 102_580, gzip: 32_066, brotli: 28_396 } as const;
+// 2026-09-29 (PHD-02, owner-scoped route planning): measured -24/-11/-1 B; same 13/7/120 B cushions.
+export const INLINE_LEAN_BUDGET = { raw: 102_556, gzip: 32_055, brotli: 28_395 } as const;

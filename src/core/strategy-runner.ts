@@ -175,10 +175,21 @@ export class StrategyRunner {
   }
 
   /** Whether a touched field is bound to an element the route owns. */
-  hasRouteBinding(touched: ReadonlySet<string>): boolean {
+  /**
+   * Whether the route is asked for, by the strategy's planner or by a route
+   * binding of a touched field, each only inside the update's owner scope: a
+   * marker another document owns is that document's business (PHD-02).
+   */
+  plansRoute(route: RouteStrategy, touched: ReadonlySet<string>, ownerKeys: OwnerScope): boolean {
+    const owned = (owner: string | undefined): boolean =>
+      ownerKeys === false || isBindingInScope(owner, ownerKeys);
+    const inScope = (element: Element): boolean => owned(resolveBindingOwner(element));
+    if (route.plan(this.deps.root, touched, { inScope })) return true;
     for (const [fieldName, bindings] of this.deps.cache.entries()) {
       if (!touched.has(fieldName)) continue;
-      if (bindings.some((target) => target.strategyKind === 'route')) return true;
+      if (bindings.some((target) => target.strategyKind === 'route' && owned(target.owner))) {
+        return true;
+      }
     }
     return false;
   }

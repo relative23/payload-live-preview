@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 400,
-    "suites": 783,
-    "tests": 3559,
+    "files": 402,
+    "suites": 787,
+    "tests": 3569,
     "benchmarks": 12
   },
   "groups": {
@@ -38,9 +38,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 42,
-      "suites": 48,
-      "tests": 195,
+      "files": 43,
+      "suites": 49,
+      "tests": 197,
       "benchmarks": 0
     },
     "integration": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 325,
-      "suites": 694,
-      "tests": 3243,
+      "files": 326,
+      "suites": 697,
+      "tests": 3251,
       "benchmarks": 0
     }
   },
@@ -330,6 +330,13 @@
     },
     {
       "path": "tests/e2e/specs/root-replacement.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/route-owner-scope.spec.ts",
       "group": "e2e",
       "suites": 1,
       "tests": 2,
@@ -1572,6 +1579,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/route-owner-scope.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 8,
       "benchmarks": 0
     },
     {

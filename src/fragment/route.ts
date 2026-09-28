@@ -125,11 +125,11 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
   let lastRefreshAt = -Infinity;
 
   return {
-    plan(root, changedFields) {
+    plan(root, changedFields, context) {
       for (const element of root.querySelectorAll(
         `[${FIELD_ATTRIBUTE}], [${STRATEGY_ATTRIBUTE}="route"]`,
       )) {
-        if (!isRouteBound(element)) continue;
+        if (!isRouteBound(element) || context?.inScope(element) === false) continue;
         const fields = fieldsOf(element);
         if (fields.length === 0 || fields.some((field) => changedFields.has(field))) return true;
       }

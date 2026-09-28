@@ -492,7 +492,8 @@
 // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1991/+611/+489 B; same 10/5/120 B cushions.
 // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+151/+144 B; same 10/5/120 B cushions.
 // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+7/+39 B; same 10/5/120 B cushions.
-export const INLINE_BUDGET = { raw: 128_541, gzip: 40_254, brotli: 35_406 } as const;
+// 2026-09-29 (PHD-02, owner-scoped route planning): measured +75/+41/-6 B; same 10/5/120 B cushions.
+export const INLINE_BUDGET = { raw: 128_616, gzip: 40_295, brotli: 35_400 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

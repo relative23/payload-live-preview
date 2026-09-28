@@ -97,13 +97,29 @@ export interface RouteContext {
  */
 export type RouteOutcome = 'refreshed' | 'partial' | 'failed' | 'refused' | 'superseded';
 
+/** What the runtime tells a route planner about the update it plans for. */
+export interface RoutePlanContext {
+  /**
+   * Whether an element belongs to the update: always `true` without
+   * `scopeBindingsByOwner`, otherwise only inside the document the update
+   * names. A marker outside it asks for nothing.
+   */
+  readonly inScope: (element: Element) => boolean;
+}
+
 /**
  * Whether a revision needs the whole route re-rendered, and how. After a
  * refresh the runtime rescans and re-applies the revision, so reachable
- * unsaved bindings land on the fresh markup.
+ * unsaved bindings land on the fresh markup. The runtime always passes
+ * `context`; a planner written before it existed still works, but plans for
+ * markers of every document.
  */
 export interface RouteStrategy {
-  readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
+  readonly plan: (
+    root: ParentNode,
+    changedFields: ReadonlySet<string>,
+    context?: RoutePlanContext,
+  ) => boolean;
   readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 

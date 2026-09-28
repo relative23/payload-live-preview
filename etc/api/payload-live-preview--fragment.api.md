@@ -237,9 +237,14 @@ export interface RouteContext {
 export type RouteOutcome = 'refreshed' | 'partial' | 'failed' | 'refused' | 'superseded';
 
 // @public
+export interface RoutePlanContext {
+    readonly inScope: (element: Element) => boolean;
+}
+
+// @public
 export interface RouteStrategy {
     // (undocumented)
-    readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
+    readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>, context?: RoutePlanContext) => boolean;
     // (undocumented)
     readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }

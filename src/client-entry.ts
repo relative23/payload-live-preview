@@ -59,6 +59,7 @@ export type {
   FragmentStrategy,
   RouteContext,
   RouteOutcome,
+  RoutePlanContext,
   RouteStrategy,
   StrategyHandlers,
   UpdateSource,

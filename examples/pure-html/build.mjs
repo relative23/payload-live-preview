@@ -24,6 +24,13 @@ const inline = generateInlineScript(options);
 // The lean artifact: same options, fewer features baked in. `lean.html` is what
 // `tests/e2e/specs/lean-profile.spec.ts` measures and drives.
 const lean = generateInlineScript({ ...options, runtime: LEAN_RUNTIME });
+// Two documents and the route strategy: an update reaches only what the
+// document it names owns, the route included (`route-owner-scope.spec.ts`).
+const ownersRoute = generateInlineScript({
+  ...options,
+  scopeBindingsByOwner: true,
+  routeStrategy: true,
+});
 
 const shell = (title, body, script = inline) =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title>` +
@@ -45,10 +52,27 @@ const leanBody =
   '<ul data-payload-field="tags" data-payload-type="array" ' +
   'data-payload-array-template="<li>{{value}}</li>" data-testid="tags"><li>one</li></ul>';
 
+// `teaser` asks for the route only on the edited document's side; `title` only
+// on the other document's side.
+const ownersRouteBody =
+  '<section data-payload-owner="global:home" data-testid="home">' +
+  '<h1 data-payload-field="title" data-testid="title">Hello</h1>' +
+  '<p data-payload-field="teaser" data-testid="teaser">teaser</p>' +
+  '<aside data-payload-strategy="route" data-payload-depends="teaser">home route</aside>' +
+  '</section>' +
+  '<section data-payload-owner="global:other" data-testid="other">' +
+  '<aside data-payload-strategy="route" data-payload-depends="title">other route</aside>' +
+  '</section>';
+
 await mkdir(dist, { recursive: true });
 await writeFile(join(dist, 'index.html'), shell('Pure HTML preview', indexBody), 'utf8');
 await writeFile(join(dist, 'reveal.html'), shell('Reveal fixture', revealBody), 'utf8');
 await writeFile(join(dist, 'lean.html'), shell('Lean profile', leanBody, lean), 'utf8');
 await writeFile(join(dist, 'full.html'), shell('Full profile', leanBody), 'utf8');
+await writeFile(
+  join(dist, 'owners-route.html'),
+  shell('Owners and the route', ownersRouteBody, ownersRoute),
+  'utf8',
+);
 await copyFile(join(here, 'admin.html'), join(dist, 'admin.html'));
 console.log(`pure-html built to dist/ (inline ${inline.length} bytes, lean ${lean.length} bytes)`);
