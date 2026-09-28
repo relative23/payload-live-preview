@@ -464,3 +464,16 @@ own props handoff carries later revisions. The page still owns the island
 runtime and the catalog's CSS, and no module name or resource URL enters the
 fragment protocol. The page-owned recipe above remains valid for islands the
 page renders outside its fragments.
+
+## Package live region under a strict style policy (2026-09-28)
+
+The strict-CSP limitation recorded under Decision is removed (PHD-03). The
+package's fallback live region and the unbound-fields overlay set their fixed
+declarations through `element.style` instead of a `style` attribute. A
+`style-src 'self'` policy refuses the attribute, not declarations made through
+the CSSOM. `tests/e2e/specs/strict-style-csp.spec.ts` serves the plain-HTML and
+vanilla-client pages with that policy: the region is absolute, one pixel wide
+and clipped, the overlay is fixed and styled, and neither reports a style
+violation, in Chromium, Firefox and WebKit; a `style` attribute set the old way
+is refused and reported there. The reference's declared region stays supported
+and is adopted as before.

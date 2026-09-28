@@ -124,21 +124,22 @@ export const ATTRIBUTE_SINKS: ReadonlyMap<string, AttributeSinkJustification> = 
   // Development furniture: the live region and the unbound-fields overlay,
   // styled from this package's own constants; `position` is the plugin's own
   // option, and a consumer's CSS on a consumer's page is not a wire value.
-  ["src/core/a11y.ts::element.setAttribute('style', STYLE)", 'constant'],
+  // Written through the CSSOM, which a strict `style-src` does not refuse (PHD-03).
+  ['src/core/a11y.ts::element.style.cssText = STYLE', 'constant'],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::field.setAttribute('style', 'position:fixed;opacity:0;pointer-events:none;')",
+    "src/plugins/built-in/unbound-fields-overlay.ts::field.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'",
     'constant',
   ],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::button.setAttribute('style', BUTTON_STYLE)",
+    'src/plugins/built-in/unbound-fields-overlay.ts::button.style.cssText = BUTTON_STYLE',
     'constant',
   ],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::panel.setAttribute('style', PANEL_STYLE + position)",
+    'src/plugins/built-in/unbound-fields-overlay.ts::panel.style.cssText = PANEL_STYLE + position',
     'constant',
   ],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::title.setAttribute('style', 'font-weight:600;margin-bottom:4px;')",
+    "src/plugins/built-in/unbound-fields-overlay.ts::title.style.cssText = 'font-weight:600;margin-bottom:4px;'",
     'constant',
   ],
 ]);

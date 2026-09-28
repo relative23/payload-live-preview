@@ -345,6 +345,22 @@ describe('A11yAnnouncer — element mounting', () => {
     announcer.detach();
   });
 
+  it('styles the region through the CSSOM, which a strict style-src does not refuse', () => {
+    // `setAttribute('style')` is an inline style attribute to a CSP that
+    // refuses them (PHD-03); declarations set through `element.style` are not.
+    const setAttribute = vi.spyOn(Element.prototype, 'setAttribute');
+    const announcer = new A11yAnnouncer('en');
+    announcer.announceConnected();
+    const element = document.getElementById(ID)!;
+    expect(setAttribute.mock.calls.map(([name]) => name)).not.toContain('style');
+    expect(element.style.position).toBe('absolute');
+    expect(element.style.width).toBe('1px');
+    expect(element.style.overflow).toBe('hidden');
+    expect(element.style.whiteSpace).toBe('nowrap');
+    setAttribute.mockRestore();
+    announcer.detach();
+  });
+
   it('detach removes the element from the document', () => {
     const announcer = new A11yAnnouncer('en');
     announcer.detach();

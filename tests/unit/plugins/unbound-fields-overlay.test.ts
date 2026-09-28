@@ -160,6 +160,25 @@ describe('the unbound-fields overlay', () => {
     );
   });
 
+  it('lays itself out through the CSSOM, which a strict style-src does not refuse', async () => {
+    // `setAttribute('style')` is an inline style attribute to a CSP that
+    // refuses them (PHD-03); declarations set through `element.style` are not.
+    // No clipboard: the copy falls back to a hidden text area, styled the same way.
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    const setAttribute = vi.spyOn(Element.prototype, 'setAttribute');
+    const { events, manager: plugins } = manager({ debug: true });
+    await plugins.register(createUnboundFieldsOverlayPlugin());
+
+    await update(events, { tagline: 'b' });
+    document.querySelector<HTMLButtonElement>(`${PANEL} button`)?.click();
+
+    expect(setAttribute.mock.calls.map(([name]) => name)).not.toContain('style');
+    expect(document.querySelector<HTMLElement>(PANEL)?.style.position).toBe('fixed');
+    expect(document.querySelector<HTMLElement>(`${PANEL} button`)?.style.cursor).toBe('pointer');
+    expect(document.querySelector<HTMLElement>(`${PANEL} div`)?.style.fontWeight).toBe('600');
+    setAttribute.mockRestore();
+  });
+
   it('is not a binding target itself', async () => {
     const { manager: plugins } = manager({ debug: true });
     await plugins.register(createUnboundFieldsOverlayPlugin());

@@ -46,6 +46,8 @@ const POSITIONS: Readonly<Record<NonNullable<UnboundFieldsOverlayOptions['positi
   'top-left': 'top:12px;left:12px;',
 };
 
+// Applied through `element.style`, never as a `style` attribute: a strict
+// `style-src` refuses the attribute and would leave the panel unstyled in flow.
 const PANEL_STYLE =
   'position:fixed;z-index:2147483646;max-width:280px;max-height:40vh;overflow:auto;' +
   'font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#111;color:#eee;' +
@@ -113,7 +115,7 @@ function selectInstead(doc: Document, text: string): void {
   const field = doc.createElement('textarea');
   field.value = text;
   field.setAttribute('readonly', '');
-  field.setAttribute('style', 'position:fixed;opacity:0;pointer-events:none;');
+  field.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
   doc.body.append(field);
   field.select();
   field.remove();
@@ -129,7 +131,7 @@ function copyButton(doc: Document, field: string, label: string): HTMLButtonElem
   const button = doc.createElement('button');
   button.type = 'button';
   button.textContent = label;
-  button.setAttribute('style', BUTTON_STYLE);
+  button.style.cssText = BUTTON_STYLE;
   button.title = `Copy ${FIELD_ATTRIBUTE}="${field}"`;
   button.addEventListener('click', () => {
     copy(doc, `${FIELD_ATTRIBUTE}="${field}"`);
@@ -143,7 +145,7 @@ function mountOverlay(root: Document | Element, position: string): Overlay | nul
   if (doc?.body == null) return null;
   const panel = doc.createElement('aside');
   panel.id = ELEMENT_ID;
-  panel.setAttribute('style', PANEL_STYLE + position);
+  panel.style.cssText = PANEL_STYLE + position;
   // Development furniture, not content: no screen reader should read it, and
   // no binding scan should ever reach into it.
   panel.setAttribute('aria-hidden', 'true');
@@ -151,7 +153,7 @@ function mountOverlay(root: Document | Element, position: string): Overlay | nul
   const heading = (text: string): HTMLElement => {
     const title = doc.createElement('div');
     title.textContent = text;
-    title.setAttribute('style', 'font-weight:600;margin-bottom:4px;');
+    title.style.cssText = 'font-weight:600;margin-bottom:4px;';
     return title;
   };
   const unboundTitle = heading('Unbound fields');

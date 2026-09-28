@@ -85,7 +85,9 @@ export class A11yAnnouncer {
       element.setAttribute('role', 'status');
       element.setAttribute('aria-live', 'polite');
       element.setAttribute('aria-atomic', 'true');
-      element.setAttribute('style', STYLE);
+      // Through the CSSOM: a strict `style-src` refuses a `style` attribute,
+      // not declarations set on `element.style`.
+      element.style.cssText = STYLE;
       activeDocument.body.appendChild(element);
     }
     lease.element = element;

@@ -347,6 +347,10 @@ interface Fixture {
  * 171/156/169/151/55 B gzip to root client/generator, core client, Next
  * middleware and lean; cushions 24/65/24/72/60 B stay unchanged, other
  * consumers do not move.
+ * 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src):
+ * paired measurements against the PHD-07 archive add 8/6/8/5 B gzip to root
+ * client/generator, core client and Next middleware (raw shrinks by 7-8 B);
+ * cushions 24/65/24/72 B stay unchanged, lean and the plugin manager do not move.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -367,21 +371,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 49_242,
+    gzip: 49_250,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 47_381,
+    gzip: 47_387,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 49_235,
+    gzip: 49_243,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -402,7 +406,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 52_674,
+    gzip: 52_679,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

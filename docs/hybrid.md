@@ -131,9 +131,10 @@ its lifetime; removing one preview client does not remove shared CSS.
 
 The executable strict-CSP reference also declares the existing announcer's
 `payload-live-preview-a11y` live region with external CSS before starting the
-client. Otherwise the package's fallback region uses an inline style that a
-`style-src 'self'` policy blocks. Announcements stay enabled in the reference;
-neither the sanitizer nor CSP is relaxed.
+client, and the announcer adopts it. Without it, the package creates its own
+region and hides it through `element.style`, which a `style-src 'self'` policy
+does not refuse; so does the unbound-fields overlay. Announcements stay enabled
+in the reference; neither the sanitizer nor CSP is relaxed.
 
 See [ADR 0020](architecture/0020-astro-page-owned-resources.md) and
 [the native resource tests](../tests/e2e/continuation/astro-resources.spec.ts).

@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 399,
-    "suites": 782,
-    "tests": 3554,
+    "files": 400,
+    "suites": 783,
+    "tests": 3559,
     "benchmarks": 12
   },
   "groups": {
@@ -38,9 +38,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 41,
-      "suites": 47,
-      "tests": 192,
+      "files": 42,
+      "suites": 48,
+      "tests": 195,
       "benchmarks": 0
     },
     "integration": {
@@ -64,7 +64,7 @@
     "unit": {
       "files": 325,
       "suites": 694,
-      "tests": 3241,
+      "tests": 3243,
       "benchmarks": 0
     }
   },
@@ -340,6 +340,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/strict-style-csp.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -955,7 +962,7 @@
       "path": "tests/unit/core/a11y.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 28,
+      "tests": 29,
       "benchmarks": 0
     },
     {
@@ -2208,7 +2215,7 @@
       "path": "tests/unit/plugins/unbound-fields-overlay.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 11,
+      "tests": 12,
       "benchmarks": 0
     },
     {
