@@ -17,9 +17,11 @@
 import { expect, test } from '@playwright/test';
 import {
   acceptedRevisions,
+  countReadyHandshakes,
   installNavigationProbe,
   readNavigationProbe,
   waitForPreviewFrame,
+  waitForStartupReadies,
   waitForStarted,
 } from '../helpers/preview';
 
@@ -60,6 +62,7 @@ test.describe('sveltekit live preview — admin → iframe updates', () => {
   test('locally reapplies one unchanged unsaved document after each afterNavigate commit', async ({
     page,
   }) => {
+    await countReadyHandshakes(page);
     await page.goto(`${APP}/admin.html?target=/navigation`);
     const frame = await waitForPreviewFrame(page, '/navigation');
     const title = frame.locator('[data-payload-field="title"]');
@@ -73,7 +76,7 @@ test.describe('sveltekit live preview — admin → iframe updates', () => {
         ),
       )
       .toBe('function');
-    await page.waitForTimeout(2_100);
+    await waitForStartupReadies(page);
     await installNavigationProbe(page);
 
     await page.getByTestId('title-input').fill('Unsaved across SvelteKit navigation');
@@ -120,11 +123,12 @@ test.describe('sveltekit live preview — admin → iframe updates', () => {
   });
 
   test('reapplies the retained document when a streamed load binding arrives', async ({ page }) => {
+    await countReadyHandshakes(page);
     await page.goto(`${APP}/admin.html?target=/navigation`);
     const frame = await waitForPreviewFrame(page, '/navigation');
     const title = frame.locator('[data-payload-field="title"]');
     await expect(title).toBeVisible();
-    await page.waitForTimeout(2_100);
+    await waitForStartupReadies(page);
     await installNavigationProbe(page);
 
     await page.getByTestId('title-input').fill('Unsaved across a streamed Svelte destination');

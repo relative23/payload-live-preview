@@ -603,7 +603,6 @@ export type RichTextRenderer = (value: unknown, context: {
 
 // @public
 export interface RouteContext {
-    // (undocumented)
     readonly isCurrent: () => boolean;
     // (undocumented)
     readonly log: (code: DiagnosticCode, detail: string) => void;

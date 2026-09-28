@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 398,
-    "suites": 780,
-    "tests": 3542,
+    "files": 399,
+    "suites": 782,
+    "tests": 3554,
     "benchmarks": 12
   },
   "groups": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 324,
-      "suites": 692,
-      "tests": 3229,
+      "files": 325,
+      "suites": 694,
+      "tests": 3241,
       "benchmarks": 0
     }
   },
@@ -1642,6 +1642,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/superseded-strategy-work.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 12,
       "benchmarks": 0
     },
     {

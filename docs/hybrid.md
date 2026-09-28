@@ -537,6 +537,13 @@ as `LP0805`. A page that binds little and edits much will still refresh often;
 that is the trade, and `onUnfaithfulPatch: 'warn'` is the other side of it: the
 same findings, reported as `LP0411`, with the patch left where it is.
 
+A refresh still running when the next revision arrives keeps running: the
+route is the server's, so the refresh lands for that revision and the runtime
+re-applies it onto the fresh markup. Only a revision that needs a refresh of
+its own replaces the running one. A fragment render carries the revision's
+fields, so a newer revision aborts it instead, and renders the boundary again
+even when its own changes lie outside it.
+
 ## What you observe
 
 - `fragmentRender` events per boundary and revision (`rendered` / `failed`

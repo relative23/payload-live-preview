@@ -138,6 +138,38 @@ export async function footerInView(frame: Frame): Promise<boolean> {
   });
 }
 
+/** Startup's handshake: one `ready` at start and three retries (`READY_RETRY_DELAYS_MS`). */
+const STARTUP_READIES = 4;
+
+type ReadyCountWindow = Window & { __plpReadies?: number };
+
+/** Count every `ready` the preview sends the admin page from its first; call before `page.goto`. */
+export async function countReadyHandshakes(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    if (window.top !== window) return;
+    const counted = window as ReadyCountWindow;
+    counted.__plpReadies = 0;
+    window.addEventListener('message', (event) => {
+      const message = event.data as { ready?: unknown; type?: unknown } | undefined;
+      if (message?.type === 'payload-live-preview' && message.ready === true) {
+        counted.__plpReadies = (counted.__plpReadies ?? 0) + 1;
+      }
+    });
+  });
+}
+
+/**
+ * Wait until startup sent its last `ready` retry, so a navigation probe
+ * installed next counts only router handshakes. A fixed wait from the title's
+ * visibility raced the runtime's own start in WebKit: the last retry fires
+ * 2 000 ms after start, and start came up to 271 ms after the title (PHD-07).
+ */
+export async function waitForStartupReadies(page: Page): Promise<void> {
+  await expect
+    .poll(() => page.evaluate(() => (window as ReadyCountWindow).__plpReadies ?? 0))
+    .toBe(STARTUP_READIES);
+}
+
 interface NavigationProbe {
   events: number;
   ready: number;

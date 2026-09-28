@@ -70,8 +70,13 @@ export interface FragmentStrategy {
 export interface RouteContext {
   readonly revision: number;
   readonly receivedAt: number;
-  /** Aborted when a newer revision arrives or the runtime stops. */
+  /** Aborted when a newer revision asks for a refresh of its own, a navigation commits, or the runtime stops. */
   readonly signal: AbortSignal;
+  /**
+   * Whether the refresh may still land. A newer revision that asks for no
+   * refresh of its own does not end it: the route is the server's, so the
+   * refresh lands for that revision, which the runtime then re-applies.
+   */
   readonly isCurrent: () => boolean;
   readonly log: (code: DiagnosticCode, detail: string) => void;
   /**

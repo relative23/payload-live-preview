@@ -222,7 +222,6 @@ export const ROUTE_REFRESH_HEADER = "x-payload-live-preview";
 
 // @public
 export interface RouteContext {
-    // (undocumented)
     readonly isCurrent: () => boolean;
     // (undocumented)
     readonly log: (code: DiagnosticCode, detail: string) => void;

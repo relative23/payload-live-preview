@@ -171,17 +171,26 @@ export class RuntimeState {
   readonly revealLedger = new RevealLedger();
   readonly fragmentStats = { rendered: 0, failed: 0, superseded: 0 };
   readonly routeStats = { refreshes: 0, partial: 0, failed: 0, refused: 0, loopStopped: 0 };
-  /** Every fragment batch still rendering; streamed bindings can start more than one per revision. */
-  readonly fragmentControllers = new Set<AbortController>();
+  /**
+   * Every fragment batch still rendering, with the boundaries it has not
+   * settled yet; streamed bindings can start more than one per revision.
+   */
+  readonly fragmentControllers = new Map<AbortController, ReadonlySet<Element>>();
   routeController: AbortController | null = null;
   /** The trailing run a refused refresh asked for; at most one, and always the newest. */
   routeRetry: ReturnType<typeof setTimeout> | null = null;
   /**
    * A trailing run a newer revision took over before it ran. That revision
    * plans from its own diff, which no longer names the field the older one
-   * changed, so the debt is carried here until a refresh runs.
+   * changed, so the debt is carried here until a refresh runs. A refresh
+   * already running is not owed: it lands for the newer revision.
    */
   routeRefreshOwed = false;
+  /**
+   * Boundaries a newer revision cut short before they settled: the same debt,
+   * per boundary, settled when a render of the boundary starts.
+   */
+  readonly fragmentsOwed = new Set<Element>();
   readonly readyTimers: ReturnType<typeof setTimeout>[] = [];
   readonly revealer = new FieldRevealer();
   readonly changes = new FieldChangeTracker();
@@ -205,21 +214,37 @@ export class RuntimeState {
     if (transaction.countsAsUpdate) this.completedCount += 1;
   }
 
+  /** A new route or session starts clean: no refresh or boundary render is owed to it. */
+  forgetOwedWork(): void {
+    this.routeRefreshOwed = false;
+    this.fragmentsOwed.clear();
+  }
+
   /**
-   * Abort in-flight strategy work; a newer revision or a stop supersedes it.
-   * The trailing route refresh goes with it: the revision that asked for it is
-   * no longer the one on screen, and the newer one runs it instead — its
-   * message carries the older one's values too, so `routeRefreshOwed` makes
-   * it plan the refresh its own diff would not.
+   * A newer revision supersedes the older one's revision-bound work: boundary
+   * renders carry its fields, and a trailing refresh runs for the revision that
+   * asked. Both become debts the newer revision settles, because its message
+   * carries the older one's values too while its own diff no longer names them
+   * (PHD-07). The route refresh in flight is not revision-bound — it renders
+   * the server's view of the route — so it runs on and lands for whichever
+   * revision is current then; only a refresh of that revision's own replaces it.
    */
-  abortStrategies(): void {
+  supersedeStrategies(): void {
     if (this.routeRetry !== null) {
       clearTimeout(this.routeRetry);
       this.routeRetry = null;
       this.routeRefreshOwed = true;
     }
-    for (const controller of this.fragmentControllers) controller.abort();
+    for (const [controller, unsettled] of this.fragmentControllers) {
+      for (const boundary of unsettled) this.fragmentsOwed.add(boundary);
+      controller.abort();
+    }
     this.fragmentControllers.clear();
+  }
+
+  /** Abort all strategy work, the route refresh included: a navigation, a lost connection or a stop. */
+  abortStrategies(): void {
+    this.supersedeStrategies();
     const route = this.routeController;
     this.routeController = null;
     route?.abort();

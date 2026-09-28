@@ -55,14 +55,27 @@ export class StrategyRunner {
     private readonly host: StrategyHost,
   ) {}
 
+  /**
+   * The boundaries this revision renders: those its diff touches, and those a
+   * newer revision cut short before they settled that are still on the page.
+   * A debt is settled when a render of its boundary starts, so a late-binding
+   * pass, which renders only what streamed in, leaves the rest owed.
+   */
   planFragments(touched: ReadonlySet<string>, ownerKeys: OwnerScope): FragmentPlan | null {
-    const strategy = this.deps.strategies.fragment;
+    const { deps, state } = this;
+    const strategy = deps.strategies.fragment;
     if (strategy === undefined) return null;
-    const planned = strategy.plan(this.deps.root, touched);
+    const planned = new Set(strategy.plan(deps.root, touched));
+    for (const boundary of state.fragmentsOwed) {
+      if (deps.root.contains(boundary)) planned.add(boundary);
+      else state.fragmentsOwed.delete(boundary);
+    }
     const boundaries =
       ownerKeys === false
-        ? planned
-        : planned.filter((boundary) => isBindingInScope(resolveBindingOwner(boundary), ownerKeys));
+        ? [...planned]
+        : [...planned].filter((boundary) =>
+            isBindingInScope(resolveBindingOwner(boundary), ownerKeys),
+          );
     return planBoundaries(strategy, boundaries, ownerKeys);
   }
 
@@ -177,8 +190,9 @@ export class StrategyRunner {
   ): Promise<void> {
     const { deps, state } = this;
     const controller = new AbortController();
-    state.fragmentControllers.add(controller);
     const unsettled = new Set(plan.boundaries);
+    for (const boundary of unsettled) state.fragmentsOwed.delete(boundary);
+    state.fragmentControllers.set(controller, unsettled);
     const settle = (boundary: Element): void => {
       if (unsettled.delete(boundary)) transaction.pendingFragments -= 1;
     };
@@ -302,7 +316,18 @@ export class StrategyRunner {
     // A refusal counts as asked as well: the trailing run below is this
     // revision's one refresh, and nothing else may start a second.
     transaction.routeRefreshed = true;
-    await this.runRoute(transaction, data, strategy);
+    await this.runRoute(transaction, data, strategy).catch((error: unknown) => {
+      this.routeFailed(error);
+    });
+  }
+
+  /**
+   * Nothing awaits a refresh, so an unexpected throw after it returned, while
+   * the page is re-applied onto the fresh markup, would otherwise escape as an
+   * unhandled rejection. The strategy's own throw is an outcome (LP0801).
+   */
+  private routeFailed(error: unknown): void {
+    this.deps.log('route refresh failed:', error);
   }
 
   /**
@@ -321,11 +346,18 @@ export class StrategyRunner {
     state.routeRetry = setTimeout(() => {
       state.routeRetry = null;
       if (!state.isCurrent(transaction)) return;
-      void this.runRoute(transaction, data, strategy);
+      this.runRoute(transaction, data, strategy).catch((error: unknown) => {
+        this.routeFailed(error);
+      });
     }, delayMs);
   }
 
-  /** One trip through the strategy, whether the revision asked for it or the window did. */
+  /**
+   * One trip through the strategy, whether the revision asked for it or the
+   * window did. It replaces a refresh still in flight, and it lands for the
+   * revision that is current when it returns, which need not be the one that
+   * asked (ADR 0004 §4d).
+   */
   private async runRoute(
     transaction: UpdateTransaction,
     data: PayloadLivePreviewData,
@@ -334,15 +366,17 @@ export class StrategyRunner {
     const { deps, state } = this;
     const stats = state.routeStats;
     const controller = new AbortController();
+    state.routeController?.abort();
     state.routeController = controller;
-    const isCurrent = (): boolean => state.isCurrent(transaction) && !controller.signal.aborted;
+    // A stop aborts it too, so the signal alone says whether it may still land.
+    const lands = (): boolean => !controller.signal.aborted;
     let outcome: RouteOutcome;
     try {
       outcome = await strategy.refresh({
         revision: transaction.revision.revision,
         receivedAt: transaction.receivedAt,
         signal: controller.signal,
-        isCurrent,
+        isCurrent: lands,
         log: (code, detail) => {
           deps.log('route', code, detail);
         },
@@ -354,8 +388,18 @@ export class StrategyRunner {
       deps.log('route', 'LP0801', error);
       outcome = 'failed';
     }
-    if (!isCurrent()) return;
-    if (state.routeController === controller) state.routeController = null;
+    if (!lands()) return;
+    // Whatever replaces this refresh, ends the route or stops the session
+    // aborts it first, so it is still the one in flight and a revision is
+    // current; the null check only narrows the type.
+    state.routeController = null;
+    const current = state.activeUpdate;
+    if (current === null) return;
+    // The current revision's latest data, which a merge may have refined since
+    // the refresh started. One still resolving its fields has none yet: it
+    // applies itself onto whatever the route shows when it gets there.
+    const currentData = current.renderData;
+    const isCurrent = (): boolean => state.isCurrent(current);
     if (outcome === 'refreshed' || outcome === 'partial') {
       stats.refreshes += 1;
       if (outcome === 'partial') stats.partial += 1;
@@ -363,22 +407,22 @@ export class StrategyRunner {
       state.lastAppliedIdentity = new WeakMap();
       // The fresh markup carries no stamp: the guesses go back on before the
       // cache is rebuilt from it, or the rebuild would not know them.
-      this.host.restoreGuesses(transaction, data);
+      if (currentData !== undefined) this.host.restoreGuesses(current, currentData);
       this.host.rebuildCache();
-      if (!isCurrent()) return;
-      this.host.reapply(transaction, data);
+      if (currentData === undefined || !isCurrent()) return;
+      this.host.reapply(current, currentData);
       if (deps.emitter.listenerCount('afterUpdate') > 0) {
         void deps.emitter.emitWhile(
           'afterUpdate',
           {
-            data,
+            data: currentData,
             // The strategy replaced the whole route, so every binding now on
             // the page carries new markup; the unsaved fields scheduled just
             // above report themselves in their own `patch` batch.
             updatedCount: deps.cache.elementCount,
-            durationMs: Date.now() - transaction.receivedAt,
-            revision: transaction.revision.revision,
-            receivedAt: transaction.receivedAt,
+            durationMs: Date.now() - current.receivedAt,
+            revision: current.revision.revision,
+            receivedAt: current.receivedAt,
             source: 'route',
           },
           isCurrent,
@@ -392,7 +436,7 @@ export class StrategyRunner {
     else if (outcome === 'refused') stats.refused += 1;
     // Either way the page shows what it can now: the window holds back the
     // server, not the bindings this revision could already have written.
-    this.host.reapply(transaction, data);
+    if (currentData !== undefined) this.host.reapply(current, currentData);
   }
 
   /** LP0809, once: fragment scripts never run, so the page must already start Astro islands. */

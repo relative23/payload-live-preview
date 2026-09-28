@@ -342,6 +342,11 @@ interface Fixture {
  * client, Next middleware and lean, and 13 B to the morph alone; the island
  * handoff is handed in by the coordinators, so the bare engine carries only
  * the new option. Cushions 24/65/24/72/60/24 B stay unchanged.
+ * 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives):
+ * paired measurements against the unfixed source-built archive add
+ * 171/156/169/151/55 B gzip to root client/generator, core client, Next
+ * middleware and lean; cushions 24/65/24/72/60 B stay unchanged, other
+ * consumers do not move.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -362,21 +367,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 49_071,
+    gzip: 49_242,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 47_225,
+    gzip: 47_381,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 49_066,
+    gzip: 49_235,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -397,14 +402,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 52_523,
+    gzip: 52_674,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 32_325,
+    gzip: 32_380,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

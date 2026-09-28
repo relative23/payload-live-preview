@@ -201,6 +201,46 @@ attempt before returning either a document or a refusal. No response body or
 credential is added to diagnostics. The response and session regression suites
 pin these boundaries separately from the H04/H11 authorization continuation.
 
+### 4d. A route refresh is the route's, not a revision's
+
+2026-09-28 (2.1 addendum, PHD-07): a route refresh renders the server's view of
+the route; the unsaved revision reaches it only through the re-apply that
+follows. Accepting a newer revision therefore no longer aborts a refresh in
+flight. When the refresh returns, the runtime rebuilds the cache and re-applies
+the revision that is current then; a revision still resolving its fields
+applies itself onto the fresh markup when it gets there. A running refresh ends
+early only when a revision asks for one of its own, a navigation commits, or
+the runtime stops, and `RouteContext.signal` and `isCurrent()` say exactly that.
+
+The earlier rule dropped the refresh. The diff that plans one compares a
+revision with the previous message, so a newer revision that repeated the older
+one's values, or changed only a patched field, asked for nothing, and the
+refresh the older one needed was neither counted nor re-applied. Carrying it
+over as a debt did not help: the Next fixture's mock admin re-sends the form
+state every 500 ms, the repeated refresh was paced to the 1 000 ms window, and
+every second re-send landed inside it again, in one WebKit run for five seconds.
+
+Boundary renders stay revision-bound, because they carry the revision's fields.
+A newer revision aborts them, and the boundaries that had not settled are
+rendered by the next revision that plans, even when its own diff leaves them
+untouched. The debt is settled when a render of its boundary starts: a
+late-binding pass after navigation renders only what streamed in and leaves the
+rest owed, a boundary that left the page is dropped, and a navigation or a new
+session starts without any.
+
+Nothing awaits a refresh. A throw while the page is re-applied after it
+returned is logged as `route refresh failed`, the way the update pipeline logs
+`update failed`, instead of escaping as an unhandled rejection.
+
+`tests/unit/core/superseded-strategy-work.test.ts` pins both halves: a refresh
+that lands for a repeated or patch-only revision and for one still resolving
+its fields, its replacement by a revision's own refresh, no landing after a
+navigation or an abort even when the strategy reports a render, the logged
+throw after a refresh and after its trailing run, and the boundary rendered
+again once but not when it left the page. The Next route-commit case in
+`tests/e2e/specs/nextjs-live-preview.spec.ts` failed 10 of 30 WebKit runs
+against a runtime without this change and passed 30 of 30 with it.
+
 ### 5. Cancellation is revision-local and terminal
 
 `beforeUpdate` handlers continue to run sequentially in registration order. The

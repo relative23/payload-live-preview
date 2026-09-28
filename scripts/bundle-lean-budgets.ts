@@ -110,4 +110,5 @@
 // 2026-09-27 (PHD-05): shared guarded island handoff and deduplication,
 // measured +167/+105/+118 B; retain 13/7/120 B cushions.
 // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+9/-28 B; same 13/7/120 B cushions.
-export const INLINE_LEAN_BUDGET = { raw: 102_387, gzip: 32_015, brotli: 28_368 } as const;
+// 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +193/+51/+28 B; same 13/7/120 B cushions.
+export const INLINE_LEAN_BUDGET = { raw: 102_580, gzip: 32_066, brotli: 28_396 } as const;

@@ -272,7 +272,7 @@ export class LivePreviewRuntime {
     const suspendedHeartbeatExpired = recoverSuspendedSession && deps.heartbeat.resume();
     if (!state.isRunning()) return;
     if (recoverSuspendedSession && !suspendedHeartbeatExpired) {
-      state.routeRefreshOwed = false;
+      state.forgetOwedWork();
       state.merges.resetRawChanges();
       state.unfaithfulPatches = [];
       state.revealer.reset();
@@ -415,7 +415,7 @@ export class LivePreviewRuntime {
     state.merges.destroy();
     state.abortStrategies();
     this.cancelActiveUpdate(true);
-    state.routeRefreshOwed = false;
+    state.forgetOwedWork();
     state.merges.resetRawChanges();
     state.unfaithfulPatches = [];
     state.revealer.reset();

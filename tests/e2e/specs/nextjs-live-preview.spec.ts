@@ -15,11 +15,13 @@
 import { expect, test } from '@playwright/test';
 import {
   acceptedRevisions,
+  countReadyHandshakes,
   installNavigationProbe,
   NEXT_ORIGIN,
   readNavigationProbe,
   requirePreviewFrame,
   waitForPreviewFrame,
+  waitForStartupReadies,
 } from '../helpers/preview';
 
 const ADMIN_URL = `${NEXT_ORIGIN}/admin.html`;
@@ -117,11 +119,12 @@ test.describe('live preview (Next.js) — admin → iframe updates', () => {
   test('locally reapplies one unchanged unsaved document after each committed App Router navigation', async ({
     page,
   }) => {
+    await countReadyHandshakes(page);
     await page.goto(`${ADMIN_URL}?target=/soft-navigation/one`);
     const frame = await waitForPreviewFrame(page, '/soft-navigation/one');
     const title = frame.locator('[data-payload-field="title"]');
     await expect(title).toBeVisible();
-    await page.waitForTimeout(2_100);
+    await waitForStartupReadies(page);
     await installNavigationProbe(page);
 
     await page.getByTestId('title-input').fill('Unsaved across Next navigation');

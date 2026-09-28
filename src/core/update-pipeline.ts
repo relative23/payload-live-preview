@@ -163,7 +163,7 @@ export class UpdatePipeline {
     state.activeUpdate = transaction;
     deps.scheduler.acceptRevision(revision);
     if (countsAsUpdate) state.updateCount += 1;
-    state.abortStrategies();
+    state.supersedeStrategies();
     if (!state.isCurrent(transaction)) return;
     if (relationshipEdit !== null) {
       void deps.emitter.emitWhile(
