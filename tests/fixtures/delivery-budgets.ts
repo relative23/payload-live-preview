@@ -180,7 +180,7 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     // same subtraction: `AUTHORIZED_NEXT_DELIVERY` below. A zero that holds for
     // everyone would be a broken adapter rather than a win, so the two rows are
     // read in one file — this one proves the public pays nothing, that one
-    // proves the editor still gets the runtime, down to the 12 633 bytes of tag,
+    // proves the editor still gets the runtime, down to the 13 933 bytes of tag,
     // config statement and fragment prelude this fixture asks for.
     why: 'LP-8 closed: a component that can decline to render is the only thing that gets a Next layout to zero',
   },
@@ -264,8 +264,8 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * mints a signed token into a cookie, and `<LivePreviewScript />` verifies it
  * and renders the runtime it declined to render a moment earlier.
  *
- * The current delivery is 12 633 bytes above the runtime: 17 bytes of tag, a
- * 156-byte config statement, two separators and the 12 458-byte fragment
+ * The current delivery is 13 933 bytes above the runtime: 17 bytes of tag, a
+ * 156-byte config statement, two separators and the 13 758-byte fragment
  * prelude this fixture asks for. Next writes the element into its flight
  * payload as well, so the response contains two. Nothing about the delivery
  * got cheaper for an editor; what changed is who is charged.
@@ -296,6 +296,13 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * session-safe request identity, cancellable gate waiters, ordered head
  * reconciliation and the two-sided morph boundary rule make it 12 458 bytes,
  * an 850-byte increase. The runtime remains subtracted from this row.
+ *
+ * 2026-09-28 (H05 fragment islands, ADR 0021): 12 633 → 13 933, measured in
+ * all three browsers. The prelude bundles the route morph apart from the
+ * runtime (O-24), so it carries the island boundary-pair rule and the release
+ * of removed islands too: the paired inline profiles put the prelude at
+ * +1 304 bytes (fragment profile +3 295, runtime +1 991), and this row
+ * measures +1 300. Nothing in the fixture or its delivery moved.
  */
 export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   name: 'Next.js, script in the root layout, authorized editor',
@@ -304,7 +311,7 @@ export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   carries: 'runtime',
   bindings: true,
   scriptElements: 2,
-  overheadBytes: 12_633,
+  overheadBytes: 13_933,
   why: 'the same layout still hands an authorized editor the whole runtime — the zero above is a decision, not a broken adapter',
 };
 

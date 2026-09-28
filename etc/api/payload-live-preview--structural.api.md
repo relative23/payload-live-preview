@@ -104,6 +104,7 @@ export interface MorphOptions {
     readonly boundary?: (element: Element) => boolean;
     readonly keyAttributes: readonly string[];
     readonly onDuplicateKey?: (parent: Element, key: string) => void;
+    readonly retainBoundary?: (live: Element, rendered: Element) => boolean;
     readonly retainChildrenOf?: (live: Element, rendered: Element) => boolean;
 }
 
@@ -183,6 +184,9 @@ export interface RenderContext {
 
 // @public
 export type RendererKey = FieldType | CustomRendererKey;
+
+// @beta
+export function retainIslandBoundary(live: Element, rendered: Element): boolean;
 
 // @public
 export type RichTextRenderer = (value: unknown, context: {

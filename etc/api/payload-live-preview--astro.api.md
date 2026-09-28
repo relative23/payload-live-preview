@@ -52,6 +52,25 @@ export interface AstroIntegrationLike {
     // (undocumented)
     readonly hooks: {
         readonly 'astro:config:setup': (ctx: AstroConfigSetupContext) => void;
+        readonly 'astro:config:done': (ctx: {
+            readonly config: {
+                readonly build?: {
+                    readonly server?: URL;
+                };
+            };
+        }) => void;
+        readonly 'astro:build:ssr': (ctx: {
+            readonly manifest: {
+                readonly entryModules?: Readonly<Record<string, string>>;
+                readonly base?: string;
+                readonly assetsPrefix?: string | Readonly<Record<string, string>>;
+            };
+        }) => void;
+        readonly 'astro:build:done': (ctx: {
+            readonly logger?: {
+                readonly info: (message: string) => void;
+            };
+        }) => Promise<void>;
     };
     // (undocumented)
     readonly name: string;
@@ -100,6 +119,9 @@ export { FragmentRenderInput }
 
 export { hasPreviewIntent }
 
+// @public
+export type IslandModuleResolver = (specifier: string) => Promise<string>;
+
 // @public @deprecated (undocumented)
 export const isPreviewRequest: typeof hasPreviewIntent;
 
@@ -129,6 +151,9 @@ export function renderLivePreviewScript(options?: RenderScriptOptions): string;
 export interface RenderScriptOptions extends LivePreviewAstroOptions {
     readonly nonce?: string;
 }
+
+// @public
+export const resolveIslandModule: IslandModuleResolver;
 
 // @public (undocumented)
 interface RollupEmitContext {
@@ -171,10 +196,10 @@ interface VitePluginLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/astro/index.d.ts:32:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:32:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:51:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:62:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:33:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:33:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:52:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:63:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

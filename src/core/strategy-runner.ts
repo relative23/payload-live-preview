@@ -9,7 +9,13 @@ import { isBindingInScope } from './binding-owner';
 import { resolveBindingOwner } from './cache';
 import { reportUnboundChange } from './fidelity';
 import { bindingValue } from './field-value';
-import { isMorphBoundary } from './islands';
+import {
+  astroIslandsIn,
+  isMorphBoundary,
+  islandStartBlocker,
+  releaseDisconnectedIslands,
+  retainIslandBoundary,
+} from './islands';
 import { morphElement } from './morph';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
 import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
@@ -196,7 +202,10 @@ export class StrategyRunner {
         deps.log('fragment', code, detail);
       },
       morph: (boundary, html) => {
-        if (isCurrent()) morphFragment(boundary, html);
+        if (!isCurrent()) return;
+        morphFragment(boundary, html, (island, blocker) => {
+          this.warnIslandStart(island, blocker);
+        });
       },
       patch: (boundary) => {
         this.patchFallback(transaction, data, boundary, plan.ownerKeys, isCurrent);
@@ -386,6 +395,17 @@ export class StrategyRunner {
     this.host.reapply(transaction, data);
   }
 
+  /** LP0809, once: fragment scripts never run, so the page must already start Astro islands. */
+  private warnIslandStart(island: Element, blocker: 'element' | 'directive'): void {
+    if (this.state.warnedIslandStart) return;
+    this.state.warnedIslandStart = true;
+    const missing =
+      blocker === 'element' ? '<astro-island>' : `client:${island.getAttribute('client') ?? ''}`;
+    this.deps.warn(
+      `[live-preview] LP0809: a fragment island cannot start: this page never loaded ${missing}; render one on the page`,
+    );
+  }
+
   /** LP0806, once: a fragment boundary with no handler is patched instead. */
   warnFragmentFallback(target: CachedElement): void {
     warnFragmentFallback(this.deps, this.state, target);
@@ -450,11 +470,30 @@ function planBoundaries(
   };
 }
 
-/** Morph server-rendered HTML into the boundary; compatible retained nodes keep live state. */
-function morphFragment(boundary: Element, html: string): void {
+/**
+ * Morph server-rendered HTML into the boundary; compatible retained nodes keep
+ * live state. Islands follow ADR 0021: removed ones are released, and an
+ * inserted one the page cannot start is reported rather than scripted.
+ */
+function morphFragment(
+  boundary: Element,
+  html: string,
+  blocked: (island: Element, blocker: 'element' | 'directive') => void,
+): void {
   const template = boundary.ownerDocument.createElement('template');
   template.innerHTML = trustedHtml(html);
   const rendered = boundary.cloneNode(false) as Element;
   rendered.append(template.content);
-  morphElement(boundary, rendered, { keyAttributes: [KEY_ATTRIBUTE], boundary: isMorphBoundary });
+  const before = astroIslandsIn(boundary);
+  morphElement(boundary, rendered, {
+    keyAttributes: [KEY_ATTRIBUTE],
+    boundary: isMorphBoundary,
+    retainBoundary: retainIslandBoundary,
+  });
+  releaseDisconnectedIslands(before);
+  const known = new Set(before);
+  for (const island of astroIslandsIn(boundary)) {
+    const blocker = known.has(island) ? undefined : islandStartBlocker(island);
+    if (blocker !== undefined) blocked(island, blocker);
+  }
 }

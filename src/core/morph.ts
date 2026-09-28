@@ -31,6 +31,15 @@ export interface MorphOptions {
    * predicate to add package-compatible boundaries.
    */
   readonly boundary?: (element: Element) => boolean;
+  /**
+   * Decides a live/rendered pair that are both boundaries: `true` keeps the
+   * live one, after any handoff to its owner; `false` replaces it with the
+   * rendered one. Without it every such pair is kept whole (ADR 0008 §4). The
+   * package's coordinators hand in `retainIslandBoundary`, under which an
+   * Astro island that still renders the same component takes the rendered
+   * props through Astro's own handoff (ADR 0021).
+   */
+  readonly retainBoundary?: (live: Element, rendered: Element) => boolean;
 }
 
 /** Empty attribute values (boolean markers such as `data-payload-island`) are not keys. */
@@ -69,7 +78,8 @@ export function morphElement(live: Element, rendered: Element, options: MorphOpt
   const liveBoundary = boundary(live);
   const renderedBoundary = boundary(rendered);
   if (liveBoundary || renderedBoundary) {
-    return liveBoundary && renderedBoundary ? live : rendered;
+    if (!liveBoundary || !renderedBoundary) return rendered;
+    return (options.retainBoundary?.(live, rendered) ?? true) ? live : rendered;
   }
   const focus = captureFocus(live);
   syncAttributes(live, rendered);

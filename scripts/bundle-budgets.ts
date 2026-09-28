@@ -489,7 +489,8 @@
 // 2026-09-27 (PHD-05): guarded fragment-only island handoff and per-snapshot
 // deduplication. Measured +167/+100/+78 B raw/gzip/brotli against the retained
 // source-built archive; preserve the 10/5/120 B cushions.
-export const INLINE_BUDGET = { raw: 125_989, gzip: 39_485, brotli: 34_734 } as const;
+// 2026-09-28 (H05 fragment islands, ADR 0021): measured +1991/+611/+489 B; same 10/5/120 B cushions.
+export const INLINE_BUDGET = { raw: 127_980, gzip: 40_096, brotli: 35_223 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

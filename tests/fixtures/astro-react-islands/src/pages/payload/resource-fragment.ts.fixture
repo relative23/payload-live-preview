@@ -4,12 +4,17 @@
 import type { APIRoute } from 'astro';
 import reactRenderer from '@astrojs/react/server.js';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { createFragmentEndpoint, type FragmentRenderer } from 'payload-live-preview/astro';
+import {
+  createFragmentEndpoint,
+  resolveIslandModule,
+  type FragmentRenderer,
+} from 'payload-live-preview/astro';
 import Blocks from '../../components/Blocks.astro';
 import { canonical, fixture, refused } from '../../server/host';
 
 // Only the local deployment mode chooses registration; form fields cannot.
-const container = AstroContainer.create().then(instance => {
+// Island module URLs come from this build's table, never from the request.
+const container = AstroContainer.create({ resolve: resolveIslandModule }).then(instance => {
   if (process.env.PLP_ASTRO_RESOURCE_RENDERER === 'react-islands') {
     instance.addServerRenderer({ renderer: reactRenderer });
     instance.addClientRenderer({ name: '@astrojs/react', entrypoint: '@astrojs/react/client.js' });

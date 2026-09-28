@@ -32,6 +32,13 @@ const ESM_ONLY_ARTIFACT_STEMS = [
 ] as const;
 const FORBIDDEN_ESM_ONLY_SUFFIXES = ['.cjs', '.cjs.map', '.d.cts'] as const;
 
+/**
+ * The quoted placeholder the Astro integration fills with the island module
+ * table after a consumer's build (ADR 0021). This package's minifier once folded
+ * it away, which left a resolver that could never succeed.
+ */
+const ISLAND_TABLE_PLACEHOLDER = /(['"`])@@PAYLOAD_LIVE_PREVIEW_ISLAND_MODULES@@\1/g;
+
 export const CODEGEN_EXPORT_NAMES = new Set(['./codegen', './codegen/astro']);
 
 /**
@@ -57,6 +64,18 @@ export async function findPackedContentFailures(
       path.startsWith('dist/') && PUBLIC_DIST_SUFFIXES.some((suffix) => path.endsWith(suffix));
     if (!PUBLIC_TOP_LEVEL_FILES.has(path) && !allowedDistFile) {
       failures.push(`package content is outside the public allow-list: ${path}`);
+    }
+  }
+
+  const astroEntry = resolve(ROOT, 'dist/adapters/astro/index.js');
+  if (await exists(astroEntry)) {
+    const placeholders = [
+      ...(await readFile(astroEntry, 'utf8')).matchAll(ISLAND_TABLE_PLACEHOLDER),
+    ];
+    if (placeholders.length !== 1) {
+      failures.push(
+        `dist/adapters/astro/index.js must carry exactly one fillable island table placeholder; found ${String(placeholders.length)}`,
+      );
     }
   }
 

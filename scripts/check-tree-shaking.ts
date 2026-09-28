@@ -337,6 +337,11 @@ interface Fixture {
  * against the retained source-built archive add 27/101/34/99/108 B gzip to
  * root client/generator, core client, Next middleware and lean respectively.
  * Their 24/65/24/72/60 B cushions stay unchanged; other consumers do not move.
+ * 2026-09-28 (H05 fragment islands, ADR 0021): paired measurements against the
+ * PHD-05 archive add 682/813/682/827/9 B gzip to root client/generator, core
+ * client, Next middleware and lean, and 13 B to the morph alone; the island
+ * handoff is handed in by the coordinators, so the bare engine carries only
+ * the new option. Cushions 24/65/24/72/60/24 B stay unchanged.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -357,21 +362,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 48_389,
+    gzip: 49_071,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 46_412,
+    gzip: 47_225,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 48_384,
+    gzip: 49_066,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -385,21 +390,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_557,
+    gzip: 1_570,
     why: 'the keyed morph alone, without the array renderer',
   },
   {
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 51_696,
+    gzip: 52_523,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 32_316,
+    gzip: 32_325,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

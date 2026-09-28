@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 393,
-    "suites": 772,
-    "tests": 3515,
+    "files": 398,
+    "suites": 780,
+    "tests": 3542,
     "benchmarks": 12
   },
   "groups": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 319,
-      "suites": 684,
-      "tests": 3202,
+      "files": 324,
+      "suites": 692,
+      "tests": 3229,
       "benchmarks": 0
     }
   },
@@ -616,6 +616,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/astro-island-modules.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/astro-loader-mode.test.ts",
       "group": "unit",
       "suites": 1,
@@ -1099,10 +1106,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/fragment-island-bootstrap.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/fragment-island-delivery.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/fragment-island-handoff.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -1138,6 +1159,13 @@
       "group": "unit",
       "suites": 5,
       "tests": 15,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/island-handoff.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -1894,6 +1922,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/fragment/route-islands.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {

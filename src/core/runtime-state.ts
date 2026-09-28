@@ -133,6 +133,8 @@ export class RuntimeState {
   warnedUnattributableMessage = false;
   warnedVisibilityGate = false;
   warnedFragmentFallback = false;
+  /** LP0809 is reported once: every later island would fail for the same page-level reason. */
+  warnedIslandStart = false;
   /** LP0808 is said once: escalation was asked for and nothing on the page can do it. */
   warnedEscalationUnavailable = false;
   /** LP0503 is reported once: a drifting sender repeats the same shape on every keystroke. */

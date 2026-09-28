@@ -12,7 +12,12 @@ export {
   type StructuralApplyOptions,
   type StructuralStore,
 } from './core/structural-applier';
-export { ISLAND_ATTRIBUTE, OWNED_ATTRIBUTE, isMorphBoundary } from './core/islands';
+export {
+  ISLAND_ATTRIBUTE,
+  OWNED_ATTRIBUTE,
+  isMorphBoundary,
+  retainIslandBoundary,
+} from './core/islands';
 export { isMorphCompatible, morphElement, type MorphOptions } from './core/morph';
 export {
   dependencyMapFromBinding,

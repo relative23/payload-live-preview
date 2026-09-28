@@ -194,22 +194,39 @@ Two unsaved revisions, computed external CSS and verified request-local React
 provider values pass in Chromium, Firefox and WebKit. Omitting that registration
 produces HTTP 500 in the same native fixture.
 
-This produces React server HTML, not an interactive React root in each updated
-fragment. A separate page-owned `hydrateRoot` control confirms that working
-client interaction is observable and survives the fragment updates; it does not
-establish Astro `client:*` hydration after morphing. The page eagerly includes
-the finite shared catalog's CSS. Page providers, executable module names and
-resource URLs are not copied from form data. Post-morph hydration and other
-renderer/version combinations remain explicit acceptance work, not a guarantee
-of this recipe.
+Without a `client:*` directive this produces React server HTML, not an
+interactive React root in each updated fragment. The page eagerly includes the
+finite shared catalog's CSS. Page providers, executable module names and
+resource URLs are not copied from form data.
 
-A separate native `client:load` probe demonstrates why adding a client renderer
-to the container is not sufficient. The page control hydrates with an explicit
-policy for its build-owned bootstrap, but the fragment emits a source-file
-component path and a bare renderer specifier. Its first React counter does not
-work; a second successful server response leaves the preserved island showing
-the first title. See the [native contract](../tests/e2e/continuation/astro-islands.spec.ts).
-This remains an integration gap, not automatic hydration support.
+A fragment component can also contain a `client:*` island. Its container then
+needs three things: the framework's server renderer, its client renderer, and
+`resolve: resolveIslandModule`, which maps each island module to the URL this
+build emitted. `livePreview()` in the Astro integrations writes that table into
+the server build during `astro build`; pass `autoInject: false` when the page
+delivers the runtime itself.
+
+```ts
+import reactRenderer from '@astrojs/react/server.js';
+import { experimental_AstroContainer as AstroContainer } from 'astro/container';
+import { resolveIslandModule } from 'payload-live-preview/astro';
+
+const container = await AstroContainer.create({ resolve: resolveIslandModule });
+container.addServerRenderer({ renderer: reactRenderer });
+container.addClientRenderer({ name: '@astrojs/react', entrypoint: '@astrojs/react/client.js' });
+```
+
+Fragment scripts never run, so the page itself must load Astro's island runtime
+for each directive a fragment island uses; rendering the finite catalog with
+that directive does. `LP0809` reports an island the page cannot start. Later
+revisions reach the same island through Astro's own props handoff, so React
+keeps its state; a different component, changed slot content or an island the
+revision removes is replaced or released. A module the build did not emit, or a
+build without the table, fails the render instead of sending a source path.
+This is measured on Astro 7.3.2 with `@astrojs/react` 6.0.6 in three browsers
+([native contract](../tests/e2e/continuation/astro-islands.spec.ts),
+[ADR 0021](architecture/0021-fragment-islands-hydrate-from-the-build.md)).
+`resolve` needs Astro 4.16 or later, and `astro dev` is not supported yet.
 
 The finite page-owned native React recipe now has a separate
 [24-case native contract](../tests/e2e/continuation/astro-owner.spec.ts) on
@@ -220,8 +237,8 @@ duplicate fallback delivery. PHD-06 is application glue: a
 subscribes before the preview client starts, and React subscribes before reading
 the latest selected snapshot. Real delayed module loading, newer revisions,
 scope checks, abort, remount and native router disposal pass in three browsers.
-The recipe does not make raw inserted fragment islands interactive or turn
-package completion into a React commit signal. See
+The recipe covers islands the page renders outside its fragments; it does not
+turn package completion into a React commit signal. See
 [ADR 0020](architecture/0020-astro-page-owned-resources.md) for finite ownership
 and its limits. Do not substitute
 a dummy text binding or guessed hydration delay for the handoff.
@@ -606,7 +623,8 @@ carries the older one's values too.
 
 A hydrated island (`<astro-island>`, `data-payload-island`) keeps owning its
 subtree: patching skips it, a fragment boundary inside it is never planned,
-the route morph stops at it, and it re-renders itself from a
+the route and fragment morphs never enter it (an `<astro-island>` they keep
+takes rendered props through Astro's own handoff, ADR 0021), and it re-renders itself from a
 `payload-live-preview:update` event — or with the official
 `@payloadcms/live-preview-react`/`-vue` hook if that is what renders it
 ([docs/interop.md](interop.md)). The event follows every flush that carried a

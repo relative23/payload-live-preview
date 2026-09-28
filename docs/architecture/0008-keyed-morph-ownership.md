@@ -254,3 +254,17 @@ owned elements are retained only when their tag and namespace match. A
 one-sided boundary or an incompatible keyed pair yields the rendered element.
 Before this option exposed the seam, the direct root and keyed-child paths
 disagreed on those two cases; the contract suite now holds both to §4.
+
+### Boundary pairs (2026-09-28)
+
+ADR 0021 adds one decision to the coordinator's side of this line. When a live
+and a rendered element are both boundaries, the engine asks
+`MorphOptions.retainBoundary` whether to keep the live one or replace it; it
+still never enters either, and without a callback keeps the pair whole as
+before. The coordinators hand in `retainIslandBoundary` from `islands.ts`,
+which keeps every boundary whole except an `<astro-island>`: one that
+still renders the same component takes the rendered props through Astro's own
+handoff, one that does not is replaced. Both are `@beta` from `/structural`.
+The fragment and route strategies release islands a morph disconnects.
+`tests/unit/core/island-handoff.test.ts` fences the pair decision; the existing
+contract case for an island without identity or props still holds.

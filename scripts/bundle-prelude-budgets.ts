@@ -104,7 +104,8 @@
 // and paired measurement are in bundle-budgets.ts. Prior cushions retained.
 // 2026-09-27 (PHD-05): guarded island handoff and deduplication in the runtime,
 // measured +167/+82/+5 B; retain 36/29/120 B cushions. Prelude unchanged.
-export const INLINE_FRAGMENT_BUDGET = { raw: 138_489, gzip: 43_554, brotli: 38_121 } as const;
+// 2026-09-28 (H05 fragment islands, ADR 0021): measured +3295/+903/+686 B; same 36/29/120 B cushions.
+export const INLINE_FRAGMENT_BUDGET = { raw: 141_784, gzip: 44_457, brotli: 38_807 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -206,4 +207,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 138_489, gzip: 43_554, brotli: 38_1
 // same HEAD epoch and prior cushions (bundle-budgets.ts).
 // 2026-09-27 (PHD-05): shared guarded island handoff and deduplication,
 // measured +167/+93/+97 B; retain 20/10/120 B cushions. Prelude unchanged.
-export const INLINE_ROUTE_BUDGET = { raw: 133_041, gzip: 41_763, brotli: 36_587 } as const;
+// 2026-09-28 (H05 fragment islands, ADR 0021): measured +3291/+793/+605 B; same 20/10/120 B cushions.
+export const INLINE_ROUTE_BUDGET = { raw: 136_332, gzip: 42_556, brotli: 37_192 } as const;

@@ -17,7 +17,7 @@ import {
 } from './array-template';
 import { safeStringify } from '@field-types/utils';
 import { diffArray, type ArrayPatch } from '@schema/diff';
-import { isMorphBoundary } from './islands';
+import { isMorphBoundary, retainIslandBoundary } from './islands';
 import { captureFocus, restoreFocus, morphElement } from './morph';
 import { templateSanitizeOptions } from './template-sanitize';
 
@@ -140,6 +140,7 @@ function commitStructuralPlan(
           ? morphElement(live, rendered, {
               keyAttributes: [KEY_ATTRIBUTE, NESTED_KEY_ATTRIBUTE],
               boundary: isMorphBoundary,
+              retainBoundary: retainIslandBoundary,
               retainChildrenOf: isManagedNestedSlot,
               ...(options.onDuplicateKey !== undefined
                 ? { onDuplicateKey: options.onDuplicateKey }

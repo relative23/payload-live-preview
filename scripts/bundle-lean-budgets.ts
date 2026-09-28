@@ -109,4 +109,5 @@
 // measured at the same HEAD epoch, with unchanged cushions (bundle-budgets.ts).
 // 2026-09-27 (PHD-05): shared guarded island handoff and deduplication,
 // measured +167/+105/+118 B; retain 13/7/120 B cushions.
-export const INLINE_LEAN_BUDGET = { raw: 102_355, gzip: 32_006, brotli: 28_396 } as const;
+// 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+9/-28 B; same 13/7/120 B cushions.
+export const INLINE_LEAN_BUDGET = { raw: 102_387, gzip: 32_015, brotli: 28_368 } as const;

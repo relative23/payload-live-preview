@@ -1,6 +1,7 @@
 /** Astro adapter — public barrel. */
 
 export { livePreview, type AstroIntegrationLike } from './integration';
+export { resolveIslandModule, type IslandModuleResolver } from './island-modules';
 export {
   createLivePreviewMiddleware,
   NONCE_LOCALS_KEY,

@@ -101,6 +101,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly FragmentStrategyUnavailable: "LP0806";
     readonly UnboundChangeRefresh: "LP0807";
     readonly EscalationUnavailable: "LP0808";
+    readonly IslandStartUnavailable: "LP0809";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
 }>;

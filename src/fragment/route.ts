@@ -5,7 +5,13 @@
  * LP0805 and handed back for a trailing run. See ADR 0011.
  */
 
-import { isMorphBoundary, OWNED_ATTRIBUTE } from '@core/islands';
+import {
+  astroIslandsIn,
+  isMorphBoundary,
+  OWNED_ATTRIBUTE,
+  releaseDisconnectedIslands,
+  retainIslandBoundary,
+} from '@core/islands';
 import { morphElement } from '@core/morph';
 import { KEY_ATTRIBUTE } from '@core/structural-applier';
 import { parseDependencyList } from '@core/dependencies';
@@ -201,11 +207,14 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
           // node cannot mispair them; fragment boundaries keep their children —
           // the fragment strategy re-renders those for this revision and must
           // not lose the focused input inside one.
+          const islands = astroIslandsIn(live.body);
           morphElement(live.body, fresh.body, {
             boundary: isMorphBoundary,
+            retainBoundary: retainIslandBoundary,
             keyAttributes: [KEY_ATTRIBUTE, FRAGMENT_KEY_ATTRIBUTE, FRAGMENT_ATTRIBUTE],
             retainChildrenOf: (element) => element.hasAttribute(FRAGMENT_ATTRIBUTE),
           });
+          releaseDisconnectedIslands(islands);
           view.scrollTo(x, y);
           return 'partial';
         } catch (error) {

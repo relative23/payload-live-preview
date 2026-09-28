@@ -123,6 +123,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'The block renders as an empty placeholder, and the live markup and the rendered document did not line up — a paragraph the server dropped, a second wrapper around the field (one `<div class="prose">` around the blocks is understood and kept) — so the placeholder was written over what the server had rendered, and that markup is gone from the preview until the page reloads. This is the case `onUnfaithfulPatch` decides: under the default `\'escalate\'` the enclosing fragment boundary or the whole route is re-rendered by the server when the page has a strategy for it, and `inspect().fidelity` counts the patch either way (`unfaithful` up, `escalated` up only when a strategy took it). Register a renderer with `registerBlockRenderer(slug, …)` so the block is drawn in the browser and nothing has to be kept.',
   LP0806:
     'Configure `fragments: { endpoint }` on the adapter so boundaries render on the server; until then they are patched.',
+  LP0809:
+    "Once per session. Fragment scripts never run, so the page itself must load Astro's island element and each client directive a fragment island uses: render an island with that directive on the page (the finite catalog of ADR 0020). See ADR 0021.",
   LP0808:
     "Once per session. Set `routeStrategy: true` (an adapter that serves the runtime asset, or the route prelude) or `fragments: { endpoint }` so a server can draw what the patch could not, or set `onUnfaithfulPatch: 'warn'` to keep the patch and say so; `inspect().fidelity.canEscalate` reports which it is.",
   LP0807:

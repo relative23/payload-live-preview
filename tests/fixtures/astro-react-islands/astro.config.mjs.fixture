@@ -1,0 +1,17 @@
+/** The page owns emitted CSS and the island bootstrap through Astro's native build graph.
+ * livePreview() only records the island module table here; the page delivers its runtime itself.
+ */
+import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
+import react from '@astrojs/react';
+import { livePreview } from 'payload-live-preview/astro';
+const origin = new URL(process.env.PLP_ASTRO_ORIGIN ?? 'https://localhost:4287');
+export default defineConfig({
+  output: 'server',
+  // The omit switch exists only for the countercheck that the endpoint refuses without the table.
+  integrations: [react(), ...(process.env.PLP_ASTRO_ISLAND_TABLE === 'omit' ? [] : [livePreview({ autoInject: false })])],
+  adapter: node({ mode: 'standalone' }),
+  trailingSlash: 'never',
+  build: { inlineStylesheets: 'never' },
+  security: { allowedDomains: [{ protocol: origin.protocol.slice(0, -1), hostname: origin.hostname, port: origin.port }] },
+});

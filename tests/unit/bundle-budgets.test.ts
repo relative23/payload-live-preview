@@ -9,11 +9,11 @@ import { findBudgetViolations, measureBundle } from '../../scripts/bundle-measur
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    // PHD-05's measured island-handoff delta, with the prior cushions kept.
-    expect(INLINE_BUDGET).toEqual({ raw: 125_989, gzip: 39_485, brotli: 34_734 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 102_355, gzip: 32_006, brotli: 28_396 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 133_041, gzip: 41_763, brotli: 36_587 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 138_489, gzip: 43_554, brotli: 38_121 });
+    // ADR 0021's measured fragment-island delta, with the prior cushions kept.
+    expect(INLINE_BUDGET).toEqual({ raw: 127_980, gzip: 40_096, brotli: 35_223 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 102_387, gzip: 32_015, brotli: 28_368 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 136_332, gzip: 42_556, brotli: 37_192 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 141_784, gzip: 44_457, brotli: 38_807 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

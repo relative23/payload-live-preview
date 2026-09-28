@@ -119,6 +119,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   UnboundChangeRefresh: 'LP0807',
   /** `onUnfaithfulPatch: 'escalate'` found no route or fragment strategy to hand an unfaithful patch to; the page keeps it. */
   EscalationUnavailable: 'LP0808',
+  /** A fragment inserted an Astro island the page cannot start: it never loaded the island element or that client directive. */
+  IslandStartUnavailable: 'LP0809',
   /** A readiness row is not yet at its 2.0 value; `pll doctor --v2` reports it. */
   V2ReadinessGap: 'LP0709',
   /** The preview runtime is served to anonymous visitors, not only inside the admin frame. */

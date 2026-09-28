@@ -454,3 +454,13 @@ The raw-container counterexample remains separate. Rollback removes the store,
 its React subscription and their tests together; it must not remove PHD-05's
 compatible core correction. This application recipe has no package semver or
 migration effect and does not expand the measured renderer/version range.
+
+## Raw fragment islands (2026-09-28)
+
+The raw-container contract this record kept red is decided in
+[ADR 0021](0021-fragment-islands-hydrate-from-the-build.md): the fragment
+container resolves island modules from a table the build writes, and Astro's
+own props handoff carries later revisions. The page still owns the island
+runtime and the catalog's CSS, and no module name or resource URL enters the
+fragment protocol. The page-owned recipe above remains valid for islands the
+page renders outside its fragments.

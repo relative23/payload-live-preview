@@ -1,7 +1,8 @@
 /**
  * The Astro integration for `astro.config.mjs`: `livePreview({ ... })`.
  * Inline and loader modes deliver at build time; middleware mode registers
- * the request-time middleware through a serialized options module.
+ * the request-time middleware through a serialized options module. Every
+ * build also records its island module table for fragment containers (ADR 0021).
  */
 
 import { generateInlineScript, generateLoaderScript } from '@inline/generator';
@@ -9,6 +10,7 @@ import { loaderAsset } from './loader-asset';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
 import type { LivePreviewAstroOptions } from './types';
 import { ASTRO_PAGE } from './page-facts';
+import { islandModuleTable, writeIslandTable } from './island-table';
 
 // Local shims keep `astro` a runtime-optional peer.
 type ScriptStage = 'head-inline' | 'page' | 'before-hydration' | 'page-ssr';
@@ -42,11 +44,70 @@ interface AstroConfigSetupContext {
   /** Astro's configured `base`; absent on versions that do not expose it. */
   readonly config?: { readonly base?: string };
 }
+// The build hooks' contexts stay structural and inline: Astro hands richer
+// objects, and naming them here would only widen the public type surface.
 export interface AstroIntegrationLike {
   readonly name: string;
   readonly hooks: {
     readonly 'astro:config:setup': (ctx: AstroConfigSetupContext) => void;
+    readonly 'astro:config:done': (ctx: {
+      readonly config: { readonly build?: { readonly server?: URL } };
+    }) => void;
+    readonly 'astro:build:ssr': (ctx: {
+      readonly manifest: {
+        readonly entryModules?: Readonly<Record<string, string>>;
+        readonly base?: string;
+        readonly assetsPrefix?: string | Readonly<Record<string, string>>;
+      };
+    }) => void;
+    readonly 'astro:build:done': (ctx: {
+      readonly logger?: { readonly info: (message: string) => void };
+    }) => Promise<void>;
   };
+}
+
+interface NodeFiles {
+  readonly readdir: (path: string, options: { recursive: true }) => Promise<string[]>;
+  readonly readFile: (path: string, encoding: 'utf8') => Promise<string>;
+  readonly writeFile: (path: string, data: string) => Promise<void>;
+}
+interface NodeUrl {
+  readonly fileURLToPath: (url: URL) => string;
+}
+
+/**
+ * Node builtins, looked up only while Astro builds. A static import would
+ * break this module's browser reachability (see the loader-mode note below).
+ */
+function builtin(id: string): unknown {
+  const process: unknown = Reflect.get(globalThis, 'process');
+  const lookup: unknown =
+    typeof process === 'object' && process !== null
+      ? Reflect.get(process, 'getBuiltinModule')
+      : undefined;
+  return typeof lookup === 'function' ? (lookup.call(process, id) as unknown) : undefined;
+}
+
+/** Write the island table into every server chunk that carries its placeholder. */
+async function writeIslandModules(
+  serverDir: URL,
+  table: Readonly<Record<string, string>>,
+): Promise<number> {
+  const files = builtin('node:fs/promises') as NodeFiles | undefined;
+  const url = builtin('node:url') as NodeUrl | undefined;
+  if (files === undefined || url === undefined) return 0;
+  const root = url.fileURLToPath(serverDir);
+  let written = 0;
+  for (const entry of await files.readdir(root, { recursive: true })) {
+    if (!/\.(?:m|c)?js$/u.test(entry)) continue;
+    const path = `${root.replace(/[\\/]$/u, '')}/${entry}`;
+    const code = await files.readFile(path, 'utf8');
+    const next = writeIslandTable(code, table);
+    if (next === code) continue;
+    await files.writeFile(path, next);
+    written += 1;
+  }
+  return written;
 }
 
 const VIRTUAL_OPTIONS_ID = 'virtual:payload-live-preview/options';
@@ -55,9 +116,26 @@ const MIDDLEWARE_ENTRYPOINT = 'payload-live-preview/astro/middleware-entry';
 
 /** Build the integration. The injected runtime stays inert outside the admin's preview iframe. */
 export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegrationLike {
+  let serverDir: URL | undefined;
+  let islandTable: Readonly<Record<string, string>> | undefined;
   return {
     name: 'payload-live-preview',
     hooks: {
+      'astro:config:done': ({ config }): void => {
+        serverDir = config.build?.server;
+      },
+      'astro:build:ssr': ({ manifest }): void => {
+        islandTable = islandModuleTable(manifest);
+      },
+      'astro:build:done': async ({ logger }): Promise<void> => {
+        if (serverDir === undefined || islandTable === undefined) return;
+        const written = await writeIslandModules(serverDir, islandTable);
+        // No placeholder is normal: an app that renders no islands in fragments
+        // never imports resolveIslandModule, and the bundler drops it.
+        if (written > 0) {
+          logger?.info(`island module table written into ${String(written)} server chunk(s)`);
+        }
+      },
       'astro:config:setup': (ctx): void => {
         if (options.mode === 'middleware') {
           setupMiddlewareMode(ctx, options);
