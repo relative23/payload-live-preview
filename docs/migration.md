@@ -1,5 +1,22 @@
 # Migration guide
 
+## Preparing for 3.0
+
+3.0 changes defaults and removes names that 2.x keeps. Each change below is
+available as an opt-in now, so a site can take it one row at a time and see
+what it does before the release does it. The ADR 0007 ledger has the full
+table.
+
+| 3.0 change                                                               | Try it now                                                                          | What to do                                                                                                   |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `lexicalToHtml()` without a sanitizer document throws instead of warning | `lexicalToHtml(content, { requireDocument: true })`, `<RichText requireDocument />` | pass a `document` (linkedom, jsdom) per call; the build names every render without one                       |
+| a partly bound group counts as covered path by path                      | `subfieldCoverage: 'declared'`                                                      | LP0203 names each uncovered path; declare the ones the page leaves out on purpose with `data-payload-covers` |
+| `setSanitizerDocument()` is removed                                      | pass `document` per call                                                            | `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, the `RichText` `document` prop   |
+
+None of these is a mechanical rewrite: whether a call site has a DOM, or which
+fields a page shows on purpose, is a fact about the project that `pll migrate`
+cannot read from the source.
+
 ## Upgrading to 2.0
 
 2.0 flips a table of defaults toward security and performance, renames a few

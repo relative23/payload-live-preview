@@ -114,4 +114,5 @@
 // 2026-09-29 (PHD-02, owner-scoped route planning): measured -24/-11/-1 B; same 13/7/120 B cushions.
 // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2914/+893/+742 B; same 13/7/120 B cushions.
 // 2026-09-29 (H13, revision display state, ADR 0023): measured +2514/+862/+792 B; same 13/7/120 B cushions.
-export const INLINE_LEAN_BUDGET = { raw: 107_984, gzip: 33_810, brotli: 29_929 } as const;
+// 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+38/-23 B; same 13/7/120 B cushions.
+export const INLINE_LEAN_BUDGET = { raw: 108_055, gzip: 33_848, brotli: 29_906 } as const;

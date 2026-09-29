@@ -30,7 +30,7 @@ describe('SanitizerEnvironmentError', () => {
     try {
       expect(() => sanitizeHtml('<p>x</p>')).toThrow(SanitizerEnvironmentError);
       expect(() => sanitizeHtml('<p>x</p>')).toThrow(
-        'sanitizeHtml needs a DOM; provide one with setSanitizerDocument() during SSR.',
+        'sanitizeHtml needs a DOM; pass one per call during SSR: { document } (linkedom, jsdom).',
       );
     } finally {
       globalThis.document = originalDocument;

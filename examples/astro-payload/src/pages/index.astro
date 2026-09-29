@@ -7,7 +7,7 @@
  * In a real Astro project these initial values would come from
  * Payload via a server-side fetch; for the example we hard-code them.
  */
-import '../sanitizer';
+import { sanitizerDocument } from '../sanitizer';
 import { ClientRouter } from 'astro:transitions';
 import RichText from 'payload-live-preview/astro/RichText.astro';
 
@@ -121,7 +121,7 @@ const initial = {
 
       {/* SSR-rendered through the SAME Lexical renderer the runtime
           uses for live patches — markup cannot diverge. */}
-      <RichText value={initial.body} field="body" />
+      <RichText value={initial.body} field="body" document={sanitizerDocument} requireDocument />
 
       <p>
         Count: <span data-payload-field="count" data-payload-type="number">{initial.count}</span>

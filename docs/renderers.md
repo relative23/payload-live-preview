@@ -232,10 +232,12 @@ inline runtime (adapters) cannot carry a function; `renderRichText` is a
 `registerLexicalNode(type, render)` adds a node renderer to `lexicalToHtml`.
 In the browser the runtime sanitizes the whole rendered document, so a
 custom node cannot introduce a script or an event handler however it is
-written. On the server `lexicalToHtml` sanitizes when a sanitizer document
-was set (`setSanitizerDocument()` with linkedom or jsdom); **without one it
+written. On the server `lexicalToHtml` sanitizes when it has a sanitizer document
+(`{ document }` with the call, from linkedom or jsdom); **without one it
 returns the HTML as rendered and warns once**, because silently unsanitized
-output is the worse failure. The built-in nodes escape their own output;
+output is the worse failure. `{ requireDocument: true }` makes it throw
+instead, which 3.0 does by default
+([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)). The built-in nodes escape their own output;
 custom nodes are responsible for theirs — see [docs/security.md](security.md).
 Pass `{ sanitize: false }` when the caller sanitizes downstream itself; that
 opts out of the warning too.

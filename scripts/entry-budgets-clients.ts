@@ -19,7 +19,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +73/+34/+6 B; same 21/12/120 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2992/+908/+728 B; same 21/12/120 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +3310/+1081/+890 B; same 21/12/120 B cushions.
-  'client.cjs': { raw: 150_252, gzip: 46_861, brotli: 40_545 },
+  // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +81/+59/+55 B; same 21/12/120 B cushions.
+  'client.cjs': { raw: 150_333, gzip: 46_920, brotli: 40_600 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -31,17 +32,20 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +73/+35/+33 B; same 21/12/120 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2992/+906/+757 B; same 21/12/120 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +3310/+1081/+857 B; same 21/12/120 B cushions.
-  'client.js': { raw: 150_171, gzip: 46_847, brotli: 40_524 },
+  // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +81/+59/+56 B; same 21/12/120 B cushions.
+  'client.js': { raw: 150_252, gzip: 46_906, brotli: 40_580 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1110/+350/+307 B; same 87/12/87 B cushions.
-  'structural.cjs': { raw: 21_730, gzip: 7_576, brotli: 6_869 },
+  // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +10/+9/+17 B; same 87/12/87 B cushions.
+  'structural.cjs': { raw: 21_740, gzip: 7_585, brotli: 6_886 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 019 → 7 029 (+10 B, measured 7 014 → 7 024); brotli 6 326 → 6 427 (measured 6 307, 19 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 19 958 → 20 091 (+133 B, measured 19 870 → 20 003); gzip 7 029 → 7 068 (+39 B, measured 7 024 → 7 063).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 091 → 20 323 (+232 B, measured 20 003 → 20 235); gzip 7 068 → 7 120 (+52 B, measured 7 063 → 7 115).
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1100/+347/+308 B; same 88/12/90 B cushions.
-  'structural.js': { raw: 21_685, gzip: 7_577, brotli: 6_885 },
+  // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +10/+7/+19 B; same 88/12/90 B cushions.
+  'structural.js': { raw: 21_695, gzip: 7_584, brotli: 6_904 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 768 → 91 802 (+34 B, measured 91 749 → 91 783).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 802 → 91 851 (+49 B, measured 91 783 → 91 832); gzip 29 177 → 29 190 (+13 B, measured 29 171 → 29 184).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 91 851 → 91 869 (+18 B, measured 91 832 → 91 850); gzip 29 190 → 29 197 (+7 B, measured 29 184 → 29 191).
@@ -52,7 +56,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured -24/-10/-36 B; same 9/6/133 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2914/+888/+726 B; same 9/6/133 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +2514/+855/+771 B; same 9/6/133 B cushions.
-  'lean.cjs': { raw: 108_323, gzip: 34_058, brotli: 30_117 },
+  // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+46/+22 B; same 9/6/133 B cushions.
+  'lean.cjs': { raw: 108_394, gzip: 34_104, brotli: 30_139 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 757 → 91 791 (+34 B, measured 91 738 → 91 772).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 791 → 91 840 (+49 B, measured 91 772 → 91 821); gzip 29 171 → 29 183 (+12 B, measured 29 167 → 29 179).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 91 840 → 91 858 (+18 B, measured 91 821 → 91 839); gzip 29 183 → 29 190 (+7 B, measured 29 179 → 29 186).
@@ -63,14 +68,17 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured -24/-9/+53 B; same 9/6/120 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2914/+888/+692 B; same 9/6/120 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +2514/+855/+771 B; same 9/6/120 B cushions.
-  'lean.js': { raw: 108_312, gzip: 34_052, brotli: 30_123 },
+  // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+46/-5 B; same 9/6/120 B cushions.
+  'lean.js': { raw: 108_383, gzip: 34_098, brotli: 30_118 },
   // 2026-09-16 (2.0.1 Version PR): gzip 5 602 → 5 612. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 5 600 against a cushion of 2 B. Twelve bytes over that measurement  as the rows that never flipped carry.
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 16 307 → 16 527 (+220 B, measured 16 305 → 16 525); gzip 5 612 → 5 665 (+53 B, measured 5 600 → 5 653); brotli 5 072 → 5 162 (measured 5 072; under the 2 % notice).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 16 527 → 16 755 (+228 B, measured 16 525 → 16 753); gzip 5 665 → 5 720 (+55 B, measured 5 653 → 5 708).
-  'lexical.cjs': { raw: 17_429, gzip: 5_906, brotli: 5_392 },
+  // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +81/+45/+42 B; same 2/12/97 B cushions.
+  'lexical.cjs': { raw: 17_510, gzip: 5_951, brotli: 5_434 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 16 278 → 16 490 (+212 B, measured 16 276 → 16 488); gzip 5 606 → 5 658 (+52 B, measured 5 602 → 5 654); brotli 5 079 → 5 165 (measured 5 075; under the 2 % notice).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 16 490 → 16 718 (+228 B, measured 16 488 → 16 716); gzip 5 658 → 5 715 (+57 B, measured 5 654 → 5 711).
-  'lexical.js': { raw: 17_392, gzip: 5_914, brotli: 5_393 },
+  // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +81/+45/+44 B; same 2/12/97 B cushions.
+  'lexical.js': { raw: 17_473, gzip: 5_959, brotli: 5_437 },
   //
   // 2026-09-06 (Ü10): `plugins.*` rise ~2 900 raw / ~1 150 gzip for the
   // unbound-fields overlay — the development panel that lists the fields an

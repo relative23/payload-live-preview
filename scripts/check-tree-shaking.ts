@@ -368,6 +368,11 @@ interface Fixture {
  * Vue composable +21 for `revision`. The runtime carries the per-revision
  * ledger and its seven call sites; every ceiling keeps its cushion
  * (24/65/24/72/60/80/59 B).
+ * 2026-09-29 (H10, lexical render can require a document, ADR 0025): paired
+ * measurements against the H12 archive: root client +49, generator +48, core
+ * client +46, Next middleware +41, lean +44, the root Lexical import +36 and
+ * `/lexical` +37 B gzip, for `requireDocument` and the longer warning that
+ * names it; every ceiling keeps its cushion.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -381,35 +386,35 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_368,
+    gzip: 5_404,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 51_568,
+    gzip: 51_617,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 49_335,
+    gzip: 49_383,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 51_531,
+    gzip: 51_577,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_502,
+    gzip: 5_539,
     why: 'the Lexical renderer from its focused entry',
   },
   {
@@ -423,14 +428,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 54_617,
+    gzip: 54_658,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 34_114,
+    gzip: 34_158,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

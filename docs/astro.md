@@ -137,8 +137,11 @@ import RichText from 'payload-live-preview/astro/RichText.astro';
 
 On a server without a global DOM, pass the document the sanitizer should parse
 with as the `document` prop (linkedom's `parseHTML(...).document`, for example);
-it is per render, so two requests never share one. Without the prop the
-component uses the document `setSanitizerDocument()` supplied.
+it is per render, so two requests never share one. Add `requireDocument` and a
+render without a document throws instead of returning unsanitised markup, as
+3.0 does by default ([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)).
+Without the prop the component uses the document the deprecated
+`setSanitizerDocument()` supplied.
 
 That is the whole frontend. Open the page inside the admin's preview and edits appear as you type.
 

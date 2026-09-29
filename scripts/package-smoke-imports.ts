@@ -204,7 +204,11 @@ const DOMLESS_LEXICAL_BODY = [
   "if (!withoutDocument.includes('&lt;img src&#x3D;x onerror&#x3D;alert(1)&gt;')) throw new Error('built-in text did not escape markup without a DOM');",
   "if (!withoutDocument.includes('&lt;svg onload&#x3D;alert(1)&gt;')) throw new Error('built-in block did not escape fields without a DOM');",
   "if (!withoutDocument.includes('<script data-plp-smoke=\"node\">') || !withoutDocument.includes(' onerror=\"globalThis.__plpPackageSmoke = true\"')) throw new Error('DOM-less trusted custom markup contract changed');",
-  "if (warnings.length !== 1 || !warnings[0].includes('returned unsanitised HTML')) throw new Error('DOM-less render did not emit its warning exactly once: ' + JSON.stringify(warnings));",
+  "if (warnings.length !== 1 || !warnings[0].includes('returned unsanitised HTML') || !warnings[0].includes('requireDocument: true')) throw new Error('DOM-less render did not emit its warning exactly once: ' + JSON.stringify(warnings));",
+  // ADR 0025: under requireDocument the same call refuses, with the sanitizer's own error.
+  'let refused;',
+  'try { lexical.lexicalToHtml(content, { requireDocument: true }); } catch (error) { refused = error; }',
+  "if (refused?.name !== 'SanitizerEnvironmentError') throw new Error('requireDocument did not refuse a DOM-less render: ' + String(refused));",
   "const documentFacade = () => { const dom = new JSDOM('<!doctype html><html><body></body></html>'); let calls = 0; return { value: { createElement: (tag) => { calls += 1; return dom.window.document.createElement(tag); } }, calls: () => calls, close: () => { dom.window.close(); } }; };",
   'const first = documentFacade(); const second = documentFacade(); const fallback = documentFacade();',
   "const assertSanitised = (html, label) => { if (html.includes('<script') || html.includes(' onerror=\"') || html.includes('href=\"javascript:')) throw new Error(label + ' kept active custom markup: ' + html); };",

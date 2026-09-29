@@ -343,7 +343,7 @@ function environmentError(): Error {
     return new Error('sanitizeHtml needs a DOM');
   }
   return new SanitizerEnvironmentError(
-    'sanitizeHtml needs a DOM; provide one with setSanitizerDocument() during SSR.',
+    'sanitizeHtml needs a DOM; pass one per call during SSR: { document } (linkedom, jsdom).',
   );
 }
 

@@ -46,6 +46,19 @@ describe('lexicalToHtml with a document per call', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it('sanitises with the given document under requireDocument too', () => {
+    const doc = {
+      createElement: (tag: string) =>
+        document.createElement(tag) as unknown as {
+          innerHTML: string;
+          readonly content: ParentNode;
+        },
+    };
+    expect(lexicalToHtml(content, { document: doc, requireDocument: true })).toContain(
+      'hello &lt;b&gt;there&lt;/b&gt;',
+    );
+  });
+
   it('still skips sanitising when asked to', () => {
     let created = 0;
     const doc = {

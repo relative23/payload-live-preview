@@ -39,6 +39,7 @@ export interface LexicalNode {
 export interface LexicalRenderOptions {
     readonly document?: SanitizerDocument;
     readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string) => void;
+    readonly requireDocument?: boolean;
     readonly sanitize?: boolean;
 }
 

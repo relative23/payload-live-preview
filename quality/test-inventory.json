@@ -21,7 +21,7 @@
   "totals": {
     "files": 415,
     "suites": 820,
-    "tests": 3687,
+    "tests": 3690,
     "benchmarks": 12
   },
   "groups": {
@@ -64,7 +64,7 @@
     "unit": {
       "files": 334,
       "suites": 724,
-      "tests": 3356,
+      "tests": 3359,
       "benchmarks": 0
     }
   },
@@ -2110,7 +2110,7 @@
       "path": "tests/unit/lexical/render-document.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -2124,7 +2124,7 @@
       "path": "tests/unit/lexical/render-layout.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 7,
+      "tests": 9,
       "benchmarks": 0
     },
     {
