@@ -29,8 +29,8 @@
     "src/security/url-validator.ts"
   ],
   "baseline": {
-    "total": 1227,
-    "mutationScoreMinimum": 99.19,
+    "total": 1302,
+    "mutationScoreMinimum": 99.23,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 0,
     "noCoverageMaximum": 0,
@@ -41,7 +41,7 @@
   "equivalent": [
     {
       "file": "src/core/message-bus.ts",
-      "line": 144,
+      "line": 173,
       "column": 9,
       "mutator": "LogicalOperator",
       "original": "target === undefined || listener === undefined",
@@ -50,7 +50,7 @@
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 144,
+      "line": 173,
       "column": 9,
       "mutator": "ConditionalExpression",
       "original": "target === undefined",
@@ -59,7 +59,7 @@
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 144,
+      "line": 173,
       "column": 33,
       "mutator": "ConditionalExpression",
       "original": "listener === undefined",
@@ -68,7 +68,7 @@
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 335,
+      "line": 416,
       "column": 13,
       "mutator": "BlockStatement",
       "original": "{ return false; }",
@@ -77,7 +77,7 @@
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 345,
+      "line": 426,
       "column": 13,
       "mutator": "BlockStatement",
       "original": "{ return false; }",
@@ -86,7 +86,7 @@
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 356,
+      "line": 437,
       "column": 9,
       "mutator": "ConditionalExpression",
       "original": "handler === undefined",

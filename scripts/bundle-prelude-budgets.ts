@@ -111,7 +111,8 @@
 // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2924/+883/+766 B; same 36/29/120 B cushions.
 // 2026-09-29 (H13, revision display state, ADR 0023): measured +3168/+1034/+880 B; same 36/29/120 B cushions.
 // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+44/+48 B; same 36/29/120 B cushions.
-export const INLINE_FRAGMENT_BUDGET = { raw: 148_605, gzip: 46_627, brotli: 40_694 } as const;
+// 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-43/-36 B; same 36/29/120 B cushions.
+export const INLINE_FRAGMENT_BUDGET = { raw: 148_456, gzip: 46_584, brotli: 40_658 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -220,4 +221,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 148_605, gzip: 46_627, brotli: 40_6
 // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2924/+880/+793 B; same 20/10/120 B cushions.
 // 2026-09-29 (H13, revision display state, ADR 0023): measured +3164/+1042/+845 B; same 20/10/120 B cushions.
 // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+41/+43 B; same 20/10/120 B cushions.
-export const INLINE_ROUTE_BUDGET = { raw: 143_149, gzip: 44_735, brotli: 39_064 } as const;
+// 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-22/-4 B; same 20/10/120 B cushions.
+export const INLINE_ROUTE_BUDGET = { raw: 143_000, gzip: 44_713, brotli: 39_060 } as const;

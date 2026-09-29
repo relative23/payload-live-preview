@@ -38,8 +38,12 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
  * 2026-09-29 (H13, ADR 0023): +9 hook-session lines carry `revision`, the
  * message the snapshot's data came from, so a component can tell merged from
  * painted; it is compared and published like the other snapshot fields.
+ * 2026-09-29 (PHD-11): -2 protocol lines. The replay's detach guard and its
+ * second reentrancy guard repeated checks the origin match and the first guard
+ * already make, and its null branch could not be reached on a value that is
+ * itself a structured clone; the core mutation run named all three.
  */
-export const REVIEWED_SCOPE_LINES = 995;
+export const REVIEWED_SCOPE_LINES = 993;
 
 interface OurFile {
   readonly file: string;

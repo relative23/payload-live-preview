@@ -194,33 +194,33 @@ export class MessageBus {
   replayLastAccepted(): boolean {
     const accepted = this.lastAccepted;
     const generation = this.generation;
+    const handler = this.handlers.onReplay;
     if (
-      this.attachedTarget === undefined ||
+      handler === undefined ||
       accepted === undefined ||
       accepted.generation >= generation ||
       this.replayedGeneration === generation
     ) {
       return false;
     }
-    if (!this.matchesOrigin(accepted.origin, generation)) return false;
-    // Origin matching is consumer code and may accept a newer message
-    // reentrantly. Never let the older snapshot run after it.
-    if (this.lastAccepted !== accepted || !this.isCurrentGeneration(generation)) return false;
-    const handler = this.handlers.onReplay;
-    if (handler === undefined) return false;
-    const replay = snapshotForReplay(accepted.message);
-    // Clone again for every replay. Hooks may mutate what they receive, but
-    // the retained copy is the baseline for later navigations too.
-    if (
-      replay === null ||
-      this.lastAccepted !== accepted ||
-      !this.isCurrentGeneration(generation)
-    ) {
+    // Origin matching fails closed outside the attached generation it ran in,
+    // and it is consumer code that may accept a newer message reentrantly.
+    // Never let the older snapshot run after it.
+    if (!this.matchesOrigin(accepted.origin, generation) || this.lastAccepted !== accepted) {
       return false;
     }
     this.replayedGeneration = generation;
     const revision = { generation, revision: (this.revision += 1) };
-    this.invokeHandler(generation, handler, replay, accepted.origin, revision);
+    // Clone for every replay: hooks may mutate what they receive, but the
+    // retained copy is the baseline for later navigations too. It came out
+    // of structuredClone, so cloning it again cannot throw.
+    this.invokeHandler(
+      generation,
+      handler,
+      structuredClone(accepted.message),
+      accepted.origin,
+      revision,
+    );
     return true;
   }
 

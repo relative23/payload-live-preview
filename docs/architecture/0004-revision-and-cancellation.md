@@ -511,7 +511,10 @@ The 2.1 navigation addendum is pinned by named tests:
   one replay per advanced generation, monotonic revisions, re-entrant clone and
   origin checks, explicit forgetting, and the non-cloneable no-retention path. A
   matcher that no longer accepts the retained origin, or a bus without a replay
-  consumer, replays nothing and consumes no revision;
+  consumer, replays nothing and consumes no revision. A detached bus replays
+  nothing and asks no matcher, and replays once it is attached again; its
+  origin check is what refuses, since it holds only inside the attached
+  generation;
 - `tests/unit/core/navigation-replay-guards.test.ts` calls the replay directly: a
   late observation before any accepted snapshot, or with a transaction that has no
   rendered data yet, is a synchronous no-op. A late route binding owned by another

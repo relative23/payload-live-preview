@@ -496,7 +496,8 @@
 // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2924/+890/+753 B; same 10/5/120 B cushions.
 // 2026-09-29 (H13, revision display state, ADR 0023): measured +3168/+1057/+947 B; same 10/5/120 B cushions.
 // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+42/-7 B; same 10/5/120 B cushions.
-export const INLINE_BUDGET = { raw: 134_779, gzip: 42_284, brotli: 37_093 } as const;
+// 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-27/-26 B; same 10/5/120 B cushions.
+export const INLINE_BUDGET = { raw: 134_630, gzip: 42_257, brotli: 37_067 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

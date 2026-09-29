@@ -327,6 +327,31 @@ describe('MessageBus — message shapes', () => {
     expect(bus.replayLastAccepted()).toBe(true);
     expect(onReplay).toHaveBeenCalledOnce();
   });
+  it('replays nothing and consults no matcher while detached, then replays once re-attached', () => {
+    const onReplay = vi.fn<NonNullable<BusHandlers['onReplay']>>();
+    const matcher = vi.fn((origin: string) => origin === TRUSTED);
+    bus.detach();
+    bus = new MessageBus(matcher, { onUpdate, onReplay, onDocumentEvent, onInvalid });
+    bus.attach();
+    window.dispatchEvent(
+      makeMessage({ type: 'payload-live-preview', data: { title: 'retained' } }, TRUSTED),
+    );
+    bus.advanceGeneration();
+    bus.detach();
+    matcher.mockClear();
+
+    expect(bus.replayLastAccepted()).toBe(false);
+    expect(matcher).not.toHaveBeenCalled();
+    expect(onReplay).not.toHaveBeenCalled();
+
+    bus.attach();
+    expect(bus.replayLastAccepted()).toBe(true);
+    expect(onReplay).toHaveBeenCalledWith(
+      { type: 'payload-live-preview', data: { title: 'retained' } },
+      TRUSTED,
+      { generation: 3, revision: 2 },
+    );
+  });
   it('reports no replay and consumes no revision without a replay consumer', () => {
     window.dispatchEvent(
       makeMessage({ type: 'payload-live-preview', data: { title: 'retained' } }, TRUSTED),
