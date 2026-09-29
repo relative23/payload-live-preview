@@ -40,6 +40,10 @@
       "import": {
         "types": "./dist/adapters/nextjs/index.d.ts",
         "default": "./dist/adapters/nextjs/index.js"
+      },
+      "default": {
+        "types": "./dist/adapters/nextjs/index.d.ts",
+        "default": "./dist/adapters/nextjs/index.js"
       }
     },
     "./sveltekit": {

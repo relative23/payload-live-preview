@@ -12,14 +12,13 @@ npm install payload-live-preview
 
 ## The short setup
 
-One line in `nuxt.config.ts`, if every option is data:
+One entry in `nuxt.config.ts` and one server module for the authorization hook:
 
 ```ts
 export default defineNuxtConfig({
   modules: ['payload-live-preview/nuxt-module'],
   livePreview: {
-    // The module cannot carry authorizePreview (below), so it runs on the 1.x profile.
-    defaults: 'v1',
+    authorizePreviewModule: './server/utils/live-preview-auth',
     allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
     serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
     mergeDepth: 1,
@@ -27,9 +26,22 @@ export default defineNuxtConfig({
 });
 ```
 
-The module writes a Nitro plugin into `.nuxt/` and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
+```ts
+// server/utils/live-preview-auth.ts
+import { authorizePreviewRequest } from 'payload-live-preview/server';
 
-What it cannot carry is a function. The options are serialized into the generated plugin, so `authorizePreview` and `shouldInject` are not part of the module's option type — and under the strict 2.0 default the plugin refuses to start without `authorizePreview`. The short setup therefore needs `defaults: 'v1'` (or `strict: false`), and then injects on client-controlled intent alone. A preview under the strict default writes the plugin below with `authorizePreview`, which is three lines rather than one.
+export default (request: Request) =>
+  authorizePreviewRequest(request, {
+    type: 'payload-session',
+    serverURL: process.env.PAYLOAD_URL!,
+  });
+```
+
+The module writes a Nitro plugin into Nuxt's build directory (`.nuxt/`, or `node_modules/.cache/nuxt/.nuxt/` while Nuxt 4 builds) and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
+
+The options are serialized into the generated plugin, so a function cannot travel in them: `authorizePreview` travels by reference instead ([ADR 0024](architecture/0024-authorization-by-module-reference.md)). The plugin imports the module `authorizePreviewModule` names and passes its default export on, so the strict 2.0 default holds. With the reference the module also registers the server handler below, so the decision is made before the app renders and a page reads it on `event.context`, as [Read `event.context`](#read-eventcontext) shows. A path beginning with `./` is relative to the project root; an alias such as `~/` or a package specifier is passed to Nitro unchanged, and one outside the project is refused. `shouldInject` has no such reference; a preview that needs it writes the plugin below by hand.
+
+Without either, the strict default refuses to start. `defaults: 'v1'` (or `strict: false`) then injects on client-controlled intent alone, which is not authorization: anyone who adds the query parameter receives the runtime.
 
 ## One options object
 

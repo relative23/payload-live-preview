@@ -139,7 +139,9 @@ describe('livePreview integration — middleware mode', () => {
     const integration = livePreview({ mode: 'middleware', allowedOrigins: [ADMIN] });
     expect(() => {
       integration.hooks['astro:config:setup'](ctx);
-    }).toThrow(/strict default/);
+    }).toThrow(
+      /strict default[\s\S]*Name the module that exports it in `authorizePreviewModule` \(ADR 0024\), or register `createLivePreviewMiddleware\(\{ authorizePreview, \.\.\. \}\)` yourself in src\/middleware\.ts\. `defaults: 'v1'` \(or `strict: false`\) runs intent-only middleware instead/u,
+    );
     expect(ctx.addMiddleware).not.toHaveBeenCalled();
   });
 
@@ -150,5 +152,52 @@ describe('livePreview integration — middleware mode', () => {
       integration.hooks['astro:config:setup'](ctx);
     }).not.toThrow();
     expect(ctx.addMiddleware).toHaveBeenCalled();
+  });
+
+  // ADR 0024: the hook travels by reference, so the one-line setup can stay strict.
+  function optionsModule(options: Parameters<typeof livePreview>[0]): string {
+    const ctx = makeSetupContext();
+    livePreview({ mode: 'middleware', allowedOrigins: [ADMIN], ...options }).hooks[
+      'astro:config:setup'
+    ](ctx);
+    const plugin = ctx.plugins[0]!;
+    return plugin.load!(plugin.resolveId!('virtual:payload-live-preview/options')!)!;
+  }
+
+  it('imports the hook named by authorizePreviewModule and meets the strict default with it', () => {
+    const source = optionsModule({ authorizePreviewModule: './src/live-preview/authorize.ts' });
+    expect(source).toContain('import authorizePreview from "/src/live-preview/authorize.ts";');
+    expect(source).toContain('authorizePreview');
+    expect(source).not.toContain('"authorizePreviewModule"');
+    expect(source).toMatch(/typeof authorizePreview !== "function"/u);
+  });
+
+  it('passes a package or alias specifier to the bundler unchanged, escaped as the options are', () => {
+    expect(optionsModule({ authorizePreviewModule: '@acme/preview-auth' })).toContain(
+      'import authorizePreview from "@acme/preview-auth";',
+    );
+    expect(optionsModule({ authorizePreviewModule: '@acme/x</script>' })).toContain(
+      'import authorizePreview from "@acme/x\\u003C/script>";',
+    );
+  });
+
+  it('refuses a reference outside the project, and one outside middleware mode', () => {
+    expect(() => optionsModule({ authorizePreviewModule: '../shared/authorize.ts' })).toThrow(
+      /outside the project/u,
+    );
+    expect(() => {
+      livePreview({ authorizePreviewModule: './src/authorize.ts' }).hooks['astro:config:setup']({
+        injectScript: vi.fn(),
+      });
+    }).toThrow(
+      "payload-live-preview: `authorizePreviewModule` applies to mode 'middleware'; " +
+        'inline and loader delivery run no server hook (ADR 0024).',
+    );
+  });
+
+  it('refuses the hook itself and the reference together', () => {
+    expect(() =>
+      optionsModule({ authorizePreviewModule: './src/authorize.ts', authorizePreview: () => null }),
+    ).toThrow(/authorizePreview/u);
   });
 });

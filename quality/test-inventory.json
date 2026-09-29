@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 414,
-    "suites": 819,
-    "tests": 3674,
+    "files": 415,
+    "suites": 820,
+    "tests": 3687,
     "benchmarks": 12
   },
   "groups": {
@@ -38,9 +38,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 46,
-      "suites": 53,
-      "tests": 205,
+      "files": 47,
+      "suites": 54,
+      "tests": 208,
       "benchmarks": 0
     },
     "integration": {
@@ -64,7 +64,7 @@
     "unit": {
       "files": 334,
       "suites": 724,
-      "tests": 3346,
+      "tests": 3356,
       "benchmarks": 0
     }
   },
@@ -165,6 +165,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/astro-middleware-authorized.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -654,7 +661,7 @@
       "path": "tests/unit/adapters/astro-integration.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 11,
+      "tests": 15,
       "benchmarks": 0
     },
     {
@@ -878,7 +885,7 @@
       "path": "tests/unit/adapters/zero-config.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 12,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -2201,7 +2208,7 @@
       "path": "tests/unit/package-entries.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {

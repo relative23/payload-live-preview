@@ -226,7 +226,11 @@ Next.js middleware has no `locals`, so the adapter cannot publish its decision. 
 // app/[slug]/page.tsx — a server component
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { authorizePreviewRequest, definePreview } from 'payload-live-preview/server';
+import {
+  authorizePreviewRequest,
+  createPreviewBindings,
+  definePreview,
+} from 'payload-live-preview/server';
 
 // depth is written once for the initial read and the runtime merge.
 const preview = definePreview({ serverURL: process.env.PAYLOAD_URL!, depth: 1 });
@@ -243,7 +247,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     authorization: decision.context, // a verified context reads the draft, null the published document
   });
   if (!result.ok || result.data === null) notFound();
-  return <h1 data-payload-field="title">{result.data.title}</h1>;
+  // The same decision gates the binding attributes: a public response carries none.
+  const bindings = createPreviewBindings({ authorization: decision.context });
+  return <h1 {...bindings.bind<PageDocument>('title')}>{result.data.title}</h1>;
 }
 ```
 

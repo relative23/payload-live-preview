@@ -19,6 +19,7 @@ import {
 interface Conditions {
   readonly import?: { readonly types: string; readonly default: string };
   readonly require?: { readonly types: string; readonly default: string };
+  readonly default?: { readonly types: string; readonly default: string };
 }
 const manifest = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
   exports: Record<string, Conditions | string>;
@@ -60,6 +61,17 @@ describe('package entries', () => {
         expect(DUAL[name], `${subpath} is ESM-only in the manifest but built dual`).toBeUndefined();
       }
     }
+  });
+
+  it('lets a CommonJS-loaded next.config.ts require the Next.js entry, through require(esm)', () => {
+    // Next compiles next.config.ts to CommonJS and requires it, and a fresh
+    // project has no "type": "module". `withLivePreview` lives in `./nextjs`,
+    // which is ESM-only: without a `default` condition the require finds no
+    // export and the documented setup fails to build (found in a clean project,
+    // H12). Node 20.19, the floor, loads the ESM file through require(esm).
+    const nextjs = manifest.exports['./nextjs'] as Conditions;
+    expect(nextjs.require).toBeUndefined();
+    expect(nextjs.default).toEqual(nextjs.import);
   });
 
   it('every tsup entry that is not a CLI is reachable through the manifest', () => {

@@ -7,6 +7,7 @@
 
 import { generateInlineScript, generateLoaderScript } from '@inline/generator';
 import { loaderAsset } from './loader-asset';
+import { hookImportLines, refuseOutsideReference } from '@adapters/shared/hook-reference';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
 import type { LivePreviewAstroOptions } from './types';
 import { ASTRO_PAGE } from './page-facts';
@@ -141,6 +142,12 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
           setupMiddlewareMode(ctx, options);
           return;
         }
+        if (options.authorizePreviewModule !== undefined) {
+          throw new Error(
+            "payload-live-preview: `authorizePreviewModule` applies to mode 'middleware'; " +
+              'inline and loader delivery run no server hook (ADR 0024).',
+          );
+        }
         if (options.autoInject === false) return;
         if (options.mode === 'loader') {
           setupLoaderMode(ctx, options);
@@ -233,23 +240,38 @@ function setupMiddlewareMode(ctx: AstroConfigSetupContext, options: LivePreviewA
         'or register createLivePreviewMiddleware() manually in src/middleware.ts.',
     );
   }
+  const reference = options.authorizePreviewModule;
+  if (reference !== undefined) refuseOutsideReference(reference);
   // Strict needs `authorizePreview`, which cannot serialize: refuse here rather
   // than build cleanly and fail on every preview request.
   const willBeStrict = options.strict ?? options.defaults !== 'v1';
-  if (willBeStrict) {
+  if (willBeStrict && reference === undefined) {
     throw new Error(
       "payload-live-preview: mode 'middleware' cannot satisfy the 2.0 strict default — it " +
         'serializes its options into the build, so it cannot carry the `authorizePreview` ' +
-        'function strict mode requires. Either register ' +
-        '`createLivePreviewMiddleware({ authorizePreview, ... })` yourself in src/middleware.ts ' +
-        '(recommended: response changes stay gated on a verified context), or pass ' +
-        "`defaults: 'v1'` (or `strict: false`) to run intent-only middleware " +
+        'function strict mode requires. Name the module that exports it in ' +
+        '`authorizePreviewModule` (ADR 0024), or register ' +
+        '`createLivePreviewMiddleware({ authorizePreview, ... })` yourself in src/middleware.ts. ' +
+        "`defaults: 'v1'` (or `strict: false`) runs intent-only middleware instead " +
         '(ADR 0006 explains why intent is not authorization).',
     );
   }
 
-  const { mode: _mode, shouldInject: _shouldInject, ...serializable } = options;
-  const optionsModule = `export default ${JSON.stringify(serializable).replace(/</g, '\\u003C')};`;
+  const {
+    mode: _mode,
+    shouldInject: _shouldInject,
+    authorizePreviewModule: _reference,
+    ...serializable
+  } = options;
+  const json = JSON.stringify(serializable).replace(/</g, '\\u003C');
+  // Vite resolves a root-relative path against the project root.
+  const optionsModule =
+    reference === undefined
+      ? `export default ${json};`
+      : [
+          ...hookImportLines(reference.startsWith('./') ? reference.slice(1) : reference),
+          `export default { ...${json}, authorizePreview };`,
+        ].join('\n');
 
   ctx.updateConfig({
     vite: {

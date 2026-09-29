@@ -66,12 +66,12 @@ const TARGETS: readonly RevealTarget[] = [
     handle: '__livePreview',
   },
   {
-    // Middleware injection is gated on preview intent, which this fixture
-    // signals with a query parameter, so the framed path carries it.
+    // Strict middleware delivery (ADR 0024): the mock admin mints a token for
+    // the route it is asked to frame, and the hook verifies it.
     name: 'astro — middleware delivery',
     server: 'astro-middleware',
     admin: 'http://localhost:4183/admin',
-    path: '/reveal?preview=true',
+    path: '/reveal',
     handle: '__livePreview',
   },
   {

@@ -52,7 +52,7 @@ Astro evaluates `astro.config.mjs` before it loads `.env`, and `import.meta.env`
 
 `mode` selects how the runtime reaches a page. A static build has no request to decide on, so `'inline'` and `'loader'` are delivery choices and not authorization boundaries: neither changes a response header, carries a nonce or reads a draft, and the injected runtime does not start at all outside a preview frame. What an editor is shown is decided by whatever fetches the draft — see [authorization.md](authorization.md). `'middleware'` is the mode that runs per request, and the one the policy engine gates.
 
-**`'inline'` (the default)** bakes the runtime into every page at build time. It works without a server, and every ordinary visitor downloads about 35 KB gzip for a feature only an editor uses.
+**`'inline'` (the default)** bakes the runtime into every page at build time. It works without a server, and every ordinary visitor downloads about 41 KB gzip for a feature only an editor uses.
 
 **`'loader'`** keeps the pages small. Each page carries a bootstrap of a few hundred bytes that checks the preview context and fetches the runtime as a content-hashed, SRI-verified asset only inside a preview. The asset is published once at `/_payload-live-preview/runtime.<hash>.js` (below Astro's `base`, when one is set), cached across every page, and identical for every site on the same package version, so it carries no deployment secret. `astro dev` serves the same path from memory. The price is one extra request the first time an editor opens a preview.
 
@@ -65,19 +65,34 @@ livePreview({
 
 Under a strict CSP the asset is a same-origin script with an `integrity` attribute and needs no `'unsafe-inline'`. The bootstrap is an inline `<script>` without a nonce, because a static build has no request to derive one from; its content is deterministic for a package version and configuration, so a `'sha256-…'` source expression covers it.
 
-**`'middleware'`** injects at request time in `output: 'server'` projects, so only requests carrying preview intent receive the bytes. The integration serializes its options into the build, so it cannot carry the `authorizePreview` function the strict default requires; it refuses to build without `strict: false` (or `defaults: 'v1'`) and then delivers on intent alone:
+**`'middleware'`** injects at request time in `output: 'server'` projects, into a response the server authorized and no other. The integration serializes its options into the build, so it cannot carry the `authorizePreview` hook as a function; it takes the module that exports it ([ADR 0024](architecture/0024-authorization-by-module-reference.md)):
 
 ```ts
 livePreview({
   mode: 'middleware',
-  strict: false, // intent-only: the query parameter alone triggers injection
+  authorizePreviewModule: './src/live-preview/authorize.ts',
   allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
   serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
   mergeDepth: 1,
 }),
 ```
 
-Intent is the query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`); `previewSignals` can add `Sec-Fetch-Dest: iframe`, and `defaults: 'v1'` restores the admin referer as well. All of them are client-controlled. For a preview gated on a verified request, register `createLivePreviewMiddleware()` yourself as in step 5: it takes the hook, and the integration stays out of `astro.config.mjs`.
+```ts
+// src/live-preview/authorize.ts
+import { authorizePreviewRequest } from 'payload-live-preview/server';
+
+export default (request: Request) =>
+  authorizePreviewRequest(request, {
+    type: 'payload-session',
+    serverURL: import.meta.env.PAYLOAD_URL,
+  });
+```
+
+A path beginning with `./` is relative to the project root; a package specifier is passed to Vite unchanged, and one outside the project is refused. The module is server code: the middleware imports it, and the page never does. If its default export is not a function, the server says so when it loads. Step 5 describes the hook and its strategies; composing `createLivePreviewMiddleware()` yourself, as shown there, does the same with the function in hand.
+
+#### Intent-only delivery is not authorization
+
+With `strict: false` (or `defaults: 'v1'`) and no hook, the middleware injects on preview intent alone: the query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`), `Sec-Fetch-Dest: iframe` through `previewSignals`, and under `'v1'` the admin referer. All of them are client-controlled, so anyone who adds the parameter receives the runtime. Use it for a local demo, not for drafts.
 
 ## 3. Mark what should update
 

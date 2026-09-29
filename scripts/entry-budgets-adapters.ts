@@ -26,7 +26,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +119/-25/-8 B; same 106/27/167 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +3015/+915/+788 B; same 106/27/167 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +3164/+1052/+837 B; same 106/27/167 B cushions.
-  'adapters/astro/index.js': { raw: 195_072, gzip: 60_675, brotli: 51_784 },
+  // 2026-09-29 (H12, authorization by module reference, ADR 0024): measured +951/+288/+259 B; same 106/27/167 B cushions.
+  'adapters/astro/index.js': { raw: 196_023, gzip: 60_963, brotli: 52_043 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -100,7 +101,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // is the existing `./nuxt` entry, which the generated plugin imports. The Next
   // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
   // frame-ancestors builder it shares with the middleware.
-  'adapters/nuxt/module.js': { raw: 660, gzip: 426, brotli: 349 },
+  // 2026-09-29 (H12, authorization by module reference, ADR 0024): measured +1448/+485/+428 B; same 11/7/6 B cushions.
+  'adapters/nuxt/module.js': { raw: 2_108, gzip: 911, brotli: 777 },
   // 2026-09-12 (C1): sveltekit brotli 42 479 → 42 620, the only metric the drawer-edit fix crossed (measured 42 500 + the ~120 B cushion).
   // 2026-09-14 (2.0.1): brotli 42 955 → 43 092. Its cushion was 4 B (measured 42 951), which
   // brotli's run-to-run swing crosses with no code change; the fix's build measured 42 972 and

@@ -18,7 +18,10 @@ function packageSpecifier(name: string, exportName: string): string {
   return exportName === '.' ? name : `${name}/${exportName.slice(2)}`;
 }
 
-function conditionTarget(value: unknown, condition: 'import' | 'require'): string | undefined {
+function conditionTarget(
+  value: unknown,
+  condition: 'import' | 'require' | 'default',
+): string | undefined {
   if (!isRecord(value)) return undefined;
   const branch = value[condition];
   if (typeof branch === 'string') return branch;
@@ -52,7 +55,12 @@ function partitionExportSpecifiers(
           : runtimeEsm;
       target.push(packageSpecifier(packageName, exportName));
     }
-    if (conditionTarget(conditions, 'require') !== undefined) {
+    // A `default` beside `import` is an ESM file Node loads through require(esm)
+    // (Next.js requires a next.config.ts compiled to CommonJS).
+    if (
+      conditionTarget(conditions, 'require') !== undefined ||
+      conditionTarget(conditions, 'default') !== undefined
+    ) {
       const target = CODEGEN_EXPORT_NAMES.has(exportName) ? codegenCjs : runtimeCjs;
       target.push(packageSpecifier(packageName, exportName));
     }
@@ -124,6 +132,7 @@ function esmRuntimeExports(packageName: string): Readonly<Record<string, readonl
 
 function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonly string[]>> {
   return {
+    [packageSpecifier(packageName, './nextjs')]: ['withLivePreview', 'createLivePreviewMiddleware'],
     [packageSpecifier(packageName, '.')]: ['LivePreviewClient', 'createPreviewFocusReporter'],
     [packageSpecifier(packageName, './core')]: ['EventEmitter', 'initLivePreview'],
     [packageSpecifier(packageName, './payload')]: ['buildLivePreviewUrl'],

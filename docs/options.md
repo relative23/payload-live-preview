@@ -58,6 +58,7 @@ always wins. The ledger of what changed is
 | `defaults`                 | yes    | yes           | yes                                                      | —                        | `'v2'`                                              | `'v1'`                               |
 | `strict`                   | —      | —             | yes                                                      | —                        | `true`                                              | `false`                              |
 | `authorizePreview`         | —      | —             | yes                                                      | —                        | — (required under `strict`)                         | same                                 |
+| `authorizePreviewModule`   | —      | —             | Astro `mode: 'middleware'`, the Nuxt module              | —                        | — (the hook by reference, ADR 0024)                 | same                                 |
 | `previewSignals`           | —      | —             | yes                                                      | —                        | `['query']`                                         | `['query', 'fetch-dest', 'referer']` |
 | `previewQueryParams`       | —      | —             | yes                                                      | —                        | `['preview', 'draft', 'livePreview']`               | same                                 |
 | `inject`                   | —      | —             | yes                                                      | —                        | `'preview-only'`                                    | same                                 |
@@ -156,10 +157,18 @@ Notes on the rows that need one:
   `'loader'` injects a small bootstrap that fetches the runtime as a hashed,
   SRI-verified asset only inside a preview; `'middleware'` registers the
   request-time middleware from serialized options, so it cannot carry
-  `authorizePreview` or `shouldInject` and refuses the `strict` default —
-  register `createLivePreviewMiddleware()` yourself for those. The loader
-  asset's caching and CSP are in
+  `authorizePreview` or `shouldInject` as functions. It takes the hook by
+  module reference instead, `authorizePreviewModule`, and refuses the `strict`
+  default without one; register `createLivePreviewMiddleware()` yourself for
+  `shouldInject`. The loader asset's caching and CSP are in
   [docs/deployment.md](deployment.md#the-runtime-as-a-cached-asset).
+- `authorizePreviewModule` (Astro `mode: 'middleware'`, the Nuxt module): a
+  server module whose default export is the `authorizePreview` hook. A path
+  beginning with `./` is relative to the project root; a package or alias
+  specifier is passed to the bundler unchanged; one outside the project is
+  refused. The generated code throws when the server loads it if the export
+  is not a function
+  ([ADR 0024](architecture/0024-authorization-by-module-reference.md)).
 - `manageCsp: 'full'` also manages a nonce'd `script-src`; `strictDynamic`
   adds `'strict-dynamic'`, after which CSP 3 ignores `'self'` and host
   sources, so every script on the page must carry the nonce.
@@ -336,7 +345,7 @@ ones, as `@beta` on the declarations in the API reports (`etc/api/*.api.md`):
 | `payload-live-preview/plugin`                        | Stable       | `livePreview()` configures Payload 2.32.3 or 3.x structurally: one root URL callback, merged entity lists and optional root breakpoints; no authentication or Payload import.                             |
 | `payload-live-preview/payload`                       | Stable       | The lower-level `buildLivePreviewUrl()` callback for manual or nullable `payload.config.ts` routing; imports nothing from `payload`.                                                                      |
 | `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | Stable       | One framework adapter each.                                                                                                                                                                               |
-| `payload-live-preview/nuxt-module`                   | Stable       | The Nuxt module: registers the Nitro plugin from `nuxt.config.ts`; data options only, no `authorizePreview` or `shouldInject`.                                                                            |
+| `payload-live-preview/nuxt-module`                   | Stable       | The Nuxt module: registers the Nitro plugin from `nuxt.config.ts`; data options, `authorizePreview` by module reference (`authorizePreviewModule`), no `shouldInject`.                                    |
 | `payload-live-preview/react`                         | Stable       | `useLivePreviewDocument()`: the merged document as a hook (needs `react`).                                                                                                                                |
 | `payload-live-preview/vue`                           | Stable       | The same as a composable (needs `vue`).                                                                                                                                                                   |
 | `payload-live-preview/lean`                          | Experimental | `LEAN_RUNTIME`: the smaller runtime artifact, as a value for the `runtime` option. Passing it is stable; the artifact's fields (`RuntimeArtifact`) may gain one in a minor.                               |

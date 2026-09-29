@@ -164,9 +164,10 @@ request except a refused preview. `LivePreviewLocals`, exported from
 `payload-live-preview/nuxt`, types all three: extend Astro's `App.Locals`,
 SvelteKit's `App.Locals` or Nuxt's `H3EventContext` (module `h3`) with it, as
 the guides show ([docs/astro.md](astro.md), [docs/sveltekit.md](sveltekit.md),
-[docs/nuxt.md](nuxt.md)). Astro's `mode: 'middleware'` serializes its options
-into the build and cannot carry the hook; register
-`createLivePreviewMiddleware()` yourself.
+[docs/nuxt.md](nuxt.md)). Astro's `mode: 'middleware'` and the Nuxt module
+serialize their options into the build, so they take the hook by module
+reference: `authorizePreviewModule` names a server module whose default export
+it is ([ADR 0024](architecture/0024-authorization-by-module-reference.md)).
 
 ## Draft documents on first load
 
