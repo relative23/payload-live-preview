@@ -41,7 +41,7 @@ The module writes a Nitro plugin into Nuxt's build directory (`.nuxt/`, or `node
 
 The options are serialized into the generated plugin, so a function cannot travel in them: `authorizePreview` travels by reference instead ([ADR 0024](architecture/0024-authorization-by-module-reference.md)). The plugin imports the module `authorizePreviewModule` names and passes its default export on, so the strict 2.0 default holds. With the reference the module also registers the server handler below, so the decision is made before the app renders and a page reads it on `event.context`, as [Read `event.context`](#read-eventcontext) shows. A path beginning with `./` is relative to the project root; an alias such as `~/` or a package specifier is passed to Nitro unchanged, and one outside the project is refused. `shouldInject` has no such reference; a preview that needs it writes the plugin below by hand.
 
-Without either, the strict default refuses to start. `defaults: 'v1'` (or `strict: false`) then injects on client-controlled intent alone, which is not authorization: anyone who adds the query parameter receives the runtime.
+Without either, the strict default refuses to start. `strict: false` then injects on client-controlled intent alone, which is not authorization: anyone who adds the query parameter receives the runtime. The deprecated `defaults: 'v1'` does the same and goes in 3.0 ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)).
 
 ## One options object
 
@@ -101,7 +101,7 @@ export default defineEventHandler(defineLivePreviewServerHandler(livePreviewOpti
 export const livePreviewOptions = {
   allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
   delivery: 'asset',
-  defaults: 'v1', // for the module, as in the short setup
+  authorizePreviewModule: './server/utils/live-preview-auth', // for the module, as in the short setup
 } as const;
 ```
 

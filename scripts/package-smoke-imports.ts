@@ -162,18 +162,22 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
  * unsanitised HTML on a server that had called the root's setter. The fake
  * document counts the one `createElement('template')` a sanitising pass makes.
  *
+ * The setter's own deprecation warning (ADR 0026) is counted apart: called
+ * through both entries, it prints once, since the issued keys live on the realm.
+ *
  * The probe is a fixed text; the two specifiers arrive as arguments
  * (`process.argv[1]` and `[2]`), so no value is spliced into code.
  */
 const SHARED_SANITIZER_DOCUMENT_BODY = [
-  'let calls = 0; const warnings = [];',
-  'console.warn = (message) => { warnings.push(String(message)); };',
+  'let calls = 0; const warnings = []; const deprecations = [];',
+  "console.warn = (message) => { const text = String(message); (text.includes('is removed in 3.0') ? deprecations : warnings).push(text); };",
   "root.setSanitizerDocument({ createElement: () => { calls += 1; return { innerHTML: '', content: { childNodes: [] } }; } });",
   "lexical.lexicalToHtml({ root: { type: 'root', children: [{ type: 'paragraph', children: [{ type: 'text', text: 'x', format: 0 }] }] } });",
   "if (calls !== 1 || warnings.length > 0) throw new Error('lexicalToHtml from /lexical did not use the document set through the root: ' + calls + ' template(s), ' + JSON.stringify(warnings));",
   'lexical.setSanitizerDocument(null);',
   "root.lexicalToHtml({ root: { type: 'root', children: [] } });",
   "if (calls !== 1 || warnings.length !== 1) throw new Error('clearing through /lexical did not clear the root: ' + calls + ' template(s), ' + warnings.length + ' warning(s)');",
+  "if (deprecations.length !== 1) throw new Error('setSanitizerDocument() through two entries did not warn exactly once: ' + JSON.stringify(deprecations));",
 ].join(' ');
 
 const SHARED_SANITIZER_DOCUMENT_PROBES: Readonly<Record<'esm' | 'cjs', string>> = {

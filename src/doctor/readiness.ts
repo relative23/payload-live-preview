@@ -149,7 +149,10 @@ function remedyFor(origin: Origin, row: ReadinessRow, value: unknown): string {
   const wanted = `\`${row.key}: ${literal(V2_RUNTIME_DEFAULTS[row.key])}\``;
   switch (origin) {
     case 'profile':
-      return `Set ${wanted} or drop \`defaults: 'v1'\` once ${row.condition}.`;
+      return (
+        `Set ${wanted} or drop \`defaults: 'v1'\` once ${row.condition}. 3.0 removes the ` +
+        'profile; `pll migrate` writes its rows out, so each can go on its own.'
+      );
     case 'explicit':
       return `Drop the explicit \`${row.key}: ${literal(value)}\` once ${row.condition}; 2.0 defaults to ${wanted}.`;
     case 'unmarked':

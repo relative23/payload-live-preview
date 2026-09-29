@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 415,
-    "suites": 820,
-    "tests": 3691,
+    "files": 418,
+    "suites": 826,
+    "tests": 3708,
     "benchmarks": 12
   },
   "groups": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 334,
-      "suites": 724,
-      "tests": 3360,
+      "files": 337,
+      "suites": 730,
+      "tests": 3377,
       "benchmarks": 0
     }
   },
@@ -1827,6 +1827,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/deprecation-warnings.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/detection/environment.test.ts",
       "group": "unit",
       "suites": 5,
@@ -2156,6 +2163,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/migrate/expand-defaults-v1.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/migrate/migrate-source.test.ts",
       "group": "unit",
       "suites": 2,
@@ -2188,6 +2202,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/rename-on-unbound-change.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {

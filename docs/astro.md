@@ -92,7 +92,7 @@ A path beginning with `./` is relative to the project root; a package specifier 
 
 #### Intent-only delivery is not authorization
 
-With `strict: false` (or `defaults: 'v1'`) and no hook, the middleware injects on preview intent alone: the query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`), `Sec-Fetch-Dest: iframe` through `previewSignals`, and under `'v1'` the admin referer. All of them are client-controlled, so anyone who adds the parameter receives the runtime. Use it for a local demo, not for drafts.
+With `strict: false` (or the deprecated `defaults: 'v1'`) and no hook, the middleware injects on preview intent alone: the query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`), `Sec-Fetch-Dest: iframe` through `previewSignals`, and under `'v1'` the admin referer. All of them are client-controlled, so anyone who adds the parameter receives the runtime. Use it for a local demo, not for drafts.
 
 ## 3. Mark what should update
 
@@ -247,7 +247,7 @@ Wrap such a component in a `data-payload-fragment` boundary, export an endpoint 
 
 - [`examples/astro-payload`](../examples/astro-payload) — the integration in `mode: 'loader'`, the fastest way to see the whole flow.
 - [`examples/astro-inline`](../examples/astro-inline) and [`examples/astro-middleware`](../examples/astro-middleware) — the same page in the other two modes.
-- [`examples/astro-hybrid`](../examples/astro-hybrid) — server-rendered fragments behind a hand-composed middleware that mints a preview token and injects on intent (`defaults: 'v1'`); the fragment endpoint verifies that token with the `signed-token` strategy.
+- [`examples/astro-hybrid`](../examples/astro-hybrid) — server-rendered fragments behind a hand-composed middleware that mints a preview token and injects on intent (`strict: false`); the fragment endpoint verifies that token with the `signed-token` strategy.
 
 ## Next
 

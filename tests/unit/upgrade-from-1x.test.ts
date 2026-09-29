@@ -21,12 +21,14 @@ describe('the 1.x name that stayed', () => {
     // 1.8.1 exported it from `./astro` as well, and an Astro project is this
     // package's most common consumer — an alias only at the root would have
     // left exactly them with the edit.
-    expect(astroIsPreviewRequest).toBe(astroHasPreviewIntent);
     expect(astroIsPreviewRequest).toBe(isPreviewRequest);
   });
 
-  it('`isPreviewRequest` is `hasPreviewIntent`, not a copy of it', () => {
-    expect(isPreviewRequest).toBe(hasPreviewIntent);
+  it('answers as `hasPreviewIntent` on both entries, and says once that 3.0 removes it (ADR 0026)', () => {
+    const request = { url: 'https://site.example/page?preview=true', headers: { get: () => null } };
+
+    expect(astroIsPreviewRequest(request)).toBe(astroHasPreviewIntent(request));
+    expect(isPreviewRequest(request)).toBe(hasPreviewIntent(request));
   });
 
   it('answers the way 1.x answered', () => {

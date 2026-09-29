@@ -378,6 +378,12 @@ interface Fixture {
  * client -8, Next middleware -17, lean -23, the React hook -33 and the Vue
  * composable -29 B gzip; every ceiling moves down by its difference and keeps
  * its cushion.
+ * 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): paired
+ * measurements against the PHD-11 archive: generator +358, Next middleware
+ * +261 and `/lexical` +1 B gzip, for the development warnings the generator
+ * and the adapters give for `defaults: 'v1'` and `onUnboundChange`, and the
+ * helper that prints them once; the browser runtime does not change. Every
+ * ceiling keeps its cushion.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -405,7 +411,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 49_356,
+    gzip: 49_714,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -419,7 +425,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_539,
+    gzip: 5_540,
     why: 'the Lexical renderer from its focused entry',
   },
   {
@@ -433,7 +439,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 54_641,
+    gzip: 54_902,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

@@ -53,7 +53,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 19 210 → 19 261 (+51 B, measured 19 193 → 19 244); gzip 7 600 → 7 624 (+24 B, measured 7 589 → 7 613).
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+11/+3 B; same 17/12/94 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +19/+12/+3 B; same 17/12/94 B cushions.
-  'doctor.js': { raw: 19_388, gzip: 7_678, brotli: 6_760 },
+  // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +89/+49/+34 B; same 17/12/94 B cushions.
+  'doctor.js': { raw: 19_477, gzip: 7_727, brotli: 6_794 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -87,7 +88,9 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 43 141 → 43 874 (+733 B, measured 43 099 → 43 832); gzip 15 403 → 15 564 (+161 B, measured 15 384 → 15 545); brotli 13 744 → 13 903 (measured 13 624 → 13 783, cushion kept).
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+11/+10 B; same 42/19/120 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +19/+6/+2 B; same 42/19/120 B cushions.
-  'doctor-cli.js': { raw: 44_001, gzip: 15_614, brotli: 13_938 },
+  // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5539/+1689/+1557 B; same 42/19/120 B cushions.
+  'doctor-cli.js': { raw: 49_540, gzip: 17_303, brotli: 15_495 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
-  'migrate.js': { raw: 14_534, gzip: 5_267, brotli: 4_750 },
+  // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
+  'migrate.js': { raw: 19_975, gzip: 6_976, brotli: 6_333 },
 };

@@ -7,15 +7,25 @@ available as an opt-in now, so a site can take it one row at a time and see
 what it does before the release does it. The ADR 0007 ledger has the full
 table.
 
-| 3.0 change                                                               | Try it now                                                                          | What to do                                                                                                   |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `lexicalToHtml()` without a sanitizer document throws instead of warning | `lexicalToHtml(content, { requireDocument: true })`, `<RichText requireDocument />` | pass a `document` (linkedom, jsdom) per call; the build names every render without one                       |
-| a partly bound group counts as covered path by path                      | `subfieldCoverage: 'declared'`                                                      | LP0203 names each uncovered path; declare the ones the page leaves out on purpose with `data-payload-covers` |
-| `setSanitizerDocument()` is removed                                      | pass `document` per call                                                            | `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, the `RichText` `document` prop   |
+| 3.0 change                                                               | Try it now                                                                          | What to do                                                                                                                         |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `lexicalToHtml()` without a sanitizer document throws instead of warning | `lexicalToHtml(content, { requireDocument: true })`, `<RichText requireDocument />` | pass a `document` (linkedom, jsdom) per call; the build names every render without one                                             |
+| a partly bound group counts as covered path by path                      | `subfieldCoverage: 'declared'`                                                      | LP0203 names each uncovered path; declare the ones the page leaves out on purpose with `data-payload-covers`                       |
+| `setSanitizerDocument()` is removed                                      | pass `document` per call                                                            | `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, the `RichText` `document` prop                         |
+| `defaults: 'v1'` is removed                                              | `npx pll migrate ./src --write`                                                     | the rows it stood for become explicit options with the same values; `pll doctor --v2` names each one, so they can go one at a time |
+| `onUnboundChange`, `isPreviewRequest()` and `adminOrigins` are removed   | `npx pll migrate ./src --write`                                                     | the codemods rename them: `onUnfaithfulPatch` (`'route'` is `'escalate'`), `hasPreviewIntent()`, `allowedOrigins`                  |
+| the `signed-token` replay store `{ isUsed, markUsed }` is removed        | implement `consume(id, expiresAt)`                                                  | one check-and-record step; [security.md](security.md) has a Redis example                                                          |
+| `new OriginDetector()` no longer trusts `document.referrer` by default   | `new OriginDetector({ enableReferrerDetection: false })`                            | pass `enableReferrerDetection: true` where a detector you build yourself relies on the referrer                                    |
 
-None of these is a mechanical rewrite: whether a call site has a DOM, or which
-fields a page shows on purpose, is a fact about the project that `pll migrate`
-cannot read from the source.
+Each form 3.0 removes warns once per process while it runs in development,
+never in production, and names what replaces it, so the server log lists what
+is left. The first three rows are not mechanical rewrites: whether a call site
+has a DOM, or which fields a page shows on purpose, is a fact about the
+project that `pll migrate` cannot read from the source. The codemods rewrite
+options that a file hands to the package, directly or through a `const` it
+spreads; module options in `nuxt.config` are not among them, so write the rows
+out there by hand. A client built in the browser (`LivePreviewClient`,
+`initLivePreview()`) does not warn; the codemods cover its options.
 
 ## Upgrading to 2.0
 
@@ -46,7 +56,8 @@ reports conflicts has almost always changed the files it reports. Exit codes: `0
 missing `ts-morph`, `3` at least one file needs manual attention. `.astro`,
 `.vue` and `.svelte` files are rewritten in their script blocks only. The
 codemods are `rename-is-preview-request`, `rename-admin-origins-option`,
-`rename-bindings-authorized-option` and `move-fetch-preview-helpers`.
+`rename-bindings-authorized-option`, `move-fetch-preview-helpers`,
+`rename-on-unbound-change` and `expand-defaults-v1`.
 
 `pll doctor --v2` reads the served inline configuration and reports each
 runtime row still at its `'v1'` value as `LP0709`. A script names the defaults

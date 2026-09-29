@@ -13,7 +13,9 @@ inline script, so an adapter row is also an inline-script row.
 
 The defaults are the `v2` table. `defaults: 'v1'` restores every 1.x row at
 once on the client, the inline script and the adapters; an explicit option
-always wins. The ledger of what changed is
+always wins. It is deprecated: 3.0 removes it, an adapter given it warns once
+in development, and `pll migrate` writes the rows it stands for into the
+options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The ledger of what changed is
 [ADR 0007 — 2.0 defaults, migration policy, and the renames ledger](architecture/0007-v2-defaults-and-renames-ledger.md).
 
 | Option                     | Client | Inline script | Adapter                                                  | Server (`definePreview`) | Default (v2)                                        | With `defaults: 'v1'`                |
@@ -217,7 +219,8 @@ Notes on the rows that need one:
   and `escalated` for the ones a strategy took — so a page that has nowhere to
   escalate to shows the gap rather than hiding it.
   `onUnboundChange` is the 2.0 name for the same decision and still decides when
-  it is given — `'route'` means `'escalate'` — until it is removed in 3.0.
+  it is given — `'route'` means `'escalate'` — until it is removed in 3.0. An
+  adapter given it warns once in development, and `pll migrate` renames it.
 - `hydration: 'react'` holds the runtime's start — no `ready`, no listener —
   until React has committed the tree that holds the bindings, so the first
   write lands on markup React keeps instead of on markup React is about to

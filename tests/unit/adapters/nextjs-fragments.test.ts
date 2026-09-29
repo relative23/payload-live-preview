@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFragmentEndpoint, defineFragment } from '@adapters/nextjs/fragments';
 import { issuePreviewToken } from '@security/preview-authorization';
-import { resetDevWarnings } from '@adapters/shared/dev-warning';
+import { resetDevWarnings } from '@/types/dev-warning';
 
 /**
  * The same endpoint as Astro's, rendering through React instead of Astro's

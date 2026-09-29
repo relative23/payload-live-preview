@@ -13,9 +13,17 @@
  * the very defaults the move removed (ADR 0007, ledger rows 1 and 9).
  */
 
+import { warnOnce } from '@/types/dev-warning';
 import { hasPreviewIntent } from './preview-request';
 
 /**
  * @deprecated Use `hasPreviewIntent`; removed in 3.0. `pll migrate` rewrites it.
  */
-export const isPreviewRequest = hasPreviewIntent;
+export const isPreviewRequest: typeof hasPreviewIntent = (request, options) => {
+  warnOnce(
+    'is-preview-request',
+    '`isPreviewRequest()` is removed in 3.0: call `hasPreviewIntent()`, which takes the same ' +
+      'arguments; `pll migrate` renames it (ADR 0026).',
+  );
+  return hasPreviewIntent(request, options);
+};

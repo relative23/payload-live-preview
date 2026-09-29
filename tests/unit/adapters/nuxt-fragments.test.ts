@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFragmentEndpoint } from '@adapters/nuxt/fragments';
 import { issuePreviewToken } from '@security/preview-authorization';
-import { resetDevWarnings } from '@adapters/shared/dev-warning';
+import { resetDevWarnings } from '@/types/dev-warning';
 
 /**
  * The same endpoint as the other three, rendering through Vue. `vue` is an

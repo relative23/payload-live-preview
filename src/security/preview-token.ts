@@ -4,6 +4,7 @@
  */
 
 import { createAuthorizedPreviewContext } from '@/types/authorized-preview';
+import { warnOnce } from '@/types/dev-warning';
 import {
   PreviewConfigurationError,
   refused,
@@ -343,6 +344,11 @@ async function consumeTokenId(
     const answer: unknown = await store.consume(id, expiresAt);
     return answer === true;
   }
+  warnOnce(
+    'replay-is-used',
+    'A `signed-token` replay store with `isUsed` and `markUsed` is removed in 3.0: implement ' +
+      '`consume(id, expiresAt)`, which checks and records in one step (ADR 0026).',
+  );
   if (await store.isUsed(id)) return false;
   await store.markUsed(id, expiresAt);
   return true;

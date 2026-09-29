@@ -3,6 +3,7 @@
  * places at most one strategy prelude ahead of it.
  */
 
+import { warnDeprecatedOptions } from '@/types/dev-warning';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import { V1_RUNTIME_DEFAULTS } from '@/types/defaults-profile';
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
@@ -24,6 +25,8 @@ function assertBuilt(source: string, artifact: string): void {
 
 /** The inline script body without `<script>` tags; see `wrapWithScriptTag()`. */
 export function generateInlineScript(config: InlineScriptConfig = {}): string {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- read to warn about it
+  warnDeprecatedOptions({ defaults: config.defaults, onUnboundChange: config.onUnboundChange });
   const runtime = runtimeFor(config);
   return [configStatement(config), ...strategyPrelude(config), runtime].join('\n');
 }

@@ -21,7 +21,7 @@ import {
   matchesPreviewDocumentData,
 } from '@security/preview-scope';
 import { runAuthorizeHook } from './authorize-hook';
-import { warnOnce } from './dev-warning';
+import { warnOnce } from '@/types/dev-warning';
 import type { PreviewAdapterOptions } from './options';
 import {
   FRAGMENT_PROTOCOL_VERSION,

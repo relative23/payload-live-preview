@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFragmentEndpoint as svelteEndpoint } from '@adapters/sveltekit/fragments';
 import { createFragmentEndpoint as vueEndpoint } from '@adapters/nuxt/fragments';
 import { issuePreviewToken } from '@security/preview-authorization';
-import { resetDevWarnings } from '@adapters/shared/dev-warning';
+import { resetDevWarnings } from '@/types/dev-warning';
 
 /**
  * A project that installs neither Svelte nor Vue: the bindings must import and

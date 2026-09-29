@@ -2,7 +2,7 @@ import { expect, test, type Frame, type Page } from '@playwright/test';
 import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 /**
- * `onUnboundChange: 'route'` in a browser (`examples/astro-hybrid`, route
+ * `onUnfaithfulPatch: 'escalate'` in a browser (`examples/astro-hybrid`, route
  * `/unbound`, which runs the route strategy without a fragment endpoint).
  *
  * The case it exists for: an editor changes a field the template does not

@@ -3,7 +3,7 @@ import { createLivePreviewMiddleware as nextMiddleware } from '@adapters/nextjs/
 import { livePreviewHandle } from '@adapters/sveltekit/adapter';
 import { livePreviewNitroPlugin } from '@adapters/nuxt/adapter';
 import { createLivePreviewMiddleware as astroMiddleware } from '@adapters/astro/middleware';
-import { resetDevWarnings } from '@adapters/shared/dev-warning';
+import { resetDevWarnings } from '@/types/dev-warning';
 import {
   authorizePreviewRequest,
   PreviewConfigurationError,

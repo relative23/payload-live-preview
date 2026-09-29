@@ -4,6 +4,7 @@
  * Needs a DOM; string-only sanitizers are historically brittle.
  */
 
+import { warnOnce } from '@/types/dev-warning';
 import { trustedHtml } from './trusted-types';
 import { isSafeUrl, isExternalHttpUrl } from './url-validator';
 import { reportDroppedAttribute } from './sanitizer-report';
@@ -301,6 +302,11 @@ interface DocumentSlot {
  * (ADR 0007 ledger).
  */
 export function setSanitizerDocument(doc: SanitizerDocument | null): void {
+  warnOnce(
+    'set-sanitizer-document',
+    '`setSanitizerDocument()` is removed in 3.0: pass the document per call, ' +
+      '`sanitizeHtml(html, { document })` or `lexicalToHtml(content, { document })` (ADR 0026).',
+  );
   (globalThis as DocumentSlot)[DOCUMENT_SLOT] = doc ?? undefined;
 }
 

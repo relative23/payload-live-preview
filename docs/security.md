@@ -57,9 +57,11 @@ start without `authorizePreview`, without explicit `https` admin origins
 (outside development), or with referrer trust — including the trust the `'v1'`
 signal set implies. Astro's `livePreview()` integration in its default
 `mode: 'inline'` and in `'loader'` injects at build time and checks none of
-this; its `'middleware'` mode refuses the strict default outright, because it
-cannot carry the hook. `defaults: 'v1'` restores the 1.x intent-only behavior, with a
-one-time development warning, for a staged migration.
+this; its `'middleware'` mode takes the hook by module reference
+(`authorizePreviewModule`, ADR 0024) and refuses the strict default without
+one. `strict: false` restores the 1.x intent-only behavior, with a one-time
+development warning, for a staged migration; so does the deprecated
+`defaults: 'v1'`, which 3.0 removes.
 
 When verification fails or is unavailable the adapters serve the ordinary
 published response unchanged. A response an adapter did change — runtime
@@ -90,7 +92,8 @@ followed by a write lets two requests that carry the same token and arrive
 together both pass. `true` admits the token; any other answer refuses it as
 `replayed`, a throw as `unavailable`. The 1.x `isUsed`/`markUsed` shape is
 still accepted, deprecated, and removed in 3.0: it is the two-step shape and
-has exactly that race.
+has exactly that race. A strategy that checks a token against it warns once in
+development.
 
 ```ts
 const replay = {
