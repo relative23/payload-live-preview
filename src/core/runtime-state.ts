@@ -27,6 +27,7 @@ import { FieldRevealer } from './reveal';
 import { RevealLedger } from './reveal-ledger';
 import type { RuntimeOptions } from './runtime-options';
 import type { ConnectionState, HeartbeatTimer } from './state';
+import type { SubfieldCoverage } from './subfield-coverage';
 import type { StrategyHandlers } from './strategies';
 import type { CachedElement, FieldRenderer, RichTextRenderer } from './types';
 import type { FlushStats, UpdateScheduler } from './update-scheduler';
@@ -97,6 +98,8 @@ export interface RuntimeDeps {
   /** How long a burst of messages may share one merge; the scheduler's debounce window. */
   readonly mergeWindowMs: number;
   readonly scopeBindingsByOwner: boolean;
+  /** ADR 0022: whether one bound descendant covers a group, or each changed path needs its own. */
+  readonly subfieldCoverage: SubfieldCoverage;
   readonly lockedOrigin: () => string | undefined;
   readonly skipUnchanged: boolean;
   readonly dependencies: Readonly<Record<string, readonly string[]>>;

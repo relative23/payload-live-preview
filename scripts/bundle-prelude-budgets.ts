@@ -108,7 +108,8 @@
 // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+151/+213 B; same 36/29/120 B cushions.
 // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+6/-64 B; same 36/29/120 B cushions.
 // 2026-09-29 (PHD-02, owner-scoped route planning): measured +97/+52/+44 B; same 36/29/120 B cushions.
-export const INLINE_FRAGMENT_BUDGET = { raw: 142_442, gzip: 44_666, brotli: 39_000 } as const;
+// 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2924/+883/+766 B; same 36/29/120 B cushions.
+export const INLINE_FRAGMENT_BUDGET = { raw: 145_366, gzip: 45_549, brotli: 39_766 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -214,4 +215,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 142_442, gzip: 44_666, brotli: 39_0
 // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+148/+154 B; same 20/10/120 B cushions.
 // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+6/-15 B; same 20/10/120 B cushions.
 // 2026-09-29 (PHD-02, owner-scoped route planning): measured +97/+62/+52 B; same 20/10/120 B cushions.
-export const INLINE_ROUTE_BUDGET = { raw: 136_990, gzip: 42_772, brotli: 37_383 } as const;
+// 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2924/+880/+793 B; same 20/10/120 B cushions.
+export const INLINE_ROUTE_BUDGET = { raw: 139_914, gzip: 43_652, brotli: 38_176 } as const;

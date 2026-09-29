@@ -21,8 +21,21 @@
  */
 
 import type { LivePreviewPlugin, PluginDisposer } from '../types';
-import { FIELD_ATTRIBUTE, GUESSED_ATTRIBUTE } from '@core/cache';
-import { createNameAddressability, SYSTEM_FIELD_NAMES } from '@core/unbound-fields';
+import {
+  COVERS_ATTRIBUTE,
+  DEPENDS_ATTRIBUTE,
+  FIELD_ATTRIBUTE,
+  GUESSED_ATTRIBUTE,
+  renderingStrategy,
+} from '@core/cache';
+import { parseDependencyList } from '@core/dependencies';
+import { isInsideIsland } from '@core/islands';
+import {
+  createNameAddressability,
+  SYSTEM_FIELD_NAMES,
+  uncoveredNamePaths,
+  type ServerRendering,
+} from '@core/unbound-fields';
 
 const ELEMENT_ID = 'payload-live-preview-unbound';
 
@@ -57,16 +70,47 @@ const BUTTON_STYLE =
   'display:block;width:100%;text-align:left;margin:2px 0;padding:2px 4px;border:0;border-radius:3px;' +
   'background:#222;color:#7fd1ff;font:inherit;cursor:pointer;';
 
-/** The document this update named, minus everything the page can already show. @internal */
+/**
+ * The document this update named, minus everything the page can already show
+ * or declares with `data-payload-covers`. Under `subfieldCoverage: 'declared'`
+ * the uncovered paths inside partly bound groups are listed too (ADR 0022).
+ * @internal
+ */
 export function unboundFieldNames(
   fields: Readonly<Record<string, unknown>>,
   boundNames: Iterable<string>,
   locale?: string,
+  coverPaths: readonly string[] = [],
+  subfieldCoverage: 'descendant' | 'declared' = 'descendant',
 ): readonly string[] {
-  const addressable = createNameAddressability(boundNames, locale);
-  return Object.keys(fields)
-    .filter((name) => !SYSTEM_FIELD_NAMES.has(name) && !addressable(name))
-    .sort((left, right) => left.localeCompare(right));
+  const bound = [...boundNames];
+  const addressable = createNameAddressability(bound, locale, coverPaths);
+  const names = Object.keys(fields).filter(
+    (name) => !SYSTEM_FIELD_NAMES.has(name) && !addressable(name),
+  );
+  if (subfieldCoverage === 'declared') {
+    names.push(...uncoveredNamePaths(fields, bound, locale, coverPaths));
+  }
+  return [...new Set(names)].sort((left, right) => left.localeCompare(right));
+}
+
+/**
+ * The declared covers and, as in the runtime (ADR 0022 §1a), what a boundary
+ * or route marker depends on when the client has the strategy that renders it.
+ */
+function coverPathsIn(root: Document | Element, rendering: ServerRendering): string[] {
+  const paths: string[] = [];
+  for (const element of root.querySelectorAll(`[${COVERS_ATTRIBUTE}]`)) {
+    paths.push(...parseDependencyList(element.getAttribute(COVERS_ATTRIBUTE)));
+  }
+  for (const element of root.querySelectorAll(`[${DEPENDS_ATTRIBUTE}]`)) {
+    const strategy = renderingStrategy(element);
+    if (strategy === undefined || rendering[strategy] === undefined) continue;
+    if (!isInsideIsland(element)) {
+      paths.push(...parseDependencyList(element.getAttribute(DEPENDS_ATTRIBUTE)));
+    }
+  }
+  return paths;
 }
 
 function boundNamesIn(root: Document | Element): string[] {
@@ -216,8 +260,16 @@ export function createUnboundFieldsOverlayPlugin(
       const overlay = mountOverlay(root, POSITIONS[options.position ?? 'bottom-right']);
       if (overlay === null) return;
       ctx.registerCleanup?.(overlay.destroy);
+      const mode = ctx.getConfig()['subfieldCoverage'] === 'declared' ? 'declared' : 'descendant';
+      const rendering = (ctx.getConfig()['strategies'] ?? {}) as ServerRendering;
       ctx.events.on('afterUpdate', (e) => {
-        const names = unboundFieldNames(e.data.fields, boundNamesIn(root), e.data.locale);
+        const names = unboundFieldNames(
+          e.data.fields,
+          boundNamesIn(root),
+          e.data.locale,
+          coverPathsIn(root, rendering),
+          mode,
+        );
         const guessed = guessedBindingsIn(root);
         overlay.update(names, guessed);
         if (names.length > 0) ctx.log('unbound:', names.join(', '));

@@ -39,6 +39,7 @@ export class UpdatePipeline {
     private readonly state: RuntimeState,
     rebuildCache: () => void,
   ) {
+    state.changes.keepValues = deps.subfieldCoverage === 'declared';
     // Esbuild folds this choice; the lean branch drops the server-rendering strategies.
     this.strategies =
       typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__
@@ -448,7 +449,8 @@ export class UpdatePipeline {
     }
     if (!lateBindings) {
       diagnoseOrphanFields(
-        { cache: deps.cache, warned: state.warnedOrphanFields, warn: deps.warn },
+        deps,
+        state.warnedOrphanFields,
         data.fields,
         transaction.locale,
         ownerKeys,

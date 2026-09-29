@@ -21,7 +21,7 @@ import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-sta
 import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
-import { unboundChangedFields, type OwnerScope } from './unbound-fields';
+import { declaredSubfields, unboundChangedFields, type OwnerScope } from './unbound-fields';
 import type { CachedElement } from './types';
 
 /** What the pipeline lends the runner. */
@@ -160,6 +160,12 @@ export class StrategyRunner {
       transaction.touched,
       transaction.locale,
       ownerKeys,
+      declaredSubfields(
+        deps.subfieldCoverage,
+        state.changes.previousFields,
+        transaction.renderData?.fields,
+      ),
+      deps.strategies,
     );
     let answered = 0;
     for (const fieldName of unbound) if (reportUnboundChange(state, fieldName)) answered += 1;

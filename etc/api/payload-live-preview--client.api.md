@@ -329,6 +329,7 @@ export interface LivePreviewClientConfig {
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
     readonly strategies?: StrategyHandlers;
+    readonly subfieldCoverage?: 'descendant' | 'declared';
     readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
     readonly visibilityGateThreshold?: number;
 }

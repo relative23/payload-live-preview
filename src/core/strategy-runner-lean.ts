@@ -14,7 +14,7 @@ import { reportOmittedFeature } from './profile';
 import type { StrategyRunner } from './strategy-runner';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
-import { unboundChangedFields, type OwnerScope } from './unbound-fields';
+import { declaredSubfields, unboundChangedFields, type OwnerScope } from './unbound-fields';
 import type { CachedElement } from './types';
 
 /** What `UpdatePipeline` calls on a runner; both profiles satisfy it. */
@@ -50,6 +50,11 @@ export function createLeanStrategyRunner(
         transaction.touched,
         transaction.locale,
         ownerKeys,
+        declaredSubfields(
+          deps.subfieldCoverage,
+          state.changes.previousFields,
+          transaction.renderData?.fields,
+        ),
       );
       for (const fieldName of unbound) reportUnboundChange(state, fieldName);
       return false;

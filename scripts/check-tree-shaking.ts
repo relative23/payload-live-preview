@@ -355,6 +355,13 @@ interface Fixture {
  * the PHD-03 archive: root and core client +42 B gzip, generator -29, Next
  * middleware -24, lean -10; each ceiling follows with its cushion
  * (24/65/24/72/60 B) unchanged.
+ * 2026-09-29 (H02, sub-field coverage declared, ADR 0022): paired
+ * measurements against the PHD-08 archive: root client +1 155, generator
+ * +908, core client +1 123, Next middleware +912, lean +886 B gzip, the plugin
+ * manager and the root Lexical import +1. The runtime carries the coverage
+ * rule, the bounded comparison, `data-payload-covers` and the dependencies of
+ * rendered boundaries and route markers; every ceiling keeps its cushion
+ * (24/65/24/72/60/56/2 B).
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -368,28 +375,28 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_367,
+    gzip: 5_368,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 49_292,
+    gzip: 50_447,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 47_358,
+    gzip: 48_266,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 49_285,
+    gzip: 50_408,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -410,14 +417,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 52_655,
+    gzip: 53_567,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 32_370,
+    gzip: 33_256,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
@@ -438,7 +445,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/plugins',
     symbol: 'PluginManager',
     use: 'export const out = PluginManager;',
-    gzip: 3_372,
+    gzip: 3_373,
     why: 'the plugin manager without the built-in plugins',
   },
   {

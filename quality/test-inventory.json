@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 403,
-    "suites": 788,
-    "tests": 3571,
+    "files": 410,
+    "suites": 805,
+    "tests": 3627,
     "benchmarks": 12
   },
   "groups": {
@@ -38,15 +38,15 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 44,
-      "suites": 50,
-      "tests": 199,
+      "files": 45,
+      "suites": 52,
+      "tests": 203,
       "benchmarks": 0
     },
     "integration": {
-      "files": 25,
-      "suites": 28,
-      "tests": 110,
+      "files": 26,
+      "suites": 29,
+      "tests": 112,
       "benchmarks": 0
     },
     "real-payload": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 326,
-      "suites": 697,
-      "tests": 3251,
+      "files": 331,
+      "suites": 711,
+      "tests": 3301,
       "benchmarks": 0
     }
   },
@@ -364,6 +364,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/subfield-coverage.spec.ts",
+      "group": "e2e",
+      "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/sveltekit-asset-delivery.spec.ts",
       "group": "e2e",
       "suites": 1,
@@ -431,6 +438,13 @@
       "group": "integration",
       "suites": 1,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/client-subfield-coverage.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -1026,6 +1040,13 @@
       "group": "unit",
       "suites": 4,
       "tests": 16,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/boundary-coverage.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -1673,6 +1694,20 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/subfield-coverage-walk.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/subfield-coverage.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 10,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/superseded-strategy-work.test.ts",
       "group": "unit",
       "suites": 2,
@@ -1684,6 +1719,13 @@
       "group": "unit",
       "suites": 5,
       "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/unbound-fields.test.ts",
+      "group": "unit",
+      "suites": 6,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -1829,8 +1871,8 @@
     {
       "path": "tests/unit/dsl/preview-bindings.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 16,
+      "suites": 5,
+      "tests": 19,
       "benchmarks": 0
     },
     {
@@ -2236,7 +2278,7 @@
       "path": "tests/unit/plugins/unbound-fields-overlay.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 12,
+      "tests": 15,
       "benchmarks": 0
     },
     {
@@ -2293,6 +2335,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 21,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/property/subfield-coverage.property.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {

@@ -38,6 +38,8 @@ export const BOUNDARY_ATTRIBUTE = 'data-payload-boundary';
  * declared one, in `inspect()` and in the overlay.
  */
 export const GUESSED_ATTRIBUTE = 'data-payload-guessed';
+/** Field paths a page accounts for without binding them, and everything below them (ADR 0022). */
+export const COVERS_ATTRIBUTE = 'data-payload-covers';
 export const INPUT_TYPE_ATTRIBUTE = 'type';
 
 /**
@@ -111,6 +113,32 @@ function isRendererKey(value: string): value is RendererKey {
   return VALID_FIELD_TYPES.has(value as FieldType) || CUSTOM_RENDERER_KEY.test(value);
 }
 
+/** One `data-payload-covers` declaration: the paths it names, for the owner it sits under. */
+export interface CoverDeclaration {
+  readonly paths: readonly string[];
+  readonly owner: string | undefined;
+}
+
+/** The fields a fragment boundary or a route marker depends on, which its strategy renders. */
+export interface RenderedDeclaration extends CoverDeclaration {
+  readonly strategy: 'fragment' | 'route';
+}
+
+/**
+ * The strategy that renders what an element depends on, by the planners' own
+ * rules: the fragment planner takes every named boundary, the route planner a
+ * route-bound element — marked `route`, or a binding in `<head>` left unmarked
+ * (`src/fragment/boundary.ts`, `src/fragment/route.ts`). @internal
+ */
+export function renderingStrategy(element: Element): RenderedDeclaration['strategy'] | undefined {
+  if ((element.getAttribute(FRAGMENT_ATTRIBUTE) ?? '').length > 0) return 'fragment';
+  const explicit = element.getAttribute(STRATEGY_ATTRIBUTE);
+  if (explicit !== null) return explicit === 'route' ? 'route' : undefined;
+  return element.hasAttribute(FIELD_ATTRIBUTE) && element.closest('head') !== null
+    ? 'route'
+    : undefined;
+}
+
 export interface CacheBuildStats {
   readonly elementCount: number;
   readonly fieldCount: number;
@@ -146,6 +174,8 @@ export class ElementCache {
   private islandRoots: readonly Element[] = [];
   private ownersByIsland: ReadonlyMap<Element, string | undefined> = new Map();
   private navigationRoots: readonly Element[] = [];
+  private coverDeclarations: readonly CoverDeclaration[] = [];
+  private renderedDeclarations: readonly RenderedDeclaration[] = [];
 
   constructor(options: ElementCacheOptions = {}) {
     this.filter = options.filter ?? alwaysTrue;
@@ -174,6 +204,16 @@ export class ElementCache {
     return this.ownersByIsland;
   }
 
+  /** `data-payload-covers` declarations under the last built root. */
+  get covers(): readonly CoverDeclaration[] {
+    return this.coverDeclarations;
+  }
+
+  /** Boundaries and route markers under the last built root that name the fields they depend on. */
+  get rendered(): readonly RenderedDeclaration[] {
+    return this.renderedDeclarations;
+  }
+
   /** Fieldless strategy roots under the last built root, for navigation replay. */
   get navigationReplayRoots(): readonly Element[] {
     return this.navigationRoots;
@@ -196,6 +236,20 @@ export class ElementCache {
         (element.hasAttribute(FRAGMENT_ATTRIBUTE) ||
           (element.getAttribute(FIELD_ATTRIBUTE) ?? '').length === 0),
     );
+    this.coverDeclarations = [...root.querySelectorAll(`[${COVERS_ATTRIBUTE}]`)]
+      .filter((element) => this.filter(element))
+      .map((element) => ({
+        paths: parseDependencyList(element.getAttribute(COVERS_ATTRIBUTE)),
+        owner: resolveBindingOwner(element),
+      }));
+    this.renderedDeclarations = [...root.querySelectorAll(`[${DEPENDS_ATTRIBUTE}]`)]
+      .filter((element) => this.filter(element))
+      .flatMap((element): RenderedDeclaration[] => {
+        const strategy = renderingStrategy(element);
+        if (strategy === undefined) return [];
+        const paths = parseDependencyList(element.getAttribute(DEPENDS_ATTRIBUTE));
+        return [{ strategy, paths, owner: resolveBindingOwner(element) }];
+      });
     return {
       elementCount,
       fieldCount: this.entriesByField.size,
@@ -271,6 +325,8 @@ export class ElementCache {
     this.islandRoots = [];
     this.ownersByIsland = new Map();
     this.navigationRoots = [];
+    this.coverDeclarations = [];
+    this.renderedDeclarations = [];
   }
 
   /** Replace in place when the field bucket is unchanged, preserving order. */

@@ -179,6 +179,57 @@ describe('the unbound-fields overlay', () => {
     setAttribute.mockRestore();
   });
 
+  it('leaves out what the page declares with data-payload-covers', async () => {
+    document.body.innerHTML =
+      '<h1 data-payload-field="title">t</h1><i data-payload-covers="seo"></i>';
+    const { events, manager: plugins } = manager({ debug: true });
+    await plugins.register(createUnboundFieldsOverlayPlugin());
+
+    await update(events, { title: 'a', seo: { title: 's' }, tagline: 'b' });
+
+    expect(panelText()).toContain('tagline');
+    expect(panelText()).not.toContain('seo');
+  });
+
+  it('leaves out what a configured strategy renders, and only then', async () => {
+    const page =
+      '<h1 data-payload-field="title">t</h1>' +
+      '<section data-payload-fragment="pricing" data-payload-depends="pricing"></section>' +
+      '<div data-payload-island="x"><section data-payload-fragment="plans" data-payload-depends="plans"></section></div>';
+    const fields = { title: 'a', pricing: 1, plans: 2 };
+    document.body.innerHTML = page;
+    const rendered = manager({ debug: true, strategies: { fragment: () => {} } });
+    await rendered.manager.register(createUnboundFieldsOverlayPlugin());
+    await update(rendered.events, fields);
+    expect(panelText()).not.toContain('pricing');
+    // The fragment planner leaves a boundary inside an island to the island.
+    expect(panelText()).toContain('plans');
+    await rendered.manager.destroyAll();
+
+    document.body.innerHTML = page;
+    const unrendered = manager({ debug: true, strategies: { route: {} } });
+    await unrendered.manager.register(createUnboundFieldsOverlayPlugin());
+    await update(unrendered.events, fields);
+    expect(panelText()).toContain('pricing');
+  });
+
+  it("lists the uncovered path inside a partly bound group under subfieldCoverage: 'declared'", async () => {
+    document.body.innerHTML = '<p data-payload-field="hero.eyebrow">e</p>';
+    const hero = { eyebrow: 'e', description: 'd' };
+    const declared = manager({ debug: true, subfieldCoverage: 'declared' });
+    await declared.manager.register(createUnboundFieldsOverlayPlugin());
+    await update(declared.events, { hero });
+    expect(panelText()).toContain('hero.description');
+    expect(panelText()).not.toContain('hero.eyebrow');
+    await declared.manager.destroyAll();
+
+    document.body.innerHTML = '<p data-payload-field="hero.eyebrow">e</p>';
+    const descendant = manager({ debug: true });
+    await descendant.manager.register(createUnboundFieldsOverlayPlugin());
+    await update(descendant.events, { hero });
+    expect(panelText()).not.toContain('hero');
+  });
+
   it('is not a binding target itself', async () => {
     const { manager: plugins } = manager({ debug: true });
     await plugins.register(createUnboundFieldsOverlayPlugin());

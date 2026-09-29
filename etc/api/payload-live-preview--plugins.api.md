@@ -430,7 +430,7 @@ export type RichTextRenderer = (value: unknown, context: {
 export type SanitizerPolicyMode = 'compat' | 'strict';
 
 // @internal
-export function unboundFieldNames(fields: Readonly<Record<string, unknown>>, boundNames: Iterable<string>, locale?: string): readonly string[];
+export function unboundFieldNames(fields: Readonly<Record<string, unknown>>, boundNames: Iterable<string>, locale?: string, coverPaths?: readonly string[], subfieldCoverage?: 'descendant' | 'declared'): readonly string[];
 
 // @public
 export interface UnboundFieldsOverlayOptions {

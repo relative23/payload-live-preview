@@ -31,6 +31,13 @@ const ownersRoute = generateInlineScript({
   scopeBindingsByOwner: true,
   routeStrategy: true,
 });
+// A partly bound group, once per coverage mode (`subfield-coverage.spec.ts`).
+const groupsDeclared = generateInlineScript({
+  ...options,
+  routeStrategy: true,
+  subfieldCoverage: 'declared',
+});
+const groupsDescendant = generateInlineScript({ ...options, routeStrategy: true });
 
 const shell = (title, body, script = inline) =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title>` +
@@ -64,11 +71,29 @@ const ownersRouteBody =
   '<aside data-payload-strategy="route" data-payload-depends="title">other route</aside>' +
   '</section>';
 
+// `hero.eyebrow` is bound, `hero.note` is covered on purpose, and
+// `hero.description` is shown by nothing on this page.
+const groupsBody =
+  '<section data-payload-covers="hero.note">' +
+  '<h1 data-payload-field="hero.eyebrow" data-testid="eyebrow">Eyebrow</h1>' +
+  '<p data-testid="description">Saved description</p>' +
+  '</section>';
+
 await mkdir(dist, { recursive: true });
 await writeFile(join(dist, 'index.html'), shell('Pure HTML preview', indexBody), 'utf8');
 await writeFile(join(dist, 'reveal.html'), shell('Reveal fixture', revealBody), 'utf8');
 await writeFile(join(dist, 'lean.html'), shell('Lean profile', leanBody, lean), 'utf8');
 await writeFile(join(dist, 'full.html'), shell('Full profile', leanBody), 'utf8');
+await writeFile(
+  join(dist, 'groups-declared.html'),
+  shell('Groups, declared', groupsBody, groupsDeclared),
+  'utf8',
+);
+await writeFile(
+  join(dist, 'groups-descendant.html'),
+  shell('Groups, descendant', groupsBody, groupsDescendant),
+  'utf8',
+);
 await writeFile(
   join(dist, 'owners-route.html'),
   shell('Owners and the route', ownersRouteBody, ownersRoute),

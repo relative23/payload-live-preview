@@ -108,6 +108,9 @@ export function inlineScriptConfig(
       ? { onUnfaithfulPatch: options.onUnfaithfulPatch }
       : {}),
     ...(options.autoBind !== undefined ? { autoBind: options.autoBind } : {}),
+    ...(options.subfieldCoverage !== undefined
+      ? { subfieldCoverage: options.subfieldCoverage }
+      : {}),
     ...(facts.hydration !== undefined ? { hydration: facts.hydration } : {}),
     ...(facts.softNavigationEvents !== undefined
       ? { softNavigationEvents: facts.softNavigationEvents }

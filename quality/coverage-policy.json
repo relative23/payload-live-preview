@@ -212,10 +212,20 @@
       "functions": 100,
       "branches": 93
     },
+    "src/core/subfield-coverage.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/template-sanitize.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 75
+    },
+    "src/core/unbound-fields.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
     },
     "src/core/update-owner.ts": {
       "lines": 100,

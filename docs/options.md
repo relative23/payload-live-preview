@@ -47,6 +47,7 @@ always wins. The ledger of what changed is
 | `onUnfaithfulPatch`        | —      | yes           | yes                                                      | —                        | `'escalate'`                                        | same                                 |
 | `onUnboundChange`          | —      | yes           | yes                                                      | —                        | — (alias, deprecated)                               | same                                 |
 | `autoBind`                 | yes    | yes           | yes                                                      | —                        | `'off'`                                             | same                                 |
+| `subfieldCoverage`         | yes    | yes           | yes                                                      | —                        | `'descendant'`                                      | same                                 |
 | `hydration`                | —      | yes           | set by the Next.js and Nuxt adapters                     | —                        | — (start on `DOMContentLoaded`)                     | same                                 |
 | `softNavigationEvents`     | —      | yes           | set by Astro, Next.js, SvelteKit and Nuxt                | —                        | `[]`                                                | same                                 |
 | `resolveRenderer`          | yes    | —             | —                                                        | —                        | —                                                   | same                                 |
@@ -100,10 +101,14 @@ fifty-two rows.
   ever loosening a policy the site already sends.
 - **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
   `routeStrategy`, `onUnfaithfulPatch`, `strategies`, `dependencies`,
-  `autoBind`. Three strategies exist because patching cannot create markup and
-  a route refresh cannot be done per keystroke
+  `autoBind`, `subfieldCoverage`. Three strategies exist because patching
+  cannot create markup and a route refresh cannot be done per keystroke
   ([overview](architecture/overview.md#the-five-objects)); `autoBind` is how a
-  page with no `data-payload-field` at all gets its bindings.
+  page with no `data-payload-field` at all gets its bindings;
+  `subfieldCoverage: 'declared'` makes an edit inside a partly bound group
+  count as unbound unless the page binds or covers that path
+  ([bindings](bindings.md#what-a-page-accounts-for),
+  [ADR 0022](architecture/0022-subfield-coverage-is-declared.md)).
 - **What the page does with a value** — `sanitizerPolicy`, `resolveRenderer`,
   `renderRichText`, `revealEditedField`, `scopeBindingsByOwner`. Unsaved editor
   input is untrusted input; the rest is how a site renders what it already

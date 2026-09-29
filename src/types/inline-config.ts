@@ -104,6 +104,13 @@ export interface InlineScriptConfig {
    */
   readonly softNavigationEvents?: readonly string[];
   /**
+   * How a group counts as covered (ADR 0022). `'descendant'`, the 2.x default:
+   * one bound path inside it covers all of it. `'declared'`: each changed path
+   * inside such a group needs its own binding or a `data-payload-covers`
+   * declaration; an uncovered one is an unbound change.
+   */
+  readonly subfieldCoverage?: 'descendant' | 'declared';
+  /**
    * A runtime artifact to embed instead of the full one — today only
    * `LEAN_RUNTIME` from `payload-live-preview/lean`, which leaves out the
    * strategies, the keyed morph, the structural arrays, the item templates, the
@@ -163,4 +170,5 @@ export const INLINE_CONFIG_KEYS = [
   'hydration',
   'defaults',
   'softNavigationEvents',
+  'subfieldCoverage',
 ] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'runtime'>[];

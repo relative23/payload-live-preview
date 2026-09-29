@@ -110,6 +110,7 @@ describe('inlineScriptConfig', () => {
     ['onUnboundChange', 'route', 'onUnboundChange', 'route'],
     ['onUnfaithfulPatch', 'warn', 'onUnfaithfulPatch', 'warn'],
     ['autoBind', 'unique', 'autoBind', 'unique'],
+    ['subfieldCoverage', 'declared', 'subfieldCoverage', 'declared'],
   ] as const;
 
   it.each(WIRE)('puts %s on the wire', (option, value, wireKey, wireValue) => {

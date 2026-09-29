@@ -22,6 +22,20 @@ export interface FieldChanges {
 
 export class FieldChangeTracker {
   private previous: Map<string, string | undefined> | null = null;
+  private lastFields: Readonly<Record<string, unknown>> | undefined;
+  private priorFields: Readonly<Record<string, unknown>> | undefined;
+
+  /**
+   * Keep the message's values, not only their identities, so the one before
+   * the last diff can be compared below the top level (ADR 0022). Off by
+   * default: it holds one more document.
+   */
+  keepValues = false;
+
+  /** The fields of the message before the last diff, while `keepValues` is on. */
+  get previousFields(): Readonly<Record<string, unknown>> | undefined {
+    return this.priorFields;
+  }
 
   get isBaseline(): boolean {
     return this.previous === null;
@@ -70,11 +84,15 @@ export class FieldChangeTracker {
     }
     if (!isCurrent()) return null;
     this.previous = next;
+    this.priorFields = this.keepValues ? this.lastFields : undefined;
+    this.lastFields = this.keepValues ? fields : undefined;
     return { changed, invalidated, baseline };
   }
 
   reset(): void {
     this.previous = null;
+    this.lastFields = undefined;
+    this.priorFields = undefined;
   }
 }
 

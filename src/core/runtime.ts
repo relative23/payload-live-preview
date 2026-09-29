@@ -89,6 +89,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     hydration,
     _defaults,
     softNavigationEvents = [],
+    subfieldCoverage = 'descendant',
   ] = readBuildConfig();
   // `routeStrategy` is destructured only to hold its wire slot: it decides
   // which prelude the generator emitted, and the prelude's presence is what the
@@ -139,6 +140,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     visibilityGateThreshold,
     enableA11y,
     scopeBindingsByOwner,
+    subfieldCoverage,
     skipUnchanged,
     revealEditedField,
     // Resolved here rather than passed through as two slots: an empty slot must

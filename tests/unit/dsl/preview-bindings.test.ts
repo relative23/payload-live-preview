@@ -163,4 +163,30 @@ describe('createPreviewBindings — request scoping', () => {
       }
     });
   });
+
+  describe('covers', () => {
+    it('declares the paths the page accounts for (ADR 0022)', () => {
+      const preview = createPreviewBindings({ authorization: ctx });
+
+      expect(preview.covers('hero.description', 'seo')).toEqual({
+        'data-payload-covers': 'hero.description seo',
+      });
+      expect(preview.covers()).toEqual({});
+    });
+
+    it('emits nothing while unauthorized: the paths are the content model too', () => {
+      expect(createPreviewBindings({ authorization: null }).covers('seo')).toEqual({});
+    });
+
+    it('refuses a path the attribute would split, authorized or not', () => {
+      for (const preview of [
+        createPreviewBindings({ authorization: ctx }),
+        createPreviewBindings({ authorization: null }),
+      ]) {
+        expect(() => preview.covers('')).toThrow(RangeError);
+        expect(() => preview.covers('hero description')).toThrow(RangeError);
+        expect(() => preview.covers('hero,seo')).toThrow(RangeError);
+      }
+    });
+  });
 });

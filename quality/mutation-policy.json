@@ -62,7 +62,9 @@
     "src/core/strategies.ts",
     "src/core/strategy-runner.ts",
     "src/core/structural-applier.ts",
+    "src/core/subfield-coverage.ts",
     "src/core/template-sanitize.ts",
+    "src/core/unbound-fields.ts",
     "src/core/update-owner.ts",
     "src/core/update-pipeline.ts",
     "src/core/update-scheduler.ts",
@@ -92,8 +94,8 @@
     "src/types/merge-depth.ts"
   ],
   "baseline": {
-    "total": 9500,
-    "mutationScoreMinimum": 86.27,
+    "total": 9853,
+    "mutationScoreMinimum": 86.54,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 45,
     "noCoverageMaximum": 67,

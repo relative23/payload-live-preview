@@ -112,6 +112,7 @@ export class LivePreviewClient {
         skipUnchanged: config.skipUnchanged,
         revealEditedField: config.revealEditedField,
         autoBind: config.autoBind,
+        subfieldCoverage: config.subfieldCoverage,
         eventSourcePolicy: config.eventSourcePolicy,
         dependencies: config.dependencies,
         strategies: config.strategies,

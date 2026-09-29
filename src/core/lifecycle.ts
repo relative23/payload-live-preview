@@ -178,6 +178,7 @@ export class LivePreviewRuntime {
             }),
       mergeWindowMs: options.debounceMs ?? DEFAULT_DEBOUNCE_MS,
       scopeBindingsByOwner: options.scopeBindingsByOwner === true,
+      subfieldCoverage: options.subfieldCoverage ?? 'descendant',
       lockedOrigin: options.lockedOrigin ?? ((): undefined => undefined),
       skipUnchanged: options.skipUnchanged === true,
       dependencies: options.dependencies ?? {},

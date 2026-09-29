@@ -14,32 +14,37 @@
  */
 
 import type { ElementCache } from './cache';
+import type { RuntimeDeps } from './runtime-state';
 import {
   createFieldAddressability,
   ownsAnyBinding,
   stripLocaleSuffix,
   SYSTEM_FIELD_NAMES,
+  uncoveredDocumentPaths,
   type FieldAddressability,
   type OwnerScope,
 } from './unbound-fields';
 
-export interface OrphanDiagnosticContext {
+interface OrphanDiagnosticContext {
   readonly cache: ElementCache;
   readonly warned: Set<string>;
   readonly warn: (...args: unknown[]) => void;
 }
 
 export function diagnoseOrphanFields(
-  context: OrphanDiagnosticContext,
+  deps: Pick<RuntimeDeps, 'cache' | 'warn' | 'subfieldCoverage' | 'strategies'>,
+  warned: Set<string>,
   fields: Readonly<Record<string, unknown>>,
   locale: string | undefined,
   ownerKeys: OwnerScope,
 ): void {
-  const { cache } = context;
+  const { cache, strategies } = deps;
+  const context: OrphanDiagnosticContext = { cache, warned, warn: deps.warn };
   if (cache.fieldCount === 0) return;
   // With scoping on, a page that renders none of this document is normal.
   if (ownerKeys !== false && !ownsAnyBinding(cache, ownerKeys)) return;
-  const isAddressable = createFieldAddressability(cache, locale, ownerKeys);
+  // A field a configured strategy renders from a boundary or marker is shown.
+  const isAddressable = createFieldAddressability(cache, locale, ownerKeys, strategies);
   for (const [rawName, value] of Object.entries(fields)) {
     if (SYSTEM_FIELD_NAMES.has(rawName)) continue;
     // Only scalars: an unbound relationship or block array is a template
@@ -62,6 +67,19 @@ export function diagnoseOrphanFields(
     for (const [childName, childValue] of Object.entries(value)) {
       if (!isBindableScalar(childValue) || SYSTEM_FIELD_NAMES.has(childName)) continue;
       report(context, isAddressable, `${group}.${childName}`, locale, childValue);
+    }
+  }
+  if (deps.subfieldCoverage !== 'declared') return;
+  // ADR 0022: inside a group the page reaches only below the top level, each
+  // uncovered path is named the same way, scalars and one level of a group.
+  const uncovered = uncoveredDocumentPaths(cache, fields, locale, ownerKeys, strategies);
+  for (const { path, value } of uncovered) {
+    if (isBindableScalar(value)) report(context, isAddressable, path, locale, value);
+    if (!isPlainObject(value)) continue;
+    for (const [childName, childValue] of Object.entries(value)) {
+      if (isBindableScalar(childValue)) {
+        report(context, isAddressable, `${path}.${childName}`, locale, childValue);
+      }
     }
   }
 }

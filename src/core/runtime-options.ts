@@ -116,6 +116,13 @@ export interface RuntimeOptions {
    * subtrees are then out of scope.
    */
   readonly scopeBindingsByOwner?: boolean;
+  /**
+   * How a group counts as covered (ADR 0022). `'descendant'`, the 2.x default:
+   * one bound path inside it covers all of it. `'declared'`: each changed path
+   * inside such a group needs its own binding or a `data-payload-covers`
+   * declaration, and an uncovered one is an unbound change.
+   */
+  readonly subfieldCoverage?: 'descendant' | 'declared';
   /** Which windows may post updates. `defaults: 'v2'` sets `'parent-or-opener'`. */
   readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
   /** Apply every update regardless of visibility. */

@@ -431,7 +431,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +585/+163/+175 B; same 27/12/120 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+7/-5 B; same 27/12/120 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +73/+35/+39 B; same 27/12/120 B cushions.
-  'core.cjs': { raw: 149_713, gzip: 46_946, brotli: 40_669 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +3291/+1000/+778 B; same 27/12/120 B cushions.
+  'core.cjs': { raw: 153_004, gzip: 47_946, brotli: 41_447 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 133 971 → 134 005 (+34 B, measured 133 945 → 133 979).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 134 005 → 134 054 (+49 B, measured 133 979 → 134 028); gzip 42 628 → 42 646 (+18 B, measured 42 628 → 42 646); brotli 36 811 → 36 934 (measured 36 814, -3 B left; ~120 B as the other brotli rows).
   // 2026-09-16 (2.0.1 Version PR): gzip 42 646 → 42 658. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 42 646 against a cushion of 0 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -442,7 +443,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +585/+164/+127 B; same 26/12/120 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+7/-44 B; same 26/12/120 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +73/+34/+9 B; same 26/12/120 B cushions.
-  'core.js': { raw: 149_175, gzip: 46_855, brotli: 40_525 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +3293/+1003/+898 B; same 26/12/120 B cushions.
+  'core.js': { raw: 152_468, gzip: 47_858, brotli: 41_423 },
   //
   // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
   // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a
@@ -478,7 +480,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +1154/+310/+311 B; same 22/12/153 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -16/+15/+84 B; same 22/12/225 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +192/+9/-11 B; same 22/13/273 B cushions.
-  'index.cjs': { raw: 318_897, gzip: 98_507, brotli: 62_705 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +6236/+1963/+1026 B; same 22/13/183 B cushions.
+  'index.cjs': { raw: 325_133, gzip: 100_470, brotli: 63_731 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 282 113 → 282 177 (+64 B, measured 282 092 → 282 156); gzip 88 558 → 88 583 (+25 B, measured 88 555 → 88 580).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 282 177 → 282 275 (+98 B, measured 282 156 → 282 254); gzip 88 583 → 88 610 (+27 B, measured 88 580 → 88 607).
   // 2026-09-16 (2.0.1 Version PR): gzip 88 610 → 88 619. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 88 607 against a cushion of 3 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -489,13 +492,16 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +1154/+319/+330 B; same 21/13/130 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -16/+14/-38 B; same 21/12/129 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +192/+7/+136 B; same 21/13/192 B cushions.
-  'index.js': { raw: 318_284, gzip: 98_512, brotli: 62_712 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +6236/+1944/+1054 B; same 21/13/295 B cushions.
+  'index.js': { raw: 324_520, gzip: 100_456, brotli: 63_766 },
   ...PAYLOAD_ENTRY_BUDGETS,
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
   // 2026-09-06 (R8): +~110 B raw for `previewBindingsFromLocals`, the one-line
   // helper the build-time annotator writes a call to.
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 12 950 → 12 960 (+10 B, measured 12 944 → 12 954); gzip 4 780 → 4 786 (+6 B, measured 4 769 → 4 775).
-  'server.cjs': { raw: 15_936, gzip: 5_741, brotli: 5_284 },
-  'server.js': { raw: 15_806, gzip: 5_732, brotli: 5_268 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +298/+92/+73 B; same 6/12/120 B cushions.
+  'server.cjs': { raw: 16_234, gzip: 5_833, brotli: 5_357 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +298/+95/+85 B; same 4/12/120 B cushions.
+  'server.js': { raw: 16_104, gzip: 5_827, brotli: 5_353 },
   ...CLIENT_ENTRY_BUDGETS,
 };

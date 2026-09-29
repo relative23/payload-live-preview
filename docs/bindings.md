@@ -339,6 +339,42 @@ collection. Enforcement is the `scopeBindingsByOwner` option
 - a message naming neither a global nor a collection changes nothing and
   warns once (`LP0202`).
 
+## What a page accounts for
+
+The diff that decides what an edit changed names top-level fields, while a
+binding usually names a path inside one: `hero.eyebrow` for the group `hero`.
+By default one bound path covers the whole group, so an edit of
+`hero.description` on a page that binds only `hero.eyebrow` is neither
+reported nor sent to a server render.
+
+`subfieldCoverage: 'declared'` asks path by path instead (ADR 0022). Inside a
+group the page reaches only below the top level, each changed path needs a
+binding of its own, a binding on the path above it, or a declaration; an
+uncovered one is an unbound change: LP0203 and `inspect().fidelity.fields`
+name it (`hero.description`), and `onUnfaithfulPatch` decides whether the
+route or a fragment is rendered for it.
+
+A page that shows part of a document on purpose says so with
+`data-payload-covers`: field paths it accounts for, and everything below them.
+
+```html
+<!-- The description is shown on another page; editing it asks for no refresh here. -->
+<section data-payload-covers="hero.description">
+  <p data-payload-field="hero.eyebrow">…</p>
+</section>
+```
+
+The declaration works in both modes: a covered field is not reported as
+unbound and does not ask for a server render. The fields a fragment boundary
+or a route-bound element lists in `data-payload-depends` count the same way
+when the page configures the strategy that renders it; a boundary inside an
+island does not, since the island renders it. Under `scopeBindingsByOwner` it
+covers only the document its closest `data-payload-owner` names.
+`createPreviewBindings().covers('hero.description', 'seo')` emits it for an
+authorized response only. The comparison stops at depth 8 and after 1 024
+nodes per field; what lies beyond counts as one changed path, which errs
+towards one refresh too many.
+
 ## Keeping binding attributes off public responses
 
 `data-payload-field` names a CMS field and `data-payload-owner` names a

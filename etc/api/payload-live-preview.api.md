@@ -501,6 +501,7 @@ export interface InlineScriptConfig {
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
     readonly softNavigationEvents?: readonly string[];
+    readonly subfieldCoverage?: 'descendant' | 'declared';
     readonly visibilityGateThreshold?: number;
 }
 
@@ -757,6 +758,7 @@ export interface LivePreviewClientConfig {
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
     readonly strategies?: StrategyHandlers;
+    readonly subfieldCoverage?: 'descendant' | 'declared';
     readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
     readonly visibilityGateThreshold?: number;
 }
@@ -1167,6 +1169,7 @@ export interface PreviewBindings {
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
     bindByPath: <T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
     boundary: (id: string, options?: FragmentBoundaryOptions) => FragmentBoundaryAttributes | SuppressedBinding;
+    covers: (...paths: readonly string[]) => Readonly<Record<'data-payload-covers', string>> | SuppressedBinding;
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 

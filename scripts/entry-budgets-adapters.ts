@@ -24,7 +24,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+150/+242 B; same 106/27/167 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+6/-52 B; same 106/27/167 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +119/-25/-8 B; same 106/27/167 B cushions.
-  'adapters/astro/index.js': { raw: 188_893, gzip: 58_708, brotli: 50_159 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +3015/+915/+788 B; same 106/27/167 B cushions.
+  'adapters/astro/index.js': { raw: 191_908, gzip: 59_623, brotli: 50_947 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -34,7 +35,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+154/+232 B; same 16/12/120 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+1/-79 B; same 16/12/120 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +119/-24/-6 B; same 16/12/120 B cushions.
-  'adapters/astro/middleware-entry.js': { raw: 166_936, gzip: 51_843, brotli: 44_153 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +3015/+906/+742 B; same 16/12/120 B cushions.
+  'adapters/astro/middleware-entry.js': { raw: 169_951, gzip: 52_749, brotli: 44_895 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -72,7 +74,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+157/+161 B; same 20/16/120 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+3/-40 B; same 20/16/120 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +119/-18/-83 B; same 20/16/120 B cushions.
-  'adapters/nextjs/index.js': { raw: 184_464, gzip: 57_318, brotli: 48_821 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +3015/+907/+807 B; same 20/16/120 B cushions.
+  'adapters/nextjs/index.js': { raw: 187_479, gzip: 58_225, brotli: 49_628 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -105,7 +108,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+158/+128 B; same 15/12/120 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+3/-12 B; same 15/12/120 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +119/-18/+41 B; same 15/12/120 B cushions.
-  'adapters/nuxt/index.js': { raw: 185_091, gzip: 57_560, brotli: 49_122 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +3015/+914/+698 B; same 15/12/120 B cushions.
+  'adapters/nuxt/index.js': { raw: 188_106, gzip: 58_474, brotli: 49_820 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -114,5 +118,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+153/+166 B; same 16/15/120 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+3/-52 B; same 16/15/120 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +119/-20/+47 B; same 16/15/120 B cushions.
-  'adapters/sveltekit/index.js': { raw: 184_235, gzip: 57_296, brotli: 48_841 },
+  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +3015/+917/+710 B; same 16/15/120 B cushions.
+  'adapters/sveltekit/index.js': { raw: 187_250, gzip: 58_213, brotli: 49_551 },
 };
