@@ -6,6 +6,7 @@
 import { createFragmentEndpoint } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest, createPreviewBindings } from 'payload-live-preview';
 import Hero from '$lib/Hero.svelte';
+import OwnedPanel from '$lib/OwnedPanel.svelte';
 import { heroProps } from '$lib/hero';
 import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview.server';
 import type { RequestHandler } from './$types';
@@ -23,6 +24,15 @@ const endpoint = createFragmentEndpoint({
           ...heroProps(fields),
           bindings: { title: preview.bind('title'), body: preview.bind('body') },
         };
+      },
+    },
+    // `/owners-hybrid`: one panel per document, told apart by the boundary key.
+    owned: {
+      component: OwnedPanel,
+      props: ({ fields, authorization }) => {
+        const preview = createPreviewBindings({ authorization });
+        const title = typeof fields['title'] === 'string' ? fields['title'] : '';
+        return { title, letters: title.length, bindings: { title: preview.bind('title') } };
       },
     },
   },
