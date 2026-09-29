@@ -9,11 +9,11 @@ import { findBudgetViolations, measureBundle } from '../../scripts/bundle-measur
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    // H02's measured delta for declared sub-field coverage (ADR 0022), prior cushions kept.
-    expect(INLINE_BUDGET).toEqual({ raw: 131_540, gzip: 41_185, brotli: 36_153 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 105_470, gzip: 32_948, brotli: 29_137 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 139_914, gzip: 43_652, brotli: 38_176 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 145_366, gzip: 45_549, brotli: 39_766 });
+    // H13's measured delta for the revision display state (ADR 0023), prior cushions kept.
+    expect(INLINE_BUDGET).toEqual({ raw: 134_708, gzip: 42_242, brotli: 37_100 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 107_984, gzip: 33_810, brotli: 29_929 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 143_078, gzip: 44_694, brotli: 39_021 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 148_534, gzip: 46_583, brotli: 40_646 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

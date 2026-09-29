@@ -111,6 +111,11 @@ export class A11yAnnouncer {
     );
   }
 
+  /** A revision settled with a step that fell short (ADR 0023); the counts said only what was written. */
+  announcePartial(): void {
+    this.say(this.german ? 'Vorschau teilweise aktualisiert' : 'Preview partly updated');
+  }
+
   /** Release the lease; the last release removes an owned region but leaves an adopted one. Idempotent. */
   detach(): void {
     const lease = this.lease;

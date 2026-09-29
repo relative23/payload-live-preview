@@ -494,7 +494,8 @@
 // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+7/+39 B; same 10/5/120 B cushions.
 // 2026-09-29 (PHD-02, owner-scoped route planning): measured +75/+41/-6 B; same 10/5/120 B cushions.
 // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2924/+890/+753 B; same 10/5/120 B cushions.
-export const INLINE_BUDGET = { raw: 131_540, gzip: 41_185, brotli: 36_153 } as const;
+// 2026-09-29 (H13, revision display state, ADR 0023): measured +3168/+1057/+947 B; same 10/5/120 B cushions.
+export const INLINE_BUDGET = { raw: 134_708, gzip: 42_242, brotli: 37_100 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

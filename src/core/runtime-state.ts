@@ -25,6 +25,7 @@ import { ProtocolTracker } from './protocol-tracker';
 import { RelationshipTracker } from './relationship-tracker';
 import { FieldRevealer } from './reveal';
 import { RevealLedger } from './reveal-ledger';
+import { RevisionDisplayLedger } from './revision-display';
 import type { RuntimeOptions } from './runtime-options';
 import type { ConnectionState, HeartbeatTimer } from './state';
 import type { SubfieldCoverage } from './subfield-coverage';
@@ -172,6 +173,8 @@ export class RuntimeState {
   navigationBindingReplay = false;
   /** What each owned field was last seen with, for the reveal decision only. */
   readonly revealLedger = new RevealLedger();
+  /** How completely the page shows the latest accepted revision (ADR 0023). */
+  readonly display = new RevisionDisplayLedger<UpdateTransaction>();
   readonly fragmentStats = { rendered: 0, failed: 0, superseded: 0 };
   readonly routeStats = { refreshes: 0, partial: 0, failed: 0, refused: 0, loopStopped: 0 };
   /**
@@ -212,6 +215,8 @@ export class RuntimeState {
   }
 
   complete(transaction: UpdateTransaction): void {
+    // Asked again after a refresh re-applies it: only then is a refused route settled.
+    this.display.requestSettle(transaction);
     if (transaction.completed) return;
     transaction.completed = true;
     if (transaction.countsAsUpdate) this.completedCount += 1;

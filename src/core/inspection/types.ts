@@ -5,6 +5,7 @@
  * misbehaving preview is exactly the case worth diagnosing. Reading one
  * performs no I/O and transmits nothing.
  */
+import type { RevisionDisplay } from '../revision-display';
 import type { ConnectionStatus } from '../state';
 
 /** Origin trust as the runtime currently sees it. */
@@ -57,6 +58,13 @@ export interface InspectionRevisions {
   readonly skippedUnchanged: number;
   /** Revision currently in flight, or `undefined` when the pipeline is idle. */
   readonly active: number | undefined;
+  /**
+   * How completely the page shows the latest accepted revision (ADR 0023):
+   * `pending`, `current`, `partial` with its shortfalls, or `unconfirmed` while
+   * an island it was handed has not called `displayed()`. `undefined` before
+   * the first message.
+   */
+  readonly display: RevisionDisplay | undefined;
 }
 
 /** What the DOM offers the runtime to write into. */

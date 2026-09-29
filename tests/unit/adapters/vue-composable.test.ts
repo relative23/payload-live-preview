@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createApp, defineComponent, effectScope, h, nextTick, type App } from 'vue';
+import {
+  createApp,
+  defineComponent,
+  effectScope,
+  h,
+  nextTick,
+  onMounted,
+  watch,
+  type App,
+} from 'vue';
 import { useLivePreviewDocument } from '@adapters/vue/index';
 
 /**
@@ -114,6 +123,48 @@ describe('useLivePreviewDocument — Vue', () => {
     expect(mounted.host.querySelector('h1')?.textContent).toBe('From the server');
     expect(mounted.host.querySelector('.status')?.textContent).toBe('unavailable');
     expect(mounted.host.querySelector('.error')?.textContent).toContain('Failed to fetch');
+  });
+
+  it('reports which message its data came from, and the refs agree after the render', async () => {
+    let fail = false;
+    const painted: [number, string][] = [];
+    const Painted = defineComponent({
+      setup() {
+        const { data, revision } = useLivePreviewDocument<Page>({
+          serverURL: SERVER,
+          allowedOrigins: [ADMIN],
+          eventSourcePolicy: 'any',
+          initialData: INITIAL,
+          fetchFn: (...args: Parameters<typeof fetch>) =>
+            fail
+              ? Promise.reject(new TypeError('Failed to fetch'))
+              : respondWith({ id: '1', title: 'Merged' })(...args),
+        });
+        // After mount and, with flush: 'post', after each patch: what they read is painted.
+        const note = (value: number): void => {
+          painted.push([value, host.querySelector('h1')?.textContent ?? '']);
+        };
+        onMounted(() => {
+          note(revision.value);
+        });
+        watch(revision, note, { flush: 'post' });
+        return () => h('h1', data.value.title);
+      },
+    });
+    const host = document.createElement('div');
+    document.body.append(host);
+    const app = createApp(Painted);
+    app.mount(host);
+    mounted = { app, host, text: () => host.textContent };
+    window.dispatchEvent(update('Typed'));
+    await settle();
+    fail = true;
+    window.dispatchEvent(update('Typed again'));
+    await settle();
+    expect(painted).toEqual([
+      [0, 'From the server'],
+      [1, 'Merged'],
+    ]);
   });
 
   it('stops listening when the component unmounts', async () => {

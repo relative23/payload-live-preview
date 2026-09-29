@@ -35,8 +35,11 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
  * 2026-09-25: +27 code lines bind explicit merge response identities to their
  * dispatched target, with a reentrant-validation fence. Errors-only documents
  * remain valid: the installed Payload global REST handler can return one.
+ * 2026-09-29 (H13, ADR 0023): +9 hook-session lines carry `revision`, the
+ * message the snapshot's data came from, so a component can tell merged from
+ * painted; it is compared and published like the other snapshot fields.
  */
-export const REVIEWED_SCOPE_LINES = 986;
+export const REVIEWED_SCOPE_LINES = 995;
 
 interface OurFile {
   readonly file: string;

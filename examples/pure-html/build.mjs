@@ -38,6 +38,9 @@ const groupsDeclared = generateInlineScript({
   subfieldCoverage: 'declared',
 });
 const groupsDescendant = generateInlineScript({ ...options, routeStrategy: true });
+// The route strategy and an island: how completely the page shows a revision
+// (`revision-display.spec.ts`).
+const revisionDisplay = generateInlineScript({ ...options, routeStrategy: true });
 
 const shell = (title, body, script = inline) =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title>` +
@@ -79,6 +82,20 @@ const groupsBody =
   '<p data-testid="description">Saved description</p>' +
   '</section>';
 
+// `banner` only the route shows, which renders the saved draft; the island
+// renders `title` at once but confirms it only when the page is told to, the
+// way a framework commit can come later than the event.
+const revisionDisplayBody =
+  '<h1 data-payload-field="title" data-testid="title">Hello</h1>' +
+  '<aside data-payload-strategy="route" data-payload-depends="banner">banner</aside>' +
+  '<x-panel data-payload-island="panel"><p data-testid="island-title">Hello</p></x-panel>' +
+  '<script>' +
+  'const island=document.querySelector("x-panel");window.__confirmIsland=()=>{};' +
+  'island.addEventListener("payload-live-preview:update",(event)=>{' +
+  'island.querySelector("p").textContent=String(event.detail.fields.title??"");' +
+  'window.__confirmIsland=()=>event.detail.displayed();});' +
+  '</script>';
+
 await mkdir(dist, { recursive: true });
 await writeFile(join(dist, 'index.html'), shell('Pure HTML preview', indexBody), 'utf8');
 await writeFile(join(dist, 'reveal.html'), shell('Reveal fixture', revealBody), 'utf8');
@@ -97,6 +114,11 @@ await writeFile(
 await writeFile(
   join(dist, 'owners-route.html'),
   shell('Owners and the route', ownersRouteBody, ownersRoute),
+  'utf8',
+);
+await writeFile(
+  join(dist, 'revision-display.html'),
+  shell('Revision display', revisionDisplayBody, revisionDisplay),
   'utf8',
 );
 await copyFile(join(here, 'admin.html'), join(dist, 'admin.html'));

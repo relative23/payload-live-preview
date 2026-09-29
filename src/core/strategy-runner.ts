@@ -18,6 +18,7 @@ import {
 } from './islands';
 import { morphElement } from './morph';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
+import { thrownFragment } from './revision-display';
 import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
@@ -94,7 +95,10 @@ export class StrategyRunner {
     targets: readonly CachedElement[],
     ownerKeys: OwnerScope,
   ): void {
-    if (transaction.routeRefreshed) return;
+    if (transaction.routeRefreshed) {
+      this.kept(transaction, targets);
+      return;
+    }
     const { fragment, route } = this.deps.strategies;
     const covered = fragment === undefined ? undefined : coveringBoundaries(targets);
     const boundaries =
@@ -113,10 +117,18 @@ export class StrategyRunner {
       // Only 'escalate' queues a patch for this method (fidelity.ts), so the
       // page that reaches here with no strategy is the one the line is for.
       this.warnEscalationUnavailable(targets.length);
+      this.kept(transaction, targets);
       return;
     }
     this.state.escalatedCount += targets.length;
     void this.refreshRoute(transaction, data, route);
+  }
+
+  /** Patches that fell short and stay as they are: the revision does not show those fields. */
+  private kept(transaction: UpdateTransaction, targets: readonly CachedElement[]): void {
+    for (const target of targets) {
+      this.state.display.shortfall(transaction, { kind: 'unfaithful', field: target.fieldName });
+    }
   }
 
   /**
@@ -170,9 +182,10 @@ export class StrategyRunner {
     let answered = 0;
     for (const fieldName of unbound) if (reportUnboundChange(state, fieldName)) answered += 1;
     const [first] = unbound;
-    if (first === undefined || deps.onUnfaithfulPatch !== 'escalate') return false;
-    if (deps.strategies.route === undefined) {
-      this.warnEscalationUnavailable(unbound.length);
+    if (first === undefined) return false;
+    if (deps.onUnfaithfulPatch !== 'escalate' || deps.strategies.route === undefined) {
+      if (deps.onUnfaithfulPatch === 'escalate') this.warnEscalationUnavailable(unbound.length);
+      for (const field of unbound) state.display.shortfall(transaction, { kind: 'unbound', field });
       return false;
     }
     deps.log('route', 'LP0807', `field "${first}" has no binding; refreshing the route`);
@@ -251,6 +264,7 @@ export class StrategyRunner {
       },
       failed: (element, id, key, code, reason) => {
         settle(element);
+        state.display.shortfall(transaction, { kind: 'fragment', id, key, code });
         const detail = `fragment "${id}" fell back to patch: ${reason}`;
         // Logged where the failure is, not where an exception would have been:
         // the supplied strategy answers a timeout or a refusal with an outcome
@@ -277,6 +291,7 @@ export class StrategyRunner {
       if (isCurrent()) {
         for (const boundary of plan.boundaries) {
           this.patchFallback(transaction, data, boundary, plan.ownerKeys, isCurrent);
+          state.display.shortfall(transaction, thrownFragment(boundary));
         }
         report = { rendered: 0, failed: plan.boundaries.length, superseded: 0 };
       }
@@ -417,6 +432,15 @@ export class StrategyRunner {
     // applies itself onto whatever the route shows when it gets there.
     const currentData = current.renderData;
     const isCurrent = (): boolean => state.isCurrent(current);
+    if (outcome === 'partial') state.display.shortfall(current, { kind: 'route-saved' });
+    // A refusal with its trailing run armed is not an outcome yet: that run is.
+    else if (
+      outcome === 'failed' ||
+      outcome === 'superseded' ||
+      (outcome === 'refused' && state.routeRetry === null)
+    ) {
+      state.display.shortfall(current, { kind: 'route-failed', outcome });
+    }
     if (outcome === 'refreshed' || outcome === 'partial') {
       stats.refreshes += 1;
       if (outcome === 'partial') stats.partial += 1;

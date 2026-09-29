@@ -551,6 +551,15 @@ even when its own changes lie outside it.
   with the code); `afterUpdate` carries `source: 'fragment'` once the
   revision's fragments settled, next to the `source: 'patch'` one for the
   rest of the page.
+- `inspect().revisions.display`: whether the page shows the latest accepted
+  revision — `pending`, `current`, `partial` with the shortfalls that kept it
+  from being current (a boundary that fell back to a patch, with its code; a
+  route render that showed the saved draft or failed; a patch or an unbound
+  field kept; a write that did not happen; a failed re-fetch), `unconfirmed`
+  while an island has not called `displayed()`, or `superseded`. The
+  `revisionDisplay` event carries the same record when a revision leaves
+  `pending`, and with `enableA11y` a partial revision is announced
+  ([ADR 0023](architecture/0023-revision-display-state.md)).
 - `inspect().fragments`: `{ handler, inFlight, rendered, failed, superseded }`.
 - `inspect().fidelity`: `{ mode, unfaithful, escalated, fields }` — every
   finding of this kind, and how many of them a strategy was handed: the patches

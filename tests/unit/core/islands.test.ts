@@ -108,7 +108,13 @@ describe('isInsideIsland', () => {
     expect(
       dispatchIslandUpdate(
         [island],
-        { fields: { title: 'stale' }, revision: 1, receivedAt: 1, locale: undefined },
+        {
+          fields: { title: 'stale' },
+          revision: 1,
+          receivedAt: 1,
+          locale: undefined,
+          displayed: () => {},
+        },
         () => false,
       ),
     ).toBe(0);

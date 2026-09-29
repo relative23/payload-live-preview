@@ -362,6 +362,12 @@ interface Fixture {
  * rule, the bounded comparison, `data-payload-covers` and the dependencies of
  * rendered boundaries and route markers; every ceiling keeps its cushion
  * (24/65/24/72/60/56/2 B).
+ * 2026-09-29 (H13, revision display state, ADR 0023): paired measurements
+ * against the H02 archive: root client +1 121, generator +1 069, core client
+ * +1 123, Next middleware +1 050, lean +858 B gzip, the React hook +14 and the
+ * Vue composable +21 for `revision`. The runtime carries the per-revision
+ * ledger and its seven call sites; every ceiling keeps its cushion
+ * (24/65/24/72/60/80/59 B).
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -382,21 +388,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 50_447,
+    gzip: 51_568,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 48_266,
+    gzip: 49_335,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 50_408,
+    gzip: 51_531,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -417,28 +423,28 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 53_567,
+    gzip: 54_617,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 33_256,
+    gzip: 34_114,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_563,
+    gzip: 5_577,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_542,
+    gzip: 5_563,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {

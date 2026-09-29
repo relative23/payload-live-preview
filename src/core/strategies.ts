@@ -12,6 +12,8 @@ export type UpdateSource = 'patch' | 'fragment' | 'route';
 
 /** Marks a server-rendered boundary; the value is the registry id the server may render. @internal */
 export const FRAGMENT_ATTRIBUTE = 'data-payload-fragment';
+/** Distinguishes several boundaries of one registry id; unique among siblings. @internal */
+export const FRAGMENT_KEY_ATTRIBUTE = 'data-payload-fragment-key';
 
 /** The nearest fragment boundary enclosing `element` (the element itself included). */
 export function enclosingFragment(element: Element): Element | null {

@@ -67,12 +67,23 @@ component can move from one CMS document to another, remount it with a key that
 includes the document owner and id. This releases the old session and starts a
 new one from the new `initialData`.
 
-The return value is `{ data, isLoading, status, error }`. `data` and `isLoading`
-are Payload's two names. `isLoading` is `true` until an update settles, turns
-`true` again with every update it accepts, and is `false` once the newest one
-has merged or failed to. `status` is `'idle'` before the first update, `'live'`
-when the newest one merged, `'unavailable'` when it did not; `error` says why,
-and only then.
+The return value is `{ data, isLoading, status, error, revision }`. `data` and
+`isLoading` are Payload's two names. `isLoading` is `true` until an update
+settles, turns `true` again with every update it accepts, and is `false` once the
+newest one has merged or failed to. `status` is `'idle'` before the first update,
+`'live'` when the newest one merged, `'unavailable'` when it did not; `error` says
+why, and only then. `revision` says which of the hook's messages `data` came
+from: `0` for `initialData`, unchanged when a merge fails.
+
+`status` describes the merge. React paints `data` in its own commit, so a
+component that must know the editor sees a revision reads `revision` in an
+effect, which runs after that commit:
+
+```tsx
+useEffect(() => {
+  reportPainted(revision);
+}, [revision]);
+```
 
 ## Measured against the official package
 

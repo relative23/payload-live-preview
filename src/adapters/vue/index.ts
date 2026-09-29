@@ -37,6 +37,8 @@ export interface LivePreviewDocumentRefs<T> {
   readonly status: ComputedRef<DocumentStatus>;
   /** Why the last update did not merge; `undefined` unless `status` is `unavailable`. */
   readonly error: ComputedRef<Error | undefined>;
+  /** Which of the session's messages `data` came from; compare it after `nextTick` to know it was painted. */
+  readonly revision: ComputedRef<number>;
 }
 
 /**
@@ -86,5 +88,6 @@ export function useLivePreviewDocument<T>(
     isLoading: computed(() => snapshot.value.isLoading),
     status: computed(() => snapshot.value.status),
     error: computed(() => snapshot.value.error),
+    revision: computed(() => snapshot.value.revision),
   };
 }

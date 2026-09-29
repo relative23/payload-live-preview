@@ -182,6 +182,11 @@
       "functions": 100,
       "branches": 100
     },
+    "src/core/revision-display.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/runtime-state.ts": {
       "lines": 100,
       "functions": 100,

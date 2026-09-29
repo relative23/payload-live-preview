@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 410,
-    "suites": 805,
-    "tests": 3627,
+    "files": 414,
+    "suites": 819,
+    "tests": 3674,
     "benchmarks": 12
   },
   "groups": {
@@ -38,9 +38,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 45,
-      "suites": 52,
-      "tests": 203,
+      "files": 46,
+      "suites": 53,
+      "tests": 205,
       "benchmarks": 0
     },
     "integration": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 331,
-      "suites": 711,
-      "tests": 3301,
+      "files": 334,
+      "suites": 724,
+      "tests": 3346,
       "benchmarks": 0
     }
   },
@@ -323,6 +323,13 @@
     },
     {
       "path": "tests/e2e/specs/reveal.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/revision-display.spec.ts",
       "group": "e2e",
       "suites": 1,
       "tests": 2,
@@ -829,7 +836,7 @@
       "path": "tests/unit/adapters/react-hook.test.tsx",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -864,7 +871,7 @@
       "path": "tests/unit/adapters/vue-composable.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -1591,8 +1598,8 @@
     {
       "path": "tests/unit/core/reveal.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 8,
+      "suites": 6,
+      "tests": 10,
       "benchmarks": 0
     },
     {
@@ -1600,6 +1607,27 @@
       "group": "unit",
       "suites": 2,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/revision-display-ledger.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/revision-display-paths.test.ts",
+      "group": "unit",
+      "suites": 7,
+      "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/revision-display.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 15,
       "benchmarks": 0
     },
     {

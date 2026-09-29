@@ -304,6 +304,7 @@ describe('DocumentSession', () => {
       isLoading: true,
       status: 'idle',
       error: undefined,
+      revision: 0,
     });
   });
 });

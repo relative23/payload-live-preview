@@ -248,6 +248,7 @@ export interface InspectionRevisions {
     readonly accepted: number;
     readonly active: number | undefined;
     readonly completed: number;
+    readonly display: RevisionDisplay | undefined;
     readonly skippedUnchanged: number;
     readonly superseded: number;
 }
@@ -400,6 +401,7 @@ export interface LivePreviewEventMap {
         readonly detail: PayloadDocumentEventDetail;
         readonly timestamp: number;
     };
+    readonly revisionDisplay: RevisionDisplay;
 }
 
 // @public
@@ -594,6 +596,40 @@ export type RendererKey = FieldType | CustomRendererKey;
 
 // @public
 export function reportPreviewFocus(target: FocusReportTarget, field: string, targetOrigin: string): void;
+
+// @public
+export interface RevisionDisplay {
+    readonly awaitingIslands: number;
+    readonly deferred: number;
+    readonly revision: number;
+    readonly shortfalls: readonly RevisionShortfall[];
+    readonly state: RevisionDisplayState;
+}
+
+// @public
+export type RevisionDisplayState = 'pending' | 'current' | 'partial' | 'unconfirmed' | 'superseded';
+
+// @public
+export type RevisionShortfall = {
+    readonly kind: 'fragment';
+    readonly id: string;
+    readonly key: string | undefined;
+    readonly code: DiagnosticCode;
+} | {
+    readonly kind: 'route-saved';
+} | {
+    readonly kind: 'route-failed';
+    readonly outcome: RouteOutcome;
+} | {
+    readonly kind: 'unfaithful' | 'unbound';
+    readonly field: string;
+} | {
+    readonly kind: 'write';
+    readonly field: string;
+    readonly code: DiagnosticCode;
+} | {
+    readonly kind: 'merge';
+};
 
 // @public
 export type RichTextRenderer = (value: unknown, context: {

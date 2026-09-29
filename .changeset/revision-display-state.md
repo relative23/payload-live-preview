@@ -1,0 +1,5 @@
+---
+'payload-live-preview': minor
+---
+
+A revision now says how completely the page shows it. `inspect().revisions.display` and the new `revisionDisplay` event report one state for the latest accepted revision: `pending` while work is left, `current` when nothing fell short, `partial` with each shortfall named (a fragment boundary that fell back to a patch, with its code, including LP0803 for a refused authorization; a route render that showed the saved draft, or a route refresh that failed; a patch or an unbound field that was kept; a write that did not happen; a failed re-fetch of the populated document), `unconfirmed` while an island has not confirmed it, and `superseded` when a newer revision came first. The island event's detail gains `displayed()`, which an island calls once it has rendered the revision. With `enableA11y`, a partial revision is announced in the live region. `useLivePreviewDocument` in React and Vue returns `revision`, the message its data came from, so a component can compare it after the framework has painted. Nothing else changes.

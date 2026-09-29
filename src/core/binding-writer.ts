@@ -63,7 +63,7 @@ export class BindingWriter {
     try {
       renderer = deps.resolveRenderer(type, target);
     } catch (error) {
-      return this.fail(transaction, error);
+      return this.fail(transaction, target.fieldName, error);
     }
     if (!state.isCurrent(transaction)) return false;
     const emitElementUpdate = deps.emitter.listenerCount('elementUpdate') > 0;
@@ -86,6 +86,11 @@ export class BindingWriter {
           deps.warn(
             `[live-preview] LP0401: refused to write "${target.fieldName}" into attribute "${target.targetAttribute}"`,
           );
+          state.display.shortfall(transaction, {
+            kind: 'write',
+            field: target.fieldName,
+            code: 'LP0401',
+          });
           return false;
         }
       } else if (renderer !== undefined) {
@@ -108,7 +113,7 @@ export class BindingWriter {
         return false;
       }
     } catch (error) {
-      return this.fail(transaction, error);
+      return this.fail(transaction, target.fieldName, error);
     }
     if (!state.isCurrent(transaction)) return false;
     if (emitElementUpdate) {
@@ -139,8 +144,9 @@ export class BindingWriter {
     return applied;
   }
 
-  private fail(transaction: UpdateTransaction, cause: unknown): false {
+  private fail(transaction: UpdateTransaction, field: string, cause: unknown): false {
     if (!this.state.isCurrent(transaction)) return false;
+    this.state.display.shortfall(transaction, { kind: 'write', field, code: 'LP0603' });
     const error = cause instanceof Error ? cause : new Error(String(cause));
     void this.deps.emitter.emitWhile('error', { error, context: 'renderer', code: 'LP0603' }, () =>
       this.state.isCurrent(transaction),

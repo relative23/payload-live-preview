@@ -398,7 +398,7 @@ binding inside it, and the keyed morph never enters it
 ([ADR 0008 — Keyed morph: what it keeps, what it never crosses](architecture/0008-keyed-morph-ownership.md)).
 Instead, an update is dispatched on each island root as a
 `payload-live-preview:update` DOM event whose `detail` is
-`{ fields, revision, receivedAt, locale }` — for every revision that carried a
+`{ fields, revision, receivedAt, locale, displayed }` — for every revision that carried a
 change, whether or not a binding outside the islands was written. A page whose
 only bindings sit inside islands hears every edit, and so does an island that
 alone shows the field an editor is typing into, `skipUnchanged` (on by default)
@@ -406,13 +406,25 @@ or not:
 
 ```ts
 // inside a React island
+const [update, setUpdate] = useState<IslandUpdateDetail>();
 useEffect(() => {
   const root = ref.current?.closest('[data-payload-island]');
-  const onUpdate = (e: Event) => setFields((e as CustomEvent<IslandUpdateDetail>).detail.fields);
+  const onUpdate = (e: Event) => setUpdate((e as CustomEvent<IslandUpdateDetail>).detail);
   root?.addEventListener('payload-live-preview:update', onUpdate);
   return () => root?.removeEventListener('payload-live-preview:update', onUpdate);
 }, []);
+// After React committed the render of `update.fields`:
+useEffect(() => {
+  update?.displayed();
+}, [update]);
 ```
+
+`displayed()` tells the runtime that the island has rendered that revision.
+The runtime cannot see an island render, so until every island a revision was
+handed to has called it, `inspect().revisions.display` says `unconfirmed`
+rather than `current` ([ADR 0023](architecture/0023-revision-display-state.md)).
+Calling it twice, late or for a superseded revision does nothing, and an island
+that never calls it changes nothing else.
 
 An Astro island keeps its `ssr` attribute until hydration has installed the
 component listeners. The runtime holds the current snapshot while that marker

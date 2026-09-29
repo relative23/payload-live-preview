@@ -56,6 +56,7 @@
     "src/core/protocol-version.ts",
     "src/core/reveal-ledger.ts",
     "src/core/reveal.ts",
+    "src/core/revision-display.ts",
     "src/core/runtime-state.ts",
     "src/core/runtime.ts",
     "src/core/state.ts",
@@ -94,11 +95,11 @@
     "src/types/merge-depth.ts"
   ],
   "baseline": {
-    "total": 9853,
-    "mutationScoreMinimum": 86.54,
+    "total": 10044,
+    "mutationScoreMinimum": 86.87,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 45,
-    "noCoverageMaximum": 67,
+    "noCoverageMaximum": 65,
     "timeoutMaximum": 60,
     "errorMaximum": 0,
     "ignoredMaximum": 0

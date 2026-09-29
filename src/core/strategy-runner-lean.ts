@@ -37,8 +37,13 @@ export function createLeanStrategyRunner(
   return {
     planFragments: (): null => null,
     // Nothing to escalate to. The pipeline still drains its queue, so a page
-    // that keeps producing findings does not keep producing entries.
-    escalateUnfaithful: (): void => undefined,
+    // that keeps producing findings does not keep producing entries; the
+    // patches stay as they are, and the revision says so (ADR 0023).
+    escalateUnfaithful: (transaction, _data, targets): void => {
+      for (const { fieldName: field } of targets) {
+        state.display.shortfall(transaction, { kind: 'unfaithful', field });
+      }
+    },
     // Nothing here to escalate to, and the finding is still worth recording:
     // a page that changes a field it does not bind is the page
     // `inspect().fidelity` is read on, and `escalated` staying 0 beside it is
@@ -56,7 +61,10 @@ export function createLeanStrategyRunner(
           transaction.renderData?.fields,
         ),
       );
-      for (const fieldName of unbound) reportUnboundChange(state, fieldName);
+      for (const field of unbound) {
+        reportUnboundChange(state, field);
+        state.display.shortfall(transaction, { kind: 'unbound', field });
+      }
       return false;
     },
     plansRoute: (): boolean => false,

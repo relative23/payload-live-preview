@@ -33,6 +33,13 @@ export interface IslandUpdateDetail {
   readonly revision: number;
   readonly receivedAt: number;
   readonly locale: string | undefined;
+  /**
+   * Call once the island has rendered this revision, for instance from an
+   * effect after its framework committed. Until every island handed the
+   * revision has called it, `inspect().revisions.display` says `unconfirmed`
+   * (ADR 0023). Repeated, late or superseded calls do nothing.
+   */
+  readonly displayed: () => void;
 }
 
 function isIslandRoot(element: Element): boolean {

@@ -43,6 +43,11 @@ export type {
   InspectionFragments,
   InspectionRoute,
 } from './core/inspection/types';
+export type {
+  RevisionDisplay,
+  RevisionDisplayState,
+  RevisionShortfall,
+} from './core/revision-display';
 export type { ConnectionStatus } from './core/state';
 export type { DefaultsProfile, EventSourcePolicy } from './types/defaults-profile';
 export type {

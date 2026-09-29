@@ -1,5 +1,5 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { StrictMode } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useLivePreviewDocument } from '@adapters/react/index';
 
@@ -127,6 +127,46 @@ describe('useLivePreviewDocument', () => {
     expect(screen.getByTestId('title').textContent).toBe('From the server');
     expect(screen.getByTestId('status').textContent).toBe('unavailable');
     expect(screen.getByTestId('error').textContent).toContain('Failed to fetch');
+  });
+
+  it('reports which message its data came from, for an effect to compare after the commit', async () => {
+    // ADR 0023: `status` is the merge; the paint is React's. An effect runs
+    // after the commit, so what it reads is what the editor sees.
+    const painted: [number, string][] = [];
+    function Painted({ fetchFn }: { readonly fetchFn: typeof fetch }): React.JSX.Element {
+      const { data, revision } = useLivePreviewDocument<Page>({
+        serverURL: SERVER,
+        allowedOrigins: [ADMIN],
+        eventSourcePolicy: 'any',
+        initialData: INITIAL,
+        fetchFn,
+      });
+      useEffect(() => {
+        painted.push([revision, screen.getByTestId('title').textContent]);
+      }, [revision]);
+      return <h1 data-testid="title">{data.title}</h1>;
+    }
+    let fail = false;
+    const fetchFn = ((...args: Parameters<typeof fetch>) =>
+      fail
+        ? Promise.reject(new TypeError('Failed to fetch'))
+        : respondWith({ id: '1', title: 'Merged' })(...args)) as typeof fetch;
+    render(<Painted fetchFn={fetchFn} />);
+    await act(async () => {
+      window.dispatchEvent(update('Typed'));
+      await Promise.resolve();
+    });
+    await settle();
+    fail = true;
+    await act(async () => {
+      window.dispatchEvent(update('Typed again'));
+      await Promise.resolve();
+    });
+    await settle();
+    expect(painted).toEqual([
+      [0, 'From the server'],
+      [1, 'Merged'],
+    ]);
   });
 
   it('subscribes once under strict mode, where every effect runs twice', async () => {

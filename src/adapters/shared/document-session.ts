@@ -32,6 +32,13 @@ export interface DocumentSnapshot<T> {
   readonly status: DocumentStatus;
   /** Why the last update did not merge; `undefined` while `status` is not `unavailable`. */
   readonly error: Error | undefined;
+  /**
+   * Which of this session's messages `data` came from: `0` for the initial
+   * data, and unchanged when a merge fails. The framework paints `data` in its
+   * own commit; a component that must know it was painted compares this in an
+   * effect (ADR 0023).
+   */
+  readonly revision: number;
 }
 
 export interface DocumentSessionOptions {
@@ -114,7 +121,13 @@ export class DocumentSession<T> {
       sourcePolicy: options.eventSourcePolicy ?? 'parent-or-opener',
     });
     this.#target = options.target;
-    this.#initial = { data: initialData, isLoading: true, status: 'idle', error: undefined };
+    this.#initial = {
+      data: initialData,
+      isLoading: true,
+      status: 'idle',
+      error: undefined,
+      revision: 0,
+    };
     this.#snapshot = this.#initial;
   }
 
@@ -191,6 +204,7 @@ export class DocumentSession<T> {
       isLoading: false,
       status: 'live',
       error: undefined,
+      revision,
     });
   }
 
@@ -200,7 +214,8 @@ export class DocumentSession<T> {
       current.data === next.data &&
       current.isLoading === next.isLoading &&
       current.status === next.status &&
-      current.error === next.error
+      current.error === next.error &&
+      current.revision === next.revision
     ) {
       return;
     }

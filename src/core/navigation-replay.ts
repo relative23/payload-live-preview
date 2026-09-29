@@ -33,6 +33,11 @@ export class NavigationReplay {
   private readonly awaitingHydration = new WeakSet<Element>();
   /** A fallback flush may carry the same snapshot after the no-patch handoff. */
   private readonly delivered = new WeakMap<PayloadLivePreviewData, WeakSet<Element>>();
+  /** Each island confirms a revision once, however often it is handed it (ADR 0023). */
+  private readonly confirmations = new WeakMap<
+    Element,
+    { readonly transaction: UpdateTransaction; readonly displayed: () => void }
+  >();
 
   constructor(
     private readonly deps: RuntimeDeps,
@@ -79,6 +84,8 @@ export class NavigationReplay {
         this.awaitingHydration.delete(island);
         continue;
       }
+      // Counted while it hydrates too: it owes the revision a render.
+      const displayed = this.confirmation(island, transaction);
       if (isAwaitingIslandHydration(island)) {
         this.awaitingHydration.add(island);
       } else {
@@ -86,7 +93,7 @@ export class NavigationReplay {
         if (delivered.has(island)) continue;
         // Claim before calling application code: it can re-enter this fanout.
         delivered.add(island);
-        dispatchSnapshotToIslands(transaction, data, [island], isCurrent);
+        dispatchSnapshotToIslands(transaction, data, [island], isCurrent, displayed);
       }
     }
   }
@@ -159,6 +166,14 @@ export class NavigationReplay {
     };
   }
 
+  private confirmation(island: Element, transaction: UpdateTransaction): () => void {
+    const held = this.confirmations.get(island);
+    if (held?.transaction === transaction) return held.displayed;
+    const displayed = this.state.display.handIsland(transaction);
+    this.confirmations.set(island, { transaction, displayed });
+    return displayed;
+  }
+
   private currentTransaction(): UpdateTransaction | null {
     const transaction = this.state.activeUpdate;
     return this.state.navigationBindingReplay &&
@@ -174,6 +189,7 @@ export function dispatchSnapshotToIslands(
   data: PayloadLivePreviewData,
   islands: readonly Element[],
   isCurrent: () => boolean,
+  displayed: () => void,
 ): void {
   dispatchIslandUpdate(
     islands,
@@ -182,6 +198,7 @@ export function dispatchSnapshotToIslands(
       revision: transaction.revision.revision,
       receivedAt: transaction.receivedAt,
       locale: transaction.locale,
+      displayed,
     },
     isCurrent,
   );

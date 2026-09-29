@@ -83,6 +83,11 @@ export type {
   LivePreviewInspection,
 } from './core/inspection/types';
 export type {
+  RevisionDisplay,
+  RevisionDisplayState,
+  RevisionShortfall,
+} from './core/revision-display';
+export type {
   FragmentContext,
   FragmentReport,
   FragmentStrategy,

@@ -3,6 +3,7 @@ import {
   FieldRevealer,
   isInViewport,
   prefersReducedMotion,
+  revealBinding,
   revealElement,
   type RevealElement,
   type RevealWindow,
@@ -108,5 +109,27 @@ describe('FieldRevealer', () => {
     r.reveal('title', el({ top: 2000, bottom: 2040 }), win());
     r.reset();
     expect(r.reveal('title', el({ top: 2000, bottom: 2040 }), win())).toBe('revealed');
+  });
+});
+
+describe('revealBinding', () => {
+  it('reveals nothing in a document without a window', () => {
+    const detached = document.implementation.createHTMLDocument('no window');
+    const element = detached.createElement('p');
+    expect(revealBinding(new FieldRevealer(), { element, fieldName: 'title' })).toBe('no-element');
+  });
+
+  it("keys a reveal by document, so another document's field of the same name still scrolls", () => {
+    const revealer = new FieldRevealer();
+    const binding = (owner: string | undefined) => {
+      const element = document.createElement('p');
+      element.scrollIntoView = vi.fn();
+      document.body.append(element);
+      return { element, owner, fieldName: 'title' };
+    };
+    expect(revealBinding(revealer, binding('global:home'))).toBe('revealed');
+    expect(revealBinding(revealer, binding('global:other'))).toBe('revealed');
+    expect(revealBinding(revealer, binding('global:other'))).toBe('skipped-same');
+    expect(revealBinding(revealer, binding(undefined))).toBe('revealed');
   });
 });

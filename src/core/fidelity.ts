@@ -66,11 +66,17 @@ export function reportUnfaithfulPatch(
   target: CachedElement,
   reason: string,
 ): void {
-  if (state.reportedUnfaithful.has(target.element)) return;
+  const mode = deps.onUnfaithfulPatch;
+  const repeated = state.reportedUnfaithful.has(target.element);
+  // Kept, not queued: under 'warn' and 'ignore', and for every repeat, which
+  // is never escalated again. The revision does not show the field (ADR 0023).
+  if (repeated || mode !== 'escalate') {
+    state.display.shortfall(state.activeUpdate, { kind: 'unfaithful', field: target.fieldName });
+  }
+  if (repeated) return;
   state.reportedUnfaithful.add(target.element);
   state.unfaithfulCount += 1;
   state.unfaithfulFields.add(target.fieldName);
-  const mode = deps.onUnfaithfulPatch;
   if (mode === 'ignore') return;
   if (mode === 'warn') {
     deps.warn(`[live-preview] LP0411: "${target.fieldName}" ${reason}`);

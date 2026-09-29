@@ -18,7 +18,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+8/+35 B; same 21/12/120 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +73/+34/+6 B; same 21/12/120 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2992/+908/+728 B; same 21/12/120 B cushions.
-  'client.cjs': { raw: 146_942, gzip: 45_780, brotli: 39_655 },
+  // 2026-09-29 (H13, revision display state, ADR 0023): measured +3310/+1081/+890 B; same 21/12/120 B cushions.
+  'client.cjs': { raw: 150_252, gzip: 46_861, brotli: 40_545 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -29,7 +30,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+13/-9 B; same 21/12/120 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +73/+35/+33 B; same 21/12/120 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2992/+906/+757 B; same 21/12/120 B cushions.
-  'client.js': { raw: 146_861, gzip: 45_766, brotli: 39_667 },
+  // 2026-09-29 (H13, revision display state, ADR 0023): measured +3310/+1081/+857 B; same 21/12/120 B cushions.
+  'client.js': { raw: 150_171, gzip: 46_847, brotli: 40_524 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).
@@ -49,7 +51,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +193/+56/+72 B; same 9/6/133 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured -24/-10/-36 B; same 9/6/133 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2914/+888/+726 B; same 9/6/133 B cushions.
-  'lean.cjs': { raw: 105_809, gzip: 33_203, brotli: 29_346 },
+  // 2026-09-29 (H13, revision display state, ADR 0023): measured +2514/+855/+771 B; same 9/6/133 B cushions.
+  'lean.cjs': { raw: 108_323, gzip: 34_058, brotli: 30_117 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 757 → 91 791 (+34 B, measured 91 738 → 91 772).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 791 → 91 840 (+49 B, measured 91 772 → 91 821); gzip 29 171 → 29 183 (+12 B, measured 29 167 → 29 179).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 91 840 → 91 858 (+18 B, measured 91 821 → 91 839); gzip 29 183 → 29 190 (+7 B, measured 29 179 → 29 186).
@@ -59,7 +62,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +193/+54/+47 B; same 9/6/120 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured -24/-9/+53 B; same 9/6/120 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2914/+888/+692 B; same 9/6/120 B cushions.
-  'lean.js': { raw: 105_798, gzip: 33_197, brotli: 29_352 },
+  // 2026-09-29 (H13, revision display state, ADR 0023): measured +2514/+855/+771 B; same 9/6/120 B cushions.
+  'lean.js': { raw: 108_312, gzip: 34_052, brotli: 30_123 },
   // 2026-09-16 (2.0.1 Version PR): gzip 5 602 → 5 612. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 5 600 against a cushion of 2 B. Twelve bytes over that measurement  as the rows that never flipped carry.
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 16 307 → 16 527 (+220 B, measured 16 305 → 16 525); gzip 5 612 → 5 665 (+53 B, measured 5 600 → 5 653); brotli 5 072 → 5 162 (measured 5 072; under the 2 % notice).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 16 527 → 16 755 (+228 B, measured 16 525 → 16 753); gzip 5 665 → 5 720 (+55 B, measured 5 653 → 5 708).
@@ -91,5 +95,6 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'fragment.cjs': { raw: 16_489, gzip: 6_297, brotli: 5_627 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+429/+364 B; same 20/9/79 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+16/+17 B; same 20/9/79 B cushions.
-  'fragment.js': { raw: 16_423, gzip: 6_272, brotli: 5_607 },
+  // 2026-09-29 (H13, revision display state, ADR 0023): measured -4/-2/-1 B; same 20/9/79 B cushions.
+  'fragment.js': { raw: 16_419, gzip: 6_270, brotli: 5_606 },
 };

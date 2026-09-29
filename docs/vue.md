@@ -57,11 +57,14 @@ required, `depth` is `1`, `apiRoute` is `/api`, `allowedOrigins` names the admin
 origins, and a message is accepted only from the window that framed or opened
 the page unless `eventSourcePolicy: 'any'` says otherwise.
 
-The four returned values are refs: `data`, `isLoading`, `status`
-(`'idle' | 'live' | 'unavailable'`) and `error`. `data` and `isLoading` are
-Payload's two names. `isLoading` is `true` until an update settles, turns `true`
-again with every update it accepts, and is `false` once the newest one has merged
-or failed to.
+The five returned values are refs: `data`, `isLoading`, `status`
+(`'idle' | 'live' | 'unavailable'`), `error` and `revision`. `data` and
+`isLoading` are Payload's two names. `isLoading` is `true` until an update
+settles, turns `true` again with every update it accepts, and is `false` once the
+newest one has merged or failed to. `revision` says which of the composable's
+messages `data` came from: `0` for `initialData`, unchanged when a merge fails.
+`status` describes the merge; Vue patches the DOM afterwards, so a watcher with
+`flush: 'post'` on `revision` runs once the editor can see it.
 
 ## Scope
 

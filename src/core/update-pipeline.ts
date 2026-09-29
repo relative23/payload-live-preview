@@ -17,18 +17,20 @@ import { reportOmittedFeature } from './profile';
 import { detectProtocolProfile } from './protocol-profile';
 import { observeCapabilities } from './protocol-version';
 import { owesForceRender } from './relationship-tracker';
-import type { RevealWindow } from './reveal';
+import { revealBinding } from './reveal';
+import { runtimeDisplayHost } from './revision-display';
 import { type RuntimeDeps, type RuntimeState, type UpdateTransaction } from './runtime-state';
 import { resolveStrategy } from './strategies';
 import { StrategyRunner } from './strategy-runner';
 import { createLeanStrategyRunner, type StrategyRunnerLike } from './strategy-runner-lean';
 import { transformForBinding } from './transform-value';
-import type { CachedElement } from './types';
 import { ownerKeysForUpdate } from './update-owner';
 import type { FlushStats, ScheduledUpdate } from './update-scheduler';
 
 /** A refinement moved no field: it completes values the revision already applied. */
 const NOTHING_CHANGED: ReadonlySet<string> = new Set();
+/** The populated re-fetch failed; the message's own values stand in (ADR 0023). */
+const MERGE_FAILED = { kind: 'merge' } as const;
 
 export class UpdatePipeline {
   private readonly strategies: StrategyRunnerLike;
@@ -40,6 +42,7 @@ export class UpdatePipeline {
     rebuildCache: () => void,
   ) {
     state.changes.keepValues = deps.subfieldCoverage === 'declared';
+    state.display.host = runtimeDisplayHost(deps, state);
     // Esbuild folds this choice; the lean branch drops the server-rendering strategies.
     this.strategies =
       typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__
@@ -161,6 +164,7 @@ export class UpdatePipeline {
     if (previous !== null && !previous.completed && previous.countsAsUpdate) {
       state.supersededCount += 1;
     }
+    state.display.begin(transaction, revision.revision);
     state.activeUpdate = transaction;
     deps.scheduler.acceptRevision(revision);
     if (countsAsUpdate) state.updateCount += 1;
@@ -318,6 +322,7 @@ export class UpdatePipeline {
       return result.doc;
     }
     if (result.status === 'superseded') return null;
+    state.display.shortfall(transaction, MERGE_FAILED);
     return plan.fields;
   }
 
@@ -328,6 +333,7 @@ export class UpdatePipeline {
   ): Promise<void> {
     const { state } = this;
     const result = await pending;
+    if (result.status === 'unavailable') state.display.shortfall(transaction, MERGE_FAILED);
     if (result.status !== 'merged' || !state.isCurrent(transaction)) return;
     state.merges.recordMerged(result.doc);
     this.applyFields(transaction, this.dataFor(transaction, result.doc), true);
@@ -520,6 +526,7 @@ export class UpdatePipeline {
     ) {
       return;
     }
+    state.display.deferred(transaction, stats.deferred);
     if (transaction.pendingFragments === 0) state.complete(transaction);
     const isCurrent = (): boolean =>
       state.isCurrent(transaction) && sameRevision(transaction.revision, revision);
@@ -568,7 +575,7 @@ export class UpdatePipeline {
     const target = this.state.revealLedger.commit(transaction);
     if (target === undefined) return;
     try {
-      this.revealBinding(target);
+      revealBinding(this.state.revealer, target);
     } catch (error) {
       this.deps.log('reveal', error);
     }
@@ -579,21 +586,8 @@ export class UpdatePipeline {
    * names a field, so it takes the first binding — a focus message carries no
    * document identity to choose between several.
    */
-  revealField(fieldName: string): 'revealed' | 'already-visible' | 'skipped-same' | 'no-element' {
+  revealField(fieldName: string): ReturnType<typeof revealBinding> {
     const target = this.deps.cache.get(fieldName)?.[0];
-    if (target === undefined) return 'no-element';
-    return this.revealBinding(target);
-  }
-
-  private revealBinding(
-    target: CachedElement,
-  ): 'revealed' | 'already-visible' | 'skipped-same' | 'no-element' {
-    const { element } = target;
-    const win = element.ownerDocument.defaultView as RevealWindow | null;
-    if (win === null) return 'no-element';
-    // Keyed by document as well as field: two documents on one page have their
-    // own `title`, and revealing one must not count as revealing the other.
-    const key = `${target.owner ?? ''} ${target.fieldName}`;
-    return this.state.revealer.reveal(key, element, win);
+    return target === undefined ? 'no-element' : revealBinding(this.state.revealer, target);
   }
 }
