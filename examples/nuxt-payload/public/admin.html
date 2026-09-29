@@ -110,7 +110,8 @@
       const PREVIEW_ORIGIN = 'http://localhost:4176';
       const form = document.getElementById('admin-form');
       const iframe = document.getElementById('preview');
-      const ROUTES = ['/', '/navigation'];
+      // `?target=` picks an entry; the framed route never comes from the query.
+      const ROUTES = ['/', '/navigation', '/reveal'];
       const requested = new URLSearchParams(window.location.search).get('target');
       iframe.src = ROUTES.find((route) => route === requested) ?? ROUTES[0];
       const fixtureNow = new Date();

@@ -22,8 +22,6 @@ interface RevealTarget {
   /** Relative admin URLs resolve against baseURL, which is the astro fixture. */
   readonly admin: string;
   readonly path: string;
-  /** Set when the admin frames a fixed page and has no `?target=`. */
-  readonly frameSrc?: string;
   readonly handle: RuntimeHandle;
   /** SPA hydration can re-render and revert an applied value. */
   readonly hydrationWaitMs?: number;
@@ -77,10 +75,10 @@ const TARGETS: readonly RevealTarget[] = [
     handle: '__livePreview',
   },
   {
-    // `?target=` rather than `frameSrc`: this fixture's admin enters through
-    // `/preview-session`, which mints the credential the gated root layout
-    // verifies, and a frame src written over it afterwards would be a race
-    // between the test and the admin's own navigation.
+    // `?target=` rather than writing the frame src: this fixture's admin
+    // enters through `/preview-session`, which mints the credential the gated
+    // root layout verifies, and a frame src written over it afterwards would
+    // be a race between the test and the admin's own navigation.
     name: 'nextjs — inline delivery, React',
     server: 'nextjs',
     admin: 'http://localhost:4174/admin.html',
@@ -92,11 +90,13 @@ const TARGETS: readonly RevealTarget[] = [
     hydrationWaitMs: 800,
   },
   {
+    // `?target=` as for Next.js: a frame src written after the admin set its
+    // own is a second navigation in the same frame, and under load WebKit
+    // kept the first one (2 of 80 runs at 8 workers, PHD-08).
     name: 'nuxt — asset delivery, Vue',
     server: 'nuxt',
     admin: 'http://localhost:4176/admin.html',
     path: '/reveal',
-    frameSrc: '/reveal',
     handle: '__livePreview',
     hydrationWaitMs: 800,
   },
@@ -125,16 +125,10 @@ function bound(page: Page, testId: string) {
 
 async function openReveal(page: Page, target: RevealTarget): Promise<Frame> {
   const admin =
-    target.frameSrc === undefined && target.signedFrame !== true
-      ? `${target.admin}?target=${encodeURIComponent(target.path)}`
-      : target.admin;
+    target.signedFrame === true
+      ? target.admin
+      : `${target.admin}?target=${encodeURIComponent(target.path)}`;
   await page.goto(admin);
-  if (target.frameSrc !== undefined) {
-    await page.evaluate((src) => {
-      const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
-      if (iframe) iframe.src = src;
-    }, target.frameSrc);
-  }
   if (target.signedFrame === true) {
     // The admin frames the first route on its allowlist once it has a token
     // for it; after that navigation the frame is the test's to point elsewhere.
@@ -148,7 +142,7 @@ async function openReveal(page: Page, target: RevealTarget): Promise<Frame> {
 
   const frame = await waitForPreviewFrame(
     page,
-    target.signedFrame === true ? `${target.path}?` : (target.frameSrc ?? target.path),
+    target.signedFrame === true ? `${target.path}?` : target.path,
   );
   await waitForStarted(frame, target.handle);
   if (target.hydrationWaitMs !== undefined) await page.waitForTimeout(target.hydrationWaitMs);
