@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 418,
-    "suites": 826,
-    "tests": 3708,
+    "files": 419,
+    "suites": 827,
+    "tests": 3716,
     "benchmarks": 12
   },
   "groups": {
@@ -40,7 +40,7 @@
     "e2e": {
       "files": 47,
       "suites": 54,
-      "tests": 208,
+      "tests": 209,
       "benchmarks": 0
     },
     "integration": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 337,
-      "suites": 730,
-      "tests": 3377,
+      "files": 338,
+      "suites": 731,
+      "tests": 3384,
       "benchmarks": 0
     }
   },
@@ -220,7 +220,7 @@
       "path": "tests/e2e/specs/hybrid-fragment.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -2986,6 +2986,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/types/fragment-request-depth.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
       "benchmarks": 0
     },
     {

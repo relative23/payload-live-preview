@@ -397,7 +397,12 @@ in whatever it does hand a handler — that is all either binding does.
 - **Limits**: the endpoint counts the bytes consumed from the request stream,
   with a 64 KiB default cap. One 5 s deadline covers the complete body read;
   props and rendering then receive separate 5 s windows. Configure these with
-  `limits` (`bodyBytes`, `timeoutMs`); field depth 12 is fixed. `Content-Length`
+  `limits` (`bodyBytes`, `timeoutMs`); field depth 64 is fixed. The request
+  carries the whole document: 64 KiB holds about 4 500 words of rich text,
+  and a page with layout blocks measured 6 to 15 KB
+  ([ADR 0027](architecture/0027-fragment-requests-within-measured-bounds.md)).
+  A larger document is answered 413 and patched instead (`LP0801`); raise
+  `bodyBytes` for it. `Content-Length`
   can refuse early but cannot bypass the streamed cap. Every response is
   `Cache-Control: private, no-store`.
 - **Request lifetime**: set `limits.totalTimeoutMs` for one deadline covering

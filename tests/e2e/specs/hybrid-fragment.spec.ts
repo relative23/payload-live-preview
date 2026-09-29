@@ -77,6 +77,38 @@ test.describe('hybrid fragment preview', () => {
     expect((await fragments(frame)).rendered).toBe(2);
   });
 
+  test('a document with a list in a column block is rendered by the server, not refused as too deep (ADR 0027)', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+    const text = { type: 'text', text: 'Punkt', format: 0 };
+    // layout[0].columns[0].richText.root.children[0].children[0].children[0].format: 13 levels.
+    const layout = [
+      {
+        blockType: 'content',
+        columns: [
+          {
+            richText: {
+              root: {
+                type: 'root',
+                children: [{ type: 'list', children: [{ type: 'listitem', children: [text] }] }],
+              },
+            },
+          },
+        ],
+      },
+    ];
+    await post(
+      page,
+      { title: 'Deep page', subtitle: 'Server rendered', body: 'a b', layout },
+      OWNER,
+    );
+    await expect(frame.getByTestId('hero-subtitle')).toHaveText('Server rendered');
+    const stats = await fragments(frame);
+    expect(stats.rendered).toBe(1);
+    expect(stats.failed).toBe(0);
+  });
+
   test('a fragment render equals the full server render of the same document', async ({ page }) => {
     const frame = await open(page);
     const ssr = await frame.getByTestId('hero').innerHTML();

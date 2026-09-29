@@ -43,7 +43,10 @@ export interface FragmentResponseBody {
   };
 }
 
-const MAX_FIELD_DEPTH = 12;
+// Bounds the walk over a body anyone may post, not the content: a bulleted list
+// in a column's rich text inside a layout block is 13 levels, a list nested
+// five levels 29 (ADR 0027). The byte cap bounds the rest.
+const MAX_FIELD_DEPTH = 64;
 
 function depthOf(value: unknown, depth: number): number {
   if (depth > MAX_FIELD_DEPTH || typeof value !== 'object' || value === null) return depth;

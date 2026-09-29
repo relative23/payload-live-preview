@@ -106,9 +106,11 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   'plugins.js': { raw: 21_927, gzip: 8_040, brotli: 7_138 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+423/+399 B; same 20/3/84 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+13/-6 B; same 20/3/84 B cushions.
-  'fragment.cjs': { raw: 16_489, gzip: 6_297, brotli: 5_627 },
+  // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+0/+2 B; same 20/3/84 B cushions.
+  'fragment.cjs': { raw: 16_489, gzip: 6_297, brotli: 5_629 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+429/+364 B; same 20/9/79 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+16/+17 B; same 20/9/79 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured -4/-2/-1 B; same 20/9/79 B cushions.
-  'fragment.js': { raw: 16_419, gzip: 6_270, brotli: 5_606 },
+  // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+1/+11 B; same 20/9/79 B cushions.
+  'fragment.js': { raw: 16_419, gzip: 6_271, brotli: 5_617 },
 };

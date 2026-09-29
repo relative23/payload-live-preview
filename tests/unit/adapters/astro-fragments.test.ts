@@ -123,7 +123,7 @@ describe('createFragmentEndpoint — refusals carry no information', () => {
     const big = await validBody({ fields: { title: 'x'.repeat(70_000) } });
     expect((await post(big)).status).toBe(413);
     expect((await post({ fragment: '../etc/passwd' })).status).toBe(400);
-    const deep = await validBody({ fields: JSON.parse('{"a":'.repeat(20) + '1' + '}'.repeat(20)) });
+    const deep = await validBody({ fields: JSON.parse('{"a":'.repeat(70) + '1' + '}'.repeat(70)) });
     expect((await post(deep)).status).toBe(400);
   });
 
