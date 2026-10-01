@@ -83,18 +83,22 @@ const renderWithSvelte: FragmentRenderer = async (component, props) => {
 /** Build the endpoint; export it as the `POST` of a `+server.ts` route. */
 export function createFragmentEndpoint(
   options: FragmentEndpointOptions,
-): (event: { readonly request: Request; readonly platform?: unknown }) => Promise<Response> {
+): (event: {
+  readonly request: Request;
+  readonly platform?: unknown;
+  readonly locals?: unknown;
+}) => Promise<Response> {
   const handler = createFragmentEndpointHandler(options, {
     render: renderWithSvelte,
     rendererName: RENDERER_NAME,
     overLimitBody: 'drain',
   });
-  return ({ request, platform }) =>
+  return ({ request, platform, locals }) =>
     withNodeFragmentRequest(
       request,
       typeof platform === 'object' && platform !== null && 'req' in platform
         ? platform.req
         : undefined,
-      handler,
+      (fragmentRequest) => handler(fragmentRequest, locals),
     );
 }

@@ -76,10 +76,10 @@ const renderWithContainer: FragmentRenderer = async (component, props) => {
 /** Build the endpoint; export it as the `POST` of a non-prerendered Astro API route. */
 export function createFragmentEndpoint(
   options: FragmentEndpointOptions,
-): (context: { readonly request: Request }) => Promise<Response> {
+): (context: { readonly request: Request; readonly locals?: unknown }) => Promise<Response> {
   const handler = createFragmentEndpointHandler(options, {
     render: renderWithContainer,
     rendererName: RENDERER_NAME,
   });
-  return ({ request }) => handler(request);
+  return ({ request, locals }) => handler(request, locals);
 }

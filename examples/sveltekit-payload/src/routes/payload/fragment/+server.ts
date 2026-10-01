@@ -7,6 +7,7 @@ import { createFragmentEndpoint } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest, createPreviewBindings } from 'payload-live-preview';
 import Hero from '$lib/Hero.svelte';
 import OwnedPanel from '$lib/OwnedPanel.svelte';
+import Notice from '$lib/Notice.svelte';
 import { heroProps } from '$lib/hero';
 import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview.server';
 import type { RequestHandler } from './$types';
@@ -25,6 +26,15 @@ const endpoint = createFragmentEndpoint({
           bindings: { title: preview.bind('title'), body: preview.bind('body') },
         };
       },
+    },
+    // `/hybrid`: a component the page shows only once a fragment rendered it.
+    notice: {
+      component: Notice,
+      props: ({ fields, locals }) => ({
+        text: typeof fields['notice'] === 'string' ? fields['notice'] : '',
+        // Read as the page's load reads it, from what this request's hook set.
+        edition: (locals as App.Locals | undefined)?.edition ?? '',
+      }),
     },
     // `/owners-hybrid`: one panel per document, told apart by the boundary key.
     owned: {

@@ -201,6 +201,15 @@ delivers its `body`: `<svelte:head>` output belongs to the document head, which
 the route strategy owns. `svelte` is an optional peer, imported at the first
 render.
 
+A component the endpoint renders has to be part of the page, so SvelteKit
+links its scoped CSS before the first unsaved value needs it: import it in the
+route's `+page.svelte` and render it, empty if need be, inside its boundary. A
+component only the endpoint imports arrives without its styles. `props` also
+receives `locals`, the `event.locals` your hooks set on the fragment request,
+as `load` reads them on the page request; narrow it with
+`locals as App.Locals`
+([ADR 0029](architecture/0029-fragment-components-and-locals-belong-to-the-page.md)).
+
 A page built around boundaries usually wants `export const csr = false` on that
 route: the runtime writes into the DOM, and a component hydrating afterwards can
 reset what was patched (the caveat below). Registry, limits, the fallback and

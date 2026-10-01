@@ -57,5 +57,9 @@ export const assetOptions = { ...options, delivery: 'asset' } as const;
 const inline = livePreviewHandle(options);
 const asset = livePreviewHandle(assetOptions);
 
-export const handle: Handle = (input) =>
-  input.event.url.pathname.startsWith('/asset') ? asset(input) : inline(input);
+export const handle: Handle = (input) => {
+  // What an app's own hook puts on a request (a session, a locale, a client):
+  // the page's load reads it, and so do the fragment's props (ADR 0029).
+  input.event.locals.edition = 'Preview edition';
+  return input.event.url.pathname.startsWith('/asset') ? asset(input) : inline(input);
+};

@@ -6,7 +6,10 @@
 import type { FragmentEndpointOptions } from 'payload-live-preview/nextjs';
 
 type Handler<Context> = (request: Request, context?: Context) => Promise<Response>;
-type Factory<Context> = (options: FragmentEndpointOptions) => Handler<Context>;
+// `never`: each fixture passes its own adapter's factory, whose options name its
+// own component type. The probe's options touch no component (its renderer is
+// custom), so they suit every adapter.
+type Factory<Context> = (options: never) => Handler<Context>;
 type Mode = 'success' | 'authorization' | 'props' | 'render' | 'sum';
 
 interface Observation {
@@ -85,7 +88,7 @@ export function createLifetimeProbe<Context = never>(createEndpoint: Factory<Con
       observation.events.push(`${name}:end`);
     }
 
-    const endpoint = createEndpoint({
+    const options: FragmentEndpointOptions = {
       // Next's self-hosted Request URL retains its internal listening port.
       // Accept only the configured public origin, never a forwarded client value.
       allowedOrigins: process.env['PAYLOAD_ADMIN_ORIGIN']
@@ -118,7 +121,8 @@ export function createLifetimeProbe<Context = never>(createEndpoint: Factory<Con
         await phase('render', signal);
         return '<p>local lifetime probe</p>';
       },
-    });
+    };
+    const endpoint = createEndpoint(options as never);
     try {
       const response = await endpoint(request, context);
       observation.status = response.status;

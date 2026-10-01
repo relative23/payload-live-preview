@@ -4,12 +4,12 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-BNNtNkMh.js';
-import { b } from '../../fragment-endpoint-BNNtNkMh.js';
+import { a } from '../../fragment-endpoint-C0LsX_6r.js';
+import { b } from '../../fragment-endpoint-C0LsX_6r.js';
 import { b as b_2 } from '../../locals-CEg7out0.js';
-import { c } from '../../fragment-endpoint-BNNtNkMh.js';
-import { F } from '../../fragment-endpoint-BNNtNkMh.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-BNNtNkMh.js';
+import { c } from '../../fragment-endpoint-C0LsX_6r.js';
+import { F } from '../../fragment-endpoint-C0LsX_6r.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-C0LsX_6r.js';
 import { L as LivePreviewLocals } from '../../locals-CEg7out0.js';
 import { P as PreviewAdapterOptions } from '../../options-Bq-ZDz1F.js';
 
@@ -17,6 +17,7 @@ import { P as PreviewAdapterOptions } from '../../options-Bq-ZDz1F.js';
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (event: {
     readonly request: Request;
     readonly platform?: unknown;
+    readonly locals?: unknown;
 }) => Promise<Response>;
 
 // @public

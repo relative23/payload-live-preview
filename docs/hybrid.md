@@ -101,6 +101,19 @@ export const POST = createFragmentEndpoint({
 });
 ```
 
+#### What `props` receives
+
+`props` is called with the boundary's `id` and `key`, the unsaved `fields`,
+`locale`, `collectionSlug` and `globalSlug`, the page `route`, the request's
+verified `authorization`, an abort `signal`, the `request` itself, and
+`locals`: what the framework's own server code put on the fragment request,
+as a page's `load` or middleware sees it on the page request. That is
+Astro's `context.locals`, SvelteKit's `event.locals` and Nuxt's
+`event.context`; Next.js has no such object, so `locals` is `undefined` there.
+It is typed `unknown`, so narrow it to the application's own type. It holds
+what server code set, nothing from the request body
+([ADR 0029](architecture/0029-fragment-components-and-locals-belong-to-the-page.md)).
+
 #### First-use Astro resources
 
 A successful isolated container render does not register the component's CSS

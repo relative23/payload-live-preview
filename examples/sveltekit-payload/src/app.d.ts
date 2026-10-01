@@ -9,6 +9,8 @@ declare global {
     interface Locals {
       livePreviewNonce?: string;
       livePreviewAuthorization?: AuthorizedPreviewContext;
+      /** Set by this app's own hook for every request; the page's load and the fragment's props both read it. */
+      edition?: string;
     }
   }
 }

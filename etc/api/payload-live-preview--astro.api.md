@@ -4,14 +4,14 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-BNNtNkMh.js';
+import { a } from '../../fragment-endpoint-C0LsX_6r.js';
 import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-CEg7out0.js';
 import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-CEg7out0.js';
-import { b } from '../../fragment-endpoint-BNNtNkMh.js';
-import { c } from '../../fragment-endpoint-BNNtNkMh.js';
+import { b } from '../../fragment-endpoint-C0LsX_6r.js';
+import { c } from '../../fragment-endpoint-C0LsX_6r.js';
 import { c as createLivePreviewMiddleware } from '../../middleware-wn0ylJDV.js';
-import { F } from '../../fragment-endpoint-BNNtNkMh.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-BNNtNkMh.js';
+import { F } from '../../fragment-endpoint-C0LsX_6r.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-C0LsX_6r.js';
 import { h as hasPreviewIntent } from '../../options-Bq-ZDz1F.js';
 import { L as LivePreviewAstroOptions } from '../../middleware-wn0ylJDV.js';
 import { L as LivePreviewLocals } from '../../locals-CEg7out0.js';
@@ -83,6 +83,7 @@ export { AUTHORIZATION_OUTCOME_LOCALS_KEY }
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (context: {
     readonly request: Request;
+    readonly locals?: unknown;
 }) => Promise<Response>;
 
 export { createLivePreviewMiddleware }

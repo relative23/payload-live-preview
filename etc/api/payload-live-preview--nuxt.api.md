@@ -4,12 +4,12 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-BNNtNkMh.js';
+import { a } from '../../fragment-endpoint-C0LsX_6r.js';
 import { a as a_2 } from '../../options-Bq-ZDz1F.js';
-import { b } from '../../fragment-endpoint-BNNtNkMh.js';
-import { c } from '../../fragment-endpoint-BNNtNkMh.js';
-import { F } from '../../fragment-endpoint-BNNtNkMh.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-BNNtNkMh.js';
+import { b } from '../../fragment-endpoint-C0LsX_6r.js';
+import { c } from '../../fragment-endpoint-C0LsX_6r.js';
+import { F } from '../../fragment-endpoint-C0LsX_6r.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-C0LsX_6r.js';
 import { L as LivePreviewLocals } from '../../locals-CEg7out0.js';
 import { P as PreviewAdapterOptions } from '../../options-Bq-ZDz1F.js';
 
@@ -21,6 +21,7 @@ export function createFragmentEndpoint(options: FragmentEndpointOptions): (reque
     readonly node?: {
         readonly req?: unknown;
     };
+    readonly context?: unknown;
 }) => Promise<Response>;
 
 // @public

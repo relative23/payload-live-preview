@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 421,
-    "suites": 828,
-    "tests": 3721,
+    "files": 422,
+    "suites": 829,
+    "tests": 3727,
     "benchmarks": 12
   },
   "groups": {
@@ -40,7 +40,7 @@
     "e2e": {
       "files": 48,
       "suites": 55,
-      "tests": 212,
+      "tests": 213,
       "benchmarks": 0
     },
     "integration": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 339,
-      "suites": 731,
-      "tests": 3386,
+      "files": 340,
+      "suites": 732,
+      "tests": 3391,
       "benchmarks": 0
     }
   },
@@ -402,7 +402,7 @@
       "path": "tests/e2e/specs/sveltekit-fragment.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -746,6 +746,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 14,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/fragment-locals.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {

@@ -58,6 +58,31 @@ test.beforeAll(async ({ playwright }) => {
 });
 
 test.describe('fragment preview (SvelteKit)', () => {
+  test('scoped CSS reaches what a fragment created, and a fragment-only component is styled once the page imports it (ADR 0029)', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+
+    await post(
+      page,
+      { title: 'Styled', subtitle: 'Spaced', body: 'a b', notice: 'Outlined' },
+      OWNER,
+    );
+
+    await expect(frame.getByTestId('hero-subtitle')).toHaveText('Spaced');
+    await expect(frame.getByTestId('notice')).toHaveText('Outlined');
+    const subtitle = frame.getByTestId('hero-subtitle');
+    expect(await subtitle.evaluate((element) => getComputedStyle(element).letterSpacing)).not.toBe(
+      'normal',
+    );
+    // The fragment's props read what this request's own hook set, as the page's load does.
+    await expect(frame.getByTestId('notice-edition')).toHaveText('Preview edition');
+    const notice = frame.getByTestId('notice');
+    expect(await notice.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe(
+      'solid',
+    );
+  });
+
   test('the server creates the conditional section and the derived count Svelte renders', async ({
     page,
   }) => {

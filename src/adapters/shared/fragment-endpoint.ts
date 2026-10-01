@@ -45,6 +45,8 @@ export interface FragmentRenderInput {
   /** Aborts when the request, its total deadline, or a render phase ends early. */
   readonly signal: AbortSignal;
   readonly request: Request;
+  /** What the framework's server code put on this request: Astro `locals`, SvelteKit `event.locals`, Nuxt `event.context`; Next.js none (ADR 0029). */
+  readonly locals: unknown;
 }
 
 /**
@@ -456,7 +458,7 @@ function authorizerFor<Component>(options: FragmentEndpointOptions<Component>): 
 export function createFragmentEndpointHandler<Component>(
   options: FragmentEndpointOptions<Component>,
   binding: FragmentEndpointBinding<Component>,
-): (request: Request) => Promise<Response> {
+): (request: Request, locals?: unknown) => Promise<Response> {
   const authorize = authorizerFor(options);
   const render = options.render ?? binding.render;
   const rendererName = options.render === undefined ? binding.rendererName : 'custom';
@@ -479,7 +481,7 @@ export function createFragmentEndpointHandler<Component>(
       : positiveIntegerLimit('totalTimeoutMs', options.limits.totalTimeoutMs, 0, MAX_TIMER_MS);
   const registry = options.registry;
 
-  return async (request) => {
+  return async (request, locals) => {
     if (request.method !== 'POST') return refuse(405, 'method');
     if (!sameOrigin(request, allowed)) return refuse(403, 'origin');
     const type = request.headers.get('content-type') ?? '';
@@ -526,6 +528,7 @@ export function createFragmentEndpointHandler<Component>(
       if (entry === undefined) return refuse(404, 'fragment');
 
       const input: FragmentRenderInput = {
+        locals,
         id: body.fragment,
         key: body.key,
         revision: body.revision,

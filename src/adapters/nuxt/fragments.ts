@@ -84,10 +84,16 @@ const renderWithVue: FragmentRenderer = async (component, props) => {
  */
 export function createFragmentEndpoint(
   options: FragmentEndpointOptions,
-): (request: Request, event?: { readonly node?: { readonly req?: unknown } }) => Promise<Response> {
+): (
+  request: Request,
+  event?: { readonly node?: { readonly req?: unknown }; readonly context?: unknown },
+) => Promise<Response> {
   const handler = createFragmentEndpointHandler(options, {
     render: renderWithVue,
     rendererName: RENDERER_NAME,
   });
-  return (request, event) => withNodeFragmentRequest(request, event?.node?.req, handler);
+  return (request, event) =>
+    withNodeFragmentRequest(request, event?.node?.req, (fragmentRequest) =>
+      handler(fragmentRequest, event?.context),
+    );
 }
