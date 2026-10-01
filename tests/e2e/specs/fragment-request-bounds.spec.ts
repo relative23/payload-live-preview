@@ -12,8 +12,10 @@ async function postOversizedFragment(
   request: APIRequestContext,
   origin: string,
   route: string,
+  timeout?: number,
 ): Promise<APIResponse> {
   return request.post(`${origin}/payload/fragment`, {
+    ...(timeout === undefined ? {} : { timeout }),
     headers: { 'content-type': 'application/json', origin },
     data: {
       fragment: 'hero',
@@ -24,6 +26,24 @@ async function postOversizedFragment(
       fields: { title: 'Oversized preview', body: OVERSIZED_FIELD },
     },
   });
+}
+
+/**
+ * `nuxt dev` sometimes never forwards an early refusal of an unread body:
+ * under 16 concurrent requests a plain Nitro route that returns 413 without
+ * reading lost 16 to 32 of 400, the package's endpoint 1 to 17, and the
+ * production Nitro server none of 400 (PHD-14). A request that gets no answer
+ * at all is sent again, at most twice; every answer that arrives is held to
+ * the contract on the spot.
+ */
+async function postThroughNuxtDev(request: APIRequestContext): Promise<APIResponse> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await postOversizedFragment(request, 'http://localhost:4176', '/hybrid', 5_000);
+    } catch (error) {
+      if (attempt === 3 || !String(error).includes('Timeout 5000ms exceeded')) throw error;
+    }
+  }
 }
 
 async function expectBodyRefusal(response: APIResponse): Promise<void> {
@@ -139,9 +159,7 @@ test.describe('fragment request body bounds over HTTP', () => {
   });
 
   test('Nuxt refuses an oversized multibyte fragment request', async ({ request }) => {
-    await expectBodyRefusal(
-      await postOversizedFragment(request, 'http://localhost:4176', '/hybrid'),
-    );
+    await expectBodyRefusal(await postThroughNuxtDev(request));
   });
 
   test('Astro refuses an oversized chunked fragment request', async () => {
