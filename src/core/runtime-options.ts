@@ -67,10 +67,12 @@ export interface RuntimeOptions {
    * lands on markup React keeps rather than on markup React is about to
    * compare with its own render and throw away; under `'vue'` until Vue has
    * mounted an app around a binding (and, on Nuxt, hydrated its Suspense), so
-   * the write is not put back by Vue's repair. Capped at five seconds, then
-   * LP0607. The Next.js and Nuxt adapters set it; nothing else does by default.
+   * the write is not put back by Vue's repair; under `'sveltekit'` until
+   * SvelteKit's root has mounted, so Svelte's hydration does not set its own
+   * text back over the write. Capped at five seconds, then LP0607. The
+   * Next.js, Nuxt and SvelteKit adapters set it; nothing else does by default.
    */
-  readonly hydration?: 'react' | 'vue';
+  readonly hydration?: 'react' | 'vue' | 'sveltekit';
   /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn — a renderer that cannot represent the value, a Lexical

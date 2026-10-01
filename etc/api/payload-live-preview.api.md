@@ -488,7 +488,7 @@ export interface InlineScriptConfig {
     readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
     readonly fragmentEndpoint?: string;
     readonly heartbeatMs?: number;
-    readonly hydration?: 'react' | 'vue';
+    readonly hydration?: 'react' | 'vue' | 'sveltekit';
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     // @deprecated
@@ -843,7 +843,7 @@ export interface LivePreviewInspection {
     readonly fidelity: InspectionFidelity;
     readonly fragments: InspectionFragments;
     readonly hydration: {
-        readonly mode: 'off' | 'react' | 'vue';
+        readonly mode: 'off' | 'react' | 'vue' | 'sveltekit';
         readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
     };
     // (undocumented)

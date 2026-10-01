@@ -50,7 +50,7 @@ options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The led
 | `onUnboundChange`          | —      | yes           | yes                                                      | —                        | — (alias, deprecated)                               | same                                 |
 | `autoBind`                 | yes    | yes           | yes                                                      | —                        | `'off'`                                             | same                                 |
 | `subfieldCoverage`         | yes    | yes           | yes                                                      | —                        | `'descendant'`                                      | same                                 |
-| `hydration`                | —      | yes           | set by the Next.js and Nuxt adapters                     | —                        | — (start on `DOMContentLoaded`)                     | same                                 |
+| `hydration`                | —      | yes           | set by the Next.js, Nuxt and SvelteKit adapters          | —                        | — (start on `DOMContentLoaded`)                     | same                                 |
 | `softNavigationEvents`     | —      | yes           | set by Astro, Next.js, SvelteKit and Nuxt                | —                        | `[]`                                                | same                                 |
 | `resolveRenderer`          | yes    | —             | —                                                        | —                        | —                                                   | same                                 |
 | `renderRichText`           | yes    | —             | —                                                        | —                        | built-in Lexical renderer                           | same                                 |
@@ -229,9 +229,12 @@ Notes on the rows that need one:
   adapter sets it on every script it emits. `hydration: 'vue'` holds it until
   Vue has mounted the app around the bindings — and, on Nuxt, until a Suspense
   still hydrating at the mount has resolved — so the write is not repaired
-  back to the server's value by Vue's hydration; the Nuxt adapter sets it. A
-  page built by hand with `generateInlineScript()` may set either. Capped at
-  five seconds, then `LP0607`.
+  back to the server's value by Vue's hydration; the Nuxt adapter sets it.
+  `hydration: 'sveltekit'` holds it until SvelteKit's root has mounted, so
+  Svelte's hydration does not set its own text back over the write; the
+  SvelteKit handle sets it, and a page served with `csr = false` starts at
+  once. A page built by hand with `generateInlineScript()` may set any of
+  them. Capped at five seconds, then `LP0607`.
 - `autoBind: 'unique'` lets the runtime find bindings by value on the
   connection's first message, once: a scalar whose value is the whole content
   of exactly one element in the body is bound to that element as if

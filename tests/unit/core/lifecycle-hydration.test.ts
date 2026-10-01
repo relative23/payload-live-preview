@@ -381,3 +381,120 @@ describe('startup on a page that declares Vue hydration', () => {
     runtime.destroy();
   });
 });
+
+/**
+ * The addendum of 2026-10-01: with `hydration: 'sveltekit'` the runtime does
+ * not start until SvelteKit's root has mounted, its route announcer in the
+ * document, on a page whose start script left SvelteKit's global. A page
+ * without that global (`csr = false`) has no client and starts at once.
+ */
+const SVELTEKIT_GLOBAL = '__sveltekit_dev';
+const SVELTEKIT_ANNOUNCER_ID = 'svelte-announcer';
+
+function svelteKitServes(): void {
+  document.body.innerHTML =
+    '<div style="display: contents"><h1 data-payload-field="title">server</h1></div>';
+  (window as unknown as Record<string, unknown>)[SVELTEKIT_GLOBAL] = { base: '' };
+}
+
+function svelteKitMounts(): void {
+  const announcer = document.createElement('div');
+  announcer.id = SVELTEKIT_ANNOUNCER_ID;
+  document.body.firstElementChild?.append(announcer);
+}
+
+describe('startup on a page that declares SvelteKit hydration', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(window, SVELTEKIT_GLOBAL);
+  });
+
+  it('posts no ready and applies no message until the SvelteKit root has mounted', async () => {
+    svelteKitServes();
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'sveltekit', sendReady });
+
+    expect(runtime.start()).toBe(true);
+    expect(sendReady).not.toHaveBeenCalled();
+    expect(runtime.cache.elementCount).toBe(0);
+    expect(runtime.inspect().hydration).toEqual({ mode: 'sveltekit', state: 'waiting' });
+
+    fireMessage({ type: 'payload-live-preview', data: { title: 'too early' } });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('server');
+
+    svelteKitMounts();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    expect(runtime.cache.elementCount).toBe(1);
+    expect(runtime.inspect().hydration).toEqual({ mode: 'sveltekit', state: 'committed' });
+    fireMessage({ type: 'payload-live-preview', data: { title: 'after hydration' } });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(document.querySelector('h1')?.textContent).toBe('after hydration');
+
+    runtime.destroy();
+  });
+
+  it('starts at once on a page SvelteKit serves without its client', () => {
+    svelteKitServes();
+    Reflect.deleteProperty(window, SVELTEKIT_GLOBAL);
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'sveltekit', sendReady });
+
+    runtime.start();
+
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    expect(runtime.inspect().hydration).toEqual({ mode: 'sveltekit', state: 'committed' });
+    runtime.destroy();
+  });
+
+  it('starts at once when the root mounted before the runtime evaluated — asset delivery', () => {
+    svelteKitServes();
+    svelteKitMounts();
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'sveltekit', sendReady });
+
+    runtime.start();
+
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    expect(runtime.inspect().hydration.state).toBe('committed');
+    runtime.destroy();
+  });
+
+  it('starts at the cap, once, and says so with LP0607 naming the SvelteKit mount', async () => {
+    svelteKitServes();
+    const sendReady = vi.fn();
+    const warn = vi.fn();
+    const runtime = makeRuntime({ hydration: 'sveltekit', sendReady, warn });
+    runtime.start();
+
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(sendReady).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('LP0607');
+    expect(String(warn.mock.calls[0]?.[0])).toContain('no SvelteKit mount');
+    expect(runtime.inspect().hydration).toEqual({ mode: 'sveltekit', state: 'timed-out' });
+
+    svelteKitMounts();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sendReady).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledTimes(1);
+    runtime.destroy();
+  });
+
+  it('destroy() while waiting cancels the pending startup', async () => {
+    svelteKitServes();
+    const sendReady = vi.fn();
+    const runtime = makeRuntime({ hydration: 'sveltekit', sendReady });
+    runtime.start();
+    runtime.destroy();
+
+    svelteKitMounts();
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(sendReady).not.toHaveBeenCalled();
+  });
+});

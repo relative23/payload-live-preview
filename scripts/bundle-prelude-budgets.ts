@@ -113,7 +113,8 @@
 // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+44/+48 B; same 36/29/120 B cushions.
 // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-43/-36 B; same 36/29/120 B cushions.
 // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +178/+98/+100 B; same 36/29/120 B cushions.
-export const INLINE_FRAGMENT_BUDGET = { raw: 148_634, gzip: 46_682, brotli: 40_758 } as const;
+// 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+188/+118 B; same 36/29/120 B cushions.
+export const INLINE_FRAGMENT_BUDGET = { raw: 149_060, gzip: 46_870, brotli: 40_876 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -224,4 +225,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 148_634, gzip: 46_682, brotli: 40_7
 // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+41/+43 B; same 20/10/120 B cushions.
 // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-22/-4 B; same 20/10/120 B cushions.
 // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +180/+73/+69 B; same 20/10/120 B cushions.
-export const INLINE_ROUTE_BUDGET = { raw: 143_180, gzip: 44_786, brotli: 39_129 } as const;
+// 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+194/+156 B; same 20/10/120 B cushions.
+export const INLINE_ROUTE_BUDGET = { raw: 143_606, gzip: 44_980, brotli: 39_285 } as const;

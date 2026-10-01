@@ -26,8 +26,8 @@
  * slot, read late, the way the route-refresh seam does.
  */
 
-/** The framework whose first commit the start waits for; `./hydration-vue` reads the second. */
-export type HydrationMode = 'react' | 'vue';
+/** The framework whose first commit the start waits for; `./hydration-vue` and `./hydration-sveltekit` read the others. */
+export type HydrationMode = 'react' | 'vue' | 'sveltekit';
 export type HydrationOutcome = 'committed' | 'timed-out';
 export type HydrationState = 'idle' | 'waiting' | HydrationOutcome;
 

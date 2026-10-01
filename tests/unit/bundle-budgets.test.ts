@@ -9,11 +9,11 @@ import { findBudgetViolations, measureBundle } from '../../scripts/bundle-measur
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    // H10's measured delta for requireDocument and its warning (ADR 0025), prior cushions kept.
-    expect(INLINE_BUDGET).toEqual({ raw: 134_630, gzip: 42_257, brotli: 37_067 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 107_907, gzip: 33_823, brotli: 29_895 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 143_180, gzip: 44_786, brotli: 39_129 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 148_634, gzip: 46_682, brotli: 40_758 });
+    // PHD-13's measured delta for the wait on SvelteKit's root (ADR 0015), prior cushions kept.
+    expect(INLINE_BUDGET).toEqual({ raw: 135_056, gzip: 42_448, brotli: 37_230 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 108_333, gzip: 33_968, brotli: 30_110 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 143_606, gzip: 44_980, brotli: 39_285 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 149_060, gzip: 46_870, brotli: 40_876 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

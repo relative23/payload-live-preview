@@ -155,12 +155,12 @@ export interface LivePreviewInspection {
   readonly fidelity: InspectionFidelity;
   /**
    * Whether the page declared a framework that hydrates it, and how far the
-   * wait for its first commit — React's, or Vue's mount — got (ADR 0015).
-   * `waiting` is why a preview on a Next or Nuxt page is not connected yet;
-   * `timed-out` is LP0607.
+   * wait for its first commit — React's, Vue's mount, or SvelteKit's root
+   * mounting — got (ADR 0015). `waiting` is why a preview on a Next, Nuxt or
+   * SvelteKit page is not connected yet; `timed-out` is LP0607.
    */
   readonly hydration: {
-    readonly mode: 'off' | 'react' | 'vue';
+    readonly mode: 'off' | 'react' | 'vue' | 'sveltekit';
     readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
   };
 }

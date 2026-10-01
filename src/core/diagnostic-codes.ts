@@ -84,7 +84,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   StartupFailed: 'LP0605',
   /** Sending the ready handshake failed. */
   ReadyFailed: 'LP0606',
-  /** The page declared hydration, but no React commit or Vue mount came within the cap; the runtime started without waiting. */
+  /** The page declared hydration, but no React commit, Vue mount or SvelteKit mount came within the cap; the runtime started without waiting. */
   HydrationWaitTimedOut: 'LP0607',
 
   /** The audit found no runtime in a response that carried preview intent. */

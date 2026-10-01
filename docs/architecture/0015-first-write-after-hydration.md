@@ -393,3 +393,70 @@ a cleared `.next` cache passed 10 fresh-page WebKit repeats. A second run
 against the resulting dev server passed 20 consecutive fresh-page repeats.
 Each run kept the one startup document through initial hydration, then observed
 the slow server destination before replaying the retained unsaved document.
+
+## Addendum, 2026-10-01 — SvelteKit
+
+**Status:** Accepted • PHD-13, measured on `examples/sveltekit-payload` on
+2026-09-30 and 2026-10-01.
+
+The record above says SvelteKit (Svelte 5) leaves the first write alone. That
+was measured on `/`, which the fixture serves with `csr = false`: no client,
+nothing to hydrate. On `/navigation`, which SvelteKit does hydrate, the full
+development suite lost the first unsaved edit once in Chromium, and under
+eight workers the case failed 7 of 40 runs in Firefox (5 of 40 with 20-second
+expectations). A recorder in the frame showed the same order in every failing
+run: the runtime writes the title, and 4 to 20 ms later Svelte sets the
+server's title back on the same node. Svelte's hydration claims the server's
+nodes and runs each template effect once; `set_text` writes its own value
+wherever the node's text differs. A value written before then is put back
+quietly, as with Vue. On a fast machine the client has usually hydrated before
+the first message arrives, which is why the earlier measurement and most runs
+never saw it.
+
+### What SvelteKit gives
+
+| signal                                                                              | usable                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<div id="svelte-announcer">`, rendered by the generated root under `{#if mounted}` | **yes**: `mounted` is set in the root's `onMount`, after the tree below has hydrated; the same in 2.0.0 and 2.70.2 (read in their source); state, so a late runtime finds it |
+| `afterNavigate` with `type: 'enter'`                                                | no: it needs a component on the page, and the adapter mounts none                                                                                                            |
+| the client's own `hydrated` and `started` flags                                     | no: module state, not reachable from a script                                                                                                                                |
+| Svelte's properties on nodes (`__t`, `__attributes`)                                | no: internal, and set during the render rather than after it                                                                                                                 |
+
+### Decision
+
+The SvelteKit adapter declares `hydration: 'sveltekit'` on every script its
+handle emits, under §1's rule. The value names SvelteKit and not Svelte: the
+signal is SvelteKit's root, and a Svelte app mounted without SvelteKit renders
+no announcer.
+
+Under it the runtime waits, as in §3, until the announcer is in the document,
+watched by a `MutationObserver` that disconnects when it appears, at the cap,
+or when the runtime stops. A page served with `csr = false` would never render
+it, so the wait first asks whether SvelteKit's client runs at all: its start
+script assigns a global (`__sveltekit_dev`, or `__sveltekit_` and the app's
+version hash) only on a page it will hydrate, and by `DOMContentLoaded` that
+classic script has run. Without the global the runtime starts at once and
+`inspect().hydration` reads `{ mode: 'sveltekit', state: 'committed' }`, as it
+does after a bfcache restore. The cap, LP0607 (naming the SvelteKit mount) and
+`inspect().hydration` are §4's.
+
+The browser case holds SvelteKit's client module back three seconds, so the
+order the loaded suite produced happens on every run: against the package
+before this addendum the title ends as the server's in Chromium, Firefox and
+WebKit, 3 of 3.
+
+### What counts as failure, for SvelteKit
+
+F1, F5 and F6 apply as written. F2 does not arise (state, not an event). F7 is
+the `csr = false` page: the fixture serves `/`, `/hybrid` and `/owners-hybrid`
+that way, and their specs measure what they did. New:
+
+**F10 — SvelteKit renames the announcer or the global.** A renamed announcer
+costs every hydrated page the cap and LP0607; a renamed global makes the runtime
+start as it did before this addendum. The browser case fails on either with
+the fixture's SvelteKit (2.70.2); both names are the same in 2.0.0, the first
+release of the supported major, read in its source on 2026-10-01.
+
+**F11 — a streamed `{#await}` resolves after the mount.** Its resolved branch is
+rendered on the client, after the root mounted; bindings inside it are new
+elements, found by the binding cache as before (the fixture's `stream` step).

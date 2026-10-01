@@ -79,11 +79,14 @@ export interface InlineScriptConfig {
    * throws `Hydration failed` and regenerates the tree, and the write is gone.
    * Under `'vue'` it holds the write until Vue has mounted the app around them
    * — otherwise Vue's hydration repairs the write back to the server's value,
-   * quietly. The Next.js and Nuxt adapters set it on every script they emit; a
-   * page built by hand with `generateInlineScript()` may. Omitted: the runtime
-   * starts on `DOMContentLoaded`, as on a static page.
+   * quietly. Under `'sveltekit'` it holds the write until SvelteKit's root has
+   * mounted, on a page SvelteKit's client runs on — otherwise Svelte's
+   * hydration sets its own text back over it, as quietly. The Next.js, Nuxt
+   * and SvelteKit adapters set it on every script they emit; a page built by
+   * hand with `generateInlineScript()` may. Omitted: the runtime starts on
+   * `DOMContentLoaded`, as on a static page.
    */
-  readonly hydration?: 'react' | 'vue';
+  readonly hydration?: 'react' | 'vue' | 'sveltekit';
   /**
    * Which defaults the omitted options fall back to, resolved by the generator
    * rather than the runtime, whose own fallbacks are the 2.0 rows: `'v1'`

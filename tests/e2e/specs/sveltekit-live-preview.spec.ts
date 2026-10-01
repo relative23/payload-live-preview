@@ -347,3 +347,76 @@ test.describe("sveltekit live preview — eventSourcePolicy 'parent-or-opener' (
     await popup.close();
   });
 });
+
+/**
+ * ADR 0015, addendum of 2026-10-01 (PHD-13). Svelte's hydration writes its own
+ * text where a node's text differs, so a first write that lands before the
+ * client has hydrated is put back, quietly; the mock admin's answers to the
+ * runtime's later `ready`s all come before it, and a real admin answers once.
+ * On a fast machine the client is done first, so the case holds SvelteKit's
+ * app module back three seconds: the order the suite saw under load, every time.
+ */
+const SVELTEKIT_APP_MODULE =
+  /\/(?:generated\/client\/app\.js|_app\/immutable\/entry\/app\.[^/]+\.js)(?:\?|$)/u;
+
+type TitleProbe = Window & {
+  __titleChanges?: string[];
+  __livePreview?: { inspect: () => { hydration: { mode: string; state: string } } };
+};
+
+test.describe('sveltekit live preview — the first message and Svelte', () => {
+  test('the first write is not put back by hydration, so it stands without a second message', async ({
+    page,
+  }) => {
+    // The dev server compiles the route and its client on first request; the
+    // first load warms it, so the measured load below is the page as served.
+    await page.goto(`${APP}/admin.html?target=/navigation`);
+    await waitForStarted(await waitForPreviewFrame(page, '/navigation'));
+
+    // Every value the title takes, in order, seen from before the frame's own
+    // scripts run; attached again at DOMContentLoaded for Firefox, as in the
+    // Nuxt case.
+    await page.addInitScript(() => {
+      if (window === window.top) return;
+      const changes: string[] = [];
+      (window as TitleProbe).__titleChanges = changes;
+      const observed = new WeakSet<Document>();
+      const attach = (): void => {
+        if (observed.has(document)) return;
+        observed.add(document);
+        new MutationObserver((records) => {
+          for (const record of records) {
+            const node = record.target;
+            const element =
+              node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+            const bound = element?.closest('[data-payload-field="title"]');
+            const value = bound?.textContent ?? null;
+            if (value !== null && changes.at(-1) !== value) changes.push(value);
+          }
+        }).observe(document, { subtree: true, childList: true, characterData: true });
+      };
+      attach();
+      window.addEventListener('DOMContentLoaded', attach);
+    });
+    await page.route(SVELTEKIT_APP_MODULE, async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 3_000));
+      await route.continue();
+    });
+
+    await page.goto(`${APP}/admin.html?target=/navigation`);
+    const frame = await waitForPreviewFrame(page, '/navigation');
+    await frame.waitForSelector('#svelte-announcer', { state: 'attached', timeout: 15_000 });
+    await expect(frame.locator('[data-payload-field="title"]')).toHaveText('Hello from the demo');
+    await page.waitForTimeout(100);
+
+    // Before the write the recorder may see the parser insert the server's
+    // title; after it, nothing: hydration put nothing back.
+    const changes = (await frame.evaluate(() => (window as TitleProbe).__titleChanges)) ?? [];
+    const written = changes.indexOf('Hello from the demo');
+    expect(changes.slice(written)).toEqual(['Hello from the demo']);
+    expect(changes.slice(0, written).every((value) => value === 'Server title for one')).toBe(true);
+    expect(
+      await frame.evaluate(() => (window as TitleProbe).__livePreview?.inspect().hydration),
+    ).toEqual({ mode: 'sveltekit', state: 'committed' });
+  });
+});

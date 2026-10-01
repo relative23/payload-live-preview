@@ -46,6 +46,10 @@
       "release": "scope",
       "why": "The cap on the wait for the framework's first commit; the cancel the startup host hands to the scope clears it, and it clears itself when the commit lands."
     },
+    "src/core/hydration-sveltekit.ts::const observer = new MutationObserver(() => {": {
+      "release": "scope",
+      "why": "Watches for SvelteKit's announcer during the wait for its root to mount; disconnected when it appears, at the cap, or by the cancel the startup host hands to the scope."
+    },
     "src/core/startup.ts::root.addEventListener('DOMContentLoaded', onReady, { once: true });": {
       "release": "scope",
       "why": "A once listener; the cancel the startup host hands to the scope removes it if the session ends before the parse does."

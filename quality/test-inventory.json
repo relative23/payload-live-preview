@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 422,
-    "suites": 829,
-    "tests": 3727,
+    "files": 423,
+    "suites": 832,
+    "tests": 3740,
     "benchmarks": 12
   },
   "groups": {
@@ -39,8 +39,8 @@
     },
     "e2e": {
       "files": 48,
-      "suites": 55,
-      "tests": 213,
+      "suites": 56,
+      "tests": 214,
       "benchmarks": 0
     },
     "integration": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 340,
-      "suites": 732,
-      "tests": 3391,
+      "files": 341,
+      "suites": 734,
+      "tests": 3403,
       "benchmarks": 0
     }
   },
@@ -408,8 +408,8 @@
     {
       "path": "tests/e2e/specs/sveltekit-live-preview.spec.ts",
       "group": "e2e",
-      "suites": 4,
-      "tests": 13,
+      "suites": 5,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -1204,6 +1204,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/hydration-sveltekit.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/hydration-vue.test.ts",
       "group": "unit",
       "suites": 2,
@@ -1332,8 +1339,8 @@
     {
       "path": "tests/unit/core/lifecycle-hydration.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 17,
+      "suites": 3,
+      "tests": 22,
       "benchmarks": 0
     },
     {

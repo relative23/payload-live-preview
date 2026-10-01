@@ -1,7 +1,7 @@
 /**
  * When the runtime may start: after the document has parsed, and on a page
- * that declares hydration after the framework's first commit — React's, or
- * Vue's mount — or the cap (ADR 0015).
+ * that declares hydration after the framework's first commit — React's, Vue's
+ * mount, or SvelteKit's root mounting — or the cap (ADR 0015).
  *
  * `lifecycle.ts` owns the resources a start acquires and how a failed one is
  * rolled back; this module owns only the waiting. It moved out when the
@@ -21,6 +21,7 @@ import {
   type HydrationState,
 } from './hydration';
 import { armVueMountSignal, whenVueMounted } from './hydration-vue';
+import { whenSvelteKitMounted } from './hydration-sveltekit';
 
 /** What the startup chain needs from the runtime. */
 export interface StartupHost {
@@ -66,33 +67,48 @@ export function startWhenReady(host: StartupHost): void {
 
 /** A page a framework hydrates is not final until the framework has committed. */
 function startAfterParse(host: StartupHost): void {
-  if (host.hydration === undefined) {
+  const mode = host.hydration;
+  if (mode === undefined) {
     host.startNow();
     return;
   }
   const onSettled = (outcome: HydrationOutcome): void => {
     host.later(() => {
-      startHydrated(host, outcome);
+      startHydrated(host, mode, outcome);
     });
   };
-  const pending =
-    host.hydration === 'react'
-      ? whenReactCommitted(onSettled)
-      : whenVueMounted(host.root, onSettled);
+  const pending = WAITS[mode](host.root, onSettled);
   // Already committed — a bfcache restore does not wait again.
   if (pending === null) {
-    startHydrated(host, 'committed');
+    startHydrated(host, mode, 'committed');
     return;
   }
   host.defer(pending);
   host.hydrated('waiting');
 }
 
-function startHydrated(host: StartupHost, outcome: HydrationOutcome): void {
+/** One wait per framework; each returns `null` when there is nothing left to wait for. */
+const WAITS: Record<
+  HydrationMode,
+  (root: Document | Element, onSettled: (outcome: HydrationOutcome) => void) => (() => void) | null
+> = {
+  react: (_root, onSettled) => whenReactCommitted(onSettled),
+  vue: whenVueMounted,
+  sveltekit: whenSvelteKitMounted,
+};
+
+/** What LP0607 says the runtime waited for. */
+const AWAITED: Record<HydrationMode, string> = {
+  react: 'React commit',
+  vue: 'Vue mount',
+  sveltekit: 'SvelteKit mount',
+};
+
+function startHydrated(host: StartupHost, mode: HydrationMode, outcome: HydrationOutcome): void {
   host.hydrated(outcome);
   if (outcome === 'timed-out') {
     host.warn(
-      `[live-preview] LP0607: no ${host.hydration === 'react' ? 'React commit' : 'Vue mount'} in ${String(HYDRATION_WAIT_CAP_MS)} ms; started without waiting for hydration.`,
+      `[live-preview] LP0607: no ${AWAITED[mode]} in ${String(HYDRATION_WAIT_CAP_MS)} ms; started without waiting for hydration.`,
     );
   }
   host.startNow();

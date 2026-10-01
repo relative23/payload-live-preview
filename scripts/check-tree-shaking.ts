@@ -389,6 +389,11 @@ interface Fixture {
  * Next middleware +332 B gzip. Both carry the route and fragment prelude
  * sources, which gain the `LP0810` check on a refresh that returns no promise
  * (route prelude +73 B gzip); every ceiling keeps its cushion.
+ * 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount,
+ * ADR 0015): paired measurements against the H17 archive: root client +155,
+ * generator +177, core client +155, Next middleware +207 and lean +139 B gzip,
+ * for the wait on SvelteKit's announcer and the table that picks a wait by
+ * framework; every ceiling keeps its cushion.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -409,21 +414,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 51_594,
+    gzip: 51749,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 50_020,
+    gzip: 50197,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 51_569,
+    gzip: 51724,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -444,14 +449,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 55_234,
+    gzip: 55441,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 34_135,
+    gzip: 34274,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

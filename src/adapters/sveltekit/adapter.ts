@@ -16,7 +16,15 @@ export type { LivePreviewLocals } from '@adapters/shared/locals';
 
 export type LivePreviewSvelteKitOptions = PreviewAdapterOptions;
 
+/**
+ * A SvelteKit page that runs SvelteKit's client is hydrated by Svelte, which
+ * sets its own text back over a value written before it (ADR 0015, addendum
+ * of 2026-10-01). So every script this handle emits declares it, and the
+ * runtime holds its first write until SvelteKit's root has mounted; a page
+ * served with `csr = false` has no client and starts at once.
+ */
 const SVELTEKIT_PAGE: PageFacts = {
+  hydration: 'sveltekit',
   softNavigationEvents: [NAVIGATION_COMMIT_EVENT],
 };
 
