@@ -25,6 +25,8 @@ import {
 } from '../helpers/preview';
 
 const ADMIN_URL = `${NEXT_ORIGIN}/admin.html`;
+/** The base path the app is served under, empty at the site root. */
+const BASE = new URL(NEXT_ORIGIN).pathname.replace(/\/$/u, '');
 
 interface HydrationApi {
   inspect: () => { hydration: { mode: string; state: string } };
@@ -134,7 +136,7 @@ test.describe('live preview (Next.js) — admin → iframe updates', () => {
     const firstGeneration = await frame.getByTestId('navigation-generation').textContent();
 
     await frame.getByTestId('navigate-two').click();
-    await expect.poll(() => new URL(frame.url()).pathname).toBe('/soft-navigation/two');
+    await expect.poll(() => new URL(frame.url()).pathname).toBe(`${BASE}/soft-navigation/two`);
     await expect(frame.getByTestId('navigation-generation')).not.toHaveText(firstGeneration ?? '');
     await expect(title).toHaveText('Unsaved across Next navigation');
     await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(1);
@@ -148,7 +150,7 @@ test.describe('live preview (Next.js) — admin → iframe updates', () => {
       document.querySelector<HTMLElement>('[data-testid="navigate-slow"]')?.click();
       document.querySelector<HTMLElement>('[data-testid="navigate-final"]')?.click();
     });
-    await expect.poll(() => new URL(frame.url()).pathname).toBe('/soft-navigation/final');
+    await expect.poll(() => new URL(frame.url()).pathname).toBe(`${BASE}/soft-navigation/final`);
     await expect(title).toHaveText('Unsaved across Next navigation');
     await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(2);
     await expect.poll(async () => (await readNavigationProbe(page)).ready).toBe(2);
@@ -160,7 +162,7 @@ test.describe('live preview (Next.js) — admin → iframe updates', () => {
     expect(await acceptedRevisions(frame)).toBe(accepted);
 
     await frame.getByTestId('navigate-off').click();
-    await expect.poll(() => new URL(frame.url()).pathname).toBe('/');
+    await expect.poll(() => new URL(frame.url()).pathname).toBe(BASE === '' ? '/' : BASE);
     await expect
       .poll(() =>
         frame.evaluate(
@@ -202,7 +204,7 @@ test.describe('live preview (Next.js) — admin → iframe updates', () => {
     await frame.evaluate(() => {
       document.querySelector<HTMLElement>('[data-testid="navigate-slow"]')?.click();
     });
-    await expect.poll(() => new URL(frame.url()).pathname).toBe('/soft-navigation/slow');
+    await expect.poll(() => new URL(frame.url()).pathname).toBe(`${BASE}/soft-navigation/slow`);
     await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(1);
     await expect(title).toHaveText('Unsaved across a streamed Next destination');
 

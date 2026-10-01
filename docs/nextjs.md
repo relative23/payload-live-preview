@@ -290,6 +290,17 @@ peers loaded at the first render.
 
 Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
 
+## Under a base path
+
+With `basePath` in `next.config`, Next prefixes its own links and routes,
+but the runtime requests exactly the paths it is given. Put the base path into
+`assetPath` and `fragments.endpoint` (`'/docs/payload/fragment'`), and bind
+the preview token to the path the browser shows, base path included, which
+is what Payload's `livePreview.url` builds. A redirect a route handler writes
+itself is not prefixed either. A rewrite keeps the browser's URL, and the
+preview works on it unchanged. The Next.js suites pass against a production
+build served under `/docs`.
+
 ## Hydration caveat
 
 The runtime writes into the DOM; React does not know. Two things follow.

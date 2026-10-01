@@ -232,6 +232,7 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
+    "test:e2e:next-base-path": "playwright test --config playwright.next-base-path.config.ts",
     "test:e2e:next-production": "playwright test --config playwright.next-production.config.ts",
     "test:e2e:next-continuation": "playwright test --config playwright.next-continuation.config.ts",
     "test:e2e:sveltekit-continuation": "playwright test --config playwright.sveltekit-continuation.config.ts",

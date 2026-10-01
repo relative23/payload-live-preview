@@ -13,10 +13,16 @@
  * @type {import('next').NextConfig}
  */
 import { withLivePreview } from 'payload-live-preview/nextjs';
+import { BASE_PATH } from './base-path.mjs';
 import { PREVIEW_ADMIN_ORIGIN } from './preview-origin.mjs';
 
 export default withLivePreview(
-  {},
+  {
+    ...(BASE_PATH === '' ? {} : { basePath: BASE_PATH }),
+    // A preview reached through a rewrite: the browser keeps `/alias/reveal`,
+    // the server renders `/reveal` (tests/e2e/specs/nextjs-base-path.spec.ts).
+    rewrites: async () => [{ source: '/alias/reveal', destination: '/reveal' }],
+  },
   {
     // The mock admin is served from this example's own origin (public/admin.html).
     allowedOrigins: [PREVIEW_ADMIN_ORIGIN],

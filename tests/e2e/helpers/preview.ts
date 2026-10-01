@@ -14,8 +14,12 @@ const DEFAULT_TIMEOUT = 15_000;
  * spells the port out bypasses the override and runs against that server.
  */
 export const ASTRO_ORIGIN = `http://localhost:${process.env['PLP_E2E_PORT'] ?? '4173'}`;
-/** Next's development origin, or the HTTPS front door used by its production fixture. */
-export const NEXT_ORIGIN = process.env['PLP_NEXT_ORIGIN'] ?? 'http://localhost:4174';
+/**
+ * Where the Next app answers: its development origin, or the HTTPS front door
+ * of its production fixture, followed by the base path a build may serve it
+ * under (`PLP_NEXT_BASE_PATH`, playwright.next-base-path.config.ts).
+ */
+export const NEXT_ORIGIN = `${process.env['PLP_NEXT_ORIGIN'] ?? 'http://localhost:4174'}${process.env['PLP_NEXT_BASE_PATH'] ?? ''}`;
 
 /** `__lpClient` is the /client import's handle; adapters inject `__livePreview`. */
 export type RuntimeHandle = '__livePreview' | '__lpClient';

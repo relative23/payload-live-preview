@@ -13,10 +13,18 @@
  * from `ROUTES` is redirected to, and only the query of the request is carried
  * along with it, so a crafted `to` has no way to become an off-site redirect.
  */
+import { BASE_PATH } from '../../base-path.mjs';
 import { PREVIEW_COOKIE, SITE, mintSessionToken } from '../preview';
 
 /** The pages this fixture frames. `/asset` is not here: its layout is not gated. */
-const ROUTES = ['/', '/reveal', '/hybrid', '/route-commit', '/soft-navigation/one'];
+const ROUTES = [
+  '/',
+  '/reveal',
+  '/alias/reveal',
+  '/hybrid',
+  '/route-commit',
+  '/soft-navigation/one',
+];
 const COOKIE_SECURITY = new URL(SITE).protocol === 'https:' ? '; Secure' : '';
 
 export async function GET(request: Request): Promise<Response> {
@@ -29,7 +37,8 @@ export async function GET(request: Request): Promise<Response> {
   return new Response(null, {
     status: 302,
     headers: {
-      location: `${route}${parsed.search}`,
+      // A route handler's own redirect is not given the base path; the page's is.
+      location: `${BASE_PATH}${route}${parsed.search}`,
       'set-cookie': `${PREVIEW_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax${COOKIE_SECURITY}`,
       // The token is one editor's credential; no shared cache may keep it.
       'cache-control': 'private, no-store',

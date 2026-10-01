@@ -126,10 +126,12 @@
       // parameter only selects an entry, so a crafted `?target=` has no path to
       // `iframe.src` at all. A mock admin is the first integration a reader
       // copies, so it models the check a real one needs.
-      const ROUTES = ['/', '/reveal', '/route-commit', '/soft-navigation/one'];
+      const ROUTES = ['/', '/reveal', '/alias/reveal', '/route-commit', '/soft-navigation/one'];
+      // The app may be served under a base path; this page sits at its root.
+      const BASE = window.location.pathname.replace(/\/admin\.html$/u, '');
       const requested = new URLSearchParams(window.location.search).get('target');
       const target = ROUTES.find((route) => route === requested) ?? ROUTES[0];
-      iframe.src = `/preview-session?to=${encodeURIComponent(target)}`;
+      iframe.src = `${BASE}/preview-session?to=${encodeURIComponent(target)}`;
       const fixtureNow = new Date();
 
       function buildData() {

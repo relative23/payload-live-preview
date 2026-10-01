@@ -30,6 +30,7 @@ import { headers } from 'next/headers';
 import { LivePreviewScript } from 'payload-live-preview/nextjs';
 import { styles } from '../styles';
 import { SITE, authorizePreview } from '../preview';
+import { BASE_PATH } from '../../base-path.mjs';
 
 const previewOptions = {
   allowedOrigins: [SITE],
@@ -39,7 +40,7 @@ const previewOptions = {
   revealEditedField: true,
   // Server-rendered boundaries: /hybrid marks one, every other page has none
   // and is patched as before. Exercised by nextjs-fragment.spec.ts.
-  fragments: { endpoint: '/payload/fragment' },
+  fragments: { endpoint: `${BASE_PATH}/payload/fragment` },
   inject: 'always',
   authorizePreview,
 } as const;
