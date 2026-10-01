@@ -2,7 +2,8 @@
  * End-to-end tests for the Nuxt adapter (`livePreviewNitroPlugin`).
  *
  * The fixture is the Nuxt example under `examples/nuxt-payload`, expected to
- * be running on port 4176 (`npm --prefix examples/nuxt-payload run dev`). The
+ * be running on port 4176 (`npm --prefix examples/nuxt-payload run dev`), or
+ * the production build at `PLP_NUXT_ORIGIN`. The
  * static `/admin.html` page emulates the Payload admin: it embeds `/` in an
  * iframe and posts updates whenever the form changes. Because the iframe load
  * carries `Sec-Fetch-Dest: iframe`, the plugin's default `'preview-only'`
@@ -24,7 +25,7 @@ import {
   waitForStarted,
 } from '../helpers/preview';
 
-const APP = 'http://localhost:4176';
+const APP = process.env['PLP_NUXT_ORIGIN'] ?? 'http://localhost:4176';
 
 interface HydrationApi {
   inspect: () => { hydration: { mode: string; state: string } };

@@ -125,6 +125,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'Configure `fragments: { endpoint }` on the adapter so boundaries render on the server; until then they are patched.',
   LP0809:
     "Once per session. Fragment scripts never run, so the page itself must load Astro's island element and each client directive a fragment island uses: render an island with that directive on the page (the finite catalog of ADR 0020). See ADR 0021.",
+  LP0810:
+    "Once per page, under `debug`. A function given to `registerRouteRefresh()` returned nothing, so the runtime could not wait for the host's commit and re-applied the unsaved revision at once, on markup the router may still replace. Return a promise that settles after the commit: `LivePreviewRouteRefresh` does for Next's `router.refresh`, and the SvelteKit and Nuxt recipes await their data and the next tick. See ADR 0028.",
   LP0808:
     "Once per session. Set `routeStrategy: true` (an adapter that serves the runtime asset, or the route prelude) or `fragments: { endpoint }` so a server can draw what the patch could not, or set `onUnfaithfulPatch: 'warn'` to keep the patch and say so; `inspect().fidelity.canEscalate` reports which it is.",
   LP0807:

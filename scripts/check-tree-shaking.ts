@@ -384,6 +384,11 @@ interface Fixture {
  * and the adapters give for `defaults: 'v1'` and `onUnboundChange`, and the
  * helper that prints them once; the browser runtime does not change. Every
  * ceiling keeps its cushion.
+ * 2026-09-29 (H15, a host route refresh settles after the host commits,
+ * ADR 0028): paired measurements against the H07 archive: generator +306 and
+ * Next middleware +332 B gzip. Both carry the route and fragment prelude
+ * sources, which gain the `LP0810` check on a refresh that returns no promise
+ * (route prelude +73 B gzip); every ceiling keeps its cushion.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -411,7 +416,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 49_714,
+    gzip: 50_020,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -439,7 +444,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 54_902,
+    gzip: 55_234,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

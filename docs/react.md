@@ -160,7 +160,11 @@ server HTML this package morphs over the reconciler's nodes. It renders
 nothing, registers while it is mounted, and gives the registration back on
 unmount; without it the route strategy fetches and morphs as before. Wiring for
 Next's App Router: [nextjs.md](nextjs.md). Outside React the same seam is
-`registerRouteRefresh()`.
+`registerRouteRefresh()`: give it a function whose promise settles once the
+host has committed the fresh render, as the SvelteKit and Nuxt recipes do. A
+function that returns nothing is taken as already committed; with `debug` the
+runtime says once that it could not wait (`LP0810`), and 3.0 requires the
+promise ([ADR 0028](architecture/0028-host-route-refresh-settles-after-commit.md)).
 
 ## Vue
 

@@ -21,7 +21,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +3310/+1081/+890 B; same 21/12/120 B cushions.
   // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +81/+59/+55 B; same 21/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -163/-26/-21 B; same 21/12/120 B cushions.
-  'client.cjs': { raw: 150_170, gzip: 46_894, brotli: 40_579 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+7/+20 B; same 21/12/120 B cushions.
+  'client.cjs': { raw: 150_203, gzip: 46_901, brotli: 40_599 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -35,7 +36,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +3310/+1081/+857 B; same 21/12/120 B cushions.
   // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +81/+59/+56 B; same 21/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -163/-27/-25 B; same 21/12/120 B cushions.
-  'client.js': { raw: 150_089, gzip: 46_879, brotli: 40_555 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+8/+8 B; same 21/12/120 B cushions.
+  'client.js': { raw: 150_122, gzip: 46_887, brotli: 40_563 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).
@@ -99,18 +101,22 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+12/+6 B; same 86/37/61 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -32/+3/-15 B; same 86/37/61 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2605/+920/+856 B; same 86/37/61 B cushions.
-  'plugins.cjs': { raw: 21_951, gzip: 8_058, brotli: 7_133 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+11/-9 B; same 86/37/61 B cushions.
+  'plugins.cjs': { raw: 21_984, gzip: 8_069, brotli: 7_124 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+12/+1 B; same 86/33/92 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -32/+0/+9 B; same 86/33/92 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2605/+921/+832 B; same 86/33/92 B cushions.
-  'plugins.js': { raw: 21_927, gzip: 8_040, brotli: 7_138 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+11/+10 B; same 86/33/92 B cushions.
+  'plugins.js': { raw: 21_960, gzip: 8_051, brotli: 7_148 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+423/+399 B; same 20/3/84 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+13/-6 B; same 20/3/84 B cushions.
   // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+0/+2 B; same 20/3/84 B cushions.
-  'fragment.cjs': { raw: 16_489, gzip: 6_297, brotli: 5_629 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +206/+86/+80 B; same 20/3/84 B cushions.
+  'fragment.cjs': { raw: 16_695, gzip: 6_383, brotli: 5_709 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+429/+364 B; same 20/9/79 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+16/+17 B; same 20/9/79 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured -4/-2/-1 B; same 20/9/79 B cushions.
   // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+1/+11 B; same 20/9/79 B cushions.
-  'fragment.js': { raw: 16_419, gzip: 6_271, brotli: 5_617 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +206/+86/+80 B; same 20/9/79 B cushions.
+  'fragment.js': { raw: 16_625, gzip: 6_357, brotli: 5_697 },
 };

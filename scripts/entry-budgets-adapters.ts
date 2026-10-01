@@ -31,7 +31,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-12/-85 B; same 106/27/167 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +1030/+400/+343 B; same 106/27/167 B cushions.
   // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+1/+35 B; same 106/27/167 B cushions.
-  'adapters/astro/index.js': { raw: 196_975, gzip: 61_395, brotli: 52_399 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +358/+311/+132 B; same 106/27/167 B cushions.
+  'adapters/astro/index.js': { raw: 197_333, gzip: 61_706, brotli: 52_531 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -46,7 +47,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+39/+43 B; same 16/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-14/+24 B; same 16/12/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +672/+206/+104 B; same 16/12/120 B cushions.
-  'adapters/astro/middleware-entry.js': { raw: 173_709, gzip: 54_029, brotli: 45_961 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +358/+326/+285 B; same 16/12/120 B cushions.
+  'adapters/astro/middleware-entry.js': { raw: 174_067, gzip: 54_355, brotli: 46_246 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -90,7 +92,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-17/-12 B; same 20/16/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +850/+301/+230 B; same 20/16/120 B cushions.
   // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+0/+50 B; same 20/16/120 B cushions.
-  'adapters/nextjs/index.js': { raw: 191_415, gzip: 59_602, brotli: 50_852 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +358/+319/+171 B; same 20/16/120 B cushions.
+  'adapters/nextjs/index.js': { raw: 191_773, gzip: 59_921, brotli: 51_023 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -134,7 +137,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-27/-34 B; same 15/12/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +850/+312/+308 B; same 15/12/120 B cushions.
   // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+0/+7 B; same 15/12/120 B cushions.
-  'adapters/nuxt/index.js': { raw: 192_042, gzip: 59_864, brotli: 51_043 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +358/+313/+149 B; same 15/12/120 B cushions.
+  'adapters/nuxt/index.js': { raw: 192_400, gzip: 60_177, brotli: 51_192 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -149,5 +153,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-20/-78 B; same 16/15/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +849/+304/+278 B; same 16/15/120 B cushions.
   // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+1/+23 B; same 16/15/120 B cushions.
-  'adapters/sveltekit/index.js': { raw: 191_185, gzip: 59_581, brotli: 50_765 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +358/+320/+175 B; same 16/15/120 B cushions.
+  'adapters/sveltekit/index.js': { raw: 191_543, gzip: 59_901, brotli: 50_940 },
 };

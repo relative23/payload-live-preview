@@ -7,7 +7,8 @@
  * the route does not answer.
  */
 export const livePreviewOptions = {
-  allowedOrigins: ['http://localhost:4176'],
+  // The production gate serves this app over TLS on another port and says so.
+  allowedOrigins: [process.env['PAYLOAD_ADMIN_ORIGIN'] ?? 'http://localhost:4176'],
   debug: true,
   debounceMs: 25,
   revealEditedField: true,

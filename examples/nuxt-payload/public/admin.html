@@ -107,7 +107,7 @@
     <iframe id="preview" data-testid="preview-frame" title="Live preview"></iframe>
 
     <script>
-      const PREVIEW_ORIGIN = 'http://localhost:4176';
+      const PREVIEW_ORIGIN = window.location.origin;
       const form = document.getElementById('admin-form');
       const iframe = document.getElementById('preview');
       // `?target=` picks an entry; the framed route never comes from the query.

@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 419,
+    "files": 420,
     "suites": 827,
-    "tests": 3716,
+    "tests": 3718,
     "benchmarks": 12
   },
   "groups": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 338,
+      "files": 339,
       "suites": 731,
-      "tests": 3384,
+      "tests": 3386,
       "benchmarks": 0
     }
   },
@@ -2044,6 +2044,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/fragment/route-host-refresh.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/fragment/route-islands.test.ts",
       "group": "unit",
       "suites": 1,
@@ -2053,8 +2060,8 @@
     {
       "path": "tests/unit/fragment/route.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 19,
+      "suites": 5,
+      "tests": 16,
       "benchmarks": 0
     },
     {

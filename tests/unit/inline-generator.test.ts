@@ -149,7 +149,7 @@ describe('generateInlineScript', () => {
     const withFragments = generateInlineScript({ fragmentEndpoint: '/f' }).split('\n')[1] ?? '';
 
     expect(new Set(routeOnly.match(/LP0[0-9]{3}/gu) ?? [])).toEqual(
-      new Set(['LP0801', 'LP0802', 'LP0805']),
+      new Set(['LP0801', 'LP0802', 'LP0805', 'LP0810']),
     );
     expect(routeOnly.length).toBeLessThan(withFragments.length);
   });
@@ -161,7 +161,7 @@ describe('generateInlineScript', () => {
     // included — out of every fragment-enabled page.
     expect(prelude).toContain('__LIVE_PREVIEW_FRAGMENT__');
     expect(new Set(prelude?.match(/LP0[0-9]{3}/gu) ?? [])).toEqual(
-      new Set(['LP0801', 'LP0802', 'LP0803', 'LP0804', 'LP0805']),
+      new Set(['LP0801', 'LP0802', 'LP0803', 'LP0804', 'LP0805', 'LP0810']),
     );
   });
 

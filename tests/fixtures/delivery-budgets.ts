@@ -180,7 +180,7 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     // same subtraction: `AUTHORIZED_NEXT_DELIVERY` below. A zero that holds for
     // everyone would be a broken adapter rather than a win, so the two rows are
     // read in one file — this one proves the public pays nothing, that one
-    // proves the editor still gets the runtime, down to the 13 955 bytes of tag,
+    // proves the editor still gets the runtime, down to the 14 133 bytes of tag,
     // config statement and fragment prelude this fixture asks for.
     why: 'LP-8 closed: a component that can decline to render is the only thing that gets a Next layout to zero',
   },
@@ -264,8 +264,8 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * mints a signed token into a cookie, and `<LivePreviewScript />` verifies it
  * and renders the runtime it declined to render a moment earlier.
  *
- * The current delivery is 13 955 bytes above the runtime: 17 bytes of tag, a
- * 156-byte config statement, two separators and the 13 780-byte fragment
+ * The current delivery is 14 133 bytes above the runtime: 17 bytes of tag, a
+ * 156-byte config statement, two separators and the 13 958-byte fragment
  * prelude this fixture asks for. Next writes the element into its flight
  * payload as well, so the response contains two. Nothing about the delivery
  * got cheaper for an editor; what changed is who is charged.
@@ -308,6 +308,11 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * in all three browsers. The prelude's route planner now skips markers outside
  * the update's owner scope: the paired inline profiles put the prelude at +22
  * bytes (fragment profile +97, runtime +75), and this row measures +22.
+ *
+ * 2026-09-29 (H15, ADR 0028): 13 955 → 14 133, measured in all three
+ * browsers. The route strategy the prelude carries names a host refresh that
+ * returns no promise (LP0810): the paired inline profiles put the fragment
+ * profile at +178 bytes with the runtime unchanged, and this row measures +178.
  */
 export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   name: 'Next.js, script in the root layout, authorized editor',
@@ -316,7 +321,7 @@ export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   carries: 'runtime',
   bindings: true,
   scriptElements: 2,
-  overheadBytes: 13_955,
+  overheadBytes: 14_133,
   why: 'the same layout still hands an authorized editor the whole runtime — the zero above is a decision, not a broken adapter',
 };
 

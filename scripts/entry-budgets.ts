@@ -436,7 +436,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +81/+62/+27 B; same 27/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -164/-30/-4 B; same 27/12/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +495/+175/+124 B; same 27/12/120 B cushions.
-  'core.cjs': { raw: 156_726, gzip: 49_282, brotli: 42_531 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+8/+32 B; same 27/12/120 B cushions.
+  'core.cjs': { raw: 156_759, gzip: 49_290, brotli: 42_563 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 133 971 → 134 005 (+34 B, measured 133 945 → 133 979).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 134 005 → 134 054 (+49 B, measured 133 979 → 134 028); gzip 42 628 → 42 646 (+18 B, measured 42 628 → 42 646); brotli 36 811 → 36 934 (measured 36 814, -3 B left; ~120 B as the other brotli rows).
   // 2026-09-16 (2.0.1 Version PR): gzip 42 646 → 42 658. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 42 646 against a cushion of 0 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -452,7 +453,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +81/+51/+29 B; same 26/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -168/-24/+1 B; same 26/12/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +495/+191/+149 B; same 26/12/120 B cushions.
-  'core.js': { raw: 156_186, gzip: 49_201, brotli: 42_493 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+9/+35 B; same 26/12/120 B cushions.
+  'core.js': { raw: 156_219, gzip: 49_210, brotli: 42_528 },
   //
   // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
   // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a
@@ -493,7 +495,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +152/+108/+50 B; same 22/13/102 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -317/-40/+1 B; same 22/13/188 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +1456/+526/+444 B; same 22/13/136 B cushions.
-  'index.cjs': { raw: 332_898, gzip: 103_215, brotli: 65_498 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +391/+334/+170 B; same 22/13/166 B cushions.
+  'index.cjs': { raw: 333_289, gzip: 103_549, brotli: 65_668 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 282 113 → 282 177 (+64 B, measured 282 092 → 282 156); gzip 88 558 → 88 583 (+25 B, measured 88 555 → 88 580).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 282 177 → 282 275 (+98 B, measured 282 156 → 282 254); gzip 88 583 → 88 610 (+27 B, measured 88 580 → 88 607).
   // 2026-09-16 (2.0.1 Version PR): gzip 88 610 → 88 619. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 88 607 against a cushion of 3 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -509,7 +512,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +152/+116/+111 B; same 21/13/287 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -318/-48/-46 B; same 21/13/276 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +1462/+574/+394 B; same 21/13/289 B cushions.
-  'index.js': { raw: 332_290, gzip: 103_250, brotli: 65_546 },
+  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +391/+340/+172 B; same 21/12/274 B cushions.
+  'index.js': { raw: 332_681, gzip: 103_590, brotli: 65_718 },
   ...PAYLOAD_ENTRY_BUDGETS,
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
   // 2026-09-06 (R8): +~110 B raw for `previewBindingsFromLocals`, the one-line

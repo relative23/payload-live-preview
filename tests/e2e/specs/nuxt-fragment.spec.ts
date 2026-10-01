@@ -8,7 +8,7 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * never is, and that split is what the last test here holds.
  */
 
-const APP = 'http://localhost:4176';
+const APP = process.env['PLP_NUXT_ORIGIN'] ?? 'http://localhost:4176';
 const OWNER = { globalSlug: 'home' };
 
 interface FragmentStats {

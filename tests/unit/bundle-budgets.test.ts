@@ -12,8 +12,8 @@ describe('release bundle budgets', () => {
     // H10's measured delta for requireDocument and its warning (ADR 0025), prior cushions kept.
     expect(INLINE_BUDGET).toEqual({ raw: 134_630, gzip: 42_257, brotli: 37_067 });
     expect(INLINE_LEAN_BUDGET).toEqual({ raw: 107_907, gzip: 33_823, brotli: 29_895 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 143_000, gzip: 44_713, brotli: 39_060 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 148_456, gzip: 46_584, brotli: 40_658 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 143_180, gzip: 44_786, brotli: 39_129 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 148_634, gzip: 46_682, brotli: 40_758 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

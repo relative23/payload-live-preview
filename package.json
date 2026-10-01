@@ -240,6 +240,7 @@
     "test:e2e:astro-resources": "playwright test --config playwright.astro-resources.config.ts",
     "test:e2e:html-continuation": "playwright test --config playwright.html-continuation.config.ts",
     "test:e2e:vue-continuation": "playwright test --config playwright.vue-continuation.config.ts",
+    "test:e2e:nuxt-production": "playwright test --config playwright.nuxt-production.config.ts",
     "test:e2e:sveltekit-production": "playwright test --config playwright.sveltekit-production.config.ts",
     "check:fixtures": "tsx scripts/check-fixture-freshness.ts",
     "check:generated": "tsx scripts/check-generated-runtime.ts",

@@ -88,6 +88,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly UnboundChangeRefresh: "LP0807";
     readonly EscalationUnavailable: "LP0808";
     readonly IslandStartUnavailable: "LP0809";
+    readonly RouteRefreshUnconfirmed: "LP0810";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
 }>;
