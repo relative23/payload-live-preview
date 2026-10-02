@@ -62,10 +62,24 @@ function post(fields: Record<string, unknown>): Promise<void> {
   );
   return afterUpdate();
 }
+/**
+ * Resolves once the runtime reports the revision settled (ADR 0023), whether
+ * it patched or not; a 60 ms grace here could give up first under load
+ * (PHD-15). The fallback ends the wait for a message that is no revision.
+ */
 function afterUpdate(): Promise<void> {
   return new Promise((resolve) => {
-    emitter.once('afterUpdate', () => resolve());
-    setTimeout(resolve, 60);
+    const off = emitter.on('revisionDisplay', (display) => {
+      if (display.state !== 'pending') done();
+    });
+    const fallback = setTimeout(() => {
+      done();
+    }, 2_000);
+    const done = (): void => {
+      off();
+      clearTimeout(fallback);
+      setTimeout(resolve, 0);
+    };
   });
 }
 function fieldOf(el: Element | null): string | undefined {
@@ -135,8 +149,10 @@ describe('reveal on admin focus (tier 2)', () => {
         origin: TRUSTED,
       }),
     );
-    await new Promise((r) => setTimeout(r, 20));
-    expect(scrolled).toEqual(['body']);
+    // A focus message is no revision: wait for its effect (PHD-15).
+    await vi.waitFor(() => {
+      expect(scrolled).toEqual(['body']);
+    });
   });
 
   it('does nothing for a focus message that names a field with no binding', async () => {

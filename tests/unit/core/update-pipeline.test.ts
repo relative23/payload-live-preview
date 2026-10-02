@@ -68,19 +68,25 @@ function update(fields: Record<string, unknown>): Promise<void> {
   return settled();
 }
 
-/** Resolves once the revision's patch writes landed, or after a grace period when nothing applies. */
+/**
+ * Resolves once the runtime reports the revision settled, any display state
+ * but `pending` (ADR 0023), whether or not it patched anything. A message the
+ * runtime takes as no revision reports nothing; the fallback ends that wait.
+ * A fixed 80 ms grace here gave up before a slow runtime had patched (PHD-15).
+ */
 function settled(): Promise<void> {
   return new Promise((resolve) => {
-    const emitter = harness?.emitter;
-    const off = emitter?.on('afterUpdate', (event) => {
-      if (event.source !== 'patch') return;
-      off?.();
-      setTimeout(resolve, 5);
+    const off = harness?.emitter.on('revisionDisplay', (display) => {
+      if (display.state !== 'pending') done();
     });
-    setTimeout(() => {
+    const fallback = setTimeout(() => {
+      done();
+    }, 2_000);
+    const done = (): void => {
       off?.();
-      resolve();
-    }, 80);
+      clearTimeout(fallback);
+      setTimeout(resolve, 0);
+    };
   });
 }
 

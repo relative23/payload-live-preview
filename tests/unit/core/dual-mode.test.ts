@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import { withProfileDefaults } from '@client/config';
@@ -108,9 +108,11 @@ describe.each(MODES)('skipUnchanged under $name', ({ defaults }) => {
     // Second identical message.
     if (defaults === 'v2') {
       post({ title: 'same' });
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      // Waits for the runtime, not a fixed time: a fixed wait failed under load (PHD-15).
+      await vi.waitFor(() => {
+        expect(rt.inspect().revisions.skippedUnchanged).toBe(1);
+      });
       expect(renders).toEqual(['same']);
-      expect(rt.inspect().revisions.skippedUnchanged).toBe(1);
     } else {
       done = afterUpdate();
       post({ title: 'same' });
