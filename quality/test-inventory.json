@@ -21,7 +21,7 @@
   "totals": {
     "files": 426,
     "suites": 834,
-    "tests": 3753,
+    "tests": 3754,
     "benchmarks": 12
   },
   "groups": {
@@ -40,7 +40,7 @@
     "e2e": {
       "files": 49,
       "suites": 56,
-      "tests": 221,
+      "tests": 222,
       "benchmarks": 0
     },
     "integration": {
@@ -318,7 +318,7 @@
       "path": "tests/e2e/specs/plain-html-tarball.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {

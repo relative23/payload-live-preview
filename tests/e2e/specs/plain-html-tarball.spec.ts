@@ -88,7 +88,11 @@ function fixtureServer(dist: string): Server {
           response.writeHead(403).end('forbidden');
           return;
         }
-        const body = await readFile(file);
+        // A route refresh asks the server to render the page again; this one
+        // answers with a newer head, as a server render after a save would.
+        const refreshed =
+          pathname === '/route.html' && request.headers['x-payload-live-preview'] === 'route';
+        const body = await readFile(refreshed ? resolve(dist, 'route-fresh.html') : file);
         const headers: Record<string, string> = {
           'content-type': TYPES[extname(file)] ?? 'application/octet-stream',
         };
@@ -198,6 +202,11 @@ async function createFixture(): Promise<PackedHtmlFixture> {
       // localhost origin (docs/security.md); this one opts out, as a page on a
       // production host is anyway.
       const strict = generateInlineScript({ ...options, disableLocalhostMatching: true });
+      const route = generateInlineScript({ ...options, routeStrategy: true });
+      const routePage = (head) =>
+        '<!doctype html><html><head><meta charset="utf-8">' + wrapWithScriptTag(route) +
+        '<title data-payload-field="title">Server title</title>' + head + '</head><body>' +
+        '<h1 data-payload-field="title" data-testid="route-title">Server title</h1></body></html>';
       const body =
         '<p data-payload-field="subtitle" data-testid="subtitle"></p>' +
         '<ul data-payload-field="tags" data-payload-type="array" ' +
@@ -209,7 +218,7 @@ async function createFixture(): Promise<PackedHtmlFixture> {
         blockedProbe + '</head><body>' + body + '</body></html>';
       const admin = '<!doctype html><html><body>' +
         '<iframe data-testid="preview-frame" title="Live preview"></iframe>' +
-        '<script>const pages=["/full.html","/lean.html","/nonce.html","/hash.html","/hash-wrong.html","/strict.html"];' +
+        '<script>const pages=["/full.html","/lean.html","/nonce.html","/hash.html","/hash-wrong.html","/strict.html","/route.html"];' +
         'const requested=new URLSearchParams(location.search).get("target");' +
         'document.querySelector("iframe").src=pages.includes(requested)?requested:pages[0];</script>' +
         '</body></html>';
@@ -227,6 +236,21 @@ async function createFixture(): Promise<PackedHtmlFixture> {
         writeFile(resolve(dist, 'hash.html'), page(full)),
         writeFile(resolve(dist, 'hash-wrong.html'), page(full)),
         writeFile(resolve(dist, 'strict.html'), page(strict)),
+        writeFile(
+          resolve(dist, 'route.html'),
+          routePage(
+            '<meta property="og:image" content="/old.png" data-stale="yes">' +
+              '<meta property="og:image" content="/owned.png" data-payload-owned>',
+          ),
+        ),
+        writeFile(
+          resolve(dist, 'route-fresh.html'),
+          routePage(
+            '<meta property="og:image" content="/one.png">' +
+              '<meta property="og:image" content="/two.png">' +
+              '<link rel="canonical" href="/fresh">',
+          ),
+        ),
         writeFile(
           resolve(dist, 'build.json'),
           JSON.stringify({
@@ -412,5 +436,36 @@ test.describe('plain HTML from the exact package archive', () => {
     const own = await open(page, '/strict.html');
     await post(page, { subtitle: 'from the admin' });
     await expect(own.getByTestId('subtitle')).toHaveText('from the admin');
+  });
+  test('a route refresh reconciles the managed head from the server render (H08)', async ({
+    page,
+  }) => {
+    let refreshes = 0;
+    page.on('request', (request) => {
+      if (request.headers()['x-payload-live-preview'] === 'route') refreshes += 1;
+    });
+    const frame = await open(page, '/route.html');
+    await post(page, { title: 'Unsaved head title' });
+
+    await expect.poll(() => refreshes).toBe(1);
+    await expect.poll(() => frame.title()).toBe('Unsaved head title');
+    await expect(frame.getByTestId('route-title')).toHaveText('Unsaved head title');
+    expect(
+      await frame.evaluate(() => ({
+        managed: Array.from(
+          document.head.querySelectorAll(
+            'meta[property]:not([data-payload-owned]), link[rel="canonical"]',
+          ),
+        ).map((element) => element.outerHTML),
+        owned: document.head.querySelector('meta[data-payload-owned]')?.getAttribute('content'),
+      })),
+    ).toEqual({
+      managed: [
+        '<meta property="og:image" content="/one.png">',
+        '<meta property="og:image" content="/two.png">',
+        '<link rel="canonical" href="/fresh">',
+      ],
+      owned: '/owned.png',
+    });
   });
 });
