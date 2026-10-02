@@ -1,6 +1,8 @@
 # Nuxt
 
-Nuxt 3 with server-side rendering. A Nitro plugin injects the runtime into authorized preview responses and merges the CSP; a server handler decides before the Vue app renders, so pages can read the decision from `event.context`.
+Nuxt with server-side rendering. A Nitro plugin injects the runtime into authorized preview responses and merges the CSP; a server handler decides before the Vue app renders, so pages can read the decision from `event.context`.
+
+Nuxt 3 reached its [end of life](https://nuxt.com/docs/4.x/community/roadmap) on 31 July 2026 and is no longer supported here officially. It keeps working: the example still runs on Nuxt 3.21.11, and nothing in 2.x breaks it on purpose. A copy of the example in Nuxt 4.5.2's `app/` layout passes the same production suite (54/54, measured 2026-10-02).
 
 Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to.
 
@@ -38,6 +40,10 @@ export default (request: Request) =>
 ```
 
 The module writes a Nitro plugin into Nuxt's build directory (`.nuxt/`, or `node_modules/.cache/nuxt/.nuxt/` while Nuxt 4 builds) and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
+
+Nuxt accepts `livePreview` as a config key, but types its value loosely. To have
+the options checked, write `livePreview: { … } satisfies LivePreviewModuleOptions`,
+with the type imported from `payload-live-preview/nuxt-module`.
 
 The options are serialized into the generated plugin, so a function cannot travel in them: `authorizePreview` travels by reference instead ([ADR 0024](architecture/0024-authorization-by-module-reference.md)). The plugin imports the module `authorizePreviewModule` names and passes its default export on, so the strict 2.0 default holds. With the reference the module also registers the server handler below, so the decision is made before the app renders and a page reads it on `event.context`, as [Read `event.context`](#read-eventcontext) shows. A path beginning with `./` is relative to the project root; an alias such as `~/` or a package specifier is passed to Nitro unchanged, and one outside the project is refused. `shouldInject` has no such reference; a preview that needs it writes the plugin below by hand.
 
@@ -253,16 +259,63 @@ Vue renders through `renderToString()` from `vue/server-renderer`, one SSR app
 per render. `vue` is an optional peer imported at the first render.
 
 The component is rendered inside the Nitro bundle, and Nitro's rollup does not
-know single-file components. Add the plugin once:
+know single-file components. Add the plugins once:
 
 ```ts
 // nuxt.config.ts
+import { fileURLToPath } from 'node:url';
 import vue from '@vitejs/plugin-vue';
-export default defineNuxtConfig({ nitro: { rollupConfig: { plugins: [vue()] } } });
+import { fragmentComponentPlugins } from 'payload-live-preview/nuxt-module';
+
+export default defineNuxtConfig({
+  nitro: {
+    rollupConfig: {
+      // Nuxt 4 keeps components under app/; on a Nuxt 3 layout use './'.
+      plugins: fragmentComponentPlugins(vue, {
+        srcDir: fileURLToPath(new URL('./app/', import.meta.url)),
+      }),
+    },
+  },
+});
 ```
 
-Without it the server build fails on the first `.vue` import from `server/`. The
-alternative is a `defineComponent` in a `.ts` file, which Nitro reads as it is.
+`fragmentComponentPlugins` returns Vue's plugin and one more. Vue's plugin
+hashes each component's scope id from its path under `srcDir`, as Nuxt's own
+build does; with another directory the ids differ and no scoped rule reaches
+what a fragment renders. The other plugin turns every `<style>` block into an
+empty module in the server bundle, where rollup would otherwise fail on the
+CSS. The page's build delivers that CSS, so the page imports every component
+its fragments render, even one it shows empty until the first unsaved value
+([ADR 0029](architecture/0029-fragment-components-and-locals-belong-to-the-page.md)).
+`@vitejs/plugin-vue` is your own dependency, and a component whose `defineProps`
+names an imported type needs `typescript` installed.
+
+A fragment is a standalone Vue app, as Nuxt's own islands are
+([ADR 0030](architecture/0030-nuxt-fragments-are-standalone-vue-apps.md)). It
+renders from its props, so read what it needs from Nuxt in the route and pass
+it in: `locals` is the request's `event.context`, and Nitro's
+`useRuntimeConfig()` works in the route.
+
+```ts
+registry: {
+  notice: {
+    component: Notice,
+    props: ({ fields, locals }) => ({
+      text: String(fields['notice'] ?? ''),
+      edition: (locals as { edition?: string } | undefined)?.edition ?? '',
+      site: useRuntimeConfig().public.siteName,
+    }),
+  },
+},
+```
+
+Nuxt's app composables are not there: a component that calls `useHead()` or
+`useNuxtApp()` fails with `useHead is not defined`. The endpoint answers 500 in
+production as in development, and says why in development only, as it does for
+any render that throws; the runtime patches the boundary instead. The page owns `<head>`; a binding there uses the route strategy.
+
+The alternative to the plugins is a `defineComponent` in a `.ts` file, which
+Nitro reads as it is.
 Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
 
 ## Caveats

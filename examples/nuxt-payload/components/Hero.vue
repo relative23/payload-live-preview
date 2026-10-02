@@ -20,3 +20,9 @@ defineProps<HeroDocument>();
   <p data-testid="hero-words">{{ words }} words</p>
   <input id="hero-input" data-testid="hero-input" aria-label="Scratch" />
 </template>
+
+<style scoped>
+.lede {
+  letter-spacing: 0.25em;
+}
+</style>

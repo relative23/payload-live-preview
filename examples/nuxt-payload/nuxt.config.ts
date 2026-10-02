@@ -1,4 +1,6 @@
+import { fileURLToPath } from 'node:url';
 import vue from '@vitejs/plugin-vue';
+import { fragmentComponentPlugins } from 'payload-live-preview/nuxt-module';
 import { livePreviewOptions } from './lib/live-preview';
 
 export default defineNuxtConfig({
@@ -7,13 +9,22 @@ export default defineNuxtConfig({
   // The asset route in `server/routes/` reads the same object.
   modules: ['payload-live-preview/nuxt-module'],
   livePreview: livePreviewOptions,
-  // The fragment endpoint renders a component inside the Nitro bundle, and
-  // Nitro's rollup has no idea what a single-file component is. One plugin
-  // teaches it; without this the server build fails on the first `.vue` import
-  // from `server/`. (See docs/nuxt.md — the alternative is a `defineComponent`
-  // in a .ts file, which Nitro can already read.)
-  nitro: { rollupConfig: { plugins: [vue()] } },
+  // The fragment endpoint renders the project's components inside the Nitro
+  // bundle, whose rollup does not know single-file components. The helper adds
+  // Vue's plugin, hashing scope ids from the same directory Nuxt's build does
+  // (this Nuxt 3 layout keeps components at the root; Nuxt 4's under `app/`),
+  // and keeps each component's CSS out of the server bundle: the page's build
+  // delivers it, since the page imports the component (ADR 0029, 0030).
+  nitro: {
+    rollupConfig: {
+      plugins: fragmentComponentPlugins(vue, {
+        srcDir: fileURLToPath(new URL('./', import.meta.url)),
+      }),
+    },
+  },
   compatibilityDate: '2026-08-01',
+  // Read by the page and, through the fragment route's props, by fragments.
+  runtimeConfig: { public: { siteName: 'Nuxt fixture' } },
   devtools: { enabled: false },
   // The mock admin is a static file so it never carries preview intent and
   // therefore never receives the runtime — the same split the other examples

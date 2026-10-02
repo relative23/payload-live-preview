@@ -61,6 +61,48 @@ test.beforeAll(async ({ playwright }) => {
 });
 
 test.describe('fragment preview (Nuxt)', () => {
+  test('scoped CSS reaches what a fragment created, and a fragment-only component is styled once the page imports it (ADR 0029, 0030)', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+
+    await post(
+      page,
+      { title: 'Styled', subtitle: 'Spaced', body: 'a b', notice: 'Outlined' },
+      OWNER,
+    );
+
+    await expect(frame.getByTestId('hero-subtitle')).toHaveText('Spaced');
+    await expect(frame.getByTestId('notice')).toHaveText('Outlined');
+    const subtitle = frame.getByTestId('hero-subtitle');
+    expect(await subtitle.evaluate((element) => getComputedStyle(element).letterSpacing)).not.toBe(
+      'normal',
+    );
+    // A standalone Vue app reads Nuxt's request context and runtime config only
+    // through the props the route computes on the server.
+    await expect(frame.getByTestId('notice-edition')).toHaveText('Preview edition');
+    await expect(frame.getByTestId('notice-site')).toHaveText('Nuxt fixture');
+    const notice = frame.getByTestId('notice');
+    expect(await notice.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe(
+      'solid',
+    );
+  });
+
+  test('a component that throws while rendering leaves its boundary as it was (PHD-17)', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+    await post(page, { title: 'Kept', body: 'a b', notice: 'Kept' }, OWNER);
+    await expect(frame.getByTestId('notice')).toHaveText('Kept');
+    const before = await fragments(frame);
+
+    // Vue's production build only logs a setup error and renders nothing; the
+    // endpoint must fail that render, so the runtime keeps the boundary.
+    await post(page, { title: 'Kept', body: 'a b', notice: 'throw in setup' }, OWNER);
+    await expect.poll(async () => (await fragments(frame)).failed).toBe(before.failed + 1);
+    await expect(frame.getByTestId('notice')).toHaveText('Kept');
+  });
+
   test('the server creates the conditional section and the derived count Vue renders', async ({
     page,
   }) => {

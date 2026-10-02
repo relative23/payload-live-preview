@@ -38,7 +38,7 @@
  * `livePreviewNitroPlugin()` by hand, exactly as before (docs/nuxt.md).
  */
 
-import { join } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { hookImportLines, refuseOutsideReference } from '@adapters/shared/hook-reference';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PreviewRequestLike } from '@adapters/shared/preview-request';
@@ -195,3 +195,63 @@ livePreviewModule.meta = {
   name: 'payload-live-preview',
   configKey: 'livePreview',
 };
+
+/**
+ * How `@nuxt/kit`'s `installModule` actually reads that meta — `.meta` alone
+ * names nothing to it. Through this Nuxt also writes the `livePreview` key
+ * into `.nuxt/types/schema.d.ts`; without it `nuxt.config.ts` fails to
+ * type-check on that key.
+ */
+livePreviewModule.getMeta = (): Promise<typeof livePreviewModule.meta> =>
+  Promise.resolve(livePreviewModule.meta);
+
+/**
+ * The app's own `@vitejs/plugin-vue` default export, as far as it is called
+ * here: with the hook that names a component's scope id.
+ */
+export type VuePluginFactory = (options?: {
+  readonly features?: {
+    readonly componentIdGenerator?: (
+      filepath: string,
+      source: string,
+      isProduction: boolean | undefined,
+      getHash: (text: string) => string,
+    ) => string;
+  };
+}) => { readonly name: string };
+
+const EMPTY_STYLE = '\0payload-live-preview:server-style';
+
+/**
+ * The rollup plugins Nitro needs to render the project's single-file
+ * components in a fragment endpoint (ADR 0030), for
+ * `nitro.rollupConfig.plugins`: Vue's plugin, hashing a scope id from the path
+ * under `srcDir` as Nuxt's own build does, and an empty module for every style
+ * request, which the page's build delivers instead (ADR 0029).
+ *
+ * Without the second, rollup fails on a component's `<style>`. Without the
+ * first, Nuxt 4's `app/` layout gives the fragment other scope ids than the
+ * page, and no scoped rule reaches what it renders.
+ */
+export function fragmentComponentPlugins(
+  vue: VuePluginFactory,
+  options: { readonly srcDir: string },
+): { readonly name: string }[] {
+  // plugin-vue outside Vite resolves paths from the working directory.
+  const root = process.cwd();
+  const componentIdGenerator = (
+    filepath: string,
+    source: string,
+    isProduction: boolean | undefined,
+    getHash: (text: string) => string,
+  ): string => {
+    const underSrcDir = relative(options.srcDir, resolve(root, filepath)).replaceAll('\\', '/');
+    return getHash(underSrcDir + (isProduction === true ? source : ''));
+  };
+  const styles = {
+    name: 'payload-live-preview:server-styles',
+    resolveId: (id: string): string | null => (/[?&]type=style\b/u.test(id) ? EMPTY_STYLE : null),
+    load: (id: string): string | null => (id === EMPTY_STYLE ? 'export default ""' : null),
+  };
+  return [styles, vue({ features: { componentIdGenerator } })];
+}

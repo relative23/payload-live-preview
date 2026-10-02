@@ -123,7 +123,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // row rises ~700 B gzip for `withLivePreview()`: the header rules and the
   // frame-ancestors builder it shares with the middleware.
   // 2026-09-29 (H12, authorization by module reference, ADR 0024): measured +1448/+485/+428 B; same 11/7/6 B cushions.
-  'adapters/nuxt/module.js': { raw: 2_108, gzip: 911, brotli: 777 },
+  // 2026-10-02 (H18 and PHD-17, a Nuxt fragment is a standalone Vue app, ADR 0030): measured +421/+200/+178 B; same 11/7/6 B cushions.
+  'adapters/nuxt/module.js': { raw: 2_529, gzip: 1_111, brotli: 955 },
   // 2026-09-12 (C1): sveltekit brotli 42 479 → 42 620, the only metric the drawer-edit fix crossed (measured 42 500 + the ~120 B cushion).
   // 2026-09-14 (2.0.1): brotli 42 955 → 43 092. Its cushion was 4 B (measured 42 951), which
   // brotli's run-to-run swing crosses with no code change; the fix's build measured 42 972 and
@@ -145,7 +146,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +358/+313/+149 B; same 15/12/120 B cushions.
   // 2026-10-01 (H17, a fragment's components and its request context are the page's, ADR 0029): measured +29/+3/-17 B; same 15/12/120 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+203/+182 B; same 15/12/120 B cushions.
-  'adapters/nuxt/index.js': { raw: 192_855, gzip: 60_383, brotli: 51_357 },
+  // 2026-10-02 (H18 and PHD-17, a Nuxt fragment is a standalone Vue app, ADR 0030): measured +87/+37/-62 B; same 15/12/120 B cushions.
+  'adapters/nuxt/index.js': { raw: 192_942, gzip: 60_420, brotli: 51_295 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).

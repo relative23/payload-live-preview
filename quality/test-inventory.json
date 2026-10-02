@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 423,
-    "suites": 832,
-    "tests": 3740,
+    "files": 425,
+    "suites": 834,
+    "tests": 3748,
     "benchmarks": 12
   },
   "groups": {
@@ -40,7 +40,7 @@
     "e2e": {
       "files": 48,
       "suites": 56,
-      "tests": 214,
+      "tests": 216,
       "benchmarks": 0
     },
     "integration": {
@@ -62,9 +62,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 341,
-      "suites": 734,
-      "tests": 3403,
+      "files": 343,
+      "suites": 736,
+      "tests": 3409,
       "benchmarks": 0
     }
   },
@@ -297,7 +297,7 @@
       "path": "tests/e2e/specs/nuxt-fragment.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 4,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -798,7 +798,21 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/nuxt-fragment-build.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/nuxt-fragment-context.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/nuxt-fragment-render-error.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 2,
@@ -899,7 +913,7 @@
       "path": "tests/unit/adapters/zero-config.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 17,
+      "tests": 18,
       "benchmarks": 0
     },
     {

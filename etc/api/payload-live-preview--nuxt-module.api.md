@@ -7,6 +7,13 @@
 import { a } from '../../options-Bq-ZDz1F.js';
 import { P } from '../../options-Bq-ZDz1F.js';
 
+// @public
+export function fragmentComponentPlugins(vue: VuePluginFactory, options: {
+    readonly srcDir: string;
+}): {
+    readonly name: string;
+}[];
+
 // @internal
 export const HANDLER_FILENAME = "payload-live-preview-server-handler.mjs";
 
@@ -20,6 +27,8 @@ namespace livePreviewModule {
         name: string;
         configKey: string;
     };
+    var // (undocumented)
+    getMeta: () => Promise<typeof livePreviewModule.meta>;
 }
 export default livePreviewModule;
 
@@ -68,6 +77,15 @@ export const PLUGIN_FILENAME = "payload-live-preview-nitro-plugin.mjs";
 
 // @internal
 export function pluginSource(options: LivePreviewModuleOptions, rootDir: string): string;
+
+// @public
+export type VuePluginFactory = (options?: {
+    readonly features?: {
+        readonly componentIdGenerator?: (filepath: string, source: string, isProduction: boolean | undefined, getHash: (text: string) => string) => string;
+    };
+}) => {
+    readonly name: string;
+};
 
 // (No @packageDocumentation comment for this package)
 

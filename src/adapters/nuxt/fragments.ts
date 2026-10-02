@@ -40,9 +40,17 @@ export type FragmentEndpointOptions = SharedOptions<VueComponentLike>;
 
 const RENDERER_NAME = 'vue-server-renderer';
 
+/** The one part of a Vue app this binding sets: where Vue reports an error it does not throw. */
+interface VueAppLike {
+  readonly config: { errorHandler?: (error: unknown) => void };
+}
+
 interface VueRuntime {
-  readonly createSSRApp: (component: VueComponentLike, props: Record<string, unknown>) => unknown;
-  readonly renderToString: (app: unknown) => Promise<string>;
+  readonly createSSRApp: (
+    component: VueComponentLike,
+    props: Record<string, unknown>,
+  ) => VueAppLike;
+  readonly renderToString: (app: VueAppLike) => Promise<string>;
 }
 
 const loadVue = lazyPeer(async (): Promise<VueRuntime> => {
@@ -67,10 +75,23 @@ const loadVue = lazyPeer(async (): Promise<VueRuntime> => {
 /**
  * One app per render, not one per process: an SSR app carries the props it was
  * created with, and every revision brings new ones.
+ *
+ * Vue's production build does not throw a component's setup or render error
+ * out of `renderToString`; it hands it to `config.errorHandler`, or logs it,
+ * and renders the component as an empty comment. Only the development build
+ * rethrows. So the first error is kept and thrown after the render: a fragment
+ * that resolved anyway would empty its boundary instead of failing (PHD-17).
  */
 const renderWithVue: FragmentRenderer = async (component, props) => {
   const { createSSRApp, renderToString } = await loadVue();
-  return renderToString(createSSRApp(component, props));
+  const app = createSSRApp(component, props);
+  const failures: unknown[] = [];
+  app.config.errorHandler = (error) => {
+    failures.push(error);
+  };
+  const html = await renderToString(app);
+  if (failures.length > 0) throw failures[0];
+  return html;
 };
 
 /**

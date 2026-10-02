@@ -12,6 +12,8 @@ const vue = vi.hoisted(() => ({
   createSSRApp: vi.fn((component: unknown, props: Record<string, unknown>) => ({
     component,
     props,
+    // Every Vue app carries one; the binding sets its error handler (PHD-17).
+    config: {},
   })),
 }));
 const renderer = vi.hoisted(() => ({

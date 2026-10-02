@@ -10,9 +10,10 @@ import { registerRouteRefresh } from 'payload-live-preview';
 const NAVIGATION_COMMIT_EVENT = 'payload-live-preview:navigation';
 
 export default defineNuxtPlugin((nuxtApp) => {
-  let committedRoute = nuxtApp.$router.currentRoute.value.fullPath;
+  const router = useRouter();
+  let committedRoute = router.currentRoute.value.fullPath;
   const removeLoadingEnd = nuxtApp.hook('page:loading:end', () => {
-    const route = nuxtApp.$router.currentRoute.value.fullPath;
+    const route = router.currentRoute.value.fullPath;
     if (route === committedRoute) return;
     committedRoute = route;
     document.dispatchEvent(new Event(NAVIGATION_COMMIT_EVENT));

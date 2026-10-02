@@ -173,6 +173,13 @@ describe('the Nuxt module', () => {
     expect(templates.map((template) => template.filename)).toEqual([PLUGIN_FILENAME]);
   });
 
+  it('hands Nuxt its config key the way @nuxt/kit reads it, so nuxt.config types `livePreview`', async () => {
+    // `installModule` reads the meta through `getMeta()` only; without it Nuxt
+    // writes no schema entry and `livePreview:` is an unknown key (H18).
+    expect(typeof livePreviewModule.getMeta).toBe('function');
+    await expect(livePreviewModule.getMeta()).resolves.toEqual(livePreviewModule.meta);
+  });
+
   it('names itself the way Nuxt reports modules', () => {
     expect(livePreviewModule.meta).toEqual({
       name: 'payload-live-preview',
