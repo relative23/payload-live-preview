@@ -239,6 +239,74 @@ for text, numbers, dates, images, uploads, relationships and rich text.
 The import is what puts the artifact in your build, so a project that stays on
 the default ships nothing extra.
 
+## The fragment endpoint on another runtime
+
+`createFragmentEndpoint` from `payload-live-preview/nextjs` takes a `Request`
+and returns a `Response`, and it loads no Node module until its default
+renderer runs. With a renderer of your own it runs wherever those two types
+exist. A bare Node 24.19 server, Deno 2.9.7 and Bun 1.4.2 each passed the 19
+native cases that the four framework servers pass: the three phases and the
+total deadline, a client that leaves during a phase or an upload, a body of
+exactly 64 KiB and one byte over it in two-byte text, a chunked body cut at the
+limit, a declared length refused on the headers alone, a gzip body refused as
+malformed, and keep-alive reuse. The 12 cases that apply to HTTP/2 passed on
+Deno with TLS. Deno differs in one place: when a client drops an upload it
+fails the request's body stream and leaves `request.signal` alone. The endpoint
+still answers 400 before it authorizes, within 50 ms.
+
+The endpoint reads the bytes that arrive and does not undo a
+`Content-Encoding`. A gzip body, even one that would inflate to 8 MB, is refused
+as malformed. A host or proxy that inflates request bodies has to apply its own
+limit to the inflated size; none of the hosts and proxies tested did.
+
+A Node server that builds the `Request` itself must not answer before the body
+is read and then keep the connection. The next request on that connection is
+read as the rest of the body and waits. Send `Connection: close`, as the
+SvelteKit and Nuxt bindings do, or drain the body. A bridge that did neither
+held every second 300 kB request from Chromium and Firefox until its timeout.
+
+## The fragment endpoint behind a proxy
+
+The endpoint's limits hold wherever it runs: 64 KiB of body, one deadline, work
+cancelled when the client goes away. A proxy decides when the client hears of
+them. Through nginx 1.27, Caddy 2.11 and Traefik 3.3 in front of the Node
+server, over HTTP/1.1 and HTTP/2, a client that left during a phase cancelled
+the server's work, and the deadline's 504 reached the client. An upload that
+stays half-sent differs by proxy. A browser sends its small body at once and
+does not meet this; a slow or abandoned upload does.
+
+| In front of the endpoint                                                         | An upload that stays half-sent                                                                                                                    |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| nginx with `proxy_request_buffering off`; Caddy or Traefik with an HTTP/2 client | The endpoint answers 504 at its deadline and the client hears it then (0.4 s in the test).                                                        |
+| Caddy or Traefik with an HTTP/1.1 client that keeps its connection alive         | The endpoint answers at 0.4 s. The client hears it when its upload ends (1 s in the test).                                                        |
+| nginx with its default buffering                                                 | Nothing reaches the endpoint until the body is whole, so its body deadline never runs. `client_body_timeout` (60 s by default) bounds the upload. |
+
+A body over the limit is refused before it is read, and the host then closes or
+drains the connection. A client that is still sending can get a reset instead of
+the 413, and a proxy a 502. The page treats that like any failed request: it
+reports `LP0801` and patches the boundary from the same revision. Whether the
+413 arrives is a race between that close and the data still in flight, so its
+share moves with load. Chromium, Firefox and WebKit sent ten requests each of
+90 kB, 300 kB and 2 MB, twice (180 per host), at a load average of 5 to 10 on
+the test machine, and again at 16:
+
+- Deno, Bun and nginx with `proxy_request_buffering off` returned the 413 every
+  time in both sets (180 of 180 each). nginx with `client_max_body_size 256k` did
+  for every size over that limit, which it refuses itself before the endpoint is
+  asked (120 of 120 in each set).
+- Caddy and Traefik lost 4 and 6 of the 180 to a 502 in the first set, and a Node
+  bridge that closes with the body unread lost 20, all of them WebKit at 2 MB,
+  to a network error. nginx with its default buffering lost none in the first
+  set and 39 and 37 of 60 at 90 kB and 300 kB in the second.
+- Asked directly, the Astro and Next.js servers returned the 413 every time (90
+  of 90 each). Chromium got it every time from the SvelteKit and Nuxt servers,
+  whose bindings close the connection; Firefox and WebKit lost some to a network
+  error, WebKit 10 of 10 at 2 MB from SvelteKit.
+
+A request body limit on the proxy that answers before it forwards anything, such
+as nginx's `client_max_body_size` set a little above `limits.bodyBytes`, keeps
+the 413 for the sizes it covers.
+
 ## A static site with the fragment endpoint as a service
 
 A hybrid preview renders `data-payload-fragment` boundaries on the server, and

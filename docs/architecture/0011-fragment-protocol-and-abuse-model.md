@@ -190,6 +190,73 @@ observer is independent of the bridged cancellation signal: seeing disconnect
 alone does not establish that application work stopped. TLS proxies must relay
 their downstream close separately; an upstream-only pass does not prove that.
 
+### 4c. Other runtimes and proxies (2026-10-02)
+
+The Web-API binding loads no framework module, so it is the one a host other
+than the four frameworks can run. It was driven through the native cases of the
+framework servers: the three phases and the total deadline, a client that leaves
+during a phase or an upload, a body of exactly 64 KiB and one byte over it in
+two-byte text, a chunked body cut at the limit, a declared length refused on
+the headers alone, a gzip body, and keep-alive reuse. A bare Node 24.19 server,
+Deno 2.9.7 and Bun 1.4.2 pass all 19, and Deno with TLS the 12 that apply to
+HTTP/2. Deno fails the body stream of a dropped upload and leaves
+`request.signal` alone; the case holds the endpoint to what it controls, a 400
+before authorization within 50 ms. The four framework servers pass the same 19
+(18 behind the fixture's TLS proxy, whose Node pipe sends no request head before
+its first body byte, so a headers-only request never reaches them).
+
+The bytes counted are the bytes sent. The endpoint does not undo a
+`Content-Encoding`: a gzip body of a valid request, and one of 8 MB of blanks
+that is 8 KB on the wire, are both refused as malformed, and no host or proxy
+tested inflated them. A host that inflates request bodies owns the limit on the
+inflated size, as the decision above already says.
+
+Behind nginx 1.27.5, Caddy 2.11.4 and Traefik 3.3.7 in front of that Node server,
+to a client over HTTP/1.1 and HTTP/2, a client that leaves during a phase
+cancels the server's work and the deadline's 504 reaches the client. They differ
+for an upload that stays half-sent, which a browser does not produce:
+
+- nginx with `proxy_request_buffering off` passes the endpoint's answer at its
+  deadline through, as do Caddy and Traefik to an HTTP/2 client.
+- Caddy and Traefik forward the request at once but, to an HTTP/1.1 client that
+  keeps its connection alive, deliver the answer only after the upload ends. The
+  endpoint answered at 0.4 s, the client heard at 1 s when it finished sending.
+  A request that asks to close does not wait for the upload, which is why a
+  test client must keep its connection alive to see this.
+- nginx with its default buffering forwards nothing of a half-sent body, so the
+  endpoint's body deadline never runs and `client_body_timeout` is the bound.
+
+A request over the limit is refused before the body is read, and the host then
+closes or drains the connection. This ADR keeps that: draining a body whose
+refusal is already decided would move unbounded work into the bridge, and the
+`overLimitBody: 'drain'` of the SvelteKit binding is bounded by the body
+deadline. The cost is a race. A client or proxy still sending when the server
+closes can get a reset instead of the 413. Measured from Chromium, Firefox and
+WebKit (ten requests per size and engine at 90 kB, 300 kB and 2 MB, twice, so
+180 per host) the share moved with machine load. At a load average of 5 to 10:
+none lost through Deno, Bun, nginx with either buffering setting and nginx with
+`client_max_body_size 256k`; 4 of 180 through Caddy and 6 through Traefik; 20
+through a Node bridge that closes with the body unread, all in WebKit at 2 MB.
+At 16, nginx's default buffering lost 39 and 37 of 60 at 90 kB and 300 kB, while
+Deno, Bun and nginx with `proxy_request_buffering off` still lost none of 180,
+nor nginx with the limit any of the 120 above it, which it refuses before the
+endpoint is asked. Of the framework servers asked directly, Astro and Next.js
+lost none; SvelteKit and Nuxt, which answer `Connection: close`, lost some in
+Firefox and WebKit and none in Chromium. The runtime treats a 502 and a
+network error like a 413: `LP0801`, then a patch from the same revision. The
+deployment guide names the proxy limit as the remedy.
+
+Two findings of the same measurement are not the package's. A Node bridge that
+answers before the body is read and keeps the connection stalls the next
+request on it for a browser that pools connections (every second 300 kB request
+in Chromium and Firefox); the test host now sends `Connection: close`, as the
+bindings do. Traefik 3.3.7's `buffering` middleware answers a response with an
+empty body as 500, which the endpoint never sends but its probe route does.
+
+The cases live in `tests/e2e/lifetime*`, driven by
+`playwright.fragment-hosts.config.ts` (hosts and proxies) and
+`playwright.fragment-lifetime.config.ts` (framework servers).
+
 ### 5. What stays out
 
 - No unsigned query-only fragment endpoint: authorization is mandatory.

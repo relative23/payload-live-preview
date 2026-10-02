@@ -435,10 +435,14 @@ in whatever it does hand a handler — that is all either binding does.
   and the H3 event as the Nuxt handler's second argument. These bindings link
   socket closure to the request lifetime, including after upload. An unread
   body is paused without cancelling the host's response socket; the refusal
-  uses `Connection: close` so it can flush without draining an unbounded tail.
-  Fully consumed requests retain keep-alive. HTTP/2 and non-Node hosts use
-  their Web request's signal instead; a proxy must propagate disconnects to
-  its upstream connection for the server to observe them.
+  uses `Connection: close` so it can flush without draining an unbounded tail,
+  and a client still sending can see a network error instead of the 413 (WebKit
+  and Firefox, measured in
+  [Deployment](deployment.md#the-fragment-endpoint-behind-a-proxy)). Fully
+  consumed requests retain keep-alive. HTTP/2 and non-Node hosts use their Web
+  request's signal instead (Deno fails the body stream of a dropped upload and
+  leaves the signal alone); a proxy must propagate disconnects to its upstream
+  connection for the server to observe them, and nginx, Caddy and Traefik do.
 - **Cooperative cancellation**: pass `input.signal` from props or a custom
   renderer into fetches and other work that supports `AbortSignal`. The page
   request passed to authorization follows the same lifetime. No following
@@ -467,6 +471,11 @@ in whatever it does hand a handler — that is all either binding does.
 - Rate limiting at the edge or proxy for the endpoint path: each request
   renders a component. The endpoint bounds work per request (limits above)
   but does not count requests per client.
+- A proxy that lets those limits reach the client. Give it a request body limit
+  a little above `limits.bodyBytes`, and stream request bodies if the body
+  deadline should run for a slow upload. What each proxy was measured to do,
+  and the endpoint on Deno and Bun:
+  [Deployment](deployment.md#the-fragment-endpoint-behind-a-proxy).
 - Same-origin only. A request whose `Sec-Fetch-Site` is anything but
   `same-origin` (or `none`) is refused before `Origin` is read, and the
   runtime's fragment client only posts to a path on the page's own origin.

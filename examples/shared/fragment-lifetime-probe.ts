@@ -37,7 +37,8 @@ export function createLifetimeProbe<Context = never>(createEndpoint: Factory<Con
       });
     }
     if (request.method !== 'POST') return new Response(null, { status: 405 });
-    if (observations.size >= 64 || observations.has(id)) {
+    // Room for three engines' page-side runs in one minute (each keeps an entry that long).
+    if (observations.size >= 256 || observations.has(id)) {
       return new Response(null, { status: 429 });
     }
     const rawMode = request.headers.get('x-plp-probe-mode') ?? 'success';

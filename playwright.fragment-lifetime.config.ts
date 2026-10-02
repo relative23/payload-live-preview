@@ -26,6 +26,16 @@ if (!['direct', 'tls'].includes(transport)) {
   throw new Error('PLP_LIFETIME_TRANSPORT must be direct or tls.');
 }
 const tls = transport === 'tls';
+// The page-side run (`tests/e2e/lifetime-browser`) in the named engines, instead of
+// the HTTP cases: each framework's server is asked from a page's own fetch.
+const engines = (process.env['PLP_LIFETIME_BROWSERS'] ?? '')
+  .split(',')
+  .filter((engine) => engine !== '');
+if (tls && engines.length > 0) {
+  throw new Error(
+    'The page-side run asks the framework server directly; the TLS fixture proxy is no deployment.',
+  );
+}
 if (tls && name !== 'nextjs' && name !== 'sveltekit') {
   throw new Error('The TLS fixture proxy exists only for nextjs and sveltekit.');
 }
@@ -41,8 +51,14 @@ if (tls) {
 // Inherited by workers and the server, never serialized into a report or URL.
 process.env['PLP_LIFETIME_PROBE_KEY'] ??= randomBytes(32).toString('hex');
 
+// A page of the fixture that is served on the same origin as the endpoint.
+process.env['PLP_PAGE_PATH'] = name === 'astro' ? '/bench' : '/admin.html';
+
 export default defineConfig({
-  testDir: './tests/e2e/lifetime',
+  testDir: engines.length === 0 ? './tests/e2e/lifetime' : './tests/e2e/lifetime-browser',
+  // The fixture proxy pipes with Node's http.request, which sends no request head
+  // before the first body byte, so a headers-only request never reaches the server.
+  ...(tls ? { testIgnore: /fragment-early-refusal/u } : {}),
   outputDir: `${outputRoot}/${name}/${transport}/results`,
   fullyParallel: false,
   workers: 1,
@@ -58,7 +74,13 @@ export default defineConfig({
   // The self-signed certificate is generated for this fixture. Raw socket
   // probes additionally trust that exact certificate, not arbitrary TLS peers.
   use: { baseURL: origin, trace: 'off', ignoreHTTPSErrors: tls },
-  projects: [{ name: `${name}-${transport}` }],
+  projects:
+    engines.length === 0
+      ? [{ name: `${name}-${transport}` }]
+      : engines.map((engine) => ({
+          name: `${engine}-${name}-${transport}`,
+          use: { browserName: engine as 'chromium' | 'firefox' | 'webkit' },
+        })),
   webServer: {
     name: `${name}-${transport}-production`,
     cwd: tls ? '.' : `examples/${fixture.directory}`,

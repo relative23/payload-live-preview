@@ -13,6 +13,10 @@ const PHASES = ['authorization', 'props', 'render'] as const;
 const CREDENTIAL = process.env['PLP_LIFETIME_PROBE_KEY'];
 if (!CREDENTIAL) throw new Error('Use playwright.fragment-lifetime.config.ts.');
 const AUTH_HEADERS = { 'x-plp-probe-key': CREDENTIAL };
+// Deno fails the body stream when a client drops mid-upload and leaves
+// `request.signal` alone; every other host aborts the signal. The endpoint
+// answers 400 before authorization either way, which is what is held to account.
+const SIGNALS_ON_UPLOAD_DISCONNECT = process.env['PLP_LIFETIME_UPLOAD_ABORT'] !== 'body-error';
 
 function certificate(origin: string): { ca: Buffer } | Record<string, never> {
   if (!origin.startsWith('https:')) return {};
@@ -273,7 +277,11 @@ test('disconnect during an incomplete upload stops before authorization', async 
     await operation.result;
     await expect
       .poll(() => observe(request, id), { timeout: 700, intervals: [20, 40, 80] })
-      .toMatchObject({ status: 400, transportAborted: true, events: ['endpoint:end'] });
+      .toMatchObject({
+        status: 400,
+        ...(SIGNALS_ON_UPLOAD_DISCONNECT ? { transportAborted: true } : {}),
+        events: ['endpoint:end'],
+      });
     expectPrivateResponse(await post(baseURL!, randomUUID(), 'success').result, 200);
   } finally {
     operation.pending.destroy();

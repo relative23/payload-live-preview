@@ -48,6 +48,9 @@
     "tests/reproductions/preview-continuation-payload-acl.ts",
     "tests/reproductions/preview-unsaved-payload.ts",
     "tests/reproductions/preview-related-drafts.ts",
+    // The host fixtures run under Node, Deno and Bun from esbuild bundles that
+    // `build.ts` writes; no module imports the entries.
+    "tests/fixtures/web-hosts/{build,node,deno,bun}.ts",
     "*.config.ts",
   ],
   // Analyze the complete maintained TS/JS surface. Build output, fixtures and

@@ -21,6 +21,7 @@ export const TEST_FILE_PATTERN = /\.(?:test|spec|bench)\.[cm]?[jt]sx?$/u;
 export const RUNNER_CONFIGS = [
   'playwright.bench.config.ts',
   'playwright.config.ts',
+  'playwright.fragment-hosts.config.ts',
   'playwright.fragment-lifetime.config.ts',
   'playwright.real-payload.config.ts',
   'playwright.soak.config.ts',

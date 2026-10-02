@@ -105,7 +105,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0710:
     "Correct for `inject: 'always'`. Under `'preview-only'` it means every request counts as intent: check `previewSignals` and `previewQueryParams`.",
   LP0801:
-    "Network, timeout, or any status but 2xx, 401 and 403 from the fragment endpoint (its own 400, 404, 405, 413, 415 and 500 among them); the boundary was patched from the same revision. Check the endpoint's logs and its limits: a 413 means the document is larger than `limits.bodyBytes` (64 KiB by default, about 4 500 words of rich text).",
+    "Network, timeout, or any status but 2xx, 401 and 403 from the fragment endpoint (its own 400, 404, 405, 413, 415 and 500 among them); the boundary was patched from the same revision. Check the endpoint's logs and its limits: a 413 means the document is larger than `limits.bodyBytes` (64 KiB by default, about 4 500 words of rich text). Behind some proxies, and from Firefox and WebKit on some hosts, that 413 arrives as a 502 or a network error: [deployment.md](deployment.md#the-fragment-endpoint-behind-a-proxy).",
   LP0802:
     'Wrong content type, shape, size or boundary; patched instead. Make sure the request reaches the fragment endpoint itself, not a proxy or an error page.',
   LP0803:

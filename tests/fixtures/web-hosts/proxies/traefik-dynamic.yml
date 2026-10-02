@@ -1,0 +1,17 @@
+# Traefik with its defaults: TLS and HTTP/2 at the edge, the body streamed on.
+tls:
+  certificates:
+    - certFile: /certs/cert.pem
+      keyFile: /certs/key.pem
+http:
+  routers:
+    upstream:
+      rule: PathPrefix(`/`)
+      entryPoints: [edge]
+      service: upstream
+      tls: {}
+  services:
+    upstream:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:4393

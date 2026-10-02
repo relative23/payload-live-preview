@@ -1,0 +1,10 @@
+# Caddy with its defaults: TLS and HTTP/2 at the edge, the body streamed on.
+{
+	auto_https off
+	admin off
+}
+
+:4396 {
+	tls /certs/cert.pem /certs/key.pem
+	reverse_proxy 127.0.0.1:4393
+}
