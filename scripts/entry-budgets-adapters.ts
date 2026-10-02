@@ -130,7 +130,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // frame-ancestors builder it shares with the middleware.
   // 2026-09-29 (H12, authorization by module reference, ADR 0024): measured +1448/+485/+428 B; same 11/7/6 B cushions.
   // 2026-10-02 (H18 and PHD-17, a Nuxt fragment is a standalone Vue app, ADR 0030): measured +421/+200/+178 B; same 11/7/6 B cushions.
-  'adapters/nuxt/module.js': { raw: 2_529, gzip: 1_111, brotli: 955 },
+  // 2026-10-02 (real admin, `nuxt dev` could not load a reference without an extension; the module names the file it finds): measured +570/+235/+223 B; same 11/7/6 B cushions.
+  'adapters/nuxt/module.js': { raw: 3_099, gzip: 1_346, brotli: 1_178 },
   // 2026-09-12 (C1): sveltekit brotli 42 479 → 42 620, the only metric the drawer-edit fix crossed (measured 42 500 + the ~120 B cushion).
   // 2026-09-14 (2.0.1): brotli 42 955 → 43 092. Its cushion was 4 B (measured 42 951), which
   // brotli's run-to-run swing crosses with no code change; the fix's build measured 42 972 and

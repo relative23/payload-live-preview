@@ -48,6 +48,11 @@ export const onRequest = createLivePreviewMiddleware({
 });
 ```
 
+Payload's `autoLogin` authenticates requests on the server and sets no
+`payload-token` cookie, so a site that checks the session sees
+`'missing-credential'` and serves the public page. Sign in through the login
+form, which is what the real-admin suites do.
+
 Options: `serverURL` (required), `usersSlug` (`users`), `cookieName`
 (`payload-token`), `timeoutMs` (`3000`, floor `250`), `maxCookieLength`
 (`4096`). A missing, repeated or malformed cookie is `'missing-credential'`; a

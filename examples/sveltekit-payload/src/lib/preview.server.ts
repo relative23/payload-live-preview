@@ -36,3 +36,6 @@ export const PREVIEW_TOKEN_SECRET =
   configuredSecret && configuredSecret.length > 0
     ? configuredSecret
     : 'sveltekit-example-secret-at-least-32-bytes-long';
+
+/** Set when a real Payload admin frames this site: its session authorizes the preview. */
+export const PAYLOAD_SERVER_URL = env.PLP_PAYLOAD_SERVER_URL?.trim() || undefined;

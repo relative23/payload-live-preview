@@ -8,12 +8,15 @@
  * through `load` and spread into the template unchanged.
  */
 import { createPreviewBindings } from 'payload-live-preview';
+import { PAYLOAD_SERVER_URL } from '$lib/preview.server';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals }) => {
   const preview = createPreviewBindings({
     authorization: locals.livePreviewAuthorization ?? null,
-    owner: 'collection:pages',
+    // Owner scoping is on (hooks.server.ts): an update patches only the document
+    // it names. The real admin edits the homepage global, the mock admin a page.
+    owner: PAYLOAD_SERVER_URL === undefined ? 'collection:pages' : 'global:homepage',
   });
   return {
     authorized: preview.authorized,

@@ -23,6 +23,13 @@ export const livePreviewOptions = {
   delivery: 'asset',
   // Staged on the 1.x profile: this fixture exercises the runtime mechanics.
   // The v2 defaults with a real authorized context are shown by the SvelteKit
-  // fixture (defaults: 'v2' + authorizePreview) and the real-payload suites.
-  defaults: 'v1',
+  // fixture (defaults: 'v2' + authorizePreview) and the real-payload suites,
+  // which also run this one: with PLP_PAYLOAD_SERVER_URL set it is strict and
+  // the editor's session decides.
+  ...(process.env['PLP_PAYLOAD_SERVER_URL']
+    ? ({
+        defaults: 'v2',
+        authorizePreviewModule: './server/utils/live-preview-auth',
+      } as const)
+    : ({ defaults: 'v1' } as const)),
 } as const;

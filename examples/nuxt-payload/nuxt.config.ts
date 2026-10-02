@@ -24,7 +24,10 @@ export default defineNuxtConfig({
   },
   compatibilityDate: '2026-08-01',
   // Read by the page and, through the fragment route's props, by fragments.
-  runtimeConfig: { public: { siteName: 'Nuxt fixture' } },
+  // `payloadUrl` is the admin a real-Payload run names (pages/composable.vue).
+  runtimeConfig: {
+    public: { siteName: 'Nuxt fixture', payloadUrl: process.env['PLP_PAYLOAD_SERVER_URL'] ?? '' },
+  },
   devtools: { enabled: false },
   // The mock admin is a static file so it never carries preview intent and
   // therefore never receives the runtime — the same split the other examples

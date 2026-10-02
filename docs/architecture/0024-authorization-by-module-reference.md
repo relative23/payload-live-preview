@@ -96,3 +96,24 @@ heading that says it is not authorization.
   request does not, for Astro's integration and Nuxt's module; clean projects
   built from the guides with an authenticated `pll doctor` probe; the full
   chain.
+
+## Addendum (2026-10-02): the reference names the file
+
+The first real-admin run of the Nuxt example found the documented reference
+failing in `nuxt dev`: the generated plugin imported
+`<project>/server/utils/live-preview-auth` without an extension, `nuxt dev`
+loads that file as it stands, and nothing there looks for a TypeScript file by
+its bare path. It answered 500 ("Cannot find module"). The production build
+bundled the same reference, with `./`, `~/` and `~~/` forms alike, and the unit
+tests only read the source the module generates, so none of them loaded it in
+development. An explicit `.ts`
+worked in development.
+
+The module now writes the file a `./` reference or one of Nuxt's aliases points
+at, with the extension it has (`.ts`, `.mts`, `.js`, `.mjs`, `.cts`, `.cjs`, in
+that order, then a directory's `index`), and leaves the reference as written
+when it reads no such file, for the bundler to report. An alias is read from
+`nuxt.options.alias`; a package specifier is untouched. `adapters/nuxt/module.js`
+grows by +570 B raw, +235 B gzip and +223 B brotli. The Nuxt example runs this
+setup when `PLP_PAYLOAD_SERVER_URL` names the admin, and the real-admin suite
+exercises it in `nuxt dev` with the editor's real session.

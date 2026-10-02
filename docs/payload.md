@@ -97,8 +97,16 @@ collection document in its initial create state. This plugin uses one function
 to route the mapped entities, so a brand-new collection document has no iframe
 until its first save. When the create screen itself must have a preview, omit
 that collection from the plugin mapping and configure its entity-level
-`admin.livePreview.url` as a string. The real-admin fixture proves unsaved edits
-on an existing global; it does not claim this create-state case.
+`admin.livePreview.url` as a string. The real-admin fixture runs the Astro (static and hybrid), Next.js, SvelteKit,
+Nuxt and plain HTML examples, a React hook page and a Vue composable page
+against a real Payload 3.89 admin and proves unsaved edits on an existing
+global in Chromium, Firefox and WebKit. The Next.js, SvelteKit and Nuxt previews
+authorize the editor's real session (`payload-session`); the hook and the
+composable populate a relationship through a credentialed request to the
+admin's REST API from the preview's own origin. It does not claim this
+create-state case. Payload posts the
+document when its form state changes, not when the frame loads, so a bare reload
+of the preview frame shows the saved document until the next change in the form.
 
 The config plugin's path resolvers return strings. For a document that should
 have no iframe, use the lower-level `buildLivePreviewUrl()` callback directly:

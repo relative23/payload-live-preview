@@ -13,8 +13,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, 'dist');
 const ORIGIN = 'http://localhost:4180';
 
+// A real Payload admin (tests/real-payload) frames these pages from its own origin.
+const admin = process.env.PAYLOAD_ADMIN_ORIGIN?.trim();
+
 const options = {
-  allowedOrigins: [ORIGIN, 'http://127.0.0.1:4180'],
+  allowedOrigins: [ORIGIN, 'http://127.0.0.1:4180', ...(admin ? [admin] : [])],
   debug: true,
   debounceMs: 25,
   revealEditedField: true,

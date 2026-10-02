@@ -24,7 +24,12 @@ import {
   type LivePreviewSvelteKitOptions,
 } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest } from 'payload-live-preview';
-import { PREVIEW_ADMIN_ORIGIN, PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview.server';
+import {
+  PAYLOAD_SERVER_URL,
+  PREVIEW_ADMIN_ORIGIN,
+  PREVIEW_AUDIENCE,
+  PREVIEW_TOKEN_SECRET,
+} from '$lib/preview.server';
 
 const options = {
   allowedOrigins: [PREVIEW_ADMIN_ORIGIN],
@@ -44,12 +49,15 @@ const options = {
   // query-only intent, no referrer trust, updates only from the window that
   // framed or opened the page, unchanged bindings skipped.
   defaults: 'v2',
+  // Against a real Payload admin (tests/real-payload) the editor's own session
+  // reaches this site, so the documented `payload-session` strategy applies.
   authorizePreview: (request: Request) =>
-    authorizePreviewRequest(request, {
-      type: 'signed-token',
-      secret: PREVIEW_TOKEN_SECRET,
-      audience: PREVIEW_AUDIENCE,
-    }),
+    authorizePreviewRequest(
+      request,
+      PAYLOAD_SERVER_URL === undefined
+        ? { type: 'signed-token', secret: PREVIEW_TOKEN_SECRET, audience: PREVIEW_AUDIENCE }
+        : { type: 'payload-session', serverURL: PAYLOAD_SERVER_URL },
+    ),
 } satisfies LivePreviewSvelteKitOptions;
 
 export const assetOptions = { ...options, delivery: 'asset' } as const;

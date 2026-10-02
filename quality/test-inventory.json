@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 435,
-    "suites": 841,
-    "tests": 3799,
+    "files": 439,
+    "suites": 845,
+    "tests": 3817,
     "benchmarks": 12
   },
   "groups": {
@@ -51,9 +51,9 @@
       "benchmarks": 0
     },
     "real-payload": {
-      "files": 3,
-      "suites": 3,
-      "tests": 9,
+      "files": 6,
+      "suites": 6,
+      "tests": 20,
       "benchmarks": 0
     },
     "soak": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 346,
-      "suites": 742,
-      "tests": 3433,
+      "files": 347,
+      "suites": 743,
+      "tests": 3440,
       "benchmarks": 0
     }
   },
@@ -687,6 +687,27 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/real-payload/surface-hook.spec.ts",
+      "group": "real-payload",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/real-payload/surface-session.spec.ts",
+      "group": "real-payload",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/real-payload/surface-smoke.spec.ts",
+      "group": "real-payload",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/soak/live-preview-soak.spec.ts",
       "group": "soak",
       "suites": 0,
@@ -873,6 +894,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/nuxt-module-reference-files.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
       "benchmarks": 0
     },
     {

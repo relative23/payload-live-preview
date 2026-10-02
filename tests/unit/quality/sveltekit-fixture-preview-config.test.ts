@@ -45,6 +45,7 @@ describe('SvelteKit fixture preview configuration', () => {
     expect(existsSync(resolve(FIXTURE, 'src/lib/preview.ts'))).toBe(false);
     expect(configImporters.map(({ path }) => path).sort()).toEqual([
       'hooks.server.ts',
+      'routes/+page.server.ts',
       'routes/hybrid/host/+page.server.ts',
       'routes/payload/fragment/+server.ts',
       'routes/preview-token/+server.ts',

@@ -58,6 +58,7 @@ export interface NuxtLike {
         readonly build: {
             templates: NuxtTemplateLike[];
         };
+        readonly alias?: Readonly<Record<string, string>>;
         livePreview?: LivePreviewModuleOptions;
     };
 }
@@ -76,7 +77,7 @@ export interface NuxtTemplateLike {
 export const PLUGIN_FILENAME = "payload-live-preview-nitro-plugin.mjs";
 
 // @internal
-export function pluginSource(options: LivePreviewModuleOptions, rootDir: string): string;
+export function pluginSource(options: LivePreviewModuleOptions, rootDir: string, alias?: Readonly<Record<string, string>>): string;
 
 // @public
 export type VuePluginFactory = (options?: {
