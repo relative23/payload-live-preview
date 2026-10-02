@@ -214,6 +214,24 @@ describe('sanitizeHtml — srcset validation', () => {
     expect(out).toContain('src="/ok.jpg"');
   });
 
+  it.each(['javascript :', 'jav&#x0A;ascript:', 'foo :', 'a.png 1x, javascript : 2x'])(
+    'drops srcset %j: a candidate that spells a scheme through whitespace (PHD-19)',
+    (value) => {
+      expect(sanitizeHtml(`<img src="/ok.jpg" srcset="${value}">`)).not.toContain('srcset');
+      expect(sanitizeHtml(`<source srcset="${value}">`)).not.toContain('srcset');
+    },
+  );
+
+  it('keeps a candidate whose descriptor follows a space', () => {
+    const out = sanitizeHtml('<img src="/ok.jpg" srcset="a.png 2x, b c.png 480w">');
+    expect(out).toContain('srcset="a.png 2x, b c.png 480w"');
+  });
+
+  it('applies the same reading to poster', () => {
+    expect(sanitizeHtml('<video poster="foo :"></video>')).not.toContain('poster');
+    expect(sanitizeHtml('<video poster="a b.png"></video>')).toContain('poster="a b.png"');
+  });
+
   it('drops srcset when any of several candidates is unsafe', () => {
     const out = sanitizeHtml(
       '<img src="/ok.jpg" srcset="https://a.example/1.jpg 1x, data:text/html,x 2x">',

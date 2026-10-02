@@ -29,8 +29,8 @@
     "src/security/url-validator.ts"
   ],
   "baseline": {
-    "total": 1305,
-    "mutationScoreMinimum": 99.23,
+    "total": 1331,
+    "mutationScoreMinimum": 99.25,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 0,
     "noCoverageMaximum": 0,
@@ -113,7 +113,7 @@
     },
     {
       "file": "src/security/url-validator.ts",
-      "line": 11,
+      "line": 8,
       "column": 23,
       "mutator": "Regex",
       "original": "/^(?:\\.{1,2}\\/|[a-zA-Z0-9_-]+\\/?)/",
@@ -122,7 +122,7 @@
     },
     {
       "file": "src/security/url-validator.ts",
-      "line": 24,
+      "line": 41,
       "column": 7,
       "mutator": "ConditionalExpression",
       "original": "trimmed.length === 0",

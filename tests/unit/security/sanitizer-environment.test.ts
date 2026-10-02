@@ -142,7 +142,8 @@ describe('one injected document for every copy of the sanitizer', () => {
       setSanitizerDocument(surrogate);
       expect(other.hasSanitizerDocument()).toBe(true);
       expect(other.sanitizeHtml('<p>hi <script>x</script></p>')).toBe('<p>hi </p>');
-      expect(calls).toBe(1);
+      // Two parses: the rewritten output is parsed once more to confirm it settled.
+      expect(calls).toBe(2);
       other.setSanitizerDocument(null);
       expect(hasSanitizerDocument()).toBe(false);
     } finally {
@@ -213,10 +214,11 @@ describe('a document named per call', () => {
         slot += 1;
       }),
     );
+    // A rewritten input takes two parses, a canonical one a single parse.
     expect(sanitizeHtml('<p onclick="x()">a</p>', { document: own })).toBe('<p>a</p>');
-    expect([perCall, slot]).toEqual([1, 0]);
+    expect([perCall, slot]).toEqual([2, 0]);
     expect(sanitizeHtml('<p>b</p>')).toBe('<p>b</p>');
-    expect([perCall, slot]).toEqual([1, 1]);
+    expect([perCall, slot]).toEqual([2, 1]);
   });
 
   it('serves without any slot or global at all', () => {
@@ -254,6 +256,7 @@ describe('a document named per call', () => {
     const [fromA, fromB] = await Promise.all([render(a, 'A'), render(b, 'B')]);
     expect(fromA).toEqual(['<p>A0</p>', '<p>A1</p>', '<p>A2</p>']);
     expect(fromB).toEqual(['<p>B0</p>', '<p>B1</p>', '<p>B2</p>']);
-    expect(counts).toEqual({ a: 3, b: 3 });
+    // Each of the three inputs is rewritten, so each takes two parses in its own document.
+    expect(counts).toEqual({ a: 6, b: 6 });
   });
 });

@@ -74,7 +74,8 @@ pattern, so the comparison stays exact and a new difference still fails.
   when they appear in the HTML namespace, as a precaution against the
   integration-point pivots of mutation XSS. Ours removes the containers that
   change namespace (`svg`, `math`, `template`, the raw-text elements)
-  outright, unwraps an unknown tag, and pins the fixed point per input.
+  outright, unwraps an unknown tag, and reaches the fixed point by
+  construction (see the addendum of 2026-10-02).
 - **Values that could close a comment, a CDATA section or a raw-text
   element** (DOMPurify's `SAFE_FOR_XML` guard), and **any value that does not
   look like an allowed URI on an attribute that is not a URL sink**
@@ -92,6 +93,51 @@ content and strips `contenteditable`, so an item that had either on the
 server is replaced by the morph once re-rendered (ADR 0008 §8). Admitting SVG
 would mean an SVG allow-list of its own; `contenteditable` is one attribute.
 Both are policy questions with a byte cost, not gaps in the fence.
+
+## Addendum 2026-10-02: what the daily exploration found
+
+The Deep Quality workflow runs the aimed fuzz with 10 000 inputs and a new
+seed each day. Between 2026-09-20 and 2026-10-01 eleven of its twelve runs
+went red, each on a different input. None of the eleven leaves script-capable
+markup: the oracle's first question never fired. They fall into three
+families, and each input is now in `REGRESSIONS`.
+
+1. **The fixed point held for the corpus, not for the sanitizer** (3 of 11).
+   Unwrapping an unknown tag such as `summary` can leave an `a` inside an
+   `a`, or a `li` inside a `li`: trees no parser produces. A consumer's
+   `innerHTML` rebuilds them as the parser would, so a second pass changed the
+   output. That gap is where this record puts mutation XSS. `sanitizeHtml` now
+   parses, sanitises and serialises again until a pass changes nothing, so the
+   string it returns is the one the consumer gets. Clean, canonical markup
+   costs one parse, rewritten markup two, and a tree no parser produces three.
+   Measured on 100 000 fuzz inputs under three policies (300 000 calls), none
+   needed more than three parses; the limit is six, and an output that does
+   not settle is returned as an empty string with a development warning.
+2. **A scheme spelled through whitespace** (6 of 11). The URL parser reads
+   `java script:` and `foo :` as relative paths, and a `srcset` candidate
+   `javascript :` as a relative URL followed by a descriptor it cannot read,
+   which the browser drops. DOMPurify strips whitespace and control
+   characters first (its `ATTR_WHITESPACE`) and reads a scheme. `isSafeUrl` now
+   does the same for a value the URL parser cannot take as absolute, and a
+   `srcset` candidate is tested as a whole as well as by its URL. The
+   attributes the fuzz found (`srcset` on `img` and `source`, `poster` on an
+   author-kept tag) are dropped as DOMPurify drops them. The gaps it closes
+   are JavaScript's whitespace and DOMPurify's together, so it is at least as
+   strict as each. The dangerous-scheme pattern it makes redundant is gone; a
+   comparison with the version that still had it, over 400 000 generated
+   strings, found one difference (a byte-order mark before the colon) until
+   the two classes were joined, and none after. A relative URL with a space
+   before a colon (`my file: notes.pdf`) is refused now; none was meant as a
+   URL.
+3. **Foreign-named elements** (2 of 11). The difference is the one classified
+   above, and the oracle's implementation of it was too small: it listed
+   twelve names and read the pairs back from the element's `innerHTML`, where
+   a `plaintext` swallowed its sibling `table`. It now asks DOMPurify which
+   elements it removes with their children and reads the pairs off the parse.
+   The sanitizer did not change.
+
+After the change the twelve seeds of those runs and twelve fresh ones, 10 000
+inputs each, are green.
 
 ## What would change this decision
 

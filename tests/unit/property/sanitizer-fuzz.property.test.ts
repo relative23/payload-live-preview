@@ -219,7 +219,13 @@ describe('the sanitizer, under aimed fuzzing', () => {
         assertNoActiveContent(output, policy, JSON.stringify(input));
         expect(sanitizeHtml(output, options), JSON.stringify(input)).toBe(output);
         if (policy.name !== 'compat') {
-          const missing = missingFromPurify(output, purifyLikeOurs(purify, input), options, input);
+          const missing = missingFromPurify(
+            output,
+            purifyLikeOurs(purify, input),
+            options,
+            input,
+            purify,
+          );
           expect(
             missing,
             `${policy.name} keeps what DOMPurify drops for ${JSON.stringify(input)}`,

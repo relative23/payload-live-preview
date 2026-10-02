@@ -55,9 +55,10 @@ export const HTML_SINKS: ReadonlyMap<string, HtmlSinkJustification> = new Map([
   ['src/field-types/text.ts::trustedHtml(escapeAndLinebreak(text))', 'escaped'],
   // Sanitised first, then parsed inertly to be adopted — safe twice over.
   ['src/core/structural-applier.ts::trustedHtml(safe)', 'sanitised'],
-  // The sanitizer's own parse. Untrusted markup by definition; it is read back
-  // only after the fragment has been walked and stripped.
-  ['src/security/sanitizer.ts::trustedHtml(html)', 'inert-parse'],
+  // The sanitizer's own parse. Untrusted markup by definition on the first pass,
+  // and its own previous output on the passes after (ADR 0016, 2026-10-02); it
+  // is read back only after the fragment has been walked and stripped.
+  ['src/security/sanitizer.ts::trustedHtml(markup)', 'inert-parse'],
   // A fragment the project's server rendered, parsed here and morphed into the
   // boundary. Sanitising it would strip the page's own legitimate markup.
   ['src/core/strategy-runner.ts::trustedHtml(html)', 'trusted-origin'],

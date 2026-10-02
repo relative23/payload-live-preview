@@ -146,7 +146,8 @@ sanitizer:
 - **Allow-listed tags only.** Removes `<script>`, `<style>`, `<iframe>`, `<object>`, `<embed>`, `<link>`, `<meta>`, `<form>` and every form control, `<svg>`, `<math>`, `<template>`, `<noscript>`, frames.
 - **Inline event handlers stripped.** Every `on*` attribute is removed.
 - **`style` attributes stripped** to neutralize the CSS-injection vector.
-- **URL attributes validated.** `href`, `src`, `srcset`, `poster`, `cite` go through `isSafeUrl`.
+- **URL attributes validated.** `href`, `src`, `srcset`, `poster`, `cite` go through `isSafeUrl`; a `srcset` candidate is tested as a whole as well as by its URL.
+- **The output is a fixed point.** The sanitizer parses, sanitises and writes again until a pass changes nothing, so the string it returns is the one a consumer's `innerHTML` rebuilds. Output that does not settle after six parses is returned as an empty string, with a development warning.
 - **External `<a>` hardened.** Auto-applies `rel="noopener noreferrer"` and `target="_blank"`.
 - **HTML comments removed.**
 - **`is` emptied, not removed.** A parsed element's `is` value is immutable
@@ -214,7 +215,7 @@ registered with `registerRouteRefresh()` parses nothing.
 - hash / query fragments
 - plain relative paths
 
-Everything else — `javascript:`, `data:`, `vbscript:`, `file:`, `blob:`, `about:`, custom schemes — is rejected. Comparison is case-insensitive; tabs and newlines are removed and leading whitespace is trimmed first, as the URL parser does. Backslash forms the parser resolves to another origin (`/\evil.com`, `\\evil.com`) count as protocol-relative, so `isExternalHttpUrl()` reports them external and the sanitizer hardens such links with `noopener`.
+Everything else — `javascript:`, `data:`, `vbscript:`, `file:`, `blob:`, `about:`, custom schemes — is rejected. Comparison is case-insensitive; tabs and newlines are removed and leading whitespace is trimmed first, as the URL parser does. A value the URL parser cannot read as absolute is also tested with every space and control character removed, as DOMPurify does: `java script:` and `foo :` spell a scheme outside the list and are rejected, while `my file.png` is not. Backslash forms the parser resolves to another origin (`/\evil.com`, `\\evil.com`) count as protocol-relative, so `isExternalHttpUrl()` reports them external and the sanitizer hardens such links with `noopener`.
 
 ## CSP integration
 

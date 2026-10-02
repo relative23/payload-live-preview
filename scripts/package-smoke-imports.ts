@@ -220,10 +220,13 @@ const DOMLESS_LEXICAL_BODY = [
   '  root.setSanitizerDocument(fallback.value);',
   '  const [firstHtml, secondHtml] = await Promise.all([Promise.resolve().then(() => lexical.lexicalToHtml(content, { document: first.value })), Promise.resolve().then(() => lexical.lexicalToHtml(content, { document: second.value }))]);',
   "  assertSanitised(firstHtml, 'first per-call document'); assertSanitised(secondHtml, 'second per-call document');",
-  "  if (first.calls() !== 1 || second.calls() !== 1 || fallback.calls() !== 0) throw new Error('per-call documents were not isolated: ' + [first.calls(), second.calls(), fallback.calls()].join('/'));",
+  // The sanitizer parses what it rewrote again to confirm it settled (ADR 0016), so the count is
+  // the parses one rendering takes, the same for every document and never zero.
+  '  const parses = first.calls();',
+  "  if (parses < 1 || second.calls() !== parses || fallback.calls() !== 0) throw new Error('per-call documents were not isolated: ' + [first.calls(), second.calls(), fallback.calls()].join('/'));",
   '  const fallbackHtml = lexical.lexicalToHtml(content);',
   "  assertSanitised(fallbackHtml, 'global fallback document');",
-  "  if (fallback.calls() !== 1) throw new Error('global fallback document was called ' + String(fallback.calls()) + ' times');",
+  "  if (fallback.calls() !== parses) throw new Error('global fallback document was called ' + String(fallback.calls()) + ' times, not ' + String(parses));",
   '} finally {',
   '  lexical.setSanitizerDocument(null); first.close(); second.close(); fallback.close();',
   '}',

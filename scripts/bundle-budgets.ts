@@ -499,7 +499,8 @@
 // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-27/-26 B; same 10/5/120 B cushions.
 // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+191/+163 B; same 10/5/120 B cushions.
 // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +360/+112/+114 B; same 10/5/120 B cushions.
-export const INLINE_BUDGET = { raw: 135_416, gzip: 42_560, brotli: 37_344 } as const;
+// 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +616/+259/+262 B; same 10/5/120 B cushions.
+export const INLINE_BUDGET = { raw: 136_032, gzip: 42_819, brotli: 37_606 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

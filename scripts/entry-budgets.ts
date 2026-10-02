@@ -439,7 +439,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+8/+32 B; same 27/12/120 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +438/+157/+166 B; same 27/12/120 B cushions.
   // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +381/+138/+97 B; same 27/12/120 B cushions.
-  'core.cjs': { raw: 157_578, gzip: 49_585, brotli: 42_826 },
+  // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +321/+161/+67 B; same 27/12/120 B cushions.
+  'core.cjs': { raw: 157_899, gzip: 49_746, brotli: 42_893 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 133 971 → 134 005 (+34 B, measured 133 945 → 133 979).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 134 005 → 134 054 (+49 B, measured 133 979 → 134 028); gzip 42 628 → 42 646 (+18 B, measured 42 628 → 42 646); brotli 36 811 → 36 934 (measured 36 814, -3 B left; ~120 B as the other brotli rows).
   // 2026-09-16 (2.0.1 Version PR): gzip 42 646 → 42 658. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 42 646 against a cushion of 0 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -458,7 +459,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+9/+35 B; same 26/12/120 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +438/+160/+82 B; same 26/12/120 B cushions.
   // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +381/+156/+94 B; same 26/12/120 B cushions.
-  'core.js': { raw: 157_038, gzip: 49_526, brotli: 42_704 },
+  // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +325/+114/+102 B; same 26/12/120 B cushions.
+  'core.js': { raw: 157_363, gzip: 49_640, brotli: 42_806 },
   //
   // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
   // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a
@@ -502,7 +504,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +391/+334/+170 B; same 22/13/166 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +864/+324/+172 B; same 22/14/180 B cushions.
   // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +741/+176/-119 B; same 22/15/147 B cushions.
-  'index.cjs': { raw: 334_894, gzip: 104_049, brotli: 65_721 },
+  // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +945/+376/+272 B; same 22/15/261 B cushions.
+  'index.cjs': { raw: 335_839, gzip: 104_425, brotli: 65_993 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 282 113 → 282 177 (+64 B, measured 282 092 → 282 156); gzip 88 558 → 88 583 (+25 B, measured 88 555 → 88 580).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 282 177 → 282 275 (+98 B, measured 282 156 → 282 254); gzip 88 583 → 88 610 (+27 B, measured 88 580 → 88 607).
   // 2026-09-16 (2.0.1 Version PR): gzip 88 610 → 88 619. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 88 607 against a cushion of 3 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -521,7 +524,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +391/+340/+172 B; same 21/12/274 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +864/+324/+236 B; same 21/13/283 B cushions.
   // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +741/+144/-229 B; same 21/13/313 B cushions.
-  'index.js': { raw: 334_286, gzip: 104_058, brotli: 65_725 },
+  // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +946/+374/+229 B; same 21/12/297 B cushions.
+  'index.js': { raw: 335_232, gzip: 104_432, brotli: 65_954 },
   ...PAYLOAD_ENTRY_BUDGETS,
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
   // 2026-09-06 (R8): +~110 B raw for `previewBindingsFromLocals`, the one-line

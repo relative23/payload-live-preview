@@ -160,6 +160,9 @@ const ATTR_BY_TAG: Readonly<Record<string, ReadonlySet<string>>> = {
 
 const URL_ATTRIBUTES: ReadonlySet<string> = new Set(['href', 'src', 'cite', 'poster']);
 
+/** Parses `sanitizeHtml` spends before it gives up on an output that will not settle. */
+const MAX_PASSES = 6;
+
 // Numeric nodeType constants keep an injected SSR document independent of a
 // browser-global `Node` constructor.
 const ELEMENT_NODE = 1;
@@ -311,7 +314,8 @@ export function setSanitizerDocument(doc: SanitizerDocument | null): void {
 }
 
 /**
- * Sanitize `html`; malformed input is recovered by the parser first.
+ * Sanitize `html`; malformed input is recovered by the parser first. The
+ * result is a fixed point: sanitising it again changes nothing.
  *
  * @throws {SanitizerEnvironmentError} when no DOM is available.
  */
@@ -334,11 +338,25 @@ export function sanitizeHtmlWithPolicy(
   if (html === '') return '';
 
   const resolved = resolvePolicy(options, policy);
-  const template = doc.createElement('template');
-  // The sanitizer's own parse is a sink too: under Trusted Types it needs the policy.
-  template.innerHTML = trustedHtml(html);
-  sanitizeFragment(template.content, resolved);
-  return template.innerHTML;
+  // Unwrapping an unknown tag can leave a tree no parser produces (an `a` in an
+  // `a`), and the consumer's `innerHTML` rebuilds it as the parser would. So
+  // what is written is parsed and sanitised again until a pass changes nothing
+  // (ADR 0016, 2026-10-02): the string returned is the one the consumer gets.
+  let markup = html;
+  for (let pass = 0; pass < MAX_PASSES; pass += 1) {
+    const template = doc.createElement('template');
+    // The sanitizer's own parse is a sink too: under Trusted Types it needs the policy.
+    template.innerHTML = trustedHtml(markup);
+    sanitizeFragment(template.content, resolved);
+    const written = template.innerHTML;
+    if (written === markup) return written;
+    markup = written;
+  }
+  warnOnce(
+    'sanitizer-unsettled',
+    `sanitizeHtml: the output did not settle after ${String(MAX_PASSES)} passes, so it returned an empty string (ADR 0016).`,
+  );
+  return '';
 }
 
 // Read the define at each branch rather than through a helper: a bundler
@@ -457,9 +475,10 @@ function isSafeSrcset(value: string): boolean {
   for (const candidate of value.split(',')) {
     const trimmed = candidate.trim();
     if (trimmed.length === 0) continue;
-    // The URL ends at the first whitespace; what follows is the descriptor.
+    // The URL ends at the first whitespace; what follows is the descriptor. The
+    // candidate as a whole must pass too: a scheme can be spelled across that gap.
     const [url = trimmed] = trimmed.split(/\s/, 1);
-    if (!isSafeUrl(url)) return false;
+    if (!isSafeUrl(url) || !isSafeUrl(trimmed)) return false;
   }
   return true;
 }

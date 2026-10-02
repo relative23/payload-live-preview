@@ -42,7 +42,8 @@ describe('lexicalToHtml with a document per call', () => {
     const html = lexicalToHtml(content, { document: doc });
     expect(html).toContain('<p>');
     expect(html).toContain('hello &lt;b&gt;there&lt;/b&gt;');
-    expect(created).toBe(1);
+    // The renderer's markup is rewritten once, and parsed once more to confirm it settled.
+    expect(created).toBe(2);
     expect(warn).not.toHaveBeenCalled();
   });
 

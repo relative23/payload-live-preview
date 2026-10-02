@@ -267,8 +267,9 @@ Held by: the core mutation profile; `tests/unit/security/escape.test.ts`.
   neither clobber a global nor add a binding. Other `data-*` pass only when
   listed in `allowedDataAttributes`. `'compat'` keeps them, as 1.x did.
 - **S5** `href`, `src`, `cite` and `poster` are removed when `isSafeUrl`
-  refuses them; every `srcset` candidate is checked and the attribute goes if
-  one fails.
+  refuses them; every `srcset` candidate is checked, whole as well as by its
+  URL, and the attribute goes if one fails. `isSafeUrl` reads a scheme through
+  whitespace and control characters, as DOMPurify does.
 - **S6** An anchor to another HTTP origin gets `rel="noopener noreferrer"` and,
   if it had none, `target="_blank"`.
 - **S7** The policy is resolved per call: an explicit option, else the
@@ -283,6 +284,12 @@ Held by: the core mutation profile; `tests/unit/security/escape.test.ts`.
   immutable and the serializer writes it back after the attribute is gone, so
   a removed `is` would reach the re-parse and upgrade the element to the
   page's customized built-in of that name. An empty `is` names nothing.
+- **S10** The output is a fixed point. The sanitizer parses, sanitises and
+  writes again until a pass changes nothing, at most six parses; an output that
+  does not settle is returned as an empty string, with a development warning.
+  Unwrapping an unknown tag can leave a tree no parser produces, and the
+  consumer's `innerHTML` rebuilds it, so the string handed back is the one
+  that rebuild gives.
 
 Held by: `html-sink` reviewed as `inert-parse` (gate 2); the nightly and core
 mutation profiles; `tests/unit/security/sanitizer*.test.ts` (allow-lists,
@@ -291,7 +298,9 @@ fixed-point properties in `tests/unit/property/security.property.test.ts`;
 and, since 2.0.6, the XSS corpus (`tests/unit/security/xss-corpus.ts`, run by
 `sanitizer-corpus.test.ts` under every policy against an oracle that reads no
 allow-list, and against DOMPurify as the reference engine) with the aimed
-fuzz in `tests/unit/property/sanitizer-fuzz.property.test.ts` (ADR 0016).
+fuzz in `tests/unit/property/sanitizer-fuzz.property.test.ts`, which the Deep
+Quality workflow also runs daily with 10 000 inputs and a new seed (ADR 0016),
+and, since 2.1, `tests/unit/security/sanitizer-settling.test.ts` for S10.
 
 ### 8. `trusted-types.ts` — the one policy
 

@@ -117,4 +117,5 @@
 // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+38/-23 B; same 13/7/120 B cushions.
 // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -148/-25/-11 B; same 13/7/120 B cushions.
 // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+145/+215 B; same 13/7/120 B cushions.
-export const INLINE_LEAN_BUDGET = { raw: 108_333, gzip: 33_968, brotli: 30_110 } as const;
+// 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +616/+286/+133 B; same 13/7/120 B cushions.
+export const INLINE_LEAN_BUDGET = { raw: 108_949, gzip: 34_254, brotli: 30_243 } as const;

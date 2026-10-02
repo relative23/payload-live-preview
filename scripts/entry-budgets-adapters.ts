@@ -35,7 +35,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-01 (H17, a fragment's components and its request context are the page's, ADR 0029): measured +23/+11/+33 B; same 106/27/167 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+197/+146 B; same 106/27/167 B cushions.
   // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +360/+7/+38 B; same 106/27/167 B cushions.
-  'adapters/astro/index.js': { raw: 198_142, gzip: 61_921, brotli: 52_748 },
+  // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +623/+203/+124 B; same 106/27/167 B cushions.
+  'adapters/astro/index.js': { raw: 198_765, gzip: 62_124, brotli: 52_872 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -53,7 +54,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +358/+326/+285 B; same 16/12/120 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+212/+54 B; same 16/12/120 B cushions.
   // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +360/+0/+66 B; same 16/12/120 B cushions.
-  'adapters/astro/middleware-entry.js': { raw: 174_853, gzip: 54_567, brotli: 46_366 },
+  // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +623/+200/+95 B; same 16/12/120 B cushions.
+  'adapters/astro/middleware-entry.js': { raw: 175_476, gzip: 54_767, brotli: 46_461 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -101,7 +103,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-01 (H17, a fragment's components and its request context are the page's, ADR 0029): measured +12/-3/-130 B; same 20/16/120 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+211/+249 B; same 20/16/120 B cushions.
   // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +360/+16/-44 B; same 20/16/120 B cushions.
-  'adapters/nextjs/index.js': { raw: 192_571, gzip: 60_145, brotli: 51_098 },
+  // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +623/+203/+191 B; same 20/16/120 B cushions.
+  'adapters/nextjs/index.js': { raw: 193_194, gzip: 60_348, brotli: 51_289 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -151,7 +154,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+203/+182 B; same 15/12/120 B cushions.
   // 2026-10-02 (H18 and PHD-17, a Nuxt fragment is a standalone Vue app, ADR 0030): measured +87/+37/-62 B; same 15/12/120 B cushions.
   // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +360/+13/+97 B; same 15/12/120 B cushions.
-  'adapters/nuxt/index.js': { raw: 193_302, gzip: 60_433, brotli: 51_392 },
+  // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +623/+210/+175 B; same 15/12/120 B cushions.
+  'adapters/nuxt/index.js': { raw: 193_925, gzip: 60_643, brotli: 51_567 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -170,5 +174,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-01 (H17, a fragment's components and its request context are the page's, ADR 0029): measured +29/+8/-59 B; same 16/15/120 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +448/+219/+243 B; same 16/15/120 B cushions.
   // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +360/+12/-28 B; same 16/15/120 B cushions.
-  'adapters/sveltekit/index.js': { raw: 192_380, gzip: 60_140, brotli: 51_096 },
+  // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +623/+203/+135 B; same 16/15/120 B cushions.
+  'adapters/sveltekit/index.js': { raw: 193_003, gzip: 60_343, brotli: 51_231 },
 };
