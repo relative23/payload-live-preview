@@ -19,9 +19,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 425,
+    "files": 426,
     "suites": 834,
-    "tests": 3748,
+    "tests": 3753,
     "benchmarks": 12
   },
   "groups": {
@@ -38,9 +38,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 48,
+      "files": 49,
       "suites": 56,
-      "tests": 216,
+      "tests": 221,
       "benchmarks": 0
     },
     "integration": {
@@ -318,7 +318,7 @@
       "path": "tests/e2e/specs/plain-html-tarball.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 3,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -431,6 +431,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/vanilla-custom-renderer.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 1,
       "benchmarks": 0
     },
     {

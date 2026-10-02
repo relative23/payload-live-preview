@@ -27,7 +27,7 @@ const tag = wrapWithScriptTag(script); // `<script>…</script>`; pass { nonce }
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">${tag}</head><body>…</body></html>`;
 ```
 
-The tag goes into `<head>`. The script stays inert outside the admin's preview iframe and costs about 35 KB gzip on every page that carries it. `generateInlineScript()` returns the script body and accepts the runtime options ([options.md](options.md)); `wrapWithScriptTag()` adds the tag and an optional `nonce`.
+The tag goes into `<head>`. The script stays inert outside the admin's preview iframe and costs about 41 KB gzip on every page that carries it, 33 KB with the lean artifact (`runtime: LEAN_RUNTIME`, [options.md](options.md)). `generateInlineScript()` returns the script body and accepts the runtime options ([options.md](options.md)); `wrapWithScriptTag()` adds the tag and an optional `nonce`.
 
 ## Annotate the markup
 
@@ -38,11 +38,26 @@ The tag goes into `<head>`. The script stays inert outside the admin's preview i
 <ul data-payload-field="tags" data-payload-array-template="<li>{{value}}</li>"></ul>
 ```
 
-Render an element even when its field is empty: the runtime patches elements that exist, and an edit to an initially empty field needs somewhere to land. Rich text is detected from the value shape. Every attribute, the field types and the owner marker for pages with several documents: [bindings.md](bindings.md).
+Render an element even when its field is empty: the runtime patches elements that exist, and an edit to an initially empty field needs somewhere to land. Rich text is detected from the value shape, in the lean artifact too. Every attribute, the field types and the owner marker for pages with several documents: [bindings.md](bindings.md).
+
+## Content Security Policy
+
+A static host has no request to derive a nonce from, but the script is fixed once it is built, so its hash can stand in a fixed header. Hash exactly what `generateInlineScript()` returned, the text between the tags, and build it again with every version or option change:
+
+```ts
+import { createHash } from 'node:crypto';
+
+const hash = createHash('sha256').update(script).digest('base64');
+// Content-Security-Policy: script-src 'sha256-${hash}'; frame-ancestors <admin origin>
+```
+
+Under that policy the runtime runs, and under a wrong hash the browser blocks it. A host that can set a nonce per request passes it as `wrapWithScriptTag(script, { nonce })` instead.
 
 ## Authorization
 
-A static file has no request to authorize, so nothing in it can be private: the script and every `data-payload-*` attribute ship to every visitor, and `allowedOrigins` is the only check — it decides which admin origin may post updates into the page. Draft content and gated delivery need a server; `authorizePreviewRequest()` from `payload-live-preview/server` and the framework adapters do that ([authorization.md](authorization.md)). Serve preview pages with a `frame-ancestors` policy that admits the admin origin and without `X-Frame-Options: DENY` ([deployment.md](deployment.md)).
+A static file has no request to authorize, so nothing in it can be private: the script and every `data-payload-*` attribute ship to every visitor, and `allowedOrigins` is the only check — it decides which admin origin may post updates into the page. Draft content and gated delivery need a server; `authorizePreviewRequest()` from `payload-live-preview/server` and the framework adapters do that ([authorization.md](authorization.md)). A static site that needs them adds a small service on the same origin for the preview route and keeps the published pages static; nothing in the static setup starts one for you.
+
+Only an origin in `allowedOrigins` can drive the page: a message from any other parent window is dropped, and the `ready` handshake is addressed to the allowed origins, so a foreign parent receives nothing. One exception belongs to development: a page served from `localhost` or `127.0.0.1` also trusts every local origin, and in development `ready` goes to common local ports as well ([security.md](security.md)). `disableLocalhostMatching: true` turns that off. Serve preview pages with a `frame-ancestors` policy that admits the admin origin and without `X-Frame-Options: DENY` ([deployment.md](deployment.md)).
 
 ## Bundled applications
 

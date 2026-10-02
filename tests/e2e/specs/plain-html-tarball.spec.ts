@@ -38,7 +38,18 @@ interface PackedHtmlFixture {
   readonly origin: string;
   readonly root: string;
   readonly server: Server;
+  /** Another origin that frames the static page and is not allowed to drive it. */
+  readonly foreignOrigin: string;
+  readonly foreignServer: Server;
 }
+
+/** A Lexical document as Payload's rich-text field sends it. */
+const RICH_TEXT = {
+  root: {
+    type: 'root',
+    children: [{ type: 'paragraph', children: [{ type: 'text', text: 'Rich from the admin' }] }],
+  },
+};
 
 let fixture: PackedHtmlFixture | undefined;
 
@@ -85,6 +96,16 @@ function fixtureServer(dist: string): Server {
           headers['content-security-policy'] =
             `default-src 'none'; script-src 'nonce-${NONCE}'; frame-ancestors 'self'`;
         }
+        // A static host has no request to derive a nonce from; it can send the
+        // hash of the script it built, once, as a fixed header.
+        if (pathname === '/hash.html' || pathname === '/hash-wrong.html') {
+          const { fullHash } = JSON.parse(await readFile(resolve(dist, 'build.json'), 'utf8')) as {
+            fullHash: string;
+          };
+          const source = pathname === '/hash.html' ? fullHash : 'A'.repeat(43) + '=';
+          headers['content-security-policy'] =
+            `default-src 'none'; script-src 'sha256-${source}'; frame-ancestors 'self'`;
+        }
         response.writeHead(200, headers).end(body);
       } catch {
         response.writeHead(404).end('not found');
@@ -93,9 +114,28 @@ function fixtureServer(dist: string): Server {
   });
 }
 
+/** A parent on another origin: it frames the page `?target=` names and records what reaches it. */
+function foreignServer(origin: () => string): Server {
+  return createServer((request, response) => {
+    const target = new URL(request.url ?? '/', 'http://localhost').searchParams.get('target');
+    const framed = `${origin()}${target === '/strict.html' ? '/strict.html' : '/full.html'}`;
+    response
+      .writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+      .end(
+        '<!doctype html><html><body>' +
+          '<iframe data-testid="preview-frame" title="Foreign frame"></iframe>' +
+          '<script>window.__received=[];' +
+          'addEventListener("message",(event)=>window.__received.push(event.data));' +
+          `document.querySelector("iframe").src=${JSON.stringify(framed)};</script>` +
+          '</body></html>',
+      );
+  });
+}
+
 async function createFixture(): Promise<PackedHtmlFixture> {
   const root = await mkdtemp(resolve(tmpdir(), 'payload-live-preview-html-tarball-'));
   let server: Server | undefined;
+  let foreign: Server | undefined;
   try {
     const pack = run(
       'npm',
@@ -142,6 +182,7 @@ async function createFixture(): Promise<PackedHtmlFixture> {
     await writeFile(
       builder,
       `
+      import { createHash } from 'node:crypto';
       import { mkdir, writeFile } from 'node:fs/promises';
       import { resolve } from 'node:path';
       import { generateInlineScript, wrapWithScriptTag } from 'payload-live-preview';
@@ -153,17 +194,22 @@ async function createFixture(): Promise<PackedHtmlFixture> {
       const options = { allowedOrigins: [origin], debug: true, debounceMs: 0 };
       const full = generateInlineScript(options);
       const lean = generateInlineScript({ ...options, runtime: LEAN_RUNTIME });
+      // A page served from localhost counts as development and trusts any
+      // localhost origin (docs/security.md); this one opts out, as a page on a
+      // production host is anyway.
+      const strict = generateInlineScript({ ...options, disableLocalhostMatching: true });
       const body =
         '<p data-payload-field="subtitle" data-testid="subtitle"></p>' +
         '<ul data-payload-field="tags" data-payload-type="array" ' +
-        'data-payload-array-template="<li>{{value}}</li>" data-testid="tags"><li>baseline</li></ul>';
+        'data-payload-array-template="<li>{{value}}</li>" data-testid="tags"><li>baseline</li></ul>' +
+        '<div data-payload-field="content" data-testid="content"></div>';
       const page = (runtime, runtimeNonce, blockedProbe = '') =>
         '<!doctype html><html><head><meta charset="utf-8">' +
         wrapWithScriptTag(runtime, runtimeNonce === undefined ? {} : { nonce: runtimeNonce }) +
         blockedProbe + '</head><body>' + body + '</body></html>';
       const admin = '<!doctype html><html><body>' +
         '<iframe data-testid="preview-frame" title="Live preview"></iframe>' +
-        '<script>const pages=["/full.html","/lean.html","/nonce.html"];' +
+        '<script>const pages=["/full.html","/lean.html","/nonce.html","/hash.html","/hash-wrong.html","/strict.html"];' +
         'const requested=new URLSearchParams(location.search).get("target");' +
         'document.querySelector("iframe").src=pages.includes(requested)?requested:pages[0];</script>' +
         '</body></html>';
@@ -177,9 +223,17 @@ async function createFixture(): Promise<PackedHtmlFixture> {
           resolve(dist, 'nonce.html'),
           page(full, nonce, '<script>globalThis.__h20UnnoncedScriptRan=true</script>'),
         ),
+        // The same page twice: the server sends the right hash for one, a wrong one for the other.
+        writeFile(resolve(dist, 'hash.html'), page(full)),
+        writeFile(resolve(dist, 'hash-wrong.html'), page(full)),
+        writeFile(resolve(dist, 'strict.html'), page(strict)),
         writeFile(
           resolve(dist, 'build.json'),
-          JSON.stringify({ fullBytes: Buffer.byteLength(full), leanBytes: Buffer.byteLength(lean) }),
+          JSON.stringify({
+            fullBytes: Buffer.byteLength(full),
+            leanBytes: Buffer.byteLength(lean),
+            fullHash: createHash('sha256').update(full).digest('base64'),
+          }),
         ),
       ]);
       `,
@@ -191,9 +245,12 @@ async function createFixture(): Promise<PackedHtmlFixture> {
     });
     if (build.error !== undefined) throw build.error;
     if (build.status !== 0) throw commandFailure('packed plain-HTML build failed', build);
-    return { archive, origin, root, server };
+    foreign = foreignServer(() => origin);
+    const foreignOrigin = `http://127.0.0.1:${String(await listen(foreign))}`;
+    return { archive, origin, root, server, foreignOrigin, foreignServer: foreign };
   } catch (error) {
     if (server?.listening === true) await close(server);
+    if (foreign?.listening === true) await close(foreign);
     await rm(root, { recursive: true, force: true });
     throw error;
   }
@@ -216,9 +273,10 @@ test.describe('plain HTML from the exact package archive', () => {
 
   test.afterAll(async () => {
     if (fixture === undefined) return;
-    const { root, server } = fixture;
+    const { root, server, foreignServer: foreign } = fixture;
     fixture = undefined;
     await close(server);
+    await close(foreign);
     await rm(root, { recursive: true, force: true });
   });
 
@@ -274,5 +332,85 @@ test.describe('plain HTML from the exact package archive', () => {
     await post(page, { subtitle: 'nonce runtime executed', tags: ['still', 'full'] });
     await expect(frame.getByTestId('subtitle')).toHaveText('nonce runtime executed');
     await expect(frame.getByTestId('tags').locator('li')).toHaveCount(2);
+  });
+  test('runs under a script hash, as a static host can send it, and not under a wrong one', async ({
+    page,
+  }) => {
+    if (fixture === undefined) throw new Error('packed fixture is unavailable');
+    const frame = await open(page, '/hash.html');
+    await post(page, { subtitle: 'hash runtime executed' });
+    await expect(frame.getByTestId('subtitle')).toHaveText('hash runtime executed');
+
+    await page.goto(
+      `${fixture.origin}/admin.html?target=${encodeURIComponent('/hash-wrong.html')}`,
+    );
+    const blocked = await waitForPreviewFrame(page, '/hash-wrong.html');
+    await blocked.waitForLoadState('load');
+    expect(await blocked.evaluate(() => Reflect.has(globalThis, '__livePreview'))).toBe(false);
+  });
+
+  test('renders Lexical rich text in the full and the lean profile', async ({ page }) => {
+    const full = await open(page, '/full.html');
+    await post(page, { content: RICH_TEXT });
+    await expect(full.getByTestId('content').locator('p')).toHaveText('Rich from the admin');
+
+    const lean = await open(page, '/lean.html');
+    await post(page, { content: RICH_TEXT });
+    await expect(lean.getByTestId('content').locator('p')).toHaveText('Rich from the admin');
+  });
+
+  test('on a page served from localhost, trusts a localhost parent, as development', async ({
+    page,
+  }) => {
+    if (fixture === undefined) throw new Error('packed fixture is unavailable');
+    await page.goto(`${fixture.foreignOrigin}/?target=/full.html`);
+    const frame = await waitForPreviewFrame(page, '/full.html');
+    await waitForStarted(frame);
+    await page.evaluate(() => {
+      document
+        .querySelector('iframe')
+        ?.contentWindow?.postMessage(
+          { type: 'payload-live-preview', data: { subtitle: 'from another localhost port' } },
+          '*',
+        );
+    });
+    await expect(frame.getByTestId('subtitle')).toHaveText('from another localhost port');
+  });
+
+  test('with localhost matching off, ignores a parent on another origin, which receives no ready', async ({
+    page,
+  }) => {
+    if (fixture === undefined) throw new Error('packed fixture is unavailable');
+    const logged: string[] = [];
+    page.on('console', (message) => logged.push(message.text()));
+    await page.goto(`${fixture.foreignOrigin}/?target=/strict.html`);
+    const frame = await waitForPreviewFrame(page, '/strict.html');
+    await waitForStarted(frame);
+
+    await page.evaluate(() => {
+      document
+        .querySelector('iframe')
+        ?.contentWindow?.postMessage(
+          { type: 'payload-live-preview', data: { subtitle: 'from a foreign parent' } },
+          '*',
+        );
+    });
+    // The runtime says it refused the message; only then is "unchanged" a result.
+    await expect
+      .poll(() => logged.join('\n'))
+      .toContain(`rejected: origin ${fixture.foreignOrigin}`);
+    await expect(frame.getByTestId('subtitle')).toHaveText('');
+    expect(
+      await page.evaluate(() =>
+        (window as Window & { __received?: unknown[] }).__received?.filter(
+          (data) => typeof data === 'object' && data !== null && 'ready' in data,
+        ),
+      ),
+    ).toEqual([]);
+
+    // The same page framed by its own admin is driven as usual.
+    const own = await open(page, '/strict.html');
+    await post(page, { subtitle: 'from the admin' });
+    await expect(own.getByTestId('subtitle')).toHaveText('from the admin');
   });
 });
