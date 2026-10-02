@@ -243,8 +243,9 @@ in whatever it does hand a handler — that is all either binding does.
   first render and forgotten again if that import failed, so a project that
   installs the peer afterwards is not answered from a stale failure. Pass
   `render` for another component system or for a test.
-- **Limits**: body 64 KiB and render timeout 5 s, configurable through
-  `limits` (`bodyBytes`, `timeoutMs`); field depth 12 is fixed. Every
+- **Limits**: body 64 KiB, render timeout 5 s, and field depth 12, configurable through
+  `limits` (`bodyBytes`, `timeoutMs`, `fieldDepth`). For example, set
+  `limits: { fieldDepth: 24 }` in `createFragmentEndpoint()`. Every
   response is `Cache-Control: private, no-store`.
 - **A render that throws** answers `500 {"error":"render"}` — the reason never
   leaves the server — and logs the boundary's id and the message once per

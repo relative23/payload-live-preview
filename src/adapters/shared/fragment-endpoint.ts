@@ -20,6 +20,7 @@ import { runAuthorizeHook } from './authorize-hook';
 import { warnOnce } from './dev-warning';
 import type { PreviewAdapterOptions } from './options';
 import {
+  DEFAULT_MAX_FIELD_DEPTH,
   FRAGMENT_PROTOCOL_VERSION,
   FRAGMENT_VERSION_HEADER,
   parseFragmentRequest,
@@ -88,6 +89,8 @@ export interface FragmentEndpointOptions<Component> {
     readonly bodyBytes?: number;
     /** Render timeout. Default 5000 ms. */
     readonly timeoutMs?: number;
+    /** Maximum nesting depth of `fields`. Default 12. */
+    readonly fieldDepth?: number;
   };
 }
 
@@ -210,6 +213,10 @@ export function createFragmentEndpointHandler<Component>(
   const allowed = new Set(options.allowedOrigins ?? []);
   const bodyLimit = options.limits?.bodyBytes ?? DEFAULT_BODY_BYTES;
   const timeoutMs = options.limits?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const fieldDepth = options.limits?.fieldDepth ?? DEFAULT_MAX_FIELD_DEPTH;
+  if (!Number.isSafeInteger(fieldDepth) || fieldDepth < 0) {
+    throw new TypeError('createFragmentEndpoint: limits.fieldDepth must be a non-negative integer');
+  }
   const registry = options.registry;
 
   return async (request) => {
@@ -219,7 +226,7 @@ export function createFragmentEndpointHandler<Component>(
     if (!type.toLowerCase().startsWith('application/json')) return refuse(415, 'content-type');
     const raw = await readBody(request, bodyLimit);
     if (raw === TOO_LARGE) return refuse(413, 'body');
-    const body = parseFragmentRequest(raw);
+    const body = parseFragmentRequest(raw, fieldDepth);
     if (body === null) return refuse(400, 'shape');
 
     // Authorize as the page would, so a token stays bound to the route it was

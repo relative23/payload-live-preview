@@ -43,14 +43,14 @@ export interface FragmentResponseBody {
   };
 }
 
-const MAX_FIELD_DEPTH = 12;
+export const DEFAULT_MAX_FIELD_DEPTH = 12;
 
-function depthOf(value: unknown, depth: number): number {
-  if (depth > MAX_FIELD_DEPTH || typeof value !== 'object' || value === null) return depth;
+function depthOf(value: unknown, depth: number, maxDepth: number): number {
+  if (depth > maxDepth || typeof value !== 'object' || value === null) return depth;
   let deepest = depth;
   for (const child of Object.values(value)) {
-    deepest = Math.max(deepest, depthOf(child, depth + 1));
-    if (deepest > MAX_FIELD_DEPTH) break;
+    deepest = Math.max(deepest, depthOf(child, depth + 1, maxDepth));
+    if (deepest > maxDepth) break;
   }
   return deepest;
 }
@@ -60,7 +60,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** Shape check for a request body; `null` when it is not one. @internal */
-export function parseFragmentRequest(value: unknown): FragmentRequestBody | null {
+export function parseFragmentRequest(
+  value: unknown,
+  maxFieldDepth = DEFAULT_MAX_FIELD_DEPTH,
+): FragmentRequestBody | null {
   if (!isRecord(value)) return null;
   const fragment = value['fragment'];
   if (typeof fragment !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/iu.test(fragment)) return null;
@@ -90,7 +93,7 @@ export function parseFragmentRequest(value: unknown): FragmentRequestBody | null
   }
   const [locale, collectionSlug, globalSlug] = slugs;
   const fields = value['fields'];
-  if (!isRecord(fields) || depthOf(fields, 0) > MAX_FIELD_DEPTH) return null;
+  if (!isRecord(fields) || depthOf(fields, 0, maxFieldDepth) > maxFieldDepth) return null;
   return {
     fragment,
     ...(typeof key === 'string' ? { key } : {}),
