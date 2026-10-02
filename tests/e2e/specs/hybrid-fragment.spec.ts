@@ -268,6 +268,93 @@ test.describe('hybrid fragment preview', () => {
     expect(stats.rendered).toBe(0);
   });
 
+  test('a boundary remounted while its render is in flight shows that render (H06)', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+    let release: (() => void) | undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requests = 0;
+    await page.route(`${APP}/payload/fragment`, async (intercepted) => {
+      requests += 1;
+      const response = await intercepted.fetch();
+      if (requests === 1) await held;
+      await intercepted.fulfill({ response });
+    });
+
+    await post(
+      page,
+      { title: 'Rendered after remount', subtitle: 'Server only', body: 'a b' },
+      OWNER,
+    );
+    await expect.poll(() => requests).toBe(1);
+    // A host component re-rendering its region: the boundary leaves the
+    // document and a fresh copy with the same identity takes its place.
+    await frame.evaluate(() => {
+      const boundary = document.querySelector('[data-payload-fragment="hero"]');
+      if (boundary === null) throw new Error('boundary missing');
+      const copy = boundary.cloneNode(true);
+      boundary.replaceWith(copy);
+    });
+    release?.();
+
+    await expect(frame.getByTestId('hero-subtitle')).toHaveText('Server only');
+    await expect(frame.getByTestId('hero-title')).toHaveText('Rendered after remount');
+  });
+
+  test('a boundary remounted while its render fails is the one patched (H06)', async ({ page }) => {
+    const frame = await open(page);
+    let release: (() => void) | undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requests = 0;
+    await page.route(`${APP}/payload/fragment`, async (intercepted) => {
+      requests += 1;
+      await held;
+      await intercepted.fulfill({ status: 503, body: 'down' });
+    });
+
+    await post(page, { title: 'Patched after remount', body: 'a b' }, OWNER);
+    await expect.poll(() => requests).toBe(1);
+    await frame.evaluate(() => {
+      const boundary = document.querySelector('[data-payload-fragment="hero"]');
+      if (boundary === null) throw new Error('boundary missing');
+      boundary.replaceWith(boundary.cloneNode(true));
+    });
+    release?.();
+
+    await expect(frame.getByTestId('hero-title')).toHaveText('Patched after remount');
+  });
+
+  test('the admin locale reaches the fragment render, and a newer locale wins (H06)', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+    const locales: unknown[] = [];
+    page.on('request', (request) => {
+      if (!request.url().endsWith('/payload/fragment')) return;
+      locales.push((request.postDataJSON() as { locale?: string }).locale);
+    });
+    const title = frame.getByTestId('hero-title');
+
+    await post(page, { title: 'Erster', body: 'a' }, { ...OWNER, locale: 'de' });
+    await expect(title).toHaveAttribute('lang', 'de');
+    await expect(title).toHaveText('Erster');
+    // The French render is slow on the server; the English revision supersedes it.
+    await post(page, { title: 'Deuxième', body: 'slow:1500 a' }, { ...OWNER, locale: 'fr' });
+    await post(page, { title: 'Third', body: 'a' }, { ...OWNER, locale: 'en' });
+    await expect(title).toHaveAttribute('lang', 'en');
+    await page.waitForTimeout(2_000);
+
+    expect(locales).toEqual(['de', 'fr', 'en']);
+    expect((await fragments(frame)).superseded).toBeGreaterThanOrEqual(1);
+    await expect(title).toHaveAttribute('lang', 'en');
+    await expect(title).toHaveText('Third');
+  });
+
   test('a response for another boundary key never morphs its server HTML', async ({ page }) => {
     const frame = await open(page);
     let mismatchedResponses = 0;

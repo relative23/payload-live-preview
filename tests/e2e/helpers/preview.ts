@@ -35,6 +35,8 @@ export interface PostOptions {
    * runtime to re-render fields nobody changed asks for it through this.
    */
   readonly relationshipUpdate?: Record<string, unknown>;
+  /** The admin's current locale, as Payload's panel sends it beside the data. */
+  readonly locale?: string;
 }
 
 /** Hosts carry the framed path in their own query, so identity separates them, not the URL. */
@@ -69,11 +71,12 @@ export async function post(
   options: PostOptions = {},
 ): Promise<void> {
   await page.evaluate(
-    ({ payload, globalSlug, targetOrigin, relationshipUpdate }) => {
+    ({ payload, globalSlug, targetOrigin, relationshipUpdate, locale }) => {
       const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
       if (iframe?.contentWindow == null) throw new Error('preview frame is unavailable');
       const message: Record<string, unknown> = { type: 'payload-live-preview', data: payload };
       if (globalSlug !== undefined) message['globalSlug'] = globalSlug;
+      if (locale !== undefined) message['locale'] = locale;
       if (relationshipUpdate !== undefined) {
         message['externallyUpdatedRelationship'] = relationshipUpdate;
       }
@@ -84,6 +87,7 @@ export async function post(
       globalSlug: options.globalSlug,
       targetOrigin: options.targetOrigin,
       relationshipUpdate: options.relationshipUpdate,
+      locale: options.locale,
     },
   );
 }

@@ -23,7 +23,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -163/-26/-21 B; same 21/12/120 B cushions.
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+7/+20 B; same 21/12/120 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +438/+159/+126 B; same 21/12/120 B cushions.
-  'client.cjs': { raw: 150_641, gzip: 47_060, brotli: 40_725 },
+  // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +381/+147/+120 B; same 21/12/120 B cushions.
+  'client.cjs': { raw: 151_022, gzip: 47_207, brotli: 40_845 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -39,7 +40,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -163/-27/-25 B; same 21/12/120 B cushions.
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+8/+8 B; same 21/12/120 B cushions.
   // 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +438/+159/+140 B; same 21/12/120 B cushions.
-  'client.js': { raw: 150_560, gzip: 47_046, brotli: 40_703 },
+  // 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +381/+146/+55 B; same 21/12/120 B cushions.
+  'client.js': { raw: 150_941, gzip: 47_192, brotli: 40_758 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).

@@ -52,6 +52,27 @@ the part that needs a threat model before an endpoint.
   the revision's fragments settled; `error` with `context: 'fragment'`.
   `inspect().fragments` reports handler presence and counts.
 
+### 1a. A boundary replaced while its render is in flight (2026-10-02)
+
+A host component that re-renders its region while a fragment request is open
+swaps the boundary element and keeps its `data-payload-fragment` and
+`data-payload-fragment-key`. The runtime morphed the late response into the
+element it had planned the render for, which was no longer in the document, and
+the page kept the old content. The fallback patch after a failed render reached
+nothing either: it looks bindings up in the cache, and the copy's bindings
+reach the cache only after the structural debounce. Both were red 3 of 3 in
+Chromium, Firefox and WebKit on the hybrid example.
+
+A boundary's identity is its id and key, not its element. When the planned
+element has left the document, the morph, the fallback patch and the
+`fragmentRender` event go to the one connected boundary with the same id and
+key inside the update's owner scope (`scopeBindingsByOwner`), and the cache is
+rebuilt before that patch. When two boundaries carry the identity, or none
+does, nothing is written: two copies name no single region. The revision check
+is unchanged, so a replacement never keeps a superseded render alive, and a
+boundary replaced after its render landed is an ordinary host re-render.
+Measured: +112 B gzip on the inline script, +106 B with the fragment prelude.
+
 ### 2. Wire protocol (`@/types/fragment-protocol`, version 1)
 
 Request: `POST <endpoint>` on the page's own origin, `application/json`,

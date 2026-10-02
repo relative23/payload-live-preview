@@ -38,6 +38,11 @@ answer — is
   it, every update does.
 - `data-payload-fragment-key` — when one id renders several boundaries on a
   page (one per list item, say).
+- The id and key are the boundary's identity, not the element. A component
+  that re-renders its region while a render is in flight may replace the
+  element; the render, or the fallback patch, then goes to the replacement.
+  When two boundaries on the page carry that id and key, it goes to neither
+  ([ADR 0011](architecture/0011-fragment-protocol-and-abuse-model.md#1a-a-boundary-replaced-while-its-render-is-in-flight-2026-10-02)).
 - Bindings inside the boundary still work as the **fallback**: if the
   server cannot render (network, timeout, refusal, bad response), the
   runtime patches them from the same revision and reports an `LP08xx`

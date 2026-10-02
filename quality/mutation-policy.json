@@ -95,8 +95,8 @@
     "src/types/merge-depth.ts"
   ],
   "baseline": {
-    "total": 10052,
-    "mutationScoreMinimum": 87.02,
+    "total": 10076,
+    "mutationScoreMinimum": 87.06,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 45,
     "noCoverageMaximum": 63,

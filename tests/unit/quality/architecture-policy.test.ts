@@ -229,9 +229,11 @@ describe('architecture policy', () => {
     }
   });
 
+  // A scan of the whole repository: 1.4 s alone, 3 to 4 s under coverage, and
+  // past the default 5 s on a shared machine (load average 87).
   it('keeps the complete repository graph within the executable boundaries', async () => {
     const modules = await readArchitectureModules(process.cwd());
     expect(findArchitectureViolations(modules)).toEqual([]);
     expect(modules.length).toBeGreaterThan(0);
-  });
+  }, 60_000);
 });

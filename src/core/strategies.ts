@@ -20,6 +20,31 @@ export function enclosingFragment(element: Element): Element | null {
   return element.closest(`[${FRAGMENT_ATTRIBUTE}]`);
 }
 
+/**
+ * Where a render planned for `planned` lands. A host component that re-renders
+ * its region while the render is in flight swaps the element and keeps the
+ * identity, so a boundary no longer in the document stands for the one that
+ * is: the single connected boundary with its id and key that `inScope` admits.
+ * Two candidates name no single region, and none means it is gone (H06).
+ */
+export function liveBoundary(
+  root: Document | Element,
+  planned: Element,
+  inScope: (boundary: Element) => boolean,
+): Element | undefined {
+  if (planned.isConnected) return planned;
+  const id = planned.getAttribute(FRAGMENT_ATTRIBUTE);
+  const key = planned.getAttribute(FRAGMENT_KEY_ATTRIBUTE);
+  let found: Element | undefined;
+  for (const candidate of root.querySelectorAll(`[${FRAGMENT_ATTRIBUTE}]`)) {
+    if (candidate.getAttribute(FRAGMENT_ATTRIBUTE) !== id) continue;
+    if (candidate.getAttribute(FRAGMENT_KEY_ATTRIBUTE) !== key || !inScope(candidate)) continue;
+    if (found !== undefined) return undefined;
+    found = candidate;
+  }
+  return found;
+}
+
 /** One revision, as a strategy sees it, with the runtime capabilities it may use. */
 export interface FragmentContext {
   readonly root: ParentNode;

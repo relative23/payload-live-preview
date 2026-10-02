@@ -394,6 +394,11 @@ interface Fixture {
  * generator +177, core client +155, Next middleware +207 and lean +139 B gzip,
  * for the wait on SvelteKit's announcer and the table that picks a wait by
  * framework; every ceiling keeps its cushion.
+ * 2026-10-02 (H06, a fragment render lands in the boundary that replaced its
+ * own, ADR 0011): paired measurements against the H08 archive: root client
+ * +177, core client +171, generator -5 and Next middleware -3 B gzip, for the
+ * lookup of the replacement boundary and the cache rebuild before its
+ * fallback patch; every ceiling keeps its cushion.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -414,21 +419,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 51749,
+    gzip: 51926,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 50197,
+    gzip: 50192,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 51724,
+    gzip: 51895,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -449,7 +454,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 55441,
+    gzip: 55438,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

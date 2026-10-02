@@ -19,7 +19,13 @@ import {
 import { morphElement } from './morph';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
 import { thrownFragment } from './revision-display';
-import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
+import {
+  liveBoundary,
+  type FragmentContext,
+  type FragmentStrategy,
+  type RouteOutcome,
+  type RouteStrategy,
+} from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
 import { declaredSubfields, unboundChangedFields, type OwnerScope } from './unbound-fields';
@@ -71,12 +77,7 @@ export class StrategyRunner {
       if (deps.root.contains(boundary)) planned.add(boundary);
       else state.fragmentsOwed.delete(boundary);
     }
-    const boundaries =
-      ownerKeys === false
-        ? [...planned]
-        : [...planned].filter((boundary) =>
-            isBindingInScope(resolveBindingOwner(boundary), ownerKeys),
-          );
+    const boundaries = [...planned].filter((boundary) => inOwnerScope(boundary, ownerKeys));
     return planBoundaries(strategy, boundaries, ownerKeys);
   }
 
@@ -102,9 +103,7 @@ export class StrategyRunner {
     const { fragment, route } = this.deps.strategies;
     const covered = fragment === undefined ? undefined : coveringBoundaries(targets);
     const boundaries =
-      covered === undefined ||
-      ownerKeys === false ||
-      covered.every((boundary) => isBindingInScope(resolveBindingOwner(boundary), ownerKeys))
+      covered === undefined || covered.every((boundary) => inOwnerScope(boundary, ownerKeys))
         ? covered
         : undefined;
     if (fragment !== undefined && boundaries !== undefined) {
@@ -227,6 +226,8 @@ export class StrategyRunner {
       if (unsettled.delete(boundary)) transaction.pendingFragments -= 1;
     };
     const isCurrent = (): boolean => state.isCurrent(transaction) && !controller.signal.aborted;
+    const live = (boundary: Element): Element | undefined =>
+      liveBoundary(deps.root, boundary, (candidate) => inOwnerScope(candidate, plan.ownerKeys));
     const { emitter } = deps;
     const { message } = transaction;
     const revision = transaction.revision.revision;
@@ -246,24 +247,31 @@ export class StrategyRunner {
         deps.log('fragment', code, detail);
       },
       morph: (boundary, html) => {
-        if (!isCurrent()) return;
-        morphFragment(boundary, html, (island, blocker) => {
+        const target = isCurrent() ? live(boundary) : undefined;
+        if (target === undefined) return;
+        morphFragment(target, html, (island, blocker) => {
           this.warnIslandStart(island, blocker);
         });
       },
       patch: (boundary) => {
-        this.patchFallback(transaction, data, boundary, plan.ownerKeys, isCurrent);
+        const target = live(boundary);
+        if (target === undefined) return;
+        // A copy's bindings reach the cache only after the structural debounce.
+        if (target !== boundary) this.host.rebuildCache();
+        this.patchFallback(transaction, data, target, plan.ownerKeys, isCurrent);
       },
-      rendered: (element, id, key) => {
-        settle(element);
+      rendered: (planned, id, key) => {
+        settle(planned);
+        const element = live(planned) ?? planned;
         void emitter.emitWhile(
           'fragmentRender',
           { element, id, key, status: 'rendered', revision, receivedAt },
           isCurrent,
         );
       },
-      failed: (element, id, key, code, reason) => {
-        settle(element);
+      failed: (planned, id, key, code, reason) => {
+        settle(planned);
+        const element = live(planned) ?? planned;
         state.display.shortfall(transaction, { kind: 'fragment', id, key, code });
         const detail = `fragment "${id}" fell back to patch: ${reason}`;
         // Logged where the failure is, not where an exception would have been:
@@ -290,7 +298,7 @@ export class StrategyRunner {
       deps.log('fragment', 'LP0801', error);
       if (isCurrent()) {
         for (const boundary of plan.boundaries) {
-          this.patchFallback(transaction, data, boundary, plan.ownerKeys, isCurrent);
+          context.patch(boundary);
           state.display.shortfall(transaction, thrownFragment(boundary));
         }
         report = { rendered: 0, failed: plan.boundaries.length, superseded: 0 };
@@ -553,6 +561,11 @@ function planBoundaries(
     covers: (target) =>
       target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
   };
+}
+
+/** Whether the document that owns `element` is inside the update's owner scope. */
+function inOwnerScope(element: Element, ownerKeys: OwnerScope): boolean {
+  return ownerKeys === false || isBindingInScope(resolveBindingOwner(element), ownerKeys);
 }
 
 /**
