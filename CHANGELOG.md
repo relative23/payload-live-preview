@@ -1,5 +1,12 @@
 # payload-live-preview
 
+## 2.0.6
+
+### Patch Changes
+
+- d0f7356: The sanitizer empties an `is` attribute instead of removing it. A parsed element's `is` value is immutable and the HTML serializer writes it back after the attribute is removed, so sanitized markup that re-entered the parser still carried `is="…"` and upgraded the element to the page's customized built-in of that name; an empty `is` names nothing, which is what DOMPurify does. Found by the new XSS corpus, which runs 118 vectors and an aimed fuzz under every policy against an allow-list-independent oracle and against DOMPurify (a devDependency).
+- eabd171: Accept ordinary nested Lexical tables in fragment requests by raising the fixed field-depth ceiling from 12 to 64. The reported table inside a content block reaches depth 15 and was rejected before rendering. Keep the existing generic refusal response and authorization checks; requests beyond 64 levels remain rejected before authorization or rendering.
+
 ## 2.0.5
 
 ### Patch Changes
