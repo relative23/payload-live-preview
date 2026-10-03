@@ -39,7 +39,60 @@ describe('workflow contracts', () => {
     expect(findWorkflowContractViolations(readWorkflows())).toEqual([]);
   });
 
+  it('runs CI for pushes and pull requests into the exact 2.0 maintenance branch', () => {
+    const ci = parseWorkflow(readWorkflows().get('ci.yml') ?? '');
+    expect(ci['on']).toEqual({
+      push: { branches: ['main', 'release/2.0'] },
+      pull_request: { branches: ['main', 'release/2.0'] },
+    });
+  });
+
+  it('accepts 2.0 maintenance verdicts in the default-branch release workflow', () => {
+    const release = parseWorkflow(readWorkflows().get('release.yml') ?? '');
+    const jobs = release['jobs'] as Record<string, Record<string, unknown>>;
+    expect(jobs['gate']?.['if']).toContain("head_branch == 'release/2.0'");
+  });
+
+  it('keeps gate code on the default checkout and publication on the certified commit', () => {
+    const release = parseWorkflow(readWorkflows().get('release.yml') ?? '');
+    const jobs = release['jobs'] as Record<string, { steps: Record<string, unknown>[] }>;
+    for (const jobName of ['gate', 'version', 'publish']) {
+      const checkouts = jobs[jobName]?.steps.filter(
+        (step) => typeof step['uses'] === 'string' && step['uses'].startsWith('actions/checkout@'),
+      );
+      expect(checkouts).toHaveLength(1);
+      expect(checkouts?.[0]?.['with']).toEqual(
+        jobName === 'gate'
+          ? { 'fetch-depth': 0 }
+          : { ref: '${{ needs.gate.outputs.tested_sha }}', 'fetch-depth': 0 },
+      );
+    }
+  });
+
   it.each([
+    {
+      label: 'a CI trigger that drops 2.0 maintenance pushes',
+      file: 'ci.yml',
+      original: 'push:\n    branches: [main, release/2.0]',
+      replacement: 'push:\n    branches: [main]',
+      violation: 'ci.yml on differs from the reviewed contract',
+    },
+    {
+      label: 'a CI trigger that drops 2.0 maintenance pull requests',
+      file: 'ci.yml',
+      original: 'pull_request:\n    branches: [main, release/2.0]',
+      replacement: 'pull_request:\n    branches: [main]',
+      violation: 'ci.yml on differs from the reviewed contract',
+    },
+    {
+      label: 'release gates that skip certified 2.0 maintenance pushes',
+      file: 'ci.yml',
+      original:
+        "if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/2.0')\n    needs: build",
+      replacement:
+        "if: github.event_name == 'push' && github.ref == 'refs/heads/main'\n    needs: build",
+      violation: 'ci.yml job release-gates does not use the reviewed condition',
+    },
     {
       label: 'a soft-failed unit run',
       file: 'ci.yml',
@@ -110,10 +163,10 @@ describe('workflow contracts', () => {
       label: 'a dropped fixture audit',
       file: 'ci.yml',
       original:
-        '      - run: npm audit --audit-level=high --package-lock-only --prefix examples/payload-backend\n',
+        '      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/payload-backend\n',
       replacement: '',
       violation:
-        'ci.yml job fixture-audit step run "npm audit --audit-level=high --package-lock-only --prefix examples/payload-backend" must exist exactly once (found 0)',
+        'ci.yml job fixture-audit step run "node scripts/audit-gate.ts --package-lock-only --prefix examples/payload-backend" must exist exactly once (found 0)',
     },
     {
       label: 'a reduced browser matrix',
@@ -140,7 +193,7 @@ describe('workflow contracts', () => {
       label: 'release gates on every push',
       file: 'ci.yml',
       original:
-        "if: github.event_name == 'push' && github.ref == 'refs/heads/main'\n    needs: build",
+        "if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/2.0')\n    needs: build",
       replacement: "if: github.event_name == 'push'\n    needs: build",
       violation: 'ci.yml job release-gates does not use the reviewed condition',
     },
@@ -232,8 +285,22 @@ describe('workflow contracts', () => {
     {
       label: 'a gate that no longer accepts the 1.x maintenance branch',
       file: 'release.yml',
-      original: " ||\n      github.event.workflow_run.head_branch == 'release/1.x')",
+      original: " ||\n      github.event.workflow_run.head_branch == 'release/1.x'",
+      replacement: '',
+      violation: 'release.yml job gate does not use the reviewed condition',
+    },
+    {
+      label: 'a default-branch gate that drops the 2.0 maintenance branch',
+      file: 'release.yml',
+      original: " ||\n      github.event.workflow_run.head_branch == 'release/2.0')",
       replacement: ')',
+      violation: 'release.yml job gate does not use the reviewed condition',
+    },
+    {
+      label: 'a default-branch gate that accepts another 2.x branch instead',
+      file: 'release.yml',
+      original: "head_branch == 'release/2.0'",
+      replacement: "head_branch == 'release/2.x'",
       violation: 'release.yml job gate does not use the reviewed condition',
     },
     {

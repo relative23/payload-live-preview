@@ -43,7 +43,7 @@ One runtime serves every framework, and every framework adapter's example app ru
 | Framework | Supported      | Tested in CI on every push (version, browsers)                                    |
 | --------- | -------------- | --------------------------------------------------------------------------------- |
 | Astro     | >=4.0.0 <8.0.0 | 7.3.2 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
-| Next.js   | App Router, 16 | 16.3.4 (chromium, firefox, webkit)                                                |
+| Next.js   | App Router, 16 | 16.3.8 (chromium, firefox, webkit)                                                |
 | SvelteKit | 2.x            | 2.70.2 (chromium, firefox, webkit)                                                |
 | Nuxt      | 3.x            | 3.21.11 (chromium, firefox, webkit)                                               |
 
@@ -56,7 +56,8 @@ The React and Vue hooks and the Next.js and Nuxt fragment renderers run twice on
 - Payload 2.32.3: wire corpus captured from a real admin in a one-off round (examples/ has no Payload 2 fixture), replayed in tests/integration/wire-corpus.test.ts, plus fieldSchemaJSON typing in tests/integration/schema-driven.test.ts; relationship and upload population is not verified against a real 2.x admin.
 - Payload 3.85.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
 - Payload 3.88.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
-- Payload 3.89.0: real admin E2E (examples/payload-backend) on every push, plus a wire corpus captured from it.
+- Payload 3.89.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
+- Payload 3.90.2: real admin E2E fixture (examples/payload-backend), run by CI on every push.
 - Payload 4.0.0-canary.33: wire corpus captured from a real Payload 4 admin in a one-off upgrade round, replayed in tests/integration/wire-corpus.test.ts; the fixture itself stays on 3.x.
 - Payload latest: daily protocol watch executes @payloadcms/live-preview@latest against the corpus.
 - Payload 4.0 pre-releases: daily protocol watch against @payloadcms/live-preview@canary, early warning only.

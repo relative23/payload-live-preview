@@ -27,7 +27,7 @@ exactly that artifact by run id and name, reruns the package gate with
 
 `scripts/release-gate.ts` runs after every completed CI run and on
 `workflow_dispatch` with a `run_id`. It accepts only a completed, successful CI
-`push` run of this repository on a release branch — `main` or `release/1.x`,
+`push` run of this repository on a release branch — `main`, `release/1.x` or `release/2.0`,
 listed once as `RELEASE_BRANCHES` — whose head is an ancestor of that branch on
 `origin`, reads `package.json` at that commit, and asks the registry:
 
@@ -42,7 +42,7 @@ of `main`, because `changesets/action` branches from `github.sha`. Under
 `workflow_run` that is always the tip of `main`, and a step cannot change it:
 the runner writes `GITHUB_SHA` from the `github` context over any step `env`.
 A maintenance branch therefore gets no Version PR — with changesets there and
-its version already on npm, the gate fails and names the hand step (§7). The
+its version already on npm, the gate fails and names the hand step (§7–8). The
 publish job does not require the tip: a newer push must not block an artifact
 the gate has proven.
 
@@ -223,6 +223,53 @@ Open:
   found.
 - A re-entry by `workflow_dispatch` runs on main's ref, so a 1.x run re-entered
   that way shares main's concurrency group and queues with it.
+
+### 8. 2.0 patches alongside the next minor (added 2026-10-03)
+
+`main` carries changesets for the next minor, so a patch for the published 2.0
+line needs a separate `release/2.0` branch from the last published 2.0 tag. The
+branch takes the patch and its regression test without the pending minor work.
+
+CI accepts pushes and pull requests for that exact branch. A push runs the
+same release-critical gates as `main`, including the nightly mutation scope
+and the five-minute browser soak. The release gate proves ancestry against
+`origin/release/2.0`; the publish job consumes that run's certified archive.
+The default branch must carry the updated release workflow before a maintenance
+run can release, because `workflow_run` reads that workflow from the default
+branch.
+
+Changesets on the maintenance branch use `baseBranch: "release/2.0"`. Run
+`npm run version` in the maintenance pull request, as for 1.x (§7); automatic
+Version PRs remain on `main` only. The dist-tag rule in §4 is unchanged: a 2.0
+patch below an already published 2.1 `latest` is refused, so this route publishes
+2.0.6 before 2.1.0.
+
+### 9. Project-scoped audit exceptions (2026-10-03)
+
+CI audits development dependencies in the root package and all ten examples.
+After updates within the maintained dependency ranges, seven project/advisory
+combinations remain without a patched release in their current major track:
+[braces 3](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) in the root and Nuxt,
+[node-forge 1](https://github.com/advisories/GHSA-86w9-cpqp-85rv) in Nuxt, and
+[http-cache-semantics 4](https://github.com/advisories/GHSA-ch52-4w7c-c8xp) in four
+Astro examples. Their temporary exceptions expire at the end of 2026-10-10 UTC.
+
+Each exception names one project, advisory, leaf version and integrity. It also
+binds the affected dependency graph, including parent fix suggestions, and a
+reviewed source/configuration/caller descriptor. Empty descriptors, new findings,
+changed pins and unused exceptions fail. Every invocation validates all register
+entries and dates, then uses only the selected project's exceptions. Audit or
+registry errors cannot supply a clean result; both subprocesses have finite
+SIGKILL time limits. A fresh official registry query requires another review as
+soon as a newer stable version appears in the exception's major track.
+
+The reviewed contexts are Changesets' single-package discovery, the Nuxt
+example's HTTP build/development setup, and Astro image-build callers in examples
+that use plain image tags. The descriptors bind those contexts to the measured
+sources and caller identities. These maintenance profiles need a separate reachability
+review and fresh pins before use on another source branch. Package version and
+Changesets base-branch metadata are omitted from the security projections so a
+version-only change keeps an otherwise valid binding.
 
 ## Consequences
 

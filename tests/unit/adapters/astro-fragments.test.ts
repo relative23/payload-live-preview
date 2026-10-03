@@ -7,6 +7,9 @@ import {
   type AuthorizedPreviewContext,
 } from '@security/preview-authorization';
 import type { PreviewAuthorizationHookResult } from '@adapters/shared/options';
+import { parseFragmentRequest } from '@/types/fragment-protocol';
+import { lexicalToHtml, type LexicalRoot } from '@lexical/index';
+import tableRequest from '../../fixtures/fragment/lexical-table-request.json' with { type: 'json' };
 
 // `astro` is a peer this package does not install; the default renderer
 // imports `astro/container` lazily, so the container is stood in for here.
@@ -121,7 +124,7 @@ describe('createFragmentEndpoint — refusals carry no information', () => {
     const big = await validBody({ fields: { title: 'x'.repeat(70_000) } });
     expect((await post(big)).status).toBe(413);
     expect((await post({ fragment: '../etc/passwd' })).status).toBe(400);
-    const deep = await validBody({ fields: JSON.parse('{"a":'.repeat(20) + '1' + '}'.repeat(20)) });
+    const deep = await validBody({ fields: JSON.parse('{"a":'.repeat(70) + '1' + '}'.repeat(70)) });
     expect((await post(deep)).status).toBe(400);
   });
 
@@ -335,5 +338,70 @@ describe('createFragmentEndpoint — the default renderer', () => {
       metadata: { renderer: 'astro-container' },
     });
     expect(renderToString).toHaveBeenCalledWith(Hero, { props: { title: 'Hallo', locale: 'de' } });
+  });
+});
+
+describe('fragment field depth', () => {
+  function fieldsAt(depth: number): Record<string, unknown> {
+    let value: unknown = 0;
+    for (let level = 1; level < depth; level += 1) value = [value];
+    return { a: value };
+  }
+
+  it('accepts and renders the reported Lexical table at depth 15', async () => {
+    expect(parseFragmentRequest(tableRequest)).not.toBeNull();
+    const handler = createFragmentEndpoint({
+      registry: {
+        'page-blocks': {
+          component: Hero,
+          props: ({ fields }) => ({
+            content: (fields['blocks'] as { content: unknown }[])[0]?.content,
+          }),
+        },
+      },
+      authorize: { type: 'verifier', verify: () => ({ subject: 'editor' }) },
+      render: (_component, props) =>
+        Promise.resolve(lexicalToHtml(props['content'] as LexicalRoot)),
+    });
+    const response = await handler({ request: fragmentRequest(tableRequest) });
+    expect(response.status).toBe(200);
+    const result = (await response.json()) as { html: string };
+    expect(result.html).toContain('<table>');
+    expect(result.html).toContain('Example');
+  });
+
+  it('accepts depth 64 and refuses depth 65', () => {
+    expect(parseFragmentRequest({ ...tableRequest, fields: fieldsAt(64) })).not.toBeNull();
+    expect(parseFragmentRequest({ ...tableRequest, fields: fieldsAt(65) })).toBeNull();
+  });
+
+  it('refuses deeply nested serialized fields before authorization or rendering', async () => {
+    const verify = vi.fn(() => ({ subject: 'editor' }));
+    const renderDepth = vi.fn(() => Promise.resolve('<p>Preview</p>'));
+    const handler = endpoint({
+      authorize: { type: 'verifier', verify },
+      render: renderDepth,
+    });
+    const depth = 20_000;
+    const raw = JSON.stringify(tableRequest).replace(
+      /"fields":.*\}$/u,
+      '"fields":{"a":' + '['.repeat(depth - 1) + '0' + ']'.repeat(depth - 1) + '}}',
+    );
+    expect(Buffer.byteLength(raw)).toBeLessThan(64 * 1024);
+    const response = await handler({
+      request: new Request(`${SITE}/payload/fragment`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', origin: SITE },
+        body: raw,
+      }),
+    });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'shape' });
+    expect(verify).not.toHaveBeenCalled();
+    expect(renderDepth).not.toHaveBeenCalled();
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(response.headers.get('vary')).toBe('Cookie');
+    expect(response.headers.get('x-payload-fragment-version')).toBe('1');
   });
 });

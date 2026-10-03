@@ -80,7 +80,7 @@ service); the docs say so.
 | Confused deputy (site renders for a non-editor)        | `authorizePreviewRequest()` with the site's strategy on the **page route + query** the client reports, under the request's own cookies/headers.           | 403 without a token, 403 for a token of another route     |
 | Token leakage                                          | The token travels only as it already does for the page (query/cookie); responses are `no-store`; refusals carry no detail.                                | headers asserted on every response                        |
 | Cross-site request forgery                             | `Sec-Fetch-Site` must be `same-origin`/`none`; `Origin` must match the page origin or an explicit allow-list; JSON content type required.                 | 403 cross-site / foreign origin; 415 non-JSON             |
-| Amplification / resource exhaustion                    | Body limit (64 KiB), field depth limit (12), render timeout (5 s), client concurrency cap (4) and dedupe; rate limiting is the deployment's (documented). | 413 / 400 / 500 on timeout; client concurrency test       |
+| Amplification / resource exhaustion                    | Body limit (64 KiB), field depth limit (64), render timeout (5 s), client concurrency cap (4) and dedupe; rate limiting is the deployment's (documented). | 413 / 400 / 500 on timeout; client concurrency test       |
 | Cross-tenant access (a token for document A renders B) | The authorized context's scope is checked against the request (locale today; collection/id when the strategy carries them).                               | `scopeAllows` in the endpoint                             |
 | Stale content shown as current                         | Revision-bound requests, abort on supersession, fallback patch on failure, visible `LP08xx` code.                                                         | `fragment-strategy.test.ts`, `client.test.ts`             |
 
@@ -122,3 +122,17 @@ itself — content, head title, scroll, and `route.refreshes` — because a
 focused control's survival across a full-document morph is engine-sensitive
 and the fragment path (which is what a focused editor field sits in) keeps
 focus in all three engines.
+
+## Addendum (2026-10-03): Lexical tables in fragment requests
+
+The fixed depth ceiling is 64 instead of 12. The reported Lexical table inside
+a content block reaches depth 15: its table, row, cell, paragraph and text nodes
+add object and array levels. The previous ceiling rejected that ordinary
+fragment request before it could render.
+
+The walk still stops at the first level beyond the ceiling, before authorization
+or rendering. Regression coverage retains the contributor's unchanged table,
+the 64/65 boundary and a serialized 20,000-level request below the default body
+limit. An excessive depth still receives the generic `400 {"error":"shape"}`;
+the request-body limit and authorization rules are unchanged. This patch adds
+no configurable depth or diagnostic response fields.

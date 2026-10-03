@@ -1,0 +1,44 @@
+{
+  "sources": {
+    "playwright.config.ts": "77ffadc555b938543a03cd2c7dac14d8a528937b10ff7cf5361a162b44be41ff",
+    "playwright.real-payload.config.ts": "feea2d9a4b68c7e365c812961698b0abe70fc5641e9d4f44e7760b76e9e8b415",
+    "examples/astro-payload/.gitignore": "c760594e89b7b78ec030eb86107c075f9d8177fa7987881c04ff6ea47d5d40cc",
+    "examples/astro-payload/.npmrc": "88bc01af10b36e60a8586eb1daf94c4203ab005202836da0afe4b486af5323d0",
+    "examples/astro-payload/README.md": "03ddfc06aaea2adcfdb942dad51c809a10cb6567c6830c92e7ef95cccaa19159",
+    "examples/astro-payload/astro.config.mjs": "5073e2986941d6736485f78a11d5a53137ba2dbac4fdb5b6d59e6f41ba4d5a0c",
+    "examples/astro-payload/src/env.d.ts": "cc719d1ef0609cd73ab9d19df5df62df8a3f84bed76b9e6b0ae1f669c67a1ff8",
+    "examples/astro-payload/src/pages/admin.astro": "1340c84204e3b78b5e3387a31ade48d123ea829869f2aad6508d1bd32a833fda",
+    "examples/astro-payload/src/pages/bench.astro": "bd8b9f88d91689b95b454ff177fa69364b748cddfde3228b869fafd3f81e4443",
+    "examples/astro-payload/src/pages/index.astro": "1ffe7d68d192f136b25aebf9e3bf553c9f8e78abbb4c998eba155e3825b911d3",
+    "examples/astro-payload/src/pages/island.astro": "96495e57e8f663213ff3e36c09b292bed96e180de4c78ecf623ed3ee65e65e51",
+    "examples/astro-payload/src/pages/reveal.astro": "6d19d38acb01b23d8c9a4a516c2304ddac6c91abc163028a7ce49a79e0fd4459",
+    "examples/astro-payload/src/pages/scenario/[count].astro": "6ff0c87b1365bcad061163d3aac4022e6853330a3717d91f41c8b57fb6a88008",
+    "examples/astro-payload/src/pages/scenario/array.astro": "da4dc9fb3089fbb49c12f5830d9da62697106cb69d007bfacc6ec8b8d7fa50fe",
+    "examples/astro-payload/src/pages/scenario/richtext.astro": "140dbf5b774504239bffdbbad58a9584faec5f5cac60ebc4b0556ba4b16dd4bd",
+    "examples/astro-payload/src/pages/structural.astro": "ad216442c4a8a0e10aa46366655665fb490fb8f2f71b0854c894d608daa99214",
+    "examples/astro-payload/src/sanitizer.ts": "332551e6bff681bcec78c2b4b57ec5675c8ba638d50f7cc5b468af3e38a93c42",
+    "examples/astro-payload/tsconfig.json": "b5b0a5b04a14cddd7713c5e1c82e86c79c17c2f86b170e26e9b170b3d5e01cd9"
+  },
+  "directories": ["examples/astro-payload"],
+  "absentFiles": [],
+  "json": [
+    {
+      "path": "examples/astro-payload/package.json",
+      "values": {
+        "scripts": {
+          "dev": "astro dev --host --port 4173",
+          "build": "astro build",
+          "preview": "astro preview --host --port 4173",
+          "astro": "astro"
+        }
+      },
+      "absent": []
+    }
+  ],
+  "callers": {
+    "node_modules/astro": [
+      "7.3.2",
+      "sha512-ysTcdpGP61XZpHoMRYC/CK19DQ94qkBvzXMtXEo0gEqPNkmOU/Tv++CtWmzaI4nF2Ck8RXFdiWvdlTWa2oOr9w=="
+    ]
+  }
+}

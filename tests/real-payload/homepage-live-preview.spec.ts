@@ -25,7 +25,8 @@
  */
 import { expect, test } from '@playwright/test';
 
-const PREVIEW_IFRAME = 'iframe[src*="localhost:4173"]';
+const PORT = process.env['PLP_E2E_PORT'] ?? '4173';
+const PREVIEW_IFRAME = `iframe[src*="localhost:${PORT}"]`;
 
 test.describe('real Payload admin → live preview iframe', () => {
   test.beforeEach(async ({ page }) => {

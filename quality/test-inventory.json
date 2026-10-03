@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 319,
-    "suites": 695,
-    "tests": 2930,
+    "files": 323,
+    "suites": 707,
+    "tests": 2983,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 262,
-      "suites": 620,
-      "tests": 2701,
+      "files": 266,
+      "suites": 632,
+      "tests": 2754,
       "benchmarks": 0
     }
   },
@@ -476,8 +476,8 @@
     {
       "path": "tests/unit/adapters/astro-fragments.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 13,
+      "suites": 5,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -1944,6 +1944,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/property/sanitizer-fuzz.property.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/property/security.property.test.ts",
       "group": "unit",
       "suites": 1,
@@ -1979,10 +1986,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/audit-gate-scoped.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 26,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/audit-gate.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 11,
+      "tests": 13,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/audit-registry.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -2122,7 +2143,7 @@
       "path": "tests/unit/quality/workflow-contracts.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2136,7 +2157,7 @@
       "path": "tests/unit/release-gate.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 21,
+      "tests": 26,
       "benchmarks": 0
     },
     {
@@ -2213,7 +2234,7 @@
       "path": "tests/unit/security/sanitizer-attributes.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 10,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -2221,6 +2242,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/sanitizer-corpus.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {

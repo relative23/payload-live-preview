@@ -1,0 +1,32 @@
+{
+  "sources": {
+    "playwright.config.ts": "77ffadc555b938543a03cd2c7dac14d8a528937b10ff7cf5361a162b44be41ff",
+    "playwright.real-payload.config.ts": "feea2d9a4b68c7e365c812961698b0abe70fc5641e9d4f44e7760b76e9e8b415",
+    "examples/astro-middleware/.gitignore": "c760594e89b7b78ec030eb86107c075f9d8177fa7987881c04ff6ea47d5d40cc",
+    "examples/astro-middleware/astro.config.mjs": "1e08a5c0ce8e41e5f51b36bc2d0da087ae9b7c1b7c9d15d18d5630bd4c7a6d4d",
+    "examples/astro-middleware/src/pages/admin.astro": "a06a8804fb2894d7120fbf409dc83b8545e31c65236ed1c74e3e3499808d082b",
+    "examples/astro-middleware/src/pages/index.astro": "89fec8690f9b83e30bc92f037432183109785aaf91562ed5a750e5fb4aadb762",
+    "examples/astro-middleware/src/pages/reveal.astro": "806cdfbd5b4f4049cd6853d78fb65c11e0cf45e82d375ce2a9d394a852975437"
+  },
+  "directories": ["examples/astro-middleware"],
+  "absentFiles": [],
+  "json": [
+    {
+      "path": "examples/astro-middleware/package.json",
+      "values": {
+        "scripts": {
+          "build": "astro build",
+          "start": "HOST=127.0.0.1 PORT=4183 node ./dist/server/entry.mjs",
+          "astro": "astro"
+        }
+      },
+      "absent": []
+    }
+  ],
+  "callers": {
+    "node_modules/astro": [
+      "7.2.9",
+      "sha512-o5nZFo/bieF6rp4x9sQSLhI7GO7Bahpld38Y4LvX27nFoxNiuttjI+Hea81w5ksORLHgdPUlQpU9obPz5QRa8g=="
+    ]
+  }
+}

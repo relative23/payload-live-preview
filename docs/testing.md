@@ -175,6 +175,11 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   keyed morph's promises (ADR 0008 §8), one case each: what a retained node
   keeps, what pairs with what, what is never entered. The engine's mechanics
   stay in `tests/unit/core/morph.test.ts`.
+- `tests/unit/security/xss-corpus.ts` with `sanitizer-corpus.test.ts` and
+  `tests/unit/property/sanitizer-fuzz.property.test.ts` — the sanitizer's
+  fence (ADR 0016): 118 vectors and an aimed fuzz under every policy, against
+  an oracle that reads no allow-list and against DOMPurify as the reference
+  engine (a devDependency). `npm run test:security-corpus` runs just these.
 - `tests/integration/wire-corpus.test.ts` — replays every capture under
   `tests/fixtures/wire-corpus/` through the real runtime. Record a new Payload
   version with `PLP_RECORD_CORPUS=1 npm run test:e2e:real-payload` after
