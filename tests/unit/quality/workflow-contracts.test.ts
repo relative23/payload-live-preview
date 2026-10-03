@@ -163,10 +163,10 @@ describe('workflow contracts', () => {
       label: 'a dropped fixture audit',
       file: 'ci.yml',
       original:
-        '      - run: npm audit --audit-level=high --package-lock-only --prefix examples/payload-backend\n',
+        '      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/payload-backend\n',
       replacement: '',
       violation:
-        'ci.yml job fixture-audit step run "npm audit --audit-level=high --package-lock-only --prefix examples/payload-backend" must exist exactly once (found 0)',
+        'ci.yml job fixture-audit step run "node scripts/audit-gate.ts --package-lock-only --prefix examples/payload-backend" must exist exactly once (found 0)',
     },
     {
       label: 'a reduced browser matrix',

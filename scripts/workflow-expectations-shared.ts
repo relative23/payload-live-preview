@@ -54,7 +54,7 @@ export const fixtureInstall = (fixture: string): StepSpec => ({
   run: `npm ci --no-audit --no-fund --prefix examples/${fixture}`,
 });
 export const fixtureAudit = (fixture: string): StepSpec => ({
-  run: `npm audit --audit-level=high --package-lock-only --prefix examples/${fixture}`,
+  run: `node scripts/audit-gate.ts --package-lock-only --prefix examples/${fixture}`,
 });
 export const testedCommit = (sha: string): StepSpec => ({
   run: 'test "$(git rev-parse HEAD)" = "$TESTED_SHA"',

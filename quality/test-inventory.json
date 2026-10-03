@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 321,
-    "suites": 701,
-    "tests": 2948,
+    "files": 323,
+    "suites": 707,
+    "tests": 2983,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 264,
-      "suites": 626,
-      "tests": 2719,
+      "files": 266,
+      "suites": 632,
+      "tests": 2754,
       "benchmarks": 0
     }
   },
@@ -1986,10 +1986,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/audit-gate-scoped.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 26,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/audit-gate.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 11,
+      "tests": 13,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/audit-registry.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {

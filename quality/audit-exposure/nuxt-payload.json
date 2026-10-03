@@ -1,0 +1,49 @@
+{
+  "sources": {
+    "playwright.config.ts": "77ffadc555b938543a03cd2c7dac14d8a528937b10ff7cf5361a162b44be41ff",
+    "playwright.real-payload.config.ts": "feea2d9a4b68c7e365c812961698b0abe70fc5641e9d4f44e7760b76e9e8b415",
+    "examples/nuxt-payload/.gitignore": "9647eb01b1a6b10e0ed277a2c77a61dfa7175a2eae5bca93019430e644668a19",
+    "examples/nuxt-payload/.npmrc": "88bc01af10b36e60a8586eb1daf94c4203ab005202836da0afe4b486af5323d0",
+    "examples/nuxt-payload/app.vue": "0f726f6a452814de5029d73f9df4803400a737cb2dfa2364455edda42012b5c6",
+    "examples/nuxt-payload/components/Hero.vue": "19a930929aff32a3a2ce1fd72081cc2cb95eff8db708049c5d5d06f4bad48e78",
+    "examples/nuxt-payload/lib/hero.ts": "50e148f1c6b1c10f89e6b850c5fd33dccfe4f037ccadc36c49ab4ff5a5c36d6f",
+    "examples/nuxt-payload/lib/live-preview.ts": "611fd84f2ffedf9d80e9dd614fdc0b0472525f3e88f2f0a08671ea4b53834aac",
+    "examples/nuxt-payload/lib/preview.ts": "dcf09ecdaa4359ad15bd431cbd10dab9b1707ebabbfabd65058faa0ead88ce08",
+    "examples/nuxt-payload/nuxt.config.ts": "a219ffd32fde74d5a75d07e4870ed9a37c411e0afc44f48fda9a8447a36e54b5",
+    "examples/nuxt-payload/pages/hybrid-host.vue": "861a4867649350d1b1d4bab88f6fed5abaf0bbab0e5493c7994ea6894b182552",
+    "examples/nuxt-payload/pages/hybrid.vue": "a9f442000ed881bdb3e977275e43a8eded245aa787b27129f32e0126e936a763",
+    "examples/nuxt-payload/pages/index.vue": "be1ef3d78502ac1c23567a53d50336895700d22f45e8765ec6c838c6726e2569",
+    "examples/nuxt-payload/pages/reveal.vue": "7bdabf8032bec2a53a5d34c4461bde94e198fc367543bed856b75e493c1a4b89",
+    "examples/nuxt-payload/public/admin.html": "ca404393ba8c21ea72cd5deb4608f1b4be7765c1419754d45a970d1ac9291fb6",
+    "examples/nuxt-payload/server/routes/payload-live-preview/[file].get.ts": "eb8f5d90403f1457aa308ed2228f24ccfc4ba80f8062c9a1c3587e9b92997785",
+    "examples/nuxt-payload/server/routes/payload/fragment.post.ts": "d9eb3c6c2eab74546cf364185c84a2cb4cdd3ceaa407af9eb1ca6959e3b94a9d",
+    "examples/nuxt-payload/server/routes/preview-token.get.ts": "dae0827cc157edbb6b47b04e9ec25e4f8fc70ba1f56ff3cc6343b0d9e6f02d4a",
+    "examples/nuxt-payload/tsconfig.json": "56f5b528cc102a257b71c01305f8b1456762d85793bd610bf613f2d7c3e1fc84"
+  },
+  "directories": ["examples/nuxt-payload"],
+  "absentFiles": [],
+  "json": [
+    {
+      "path": "examples/nuxt-payload/package.json",
+      "values": {
+        "scripts": {
+          "dev": "nuxt dev --port 4176",
+          "build": "nuxt build",
+          "preview": "nuxt preview --port 4176",
+          "prepare": "nuxt prepare || echo ''"
+        }
+      },
+      "absent": []
+    }
+  ],
+  "callers": {
+    "node_modules/nitropack": [
+      "2.13.4",
+      "sha512-tX7bT6zxNeMwkc6hxHiZeUoTOjVrcjoh1Z3cmxOlodIqjl4HISgqfGOmkWSayky3Nv9Z5+KQH52F8nmXJY5AAA=="
+    ],
+    "node_modules/listhen": [
+      "1.10.1",
+      "sha512-6nt/86SkqUQSLW1ofz8MxC6RhRMqOl3ONISe6qqvJ3xj09aJWQx6DhgSZpugs3PX4PXdOas/WD6A9jx6J2N19A=="
+    ]
+  }
+}

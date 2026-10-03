@@ -1,0 +1,123 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@nuxt/cli": {
+      "severity": "high",
+      "via": ["listhen"],
+      "nodes": ["node_modules/@nuxt/cli"],
+      "fixAvailable": {
+        "name": "nuxt",
+        "version": "3.15.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@nuxt/nitro-server": {
+      "severity": "high",
+      "via": ["nitropack", "nuxt"],
+      "nodes": ["node_modules/@nuxt/nitro-server"],
+      "fixAvailable": {
+        "name": "nuxt",
+        "version": "3.15.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@nuxt/vite-builder": {
+      "severity": "high",
+      "via": ["nuxt"],
+      "nodes": ["node_modules/@nuxt/vite-builder"],
+      "fixAvailable": {
+        "name": "nuxt",
+        "version": "3.15.1",
+        "isSemVerMajor": true
+      }
+    },
+    "braces": {
+      "severity": "high",
+      "via": [
+        {
+          "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+          "source": 1240992,
+          "severity": "high",
+          "range": "<=3.0.3"
+        }
+      ],
+      "nodes": ["node_modules/braces"],
+      "fixAvailable": true
+    },
+    "fast-glob": {
+      "severity": "high",
+      "via": ["micromatch"],
+      "nodes": ["node_modules/fast-glob"],
+      "fixAvailable": true
+    },
+    "globby": {
+      "severity": "high",
+      "via": ["fast-glob", "micromatch"],
+      "nodes": ["node_modules/globby"],
+      "fixAvailable": true
+    },
+    "listhen": {
+      "severity": "high",
+      "via": ["node-forge"],
+      "nodes": ["node_modules/listhen"],
+      "fixAvailable": {
+        "name": "nuxt",
+        "version": "3.15.1",
+        "isSemVerMajor": true
+      }
+    },
+    "micromatch": {
+      "severity": "high",
+      "via": ["braces"],
+      "nodes": ["node_modules/micromatch"],
+      "fixAvailable": true
+    },
+    "nitropack": {
+      "severity": "high",
+      "via": ["listhen"],
+      "nodes": ["node_modules/nitropack"],
+      "fixAvailable": {
+        "name": "nuxt",
+        "version": "3.15.1",
+        "isSemVerMajor": true
+      }
+    },
+    "node-forge": {
+      "severity": "high",
+      "via": [
+        {
+          "url": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+          "source": 1240912,
+          "severity": "high",
+          "range": "<=1.4.0"
+        }
+      ],
+      "nodes": ["node_modules/node-forge"],
+      "fixAvailable": {
+        "name": "nuxt",
+        "version": "3.15.1",
+        "isSemVerMajor": true
+      }
+    },
+    "nuxt": {
+      "severity": "high",
+      "via": ["@nuxt/cli", "@nuxt/nitro-server", "@nuxt/vite-builder"],
+      "nodes": ["node_modules/nuxt"],
+      "fixAvailable": {
+        "name": "nuxt",
+        "version": "3.15.1",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 11,
+      "critical": 0,
+      "total": 11
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "astro": {
+      "severity": "high",
+      "via": ["http-cache-semantics"],
+      "nodes": ["node_modules/astro"],
+      "fixAvailable": false
+    },
+    "http-cache-semantics": {
+      "severity": "high",
+      "via": [
+        {
+          "url": "https://github.com/advisories/GHSA-ch52-4w7c-c8xp",
+          "source": 1240991,
+          "severity": "high",
+          "range": "<=4.2.0"
+        }
+      ],
+      "nodes": ["node_modules/http-cache-semantics"],
+      "fixAvailable": false
+    },
+    "payload-live-preview": {
+      "severity": "high",
+      "via": ["astro"],
+      "nodes": ["node_modules/payload-live-preview"],
+      "fixAvailable": false
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 3,
+      "critical": 0,
+      "total": 3
+    }
+  }
+}

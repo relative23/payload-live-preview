@@ -1,5 +1,5 @@
-import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -15,9 +15,9 @@ const AUDIT = {
   vulnerabilities: {
     'left-pad': {
       severity: 'high',
-      via: [{ url: 'https://github.com/advisories/GHSA-xxxx' }],
+      via: [{ url: 'https://github.com/advisories/GHSA-xxxx', severity: 'high' }],
     },
-    lodash: { severity: 'moderate', via: [] },
+    lodash: { severity: 'moderate', via: [{ url: 'GHSA-low', severity: 'moderate' }] },
   },
 };
 
@@ -46,7 +46,11 @@ describe('findingsFromAudit', () => {
       vulnerabilities: {
         qs: {
           severity: 'critical',
-          via: [{ url: 'GHSA-one' }, { source: 'GHSA-two' }, 'qs'],
+          via: [
+            { url: 'GHSA-one', severity: 'critical' },
+            { source: 'GHSA-two', severity: 'critical' },
+            'qs',
+          ],
         },
       },
     });
@@ -55,7 +59,7 @@ describe('findingsFromAudit', () => {
 
   it('is empty for a clean audit', () => {
     expect(findingsFromAudit({ vulnerabilities: {} })).toEqual([]);
-    expect(findingsFromAudit(null)).toEqual([]);
+    expect(() => findingsFromAudit(null)).toThrow();
   });
 });
 
@@ -78,7 +82,7 @@ describe('evaluateAuditGate', () => {
       vulnerabilities: {
         'left-pad': {
           severity: 'critical',
-          via: [{ url: 'https://github.com/advisories/GHSA-new' }],
+          via: [{ url: 'https://github.com/advisories/GHSA-new', severity: 'critical' }],
         },
       },
     });
@@ -121,11 +125,101 @@ describe('evaluateAuditGate', () => {
 });
 
 describe('audit-gate entry point', () => {
+  it('does not skip main() through a symlink alias', () => {
+    const root = mkdtempSync(join(tmpdir(), 'plp audit gäte-'));
+    try {
+      mkdirSync(join(root, 'quality'));
+      writeFileSync(
+        join(root, 'quality/audit-exceptions.json'),
+        JSON.stringify({
+          schemaVersion: 2,
+          projects: { '.': { exposure: null, exposureSha256: null, exceptions: [] } },
+        }),
+      );
+      const script = join(root, 'audit gate.ts');
+      const alias = join(root, 'audït alias.ts');
+      copyFileSync(resolve(process.cwd(), 'scripts/audit-gate.ts'), script);
+      copyFileSync(
+        resolve(process.cwd(), 'scripts/audit-registry.mjs'),
+        join(root, 'audit-registry.mjs'),
+      );
+      copyFileSync(
+        resolve(process.cwd(), 'scripts/audit-graph.mjs'),
+        join(root, 'audit-graph.mjs'),
+      );
+      symlinkSync(script, alias);
+      const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
+      const loader = pathToFileURL(resolve(process.cwd(), 'node_modules/tsx/dist/loader.mjs')).href;
+      // Native stripping exercises the CI entrypoint; older supported Node uses the same CLI through tsx.
+      const args =
+        major > 22 || (major === 22 && minor >= 18) ? [alias] : ['--import', loader, alias];
+      const result = spawnSync(process.execPath, [...args, '--prefix', 'unregistered'], {
+        cwd: root,
+        encoding: 'utf8',
+        timeout: 10_000,
+        killSignal: 'SIGKILL',
+      });
+      expect(result.error).toBeUndefined();
+      expect(result.signal).toBeNull();
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('unknown audit project');
+      expect(result.stdout).toBe('');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+  it.each(['unregistered', '../outside', '/outside'])(
+    'refuses an unknown or outside CLI project %s before auditing',
+    (prefix) => {
+      const root = mkdtempSync(join(tmpdir(), 'plp audit gäte-'));
+      try {
+        mkdirSync(join(root, 'quality'));
+        writeFileSync(
+          join(root, 'quality/audit-exceptions.json'),
+          JSON.stringify({
+            schemaVersion: 2,
+            projects: { '.': { exposure: null, exposureSha256: null, exceptions: [] } },
+          }),
+        );
+        const script = join(root, 'audit gate.ts');
+        copyFileSync(resolve(process.cwd(), 'scripts/audit-gate.ts'), script);
+        copyFileSync(
+          resolve(process.cwd(), 'scripts/audit-registry.mjs'),
+          join(root, 'audit-registry.mjs'),
+        );
+        copyFileSync(
+          resolve(process.cwd(), 'scripts/audit-graph.mjs'),
+          join(root, 'audit-graph.mjs'),
+        );
+        const loader = pathToFileURL(
+          resolve(process.cwd(), 'node_modules/tsx/dist/loader.mjs'),
+        ).href;
+        const result = spawnSync(
+          process.execPath,
+          ['--import', loader, script, '--prefix', prefix],
+          { cwd: root, encoding: 'utf8', timeout: 10_000, killSignal: 'SIGKILL' },
+        );
+        expect(result.error).toBeUndefined();
+        expect(result.signal).toBeNull();
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain('unknown audit project');
+        expect(result.stdout).toBe('');
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+  );
   it('runs main() when invoked through a path with spaces and non-ASCII characters', () => {
     const root = mkdtempSync(join(tmpdir(), 'plp audit gäte-'));
     try {
       mkdirSync(join(root, 'quality'));
-      writeFileSync(join(root, 'quality/audit-exceptions.json'), JSON.stringify(register([])));
+      writeFileSync(
+        join(root, 'quality/audit-exceptions.json'),
+        JSON.stringify({
+          schemaVersion: 2,
+          projects: { consumer: { exposure: null, exposureSha256: null, exceptions: [] } },
+        }),
+      );
       const consumer = join(root, 'consumer');
       mkdirSync(consumer);
       writeFileSync(
@@ -138,6 +232,14 @@ describe('audit-gate entry point', () => {
       );
       const script = join(root, 'audit gate.ts');
       copyFileSync(resolve(process.cwd(), 'scripts/audit-gate.ts'), script);
+      copyFileSync(
+        resolve(process.cwd(), 'scripts/audit-registry.mjs'),
+        join(root, 'audit-registry.mjs'),
+      );
+      copyFileSync(
+        resolve(process.cwd(), 'scripts/audit-graph.mjs'),
+        join(root, 'audit-graph.mjs'),
+      );
       // The loader is addressed by URL: the copy runs outside the repository,
       // where a bare `tsx` specifier has no node_modules to resolve against.
       const loader = pathToFileURL(resolve(process.cwd(), 'node_modules/tsx/dist/loader.mjs')).href;
