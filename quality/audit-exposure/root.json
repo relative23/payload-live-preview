@@ -1,0 +1,96 @@
+{
+  "sources": {
+    ".github/workflows/release.yml": "77c6dc30010bc296f5ca3cdf2bf4d8b6abb900920b2de62c400f9542e01dae55"
+  },
+  "directories": [],
+  "absentFiles": ["pnpm-workspace.yaml", "lerna.json"],
+  "json": [
+    {
+      "path": "package.json",
+      "values": {
+        "scripts": {
+          "build:runtime": "node -e \"const c=require('node:child_process'),e={...process.env};if(!e.SOURCE_DATE_EPOCH){const g=c.spawnSync('git',['show','-s','--format=%ct','HEAD'],{encoding:'utf8'});if(g.status===0)e.SOURCE_DATE_EPOCH=g.stdout.trim()}process.exit(c.spawnSync(process.execPath,['--import','tsx',process.argv[1]],{stdio:'inherit',env:e}).status??1)\" scripts/build-runtime.ts",
+          "build": "npm run build:runtime && tsx scripts/build-dist.ts && npm run build:assets && npm run test:bundle && npm run test:treeshake && npm run test:edge && npm run test:interaction && npm run test:protocol-semantics",
+          "build:assets": "node -e \"const fs=require('node:fs');for(const f of ['RichText','PreviewBoundary'])fs.copyFileSync('src/adapters/astro/'+f+'.astro','dist/adapters/astro/'+f+'.astro')\"",
+          "dev": "tsup --watch",
+          "pretest": "npm run build:runtime",
+          "test": "vitest run",
+          "test:watch": "vitest",
+          "test:security-corpus": "vitest run tests/unit/security/sanitizer-corpus.test.ts tests/unit/property/sanitizer-fuzz.property.test.ts",
+          "test:unit": "vitest run tests/unit",
+          "test:integration": "vitest run tests/integration",
+          "test:e2e": "playwright test",
+          "check:fixtures": "tsx scripts/check-fixture-freshness.ts",
+          "check:generated": "tsx scripts/check-generated-runtime.ts",
+          "test:e2e:real-payload": "playwright test --config playwright.real-payload.config.ts",
+          "test:a11y": "playwright test tests/e2e/specs/accessibility.spec.ts",
+          "test:soak": "playwright test --config playwright.soak.config.ts",
+          "test:browser-bench": "playwright test --config playwright.bench.config.ts",
+          "test:bench": "vitest bench tests/benchmarks",
+          "test:bench:codspeed": "vitest bench --run --config vitest.bench.config.ts",
+          "test:bundle": "tsx scripts/check-bundle-size.ts",
+          "test:interaction": "tsx scripts/check-interaction-budgets.ts",
+          "test:protocol-semantics": "tsx scripts/check-protocol-semantics.ts",
+          "test:upstream-findings": "tsx scripts/check-upstream-findings.ts",
+          "test:treeshake": "tsx scripts/check-tree-shaking.ts",
+          "test:edge": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' tsx scripts/check-edge-runtime.ts",
+          "compat:check": "tsx scripts/compat-table.ts --check",
+          "compat:write": "tsx scripts/compat-table.ts --write",
+          "compat:refresh": "tsx scripts/compat-table.ts --refresh",
+          "diagnostics:check": "tsx scripts/diagnostic-table.ts --check",
+          "test:package": "tsx scripts/check-package.ts",
+          "audit:gate": "tsx scripts/audit-gate.ts",
+          "test:smoke": "tsx scripts/post-publish-smoke.ts",
+          "test:coverage": "vitest run --coverage",
+          "test:coverage:diff": "tsx scripts/coverage-policy.ts",
+          "test:policy": "tsx scripts/test-policy.ts",
+          "test:architecture": "tsx scripts/architecture-policy.ts && tsx scripts/check-complexity.ts && tsx scripts/check-trusted-core.ts && tsx scripts/compare-scope.ts --check && tsx scripts/workflow-contracts.ts && tsx scripts/docs-contracts.ts && tsx scripts/check-resource-inventory.ts && knip --no-progress --treat-config-hints-as-errors",
+          "test:property": "vitest run tests/unit/property",
+          "test:mutation": "stryker run stryker.config.js",
+          "test:mutation:policy:pr": "tsx scripts/mutation-policy.ts --policy quality/mutation-policy-pr.json --report test-results/stryker-pr.json",
+          "test:mutation:policy:core": "tsx scripts/mutation-policy.ts --policy quality/mutation-policy-core.json --report test-results/stryker-core.json",
+          "test:mutation:policy": "tsx scripts/mutation-policy.ts",
+          "test:leak": "node --expose-gc --import tsx scripts/leak-soak.ts",
+          "test:leak:quick": "node --expose-gc --import tsx scripts/leak-soak.ts --quick",
+          "api:update": "npm run build && tsx scripts/check-package.ts --update-api-reports",
+          "typecheck": "tsc --noEmit",
+          "lint": "eslint .",
+          "lint:fix": "eslint . --fix",
+          "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.ts\" \"*.{js,cjs,mjs,ts,json,jsonc,yml,yaml,md}\" \"quality/**/*.json\" \"docs/**/*.md\" \"type-tests/**/*.md\" \".prettierrc.json\" \".changeset/*.{json,md}\" \".github/**/*.{yml,yaml,json}\" \"examples/**/*.{ts,tsx,js,cjs,mjs,json}\" && prettier --write \"type-tests/packed/*.fixture\" --parser typescript",
+          "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.ts\" \"*.{js,cjs,mjs,ts,json,jsonc,yml,yaml,md}\" \"quality/**/*.json\" \"docs/**/*.md\" \"type-tests/**/*.md\" \".prettierrc.json\" \".changeset/*.{json,md}\" \".github/**/*.{yml,yaml,json}\" \"examples/**/*.{ts,tsx,js,cjs,mjs,json}\" && prettier --check \"type-tests/packed/*.fixture\" --parser typescript",
+          "check": "npm run typecheck && npm run lint && npm run format:check && npm run test:policy && npm run test:architecture && npm run compat:check && npm run diagnostics:check && npm run test",
+          "prepublishOnly": "npm run build && npm run check && npm run format:check && npm run test:package",
+          "changeset": "changeset",
+          "version": "changeset version && tsx scripts/sync-lockfile-metadata.ts && npm run build:runtime",
+          "release": "tsx scripts/publish-artifact.ts",
+          "test:docs": "tsx scripts/docs-contracts.ts"
+        },
+        "packageManager": "npm@12.0.2"
+      },
+      "absent": ["workspaces", "bolt"]
+    },
+    {
+      "path": ".changeset/config.json",
+      "values": {
+        "fixed": [],
+        "linked": [],
+        "ignore": []
+      },
+      "absent": []
+    }
+  ],
+  "callers": {
+    "node_modules/@changesets/config": [
+      "3.1.4",
+      "sha512-pf0bvD/v6WI2cRlZ6hzpjtZdSlXDXMAJ+Iz7xfFzV4ZxJ8OGGAON+1qYc99ZPrijnt4xp3VGG7eNvAOGS24V1Q=="
+    ],
+    "node_modules/@changesets/git": [
+      "3.0.4",
+      "sha512-BXANzRFkX+XcC1q/d27NKvlJ1yf7PSAgi8JG6dt8EfbHFHi4neau7mufcSca5zRhwOL8j9s6EqsxmT+s+/E6Sw=="
+    ],
+    "node_modules/@manypkg/get-packages": [
+      "1.1.3",
+      "sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A=="
+    ]
+  }
+}

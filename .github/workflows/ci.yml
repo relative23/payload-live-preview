@@ -195,16 +195,16 @@ jobs:
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
       # Lockfile-only audits: the advisories are a property of the reviewed
       # lockfiles, not of an installed tree.
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/astro-payload
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/nextjs-payload
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/sveltekit-payload
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/nuxt-payload
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/astro-hybrid
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/pure-html
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/vanilla-client
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/astro-inline
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/astro-middleware
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/payload-backend
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-payload
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/nextjs-payload
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/sveltekit-payload
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/nuxt-payload
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-hybrid
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/pure-html
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/vanilla-client
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-inline
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-middleware
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/payload-backend
 
   # A job that calls a reusable workflow reports its check as
   # "<this name> / <the called job's name>" — here "Build / Build" — and the

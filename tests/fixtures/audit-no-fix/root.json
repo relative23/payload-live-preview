@@ -1,0 +1,203 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@changesets/apply-release-plan": {
+      "severity": "high",
+      "via": [
+        "@changesets/config",
+        "@changesets/git",
+        "@changesets/should-skip-package",
+        "@manypkg/get-packages"
+      ],
+      "nodes": ["node_modules/@changesets/apply-release-plan"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@changesets/assemble-release-plan": {
+      "severity": "high",
+      "via": [
+        "@changesets/get-dependents-graph",
+        "@changesets/should-skip-package",
+        "@manypkg/get-packages"
+      ],
+      "nodes": ["node_modules/@changesets/assemble-release-plan"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@changesets/cli": {
+      "severity": "high",
+      "via": [
+        "@changesets/apply-release-plan",
+        "@changesets/assemble-release-plan",
+        "@changesets/config",
+        "@changesets/get-dependents-graph",
+        "@changesets/get-release-plan",
+        "@changesets/git",
+        "@changesets/pre",
+        "@changesets/read",
+        "@changesets/should-skip-package",
+        "@manypkg/get-packages"
+      ],
+      "nodes": ["node_modules/@changesets/cli"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@changesets/config": {
+      "severity": "high",
+      "via": [
+        "@changesets/get-dependents-graph",
+        "@changesets/should-skip-package",
+        "@manypkg/get-packages",
+        "micromatch"
+      ],
+      "nodes": ["node_modules/@changesets/config"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@changesets/get-dependents-graph": {
+      "severity": "high",
+      "via": ["@manypkg/get-packages"],
+      "nodes": ["node_modules/@changesets/get-dependents-graph"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@changesets/get-release-plan": {
+      "severity": "high",
+      "via": [
+        "@changesets/assemble-release-plan",
+        "@changesets/config",
+        "@changesets/pre",
+        "@changesets/read",
+        "@manypkg/get-packages"
+      ],
+      "nodes": ["node_modules/@changesets/get-release-plan"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@changesets/git": {
+      "severity": "high",
+      "via": ["@manypkg/get-packages", "micromatch"],
+      "nodes": ["node_modules/@changesets/git"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@changesets/pre": {
+      "severity": "high",
+      "via": ["@manypkg/get-packages"],
+      "nodes": ["node_modules/@changesets/pre"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@changesets/read": {
+      "severity": "high",
+      "via": ["@changesets/git"],
+      "nodes": ["node_modules/@changesets/read"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@changesets/should-skip-package": {
+      "severity": "high",
+      "via": ["@manypkg/get-packages"],
+      "nodes": ["node_modules/@changesets/should-skip-package"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "@manypkg/get-packages": {
+      "severity": "high",
+      "via": ["globby"],
+      "nodes": ["node_modules/@manypkg/get-packages"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "braces": {
+      "severity": "high",
+      "via": [
+        {
+          "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+          "source": 1240992,
+          "severity": "high",
+          "range": "<=3.0.3"
+        }
+      ],
+      "nodes": ["node_modules/braces"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "fast-glob": {
+      "severity": "high",
+      "via": ["micromatch"],
+      "nodes": ["node_modules/fast-glob"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "globby": {
+      "severity": "high",
+      "via": ["fast-glob"],
+      "nodes": ["node_modules/globby"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    },
+    "micromatch": {
+      "severity": "high",
+      "via": ["braces"],
+      "nodes": ["node_modules/micromatch"],
+      "fixAvailable": {
+        "name": "@changesets/cli",
+        "version": "3.0.3",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 15,
+      "critical": 0,
+      "total": 15
+    }
+  }
+}
