@@ -7,13 +7,15 @@ import {
   type AuthorizedPreviewContext,
 } from '@security/preview-authorization';
 import type { PreviewAuthorizationHookResult } from '@adapters/shared/options';
+import { parseFragmentRequest } from '@/types/fragment-protocol';
+import tableRequest from '../../fixtures/fragment/lexical-table-request.json' with { type: 'json' };
 
 // `astro` is a peer this package does not install; the default renderer
 // imports `astro/container` lazily, so the container is stood in for here.
 const container = vi.hoisted(() => ({ create: vi.fn<() => Promise<unknown>>() }));
 vi.mock('astro/container', () => ({ experimental_AstroContainer: container }));
 
-/** ADR 0011's abuse model: registered boundaries only, authorized and same-origin only, refusals say nothing. */
+/** ADR 0011's abuse model: registered boundaries only, authorized and same-origin only. */
 
 const SITE = 'https://site.example.com';
 const SECRET = 'fragment-endpoint-secret-that-is-long-enough-1234';
@@ -121,7 +123,7 @@ describe('createFragmentEndpoint — refusals carry no information', () => {
     const big = await validBody({ fields: { title: 'x'.repeat(70_000) } });
     expect((await post(big)).status).toBe(413);
     expect((await post({ fragment: '../etc/passwd' })).status).toBe(400);
-    const deep = await validBody({ fields: JSON.parse('{"a":'.repeat(20) + '1' + '}'.repeat(20)) });
+    const deep = await validBody({ fields: JSON.parse('{"a":'.repeat(70) + '1' + '}'.repeat(70)) });
     expect((await post(deep)).status).toBe(400);
   });
 
@@ -336,4 +338,72 @@ describe('createFragmentEndpoint — the default renderer', () => {
     });
     expect(renderToString).toHaveBeenCalledWith(Hero, { props: { title: 'Hallo', locale: 'de' } });
   });
+});
+
+describe('fragment field depth', () => {
+  function fieldsAt(depth: number): Record<string, unknown> {
+    let value: unknown = 0;
+    for (let level = 1; level < depth; level += 1) value = [value];
+    return { a: value };
+  }
+
+  it('accepts the anonymized reported table at depth 15 and renders it with a cap of 24', async () => {
+    expect(parseFragmentRequest(tableRequest, 14)).toBeNull();
+    expect(parseFragmentRequest(tableRequest, 15)).not.toBeNull();
+    for (const limits of [undefined, { fieldDepth: 24 }]) {
+      const response = await endpoint({ limits })({
+        request: fragmentRequest(await validBody({ fields: tableRequest.fields })),
+      });
+      expect(response.status).toBe(200);
+    }
+  });
+
+  it('bounds the default at 64 and supports stricter limits, including zero', () => {
+    expect(parseFragmentRequest({ ...tableRequest, fields: fieldsAt(64) })).not.toBeNull();
+    expect(parseFragmentRequest({ ...tableRequest, fields: fieldsAt(65) })).toBeNull();
+    expect(parseFragmentRequest({ ...tableRequest, fields: fieldsAt(24) }, 24)).not.toBeNull();
+    expect(parseFragmentRequest({ ...tableRequest, fields: fieldsAt(25) }, 24)).toBeNull();
+    expect(parseFragmentRequest({ ...tableRequest, fields: {} }, 0)).not.toBeNull();
+    expect(parseFragmentRequest({ ...tableRequest, fields: { a: 0 } }, 0)).toBeNull();
+  });
+
+  it.each([-1, 0.5, 65, 20_000, NaN, Infinity, '24', null])(
+    'rejects invalid fieldDepth %s during endpoint creation',
+    (fieldDepth) => {
+      expect(() => endpoint({ limits: { fieldDepth } })).toThrow(/integer from 0 to 64/u);
+    },
+  );
+
+  it.each([
+    [24, 25],
+    [64, 20_000],
+  ])(
+    'reports the cap of %i for depth %i before authorization without overflowing',
+    async (fieldDepth, depth) => {
+      const verify = vi.fn(() => ({ subject: 'editor' }));
+      const renderDepth = vi.fn(() => Promise.resolve('<p>Preview</p>'));
+      const handler = endpoint({
+        limits: { fieldDepth },
+        authorize: { type: 'verifier', verify },
+        render: renderDepth,
+      });
+      // Construct serialized input directly: JSON.stringify itself cannot handle 20,000 levels.
+      const raw = JSON.stringify(tableRequest).replace(
+        /"fields":.*\}$/u,
+        '"fields":{"a":' + '['.repeat(depth - 1) + '0' + ']'.repeat(depth - 1) + '}}',
+      );
+      expect(Buffer.byteLength(raw)).toBeLessThan(64 * 1024);
+      const response = await handler({
+        request: new Request(`${SITE}/payload/fragment`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: SITE },
+          body: raw,
+        }),
+      });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'field-depth', maxDepth: fieldDepth });
+      expect(verify).not.toHaveBeenCalled();
+      expect(renderDepth).not.toHaveBeenCalled();
+    },
+  );
 });

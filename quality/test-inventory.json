@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 328,
-    "suites": 712,
-    "tests": 2999,
+    "files": 331,
+    "suites": 716,
+    "tests": 3013,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 271,
-      "suites": 637,
-      "tests": 2770,
+      "files": 274,
+      "suites": 641,
+      "tests": 2784,
       "benchmarks": 0
     }
   },
@@ -476,8 +476,8 @@
     {
       "path": "tests/unit/adapters/astro-fragments.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 13,
+      "suites": 5,
+      "tests": 17,
       "benchmarks": 0
     },
     {
@@ -527,6 +527,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 9,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/fragment-depth-contracts.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -919,6 +926,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/fragment-depth-fallback.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -2354,6 +2368,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/types/fragment-depth-parser.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {

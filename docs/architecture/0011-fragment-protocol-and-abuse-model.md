@@ -122,3 +122,34 @@ itself — content, head title, scroll, and `route.refreshes` — because a
 focused control's survival across a full-document morph is engine-sensitive
 and the fragment path (which is what a focused editor field sits in) keeps
 focus in all three engines.
+
+## Addendum (2026-10-03): table depth and stricter endpoint caps
+
+The reported Lexical table in PR #120 nests 15 levels under `fields`. The
+previous ceiling of 12 refused that document before authorization. The default
+ceiling is now 64; projects can lower it with `limits.fieldDepth`, an integer
+from 0 to 64. A zero cap accepts an empty `fields` record only. Each object
+property or array element adds one level, including primitive values, starting
+at zero for `fields`. This is the serialized document's shape, separate from
+Payload REST population depth.
+
+The fixed ceiling still bounds the walk before authorization. Invalid endpoint
+configuration throws when the endpoint is created; the internal parser returns
+`null` for an invalid cap. A deeper request answers
+`400 {"error":"field-depth","maxDepth":64}`, with the configured lower cap when
+present. That public diagnostic reveals the cap before authorization. It does
+not include fields, credentials, registry contents or the measured input depth.
+Other shape, origin and authorization refusals retain their existing codes and
+generic bodies. Response cache, content-type, protocol and `nosniff` headers
+remain unchanged.
+
+This addendum narrows the earlier rule that every refusal carries one word:
+depth refusal additionally names the configured cap. The client continues to
+treat HTTP 400 as `LP0801` and patches from the same revision. Protocol version 1
+and the successful response shape stay unchanged. The new lower-cap option is
+a minor release change.
+
+The reported fixture and `astro-fragments.test.ts` cover the original table,
+64/65, stricter caps and a serialized 20,000-level request before authorization.
+The parser and shared binding contracts also check mixed object/array edges,
+zero and invalid caps, and the refusal headers on all four adapters.

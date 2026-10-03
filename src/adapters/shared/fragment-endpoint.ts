@@ -20,9 +20,10 @@ import { runAuthorizeHook } from './authorize-hook';
 import { warnOnce } from './dev-warning';
 import type { PreviewAdapterOptions } from './options';
 import {
+  MAX_FIELD_DEPTH,
   FRAGMENT_PROTOCOL_VERSION,
   FRAGMENT_VERSION_HEADER,
-  parseFragmentRequest,
+  parseFragmentRequestResult,
   type FragmentRequestBody,
   type FragmentResponseBody,
 } from '@/types/fragment-protocol';
@@ -88,6 +89,8 @@ export interface FragmentEndpointOptions<Component> {
     readonly bodyBytes?: number;
     /** Render timeout. Default 5000 ms. */
     readonly timeoutMs?: number;
+    /** Maximum nesting depth of `fields`. Integer from 0 to 64; default 64. */
+    readonly fieldDepth?: number;
   };
 }
 
@@ -107,9 +110,9 @@ const NO_STORE_HEADERS: Readonly<Record<string, string>> = {
   [FRAGMENT_VERSION_HEADER]: String(FRAGMENT_PROTOCOL_VERSION),
 };
 
-/** A refusal carries a status and a generic word, never why. */
-function refuse(status: number, error: string): Response {
-  return new Response(JSON.stringify({ error }), {
+/** A refusal carries an error code and, for depth limits, the configured cap. */
+function refuse(status: number, error: string, maxDepth?: number): Response {
+  return new Response(JSON.stringify({ error, ...(maxDepth !== undefined ? { maxDepth } : {}) }), {
     status,
     headers: { ...NO_STORE_HEADERS, 'content-type': 'application/json; charset=utf-8' },
   });
@@ -210,6 +213,12 @@ export function createFragmentEndpointHandler<Component>(
   const allowed = new Set(options.allowedOrigins ?? []);
   const bodyLimit = options.limits?.bodyBytes ?? DEFAULT_BODY_BYTES;
   const timeoutMs = options.limits?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const { fieldDepth = MAX_FIELD_DEPTH } = options.limits ?? {};
+  if (!Number.isInteger(fieldDepth) || fieldDepth < 0 || fieldDepth > MAX_FIELD_DEPTH) {
+    throw new TypeError(
+      'createFragmentEndpoint: limits.fieldDepth must be an integer from 0 to 64',
+    );
+  }
   const registry = options.registry;
 
   return async (request) => {
@@ -219,7 +228,8 @@ export function createFragmentEndpointHandler<Component>(
     if (!type.toLowerCase().startsWith('application/json')) return refuse(415, 'content-type');
     const raw = await readBody(request, bodyLimit);
     if (raw === TOO_LARGE) return refuse(413, 'body');
-    const body = parseFragmentRequest(raw);
+    const body = parseFragmentRequestResult(raw, fieldDepth);
+    if (body === 'field-depth') return refuse(400, 'field-depth', fieldDepth);
     if (body === null) return refuse(400, 'shape');
 
     // Authorize as the page would, so a token stays bound to the route it was

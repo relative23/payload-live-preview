@@ -208,7 +208,7 @@ export interface FragmentStrategyOptions {
 export function isRouteBound(element: Element): boolean;
 
 // @internal
-export function parseFragmentRequest(value: unknown): FragmentRequestBody | null;
+export function parseFragmentRequest(value: unknown, maxFieldDepth?: number): FragmentRequestBody | null;
 
 // @internal
 export function parseFragmentResponse(value: unknown): FragmentResponseBody | null;

@@ -4,14 +4,14 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-DATKU183.js';
+import { a } from '../../fragment-endpoint-yIQFf015.js';
 import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-CNUGYbA_.js';
 import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-CNUGYbA_.js';
-import { b } from '../../fragment-endpoint-DATKU183.js';
-import { c } from '../../fragment-endpoint-DATKU183.js';
+import { b } from '../../fragment-endpoint-yIQFf015.js';
+import { c } from '../../fragment-endpoint-yIQFf015.js';
 import { c as createLivePreviewMiddleware } from '../../middleware-CWObDO37.js';
-import { F } from '../../fragment-endpoint-DATKU183.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-DATKU183.js';
+import { F } from '../../fragment-endpoint-yIQFf015.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-yIQFf015.js';
 import { h as hasPreviewIntent } from '../../options-uHKrDM2U.js';
 import { L as LivePreviewAstroOptions } from '../../middleware-CWObDO37.js';
 import { L as LivePreviewLocals } from '../../locals-CNUGYbA_.js';
