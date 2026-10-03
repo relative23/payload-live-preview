@@ -19,7 +19,7 @@
   "totals": {
     "files": 326,
     "suites": 706,
-    "tests": 2963,
+    "tests": 2964,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 269,
       "suites": 631,
-      "tests": 2734,
+      "tests": 2735,
       "benchmarks": 0
     }
   },
@@ -2101,7 +2101,7 @@
       "path": "tests/unit/quality/mutation-sharding.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 14,
+      "tests": 15,
       "benchmarks": 0
     },
     {

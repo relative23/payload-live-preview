@@ -244,6 +244,21 @@ Version PRs remain on `main` only. The dist-tag rule in §4 is unchanged: a 2.0
 patch below an already published 2.1 `latest` is refused, so this route publishes
 2.0.6 before 2.1.0.
 
+### 9. Nightly policy scope correction (2026-10-03)
+
+The official [Main CI report](https://github.com/relative23/payload-live-preview/actions/runs/35471423974)
+and [Deep Quality report](https://github.com/relative23/payload-live-preview/actions/runs/37108394350)
+for `9f66fbf` both contain 64 mutated files; the policy named 63. Both reports'
+embedded sources match that commit byte for byte. The missing policy entry is
+`src/core/lifetime-scope.ts`, which the actual nightly configuration already
+includes.
+
+The policy now names that file and lowers the no-coverage maximum from 75 to
+the measured 71. The total of 7,333 mutants, the 84.69% score minimum, the
+45-mutant drift band and every other limit stay unchanged. This corrects the
+policy for the existing reports; the separate property-exploration failure
+remains open.
+
 ## Consequences
 
 - What is on npm is what CI tested, provably: manifest and registry archive are
