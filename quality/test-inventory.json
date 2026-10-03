@@ -19,7 +19,7 @@
   "totals": {
     "files": 321,
     "suites": 701,
-    "tests": 2940,
+    "tests": 2948,
     "benchmarks": 12
   },
   "groups": {
@@ -62,7 +62,7 @@
     "unit": {
       "files": 264,
       "suites": 626,
-      "tests": 2711,
+      "tests": 2719,
       "benchmarks": 0
     }
   },
@@ -2129,7 +2129,7 @@
       "path": "tests/unit/quality/workflow-contracts.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2143,7 +2143,7 @@
       "path": "tests/unit/release-gate.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 21,
+      "tests": 26,
       "benchmarks": 0
     },
     {

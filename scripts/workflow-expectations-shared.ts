@@ -35,7 +35,8 @@ export const MATRIX_SETUP = [CHECKOUT, SETUP_NODE, NPM_VERSION_WHERE_SUPPORTED, 
 export const PINNED_SETUP = [CHECKOUT, PINNED_NODE, NPM_VERSION, NPM_CI] as const;
 export const FIXTURE_SETUP = [CHECKOUT, FIXTURE_CACHE, NPM_VERSION, NPM_CI] as const;
 export const READ_ONLY = { contents: 'read' } as const;
-export const MAIN_PUSH = "github.event_name == 'push' && github.ref == 'refs/heads/main'";
+export const RELEASE_PUSH =
+  "github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/2.0')";
 export const BROWSERS = ['chromium', 'firefox', 'webkit'] as const;
 export const CI_FIXTURES = [
   'astro-payload',

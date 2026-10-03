@@ -1,6 +1,6 @@
 name: Release
 
-# A successful CI push run on main or release/1.x certifies its head commit;
+# A successful CI push run on a release branch certifies its head commit;
 # this workflow either opens the Version PR or publishes the exact artifact that
 # run produced. The branches are listed once, in scripts/release-gate.ts.
 # `workflow_dispatch` re-enters a certified run whose release was skipped
@@ -12,12 +12,12 @@ on:
   workflow_dispatch:
     inputs:
       run_id:
-        description: Id of a successful CI push run on main or release/1.x to release.
+        description: Id of a successful CI push run on main or release/1.x or release/2.0 to release.
         required: true
         type: string
 
-# One release at a time per branch, so main and release/1.x never wait on each
-# other. A dispatched re-entry runs on main's ref and queues with main.
+# One release at a time per branch, so independent release branches never wait
+# on each other. A dispatched re-entry runs on main's ref and queues with main.
 concurrency:
   group: release-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: false
@@ -32,7 +32,8 @@ jobs:
       (github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       (github.event.workflow_run.head_branch == 'main' ||
-      github.event.workflow_run.head_branch == 'release/1.x') &&
+      github.event.workflow_run.head_branch == 'release/1.x' ||
+      github.event.workflow_run.head_branch == 'release/2.0') &&
       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     permissions:
@@ -74,7 +75,7 @@ jobs:
     # changesets/action resets its version branch to github.sha, which under
     # workflow_run is the tip of main; the runner writes GITHUB_SHA over any
     # step env. The Version PR is only correct when the tested commit is still
-    # that tip, so release/1.x is versioned by hand and the gate says so.
+    # that tip, so maintenance branches are versioned by hand and the gate says so.
     if: >-
       needs.gate.outputs.version_pr == 'true' &&
       needs.gate.outputs.tested_sha == github.sha

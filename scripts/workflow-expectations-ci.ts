@@ -8,7 +8,7 @@ import {
   CI_FIXTURES,
   DOWNLOAD_DIST,
   FIXTURE_SETUP,
-  MAIN_PUSH,
+  RELEASE_PUSH,
   NPM_CI,
   NPM_VERSION,
   MATRIX_SETUP,
@@ -25,7 +25,10 @@ import {
 
 export const CI: WorkflowSpec = {
   name: 'CI',
-  on: { push: { branches: ['main'] }, pull_request: { branches: ['main'] } },
+  on: {
+    push: { branches: ['main', 'release/2.0'] },
+    pull_request: { branches: ['main', 'release/2.0'] },
+  },
   permissions: READ_ONLY,
   concurrency: {
     group:
@@ -185,7 +188,7 @@ export const CI: WorkflowSpec = {
         },
       ],
     },
-    'release-gates': callCriticalGates('300000', MAIN_PUSH),
+    'release-gates': callCriticalGates('300000', RELEASE_PUSH),
   },
 };
 
