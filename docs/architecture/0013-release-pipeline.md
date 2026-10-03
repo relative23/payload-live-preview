@@ -259,6 +259,33 @@ the measured 71. The total of 7,333 mutants, the 84.69% score minimum, the
 policy for the existing reports; the separate property-exploration failure
 remains open.
 
+### 10. Project-scoped audit exceptions (2026-10-03)
+
+CI audits development dependencies in the root package and all ten examples.
+After updates within the maintained dependency ranges, seven project/advisory
+combinations remain without a patched release in their current major track:
+[braces 3](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) in the root and Nuxt,
+[node-forge 1](https://github.com/advisories/GHSA-86w9-cpqp-85rv) in Nuxt, and
+[http-cache-semantics 4](https://github.com/advisories/GHSA-ch52-4w7c-c8xp) in four
+Astro examples. Their temporary exceptions expire at the end of 2026-10-10 UTC.
+
+Each exception names one project, advisory, leaf version and integrity. It also
+binds the affected dependency graph, including parent fix suggestions, and a
+reviewed source/configuration/caller descriptor. Empty descriptors, new findings,
+changed pins and unused exceptions fail. Every invocation validates all register
+entries and dates, then uses only the selected project's exceptions. Audit or
+registry errors cannot supply a clean result; both subprocesses have finite
+SIGKILL time limits. A fresh official registry query requires another review as
+soon as a newer stable version appears in the exception's major track.
+
+The reviewed contexts are Changesets' single-package discovery, the Nuxt
+example's HTTP build/development setup, and Astro image-build callers in examples
+that use plain image tags. The descriptors bind those contexts to the measured
+sources and caller identities. These Main profiles need a separate reachability
+review and fresh pins before use on another source branch. Package version and
+Changesets base-branch metadata are omitted from the security projections so a
+version-only change keeps an otherwise valid binding.
+
 ## Consequences
 
 - What is on npm is what CI tested, provably: manifest and registry archive are

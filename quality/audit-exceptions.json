@@ -1,5 +1,136 @@
 {
-  "schemaVersion": 1,
-  "comment": "Reviewed npm audit exceptions. Each entry lets a specific high/critical advisory pass the audit gate until it expires. Keep this empty; add an entry only with a real reachability analysis and a near-term expiry, and remove it the moment a fix is available.",
-  "exceptions": []
+  "schemaVersion": 2,
+  "projects": {
+    ".": {
+      "exposure": "quality/audit-exposure/root.json",
+      "exposureSha256": "9ffc8b779087f46e312bfe41e8cc0546f85082e44639b4ac5dfc6f730e1f27ff",
+      "exceptions": [
+        {
+          "id": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+          "package": "braces",
+          "version": "3.0.3",
+          "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
+          "graphSha256": "93bb2fae72a34402a2809507b0635ae96aaf820aee101fc5c7345f84e4a7914a",
+          "reason": "No patched braces 3 release. Changesets 2 is retained while a CLI 3 migration remains unverified; its major replacement suggestion is pinned with this graph.",
+          "reachability": "Reviewed Changesets config/git and Manypkg callers; fixed, linked and ignore are empty, workspace metadata is absent and the repository uses one package. Source and configuration projections reject drift.",
+          "expires": "2026-10-10"
+        }
+      ]
+    },
+    "examples/astro-payload": {
+      "exposure": "quality/audit-exposure/astro-payload.json",
+      "exposureSha256": "a4a2df84015fbc5679a1aab759de0eb940b3974c1faefb79abb00e833f0713f1",
+      "exceptions": [
+        {
+          "id": "https://github.com/advisories/GHSA-ch52-4w7c-c8xp",
+          "package": "http-cache-semantics",
+          "version": "4.2.0",
+          "integrity": "sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ==",
+          "graphSha256": "b9bd521a8c094d717c559663c6ba01932a65c20883d801c0d33b0201931ea23e",
+          "reason": "No patched http-cache-semantics 4 release. The reviewed Astro image-build caller uses storable/timeToLive and creates its own requests and image responses.",
+          "reachability": "The fixture uses plain image tags and has no astro:assets or remote-image configuration. The reviewed caller forwards neither editor credentials/client max-stale nor cached Set-Cookie headers; exact Astro identity and complete source/configuration projections are required.",
+          "expires": "2026-10-10"
+        }
+      ]
+    },
+    "examples/nextjs-payload": {
+      "exposure": null,
+      "exposureSha256": null,
+      "exceptions": []
+    },
+    "examples/sveltekit-payload": {
+      "exposure": null,
+      "exposureSha256": null,
+      "exceptions": []
+    },
+    "examples/nuxt-payload": {
+      "exposure": "quality/audit-exposure/nuxt-payload.json",
+      "exposureSha256": "9cce63073ab07a8c7983e83932ae3192b797b7f9f56f6bb6aef4a793cae08c87",
+      "exceptions": [
+        {
+          "id": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+          "package": "braces",
+          "version": "3.0.3",
+          "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
+          "graphSha256": "fb441fbe692f82138ce97f98280030234a943d344366521d05dba49817a41866",
+          "reason": "No patched braces 3 release. This exception covers only the reviewed Nuxt fixture and the exact Nitro/glob dependency graph.",
+          "reachability": "Nitro compiles build and scan globs; this HTTP fixture has no custom asset, scan or ignore patterns. Its source set, Nuxt configuration, commands, server definitions and Nitro caller identity are pinned.",
+          "expires": "2026-10-10"
+        },
+        {
+          "id": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+          "package": "node-forge",
+          "version": "1.4.0",
+          "integrity": "sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==",
+          "graphSha256": "89ea63409fdf95ad80b156ec216da6af73a1f113eeabf0726ef7925fe99c8590",
+          "reason": "No patched node-forge 1 release. The reviewed Listhen caller generates and signs development certificates; the advisory concerns RSA signature verification.",
+          "reachability": "This fixture runs HTTP with no HTTPS or PFX option. No RSA verification was found in the retained Listhen caller; caller identities, commands, server definitions and the complete source/configuration set detect exposure changes.",
+          "expires": "2026-10-10"
+        }
+      ]
+    },
+    "examples/astro-hybrid": {
+      "exposure": "quality/audit-exposure/astro-hybrid.json",
+      "exposureSha256": "9a66c8505a96d93ecb4352f690511b52d2fb52be0235ebdec8b396b0a1dd9de6",
+      "exceptions": [
+        {
+          "id": "https://github.com/advisories/GHSA-ch52-4w7c-c8xp",
+          "package": "http-cache-semantics",
+          "version": "4.2.0",
+          "integrity": "sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ==",
+          "graphSha256": "a65a5b4c5d54e74bd9da7d22b8895f106b45c4109910d3e451769fe41d217639",
+          "reason": "No patched http-cache-semantics 4 release. The reviewed Astro image-build caller uses storable/timeToLive and creates its own requests and image responses.",
+          "reachability": "The fixture uses plain image tags and has no astro:assets or remote-image configuration. The reviewed caller forwards neither editor credentials/client max-stale nor cached Set-Cookie headers; exact Astro identity and complete source/configuration projections are required.",
+          "expires": "2026-10-10"
+        }
+      ]
+    },
+    "examples/pure-html": {
+      "exposure": null,
+      "exposureSha256": null,
+      "exceptions": []
+    },
+    "examples/vanilla-client": {
+      "exposure": null,
+      "exposureSha256": null,
+      "exceptions": []
+    },
+    "examples/astro-inline": {
+      "exposure": "quality/audit-exposure/astro-inline.json",
+      "exposureSha256": "ee4cef5402fd7b79699f9295b5e137c24fc9afd15bdfd38ee0748d69a5ade4a0",
+      "exceptions": [
+        {
+          "id": "https://github.com/advisories/GHSA-ch52-4w7c-c8xp",
+          "package": "http-cache-semantics",
+          "version": "4.2.0",
+          "integrity": "sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ==",
+          "graphSha256": "9cba8ca46b97edf0e92bf319a7288535f7144e874c84bbb9a248e6d87bf3be31",
+          "reason": "No patched http-cache-semantics 4 release. The reviewed Astro image-build caller uses storable/timeToLive and creates its own requests and image responses.",
+          "reachability": "The fixture uses plain image tags and has no astro:assets or remote-image configuration. The reviewed caller forwards neither editor credentials/client max-stale nor cached Set-Cookie headers; exact Astro identity and complete source/configuration projections are required.",
+          "expires": "2026-10-10"
+        }
+      ]
+    },
+    "examples/astro-middleware": {
+      "exposure": "quality/audit-exposure/astro-middleware.json",
+      "exposureSha256": "9f65d6723f30ac9dd656dc53d3aed36ca7e0f2596d33067c63f698c70eaf9af8",
+      "exceptions": [
+        {
+          "id": "https://github.com/advisories/GHSA-ch52-4w7c-c8xp",
+          "package": "http-cache-semantics",
+          "version": "4.2.0",
+          "integrity": "sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ==",
+          "graphSha256": "a65a5b4c5d54e74bd9da7d22b8895f106b45c4109910d3e451769fe41d217639",
+          "reason": "No patched http-cache-semantics 4 release. The reviewed Astro image-build caller uses storable/timeToLive and creates its own requests and image responses.",
+          "reachability": "The fixture uses plain image tags and has no astro:assets or remote-image configuration. The reviewed caller forwards neither editor credentials/client max-stale nor cached Set-Cookie headers; exact Astro identity and complete source/configuration projections are required.",
+          "expires": "2026-10-10"
+        }
+      ]
+    },
+    "examples/payload-backend": {
+      "exposure": null,
+      "exposureSha256": null,
+      "exceptions": []
+    }
+  }
 }

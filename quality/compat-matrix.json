@@ -48,7 +48,7 @@
       "fixture": "examples/nextjs-payload",
       "tested": [
         {
-          "version": "16.3.4",
+          "version": "16.3.8",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E"
@@ -117,8 +117,13 @@
     },
     {
       "version": "3.89.0",
-      "how": "real admin E2E (examples/payload-backend) on every push, plus a wire corpus captured from it",
+      "how": "wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts",
       "source": "corpus"
+    },
+    {
+      "version": "3.90.2",
+      "how": "real admin E2E fixture (examples/payload-backend), run by CI on every push",
+      "source": "tests"
     },
     {
       "version": "4.0.0-canary.33",
