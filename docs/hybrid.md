@@ -244,7 +244,7 @@ in whatever it does hand a handler — that is all either binding does.
   installs the peer afterwards is not answered from a stale failure. Pass
   `render` for another component system or for a test.
 - **Limits**: body 64 KiB and render timeout 5 s, configurable through
-  `limits` (`bodyBytes`, `timeoutMs`); field depth 12 is fixed. Every
+  `limits` (`bodyBytes`, `timeoutMs`); field depth 64 is fixed. Every
   response is `Cache-Control: private, no-store`.
 - **A render that throws** answers `500 {"error":"render"}` — the reason never
   leaves the server — and logs the boundary's id and the message once per

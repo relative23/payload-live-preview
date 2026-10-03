@@ -43,7 +43,7 @@ export interface FragmentResponseBody {
   };
 }
 
-const MAX_FIELD_DEPTH = 12;
+const MAX_FIELD_DEPTH = 64;
 
 function depthOf(value: unknown, depth: number): number {
   if (depth > MAX_FIELD_DEPTH || typeof value !== 'object' || value === null) return depth;

@@ -18,8 +18,8 @@
   ],
   "totals": {
     "files": 321,
-    "suites": 700,
-    "tests": 2937,
+    "suites": 701,
+    "tests": 2940,
     "benchmarks": 12
   },
   "groups": {
@@ -61,8 +61,8 @@
     },
     "unit": {
       "files": 264,
-      "suites": 625,
-      "tests": 2708,
+      "suites": 626,
+      "tests": 2711,
       "benchmarks": 0
     }
   },
@@ -476,8 +476,8 @@
     {
       "path": "tests/unit/adapters/astro-fragments.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 13,
+      "suites": 5,
+      "tests": 16,
       "benchmarks": 0
     },
     {
