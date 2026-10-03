@@ -2,15 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, release/2.0]
   pull_request:
-    branches: [main]
+    branches: [main, release/2.0]
 
 permissions:
   contents: read
 
 concurrency:
-  # Main runs carry the verdict the Release workflow consumes; never cancel them.
+  # Release branch runs carry the verdict the Release workflow consumes; never cancel them.
   # `cancel-in-progress: false` alone does not achieve that: GitHub keeps exactly
   # one *pending* run per group and cancels it when the next one arrives, so a
   # merge landing while an earlier main run is still going costs the commit in
@@ -385,7 +385,7 @@ jobs:
 
   release-gates:
     name: Release Gates
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/2.0')
     needs: build
     uses: ./.github/workflows/critical-gates.yml
     permissions:

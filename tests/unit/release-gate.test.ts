@@ -90,9 +90,21 @@ describe('certified run resolution', () => {
     });
   });
 
+  it('accepts a certified push on the exact 2.0 maintenance branch', () => {
+    expect(certifiedRunFrom(run({ head_branch: 'release/2.0' }), REPOSITORY)).toEqual({
+      id: 42,
+      headSha: TESTED,
+      branch: 'release/2.0',
+    });
+  });
+
   it('refuses every other branch, however close its name', () => {
     for (const branch of [
       'release/2.x',
+      'release/2.0-backport',
+      'release/2.0.1',
+      'changeset-release/release/2.0',
+      'Release/2.0',
       'release/1.x-backport',
       'changeset-release/release/1.x',
       'Main',
@@ -114,6 +126,18 @@ describe('certified run resolution', () => {
     expect(() => certifiedRunFrom(run({ [field]: value }), REPOSITORY)).toThrow(
       /not a certified CI run/u,
     );
+  });
+
+  it.each([
+    { field: 'name', value: 'Docs' },
+    { field: 'event', value: 'pull_request' },
+    { field: 'status', value: 'in_progress' },
+    { field: 'conclusion', value: 'failure' },
+    { field: 'head_repository', value: { full_name: 'someone/fork' } },
+  ])('refuses an uncertified $field on release/2.0', ({ field, value }) => {
+    expect(() =>
+      certifiedRunFrom(run({ head_branch: 'release/2.0', [field]: value }), REPOSITORY),
+    ).toThrow(/not a certified CI run/u);
   });
 
   it('refuses malformed identifiers', () => {
@@ -212,6 +236,49 @@ describe('release gate run', () => {
         }),
       }),
     ).toEqual({ run_id: '42', tested_sha: TESTED, publish: 'true', version_pr: 'false' });
+  });
+
+  it('publishes certified 2.0.6 bytes only after proving the run belongs to release/2.0', () => {
+    const commands: string[] = [];
+    expect(
+      runReleaseGate({
+        repository: REPOSITORY,
+        runId: '42',
+        run: runner({
+          run: run({ head_branch: 'release/2.0' }),
+          manifest: { name: 'pkg', version: '2.0.6' },
+          commands,
+        }),
+      }),
+    ).toEqual({ run_id: '42', tested_sha: TESTED, publish: 'true', version_pr: 'false' });
+    expect(commands).toContain(`git merge-base --is-ancestor ${TESTED} origin/release/2.0`);
+    expect(commands.some((command) => command.includes('origin/main'))).toBe(false);
+    expect(commands).toContain(`git show ${TESTED}:package.json`);
+  });
+
+  it('refuses a 2.0 maintenance run whose commit is not on its own branch', () => {
+    expect(() =>
+      runReleaseGate({
+        repository: REPOSITORY,
+        runId: '42',
+        run: runner({ run: run({ head_branch: 'release/2.0' }), ancestor: false }),
+      }),
+    ).toThrow(/not on release\/2\.0/u);
+  });
+
+  it('requires the manual version step on release/2.0 instead of opening a main Version PR', () => {
+    expect(() =>
+      runReleaseGate({
+        repository: REPOSITORY,
+        runId: '42',
+        run: runner({
+          run: run({ head_branch: 'release/2.0' }),
+          manifest: { name: 'pkg', version: '2.0.5' },
+          registry: ok('2.0.5\n'),
+          changesets: '.changeset/README.md\n.changeset/fix.md\n',
+        }),
+      }),
+    ).toThrow(/npm run version/u);
   });
 
   it('refuses a 1.x commit that is not on release/1.x', () => {
