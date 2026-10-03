@@ -415,8 +415,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 161 256 → 161 305 (+49 B, measured 161 217 → 161 266); gzip 50 901 → 50 911 (+10 B, measured 50 893 → 50 903).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 50 911 → 50 918 (+7 B, measured 50 903 → 50 910).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 161 305 → 161 756 (+451 B, measured 161 284 → 161 735); gzip 50 918 → 51 037 (+119 B, measured 50 909 → 51 028); brotli 43 631 → 43 731 (measured 43 541 → 43 641, cushion kept).
-  // 2026-09-30: configurable field depth grows four adapters; raw/gzip limits keep 20/12 B headroom. Brotli is unchanged.
-  'adapters/astro/index.js': { raw: 163_468, gzip: 51_664, brotli: 44_165 },
+  // 2026-10-03: bounded fieldDepth and depth refusals grow adapters and fragment.*; raw/gzip keep 20/12 B headroom where raised.
+  'adapters/astro/index.js': { raw: 163_625, gzip: 51_664, brotli: 44_165 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -454,7 +454,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-16 (2.0.1 Version PR): gzip 50 454 → 50 467. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 50 455 against a cushion of -1 B. Twelve bytes over that measurement  as the rows that never flipped carry.
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 159 713 → 159 731 (+18 B, measured 159 712 → 159 730); gzip 50 467 → 50 473 (+6 B, measured 50 454 → 50 460).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 159 731 → 160 182 (+451 B, measured 159 730 → 160 181); gzip 50 473 → 50 594 (+121 B, measured 50 457 → 50 578).
-  'adapters/nextjs/index.js': { raw: 161_914, gzip: 51_221, brotli: 43_832 },
+  'adapters/nextjs/index.js': { raw: 162_071, gzip: 51_221, brotli: 43_832 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -479,11 +479,11 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 158 976 → 159 025 (+49 B, measured 158 943 → 158 992).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 50 291 → 50 296 (+5 B, measured 50 279 → 50 284).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 159 025 → 159 476 (+451 B, measured 159 010 → 159 461); gzip 50 296 → 50 407 (+111 B, measured 50 285 → 50 396); brotli 43 092 → 43 290 (measured 42 930 → 43 128, cushion kept).
-  'adapters/nuxt/index.js': { raw: 161_194, gzip: 51_033, brotli: 43_701 },
+  'adapters/nuxt/index.js': { raw: 161_351, gzip: 51_033, brotli: 43_701 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
-  'adapters/sveltekit/index.js': { raw: 160_183, gzip: 50_744, brotli: 43_412 },
+  'adapters/sveltekit/index.js': { raw: 160_336, gzip: 50_744, brotli: 43_412 },
   // The build tools (codegen, doctor, codemods) are logged in `entry-budgets-tools.ts`, split off at 500 lines (Z37).
   ...TOOL_ENTRY_BUDGETS,
   // 2026-09-14 (2.0.1, guesses in a fragment boundary): raw +44 B each, the fix's own bytes; cushions kept.
@@ -595,6 +595,6 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // Z9 commit: 6 179 / 6 163).
   'plugins.cjs': { raw: 19_346, gzip: 7_123, brotli: 6_286 },
   'plugins.js': { raw: 19_322, gzip: 7_107, brotli: 6_296 },
-  'fragment.cjs': { raw: 14_291, gzip: 5_554, brotli: 4_957 },
-  'fragment.js': { raw: 14_225, gzip: 5_510, brotli: 4_928 },
+  'fragment.cjs': { raw: 14_426, gzip: 5_599, brotli: 4_957 },
+  'fragment.js': { raw: 14_360, gzip: 5_566, brotli: 4_928 },
 };

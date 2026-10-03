@@ -43,7 +43,8 @@ export interface FragmentResponseBody {
   };
 }
 
-export const DEFAULT_MAX_FIELD_DEPTH = 12;
+/** A fixed ceiling bounds the recursive walk before request authorization. @internal */
+export const MAX_FIELD_DEPTH = 64;
 
 function depthOf(value: unknown, depth: number, maxDepth: number): number {
   if (depth > maxDepth || typeof value !== 'object' || value === null) return depth;
@@ -62,8 +63,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /** Shape check for a request body; `null` when it is not one. @internal */
 export function parseFragmentRequest(
   value: unknown,
-  maxFieldDepth = DEFAULT_MAX_FIELD_DEPTH,
+  maxFieldDepth = MAX_FIELD_DEPTH,
 ): FragmentRequestBody | null {
+  const result = parseFragmentRequestResult(value, maxFieldDepth);
+  return result === 'field-depth' ? null : result;
+}
+
+/** Request validation with a distinct depth refusal for endpoint diagnostics. @internal */
+export function parseFragmentRequestResult(
+  value: unknown,
+  maxFieldDepth = MAX_FIELD_DEPTH,
+): FragmentRequestBody | 'field-depth' | null {
+  if (!Number.isInteger(maxFieldDepth) || maxFieldDepth < 0 || maxFieldDepth > MAX_FIELD_DEPTH) {
+    return null;
+  }
   if (!isRecord(value)) return null;
   const fragment = value['fragment'];
   if (typeof fragment !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/iu.test(fragment)) return null;
@@ -93,7 +106,8 @@ export function parseFragmentRequest(
   }
   const [locale, collectionSlug, globalSlug] = slugs;
   const fields = value['fields'];
-  if (!isRecord(fields) || depthOf(fields, 0, maxFieldDepth) > maxFieldDepth) return null;
+  if (!isRecord(fields)) return null;
+  if (depthOf(fields, 0, maxFieldDepth) > maxFieldDepth) return 'field-depth';
   return {
     fragment,
     ...(typeof key === 'string' ? { key } : {}),
