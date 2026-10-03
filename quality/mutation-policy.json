@@ -40,6 +40,7 @@
     "src/core/intl-cache.ts",
     "src/core/islands.ts",
     "src/core/lifecycle.ts",
+    "src/core/lifetime-scope.ts",
     "src/core/loader.ts",
     "src/core/lru.ts",
     "src/core/message-bus.ts",
@@ -88,7 +89,7 @@
     "mutationScoreMinimum": 84.69,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 45,
-    "noCoverageMaximum": 75,
+    "noCoverageMaximum": 71,
     "timeoutMaximum": 60,
     "errorMaximum": 0,
     "ignoredMaximum": 0
