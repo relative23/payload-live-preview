@@ -30,6 +30,13 @@ afterEach(() => {
 });
 
 describe('nightly mutation sharding', () => {
+  it('keeps the reviewed policy on the actual unsharded mutation scope', async () => {
+    const checkedIn = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, '../../../quality/mutation-policy.json'), 'utf8'),
+    ) as { scope: readonly string[] };
+    expect([...checkedIn.scope].sort()).toEqual([...(await mutateList())].sort());
+  });
+
   it('splits the scope into disjoint shards that together are the whole scope', async () => {
     const full = await mutateList();
     // Sequential on purpose: each call sets the environment the config reads.

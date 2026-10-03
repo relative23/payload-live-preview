@@ -1,0 +1,40 @@
+{
+  "sources": {
+    "playwright.config.ts": "77ffadc555b938543a03cd2c7dac14d8a528937b10ff7cf5361a162b44be41ff",
+    "playwright.real-payload.config.ts": "feea2d9a4b68c7e365c812961698b0abe70fc5641e9d4f44e7760b76e9e8b415",
+    "examples/astro-hybrid/astro.config.mjs": "6615b129029bca4da2bbc93620ffda3543d5032d1ec10114f7c7749a1a78f80a",
+    "examples/astro-hybrid/src/components/Hero.astro": "5355cf34a68f1fd30c90beac40f5dfb41372abcaba3ad912fccd78d44a7c08d9",
+    "examples/astro-hybrid/src/document.ts": "cf47d3e029a875a39bc73251635fdfd731aa2eaff84d90586f6487b549888826",
+    "examples/astro-hybrid/src/env.d.ts": "9c9283a414423d9223e5ea86941b142443b8af7a007f77612dc2c098de2d2500",
+    "examples/astro-hybrid/src/middleware.ts": "3bc8c0b0c0a1db795fd3d04acfeffb5a27daa080141a26c22d33d5863700e8cb",
+    "examples/astro-hybrid/src/pages/annotated.astro": "c35048e3bb2a12bd985e4e4ab2b616fbede747db0a9ca4c3730199d54d1d132e",
+    "examples/astro-hybrid/src/pages/bench.astro": "b861a61e4ae96c11084889c1febc25bb104d214f6ceff4c0d99551fd635f147c",
+    "examples/astro-hybrid/src/pages/index.astro": "f084ce687872c15e8e3669b96246d168e52a5736796ee3b3922d219b59b34f2e",
+    "examples/astro-hybrid/src/pages/payload/fragment.ts": "31884ee0d0a13a77ff7037071247c96175e3bc59b77a2185a6e8f5b528e3d4d5",
+    "examples/astro-hybrid/src/pages/unbound.astro": "0e3bcef8dbb53ab866ad58e045fb756e70b14c236b95de9eb18c344e3d2aac61",
+    "examples/astro-hybrid/src/preview.ts": "5dcb260a5383fa6c54b2d2f9041607e2f431ea0a6cab3f7489ca48dcd66f7b2f",
+    "examples/astro-hybrid/tsconfig.json": "974b0a3b37e52f3649d9df63e72e374794e9e797c8ae61eca4812f844406f7ef"
+  },
+  "directories": ["examples/astro-hybrid"],
+  "absentFiles": [],
+  "json": [
+    {
+      "path": "examples/astro-hybrid/package.json",
+      "values": {
+        "scripts": {
+          "dev": "astro dev --host --port 4177",
+          "build": "astro build",
+          "start": "node ./dist/server/entry.mjs",
+          "astro": "astro"
+        }
+      },
+      "absent": []
+    }
+  ],
+  "callers": {
+    "node_modules/astro": [
+      "7.2.9",
+      "sha512-o5nZFo/bieF6rp4x9sQSLhI7GO7Bahpld38Y4LvX27nFoxNiuttjI+Hea81w5ksORLHgdPUlQpU9obPz5QRa8g=="
+    ]
+  }
+}

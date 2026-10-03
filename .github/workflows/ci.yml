@@ -2,15 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, release/2.0]
   pull_request:
-    branches: [main]
+    branches: [main, release/2.0]
 
 permissions:
   contents: read
 
 concurrency:
-  # Main runs carry the verdict the Release workflow consumes; never cancel them.
+  # Release branch runs carry the verdict the Release workflow consumes; never cancel them.
   # `cancel-in-progress: false` alone does not achieve that: GitHub keeps exactly
   # one *pending* run per group and cancels it when the next one arrives, so a
   # merge landing while an earlier main run is still going costs the commit in
@@ -195,16 +195,16 @@ jobs:
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
       # Lockfile-only audits: the advisories are a property of the reviewed
       # lockfiles, not of an installed tree.
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/astro-payload
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/nextjs-payload
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/sveltekit-payload
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/nuxt-payload
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/astro-hybrid
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/pure-html
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/vanilla-client
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/astro-inline
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/astro-middleware
-      - run: npm audit --audit-level=high --package-lock-only --prefix examples/payload-backend
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-payload
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/nextjs-payload
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/sveltekit-payload
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/nuxt-payload
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-hybrid
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/pure-html
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/vanilla-client
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-inline
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-middleware
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/payload-backend
 
   # A job that calls a reusable workflow reports its check as
   # "<this name> / <the called job's name>" — here "Build / Build" — and the
@@ -385,7 +385,7 @@ jobs:
 
   release-gates:
     name: Release Gates
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/2.0')
     needs: build
     uses: ./.github/workflows/critical-gates.yml
     permissions:

@@ -115,6 +115,7 @@ export const MAINTAINER_INSTALL_POLICIES = [
     npmrc: 'strict-allow-scripts=true\n',
     packageManager: REVIEWED_PACKAGE_MANAGER,
     allowScripts: {
+      '@parcel/watcher@2.6.0': false,
       'esbuild@0.25.12': true,
       'esbuild@0.28.2': true,
       'fsevents@2.3.3': false,

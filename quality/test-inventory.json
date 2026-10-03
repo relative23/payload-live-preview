@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 329,
-    "suites": 710,
-    "tests": 2969,
+    "files": 331,
+    "suites": 716,
+    "tests": 3013,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 272,
-      "suites": 635,
-      "tests": 2740,
+      "files": 274,
+      "suites": 641,
+      "tests": 2784,
       "benchmarks": 0
     }
   },
@@ -2035,10 +2035,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/audit-gate-scoped.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 26,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/audit-gate.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 11,
+      "tests": 13,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/audit-registry.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -2115,7 +2129,7 @@
       "path": "tests/unit/quality/mutation-sharding.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 14,
+      "tests": 15,
       "benchmarks": 0
     },
     {
@@ -2178,7 +2192,7 @@
       "path": "tests/unit/quality/workflow-contracts.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2192,7 +2206,7 @@
       "path": "tests/unit/release-gate.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 21,
+      "tests": 26,
       "benchmarks": 0
     },
     {
