@@ -1,5 +1,17 @@
 # payload-live-preview
 
+## 2.1.0
+
+### Minor Changes
+
+- 1d9c2b8: Accept nested Lexical rich-text tables in fragment requests by raising the default field depth limit from 12 to 64. Add `limits.fieldDepth` to fragment endpoints with a supported range of 0 to 64, keeping validation before authorization bounded. Projects can set a stricter limit such as 24 without forking the package.
+- e2d7480: The sanitizer's document is named per call. `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })` and the `RichText` Astro component's `document` prop take an SSR document such as linkedom's, so two requests rendering at once each parse in their own DOM and nothing is shared through the process. `setSanitizerDocument()` stays as the fallback for a call that names none and is deprecated for 3.0.
+
+### Patch Changes
+
+- f4f7bc9: The sanitizer empties an `is` attribute instead of removing it. A parsed element's `is` value is immutable and the HTML serializer writes it back after the attribute is removed, so sanitized markup that re-entered the parser still carried `is="…"` and upgraded the element to the page's customized built-in of that name; an empty `is` names nothing, which is what DOMPurify does. Found by the new XSS corpus, which runs 118 vectors and an aimed fuzz under every policy against an allow-list-independent oracle and against DOMPurify (a devDependency).
+- 9f66fbf: The runtime releases everything a session acquired through one scope. `destroy()`, `suspend()` and a failed start close it the same way: the session is marked invalid, the work in flight is aborted, and the ready retries, the heartbeat, the message listener, the observers and the scheduler go in reverse order, a failing cleanup logged without stopping the rest. Fifty start/update/destroy cycles leave no timer, listener or observer behind, and every acquisition in the core now names who releases it.
+
 ## 2.0.5
 
 ### Patch Changes
