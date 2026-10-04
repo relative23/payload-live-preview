@@ -114,11 +114,13 @@ const RELEASE: WorkflowSpec = {
           operators: true,
         },
         {
-          run: 'npm run release',
+          run: 'env GITHUB_SHA="$PACKAGE_SOURCE_COMMIT" GITHUB_REF="refs/heads/$PACKAGE_SOURCE_BRANCH" npm run release',
+          shell: 'bash',
           env: {
             NPM_CONFIG_PROVENANCE: 'true',
             PACKAGE_ARTIFACT_DIR: 'release-artifact',
             PACKAGE_SOURCE_COMMIT: TESTED_SHA,
+            PACKAGE_SOURCE_BRANCH: '${{ needs.gate.outputs.tested_branch }}',
             SOURCE_DATE_EPOCH: '${{ steps.source_date.outputs.epoch }}',
           },
         },

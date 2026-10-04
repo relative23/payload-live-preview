@@ -3,7 +3,7 @@
   "projects": {
     ".": {
       "exposure": "quality/audit-exposure/root.json",
-      "exposureSha256": "9ffc8b779087f46e312bfe41e8cc0546f85082e44639b4ac5dfc6f730e1f27ff",
+      "exposureSha256": "d2f1ec20ae203f7b5aaeddca3266a80bbbd42e4abc06fbb542ca96c35d53e9b0",
       "exceptions": [
         {
           "id": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",

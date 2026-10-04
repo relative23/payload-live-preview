@@ -30,6 +30,9 @@ function mutated(file: string, original: string, replacement: string): Map<strin
   return sources;
 }
 
+const PUBLISH_COMMAND =
+  'env GITHUB_SHA="$PACKAGE_SOURCE_COMMIT" GITHUB_REF="refs/heads/$PACKAGE_SOURCE_BRANCH" npm run release';
+
 const NPM_VERSION_STEP =
   '      - name: Use repository npm version\n' +
   '        run: npm install --global "$(node -p "require(\'./package.json\').packageManager")"\n';
@@ -269,10 +272,9 @@ describe('workflow contracts', () => {
     {
       label: 'a publish through Changesets directory repacking',
       file: 'release.yml',
-      original: 'run: npm run release',
+      original: `run: ${PUBLISH_COMMAND}`,
       replacement: 'run: npx changeset publish',
-      violation:
-        'release.yml job publish step run "npm run release" must exist exactly once (found 0)',
+      violation: `release.yml job publish step run "${PUBLISH_COMMAND}" must exist exactly once (found 0)`,
     },
     {
       label: 'an artifact from an unrelated run',

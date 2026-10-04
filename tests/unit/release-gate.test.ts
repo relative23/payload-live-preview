@@ -205,6 +205,7 @@ describe('release gate run', () => {
     expect(runReleaseGate({ repository: REPOSITORY, runId: '42', run: runner({}) })).toEqual({
       run_id: '42',
       tested_sha: TESTED,
+      tested_branch: 'main',
       publish: 'true',
       version_pr: 'false',
     });
@@ -235,7 +236,13 @@ describe('release gate run', () => {
           manifest: { name: 'pkg', version: '1.8.2' },
         }),
       }),
-    ).toEqual({ run_id: '42', tested_sha: TESTED, publish: 'true', version_pr: 'false' });
+    ).toEqual({
+      run_id: '42',
+      tested_sha: TESTED,
+      tested_branch: 'release/1.x',
+      publish: 'true',
+      version_pr: 'false',
+    });
   });
 
   it('publishes certified 2.0.6 bytes only after proving the run belongs to release/2.0', () => {
@@ -250,7 +257,13 @@ describe('release gate run', () => {
           commands,
         }),
       }),
-    ).toEqual({ run_id: '42', tested_sha: TESTED, publish: 'true', version_pr: 'false' });
+    ).toEqual({
+      run_id: '42',
+      tested_sha: TESTED,
+      tested_branch: 'release/2.0',
+      publish: 'true',
+      version_pr: 'false',
+    });
     expect(commands).toContain(`git merge-base --is-ancestor ${TESTED} origin/release/2.0`);
     expect(commands.some((command) => command.includes('origin/main'))).toBe(false);
     expect(commands).toContain(`git show ${TESTED}:package.json`);

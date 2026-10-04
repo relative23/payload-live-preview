@@ -57,6 +57,7 @@ export type ReleaseAction = 'publish' | 'version-pr' | 'none';
 export interface ReleaseGateOutputs {
   readonly run_id: string;
   readonly tested_sha: string;
+  readonly tested_branch: ReleaseBranch;
   readonly publish: 'true' | 'false';
   readonly version_pr: 'true' | 'false';
 }
@@ -250,6 +251,7 @@ export function runReleaseGate(environment: ReleaseGateEnvironment): ReleaseGate
   return {
     run_id: String(certified.id),
     tested_sha: certified.headSha,
+    tested_branch: certified.branch,
     publish: action === 'publish' ? 'true' : 'false',
     version_pr: action === 'version-pr' ? 'true' : 'false',
   };

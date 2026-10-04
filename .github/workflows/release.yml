@@ -42,6 +42,7 @@ jobs:
     outputs:
       run_id: ${{ steps.release_gate.outputs.run_id }}
       tested_sha: ${{ steps.release_gate.outputs.tested_sha }}
+      tested_branch: ${{ steps.release_gate.outputs.tested_branch }}
       version_pr: ${{ steps.release_gate.outputs.version_pr }}
       publish: ${{ steps.release_gate.outputs.publish }}
     steps:
@@ -185,14 +186,18 @@ jobs:
       # the version and the registry's `latest` decide, then downloads it from
       # the registry and compares digests and inventory before creating the
       # local release tag.
+      # Checkout does not change the GitHub source identity npm uses for provenance.
+      # Override only this process; the workflow identity and run id stay the runner's.
       - name: Publish with provenance
         id: publish
+        shell: bash
         env:
           NPM_CONFIG_PROVENANCE: 'true'
           PACKAGE_ARTIFACT_DIR: release-artifact
           PACKAGE_SOURCE_COMMIT: ${{ needs.gate.outputs.tested_sha }}
+          PACKAGE_SOURCE_BRANCH: ${{ needs.gate.outputs.tested_branch }}
           SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
-        run: npm run release
+        run: env GITHUB_SHA="$PACKAGE_SOURCE_COMMIT" GITHUB_REF="refs/heads/$PACKAGE_SOURCE_BRANCH" npm run release
 
       # The Release follows npm: a version not published under `latest` does
       # not take GitHub's Latest label.
