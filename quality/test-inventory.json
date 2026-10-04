@@ -17,9 +17,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 331,
-    "suites": 716,
-    "tests": 3013,
+    "files": 332,
+    "suites": 717,
+    "tests": 3015,
     "benchmarks": 12
   },
   "groups": {
@@ -60,9 +60,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 274,
-      "suites": 641,
-      "tests": 2784,
+      "files": 275,
+      "suites": 642,
+      "tests": 2786,
       "benchmarks": 0
     }
   },
@@ -2134,6 +2134,13 @@
     },
     {
       "path": "tests/unit/quality/playwright-runtime-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/release-provenance.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 2,

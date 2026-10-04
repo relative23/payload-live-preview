@@ -286,6 +286,20 @@ review and fresh pins before use on another source branch. Package version and
 Changesets base-branch metadata are omitted from the security projections so a
 version-only change keeps an otherwise valid binding.
 
+### 11. Provenance names the certified source (2026-10-04)
+
+npm reads `GITHUB_SHA` and `GITHUB_REF` from the publishing process to name
+the source material in its provenance statement. A checkout of the certified
+commit does not change those runner values: `workflow_run` supplies the
+default branch identity, and a manual dispatch can certify another branch.
+
+The gate now outputs the branch it validated with the CI run and ancestry
+check. The publish command sets `GITHUB_SHA` to that run's certified commit
+and `GITHUB_REF` to `refs/heads/<validated branch>` for the npm process.
+Its workflow reference and run id remain the runner's identity. The archive
+checks and publisher are unchanged. Regression tests execute the committed
+Bash command with a recording npm for both automatic and manual releases.
+
 ## Consequences
 
 - What is on npm is what CI tested, provably: manifest and registry archive are
