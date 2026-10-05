@@ -19,6 +19,33 @@ function el(html: string): Element {
 }
 
 describe('compatibility and boundaries', () => {
+  it('morphs marked custom-element light DOM while retaining the host and protected descendants', () => {
+    const live = el(
+      '<my-widget data-payload-morph title="old"><b>old</b><p data-payload-owned>owned</p></my-widget>',
+    );
+    const shadow = live.attachShadow({ mode: 'open' });
+    shadow.textContent = 'shadow';
+    const rendered = el(
+      '<my-widget data-payload-morph="false" title="new"><b>new</b><p data-payload-owned>new</p></my-widget>',
+    );
+    expect(morphElement(live, rendered, options)).toBe(live);
+    expect(live.getAttribute('title')).toBe('new');
+    expect(live.querySelector('b')?.textContent).toBe('new');
+    expect(live.querySelector('p')?.textContent).toBe('owned');
+    expect(shadow.textContent).toBe('shadow');
+    expect(isMorphCompatible(live, el('<my-widget></my-widget>'))).toBe(false);
+    for (const attrs of ['data-payload-island', 'data-payload-owned', 'contenteditable']) {
+      expect(isMorphBoundary(el(`<my-widget data-payload-morph ${attrs}></my-widget>`))).toBe(true);
+    }
+    expect(isMorphBoundary(el('<astro-island data-payload-morph></astro-island>'))).toBe(true);
+  });
+
+  it('replaces differently named custom-element boundaries even when they share a key', () => {
+    const live = el('<div><my-first data-payload-key="a"></my-first></div>');
+    morphElement(live, el('<div><my-second data-payload-key="a"></my-second></div>'), options);
+    expect(live.firstElementChild?.tagName).toBe('MY-SECOND');
+  });
+
   it('is compatible for the same tag, incompatible across tags', () => {
     expect(isMorphCompatible(el('<li>a</li>'), el('<li>b</li>'))).toBe(true);
     expect(isMorphCompatible(el('<li>a</li>'), el('<div>b</div>'))).toBe(false);

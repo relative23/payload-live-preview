@@ -166,6 +166,22 @@ That is it: the inline script detects the admin's iframe and starts patching. Ri
 
 A binding is patched in place by default. A `data-payload-fragment` boundary is rendered by your server from the unsaved form state instead — conditional sections, derived values, custom blocks, the component's own logic — and morphed in with focus and visitor state intact; the runtime posts the fields to the same-origin endpoint named in `fragments: { endpoint }`, built with `createFragmentEndpoint()`, which every adapter entry exports — Astro renders through its container API, Next.js through `react-dom/server`, SvelteKit through `svelte/server`, Nuxt through `vue/server-renderer` — and patches the boundary's own bindings when the server cannot render. With `routeStrategy: true` or `fragments` set, a binding in `<head>`, or one marked `data-payload-strategy="route"`, refreshes the whole route once per revision with scroll and focus kept; without either it is patched like any other. The route is matched by top-level field name, so a dotted binding such as `meta.title` refreshes it only with `data-payload-depends="meta"`. Markup, endpoint, deployment requirements and the abuse model: [docs/hybrid.md](docs/hybrid.md).
 
+Custom elements stay protected during fragment, route and structural morphs
+by default. For server-rendered light DOM, put `data-payload-morph` on **both
+live and rendered hosts**. Presence opts in, even `data-payload-morph="false"`.
+Compatible hosts with the same tag and namespace retain their identity,
+instance properties and listeners while attributes and light DOM update.
+One-sided opt-in or incompatible hosts follow the existing replacement path.
+Shadow roots are never touched; islands, `data-payload-owned`, editable content
+and nested protected descendants remain protected. Ordinary elements are unchanged.
+
+Components must react to child changes, refresh cached references, preserve UI
+state, and clean up listeners or observers. `connectedCallback` does not rerun
+for child updates; DOM moves can still reconnect a retained host. Consumers
+may emit the marker only in preview mode on initial and subsequent renders;
+preview detection stays in the application. See
+[ADR 0008](docs/architecture/0008-keyed-morph-ownership.md#9-custom-element-light-dom-opt-in-2026-10-06).
+
 ## Events and plugins
 
 ```ts

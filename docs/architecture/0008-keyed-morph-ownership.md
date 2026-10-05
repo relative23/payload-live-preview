@@ -77,9 +77,10 @@ position) are never written by the morph.
 The morph retains a boundary element as a whole and does not descend into
 it. Boundaries are:
 
-- **Custom elements** — any element whose tag name contains a hyphen.
-  Their subtree is theirs; the morph has no way to know what a shadow root
-  or an upgrade callback did with it.
+- **Custom elements** — any element whose tag name contains a hyphen,
+  unless both the live and rendered hosts carry `data-payload-morph` (§9).
+  Their subtree is theirs by default; the morph has no way to know what a
+  shadow root or an upgrade callback did with it.
 - **Hydrated islands** — `astro-island`, and any element marked
   `data-payload-island`. A framework owns that subtree; patching into it
   corrupts the framework's view of its own DOM. The island bridge
@@ -145,8 +146,9 @@ WebKit, on the Astro fixture's `/structural` page.
 - Templates that want CMS-controlled `open`/`checked` must say so in the
   template. Templates that relied on `replaceWith()` resetting form state
   no longer get that reset.
-- Custom elements and islands inside items are safe by construction and
-  update only through the island bridge.
+- Custom elements and islands inside items are protected by default.
+  Custom elements can opt into light DOM morphing (§9); islands receive data
+  through the island bridge.
 - Diagnostics `LP0404`–`LP0406` join the code table; `pll doctor` reports
   missing keys on structural containers.
 
@@ -219,3 +221,26 @@ live and neither once re-rendered — the morph replaces it under §4's
 one-sided rule. That is the sanitizer's policy, not the morph's, and belongs
 with the sanitizer corpus (2.1 plan, M3); the fixture page carries neither
 and says why.
+
+### 9. Custom-element light DOM opt-in (2026-10-06)
+
+Presence of `data-payload-morph` on **both live and rendered custom-element
+hosts** permits normal host attribute and server-rendered light DOM updates.
+Values have no meaning, including `"false"`. Ordinary elements are unchanged.
+Hosts must share a tag and namespace to retain identity, instance properties
+and listeners; keyed boundary pairing checks these too. Unmarked compatible
+child boundaries stay untouched; one-sided opt-in or incompatible hosts keep
+the existing replacement behavior. Fragment, route and structural morphs
+use the same engine.
+
+Shadow roots are never traversed or modified. The marker cannot override
+`astro-island`, `data-payload-island`, `data-payload-owned` or `contenteditable`
+protection, including nested protected descendants. The island bridge's
+separate `data-payload-island="patch"` contract is unchanged.
+
+Components must react to child changes, refresh cached references, preserve
+UI state, and clean up listeners or observers for removed children.
+`connectedCallback` does not rerun merely because children change; keyed
+moves can still disconnect and reconnect retained hosts through DOM movement.
+Consumers may emit the marker only in preview mode on initial and subsequent
+renders; preview detection belongs to the consumer, not the package.

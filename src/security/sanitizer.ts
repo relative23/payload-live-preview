@@ -213,6 +213,7 @@ const TEMPLATE_ATTRIBUTES: ReadonlySet<string> = new Set([
   'id',
   'name',
   'data-payload-key',
+  'data-payload-morph',
   'data-payload-nested-key',
   'data-payload-nested-template',
 ]);

@@ -176,7 +176,7 @@ under every policy against an oracle that reads no allow-list and against
 DOMPurify as the reference engine (ADR 0016). Item templates for structural lists are the one place form
 controls are admitted (`allowFormControls`) and the applier's own
 reconciliation attributes survive strict (`templateMode`: `id`, `name`,
-`data-payload-key`, `data-payload-nested-key`,
+`data-payload-key`, `data-payload-morph`, `data-payload-nested-key`,
 `data-payload-nested-template` — every other `data-payload-*` is still
 stripped, so a template cannot add a binding), because they are the page
 author's markup and every interpolated value is escaped first.
