@@ -78,7 +78,9 @@ The morph retains a boundary element as a whole and does not descend into
 it. Boundaries are:
 
 - **Custom elements** — any element whose tag name contains a hyphen,
-  unless both the live and rendered hosts carry `data-payload-morph` (§9).
+  protected by default. Add `data-payload-morph` in the template to opt into
+  live-preview updates to attributes and server-rendered light DOM. See
+  [section 9](#9-custom-element-light-dom-opt-in-2026-10-06) for the contract.
   Their subtree is theirs by default; the morph has no way to know what a
   shadow root or an upgrade callback did with it.
 - **Hydrated islands** — `astro-island`, and any element marked
@@ -147,7 +149,7 @@ WebKit, on the Astro fixture's `/structural` page.
   template. Templates that relied on `replaceWith()` resetting form state
   no longer get that reset.
 - Custom elements and islands inside items are protected by default.
-  Custom elements can opt into light DOM morphing (§9); islands receive data
+  Custom elements can opt into light DOM morphing (section 9); islands receive data
   through the island bridge.
 - Diagnostics `LP0404`–`LP0406` join the code table; `pll doctor` reports
   missing keys on structural containers.
@@ -224,9 +226,13 @@ and says why.
 
 ### 9. Custom-element light DOM opt-in (2026-10-06)
 
-Presence of `data-payload-morph` on **both live and rendered custom-element
-hosts** permits normal host attribute and server-rendered light DOM updates.
-Values have no meaning, including `"false"`. Ordinary elements are unchanged.
+`data-payload-morph` is an opt-in attribute for custom elements whose
+attributes and server-rendered light DOM should update with live preview.
+Add it to the custom element in your template. It must be present on both
+the element currently on the preview page and the updated element generated
+by the template; using the same template normally covers both.
+The attribute opts in when present; its value is ignored. Ordinary elements
+are unchanged.
 Hosts must share a tag and namespace to retain identity, instance properties
 and listeners; keyed boundary pairing checks these too. Unmarked compatible
 child boundaries stay untouched; one-sided opt-in or incompatible hosts keep

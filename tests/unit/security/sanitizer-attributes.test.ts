@@ -81,12 +81,12 @@ describe.each(CASES)('strict versus compat: $name', ({ html, options, strict, co
 
 describe('sanitizeHtml — templateMode (page-author item templates)', () => {
   const template =
-    '<li id="row" name="row" data-payload-key="k" data-payload-nested-key="n" ' +
+    '<li id="row" name="row" data-payload-key="k" data-payload-morph data-payload-nested-key="n" ' +
     'data-payload-nested-template="t" data-payload-field="title" data-track="x">v</li>';
 
   it('keeps exactly the reconciliation attributes under strict and still strips bindings', () => {
     expect(sanitizeHtml(template, { templateMode: true })).toBe(
-      '<li id="row" name="row" data-payload-key="k" data-payload-nested-key="n" ' +
+      '<li id="row" name="row" data-payload-key="k" data-payload-morph="" data-payload-nested-key="n" ' +
         'data-payload-nested-template="t">v</li>',
     );
   });

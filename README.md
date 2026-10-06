@@ -166,12 +166,24 @@ That is it: the inline script detects the admin's iframe and starts patching. Ri
 
 A binding is patched in place by default. A `data-payload-fragment` boundary is rendered by your server from the unsaved form state instead — conditional sections, derived values, custom blocks, the component's own logic — and morphed in with focus and visitor state intact; the runtime posts the fields to the same-origin endpoint named in `fragments: { endpoint }`, built with `createFragmentEndpoint()`, which every adapter entry exports — Astro renders through its container API, Next.js through `react-dom/server`, SvelteKit through `svelte/server`, Nuxt through `vue/server-renderer` — and patches the boundary's own bindings when the server cannot render. With `routeStrategy: true` or `fragments` set, a binding in `<head>`, or one marked `data-payload-strategy="route"`, refreshes the whole route once per revision with scroll and focus kept; without either it is patched like any other. The route is matched by top-level field name, so a dotted binding such as `meta.title` refreshes it only with `data-payload-depends="meta"`. Markup, endpoint, deployment requirements and the abuse model: [docs/hybrid.md](docs/hybrid.md).
 
-Custom elements stay protected during fragment, route and structural morphs
-by default. For server-rendered light DOM, put `data-payload-morph` on **both
-live and rendered hosts**. Presence opts in, even `data-payload-morph="false"`.
+Custom elements are protected from fragment, route and structural morphs by
+default. Add the opt-in attribute `data-payload-morph` to a custom element in
+your template when you want live preview to update its attributes and
+server-rendered light DOM (the children inside the element).
+
+```html
+<my-component data-payload-morph>
+  <!-- Server-rendered content that live preview can update -->
+</my-component>
+```
+
+The attribute must appear on the element already on the preview page and in
+the updated HTML returned by your template. Adding it to the template normally
+covers both. The attribute opts in when present; its value is ignored.
 Compatible hosts with the same tag and namespace retain their identity,
 instance properties and listeners while attributes and light DOM update.
-One-sided opt-in or incompatible hosts follow the existing replacement path.
+If only one version has the attribute, or the elements are incompatible, the
+existing replacement behavior applies.
 Shadow roots are never touched; islands, `data-payload-owned`, editable content
 and nested protected descendants remain protected. Ordinary elements are unchanged.
 

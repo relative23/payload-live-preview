@@ -287,6 +287,8 @@ interface Fixture {
  * `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 48_026 → 48_249 (measured 47_954 → 48_177);
  * `LEAN_RUNTIME` from `payload-live-preview/lean` 29_560 → 29_756 (measured 29_500 → 29_696).
  */
+// 2026-10-06: morph opt-in and author-template marker; exceeded ceilings rise by
+// the measured gzip delta against e0bc93c^, preserving each existing cushion.
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
     from: 'payload-live-preview',
@@ -299,49 +301,49 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_367,
+    gzip: 5_375,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_257,
+    gzip: 45_300,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 42_964,
+    gzip: 43_034,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_247,
+    gzip: 45_290,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_502,
+    gzip: 5_510,
     why: 'the Lexical renderer from its focused entry',
   },
   {
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_487,
+    gzip: 1_519,
     why: 'the keyed morph alone, without the array renderer',
   },
   {
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 48_249,
+    gzip: 48_323,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
