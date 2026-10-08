@@ -19,6 +19,54 @@ function el(html: string): Element {
 }
 
 describe('compatibility and boundaries', () => {
+  it('morphs marked custom-element light DOM while retaining the host and protected descendants', () => {
+    class MorphWidget extends HTMLElement {
+      connected = 0;
+      state = { expanded: true };
+      connectedCallback(): void {
+        this.connected += 1;
+      }
+    }
+    customElements.define('my-morph-widget', MorphWidget);
+    const live = document.importNode(
+      el(
+        '<my-morph-widget data-payload-morph title="old"><b>old</b><p data-payload-owned>owned</p></my-morph-widget>',
+      ),
+      true,
+    ) as MorphWidget;
+    document.body.append(live);
+    const state = live.state;
+    const listener = vi.fn();
+    live.addEventListener('click', listener);
+    const shadow = live.attachShadow({ mode: 'open' });
+    shadow.textContent = 'shadow';
+    const rendered = el(
+      '<my-morph-widget data-payload-morph="false" title="new"><b>new</b><p data-payload-owned>new</p></my-morph-widget>',
+    );
+    expect(morphElement(live, rendered, options)).toBe(live);
+    expect(live.getAttribute('title')).toBe('new');
+    expect(live.querySelector('b')?.textContent).toBe('new');
+    expect(live.querySelector('p')?.textContent).toBe('owned');
+    expect(shadow.textContent).toBe('shadow');
+    expect(live.shadowRoot).toBe(shadow);
+    expect(live.state).toBe(state);
+    expect(live.connected).toBe(1);
+    live.dispatchEvent(new Event('click'));
+    expect(listener).toHaveBeenCalledOnce();
+    expect(isMorphCompatible(live, el('<my-morph-widget></my-morph-widget>'))).toBe(false);
+    expect(isMorphCompatible(el('<my-morph-widget></my-morph-widget>'), rendered)).toBe(false);
+    for (const attrs of ['data-payload-island', 'data-payload-owned', 'contenteditable']) {
+      expect(isMorphBoundary(el(`<my-widget data-payload-morph ${attrs}></my-widget>`))).toBe(true);
+    }
+    expect(isMorphBoundary(el('<astro-island data-payload-morph></astro-island>'))).toBe(true);
+  });
+
+  it('replaces differently named custom-element boundaries even when they share a key', () => {
+    const live = el('<div><my-first data-payload-key="a"></my-first></div>');
+    morphElement(live, el('<div><my-second data-payload-key="a"></my-second></div>'), options);
+    expect(live.firstElementChild?.tagName).toBe('MY-SECOND');
+  });
+
   it('is compatible for the same tag, incompatible across tags', () => {
     expect(isMorphCompatible(el('<li>a</li>'), el('<li>b</li>'))).toBe(true);
     expect(isMorphCompatible(el('<li>a</li>'), el('<div>b</div>'))).toBe(false);

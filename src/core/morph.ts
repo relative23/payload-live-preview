@@ -1,7 +1,7 @@
 /**
  * Keyed DOM morph: edits a live element toward a freshly rendered one while
  * keeping the live nodes, and with them focus, selection, scroll, playback and
- * listeners. Custom elements, islands, `contenteditable` and
+ * listeners. Custom elements (unless both hosts carry `data-payload-morph`), islands, `contenteditable` and
  * `data-payload-owned` subtrees are boundaries the morph never enters.
  * See ADR 0008.
  */
@@ -36,7 +36,9 @@ function keyOf(element: Element, options: MorphOptions): string | undefined {
 
 /** @internal */
 export function isMorphBoundary(element: Element): boolean {
-  if (element.tagName.toLowerCase().includes('-')) return true;
+  const tag = element.tagName.toLowerCase();
+  if (tag === 'astro-island') return true;
+  if (tag.includes('-') && !element.hasAttribute('data-payload-morph')) return true;
   if (element.hasAttribute(ISLAND_ATTRIBUTE) || element.hasAttribute(OWNED_ATTRIBUTE)) return true;
   const editable = element.getAttribute('contenteditable');
   return editable !== null && editable !== 'false';
@@ -173,7 +175,9 @@ function morphChildren(live: Element, rendered: Element, options: MorphOptions):
 function reconcile(candidate: Node, next: Node, options: MorphOptions): Node {
   if (candidate instanceof Element && next instanceof Element) {
     // A compatible boundary stays exactly as it is (ADR 0008 §4).
-    if (isMorphBoundary(candidate) && isMorphBoundary(next)) return candidate;
+    if (sameKind(candidate, next) && isMorphBoundary(candidate) && isMorphBoundary(next)) {
+      return candidate;
+    }
     return morphElement(candidate, next, options);
   }
   if (candidate.nodeValue !== next.nodeValue) candidate.nodeValue = next.nodeValue;
