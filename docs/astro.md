@@ -24,7 +24,7 @@ npm install payload-live-preview
 
 ## 2. Add the integration
 
-```ts
+```js
 // astro.config.mjs
 import { defineConfig } from 'astro/config';
 import { livePreview } from 'payload-live-preview/astro';
