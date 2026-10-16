@@ -7,19 +7,23 @@ available as an opt-in now, so a site can take it one row at a time and see
 what it does before the release does it. The ADR 0007 ledger has the full
 table.
 
-| 3.0 change                                                               | Try it now                                                                          | What to do                                                                                                                         |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `lexicalToHtml()` without a sanitizer document throws instead of warning | `lexicalToHtml(content, { requireDocument: true })`, `<RichText requireDocument />` | pass a `document` (linkedom, jsdom) per call; the build names every render without one                                             |
-| a partly bound group counts as covered path by path                      | `subfieldCoverage: 'declared'`                                                      | LP0203 names each uncovered path; declare the ones the page leaves out on purpose with `data-payload-covers`                       |
-| `setSanitizerDocument()` is removed                                      | pass `document` per call                                                            | `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, the `RichText` `document` prop                         |
-| `defaults: 'v1'` is removed                                              | `npx pll migrate ./src --write`                                                     | the rows it stood for become explicit options with the same values; `pll doctor --v2` names each one, so they can go one at a time |
-| `onUnboundChange`, `isPreviewRequest()` and `adminOrigins` are removed   | `npx pll migrate ./src --write`                                                     | the codemods rename them: `onUnfaithfulPatch` (`'route'` is `'escalate'`), `hasPreviewIntent()`, `allowedOrigins`                  |
-| the `signed-token` replay store `{ isUsed, markUsed }` is removed        | implement `consume(id, expiresAt)`                                                  | one check-and-record step; [security.md](security.md) has a Redis example                                                          |
-| `new OriginDetector()` no longer trusts `document.referrer` by default   | `new OriginDetector({ enableReferrerDetection: false })`                            | pass `enableReferrerDetection: true` where a detector you build yourself relies on the referrer                                    |
+| 3.0 change                                                                   | Try it now                                                                                             | What to do                                                                                                                                                                      |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lexicalToHtml()` without a sanitizer document throws instead of warning     | `lexicalToHtml(content, { requireDocument: true })`, `<RichText requireDocument />`                    | pass a `document` (linkedom, jsdom) per call; the build names every render without one                                                                                          |
+| a partly bound group counts as covered path by path                          | `subfieldCoverage: 'declared'`                                                                         | LP0203 names each uncovered path; declare the ones the page leaves out on purpose with `data-payload-covers`                                                                    |
+| `setSanitizerDocument()` is removed                                          | pass `document` per call                                                                               | `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, the `RichText` `document` prop                                                                      |
+| `defaults: 'v1'` is removed                                                  | `npx pll migrate ./src --write`                                                                        | the rows it stood for become explicit options with the same values; `pll doctor --v2` names each one, so they can go one at a time                                              |
+| `onUnboundChange`, `isPreviewRequest()` and `adminOrigins` are removed       | `npx pll migrate ./src --write`                                                                        | the codemods rename them: `onUnfaithfulPatch` (`'route'` is `'escalate'`), `hasPreviewIntent()`, `allowedOrigins`                                                               |
+| the `signed-token` replay store `{ isUsed, markUsed }` is removed            | implement `consume(id, expiresAt)`                                                                     | one check-and-record step; [security.md](security.md) has a Redis example                                                                                                       |
+| `new OriginDetector()` no longer trusts `document.referrer` by default       | `new OriginDetector({ enableReferrerDetection: false })`                                               | pass `enableReferrerDetection: true` where a detector you build yourself relies on the referrer                                                                                 |
+| a route refresh that returns nothing is no longer taken as committed         | return a promise that settles after the host's commit; `LP0810` names one that does not, under `debug` | `LivePreviewRouteRefresh` does it for Next.js; the SvelteKit and Nuxt recipes await their data and the next tick; a host that renders synchronously returns `Promise.resolve()` |
+| the `@internal` names the public entries still export at runtime are removed | `etc/api/*.api.md` lists every `@internal` name                                                        | stop importing them; a name you need gets a public or `@beta` class first                                                                                                       |
 
 Each form 3.0 removes warns once per process while it runs in development,
 never in production, and names what replaces it, so the server log lists what
-is left. The first three rows are not mechanical rewrites: whether a call site
+is left. The last two rows are the exceptions: a refresh that returns nothing is
+reported by `LP0810`, under `debug`, and the `@internal` names do not warn. The
+first three rows are not mechanical rewrites: whether a call site
 has a DOM, or which fields a page shows on purpose, is a fact about the
 project that `pll migrate` cannot read from the source. The codemods rewrite
 options that a file hands to the package, directly or through a `const` it
@@ -50,14 +54,21 @@ npx pll doctor https://www.example.com/page --admin https://cms.example.com --v2
 if you do not already have it. It rewrites only names a file binds from
 `payload-live-preview`, so an `isPreviewRequest` of your own is left alone.
 Anything it cannot rewrite safely — an object shorthand, a re-export, a call
-whose options are not a literal — is listed as `file:line`, and only that spot
-is left as it stands: the rest of the file is rewritten as usual, so a run that
-reports conflicts has almost always changed the files it reports. Exit codes: `0` nothing needs a human, `1` usage error or
-missing `ts-morph`, `3` at least one file needs manual attention. `.astro`,
-`.vue` and `.svelte` files are rewritten in their script blocks only. The
-codemods are `rename-is-preview-request`, `rename-admin-origins-option`,
-`rename-bindings-authorized-option`, `move-fetch-preview-helpers`,
-`rename-on-unbound-change` and `expand-defaults-v1`.
+whose options are not a literal — is listed as `file:line` and left as it
+stands. The codemods work one by one. `rename-admin-origins-option`,
+`rename-bindings-authorized-option`, `rename-on-unbound-change` and
+`expand-defaults-v1` take each spot on its own, so a spot they list does not
+stop them from rewriting the rest of the file. `rename-is-preview-request` and
+`move-fetch-preview-helpers` make none of their edits in a script that holds a
+conflict for them: finish that spot by hand and run them again. A file that
+reports a conflict can still have been changed by the others. Exit codes: `0`
+nothing needs a human, `1` usage error or missing `ts-morph`, `3` at least one
+file needs manual attention. `.astro`, `.vue` and `.svelte` files are rewritten
+in their script blocks only; a conflict in one block does not hold back
+another. The codemods are `rename-is-preview-request`,
+`rename-admin-origins-option`, `rename-bindings-authorized-option`,
+`move-fetch-preview-helpers`, `rename-on-unbound-change` and
+`expand-defaults-v1`.
 
 `pll doctor --v2` reads the served inline configuration and reports each
 runtime row still at its `'v1'` value as `LP0709`. A script names the defaults
@@ -75,16 +86,16 @@ Each row is an entry of the readiness table in
 [ADR 0007 — 2.0 defaults, migration policy, and the renames ledger](architecture/0007-v2-defaults-and-renames-ledger.md).
 `defaults: 'v1'` sets the whole left column; a single option moves one row.
 
-| Row                | `defaults: 'v1'`                   | 2.0 default                           | Option                                  | Watch for                                                                     |
-| ------------------ | ---------------------------------- | ------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
-| Authorization      | response changes on intent alone   | `authorizePreview` required           | `strict`                                | a page that showed preview to anyone now needs a real editor session or token |
-| Intent signals     | `['query','fetch-dest','referer']` | `['query']`                           | `previewSignals`                        | a flow that relied on the admin referer alone must add `?preview=true`        |
-| Referrer trust     | on                                 | off                                   | `disableReferrerDetection: true`        | same as above                                                                 |
-| Message source     | any origin-valid window            | parent/opener only                    | `eventSourcePolicy: 'parent-or-opener'` | a custom embedding that posts from another window                             |
-| Unchanged bindings | re-applied                         | skipped                               | `skipUnchanged: true`                   | a renderer with side effects that expected every message                      |
-| Sanitizer          | `id` and every `data-*` pass       | `id`/`name`/`data-payload-*` stripped | `sanitizerPolicy: 'strict'`             | rich text that relies on `id` or `data-*` (list the CSP `trusted-types` name) |
-| `allowedOrigins`   | optional                           | required, non-empty, `https:`         | set it explicitly                       | a dev-only origin left implicit                                               |
-| `mergeDepth`       | `1`                                | required with `serverURL`             | `mergeDepth: <depth of your query>`     | populated relationships degrade to IDs when the depths differ                 |
+| Row                | `defaults: 'v1'`                   | 2.0 default                              | Option                                  | Watch for                                                                     |
+| ------------------ | ---------------------------------- | ---------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
+| Authorization      | response changes on intent alone   | `authorizePreview` required              | `strict`                                | a page that showed preview to anyone now needs a real editor session or token |
+| Intent signals     | `['query','fetch-dest','referer']` | `['query']`                              | `previewSignals`                        | a flow that relied on the admin referer alone must add `?preview=true`        |
+| Referrer trust     | on                                 | off                                      | `disableReferrerDetection: true`        | same as above                                                                 |
+| Message source     | any origin-valid window            | parent/opener only                       | `eventSourcePolicy: 'parent-or-opener'` | a custom embedding that posts from another window                             |
+| Unchanged bindings | re-applied                         | skipped                                  | `skipUnchanged: true`                   | a renderer with side effects that expected every message                      |
+| Sanitizer          | `id` and every `data-*` pass       | `id`, `name` and every `data-*` stripped | `sanitizerPolicy: 'strict'`             | rich text that relies on `id` or `data-*` (list the CSP `trusted-types` name) |
+| `allowedOrigins`   | optional                           | required, non-empty, `https:`            | set it explicitly                       | a dev-only origin left implicit                                               |
+| `mergeDepth`       | `1`                                | required with `serverURL`                | `mergeDepth: <depth of your query>`     | populated relationships degrade to IDs when the depths differ                 |
 
 ### Renamed, moved and removed
 

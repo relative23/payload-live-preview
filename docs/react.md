@@ -112,15 +112,19 @@ React wrapper.
 | Measured with                                                                  | `@payloadcms/live-preview` 3.88.0                                              | This hook                                                          |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
 | `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                         |
-| Two messages, the first answered after 80 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands  |
-| HTTP 403 with the body `{"errors":[{"message":"Forbidden"}]}`                  | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403   |
+| Two messages, the first answered after 40 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands  |
+| HTTP 403 with Payload's error body, `{"errors":[{"message":…}]}`               | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403   |
 | Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | each keeps its own document (ADR 0002)                             |
 | `fetch` rejecting with `TypeError: Failed to fetch`                            | the rejection escapes the async listener                                       | last good document kept, `status: 'unavailable'`, `error` names it |
 
 The failed update is not retried: this hook reports it and catches up on the
-next message. The measured Payload 3 path sends one merge request per accepted
-message. The DOM runtime's debounce delays writes, not those requests;
-`npm run test:interaction` records 18 requests for an 18-keystroke Payload 3 burst.
+next message. On Payload 3 the hook sends one merge request per accepted
+message, at any typing pace: 18 requests for an 18-keystroke burst. The DOM
+runtime asks less. It sends none for an edit that moves no populated value;
+for the others it sends one request when a burst of updates starts and one when
+it ends, a burst being updates less than `debounceMs` (50 ms by default) apart.
+`npm run test:interaction` records 0 requests for a plain text field and 2 for
+rich text and for a relationship over 18 keystrokes, 30 ms apart.
 
 Payload 3 uses a `POST` to the REST API with
 `X-Payload-HTTP-Method-Override: GET`. It returns the stored document with the

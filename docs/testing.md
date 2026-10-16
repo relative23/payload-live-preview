@@ -191,9 +191,11 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   the architecture gate.
 - `tests/unit/security/xss-corpus.ts` with `sanitizer-corpus.test.ts` and
   `tests/unit/property/sanitizer-fuzz.property.test.ts` — the sanitizer's
-  fence (ADR 0016): 118 vectors and an aimed fuzz under every policy, against
-  an oracle that reads no allow-list and against DOMPurify as the reference
-  engine (a devDependency). `npm run test:security-corpus` runs just these.
+  fence (ADR 0016): 143 vectors and an aimed fuzz under `strict`, `compat` and
+  the item-template options against an oracle that reads no allow-list, and
+  under `strict` and the item-template options against DOMPurify as the
+  reference engine (a devDependency). `npm run test:security-corpus` runs just
+  these.
 - `tests/integration/wire-corpus.test.ts` — replays every capture under
   `tests/fixtures/wire-corpus/` through the real runtime. Record a new Payload
   version with `PLP_RECORD_CORPUS=1 npm run test:e2e:real-payload` after
@@ -203,16 +205,20 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   built package as a consumer sees it: one-symbol bundles, a Web-platform-only
   runtime, and size budgets. All three run inside `npm run build`.
 - `scripts/check-interaction-budgets.ts` · `npm run test:interaction` — what one
-  burst of typing costs: the merge requests an 18-keystroke burst makes, and the
-  p95 from a keystroke to the change on the page, per scenario (plain text, rich
-  text, relationship, an unbound field, a page with no bindings at all). The
-  runtime is driven in jsdom against a merge endpoint that answers without delay,
-  so both numbers are the package's own and reproduce run to run; the network
-  half of what an editor waits for is carried by the request count instead. The
-  limits and the reason for each of them are in `scripts/interaction-budgets.ts`.
-  Request counts are exact rather than ceilings, and the latency rows carry a
-  floor as well as a ceiling: an improvement nobody records fails the gate too.
-  Runs inside `npm run build`.
+  burst of typing costs, in seven scenarios (plain text, rich text,
+  relationship, an unbound field with and without a route strategy, a page with
+  no bindings at all, an auto-bound page): the merge requests an 18-keystroke
+  burst makes, the route refreshes on the page that has a route strategy, and,
+  where the edit becomes visible (plain text, rich text, relationship, the
+  auto-bound page), the p95 from a keystroke to the change on the page. The
+  other rows pin requests and refreshes alone. The runtime is driven in jsdom
+  against a merge endpoint that answers without delay, so the numbers are the
+  package's own and reproduce run to run; the network half of what an editor
+  waits for is carried by the request count instead. The limits and the reason
+  for each of them are in `scripts/interaction-budgets.ts`. Request counts are
+  exact rather than ceilings, and the latency rows carry a floor as well as a
+  ceiling: an improvement nobody records fails the gate too. Runs inside
+  `npm run build`.
 - `tests/fixtures/protocol-model.ts` · `npm run test:protocol-semantics` — what
   each field on the wire _means_, and what the runtime must therefore do with
   it. Two halves. The form half is compared by the protocol watch against the
@@ -233,9 +239,10 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   make every change to `src/` red in a test file. Both numbers are exact in both
   directions, so a path that stops charging fails until the win is recorded.
   `tests/e2e/specs/public-response.spec.ts` runs it against every fixture.
-- `scripts/check-upstream-findings.ts` · `npm run test:upstream-findings` — the
-  seven cases the comparison in `docs/react.md` is built from, re-run on the
-  published `@payloadcms/live-preview` dist that the registry serves today. It
+- `scripts/check-upstream-findings.ts` · `npm run test:upstream-findings` — seven
+  recorded observations of the base client, five of them the rows of the
+  comparison in `docs/react.md`, re-run on the published
+  `@payloadcms/live-preview` dist that the registry serves today. It
   packs the dist-tag, imports the real `dist/index.js` into a synthetic window
   and compares each observation against the one recorded when the comparison was
   written. Deliberately outside `npm run check` and `npm run build`: it needs the
@@ -360,23 +367,23 @@ What is proven about the Payload wire protocol, from the outside in:
    published package is only the receiver, and the message object goes together
    in the admin UI, which ships compiled. A treeless fetch of
    `payloadcms/payload` and an AST walk over the two files that build and type
-   that object are compared against `tests/fixtures/protocol-model.ts`. The
-   second job of the same workflow points `examples/payload-backend` at each
-   channel and runs the real admin E2E against it; `canary` is a major and may
-   not boot, so that row is soft-fail like its wire-format twin. The same job
-   re-runs `npm run test:upstream-findings`, so the comparison in
-   `docs/react.md` is checked against the package a reader would install rather
-   than against the version it was written for.
+   that object are compared against `tests/fixtures/protocol-model.ts`. That
+   first job ends by re-running `npm run test:upstream-findings`, so the
+   comparison in `docs/react.md` is checked against the package a reader would
+   install rather than against the version it was written for. The second job
+   of the same workflow points `examples/payload-backend` at each channel and
+   runs the real admin E2E against it; `canary` is a major and may not boot, so
+   that row is soft-fail like its wire-format twin.
 
 Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
 quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches
 drift the moment Payload ships it. Per Payload version that means: 2.x is
 covered by captured-message integration tests and `fieldSchemaJSON` typing;
-3.85.0 and 3.88.0 by corpora captured from a real admin; 3.89.0 by the
-real-admin E2E on every push plus its corpus; 4.0.0-canary.33 by a corpus
-captured from a real Payload 4 admin in a one-off upgrade round (the fixture
-stays on 3.x); `latest` and the 4.0 pre-releases by the nightly watch — wire
-format, sender source and a real admin — the latter as early warning only. The
+3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.90.2 by the
+real-admin E2E on every push; 4.0.0-canary.33 by a corpus captured from a real
+Payload 4 admin in a one-off upgrade round (the fixture stays on 3.x); `latest`
+and the 4.0 pre-releases by the nightly watch — wire format, sender source and
+a real admin — the latter as early warning only. The
 four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all
 three engines; the Astro
 4–7 peer range is wider than the single-major browser fixture and is backed
@@ -387,15 +394,16 @@ by the `astro-matrix` job.
 The root barrel tree-shakes, and that is measured rather than declared:
 `npm run test:treeshake` bundles one-symbol consumers with Vite against the
 built package, resolved through `node_modules` so `exports` and `sideEffects`
-apply as after `npm install`, and holds each to a budget. Importing
-`escapeHtml` from the root ships 210 B gzip, `lexicalToHtml` 5,043 B,
-`initLivePreview` 44,601 B (the client with its built-in renderers, Lexical
-included), `generateInlineScript` 42,223 B (the inline runtime source and
+apply as after `npm install`, and holds each to a gzip budget. Importing
+`escapeHtml` from the root is held to 214 B, `lexicalToHtml` to 5,701 B,
+`initLivePreview` to 55,557 B (the client with its built-in renderers, Lexical
+included), `generateInlineScript` to 53,246 B (the inline runtime source and
 nothing of the client). The focused entries give a bundler less to look
-through; the bytes barely move — `initLivePreview` from `./core` is 44,579 B,
-`lexicalToHtml` from `./lexical` 5,175 B. The budgets are
-`TREE_SHAKING_FIXTURES` in `scripts/check-tree-shaking.ts`; the first
-measurement, and why the barrel did not tree-shake before it, are in
+through; the bytes barely move — `initLivePreview` from `./core` is held to
+55,547 B, `lexicalToHtml` from `./lexical` to 5,840 B. The budgets are
+`TREE_SHAKING_FIXTURES` in `scripts/tree-shaking-budgets.ts`, with the reason
+each one moved; the first measurement, and why the barrel did not tree-shake
+before it, are in
 [benchmarks.md](benchmarks.md#tree-shaking-what-one-import-costs).
 
 ## Failure handling
