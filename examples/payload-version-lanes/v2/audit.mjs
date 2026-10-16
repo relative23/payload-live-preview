@@ -3,32 +3,76 @@
  * The private run file, installed packages and Mongo data remain private inputs;
  * findings name an artifact and category without reproducing its secret value.
  */
-import { readFileSync, readdirSync, lstatSync, writeFileSync } from 'node:fs';
+import {
+  closeSync,
+  constants,
+  fstatSync,
+  ftruncateSync,
+  openSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import diagnostics from './template/diagnostics.cjs';
 import { readRunSettings } from './identity.mjs';
+
+// An artifact is opened once and then judged, read and rewritten through that descriptor, so a
+// path swapped for a link or another file while the audit runs cannot redirect the read or the
+// redaction. O_NOFOLLOW refuses a link; O_NONBLOCK keeps a FIFO from stalling the open.
+const READ = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK;
+const WRITE = constants.O_WRONLY | constants.O_NOFOLLOW;
+// What opening a link or a socket answers with, by platform.
+const NOT_REGULAR = new Set(['ELOOP', 'EMLINK', 'ENXIO']);
+
+function openArtifact(path) {
+  try {
+    return openSync(path, READ);
+  } catch (error) {
+    if (NOT_REGULAR.has(error.code)) return undefined;
+    throw error;
+  }
+}
+
+function redactInPlace(path, relative, read, sanitized) {
+  const fd = openSync(path, WRITE);
+  try {
+    const now = fstatSync(fd);
+    if (now.dev !== read.dev || now.ino !== read.ino)
+      throw new Error('Execution artifact changed during the audit: ' + relative);
+    ftruncateSync(fd);
+    writeFileSync(fd, sanitized);
+  } finally {
+    closeSync(fd);
+  }
+}
 
 export function auditRun(run, settings) {
   const redact = diagnostics.redactor(settings);
   const findings = [];
   let checkedFiles = 0;
   function check(path, relative) {
-    const info = lstatSync(path);
-    if (!info.isFile()) {
-      findings.push({ file: relative, reason: 'non-regular execution artifact' });
-      return;
-    }
-    if (info.size > 32 * 1024 * 1024) {
-      findings.push({ file: relative, reason: 'execution artifact exceeds audit bound' });
-      return;
-    }
-    checkedFiles++;
-    const content = readFileSync(path, 'utf8');
-    const sanitized = redact(content);
-    if (sanitized !== content) {
-      findings.push({ file: relative, reason: 'private credential or token found and redacted' });
-      writeFileSync(path, sanitized, { mode: 0o600 });
+    const fd = openArtifact(path);
+    try {
+      const info = fd === undefined ? undefined : fstatSync(fd);
+      if (!info?.isFile()) {
+        findings.push({ file: relative, reason: 'non-regular execution artifact' });
+        return;
+      }
+      if (info.size > 32 * 1024 * 1024) {
+        findings.push({ file: relative, reason: 'execution artifact exceeds audit bound' });
+        return;
+      }
+      checkedFiles++;
+      const content = readFileSync(fd, 'utf8');
+      const sanitized = redact(content);
+      if (sanitized !== content) {
+        findings.push({ file: relative, reason: 'private credential or token found and redacted' });
+        redactInPlace(path, relative, info, sanitized);
+      }
+    } finally {
+      if (fd !== undefined) closeSync(fd);
     }
   }
   function artifacts(directory, prefix) {
