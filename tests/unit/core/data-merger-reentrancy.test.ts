@@ -194,3 +194,33 @@ describe('response accessor ownership', () => {
     },
   );
 });
+
+describe('legacy response accessor ownership', () => {
+  it('does not abort the obsolete attempt again after its status getter accepts a newer merge', async () => {
+    // Whatever supersedes an attempt has already aborted its controller; the obsolete
+    // attempt returns without repeating that, so a late abort can never reach listeners.
+    const abort = vi.spyOn(AbortController.prototype, 'abort');
+    let merger: DataMerger | undefined;
+    try {
+      const older = {
+        ok: false,
+        get status() {
+          void merger?.merge({ schema: [], data: {} });
+          return 503;
+        },
+      } as unknown as Response;
+      const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(older);
+      merger = new DataMerger({ serverURL: SERVER, fetchFn });
+      await expect(
+        merger.merge({
+          schema: [{ name: 'author', type: 'relationship', relationTo: 'authors' }],
+          data: { author: 'A' },
+        }),
+      ).resolves.toEqual({ status: 'superseded' });
+      expect(abort).toHaveBeenCalledTimes(1);
+    } finally {
+      merger?.destroy();
+      abort.mockRestore();
+    }
+  });
+});

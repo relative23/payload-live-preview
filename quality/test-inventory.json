@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 491,
-    "suites": 927,
-    "tests": 4217,
+    "suites": 929,
+    "tests": 4221,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 398,
-      "suites": 823,
-      "tests": 3840,
+      "suites": 825,
+      "tests": 3844,
       "benchmarks": 0
     }
   },
@@ -1263,8 +1263,8 @@
     {
       "path": "tests/unit/core/data-merger-reentrancy.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 5,
+      "suites": 4,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -1488,7 +1488,7 @@
       "path": "tests/unit/core/legacy-population-abort-ownership.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -1564,8 +1564,8 @@
     {
       "path": "tests/unit/core/legacy-population-response-shapes.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 3,
+      "suites": 2,
+      "tests": 5,
       "benchmarks": 0
     },
     {
