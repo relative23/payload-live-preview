@@ -1,6 +1,8 @@
 /**
  * Per-entry budgets retain their measurements. Audit history stays outside the checker.
  */
+// 2026-10-16 (the json-only population body refuses an interruption, ADR 0010 addendum): paired builds at the same HEAD epoch1791096072 (Node24.19/npm12.0.2); every row that embeds
+// the runtime moves by its exact measured delta (raw +12 each, +11 react/vue, +24 index barrels; gzip +2 to +11) and keeps its reserves; a Brotli budget rises only where Brotli rose.
 // 2026-10-10 (PR 125, `data-payload-morph`, ADR 0008 §10): paired builds at the same HEAD epoch1791096072 (Node24.19/npm12.0.2); every row that embeds the runtime moves by its exact
 // measured delta (raw +60 core/client/structural, +39 fragment, +21 lean/lexical, +156 adapters, +216 index barrels) and keeps its reserves.
 // 2026-10-05 (ADR 0004): accepted data snapshots and owned merge outcomes; paired 2.1.0 measurements at epoch1791096072 (Node24.19/npm12.0.2) retain each row's reserves.
@@ -457,7 +459,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +22/+9/+12 B raw/gzip/Brotli;
   // retain the prior 27/12/120 B reserves.
-  'core.cjs': { raw: 166_752, gzip: 52_457, brotli: 45_294 },
+  'core.cjs': { raw: 166_764, gzip: 52_461, brotli: 45_294 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 133 971 → 134 005 (+34 B, measured 133 945 → 133 979).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 134 005 → 134 054 (+49 B, measured 133 979 → 134 028); gzip 42 628 → 42 646 (+18 B, measured 42 628 → 42 646); brotli 36 811 → 36 934 (measured 36 814, -3 B left; ~120 B as the other brotli rows).
   // 2026-09-16 (2.0.1 Version PR): gzip 42 646 → 42 658. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 42 646 against a cushion of 0 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -485,7 +487,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +22/+9/+48 B raw/gzip/Brotli;
   // retain the prior 26/12/120 B reserves.
-  'core.js': { raw: 166_213, gzip: 52_365, brotli: 45_243 },
+  'core.js': { raw: 166_225, gzip: 52_370, brotli: 45_243 },
   //
   // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
   // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a
@@ -539,7 +541,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +175/+109/+94 B raw/gzip/Brotli;
   // retain the prior 22/15/237 B reserves.
-  'index.cjs': { raw: 353_725, gzip: 110_078, brotli: 69_751 },
+  'index.cjs': { raw: 353_749, gzip: 110_086, brotli: 69_751 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 282 113 → 282 177 (+64 B, measured 282 092 → 282 156); gzip 88 558 → 88 583 (+25 B, measured 88 555 → 88 580).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 282 177 → 282 275 (+98 B, measured 282 156 → 282 254); gzip 88 583 → 88 610 (+27 B, measured 88 580 → 88 607).
   // 2026-09-16 (2.0.1 Version PR): gzip 88 610 → 88 619. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 88 607 against a cushion of 3 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -568,7 +570,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +175/+100/+119 B raw/gzip/Brotli;
   // retain the prior 21/13/290 B reserves.
-  'index.js': { raw: 353_113, gzip: 110_066, brotli: 69_762 },
+  'index.js': { raw: 353_137, gzip: 110_076, brotli: 69_762 },
   ...PAYLOAD_ENTRY_BUDGETS,
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
   // 2026-09-06 (R8): +~110 B raw for `previewBindingsFromLocals`, the one-line

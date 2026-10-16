@@ -55,7 +55,10 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // 2026-10-08: +1 measured code line normalizes Payload v2's numeric empty-row
 // sentinel only for schema-owned arrays and blocks in the planner's document copy.
 // The existing malformed-container guard and traversal limits still apply.
-export const REVIEWED_SCOPE_LINES = 1487;
+// 2026-10-16: +1 measured code line makes the body-less branch of the population body refuse
+// when its interruption marker wins the race, as the stream branch already does; before, the
+// marker could come back as the parsed value. No limit, capability or request path changes.
+export const REVIEWED_SCOPE_LINES = 1488;
 
 interface OurFile {
   readonly file: string;

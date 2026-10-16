@@ -22,7 +22,7 @@
   "totals": {
     "files": 491,
     "suites": 929,
-    "tests": 4221,
+    "tests": 4222,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 398,
       "suites": 825,
-      "tests": 3844,
+      "tests": 3845,
       "benchmarks": 0
     }
   },
@@ -1488,7 +1488,7 @@
       "path": "tests/unit/core/legacy-population-abort-ownership.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {

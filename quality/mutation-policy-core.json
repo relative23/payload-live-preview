@@ -150,7 +150,7 @@
     },
     {
       "file": "src/core/legacy-population.ts",
-      "line": 403,
+      "line": 404,
       "column": 7,
       "mutator": "OptionalChaining",
       "original": "reader?.releaseLock",

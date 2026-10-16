@@ -133,7 +133,9 @@
 // retain the prior 36/29/120 B reserves.
 // 2026-10-10 (PR 125, `data-payload-morph` opts a custom element into the morph, ADR 0008 §10): paired Node24.19/npm12.0.2, epoch1791096072;
 // +111/+27/+74 B raw/gzip/Brotli; retain the prior reserves.
-export const INLINE_FRAGMENT_BUDGET = { raw: 158_814, gzip: 50_299, brotli: 43_647 } as const;
+// 2026-10-16 (the json-only population body refuses an interruption, as its stream branch does): paired Node24.19/npm12.0.2, epoch1791096072,
+// the build of this source against the build before the one statement; +12/+11/+15 B raw/gzip/Brotli; retain the prior reserves (Brotli rises only where it rose).
+export const INLINE_FRAGMENT_BUDGET = { raw: 158_826, gzip: 50_310, brotli: 43_662 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -257,4 +259,6 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 158_814, gzip: 50_299, brotli: 43_6
 // retain the prior 20/10/120 B reserves.
 // 2026-10-10 (PR 125, `data-payload-morph` opts a custom element into the morph, ADR 0008 §10): paired Node24.19/npm12.0.2, epoch1791096072;
 // +111/+26/+62 B raw/gzip/Brotli; retain the prior reserves.
-export const INLINE_ROUTE_BUDGET = { raw: 153_229, gzip: 48_317, brotli: 42_009 } as const;
+// 2026-10-16 (the json-only population body refuses an interruption, as its stream branch does): paired Node24.19/npm12.0.2, epoch1791096072,
+// the build of this source against the build before the one statement; +12/+10/+26 B raw/gzip/Brotli; retain the prior reserves (Brotli rises only where it rose).
+export const INLINE_ROUTE_BUDGET = { raw: 153_241, gzip: 48_327, brotli: 42_035 } as const;
