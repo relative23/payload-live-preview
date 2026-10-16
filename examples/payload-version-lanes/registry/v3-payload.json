@@ -1,0 +1,47 @@
+[
+  {
+    "version": "3.90.2",
+    "engines": {
+      "node": "^18.20.2 || >=20.9.0"
+    },
+    "peerDependencies": {
+      "graphql": "^16.8.1"
+    },
+    "dependencies": {
+      "ws": "^8.16.0",
+      "ajv": "8.18.0",
+      "sax": "1.6.1",
+      "tsx": "4.22.4",
+      "jose": "5.10.0",
+      "pino": "9.14.0",
+      "uuid": "13.0.2",
+      "busboy": "^1.6.0",
+      "croner": "10.0.1",
+      "qs-esm": "8.0.1",
+      "undici": "7.29.0",
+      "ci-info": "^4.1.0",
+      "minimist": "1.2.8",
+      "@next/env": "^15.1.5",
+      "deepmerge": "4.3.1",
+      "file-type": "21.3.4",
+      "ipaddr.js": "2.2.0",
+      "pluralize": "8.0.0",
+      "dataloader": "2.2.3",
+      "http-status": "2.1.0",
+      "pino-pretty": "13.1.2",
+      "get-tsconfig": "4.8.1",
+      "range-parser": "1.2.1",
+      "@types/busboy": "1.5.4",
+      "bson-objectid": "2.0.4",
+      "ts-essentials": "10.0.3",
+      "path-to-regexp": "6.3.0",
+      "image-dimensions": "2.5.1",
+      "sanitize-filename": "1.6.3",
+      "console-table-printer": "2.12.1",
+      "@payloadcms/translations": "3.90.2",
+      "json-schema-to-typescript": "15.0.3"
+    },
+    "dist.tarball": "https://registry.npmjs.org/payload/-/payload-3.90.2.tgz",
+    "dist.integrity": "sha512-Qn+nRiMEVOrClVg7mkCHqCKc7x5DAKQZ+jZQm6lqtLfHTS6fuGXqeOzgy5/woWquN4awRUCNgIGu2uYVNn5uvQ=="
+  }
+]

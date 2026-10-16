@@ -1,0 +1,15 @@
+[
+  {
+    "version": "4.0.0-canary.37",
+    "peerDependencies": {
+      "next": ">=16.2.6 <17.0.0",
+      "graphql": "^16.8.1",
+      "payload": "4.0.0-canary.37"
+    },
+    "engines": {
+      "node": ">=24.15.0"
+    },
+    "dist.integrity": "sha512-q2RNpSJekK6xtbPS3u2WoMzBCHeaWJ3oYAz/rBYnJudf7EpOWuscpOeu2ERteS62wzIdlgIYotnYdpPLENi31w==",
+    "dist.tarball": "https://registry.npmjs.org/@payloadcms/next/-/next-4.0.0-canary.37.tgz"
+  }
+]

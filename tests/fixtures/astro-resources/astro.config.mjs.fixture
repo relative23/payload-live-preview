@@ -1,0 +1,11 @@
+/** The page owns emitted CSS through Astro's native build graph. Only the fixed loopback TLS proxy supplies the public origin. */
+import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
+const origin = new URL(process.env.PLP_ASTRO_ORIGIN ?? 'https://localhost:4287');
+export default defineConfig({
+  output: 'server',
+  adapter: node({ mode: 'standalone' }),
+  trailingSlash: 'never',
+  build: { inlineStylesheets: 'never' },
+  security: { allowedDomains: [{ protocol: origin.protocol.slice(0, -1), hostname: origin.hostname, port: origin.port }] },
+});

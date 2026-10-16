@@ -21,8 +21,11 @@ export const TEST_FILE_PATTERN = /\.(?:test|spec|bench)\.[cm]?[jt]sx?$/u;
 export const RUNNER_CONFIGS = [
   'playwright.bench.config.ts',
   'playwright.config.ts',
+  'playwright.fragment-hosts.config.ts',
+  'playwright.fragment-lifetime.config.ts',
   'playwright.real-payload.config.ts',
   'playwright.soak.config.ts',
+  'playwright.sveltekit-production.config.ts',
   'stryker.config.js',
   'vitest.bench.config.ts',
   'vitest.config.ts',
@@ -146,6 +149,8 @@ function staticTitle(node: Node | undefined): string {
 }
 
 function declarationKind(root: string, modifiers: readonly string[]): TestKind | undefined {
+  // Calls on Playwright's TestInfo report execution metadata rather than register tests.
+  if (modifiers.includes('info')) return undefined;
   const lastModifier = modifiers.at(-1);
   if (lastModifier !== undefined && NON_DECLARATION_METHODS.has(lastModifier)) return undefined;
   if (root === 'bench') return 'benchmark';

@@ -1,0 +1,9 @@
+---
+/** A page-owned live region retains announcements without inline styles.
+ * The packed announcer adopts this node rather than injecting its fallback.
+ */
+---
+<div id="payload-live-preview-a11y" role="status" aria-live="polite" aria-atomic="true"></div>
+<style>
+  div { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+</style>

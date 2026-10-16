@@ -3,7 +3,7 @@ import { createLivePreviewMiddleware as nextMiddleware } from '@adapters/nextjs/
 import { livePreviewHandle } from '@adapters/sveltekit/adapter';
 import { livePreviewNitroPlugin } from '@adapters/nuxt/adapter';
 import { createLivePreviewMiddleware as astroMiddleware } from '@adapters/astro/middleware';
-import { resetDevWarnings } from '@adapters/shared/dev-warning';
+import { resetDevWarnings } from '@/types/dev-warning';
 import {
   authorizePreviewRequest,
   PreviewConfigurationError,
@@ -106,6 +106,27 @@ describe('SvelteKit', () => {
     expect(response.headers.get('content-security-policy')).toContain('frame-ancestors');
     expect(event.locals['livePreviewAuthorization']).toBe(context);
     expect(event.locals['livePreviewAuthorizationOutcome']).toBe('authorized');
+  });
+
+  it("authorizes a data request against SvelteKit's normalized page URL", async () => {
+    const authorize = vi.fn((request: Request) => {
+      expect(new URL(request.url).pathname).toBe('/navigation');
+      return context;
+    });
+    const handle = livePreviewHandle({ allowedOrigins: [ADMIN], authorizePreview: authorize });
+    const event = {
+      request: new Request(
+        'https://site.example.com/navigation/__data.json?preview=true&x-sveltekit-invalidated=1',
+      ),
+      url: new URL('https://site.example.com/navigation?preview=true'),
+      isDataRequest: true,
+      locals: {} as Record<string, unknown>,
+    };
+
+    await handle({ event, resolve: resolve() });
+
+    expect(authorize).toHaveBeenCalledOnce();
+    expect(event.locals['livePreviewAuthorization']).toBe(context);
   });
 
   it('still exposes the nonce to ordinary requests, which never asked for a preview', async () => {

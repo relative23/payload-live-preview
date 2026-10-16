@@ -10,6 +10,8 @@ import {
   createAuthorizedPreviewContext,
   isAuthorizedPreviewContext,
   type AuthorizedPreviewContext,
+  type AuthorizedPreviewDocument,
+  type AuthorizedPreviewPayloadScope,
   type AuthorizedPreviewScope,
   type PreviewAuthorizationStrategyName,
 } from '@/types/authorized-preview';
@@ -20,11 +22,14 @@ import {
 } from './preview-verdict';
 import { authorizeSession, type PayloadSessionStrategy } from './preview-session';
 import { authorizeToken, type SignedTokenStrategy } from './preview-token';
+import { isValidPayloadScope } from './preview-scope';
 
 export {
   AUTHORIZED_PREVIEW_BRAND_KEY,
   isAuthorizedPreviewContext,
   type AuthorizedPreviewContext,
+  type AuthorizedPreviewDocument,
+  type AuthorizedPreviewPayloadScope,
   type AuthorizedPreviewScope,
   type PreviewAuthorizationStrategyName,
 };
@@ -93,6 +98,12 @@ async function authorizeVerifier(
     return refused('unavailable');
   }
   if (claims === null) return refused('invalid');
+  if (
+    claims.scope?.payload !== undefined &&
+    (!isValidPayloadScope(claims.scope.payload) || !Number.isFinite(claims.expiresAt))
+  ) {
+    return refused('invalid');
+  }
   const now = (strategy.now ?? Date.now)();
   if (claims.expiresAt !== undefined && claims.expiresAt <= now) return refused('expired');
   return {

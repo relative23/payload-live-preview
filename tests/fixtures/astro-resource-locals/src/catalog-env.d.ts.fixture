@@ -1,0 +1,11 @@
+/** The catalog is supplied once per verified render, not stored on the container.
+ * Keeping exact fields here makes the Astro wrapper's prop forwarding checkable.
+ */
+export {};
+declare global {
+  namespace App {
+    interface Locals {
+      resourceCatalog?: { show: boolean; title: string; delayMs: 0 | 80 };
+    }
+  }
+}

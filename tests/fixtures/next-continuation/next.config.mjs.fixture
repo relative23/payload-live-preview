@@ -1,0 +1,12 @@
+/** Private pages/data and refusals retain the same no-store/referrer policy. */
+export default {
+  async headers() {
+    return [{ source: '/continuation/:path*', headers: [
+      { key: 'Cache-Control', value: 'private, no-store' },
+      { key: 'Referrer-Policy', value: 'no-referrer' },
+      { key: 'Vary', value: 'Cookie' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+    ] }];
+  },
+};

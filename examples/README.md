@@ -11,14 +11,14 @@ from npm and drops `install-links=true` from its `.npmrc`, where it has one.
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
 | `astro-payload`     | `payload-live-preview/astro`, `mode: 'loader'`                                                                                                  | 4173 | Every spec that uses the `baseURL`, plus `public-response`, `auto-bind-hit-rate` and `fidelity-oracle`; E2E, Astro matrix, Real Payload E2E, the soak and the browser bench               | copy                  |
 | `astro-inline`      | `payload-live-preview/astro`, `mode: 'inline'`                                                                                                  | 4182 | `reveal`, `public-response`; E2E                                                                                                                                                          | link                  |
-| `astro-middleware`  | `payload-live-preview/astro`, `mode: 'middleware'` (`defaults: 'v1'`)                                                                           | 4183 | `reveal`, `public-response`; E2E                                                                                                                                                          | link                  |
+| `astro-middleware`  | `payload-live-preview/astro`, `mode: 'middleware'` (`authorizePreviewModule`, strict)                                                           | 4183 | `reveal`, `public-response`, `astro-middleware-authorized`; E2E                                                                                                                           | link                  |
 | `astro-hybrid`      | Astro SSR (Node adapter) rendering fragments on the server; `livePreviewAnnotate()` on `/annotated`                                             | 4177 | `hybrid-fragment`, `annotate-build`, `fidelity-oracle`, `unbound-route-fallback`; E2E, Real Payload E2E (hybrid)                                                                          | link                  |
 | `nextjs-payload`    | `<LivePreviewScript />` in `app/(inline)/layout.tsx`, `livePreviewScriptProps({ delivery: 'asset' })` in `app/(asset)/layout.tsx`               | 4174 | `nextjs-live-preview`, `nextjs-asset-delivery`, `nextjs-fragment`, `navigation-lifecycle-per-framework`, `reveal`, `public-response`, `auto-bind-hit-rate`; E2E                           | copy                  |
 | `sveltekit-payload` | `livePreviewHandle` from `payload-live-preview/sveltekit`, `delivery: 'asset'` on `/asset`                                                      | 4175 | `sveltekit-live-preview`, `sveltekit-asset-delivery`, `sveltekit-fragment`, `owner-scoping`, `navigation-lifecycle-per-framework`, `reveal`, `public-response`, `auto-bind-hit-rate`; E2E | copy                  |
 | `nuxt-payload`      | The module `payload-live-preview/nuxt-module` with `delivery: 'asset'` and `defaults: 'v1'`                                                     | 4176 | `nuxt-live-preview`, `nuxt-asset-delivery`, `nuxt-fragment`, `navigation-lifecycle-per-framework`, `reveal`, `public-response`, `auto-bind-hit-rate`; E2E                                 | copy                  |
 | `pure-html`         | Static HTML carrying the inline runtime from `generateInlineScript()`, and `LEAN_RUNTIME` on `lean.html`                                        | 4180 | `reveal`, `lean-profile`; E2E                                                                                                                                                             | link                  |
 | `vanilla-client`    | Bundled SPA calling `initLivePreview()` from `payload-live-preview/client`, with the unbound-fields overlay from `payload-live-preview/plugins` | 4181 | `reveal`, `unbound-overlay`; E2E                                                                                                                                                          | link                  |
-| `payload-backend`   | A real Payload admin; does not depend on the package                                                                                            | 3001 | `tests/real-payload/` through `npm run test:e2e:real-payload`; Real Payload E2E, Real Payload E2E (hybrid)                                                                                | —                     |
+| `payload-backend`   | A real Payload admin configured through the copy-installed `payload-live-preview/plugin`                                                        | 3001 | `tests/real-payload/` through `npm run test:e2e:real-payload`; Real Payload E2E, Real Payload E2E (hybrid)                                                                                | copy                  |
 
 The ports, start commands and the name each fixture answers to are in
 `playwright.config.ts` (`payload-backend`: `playwright.real-payload.config.ts`).
@@ -46,11 +46,11 @@ The two values in the last column are the two ways a lockfile records
   ```
 
   `npm ci --prefix examples/<name>` also refreshes it, because it removes
-  `node_modules` before installing. `npm run check:fixtures` hashes
-  `dist/index.js` against each installed copy and names the stale ones.
+  `node_modules` before installing. `npm run check:fixtures` hashes the shipped
+  package payload against each installed copy and names the stale ones.
 
 Keeping both kinds is deliberate: a copy is what a consumer installs, so the
-four copy fixtures exercise the packed layout and the `files` field rather than
+five copy fixtures exercise the packed layout and the `files` field rather than
 the working tree.
 
 `next dev` (Next.js 16) writes `AGENTS.md` and `CLAUDE.md` into

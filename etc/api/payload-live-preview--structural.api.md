@@ -84,11 +84,11 @@ export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structura
 // @internal (undocumented)
 export const ISLAND_ATTRIBUTE = "data-payload-island";
 
-// @internal (undocumented)
+// @beta
 export function isMorphBoundary(element: Element): boolean;
 
 // @internal
-export function isMorphCompatible(live: Element, rendered: Element): boolean;
+export function isMorphCompatible(live: Element, rendered: Element, boundary?: (element: Element) => boolean): boolean;
 
 // @internal (undocumented)
 export const KEY_ATTRIBUTE = "data-payload-key";
@@ -101,12 +101,14 @@ export function morphElement(live: Element, rendered: Element, options: MorphOpt
 
 // @beta (undocumented)
 export interface MorphOptions {
+    readonly boundary?: (element: Element) => boolean;
     readonly keyAttributes: readonly string[];
     readonly onDuplicateKey?: (parent: Element, key: string) => void;
+    readonly retainBoundary?: (live: Element, rendered: Element) => boolean;
     readonly retainChildrenOf?: (live: Element, rendered: Element) => boolean;
 }
 
-// @internal (undocumented)
+// @internal
 export const OWNED_ATTRIBUTE = "data-payload-owned";
 
 // @internal
@@ -182,6 +184,9 @@ export interface RenderContext {
 
 // @public
 export type RendererKey = FieldType | CustomRendererKey;
+
+// @beta
+export function retainIslandBoundary(live: Element, rendered: Element): boolean;
 
 // @public
 export type RichTextRenderer = (value: unknown, context: {

@@ -84,7 +84,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   StartupFailed: 'LP0605',
   /** Sending the ready handshake failed. */
   ReadyFailed: 'LP0606',
-  /** The page declared hydration, but no React commit or Vue mount came within the cap; the runtime started without waiting. */
+  /** The page declared hydration, but no React commit, Vue mount or SvelteKit mount came within the cap; the runtime started without waiting. */
   HydrationWaitTimedOut: 'LP0607',
 
   /** The audit found no runtime in a response that carried preview intent. */
@@ -119,6 +119,10 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   UnboundChangeRefresh: 'LP0807',
   /** `onUnfaithfulPatch: 'escalate'` found no route or fragment strategy to hand an unfaithful patch to; the page keeps it. */
   EscalationUnavailable: 'LP0808',
+  /** A fragment inserted an Astro island the page cannot start: it never loaded the island element or that client directive. */
+  IslandStartUnavailable: 'LP0809',
+  /** The host's route refresh returned no promise, so the revision was re-applied before the host committed. */
+  RouteRefreshUnconfirmed: 'LP0810',
   /** A readiness row is not yet at its 2.0 value; `pll doctor --v2` reports it. */
   V2ReadinessGap: 'LP0709',
   /** The preview runtime is served to anonymous visitors, not only inside the admin frame. */

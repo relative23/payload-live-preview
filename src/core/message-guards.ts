@@ -1,8 +1,10 @@
-/** Shape guards for the messages the bus accepts. `null` counts as absent, as JSON bridges send it. */
+/**
+ * Shape guards for the messages the bus accepts. `null` counts as absent, as
+ * JSON bridges send it. The schema parser owns bounded, fail-closed normalization.
+ */
 
 import type {
   PayloadDocumentEventMessage,
-  PayloadFieldSchema,
   PayloadLivePreviewMessage,
 } from '@/types/payload-protocol';
 import { parseFieldSchema } from '@schema/parser';
@@ -85,11 +87,8 @@ export function normalizeLivePreviewMessage(
     if (wireValue === null) Reflect.deleteProperty(normalized, field);
   }
   if (!Array.isArray(normalized.fieldSchemaJSON)) return normalized;
-  let fieldSchemaJSON: readonly PayloadFieldSchema[];
-  try {
-    fieldSchemaJSON = parseFieldSchema(normalized.fieldSchemaJSON);
-  } catch {
-    fieldSchemaJSON = [];
-  }
-  return { ...normalized, fieldSchemaJSON };
+  return {
+    ...normalized,
+    fieldSchemaJSON: parseFieldSchema(normalized.fieldSchemaJSON),
+  };
 }

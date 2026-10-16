@@ -20,6 +20,7 @@ export interface EdgeModules {
   readonly server: Exports;
   readonly fragment: Exports;
   readonly payload: Exports;
+  readonly plugin: Exports;
 }
 
 interface Authorization {
@@ -75,6 +76,14 @@ function webEvent(request: Request): {
 }
 
 type NitroHook = (html: { head: string[] }, context: { event: unknown }) => Promise<void> | void;
+
+type FragmentHandler = (request: Request) => Promise<Response>;
+type FragmentFactory = (options: Record<string, unknown>) => unknown;
+
+interface FragmentAdapter {
+  readonly name: string;
+  readonly create: (options: Record<string, unknown>) => FragmentHandler;
+}
 
 function registerNitroPlugin(nuxt: Exports, options: unknown): NitroHook {
   const plugin = nuxt['livePreviewNitroPlugin'] as (o: unknown) => (nitro: unknown) => void;
@@ -134,8 +143,58 @@ async function astroResponse(
   return create(options)({ request, locals }, () => Promise.resolve(html()));
 }
 
+function fragmentAdapters(modules: EdgeModules): readonly FragmentAdapter[] {
+  const next = modules.nextjs['createFragmentEndpoint'] as FragmentFactory;
+  const svelte = modules.sveltekit['createFragmentEndpoint'] as FragmentFactory;
+  const astro = modules.astro['createFragmentEndpoint'] as FragmentFactory;
+  const nuxt = modules.nuxt['createFragmentEndpoint'] as FragmentFactory;
+  return [
+    {
+      name: 'Astro',
+      create: (options) => {
+        const endpoint = astro(options) as (context: {
+          readonly request: Request;
+        }) => Promise<Response>;
+        return (request) => endpoint({ request });
+      },
+    },
+    { name: 'Next.js', create: (options) => next(options) as FragmentHandler },
+    {
+      name: 'SvelteKit',
+      create: (options) => {
+        const endpoint = svelte(options) as (event: {
+          readonly request: Request;
+        }) => Promise<Response>;
+        return (request) => endpoint({ request });
+      },
+    },
+    { name: 'Nuxt', create: (options) => nuxt(options) as FragmentHandler },
+  ];
+}
+
+function streamedFragmentRequest(raw: string, declared: string | undefined): Request {
+  const bytes = new TextEncoder().encode(raw);
+  const midpoint = Math.floor(bytes.byteLength / 2);
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(bytes.slice(0, midpoint));
+      controller.enqueue(bytes.slice(midpoint));
+      controller.close();
+    },
+  });
+  const headers = new Headers({ 'content-type': 'application/json' });
+  if (declared !== undefined) headers.set('content-length', declared);
+  const init: RequestInit & { duplex: 'half' } = {
+    method: 'POST',
+    headers,
+    body,
+    duplex: 'half',
+  };
+  return new Request('https://site.example.com/payload/fragment', init);
+}
+
 export async function edgeCases(modules: EdgeModules): Promise<readonly EdgeCase[]> {
-  const { nextjs, sveltekit, astro, nuxt, server, fragment, payload } = modules;
+  const { nextjs, sveltekit, astro, nuxt, server, fragment, payload, plugin } = modules;
   const issue = server['issuePreviewToken'] as IssueToken;
   const token = await issue({ audience: AUDIENCE, path: '/page' }, { secret: SECRET });
   const v1 = { defaults: 'v1', allowedOrigins: [ADMIN] };
@@ -238,13 +297,149 @@ export async function edgeCases(modules: EdgeModules): Promise<readonly EdgeCase
       },
     },
     {
-      name: 'fragment and payload entries are edge-loadable and expose their public surface',
+      name: 'fragment endpoints enforce the streamed UTF-8 byte cap in every built adapter',
+      run: async () => {
+        const raw = JSON.stringify({
+          fragment: 'hero',
+          route: '/page',
+          search: '?preview=true',
+          revision: 1,
+          fields: { title: '€'.repeat(32) },
+        });
+        const bodyBytes = raw.length;
+        check(
+          new TextEncoder().encode(raw).byteLength > bodyBytes,
+          'fragment edge fixture is not multibyte',
+        );
+        for (const adapter of fragmentAdapters(modules)) {
+          for (const declared of [undefined, '1'] as const) {
+            let rendered = false;
+            const endpoint = adapter.create({
+              registry: {
+                hero: {
+                  component: () => undefined,
+                  props: () => ({}),
+                },
+              },
+              authorizePreview: () => {
+                throw new Error(`${adapter.name}: oversized body reached authorization`);
+              },
+              limits: { bodyBytes },
+              render: () => {
+                rendered = true;
+                return Promise.resolve('<h1>must not render</h1>');
+              },
+            });
+            const response = await endpoint(streamedFragmentRequest(raw, declared));
+            const lengthCase = declared === undefined ? 'missing' : 'underdeclared';
+            check(
+              response.status === 413,
+              `${adapter.name}: ${lengthCase} Content-Length returned ${String(response.status)}`,
+            );
+            check((await response.text()) === '{"error":"body"}', `${adapter.name}: body leaked`);
+            check(!rendered, `${adapter.name}: rendered an oversized body`);
+          }
+        }
+      },
+    },
+    {
+      name: 'fragment deadlines cancel cooperative renderers in every built adapter',
+      run: async () => {
+        for (const adapter of fragmentAdapters(modules)) {
+          let signal: AbortSignal | undefined;
+          const endpoint = adapter.create({
+            registry: { hero: { component: () => undefined, props: () => ({}) } },
+            authorize: { type: 'verifier', verify: () => ({ subject: 'editor' }) },
+            limits: { totalTimeoutMs: 250 },
+            render: (_component: unknown, _props: unknown, input: { signal: AbortSignal }) => {
+              signal = input.signal;
+              return new Promise<string>((resolve) => {
+                input.signal.addEventListener('abort', () => resolve('<h1>late</h1>'), {
+                  once: true,
+                });
+              });
+            },
+          });
+          const response = await endpoint(
+            streamedFragmentRequest(
+              JSON.stringify({
+                fragment: 'hero',
+                route: '/page',
+                search: '',
+                revision: 1,
+                fields: {},
+              }),
+              undefined,
+            ),
+          );
+          check(response.status === 504, `${adapter.name}: deadline was not a 504`);
+          check(signal?.aborted === true, `${adapter.name}: renderer was not cancelled`);
+          check(
+            (await response.text()) === '{"error":"timeout"}',
+            `${adapter.name}: late HTML leaked`,
+          );
+        }
+      },
+    },
+    {
+      name: 'session timeout aborts its fetch with a Web-platform reason',
+      run: async () => {
+        const authorize = server['authorizePreviewRequest'] as Authorize;
+        let signal: AbortSignal | undefined;
+        const result = await authorize(
+          new Request(AUDIENCE, {
+            headers: { cookie: 'payload-token=fixture' },
+          }),
+          {
+            type: 'payload-session',
+            serverURL: ADMIN,
+            timeoutMs: 250,
+            fetch: (_url: string, init: { signal: AbortSignal }) => {
+              signal = init.signal;
+              return new Promise((resolve) => {
+                init.signal.addEventListener('abort', () => resolve({ ok: false, status: 503 }), {
+                  once: true,
+                });
+              });
+            },
+          },
+        );
+        check(!result.authorized, 'server: timed-out session authorized');
+        check(signal?.aborted === true, 'server: timed-out session fetch not aborted');
+        check(
+          signal?.reason instanceof DOMException,
+          'server: abort reason is not a Web-platform exception',
+        );
+      },
+    },
+    {
+      name: 'fragment, payload and config-plugin entries are edge-loadable without Node globals',
       run: () => {
         check(
           typeof fragment['createFragmentRoute'] === 'function' || Object.keys(fragment).length > 0,
           'fragment: entry evaluated to an empty namespace',
         );
         check(Object.keys(payload).length > 0, 'payload: entry evaluated to an empty namespace');
+        const configure = plugin['livePreview'] as (
+          options: Record<string, unknown>,
+        ) => (config: Record<string, unknown>) => Record<string, unknown>;
+        check(typeof configure === 'function', 'plugin: livePreview is not a function');
+        const configured = configure({
+          baseUrl: 'https://site.example.com',
+          globals: { homepage: '/' },
+          fallback: '/',
+        })({});
+        const admin = configured['admin'] as Record<string, unknown>;
+        const livePreview = admin['livePreview'] as Record<string, unknown>;
+        const url = livePreview['url'] as (args: Record<string, unknown>) => string;
+        check(
+          url({
+            data: {},
+            documentInfo: { global: { slug: 'homepage' } },
+            locale: 'en',
+          }) === 'https://site.example.com/?preview=true',
+          'plugin: URL callback did not execute in the Web-only context',
+        );
         return Promise.resolve();
       },
     },

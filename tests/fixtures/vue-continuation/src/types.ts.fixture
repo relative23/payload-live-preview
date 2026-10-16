@@ -1,0 +1,17 @@
+/**
+ * Only authorized document fields and public presentation scope cross SSR.
+ * Credentials, store records and the branded request context have no place
+ * in the serialized client view or its framework props.
+ */
+export interface PreviewDocument {
+  id: number;
+  title: string;
+  related?: unknown[];
+  files?: unknown[];
+}
+export interface PreviewView {
+  initialData: PreviewDocument;
+  path: string;
+  locale: string;
+  origin: string;
+}

@@ -1,0 +1,11 @@
+/** Preserve the mapped page scope for both saved reads and unsaved input. Browser fields cannot select an upstream target or credential. */
+import type { RequestHandler } from './$types';
+import { fixture, canonical, refused } from '$lib/server/host';
+export const GET: RequestHandler = event => {
+  const request = canonical(event, '/data');
+  return request ? fixture()!.host.load(request) : refused();
+};
+export const POST: RequestHandler = event => {
+  const request = canonical(event, '/data');
+  return request ? fixture()!.host.update(request) : refused();
+};

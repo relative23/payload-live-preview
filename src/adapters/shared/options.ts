@@ -128,6 +128,13 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly autoBind?: 'off' | 'unique';
   /** Patch only the bindings of the document an update names (`data-payload-owner`). Default `false`. */
   readonly scopeBindingsByOwner?: boolean;
+  /**
+   * How a group counts as covered (ADR 0022). `'descendant'` (default): one
+   * bound path inside it covers all of it. `'declared'`: each changed path
+   * inside such a group needs its own binding or a `data-payload-covers`
+   * declaration; an uncovered one is an unbound change.
+   */
+  readonly subfieldCoverage?: 'descendant' | 'declared';
   /** Sanitizer for rich text and HTML writes. Default `'strict'`; `defaults: 'v1'` restores `'compat'`. */
   readonly sanitizerPolicy?: 'compat' | 'strict';
   /** Which windows may post updates. Default `'parent-or-opener'`; `defaults: 'v1'` restores `'any'`. */

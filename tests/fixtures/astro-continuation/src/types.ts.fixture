@@ -1,0 +1,13 @@
+/** Only selected document fields and public presentation scope reach the component. Server login state and credentials have no field in this view. */
+export interface PreviewDocument {
+  id: number;
+  title: string;
+  related?: unknown[];
+  files?: unknown[];
+}
+export interface PreviewView {
+  data: PreviewDocument | null;
+  path: string;
+  locale: string;
+  origin: string;
+}

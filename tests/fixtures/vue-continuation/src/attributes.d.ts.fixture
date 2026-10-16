@@ -1,0 +1,12 @@
+/**
+ * Strict template checking needs the two HTML data attributes used by this app.
+ * Keep their value types explicit; unknown attributes and component props
+ * remain checked rather than adding a permissive string index signature.
+ */
+import 'vue';
+declare module 'vue' {
+  interface HTMLAttributes {
+    'data-testid'?: string;
+    'data-payload-island'?: '' | boolean;
+  }
+}

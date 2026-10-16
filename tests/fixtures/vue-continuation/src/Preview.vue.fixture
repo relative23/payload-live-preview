@@ -1,0 +1,81 @@
+<script setup lang="ts">
+/**
+ * Vue owns the rendered snapshot; the packed composable owns its subscription.
+ * A real child effect scope can stop independently of the component, then be
+ * replaced once. The local envelope bridge supplies no browser authority.
+ */
+import { computed, effectScope, onMounted, onUnmounted, ref, shallowRef, type EffectScope } from 'vue';
+import { useLivePreviewDocument } from 'payload-live-preview/vue';
+import type { PreviewView } from './types';
+
+const props = defineProps<PreviewView>();
+const count = ref(0);
+const ready = ref(false);
+const stopped = ref(false);
+const generation = ref(1);
+let scope: EffectScope | undefined;
+let revision = 0;
+const transport: typeof fetch = async (input, init) => {
+  const expected = ++revision;
+  const { data, locale } = JSON.parse(String(init?.body));
+  const endpoint = new URL(input instanceof Request ? input.url : String(input));
+  if (endpoint.pathname !== '/api/articles/' + props.initialData.id || String(data.id) !== String(props.initialData.id) || locale !== props.locale) throw new Error('Reference identity mismatch');
+  const response = await fetch(props.path + '/data?preview=true&locale=' + props.locale, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', signal: init?.signal,
+    body: JSON.stringify({ version: 1, revision: expected, data: { title: data.title, related: data.related, files: data.files } }),
+  });
+  if (!response.ok) { await response.body?.cancel(); return new Response(null, { status: response.status }); }
+  const envelope = await response.json();
+  if (envelope.version !== 1 || envelope.ok !== true || envelope.revision !== expected || String(envelope.data?.id) !== String(props.initialData.id)) throw new Error('Reference revision mismatch');
+  return Response.json(envelope.data);
+};
+function startSession() {
+  scope = effectScope();
+  const refs = scope.run(() => useLivePreviewDocument({
+    initialData: props.initialData, serverURL: props.origin, allowedOrigins: [props.origin],
+    fetchFn: transport, depth: 2, eventSourcePolicy: 'parent-or-opener',
+    enableReferrerDetection: false, enableLocalhostMatching: false,
+  }));
+  if (!refs) throw new Error('Inactive preview scope');
+  return refs;
+}
+const session = shallowRef(startSession());
+const data = computed(() => session.value.data.value);
+const status = computed(() => {
+  const active = session.value;
+  return active.status.value === 'idle' ? 'idle' : active.isLoading.value ? 'loading' : active.status.value;
+});
+function stop() {
+  scope?.stop();
+  scope = undefined;
+  stopped.value = true;
+}
+function restart() {
+  stop();
+  session.value = startSession();
+  generation.value++;
+  stopped.value = false;
+}
+onMounted(() => { ready.value = true; });
+onUnmounted(stop);
+function labels(values: unknown[] = []) {
+  return values.map(value => typeof value === 'object' && value !== null && 'title' in value ? String(value.title) : 'ID:' + String(value)).join(' | ');
+}
+</script>
+<template>
+  <main data-payload-island>
+    <h1 data-testid="title">{{ data.title }}</h1>
+    <p data-testid="related">{{ labels(data.related) }}</p>
+    <p data-testid="files">{{ labels(data.files) }}</p>
+    <output data-testid="ready">{{ ready ? 'ready' : 'hydrating' }}</output>
+    <output data-testid="status">{{ status }}</output>
+    <output data-testid="scope">{{ stopped ? 'stopped' : 'active' }}</output>
+    <output data-testid="generation">{{ generation }}</output>
+    <button data-testid="counter" @click="count++">{{ count }}</button>
+    <input aria-label="Visitor state" data-testid="visitor" value="Visitor state">
+    <button data-testid="stop-scope" @click="stop">Stop preview scope</button>
+    <button data-testid="restart-scope" @click="restart">Start a new preview scope</button>
+    <a data-testid="valid-navigation" :href="path + '?locale=' + locale + '&preview=true'">Reload server data</a>
+    <a data-testid="denied-navigation" :href="path + '?preview=true&locale=' + locale + '&invalid=1'">Denied navigation</a>
+  </main>
+</template>

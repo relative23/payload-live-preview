@@ -12,9 +12,10 @@ export interface ProtocolProfile {
   /** Where field types come from. */
   readonly fieldTyping: 'schema' | 'heuristic';
   /**
-   * Who populates relationships. Payload 2.x's admin posts populated data
-   * (it merges client-side with `fieldSchemaJSON`); Payload 3.x posts raw
-   * form values and the runtime asks the REST API when `serverURL` is set.
+   * Legacy transport label, retained for 2.x compatibility. `admin` identifies
+   * Payload 2's schema-based path; observed messages can contain raw relation IDs,
+   * which the shared merger populates with collection GETs. `server` identifies
+   * the Payload 3 merge path. This label alone does not describe population state.
    */
   readonly populatesRelationships: 'admin' | 'server';
   /** Whether the peer reports document saves and relationship edits. */

@@ -14,6 +14,12 @@ const DEFAULT_TIMEOUT = 15_000;
  * spells the port out bypasses the override and runs against that server.
  */
 export const ASTRO_ORIGIN = `http://localhost:${process.env['PLP_E2E_PORT'] ?? '4173'}`;
+/**
+ * Where the Next app answers: its development origin, or the HTTPS front door
+ * of its production fixture, followed by the base path a build may serve it
+ * under (`PLP_NEXT_BASE_PATH`, playwright.next-base-path.config.ts).
+ */
+export const NEXT_ORIGIN = `${process.env['PLP_NEXT_ORIGIN'] ?? 'http://localhost:4174'}${process.env['PLP_NEXT_BASE_PATH'] ?? ''}`;
 
 /** `__lpClient` is the /client import's handle; adapters inject `__livePreview`. */
 export type RuntimeHandle = '__livePreview' | '__lpClient';
@@ -29,6 +35,8 @@ export interface PostOptions {
    * runtime to re-render fields nobody changed asks for it through this.
    */
   readonly relationshipUpdate?: Record<string, unknown>;
+  /** The admin's current locale, as Payload's panel sends it beside the data. */
+  readonly locale?: string;
 }
 
 /** Hosts carry the framed path in their own query, so identity separates them, not the URL. */
@@ -63,11 +71,12 @@ export async function post(
   options: PostOptions = {},
 ): Promise<void> {
   await page.evaluate(
-    ({ payload, globalSlug, targetOrigin, relationshipUpdate }) => {
+    ({ payload, globalSlug, targetOrigin, relationshipUpdate, locale }) => {
       const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
       if (iframe?.contentWindow == null) throw new Error('preview frame is unavailable');
       const message: Record<string, unknown> = { type: 'payload-live-preview', data: payload };
       if (globalSlug !== undefined) message['globalSlug'] = globalSlug;
+      if (locale !== undefined) message['locale'] = locale;
       if (relationshipUpdate !== undefined) {
         message['externallyUpdatedRelationship'] = relationshipUpdate;
       }
@@ -78,6 +87,7 @@ export async function post(
       globalSlug: options.globalSlug,
       targetOrigin: options.targetOrigin,
       relationshipUpdate: options.relationshipUpdate,
+      locale: options.locale,
     },
   );
 }
@@ -114,6 +124,18 @@ export async function waitForStarted(
   await expect.poll(() => started(frame, handle), { timeout }).toBe(true);
 }
 
+/** Accepted editor revisions, used to prove a navigation replay stayed local. */
+export async function acceptedRevisions(frame: Frame): Promise<number> {
+  return frame.evaluate(
+    () =>
+      (
+        window as Window & {
+          __livePreview?: { inspect: () => { revisions: { accepted: number } } };
+        }
+      ).__livePreview?.inspect().revisions.accepted ?? 0,
+  );
+}
+
 /** Whether the reveal fixture's footer currently intersects the iframe viewport. */
 export async function footerInView(frame: Frame): Promise<boolean> {
   return frame.evaluate(() => {
@@ -121,5 +143,120 @@ export async function footerInView(frame: Frame): Promise<boolean> {
     if (element === null) return false;
     const rect = element.getBoundingClientRect();
     return rect.top < window.innerHeight && rect.bottom > 0;
+  });
+}
+
+/** Startup's handshake: one `ready` at start and three retries (`READY_RETRY_DELAYS_MS`). */
+const STARTUP_READIES = 4;
+
+type ReadyCountWindow = Window & { __plpReadies?: number };
+
+/** Count every `ready` the preview sends the admin page from its first; call before `page.goto`. */
+export async function countReadyHandshakes(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    if (window.top !== window) return;
+    const counted = window as ReadyCountWindow;
+    counted.__plpReadies = 0;
+    window.addEventListener('message', (event) => {
+      const message = event.data as { ready?: unknown; type?: unknown } | undefined;
+      if (message?.type === 'payload-live-preview' && message.ready === true) {
+        counted.__plpReadies = (counted.__plpReadies ?? 0) + 1;
+      }
+    });
+  });
+}
+
+/**
+ * Wait until startup sent its last `ready` retry, so a navigation probe
+ * installed next counts only router handshakes. A fixed wait from the title's
+ * visibility raced the runtime's own start in WebKit: the last retry fires
+ * 2 000 ms after start, and start came up to 271 ms after the title (PHD-07).
+ */
+export async function waitForStartupReadies(page: Page): Promise<void> {
+  await expect
+    .poll(() => page.evaluate(() => (window as ReadyCountWindow).__plpReadies ?? 0))
+    .toBe(STARTUP_READIES);
+}
+
+interface NavigationProbe {
+  events: number;
+  ready: number;
+  readonly documents: unknown[];
+  /** Every bound-title value observed while a router replaces and the runtime reapplies it. */
+  readonly titles: string[];
+}
+
+type NavigationProbeWindow = Window & { __plpNavigationProbe?: NavigationProbe };
+
+/** Observe commits, admin documents and the published-to-unsaved DOM transition. */
+export async function installNavigationProbe(page: Page): Promise<void> {
+  await page.evaluate(
+    ({ documentEventName, navigationEventName }) => {
+      const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
+      const child = iframe?.contentWindow;
+      if (child === null || child === undefined) throw new Error('preview frame is unavailable');
+
+      const titleSelector = '[data-payload-field="title"]';
+      const probe: NavigationProbe = { events: 0, ready: 0, documents: [], titles: [] };
+      (window as NavigationProbeWindow).__plpNavigationProbe = probe;
+      const remember = (value: string | null): void => {
+        if (value !== null && value.length > 0) probe.titles.push(value);
+      };
+      const rememberBoundNode = (node: Node): void => {
+        if (node.nodeType === 3) {
+          const parent = node.parentElement;
+          if (parent?.closest(titleSelector) !== null) remember(node.textContent);
+          return;
+        }
+        if (node.nodeType !== 1) return;
+        const element = node as Element;
+        if (element.matches(titleSelector)) remember(element.textContent);
+        for (const match of element.querySelectorAll(titleSelector)) remember(match.textContent);
+      };
+      remember(child.document.querySelector(titleSelector)?.textContent ?? null);
+      new MutationObserver((records) => {
+        for (const record of records) {
+          if (record.type === 'characterData') {
+            const parent = record.target.parentElement;
+            if (parent?.closest(titleSelector) !== null) {
+              remember(record.oldValue);
+              remember(record.target.textContent);
+            }
+            continue;
+          }
+          for (const node of record.removedNodes) rememberBoundNode(node);
+          for (const node of record.addedNodes) rememberBoundNode(node);
+        }
+        remember(child.document.querySelector(titleSelector)?.textContent ?? null);
+      }).observe(child.document, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+        characterDataOldValue: true,
+      });
+      window.addEventListener('message', (event) => {
+        const message = event.data as { ready?: unknown; type?: unknown } | undefined;
+        if (message?.type === 'payload-live-preview' && message.ready === true) probe.ready += 1;
+      });
+      child.document.addEventListener(navigationEventName, () => {
+        probe.events += 1;
+      });
+      document.addEventListener(documentEventName, (event) => {
+        probe.documents.push(structuredClone((event as CustomEvent<unknown>).detail));
+      });
+    },
+    {
+      documentEventName: 'payload-live-preview:fixture-document',
+      navigationEventName: 'payload-live-preview:navigation',
+    },
+  );
+}
+
+/** A clone keeps later admin sends from mutating an assertion's baseline. */
+export async function readNavigationProbe(page: Page): Promise<NavigationProbe> {
+  return page.evaluate(() => {
+    const probe = (window as NavigationProbeWindow).__plpNavigationProbe;
+    if (probe === undefined) throw new Error('navigation probe is not installed');
+    return structuredClone(probe);
   });
 }

@@ -30,14 +30,22 @@ const GLOBAL_SAVE: PayloadDocumentEventDetail = {
   updatedAt: '2026-09-06T16:53:14.954Z',
 };
 
+function edit(
+  tracker: RelationshipTracker,
+  value: PayloadLivePreviewMessage,
+): PayloadDocumentEventDetail | null {
+  const inspection = tracker.inspect(value);
+  return inspection === null ? null : tracker.commit(inspection);
+}
+
 describe('an event about the previewed document', () => {
   it('is no edit, however often the panel repeats it', () => {
     const tracker = new RelationshipTracker();
     const previewed = message({ globalSlug: 'homepage' }, GLOBAL_SAVE);
     // A global's save carries no id; an identity that required one would read
     // each of these as a new document.
-    expect(tracker.edit(previewed)).toBeNull();
-    expect(tracker.edit(previewed)).toBeNull();
+    expect(edit(tracker, previewed)).toBeNull();
+    expect(edit(tracker, previewed)).toBeNull();
   });
 
   it('is the same document when the collection and the id agree', () => {
@@ -46,7 +54,7 @@ describe('an event about the previewed document', () => {
       { collectionSlug: 'posts', data: { id: 15, title: 'a' } },
       { entitySlug: 'posts', id: 15 },
     );
-    expect(tracker.edit(previewed)).toBeNull();
+    expect(edit(tracker, previewed)).toBeNull();
   });
 });
 
@@ -54,16 +62,16 @@ describe('an event about another document', () => {
   it('is reported once, and not again while the panel repeats it', () => {
     const tracker = new RelationshipTracker();
     const drawerSave = message({ globalSlug: 'homepage' }, { entitySlug: 'authors', id: 7 });
-    expect(tracker.edit(drawerSave)).toEqual({ entitySlug: 'authors', id: 7 });
-    expect(tracker.edit(drawerSave)).toBeNull();
+    expect(edit(tracker, drawerSave)).toEqual({ entitySlug: 'authors', id: 7 });
+    expect(edit(tracker, drawerSave)).toBeNull();
   });
 
   it('is reported again once the drawer saves a second time', () => {
     const tracker = new RelationshipTracker();
     const at = (updatedAt: string): PayloadLivePreviewMessage =>
       message({ globalSlug: 'homepage' }, { entitySlug: 'authors', id: 7, updatedAt });
-    expect(tracker.edit(at('noon'))).not.toBeNull();
-    expect(tracker.edit(at('one'))).not.toBeNull();
+    expect(edit(tracker, at('noon'))).not.toBeNull();
+    expect(edit(tracker, at('one'))).not.toBeNull();
   });
 
   it('is another document when the same collection names a different id', () => {
@@ -72,12 +80,12 @@ describe('an event about another document', () => {
       { collectionSlug: 'posts', data: { id: 15, title: 'a' } },
       { entitySlug: 'posts', id: 16 },
     );
-    expect(tracker.edit(sibling)).toEqual({ entitySlug: 'posts', id: 16 });
+    expect(edit(tracker, sibling)).toEqual({ entitySlug: 'posts', id: 16 });
   });
 
   it('takes the event at its word when the message does not say what it previews', () => {
     const tracker = new RelationshipTracker();
-    expect(tracker.edit(message({}, { entitySlug: 'authors', id: 7 }))).toEqual({
+    expect(edit(tracker, message({}, { entitySlug: 'authors', id: 7 }))).toEqual({
       entitySlug: 'authors',
       id: 7,
     });
@@ -88,15 +96,15 @@ describe('a message without the event', () => {
   it('is no edit, and does not make the next repeat one either', () => {
     const tracker = new RelationshipTracker();
     const drawerSave = message({ globalSlug: 'homepage' }, { entitySlug: 'authors', id: 7 });
-    expect(tracker.edit(drawerSave)).not.toBeNull();
-    expect(tracker.edit(message({ globalSlug: 'homepage' }))).toBeNull();
-    expect(tracker.edit(drawerSave)).toBeNull();
+    expect(edit(tracker, drawerSave)).not.toBeNull();
+    expect(edit(tracker, message({ globalSlug: 'homepage' }))).toBeNull();
+    expect(edit(tracker, drawerSave)).toBeNull();
   });
 
   it('reports nothing for a `null` field, which is every message before the first save', () => {
     const tracker = new RelationshipTracker();
     expect(
-      tracker.edit({
+      edit(tracker, {
         type: 'payload-live-preview',
         data: { title: 'a' },
         externallyUpdatedRelationship: null,

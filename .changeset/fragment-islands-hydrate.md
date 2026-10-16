@@ -1,0 +1,5 @@
+---
+'payload-live-preview': minor
+---
+
+Framework islands inside Astro fragments now hydrate and follow unsaved revisions. `resolveIslandModule` from `payload-live-preview/astro` gives a fragment container the client module URLs the build emitted, and `livePreview()` writes that table into the server build; an unknown module fails the render instead of sending a source path. The morph keeps an `<astro-island>` that still renders the same component and hands it the rendered props through Astro's own handoff, so framework state survives; a different component or changed slot content is replaced, and an island a revision removes releases its framework root. `MorphOptions.retainBoundary` (beta, `/structural`) lets a coordinator decide boundary pairs; the package's fragment, route and structural coordinators hand in the exported `retainIslandBoundary`, and a direct `morphElement` call without it behaves as before. `LP0809` reports an inserted island the page cannot start. Needs Astro 4.16 or later; `astro dev` is not supported yet.

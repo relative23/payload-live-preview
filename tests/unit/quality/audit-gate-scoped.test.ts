@@ -26,7 +26,6 @@ const fixture = (name: string): unknown =>
   ) as unknown;
 const BRACES = 'https://github.com/advisories/GHSA-vfj7-8cjw-p6xm';
 const FORGE = 'https://github.com/advisories/GHSA-86w9-cpqp-85rv';
-const CACHE = 'https://github.com/advisories/GHSA-ch52-4w7c-c8xp';
 
 describe('audit advisory identity', () => {
   it('resolves every Changesets ancestor to the measured braces advisory', () => {
@@ -107,34 +106,33 @@ const model = JSON.parse(
   >;
 };
 describe('scoped audit register', () => {
+  it('retains a reviewed clean-project descriptor without creating an exception', () => {
+    const value = structuredClone(model);
+    const project = value.projects['examples/astro-payload'];
+    expect(project).toBeDefined();
+    if (project) project.exceptions = [];
+    const selected = selectAuditProject(value, process.cwd(), 'examples/astro-payload', TODAY);
+    expect(selected.project.exposure).toBe('quality/audit-exposure/astro-payload.json');
+    expect(selected.project.exceptions).toEqual([]);
+  });
+
+  it.each([
+    { exposure: null, exposureSha256: 'a'.repeat(64) },
+    { exposure: 'quality/audit-exposure/astro-payload.json', exposureSha256: null },
+    { exposure: '', exposureSha256: 'a'.repeat(64) },
+    { exposure: 'quality/audit-exposure/astro-payload.json', exposureSha256: 'invalid' },
+  ])('rejects an incomplete clean exposure binding: %j', (binding) => {
+    const value = structuredClone(model);
+    Object.assign(value.projects['examples/astro-payload'] ?? {}, binding, { exceptions: [] });
+    expect(() => selectAuditProject(value, process.cwd(), 'examples/astro-payload', TODAY)).toThrow(
+      'exposure binding',
+    );
+  });
+
   it.each([
     { project: '.', name: 'root', leaf: 'braces', id: BRACES },
     { project: 'examples/nuxt-payload', name: 'nuxt-payload', leaf: 'braces', id: BRACES },
     { project: 'examples/nuxt-payload', name: 'nuxt-payload', leaf: 'node-forge', id: FORGE },
-    {
-      project: 'examples/astro-payload',
-      name: 'astro-payload',
-      leaf: 'http-cache-semantics',
-      id: CACHE,
-    },
-    {
-      project: 'examples/astro-hybrid',
-      name: 'astro-hybrid',
-      leaf: 'http-cache-semantics',
-      id: CACHE,
-    },
-    {
-      project: 'examples/astro-inline',
-      name: 'astro-inline',
-      leaf: 'http-cache-semantics',
-      id: CACHE,
-    },
-    {
-      project: 'examples/astro-middleware',
-      name: 'astro-middleware',
-      leaf: 'http-cache-semantics',
-      id: CACHE,
-    },
   ])('binds the measured $project/$leaf graph', ({ project, leaf, id, name }) => {
     const entry = model.projects[project]?.exceptions.find(
       (value) => value.package === leaf && value.id === id,
@@ -159,6 +157,29 @@ describe('scoped audit register', () => {
       ).ok,
     ).toBe(true);
   });
+
+  it.each(['astro-payload', 'astro-hybrid', 'astro-inline', 'astro-middleware'])(
+    'keeps the known cache path source- and caller-bound after audit removal: %s',
+    (name) => {
+      const project = `examples/${name}`;
+      const selected = selectAuditProject(model, process.cwd(), project, TODAY);
+      expect(selected.project.exceptions).toEqual([]);
+      expect(selected.project.exposure).not.toBeNull();
+      const descriptor = JSON.parse(
+        readFileSync(resolve(process.cwd(), selected.project.exposure ?? ''), 'utf8'),
+      ) as { callers: Record<string, readonly string[]> };
+      expect(exposureDigest(descriptor)).toBe(selected.project.exposureSha256);
+      expect(descriptor.callers['node_modules/http-cache-semantics']).toEqual([
+        '4.3.0',
+        'sha512-M5t5LlJpS1UHMjvwRQVdFHvPISGeLAxNcrWuJkeGh0KxsqCHZ1O3NXZU/8x7cD0BDcGW8kapxMKTvwlqrNkHkA==',
+      ]);
+      expect(descriptor.callers['node_modules/astro']).toHaveLength(2);
+      const lock: unknown = JSON.parse(
+        readFileSync(resolve(process.cwd(), project, 'package-lock.json'), 'utf8'),
+      );
+      expect(() => validateExposure(descriptor, process.cwd(), lock)).not.toThrow();
+    },
+  );
 
   it('isolates clean projects and still rejects every selected unused exception', () => {
     const selected = selectAuditProject(model, process.cwd(), 'examples/pure-html', TODAY);

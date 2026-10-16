@@ -1,7 +1,7 @@
 /**
  * One polite `aria-live` region per document, leased by every announcer on
- * the page, for connect / update / disconnect announcements. The message
- * clears itself after a moment so a repeated string is heard again.
+ * the page, for connect / update / disconnect announcements. The package clears
+ * its message node after a moment so a later message creates a fresh text change.
  */
 
 import { detectInitialLocale } from '@detection/locale';
@@ -85,7 +85,9 @@ export class A11yAnnouncer {
       element.setAttribute('role', 'status');
       element.setAttribute('aria-live', 'polite');
       element.setAttribute('aria-atomic', 'true');
-      element.setAttribute('style', STYLE);
+      // Through the CSSOM: a strict `style-src` refuses a `style` attribute,
+      // not declarations set on `element.style`.
+      element.style.cssText = STYLE;
       activeDocument.body.appendChild(element);
     }
     lease.element = element;
@@ -107,6 +109,11 @@ export class A11yAnnouncer {
         ? `${String(count)} ${count === 1 ? 'Änderung' : 'Änderungen'} angewendet`
         : `${String(count)} ${count === 1 ? 'change' : 'changes'} applied`,
     );
+  }
+
+  /** A revision settled with a step that fell short (ADR 0023); the counts said only what was written. */
+  announcePartial(): void {
+    this.say(this.german ? 'Vorschau teilweise aktualisiert' : 'Preview partly updated');
   }
 
   /** Release the lease; the last release removes an owned region but leaves an adopted one. Idempotent. */

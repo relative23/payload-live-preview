@@ -94,9 +94,8 @@ type CreateElement = (type: 'script', props: LivePreviewScriptProps) => LivePrev
  * returns before reaching this.
  */
 const loadCreateElement = lazyPeer(async (): Promise<CreateElement> => {
-  // Through a variable so the bundler leaves it as a runtime import.
-  const specifier = 'react';
-  const react = (await import(/* @vite-ignore */ specifier)) as {
+  // A literal lets the app's bundler resolve its peer without an empty context.
+  const react = (await import('react')) as {
     createElement: CreateElement;
   };
   return react.createElement;

@@ -1,0 +1,6 @@
+import { canonical, fixture, refused } from '../../../../host';
+export const dynamic = 'force-dynamic';
+export async function GET(request: Request) {
+  const safe = canonical(request, '/entry');
+  return safe ? fixture()!.host.exchange(safe) : refused();
+}

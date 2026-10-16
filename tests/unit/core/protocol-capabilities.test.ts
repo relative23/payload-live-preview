@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import {
@@ -181,9 +181,11 @@ describe('runtime', () => {
     expect(renders).toEqual(['same']);
     // Nothing changed: every field is skipped, so no flush and no afterUpdate.
     post({ title: 'same' });
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    // Waits for the runtime, not a fixed time: a fixed wait failed under load (PHD-15).
+    await vi.waitFor(() => {
+      expect(rt.inspect().revisions.skippedUnchanged).toBe(1);
+    });
     expect(renders).toEqual(['same']);
-    expect(rt.inspect().revisions.skippedUnchanged).toBe(1);
     done = afterUpdate();
     post({ title: 'same' }, { externallyUpdatedRelationship: { entitySlug: 'authors', id: 7 } });
     await done;
@@ -193,9 +195,10 @@ describe('runtime', () => {
     // The panel repeats its last document event in every later message. The
     // edit already happened, so the repeat is neither an event nor a render.
     post({ title: 'same' }, { externallyUpdatedRelationship: { entitySlug: 'authors', id: 7 } });
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await vi.waitFor(() => {
+      expect(rt.inspect().revisions.skippedUnchanged).toBe(2);
+    });
     expect(renders).toEqual(['same', 'same']);
     expect(events).toEqual([{ entitySlug: 'authors', id: 7 }]);
-    expect(rt.inspect().revisions.skippedUnchanged).toBe(2);
   });
 });

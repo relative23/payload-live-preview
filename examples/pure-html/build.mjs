@@ -13,8 +13,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, 'dist');
 const ORIGIN = 'http://localhost:4180';
 
+// A real Payload admin (tests/real-payload) frames these pages from its own origin.
+const admin = process.env.PAYLOAD_ADMIN_ORIGIN?.trim();
+
 const options = {
-  allowedOrigins: [ORIGIN, 'http://127.0.0.1:4180'],
+  allowedOrigins: [ORIGIN, 'http://127.0.0.1:4180', ...(admin ? [admin] : [])],
   debug: true,
   debounceMs: 25,
   revealEditedField: true,
@@ -24,6 +27,23 @@ const inline = generateInlineScript(options);
 // The lean artifact: same options, fewer features baked in. `lean.html` is what
 // `tests/e2e/specs/lean-profile.spec.ts` measures and drives.
 const lean = generateInlineScript({ ...options, runtime: LEAN_RUNTIME });
+// Two documents and the route strategy: an update reaches only what the
+// document it names owns, the route included (`route-owner-scope.spec.ts`).
+const ownersRoute = generateInlineScript({
+  ...options,
+  scopeBindingsByOwner: true,
+  routeStrategy: true,
+});
+// A partly bound group, once per coverage mode (`subfield-coverage.spec.ts`).
+const groupsDeclared = generateInlineScript({
+  ...options,
+  routeStrategy: true,
+  subfieldCoverage: 'declared',
+});
+const groupsDescendant = generateInlineScript({ ...options, routeStrategy: true });
+// The route strategy and an island: how completely the page shows a revision
+// (`revision-display.spec.ts`).
+const revisionDisplay = generateInlineScript({ ...options, routeStrategy: true });
 
 const shell = (title, body, script = inline) =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title>` +
@@ -45,10 +65,64 @@ const leanBody =
   '<ul data-payload-field="tags" data-payload-type="array" ' +
   'data-payload-array-template="<li>{{value}}</li>" data-testid="tags"><li>one</li></ul>';
 
+// `teaser` asks for the route only on the edited document's side; `title` only
+// on the other document's side.
+const ownersRouteBody =
+  '<section data-payload-owner="global:home" data-testid="home">' +
+  '<h1 data-payload-field="title" data-testid="title">Hello</h1>' +
+  '<p data-payload-field="teaser" data-testid="teaser">teaser</p>' +
+  '<aside data-payload-strategy="route" data-payload-depends="teaser">home route</aside>' +
+  '</section>' +
+  '<section data-payload-owner="global:other" data-testid="other">' +
+  '<aside data-payload-strategy="route" data-payload-depends="title">other route</aside>' +
+  '</section>';
+
+// `hero.eyebrow` is bound, `hero.note` is covered on purpose, and
+// `hero.description` is shown by nothing on this page.
+const groupsBody =
+  '<section data-payload-covers="hero.note">' +
+  '<h1 data-payload-field="hero.eyebrow" data-testid="eyebrow">Eyebrow</h1>' +
+  '<p data-testid="description">Saved description</p>' +
+  '</section>';
+
+// `banner` only the route shows, which renders the saved draft; the island
+// renders `title` at once but confirms it only when the page is told to, the
+// way a framework commit can come later than the event.
+const revisionDisplayBody =
+  '<h1 data-payload-field="title" data-testid="title">Hello</h1>' +
+  '<aside data-payload-strategy="route" data-payload-depends="banner">banner</aside>' +
+  '<x-panel data-payload-island="panel"><p data-testid="island-title">Hello</p></x-panel>' +
+  '<script>' +
+  'const island=document.querySelector("x-panel");window.__confirmIsland=()=>{};' +
+  'island.addEventListener("payload-live-preview:update",(event)=>{' +
+  'island.querySelector("p").textContent=String(event.detail.fields.title??"");' +
+  'window.__confirmIsland=()=>event.detail.displayed();});' +
+  '</script>';
+
 await mkdir(dist, { recursive: true });
 await writeFile(join(dist, 'index.html'), shell('Pure HTML preview', indexBody), 'utf8');
 await writeFile(join(dist, 'reveal.html'), shell('Reveal fixture', revealBody), 'utf8');
 await writeFile(join(dist, 'lean.html'), shell('Lean profile', leanBody, lean), 'utf8');
 await writeFile(join(dist, 'full.html'), shell('Full profile', leanBody), 'utf8');
+await writeFile(
+  join(dist, 'groups-declared.html'),
+  shell('Groups, declared', groupsBody, groupsDeclared),
+  'utf8',
+);
+await writeFile(
+  join(dist, 'groups-descendant.html'),
+  shell('Groups, descendant', groupsBody, groupsDescendant),
+  'utf8',
+);
+await writeFile(
+  join(dist, 'owners-route.html'),
+  shell('Owners and the route', ownersRouteBody, ownersRoute),
+  'utf8',
+);
+await writeFile(
+  join(dist, 'revision-display.html'),
+  shell('Revision display', revisionDisplayBody, revisionDisplay),
+  'utf8',
+);
 await copyFile(join(here, 'admin.html'), join(dist, 'admin.html'));
 console.log(`pure-html built to dist/ (inline ${inline.length} bytes, lean ${lean.length} bytes)`);

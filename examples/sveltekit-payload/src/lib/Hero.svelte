@@ -25,3 +25,11 @@
 <p {...bindings.body} data-testid="hero-body">{body}</p>
 <p data-testid="hero-words">{words} words</p>
 <input id="hero-input" data-testid="hero-input" aria-label="Scratch" />
+
+<style>
+  /* Scoped: the section exists only after a fragment render, and its rule has
+     to be on the page already (ADR 0029). */
+  .lede {
+    letter-spacing: 0.25em;
+  }
+</style>

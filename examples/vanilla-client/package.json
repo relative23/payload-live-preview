@@ -2,6 +2,7 @@
   "name": "payload-live-preview-example-vanilla-client",
   "private": true,
   "type": "module",
+  "packageManager": "npm@12.0.2",
   "scripts": {
     "build": "node build.mjs",
     "serve": "node serve.mjs",
@@ -12,5 +13,8 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }

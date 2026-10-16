@@ -318,7 +318,69 @@ export const CORPUS: readonly VectorClass[] = [
 
 /**
  * Findings, one vector each with the date and the change that answered it.
- * Empty until the corpus finds something; the test fails on any entry whose
- * `id` also appears above, so a finding is recorded once.
+ * The test fails on any entry whose `id` also appears above, so a finding is
+ * recorded once.
+ *
+ * 2026-10-02 (PHD-19): the Deep Quality exploration (10 000 inputs, a new seed
+ * a day) found these eleven between 2026-09-20 and 2026-10-01; each is the
+ * minimal input it shrank to. None leaves script-capable markup. Three broke
+ * the fixed point, six let a URL attribute keep a scheme that has whitespace
+ * in it, two were pairs under an element DOMPurify removes whole.
  */
-export const REGRESSIONS: readonly Vector[] = [];
+export const REGRESSIONS: readonly Vector[] = [
+  {
+    id: 'phd19-nested-anchor',
+    input: "<p><a><summary href=''><script>alert(1)</script>'><table><a>",
+    note: 'Unwrapping `summary` leaves an `a` inside an `a`, which no parser produces; the re-parse closes the first. Answered by sanitising until the output settles.',
+  },
+  {
+    id: 'phd19-nested-list-item',
+    input: '<p><li><table><li>',
+    note: 'A `li` inside a `li` after the unwrap; the re-parse makes them siblings. Same answer.',
+  },
+  {
+    id: 'phd19-nested-list-item-summary',
+    input: '<p><li><summary><li>',
+    note: 'As above, through an unwrapped `summary`.',
+  },
+  {
+    id: 'phd19-srcset-space-before-colon',
+    input: '<img srcset="javascript :">',
+    note: 'The srcset parser reads `javascript` as a relative URL and drops the candidate; DOMPurify strips the whitespace first and sees a scheme. Answered by testing the whole candidate and by `isSafeUrl` reading through whitespace.',
+  },
+  {
+    id: 'phd19-srcset-source',
+    input: '<source srcset="javascript :">',
+    note: 'The same through `source`.',
+  },
+  {
+    id: 'phd19-srcset-in-paragraph',
+    input: '<p><img srcset="javascript :">',
+    note: 'The same inside a paragraph.',
+  },
+  {
+    id: 'phd19-srcset-newline-in-scheme',
+    input: '<p><p><img srcset="jav&#x0A;ascript:">',
+    note: 'A newline inside the scheme, written as a character reference.',
+  },
+  {
+    id: 'phd19-poster-on-label',
+    input: '<label poster="foo :">',
+    note: 'An author template keeps the attribute it wrote on any tag; the value `foo :` has a scheme once the whitespace is gone.',
+  },
+  {
+    id: 'phd19-poster-on-select',
+    input: '<p><select poster="foo :">',
+    note: 'The same through `select`.',
+  },
+  {
+    id: 'phd19-foreign-name-table',
+    input: '<x-a><mglyph><table><plaintext>',
+    note: 'DOMPurify removes the HTML-namespace `mglyph` with its subtree, `table` included; ours unwraps it and keeps the sanitised children. A difference the oracle classifies (ADR 0016), asked of DOMPurify itself.',
+  },
+  {
+    id: 'phd19-svg-name-textarea',
+    input: '<p><p><G </script><textarea>',
+    note: 'The same through `g`, an SVG name, over an author-kept `textarea`.',
+  },
+];

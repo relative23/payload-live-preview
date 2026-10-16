@@ -36,6 +36,8 @@ export type PreviewAuthorization =
 export interface PreviewAuthorizationRequest {
   readonly url: string;
   readonly headers: { get(name: string): string | null };
+  /** Request lifetime, when supplied by the caller. Session fetches follow it. */
+  readonly signal?: AbortSignal;
 }
 
 /**

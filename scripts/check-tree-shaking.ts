@@ -4,6 +4,11 @@
  * consumer bundled with Vite through a real `node_modules` resolution, so the
  * manifest's `exports` and `sideEffects` decide what survives.
  */
+// 2026-10-08 (ADR 0004/0010): response-body cleanup and numeric v2 rows; paired old/current consumer gzip deltas preserve all thirteen reserves.
+// 2026-10-05 (ADR 0004): timer ownership, accepted data snapshots and owned merge outcomes; Node24.19/npm12.0.2 epoch1791096072 measurements retain every reserve.
+// 2026-10-04 (2.1.0): stop superseded merges after diagnostics and simplify legacy
+// relation planning. Paired Node24.19/npm12.0.2 measurements at epoch1791096072 move
+// changed rows by their measured deltas and preserve existing raw/gzip/Brotli reserves.
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -11,7 +16,6 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { build } from 'vite';
 import { improvementNotice } from './size-budget-notice';
-
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 interface Fixture {
@@ -205,7 +209,7 @@ interface Fixture {
  *
  * 2026-09-11 (Z37): the two rows that carry the generator rise for the
  * `defaults` profile it now resolves itself — the 1.x row table and the
- * function that writes it, plus the marker in the last slot —
+ * function that writes it, plus the marker in fixed slot 24 —
  * `generateInlineScript` from `payload-live-preview` 41_698 → 41_788
  * (41_731, +202 raw), `createLivePreviewMiddleware` from
  * `payload-live-preview/nextjs` 46_955 → 47_038 (46_982, +77 raw). The runtime
@@ -286,6 +290,125 @@ interface Fixture {
  * `initLivePreview` from `payload-live-preview/core` 45_092 → 45_247 (measured 45_068 → 45_223);
  * `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 48_026 → 48_249 (measured 47_954 → 48_177);
  * `LEAN_RUNTIME` from `payload-live-preview/lean` 29_560 → 29_756 (measured 29_500 → 29_696).
+ * 2026-09-22 (2.1: the morph takes its ownership rule): five rows move by the
+ * measured difference between main and this branch under the same epoch,
+ * cushions kept — `initLivePreview` from the root 45_257 → 45_296 (measured
+ * 45_233 → 45_272), `generateInlineScript` 42_964 → 42_653 (42_899 → 42_588),
+ * `initLivePreview` from `./core` 45_247 → 45_274 (45_223 → 45_250),
+ * `morphElement` from `./structural` 1_487 → 1_512 (1_463 → 1_488), and the
+ * Next.js middleware 48_249 → 47_909 (48_177 → 47_837). Moving the boundary
+ * predicate and making the root and keyed-child decisions agree with ADR 0008
+ * are the same bytes recorded in bundle-budgets.ts.
+ * 2026-09-23 (H03/H08/H14/H06 hardening batch): the two generator consumers
+ * move by the measured difference from the post-morph snapshot, with their
+ * existing cushions kept — `generateInlineScript` 42_653 → 43_357 (measured
+ * 42_588 → 43_292) and the Next.js middleware 47_909 → 48_653 (47_837 →
+ * 48_581). These consumers retain the generated fragment and route sources;
+ * the batch adds bounded fragment reads, ordered managed-head reconciliation,
+ * abort-aware waiters and signal-generation identity for fragment deduping.
+ * The focused entry and inline-profile measurements are recorded beside their
+ * budgets in bundle-budgets.ts and bundle-prelude-budgets.ts.
+ * 2026-09-23 (`./plugin`): the new Payload config transform is 1 190 gzip;
+ * its 1 195 B budget keeps the five-byte cushion used by the small entries.
+ * 2026-09-24 (last-value preview intent): the plugin consumer measures 1 204
+ * gzip after the URL helper aligns repeated parameters with the adapters; its
+ * 1 209 B budget keeps that five-byte cushion.
+ * 2026-09-24 (Payload 3's non-localized callback and encoded custom query
+ * key): the same consumer measures 1 223 B gzip; its 1 228 B budget retains
+ * the five-byte cushion.
+ * 2026-09-24 (2.1 source freeze): the eight consumers that carry the changed
+ * runtime, morph or hook session were measured again after the owner-scope and
+ * currentness closure. Each row below moves to that measurement with its prior
+ * cushion; the five unaffected consumers retain their existing ceilings.
+ * 2026-09-24 (streamed React hydration): the five runtime consumers move by
+ * the paired-build difference from that freeze, with their prior cushions
+ * unchanged — root `initLivePreview` 48_025 → 48_218 (+193 B),
+ * `generateInlineScript` 46_016 → 46_156 (+140 B), core `initLivePreview`
+ * 48_014 → 48_205 (+191 B), Next.js middleware 51_297 → 51_432 (+135 B),
+ * and `LEAN_RUNTIME` 31_931 → 32_064 (+133 B). The root-wide dehydrated
+ * boundary scan and its measurement are recorded in ADR 0015 and
+ * bundle-budgets.ts.
+ * 2026-09-24 (H01 route fidelity): the five runtime consumers move by the
+ * exact paired-build gzip difference, keeping their prior cushions — root
+ * `initLivePreview` +25 B, `generateInlineScript` +22 B, core
+ * `initLivePreview` +25 B, Next.js middleware +24 B and `LEAN_RUNTIME` +4 B.
+ * The status and inspection counter that cost these bytes are recorded in ADR
+ * 0018 and bundle-budgets.ts.
+ * 2026-09-25 (H11 explicit response identity, ADR 0004 §4c): paired
+ * measurements add 68–100 B gzip to the seven merger-bearing consumers;
+ * each limit moves by that measured delta with its existing cushion retained.
+ * 2026-09-27 (PHD-05 island handoff/deduplication): paired measurements
+ * against the retained source-built archive add 27/101/34/99/108 B gzip to
+ * root client/generator, core client, Next middleware and lean respectively.
+ * Their 24/65/24/72/60 B cushions stay unchanged; other consumers do not move.
+ * 2026-09-28 (H05 fragment islands, ADR 0021): paired measurements against the
+ * PHD-05 archive add 682/813/682/827/9 B gzip to root client/generator, core
+ * client, Next middleware and lean, and 13 B to the morph alone; the island
+ * handoff is handed in by the coordinators, so the bare engine carries only
+ * the new option. Cushions 24/65/24/72/60/24 B stay unchanged.
+ * 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives):
+ * paired measurements against the unfixed source-built archive add
+ * 171/156/169/151/55 B gzip to root client/generator, core client, Next
+ * middleware and lean; cushions 24/65/24/72/60 B stay unchanged, other
+ * consumers do not move.
+ * 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src):
+ * paired measurements against the PHD-07 archive add 8/6/8/5 B gzip to root
+ * client/generator, core client and Next middleware (raw shrinks by 7-8 B);
+ * cushions 24/65/24/72 B stay unchanged, lean and the plugin manager do not move.
+ * 2026-09-29 (PHD-02, owner-scoped route planning): paired measurements against
+ * the PHD-03 archive: root and core client +42 B gzip, generator -29, Next
+ * middleware -24, lean -10; each ceiling follows with its cushion
+ * (24/65/24/72/60 B) unchanged.
+ * 2026-09-29 (H02, sub-field coverage declared, ADR 0022): paired
+ * measurements against the PHD-08 archive: root client +1 155, generator
+ * +908, core client +1 123, Next middleware +912, lean +886 B gzip, the plugin
+ * manager and the root Lexical import +1. The runtime carries the coverage
+ * rule, the bounded comparison, `data-payload-covers` and the dependencies of
+ * rendered boundaries and route markers; every ceiling keeps its cushion
+ * (24/65/24/72/60/56/2 B).
+ * 2026-09-29 (H13, revision display state, ADR 0023): paired measurements
+ * against the H02 archive: root client +1 121, generator +1 069, core client
+ * +1 123, Next middleware +1 050, lean +858 B gzip, the React hook +14 and the
+ * Vue composable +21 for `revision`. The runtime carries the per-revision
+ * ledger and its seven call sites; every ceiling keeps its cushion
+ * (24/65/24/72/60/80/59 B).
+ * 2026-09-29 (H10, lexical render can require a document, ADR 0025): paired
+ * measurements against the H12 archive: root client +49, generator +48, core
+ * client +46, Next middleware +41, lean +44, the root Lexical import +36 and
+ * `/lexical` +37 B gzip, for `requireDocument` and the longer warning that
+ * names it; every ceiling keeps its cushion.
+ * 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): paired
+ * measurements against the H10 archive: root client -23, generator -27, core
+ * client -8, Next middleware -17, lean -23, the React hook -33 and the Vue
+ * composable -29 B gzip; every ceiling moves down by its difference and keeps
+ * its cushion.
+ * 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): paired
+ * measurements against the PHD-11 archive: generator +358, Next middleware
+ * +261 and `/lexical` +1 B gzip, for the development warnings the generator
+ * and the adapters give for `defaults: 'v1'` and `onUnboundChange`, and the
+ * helper that prints them once; the browser runtime does not change. Every
+ * ceiling keeps its cushion.
+ * 2026-09-29 (H15, a host route refresh settles after the host commits,
+ * ADR 0028): paired measurements against the H07 archive: generator +306 and
+ * Next middleware +332 B gzip. Both carry the route and fragment prelude
+ * sources, which gain the `LP0810` check on a refresh that returns no promise
+ * (route prelude +73 B gzip); every ceiling keeps its cushion.
+ * 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount,
+ * ADR 0015): paired measurements against the H17 archive: root client +155,
+ * generator +177, core client +155, Next middleware +207 and lean +139 B gzip,
+ * for the wait on SvelteKit's announcer and the table that picks a wait by
+ * framework; every ceiling keeps its cushion.
+ * 2026-10-02 (H06, a fragment render lands in the boundary that replaced its
+ * own, ADR 0011): paired measurements against the H08 archive: root client
+ * +177, core client +171, generator -5 and Next middleware -3 B gzip, for the
+ * lookup of the replacement boundary and the cache rebuild before its
+ * fallback patch; every ceiling keeps its cushion.
+ * 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme
+ * through whitespace, ADR 0016): paired measurements against the H06 archive
+ * (34d51bb): root `lexicalToHtml` +289, root client +257, generator +219, core
+ * client +251, `/lexical` +292, Next middleware +232 and lean +296 B gzip, for
+ * the second parse, its cap and warning, and the reading of a scheme through
+ * whitespace; every ceiling keeps its cushion.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -299,78 +422,109 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_367,
+    gzip: 5_693,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
+    // 2026-10-04: paired combined 2.1 population/locale integration adds +3117 B gzip; retain 24 B cushion.
+    // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +3259 B gzip.
+    // Node24.19/npm12.0.2, epoch1791096072; retain the original 24 B gzip reserve.
+    // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +25 B gzip; retain 24 B.
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_257,
+    gzip: 55_542,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
+    // 2026-10-04: paired combined 2.1 population/locale integration adds +2476 B gzip; retain 65 B cushion.
+    // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +2610 B gzip.
+    // Node24.19/npm12.0.2, epoch1791096072; retain the original 65 B gzip reserve.
+    // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +37 B gzip; retain 65 B.
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 42_964,
+    gzip: 53_204,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
+    // 2026-10-04: paired combined 2.1 population/locale integration adds +3144 B gzip; retain 24 B cushion.
+    // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +3286 B gzip.
+    // Node24.19/npm12.0.2, epoch1791096072; retain the original 24 B gzip reserve.
+    // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +20 B gzip; retain 24 B.
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 45_247,
+    gzip: 55_531,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_502,
+    gzip: 5_832,
     why: 'the Lexical renderer from its focused entry',
   },
   {
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_487,
+    gzip: 1_570,
     why: 'the keyed morph alone, without the array renderer',
   },
   {
+    // 2026-10-04: paired combined 2.1 population/locale integration adds +2467 B gzip; retain 72 B cushion.
+    // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +2600 B gzip.
+    // Node24.19/npm12.0.2, epoch1791096072; retain the original 72 B gzip reserve.
+    // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +41 B gzip; retain 72 B.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 48_249,
+    gzip: 58_459,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
+    // 2026-10-04: paired combined 2.1 population/locale integration adds +2445 B gzip; retain 60 B cushion.
+    // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +2578 B gzip.
+    // Node24.19/npm12.0.2, epoch1791096072; retain the original 60 B gzip reserve.
+    // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +42 B gzip; retain 60 B.
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 29_756,
+    gzip: 37_245,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
+    // 2026-10-04: paired combined 2.1 population/locale integration adds +3075 B gzip; retain 80 B cushion.
+    // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery -14 B gzip; retain 80 B.
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_180,
+    gzip: 8_603,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
+    // 2026-10-04: paired combined 2.1 population/locale integration adds +3070 B gzip; retain 80 B cushion.
+    // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery -21 B gzip; retain 80 B.
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 5_176,
+    gzip: 8_585,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {
     from: 'payload-live-preview/plugins',
     symbol: 'PluginManager',
     use: 'export const out = PluginManager;',
-    gzip: 3_372,
+    gzip: 3_373,
     why: 'the plugin manager without the built-in plugins',
+  },
+  {
+    from: 'payload-live-preview/plugin',
+    symbol: 'livePreview',
+    use: "export const out = livePreview({ baseUrl: 'https://site.example.com', fallback: '/' });",
+    gzip: 1_228,
+    why: 'the Payload config transform and URL builder, without Payload itself',
   },
 ];
 

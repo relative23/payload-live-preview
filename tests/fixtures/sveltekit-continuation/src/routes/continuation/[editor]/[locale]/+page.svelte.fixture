@@ -1,0 +1,8 @@
+<script lang="ts">
+  /** Remount the document owner when the verified route changes. Refused loads never retain the previous target's component. */
+  import Preview from '$lib/Preview.svelte';
+  let { data } = $props();
+</script>
+{#if data.initialData}
+  {#key data.key}<Preview initialData={data.initialData} path={data.path} locale={data.locale} origin={data.origin} />{/key}
+{:else}<h1>Preview unavailable</h1>{/if}

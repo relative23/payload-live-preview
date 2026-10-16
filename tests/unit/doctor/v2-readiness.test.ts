@@ -128,7 +128,11 @@ describe('analyzeV2Readiness', () => {
     for (const findings of [direct, adapter]) {
       expect(findings).toHaveLength(4);
       expect(warnings(findings)).toEqual(EVERY_ROW);
-      for (const finding of findings) expect(finding.remedy).toContain("drop `defaults: 'v1'`");
+      for (const finding of findings) {
+        expect(finding.remedy).toContain("drop `defaults: 'v1'`");
+        // ADR 0026: the profile goes in 3.0, and the codemod writes it out row by row.
+        expect(finding.remedy).toMatch(/3\.0 removes the profile.*`pll migrate`/u);
+      }
     }
 
     // An explicit option still wins over the profile, and its row is not flagged.

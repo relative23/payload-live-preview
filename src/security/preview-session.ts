@@ -1,6 +1,8 @@
 /**
  * The `payload-session` strategy: forward exactly one named cookie to
  * `GET <serverURL>/api/<usersSlug>/me` and authorize when a user comes back.
+ * A cookie-only request preserves working Payload 2 sessions. When `/me`
+ * reports no user, one retry adds an `Origin` for Payload 3's CSRF check.
  */
 
 import { createAuthorizedPreviewContext } from '@/types/authorized-preview';
@@ -25,6 +27,12 @@ export interface PayloadSessionStrategy {
   readonly usersSlug?: string;
   /** Cookie name; Payload's default is `payload-token`. */
   readonly cookieName?: string;
+  /**
+   * Send this listed origin with the cookie from the first request. Without
+   * it, try the existing cookie-only request, then the origin of `serverURL`
+   * once when `/me` reports a null user. Draft reads keep the accepted headers.
+   */
+  readonly origin?: string;
   /** Upper bound for the `/me` round trip. Below 250 ms is raised to 250 ms; default 3000. */
   readonly timeoutMs?: number;
   /** Longest cookie value accepted; longer ones are refused as `missing-credential`. Default 4096. */
@@ -79,18 +87,19 @@ function cookieNameFor(configured: string | undefined): string {
   return name;
 }
 
-function serverOriginFor(serverURL: string): string {
+/** The origin of an absolute http(s) URL; `option` names it in the error. */
+function httpOriginFor(value: string, option: string): string {
   let url: URL;
   try {
-    url = new URL(serverURL);
+    url = new URL(value);
   } catch {
     throw new PreviewConfigurationError(
-      `payload-live-preview: serverURL "${serverURL}" is not an absolute URL`,
+      `payload-live-preview: ${option} "${value}" is not an absolute URL`,
     );
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new PreviewConfigurationError(
-      `payload-live-preview: serverURL must be http(s), got "${url.protocol}"`,
+      `payload-live-preview: ${option} must be http(s), got "${url.protocol}"`,
     );
   }
   return url.origin;
@@ -101,7 +110,9 @@ export async function authorizeSession(
   strategy: PayloadSessionStrategy,
 ): Promise<PreviewAuthorization> {
   const cookieName = cookieNameFor(strategy.cookieName);
-  const origin = serverOriginFor(strategy.serverURL);
+  const origin = httpOriginFor(strategy.serverURL, 'serverURL');
+  const sentOrigin =
+    strategy.origin === undefined ? undefined : httpOriginFor(strategy.origin, 'origin');
   const value = extractCookie(
     request.headers.get('cookie'),
     cookieName,
@@ -110,20 +121,55 @@ export async function authorizeSession(
   if (value === null) return refused('missing-credential');
   const now = strategy.now ?? Date.now;
   const timeoutMs = Math.max(MIN_TIMEOUT_MS, strategy.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+  // Retain AbortSignal.timeout's refusal of non-integral or non-finite values.
+  if (!Number.isSafeInteger(timeoutMs)) return refused('unavailable');
   const fetchImpl: FetchLike = strategy.fetch ?? globalThis.fetch;
   const usersSlug = encodeURIComponent(strategy.usersSlug ?? DEFAULT_USERS_SLUG);
   const forwarded = `${cookieName}=${value}`;
+  let payloadHeaders: Record<string, string> = { cookie: forwarded };
+  if (sentOrigin !== undefined) payloadHeaders['origin'] = sentOrigin;
+  const controller = new AbortController();
+  const abort = (): void => {
+    controller.abort(request.signal?.reason);
+  };
+  const isAborted = (): boolean => controller.signal.aborted;
+  request.signal?.addEventListener('abort', abort, { once: true });
+  if (request.signal?.aborted === true) abort();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   let body: unknown;
   try {
-    // `depth=0`: the verdict needs the user's id, not its populated relations.
-    const response = await fetchImpl(`${origin}/api/${usersSlug}/me?depth=0`, {
-      headers: { cookie: forwarded, accept: 'application/json' },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    if (!response.ok) return refused(response.status === 401 ? 'invalid' : 'unavailable');
-    body = await response.json();
+    if (isAborted()) return refused('unavailable');
+    timer = setTimeout(() => {
+      controller.abort(new DOMException('The operation timed out', 'TimeoutError'));
+    }, timeoutMs);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      // `depth=0`: the verdict needs the user's id, not its populated relations.
+      const response = await fetchImpl(`${origin}/api/${usersSlug}/me?depth=0`, {
+        headers: { ...payloadHeaders, accept: 'application/json' },
+        signal: controller.signal,
+      });
+      if (isAborted()) return refused('unavailable');
+      if (!response.ok) return refused(response.status === 401 ? 'invalid' : 'unavailable');
+      body = await response.json();
+      if (isAborted()) return refused('unavailable');
+      // Payload 2 accepts an absent Origin; adding one unconditionally can
+      // reject its valid session when only the frontend is in the CSRF list.
+      if (
+        attempt !== 0 ||
+        sentOrigin !== undefined ||
+        typeof body !== 'object' ||
+        body === null ||
+        (body as { user?: unknown }).user !== null
+      ) {
+        break;
+      }
+      payloadHeaders = { cookie: forwarded, origin };
+    }
   } catch {
     return refused('unavailable');
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    request.signal?.removeEventListener('abort', abort);
   }
   const user = readUser(body, strategy.usersSlug ?? DEFAULT_USERS_SLUG);
   if (user === null) return refused('invalid');
@@ -138,7 +184,7 @@ export async function authorizeSession(
       authorizedAt: now(),
       expiresAt,
       scope: {},
-      payloadHeaders: { cookie: forwarded },
+      payloadHeaders,
     }),
   };
 }

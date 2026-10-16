@@ -2,7 +2,7 @@
 
 For App Router projects on Next.js 16 whose pages are rendered on the server or at build time. The runtime patches server-rendered markup; its first write waits for React to hydrate, and a client component that re-renders a bound element can still revert a patch (see the caveat below).
 
-Next.js 15 is not supported. Measured on 2026-09-17 with Next.js 15.5.25: 30 of the 42 end-to-end cases against [`examples/nextjs-payload`](../examples/nextjs-payload) failed with `Cannot find module 'react'`. `<LivePreviewScript />` and the fragment endpoint load `react` and `react-dom/server` through an import whose specifier is computed at runtime, which Next.js 15's server bundle does not resolve. Next.js 16 is tested with its default bundler, Turbopack; the same pages also answered under `next dev --webpack`, where webpack only warns about the computed import, but that setup is not part of the test run.
+Next.js 15 is not supported. Measured on 2026-09-17 with Next.js 15.5.25: 30 of the 42 end-to-end cases against [`examples/nextjs-payload`](../examples/nextjs-payload) failed with `Cannot find module 'react'`. `<LivePreviewScript />` and the fragment endpoint load `react` and `react-dom/server` through an import whose specifier is computed at runtime, which Next.js 15's server bundle does not resolve. Next.js 16 is tested with its default bundler, Turbopack. Webpack is outside this support claim: a native Next.js 16 probe returned 500 when an authorized preview loaded React through that computed import. A public page returning 200 does not exercise the authorized branch.
 
 > A client-rendered React app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) hook: it re-renders your real component tree, so conditional sections and custom components update with full fidelity. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
 
@@ -30,7 +30,7 @@ either way, and the only question the component answers is who receives them.
 | Way                                                       | A public visitor receives | Pick it when                                                                  |
 | --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
 | `<LivePreviewScript />`, an async server component        | nothing                   | the default: the render can await an authorization verdict                    |
-| `livePreviewScriptProps()` with `delivery: 'asset'`       | a 1 331-byte bootstrap    | the script is built once at module scope and the page has no verdict to await |
+| `livePreviewScriptProps()` with `delivery: 'asset'`       | a 1 367-byte bootstrap    | the script is built once at module scope and the page has no verdict to await |
 | `livePreviewScriptProps()` or `renderLivePreviewScript()` | the whole runtime         | a page that is not gated at all, or HTML a server assembles as a string       |
 
 ## Nothing for a public visitor
@@ -99,7 +99,7 @@ below.
 
 When the script is built once at module scope and there is no verdict to
 await, `delivery: 'asset'` puts a bootstrap in the page instead of the runtime —
-a 1 331-byte `<script>` element, measured on the example, rendered twice like
+a 1 367-byte `<script>` element, measured on the example, rendered twice like
 anything else in a layout's head — which arms the wait for React's first
 commit ([hydration caveat](#hydration-caveat)) and fetches the runtime only
 once the page finds itself in a preview context:
@@ -170,7 +170,7 @@ payload, so the runtime was most of what an anonymous visitor received. The
 same request answers 15 327 bytes with `<LivePreviewScript />`. That component
 is the version of this layout that waits; `delivery: 'asset'` above is the
 version that keeps the module-scope props and replaces the runtime with the
-1 331-byte bootstrap. What each choice costs a visitor, measured per framework:
+1 367-byte bootstrap. What each choice costs a visitor, measured per framework:
 [deployment.md](deployment.md#what-a-public-visitor-pays).
 
 `livePreviewScriptProps()` takes a `nonce` for a CSP you manage yourself, and puts it where the framework expects it — a prop, not markup inside the body. `renderLivePreviewScript()` returns the complete `<script>` tag instead, for HTML a server assembles as a string; JSX cannot render that.
@@ -226,7 +226,11 @@ Next.js middleware has no `locals`, so the adapter cannot publish its decision. 
 // app/[slug]/page.tsx — a server component
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { authorizePreviewRequest, definePreview } from 'payload-live-preview/server';
+import {
+  authorizePreviewRequest,
+  createPreviewBindings,
+  definePreview,
+} from 'payload-live-preview/server';
 
 // depth is written once for the initial read and the runtime merge.
 const preview = definePreview({ serverURL: process.env.PAYLOAD_URL!, depth: 1 });
@@ -243,7 +247,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     authorization: decision.context, // a verified context reads the draft, null the published document
   });
   if (!result.ok || result.data === null) notFound();
-  return <h1 data-payload-field="title">{result.data.title}</h1>;
+  // The same decision gates the binding attributes: a public response carries none.
+  const bindings = createPreviewBindings({ authorization: decision.context });
+  return <h1 {...bindings.bind<PageDocument>('title')}>{result.data.title}</h1>;
 }
 ```
 
@@ -284,6 +290,17 @@ peers loaded at the first render.
 
 Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
 
+## Under a base path
+
+With `basePath` in `next.config`, Next prefixes its own links and routes,
+but the runtime requests exactly the paths it is given. Put the base path into
+`assetPath` and `fragments.endpoint` (`'/docs/payload/fragment'`), and bind
+the preview token to the path the browser shows, base path included, which
+is what Payload's `livePreview.url` builds. A redirect a route handler writes
+itself is not prefixed either. A rewrite keeps the browser's URL, and the
+preview works on it unchanged. The Next.js suites pass against a production
+build served under `/docs`.
+
 ## Hydration caveat
 
 The runtime writes into the DOM; React does not know. Two things follow.
@@ -309,30 +326,60 @@ static markup, keep interactive components free of bindings, or mark a hydrated
 root with `data-payload-island` so the runtime never patches or morphs into it
 ([renderers.md](renderers.md)).
 
-## Route refreshes without a morph
+## Client navigation and route refreshes
 
 A field nothing binds — and a section the template renders only under a
 condition — can only be shown by the server's own render of the route. The
 route strategy fetches that render and morphs it into the living page, which on
 a Next page means writing into DOM React's reconciler owns. Give it the
-router's own refresh instead and there is no morph and no second HTML request:
+router's own refresh instead and there is no morph and no second HTML request.
+
+The adapter also arms the preview script for a package-owned navigation event,
+but it cannot import or subscribe to the App Router for the application. Add
+this client component to a layout that stays mounted across the preview routes:
 
 ```tsx
-// app/live-preview-refresh.tsx
+// app/live-preview-navigation.tsx
 'use client';
-import { useRouter } from 'next/navigation';
+
+import { useEffect, useRef } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { LivePreviewRouteRefresh } from 'payload-live-preview/react';
 
-export function LivePreviewRefresh() {
-  return <LivePreviewRouteRefresh refresh={useRouter().refresh} />;
+const NAVIGATION_COMMIT_EVENT = 'payload-live-preview:navigation';
+
+export function LivePreviewNavigation() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const key = pathname === null || search === null ? null : `${pathname}?${search.toString()}`;
+  const committed = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (key === null) return;
+    const previous = committed.current;
+    committed.current = key;
+    if (previous === null || previous === key) return;
+    document.dispatchEvent(new Event(NAVIGATION_COMMIT_EVENT));
+  }, [key]);
+
+  return <LivePreviewRouteRefresh refresh={router.refresh} />;
 }
 ```
 
-Render it once inside the root layout, beside the script. It takes the refresh
-as a prop rather than importing `next/navigation` itself, so this package does
-not depend on Next; the same component serves any router with a refresh of that
-shape, and `registerRouteRefresh()` from `payload-live-preview` is the same seam
-without React.
+`useSearchParams()` needs a Suspense boundary when the surrounding route is
+prerendered; render the component as
+`<Suspense fallback={null}><LivePreviewNavigation /></Suspense>`. The ref deliberately skips the initial effect and React
+StrictMode's repeated mount: startup already applies the editor document, and
+only a changed, committed URL is a navigation. A cancelled transition never
+changes `key`, so it dispatches nothing.
+
+This bridge is application code, not an export installed by the package. The
+package does not depend on Next: `LivePreviewRouteRefresh` takes
+`router.refresh` as a prop, and the adapter-generated script only listens for
+the event above. After that event it rebuilds the binding cache and locally
+reapplies the last accepted editor document; the editor does not have to answer
+another `ready` for the unsaved state to survive the commit.
 
 When it is not there, the strategy fetches and morphs as before.
 

@@ -1,3 +1,5 @@
+import { BASE_PATH } from '../../../../base-path.mjs';
+
 /**
  * The host for the asset-delivery page: it frames `/asset?preview=true` so the
  * bootstrap sees a preview context and fetches the runtime. The mock admin
@@ -9,7 +11,7 @@ export default function AssetHost() {
       id="preview"
       data-testid="preview-frame"
       title="Preview"
-      src="/asset?preview=true"
+      src={`${BASE_PATH}/asset?preview=true`}
       style={{ width: '800px', height: '600px', border: 0, display: 'block' }}
     />
   );

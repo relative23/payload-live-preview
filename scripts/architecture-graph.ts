@@ -133,7 +133,7 @@ async function discoverSourceFiles(directory: string): Promise<readonly string[]
     if (entry.isDirectory()) discovered.push(...(await discoverSourceFiles(path)));
     else if (
       entry.isFile() &&
-      /\.(?:cts|mts|tsx?)$/u.test(entry.name) &&
+      /\.(?:astro|cts|mts|tsx?)$/u.test(entry.name) &&
       !/\.d\.(?:cts|mts|ts)$/u.test(entry.name)
     ) {
       discovered.push(path);
@@ -154,7 +154,27 @@ export async function readArchitectureModules(
 
   for (const absoluteFile of absoluteFiles) {
     const path = relative(repositoryRoot, absoluteFile).replaceAll('\\', '/');
-    const sourceFile = project.createSourceFile(path, await readFile(absoluteFile, 'utf8'));
+    const text = await readFile(absoluteFile, 'utf8');
+    // The shipped templates use a strict TSX-compatible subset. Include both
+    // frontmatter and template expressions; unknown syntax fails closed rather
+    // than making an executable asset a graph exemption. Native Astro still
+    // owns full template typechecking and compilation in the consumer tests.
+    const astro = path.endsWith('.astro');
+    const sections = astro ? /^---\r?\n([\s\S]*?)\r?\n---([\s\S]*)$/u.exec(text) : null;
+    if (astro && (!sections || /<(?:script|style)(?:\s|>)/iu.test(sections[2]!))) {
+      throw new Error(`Cannot statically inspect Astro template: ${path}`);
+    }
+    const sourceFile = project.createSourceFile(
+      astro ? path + '.tsx' : path,
+      sections ? `\n${sections[1]}\n;const __template = (<>${sections[2]}</>);` : text,
+    );
+    if (
+      astro &&
+      project.getProgram().compilerObject.getSyntacticDiagnostics(sourceFile.compilerNode).length >
+        0
+    ) {
+      throw new Error(`Cannot statically inspect Astro template: ${path}`);
+    }
     const dependencies: ArchitectureDependency[] = [];
 
     for (const declaration of sourceFile.getImportDeclarations()) {

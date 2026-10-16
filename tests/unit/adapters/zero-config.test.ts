@@ -1,5 +1,16 @@
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  createCompilerHost,
+  createProgram,
+  createSourceFile,
+  flattenDiagnosticMessageText,
+  parseJsonConfigFileContent,
+  readConfigFile,
+  sys,
+} from 'typescript';
 import livePreviewModule, {
+  HANDLER_FILENAME,
   PLUGIN_FILENAME,
   pluginSource,
   type NitroConfigLike,
@@ -20,6 +31,7 @@ import {
 
 const ADMIN = 'https://admin.example.com';
 
+const ROOT_DIR = '/app';
 const BUILD_DIR = '/app/.nuxt';
 
 function fakeNuxt(livePreview?: NuxtLike['options']['livePreview']): {
@@ -36,7 +48,12 @@ function fakeNuxt(livePreview?: NuxtLike['options']['livePreview']): {
     templates,
     run: () => handler?.(nitro),
     nuxt: {
-      options: { buildDir: BUILD_DIR, build: { templates }, ...(livePreview && { livePreview }) },
+      options: {
+        rootDir: ROOT_DIR,
+        buildDir: BUILD_DIR,
+        build: { templates },
+        ...(livePreview && { livePreview }),
+      },
       hook: (_name, fn) => {
         handler = fn;
       },
@@ -45,6 +62,70 @@ function fakeNuxt(livePreview?: NuxtLike['options']['livePreview']): {
 }
 
 describe('the Nuxt module', () => {
+  it('keeps the 2.x no-reference calls type-compatible without a project root', () => {
+    const project = resolve(import.meta.dirname, '../../..');
+    const file = resolve(import.meta.dirname, 'legacy-nuxt-consumer.ts');
+    const source = `
+      import livePreviewModule, { pluginSource, type NuxtLike } from '@adapters/nuxt/module';
+      pluginSource({ defaults: 'v1' });
+      const nuxt: NuxtLike = {
+        options: { buildDir: '/app/.nuxt', build: { templates: [] } },
+        hook() {},
+      };
+      livePreviewModule({ defaults: 'v1' }, nuxt);
+    `;
+    // Compile the consumer against the actual source contract, so a published
+    // signature change is caught without requiring a prior dist build.
+    const config = readConfigFile(resolve(project, 'tsconfig.json'), (path) => sys.readFile(path));
+    const { options } = parseJsonConfigFileContent(config.config, sys, project);
+    const host = createCompilerHost(options);
+    const getSourceFile = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, languageVersion, ...rest) =>
+      path === file
+        ? createSourceFile(path, source, languageVersion)
+        : getSourceFile(path, languageVersion, ...rest);
+    const program = createProgram([file], options, host);
+    const diagnostics = program
+      .getSemanticDiagnostics()
+      .filter((diagnostic) => diagnostic.file?.fileName === file)
+      .map((diagnostic) => flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('keeps the generated intent-only plugin independent of a project root', () => {
+    expect(pluginSource({ defaults: 'v1', allowedOrigins: [ADMIN] })).toBe(
+      pluginSource({ defaults: 'v1', allowedOrigins: [ADMIN] }, ROOT_DIR),
+    );
+    const { nuxt, templates, nitro, run } = fakeNuxt();
+    const { rootDir: _root, ...options } = nuxt.options;
+    livePreviewModule({ defaults: 'v1', allowedOrigins: [ADMIN] }, { ...nuxt, options });
+    run();
+    expect(templates[0]?.getContents()).toBe(
+      pluginSource({ defaults: 'v1', allowedOrigins: [ADMIN] }),
+    );
+    expect(nitro.handlers).toBeUndefined();
+  });
+
+  it.each([undefined, '', '.', 'relative/project'])(
+    'requires an explicit absolute project root for a new hook reference: %s',
+    (rootDir) => {
+      const { nuxt, templates } = fakeNuxt();
+      const { rootDir: _root, ...options } = nuxt.options;
+      const withoutRoot = {
+        ...nuxt,
+        options: { ...options, ...(rootDir === undefined ? {} : { rootDir }) },
+      };
+      const referenced = { authorizePreviewModule: './server/utils/auth' };
+      expect(() => livePreviewModule(referenced, withoutRoot)).toThrow(
+        /authorizePreviewModule requires an absolute project root/u,
+      );
+      expect(templates).toEqual([]);
+      expect(() => pluginSource(referenced, rootDir)).toThrow(
+        /authorizePreviewModule requires an absolute project root/u,
+      );
+    },
+  );
+
   it('writes the plugin into the build dir and registers it by path, once', () => {
     const { nuxt, nitro, templates, run } = fakeNuxt();
 
@@ -58,7 +139,7 @@ describe('the Nuxt module', () => {
     expect(nitro.plugins).toEqual([`${BUILD_DIR}/${PLUGIN_FILENAME}`]);
     // Nitro reads a plugin from disk; Nuxt's virtual file system is not enough.
     expect(templates[0]?.write).toBe(true);
-    expect(templates[0]?.getContents()).toBe(pluginSource({ allowedOrigins: [ADMIN] }));
+    expect(templates[0]?.getContents()).toBe(pluginSource({ allowedOrigins: [ADMIN] }, ROOT_DIR));
   });
 
   it('takes options from the config key, with the inline ones winning', () => {
@@ -67,7 +148,7 @@ describe('the Nuxt module', () => {
     livePreviewModule({ debug: false }, nuxt);
 
     expect(templates[0]?.getContents()).toBe(
-      pluginSource({ allowedOrigins: [ADMIN], debug: false }),
+      pluginSource({ allowedOrigins: [ADMIN], debug: false }, ROOT_DIR),
     );
   });
 
@@ -75,12 +156,102 @@ describe('the Nuxt module', () => {
     // The module runs at build time, the plugin per request in Nitro's bundle:
     // a closure cannot cross that, so the options travel as source. What they
     // travel into is the public entry, so the generated file stays readable.
-    const source = pluginSource({ allowedOrigins: [ADMIN], debounceMs: 25 });
+    const source = pluginSource({ allowedOrigins: [ADMIN], debounceMs: 25 }, ROOT_DIR);
 
     expect(source).toBe(
       "import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';\n\n" +
         `export default livePreviewNitroPlugin({"allowedOrigins":["${ADMIN}"],"debounceMs":25});\n`,
     );
+  });
+
+  // ADR 0024: the hook travels by reference, so the one-line setup can stay strict.
+  it('imports the hook named by authorizePreviewModule, resolving ./ against the project root', () => {
+    const { nuxt, templates } = fakeNuxt();
+    livePreviewModule(
+      { allowedOrigins: [ADMIN], authorizePreviewModule: './server/utils/live-preview-auth' },
+      nuxt,
+    );
+    const source = templates[0]?.getContents() ?? '';
+    expect(source).toContain(
+      `import authorizePreview from "${ROOT_DIR}/server/utils/live-preview-auth";`,
+    );
+    expect(source).toContain(
+      'if (typeof authorizePreview !== "function") throw new Error("payload-live-preview: ' +
+        `authorizePreviewModule \\"${ROOT_DIR}/server/utils/live-preview-auth\\" must export the ` +
+        'authorizePreview hook as its default export (ADR 0024).");',
+    );
+    expect(source).toContain(
+      `export default livePreviewNitroPlugin({ ...{"allowedOrigins":["${ADMIN}"]}, authorizePreview });`,
+    );
+  });
+
+  it('passes an alias such as ~/ to Nitro unchanged, and refuses one outside the project', () => {
+    const { nuxt, templates } = fakeNuxt();
+    livePreviewModule({ authorizePreviewModule: '~/server/utils/live-preview-auth' }, nuxt);
+    expect(templates[0]?.getContents()).toContain(
+      'import authorizePreview from "~/server/utils/live-preview-auth";',
+    );
+    ['../auth', '..\\auth'].forEach((reference) => {
+      expect(() => {
+        livePreviewModule({ authorizePreviewModule: reference }, fakeNuxt().nuxt);
+      }).toThrow(
+        `payload-live-preview: authorizePreviewModule "${reference}" is outside the project; ` +
+          'name a module inside it, relative to the project root (ADR 0024).',
+      );
+    });
+  });
+
+  // The page reads the decision on event.context while it renders, so the
+  // handler that makes it has to run before the app, not in render:html.
+  it('registers the server handler beside the plugin when the hook is referenced, once', () => {
+    const { nuxt, nitro, templates, run } = fakeNuxt();
+    const options = { allowedOrigins: [ADMIN], authorizePreviewModule: './server/utils/auth' };
+    livePreviewModule(options, nuxt);
+    run();
+    livePreviewModule(options, nuxt);
+    run();
+
+    expect(nitro.handlers).toEqual([
+      { middleware: true, handler: `${BUILD_DIR}/${HANDLER_FILENAME}` },
+    ]);
+    const handler = templates.find((template) => template.filename === HANDLER_FILENAME);
+    expect(handler?.write).toBe(true);
+    expect(handler?.getContents()).toBe(
+      "import { defineEventHandler } from 'h3';\n" +
+        "import { defineLivePreviewServerHandler } from 'payload-live-preview/nuxt';\n" +
+        `import authorizePreview from "${ROOT_DIR}/server/utils/auth";\n` +
+        'if (typeof authorizePreview !== "function") throw new Error("payload-live-preview: ' +
+        `authorizePreviewModule \\"${ROOT_DIR}/server/utils/auth\\" must export the authorizePreview ` +
+        'hook as its default export (ADR 0024).");\n\n' +
+        `export default defineEventHandler(defineLivePreviewServerHandler({ ...{"allowedOrigins":["${ADMIN}"]}, authorizePreview }));\n`,
+    );
+  });
+
+  it("keeps the project's own server middleware and adds the handler after it", () => {
+    const { nuxt, nitro, run } = fakeNuxt();
+    const own = { middleware: true, handler: `${ROOT_DIR}/server/middleware/own.ts` };
+    nitro.handlers = [own];
+    livePreviewModule({ authorizePreviewModule: './server/utils/auth' }, nuxt);
+    run();
+    expect(nitro.handlers).toEqual([
+      own,
+      { middleware: true, handler: `${BUILD_DIR}/${HANDLER_FILENAME}` },
+    ]);
+  });
+
+  it('adds no server handler to the intent-only setup, which has no decision to publish', () => {
+    const { nuxt, nitro, templates, run } = fakeNuxt();
+    livePreviewModule({ defaults: 'v1', allowedOrigins: [ADMIN] }, nuxt);
+    run();
+    expect(nitro.handlers).toBeUndefined();
+    expect(templates.map((template) => template.filename)).toEqual([PLUGIN_FILENAME]);
+  });
+
+  it('hands Nuxt its config key the way @nuxt/kit reads it, so nuxt.config types `livePreview`', async () => {
+    // `installModule` reads the meta through `getMeta()` only; without it Nuxt
+    // writes no schema entry and `livePreview:` is an unknown key (H18).
+    expect(typeof livePreviewModule.getMeta).toBe('function');
+    await expect(livePreviewModule.getMeta()).resolves.toEqual(livePreviewModule.meta);
   });
 
   it('names itself the way Nuxt reports modules', () => {

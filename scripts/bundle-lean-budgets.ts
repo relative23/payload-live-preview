@@ -5,6 +5,13 @@
  * default profile and its reasons stay there, and every "the same … as the full
  * profile" below refers to the runtime's own change recorded in `INLINE_BUDGET`.
  */
+// 2026-10-05 (ADR 0004): accepted data snapshots and owned merge outcomes; paired 2.1.0 measurements at epoch1791096072 (Node24.19/npm12.0.2) retain each row's reserves.
+// 2026-10-05 (ADR 0004): trailing merge timers own their requests and handles.
+// Measured against the prior 2.1.0 archive with Node24.19/npm12.0.2, epoch1791096072;
+// changed rows move by their exact measured deltas and retain their previous reserves.
+// 2026-10-04 (2.1.0): stop superseded merges after diagnostics and simplify legacy
+// relation planning. Paired Node24.19/npm12.0.2 measurements at epoch1791096072 move
+// changed rows by their measured deltas and preserve existing raw/gzip/Brotli reserves.
 /**
  * The same script with `profile: 'lean'`: the strategy runner, the keyed morph,
  * the structural applier, the array renderers with their item templates and the
@@ -98,4 +105,32 @@
 // 2026-09-19 (the sanitizer empties `is`): raw 92_392 → 92_433 (+41 B), gzip 29_229 → 29_238 (+9 B), brotli 25_951 → 25_968 (+17 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, the one line a field with no binding gets. The log in bundle-budgets.ts has the whole change.
 // 2026-09-19 (2.1: the sanitizer document named per call): raw 92_433 → 92_496 (+63 B), gzip 29_238 → 29_261 (+23 B), brotli 25_968 → 25_991 (+23 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, the one line a field with no binding gets. The log in bundle-budgets.ts has the whole change.
 // 2026-09-19 (2.1: one scope per runtime session): raw 92_496 → 93_010 (+514 B), gzip 29_261 → 29_456 (+195 B), brotli 25_991 → 26_162 (+171 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, the one line a field with no binding gets. The log in bundle-budgets.ts has the whole change.
-export const INLINE_LEAN_BUDGET = { raw: 93_010, gzip: 29_456, brotli: 26_162 } as const;
+// 2026-09-24 (2.1, router-commit replay): +904 raw / +205 gzip / +198 brotli in a paired build; the prior cushion stays unchanged. The common measurement and reason are in bundle-budgets.ts.
+// 2026-09-24 (2.1 source freeze): 101_387 raw / 31_675 gzip / 27_959 brotli; the prior 13 B raw, 7 B gzip and 120 B brotli cushions stay unchanged.
+// 2026-09-24 (streamed React hydration): 101_883 raw / 31_806 gzip / 28_126
+// brotli (+496 / +131 / +167); the root-wide dehydrated-boundary scan is
+// common runtime code and the prior 13 B / 7 B / 120 B cushions stay unchanged.
+// 2026-09-24 (H01 route fidelity): 101_883 / 31_806 / 28_126 →
+// 101_893 / 31_814 / 28_097; the prior cushions stay unchanged.
+// 2026-09-25 (H11): +282 raw / +80 gzip / +61 brotli; response identity,
+// measured at the same HEAD epoch, with unchanged cushions (bundle-budgets.ts).
+// 2026-09-27 (PHD-05): shared guarded island handoff and deduplication,
+// measured +167/+105/+118 B; retain 13/7/120 B cushions.
+// 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+9/-28 B; same 13/7/120 B cushions.
+// 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +193/+51/+28 B; same 13/7/120 B cushions.
+// 2026-09-29 (PHD-02, owner-scoped route planning): measured -24/-11/-1 B; same 13/7/120 B cushions.
+// 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2914/+893/+742 B; same 13/7/120 B cushions.
+// 2026-09-29 (H13, revision display state, ADR 0023): measured +2514/+862/+792 B; same 13/7/120 B cushions.
+// 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+38/-23 B; same 13/7/120 B cushions.
+// 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -148/-25/-11 B; same 13/7/120 B cushions.
+// 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+145/+215 B; same 13/7/120 B cushions.
+// 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +616/+286/+133 B; same 13/7/120 B cushions.
+// 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7524/+2424/+2182 B; cushions 13/7/120 B.
+// 2026-10-04 (2.1.0: bounded v2/locale/depth/React integration and owner/scheduler fixes):
+// Paired Node24.19/npm12.0.2, epoch1791096072; +7998/+2570/+2278 B raw/gzip/Brotli; reserves 13/7/120 B.
+// 2026-10-04 (2.1.0): merger reentrancy and accepted-locale/consumer recovery.
+// Node24.19/npm12.0.2, epoch1791096072; previous sample +315/+64/+9 B raw/gzip/Brotli; reserves 13/7/120 B.
+// 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
+// Node24.19/npm12.0.2, epoch1791096072: +22/+9/+18 B raw/gzip/Brotli;
+// retain the prior 13/7/120 B reserves.
+export const INLINE_LEAN_BUDGET = { raw: 117_485, gzip: 36_927, brotli: 32_630 } as const;

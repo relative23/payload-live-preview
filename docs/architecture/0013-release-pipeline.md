@@ -42,9 +42,10 @@ of `main`, because `changesets/action` branches from `github.sha`. Under
 `workflow_run` that is always the tip of `main`, and a step cannot change it:
 the runner writes `GITHUB_SHA` from the `github` context over any step `env`.
 A maintenance branch therefore gets no Version PR — with changesets there and
-its version already on npm, the gate fails and names the hand step (§7–8). The
-publish job does not require the tip: a newer push must not block an artifact
-the gate has proven.
+its version already on npm, the gate fails and names the hand step (§7–8). The gate can certify an ancestor, but publishing also requires the actual
+event and workflow source snapshots to match that certified commit. Source
+routing requires the branch head to match too; a newer push requires a new
+certification instead of publishing through another snapshot.
 
 ### 3. Publish is byte-identical and reconciles rather than repeats
 
@@ -262,8 +263,9 @@ remains open.
 ### 10. Project-scoped audit exceptions (2026-10-03)
 
 CI audits development dependencies in the root package and all ten examples.
-After updates within the maintained dependency ranges, seven project/advisory
-combinations remain without a patched release in their current major track:
+At the 2026-10-03 review, updates within the maintained dependency ranges left
+seven project/advisory combinations without a patched release in their current
+major track:
 [braces 3](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) in the root and Nuxt,
 [node-forge 1](https://github.com/advisories/GHSA-86w9-cpqp-85rv) in Nuxt, and
 [http-cache-semantics 4](https://github.com/advisories/GHSA-ch52-4w7c-c8xp) in four
@@ -286,28 +288,80 @@ review and fresh pins before use on another source branch. Package version and
 Changesets base-branch metadata are omitted from the security projections so a
 version-only change keeps an otherwise valid binding.
 
-### 11. Provenance names the certified source (2026-10-04)
+The 2.1 integration was reviewed again on 2026-10-04 against its actual graph,
+configuration and SRI-verified caller archives selected by its lockfiles, with
+installed root caller bytes checked separately. Three active exceptions remain:
+braces in
+the root and Nuxt, and node-forge in Nuxt. Their exact pins and 2026-10-10 expiry
+remain in force. Nuxt's production TLS front door uses Node HTTPS before the
+Nitro HTTP server; its reviewed launchers do not invoke Listhen's forge-based
+development certificate generation.
 
-npm reads `GITHUB_SHA` and `GITHUB_REF` from the publishing process to name
-the source material in its provenance statement. A checkout of the certified
-commit does not change those runner values: `workflow_run` supplies the
-default branch identity, and a manual dispatch can certify another branch.
+The four Astro examples now resolve http-cache-semantics 4.3.0, outside the
+advisory's reported affected range. Their fresh audits contain no findings, so
+the old 4.2.0 exceptions were removed. This does not establish that 4.3.0 fixes
+the reported cache behavior: a controlled shared-cache probe still returned a
+stored Set-Cookie response to an anonymous request with `max-stale`, despite
+zero freshness lifetime.
 
-The gate now outputs the branch it validated with the CI run and ancestry
-check. The publish command sets `GITHUB_SHA` to that run's certified commit
-and `GITHUB_REF` to `refs/heads/<validated branch>` for the npm process.
-Its workflow reference and run id remain the runner's identity. The archive
-checks and publisher are unchanged. Regression tests execute the committed
-Bash command with a recording npm for both automatic and manual releases.
+The SRI-verified Astro 7.2.9 and 7.3.2 image callers selected by the example
+lockfiles were checked separately. They
+store image bytes, expiry, ETag and Last-Modified, and use conditional request
+headers; the exercised path neither returns stored response headers nor calls
+the request-cache reuse methods implicated by that probe. This evidence applies
+to those pinned callers and reviewed example sources. It is not a general
+reachability result for other Astro applications or http-cache-semantics users.
+
+An exposure descriptor can therefore remain mandatory on a project with no
+current audit exceptions. The register accepts a validated descriptor/digest
+pair for such a clean project, or no descriptor at all. An active exception
+always requires the descriptor. Empty descriptors, missing files, changed
+sources or callers, and digest mismatches still fail, including when the audit
+reports zero findings. The four clean Astro profiles retain those bindings for
+the known latent cache behavior.
+
+### 11. Publish runs from the certified workflow source (2026-10-04)
+
+Changing `GITHUB_SHA` and `GITHUB_REF` for the npm process changes the claimed
+source material, but it does not change GitHub's signed workflow identity.
+The maintenance publish rejected that mismatch with npm E422. A checkout or
+process-variable override cannot repair it.
+
+The publish job and its Bash command now require both the event source
+(`github.sha/ref`, `GITHUB_SHA/REF`) and the actual workflow source
+(`github.workflow_sha/ref`, `GITHUB_WORKFLOW_SHA/REF`) to name the certified
+commit and branch. The workflow reference must also name this repository's
+`release.yml`. The job condition checks this before granting its OIDC publisher
+permission; the shell checks it again without overriding runner values.
+
+A `workflow_run` with another source snapshot routes the certified run to its
+source branch. The router has only Actions write and Contents read permissions.
+It validates the certified branch, SHA and run ID, then reads the official
+branch head and requires exact equality. It also compares the official
+`release.yml` blob at the actual router workflow SHA with the blob at the
+certified commit. A missing, malformed or different receiver workflow is refused.
+
+The router dispatches once and exits. It does not wait: the receiver shares the
+branch's concurrency key and can start only after the router finishes. The
+dispatched receiver certifies that CI run again and checks its own event and
+workflow source identities. Drift fails before publication and never triggers
+another dispatch. Archive, package, registry, tag and release gates still use
+the same certified run and artifact.
+
+Source branches need this exact guarded workflow backported and a new CI
+certification before automatic routing can use them. A main change cannot
+retrofit an older certified workflow. A changed branch head is refused rather
+than silently substituted. Local recording-shell regressions cover these
+conditions; they do not claim a completed automatic GitHub routing run.
 
 ## Consequences
 
 - What is on npm is what CI tested, provably: manifest and registry archive are
   compared on every release, and the publish job pins the exact npm the
   manifest names.
-- A missed release — a newer push landed while its CI ran — is re-entered with
-  `workflow_dispatch` and the CI run id; the gate logic is today's, the
-  artifact is the certified one.
+- A release stopped by infrastructure can be re-entered with
+  `workflow_dispatch` and the certified CI run ID while its source branch
+  still names that commit. The receiver verifies its actual snapshot again.
 - Nothing is published from a laptop, so there is no publish token to leak
   from one; the workflow uses OIDC provenance.
 - After a merge to `main`, the Version PR is the one manual step: review the

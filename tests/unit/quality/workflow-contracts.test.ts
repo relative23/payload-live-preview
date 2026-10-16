@@ -30,8 +30,7 @@ function mutated(file: string, original: string, replacement: string): Map<strin
   return sources;
 }
 
-const PUBLISH_COMMAND =
-  'env GITHUB_SHA="$PACKAGE_SOURCE_COMMIT" GITHUB_REF="refs/heads/$PACKAGE_SOURCE_BRANCH" npm run release';
+const PUBLISH_FIRST_LINE = 'if [ "$GITHUB_SHA" != "$PACKAGE_SOURCE_COMMIT" ] ||';
 
 const NPM_VERSION_STEP =
   '      - name: Use repository npm version\n' +
@@ -250,8 +249,9 @@ describe('workflow contracts', () => {
     {
       label: 'a publish job that ignores the gate',
       file: 'release.yml',
-      original: "if: needs.gate.outputs.publish == 'true'",
-      replacement: 'if: true',
+      original:
+        "      needs.gate.outputs.publish == 'true' &&\n      github.sha == needs.gate.outputs.tested_sha &&",
+      replacement: '      true &&\n      github.sha == needs.gate.outputs.tested_sha &&',
       violation: 'release.yml job publish does not use the reviewed condition',
     },
     {
@@ -272,9 +272,9 @@ describe('workflow contracts', () => {
     {
       label: 'a publish through Changesets directory repacking',
       file: 'release.yml',
-      original: `run: ${PUBLISH_COMMAND}`,
-      replacement: 'run: npx changeset publish',
-      violation: `release.yml job publish step run "${PUBLISH_COMMAND}" must exist exactly once (found 0)`,
+      original: '          npm run release\n',
+      replacement: '          npx changeset publish\n',
+      violation: `release.yml job publish step run "${PUBLISH_FIRST_LINE}" must exist exactly once (found 0)`,
     },
     {
       label: 'an artifact from an unrelated run',
@@ -377,8 +377,8 @@ describe('workflow contracts', () => {
   it('ignores expressions that only exist in YAML comments', () => {
     const sources = mutated(
       'release.yml',
-      "if: needs.gate.outputs.publish == 'true'",
-      "if: true # needs.gate.outputs.publish == 'true'",
+      '      github.sha == needs.gate.outputs.tested_sha &&',
+      '      true && # github.sha == needs.gate.outputs.tested_sha &&',
     );
     expect(findWorkflowContractViolations(sources)).toContain(
       'release.yml job publish does not use the reviewed condition',

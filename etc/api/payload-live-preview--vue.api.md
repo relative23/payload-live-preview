@@ -5,9 +5,9 @@
 ```ts
 
 import { ComputedRef } from 'vue';
-import { D as DocumentSessionOptions } from '../../document-session-BfBfLVpg.js';
-import { a as DocumentSnapshot } from '../../document-session-BfBfLVpg.js';
-import { b as DocumentStatus } from '../../document-session-BfBfLVpg.js';
+import { D as DocumentSessionOptions } from '../../document-session-DWi9H3Qk.js';
+import { a as DocumentSnapshot } from '../../document-session-DWi9H3Qk.js';
+import { b as DocumentStatus } from '../../document-session-DWi9H3Qk.js';
 
 export { DocumentSessionOptions }
 
@@ -20,6 +20,7 @@ export interface LivePreviewDocumentRefs<T> {
     readonly data: ComputedRef<T>;
     readonly error: ComputedRef<Error | undefined>;
     readonly isLoading: ComputedRef<boolean>;
+    readonly revision: ComputedRef<number>;
     // (undocumented)
     readonly status: ComputedRef<DocumentStatus>;
 }

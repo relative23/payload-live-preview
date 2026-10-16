@@ -3,6 +3,7 @@
  * places at most one strategy prelude ahead of it.
  */
 
+import { warnDeprecatedOptions } from '@/types/dev-warning';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import { V1_RUNTIME_DEFAULTS } from '@/types/defaults-profile';
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
@@ -24,6 +25,8 @@ function assertBuilt(source: string, artifact: string): void {
 
 /** The inline script body without `<script>` tags; see `wrapWithScriptTag()`. */
 export function generateInlineScript(config: InlineScriptConfig = {}): string {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- read to warn about it
+  warnDeprecatedOptions({ defaults: config.defaults, onUnboundChange: config.onUnboundChange });
   const runtime = runtimeFor(config);
   return [configStatement(config), ...strategyPrelude(config), runtime].join('\n');
 }
@@ -78,9 +81,10 @@ function buildConfigLiteral(config: InlineScriptConfig): string {
   assertMergeDepthExplicit(config);
   const profile = profileSlots(config);
   // `null` counts as omitted, and omitted slots stay empty (`[,,1]`): a JSON
-  // `null` would bypass the runtime's destructuring defaults. The last slot is
-  // always written, so there is no trailing hole to trim.
+  // `null` would bypass the runtime's destructuring defaults. Defaults remains
+  // in its established slot 24; later rows are append-only and may be absent.
   const values: unknown[] = INLINE_CONFIG_KEYS.map((key) => config[key] ?? profile[key]);
+  while (values.at(-1) === undefined) values.pop();
   // `<` is escaped so a value containing `</script>` cannot end the tag.
   return `[${values
     .map((value) => (value === undefined ? '' : JSON.stringify(value)))
@@ -90,8 +94,8 @@ function buildConfigLiteral(config: InlineScriptConfig): string {
 /**
  * What the `defaults` profile puts on the wire. The runtime's own fallbacks are
  * the 2.0 rows, so `'v2'` fills nothing and `'v1'` has to write its four; the
- * profile itself goes into the last slot either way, so a reader of the served
- * page learns which generation an empty slot belongs to (ADR 0007).
+ * profile itself goes into slot 24 either way, so a reader of the served page
+ * learns which generation an empty slot belongs to (ADR 0007).
  */
 function profileSlots(config: InlineScriptConfig): Partial<InlineScriptConfig> {
   const defaults = config.defaults ?? 'v2';

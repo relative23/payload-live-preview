@@ -12,6 +12,26 @@
       "functions": 100,
       "branches": 100
     },
+    "src/adapters/shared/document-session.ts": {
+      "lines": 95,
+      "functions": 100,
+      "branches": 95
+    },
+    "src/adapters/shared/fragment-endpoint.ts": {
+      "lines": 97,
+      "functions": 97,
+      "branches": 93
+    },
+    "src/adapters/shared/fragment-limits.ts": {
+      "lines": 97,
+      "functions": 97,
+      "branches": 93
+    },
+    "src/adapters/shared/fragment-node-request.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 95
+    },
     "src/adapters/shared/html-inject.ts": {
       "lines": 100,
       "functions": 100,
@@ -97,6 +117,11 @@
       "functions": 100,
       "branches": 100
     },
+    "src/core/legacy-population.ts": {
+      "lines": 95,
+      "functions": 100,
+      "branches": 95
+    },
     "src/core/lifecycle.ts": {
       "lines": 100,
       "functions": 100,
@@ -113,6 +138,11 @@
       "branches": 100
     },
     "src/core/lru.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/merge-need.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
@@ -136,6 +166,11 @@
       "lines": 100,
       "functions": 100,
       "branches": 100
+    },
+    "src/core/navigation-replay.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 88
     },
     "src/core/observers.ts": {
       "lines": 96,
@@ -163,6 +198,11 @@
       "branches": 100
     },
     "src/core/reveal.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/revision-display.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
@@ -197,10 +237,25 @@
       "functions": 100,
       "branches": 93
     },
+    "src/core/subfield-coverage.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/core/template-sanitize.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 75
+    },
+    "src/core/unbound-fields.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/core/update-owner.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
     },
     "src/core/update-pipeline.ts": {
       "lines": 98,
@@ -277,12 +332,27 @@
       "functions": 100,
       "branches": 88
     },
+    "src/schema/parser.ts": {
+      "lines": 95,
+      "functions": 100,
+      "branches": 95
+    },
+    "src/schema/walker.ts": {
+      "lines": 95,
+      "functions": 100,
+      "branches": 95
+    },
     "src/security/csp.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 98
     },
     "src/security/preview-authorization.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/security/preview-scope.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
@@ -312,6 +382,16 @@
       "functions": 100,
       "branches": 100
     },
+    "src/server/preview.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/types/authorized-preview.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/types/merge-depth.ts": {
       "lines": 100,
       "functions": 100,
@@ -330,5 +410,6 @@
       "src/index.ts",
       "src/inline/runtime.generated.ts"
     ]
-  }
+  },
+  "$comment": "2026-10-03: Four added critical cells own legacy schema persistence, normalization, linear indexing and bounded population/teardown. Their 95/100/95 values are explicit acceptance targets, not a claimed complete coverage measurement. All existing floors and global/diff controls stay unchanged; full coverage of the final integrated source remains required. 2026-10-04: MergeNeed owns successful population reuse and retry eligibility for later accepted updates. Real same-locale relationship-change failures exposed an untested cache-validity gap; add its 100/100/100 acceptance target without changing existing global, diff or file floors. This scope addition does not claim measured coverage."
 }

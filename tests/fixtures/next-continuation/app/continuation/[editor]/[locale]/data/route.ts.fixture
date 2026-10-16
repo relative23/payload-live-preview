@@ -1,0 +1,10 @@
+import { canonical, fixture, refused } from '../../../../host';
+export const dynamic = 'force-dynamic';
+export async function POST(request: Request) {
+  const safe = canonical(request, '/data');
+  return safe ? fixture()!.host.update(safe) : refused();
+}
+export async function GET(request: Request) {
+  const safe = canonical(request, '/data');
+  return safe ? fixture()!.host.load(safe) : refused();
+}

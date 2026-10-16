@@ -43,7 +43,10 @@ export interface FragmentResponseBody {
   };
 }
 
-/** A fixed ceiling bounds the recursive walk before request authorization. @internal */
+// Bounds the walk over a body anyone may post, not the content: a bulleted list
+// in a column's rich text inside a layout block is 13 levels, a list nested
+// five levels 29 (ADR 0027). The byte cap bounds the rest.
+/** Fixed upper bound for validation before authorization. @internal */
 export const MAX_FIELD_DEPTH = 64;
 
 function depthOf(value: unknown, depth: number, maxDepth: number): number {

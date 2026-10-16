@@ -1,0 +1,4 @@
+/** Only a real Payload login may create this local host session. The shared reference validates method, origin and the bounded JSON body. */
+import type { APIRoute } from 'astro';
+import { dispatch } from '../../server/host';
+export const ALL: APIRoute = ({ request }) => dispatch(request, 'login');

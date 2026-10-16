@@ -97,6 +97,21 @@ describe('buildSchemaIndex — blocks', () => {
 });
 
 describe('buildSchemaIndex — structural containers', () => {
+  it('keeps empty containers from creating phantom child paths', () => {
+    const index = buildSchemaIndex([
+      { name: 'tabs', type: 'tabs' },
+      { name: 'row', type: 'row' },
+      { name: 'collapsible', type: 'collapsible' },
+      { name: 'hero', type: 'group' },
+      { name: 'items', type: 'array' },
+      { name: 'layout', type: 'blocks' },
+      { name: 'title', type: 'text' },
+    ]);
+    expect([...index.keys()]).toEqual(['hero', 'items', 'layout', 'title']);
+    expect(lookupSchema(index, 'hero.title')).toBeUndefined();
+    expect(lookupBlockSchema(index, 'layout', 'missing')).toBeUndefined();
+  });
+
   it('flattens tabs/row/collapsible into their inner fields', () => {
     const index = buildSchemaIndex(
       parseFieldSchema([

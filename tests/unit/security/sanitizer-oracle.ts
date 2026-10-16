@@ -118,14 +118,17 @@ export function assertNoActiveContent(output: string, policy: CorpusPolicy, labe
 /** Every (tag, attribute) pair present in `html`, plus a bare `tag` entry per element. */
 export function keptPairs(html: string): Set<string> {
   const pairs = new Set<string>();
-  for (const element of parse(html).querySelectorAll('*')) {
-    const tag = element.tagName.toLowerCase();
-    pairs.add(tag);
-    for (const attribute of element.attributes) {
-      pairs.add(`${tag}[${attribute.name.toLowerCase()}]`);
-    }
-  }
+  for (const element of parse(html).querySelectorAll('*')) addPairs(pairs, element);
   return pairs;
+}
+
+/** The element's tag and each of its `tag[attribute]` pairs. */
+function addPairs(pairs: Set<string>, element: Element): void {
+  const tag = element.tagName.toLowerCase();
+  pairs.add(tag);
+  for (const attribute of element.attributes) {
+    pairs.add(`${tag}[${attribute.name.toLowerCase()}]`);
+  }
 }
 
 /** The pairs we add on purpose: `noopener noreferrer` and `_blank` on an external link. */
@@ -211,12 +214,13 @@ export function missingFromPurify(
   theirsHtml: string,
   options: SanitizeOptions | undefined,
   input: string,
+  purify: Purify,
 ): string[] {
   const ours = keptPairs(oursHtml);
   const theirs = keptPairs(theirsHtml);
   const custom = new Set((options?.additionalAllowedTags ?? []).filter((tag) => tag.includes('-')));
   const authorNames = options?.templateMode === true;
-  const foreign = foreignSubtreePairs(input);
+  const foreign = foreignSubtreePairs(input, purify);
   const probed = purifyProbedPairs(input);
   const xmlGuarded = xmlGuardedPairs(oursHtml);
   const missing: string[] = [];
@@ -238,29 +242,60 @@ export function missingFromPurify(
   return missing.sort();
 }
 
+/** What the oracle asks of DOMPurify: the one call `purifyLikeOurs` makes. */
+export interface Purify {
+  readonly sanitize: (node: Node, config: object) => unknown;
+}
+
+const XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
+
+/** Per DOMPurify instance: the tag names it removes from the HTML namespace together with their children. */
+const WHOLESALE = new WeakMap<Purify, Map<string, boolean>>();
+
 /**
- * MathML and SVG names that DOMPurify refuses in the HTML namespace and
- * removes with their whole subtree, as a mutation-XSS precaution against the
- * integration-point pivots. Ours unwraps an unknown tag and keeps its
- * children: the foreign containers (`svg`, `math`) it removes outright, so a
- * bare pivot in HTML is inert, and the fixed-point check pins the re-parse.
- * The pairs inside such a subtree are therefore not a finding.
+ * Whether DOMPurify removes an HTML-namespace element of this name with its
+ * children. It does so for the names of MathML and SVG elements that HTML does
+ * not share (`mglyph`, `g`, `desc`, ...), as a mutation-XSS precaution against
+ * the integration-point pivots. Asked of the engine rather than listed: its
+ * tables move with its version.
  */
-const FOREIGN_ONLY_NAMES: ReadonlySet<string> = new Set([
-  'mglyph',
-  'malignmark',
-  'mi',
-  'mo',
-  'mn',
-  'ms',
-  'mtext',
-  'annotation-xml',
-  'foreignobject',
-  'desc',
-  'use',
-  'animate',
-  'set',
-]);
+function dropsWithChildren(purify: Purify, sample: Element): boolean {
+  const known = WHOLESALE.get(purify) ?? new Map<string, boolean>();
+  WHOLESALE.set(purify, known);
+  const tag = sample.localName;
+  const cached = known.get(tag);
+  if (cached !== undefined) return cached;
+  const outer = document.createElement('div');
+  const container = document.createElement('div');
+  // A clone, not `createElement(tag)`: the parser makes names (`a<`) that DOM methods refuse.
+  const element = sample.cloneNode(false) as Element;
+  const child = document.createElement('b');
+  element.append(child);
+  container.append(element);
+  outer.append(container);
+  purify.sanitize(outer, { IN_PLACE: true, FORBID_CONTENTS: [] });
+  const dropped = !outer.contains(child);
+  known.set(tag, dropped);
+  return dropped;
+}
+
+/**
+ * The pairs inside an HTML-namespace element DOMPurify removes with its
+ * children. Ours unwraps an unknown tag and keeps its children: the foreign
+ * containers (`svg`, `math`) it removes outright, so a bare pivot in HTML is
+ * inert, and the fixed point, which `sanitizeHtml` now reaches by
+ * construction, covers the re-parse. A pair that sits under such an element
+ * is one DOMPurify never got to judge, so it is not a finding.
+ */
+function foreignSubtreePairs(input: string, purify: Purify): Set<string> {
+  const pairs = new Set<string>();
+  for (const element of parse(input).querySelectorAll('*')) {
+    if (element.namespaceURI !== XHTML_NAMESPACE) continue;
+    if (!dropsWithChildren(purify, element)) continue;
+    for (const inner of element.querySelectorAll('*')) addPairs(pairs, inner);
+  }
+  return pairs;
+}
 
 /**
  * DOMPurify's namespace-confusion probe (its rule 1, `ELEMENT_MARKUP_PROBE`,
@@ -284,16 +319,6 @@ function purifyProbedPairs(input: string): Set<string> {
   return pairs;
 }
 
-function foreignSubtreePairs(input: string): Set<string> {
-  const pairs = new Set<string>();
-  for (const element of parse(input).querySelectorAll('*')) {
-    if (!FOREIGN_ONLY_NAMES.has(element.tagName.toLowerCase())) continue;
-    if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml') continue;
-    for (const pair of keptPairs(element.innerHTML)) pairs.add(pair);
-  }
-  return pairs;
-}
-
 /**
  * DOMPurify over the same parse as ours: the markup parsed in a `<template>`
  * (the sanitizer's own context: scripting on, table parts kept), its nodes
@@ -307,10 +332,7 @@ function foreignSubtreePairs(input: string): Set<string> {
  * property that precaution stands in for; the corpus's mXSS class checks it
  * vector by vector.
  */
-export function purifyLikeOurs(
-  purify: { sanitize: (node: Node, config: object) => unknown },
-  html: string,
-): string {
+export function purifyLikeOurs(purify: Purify, html: string): string {
   const template = document.createElement('template');
   template.innerHTML = html;
   const container = document.createElement('div');

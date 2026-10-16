@@ -1,0 +1,41 @@
+---
+/** React owns two native islands; the fragment strategy owns separate Astro HTML.
+ * All catalog code is in the page build, without a hidden sample card.
+ */
+import type { PreviewView } from '../types';
+import Blocks from './Blocks.astro';
+import Announcer from './Announcer.astro';
+import ReactControl from './ReactControl.astro';
+import ReactCatalog from './ReactCatalog';
+interface Props { view: PreviewView }
+const { view } = Astro.props;
+const { data, path, locale, origin } = view;
+if (!data) throw new Error('Missing authorized document');
+const authority = { locale, path, subject: Astro.locals.previewExpectedAuthorization?.subject ?? '' };
+---
+<Announcer />
+<ReactControl />
+<plp-astro-preview data-payload-owner={'collection:articles:' + data.id} data-preview-config={JSON.stringify({ id: data.id, path, locale, origin })}>
+  <output data-testid="ready">mounting</output>
+  <output data-testid="status">idle</output>
+  <output data-testid="renders">0</output>
+  <button data-testid="counter">0</button>
+  <input data-testid="visitor" aria-label="Visitor state" value="Visitor state" />
+  <ReactCatalog client:load owner="primary" id={data.id} authority={authority} />
+  <ReactCatalog client:load owner="secondary" id={data.id} authority={authority} />
+  <section data-payload-fragment="catalog" data-payload-fragment-key="primary" data-testid="primary"><Blocks show={false} title={data.title} /></section>
+  <section data-payload-fragment="catalog" data-payload-fragment-key="secondary" data-testid="secondary"><Blocks show={false} title={data.title} /></section>
+  <a href="/" data-testid="navigation">Leave resource page</a>
+</plp-astro-preview>
+<script>
+  import { mountPreview } from '../client/preview';
+  class ResourceOwner extends HTMLElement {
+    stop?: () => void;
+    connectedCallback() { if (!this.stop) this.stop = mountPreview(this); }
+    disconnectedCallback() {
+      // A synchronous move does not surrender either the client or React state.
+      queueMicrotask(() => { if (!this.isConnected) { this.stop?.(); this.stop = undefined; } });
+    }
+  }
+  if (!customElements.get('plp-astro-preview')) customElements.define('plp-astro-preview', ResourceOwner);
+</script>

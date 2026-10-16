@@ -1,0 +1,33 @@
+[
+  {
+    "version": "3.90.2",
+    "engines": {
+      "node": "^18.20.2 || >=20.9.0"
+    },
+    "peerDependencies": {
+      "next": ">=15.2.9 <15.3.0 || >=15.3.9 <15.4.0 || >=15.4.11 <15.5.0 || >=16.3.3 <17.0.0",
+      "graphql": "^16.8.1",
+      "payload": "3.90.2"
+    },
+    "dependencies": {
+      "sass": "1.77.4",
+      "uuid": "13.0.2",
+      "busboy": "^1.6.0",
+      "dequal": "2.0.3",
+      "qs-esm": "8.0.1",
+      "file-type": "21.3.4",
+      "http-status": "2.1.0",
+      "graphql-http": "^1.22.0",
+      "@dnd-kit/core": "6.3.1",
+      "@payloadcms/ui": "3.90.2",
+      "path-to-regexp": "6.3.0",
+      "@dnd-kit/sortable": "10.0.0",
+      "@dnd-kit/modifiers": "9.0.0",
+      "@payloadcms/graphql": "3.90.2",
+      "graphql-playground-html": "1.6.30",
+      "@payloadcms/translations": "3.90.2"
+    },
+    "dist.tarball": "https://registry.npmjs.org/@payloadcms/next/-/next-3.90.2.tgz",
+    "dist.integrity": "sha512-ED5aP8LTG2S7jJl1v9zZMlcq9ZXgjWSVsUvILJsd2UwKNI5ingGsPuQVXxTFHicv2Zj9R0WFa+d6g6iqZWQcCg=="
+  }
+]

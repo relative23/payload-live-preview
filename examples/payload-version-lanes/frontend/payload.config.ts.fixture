@@ -1,0 +1,58 @@
+/**
+ * Two throwaway globals exercise actual admin document changes without touching
+ * an existing demo database. Every seeded global holds a relationship so real
+ * Payload REST population runs on the editor's subsequent unsaved text changes.
+ */
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import { buildConfig } from 'payload';
+import { sqliteAdapter } from '@payloadcms/db-sqlite';
+import { lexicalEditor } from '@payloadcms/richtext-lexical';
+import { livePreview } from 'payload-live-preview/plugin';
+
+const directory = path.dirname(fileURLToPath(import.meta.url));
+const ADMIN = process.env.PLP_R6_ADMIN!;
+const FRONTEND = process.env.PLP_R6_FRONTEND!;
+const SURFACE = process.env.PLP_R6_SURFACE!;
+if (!['react', 'vue'].includes(SURFACE)) throw new Error('Unknown lifecycle surface');
+
+export default buildConfig({
+  secret: 'isolated-r6-fixture-secret-never-deploy',
+  serverURL: ADMIN,
+  cors: [ADMIN, FRONTEND],
+  csrf: [ADMIN, FRONTEND],
+  admin: {},
+  editor: lexicalEditor(),
+  plugins: [livePreview({
+    baseUrl: FRONTEND,
+    globals: {
+      homepage: '/' + SURFACE + '.html?document=homepage',
+      otherpage: '/' + SURFACE + '.html?document=otherpage',
+    },
+  })],
+  db: sqliteAdapter({ client: { url: process.env.DATABASE_URI! } }),
+  typescript: { outputFile: path.join(directory, 'payload-types.ts') },
+  collections: [{ slug: 'users', auth: true, admin: { useAsTitle: 'email' }, fields: [] }],
+  globals: ['homepage', 'otherpage'].map((slug) => ({
+    slug,
+    fields: [
+      { name: 'title', type: 'text' as const },
+      { name: 'subtitle', type: 'text' as const },
+      { name: 'author', type: 'relationship' as const, relationTo: 'users' },
+    ],
+  })),
+  onInit: async (payload) => {
+    const result = await payload.find({ collection: 'users', limit: 1, overrideAccess: true });
+    const editor = result.docs[0] ?? await payload.create({
+      overrideAccess: true,
+      collection: 'users', data: { email: 'e2e@example.com', password: 'test1234' },
+    });
+    for (const slug of ['homepage', 'otherpage']) {
+      await payload.updateGlobal({
+        overrideAccess: true,
+        slug,
+        data: { title: 'Seeded ' + slug, subtitle: 'Seeded subtitle', author: editor.id },
+      });
+    }
+  },
+});

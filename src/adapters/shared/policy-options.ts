@@ -11,6 +11,7 @@ import {
   runtimeDefaultsFor,
   V2_RUNTIME_DEFAULTS,
 } from '@/types/defaults-profile';
+import { warnDeprecatedOptions } from '@/types/dev-warning';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import type { InlineScriptConfig } from '@/types/inline-config';
 import type { PreviewSignal } from './preview-request';
@@ -31,6 +32,8 @@ export interface ResolvedPolicyOptions {
 }
 
 export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPolicyOptions {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- read to warn about it
+  warnDeprecatedOptions({ defaults: options.defaults, onUnboundChange: options.onUnboundChange });
   const adapter = adapterDefaultsFor(options.defaults);
   const runtime = runtimeDefaultsFor(options.defaults);
   // The inline runtime already defaults to the v2 rows, so only a differing
@@ -52,11 +55,11 @@ export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPol
 }
 
 /**
- * What an adapter knows about the page beyond what a project configured — today
- * the framework that hydrates it (ADR 0015). Not an adapter option: a Next page
- * is a React tree whether or not anyone says so, so the adapter says it.
+ * What an adapter knows about the page beyond what a project configured: its
+ * hydration owner and the document events its router fires after a commit.
+ * These are facts, not project options.
  */
-export type PageFacts = Pick<InlineScriptConfig, 'hydration'>;
+export type PageFacts = Pick<InlineScriptConfig, 'hydration' | 'softNavigationEvents'>;
 
 /** The inline-script configuration; only given options travel, so the runtime's own defaults stay the single source of them. */
 export function inlineScriptConfig(
@@ -66,7 +69,7 @@ export function inlineScriptConfig(
   assertMergeDepthExplicit(options);
   const resolved = resolvePolicyOptions(options);
   return {
-    // The generator names it in the last slot and, under `'v1'`, reads an
+    // The generator names it in slot 24 and, under `'v1'`, reads an
     // omitted `mergeDepth` as deliberate.
     ...(options.defaults !== undefined ? { defaults: options.defaults } : {}),
     ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
@@ -108,6 +111,12 @@ export function inlineScriptConfig(
       ? { onUnfaithfulPatch: options.onUnfaithfulPatch }
       : {}),
     ...(options.autoBind !== undefined ? { autoBind: options.autoBind } : {}),
+    ...(options.subfieldCoverage !== undefined
+      ? { subfieldCoverage: options.subfieldCoverage }
+      : {}),
     ...(facts.hydration !== undefined ? { hydration: facts.hydration } : {}),
+    ...(facts.softNavigationEvents !== undefined
+      ? { softNavigationEvents: facts.softNavigationEvents }
+      : {}),
   };
 }

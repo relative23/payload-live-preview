@@ -1,0 +1,14 @@
+---
+import { ClientRouter } from 'astro:transitions';
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Soft navigation two</title>
+    <ClientRouter />
+  </head>
+  <body style="font:16px/1.5 system-ui,sans-serif">
+    <h1 data-payload-field="title" data-testid="soft-navigation-title">Published route two</h1>
+    <a href="/soft-navigation/one/" data-testid="soft-navigation-previous">Previous route</a>
+  </body>
+</html>

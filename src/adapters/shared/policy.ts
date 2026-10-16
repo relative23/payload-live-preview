@@ -17,7 +17,7 @@ import { wrapWithScriptTag } from '@inline/generator';
 // Delivery is decided in one place; the policy caches whatever that produced.
 import { renderScriptBody } from './response';
 import { hasPreviewIntent, type PreviewRequestLike } from './preview-request';
-import { warnOnce } from './dev-warning';
+import { warnOnce } from '@/types/dev-warning';
 import { runAuthorizeHook, type BoundAuthorizeHook } from './authorize-hook';
 import { resolvePolicyOptions, type PageFacts, type PreviewPolicyOptions } from './policy-options';
 import { assertStrictConfiguration } from './strict';

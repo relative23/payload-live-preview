@@ -102,7 +102,7 @@ export function hasRuntimeSelectionFilter(
 }
 
 /** Vitest reporter used by the main configuration. */
-export class ZeroSkipReporter implements Reporter {
+export default class ZeroSkipReporter implements Reporter {
   private inspectExecutionState = true;
 
   onTestRunStart(specifications: readonly TestSpecification[]): void {

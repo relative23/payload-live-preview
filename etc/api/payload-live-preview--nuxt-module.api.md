@@ -4,8 +4,18 @@
 
 ```ts
 
-import { a } from '../../options-uHKrDM2U.js';
-import { P } from '../../options-uHKrDM2U.js';
+import { a } from '../../options-Bq-ZDz1F.js';
+import { P } from '../../options-Bq-ZDz1F.js';
+
+// @public
+export function fragmentComponentPlugins(vue: VuePluginFactory, options: {
+    readonly srcDir: string;
+}): {
+    readonly name: string;
+}[];
+
+// @internal
+export const HANDLER_FILENAME = "payload-live-preview-server-handler.mjs";
 
 // @public
 function livePreviewModule(inlineOptions: LivePreviewModuleOptions | undefined, nuxt: NuxtLike): void;
@@ -17,14 +27,22 @@ namespace livePreviewModule {
         name: string;
         configKey: string;
     };
+    var // (undocumented)
+    getMeta: () => Promise<typeof livePreviewModule.meta>;
 }
 export default livePreviewModule;
 
 // @public
-export type LivePreviewModuleOptions = Omit<P<a>, 'authorizePreview' | 'shouldInject'>;
+export type LivePreviewModuleOptions = Omit<P<a>, 'authorizePreview' | 'shouldInject'> & {
+    readonly authorizePreviewModule?: string;
+};
 
 // @public
 export interface NitroConfigLike {
+    handlers?: {
+        readonly middleware?: boolean;
+        readonly handler: string;
+    }[];
     // (undocumented)
     plugins?: string[];
 }
@@ -35,10 +53,12 @@ export interface NuxtLike {
     readonly hook: (name: 'nitro:config', handler: (config: NitroConfigLike) => void) => void;
     // (undocumented)
     readonly options: {
+        readonly rootDir?: string;
         readonly buildDir: string;
         readonly build: {
             templates: NuxtTemplateLike[];
         };
+        readonly alias?: Readonly<Record<string, string>>;
         livePreview?: LivePreviewModuleOptions;
     };
 }
@@ -57,7 +77,16 @@ export interface NuxtTemplateLike {
 export const PLUGIN_FILENAME = "payload-live-preview-nitro-plugin.mjs";
 
 // @internal
-export function pluginSource(options: LivePreviewModuleOptions): string;
+export function pluginSource(options: LivePreviewModuleOptions, rootDir?: string, alias?: Readonly<Record<string, string>>): string;
+
+// @public
+export type VuePluginFactory = (options?: {
+    readonly features?: {
+        readonly componentIdGenerator?: (filepath: string, source: string, isProduction: boolean | undefined, getHash: (text: string) => string) => string;
+    };
+}) => {
+    readonly name: string;
+};
 
 // (No @packageDocumentation comment for this package)
 

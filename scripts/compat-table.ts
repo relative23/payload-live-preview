@@ -4,11 +4,19 @@
  * `--write` updates the README block; `--check` fails on any drift.
  */
 import { execFile } from 'node:child_process';
-import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { access, readFile, readdir, writeFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { matrixValues, parseWorkflow } from './workflow-contracts';
+import {
+  featureEvidenceProblems,
+  peerFloor,
+  scriptSemverPins,
+  type CompatEvidenceCell,
+  type CompatEvidenceFacts,
+} from './compat-evidence';
 import {
   peerCoverageProblems,
   renderViteLine,
@@ -23,6 +31,7 @@ const README = resolve(ROOT, 'README.md');
 const WORKFLOW = resolve(ROOT, '.github/workflows/ci.yml');
 const START = '<!-- compat-matrix:start -->';
 const END = '<!-- compat-matrix:end -->';
+const TOOLING_ENTRIES = ['./annotate', './codegen', './codegen/astro', './doctor', './migrate'];
 
 interface Tested {
   readonly version?: string;
@@ -59,6 +68,7 @@ interface Hook {
 interface Matrix {
   readonly frameworks: readonly Framework[];
   readonly hooks: readonly Hook[];
+  readonly featureEvidence: readonly CompatEvidenceCell[];
   readonly vite?: { readonly measured: string; readonly devBelowNewest?: string };
   readonly node: {
     readonly engines: string;
@@ -178,18 +188,134 @@ async function refresh(matrix: Matrix): Promise<Matrix> {
   return { ...matrix, vite: { measured: new Date().toISOString().slice(0, 10) } };
 }
 
-/** The lowest version an open-ended peer range (`>=x`, `>=x.y`, `>=x.y.z`) admits. */
-function rangeFloor(range: string): string | undefined {
-  const match = /^>=\s*(\d+)(?:\.(\d+))?(?:\.(\d+))?\s*$/u.exec(range);
-  if (match === null) return undefined;
-  return `${match[1] ?? '0'}.${match[2] ?? '0'}.${match[3] ?? '0'}`;
-}
-
 async function lockfileVersion(fixture: string, name: string): Promise<string | undefined> {
   const lock = JSON.parse(await readFile(resolve(ROOT, fixture, 'package-lock.json'), 'utf8')) as {
     packages?: Record<string, { version?: string }>;
   };
   return lock.packages?.[`node_modules/${name}`]?.version;
+}
+
+type JsonRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+async function pathFacts(
+  cells: readonly CompatEvidenceCell[],
+): Promise<Pick<CompatEvidenceFacts, 'availablePaths' | 'resultDigests'>> {
+  const paths = new Set(
+    cells.flatMap((cell) => [
+      ...cell.evidence.sources,
+      ...(cell.evidence.result === undefined ? [] : [cell.evidence.result.path]),
+    ]),
+  );
+  const availablePaths = new Set<string>();
+  const resultDigests: Record<string, string> = {};
+  for (const path of paths) {
+    try {
+      await access(resolve(ROOT, path));
+      availablePaths.add(path);
+      if (cells.some((cell) => cell.evidence.result?.path === path)) {
+        resultDigests[path] = createHash('sha256')
+          .update(await readFile(resolve(ROOT, path)))
+          .digest('hex');
+      }
+    } catch {
+      // The validator names every missing path in one pass.
+    }
+  }
+  return { availablePaths, resultDigests };
+}
+
+async function evidenceFacts(
+  matrix: Matrix,
+  manifest: {
+    readonly version?: string;
+    readonly exports?: Record<string, unknown>;
+    readonly bin?: Record<string, string>;
+    readonly peerDependencies?: Record<string, string>;
+  },
+): Promise<CompatEvidenceFacts> {
+  const lockfileVersions: Record<string, string | undefined> = {};
+  const scriptPins: Record<string, readonly string[] | undefined> = {};
+  for (const cell of matrix.featureEvidence) {
+    const source = cell.version.source;
+    if (source.kind === 'lockfile') {
+      const key = `${source.fixture}\u0000${cell.version.package}`;
+      lockfileVersions[key] = await lockfileVersion(source.fixture, cell.version.package);
+    }
+    if (source.kind === 'script-pin') {
+      const key = `${source.file}\u0000${source.identifier}`;
+      if (Object.hasOwn(scriptPins, key)) continue;
+      try {
+        scriptPins[key] = scriptSemverPins(
+          await readFile(resolve(ROOT, source.file), 'utf8'),
+          source.identifier,
+        );
+      } catch {
+        scriptPins[key] = undefined;
+      }
+    }
+  }
+  const peerFloors = Object.fromEntries(
+    Object.entries(manifest.peerDependencies ?? {}).map(([name, range]) => [
+      name,
+      peerFloor(range),
+    ]),
+  );
+  const workflowJobs: Record<
+    string,
+    { conditional: boolean; continueOnError: boolean } | undefined
+  > = {};
+  const workflowMatrixValues: Record<string, readonly string[] | undefined> = {};
+  const workflowFiles = new Set(
+    matrix.featureEvidence.flatMap((cell) => [
+      ...(cell.evidence.workflow === undefined ? [] : [cell.evidence.workflow.file]),
+      ...(cell.version.source.kind === 'workflow-matrix' ? [cell.version.source.file] : []),
+    ]),
+  );
+  const workflows = new Map<string, JsonRecord>();
+  for (const file of workflowFiles) {
+    workflows.set(
+      file,
+      parseWorkflow(await readFile(resolve(ROOT, '.github/workflows', file), 'utf8')),
+    );
+  }
+  for (const cell of matrix.featureEvidence) {
+    const reference = cell.evidence.workflow;
+    if (reference !== undefined) {
+      const document = workflows.get(reference.file);
+      const jobs = isRecord(document?.['jobs']) ? document['jobs'] : {};
+      const job = jobs[reference.job];
+      workflowJobs[`${reference.file}\u0000${reference.job}`] = isRecord(job)
+        ? {
+            conditional: job['if'] !== undefined,
+            continueOnError: job['continue-on-error'] !== undefined,
+          }
+        : undefined;
+    }
+    const source = cell.version.source;
+    if (source.kind === 'workflow-matrix') {
+      const document = workflows.get(source.file);
+      workflowMatrixValues[`${source.file}\u0000${source.job}\u0000${source.key}`] =
+        document === undefined
+          ? undefined
+          : matrixValues(document, source.job, source.key).map(String);
+    }
+  }
+  return {
+    repositoryVersion: manifest.version ?? '',
+    peerFloors,
+    lockfileVersions,
+    scriptPins,
+    workflowJobs,
+    workflowMatrixValues,
+    ...(await pathFacts(matrix.featureEvidence)),
+    publicEntries: Object.keys(manifest.exports ?? {}),
+    toolingEntries: TOOLING_ENTRIES,
+    publicBins: Object.keys(manifest.bin ?? {}),
+  };
 }
 
 async function validate(matrix: Matrix): Promise<readonly string[]> {
@@ -232,8 +358,14 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
     );
   }
   const manifest = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
+    version?: string;
+    exports?: Record<string, unknown>;
+    bin?: Record<string, string>;
     peerDependencies?: Record<string, string>;
   };
+  problems.push(
+    ...featureEvidenceProblems(matrix.featureEvidence, await evidenceFacts(matrix, manifest)),
+  );
   problems.push(
     ...peerCoverageProblems(
       matrix.frameworks.map((framework) => ({
@@ -254,7 +386,7 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
         `${hook.name}: matrix records peer \`${hook.peer}\`, package.json declares \`${String(range)}\``,
       );
     }
-    const declaredFloor = range === undefined ? undefined : rangeFloor(range);
+    const declaredFloor = range === undefined ? undefined : peerFloor(range);
     if (declaredFloor !== hook.floor) {
       problems.push(
         `${hook.name}: the peer range starts at ${String(declaredFloor)}, the matrix tests the floor ${hook.floor}`,

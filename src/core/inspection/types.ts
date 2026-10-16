@@ -5,6 +5,7 @@
  * misbehaving preview is exactly the case worth diagnosing. Reading one
  * performs no I/O and transmits nothing.
  */
+import type { RevisionDisplay } from '../revision-display';
 import type { ConnectionStatus } from '../state';
 
 /** Origin trust as the runtime currently sees it. */
@@ -57,6 +58,13 @@ export interface InspectionRevisions {
   readonly skippedUnchanged: number;
   /** Revision currently in flight, or `undefined` when the pipeline is idle. */
   readonly active: number | undefined;
+  /**
+   * How completely the page shows the latest accepted revision (ADR 0023):
+   * `pending`, `current`, `partial` with its shortfalls, or `unconfirmed` while
+   * an island it was handed has not called `displayed()`. `undefined` before
+   * the first message.
+   */
+  readonly display: RevisionDisplay | undefined;
 }
 
 /** What the DOM offers the runtime to write into. */
@@ -147,12 +155,12 @@ export interface LivePreviewInspection {
   readonly fidelity: InspectionFidelity;
   /**
    * Whether the page declared a framework that hydrates it, and how far the
-   * wait for its first commit — React's, or Vue's mount — got (ADR 0015).
-   * `waiting` is why a preview on a Next or Nuxt page is not connected yet;
-   * `timed-out` is LP0607.
+   * wait for its first commit — React's, Vue's mount, or SvelteKit's root
+   * mounting — got (ADR 0015). `waiting` is why a preview on a Next, Nuxt or
+   * SvelteKit page is not connected yet; `timed-out` is LP0607.
    */
   readonly hydration: {
-    readonly mode: 'off' | 'react' | 'vue';
+    readonly mode: 'off' | 'react' | 'vue' | 'sveltekit';
     readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
   };
 }
@@ -181,6 +189,8 @@ export interface InspectionFidelity {
 export interface InspectionRoute {
   readonly handler: boolean;
   readonly refreshes: number;
+  /** Successful refreshes whose server render was not proven to contain the current unsaved revision. */
+  readonly partial: number;
   /** Refreshes that broke: the request, the answer, or the morph. */
   readonly failed: number;
   /**

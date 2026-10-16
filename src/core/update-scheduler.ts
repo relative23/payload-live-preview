@@ -7,6 +7,7 @@
  */
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
+import { hasSameBindingIdentity } from './cache';
 import { usesNoWriteOutcome } from './internal-outcome';
 import { type MessageRevision, sameRevision } from './message-bus';
 import type { CachedElement } from './types';
@@ -89,6 +90,7 @@ export class UpdateScheduler {
   private windowUntil = 0;
   private activeRevision: MessageRevision | null = null;
   private activeRevisionCancelled = false;
+  private destroying = false;
 
   constructor(apply: ApplyUpdate, options: UpdateSchedulerOptions) {
     this.apply = apply;
@@ -118,6 +120,7 @@ export class UpdateScheduler {
 
   /** Queue a write; a later write for the same element replaces it until the flush. */
   schedule(update: ScheduledUpdate): void {
+    if (this.destroying) return;
     if (update.revision !== undefined) {
       if (this.activeRevisionCancelled) return;
       if (this.activeRevision === null || !sameRevision(update.revision, this.activeRevision)) {
@@ -149,20 +152,22 @@ export class UpdateScheduler {
    * Older buffered work is dropped even if the new revision is later cancelled.
    */
   acceptRevision(revision: MessageRevision): void {
+    if (this.destroying) return;
     if (this.activeRevision !== null && sameRevision(revision, this.activeRevision)) return;
     if (this.activeRevision !== null && compareRevision(revision, this.activeRevision) < 0) return;
-    this.cancelScheduledWork();
     this.clearWork();
     this.activeRevision = revision;
     this.activeRevisionCancelled = false;
+    // Publish ownership before host cancellation can accept or end another owner.
+    this.cancelScheduledWork();
   }
 
   /** Cancel buffered work for exactly one revision without reviving its predecessor. */
   cancelRevision(revision: MessageRevision): void {
     if (this.activeRevision === null || !sameRevision(revision, this.activeRevision)) return;
-    this.cancelScheduledWork();
     this.clearWork();
     this.activeRevisionCancelled = true;
+    this.cancelScheduledWork();
   }
 
   /** Flush immediately, bypassing the debounce. */
@@ -208,12 +213,19 @@ export class UpdateScheduler {
 
   /** Cancel timers and drop buffered state without draining it. */
   destroy(): void {
-    this.cancelScheduledWork();
-    this.clearWork();
-    this.activeRevision = null;
-    this.activeRevisionCancelled = false;
-    // A restarted scheduler is a quiet page again, not the tail of a burst.
-    this.windowUntil = 0;
+    if (this.destroying) return;
+    // Host cancellation must not open another frame while this owner closes.
+    this.destroying = true;
+    try {
+      this.clearWork();
+      this.activeRevision = null;
+      this.activeRevisionCancelled = false;
+      // A restarted scheduler is a quiet page again, not the tail of a burst.
+      this.windowUntil = 0;
+      this.cancelScheduledWork();
+    } finally {
+      this.destroying = false;
+    }
   }
 
   get pendingCount(): number {
@@ -347,7 +359,7 @@ export class UpdateScheduler {
   private retargetBuffer(buffer: Map<Element, BufferEntry>, target: CachedElement): void {
     const entry = buffer.get(target.element);
     if (entry === undefined) return;
-    if (entry.target.fieldName !== target.fieldName || entry.target.locale !== target.locale) {
+    if (!hasSameBindingIdentity(entry.target, target)) {
       buffer.delete(target.element);
       return;
     }

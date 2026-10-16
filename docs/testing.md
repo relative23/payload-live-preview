@@ -73,12 +73,20 @@ nominally carrying 20 %. Refresh the weights from the same report that sets the
 baseline, priced with the suite's own durations:
 
 ```sh
-npx vitest run --reporter=json --outputFile=test-results/vitest-durations.json
+npx vitest run --reporter=default --reporter=json --reporter=./scripts/zero-skip-reporter.ts \
+  --outputFile.json=test-results/vitest-durations.json
 npx tsx scripts/mutation-shard-weights.ts --durations test-results/vitest-durations.json
 ```
 
-Stale weights only unbalance the shards, and missing ones fall back to counting
-executions. Neither changes the verdict, which is graded on the merged report.
+Leading and trailing whitespace in full test names is removed as in Stryker's
+Vitest reporter; whitespace inside a name stays meaningful. Assertions represented
+by one Stryker ID contribute their combined duration. Distinct IDs with the same
+file and normalized full name are refused.
+
+Stale weights can unbalance the shards. Every file in the scope needs a positive
+recorded weight for the unit gate. Stryker falls back to the source file size when
+a weight is missing, but that fallback does not satisfy this gate. The
+mutation-policy verdict is graded on the merged report.
 
 #### Adding a file to `criticalFiles`
 

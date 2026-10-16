@@ -16,7 +16,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
  * working end to end.
  */
 
-const APP = 'http://localhost:4176';
+const APP = process.env['PLP_NUXT_ORIGIN'] ?? 'http://localhost:4176';
 const RUNTIME_MARKER = 'LP0101';
 const ASSET_URL = /"(\/payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u;
 

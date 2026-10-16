@@ -1,0 +1,10 @@
+---
+/** One finite component catalog serves the page and the fragment endpoint.
+ * An empty document renders no cards, but still has the catalog's build graph.
+ */
+import StyledCard from './StyledCard.astro';
+interface Props { show: boolean; title: string; delayMs?: number }
+const { show, title, delayMs = 0 } = Astro.props;
+if (delayMs > 0) await new Promise(resolve => setTimeout(resolve, delayMs));
+---
+{show && <StyledCard title={title} />}

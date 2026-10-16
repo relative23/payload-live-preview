@@ -21,6 +21,7 @@ async function main(): Promise<void> {
     server: await loadModule(context, 'dist/server.js'),
     fragment: await loadModule(context, 'dist/fragment.js'),
     payload: await loadModule(context, 'dist/payload.js'),
+    plugin: await loadModule(context, 'dist/plugin.js'),
   };
   await runEdgeCases(await edgeCases(modules));
 }

@@ -19,6 +19,7 @@
  *   cookies but *not* its URL, so `?previewToken=` is invisible there; the one
  *   credential a layout can read is a cookie — `mintSessionToken()`.
  */
+import 'server-only';
 import {
   authorizePreviewRequest,
   extractCookie,
@@ -26,11 +27,19 @@ import {
   type PreviewAuthorization,
   type SignedTokenStrategy,
 } from 'payload-live-preview/server';
+import { PREVIEW_ADMIN_ORIGIN } from '../preview-origin.mjs';
 
-/** Fixture secret — a real site reads it from the environment. */
-const PREVIEW_SECRET = 'nextjs-hybrid-fixture-secret-that-is-long-enough-0';
+const configuredSecret = process.env['PREVIEW_TOKEN_SECRET']?.trim();
+/** Fixture fallback only. A deployed site supplies this through its server environment. */
+const PREVIEW_SECRET =
+  configuredSecret && configuredSecret.length > 0
+    ? configuredSecret
+    : 'nextjs-hybrid-fixture-secret-that-is-long-enough-0';
 
-export const SITE = 'http://localhost:4174';
+export const SITE = PREVIEW_ADMIN_ORIGIN;
+
+/** Set when a real Payload admin frames this site: its session authorizes the preview. */
+const PAYLOAD_SERVER_URL = process.env['PLP_PAYLOAD_SERVER_URL']?.trim() || undefined;
 
 /** The cookie `/preview-session` writes and the layout reads back. */
 export const PREVIEW_COOKIE = 'previewToken';
@@ -69,6 +78,14 @@ export function mintSessionToken(): Promise<string> {
  * same audience, same HMAC as the query token — only the carrier differs.
  */
 export async function authorizePreview(request: Request): Promise<PreviewAuthorization> {
+  // Against a real Payload admin (tests/real-payload) the editor's own session
+  // reaches this site, so the documented `payload-session` strategy applies.
+  if (PAYLOAD_SERVER_URL !== undefined) {
+    return authorizePreviewRequest(request, {
+      type: 'payload-session',
+      serverURL: PAYLOAD_SERVER_URL,
+    });
+  }
   const token = extractCookie(request.headers.get('cookie'), PREVIEW_COOKIE);
   if (token === null) return { authorized: false, outcome: 'missing-credential', context: null };
   return authorizePreviewRequest(

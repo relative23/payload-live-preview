@@ -2,9 +2,10 @@
  * Whether an accepted message has to be resolved against the server before the
  * page can render it, and how many round trips a burst of them may cost. The
  * merge exists to populate relationships and uploads, so a page that renders
- * none of them needs no request at all, a message that moved no populated field
- * is answered from its own values over what the last merge resolved, and what
- * is left goes out once at the start of a burst and once at its end.
+ * none of them needs no request at all. A message in the same locale that moved
+ * no populated field is answered from its own values over what the last merge
+ * resolved, and what is left goes out once at the start of a burst and once at
+ * its end.
  *
  * Conservative in one direction on purpose: a request left out that was needed
  * puts an id where a name belongs and leaves it there, while one request too
@@ -64,14 +65,21 @@ interface PendingMerge {
   readonly settle: (result: MergeResult) => void;
 }
 
+interface TrailingMerge {
+  readonly request: MergeRequest;
+  readonly pending: PendingMerge;
+  timer: ReturnType<typeof setTimeout> | null;
+}
+
 export class MergeNeed {
-  /** What the panel last posted, so "changed" means what the editor moved, not what population added. */
+  /** Raw fields last considered for population, without confusing edits with server-added values. */
   private readonly rawChanges = new FieldChangeTracker();
   private resolved: Record<string, unknown> | null = null;
-  private queued: MergeRequest | null = null;
-  private pending: PendingMerge | null = null;
-  private timer: ReturnType<typeof setTimeout> | null = null;
+  /** Null leaves required population unresolved; undefined is the resolved default locale. */
+  private resolvedLocale: string | undefined | null = null;
+  private trailing: TrailingMerge | null = null;
   private openUntil = 0;
+  private requestAttempt = 0;
 
   /**
    * The decision, in the order the audit found the ways to get it wrong.
@@ -89,11 +97,16 @@ export class MergeNeed {
    * `request()` decides how often it is actually asked.
    */
   decide(deps: RuntimeDeps, transaction: UpdateTransaction): MergePlan {
-    const raw = transaction.message.data ?? {};
-    // Advanced for every message, including the ones that return here: the next
-    // diff has to be against what the panel last posted either way.
+    const raw = transaction.rawData;
+    if (!readsPopulatedValues(deps)) {
+      if (transaction.forceRender) this.resolvedLocale = null;
+      return { merge: false, fields: raw };
+    }
+    // Unobserved edits still need comparison when a population consumer returns.
     const { changed } = this.rawChanges.diff(raw, NO_DEPENDENCIES);
-    if (!readsPopulatedValues(deps)) return { merge: false, fields: raw };
+    // Population depends on the accepted locale even when relationship IDs stay
+    // put. A page with no population consumer leaves the retained context alone.
+    const localeChanged = this.resolvedLocale !== transaction.locale;
     const base = this.resolved;
     // The first message has nothing to carry over, so it buys the document once.
     if (base === null) {
@@ -101,9 +114,10 @@ export class MergeNeed {
       return { merge: true, fields: raw };
     }
     const fields: Record<string, unknown> = { ...base };
-    // A save in another document changes what population returns without moving
-    // one value here (LP-1) — the one reason to ask that no field can state.
-    let merge = transaction.forceRender;
+    // A related save (LP-1) or an accepted locale change can alter population
+    // without moving a relationship ID in the raw form values.
+    if (transaction.forceRender) this.resolvedLocale = null;
+    let merge = transaction.forceRender || localeChanged;
     for (const field of changed) {
       const value = raw[field];
       if (SYSTEM_FIELD_NAMES.has(field)) {
@@ -111,7 +125,10 @@ export class MergeNeed {
         continue;
       }
       const verdict = verdictFor(field, base[field], value, deps.cache, transaction.schemaIndex);
-      if (verdict !== 'own') merge = true;
+      if (verdict !== 'own') {
+        merge = true;
+        this.resolvedLocale = null;
+      }
       if (verdict !== 'keep') fields[field] = value;
     }
     this.resolved = fields;
@@ -129,6 +146,7 @@ export class MergeNeed {
    * behind them. A page that turns the debounce off turns this off with it.
    */
   request(merger: DataMerger, windowMs: number, request: MergeRequest): CoalescedMerge {
+    const attempt = ++this.requestAttempt;
     const now = Date.now();
     if (now >= this.openUntil) {
       // The clock has closed the window, but its timer may not have run: a busy
@@ -136,49 +154,62 @@ export class MergeNeed {
       // request would go out after this one, and `DataMerger` — which keeps the
       // newest request — would drop this keystroke's answer; measured in WebKit
       // as a preview one keystroke behind. This request carries the newer values.
-      this.dropQueued();
       this.openUntil = now + windowMs;
+      this.dropQueued();
+      // Cancellation can accept newer work before this leading request dispatches.
+      if (this.requestAttempt !== attempt) {
+        return { leading: true, result: Promise.resolve({ status: 'superseded' }) };
+      }
       return { leading: true, result: merger.merge(request) };
     }
-    this.queued = request;
+    const previous = this.trailing;
+    const pending = previous?.pending ?? createPending();
+    const trailing: TrailingMerge = { request, pending, timer: null };
+    this.trailing = trailing;
     this.openUntil = now + windowMs;
-    this.pending ??= createPending();
-    if (this.timer !== null) clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
-      this.flush(merger);
+    if (previous !== null && previous.timer !== null) clearTimeout(previous.timer);
+    if (this.trailing !== trailing) return { leading: false, result: pending.promise };
+    const timer = setTimeout(() => {
+      this.flush(merger, trailing);
     }, windowMs);
-    return { leading: false, result: this.pending.promise };
+    if (this.trailing === trailing) trailing.timer = timer;
+    else clearTimeout(timer);
+    return { leading: false, result: pending.promise };
   }
 
   /** The server's document replaces what was carried over; the next message builds on it. */
-  recordMerged(doc: Record<string, unknown>): void {
+  recordMerged(doc: Record<string, unknown>, locale?: string): void {
     this.resolved = doc;
+    this.resolvedLocale = locale;
+  }
+
+  /** Start a navigation replay from a raw baseline while retaining the last complete server document. */
+  resetRawChanges(): void {
+    this.rawChanges.reset();
   }
 
   destroy(): void {
-    this.dropQueued();
+    this.requestAttempt += 1;
     this.openUntil = 0;
+    this.dropQueued();
   }
 
   /** Drop a queued request; whoever waits on it keeps what they already rendered. */
   private dropQueued(): void {
-    if (this.timer !== null) clearTimeout(this.timer);
-    this.timer = null;
-    this.queued = null;
-    this.pending?.settle({ status: 'superseded' });
-    this.pending = null;
+    const trailing = this.trailing;
+    this.trailing = null;
+    if (trailing === null) return;
+    if (trailing.timer !== null) clearTimeout(trailing.timer);
+    trailing.pending.settle({ status: 'superseded' });
   }
 
-  private flush(merger: DataMerger): void {
-    const pending = this.pending;
-    const request = this.queued;
-    this.timer = null;
-    this.pending = null;
-    this.queued = null;
-    if (pending === null || request === null) return;
-    merger.merge(request).then(pending.settle, () => {
-      pending.settle({ status: 'unavailable' });
-    });
+  private flush(merger: DataMerger, trailing: TrailingMerge): void {
+    // A cancelled callback must never consume a successor's queued request.
+    if (this.trailing !== trailing) return;
+    this.trailing = null;
+    trailing.timer = null;
+    // The owned DataMerger fulfills one of its three outcomes, including request failures.
+    void merger.merge(trailing.request).then(trailing.pending.settle);
   }
 }
 

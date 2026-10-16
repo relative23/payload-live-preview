@@ -22,6 +22,9 @@
  * A host's own route refresh. It must settle once the fresh markup is
  * committed: the runtime re-applies the revision on top of it, and doing that
  * against the markup being replaced would write into nodes about to be dropped.
+ * A function that returns nothing is taken as already committed; the route
+ * strategy says once that it could not wait (LP0810), and 3.0 requires the
+ * promise (ADR 0028).
  */
 export type RouteRefresh = () => void | Promise<void>;
 

@@ -160,6 +160,76 @@ describe('the unbound-fields overlay', () => {
     );
   });
 
+  it('lays itself out through the CSSOM, which a strict style-src does not refuse', async () => {
+    // `setAttribute('style')` is an inline style attribute to a CSP that
+    // refuses them (PHD-03); declarations set through `element.style` are not.
+    // No clipboard: the copy falls back to a hidden text area, styled the same way.
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    const setAttribute = vi.spyOn(Element.prototype, 'setAttribute');
+    const { events, manager: plugins } = manager({ debug: true });
+    await plugins.register(createUnboundFieldsOverlayPlugin());
+
+    await update(events, { tagline: 'b' });
+    document.querySelector<HTMLButtonElement>(`${PANEL} button`)?.click();
+
+    expect(setAttribute.mock.calls.map(([name]) => name)).not.toContain('style');
+    expect(document.querySelector<HTMLElement>(PANEL)?.style.position).toBe('fixed');
+    expect(document.querySelector<HTMLElement>(`${PANEL} button`)?.style.cursor).toBe('pointer');
+    expect(document.querySelector<HTMLElement>(`${PANEL} div`)?.style.fontWeight).toBe('600');
+    setAttribute.mockRestore();
+  });
+
+  it('leaves out what the page declares with data-payload-covers', async () => {
+    document.body.innerHTML =
+      '<h1 data-payload-field="title">t</h1><i data-payload-covers="seo"></i>';
+    const { events, manager: plugins } = manager({ debug: true });
+    await plugins.register(createUnboundFieldsOverlayPlugin());
+
+    await update(events, { title: 'a', seo: { title: 's' }, tagline: 'b' });
+
+    expect(panelText()).toContain('tagline');
+    expect(panelText()).not.toContain('seo');
+  });
+
+  it('leaves out what a configured strategy renders, and only then', async () => {
+    const page =
+      '<h1 data-payload-field="title">t</h1>' +
+      '<section data-payload-fragment="pricing" data-payload-depends="pricing"></section>' +
+      '<div data-payload-island="x"><section data-payload-fragment="plans" data-payload-depends="plans"></section></div>';
+    const fields = { title: 'a', pricing: 1, plans: 2 };
+    document.body.innerHTML = page;
+    const rendered = manager({ debug: true, strategies: { fragment: () => {} } });
+    await rendered.manager.register(createUnboundFieldsOverlayPlugin());
+    await update(rendered.events, fields);
+    expect(panelText()).not.toContain('pricing');
+    // The fragment planner leaves a boundary inside an island to the island.
+    expect(panelText()).toContain('plans');
+    await rendered.manager.destroyAll();
+
+    document.body.innerHTML = page;
+    const unrendered = manager({ debug: true, strategies: { route: {} } });
+    await unrendered.manager.register(createUnboundFieldsOverlayPlugin());
+    await update(unrendered.events, fields);
+    expect(panelText()).toContain('pricing');
+  });
+
+  it("lists the uncovered path inside a partly bound group under subfieldCoverage: 'declared'", async () => {
+    document.body.innerHTML = '<p data-payload-field="hero.eyebrow">e</p>';
+    const hero = { eyebrow: 'e', description: 'd' };
+    const declared = manager({ debug: true, subfieldCoverage: 'declared' });
+    await declared.manager.register(createUnboundFieldsOverlayPlugin());
+    await update(declared.events, { hero });
+    expect(panelText()).toContain('hero.description');
+    expect(panelText()).not.toContain('hero.eyebrow');
+    await declared.manager.destroyAll();
+
+    document.body.innerHTML = '<p data-payload-field="hero.eyebrow">e</p>';
+    const descendant = manager({ debug: true });
+    await descendant.manager.register(createUnboundFieldsOverlayPlugin());
+    await update(descendant.events, { hero });
+    expect(panelText()).not.toContain('hero');
+  });
+
   it('is not a binding target itself', async () => {
     const { manager: plugins } = manager({ debug: true });
     await plugins.register(createUnboundFieldsOverlayPlugin());

@@ -93,7 +93,7 @@ describe.each(DIFFERENTIAL_POLICIES)('under the $name policy, against DOMPurify'
       const options = optionsFor(policy, vector.input);
       const ours = sanitizeHtml(vector.input, options);
       const theirs = purifyLikeOurs(purify, vector.input);
-      const missing = missingFromPurify(ours, theirs, options, vector.input);
+      const missing = missingFromPurify(ours, theirs, options, vector.input, purify);
       if (missing.length > 0) findings.push(`${vector.id}: ${missing.join(', ')}`);
     });
     expect(findings).toEqual([]);

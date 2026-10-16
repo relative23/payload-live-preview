@@ -25,7 +25,12 @@ export { EventEmitter } from './events';
 export type { EventHandler, LivePreviewEventMap, Unsubscribe } from './events';
 export { DIAGNOSTIC_CODES, type DiagnosticCode } from './core/diagnostic-codes';
 export type { PluginInspection } from './core/inspection/types';
-export type { UpdateSource } from './core/strategies';
+export type { RouteOutcome, UpdateSource } from './core/strategies';
+export type {
+  RevisionDisplay,
+  RevisionDisplayState,
+  RevisionShortfall,
+} from './core/revision-display';
 export type { PayloadDocumentEventDetail } from './types/payload-protocol';
 // `RenderContext.sanitizerPolicy` names it, so the entry has to as well.
 export type { SanitizerPolicyMode } from './security';

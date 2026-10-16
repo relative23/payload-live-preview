@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPreviewPolicy, type PreviewAuthorizationHookResult } from '@adapters/shared/policy';
 import { inlineScriptConfig, resolvePolicyOptions } from '@adapters/shared/policy-options';
 import { assertStrictConfiguration } from '@adapters/shared/strict';
-import { resetDevWarnings } from '@adapters/shared/dev-warning';
+import { resetDevWarnings } from '@/types/dev-warning';
 import {
   authorizePreviewRequest,
   PreviewConfigurationError,
@@ -171,8 +171,12 @@ describe("decide — without a hook (defaults: 'v1')", () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(String(warn.mock.calls[0]?.[0])).toContain('authorizePreview');
+    // The profile's own deprecation (ADR 0026) is the other line.
+    const intentOnly = warn.mock.calls.filter(([message]) =>
+      String(message).includes('authorizePreview'),
+    );
+    expect(intentOnly).toHaveLength(1);
+    expect(warn).toHaveBeenCalledTimes(2);
     const decision = await policy.decide(request(INTENT));
     expect(decision).toMatchObject({
       isPreview: true,

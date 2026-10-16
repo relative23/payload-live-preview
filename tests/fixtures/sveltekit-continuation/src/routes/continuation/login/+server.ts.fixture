@@ -1,0 +1,7 @@
+/** Only the canonical same-origin request reaches login. Posted credentials must be verified by the real Payload server. */
+import type { RequestHandler } from './$types';
+import { fixture, canonical, refused } from '$lib/server/host';
+export const POST: RequestHandler = event => {
+  const request = canonical(event);
+  return request ? fixture()!.host.login(request) : refused();
+};

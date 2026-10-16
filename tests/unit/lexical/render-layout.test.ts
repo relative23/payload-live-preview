@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { lexicalToHtml, __resetSanitizerWarningForTests } from '@lexical/render';
 import { layoutClassAttribute, resolveAlignment, resolveIndent } from '@lexical/utils';
-import { setSanitizerPolicy } from '@security/sanitizer';
+import { SanitizerEnvironmentError, setSanitizerPolicy } from '@security/sanitizer';
 import { makeRoot } from './helpers';
 
 beforeEach(() => {
@@ -87,7 +87,30 @@ describe('server rendering without a sanitizer document', () => {
     expect(lexicalToHtml(doc)).toBe('<p>x</p>');
 
     expect(warn).toHaveBeenCalledOnce();
-    expect(String(warn.mock.calls[0]?.[0])).toContain('setSanitizerDocument');
+    // ADR 0025: the warning names the per-call document, the opt-in and 3.0,
+    // not the process-wide setter 2.1 deprecated.
+    const message = String(warn.mock.calls[0]?.[0]);
+    expect(message).toContain('{ document }');
+    expect(message).toContain('requireDocument: true');
+    expect(message).toContain('3.0');
+    expect(message).not.toContain('setSanitizerDocument');
+  });
+
+  it('refuses to return unsanitised HTML under requireDocument, as sanitizeHtml does', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubGlobal('document', undefined);
+    __resetSanitizerWarningForTests();
+    const doc = makeRoot([{ type: 'paragraph', children: [{ type: 'text', text: 'x' }] }]);
+
+    expect(() => lexicalToHtml(doc, { requireDocument: true })).toThrow(SanitizerEnvironmentError);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('lets an explicit sanitize: false win over requireDocument', () => {
+    vi.stubGlobal('document', undefined);
+    const doc = makeRoot([{ type: 'paragraph', children: [{ type: 'text', text: 'x' }] }]);
+
+    expect(lexicalToHtml(doc, { requireDocument: true, sanitize: false })).toBe('<p>x</p>');
   });
 
   it('stays silent when the caller opted out of sanitising', () => {

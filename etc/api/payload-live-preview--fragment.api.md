@@ -67,6 +67,8 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly FragmentStrategyUnavailable: "LP0806";
     readonly UnboundChangeRefresh: "LP0807";
     readonly EscalationUnavailable: "LP0808";
+    readonly IslandStartUnavailable: "LP0809";
+    readonly RouteRefreshUnconfirmed: "LP0810";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
 }>;
@@ -221,7 +223,6 @@ export const ROUTE_REFRESH_HEADER = "x-payload-live-preview";
 
 // @public
 export interface RouteContext {
-    // (undocumented)
     readonly isCurrent: () => boolean;
     // (undocumented)
     readonly log: (code: DiagnosticCode, detail: string) => void;
@@ -234,12 +235,17 @@ export interface RouteContext {
 }
 
 // @public
-export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
+export type RouteOutcome = 'refreshed' | 'partial' | 'failed' | 'refused' | 'superseded';
+
+// @public
+export interface RoutePlanContext {
+    readonly inScope: (element: Element) => boolean;
+}
 
 // @public
 export interface RouteStrategy {
     // (undocumented)
-    readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
+    readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>, context?: RoutePlanContext) => boolean;
     // (undocumented)
     readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }

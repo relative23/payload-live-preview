@@ -1,8 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
+import type { FragmentContext, FragmentStrategy } from '@core/strategies';
 import type { FieldRenderer } from '@core/types';
-import { fragmentStrategyFrom, type FragmentHandler, type StrategyRequest } from '@fragment/index';
+import {
+  fragmentStrategyFrom,
+  type FragmentHandler,
+  type FragmentOutcome,
+  type StrategyRequest,
+} from '@fragment/index';
 
 /**
  * The fragment strategy in the core (roadmap 1.6.0): a `data-payload-fragment`
@@ -52,7 +58,10 @@ function once(name: 'afterUpdate' | 'fragmentRender' | 'error'): Promise<unknown
 }
 function start(
   fragment?: FragmentHandler,
-  options: { dependencies?: Readonly<Record<string, readonly string[]>> } = {},
+  options: {
+    dependencies?: Readonly<Record<string, readonly string[]>>;
+    scopeBindingsByOwner?: boolean;
+  } = {},
 ): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
     ...options,
@@ -164,6 +173,44 @@ describe('fragment strategy', () => {
     expect(rt.inspect().fragments).toMatchObject({ rendered: 0, failed: 1 });
   });
 
+  it('owner-filters bindings patched after an in-scope fragment fails', async () => {
+    document.body.innerHTML =
+      '<section data-payload-fragment="hero" data-payload-owner="global:home">' +
+      '<h1 id="own" data-payload-field="title">Old own</h1>' +
+      '<div data-payload-owner="global:other">' +
+      '<h2 id="foreign" data-payload-field="title">Old foreign</h2></div>' +
+      '<h3 id="unowned" data-payload-owner="" data-payload-field="title">Old unowned</h3>' +
+      '</section>';
+    start(() => Promise.reject(new Error('endpoint down')), { scopeBindingsByOwner: true });
+
+    post({ title: 'Draft home' });
+    await vi.waitFor(() => {
+      expect(document.querySelector('#own')?.textContent).toBe('Draft home');
+    });
+
+    expect(document.querySelector('#foreign')?.textContent).toBe('Old foreign');
+    expect(document.querySelector('#unowned')?.textContent).toBe('Old unowned');
+  });
+
+  it('patches every nested owner on fragment failure when owner scoping is off', async () => {
+    document.body.innerHTML =
+      '<section data-payload-fragment="hero" data-payload-owner="global:home">' +
+      '<h1 id="own" data-payload-field="title">Old own</h1>' +
+      '<div data-payload-owner="global:other">' +
+      '<h2 id="foreign" data-payload-field="title">Old foreign</h2></div>' +
+      '<h3 id="unowned" data-payload-owner="" data-payload-field="title">Old unowned</h3>' +
+      '</section>';
+    start(() => Promise.reject(new Error('endpoint down')));
+
+    post({ title: 'Draft' });
+    await vi.waitFor(() => {
+      expect(document.querySelector('#own')?.textContent).toBe('Draft');
+    });
+
+    expect(document.querySelector('#foreign')?.textContent).toBe('Draft');
+    expect(document.querySelector('#unowned')?.textContent).toBe('Draft');
+  });
+
   it('aborts an in-flight render when a newer revision arrives and applies only the newest', async () => {
     const signals: AbortSignal[] = [];
     let release: (() => void) | undefined;
@@ -192,6 +239,170 @@ describe('fragment strategy', () => {
     expect(document.querySelector('h1')?.textContent).toBe('second');
     expect(rt.inspect().fragments.superseded).toBe(1);
     expect(rt.inspect().revisions.superseded).toBe(1);
+  });
+
+  it('does not run stale fragment plans after synchronous reentrant work', async () => {
+    document.body.innerHTML =
+      '<section data-payload-fragment="hero"></section>' +
+      '<p data-payload-field="footer">old footer</p>';
+    const rendered: string[] = [];
+    let reenterPlan = true;
+    let reenterDiagnostic = false;
+    const fragment: FragmentStrategy = {
+      plan: (root) => {
+        if (reenterPlan) {
+          reenterPlan = false;
+          post({ title: 'newer' });
+        }
+        return [...root.querySelectorAll('[data-payload-fragment]')];
+      },
+      render: (context, boundaries) => {
+        rendered.push(String(context.fields['title']));
+        return Promise.resolve({ rendered: boundaries.length, failed: 0, superseded: 0 });
+      },
+    };
+    runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer },
+      originMatcher: (origin) => origin === TRUSTED,
+      readyTargets: [TRUSTED],
+      emitter,
+      debounceMs: 0,
+      disableVisibilityGate: true,
+      enableA11y: false,
+      onUnfaithfulPatch: 'ignore',
+      warn: () => {
+        if (!reenterDiagnostic) return;
+        reenterDiagnostic = false;
+        post({ title: 'diagnostic-newer', footer: 'newer footer' });
+      },
+      strategies: { fragment },
+    });
+    runtime.start();
+
+    post({ title: 'older' });
+    await vi.waitFor(() => {
+      expect(rendered).toEqual(['newer']);
+    });
+
+    reenterDiagnostic = true;
+    post({ title: 'diagnostic-old', footer: 'old footer', orphan: 'diagnose me' });
+    await vi.waitFor(() => {
+      expect(rendered).toEqual(['newer', 'diagnostic-newer']);
+    });
+  });
+
+  it('does not render or transform stale fields through retained custom callbacks', async () => {
+    document.body.innerHTML =
+      '<section data-payload-fragment="hero"><h1 data-payload-field="title">Old</h1></section>';
+    const contexts: FragmentContext[] = [];
+    const settle: ((report: { rendered: number; failed: number; superseded: number }) => void)[] =
+      [];
+    const transformValue = vi.fn((_field: string, value: unknown) => value);
+    const fragment: FragmentStrategy = {
+      plan: (root) => [...root.querySelectorAll('[data-payload-fragment]')],
+      render: (context) => {
+        contexts.push(context);
+        return new Promise((resolve) => {
+          settle.push(resolve);
+        });
+      },
+    };
+    runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer },
+      transformValue,
+      originMatcher: (origin) => origin === TRUSTED,
+      readyTargets: [TRUSTED],
+      emitter,
+      debounceMs: 0,
+      disableVisibilityGate: true,
+      enableA11y: false,
+      strategies: { fragment },
+    });
+    runtime.start();
+
+    post({ title: 'older' });
+    await vi.waitFor(() => {
+      expect(contexts).toHaveLength(1);
+    });
+    post({ title: 'newer' });
+    await vi.waitFor(() => {
+      expect(contexts).toHaveLength(2);
+    });
+    const boundary = document.querySelector('[data-payload-fragment]');
+    if (boundary === null || contexts[0] === undefined) throw new Error('fixture missing');
+
+    contexts[0].morph(boundary, '<h1 data-payload-field="title">Stale</h1>');
+    contexts[0].patch(boundary);
+
+    expect(contexts[0].isCurrent()).toBe(false);
+    expect(boundary.textContent).toBe('Old');
+    expect(transformValue).not.toHaveBeenCalled();
+    for (const resolve of settle) resolve({ rendered: 0, failed: 0, superseded: 1 });
+  });
+
+  it('completes a revision only after every streamed fragment run settles', async () => {
+    const pending = new Map<
+      string,
+      { resolve: (outcome: FragmentOutcome) => void; request: StrategyRequest }
+    >();
+    let hold = false;
+    const rt = start((request, boundary) => {
+      if (!hold) {
+        return Promise.resolve({
+          status: 'rendered',
+          html: `<h1 data-payload-field="title">${String(request.fields['title'])}</h1>`,
+        });
+      }
+      return new Promise((resolve) => {
+        pending.set(boundary.id, { resolve, request });
+      });
+    });
+    post({ title: 'baseline' });
+    await once('fragmentRender');
+    await vi.waitFor(() => {
+      expect(rt.inspect().revisions.completed).toBe(1);
+    });
+    rt.navigationCommit();
+    await once('fragmentRender');
+    await vi.waitFor(() => {
+      expect(rt.inspect().fragments.inFlight).toBe(0);
+    });
+
+    hold = true;
+    post({ title: 'draft' });
+    await vi.waitFor(() => {
+      expect(pending.has('hero')).toBe(true);
+    });
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<section data-payload-fragment="late" data-payload-depends="title"><h2>saved</h2></section>' +
+        '<section data-payload-fragment="untouched" data-payload-depends="footer"><h2>saved footer</h2></section>',
+    );
+    await vi.waitFor(
+      () => {
+        expect(pending.has('late')).toBe(true);
+      },
+      { timeout: 500 },
+    );
+    expect(pending.has('untouched')).toBe(false);
+    expect(rt.inspect().fragments.inFlight).toBe(2);
+
+    pending.get('late')?.resolve({
+      status: 'rendered',
+      html: '<h2>draft</h2>',
+    });
+    await vi.waitFor(() => {
+      expect(rt.inspect().fragments.inFlight).toBe(1);
+    });
+    expect(rt.inspect().revisions.completed).toBe(1);
+
+    pending.get('hero')?.resolve({
+      status: 'rendered',
+      html: '<h1 data-payload-field="title">draft</h1>',
+    });
+    await vi.waitFor(() => {
+      expect(rt.inspect().revisions.completed).toBe(2);
+    });
   });
 
   it('patches a fragment boundary when no handler is configured, warning LP0806 once', async () => {
@@ -257,5 +468,71 @@ describe('fragment strategy', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(handler).not.toHaveBeenCalled();
     expect(document.querySelector('h1')?.textContent).toBe('Old');
+  });
+
+  it('renders only a normally planned boundary owned by the current document', async () => {
+    document.body.innerHTML =
+      '<section data-payload-owner="global:home"><div data-payload-fragment="own" data-payload-depends="title"></div></section>' +
+      '<section data-payload-owner="global:other"><div data-payload-fragment="foreign" data-payload-depends="title"></div></section>' +
+      '<div data-payload-fragment="unowned" data-payload-depends="title"></div>';
+    const rendered: string[] = [];
+    start(
+      (_request, boundary) => {
+        rendered.push(boundary.id);
+        return Promise.resolve({ status: 'rendered', html: '<p>draft</p>' });
+      },
+      { scopeBindingsByOwner: true },
+    );
+
+    post({ title: 'draft' });
+    await vi.waitFor(() => {
+      expect(rendered).toEqual(['own']);
+    });
+  });
+
+  it('keeps owner filtering off when scopeBindingsByOwner is off', async () => {
+    document.body.innerHTML =
+      '<section data-payload-owner="global:home"><div data-payload-fragment="own" data-payload-depends="title"></div></section>' +
+      '<section data-payload-owner="global:other"><div data-payload-fragment="foreign" data-payload-depends="title"></div></section>' +
+      '<div data-payload-fragment="unowned" data-payload-depends="title"></div>';
+    const rendered: string[] = [];
+    start((_request, boundary) => {
+      rendered.push(boundary.id);
+      return Promise.resolve({ status: 'rendered', html: '<p>draft</p>' });
+    });
+
+    post({ title: 'draft' });
+    await vi.waitFor(() => {
+      expect(rendered).toEqual(['own', 'foreign', 'unowned']);
+    });
+  });
+
+  it('owner-filters fieldless fragment boundaries streamed after navigation', async () => {
+    document.body.innerHTML =
+      '<section data-payload-owner="global:home"><h1 data-payload-field="title">saved</h1></section>';
+    const rendered: string[] = [];
+    const rt = start(
+      (_request, boundary) => {
+        rendered.push(boundary.id);
+        return Promise.resolve({ status: 'rendered', html: '<p>draft</p>' });
+      },
+      { scopeBindingsByOwner: true },
+    );
+    let done = once('afterUpdate');
+    post({ title: 'draft' });
+    await done;
+    done = once('afterUpdate');
+    rt.navigationCommit();
+    await done;
+
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<section data-payload-owner="global:home"><div data-payload-fragment="own-late" data-payload-depends="title"></div></section>' +
+        '<section data-payload-owner="global:other"><div data-payload-fragment="foreign-late" data-payload-depends="title"></div></section>' +
+        '<div data-payload-fragment="unowned-late" data-payload-depends="title"></div>',
+    );
+    await vi.waitFor(() => {
+      expect(rendered).toEqual(['own-late']);
+    });
   });
 });

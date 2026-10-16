@@ -15,12 +15,10 @@ export default defineConfig({
   integrations: [
     livePreview({
       mode: 'middleware',
-      // The integration serializes its options into the build, so it cannot
-      // carry the `authorizePreview` function the 2.0 strict default requires.
-      // Intent-only is the coherent opt-out for integration-registered
-      // middleware (the SvelteKit fixture shows the strict + authorizePreview
-      // path, and astro-hybrid shows a hand-composed authorized middleware).
-      defaults: 'v1',
+      // The integration serializes its options into the build, so the hook
+      // travels by module reference (ADR 0024) and the strict 2.0 default
+      // holds: a preview needs the token the mock admin mints.
+      authorizePreviewModule: './src/live-preview/authorize.ts',
       revealEditedField: true,
       allowedOrigins: ['http://localhost:4183', 'http://127.0.0.1:4183'],
       debug: true,

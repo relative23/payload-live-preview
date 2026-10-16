@@ -139,6 +139,10 @@ are isolated and cannot replace that fallback or escape as unhandled rejections.
 | ⚠️ Plugin contexts have a finite lifetime                                                                    | Retaining a context after rollback or removal does not permit new registrations     |
 | ⚠️ Transforms cannot perform asynchronous work                                                               | Revision-aware async preparation belongs in lifecycle hooks, before render dispatch |
 
+## 2.1 addendum: runtime and navigation ownership
+
+### Runtime sessions own what `start()` acquires
+
 2026-09-19 (2.1): the runtime gives each session a scope of the same kind.
 `start()` opens a `LifetimeScope` (`src/core/lifetime-scope.ts`: own, close in
 reverse, guard each release — the form the inline runtime carries; the plugin
@@ -158,3 +162,44 @@ timer, which a suspended runtime keeps), the disposer a call returns
 (navigation listeners, the `__livePreview` handle) or a page-wide accessor
 left in place on purpose (Vue's mount signal, ADR 0015). A new acquisition
 fails the architecture gate until it is written down.
+
+### The lifecycle binding and retained message have longer-lived owners
+
+2026-09-24 (2.1): a committed client-router navigation is a revision boundary,
+not a new runtime session. The session's listener stays attached while its
+message generation advances. The inline bootstrap owns the
+`bindNavigationLifecycle()` disposer outside `LifetimeScope`: it must survive
+`suspend()` so a persisted `pageshow` can reacquire a session, and
+`__livePreview.destroy()` removes it before destroying the runtime. Failure to
+publish the global handle runs the same unbind-and-destroy rollback. A consumer
+that binds a `LivePreviewClient` directly owns the disposer returned by
+`bindNavigationLifecycle()`.
+
+The one retained accepted message belongs to the `MessageBus` instance, not to
+an individual `start()` scope. That deliberate exception lets the same runtime
+replay after a router commit and, within the heartbeat rule below, after a
+back/forward-cache suspension. It is neither module-global nor shared with a
+replacement client. `destroy()` forgets it even when the runtime is suspended;
+a heartbeat expiry also forgets it. A local replay does not kick the heartbeat,
+so it cannot extend the remote sender's deadline.
+
+On a persisted restore, `start()` asks `HeartbeatTimer.resume()` whether the
+original deadline elapsed while the session was suspended before it attempts a
+replay. An expired deadline runs timeout cleanup and prevents replay. With the
+default disabled heartbeat (`heartbeatMs: 0`) there is no time-based expiry
+claim; ownership then ends at explicit destroy or page/runtime replacement.
+
+Within a live session, a confirmed navigation commit invalidates pending token,
+merge, scheduled-write, fragment, and route work before rebuilding the cache.
+The retained message then receives a new generation and revision. Retained
+bindings are written again, auto-binding gets a new baseline search, and an
+unsaved field absent from the committed route can escalate. Mutation-driven
+cache rebuilds and the older public refresh methods stay cache-only.
+
+`tests/unit/core/session-scope.test.ts` holds acquisition and release counts
+across suspend, destroy, failed start, re-entrant close, and fifty sessions.
+`tests/unit/core/navigation-lifecycle.test.ts` pins ownership and idempotent
+unbind of page and router listeners. `tests/integration/runtime-preview-context.test.ts`
+pins global-handle rollback and destroy teardown, while
+`tests/unit/core/lifecycle-heartbeat.test.ts` proves an expired suspended
+heartbeat is handled before retained replay.

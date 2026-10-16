@@ -2,7 +2,7 @@
 
 Real-time live preview between the Payload admin and an Astro frontend: edit in the CMS, watch the iframe update. This guide goes from an empty project to a working preview and covers the three ways the runtime reaches a page.
 
-> A hydrated React or Vue app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` hooks. This guide is for Astro and every other server-rendered or static frontend, where those hooks do not apply.
+> Payload's framework-independent [`@payloadcms/live-preview`](https://payloadcms.com/docs/live-preview/client) client powers its official React and Vue wrappers. Use a framework hook where a hydrated client tree owns the output. This guide covers Astro markup outside such a tree; an Astro page may use both.
 
 ## How it works
 
@@ -12,7 +12,7 @@ Payload admin (iframe parent)                 Astro page (iframe)
                                                 bound DOM node in place
 ```
 
-Elements carry `data-payload-field="…"`. The injected runtime detects that it runs inside the admin's preview iframe, listens for the admin's `postMessage` updates and writes them into the DOM. No rebuild, no reload, no client framework.
+Elements carry `data-payload-field="…"`. The injected runtime detects that it runs inside the admin's preview iframe, listens for the admin's `postMessage` updates and writes them into the DOM. A scalar patch needs no rebuild, full-page reload or client framework. Fragment and route strategies can make a server or router request when a patch cannot represent the change.
 
 Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to, `PREVIEW_TOKEN_SECRET` the secret shared with the Payload side for signed tokens.
 
@@ -52,7 +52,7 @@ Astro evaluates `astro.config.mjs` before it loads `.env`, and `import.meta.env`
 
 `mode` selects how the runtime reaches a page. A static build has no request to decide on, so `'inline'` and `'loader'` are delivery choices and not authorization boundaries: neither changes a response header, carries a nonce or reads a draft, and the injected runtime does not start at all outside a preview frame. What an editor is shown is decided by whatever fetches the draft — see [authorization.md](authorization.md). `'middleware'` is the mode that runs per request, and the one the policy engine gates.
 
-**`'inline'` (the default)** bakes the runtime into every page at build time. It works without a server, and every ordinary visitor downloads about 35 KB gzip for a feature only an editor uses.
+**`'inline'` (the default)** bakes the runtime into every page at build time. It works without a server, and every ordinary visitor downloads about 44 KiB gzip with the default inline script for a feature only an editor uses.
 
 **`'loader'`** keeps the pages small. Each page carries a bootstrap of a few hundred bytes that checks the preview context and fetches the runtime as a content-hashed, SRI-verified asset only inside a preview. The asset is published once at `/_payload-live-preview/runtime.<hash>.js` (below Astro's `base`, when one is set), cached across every page, and identical for every site on the same package version, so it carries no deployment secret. `astro dev` serves the same path from memory. The price is one extra request the first time an editor opens a preview.
 
@@ -65,19 +65,34 @@ livePreview({
 
 Under a strict CSP the asset is a same-origin script with an `integrity` attribute and needs no `'unsafe-inline'`. The bootstrap is an inline `<script>` without a nonce, because a static build has no request to derive one from; its content is deterministic for a package version and configuration, so a `'sha256-…'` source expression covers it.
 
-**`'middleware'`** injects at request time in `output: 'server'` projects, so only requests carrying preview intent receive the bytes. The integration serializes its options into the build, so it cannot carry the `authorizePreview` function the strict default requires; it refuses to build without `strict: false` (or `defaults: 'v1'`) and then delivers on intent alone:
+**`'middleware'`** injects at request time in `output: 'server'` projects, into a response the server authorized and no other. The integration serializes its options into the build, so it cannot carry the `authorizePreview` hook as a function; it takes the module that exports it ([ADR 0024](architecture/0024-authorization-by-module-reference.md)):
 
 ```ts
 livePreview({
   mode: 'middleware',
-  strict: false, // intent-only: the query parameter alone triggers injection
+  authorizePreviewModule: './src/live-preview/authorize.ts',
   allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
   serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN,
   mergeDepth: 1,
 }),
 ```
 
-Intent is the query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`); `previewSignals` can add `Sec-Fetch-Dest: iframe`, and `defaults: 'v1'` restores the admin referer as well. All of them are client-controlled. For a preview gated on a verified request, register `createLivePreviewMiddleware()` yourself as in step 5: it takes the hook, and the integration stays out of `astro.config.mjs`.
+```ts
+// src/live-preview/authorize.ts
+import { authorizePreviewRequest } from 'payload-live-preview/server';
+
+export default (request: Request) =>
+  authorizePreviewRequest(request, {
+    type: 'payload-session',
+    serverURL: import.meta.env.PAYLOAD_URL,
+  });
+```
+
+A path beginning with `./` is relative to the project root; a package specifier is passed to Vite unchanged, and one outside the project is refused. The module is server code: the middleware imports it, and the page never does. If its default export is not a function, the server says so when it loads. Step 5 describes the hook and its strategies; composing `createLivePreviewMiddleware()` yourself, as shown there, does the same with the function in hand.
+
+#### Intent-only delivery is not authorization
+
+With `strict: false` (or the deprecated `defaults: 'v1'`) and no hook, the middleware injects on preview intent alone: the query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`), `Sec-Fetch-Dest: iframe` through `previewSignals`, and under `'v1'` the admin referer. All of them are client-controlled, so anyone who adds the parameter receives the runtime. Use it for a local demo, not for drafts.
 
 ## 3. Mark what should update
 
@@ -94,7 +109,9 @@ stay correct without naming a single field. It needs the endpoint from
 
 A static build has no server at request time, so there the fields are bound
 individually — and inside a boundary as well, for the ones an editor types into
-while watching: a patch keeps focus and the caret, a re-render does not.
+while watching. A direct patch keeps the target element. A component render or
+fragment morph also retains state when it keeps that node, but a changed type,
+key or position can replace it.
 
 ```astro
 ---
@@ -120,8 +137,11 @@ import RichText from 'payload-live-preview/astro/RichText.astro';
 
 On a server without a global DOM, pass the document the sanitizer should parse
 with as the `document` prop (linkedom's `parseHTML(...).document`, for example);
-it is per render, so two requests never share one. Without the prop the
-component uses the document `setSanitizerDocument()` supplied.
+it is per render, so two requests never share one. Add `requireDocument` and a
+render without a document throws instead of returning unsanitised markup, as
+3.0 does by default ([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)).
+Without the prop the component uses the document the deprecated
+`setSanitizerDocument()` supplied.
 
 That is the whole frontend. Open the page inside the admin's preview and edits appear as you type.
 
@@ -219,7 +239,7 @@ Wrap such a component in a `data-payload-fragment` boundary, export an endpoint 
 ## Gotchas
 
 - **Empty fields need an anchor.** If you render a binding only when the field is non-empty, editing a previously-empty field has nowhere to land. Render the node unconditionally (`<div data-payload-field="subtitle">{subtitle ?? ''}</div>`) or use `PreviewBoundary`.
-- **Client islands.** Bind fields in server-rendered regions. A hydrated island that re-renders a bound node overwrites the live patch; mark its root with `data-payload-island` so the runtime never patches or morphs into it ([renderers.md](renderers.md)).
+- **Client islands.** Bind fields in server-rendered regions. A hydrated island that re-renders a bound node overwrites the live patch; mark its root with `data-payload-island` so the runtime never patches or morphs into it. Native `<astro-island>` roots are also boundaries. While Astro keeps their `ssr` marker, the runtime holds the current snapshot and sends it after hydration removes the marker ([renderers.md](renderers.md#islands)). An island inside a fragment hydrates from the build's own modules and takes later revisions through Astro's props handoff; its container needs `resolve: resolveIslandModule` ([hybrid.md](hybrid.md#first-use-astro-resources), ADR 0021).
 - **`Referrer-Policy: no-referrer`** on the admin breaks zero-config origin detection. Set `allowedOrigins` explicitly (you already do).
 - **`serverURL` credentials.** Browser-side REST merging uses `credentials: 'include'`; Payload still has to authorize that request. The initial server-side draft read forwards only the credentials the verified context carries.
 
@@ -227,7 +247,7 @@ Wrap such a component in a `data-payload-fragment` boundary, export an endpoint 
 
 - [`examples/astro-payload`](../examples/astro-payload) — the integration in `mode: 'loader'`, the fastest way to see the whole flow.
 - [`examples/astro-inline`](../examples/astro-inline) and [`examples/astro-middleware`](../examples/astro-middleware) — the same page in the other two modes.
-- [`examples/astro-hybrid`](../examples/astro-hybrid) — server-rendered fragments behind a hand-composed middleware that mints a preview token and injects on intent (`defaults: 'v1'`); the fragment endpoint verifies that token with the `signed-token` strategy.
+- [`examples/astro-hybrid`](../examples/astro-hybrid) — server-rendered fragments behind a hand-composed middleware that mints a preview token and injects on intent (`strict: false`); the fragment endpoint verifies that token with the `signed-token` strategy.
 
 ## Next
 

@@ -18,10 +18,13 @@ Set `revealEditedField` on the client, the inline script or any adapter
 
 ```ts
 initLivePreview({
-  allowedOrigins: [import.meta.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
+  allowedOrigins: [import.meta.env.VITE_PAYLOAD_ADMIN_ORIGIN],
   revealEditedField: true,
 });
 ```
+
+The example assumes Vite's default `VITE_` public prefix. The origin is public
+configuration; do not put a token or secret in that variable.
 
 When a field's value changes, the preview scrolls that field's bound element
 (`[data-payload-field]`, see [docs/bindings.md](bindings.md)) into view. It

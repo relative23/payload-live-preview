@@ -68,6 +68,24 @@ describe('trustedHtml', () => {
     }
   });
 
+  it('keeps the string fallback when an initially non-callable factory getter changes', () => {
+    const createPolicy = vi.fn(() => ({ createHTML: (input: string) => `wrapped:${input}` }));
+    let firstLookup = true;
+    (globalThis as { trustedTypes?: unknown }).trustedTypes = {
+      get createPolicy() {
+        if (firstLookup) {
+          firstLookup = false;
+          return undefined;
+        }
+        return createPolicy;
+      },
+    };
+
+    expect(trustedHtml('<p>first</p>')).toBe('<p>first</p>');
+    expect(trustedHtml('<p>second</p>')).toBe('<p>second</p>');
+    expect(createPolicy).not.toHaveBeenCalled();
+  });
+
   it('prefers a policy the site handed in, and can be told to pass strings through', () => {
     installFakeApi();
     const mine = { createHTML: vi.fn((input: string) => `mine:${input}`) };

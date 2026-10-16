@@ -1,0 +1,25 @@
+/** Only Nitro imports this host and its credential file. Each decision belongs to event.context, not the bounded process-local login store. */
+import { readFileSync } from 'node:fs';
+import { getRequestURL, type H3Event } from 'h3';
+import { createNextHostReference as createHostReference } from '../../reference.mjs';
+
+let current: { host: ReturnType<typeof createHostReference>; origin: string } | undefined;
+export function fixture() {
+  if (process.env.PLP_NUXT_HOST_ENABLED !== 'local-test-only' || !process.env.PLP_NUXT_HOST_CONFIG) return null;
+  if (!current) {
+    const options = JSON.parse(readFileSync(process.env.PLP_NUXT_HOST_CONFIG, 'utf8'));
+    current = { host: createHostReference({ ...options, enabled: true, fetch }), origin: options.audience };
+  }
+  return current;
+}
+export function target(event: H3Event, suffix = '') {
+  const active = fixture();
+  if (!active || event.headers.get('host') !== new URL(active.origin).host || event.headers.get('x-forwarded-proto') !== 'https') return null;
+  const url = getRequestURL(event);
+  if (url.origin !== active.origin || (suffix && !url.pathname.endsWith(suffix))) return null;
+  if (suffix) url.pathname = url.pathname.slice(0, -suffix.length);
+  return url;
+}
+export function refused() {
+  return new Response(null, { status: 403, headers: { 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer', vary: 'Cookie' } });
+}

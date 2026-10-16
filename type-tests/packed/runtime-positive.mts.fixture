@@ -22,17 +22,23 @@ import {
 } from 'payload-live-preview/nextjs';
 import {
   buildLivePreviewCsp,
+  createFragmentEndpoint as createNuxtFragmentEndpoint,
   livePreviewNitroPlugin,
   type LivePreviewLocals as NuxtLivePreviewLocals,
   type LivePreviewNuxtOptions,
 } from 'payload-live-preview/nuxt';
 import { buildLivePreviewUrl } from 'payload-live-preview/payload';
 import {
+  livePreview as payloadLivePreview,
+  type LivePreviewPluginOptions,
+} from 'payload-live-preview/plugin';
+import {
   definePreview,
   type AuthorizedPreviewContext,
   type PreviewAuthorizationOutcome,
 } from 'payload-live-preview/server';
 import {
+  createFragmentEndpoint as createSvelteFragmentEndpoint,
   livePreviewHandle,
   type LivePreviewLocals as SvelteKitLivePreviewLocals,
   type LivePreviewSvelteKitOptions,
@@ -67,6 +73,12 @@ const astroOptions = {
 const nextOptions = { inject: 'always' } satisfies LivePreviewNextOptions;
 const svelteOptions = { manageCsp: 'full' } satisfies LivePreviewSvelteKitOptions;
 const nuxtOptions = { previewSignals: ['query'] } satisfies LivePreviewNuxtOptions;
+const payloadOptions = {
+  baseUrl: 'https://example.com',
+  collections: { posts: ({ data }) => `/posts/${String(data['slug'])}` },
+  globals: { homepage: '/' },
+  breakpoints: [{ name: 'fluid', label: 'Fluid', width: '100%', height: 900 }],
+} satisfies LivePreviewPluginOptions;
 
 const publicValues = [
   generateInlineScript(),
@@ -80,6 +92,7 @@ const publicValues = [
   livePreviewNitroPlugin(nuxtOptions),
   buildLivePreviewCsp(nuxtOptions, 'nonce'),
   buildLivePreviewUrl({ baseUrl: 'https://example.com' }),
+  payloadLivePreview(payloadOptions),
   onRequest,
   synchronousExpressionPlugin,
   asynchronousExpressionPlugin,
@@ -104,21 +117,52 @@ const crossEntryOptions: LivePreviewNextOptions = {
 };
 
 async function crossEntryDraftRead(request: Request): Promise<unknown> {
+  const document = {
+    kind: 'collection',
+    slug: 'pages',
+    id: 0,
+  } as const satisfies import('payload-live-preview/server').AuthorizedPreviewDocument;
+  const payload = {
+    serverURL: 'https://admin.example.test',
+    document,
+    maxDepth: 1,
+  } satisfies import('payload-live-preview/core').AuthorizedPreviewPayloadScope;
+  const scope: import('payload-live-preview').AuthorizedPreviewScope = { payload };
   const verdict = await authorizePreviewRequest(request, {
     type: 'verifier',
-    verify: () => ({ subject: 'editor' }),
+    verify: () => ({ subject: 'editor', expiresAt: Date.now() + 60_000, scope }),
   });
   if (!verdict.authorized) return null;
   const preview = definePreview({ serverURL: 'https://admin.example.test', depth: 1 });
-  return preview.fetchDocument({ collection: 'pages', authorization: verdict.context });
+  return preview.fetchDocument({ collection: 'pages', id: 0, authorization: verdict.context });
 }
 
 // The fragment endpoint takes the middleware's hook as it is, and the intent
 // detector the adapters' spelling of the admin origins.
 const fragmentEndpoint = createFragmentEndpoint({
   registry: {},
+  limits: { timeoutMs: 5000, totalTimeoutMs: 6000 },
+  render: (_component, _props, input) => {
+    const signal: AbortSignal = input.signal;
+    signal.throwIfAborted();
+    return Promise.resolve('<p>rendered</p>');
+  },
   authorizePreview: (request) =>
     authorizePreviewRequest(request, { type: 'verifier', verify: () => null }),
+});
+
+const nativeFragmentOptions = {
+  registry: {},
+  authorizePreview: () => null,
+};
+const nuxtFragmentEndpoint = createNuxtFragmentEndpoint(nativeFragmentOptions);
+void nuxtFragmentEndpoint(new Request('https://site.example/fragment'));
+void nuxtFragmentEndpoint(new Request('https://site.example/fragment'), { node: { req: {} } });
+const svelteFragmentEndpoint = createSvelteFragmentEndpoint(nativeFragmentOptions);
+void svelteFragmentEndpoint({ request: new Request('https://site.example/fragment') });
+void svelteFragmentEndpoint({
+  request: new Request('https://site.example/fragment'),
+  platform: { req: {} },
 });
 const intent = hasPreviewIntent(new Request('https://example.com/?preview=true'), {
   allowedOrigins: ['https://admin.example.com'],

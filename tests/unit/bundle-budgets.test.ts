@@ -1,3 +1,6 @@
+// 2026-10-04 (2.1.0): stop superseded merges after diagnostics and simplify legacy
+// relation planning. Paired Node24.19/npm12.0.2 measurements at epoch1791096072 move
+// changed rows by their measured deltas and preserve existing raw/gzip/Brotli reserves.
 import { describe, expect, it } from 'vitest';
 import {
   INLINE_BUDGET,
@@ -9,10 +12,13 @@ import { findBudgetViolations, measureBundle } from '../../scripts/bundle-measur
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
-    expect(INLINE_BUDGET).toEqual({ raw: 115_550, gzip: 36_489, brotli: 32_196 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 93_010, gzip: 29_456, brotli: 26_162 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 122_234, gzip: 38_675, brotli: 34_027 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 127_186, gzip: 40_258, brotli: 35_312 });
+    // 2026-10-08: paired Node24.19/npm12.0.2, epoch1791096072; after empty Payload2
+    // fields and fragment response fixes. Exact measured deltas retain each
+    // profile's previous raw/gzip reserves and its 120-byte Brotli reserve.
+    expect(INLINE_BUDGET).toEqual({ raw: 144_568, gzip: 45_499, brotli: 39_884 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 117_485, gzip: 36_927, brotli: 32_630 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 153_118, gzip: 48_291, brotli: 41_947 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 158_703, gzip: 50_272, brotli: 43_573 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

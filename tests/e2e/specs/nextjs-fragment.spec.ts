@@ -1,5 +1,5 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
-import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
+import { NEXT_ORIGIN, post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 /**
  * The fragment strategy through the Next.js adapter (`examples/nextjs-payload`,
@@ -16,7 +16,7 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * test is the fragment request's.
  */
 
-const APP = 'http://localhost:4174';
+const APP = NEXT_ORIGIN;
 const OWNER = { globalSlug: 'home' };
 
 interface FragmentStats {
@@ -50,7 +50,51 @@ test.describe('fragment preview (Next.js)', () => {
     expect((await fragments(frame)).handler).toBe(true);
     await expect(frame.getByTestId('hero-subtitle')).toHaveCount(0);
 
+    const fragmentResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        response.url() === `${APP}/payload/fragment` &&
+        response.frame() === frame,
+    );
     await post(page, { title: 'With subtitle', subtitle: 'From the form', body: 'one two' }, OWNER);
+    const response = await fragmentResponse;
+    await test.info().attach('next-fragment-response-headers', {
+      body: JSON.stringify({ status: response.status(), headers: response.headers() }),
+      contentType: 'application/json',
+    });
+    expect(response.status()).toBe(200);
+    const responseText = await response.text();
+    await test.info().attach('next-fragment-response', {
+      body: JSON.stringify({ status: response.status(), body: responseText }),
+      contentType: 'application/json',
+    });
+    const responseBody: unknown = JSON.parse(responseText);
+    expect(responseBody).toMatchObject({
+      boundary: { id: 'hero' },
+      metadata: { renderer: 'react-dom' },
+      html: expect.any(String),
+    });
+    if (
+      typeof responseBody !== 'object' ||
+      responseBody === null ||
+      !('html' in responseBody) ||
+      typeof responseBody.html !== 'string'
+    ) {
+      throw new Error('The fragment response must include its rendered HTML.');
+    }
+    const rendered = await frame.evaluate((html) => {
+      const document = new DOMParser().parseFromString(html, 'text/html');
+      return {
+        title: document.querySelector('[data-testid="hero-title"]')?.textContent,
+        subtitle: document.querySelector('[data-testid="hero-subtitle"]')?.textContent,
+        words: document.querySelector('[data-testid="hero-words"]')?.textContent,
+      };
+    }, responseBody.html);
+    expect(rendered).toEqual({
+      title: 'With subtitle',
+      subtitle: 'From the form',
+      words: '2 words',
+    });
     await expect(frame.getByTestId('hero-subtitle')).toHaveText('From the form');
     await expect(frame.getByTestId('hero-words')).toHaveText('2 words');
 

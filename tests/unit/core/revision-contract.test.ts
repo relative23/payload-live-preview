@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import type { FieldRenderer } from '@core/types';
@@ -151,8 +151,10 @@ describe('superseded and completed', () => {
     // Same value again: with the default renderer this still writes, so use a
     // field nothing is bound to — the flush runs and applies zero writes.
     post({ unbound: 'x' });
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    expect(runtime.inspect().revisions.completed).toBe(2);
+    // Waits for the runtime, not a fixed time: a fixed wait failed under load (PHD-15).
+    await vi.waitFor(() => {
+      expect(runtime.inspect().revisions.completed).toBe(2);
+    });
     done = afterUpdate();
     post({ title: 'two' });
     await done;

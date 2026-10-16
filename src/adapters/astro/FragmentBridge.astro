@@ -1,0 +1,25 @@
+---
+/** The consumer's Astro compiler owns this internal template, not a private factory.
+ * Fresh container locals carry only the registry-selected component and its props.
+ */
+import type { AstroInstance } from 'astro';
+
+type BridgeData = {
+  component: AstroInstance['default'];
+  props: Record<string, unknown>;
+};
+
+function isBridgeData(value: unknown): value is BridgeData {
+  return (
+    typeof value === 'object' && value !== null &&
+    'component' in value && typeof value.component === 'function' &&
+    'props' in value && typeof value.props === 'object' && value.props !== null &&
+    !Array.isArray(value.props)
+  );
+}
+
+const bridge: unknown = Reflect.get(Astro.locals, '__payloadLivePreviewFragment');
+if (!isBridgeData(bridge)) throw new Error('Missing trusted fragment bridge');
+const Component = bridge.component;
+---
+<Component {...bridge.props} />

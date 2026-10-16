@@ -101,6 +101,8 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly FragmentStrategyUnavailable: "LP0806";
     readonly UnboundChangeRefresh: "LP0807";
     readonly EscalationUnavailable: "LP0808";
+    readonly IslandStartUnavailable: "LP0809";
+    readonly RouteRefreshUnconfirmed: "LP0810";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
 }>;
@@ -234,6 +236,7 @@ export interface LivePreviewEventMap {
         readonly detail: PayloadDocumentEventDetail;
         readonly timestamp: number;
     };
+    readonly revisionDisplay: RevisionDisplay;
 }
 
 // @public
@@ -419,6 +422,40 @@ export interface RenderContext {
 export type RendererKey = FieldType | CustomRendererKey;
 
 // @public
+export interface RevisionDisplay {
+    readonly awaitingIslands: number;
+    readonly deferred: number;
+    readonly revision: number;
+    readonly shortfalls: readonly RevisionShortfall[];
+    readonly state: RevisionDisplayState;
+}
+
+// @public
+export type RevisionDisplayState = 'pending' | 'current' | 'partial' | 'unconfirmed' | 'superseded';
+
+// @public
+export type RevisionShortfall = {
+    readonly kind: 'fragment';
+    readonly id: string;
+    readonly key: string | undefined;
+    readonly code: DiagnosticCode;
+} | {
+    readonly kind: 'route-saved';
+} | {
+    readonly kind: 'route-failed';
+    readonly outcome: RouteOutcome;
+} | {
+    readonly kind: 'unfaithful' | 'unbound';
+    readonly field: string;
+} | {
+    readonly kind: 'write';
+    readonly field: string;
+    readonly code: DiagnosticCode;
+} | {
+    readonly kind: 'merge';
+};
+
+// @public
 export type RichTextRenderer = (value: unknown, context: {
     readonly fieldName: string;
     readonly element: Element;
@@ -426,10 +463,13 @@ export type RichTextRenderer = (value: unknown, context: {
 }) => string;
 
 // @public
+export type RouteOutcome = 'refreshed' | 'partial' | 'failed' | 'refused' | 'superseded';
+
+// @public
 export type SanitizerPolicyMode = 'compat' | 'strict';
 
 // @internal
-export function unboundFieldNames(fields: Readonly<Record<string, unknown>>, boundNames: Iterable<string>, locale?: string): readonly string[];
+export function unboundFieldNames(fields: Readonly<Record<string, unknown>>, boundNames: Iterable<string>, locale?: string, coverPaths?: readonly string[], subfieldCoverage?: 'descendant' | 'declared'): readonly string[];
 
 // @public
 export interface UnboundFieldsOverlayOptions {

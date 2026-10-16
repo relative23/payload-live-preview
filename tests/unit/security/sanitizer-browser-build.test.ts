@@ -46,7 +46,7 @@ function bundleForBrowser(inlineBuild: boolean): string {
 describe('sanitizeHtml — the SSR surface under the browser build define', () => {
   it('keeps the SSR error and the injected document when the define is absent', () => {
     const bundled = bundleForBrowser(false);
-    expect(bundled).toContain('provide one with setSanitizerDocument');
+    expect(bundled).toContain('pass one per call during SSR');
     expect(bundled).toContain('SanitizerEnvironmentError');
   });
 
@@ -54,7 +54,7 @@ describe('sanitizeHtml — the SSR surface under the browser build define', () =
     // The guards read the define in place: routed through a helper, esbuild
     // will not inline the call, and the branch shipped to every page.
     const bundled = bundleForBrowser(true);
-    expect(bundled).not.toContain('provide one with setSanitizerDocument');
+    expect(bundled).not.toContain('pass one per call during SSR');
     expect(bundled).not.toContain('SanitizerEnvironmentError');
   });
 });

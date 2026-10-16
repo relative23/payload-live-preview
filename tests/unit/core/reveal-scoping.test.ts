@@ -61,9 +61,20 @@ function post(message: Record<string, unknown>): Promise<void> {
       origin: TRUSTED,
     }),
   );
+  // Until the runtime reports the revision settled (ADR 0023); a 60 ms grace
+  // here could give up first under load (PHD-15).
   return new Promise((resolve) => {
-    emitter.once('afterUpdate', () => resolve());
-    setTimeout(resolve, 60);
+    const off = emitter.on('revisionDisplay', (display) => {
+      if (display.state !== 'pending') done();
+    });
+    const fallback = setTimeout(() => {
+      done();
+    }, 2_000);
+    const done = (): void => {
+      off();
+      clearTimeout(fallback);
+      setTimeout(resolve, 0);
+    };
   });
 }
 

@@ -1,0 +1,35 @@
+import { livePreview, type LivePreviewBreakpoint } from 'payload-live-preview/plugin';
+import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import type { LivePreviewConfig, Plugin, RootLivePreviewConfig } from 'payload';
+
+type PayloadLivePreviewUrl = Exclude<NonNullable<LivePreviewConfig['url']>, string>;
+
+const breakpoint = {
+  name: 'fluid',
+  label: 'Fluid',
+  width: '100%',
+  height: '75vh',
+} satisfies LivePreviewBreakpoint;
+const payloadBreakpoint: NonNullable<LivePreviewConfig['breakpoints']>[number] = breakpoint;
+const rootConfig: RootLivePreviewConfig = {
+  breakpoints: [payloadBreakpoint],
+  collections: ['posts'],
+  openByDefault: true,
+};
+const transform = livePreview({
+  baseUrl: 'https://site.example',
+  collections: { posts: '/posts' },
+  breakpoints: [breakpoint],
+});
+const payloadPlugin: Plugin = transform;
+const callback: PayloadLivePreviewUrl = buildLivePreviewUrl({
+  baseUrl: 'https://site.example',
+  collections: { posts: ({ data }) => `/posts/${String(data['slug'] ?? '')}` },
+});
+const nullableCallback: PayloadLivePreviewUrl = buildLivePreviewUrl({
+  baseUrl: 'https://site.example',
+  collections: { posts: ({ data }) => (data['slug'] ? `/posts/${String(data['slug'])}` : null) },
+  fallback: null,
+});
+
+void [callback, nullableCallback, payloadPlugin, rootConfig];

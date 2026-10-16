@@ -1,7 +1,8 @@
 /**
  * Flattens a parsed field schema into dotted paths (`hero.title`,
- * `sections.*.heading`). Tabs, rows and collapsibles have no name and
- * dissolve into their inner fields.
+ * `sections.*.heading`). Named tabs in Payload 2 own data beneath their name;
+ * rows, collapsibles and the older custom tab lookup retain flat inner paths.
+ * Separate flat and fully named passes prevent nested tabs multiplying paths.
  */
 
 import type {
@@ -23,7 +24,8 @@ export function buildSchemaIndex(
   basePath = '',
 ): SchemaIndex {
   const out = new Map<string, PayloadFieldSchema>();
-  walk(schemas, basePath, out);
+  walk(schemas, basePath, out, false);
+  walk(schemas, basePath, out, true);
   return out;
 }
 
@@ -31,21 +33,31 @@ function walk(
   schemas: readonly PayloadFieldSchema[],
   basePath: string,
   out: Map<string, PayloadFieldSchema>,
+  namedTabs: boolean,
 ): void {
   for (const schema of schemas) {
     if (STRUCTURAL_TYPES.has(schema.type)) {
-      if (schema.fields) walk(schema.fields, basePath, out);
+      const fields = schema.fields;
+      if (fields) {
+        const path =
+          namedTabs && schema.type === 'tabs'
+            ? basePath === ''
+              ? schema.name
+              : `${basePath}.${schema.name}`
+            : basePath;
+        walk(fields, path, out, namedTabs);
+      }
       continue;
     }
     const path = basePath === '' ? schema.name : `${basePath}.${schema.name}`;
     out.set(path, schema);
     if (schema.type === 'group') {
-      if (schema.fields) walk(schema.fields, path, out);
+      if (schema.fields) walk(schema.fields, path, out, namedTabs);
     } else if (schema.type === 'array' && schema.fields) {
-      walk(schema.fields, `${path}.*`, out);
+      walk(schema.fields, `${path}.*`, out, namedTabs);
     } else if (schema.type === 'blocks' && schema.blocks) {
       for (const block of schema.blocks) {
-        walk(block.fields, `${path}.*.${block.slug}`, out);
+        walk(block.fields, `${path}.*.${block.slug}`, out, namedTabs);
       }
     }
   }

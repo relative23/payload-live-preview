@@ -76,3 +76,21 @@ export class FieldRevealer {
     this.#lastField = undefined;
   }
 }
+
+/**
+ * Scroll one binding into view. Keyed by document as well as field: two
+ * documents on one page have their own `title`, and revealing one must not
+ * count as revealing the other.
+ */
+export function revealBinding(
+  revealer: FieldRevealer,
+  target: {
+    readonly element: Element;
+    readonly owner?: string | undefined;
+    readonly fieldName: string;
+  },
+): RevealOutcome | 'skipped-same' | 'no-element' {
+  const win = target.element.ownerDocument.defaultView as RevealWindow | null;
+  if (win === null) return 'no-element';
+  return revealer.reveal(`${target.owner ?? ''} ${target.fieldName}`, target.element, win);
+}

@@ -22,16 +22,26 @@ async function openOwners(page: Page): Promise<FrameLocator> {
   await page.goto(`${APP}/admin.html?target=/owners`);
   const frame = page.frameLocator('[data-testid="preview-frame"]');
   await expect(frame.getByTestId('doc-a')).toBeVisible();
+  // Started and listening: on this hydrated route the runtime waits for
+  // SvelteKit's root after `start()` (ADR 0015), and a message posted in that
+  // window is dropped, as `started()` in the shared helpers says.
   await expect
     .poll(
       () =>
         page.evaluate(() => {
           const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
           const w = frame?.contentWindow as
-            | (Window & { __livePreview?: { inspect: () => { started: boolean } } })
+            | (Window & {
+                __livePreview?: {
+                  inspect: () => { started: boolean; hydration: { state: string } };
+                };
+              })
             | null
             | undefined;
-          return w?.__livePreview?.inspect().started ?? false;
+          const snapshot = w?.__livePreview?.inspect();
+          return (
+            snapshot !== undefined && snapshot.started && snapshot.hydration.state !== 'waiting'
+          );
         }),
       { timeout: 15_000 },
     )

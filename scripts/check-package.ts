@@ -7,9 +7,9 @@
  * its types use a separate consumer that installs the reviewed ts-morph peer.
  */
 
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import {
   checkApiReports,
   checkDualDeclarationParity,
@@ -48,9 +48,106 @@ import {
   detailFor,
   isRecord,
   ROOT,
+  run,
 } from './package-smoke-support';
-import { checkPackedTypeContracts } from './package-smoke-types';
+import {
+  checkPackedPayloadPluginTypeContracts,
+  checkPackedTypeContracts,
+} from './package-smoke-types';
 import { findForbiddenPackageLifecycleScripts } from './release-contracts';
+
+const PAYLOAD_PLUGIN_TYPE_VERSIONS = ['2.32.3', '3.89.0'] as const;
+
+async function createPayloadPluginTypeConsumer(options: {
+  readonly archiveDirectory: string;
+  readonly consumer: string;
+  readonly packageArchive: string;
+  readonly version: (typeof PAYLOAD_PLUGIN_TYPE_VERSIONS)[number];
+}): Promise<void> {
+  await initializeConsumer(options.consumer);
+  const packageInstall = installStrictly(options.consumer, [options.packageArchive]);
+  if (packageInstall.status !== 0) {
+    throw new Error(
+      `installing the packed archive for Payload ${options.version} type compatibility failed:\n${detailFor(packageInstall)}`,
+    );
+  }
+
+  await mkdir(options.archiveDirectory, { recursive: true });
+  const packedPayload = run(
+    'npm',
+    [
+      'pack',
+      '--ignore-scripts',
+      '--json',
+      '--pack-destination',
+      options.archiveDirectory,
+      `payload@${options.version}`,
+    ],
+    options.consumer,
+  );
+  if (packedPayload.status !== 0) {
+    throw new Error(
+      `packing Payload ${options.version} without lifecycle scripts failed:\n${detailFor(packedPayload)}`,
+    );
+  }
+
+  let reportValue: unknown;
+  try {
+    reportValue = JSON.parse(packedPayload.stdout);
+  } catch (error) {
+    throw new Error(`npm pack returned malformed JSON for Payload ${options.version}`, {
+      cause: error,
+    });
+  }
+  const reports = Array.isArray(reportValue)
+    ? reportValue
+    : isRecord(reportValue)
+      ? Object.values(reportValue)
+      : [];
+  if (reports.length !== 1 || !isRecord(reports[0])) {
+    throw new Error(`npm pack returned no unique report for Payload ${options.version}`);
+  }
+  const report = reports[0];
+  if (report['name'] !== 'payload' || report['version'] !== options.version) {
+    throw new Error(
+      `npm pack resolved Payload ${options.version} as ${String(report['name'])}@${String(report['version'])}`,
+    );
+  }
+  const filename = report['filename'];
+  if (typeof filename !== 'string' || filename.length === 0 || basename(filename) !== filename) {
+    throw new Error(`npm pack returned an unsafe filename for Payload ${options.version}`);
+  }
+
+  const payloadRoot = resolve(options.consumer, 'node_modules/payload');
+  await mkdir(payloadRoot, { recursive: true });
+  const extract = run(
+    'tar',
+    [
+      '-xzf',
+      resolve(options.archiveDirectory, filename),
+      '-C',
+      payloadRoot,
+      '--strip-components=1',
+    ],
+    options.consumer,
+  );
+  if (extract.status !== 0) {
+    throw new Error(
+      `extracting Payload ${options.version} for type compatibility failed:\n${detailFor(extract)}`,
+    );
+  }
+
+  const manifestValue: unknown = JSON.parse(
+    await readFile(resolve(payloadRoot, 'package.json'), 'utf8'),
+  );
+  if (
+    !isRecord(manifestValue) ||
+    manifestValue['name'] !== 'payload' ||
+    manifestValue['version'] !== options.version
+  ) {
+    throw new Error(`extracted Payload ${options.version} manifest does not match its pack report`);
+  }
+}
 
 async function main(): Promise<void> {
   const options = parsePackageArtifactArguments(process.argv.slice(2));
@@ -84,6 +181,7 @@ async function main(): Promise<void> {
     }
     const resolutionProbe = probeUnavailableDependencies(consumer, [
       'astro',
+      'payload',
       'ts-morph',
       'tsx',
       'typescript',
@@ -105,6 +203,23 @@ async function main(): Promise<void> {
       failures.push(`packed manifest exposes forbidden consumer lifecycle hook: ${path}`);
     }
     const packageName = manifestValue['name'];
+
+    const payloadTypeArchives = resolve(temporaryRoot, 'payload-plugin-type-archives');
+    const payload2TypeConsumer = resolve(temporaryRoot, 'payload-2.32.3-type-consumer');
+    await createPayloadPluginTypeConsumer({
+      archiveDirectory: payloadTypeArchives,
+      consumer: payload2TypeConsumer,
+      packageArchive: tarball,
+      version: '2.32.3',
+    });
+    const payload3TypeConsumer = resolve(temporaryRoot, 'payload-3.89.0-type-consumer');
+    await createPayloadPluginTypeConsumer({
+      archiveDirectory: payloadTypeArchives,
+      consumer: payload3TypeConsumer,
+      packageArchive: tarball,
+      version: '3.89.0',
+    });
+
     const peerDependencies = manifestValue['peerDependencies'];
     if (!isRecord(peerDependencies) || typeof peerDependencies['ts-morph'] !== 'string') {
       throw new Error('packed manifest does not declare the ts-morph codegen peer');
@@ -162,6 +277,32 @@ async function main(): Promise<void> {
       );
     }
 
+    // Node itself stays DOM-less. This consumer supplies jsdom only as an
+    // explicit SSR document, so the Lexical smoke can distinguish no document,
+    // per-call documents and the deprecated process-wide fallback.
+    const lexicalConsumer = resolve(temporaryRoot, 'lexical-consumer');
+    await initializeConsumer(lexicalConsumer, {
+      jsdom: await readReviewedPeerVersion('jsdom'),
+    });
+    const lexicalDomInstall = bootstrapDeclaredPeersStrictly(lexicalConsumer);
+    if (lexicalDomInstall.status !== 0) {
+      throw new Error(
+        `installing the exact reviewed Lexical smoke DOM failed:\n${detailFor(lexicalDomInstall)}`,
+      );
+    }
+    const lexicalInstall = installStrictly(lexicalConsumer, [tarball]);
+    if (lexicalInstall.status !== 0) {
+      throw new Error(
+        `installing the packed archive in the Lexical consumer failed:\n${detailFor(lexicalInstall)}`,
+      );
+    }
+    const lexicalDomProbe = probeLocalDependency(lexicalConsumer, 'jsdom');
+    if (lexicalDomProbe.status !== 0) {
+      throw new Error(
+        `Lexical smoke DOM did not resolve from the isolated consumer:\n${detailFor(lexicalDomProbe)}`,
+      );
+    }
+
     const codegenPackageRoot = resolve(codegenConsumer, 'node_modules/payload-live-preview');
     // Each entry's declarations are extracted where its peers resolve: the
     // codegen consumer has `ts-morph`, the peer consumer has the frameworks the
@@ -198,6 +339,7 @@ async function main(): Promise<void> {
       ...(await checkPackedImportSmokes({
         consumer,
         codegenConsumer,
+        lexicalConsumer,
         peerConsumer,
         codegenPackageRoot,
         packageName,
@@ -211,6 +353,13 @@ async function main(): Promise<void> {
         packageName,
       })),
     );
+    failures.push(
+      ...(await checkPackedPayloadPluginTypeContracts({
+        payload2: payload2TypeConsumer,
+        payload3: payload3TypeConsumer,
+        packageName,
+      })),
+    );
 
     if (failures.length > 0) {
       for (const failure of failures) console.error(`FAIL ${failure}`);
@@ -218,7 +367,7 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      `[package] PASS ${String(evidence.files.length)} packed files; publint, ATTW, ${String(typedApiEntries.length)} API reports, isolated script-free strict installs, peer-free and explicit-peer ESM/CJS, CLI, and positive/negative strict NodeNext types verified`,
+      `[package] PASS ${String(evidence.files.length)} packed files; publint, ATTW, ${String(typedApiEntries.length)} API reports, isolated script-free strict installs, peer-free and explicit-peer ESM/CJS, exact Payload 2.32.3/3.89.0 plugin types, DOM-less Lexical sanitizer contexts, CLI, and positive/negative strict NodeNext types verified`,
     );
 
     await finalizePackageArtifact({

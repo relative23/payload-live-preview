@@ -60,6 +60,35 @@ describe('isSafeUrl — denied forms', () => {
   });
 });
 
+describe('isSafeUrl — a scheme spelled through whitespace (PHD-19)', () => {
+  // The URL parser reads none of these as a scheme; DOMPurify, and parsers
+  // older than the URL standard, strip the gaps first and read one.
+  it.each([
+    'java script:alert(1)',
+    'foo :bar',
+    'foo\u00a0:bar',
+    'foo\u200b:bar',
+    'jav\u0001ascript:alert(1)',
+    'ftp ://example.com',
+    'my file: notes.pdf',
+    'JAVA SCRIPT:alert(1)',
+  ])('returns false for %j', (input) => {
+    expect(isSafeUrl(input)).toBe(false);
+  });
+
+  it.each([
+    'my file.png',
+    'a b/c d.png',
+    './a b.png',
+    'folder/my file:copy.png',
+    'https ://example.com',
+    'HTTPS ://example.com',
+    'mailto :a@b.example',
+  ])('still returns true for %j: no unsafe scheme once the whitespace is gone', (input) => {
+    expect(isSafeUrl(input)).toBe(true);
+  });
+});
+
 describe('backslash forms the URL parser resolves to another origin', () => {
   it.each([['/\\evil.com'], ['\\\\evil.com'], ['\\/evil.com'], ['/\t\\evil.com'], ['///evil.com']])(
     '%j is protocol-relative: safe as http(s), but external',
