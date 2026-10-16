@@ -1,9 +1,11 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { findStrykerVitestConfigViolations } from '../../../scripts/runner-config-policy';
 import {
   buildTestInventory,
+  discoverTestFiles,
   groupForFile,
   serializeTestInventory,
 } from '../../../scripts/test-policy';
@@ -254,6 +256,30 @@ describe('test policy', () => {
       ['missing base selection', vitestStrykerConfig.replace('...base.test,', '')],
     ] as const) {
       expect(findStrykerVitestConfigViolations(strykerConfig, mutated), label).not.toEqual([]);
+    }
+  });
+
+  it('lists the repository tests and not the packages installed below tests/', async () => {
+    // A copy-installed fixture carries the specs its dependencies publish; they are not this
+    // repository's tests, and the inventory used to refuse the whole tree because of them.
+    const root = mkdtempSync(join(tmpdir(), 'plp-inventory-'));
+    try {
+      for (const path of [
+        'tests/unit/own.test.ts',
+        'tests/fixtures/consumer/node_modules/dependency/src/spec.spec.ts',
+        'tests/fixtures/consumer/node_modules/@scope/dependency/dist/check.test.js',
+      ]) {
+        mkdirSync(dirname(join(root, path)), { recursive: true });
+        writeFileSync(join(root, path), '');
+      }
+
+      const found = await discoverTestFiles(join(root, 'tests'));
+
+      expect(found.map((path) => relative(root, path).replaceAll('\\', '/'))).toEqual([
+        'tests/unit/own.test.ts',
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
     }
   });
 

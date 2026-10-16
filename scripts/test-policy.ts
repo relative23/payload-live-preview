@@ -44,10 +44,12 @@ export interface TestInventory {
   readonly files: readonly TestInventoryFile[];
 }
 
-async function discoverTestFiles(directory: string): Promise<readonly string[]> {
+/** A fixture installed below `tests/` carries the specs its dependencies publish; none are ours. */
+export async function discoverTestFiles(directory: string): Promise<readonly string[]> {
   const discovered: string[] = [];
   const entries = await readdir(directory, { withFileTypes: true });
   for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    if (entry.name === 'node_modules') continue;
     const path = resolve(directory, entry.name);
     if (entry.isDirectory()) discovered.push(...(await discoverTestFiles(path)));
     else if (entry.isFile() && TEST_FILE_PATTERN.test(entry.name)) discovered.push(path);
