@@ -357,6 +357,22 @@ describe('workflow contracts', () => {
       replacement: "&& '300000' || '300000'",
       violation: 'deep-quality.yml job critical-gates with.soak-duration-ms is not',
     },
+    {
+      label: 'a Dependency Review that also allows an advisory nobody reviewed',
+      file: 'ci.yml',
+      original: 'GHSA-4ww4-68q3-h7g5',
+      replacement: 'GHSA-4ww4-68q3-h7g5, GHSA-aaaa-bbbb-cccc',
+      violation:
+        'ci.yml job dependency-review step uses actions/dependency-review-action with.allow-ghsas is not',
+    },
+    {
+      label: 'a Dependency Review that only fails on critical advisories',
+      file: 'ci.yml',
+      original: 'fail-on-severity: high',
+      replacement: 'fail-on-severity: critical',
+      violation:
+        'ci.yml job dependency-review step uses actions/dependency-review-action with.fail-on-severity is not "high"',
+    },
   ])('rejects $label', ({ file, original, replacement, violation }) => {
     const violations = findWorkflowContractViolations(mutated(file, original, replacement));
     expect(
