@@ -28,6 +28,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: { siteName: 'Nuxt fixture', payloadUrl: process.env['PLP_PAYLOAD_SERVER_URL'] ?? '' },
   },
+  // Off on purpose: package.json overrides simple-git to 4, the only line that
+  // fixes its advisories, and @nuxt/devtools 3 imports the default export that
+  // 4 removed. With the devtools on, `nuxt dev` fails while loading that module.
   devtools: { enabled: false },
   // The mock admin is a static file so it never carries preview intent and
   // therefore never receives the runtime — the same split the other examples
