@@ -176,7 +176,7 @@ strategies, and the initial draft read.
 
 ### Astro
 
-```ts
+```js
 // astro.config.mjs
 import { defineConfig } from 'astro/config';
 import { livePreview } from 'payload-live-preview/astro';

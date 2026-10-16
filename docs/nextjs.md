@@ -6,7 +6,7 @@ Next.js 15 is not supported. Measured on 2026-09-17 with Next.js 15.5.25: 30 of 
 
 > A client-rendered React app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) hook: it re-renders your real component tree, so conditional sections and custom components update with full fidelity. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
 
-Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to.
+Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to. Under the strict default a production run needs `PUBLIC_PAYLOAD_ADMIN_ORIGIN` to be an `https:` origin: with `http://localhost:3000`, `next start` answers every route with a 500 that names the rule, while `next dev` accepts it.
 
 ## Install
 
@@ -123,7 +123,28 @@ export const { GET } = createRuntimeAssetRoute(livePreviewOptions);
 ```
 
 The layout spreads the same object into `livePreviewScriptProps()` — the
-synchronous helper the next section shows — so both sides name the same file.
+synchronous helper the next section shows — so both sides name the same file:
+
+```tsx
+// app/layout.tsx
+import type { ReactNode } from 'react';
+import { livePreviewScriptProps } from 'payload-live-preview/nextjs';
+import { livePreviewOptions } from './live-preview';
+
+const previewScript = livePreviewScriptProps({ ...livePreviewOptions });
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <script {...previewScript} />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
 The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`. The bootstrap loads it with `integrity` and `crossorigin="anonymous"`; the managed CSP already allows `'self'`, and under `strictDynamic` the nonce on the bootstrap covers the script it inserts.
 
 Move the route file and set `assetPath` together if the app is not served from the site root — the bootstrap requests exactly what `assetPath` says. With `runtime: LEAN_RUNTIME` both sides must see that option too, since the artifact decides the hash. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).

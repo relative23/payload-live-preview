@@ -556,7 +556,7 @@ tree does not have that failure mode, and that is the one thing it does better.
 A strategy to escalate to closes it, and nothing else is needed — escalating is
 what `onUnfaithfulPatch` does by default:
 
-```ts
+```js
 // astro.config.mjs reads process.env: import.meta.env has no PUBLIC_ variables there (docs/astro.md)
 livePreview({
   allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
