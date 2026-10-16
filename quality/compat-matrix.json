@@ -964,7 +964,7 @@
     {
       "name": "Nuxt",
       "package": "nuxt",
-      "supported": "3.x",
+      "supported": "3.x (end of life since 31 July 2026: kept working, not officially supported)",
       "fixture": "examples/nuxt-payload",
       "tested": [
         {
