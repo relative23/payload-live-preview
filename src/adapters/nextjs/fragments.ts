@@ -93,8 +93,11 @@ export function defineFragment<Props extends object>(
 export function createFragmentEndpoint(
   options: FragmentEndpointOptions,
 ): (request: Request) => Promise<Response> {
-  return createFragmentEndpointHandler(options, {
+  const handler = createFragmentEndpointHandler(options, {
     render: renderWithReact,
     rendererName: RENDERER_NAME,
   });
+  // Next.js calls a route handler as handler(request, { params }); that route
+  // context is not the request's `locals` (ADR 0029), so only the request goes on.
+  return (request) => handler(request);
 }
