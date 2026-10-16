@@ -27,22 +27,23 @@ The modules that answer them are the **trusted core**:
 
 | Module                          |     Lines | Decides                                                     |
 | ------------------------------- | --------: | ----------------------------------------------------------- |
-| `src/core/message-guards.ts`    |        95 | which shapes are a message                                  |
+| `src/core/message-guards.ts`    |        94 | which shapes are a message                                  |
 | `src/core/message-bus.ts`       |       467 | which window may send and which verdict commits             |
-| `src/core/data-merger.ts`       |       302 | credentialed transport and which attempt wins               |
-| `src/core/legacy-population.ts` |       424 | bounded v2 planning, response identity and body teardown    |
+| `src/core/data-merger.ts`       |       315 | credentialed transport and which attempt wins               |
+| `src/core/legacy-population.ts` |       425 | bounded v2 planning, response identity and body teardown    |
 | `src/core/attribute-binding.ts` |        68 | which attribute a remote value may become                   |
 | `src/security/url-validator.ts` |        60 | which URL is safe                                           |
 | `src/security/escape.ts`        |        48 | how text becomes escaped markup                             |
-| `src/security/sanitizer.ts`     |       500 | which tags and attributes CMS content keeps                 |
+| `src/security/sanitizer.ts`     |       501 | which tags and attributes CMS content keeps                 |
 | `src/security/trusted-types.ts` |        87 | the policy every HTML sink goes through                     |
-| **Total**                       | **2 051** | 1 639 without blank/comment lines; 47 exported declarations |
+| **Total**                       | **2 065** | 1 645 without blank/comment lines; 47 exported declarations |
 
-Measured on 2026-10-03. The full 424-line population primitive is counted:
+Measured on 2026-10-16. The full 425-line population primitive is counted:
 417 lines in the initial v2 correction, then two lines for the separately
 reviewed native-stream work bound, two for shared polymorphic-target work
-and three for bounded block-definition lookup. Delegating these checks does
-not remove them from the reader's trust scope.
+and three for bounded block-definition lookup, which made 424; three later
+reviews net one more (one line removed, two added). Delegating these checks
+does not remove them from the reader's trust scope.
 
 The boundary is not a feeling about which files are important. A module is in
 the core because it **holds a capability**: it listens to messages, sends a
@@ -84,9 +85,18 @@ renderer is a red build, and so is a justification whose site has moved.
 
 **3. The core's tests notice a changed line.** A Stryker profile mutates the
 nine modules and nothing else (`STRYKER_SCOPE=core`), with every mutant killed
-as the target. The retained historical score is in
-[quality/mutation-policy-core.json](../quality/mutation-policy-core.json).
-Its earlier eight-module measurements were
+as the target. The retained score is in
+[quality/mutation-policy-core.json](../quality/mutation-policy-core.json): the
+complete run of the nine modules on 2026-10-16, four workers, 29 minutes,
+measured 2 080 mutants, 98.94 % killed, 22 survived and none left unexecuted by
+a test. Each of the 22 is on that file's `equivalent` list — by file, line,
+mutator and the text it replaced — with one sentence saying why the program
+does the same with and without it: 13 in `legacy-population.ts`, six in
+`message-bus.ts`, two in `url-validator.ts` and one in `trusted-types.ts`. The
+policy fails the run when a survivor is missing from the list or a listed one
+is killed now, and the survivors stay visible in the report.
+
+Before `legacy-population.ts` joined, the core was eight modules, measured at
 1 202 mutants on 2026-09-11, 99.17 % killed, 10 survived and none left
 unexecuted by a test, 13 minutes. 2.0.1 adds ten in the sanitizer's `name`
 check for LP0409, all killed: 1 212 mutants, the same ten survivors, the same
@@ -94,30 +104,27 @@ score. 2.0.2 holds the sanitizer's server document under a registry name, one
 more mutant, killed by a case that pins the name: 1 213 mutants, the same ten
 survivors, 99.18 %. 2.0.3 moves the Trusted Types policy under a registry name
 of its own, five more mutants, the name pinned the same way: 1 218 mutants,
-the same ten survivors, 99.18 %. Each of the ten is on that file's
-`equivalent` list — by file, line, mutator and the text it replaced — with one
-sentence saying why the program does the same with and without it: the three
-on `detach()`'s paired fields, which are set and cleared together; the two
-empty-catch mutants whose `undefined` the callers negate like `false`; the
-guard on an undefined handler that the isolating catch would swallow anyway;
-the two Trusted Types guards a TypeError inside the same try reaches the same
-`null` as; the relative-path pattern's `+`, unanchored at the end; and the
-empty-string return `new URL('')` would throw its way to. The policy fails the
-run when a survivor is missing from the list or a listed one is killed now,
-and the survivors stay visible in the report. The first measurement, on
+the same ten survivors, 99.18 %. Those ten were the three on `detach()`'s
+paired fields, which are set and cleared together; the two empty-catch mutants
+whose `undefined` the callers negate like `false`; the guard on an undefined
+handler that the isolating catch would swallow anyway; the two Trusted Types
+guards a TypeError inside the same try reaches the same `null` as; the
+relative-path pattern's `+`, unanchored at the end; and the empty-string return
+`new URL('')` would throw its way to. Nine are still on the list; the second
+Trusted Types guard left it on 2026-10-04, when a getter that changes between
+two reads showed that the mutant is not equivalent. The first measurement, on
 2026-09-10, was 1 345 mutants and 88.40 %: of its 167 survivors, five were
 tests that mattered (the header that turns the merge into a read, a body that
 is not a document, `ready` with data, the global `fetch`), 39 lines were
 guards no test could reach and are gone, about a hundred were cheap
-boundary tests, and the ten above are what is left.
+boundary tests, and the ten above are what was left.
 
-The latest retained eight-module policy has 1 331 mutants and a 99.25 %
-minimum. That result does not measure the new nine-module source. Its full
-core and expanded Nightly measurements remain required, with no lowering of
-existing score, coverage, timeout or error controls. The four new critical
-coverage cells cover the population primitive, document session, parser and
-walker; their configured thresholds are targets until complete coverage is
-measured on the final source.
+The Nightly scope, 80 files, was measured in full the same day
+([quality/mutation-policy.json](../quality/mutation-policy.json)): 11 585
+mutants, 88.20 %, 54 without coverage. The four new critical coverage cells
+cover the population primitive, document session, parser and walker; their
+configured thresholds are targets until complete coverage is measured on the
+final source.
 
 These three rest on two that already existed: the layer rules (no upward
 import, no Node builtin in browser code, nothing browser-facing imports the
@@ -141,7 +148,7 @@ function that is handed `fetch` under another name. The core's own imports are
 held exact so that this stays a short list to check by hand.
 
 A thousand lines is about what one reader holds in one sitting, and that was
-the size this core set out to be. It is 2 051, and the difference is not a
+the size this core set out to be. It is 2 065, and the difference is not a
 second responsibility hiding in the list:
 133 of the sanitizer's lines are the allow-lists a reader has to read anyway,
 and about 130 of the bus's are the queue that commits token verdicts in arrival
@@ -153,9 +160,11 @@ hit, probes the encoding call makes itself — which are gone.
 
 ## The core in reading order
 
-Read the modules in this order; each one only depends on the ones before it.
-Every invariant has a number so a review can refer to one, and each names the
-gate or test that holds it.
+Read the modules in this order. Three of them lean on a primitive that comes
+after them: `data-merger.ts` on `legacy-population.ts`, `attribute-binding.ts`
+on `url-validator.ts` and `sanitizer.ts` on `trusted-types.ts`; the later
+section is where that primitive's invariants are. Every invariant has a number
+so a review can refer to one, and each names the gate or test that holds it.
 
 ### 1. `message-guards.ts` — what counts as a message
 
@@ -274,8 +283,10 @@ Held by: the sink inventory marks this as the one `gated` computed write
 ### 5. `url-validator.ts` — which URL is a URL
 
 - **U1** `http:`, `https:`, `mailto:` and `tel:` are the only absolute schemes;
-  `javascript:`, `data:`, `vbscript:`, `file:`, `blob:` and `about:` are refused
-  by pattern before parsing, with the whitespace a browser would strip.
+  every other one is refused, `javascript:`, `data:`, `vbscript:`, `file:`,
+  `blob:` and `about:` among them. A string the URL parser accepts is judged by
+  its parsed protocol; one it rejects is read for a scheme through the
+  whitespace and control characters a browser or DOMPurify would skip.
 - **U2** Tab, newline and carriage return are removed before the check, since
   the URL parser drops them anywhere in the input.
 - **U3** `#…`, `?…`, `/…`, `//…` and relative paths pass; a backslash pair
@@ -305,14 +316,16 @@ Held by: the core mutation profile; `tests/unit/security/escape.test.ts`.
   `createElement('template')` for this site).
 - **S2** Tags outside the allow-list are unwrapped, their children kept;
   `script`, `style`, `iframe`, `object`, `embed`, `link`, `meta`, `base`,
-  `form`, the form controls, `svg`, `math`, `template` and the frame family are
-  removed with their children.
+  `form`, `input`, `button`, `select`, `textarea`, `svg`, `math`, `template`,
+  `noscript` and the frame family are removed with their children. `label` and
+  `option` are unwrapped like any other tag outside the list.
 - **S3** `on*` and `style` attributes are removed on every tag, before the
   allow-list is consulted, so no extension can re-admit them.
 - **S4** Under `'strict'` — the 2.0 default — `id`, `name` and every
   `data-payload-*` are removed and reported once (LP0409): CMS content can
-  neither clobber a global nor add a binding. Other `data-*` pass only when
-  listed in `allowedDataAttributes`. `'compat'` keeps them, as 1.x did.
+  neither clobber a global nor add a binding. Other `data-*` pass only when a
+  `sanitizeHtml()` call lists them in `allowedDataAttributes`; the runtime's own
+  writes list none, so it removes them too. `'compat'` keeps them, as 1.x did.
 - **S5** `href`, `src`, `cite` and `poster` are removed when `isSafeUrl`
   refuses them; every `srcset` candidate is checked, whole as well as by its
   URL, and the attribute goes if one fails. `isSafeUrl` reads a scheme through
@@ -323,10 +336,10 @@ Held by: the core mutation profile; `tests/unit/security/escape.test.ts`.
   instance's, else the process default — so two clients on one page never
   share a policy through this module (ADR 0002).
 - **S8** `templateMode` — for an array item template the page author wrote,
-  never for CMS content — keeps `id`, `name` and the three reconciliation
-  attributes (`data-payload-key`, `data-payload-nested-key`,
-  `data-payload-nested-template`); every other `data-payload-*` is still
-  removed, so a template cannot add a binding.
+  never for CMS content — keeps `id`, `name` and the four reconciliation
+  attributes (`data-payload-key`, `data-payload-morph`,
+  `data-payload-nested-key`, `data-payload-nested-template`); every other
+  `data-payload-*` is still removed, so a template cannot add a binding.
 - **S9** `is` is emptied rather than removed: a parsed element's `is` value is
   immutable and the serializer writes it back after the attribute is gone, so
   a removed `is` would reach the re-parse and upgrade the element to the

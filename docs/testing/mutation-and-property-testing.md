@@ -19,11 +19,13 @@ in a fast-check failure identify the exact counterexample.
 
 The properties cover CSP parsing and merge fixed points, URL/origin policy, safe
 dotted data paths, sanitizer fixed points and sink invariants, MessageBus guards and
-ordered async token outcomes, plus model-based state machines for MessageBus
-attachments, scheduler revision ownership, and plugin resource ownership.
-The final scheduled profile completes all 26 tests at 10,000 runs per property in
-5.54 seconds on the maintainer baseline machine, including its contract for
-replayable environment overrides.
+ordered async token outcomes, the fragment endpoint's body bounds, the keyed morph,
+subfield coverage and an aimed sanitizer fuzz, plus model-based state machines for
+MessageBus attachments, scheduler revision ownership, and plugin resource ownership.
+The final scheduled profile completes all 36 tests at 10,000 runs per property,
+including its contract for replayable environment overrides. On a development
+host with two workers (2026-10-17) that took 206 seconds, 205 of them the aimed
+sanitizer fuzz.
 
 ## Stryker profiles
 
@@ -46,7 +48,7 @@ STRYKER_SCOPE=nightly npx stryker run stryker.config.js
 The core profile mutates the trusted core alone — the nine modules
 `quality/trusted-core.json` names, read from that file so the two lists cannot
 drift — because the figure the audit page quotes has to be the core's own
-and not the average of sixty files. Its target is every mutant
+and not the average of eighty files. Its target is every mutant
 killed; `quality/mutation-policy-core.json` holds the measured score, and its
 `equivalent` list names every survivor that is left, one entry each: the file,
 line and column, the mutator, the text it replaced and what it put there, and
@@ -61,11 +63,11 @@ development host and 85 to over 90 on the runner, about 40 minutes less than
 the slowest shard of the same run (63 to 137 minutes in two runs), so it costs
 runner minutes and no wall clock; its cap is 150 minutes and theirs 180. The
 nightly report cannot stand in for it — that one is a single score over
-sixty-odd files, while this one asks 98.94 % of nine and names every survivor. 2.0.3 is what the gate is for: a registry name
+eighty files, while this one asks 98.94 % of nine and names every survivor. 2.0.3 is what the gate is for: a registry name
 moved onto the realm, no test held it, and only the core run said so.
 
 Its timeout ceiling is 25 against 16 measured here and 17 on the runner, for the same reason the
-nightly one is 60 against 23: a loaded runner turns mutants the tests kill
+nightly one is 60 against 38: a loaded runner turns mutants the tests kill
 outright into timeouts, which count as detected and leave the score alone. The
 score minimum and the `equivalent` list stay exact.
 
@@ -111,7 +113,7 @@ coverage percentages are not a substitute for mutation evidence.
 - Scope: `src/security/csp.ts`, `src/security/url-validator.ts`,
   `src/core/field-value.ts`
 - Current baseline (`quality/mutation-policy-pr.json`, the file that decides):
-  361 total, mutation score 93.63%, zero no-coverage, error and ignored mutants,
+  374 total, mutation score 93.85%, zero no-coverage, error and ignored mutants,
   a timeout ceiling of 2 and a score drift band of 2 mutants.
 - Initial uncached result (2026-08-13): 296 total, 278 killed, 18 survived, zero
   no-coverage, zero timeout, and zero error mutants; mutation score 93.92%.
@@ -119,16 +121,16 @@ coverage percentages are not a substitute for mutation evidence.
   Complete uncached mutation run: 1 minute 43 seconds with four workers. A
   preceding run exposed a random-byte-dependent slash replacement survivor;
   deterministic `+` and `/` inputs made the 93.92% result repeatable.
-- Threshold: 90% break, 90% low, 95% high. Against 93.63% of 361 mutants the
-  break threshold is crossed after fourteen detected mutants are lost; the report
+- Threshold: 90% break, 90% low, 95% high. Against 93.85% of 374 mutants the
+  break threshold is crossed after fifteen detected mutants are lost; the report
   policy fails first, on the third, because it allows a drift of two.
 
 ### Surviving-mutant review
 
 No survivor is ignored by configuration. The review below classifies fourteen
 survivors — thirteen output-equivalent and one diagnostic-text mutant — and was
-last revised on 2026-09-11. The current baseline implies 23 survivors (361
-mutants at 93.63%, none uncovered); `quality/mutation-policy-pr.json` declares no
+last revised on 2026-09-11. The current baseline implies 23 survivors (374
+mutants at 93.85%, none uncovered); `quality/mutation-policy-pr.json` declares no
 `equivalent` list, so the survivors are held by the score alone and the ones not
 named here are not classified on this page. All remain visible in every report:
 

@@ -144,28 +144,31 @@ item is the attribute diff and child walk that retention costs. Measured
 
 ## Tree shaking — what one import costs
 
-Measured 2026-09-14 with `npm run test:treeshake` (`scripts/check-tree-shaking.ts`):
-a one-line consumer imports one symbol, Vite bundles it against the built
-package resolved through `node_modules` (so `exports` and `sideEffects`
-apply as after `npm install`), minified, gzip level 9. The budget is the gzip
-ceiling the script enforces.
+`npm run test:treeshake` (`scripts/check-tree-shaking.ts`): a one-line consumer
+imports one symbol, Vite bundles it against the built package resolved through
+`node_modules` (so `exports` and `sideEffects` apply as after `npm install`),
+minified, gzip level 9. Each row is held to the gzip ceiling in the table,
+which is `TREE_SHAKING_FIXTURES` in `scripts/tree-shaking-budgets.ts`; a row
+more than 2 % under its ceiling is reported, so the ceiling stays close to the
+size.
 
-| Consumer imports                                                 | gzip     | budget |
-| ---------------------------------------------------------------- | -------- | ------ |
-| `escapeHtml` from `payload-live-preview`                         | 210 B    | 214    |
-| `lexicalToHtml` from `payload-live-preview`                      | 5,043 B  | 5,045  |
-| `initLivePreview` from `payload-live-preview`                    | 44,601 B | 44,621 |
-| `generateInlineScript` from `payload-live-preview`               | 42,223 B | 42,252 |
-| `initLivePreview` from `payload-live-preview/core`               | 44,579 B | 44,599 |
-| `lexicalToHtml` from `payload-live-preview/lexical`              | 5,175 B  | 5,178  |
-| `morphElement` from `payload-live-preview/structural`            | 1,469 B  | 1,493  |
-| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 47,466 B | 47,500 |
-| `LEAN_RUNTIME` from `payload-live-preview/lean`                  | 29,188 B | 29,203 |
-| `useLivePreviewDocument` from `payload-live-preview/react`       | 5,100 B  | 5,180  |
-| `useLivePreviewDocument` from `payload-live-preview/vue`         | 5,096 B  | 5,176  |
-| `PluginManager` from `payload-live-preview/plugins`              | 3,315 B  | 3,372  |
+| Consumer imports                                                 | gzip ceiling |
+| ---------------------------------------------------------------- | ------------ |
+| `escapeHtml` from `payload-live-preview`                         | 214 B        |
+| `lexicalToHtml` from `payload-live-preview`                      | 5,701 B      |
+| `initLivePreview` from `payload-live-preview`                    | 55,557 B     |
+| `generateInlineScript` from `payload-live-preview`               | 53,246 B     |
+| `initLivePreview` from `payload-live-preview/core`               | 55,547 B     |
+| `lexicalToHtml` from `payload-live-preview/lexical`              | 5,840 B      |
+| `morphElement` from `payload-live-preview/structural`            | 1,581 B      |
+| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 58,495 B     |
+| `LEAN_RUNTIME` from `payload-live-preview/lean`                  | 37,253 B     |
+| `useLivePreviewDocument` from `payload-live-preview/react`       | 8,603 B      |
+| `useLivePreviewDocument` from `payload-live-preview/vue`         | 8,585 B      |
+| `PluginManager` from `payload-live-preview/plugins`              | 3,373 B      |
+| `livePreview` from `payload-live-preview/plugin`                 | 1,228 B      |
 
-Before this measurement existed, every row was 64 KB gzip: the root barrel
+Before this gate existed, every row was 64 KB gzip: the root barrel
 did not tree-shake at all. Three causes, all fixed in the same change:
 
 1. esbuild's `keepNames` — implemented with top-level helper statements a
