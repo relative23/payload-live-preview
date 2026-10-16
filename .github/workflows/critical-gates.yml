@@ -31,9 +31,12 @@ jobs:
     # share still measured 22 to 55 minutes in one run, because a mutant that times
     # out costs the full timeoutMS whatever its tests normally cost, and a loaded
     # runner produces more of them. Pricing timeouts into the weights was tried and
-    # did not predict wall time any better. So the cap carries headroom instead: a
-    # shard once reached 79 % at 90 minutes, which extrapolates to about 114.
-    timeout-minutes: 150
+    # did not predict wall time any better. So the cap carries headroom instead.
+    # Two runs of the 2.1 scope measured 79, 82, 89, 101, 129 and 137 minutes
+    # (ae95f71) and 63, 65, 83, 104, 127 and 127 (e03f369): the same shard took 79
+    # minutes in one run and 127 in the other, and 137 left 9 % of a 150-minute cap.
+    # The cap is 180, a third above the slowest.
+    timeout-minutes: 180
     permissions:
       contents: read
     strategy:
@@ -68,13 +71,15 @@ jobs:
   trusted-core-mutation:
     name: Trusted Core Mutation
     runs-on: ubuntu-latest
-    # About 40 minutes beside shards that run up to 150, so it costs runner
-    # minutes and no wall clock. The scope is the eight modules of the trusted
-    # core, graded against a policy the nightly one cannot stand in for: the
-    # nightly report is one score over sixty-odd files, while this one demands
-    # 99.18 % and an `equivalent` entry for every survivor by name. That is the
-    # check that would have caught the registry name no test held in 2.0.3.
-    timeout-minutes: 90
+    # Nine modules and 2,080 mutants: 29 minutes on a development host with four
+    # workers, 85 minutes on this runner in the run for e03f369 and more than 90
+    # in the run for ae95f71, which the former 90-minute cap cancelled. The cap is
+    # 150, two thirds above the 90 it is known to need. The scope is graded against
+    # a policy the nightly one cannot stand in for: the nightly report is one score
+    # over sixty-odd files, while this one demands 98.94 % and an `equivalent` entry
+    # for every survivor by name. That is the check that would have caught the
+    # registry name no test held in 2.0.3.
+    timeout-minutes: 150
     permissions:
       contents: read
     steps:

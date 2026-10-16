@@ -277,7 +277,7 @@ export const CRITICAL_GATES: WorkflowSpec = {
     // the baseline job grades the six reports joined back into one, so the
     // verdict stays a property of the scope rather than of the split.
     'critical-mutation': {
-      timeoutMinutes: 150,
+      timeoutMinutes: 180,
       permissions: READ_ONLY,
       matrix: { shard: [1, 2, 3, 4, 5, 6] },
       steps: [
@@ -291,9 +291,9 @@ export const CRITICAL_GATES: WorkflowSpec = {
     },
     // The trusted core on its own, beside the shards: same runtime, stricter
     // policy. The nightly report cannot stand in for it — one score over sixty
-    // files says nothing about eight that carry the capabilities.
+    // files says nothing about nine that carry the capabilities.
     'trusted-core-mutation': {
-      timeoutMinutes: 90,
+      timeoutMinutes: 150,
       permissions: READ_ONLY,
       steps: [
         ...PINNED_SETUP,
