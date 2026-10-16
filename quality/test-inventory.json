@@ -22,7 +22,7 @@
   "totals": {
     "files": 493,
     "suites": 933,
-    "tests": 4237,
+    "tests": 4238,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 400,
       "suites": 829,
-      "tests": 3860,
+      "tests": 3861,
       "benchmarks": 0
     }
   },
@@ -865,7 +865,7 @@
       "path": "tests/unit/adapters/fragment-locals.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 6,
       "benchmarks": 0
     },
     {

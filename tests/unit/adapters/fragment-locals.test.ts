@@ -86,6 +86,19 @@ describe("fragment props see the request's own server context (ADR 0029)", () =>
     expect(seen).toEqual([undefined]);
   });
 
+  it("Next.js: the route context Next hands a route handler is not the request's locals", async () => {
+    const seen: unknown[] = [];
+    // Next calls a route handler as handler(request, { params }).
+    const endpoint = createNextEndpoint(options(seen) as never) as unknown as (
+      request: Request,
+      context: unknown,
+    ) => Promise<Response>;
+    const response = await endpoint(request(), { params: Promise.resolve({}) });
+
+    expect(response.status).toBe(200);
+    expect(seen).toEqual([undefined]);
+  });
+
   it('an event without locals hands undefined, not the object of another request', async () => {
     const seen: unknown[] = [];
     const endpoint = createSvelteKitEndpoint(options(seen) as never);
