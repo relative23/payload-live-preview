@@ -3,7 +3,10 @@
  * Second route for the real-Payload navigation contract. Its published text
  * differs so the test proves the accepted unsaved snapshot was applied again.
  */
-import { ClientRouter } from 'astro:transitions';
+import * as transitions from 'astro:transitions';
+
+// Astro 5 renamed ViewTransitions to ClientRouter; the Astro matrix installs 4 as well.
+const Router = Reflect.get(transitions, 'ClientRouter') ?? Reflect.get(transitions, 'ViewTransitions');
 ---
 
 <html lang="en">
@@ -11,7 +14,7 @@ import { ClientRouter } from 'astro:transitions';
     <meta charset="utf-8" />
     <title>Live Preview Soft Navigation</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <ClientRouter />
+    <Router />
   </head>
   <body style="font:16px/1.5 system-ui,sans-serif;padding:2rem">
     <main data-testid="real-payload-soft-route">
