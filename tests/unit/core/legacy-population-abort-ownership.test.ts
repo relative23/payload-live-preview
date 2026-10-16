@@ -59,4 +59,47 @@ describe('legacy population — abort subscription ownership', () => {
     }
     expect(getEventListeners(owner.signal, 'abort')).toEqual([]);
   });
+
+  it('refuses with its own error when an abort listener fires on a signal that is not aborted', async () => {
+    // A hand-built or relayed signal can run its abort listeners while `aborted` is still false;
+    // the pending read ends as the module's refusal, not as a TypeError from a missing chunk.
+    const listeners = new Set<() => void>();
+    const signal = {
+      aborted: false,
+      addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+      removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener),
+    } as unknown as AbortSignal;
+    let beginReading!: () => void;
+    const reading = new Promise<void>((resolve) => {
+      beginReading = resolve;
+    });
+    let cancelled = 0;
+    const stream = new NativeReadableStream<Uint8Array>(
+      {
+        pull() {
+          beginReading();
+        },
+        cancel() {
+          cancelled += 1;
+        },
+      },
+      { highWaterMark: 0 },
+    );
+    const settled = populationBody(
+      new Response(stream as unknown as ReadableStream<Uint8Array>),
+      signal,
+      () => true,
+    ).then(
+      () => 'resolved',
+      (error: unknown) => error,
+    );
+    await reading;
+    for (const listener of listeners) listener();
+    const error = await settled;
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(TypeError);
+    expect((error as Error).message).toBe('invalid or oversized legacy population');
+    expect(cancelled).toBe(1);
+    expect(listeners.size).toBe(0);
+  });
 });

@@ -41,6 +41,123 @@
   },
   "equivalent": [
     {
+      "file": "src/core/legacy-population.ts",
+      "line": 38,
+      "column": 23,
+      "mutator": "EqualityOperator",
+      "original": "index < value.length",
+      "replacement": "index <= value.length",
+      "why": "one more pass reads `charCodeAt(value.length)`, which is NaN, and NaN is neither at most 31 nor 127, so the answer stays the same."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 58,
+      "column": 11,
+      "mutator": "BlockStatement",
+      "original": "{ return false; }",
+      "replacement": "{}",
+      "why": "an empty catch makes `segment` return `undefined` instead of `false`; its callers (`slug`, `id` and the field-name check) only test truthiness and `segment` is not exported, so a string `encodeURIComponent` rejects is refused either way. The mutant does not compile under `noImplicitReturns`."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 83,
+      "column": 10,
+      "mutator": "ConditionalExpression",
+      "original": "end > 0",
+      "replacement": "true",
+      "why": "at `end` 0 the second operand reads `charCodeAt(-1)`, which is NaN and never 47, so the loop stops there either way."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 83,
+      "column": 10,
+      "mutator": "EqualityOperator",
+      "original": "end > 0",
+      "replacement": "end >= 0",
+      "why": "the one extra test at `end` 0 reads `charCodeAt(-1)`, which is NaN and never 47, so the loop stops there either way."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 276,
+      "column": 11,
+      "mutator": "ConditionalExpression",
+      "original": "first === undefined",
+      "replacement": "false",
+      "why": "`identities` is a dense array of strings and the loop condition is `index < identities.length`, so `first` is never `undefined`; the guard only narrows the type."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 279,
+      "column": 17,
+      "mutator": "StringLiteral",
+      "original": "''",
+      "replacement": "\"Stryker was here!\"",
+      "why": "`url` is assigned from the last accepted candidate before any use: a request is pushed only after the empty-chunk refusal, and every chunk entry sets `url`, so the initial value is never read."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 280,
+      "column": 14,
+      "mutator": "ConditionalExpression",
+      "original": "index < identities.length",
+      "replacement": "true",
+      "why": "with the bound gone, `identities[index]` is `undefined` once the list is used up, and the `next === undefined` test on the next line leaves the loop at the same point."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 280,
+      "column": 14,
+      "mutator": "EqualityOperator",
+      "original": "index < identities.length",
+      "replacement": "index <= identities.length",
+      "why": "the one extra pass reads `identities[identities.length]`, which is `undefined`, and the `next === undefined` test on the next line leaves the loop at the same point."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 282,
+      "column": 13,
+      "mutator": "ConditionalExpression",
+      "original": "next === undefined",
+      "replacement": "false",
+      "why": "the loop condition on the line before keeps `index` below `identities.length`, so `next` is always a string; the test only narrows the type."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 292,
+      "column": 15,
+      "mutator": "ConditionalExpression",
+      "original": "chunk.length === 0",
+      "replacement": "false",
+      "why": "without this refusal the loop breaks with an empty chunk, and the check after the loop (`chunk.length === 0 || …`) throws the same error."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 300,
+      "column": 11,
+      "mutator": "ConditionalExpression",
+      "original": "chunk.length === 0",
+      "replacement": "false",
+      "why": "an empty chunk can only come from the `break` that the refusal inside the URL-length test already guards, so it has thrown before this line; the request cap in the same condition is untouched."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 343,
+      "column": 5,
+      "mutator": "OptionalChaining",
+      "original": "interrupt?.()",
+      "replacement": "interrupt()",
+      "why": "the Promise executor runs synchronously in the constructor and assigns `interrupt` before `abort` can be subscribed, so it is never `undefined` when called."
+    },
+    {
+      "file": "src/core/legacy-population.ts",
+      "line": 403,
+      "column": 7,
+      "mutator": "OptionalChaining",
+      "original": "reader?.releaseLock",
+      "replacement": "reader.releaseLock",
+      "why": "with no reader yet, `undefined.releaseLock()` throws a TypeError inside the try whose catch swallows every error, the same outcome as the skipped call."
+    },
+    {
       "file": "src/core/message-bus.ts",
       "line": 173,
       "column": 9,
@@ -122,5 +239,5 @@
       "why": "an empty string reaches `new URL('')`, which throws, and the relative-path pattern does not match it, so the same `false` comes out of the catch; the early return only saves the parse."
     }
   ],
-  "$comment": " 2026-10-03: Scope includes the reviewed legacy population change. The retained total/score and all drift, no-coverage, timeout, error and ignored controls are historical starting controls, not a new result. A complete non-incremental run on the final new source must establish the exact total/score and new measured shard weights before acceptance; equivalent cases remain unchanged pending exact report review. 2026-10-04: Remove the createPolicy condition-to-true equivalence after an authentic changing-getter counterexample: original keeps the string fallback, while the mutant creates a policy. Correct the origin-catch explanation to the three actual negating callers. Total, score and every drift/coverage/timeout/error/ignored limit remain unchanged historical controls until the fresh full nine-module report is reviewed; no new equivalence is granted. 2026-10-10: The custom-element morph opt-in (data-payload-morph, ADR 0008 §10) adds one mutant to sanitizer.ts, 429 to 430, and it is killed; a core run on the changed source measured sanitizer.ts at 430 mutants and 100.00%. That run also measured 2077 mutants over the nine modules at 98.60% with 29 survivors outside sanitizer.ts (legacy-population.ts 19, message-bus.ts 6, url-validator.ts 2, data-merger.ts 1, trusted-types.ts 1), none in a file the opt-in touches; they await the reviewed full report with the other starting controls."
+  "$comment": " 2026-10-03: Scope includes the reviewed legacy population change. The retained total/score and all drift, no-coverage, timeout, error and ignored controls are historical starting controls, not a new result. A complete non-incremental run on the final new source must establish the exact total/score and new measured shard weights before acceptance; equivalent cases remain unchanged pending exact report review. 2026-10-04: Remove the createPolicy condition-to-true equivalence after an authentic changing-getter counterexample: original keeps the string fallback, while the mutant creates a policy. Correct the origin-catch explanation to the three actual negating callers. Total, score and every drift/coverage/timeout/error/ignored limit remain unchanged historical controls until the fresh full nine-module report is reviewed; no new equivalence is granted. 2026-10-10: The custom-element morph opt-in (data-payload-morph, ADR 0008 §10) adds one mutant to sanitizer.ts, 429 to 430, and it is killed; a core run on the changed source measured sanitizer.ts at 430 mutants and 100.00%. That run also measured 2077 mutants over the nine modules at 98.60% with 29 survivors outside sanitizer.ts (legacy-population.ts 19, message-bus.ts 6, url-validator.ts 2, data-merger.ts 1, trusted-types.ts 1), none in a file the opt-in touches; they await the reviewed full report with the other starting controls. 2026-10-10: Of the 29 core survivors on the changed source, nine already had an equivalence entry; the other 20 (legacy-population.ts 19, data-merger.ts 1) were reviewed. Seven are killed by tests added the same day (block-definition refusals as the module's own error, the docs envelope and a chunk of 21 documents, an abort listener firing on a signal that is not aborted, and a status getter that starts a newer merge not aborting the obsolete controller again); thirteen in legacy-population.ts are granted as equivalent after each was applied by hand and compared with the original in more than 100000 differential cases, plus an independent review. Total, score and the drift, timeout and error limits stay the starting controls until the complete run."
 }

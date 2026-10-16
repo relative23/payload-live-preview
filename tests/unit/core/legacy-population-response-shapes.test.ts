@@ -75,3 +75,27 @@ describe('legacy population — plain response ownership', () => {
     }
   });
 });
+
+describe('legacy population — the docs envelope', () => {
+  const REFUSAL = /^invalid or oversized legacy population$/u;
+  const request = (count: number): Parameters<typeof fillLegacyPopulation>[0] => ({
+    url: `${SERVER}/api/authors?depth=1`,
+    ids: new Set(Array.from({ length: count }, (_, index) => `A${String(index)}`)),
+    slots: [],
+  });
+  const documents = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({ id: `A${String(index)}` }));
+
+  it.each([{}, { docs: {} }, { docs: null }, { docs: 1 }])(
+    'refuses an envelope without a docs array as an invalid population: %j',
+    (body) => {
+      expect(() => fillLegacyPopulation(request(1), body)).toThrow(REFUSAL);
+    },
+  );
+
+  it('accepts a chunk of documents and refuses one more than a chunk carries', () => {
+    expect(() => fillLegacyPopulation(request(20), { docs: documents(20) })).not.toThrow();
+    // Each document is expected and none repeats, so only the size limit refuses these.
+    expect(() => fillLegacyPopulation(request(21), { docs: documents(21) })).toThrow(REFUSAL);
+  });
+});

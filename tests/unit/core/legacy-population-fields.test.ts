@@ -8,6 +8,7 @@ import { fillLegacyPopulation, planLegacyPopulation } from '@core/legacy-populat
 import type { PayloadFieldSchema } from '@/types/payload-protocol';
 
 const author: PayloadFieldSchema = { name: 'author', type: 'relationship', relationTo: 'authors' };
+const REFUSAL = /^invalid or oversized legacy population$/u;
 const plan = (data: Record<string, unknown>, schema: readonly PayloadFieldSchema[], depth = 1) =>
   planLegacyPopulation(data, schema, 'https://cms.example.com', '/api', depth);
 
@@ -101,8 +102,9 @@ describe('legacy population — field ownership and value shapes', () => {
     for (const value of [[0], [null], ['A']]) {
       expect(() => plan({ rows: value }, [schema[0]!])).toThrow();
     }
-    expect(() => plan({ layout: [{ blockType: 'unknown' }] }, [schema[1]!])).toThrow();
-    expect(() => plan({ layout: [{}] }, [{ name: 'layout', type: 'blocks' }])).toThrow();
+    // The refusal is the module's own, not a TypeError from reading a missing block definition.
+    expect(() => plan({ layout: [{ blockType: 'unknown' }] }, [schema[1]!])).toThrow(REFUSAL);
+    expect(() => plan({ layout: [{}] }, [{ name: 'layout', type: 'blocks' }])).toThrow(REFUSAL);
     expect(plan({ rows: [{}] }, [{ name: 'rows', type: 'array' }])).toEqual({
       doc: { rows: [{}] },
       requests: [],
