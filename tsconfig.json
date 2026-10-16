@@ -56,7 +56,11 @@
       "@adapters/*": ["src/adapters/*"],
       "@types/*": ["src/types/*"],
       "@dsl/*": ["src/dsl/*"],
-      "@doctor/*": ["src/doctor/*"]
+      "@doctor/*": ["src/doctor/*"],
+      // Two files under tests/ import the package's own entries by name. The type-check reads the
+      // source for them, so it needs no build; the Web-host bundle aliases the first to dist itself.
+      "payload-live-preview/nextjs": ["src/adapters/nextjs/index.ts"],
+      "payload-live-preview/server": ["src/server/index.ts"]
     }
   },
   "include": ["src/**/*", "tests/**/*", "scripts/**/*", "*.config.ts"],
