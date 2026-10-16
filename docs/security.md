@@ -24,20 +24,20 @@ malformed cookie name, a relative `serverURL`), which the adapters re-throw
 rather than report as `unavailable`, so a misconfigured deployment fails on
 the first preview request instead of serving public pages quietly:
 
-| Strategy          | What it verifies                                                                                                                 | What it forwards to Payload                  |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `payload-session` | Exactly one named cookie (default `payload-token`) against `GET /api/<users>/me?depth=0`, bounded timeout, auth-collection check | That one cookie, as `context.payloadHeaders` |
-| `signed-token`    | An HMAC-SHA256 token from `issuePreviewToken()` bound to audience, path, locale, purpose, expiry; optional replay store          | Nothing                                      |
-| `verifier`        | Your own async function (SSO, custom cookie, edge auth) returning claims or `null`                                               | Whatever the verifier chose                  |
+| Strategy          | What it verifies                                                                                                                 | What it forwards to Payload                                                                   |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `payload-session` | Exactly one named cookie (default `payload-token`) against `GET /api/<users>/me?depth=0`, bounded timeout, auth-collection check | That one cookie, and the `origin` header when the check sent one, as `context.payloadHeaders` |
+| `signed-token`    | An HMAC-SHA256 token from `issuePreviewToken()` bound to audience, path, locale, purpose, expiry; optional replay store          | Nothing                                                                                       |
+| `verifier`        | Your own async function (SSO, custom cookie, edge auth) returning claims or `null`                                               | Whatever the verifier chose                                                                   |
 
-Every adapter accepts that verification as `authorizePreview`. It runs only
-on requests with intent, and a refusal blocks **all** response changes the
-adapter owns — runtime injection, CSP directives, nonce exposure —
-regardless of `autoInject` and `shouldInject`. The same context is what
-`createPreviewBindings({ authorization })` and the draft helpers'
-`authorization` option consume, so one authorization gates draft selection,
-attribute emission, and delivery. The threat model, the token format and
-the leakage channels it is designed against are in
+Every adapter that decides per request accepts that verification as
+`authorizePreview`. It runs only on requests with intent, and a refusal blocks
+**all** response changes the adapter owns — runtime injection, CSP directives,
+nonce exposure — regardless of `autoInject` and `shouldInject`. The same
+context is what `createPreviewBindings({ authorization })` and the draft
+helpers' `authorization` option consume, so one authorization gates draft
+selection, attribute emission, and delivery. The threat model, the token
+format and the leakage channels it is designed against are in
 [ADR 0006 — Authorized preview context](architecture/0006-authorized-preview-context.md).
 
 The controls keep deliberately narrow responsibilities:
@@ -53,15 +53,15 @@ The controls keep deliberately narrow responsibilities:
 `strict` is the default: an adapter that decides per request
 (`createLivePreviewMiddleware()`, `livePreviewHandle()`,
 `defineLivePreviewServerHandler()`, `livePreviewNitroPlugin()`) refuses to
-start without `authorizePreview`, without explicit `https` admin origins
-(outside development), or with referrer trust — including the trust the `'v1'`
-signal set implies. Astro's `livePreview()` integration in its default
-`mode: 'inline'` and in `'loader'` injects at build time and checks none of
-this; its `'middleware'` mode takes the hook by module reference
-(`authorizePreviewModule`, ADR 0024) and refuses the strict default without
-one. `strict: false` restores the 1.x intent-only behavior, with a one-time
-development warning, for a staged migration; so does the deprecated
-`defaults: 'v1'`, which 3.0 removes.
+start without `authorizePreview`, without non-empty `allowedOrigins`, with an
+origin that is not `https:` (outside development), or with `'referer'` among
+the resolved `previewSignals`, which the `'v1'` signal set includes. Astro's
+`livePreview()` integration in its default `mode: 'inline'` and in `'loader'`
+injects at build time and checks none of this; its `'middleware'` mode takes
+the hook by module reference (`authorizePreviewModule`, ADR 0024) and refuses
+the strict default without one. `strict: false` restores the 1.x intent-only
+behavior, with a one-time development warning, for a staged migration; so does
+the deprecated `defaults: 'v1'`, which 3.0 removes.
 
 When verification fails or is unavailable the adapters serve the ordinary
 published response unchanged. A response an adapter did change — runtime
@@ -90,10 +90,10 @@ and answers whether this call was the first. It has to check and record in
 one step — Redis `SET key 1 NX PX <ttl>`, a unique insert — because a read
 followed by a write lets two requests that carry the same token and arrive
 together both pass. `true` admits the token; any other answer refuses it as
-`replayed`, a throw as `unavailable`. The 1.x `isUsed`/`markUsed` shape is
-still accepted, deprecated, and removed in 3.0: it is the two-step shape and
-has exactly that race. A strategy that checks a token against it warns once in
-development.
+`replayed`, a throw as `unavailable`. The two-call `isUsed`/`markUsed` shape of
+the 2.0 beta is still accepted, deprecated, and removed in 3.0: it is the
+two-step shape and has exactly that race. A strategy that checks a token
+against it warns once in development.
 
 ```ts
 const replay = {
@@ -116,7 +116,7 @@ After the first accepted data-bearing update, the detector **locks** to that exa
 
 ⚠️ **Referrer-fallback mode:** when no explicit origins are configured, referrer detection is on and dev-mode matching is off, the referrer is the only trust source — any site that embeds the preview page in an iframe could then post (sanitized) updates into it. The inline bootstrap logs a console warning (`LP0102`) in this configuration; programmatic clients can inspect their configuration and provide their own diagnostics. Mitigations: set explicit `allowedOrigins`, and serve a `frame-ancestors` CSP so only the admin may frame the page (the adapters do this by default on intent-matched responses; use the authorization boundary above when that response change is protected).
 
-Note on intent detection and CSP: under the default `previewSignals: ['query']` only `?preview=true` (or a configured parameter) counts as intent; with `defaults: 'v1'` an iframe destination and an admin referer count too, so **any** iframe-destined request then gets the merged `frame-ancestors 'self' <admin-origins>` policy. Foreign origins remain blocked from framing; the relaxation versus a site-wide `frame-ancestors 'none'` is that `'self'` and the admin origins become allowed on those responses — and only after `authorizePreview` accepted the request under `strict`. Disable with `manageCsp: false` if you need `'none'` unconditionally.
+Note on intent detection and CSP: under the default `previewSignals: ['query']` only a query parameter counts as intent (`preview`, `draft` or `livePreview`, or the parameters `previewQueryParams` names instead, with the value `true` or `1`); with `defaults: 'v1'` an iframe destination and an admin referer count too, so **any** iframe-destined request then gets the merged `frame-ancestors 'self' <admin-origins>` policy. Foreign origins remain blocked from framing; the relaxation versus a site-wide `frame-ancestors 'none'` is that `'self'` and the admin origins become allowed on those responses — and only after `authorizePreview` accepted the request under `strict`. Disable with `manageCsp: false` if you need `'none'` unconditionally.
 
 ## Message-shape validation
 
@@ -148,7 +148,7 @@ sanitizer:
 - **`style` attributes stripped** to neutralize the CSS-injection vector.
 - **URL attributes validated.** `href`, `src`, `srcset`, `poster`, `cite` go through `isSafeUrl`; a `srcset` candidate is tested as a whole as well as by its URL.
 - **The output is a fixed point.** The sanitizer parses, sanitises and writes again until a pass changes nothing, so the string it returns is the one a consumer's `innerHTML` rebuilds. Output that does not settle after six parses is returned as an empty string, with a development warning.
-- **External `<a>` hardened.** Auto-applies `rel="noopener noreferrer"` and `target="_blank"`.
+- **External `<a>` hardened.** Sets `rel="noopener noreferrer"`, and `target="_blank"` unless the link already has a `target`.
 - **HTML comments removed.**
 - **`is` emptied, not removed.** A parsed element's `is` value is immutable
   and the serializer writes it back after the attribute is gone, so removing
@@ -175,13 +175,15 @@ entry, the only one that exports it.
 **Policies.** `sanitizerPolicy: 'strict'` is the default everywhere — the
 browser runtime, `sanitizeHtml()` and SSR `lexicalToHtml()`: it strips `id`
 and `name` (DOM clobbering, below), strips `data-payload-*` (rich text must
-never add a binding), and passes other `data-*` only when listed in
-`allowedDataAttributes`. Those checks run before the extension allow-lists,
+never add a binding), and strips other `data-*` too, unless a direct
+`sanitizeHtml()` call lists them in `allowedDataAttributes`; the runtime's own
+writes and `lexicalToHtml()` list none. Those checks run before the extension allow-lists,
 so `additionalAllowedAttributes` cannot re-admit them. `'compat'`
 (`defaults: 'v1'`, or `setSanitizerPolicy('compat')`) keeps `id` and every
 `data-*`. Every sanitizer case in the property suite runs under both
-policies, and since 2.0.6 an XSS corpus of 118 vectors and an aimed fuzz run
-under every policy against an oracle that reads no allow-list and against
+policies, and since 2.0.6 an XSS corpus (118 vectors then, 143 now) and an aimed
+fuzz run under `strict`, `compat` and the item-template options against an oracle that
+reads no allow-list, and under `strict` and the item-template options against
 DOMPurify as the reference engine (ADR 0016). Item templates for structural lists are the one place form
 controls are admitted (`allowFormControls`) and the applier's own
 reconciliation attributes survive strict (`templateMode`: `id`, `name`,
