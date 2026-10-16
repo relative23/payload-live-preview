@@ -100,7 +100,7 @@ entities until the first save. The first real-admin create-state run confirms
 the absence of the preview toggle for both URL forms; the mapped collection
 then delivers unsaved edits after saving. The real-admin fixture runs the Astro (static and hybrid), Next.js, SvelteKit,
 Nuxt and plain HTML examples, a React hook page and a Vue composable page
-against a real Payload 3.89 admin and proves unsaved edits on an existing
+against a real Payload 3.90.2 admin and proves unsaved edits on an existing
 global in Chromium, Firefox and WebKit. The Next.js, SvelteKit and Nuxt previews
 authorize the editor's real session (`payload-session`); the hook and the
 composable populate a relationship through a credentialed request to the

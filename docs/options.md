@@ -20,7 +20,7 @@ options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The led
 
 | Option                     | Client | Inline script | Adapter                                                  | Server (`definePreview`) | Default (v2)                                        | With `defaults: 'v1'`                |
 | -------------------------- | ------ | ------------- | -------------------------------------------------------- | ------------------------ | --------------------------------------------------- | ------------------------------------ |
-| `allowedOrigins`           | yes    | yes           | yes; non-empty and `https:` in production under `strict` | —                        | `[]`                                                | same                                 |
+| `allowedOrigins`           | yes    | yes           | yes; `strict` needs it non-empty, `https:` in production | —                        | `[]`                                                | same                                 |
 | `serverURL`                | yes    | yes           | yes                                                      | yes, required            | — (no REST merge)                                   | same                                 |
 | `apiRoute`                 | yes    | yes           | yes                                                      | yes                      | `/api`                                              | same                                 |
 | `mergeDepth`               | yes    | yes           | yes                                                      | as `depth`, required     | — (required with `serverURL`; `0` for none)         | `1`                                  |
@@ -59,13 +59,13 @@ options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The led
 | `validateToken`            | yes    | —             | —                                                        | —                        | — (stock Payload sends no token)                    | same                                 |
 | `defaults`                 | yes    | yes           | yes                                                      | —                        | `'v2'`                                              | `'v1'`                               |
 | `strict`                   | —      | —             | yes                                                      | —                        | `true`                                              | `false`                              |
-| `authorizePreview`         | —      | —             | yes                                                      | —                        | — (required under `strict`)                         | same                                 |
+| `authorizePreview`         | —      | —             | yes (not Astro's `livePreview()` or the Nuxt module)     | —                        | — (required under `strict`)                         | same                                 |
 | `authorizePreviewModule`   | —      | —             | Astro `mode: 'middleware'`, the Nuxt module              | —                        | — (the hook by reference, ADR 0024)                 | same                                 |
 | `previewSignals`           | —      | —             | yes                                                      | —                        | `['query']`                                         | `['query', 'fetch-dest', 'referer']` |
 | `previewQueryParams`       | —      | —             | yes                                                      | —                        | `['preview', 'draft', 'livePreview']`               | same                                 |
 | `inject`                   | —      | —             | yes                                                      | —                        | `'preview-only'`                                    | same                                 |
 | `autoInject`               | —      | —             | yes                                                      | —                        | `true`                                              | same                                 |
-| `shouldInject`             | —      | —             | yes (not Astro `mode: 'middleware'`)                     | —                        | — (inject on every preview response)                | same                                 |
+| `shouldInject`             | —      | —             | yes (not Astro's `livePreview()` or the Nuxt module)     | —                        | — (inject on every preview response)                | same                                 |
 | `manageCsp`                | —      | —             | yes                                                      | —                        | `'frame-ancestors'` (`true` is an alias)            | same                                 |
 | `strictDynamic`            | —      | —             | yes                                                      | —                        | `false`                                             | same                                 |
 | `frameAncestorsExtra`      | —      | —             | yes                                                      | —                        | `[]`                                                | same                                 |
@@ -80,7 +80,7 @@ options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The led
 
 Every option is a decision someone had to be able to make differently. Grouped
 by the decision, so the table above can be read as eight questions rather than
-fifty-two rows.
+fifty-five rows.
 
 - **Which document, and how complete** — `allowedOrigins`, `serverURL`,
   `apiRoute`, `mergeDepth`, `mergeFetch`. Payload 3.x posts raw form values, so
@@ -88,13 +88,14 @@ fifty-two rows.
   way to show the populated document, and it needs an origin, a route and an
   explicit depth ([below](#serverurl-and-mergedepth)).
 - **May this request see a preview** — `previewSignals`, `previewQueryParams`,
-  `inject`, `authorizePreview`, `strict`. Intent is client-controlled and
-  authorization is not; both exist because collapsing them into one option is
-  exactly the mistake this package is built to avoid
+  `inject`, `authorizePreview`, `authorizePreviewModule`, `strict`. Intent is
+  client-controlled and authorization is not; both exist because collapsing
+  them into one option is exactly the mistake this package is built to avoid
   ([ADR 0006](architecture/0006-authorized-preview-context.md)).
 - **How the runtime reaches the page** — `autoInject`, `shouldInject`,
-  `delivery`, `assetPath`, `mode`, `runtime`, `nonce`, and `hydration`, for a
-  page a framework takes over after it is parsed. A site that renders the
+  `delivery`, `assetPath`, `mode`, `runtime`, `nonce`, `hydration`, for a page
+  a framework takes over after it is parsed, and `softNavigationEvents`, for
+  one whose router replaces content without a load. A site that renders the
   tag itself, one that serves the runtime as a cached asset, and one that ships
   a smaller build all need a different answer, and the wrong default costs
   every visitor bytes ([deployment.md](deployment.md#what-a-public-visitor-pays)).
@@ -103,9 +104,10 @@ fifty-two rows.
   the page and the injected script has to be allowed to run, without the package
   ever loosening a policy the site already sends.
 - **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
-  `routeStrategy`, `onUnfaithfulPatch`, `strategies`, `dependencies`,
-  `autoBind`, `subfieldCoverage`. Three strategies exist because patching
-  cannot create markup and a route refresh cannot be done per keystroke
+  `routeStrategy`, `onUnfaithfulPatch` and its 2.0 name `onUnboundChange`,
+  `strategies`, `dependencies`, `autoBind`, `subfieldCoverage`. Three
+  strategies exist because patching cannot create markup and a route refresh
+  cannot be done per keystroke
   ([overview](architecture/overview.md#the-five-objects)); `autoBind` is how a
   page with no `data-payload-field` at all gets its bindings;
   `subfieldCoverage: 'declared'` makes an edit inside a partly bound group
@@ -130,11 +132,12 @@ fifty-two rows.
 Notes on the rows that need one:
 
 - `strict` refuses at startup, not on a public response: it requires
-  `authorizePreview`, explicit `https:` `allowedOrigins` outside development,
-  and no `'referer'` in the resolved `previewSignals`. Astro's `livePreview()`
-  integration does not apply it in `mode: 'inline'` or `'loader'`, which inject
-  at build time and build no per-request policy; `'middleware'` refuses it
-  outright (below).
+  `authorizePreview`, non-empty `allowedOrigins` (`https:` ones outside
+  development), and no `'referer'` in the resolved `previewSignals`. Astro's
+  `livePreview()` integration does not apply it in `mode: 'inline'` or
+  `'loader'`, which inject at build time and build no per-request policy;
+  `'middleware'` refuses it unless `authorizePreviewModule` names the hook
+  (below).
 - `authorizePreview` runs on requests carrying preview intent. Only a context
   produced by `authorizePreviewRequest()` authorizes; anything else — a
   `{ authorized: true }` literal, a copy, `null` — refuses, and a refusal
@@ -158,7 +161,10 @@ Notes on the rows that need one:
   [docs/deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 - `mode` (Astro): `'inline'` bakes the runtime into every page at build time;
   `'loader'` injects a small bootstrap that fetches the runtime as a hashed,
-  SRI-verified asset only inside a preview; `'middleware'` registers the
+  SRI-verified asset only inside a preview. Neither decides anything per
+  request, so the options that act on a request (`authorizePreview`,
+  `shouldInject`, `strict`, `previewSignals`, `previewQueryParams`, `inject` and
+  the CSP options) have no effect there. `'middleware'` registers the
   request-time middleware from serialized options, so it cannot carry
   `authorizePreview` or `shouldInject` as functions. It takes the hook by
   module reference instead, `authorizePreviewModule`, and refuses the `strict`
@@ -167,10 +173,11 @@ Notes on the rows that need one:
   [docs/deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 - `authorizePreviewModule` (Astro `mode: 'middleware'`, the Nuxt module): a
   server module whose default export is the `authorizePreview` hook. A path
-  beginning with `./` is relative to the project root; a package or alias
-  specifier is passed to the bundler unchanged; one outside the project is
-  refused. The generated code throws when the server loads it if the export
-  is not a function
+  beginning with `./` is relative to the project root; a package specifier is
+  passed to the bundler unchanged, and so is an alias, except that the Nuxt
+  module writes the file an alias names, with its extension, where it finds
+  one; a reference beginning `../` is refused. The generated code throws when
+  the server loads it if the export is not a function
   ([ADR 0024](architecture/0024-authorization-by-module-reference.md)).
 - `manageCsp: 'full'` also manages a nonce'd `script-src`; `strictDynamic`
   adds `'strict-dynamic'`, after which CSP 3 ignores `'self'` and host
@@ -208,12 +215,15 @@ Notes on the rows that need one:
 - `onUnfaithfulPatch` decides what happens when the runtime knows a patch cannot
   reach what the server would have drawn: a value no renderer can represent, a
   Lexical block whose markup the write has to drop, or a changed field the page
-  has no binding for at all. `'escalate'`, the default, hands the region to the
-  fragment strategy when a boundary covers it and to the route otherwise, so it
-  does nothing without `fragments` or `routeStrategy` — and says so once, as
-  LP0808, the first time it has something to hand over and nothing to hand it
-  to (`inspect().fidelity.canEscalate` reports the same); `'warn'` reports LP0411
-  and keeps the patch; `'ignore'` keeps it silently. It skips the connection's
+  has no binding for at all. `'escalate'`, the default, hands a patch that fell
+  short to the fragment strategy when a boundary covers its element and to the
+  route otherwise, and a changed field with no binding to the route alone. It
+  does nothing without `fragments` or `routeStrategy` (an unbound field needs
+  `routeStrategy`) — and says so once, as LP0808, the first time it has
+  something to hand over and nothing to hand it to; `inspect().fidelity.canEscalate`
+  reports whether any strategy exists. `'warn'` reports a patch that fell short
+  as LP0411 and keeps it, and a field with no binding is named by LP0203 under
+  every mode; `'ignore'` keeps the patch silently. It skips the connection's
   first message, where every field counts as changed and the page has just been
   rendered from them ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
   `inspect().fidelity` counts the findings under every mode — `unfaithful`,

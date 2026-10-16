@@ -10,7 +10,7 @@ credentials, so pass them the way the strategy reads them: a Payload session as
 (`pll doctor "https://www.example.com/page?previewToken=…"`, which the visitor
 request drops), or `--header "x-preview-token: …"` only where the strategy sets
 `transport: { kind: 'header' }`. Headers go with the preview request only and
-their values are never printed; the URL is printed as given.
+their values are never printed; a token in the URL is printed as `previewToken=…`.
 
 ## Preview responses and caches
 
@@ -140,11 +140,11 @@ build costs them, and a visitor to a site whose server decides pays nothing at
 all.
 
 792 bytes is the floor of this table, and it is not zero. A page built ahead of
-time has no request to decide for, so the check has to travel with the page;
-`mode: 'loader'` is the one delivery here that cannot reach zero, and saying so
-is more useful than a smaller number that stops being true the moment somebody
-measures it. Every other delivery can, because something of ours runs while the
-request is still open.
+time has no request to decide for, so the check has to travel with the page.
+Neither build-time Astro mode can reach zero, and `mode: 'loader'` is the
+cheaper of the two; saying so is more useful than a smaller number that stops
+being true the moment somebody measures it. Every other delivery can, because
+something of ours runs while the request is still open.
 
 "Twice" is Next's doing, not ours: a script in a layout is rendered once into
 the HTML and once more into the RSC flight payload underneath it, escaped and
@@ -184,11 +184,15 @@ last case in that spec.
 The adapter sets headers on the response it returns; what reaches the browser
 is whatever the last hop in front of the site lets through.
 
-- **`X-Frame-Options`.** Older than CSP and honored independently of it: a
-  `DENY`, or a `SAMEORIGIN` when the admin is on another origin, blocks the
-  preview iframe no matter what `frame-ancestors` says. It is usually set by a
-  proxy or a security middleware rather than by the app. Remove it for
-  authorized preview responses. The audit reports it as `LP0703`.
+- **`X-Frame-Options`.** Older than CSP. A `DENY`, or a `SAMEORIGIN` when the
+  admin is on another origin, blocks the preview iframe unless the same
+  response carries a `frame-ancestors` directive: browsers then ignore the
+  header and `frame-ancestors` decides (measured in Chromium 151, Firefox 153
+  and WebKit 26.5). The adapter's merged `frame-ancestors` is such a directive,
+  so the header matters on a response the adapter did not change, with
+  `manageCsp: false`, and behind a proxy that replaces the CSP. It is usually
+  set by a proxy or a security middleware rather than by the app; remove it for
+  preview responses. The audit reports it as `LP0703`.
 - **`Content-Security-Policy`.** The adapter merges `'self'` and the admin
   origins into the `frame-ancestors` directive of the existing header. A proxy
   that replaces the header with its own policy undoes that merge; a config can
@@ -196,7 +200,8 @@ is whatever the last hop in front of the site lets through.
   `pll doctor --admin <origin>` verifies that the served directive admits the
   admin (`LP0702`).
 - **Cache headers.** A proxy that overrides `Cache-Control` re-enables the
-  caching the adapter turned off; see the previous section.
+  caching the adapter turned off; see
+  [Preview responses and caches](#preview-responses-and-caches).
 
 ## Edge runtimes
 
@@ -276,13 +281,15 @@ held every second 300 kB request from Chromium and Firefox until its timeout.
 
 ## The fragment endpoint behind a proxy
 
-The endpoint's limits hold wherever it runs: 64 KiB of body, one deadline, work
-cancelled when the client goes away. A proxy decides when the client hears of
-them. Through nginx 1.27, Caddy 2.11 and Traefik 3.3 in front of the Node
-server, over HTTP/1.1 and HTTP/2, a client that left during a phase cancelled
-the server's work, and the deadline's 504 reached the client. An upload that
-stays half-sent differs by proxy. A browser sends its small body at once and
-does not meet this; a slow or abandoned upload does.
+The endpoint's limits hold wherever it runs: 64 KiB of body, work cancelled
+when the client goes away and, once `limits.totalTimeoutMs` is set, one
+deadline that answers 504. That deadline is off by default; the tests behind
+these results set it. A proxy decides when the client hears of the limits.
+Through nginx 1.27, Caddy 2.11 and Traefik 3.3 in front of the Node server,
+over HTTP/1.1 and HTTP/2, a client that left during a phase cancelled the
+server's work, and the deadline's 504 reached the client. An upload that stays
+half-sent differs by proxy. A browser sends its small body at once and does
+not meet this; a slow or abandoned upload does.
 
 | In front of the endpoint                                                         | An upload that stays half-sent                                                                                                                    |
 | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -332,13 +339,17 @@ not the same site.
 
 **The admin cookie does not reach the site.** The `payload-session` strategy
 verifies the admin's cookie on the preview request, and a browser does not send
-`cms.example.com`'s cookie to `www.example.com`. Use the `signed-token`
-strategy instead: the Payload side mints a short-lived token in the
-`admin.livePreview.url` callback (`issuePreviewToken`, secret
-`PREVIEW_TOKEN_SECRET`, at least 32 bytes) and the adapter verifies it
-without any cookie. The token is bound to the site origin, the path, the
-locale and its lifetime; [authorization.md](authorization.md) covers the
-strategies and [security.md](security.md) what a leaked token is worth.
+`cms.example.com`'s cookie to `www.example.com`. Use a server-owned `verifier`
+or, on Payload 3, the `signed-token` strategy: the Payload side mints a
+short-lived token in a server-side `admin.livePreview.url` callback
+(`issuePreviewToken`, secret `PREVIEW_TOKEN_SECRET`, at least 32 bytes) and the
+adapter verifies it without any cookie. Payload 2 runs that callback in the
+admin's browser, where no signing secret may go, and
+`payload-live-preview/plugin` adds no token
+([authorization.md](authorization.md#signed-token)). The token is bound to the
+site origin, the path, the locale and its lifetime;
+[authorization.md](authorization.md) covers the strategies and
+[security.md](security.md) what a leaked token is worth.
 
 **The `serverURL` merge is a cross-origin request.** With `serverURL` set, the
 runtime in the preview page re-fetches every update from Payload's REST API
@@ -351,8 +362,9 @@ back to the raw values, and relationship fields show IDs.
 ## Upgrading a monorepo
 
 The Payload side imports `payload-live-preview/payload` (`buildLivePreviewUrl`)
-and `issuePreviewToken`; the site imports the adapter, `authorizePreviewRequest`
-and `payload-live-preview/server`. Keep both on one version of the package —
+and, where it mints signed tokens (Payload 3), `issuePreviewToken`; the site
+imports the adapter, `authorizePreviewRequest` and
+`payload-live-preview/server`. Keep both on one version of the package —
 one entry in one lockfile is the simplest way — and at least on the same
 major.
 
