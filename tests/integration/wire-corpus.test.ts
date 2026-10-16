@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import { buildBuiltinRenderers } from '@field-types/index';
@@ -123,9 +123,11 @@ describe.each(CAPTURES)('Payload $version', ({ version }) => {
       rejected.push(event.code);
     });
     for (const message of corpus.messages) fire(corpus.adminOrigin, message);
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    // Waits for the runtime, not a fixed time: a fixed wait failed under load (PHD-15).
+    await vi.waitFor(() => {
+      expect(rt.inspect().revisions.accepted).toBe(updates.length);
+    });
     expect(rejected).toEqual([]);
-    expect(rt.inspect().revisions.accepted).toBe(updates.length);
   });
 
   it('the last update renders a string field the capture carries', async () => {
@@ -154,7 +156,9 @@ describe.each(CAPTURES)('Payload $version', ({ version }) => {
     document.body.innerHTML = '<p data-payload-field="title"></p>';
     const rt = start(corpus.adminOrigin);
     for (const message of corpus.messages) fire(corpus.adminOrigin, message);
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await vi.waitFor(() => {
+      expect(rt.inspect().revisions.accepted).toBe(updates.length);
+    });
     const expected = new Set<string>();
     for (const message of updates) for (const c of observeCapabilities(message)) expected.add(c);
     if (documentEvents.length > 0) expected.add('document-events');

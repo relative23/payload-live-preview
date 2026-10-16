@@ -8,6 +8,7 @@
  * gets the runtime, so the fragment request is the thing being refused rather
  * than the preview as a whole.
  */
+import { BASE_PATH } from '../../../../base-path.mjs';
 import { mintRouteToken } from '../../../preview';
 
 export const dynamic = 'force-dynamic';
@@ -18,9 +19,10 @@ export default async function HybridHost({
   searchParams: Promise<{ unauthorized?: string }>;
 }) {
   const { unauthorized } = await searchParams;
-  const token = unauthorized === '1' ? undefined : await mintRouteToken('/hybrid');
+  // The token binds the path the browser shows, which carries the base path.
+  const token = unauthorized === '1' ? undefined : await mintRouteToken(`${BASE_PATH}/hybrid`);
   const framed = `/hybrid?preview=true${token !== undefined ? `&previewToken=${token}` : ''}`;
-  const src = `/preview-session?to=${encodeURIComponent(framed)}`;
+  const src = `${BASE_PATH}/preview-session?to=${encodeURIComponent(framed)}`;
   return (
     <iframe
       id="preview"

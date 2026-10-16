@@ -102,8 +102,7 @@ const config: PlaywrightTestConfig = {
     {
       // The Astro adapter's middleware delivery (mode:'middleware'): SSR runtime
       // injection at request time via the integration-registered middleware,
-      // gated on preview intent. Intent-only (defaults:'v1'); the authorized
-      // paths are covered by SvelteKit and astro-hybrid.
+      // under the strict default with the hook by module reference (ADR 0024).
       name: 'astro-middleware',
       command:
         'npm --prefix examples/astro-middleware run build && npm --prefix examples/astro-middleware run start',

@@ -22,11 +22,31 @@ export interface AuthorizedPreviewContext {
 }
 
 // @public
+export type AuthorizedPreviewDocument = {
+    readonly kind: 'collection';
+    readonly slug: string;
+    readonly id: string | number;
+} | {
+    readonly kind: 'global';
+    readonly slug: string;
+};
+
+// @public
+export interface AuthorizedPreviewPayloadScope {
+    readonly apiRoute?: string;
+    // (undocumented)
+    readonly document: AuthorizedPreviewDocument;
+    readonly maxDepth: number;
+    readonly serverURL: string;
+}
+
+// @public
 export interface AuthorizedPreviewScope {
     readonly audience?: string;
     // (undocumented)
     readonly locale?: string;
     readonly path?: string;
+    readonly payload?: AuthorizedPreviewPayloadScope;
 }
 
 // @public
@@ -149,6 +169,7 @@ export interface PayloadSessionStrategy {
     readonly fetch?: FetchLike;
     readonly maxCookieLength?: number;
     readonly now?: () => number;
+    readonly origin?: string;
     readonly serverURL: string;
     readonly timeoutMs?: number;
     // (undocumented)
@@ -179,6 +200,7 @@ export interface PreviewAuthorizationRequest {
     readonly headers: {
         get(name: string): string | null;
     };
+    readonly signal?: AbortSignal;
     // (undocumented)
     readonly url: string;
 }
@@ -196,6 +218,7 @@ export interface PreviewBindings {
     bind: <T = Record<string, unknown>>(field: FieldName<T>, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
     bindByPath: <T = Record<string, unknown>>(picker: (data: T) => unknown, options?: BindOptions) => FieldBindingAttributes | SuppressedBinding;
     boundary: (id: string, options?: FragmentBoundaryOptions) => FragmentBoundaryAttributes | SuppressedBinding;
+    covers: (...paths: readonly string[]) => Readonly<Record<'data-payload-covers', string>> | SuppressedBinding;
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
@@ -239,7 +262,7 @@ export class PreviewFetchError extends Error {
 }
 
 // @public
-export type PreviewFetchFailureReason = 'http' | 'network' | 'timeout' | 'aborted' | 'invalid-json' | 'no-fetch';
+export type PreviewFetchFailureReason = 'http' | 'network' | 'timeout' | 'aborted' | 'invalid-json' | 'no-fetch' | 'scope';
 
 // @public
 export type PreviewFetchFunction = (input: string, init: {
@@ -391,6 +414,7 @@ export type PreviewWhereValue = string | number | boolean | null | readonly (str
 export interface ReadDocumentOptions extends PreviewReadOptions {
     // (undocumented)
     readonly collection: string;
+    readonly id?: string | number;
     // (undocumented)
     readonly where?: PreviewWhere;
 }

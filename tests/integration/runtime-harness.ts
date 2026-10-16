@@ -55,6 +55,7 @@ export interface BakedConfig {
   readonly skipUnchanged?: boolean;
   readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
   readonly sanitizerPolicy?: 'compat' | 'strict';
+  readonly softNavigationEvents?: readonly string[];
 }
 
 export type BakedConfigTuple = readonly unknown[];
@@ -79,7 +80,7 @@ export function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfigTup
     sanitizerPolicy: 'compat',
     ...overrides,
   };
-  return [
+  const establishedSlots = [
     config.additionalOrigins,
     config.serverURL,
     config.apiRoute,
@@ -97,6 +98,21 @@ export function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfigTup
     config.skipUnchanged,
     config.eventSourcePolicy,
     config.sanitizerPolicy,
+  ];
+  if (config.softNavigationEvents === undefined) return establishedSlots;
+  // Slots 17–24 predate the navigation row. In particular, `defaults` stays
+  // at 24; the event list is the append-only slot 25.
+  return [
+    ...establishedSlots,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    config.softNavigationEvents,
   ];
 }
 

@@ -7,10 +7,8 @@
  * see when they fill a previously empty field. `PreviewBoundary` renders the
  * wrapper always: with content when the value is present, and as an empty,
  * `hidden` element otherwise — out of layout and out of the accessibility
- * tree, so a public visitor and a screen reader see exactly what they would
- * have seen without live preview. When an update fills the field, the
- * runtime removes `hidden`; when it empties it, the runtime hides the
- * wrapper again.
+ * tree. When an update fills the field, the runtime removes `hidden`; when
+ * it empties it, the runtime hides the wrapper again.
  *
  * Usage:
  *

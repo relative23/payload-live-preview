@@ -35,11 +35,17 @@ export type {
   LivePreviewInspection,
 } from './core/inspection/types';
 export type {
+  RevisionDisplay,
+  RevisionDisplayState,
+  RevisionShortfall,
+} from './core/revision-display';
+export type {
   FragmentContext,
   FragmentReport,
   FragmentStrategy,
   RouteContext,
   RouteOutcome,
+  RoutePlanContext,
   RouteStrategy,
   StrategyHandlers,
   UpdateSource,
@@ -92,6 +98,8 @@ export {
 export type {
   AuthorizedPreviewContext,
   AuthorizedPreviewScope,
+  AuthorizedPreviewDocument,
+  AuthorizedPreviewPayloadScope,
   FetchLike,
   IssuePreviewTokenOptions,
   PayloadSessionStrategy,

@@ -1,0 +1,59 @@
+/** Astro 4.9.0 receives the fixed catalog through public request-local options.
+ * The wrapper passes ordinary props to the same statically imported components;
+ * no browser-selected module, arbitrary locals or component-factory hook is used.
+ */
+import type { APIRoute } from 'astro';
+import { experimental_AstroContainer as AstroContainer } from 'astro/container';
+import { createFragmentEndpoint, type FragmentRenderer } from 'payload-live-preview/astro';
+import Blocks from '../../components/Blocks.astro';
+import LocalCatalog from '../../components/LocalCatalog.astro';
+import { canonical, fixture, refused } from '../../server/host';
+
+const container = AstroContainer.create();
+const render: FragmentRenderer = async (component, props, input) => {
+  if (component !== Blocks) throw new Error('Unknown catalog component');
+  const { show, title, delayMs } = props;
+  if (typeof show !== 'boolean' || typeof title !== 'string' || (delayMs !== 0 && delayMs !== 80)) {
+    throw new TypeError('Invalid catalog data');
+  }
+  const active = fixture();
+  const path = input.authorization.scope.path;
+  const locale = input.authorization.scope.locale;
+  const match = path ? /^\/continuation\/(a|b)\/(en|de)$/.exec(path) : null;
+  if (!active || !path || !locale || !match || match[2] !== locale) throw new Error('Missing verified page');
+  const instance = await container;
+  return instance.renderToString(LocalCatalog, {
+    request: new Request(new URL(path, active.origin), { headers: { 'accept-language': locale }, signal: input.signal }),
+    params: { editor: match[1], locale },
+    locals: {
+      resourcePreview: { locale, subject: input.authorization.subject ?? '' },
+      resourceCatalog: { show, title, delayMs },
+    },
+  });
+};
+const handle = createFragmentEndpoint({
+  authorizePreview: async request => {
+    const active = fixture();
+    const target = canonical(request);
+    if (!active || !target) return null;
+    const page = await active.host.page(target);
+    await page.response.body?.cancel();
+    return page.authorization;
+  },
+  registry: {
+    catalog: {
+      component: Blocks,
+      props: input => ({
+        show: input.fields.show === true,
+        title: typeof input.fields.title === 'string' ? input.fields.title : '',
+        delayMs: input.fields.delayMs === 80 ? 80 : 0,
+      }),
+    },
+  },
+  render,
+  limits: { totalTimeoutMs: 5_000 },
+});
+export const ALL: APIRoute = ({ request }) => {
+  const target = canonical(request);
+  return target ? handle({ request: target }) : Promise.resolve(refused());
+};

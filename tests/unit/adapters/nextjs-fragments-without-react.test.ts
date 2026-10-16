@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFragmentEndpoint, defineFragment } from '@adapters/nextjs/fragments';
 import { issuePreviewToken } from '@security/preview-authorization';
-import { resetDevWarnings } from '@adapters/shared/dev-warning';
+import { resetDevWarnings } from '@/types/dev-warning';
 
 /**
  * A project that installs neither `react` nor `react-dom` — the majority, since

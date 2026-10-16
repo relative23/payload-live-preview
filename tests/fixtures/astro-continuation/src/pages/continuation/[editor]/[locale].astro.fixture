@@ -1,0 +1,13 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import Preview from '../../../components/Preview.astro';
+const view = Astro.locals.previewView;
+const authorization = Astro.locals.livePreviewAuthorization ?? null;
+if (authorization !== (Astro.locals.previewExpectedAuthorization ?? null)) throw new Error('Request context was replaced');
+const allowed = authorization && view?.data;
+if (!allowed) Astro.response.status = 403;
+---
+<html lang="en">
+  <head><meta charset="utf-8" /><title>Native Astro preview</title><ClientRouter fallback="swap" /></head>
+  <body>{allowed && view ? <Preview view={view} /> : <h1>Preview unavailable</h1>}</body>
+</html>

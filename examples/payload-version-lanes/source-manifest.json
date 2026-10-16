@@ -1,0 +1,282 @@
+{
+  "schemaVersion": 1,
+  "status": "portable-development-fixture-sources-not-native-results",
+  "files": {
+    "README.md": {
+      "sha256": "50d840ed77173306861330a519ceff9aa7d2d938744f47cf519dc1f900213826",
+      "bytes": 4328
+    },
+    "admin/next-env.d.ts": {
+      "sha256": "0f70629890b72a0a82e91972cc032c04b658b26c265373cb711cf576bfbf8fcc",
+      "bytes": 296
+    },
+    "admin/next.config.mjs": {
+      "sha256": "cd8a791eb106b7f480a266d542e19437a4e2470cc21184b0ded7585880b07afc",
+      "bytes": 481
+    },
+    "admin/src/app/(payload)/admin/[[...segments]]/not-found.tsx": {
+      "sha256": "2986009a95f8f69cac3ea82c3be666620e471197407a6023c357aab1d3c7e35c",
+      "bytes": 609
+    },
+    "admin/src/app/(payload)/admin/[[...segments]]/page.tsx": {
+      "sha256": "8a44e9ac2a44b3af7607e9c985c460366ebcdcb16597c72ac741d8b2de5c6c1a",
+      "bytes": 593
+    },
+    "admin/src/app/(payload)/admin/importMap.js": {
+      "sha256": "ac095c2e974b2232b2a60579ed74ed029d1dffd5ad0852ca46906be41ccfa882",
+      "bytes": 6256
+    },
+    "admin/src/app/(payload)/api/[...slug]/route.ts": {
+      "sha256": "8a90d705f062353243997b37c374d7c69af7d340b3dbdaa3e9c74b0d98c88592",
+      "bytes": 406
+    },
+    "admin/src/app/(payload)/api/graphql/route.ts": {
+      "sha256": "e26f6305147aebc75d7f2d31b661c43da041f3a122c8aab28b53dc001d80aa76",
+      "bytes": 137
+    },
+    "admin/src/app/(payload)/layout.tsx": {
+      "sha256": "755158b04ff94785a3a1f10ec3028aaf559060279b099351aca7cf48544690df",
+      "bytes": 659
+    },
+    "admin/tsconfig.json": {
+      "sha256": "fa8b69f3f4a0a55e35efc0c57e8a7a3fb8650a7b2b443c78e3bd5196358ca59d",
+      "bytes": 637
+    },
+    "build-consumer.mjs": {
+      "sha256": "188d2442be406f789203779b9d81cd1d7ca2bea9804e8ae3e9e4311d4af649fc",
+      "bytes": 4875
+    },
+    "contracts.mjs": {
+      "sha256": "3e8e2fd225f57c13c767207a0aa8df10950ee218ad90bb8466246cd75d6431ff",
+      "bytes": 3149
+    },
+    "discovery.config.mjs": {
+      "sha256": "3e0603b5743a7d8731cf8a369eac59ff99e743c1daac763b4c5e9c4f82f3763a",
+      "bytes": 1944
+    },
+    "frontend/ledger.mjs": {
+      "sha256": "a33db71fc55ae33114143f7ec3a94023ba9430435dfec8d5cef266e1316d302b",
+      "bytes": 7376
+    },
+    "frontend/payload.config.ts.fixture": {
+      "sha256": "37387f14a24206773183220639acb2a49197439c343429c0ae66d4fab39e8a26",
+      "bytes": 2273
+    },
+    "frontend/react-app.mjs": {
+      "sha256": "fb919a0a5e02bf29fb3a08d376618f4474e7178e7ad995c0155a50d31755d286",
+      "bytes": 3993
+    },
+    "frontend/react-client.mjs": {
+      "sha256": "a9070cc1b696cc32955a18f40321f307b5c06fbdfcfe76df118736d56f9d3e64",
+      "bytes": 604
+    },
+    "frontend/react-ssr.mjs": {
+      "sha256": "b2752d8aab204ecc4c9bc3efc6fbefade3b77f74a6b64e42b4e97935975a51e2",
+      "bytes": 422
+    },
+    "frontend/server.mjs": {
+      "sha256": "2993ed6b0d29b6b1f9bb09bc69154115f6a03ff3a9f7b11a4e2f1ba81573e578",
+      "bytes": 3452
+    },
+    "frontend/vue-app.mjs": {
+      "sha256": "6b2ebc79338892b7a6dbdeb809cd5590d58f385337185962d63ec8dd16174e89",
+      "bytes": 4561
+    },
+    "frontend/vue-client.mjs": {
+      "sha256": "71e84e875df790c9b703a65c892764a35d4e0e1c617bf8062d3761c34a15d79b",
+      "bytes": 588
+    },
+    "frontend/vue-ssr.mjs": {
+      "sha256": "ffd3d45f216a685bf5fa2df4cc34da928bc66c624c2a322b9f9cb17a8183ed65",
+      "bytes": 369
+    },
+    "inputs.mjs": {
+      "sha256": "0d894957e91e18daaaac8fb0dcd0cee1e99442d69acef9b679da446dd596fdeb",
+      "bytes": 4538
+    },
+    "install-lane.mjs": {
+      "sha256": "6e16733f0fbc01c91a2ed7804013ed82ecd6b1357f07ea1bf23d0fe940580500",
+      "bytes": 2595
+    },
+    "lane.mjs": {
+      "sha256": "88d7a6aa8373734d862b72d03f3ee0fd3a998316497f5db4f239034213d85d3f",
+      "bytes": 1935
+    },
+    "lanes.json": {
+      "sha256": "3c273cb577f7c4ba3f0f7eee69577937f6b4b88a8b755a50e6b39c6e45974fa8",
+      "bytes": 11212
+    },
+    "lifecycle.config.mjs": {
+      "sha256": "17e8d0226b1afdf2c21697e7bb73382963b8c97688157c313376ae3290e57ec5",
+      "bytes": 3253
+    },
+    "owned-graph.mjs": {
+      "sha256": "324aee491f4a77e96de6ec19f4ff0b0f1e557289686ceda79baaf599cee9d319",
+      "bytes": 7310
+    },
+    "prepare-lane.mjs": {
+      "sha256": "028621047bd987301fbb3c745d714c9a772d2084ee919ec22a8c06658f629e0c",
+      "bytes": 7866
+    },
+    "readiness.mjs": {
+      "sha256": "286125acad9c0bb75f6c84eb9dc6beedc075f70aa9ee0f431016cb7ba2af98ac",
+      "bytes": 4663
+    },
+    "registry/v3-db-sqlite.json": {
+      "sha256": "76eab90b831708000a5563d502c42be21dfbbd94ecd0e86484ae3964ccaadcf1",
+      "bytes": 597
+    },
+    "registry/v3-next.json": {
+      "sha256": "87daecd0d9009cc3f5e1708cbecb982a0599cc9b9bc9a606e530482f5f0b8e03",
+      "bytes": 1028
+    },
+    "registry/v3-payload.json": {
+      "sha256": "acb10d33d49263e09c8e12a2df19fc7c8682c2ea6d64b7e9abefae218a504fe8",
+      "bytes": 1331
+    },
+    "registry/v3-richtext-lexical.json": {
+      "sha256": "cded934bf4406179505de5b6dbfcb6e095bca28caa595223005feb62d1a06d5f",
+      "bytes": 1530
+    },
+    "registry/v4-db-sqlite.json": {
+      "sha256": "d28e3b8f486b1156d703e6397c2d622a1a4de5cd0a7102dd7d88d34337cf3499",
+      "bytes": 338
+    },
+    "registry/v4-next.json": {
+      "sha256": "b6c06ad17c88e808c95ccbdd111c885341ff24fd0e36d5e41d372f037fa9b0c6",
+      "bytes": 440
+    },
+    "registry/v4-payload.json": {
+      "sha256": "0af14d19f4384ed7b7d350690a0aa97f2e17fb2e01f9da86dd4cf63ac0a68a52",
+      "bytes": 364
+    },
+    "registry/v4-richtext-lexical.json": {
+      "sha256": "dc5fb3d0944711800821b1f364a0a63c6711c3942873afdfbdccf9a76d8fec9e",
+      "bytes": 582
+    },
+    "run-lane.mjs": {
+      "sha256": "06d748f5e5f68a1f4038e85a77650ce400a08dc6e9a11fd4ad2be20d8a58b222",
+      "bytes": 10377
+    },
+    "shared/bounded-stage-diagnostic.mjs": {
+      "sha256": "6ed85966b70d790c2ce3c9366b2a9d865e61c2b186f9761b55069287ccb00f6b",
+      "bytes": 10322
+    },
+    "shared/close-boundary.mjs": {
+      "sha256": "dbb974860c68ee47b105abd2a71aa5791ceb24b3823b304168c875b4b07c1e8f",
+      "bytes": 1078
+    },
+    "shared/diagnostics.mjs": {
+      "sha256": "75e691c44db94a4ddaf0e3badba4736301c9f595b09628f09a6ac7274471e109",
+      "bytes": 1864
+    },
+    "shared/lifecycle.diagnostic.spec.mjs": {
+      "sha256": "11ad504b20de39ac3a88a4a8f69be4d746c4dcf33f32d93f6b3b006075510584",
+      "bytes": 18773
+    },
+    "shared/reporter.mjs": {
+      "sha256": "990e5c323afafd1fe129a2d2e92d0f2ceb3c04daeb0a69772a064804f29e5a77",
+      "bytes": 2548
+    },
+    "shared/resolve-consumer-import.mjs": {
+      "sha256": "ec3f2f92b364a57436dcb60f29fc3e573e1ae62a03af59fc9797278b5f9647ae",
+      "bytes": 1716
+    },
+    "shared/serve-cms.mjs": {
+      "sha256": "d12672b31af553cbd78e14f647b77ccbf865c4455766d4339f7f462140d98808",
+      "bytes": 1583
+    },
+    "shared/verify-result-diagnostic.mjs": {
+      "sha256": "d364ffe1db232181aeaa046bf72986e7f42a1e2923ab842e9e532020432063f6",
+      "bytes": 5760
+    },
+    "source-provenance.json": {
+      "sha256": "af54a3198a9105d0a7273324f352462d755d69056cf72d775c0c87d5ea5b74a2",
+      "bytes": 9809
+    },
+    "v2/archive-inspect.py": {
+      "sha256": "8e06ff37403f499328e614eb58c037a4b2d170b33999dd5b38e5adb436e9c8a7",
+      "bytes": 3220
+    },
+    "v2/audit.mjs": {
+      "sha256": "260405a82213f96c5ec7c5e711664bf4d75c9db65d9918ee4ccae9f06cc00774",
+      "bytes": 2664
+    },
+    "v2/browser/config.cjs": {
+      "sha256": "5c826a92dd0aac868e6e23c266efb402a97b793d7157098ea406ed1a36e0d3fb",
+      "bytes": 1330
+    },
+    "v2/browser/payload2.spec.cjs": {
+      "sha256": "3847628e8038c1d0480b665ac6bc10060f975fc5e85168a15412ab2babc3b77e",
+      "bytes": 8870
+    },
+    "v2/browser/reporter.cjs": {
+      "sha256": "13a9cc8db9b7d3a9a287af3603a202786f17714f8fba68a2434ea785698c8180",
+      "bytes": 2247
+    },
+    "v2/browser/test-tool.cjs": {
+      "sha256": "b68b204ef42fdf7f6296541d478d756626449eeab225b9eb0a539b89145b25ee",
+      "bytes": 982
+    },
+    "v2/identity.mjs": {
+      "sha256": "1140966fe32e6c9ca3bb65fbd238c9cfc1b65e99b4f81a339a72f6bf6c0af61b",
+      "bytes": 5814
+    },
+    "v2/install.mjs": {
+      "sha256": "70a8e41f48538cbb9403efa4f2978ca3f04f4880e8909ff98a55dbecd70d6d58",
+      "bytes": 3080
+    },
+    "v2/prepare.mjs": {
+      "sha256": "55b58b2f4bec98ff7712fa26a35940806836d4d4cd430fd9810b3a012b6e15a4",
+      "bytes": 5621
+    },
+    "v2/run.mjs": {
+      "sha256": "704877b7adba71db2cee83a37de43158b477cd38b505f002daf6a925fe76d4e8",
+      "bytes": 12421
+    },
+    "v2/template/diagnostics.cjs": {
+      "sha256": "1aff789a6df025d88828d7aa55cdbb60c8af70cd181a486f2a332da3baf152eb",
+      "bytes": 2441
+    },
+    "v2/template/package.json": {
+      "sha256": "3e9be5ada25c28a81fa5845e304d6e483442efcba179711ba92f97967a9bbdb4",
+      "bytes": 748
+    },
+    "v2/template/payload.config.js": {
+      "sha256": "18d4c33523a7cc50b5022a62feae6419faa8389f81acd57887c8b4b0d277a671",
+      "bytes": 3028
+    },
+    "v2/template/preview.mjs": {
+      "sha256": "a96466368ceb161342a0556d5868d1fea6790d05577f388876638e5ea44a1308",
+      "bytes": 6773
+    },
+    "v2/template/server.cjs": {
+      "sha256": "a220a1d9ecd46f996afd78446cdde1c9e42932ce9e1b1cb8883f96cfc527e5eb",
+      "bytes": 3718
+    },
+    "verify-wire.mjs": {
+      "sha256": "e0bfa0a42b69ce782e8308e6005fbd6456e99ead813010e9f8b8dcecd3a018bc",
+      "bytes": 3279
+    },
+    "wire-review.mjs": {
+      "sha256": "a1bb86fef8ee1dc6dc65facf4a12c7a142e51a4edc563d487beaadd919b1d396",
+      "bytes": 2813
+    },
+    "wire.spec.mjs": {
+      "sha256": "aee56a954bef76964b27bf3bd2c37660fd26585fd9b0ef4fe8b7a0267fba41e0",
+      "bytes": 3835
+    },
+    "v2/browser/native-lifecycle.spec.cjs": {
+      "sha256": "aedbf5bbdd3dc4276aa6f5a0b86418feceabb00240fdf4217d0a1e5af32a3b26",
+      "bytes": 10108
+    },
+    "v2/native/build.mjs": {
+      "sha256": "bcf3600e83d251eead1bfb07dcef8827798d12d7fd04cd7897c3507f4920ca49",
+      "bytes": 3527
+    },
+    "v2/native/ledger.mjs": {
+      "sha256": "3efdfa553d978c8d61ebf88269373ac97df3c9c35a6c6f8ec6229a4b83d49a39",
+      "bytes": 3230
+    }
+  }
+}

@@ -11,6 +11,12 @@
 
 import { isBindingInScope } from './binding-owner';
 import type { ElementCache } from './cache';
+import {
+  uncoveredChangedPaths,
+  type PathCoverage,
+  type SubfieldCoverage,
+  type UncoveredPath,
+} from './subfield-coverage';
 
 /** Document fields Payload ships in every update that nobody binds to. */
 export const SYSTEM_FIELD_NAMES: ReadonlySet<string> = new Set([
@@ -48,13 +54,6 @@ function localisedBindingNames(cache: ElementCache, ownerKeys: OwnerScope): Set<
   return names;
 }
 
-function hasBinding(cache: ElementCache, fieldName: string, ownerKeys: OwnerScope): boolean {
-  const bindings = cache.get(fieldName);
-  if (bindings === undefined) return false;
-  if (ownerKeys === false) return true;
-  return bindings.some((binding) => isBindingInScope(binding.owner, ownerKeys));
-}
-
 /**
  * A binding on a path inside the field — `hero.eyebrow` for the field `hero` —
  * makes it addressable. The diff names top-level fields only, so without this
@@ -72,6 +71,38 @@ export function hasBindingBelow(
     if (bindings.some((binding) => isBindingInScope(binding.owner, ownerKeys))) return true;
   }
   return false;
+}
+
+/** The strategies configured for this page; only they render what a boundary or marker depends on. */
+export interface ServerRendering {
+  readonly fragment?: unknown;
+  readonly route?: unknown;
+}
+
+/**
+ * The page's answer for any path in one update's owner scope: the bound names,
+ * the declared covers (ADR 0022) and the fields a boundary or route marker
+ * depends on when its strategy is configured, read once, then the same name
+ * rule the overlay applies.
+ */
+export function createPathCoverage(
+  cache: ElementCache,
+  ownerKeys: OwnerScope,
+  rendering: ServerRendering = {},
+): PathCoverage {
+  const inScope = (owner: string | undefined): boolean =>
+    ownerKeys === false || isBindingInScope(owner, ownerKeys);
+  const names: string[] = [];
+  for (const [fieldName, bindings] of cache.entries()) {
+    if (bindings.some((binding) => inScope(binding.owner))) names.push(fieldName);
+  }
+  const rendered = cache.rendered.filter(
+    (declaration) => rendering[declaration.strategy] !== undefined,
+  );
+  const covers = [...cache.covers, ...rendered]
+    .filter((cover) => inScope(cover.owner))
+    .flatMap((cover) => cover.paths);
+  return namePathCoverage(names, covers);
 }
 
 export function stripLocaleSuffix(name: string, locale: string | undefined): string {
@@ -101,19 +132,57 @@ export function ownsAnyBinding(cache: ElementCache, ownerKeys: readonly string[]
 export function createNameAddressability(
   boundNames: Iterable<string>,
   locale: string | undefined,
+  coverPaths: Iterable<string>,
 ): FieldAddressability {
+  const coverage = namePathCoverage(boundNames, coverPaths);
+  const reaches = (name: string): boolean => coverage.covers(name) || coverage.reachesBelow(name);
+  return (fieldName) => {
+    if (reaches(fieldName)) return true;
+    const base = stripLocaleSuffix(fieldName, locale);
+    return base !== fieldName && reaches(base);
+  };
+}
+
+/** Coverage from names alone: the bound names and the declared cover paths in a document. */
+function namePathCoverage(
+  boundNames: Iterable<string>,
+  coverPaths: Iterable<string>,
+): PathCoverage {
   const names = new Set(boundNames);
-  const covers = (fieldName: string): boolean => {
-    if (names.has(fieldName)) return true;
-    const prefix = `${fieldName}.`;
-    for (const bound of names) if (bound.startsWith(prefix)) return true;
+  const covers = [...coverPaths];
+  const anyBelow = (candidates: Iterable<string>, path: string): boolean => {
+    const prefix = `${path}.`;
+    for (const candidate of candidates) if (candidate.startsWith(prefix)) return true;
     return false;
   };
-  return (fieldName) => {
-    if (covers(fieldName)) return true;
-    const base = stripLocaleSuffix(fieldName, locale);
-    return base !== fieldName && covers(base);
+  return {
+    covers: (path) =>
+      names.has(path) || covers.some((cover) => cover === path || path.startsWith(`${cover}.`)),
+    reachesBelow: (path) => anyBelow(names, path) || anyBelow(covers, path),
   };
+}
+
+/**
+ * The declared mode for a caller with names (the overlay): the uncovered paths
+ * inside the groups the document reaches only below the top level.
+ */
+export function uncoveredNamePaths(
+  fields: Readonly<Record<string, unknown>>,
+  boundNames: Iterable<string>,
+  locale: string | undefined,
+  coverPaths: Iterable<string>,
+): string[] {
+  const coverage = namePathCoverage(boundNames, coverPaths);
+  const found: string[] = [];
+  for (const [fieldName, value] of Object.entries(fields)) {
+    if (SYSTEM_FIELD_NAMES.has(fieldName)) continue;
+    const root = stripLocaleSuffix(fieldName, locale);
+    if (coverage.covers(root) || !coverage.reachesBelow(root)) continue;
+    for (const { path } of uncoveredChangedPaths(root, undefined, value, coverage)) {
+      found.push(path);
+    }
+  }
+  return found;
 }
 
 /**
@@ -124,17 +193,74 @@ export function createFieldAddressability(
   cache: ElementCache,
   locale: string | undefined,
   ownerKeys: OwnerScope,
+  rendering?: ServerRendering,
 ): FieldAddressability {
+  const coverage = createPathCoverage(cache, ownerKeys, rendering);
+  const reach = createFieldReach(cache, locale, ownerKeys, coverage);
+  return (fieldName) => reach(fieldName) !== 'none';
+}
+
+/**
+ * How far the page reaches into a field: `whole` when a binding or a cover
+ * sits on it, `below` when only paths inside it are bound or covered — the
+ * case ADR 0022's declared mode looks into — and `none`.
+ */
+function createFieldReach(
+  cache: ElementCache,
+  locale: string | undefined,
+  ownerKeys: OwnerScope,
+  coverage: PathCoverage = createPathCoverage(cache, ownerKeys),
+): (fieldName: string) => 'whole' | 'below' | 'none' {
   let localised: Set<string> | undefined;
+  const whole = coverage.covers;
+  const below = coverage.reachesBelow;
   return (fieldName) => {
-    if (hasBinding(cache, fieldName, ownerKeys)) return true;
     const base = stripLocaleSuffix(fieldName, locale);
-    if (base !== fieldName && hasBinding(cache, base, ownerKeys)) return true;
-    if (hasBindingBelow(cache, fieldName, ownerKeys)) return true;
-    if (base !== fieldName && hasBindingBelow(cache, base, ownerKeys)) return true;
+    if (whole(fieldName) || (base !== fieldName && whole(base))) return 'whole';
     localised ??= localisedBindingNames(cache, ownerKeys);
-    return localised.has(fieldName);
+    if (localised.has(fieldName)) return 'whole';
+    if (below(fieldName) || (base !== fieldName && below(base))) return 'below';
+    return 'none';
   };
+}
+
+/** The previous and current message, when the declared mode compares below the top level. */
+export interface SubfieldValues {
+  readonly previous: Readonly<Record<string, unknown>>;
+  readonly next: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * The declared mode asked of a document rather than a diff, for LP0203: the
+ * uncovered paths inside the groups the page reaches only below the top level.
+ */
+export function uncoveredDocumentPaths(
+  cache: ElementCache,
+  fields: Readonly<Record<string, unknown>>,
+  locale: string | undefined,
+  ownerKeys: OwnerScope,
+  rendering?: ServerRendering,
+): UncoveredPath[] {
+  const coverage = createPathCoverage(cache, ownerKeys, rendering);
+  const reach = createFieldReach(cache, locale, ownerKeys, coverage);
+  const found: UncoveredPath[] = [];
+  for (const [fieldName, value] of Object.entries(fields)) {
+    if (SYSTEM_FIELD_NAMES.has(fieldName) || reach(fieldName) !== 'below') continue;
+    const root = stripLocaleSuffix(fieldName, locale);
+    found.push(...uncoveredChangedPaths(root, undefined, value, coverage));
+  }
+  return found;
+}
+
+/** What the declared mode compares for one revision, or `undefined` where it does not apply. */
+export function declaredSubfields(
+  mode: SubfieldCoverage,
+  previous: Readonly<Record<string, unknown>> | undefined,
+  next: Readonly<Record<string, unknown>> | undefined,
+): SubfieldValues | undefined {
+  return mode === 'declared' && previous !== undefined && next !== undefined
+    ? { previous, next }
+    : undefined;
 }
 
 /**
@@ -149,11 +275,27 @@ export function unboundChangedFields(
   touched: ReadonlySet<string>,
   locale: string | undefined,
   ownerKeys: OwnerScope,
+  subfields?: SubfieldValues,
+  rendering?: ServerRendering,
 ): string[] {
-  const isAddressable = createFieldAddressability(cache, locale, ownerKeys);
+  const coverage = createPathCoverage(cache, ownerKeys, rendering);
+  const reach = createFieldReach(cache, locale, ownerKeys, coverage);
   const unbound: string[] = [];
   for (const fieldName of touched) {
-    if (!SYSTEM_FIELD_NAMES.has(fieldName) && !isAddressable(fieldName)) unbound.push(fieldName);
+    if (SYSTEM_FIELD_NAMES.has(fieldName)) continue;
+    const kind = reach(fieldName);
+    if (kind === 'none') unbound.push(fieldName);
+    if (kind !== 'below' || subfields === undefined) continue;
+    const root = stripLocaleSuffix(fieldName, locale);
+    const { previous, next } = subfields;
+    for (const { path } of uncoveredChangedPaths(
+      root,
+      previous[fieldName],
+      next[fieldName],
+      coverage,
+    )) {
+      unbound.push(path);
+    }
   }
   return unbound;
 }

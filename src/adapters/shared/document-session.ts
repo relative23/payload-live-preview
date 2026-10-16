@@ -15,7 +15,7 @@
 import { DataMerger } from '@core/data-merger';
 import { MessageBus } from '@core/message-bus';
 import { OriginDetector } from '@detection/origin';
-import type { PayloadLivePreviewMessage } from '@/types/payload-protocol';
+import type { PayloadFieldSchema, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 
 /**
  * `idle` — connected, nothing received yet. `live` — the newest update was
@@ -32,6 +32,13 @@ export interface DocumentSnapshot<T> {
   readonly status: DocumentStatus;
   /** Why the last update did not merge; `undefined` while `status` is not `unavailable`. */
   readonly error: Error | undefined;
+  /**
+   * Which of this session's messages `data` came from: `0` for the initial
+   * data, and unchanged when a merge fails. The framework paints `data` in its
+   * own commit; a component that must know it was painted compares this in an
+   * effect (ADR 0023).
+   */
+  readonly revision: number;
 }
 
 export interface DocumentSessionOptions {
@@ -83,6 +90,8 @@ export class DocumentSession<T> {
   #revision = 0;
   #lastLog: readonly unknown[] = [];
   #attached = false;
+  #schema: readonly PayloadFieldSchema[] | undefined;
+  #locale: string | undefined;
 
   constructor(initialData: T, options: DocumentSessionOptions) {
     this.#detector = new OriginDetector({
@@ -114,7 +123,13 @@ export class DocumentSession<T> {
       sourcePolicy: options.eventSourcePolicy ?? 'parent-or-opener',
     });
     this.#target = options.target;
-    this.#initial = { data: initialData, isLoading: true, status: 'idle', error: undefined };
+    this.#initial = {
+      data: initialData,
+      isLoading: true,
+      status: 'idle',
+      error: undefined,
+      revision: 0,
+    };
     this.#snapshot = this.#initial;
   }
 
@@ -147,6 +162,7 @@ export class DocumentSession<T> {
   #detach(): void {
     if (!this.#attached) return;
     this.#attached = false;
+    this.#revision += 1;
     this.#bus.detach();
     this.#merger.destroy();
   }
@@ -161,20 +177,30 @@ export class DocumentSession<T> {
     return targets;
   }
 
+  #current(revision: number): boolean {
+    return this.#attached && revision === this.#revision;
+  }
+
   async #handle(message: PayloadLivePreviewMessage): Promise<void> {
     const data = message.data;
     if (data === undefined) return;
     const revision = (this.#revision += 1);
+    if (message.fieldSchemaJSON !== undefined) this.#schema = message.fieldSchemaJSON;
+    const schema = this.#schema;
+    if (message.locale !== undefined) this.#locale = message.locale;
+    const locale = schema === undefined ? message.locale : this.#locale;
     this.#publish({ ...this.#snapshot, isLoading: true });
+    if (!this.#current(revision)) return;
     this.#lastLog = [];
     const result = await this.#merger.merge({
       data,
+      ...(schema === undefined ? {} : { schema }),
       ...(message.collectionSlug !== undefined ? { collectionSlug: message.collectionSlug } : {}),
       ...(message.globalSlug !== undefined ? { globalSlug: message.globalSlug } : {}),
-      ...(message.locale !== undefined ? { locale: message.locale } : {}),
+      ...(locale !== undefined ? { locale } : {}),
     });
     // A newer message owns the state now, whatever this one turned out to be.
-    if (revision !== this.#revision) return;
+    if (!this.#current(revision)) return;
     if (result.status === 'superseded') return;
     if (result.status === 'unavailable') {
       this.#publish({
@@ -191,6 +217,7 @@ export class DocumentSession<T> {
       isLoading: false,
       status: 'live',
       error: undefined,
+      revision,
     });
   }
 
@@ -200,7 +227,8 @@ export class DocumentSession<T> {
       current.data === next.data &&
       current.isLoading === next.isLoading &&
       current.status === next.status &&
-      current.error === next.error
+      current.error === next.error &&
+      current.revision === next.revision
     ) {
       return;
     }

@@ -2,6 +2,34 @@ import { describe, expect, it } from 'vitest';
 import { parseFieldSchema } from '@schema/parser';
 
 describe('parseFieldSchema', () => {
+  it('keeps valid block definitions while dropping malformed and inherited ones', () => {
+    const blocks = Object.create({ inherited: { fields: [] } }) as Record<string, unknown>;
+    Object.assign(blocks, {
+      valid: { fields: [{ name: 'title', type: 'text' }] },
+      absent: null,
+      primitive: 'not a block',
+      constructor: { fields: [] },
+      prototype: { fields: [] },
+    });
+    Object.defineProperty(blocks, '__proto__', { value: { fields: [] }, enumerable: true });
+    const parsed = parseFieldSchema([{ name: 'layout', type: 'blocks', blocks }]);
+    expect(parsed[0]?.blocks).toEqual([
+      { slug: 'valid', fields: [{ name: 'title', type: 'text' }] },
+    ]);
+    expect(Object.getPrototypeOf(blocks)).toEqual({ inherited: { fields: [] } });
+  });
+
+  it('drops malformed array block entries without losing valid neighbours', () => {
+    const parsed = parseFieldSchema([
+      {
+        name: 'layout',
+        type: 'blocks',
+        blocks: [null, 3, { slug: '' }, { slug: 'valid', fields: [] }],
+      },
+    ]);
+    expect(parsed[0]?.blocks).toEqual([{ slug: 'valid', fields: [] }]);
+  });
+
   it('parses a simple flat schema', () => {
     const result = parseFieldSchema([
       { name: 'title', type: 'text' },

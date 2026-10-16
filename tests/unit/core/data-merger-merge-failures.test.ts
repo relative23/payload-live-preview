@@ -79,27 +79,36 @@ describe('DataMerger.merge — failure paths', () => {
     oldResponse.resolve(jsonResponse({ title: 'old' }));
     await expect(oldMerge).resolves.toEqual({ status: 'superseded' });
   });
-  it('discards parsed JSON when response.json ignores an intervening abort', async () => {
-    const oldBody = deferred<unknown>();
-    const oldResponse = {
-      ok: true,
-      status: 200,
-      json: () => oldBody.promise,
-    } as Response;
-    const fetchFn = vi
-      .fn()
-      .mockResolvedValueOnce(oldResponse)
-      .mockResolvedValueOnce(jsonResponse({ title: 'new' }));
-    const merger = new DataMerger({ serverURL: 'https://cms.example.com', fetchFn: fetchFn });
+  it.each([{ title: 'old' }, null, []])(
+    'discards stale parsed JSON %j without diagnosing it',
+    async (body) => {
+      const oldBody = deferred<unknown>();
+      const log = vi.fn();
+      const oldResponse = {
+        ok: true,
+        status: 200,
+        json: () => oldBody.promise,
+      } as Response;
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValueOnce(oldResponse)
+        .mockResolvedValueOnce(jsonResponse({ title: 'new' }));
+      const merger = new DataMerger({
+        serverURL: 'https://cms.example.com',
+        fetchFn: fetchFn,
+        log,
+      });
 
-    const oldMerge = merger.merge({ globalSlug: 'homepage', data: { title: 'old' } });
-    await Promise.resolve();
-    const newMerge = merger.merge({ globalSlug: 'homepage', data: { title: 'new' } });
-    expect(await newMerge).toEqual({ status: 'merged', doc: { title: 'new' } });
+      const oldMerge = merger.merge({ globalSlug: 'homepage', data: { title: 'old' } });
+      await Promise.resolve();
+      const newMerge = merger.merge({ globalSlug: 'homepage', data: { title: 'new' } });
+      expect(await newMerge).toEqual({ status: 'merged', doc: { title: 'new' } });
 
-    oldBody.resolve({ title: 'old' });
-    await expect(oldMerge).resolves.toEqual({ status: 'superseded' });
-  });
+      oldBody.resolve(body);
+      await expect(oldMerge).resolves.toEqual({ status: 'superseded' });
+      expect(log).not.toHaveBeenCalled();
+    },
+  );
   it('does not deliver a response from before a stop after the restart', async () => {
     // A stop/start cycle sits between two merges, and the older response
     // arrives through a fetch shim that ignored its abort signal. Only the

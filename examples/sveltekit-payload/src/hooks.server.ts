@@ -24,10 +24,15 @@ import {
   type LivePreviewSvelteKitOptions,
 } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest } from 'payload-live-preview';
-import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview';
+import {
+  PAYLOAD_SERVER_URL,
+  PREVIEW_ADMIN_ORIGIN,
+  PREVIEW_AUDIENCE,
+  PREVIEW_TOKEN_SECRET,
+} from '$lib/preview.server';
 
 const options = {
-  allowedOrigins: ['http://localhost:4175'],
+  allowedOrigins: [PREVIEW_ADMIN_ORIGIN],
   debug: true,
   debounceMs: 25,
   // Reveal the edited section. `/reveal` is this fixture's row in
@@ -44,12 +49,15 @@ const options = {
   // query-only intent, no referrer trust, updates only from the window that
   // framed or opened the page, unchanged bindings skipped.
   defaults: 'v2',
+  // Against a real Payload admin (tests/real-payload) the editor's own session
+  // reaches this site, so the documented `payload-session` strategy applies.
   authorizePreview: (request: Request) =>
-    authorizePreviewRequest(request, {
-      type: 'signed-token',
-      secret: PREVIEW_TOKEN_SECRET,
-      audience: PREVIEW_AUDIENCE,
-    }),
+    authorizePreviewRequest(
+      request,
+      PAYLOAD_SERVER_URL === undefined
+        ? { type: 'signed-token', secret: PREVIEW_TOKEN_SECRET, audience: PREVIEW_AUDIENCE }
+        : { type: 'payload-session', serverURL: PAYLOAD_SERVER_URL },
+    ),
 } satisfies LivePreviewSvelteKitOptions;
 
 export const assetOptions = { ...options, delivery: 'asset' } as const;
@@ -57,5 +65,9 @@ export const assetOptions = { ...options, delivery: 'asset' } as const;
 const inline = livePreviewHandle(options);
 const asset = livePreviewHandle(assetOptions);
 
-export const handle: Handle = (input) =>
-  input.event.url.pathname.startsWith('/asset') ? asset(input) : inline(input);
+export const handle: Handle = (input) => {
+  // What an app's own hook puts on a request (a session, a locale, a client):
+  // the page's load reads it, and so do the fragment's props (ADR 0029).
+  input.event.locals.edition = 'Preview edition';
+  return input.event.url.pathname.startsWith('/asset') ? asset(input) : inline(input);
+};

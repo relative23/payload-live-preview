@@ -8,6 +8,7 @@ import {
 } from 'payload-live-preview';
 import { EventEmitter, initLivePreview } from 'payload-live-preview/core';
 import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { livePreview as payloadLivePreview } from 'payload-live-preview/plugin';
 import { definePreview } from 'payload-live-preview/server';
 
 const client = new LivePreviewClient({ autoStart: false });
@@ -29,6 +30,11 @@ const publicValues = [
   new EventEmitter(),
   initLivePreview,
   buildLivePreviewUrl({ baseUrl: 'https://example.com' }),
+  payloadLivePreview({
+    baseUrl: 'https://example.com',
+    globals: { homepage: '/' },
+    breakpoints: [{ name: 'mobile', label: 'Mobile', width: 390, height: '844px' }],
+  }),
   plugin,
   renderer,
 ] as const;
@@ -43,13 +49,24 @@ void publicValues;
 // incompatible while each entry type-checks perfectly on its own. The adapters
 // are ESM-only, so their half of this contract lives in the .mts fixture.
 async function crossEntryDraftRead(request: Request): Promise<unknown> {
+  const document = {
+    kind: 'collection',
+    slug: 'pages',
+    id: 0,
+  } as const satisfies import('payload-live-preview/server').AuthorizedPreviewDocument;
+  const payload = {
+    serverURL: 'https://admin.example.test',
+    document,
+    maxDepth: 1,
+  } satisfies import('payload-live-preview/core').AuthorizedPreviewPayloadScope;
+  const scope: import('payload-live-preview').AuthorizedPreviewScope = { payload };
   const verdict = await authorizePreviewRequest(request, {
     type: 'verifier',
-    verify: () => ({ subject: 'editor' }),
+    verify: () => ({ subject: 'editor', expiresAt: Date.now() + 60_000, scope }),
   });
   if (!verdict.authorized) return null;
   const preview = definePreview({ serverURL: 'https://admin.example.test', depth: 1 });
-  return preview.fetchDocument({ collection: 'pages', authorization: verdict.context });
+  return preview.fetchDocument({ collection: 'pages', id: 0, authorization: verdict.context });
 }
 
 export { crossEntryDraftRead };

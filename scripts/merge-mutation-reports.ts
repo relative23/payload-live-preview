@@ -39,6 +39,7 @@ const PER_SHARD_CONFIG_KEYS = new Set([
   'incrementalFile',
   'jsonReporter',
   'htmlReporter',
+  'tempDirName',
 ]);
 
 function identity(report: MutationReportShape): string {

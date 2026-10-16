@@ -193,6 +193,25 @@ describe('test policy', () => {
     ]);
   });
 
+  it('does not count Playwright test-info attachments as declarations', () => {
+    const source = `
+      import { test } from '@playwright/test';
+      import { test as browserTest } from '@playwright/test';
+      import * as pw from '@playwright/test';
+      import { test as unitTest } from 'vitest';
+      test('browser case', async () => {
+        await test.info().attach('response', { body: 'ok' });
+        await browserTest.info().attach('headers', { body: 'ok' });
+        await pw.test.info()['attach']('metadata', { body: 'ok' });
+      });
+      unitTest.each([1, 2])('case %s', () => {});
+    `;
+    const analysis = analyzeTestSource('fixture.spec.ts', source);
+
+    expect(analysis.violations).toEqual([]);
+    expect(analysis.declarations.map(({ title }) => title)).toEqual(['browser case', 'case %s']);
+  });
+
   it('does not assign an unowned test directory to the unit runner', () => {
     expect(groupForFile('tests/orphan/example.test.ts')).toBeUndefined();
   });

@@ -117,6 +117,47 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
     expect(afterUpdate).not.toHaveBeenCalled();
     runtime.destroy();
   });
+  it('discards a buffered value when an observed element changes owner', async () => {
+    document.body.innerHTML = `
+      <section data-payload-owner="global:first">
+        <span data-payload-field="title">initial</span>
+      </section>
+    `;
+    const owner = document.querySelector('section');
+    const element = document.querySelector('span');
+    if (owner === null || element === null) throw new Error('binding missing');
+    const runtime = new LivePreviewRuntime({
+      renderers: { text: textRenderer() },
+      originMatcher: () => true,
+      readyTargets: [],
+      emitter: new EventEmitter(),
+      debounceMs: 200,
+      heartbeatMs: 10 * 60_000,
+      disableVisibilityGate: true,
+      scopeBindingsByOwner: true,
+    });
+    runtime.start();
+
+    fireMessage({
+      type: 'payload-live-preview',
+      globalSlug: 'first',
+      data: { title: 'first revision' },
+    });
+    await vi.advanceTimersByTimeAsync(20);
+    expect(element.textContent).toBe('first revision');
+    fireMessage({
+      type: 'payload-live-preview',
+      globalSlug: 'first',
+      data: { title: 'must not cross owners' },
+    });
+    await flushMicrotasks();
+    owner.setAttribute('data-payload-owner', 'global:second');
+    await flushMicrotasks();
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(element.textContent).toBe('first revision');
+    runtime.destroy();
+  });
   it('discards pending work when refreshCache removes or rebinds its element', async () => {
     document.body.innerHTML =
       '<p data-payload-field="removed">initial-removed</p>' +

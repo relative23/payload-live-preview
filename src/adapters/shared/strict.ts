@@ -3,7 +3,7 @@
  * rather than a public response (ADR 0006).
  */
 
-import { isDevelopmentProcess } from './dev-warning';
+import { isDevelopmentProcess } from '@/types/dev-warning';
 import { resolvePolicyOptions, type PreviewPolicyOptions } from './policy-options';
 
 /**

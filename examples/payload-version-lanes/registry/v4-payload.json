@@ -1,0 +1,13 @@
+[
+  {
+    "version": "4.0.0-canary.37",
+    "peerDependencies": {
+      "graphql": "^16.8.1"
+    },
+    "engines": {
+      "node": ">=24.15.0"
+    },
+    "dist.integrity": "sha512-PF2GFp9NGo0G9Un//BHWYezQwTNw6Dk9A0puEbR/nsQKyU+Fxz0ftAne2LPANAC5Rk5nchspSSObNXPNrtESoQ==",
+    "dist.tarball": "https://registry.npmjs.org/payload/-/payload-4.0.0-canary.37.tgz"
+  }
+]

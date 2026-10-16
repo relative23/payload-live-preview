@@ -4,6 +4,8 @@
  * Verify with `authorizePreviewRequest()` before anything privileged.
  */
 
+import { warnOnce } from '@/types/dev-warning';
+
 /** `query`: `?preview=true`; `fetch-dest`: `Sec-Fetch-Dest: iframe`; `referer`: an admin-origin Referer. */
 export type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
 
@@ -58,7 +60,15 @@ export function hasPreviewIntent(
 
   // The 1.x spelling is honoured until 3.0; the canonical name wins when both are given.
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- the alias is read exactly here
-  const configured = options.allowedOrigins ?? options.adminOrigins ?? [];
+  const alias = options.adminOrigins;
+  if (alias !== undefined) {
+    warnOnce(
+      'admin-origins',
+      '`hasPreviewIntent({ adminOrigins })` is removed in 3.0: name the option `allowedOrigins`; ' +
+        '`pll migrate` renames it (ADR 0026).',
+    );
+  }
+  const configured = options.allowedOrigins ?? alias ?? [];
   const adminOrigins = signals.has('referer') ? configured : [];
   if (adminOrigins.length > 0) {
     const referer = request.headers.get('referer');

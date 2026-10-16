@@ -5,7 +5,7 @@
  * point. It is here only because the example has no Payload behind it.
  */
 import { issuePreviewToken } from 'payload-live-preview';
-import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview';
+import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview.server';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url }) => {

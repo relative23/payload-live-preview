@@ -5,14 +5,30 @@
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { trustedHtml } from '@security/trusted-types';
+import { isBindingInScope } from './binding-owner';
+import { resolveBindingOwner } from './cache';
 import { reportUnboundChange } from './fidelity';
 import { bindingValue } from './field-value';
+import {
+  astroIslandsIn,
+  isMorphBoundary,
+  islandStartBlocker,
+  releaseDisconnectedIslands,
+  retainIslandBoundary,
+} from './islands';
 import { morphElement } from './morph';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
-import type { FragmentContext, FragmentStrategy, RouteOutcome, RouteStrategy } from './strategies';
+import { thrownFragment } from './revision-display';
+import {
+  liveBoundary,
+  type FragmentContext,
+  type FragmentStrategy,
+  type RouteOutcome,
+  type RouteStrategy,
+} from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
-import { unboundChangedFields, type OwnerScope } from './unbound-fields';
+import { declaredSubfields, unboundChangedFields, type OwnerScope } from './unbound-fields';
 import type { CachedElement } from './types';
 
 /** What the pipeline lends the runner. */
@@ -34,6 +50,7 @@ export interface StrategyHost {
 export interface FragmentPlan {
   readonly boundaries: readonly Element[];
   readonly strategy: FragmentStrategy;
+  readonly ownerKeys: OwnerScope;
   /** Whether a binding sits inside a boundary the strategy renders this revision. */
   readonly covers: (target: CachedElement) => boolean;
 }
@@ -45,10 +62,23 @@ export class StrategyRunner {
     private readonly host: StrategyHost,
   ) {}
 
-  planFragments(touched: ReadonlySet<string>): FragmentPlan | null {
-    const strategy = this.deps.strategies.fragment;
+  /**
+   * The boundaries this revision renders: those its diff touches, and those a
+   * newer revision cut short before they settled that are still on the page.
+   * A debt is settled when a render of its boundary starts, so a late-binding
+   * pass, which renders only what streamed in, leaves the rest owed.
+   */
+  planFragments(touched: ReadonlySet<string>, ownerKeys: OwnerScope): FragmentPlan | null {
+    const { deps, state } = this;
+    const strategy = deps.strategies.fragment;
     if (strategy === undefined) return null;
-    return planBoundaries(strategy, strategy.plan(this.deps.root, touched));
+    const planned = new Set(strategy.plan(deps.root, touched));
+    for (const boundary of state.fragmentsOwed) {
+      if (deps.root.contains(boundary)) planned.add(boundary);
+      else state.fragmentsOwed.delete(boundary);
+    }
+    const boundaries = [...planned].filter((boundary) => inOwnerScope(boundary, ownerKeys));
+    return planBoundaries(strategy, boundaries, ownerKeys);
   }
 
   /**
@@ -64,24 +94,40 @@ export class StrategyRunner {
     transaction: UpdateTransaction,
     data: PayloadLivePreviewData,
     targets: readonly CachedElement[],
+    ownerKeys: OwnerScope,
   ): void {
-    if (transaction.routeRefreshed) return;
+    if (transaction.routeRefreshed) {
+      this.kept(transaction, targets);
+      return;
+    }
     const { fragment, route } = this.deps.strategies;
-    const boundaries = fragment === undefined ? undefined : coveringBoundaries(targets);
+    const covered = fragment === undefined ? undefined : coveringBoundaries(targets);
+    const boundaries =
+      covered === undefined || covered.every((boundary) => inOwnerScope(boundary, ownerKeys))
+        ? covered
+        : undefined;
     if (fragment !== undefined && boundaries !== undefined) {
       this.state.escalatedCount += targets.length;
       transaction.pendingFragments += boundaries.length;
-      void this.runFragments(transaction, data, planBoundaries(fragment, boundaries));
+      void this.runFragments(transaction, data, planBoundaries(fragment, boundaries, ownerKeys));
       return;
     }
     if (route === undefined) {
       // Only 'escalate' queues a patch for this method (fidelity.ts), so the
       // page that reaches here with no strategy is the one the line is for.
       this.warnEscalationUnavailable(targets.length);
+      this.kept(transaction, targets);
       return;
     }
     this.state.escalatedCount += targets.length;
     void this.refreshRoute(transaction, data, route);
+  }
+
+  /** Patches that fell short and stay as they are: the revision does not show those fields. */
+  private kept(transaction: UpdateTransaction, targets: readonly CachedElement[]): void {
+    for (const target of targets) {
+      this.state.display.shortfall(transaction, { kind: 'unfaithful', field: target.fieldName });
+    }
   }
 
   /**
@@ -125,13 +171,20 @@ export class StrategyRunner {
       transaction.touched,
       transaction.locale,
       ownerKeys,
+      declaredSubfields(
+        deps.subfieldCoverage,
+        state.changes.previousFields,
+        transaction.renderData?.fields,
+      ),
+      deps.strategies,
     );
     let answered = 0;
     for (const fieldName of unbound) if (reportUnboundChange(state, fieldName)) answered += 1;
     const [first] = unbound;
-    if (first === undefined || deps.onUnfaithfulPatch !== 'escalate') return false;
-    if (deps.strategies.route === undefined) {
-      this.warnEscalationUnavailable(unbound.length);
+    if (first === undefined) return false;
+    if (deps.onUnfaithfulPatch !== 'escalate' || deps.strategies.route === undefined) {
+      if (deps.onUnfaithfulPatch === 'escalate') this.warnEscalationUnavailable(unbound.length);
+      for (const field of unbound) state.display.shortfall(transaction, { kind: 'unbound', field });
       return false;
     }
     deps.log('route', 'LP0807', `field "${first}" has no binding; refreshing the route`);
@@ -140,10 +193,21 @@ export class StrategyRunner {
   }
 
   /** Whether a touched field is bound to an element the route owns. */
-  hasRouteBinding(touched: ReadonlySet<string>): boolean {
+  /**
+   * Whether the route is asked for, by the strategy's planner or by a route
+   * binding of a touched field, each only inside the update's owner scope: a
+   * marker another document owns is that document's business (PHD-02).
+   */
+  plansRoute(route: RouteStrategy, touched: ReadonlySet<string>, ownerKeys: OwnerScope): boolean {
+    const owned = (owner: string | undefined): boolean =>
+      ownerKeys === false || isBindingInScope(owner, ownerKeys);
+    const inScope = (element: Element): boolean => owned(resolveBindingOwner(element));
+    if (route.plan(this.deps.root, touched, { inScope })) return true;
     for (const [fieldName, bindings] of this.deps.cache.entries()) {
       if (!touched.has(fieldName)) continue;
-      if (bindings.some((target) => target.strategyKind === 'route')) return true;
+      if (bindings.some((target) => target.strategyKind === 'route' && owned(target.owner))) {
+        return true;
+      }
     }
     return false;
   }
@@ -155,8 +219,15 @@ export class StrategyRunner {
   ): Promise<void> {
     const { deps, state } = this;
     const controller = new AbortController();
-    state.fragmentController = controller;
+    const unsettled = new Set(plan.boundaries);
+    for (const boundary of unsettled) state.fragmentsOwed.delete(boundary);
+    state.fragmentControllers.set(controller, unsettled);
+    const settle = (boundary: Element): void => {
+      if (unsettled.delete(boundary)) transaction.pendingFragments -= 1;
+    };
     const isCurrent = (): boolean => state.isCurrent(transaction) && !controller.signal.aborted;
+    const live = (boundary: Element): Element | undefined =>
+      liveBoundary(deps.root, boundary, (candidate) => inOwnerScope(candidate, plan.ownerKeys));
     const { emitter } = deps;
     const { message } = transaction;
     const revision = transaction.revision.revision;
@@ -176,21 +247,32 @@ export class StrategyRunner {
         deps.log('fragment', code, detail);
       },
       morph: (boundary, html) => {
-        morphFragment(boundary, html);
+        const target = isCurrent() ? live(boundary) : undefined;
+        if (target === undefined) return;
+        morphFragment(target, html, (island, blocker) => {
+          this.warnIslandStart(island, blocker);
+        });
       },
       patch: (boundary) => {
-        this.patchFallback(transaction, data, boundary);
+        const target = live(boundary);
+        if (target === undefined) return;
+        // A copy's bindings reach the cache only after the structural debounce.
+        if (target !== boundary) this.host.rebuildCache();
+        this.patchFallback(transaction, data, target, plan.ownerKeys, isCurrent);
       },
-      rendered: (element, id, key) => {
-        transaction.pendingFragments -= 1;
+      rendered: (planned, id, key) => {
+        settle(planned);
+        const element = live(planned) ?? planned;
         void emitter.emitWhile(
           'fragmentRender',
           { element, id, key, status: 'rendered', revision, receivedAt },
           isCurrent,
         );
       },
-      failed: (element, id, key, code, reason) => {
-        transaction.pendingFragments -= 1;
+      failed: (planned, id, key, code, reason) => {
+        settle(planned);
+        const element = live(planned) ?? planned;
+        state.display.shortfall(transaction, { kind: 'fragment', id, key, code });
         const detail = `fragment "${id}" fell back to patch: ${reason}`;
         // Logged where the failure is, not where an exception would have been:
         // the supplied strategy answers a timeout or a refusal with an outcome
@@ -215,22 +297,27 @@ export class StrategyRunner {
     } catch (error) {
       deps.log('fragment', 'LP0801', error);
       if (isCurrent()) {
-        for (const boundary of plan.boundaries) this.patchFallback(transaction, data, boundary);
+        for (const boundary of plan.boundaries) {
+          context.patch(boundary);
+          state.display.shortfall(transaction, thrownFragment(boundary));
+        }
         report = { rendered: 0, failed: plan.boundaries.length, superseded: 0 };
       }
     }
     state.fragmentStats.rendered += report.rendered;
     state.fragmentStats.failed += report.failed;
     state.fragmentStats.superseded += report.superseded;
+    state.fragmentControllers.delete(controller);
+    for (const boundary of unsettled) settle(boundary);
     if (!isCurrent()) return;
-    if (state.fragmentController === controller) state.fragmentController = null;
-    transaction.pendingFragments = 0;
     // A rendered boundary holds the server's markup, which carries no stamp: the
     // guesses in it go back on, as after a refresh, before the revision counts
     // as complete. Without this a guess in a boundary did not outlive the first
     // message, which renders the boundary as well.
     if (report.rendered > 0) this.host.restoreGuesses(transaction, data);
-    if (deps.scheduler.pendingCount === 0) state.complete(transaction);
+    if (transaction.pendingFragments === 0 && deps.scheduler.pendingCount === 0) {
+      state.complete(transaction);
+    }
     // The edited field may be one the server just rendered: its element is only
     // in place now, so this is the earliest point it can be scrolled to.
     this.host.revealPending(transaction);
@@ -269,7 +356,18 @@ export class StrategyRunner {
     // A refusal counts as asked as well: the trailing run below is this
     // revision's one refresh, and nothing else may start a second.
     transaction.routeRefreshed = true;
-    await this.runRoute(transaction, data, strategy);
+    await this.runRoute(transaction, data, strategy).catch((error: unknown) => {
+      this.routeFailed(error);
+    });
+  }
+
+  /**
+   * Nothing awaits a refresh, so an unexpected throw after it returned, while
+   * the page is re-applied onto the fresh markup, would otherwise escape as an
+   * unhandled rejection. The strategy's own throw is an outcome (LP0801).
+   */
+  private routeFailed(error: unknown): void {
+    this.deps.log('route refresh failed:', error);
   }
 
   /**
@@ -288,11 +386,18 @@ export class StrategyRunner {
     state.routeRetry = setTimeout(() => {
       state.routeRetry = null;
       if (!state.isCurrent(transaction)) return;
-      void this.runRoute(transaction, data, strategy);
+      this.runRoute(transaction, data, strategy).catch((error: unknown) => {
+        this.routeFailed(error);
+      });
     }, delayMs);
   }
 
-  /** One trip through the strategy, whether the revision asked for it or the window did. */
+  /**
+   * One trip through the strategy, whether the revision asked for it or the
+   * window did. It replaces a refresh still in flight, and it lands for the
+   * revision that is current when it returns, which need not be the one that
+   * asked (ADR 0004 §4d).
+   */
   private async runRoute(
     transaction: UpdateTransaction,
     data: PayloadLivePreviewData,
@@ -301,15 +406,17 @@ export class StrategyRunner {
     const { deps, state } = this;
     const stats = state.routeStats;
     const controller = new AbortController();
+    state.routeController?.abort();
     state.routeController = controller;
-    const isCurrent = (): boolean => state.isCurrent(transaction) && !controller.signal.aborted;
+    // A stop aborts it too, so the signal alone says whether it may still land.
+    const lands = (): boolean => !controller.signal.aborted;
     let outcome: RouteOutcome;
     try {
       outcome = await strategy.refresh({
         revision: transaction.revision.revision,
         receivedAt: transaction.receivedAt,
         signal: controller.signal,
-        isCurrent,
+        isCurrent: lands,
         log: (code, detail) => {
           deps.log('route', code, detail);
         },
@@ -321,30 +428,50 @@ export class StrategyRunner {
       deps.log('route', 'LP0801', error);
       outcome = 'failed';
     }
-    if (!isCurrent()) return;
-    if (state.routeController === controller) state.routeController = null;
-    if (outcome === 'refreshed') {
+    if (!lands()) return;
+    // Whatever replaces this refresh, ends the route or stops the session
+    // aborts it first, so it is still the one in flight and a revision is
+    // current; the null check only narrows the type.
+    state.routeController = null;
+    const current = state.activeUpdate;
+    if (current === null) return;
+    // The current revision's latest data, which a merge may have refined since
+    // the refresh started. One still resolving its fields has none yet: it
+    // applies itself onto whatever the route shows when it gets there.
+    const currentData = current.renderData;
+    const isCurrent = (): boolean => state.isCurrent(current);
+    if (outcome === 'partial') state.display.shortfall(current, { kind: 'route-saved' });
+    // A refusal with its trailing run armed is not an outcome yet: that run is.
+    else if (
+      outcome === 'failed' ||
+      outcome === 'superseded' ||
+      (outcome === 'refused' && state.routeRetry === null)
+    ) {
+      state.display.shortfall(current, { kind: 'route-failed', outcome });
+    }
+    if (outcome === 'refreshed' || outcome === 'partial') {
       stats.refreshes += 1;
-      // The route rendered the saved document; nothing on the page is "last applied" any more.
+      if (outcome === 'partial') stats.partial += 1;
+      // Route markup has no local application identities; every prior stamp is stale.
       state.lastAppliedIdentity = new WeakMap();
       // The fresh markup carries no stamp: the guesses go back on before the
       // cache is rebuilt from it, or the rebuild would not know them.
-      this.host.restoreGuesses(transaction, data);
+      if (currentData !== undefined) this.host.restoreGuesses(current, currentData);
       this.host.rebuildCache();
-      if (!isCurrent()) return;
-      this.host.reapply(transaction, data);
+      if (currentData === undefined || !isCurrent()) return;
+      this.host.reapply(current, currentData);
       if (deps.emitter.listenerCount('afterUpdate') > 0) {
         void deps.emitter.emitWhile(
           'afterUpdate',
           {
-            data,
-            // The server re-rendered the whole route, so every binding now on
-            // the page carries fresh markup; the unsaved fields scheduled just
+            data: currentData,
+            // The strategy replaced the whole route, so every binding now on
+            // the page carries new markup; the unsaved fields scheduled just
             // above report themselves in their own `patch` batch.
             updatedCount: deps.cache.elementCount,
-            durationMs: Date.now() - transaction.receivedAt,
-            revision: transaction.revision.revision,
-            receivedAt: transaction.receivedAt,
+            durationMs: Date.now() - current.receivedAt,
+            revision: current.revision.revision,
+            receivedAt: current.receivedAt,
             source: 'route',
           },
           isCurrent,
@@ -358,7 +485,18 @@ export class StrategyRunner {
     else if (outcome === 'refused') stats.refused += 1;
     // Either way the page shows what it can now: the window holds back the
     // server, not the bindings this revision could already have written.
-    this.host.reapply(transaction, data);
+    if (currentData !== undefined) this.host.reapply(current, currentData);
+  }
+
+  /** LP0809, once: fragment scripts never run, so the page must already start Astro islands. */
+  private warnIslandStart(island: Element, blocker: 'element' | 'directive'): void {
+    if (this.state.warnedIslandStart) return;
+    this.state.warnedIslandStart = true;
+    const missing =
+      blocker === 'element' ? '<astro-island>' : `client:${island.getAttribute('client') ?? ''}`;
+    this.deps.warn(
+      `[live-preview] LP0809: a fragment island cannot start: this page never loaded ${missing}; render one on the page`,
+    );
   }
 
   /** LP0806, once: a fragment boundary with no handler is patched instead. */
@@ -376,15 +514,19 @@ export class StrategyRunner {
     transaction: UpdateTransaction,
     data: PayloadLivePreviewData,
     boundary: Element,
+    ownerKeys: OwnerScope,
+    isCurrent: () => boolean,
   ): void {
+    if (!isCurrent()) return;
     for (const [fieldName, bindings] of this.deps.cache.entries()) {
       for (const target of bindings) {
         if (target.fragmentBoundary !== boundary) continue;
+        if (ownerKeys !== false && !isBindingInScope(target.owner, ownerKeys)) continue;
         const value = bindingValue(data.fields, target, fieldName, transaction.locale);
-        if (value === undefined) continue;
+        if (value === undefined || !isCurrent()) continue;
         this.deps.scheduler.schedule({
           target,
-          value: this.host.transform(target, value, data.fields, () => true),
+          value: this.host.transform(target, value, data.fields, isCurrent),
           allFields: data.fields,
           revision: transaction.revision,
           data,
@@ -406,21 +548,50 @@ function coveringBoundaries(targets: readonly CachedElement[]): Element[] | unde
 }
 
 /** A plan over boundaries already chosen, whichever question chose them. */
-function planBoundaries(strategy: FragmentStrategy, boundaries: readonly Element[]): FragmentPlan {
+function planBoundaries(
+  strategy: FragmentStrategy,
+  boundaries: readonly Element[],
+  ownerKeys: OwnerScope,
+): FragmentPlan {
   const covered = new Set(boundaries);
   return {
     boundaries,
     strategy,
+    ownerKeys,
     covers: (target) =>
       target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
   };
 }
 
-/** Morph server-rendered HTML into the boundary, keeping focus and visitor state. */
-function morphFragment(boundary: Element, html: string): void {
+/** Whether the document that owns `element` is inside the update's owner scope. */
+function inOwnerScope(element: Element, ownerKeys: OwnerScope): boolean {
+  return ownerKeys === false || isBindingInScope(resolveBindingOwner(element), ownerKeys);
+}
+
+/**
+ * Morph server-rendered HTML into the boundary; compatible retained nodes keep
+ * live state. Islands follow ADR 0021: removed ones are released, and an
+ * inserted one the page cannot start is reported rather than scripted.
+ */
+function morphFragment(
+  boundary: Element,
+  html: string,
+  blocked: (island: Element, blocker: 'element' | 'directive') => void,
+): void {
   const template = boundary.ownerDocument.createElement('template');
   template.innerHTML = trustedHtml(html);
   const rendered = boundary.cloneNode(false) as Element;
   rendered.append(template.content);
-  morphElement(boundary, rendered, { keyAttributes: [KEY_ATTRIBUTE] });
+  const before = astroIslandsIn(boundary);
+  morphElement(boundary, rendered, {
+    keyAttributes: [KEY_ATTRIBUTE],
+    boundary: isMorphBoundary,
+    retainBoundary: retainIslandBoundary,
+  });
+  releaseDisconnectedIslands(before);
+  const known = new Set(before);
+  for (const island of astroIslandsIn(boundary)) {
+    const blocker = known.has(island) ? undefined : islandStartBlocker(island);
+    if (blocker !== undefined) blocked(island, blocker);
+  }
 }

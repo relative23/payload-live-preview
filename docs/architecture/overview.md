@@ -171,11 +171,12 @@ went wrong without it.
   nothing, and the default is `'off'`. A unique but wrong guess rewrites
   unrelated markup while the editor types.
   [ADR 0014](0014-auto-binding.md)
-- **First write after hydration** — on a page the Next.js or Nuxt adapter
-  declares hydrated, the runtime starts only once React has committed a root
-  holding a binding or Vue has mounted an app around one, and after five
-  seconds regardless (`LP0607`). React throws away a write that came first
-  together with the server markup; Vue reverts it.
+- **First write after hydration** — on a page the Next.js, Nuxt or SvelteKit
+  adapter declares hydrated, the runtime starts only once React has committed
+  a root holding a binding, Vue has mounted an app around one, or SvelteKit's
+  root has mounted, and after five seconds regardless (`LP0607`). React throws
+  away a write that came first together with the server markup; Vue and
+  Svelte revert it.
   [ADR 0015](0015-first-write-after-hydration.md)
 - **One scope per session** — the runtime releases everything a session
   acquired through one `LifetimeScope`, the minimal form of the scope a plugin

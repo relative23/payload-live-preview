@@ -16,6 +16,7 @@ import type { PageServerLoad } from './$types';
 export const csr = false;
 
 export const load: PageServerLoad = ({ locals }) => {
+  const edition = locals.edition ?? '';
   const preview = createPreviewBindings({
     authorization: locals.livePreviewAuthorization ?? null,
     owner: 'global:home',
@@ -23,6 +24,8 @@ export const load: PageServerLoad = ({ locals }) => {
   return {
     hero: heroProps({}),
     boundary: preview.boundary('hero', { dependsOn: ['title', 'subtitle', 'body'] }),
+    noticeBoundary: preview.boundary('notice', { dependsOn: ['notice'] }),
+    edition,
     bindings: {
       owner: preview.owner(),
       title: preview.bind('title'),

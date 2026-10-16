@@ -1,6 +1,6 @@
 {
   "sources": {
-    ".github/workflows/release.yml": "19db017216954954a34f0f9de2ae368e39bf163395e9ac88f22fb1e6f96eae86"
+    ".github/workflows/release.yml": "751912fce73b1074b01554f4c40bcf8aa3d45c64d016a918b75682d245886361"
   },
   "directories": [],
   "absentFiles": ["pnpm-workspace.yaml", "lerna.json"],
@@ -11,7 +11,7 @@
         "scripts": {
           "build:runtime": "node -e \"const c=require('node:child_process'),e={...process.env};if(!e.SOURCE_DATE_EPOCH){const g=c.spawnSync('git',['show','-s','--format=%ct','HEAD'],{encoding:'utf8'});if(g.status===0)e.SOURCE_DATE_EPOCH=g.stdout.trim()}process.exit(c.spawnSync(process.execPath,['--import','tsx',process.argv[1]],{stdio:'inherit',env:e}).status??1)\" scripts/build-runtime.ts",
           "build": "npm run build:runtime && tsx scripts/build-dist.ts && npm run build:assets && npm run test:bundle && npm run test:treeshake && npm run test:edge && npm run test:interaction && npm run test:protocol-semantics",
-          "build:assets": "node -e \"const fs=require('node:fs');for(const f of ['RichText','PreviewBoundary'])fs.copyFileSync('src/adapters/astro/'+f+'.astro','dist/adapters/astro/'+f+'.astro')\"",
+          "build:assets": "node -e \"const fs=require('node:fs');for(const f of ['RichText','PreviewBoundary','FragmentBridge'])fs.copyFileSync('src/adapters/astro/'+f+'.astro','dist/adapters/astro/'+f+'.astro')\"",
           "dev": "tsup --watch",
           "pretest": "npm run build:runtime",
           "test": "vitest run",
@@ -20,9 +20,22 @@
           "test:unit": "vitest run tests/unit",
           "test:integration": "vitest run tests/integration",
           "test:e2e": "playwright test",
+          "test:e2e:next-base-path": "playwright test --config playwright.next-base-path.config.ts",
+          "test:e2e:next-production": "playwright test --config playwright.next-production.config.ts",
+          "test:e2e:next-webpack-production": "playwright test --config playwright.next-webpack-production.config.ts",
+          "test:e2e:next-continuation": "playwright test --config playwright.next-continuation.config.ts",
+          "test:e2e:sveltekit-continuation": "playwright test --config playwright.sveltekit-continuation.config.ts",
+          "test:e2e:nuxt-continuation": "playwright test --config playwright.nuxt-continuation.config.ts",
+          "test:e2e:astro-continuation": "playwright test --config playwright.astro-continuation.config.ts",
+          "test:e2e:astro-resources": "playwright test --config playwright.astro-resources.config.ts",
+          "test:e2e:html-continuation": "playwright test --config playwright.html-continuation.config.ts",
+          "test:e2e:vue-continuation": "playwright test --config playwright.vue-continuation.config.ts",
+          "test:e2e:nuxt-production": "playwright test --config playwright.nuxt-production.config.ts",
+          "test:e2e:sveltekit-production": "playwright test --config playwright.sveltekit-production.config.ts",
           "check:fixtures": "tsx scripts/check-fixture-freshness.ts",
           "check:generated": "tsx scripts/check-generated-runtime.ts",
           "test:e2e:real-payload": "playwright test --config playwright.real-payload.config.ts",
+          "test:acl:real-payload": "tsx scripts/check-payload-acl.ts",
           "test:a11y": "playwright test tests/e2e/specs/accessibility.spec.ts",
           "test:soak": "playwright test --config playwright.soak.config.ts",
           "test:browser-bench": "playwright test --config playwright.bench.config.ts",
@@ -76,7 +89,7 @@
         "linked": [],
         "ignore": []
       },
-      "absent": []
+      "absent": ["changedFilePatterns"]
     }
   ],
   "callers": {

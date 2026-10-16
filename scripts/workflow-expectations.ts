@@ -61,6 +61,24 @@ const RELEASE: WorkflowSpec = {
             RELEASE_RUN_ID: '${{ inputs.run_id || github.event.workflow_run.id }}',
           },
         },
+        {
+          run: [
+            'if [ "$GITHUB_SHA" != "$TESTED_SHA" ] ||',
+            '   [ "$GITHUB_REF" != "refs/heads/$TESTED_BRANCH" ] ||',
+            '   [ "$GITHUB_WORKFLOW_SHA" != "$TESTED_SHA" ] ||',
+            '   [ "$GITHUB_WORKFLOW_REF" != "$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/$TESTED_BRANCH" ]; then',
+            '  echo "dispatched workflow source differs from certified CI"',
+            '  exit 1',
+            'fi',
+          ].join('\n'),
+          condition: "github.event_name == 'workflow_dispatch'",
+          shell: 'bash',
+          env: {
+            TESTED_SHA: '${{ steps.release_gate.outputs.tested_sha }}',
+            TESTED_BRANCH: '${{ steps.release_gate.outputs.tested_branch }}',
+          },
+          operators: true,
+        },
       ],
     },
     version: {
@@ -76,8 +94,68 @@ const RELEASE: WorkflowSpec = {
         { uses: 'changesets/action', with: { version: 'npm run version' } },
       ],
     },
+    'source-dispatch': {
+      if:
+        "github.event_name == 'workflow_run' && needs.gate.outputs.publish == 'true' && " +
+        '(github.sha != needs.gate.outputs.tested_sha || ' +
+        "github.ref != format('refs/heads/{0}', needs.gate.outputs.tested_branch) || " +
+        'github.workflow_sha != needs.gate.outputs.tested_sha || ' +
+        "github.workflow_ref != format('{0}/.github/workflows/release.yml@refs/heads/{1}', github.repository, needs.gate.outputs.tested_branch))",
+      needs: ['gate'],
+      permissions: { actions: 'write', contents: 'read' },
+      steps: [
+        {
+          run: [
+            'case "$TESTED_BRANCH" in',
+            `  ${RELEASE_BRANCHES.join('|')}) ;;`,
+            '  *) echo "invalid certified release branch"; exit 1 ;;',
+            'esac',
+            'if ! [[ "$TESTED_SHA" =~ ^[0-9a-f]{40}$ ]] ||',
+            '   ! [[ "$TESTED_RUN_ID" =~ ^[1-9][0-9]*$ ]]; then',
+            '  echo "invalid certified commit or CI run id"',
+            '  exit 1',
+            'fi',
+            'if ! [[ "$GITHUB_WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]] ||',
+            '   [ "$GITHUB_WORKFLOW_REF" != "$GITHUB_REPOSITORY/.github/workflows/release.yml@$GITHUB_REF" ]; then',
+            '  echo "invalid actual release workflow identity"',
+            '  exit 1',
+            'fi',
+            'actual_head="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TESTED_BRANCH" --jq \'.object.sha\')"',
+            'if [ "$actual_head" != "$TESTED_SHA" ]; then',
+            '  echo "certified branch moved; refusing source dispatch"',
+            '  exit 1',
+            'fi',
+            'router_workflow="$(gh api "repos/$GITHUB_REPOSITORY/contents/.github/workflows/release.yml?ref=$GITHUB_WORKFLOW_SHA" --jq \'.sha\')"',
+            'source_workflow="$(gh api "repos/$GITHUB_REPOSITORY/contents/.github/workflows/release.yml?ref=$TESTED_SHA" --jq \'.sha\')"',
+            'if ! [[ "$router_workflow" =~ ^[0-9a-f]{40}$ ]] ||',
+            '   [ "$source_workflow" != "$router_workflow" ]; then',
+            '  echo "source receiver workflow differs; backport the guarded workflow and certify CI again"',
+            '  exit 1',
+            'fi',
+            'jq -n --arg ref "$TESTED_BRANCH" --arg run_id "$TESTED_RUN_ID" \\',
+            '  \'{ref:$ref, inputs:{run_id:$run_id}}\' > "$RUNNER_TEMP/source-dispatch.json"',
+            'gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/release.yml/dispatches" \\',
+            '  --input "$RUNNER_TEMP/source-dispatch.json"',
+            "# The receiver shares this branch's concurrency key and starts after",
+            '# this router exits. Waiting here would prevent the receiver starting.',
+          ].join('\n'),
+          shell: 'bash',
+          env: {
+            GH_TOKEN: '${{ github.token }}',
+            TESTED_SHA,
+            TESTED_BRANCH: '${{ needs.gate.outputs.tested_branch }}',
+            TESTED_RUN_ID: '${{ needs.gate.outputs.run_id }}',
+          },
+          operators: true,
+        },
+      ],
+    },
     publish: {
-      if: "needs.gate.outputs.publish == 'true'",
+      if:
+        "needs.gate.outputs.publish == 'true' && github.sha == needs.gate.outputs.tested_sha && " +
+        "github.ref == format('refs/heads/{0}', needs.gate.outputs.tested_branch) && " +
+        'github.workflow_sha == needs.gate.outputs.tested_sha && ' +
+        "github.workflow_ref == format('{0}/.github/workflows/release.yml@refs/heads/{1}', github.repository, needs.gate.outputs.tested_branch)",
       needs: ['gate'],
       permissions: { actions: 'read', contents: 'write', 'id-token': 'write' },
       steps: [
@@ -114,8 +192,18 @@ const RELEASE: WorkflowSpec = {
           operators: true,
         },
         {
-          run: 'env GITHUB_SHA="$PACKAGE_SOURCE_COMMIT" GITHUB_REF="refs/heads/$PACKAGE_SOURCE_BRANCH" npm run release',
+          run: [
+            'if [ "$GITHUB_SHA" != "$PACKAGE_SOURCE_COMMIT" ] ||',
+            '   [ "$GITHUB_REF" != "refs/heads/$PACKAGE_SOURCE_BRANCH" ] ||',
+            '   [ "$GITHUB_WORKFLOW_SHA" != "$PACKAGE_SOURCE_COMMIT" ] ||',
+            '   [ "$GITHUB_WORKFLOW_REF" != "$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/$PACKAGE_SOURCE_BRANCH" ]; then',
+            '  echo "publisher workflow source differs from certified CI"',
+            '  exit 1',
+            'fi',
+            'npm run release',
+          ].join('\n'),
           shell: 'bash',
+          operators: true,
           env: {
             NPM_CONFIG_PROVENANCE: 'true',
             PACKAGE_ARTIFACT_DIR: 'release-artifact',

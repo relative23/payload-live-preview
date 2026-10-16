@@ -1,0 +1,31 @@
+{
+  "name": "plp-r4-payload2-real-admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "packageManager": "npm@12.0.2",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "backend": "node server.cjs",
+    "preview": "node preview.mjs"
+  },
+  "dependencies": {
+    "@payloadcms/bundler-webpack": "1.0.9",
+    "@payloadcms/db-mongodb": "1.7.5",
+    "@payloadcms/richtext-lexical": "0.11.4",
+    "@swc/core": "1.6.1",
+    "ajv": "8.14.0",
+    "express": "4.21.2",
+    "payload": "2.32.3",
+    "payload-live-preview": "file:./vendor/payload-live-preview.tgz",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "allowScripts": {
+    "@swc/core@1.6.1": true,
+    "sharp@0.32.6": true,
+    "fsevents@2.3.3": false
+  }
+}

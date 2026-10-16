@@ -32,6 +32,8 @@ export {
   PreviewConfigurationError,
   type AuthorizedPreviewContext,
   type AuthorizedPreviewScope,
+  type AuthorizedPreviewDocument,
+  type AuthorizedPreviewPayloadScope,
   type FetchLike,
   type IssuePreviewTokenOptions,
   type PayloadSessionStrategy,

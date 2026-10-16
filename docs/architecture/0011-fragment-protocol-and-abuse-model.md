@@ -36,17 +36,42 @@ the part that needs a threat model before an endpoint.
   (`src/fragment/inline.ts`, looked up as `__LIVE_PREVIEW_FRAGMENT__`), so a
   patch-only page carries none of it and every page shares one runtime.
 - The client (`payload-live-preview/fragment`) posts one request per
-  boundary and revision, shares identical requests, caps concurrency (4),
-  times out (5 s), validates the response (JSON, shape, size, boundary id,
-  revision) and maps every failure to an `LP08xx` outcome. A superseded
-  revision aborts its requests; a late response is discarded by revision;
-  a failure is patched from the same revision's data, so the editor never
-  sees stale content presented as current, and slow fragment A can never
-  overwrite fast fragment B.
+  boundary and revision, shares identical requests within that revision's abort
+  signal, caps concurrency (4), times out (5 s), validates the response (JSON,
+  shape, size, boundary id and key, revision) and maps every failure to an
+  `LP08xx` outcome. The signal is the internal generation identity when a new
+  runtime or owner session reuses a revision number. A superseded revision
+  aborts its requests and removes requests that are still waiting for a
+  concurrency slot. A request cancelled after permit handoff returns that
+  permit without starting its fetch. A late response is discarded by revision;
+  a failure is patched from the same revision's data, so the editor never sees
+  stale content presented as current, and slow fragment A can never overwrite
+  fast fragment B.
 - Events: `fragmentRender` per boundary and revision (`rendered` /
   `failed` with the code); `afterUpdate` with `source: 'fragment'` once
   the revision's fragments settled; `error` with `context: 'fragment'`.
   `inspect().fragments` reports handler presence and counts.
+
+### 1a. A boundary replaced while its render is in flight (2026-10-02)
+
+A host component that re-renders its region while a fragment request is open
+swaps the boundary element and keeps its `data-payload-fragment` and
+`data-payload-fragment-key`. The runtime morphed the late response into the
+element it had planned the render for, which was no longer in the document, and
+the page kept the old content. The fallback patch after a failed render reached
+nothing either: it looks bindings up in the cache, and the copy's bindings
+reach the cache only after the structural debounce. Both were red 3 of 3 in
+Chromium, Firefox and WebKit on the hybrid example.
+
+A boundary's identity is its id and key, not its element. When the planned
+element has left the document, the morph, the fallback patch and the
+`fragmentRender` event go to the one connected boundary with the same id and
+key inside the update's owner scope (`scopeBindingsByOwner`), and the cache is
+rebuilt before that patch. When two boundaries carry the identity, or none
+does, nothing is written: two copies name no single region. The revision check
+is unchanged, so a replacement never keeps a superseded render alive, and a
+boundary replaced after its render landed is an ordinary host re-render.
+Measured: +112 B gzip on the inline script, +106 B with the fragment prelude.
 
 ### 2. Wire protocol (`@/types/fragment-protocol`, version 1)
 
@@ -58,7 +83,9 @@ server authorizes the fragment request exactly as it would the page.
 Response: `{ html, boundary: { id, key? }, revision, metadata: {
 renderedAt, renderer, durationMs? } }` with `Cache-Control: private,
 no-store`, `X-Content-Type-Options: nosniff`, `Vary: Cookie`. A refusal is a
-status and one generic word (`{"error":"unauthorized"}`), never a reason.
+status and a generic error code (`{"error":"unauthorized"}`), never an authorization
+reason. A field-depth refusal also names the endpoint's public configured cap,
+as recorded in the 2026-10-03 addendum below.
 
 ### 3. Server contract (`createFragmentEndpoint`, Astro first)
 
@@ -74,15 +101,163 @@ service); the docs say so.
 
 ### 4. Abuse model — and where each control is verified
 
-| Threat                                                 | Control                                                                                                                                                   | Verified in                                               |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| SSR injection (request chooses what runs)              | Registry lookup by id only (own properties; prototype names refused); props computed server-side; no paths, templates or code cross the wire.             | `astro-fragments.test.ts` (404 for unknown/prototype ids) |
-| Confused deputy (site renders for a non-editor)        | `authorizePreviewRequest()` with the site's strategy on the **page route + query** the client reports, under the request's own cookies/headers.           | 403 without a token, 403 for a token of another route     |
-| Token leakage                                          | The token travels only as it already does for the page (query/cookie); responses are `no-store`; refusals carry no detail.                                | headers asserted on every response                        |
-| Cross-site request forgery                             | `Sec-Fetch-Site` must be `same-origin`/`none`; `Origin` must match the page origin or an explicit allow-list; JSON content type required.                 | 403 cross-site / foreign origin; 415 non-JSON             |
-| Amplification / resource exhaustion                    | Body limit (64 KiB), field depth limit (12), render timeout (5 s), client concurrency cap (4) and dedupe; rate limiting is the deployment's (documented). | 413 / 400 / 500 on timeout; client concurrency test       |
-| Cross-tenant access (a token for document A renders B) | The authorized context's scope is checked against the request (locale today; collection/id when the strategy carries them).                               | `scopeAllows` in the endpoint                             |
-| Stale content shown as current                         | Revision-bound requests, abort on supersession, fallback patch on failure, visible `LP08xx` code.                                                         | `fragment-strategy.test.ts`, `client.test.ts`             |
+| Threat                                                 | Control                                                                                                                                                                                                                                                   | Verified in                                                |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| SSR injection (request chooses what runs)              | Registry lookup by id only (own properties; prototype names refused); props computed server-side; no paths, templates or code cross the wire.                                                                                                             | `astro-fragments.test.ts` (404 for unknown/prototype ids)  |
+| Confused deputy (site renders for a non-editor)        | `authorizePreviewRequest()` with the site's strategy on the **page route + query** the client reports, under the request's own cookies/headers.                                                                                                           | 403 without a token, 403 for a token of another route      |
+| Token leakage                                          | The token travels only as it already does for the page (query/cookie); responses are `no-store`; refusals carry no detail.                                                                                                                                | headers asserted on every response                         |
+| Cross-site request forgery                             | `Sec-Fetch-Site` must be `same-origin`/`none`; `Origin` must match the page origin or an explicit allow-list; JSON content type required.                                                                                                                 | 403 cross-site / foreign origin; 415 non-JSON              |
+| Amplification / resource exhaustion                    | Streamed body limit (64 KiB of consumed bytes), field depth limit (64 by default; stricter caps 0–64), one body-read and separate props/render timeouts (5 s each), abort-aware client concurrency cap (4) and dedupe; rate limiting is the deployment's. | 413 / 408 / 400 / 500; endpoint and client tests           |
+| Cross-tenant access (a token for document A renders B) | Exact locale when scoped. Opt-in `scope.payload` also binds document kind, slug and ID before props/render, plus expiry and any site audience/path; Payload read depth is checked by `definePreview`, not inferred from form fields.                      | `fragment-document-scope.test.ts`, `preview-scope.test.ts` |
+| Stale content shown as current                         | Revision-bound requests, abort on supersession, fallback patch on failure, visible `LP08xx` code.                                                                                                                                                         | `fragment-strategy.test.ts`, `client.test.ts`              |
+
+The body cap counts the bytes exposed by `Request.body` while they are read.
+`Content-Length` may reject a request early, but it never admits one. Crossing
+the cap returns `413 {"error":"body"}` and stops application reads. A body-read
+deadline returns `408` with the same generic error; an abort, a disturbed or
+locked body, or a reader failure returns `400 {"error":"body"}`. JSON or a
+request shape that is invalid after a complete read remains
+`400 {"error":"shape"}`.
+
+An early declared-length refusal does not cancel a stream the endpoint never
+acquired. Some framework bridges map that cancellation to destroying the
+underlying request before they can write the `413`; disposal of that unread
+transport remains the bridge's responsibility. Once the endpoint acquires a
+reader, it cancels on an actual overrun, deadline, abort or read failure.
+
+Whether those bytes are before or after decompression depends on the host and
+its proxy. The host must therefore apply its own wire-size, decompression and
+request-rate limits. `limits.timeoutMs` spans the complete body read and then
+applies separately to props and rendering. Those timers cannot interrupt
+synchronous component code; an execution hard limit also belongs to the host.
+
+### 4a. One request lifetime (2026-09-24)
+
+`limits.totalTimeoutMs` is an opt-in deadline covering body reading,
+authorization, props and rendering together. The existing `timeoutMs` body and
+props/render windows keep their defaults and meanings. The total deadline
+returns `504 {"error":"timeout"}`; a client abort after reading the body returns
+`400 {"error":"request"}`. Body failures keep the responses above, and a
+props/render phase timeout remains `500 {"error":"render"}`.
+
+Each accepted POST owns one controller. The page request passed to the
+authorizer follows its signal; props and the renderer receive it as
+`FragmentRenderInput.signal`. The Payload-session verifier links that signal
+to its `/me` request while retaining its own shorter timeout. The endpoint
+stops waiting even if a consumer ignores the signal, consumes late rejections,
+and does not start another phase or accept a late result after stopping.
+Listeners and timers are released when the endpoint settles.
+
+Cancellation is cooperative. A deadline does not terminate JavaScript,
+revoke a database write, or undo replay-token consumption that already started.
+Synchronous CPU needs host isolation; concurrent-request and rate limits remain
+deployment responsibilities. This change introduces neither a shared server
+queue nor a default limit that would serialize unrelated editors.
+
+The shared endpoint joins the critical coverage and nightly mutation scope on
+2026-09-24. The first full coverage measurement is 97.83% lines, 97.43%
+functions and 93.66% branches; the new file ratchets are 97/97/93. Existing
+ratchets are unchanged. A separate two-file mutation run records 642 mutants;
+the exact full-scope baseline must be remeasured before release, not inferred
+by adding this report to an older one.
+
+### 4b. Native HTTP/1 transport ownership (2026-09-24)
+
+The native lifetime probes found that adapter-node 5.5.7 / SvelteKit 2.70.2
+does not abort its Web Request after upload completion, and H3 1.15.11 does
+not connect that signal at all. SvelteKit also destroys its incoming Node
+request when a Web body reader is cancelled, losing an otherwise valid 504.
+
+The server bindings add a request-local bridge for a supplied native HTTP/1
+request. SvelteKit receives it through `event.platform.req`; Nuxt's handler
+accepts the H3 event as an optional second argument, preserving its existing
+one-argument Web Request form. A socket close and the original request signal
+both abort the effective request. Listeners leave on success, refusal and
+exception. No Node import, H3 dependency, process-global state or queue enters
+the portable endpoint. Other hosts retain their supplied Web Request semantics.
+
+The bridge borrows the original body through a zero-prefetch stream. On early
+termination it releases the reader and pauses the native request, without
+cancelling the framework stream or draining discarded data in the background.
+An unread or partially read body requires `Connection: close` on the response:
+the HTTP/1 server flushes the refusal before closing that connection. A fully
+read request keeps normal keep-alive. Host wire/body limits still apply; this
+bridge is not an HTTP/2 stream adapter and does not close a multiplexed socket.
+
+This is an additive minor integration seam alongside the total-deadline API.
+The seven native failures remain acceptance tests. Required counterchecks are
+unread/oversized/stalled bodies, pre-existing abort, incomplete-upload disconnect,
+reader/listener cleanup, normal completion and keep-alive reuse. A real socket
+observer is independent of the bridged cancellation signal: seeing disconnect
+alone does not establish that application work stopped. TLS proxies must relay
+their downstream close separately; an upstream-only pass does not prove that.
+
+### 4c. Other runtimes and proxies (2026-10-02)
+
+The Web-API binding loads no framework module, so it is the one a host other
+than the four frameworks can run. It was driven through the native cases of the
+framework servers: the three phases and the total deadline, a client that leaves
+during a phase or an upload, a body of exactly 64 KiB and one byte over it in
+two-byte text, a chunked body cut at the limit, a declared length refused on
+the headers alone, a gzip body, and keep-alive reuse. A bare Node 24.19 server,
+Deno 2.9.7 and Bun 1.4.2 pass all 19, and Deno with TLS the 12 that apply to
+HTTP/2. Deno fails the body stream of a dropped upload and leaves
+`request.signal` alone; the case holds the endpoint to what it controls, a 400
+before authorization within 50 ms. The four framework servers pass the same 19
+(18 behind the fixture's TLS proxy, whose Node pipe sends no request head before
+its first body byte, so a headers-only request never reaches them).
+
+The bytes counted are the bytes sent. The endpoint does not undo a
+`Content-Encoding`: a gzip body of a valid request, and one of 8 MB of blanks
+that is 8 KB on the wire, are both refused as malformed, and no host or proxy
+tested inflated them. A host that inflates request bodies owns the limit on the
+inflated size, as the decision above already says.
+
+Behind nginx 1.27.5, Caddy 2.11.4 and Traefik 3.3.7 in front of that Node server,
+to a client over HTTP/1.1 and HTTP/2, a client that leaves during a phase
+cancels the server's work and the deadline's 504 reaches the client. They differ
+for an upload that stays half-sent, which a browser does not produce:
+
+- nginx with `proxy_request_buffering off` passes the endpoint's answer at its
+  deadline through, as do Caddy and Traefik to an HTTP/2 client.
+- Caddy and Traefik forward the request at once but, to an HTTP/1.1 client that
+  keeps its connection alive, deliver the answer only after the upload ends. The
+  endpoint answered at 0.4 s, the client heard at 1 s when it finished sending.
+  A request that asks to close does not wait for the upload, which is why a
+  test client must keep its connection alive to see this.
+- nginx with its default buffering forwards nothing of a half-sent body, so the
+  endpoint's body deadline never runs and `client_body_timeout` is the bound.
+
+A request over the limit is refused before the body is read, and the host then
+closes or drains the connection. This ADR keeps that: draining a body whose
+refusal is already decided would move unbounded work into the bridge, and the
+`overLimitBody: 'drain'` of the SvelteKit binding is bounded by the body
+deadline. The cost is a race. A client or proxy still sending when the server
+closes can get a reset instead of the 413. Measured from Chromium, Firefox and
+WebKit (ten requests per size and engine at 90 kB, 300 kB and 2 MB, twice, so
+180 per host) the share moved with machine load. At a load average of 5 to 10:
+none lost through Deno, Bun, nginx with either buffering setting and nginx with
+`client_max_body_size 256k`; 4 of 180 through Caddy and 6 through Traefik; 20
+through a Node bridge that closes with the body unread, all in WebKit at 2 MB.
+At 16, nginx's default buffering lost 39 and 37 of 60 at 90 kB and 300 kB, while
+Deno, Bun and nginx with `proxy_request_buffering off` still lost none of 180,
+nor nginx with the limit any of the 120 above it, which it refuses before the
+endpoint is asked. Of the framework servers asked directly, Astro and Next.js
+lost none; SvelteKit and Nuxt, which answer `Connection: close`, lost some in
+Firefox and WebKit and none in Chromium. The runtime treats a 502 and a
+network error like a 413: `LP0801`, then a patch from the same revision. The
+deployment guide names the proxy limit as the remedy.
+
+Two findings of the same measurement are not the package's. A Node bridge that
+answers before the body is read and keeps the connection stalls the next
+request on it for a browser that pools connections (every second 300 kB request
+in Chromium and Firefox); the test host now sends `Connection: close`, as the
+bindings do. Traefik 3.3.7's `buffering` middleware answers a response with an
+empty body as 500, which the endpoint never sends but its probe route does.
+
+The cases live in `tests/e2e/lifetime*`, driven by
+`playwright.fragment-hosts.config.ts` (hosts and proxies) and
+`playwright.fragment-lifetime.config.ts` (framework servers).
 
 ### 5. What stays out
 
@@ -123,33 +298,47 @@ focused control's survival across a full-document morph is engine-sensitive
 and the fragment path (which is what a focused editor field sits in) keeps
 focus in all three engines.
 
-## Addendum (2026-10-03): table depth and stricter endpoint caps
+The head reconciler owns only the first unowned `<title>`, direct unowned
+`meta[name]` and `meta[property]` children, and direct unowned
+`link[rel="canonical"]` children. It projects that managed sequence in server
+order, including duplicates, complete attribute removal and surplus deletion.
+Scripts, styles, charset and HTTP-equivalent metadata, non-canonical links,
+nested elements and anything marked `data-payload-owned` stay with their
+existing owner.
 
-The reported Lexical table in PR #120 nests 15 levels under `fields`. The
-previous ceiling of 12 refused that document before authorization. The default
-ceiling is now 64; projects can lower it with `limits.fieldDepth`, an integer
-from 0 to 64. A zero cap accepts an empty `fields` record only. Each object
-property or array element adds one level, including primitive values, starting
-at zero for `fields`. This is the serialized document's shape, separate from
-Payload REST population depth.
+## Addendum (2026-10-03): stricter field-depth caps
 
-The fixed ceiling still bounds the walk before authorization. Invalid endpoint
-configuration throws when the endpoint is created; the internal parser returns
-`null` for an invalid cap. A deeper request answers
-`400 {"error":"field-depth","maxDepth":64}`, with the configured lower cap when
-present. That public diagnostic reveals the cap before authorization. It does
-not include fields, credentials, registry contents or the measured input depth.
-Other shape, origin and authorization refusals retain their existing codes and
-generic bodies. Response cache, content-type, protocol and `nosniff` headers
-remain unchanged.
+The default and hard ceiling remain 64 (ADR 0027). `limits.fieldDepth` lets a
+site require a lower integer cap from 0 through 64; invalid configuration
+throws `TypeError` when the endpoint is created. This is an additive minor
+option. It does not permit a higher ceiling or change the default on 2.x.
 
-This addendum narrows the earlier rule that every refusal carries one word:
-depth refusal additionally names the configured cap. The client continues to
-treat HTTP 400 as `LP0801` and patches from the same revision. Protocol version 1
-and the successful response shape stay unchanged. The new lower-cap option is
-a minor release change.
+Depth starts at 0 for the `fields` record. Each object property or array
+element adds one level, including a primitive value, so 0 accepts only an
+empty record. The parser stops at the first branch past the configured cap.
+An otherwise valid request beyond it receives
+`400 {"error":"field-depth","maxDepth":24}` for a cap of 24, before authorization
+or registry lookup. The response contains no field value, registry detail or
+authorization result. Shape, origin and authorization refusals retain their
+generic codes and all response headers are unchanged.
 
-The reported fixture and `astro-fragments.test.ts` cover the original table,
-64/65, stricter caps and a serialized 20,000-level request before authorization.
-The parser and shared binding contracts also check mixed object/array edges,
-zero and invalid caps, and the refusal headers on all four adapters.
+The anonymized table reported by the contributor is kept byte for byte in
+`tests/fixtures/fragment/lexical-table-request.json`. It reaches depth 15,
+within the existing default. Its regression covers that shape and a stricter
+cap, alongside all four public bindings, invalid configuration, JSON edge
+counting and the HTTP failure path's patch from the current revision. The
+body-byte and request-lifetime checks still run before the depth check; scope,
+expiry and document identity still gate props and rendering afterwards.
+
+The unchanged positive-integer validation for `bodyBytes`, `timeoutMs` and
+`totalTimeoutMs` moves to `src/adapters/shared/fragment-limits.ts` on this date
+to keep the shared handler below 600 lines. Its three callers and error
+messages are unchanged. The new file retains the handler's critical coverage
+thresholds and joins the same nightly mutation scope; exact mutant totals
+remain subject to a full measurement. It is not added to the trusted core.
+
+The depth diagnostic narrows the earlier one-word refusal contract: it names
+only the configured cap. The client still treats HTTP 400 as `LP0801` and
+patches from the same revision. Protocol version 1 and successful responses
+are unchanged. The original table, mixed object/array edges and a serialized
+20,000-level request remain regressions for bounded pre-authorization validation.

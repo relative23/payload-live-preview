@@ -149,6 +149,29 @@ describe('data-payload-strategy', () => {
 });
 
 describe('data-payload-boundary', () => {
+  it.each([
+    ['null', null, true],
+    ['whitespace', '  ', true],
+    ['empty array', [], true],
+    ['populated array', ['entry'], false],
+    ['zero', 0, false],
+    ['false', false, false],
+    ['record', { length: 0 }, false],
+  ])('keeps conditional markup visibility truthful for %s', async (_name, value, hidden) => {
+    document.body.innerHTML = '<p data-payload-field="subtitle" data-payload-boundary hidden></p>';
+    const anchor = document.querySelector('p') as HTMLElement;
+    start();
+    let done = afterUpdate();
+    post({ subtitle: 'present' });
+    await done;
+    expect(anchor.hasAttribute('hidden')).toBe(false);
+
+    done = afterUpdate();
+    post({ subtitle: value });
+    await done;
+    expect(anchor.hasAttribute('hidden')).toBe(hidden);
+    expect(renders).toEqual(['subtitle', 'subtitle']);
+  });
   it('unhides the anchor when the field gets a value and hides it again when emptied', async () => {
     document.body.innerHTML = '<p data-payload-field="subtitle" data-payload-boundary hidden></p>';
     const anchor = document.querySelector('p') as HTMLElement;

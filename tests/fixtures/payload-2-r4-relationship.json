@@ -1,0 +1,66 @@
+[
+  {
+    "type": "payload-live-preview",
+    "origin": "https://cms.example.com",
+    "fieldSchemaJSON": [
+      {
+        "name": "title",
+        "type": "text"
+      },
+      {
+        "name": "subtitle",
+        "type": "text"
+      },
+      {
+        "name": "author",
+        "hasMany": false,
+        "relationTo": "authors",
+        "type": "relationship"
+      },
+      {
+        "name": "body",
+        "type": "richText"
+      },
+      {
+        "name": "tags",
+        "fields": [
+          {
+            "name": "label",
+            "type": "text"
+          },
+          {
+            "name": "id",
+            "type": "text"
+          },
+          {
+            "name": "id",
+            "type": "text"
+          }
+        ],
+        "type": "array"
+      },
+      {
+        "name": "updatedAt",
+        "type": "date"
+      },
+      {
+        "name": "createdAt",
+        "type": "date"
+      }
+    ],
+    "data": {
+      "title": "Saved title",
+      "subtitle": "Saved subtitle",
+      "author": null
+    }
+  },
+  {
+    "type": "payload-live-preview",
+    "origin": "https://cms.example.com",
+    "data": {
+      "title": "Saved title",
+      "subtitle": "Saved subtitle",
+      "author": "000000000000000000000001"
+    }
+  }
+]

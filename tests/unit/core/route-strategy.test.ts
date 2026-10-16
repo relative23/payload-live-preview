@@ -57,6 +57,7 @@ function start(
   extra: {
     onUnboundChange?: 'ignore' | 'route';
     onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
+    scopeBindingsByOwner?: boolean;
     warn?: (...args: unknown[]) => void;
   } = {},
 ): LivePreviewRuntime {
@@ -80,7 +81,7 @@ function start(
   return runtime;
 }
 /** A strategy that "re-renders" the route by rewriting the layout element. */
-function fakeRoute(outcome: 'refreshed' | 'failed' = 'refreshed'): RouteStrategy & {
+function fakeRoute(outcome: 'refreshed' | 'partial' | 'failed' = 'refreshed'): RouteStrategy & {
   refreshes: number;
 } {
   const strategy = {
@@ -89,7 +90,7 @@ function fakeRoute(outcome: 'refreshed' | 'failed' = 'refreshed'): RouteStrategy
       changed.has('title') && root.querySelector('head [data-payload-field="title"]') !== null,
     refresh: () => {
       strategy.refreshes += 1;
-      if (outcome === 'refreshed') {
+      if (outcome === 'refreshed' || outcome === 'partial') {
         document.querySelector('[data-testid="layout"]')!.textContent =
           'server render #' + String(strategy.refreshes);
         document.title = 'Saved title';
@@ -143,6 +144,7 @@ describe('route strategy', () => {
     expect(rt.inspect().route).toMatchObject({
       handler: true,
       refreshes: 1,
+      partial: 0,
       failed: 0,
       loopStopped: 0,
     });
@@ -159,6 +161,22 @@ describe('route strategy', () => {
     post({ footer: 'Only the footer' });
     await done;
     expect(route.refreshes).toBe(0);
+  });
+
+  it('reapplies local unsaved fields after a partial route render and reports its limit', async () => {
+    const route = fakeRoute('partial');
+    const rt = start(route);
+    const done = afterUpdates(['patch']);
+    post({ title: 'Unsaved title', footer: 'Unsaved footer' });
+    await done;
+
+    expect(document.querySelector('[data-testid="layout"]')?.textContent).toBe('server render #1');
+    expect(document.title).toBe('Unsaved title');
+    expect(document.querySelector('h1')?.textContent).toBe('Unsaved title');
+    expect(document.querySelector('[data-payload-field="footer"]')?.textContent).toBe(
+      'Unsaved footer',
+    );
+    expect(rt.inspect().route).toMatchObject({ refreshes: 1, partial: 1, failed: 0 });
   });
 
   it('patches the route-bound elements when the refresh fails', async () => {
@@ -202,6 +220,61 @@ describe('route strategy', () => {
     expect(rt.inspect().revisions.superseded).toBe(1);
     expect(rt.inspect().route.refreshes).toBe(1);
     expect(logs.some((line) => line.includes('LP0805'))).toBe(false);
+  });
+
+  it('does not start a stale refresh when route planning accepts a newer revision', async () => {
+    document.head.innerHTML = '';
+    const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
+    let reentered = false;
+    const route: RouteStrategy = {
+      plan: (_root, changed) => {
+        if (!reentered && changed.has('title')) {
+          reentered = true;
+          post({ title: 'newer' });
+          return true;
+        }
+        return false;
+      },
+      refresh,
+    };
+    start(route);
+    const done = afterUpdates(['patch']);
+
+    post({ title: 'stale' });
+    await done;
+
+    expect(document.querySelector('h1')?.textContent).toBe('newer');
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it('refreshes for a fieldless route sentinel streamed after navigation', async () => {
+    document.head.innerHTML = '';
+    document.body.innerHTML =
+      '<section data-payload-owner="global:home"><h1 data-payload-field="title">saved</h1>' +
+      '<p data-payload-field="footer">Old</p></section>';
+    const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
+    const rt = start({ plan: () => false, refresh }, { scopeBindingsByOwner: true });
+    const connected = afterUpdates(['patch']);
+    post({ title: 'unsaved title', footer: 'Old' });
+    await connected;
+
+    rt.navigationCommit();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<section data-payload-owner="global:other"><aside data-payload-strategy="route" data-payload-depends="title">foreign</aside></section>' +
+        '<section data-payload-owner="global:home"><aside data-payload-strategy="route" data-payload-depends="other">untouched</aside></section>',
+    );
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(refresh).not.toHaveBeenCalled();
+
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<section data-payload-owner="global:home"><aside data-payload-strategy="route" data-payload-depends="title">published</aside></section>',
+    );
+    await vi.waitFor(() => {
+      expect(refresh).toHaveBeenCalledOnce();
+    });
   });
 });
 

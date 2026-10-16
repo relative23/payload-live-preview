@@ -1,0 +1,10 @@
+[
+  {
+    "version": "4.0.0-canary.37",
+    "peerDependencies": {
+      "payload": "4.0.0-canary.37"
+    },
+    "dist.integrity": "sha512-TFoEiWLHGOpe+e1zCzM8WN6cm/yRrpFBYcZeXiDFUu+MsftmGsFSlv43xZssLzIIyd92VZx3KFc8G9QqGOq+ZA==",
+    "dist.tarball": "https://registry.npmjs.org/@payloadcms/db-sqlite/-/db-sqlite-4.0.0-canary.37.tgz"
+  }
+]

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { isMorphBoundary, isMorphCompatible, morphElement, syncAttributes } from '@core/morph';
+import { isMorphBoundary } from '@core/islands';
+import { isMorphCompatible, morphElement, syncAttributes } from '@core/morph';
 
 /**
  * ADR 0008 made executable: the morph retains live nodes wherever the
@@ -32,6 +33,20 @@ describe('compatibility and boundaries', () => {
     expect(isMorphBoundary(el('<div contenteditable></div>'))).toBe(true);
     expect(isMorphBoundary(el('<div contenteditable="false"></div>'))).toBe(false);
     expect(isMorphBoundary(el('<div></div>'))).toBe(false);
+  });
+
+  it('morphs through an island that explicitly opted back into patching', () => {
+    const live = el('<main><div data-payload-island="patch"><span>published</span></div></main>');
+    const span = live.querySelector('span');
+
+    morphElement(
+      live,
+      el('<main><div data-payload-island="patch"><span>draft</span></div></main>'),
+      options,
+    );
+
+    expect(live.querySelector('span')).toBe(span);
+    expect(span?.textContent).toBe('draft');
   });
 
   it('returns the rendered element when incompatible, without touching the live one', () => {

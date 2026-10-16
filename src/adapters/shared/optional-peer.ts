@@ -5,7 +5,7 @@
  * install: `astro`, `react`/`react-dom`, `svelte`, `vue`. A project that never
  * registers a fragment — most of them — must still be able to install and run
  * this package, so the import happens at the first render rather than at module
- * load, and always through a variable specifier so a bundler leaves it alone.
+ * load. Each caller chooses a specifier its consumer can resolve.
  */
 
 /**

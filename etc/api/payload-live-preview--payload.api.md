@@ -41,13 +41,24 @@ export interface LivePreviewUrlArgs {
     };
     // (undocumented)
     readonly data: Record<string, unknown>;
+    readonly documentInfo?: {
+        readonly collection?: {
+            readonly slug?: string;
+            readonly fields?: unknown;
+        };
+        readonly global?: {
+            readonly slug?: string;
+            readonly fields?: unknown;
+        };
+    };
     // (undocumented)
     readonly globalConfig?: {
         readonly slug: string;
     };
     // (undocumented)
     readonly locale?: string | {
-        readonly code: string;
+        readonly code?: string | null;
+        readonly [extra: string]: unknown;
     };
 }
 

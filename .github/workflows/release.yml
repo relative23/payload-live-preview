@@ -3,8 +3,8 @@ name: Release
 # A successful CI push run on a release branch certifies its head commit;
 # this workflow either opens the Version PR or publishes the exact artifact that
 # run produced. The branches are listed once, in scripts/release-gate.ts.
-# `workflow_dispatch` re-enters a certified run whose release was skipped
-# (for example because a newer push landed while its CI was still running).
+# `workflow_dispatch` re-enters an infrastructure-interrupted certified run
+# while its source branch still names the certified commit.
 on:
   workflow_run:
     workflows: [CI]
@@ -17,7 +17,7 @@ on:
         type: string
 
 # One release at a time per branch, so independent release branches never wait
-# on each other. A dispatched re-entry runs on main's ref and queues with main.
+# on each other. A source dispatch queues behind its branch's router.
 concurrency:
   group: release-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: false
@@ -46,8 +46,8 @@ jobs:
       version_pr: ${{ steps.release_gate.outputs.version_pr }}
       publish: ${{ steps.release_gate.outputs.publish }}
     steps:
-      # The gate itself runs from the current main tip; the tested commit is
-      # read through Git so a re-entered run still gets today's gate logic.
+      # workflow_run uses the default branch; a dispatch uses its selected branch.
+      # Both certify the requested CI run and read its tested commit through Git.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
@@ -69,6 +69,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id }}
         run: npx tsx scripts/release-gate.ts
+
+      # A dispatch runs the source branch's workflow, whose signed identity must
+      # agree with the CI run just certified. A moved branch fails before publish.
+      - name: Verify dispatched source snapshot
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          TESTED_SHA: ${{ steps.release_gate.outputs.tested_sha }}
+          TESTED_BRANCH: ${{ steps.release_gate.outputs.tested_branch }}
+        run: |
+          if [ "$GITHUB_SHA" != "$TESTED_SHA" ] ||
+             [ "$GITHUB_REF" != "refs/heads/$TESTED_BRANCH" ] ||
+             [ "$GITHUB_WORKFLOW_SHA" != "$TESTED_SHA" ] ||
+             [ "$GITHUB_WORKFLOW_REF" != "$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/$TESTED_BRANCH" ]; then
+            echo "dispatched workflow source differs from certified CI"
+            exit 1
+          fi
 
   version:
     name: Create or update Version PR
@@ -114,12 +131,74 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  source-dispatch:
+    name: Route publication to certified source workflow
+    needs: gate
+    # workflow_run signs the default-branch snapshot. Dispatch the certified
+    # branch instead; the receiver refuses drift and never dispatches recursively.
+    if: >-
+      github.event_name == 'workflow_run' &&
+      needs.gate.outputs.publish == 'true' &&
+      (github.sha != needs.gate.outputs.tested_sha ||
+      github.ref != format('refs/heads/{0}', needs.gate.outputs.tested_branch) ||
+      github.workflow_sha != needs.gate.outputs.tested_sha ||
+      github.workflow_ref != format('{0}/.github/workflows/release.yml@refs/heads/{1}', github.repository, needs.gate.outputs.tested_branch))
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Dispatch certified source workflow
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTED_SHA: ${{ needs.gate.outputs.tested_sha }}
+          TESTED_BRANCH: ${{ needs.gate.outputs.tested_branch }}
+          TESTED_RUN_ID: ${{ needs.gate.outputs.run_id }}
+        run: |
+          case "$TESTED_BRANCH" in
+            main|release/1.x|release/2.0) ;;
+            *) echo "invalid certified release branch"; exit 1 ;;
+          esac
+          if ! [[ "$TESTED_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+             ! [[ "$TESTED_RUN_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "invalid certified commit or CI run id"
+            exit 1
+          fi
+          if ! [[ "$GITHUB_WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+             [ "$GITHUB_WORKFLOW_REF" != "$GITHUB_REPOSITORY/.github/workflows/release.yml@$GITHUB_REF" ]; then
+            echo "invalid actual release workflow identity"
+            exit 1
+          fi
+          actual_head="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TESTED_BRANCH" --jq '.object.sha')"
+          if [ "$actual_head" != "$TESTED_SHA" ]; then
+            echo "certified branch moved; refusing source dispatch"
+            exit 1
+          fi
+          router_workflow="$(gh api "repos/$GITHUB_REPOSITORY/contents/.github/workflows/release.yml?ref=$GITHUB_WORKFLOW_SHA" --jq '.sha')"
+          source_workflow="$(gh api "repos/$GITHUB_REPOSITORY/contents/.github/workflows/release.yml?ref=$TESTED_SHA" --jq '.sha')"
+          if ! [[ "$router_workflow" =~ ^[0-9a-f]{40}$ ]] ||
+             [ "$source_workflow" != "$router_workflow" ]; then
+            echo "source receiver workflow differs; backport the guarded workflow and certify CI again"
+            exit 1
+          fi
+          jq -n --arg ref "$TESTED_BRANCH" --arg run_id "$TESTED_RUN_ID" \
+            '{ref:$ref, inputs:{run_id:$run_id}}' > "$RUNNER_TEMP/source-dispatch.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/actions/workflows/release.yml/dispatches" \
+            --input "$RUNNER_TEMP/source-dispatch.json"
+          # The receiver shares this branch's concurrency key and starts after
+          # this router exits. Waiting here would prevent the receiver starting.
+
   publish:
     name: Publish verified version
     needs: gate
-    # The gate has proven the tested commit is on its branch and its version is
-    # still unpublished; a newer push must not block this artifact.
-    if: needs.gate.outputs.publish == 'true'
+    # Only the actual certified source workflow may acquire an OIDC publisher.
+    if: >-
+      needs.gate.outputs.publish == 'true' &&
+      github.sha == needs.gate.outputs.tested_sha &&
+      github.ref == format('refs/heads/{0}', needs.gate.outputs.tested_branch) &&
+      github.workflow_sha == needs.gate.outputs.tested_sha &&
+      github.workflow_ref == format('{0}/.github/workflows/release.yml@refs/heads/{1}', github.repository, needs.gate.outputs.tested_branch)
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -186,8 +265,8 @@ jobs:
       # the version and the registry's `latest` decide, then downloads it from
       # the registry and compares digests and inventory before creating the
       # local release tag.
-      # Checkout does not change the GitHub source identity npm uses for provenance.
-      # Override only this process; the workflow identity and run id stay the runner's.
+      # The runner identity is signed by GitHub. Check it again in the actual
+      # publish shell without replacing source variables for the npm process.
       - name: Publish with provenance
         id: publish
         shell: bash
@@ -197,7 +276,15 @@ jobs:
           PACKAGE_SOURCE_COMMIT: ${{ needs.gate.outputs.tested_sha }}
           PACKAGE_SOURCE_BRANCH: ${{ needs.gate.outputs.tested_branch }}
           SOURCE_DATE_EPOCH: ${{ steps.source_date.outputs.epoch }}
-        run: env GITHUB_SHA="$PACKAGE_SOURCE_COMMIT" GITHUB_REF="refs/heads/$PACKAGE_SOURCE_BRANCH" npm run release
+        run: |
+          if [ "$GITHUB_SHA" != "$PACKAGE_SOURCE_COMMIT" ] ||
+             [ "$GITHUB_REF" != "refs/heads/$PACKAGE_SOURCE_BRANCH" ] ||
+             [ "$GITHUB_WORKFLOW_SHA" != "$PACKAGE_SOURCE_COMMIT" ] ||
+             [ "$GITHUB_WORKFLOW_REF" != "$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/$PACKAGE_SOURCE_BRANCH" ]; then
+            echo "publisher workflow source differs from certified CI"
+            exit 1
+          fi
+          npm run release
 
       # The Release follows npm: a version not published under `latest` does
       # not take GitHub's Latest label.

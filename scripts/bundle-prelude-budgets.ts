@@ -6,6 +6,13 @@
  * profiles and their reasons stay there, and every "the prelude did not move"
  * below refers to the runtime's own change recorded in `INLINE_BUDGET`.
  */
+// 2026-10-05 (ADR 0004): accepted data snapshots and owned merge outcomes; paired 2.1.0 measurements at epoch1791096072 (Node24.19/npm12.0.2) retain each row's reserves.
+// 2026-10-05 (ADR 0004): trailing merge timers own their requests and handles.
+// Measured against the prior 2.1.0 archive with Node24.19/npm12.0.2, epoch1791096072;
+// changed rows move by their exact measured deltas and retain their previous reserves.
+// 2026-10-04 (2.1.0): stop superseded merges after diagnostics and simplify legacy
+// relation planning. Paired Node24.19/npm12.0.2 measurements at epoch1791096072 move
+// changed rows by their measured deltas and preserve existing raw/gzip/Brotli reserves.
 
 // The inline script with the fragment prelude ahead of the runtime (ADR 0011);
 // only a page configured with `fragments` receives it. The prelude itself grew
@@ -85,7 +92,46 @@
 // 2026-09-19 (the sanitizer empties `is`): raw 126_568 → 126_609 (+41 B), gzip 40_022 → 40_032 (+10 B), brotli 35_100 → 35_117 (+17 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, LP0808 once for an escalation with nowhere to go, and `canEscalate`. The log in bundle-budgets.ts has the whole change.
 // 2026-09-19 (2.1: the sanitizer document named per call): raw 126_609 → 126_672 (+63 B), gzip 40_032 → 40_060 (+28 B), brotli 35_117 → 35_132 (+15 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, LP0808 once for an escalation with nowhere to go, and `canEscalate`. The log in bundle-budgets.ts has the whole change.
 // 2026-09-19 (2.1: one scope per runtime session): raw 126_672 → 127_186 (+514 B), gzip 40_060 → 40_258 (+198 B), brotli 35_132 → 35_312 (+180 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, LP0808 once for an escalation with nowhere to go, and `canEscalate`. The log in bundle-budgets.ts has the whole change.
-export const INLINE_FRAGMENT_BUDGET = { raw: 127_186, gzip: 40_258, brotli: 35_312 } as const;
+// 2026-09-22 (2.1: the morph takes its ownership rule): raw 127_186 → 127_101 (−85 B), gzip 40_258 → 40_350 (+92 B), brotli 35_312 → 35_447 (measured +97 B, then restored to 120 B over this host); cushions kept. The reason and common measurement are in bundle-budgets.ts.
+// 2026-09-22 (2.1: exact fragment response identity): raw 127_101 → 127_120 (measured 127_065 → 127_084, +19 B), gzip unchanged at 40_350 (measured 40_321), brotli 35_447 → 35_511 (measured 35_327 → 35_391, +64 B). The comparison used the same dirty morph tree and SOURCE_DATE_EPOCH with only the two handler changes removed; existing cushions stay intact.
+// 2026-09-23 (H08): raw 127_120 → 127_374 (+254 B), gzip 40_350 → 40_331 (−19 B), brotli 35_511 → 35_399 (−112 B); measured with only the managed-head reconciliation added, cushions kept. H14 then moves raw 127_374 → 127_899 (+525 B), gzip 40_331 → 40_520 (+189 B), brotli 35_399 → 35_583 (+184 B) for abort-aware fragment waiters. The reasons and entry measurements are in bundle-budgets.ts.
+// 2026-09-23 (H06: fragment request generation identity): raw 127_899 → 127_995
+// (+96 B), gzip 40_520 → 40_566 (+46 B), brotli 35_583 → 35_679 (+96 B).
+// The signal generation now belongs to the dedupe key, so equal revision
+// numbers in later runtime or owner generations cannot inherit an earlier
+// promise. Measured against the H08/H14 snapshot, existing cushions kept.
+// 2026-09-24 (2.1, router-commit replay): +904 raw / +210 gzip / +142 brotli in a paired build; the prior cushion stays unchanged. The common measurement and reason are in bundle-budgets.ts.
+// 2026-09-24 (2.1 source freeze): 137_457 raw / 43_196 gzip / 37_714 brotli; the prior 36 B raw, 29 B gzip and 120 B brotli cushions stay unchanged.
+// 2026-09-24 (streamed React hydration): 137_953 raw / 43_336 gzip / 37_838
+// brotli (+496 / +140 / +124); only the common root-wide dehydrated-boundary
+// scan moves, and the prior 36 B / 29 B / 120 B cushions stay unchanged.
+// 2026-09-24 (H01 route fidelity): 137_953 / 43_336 / 37_838 →
+// 138_004 / 43_359 / 37_850; the prior cushions stay unchanged.
+// 2026-09-25 (H11): +282 raw / +84 gzip / +146 brotli; the response guards
+// and paired measurement are in bundle-budgets.ts. Prior cushions retained.
+// 2026-09-27 (PHD-05): guarded island handoff and deduplication in the runtime,
+// measured +167/+82/+5 B; retain 36/29/120 B cushions. Prelude unchanged.
+// 2026-09-28 (H05 fragment islands, ADR 0021): measured +3295/+903/+686 B; same 36/29/120 B cushions.
+// 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+151/+213 B; same 36/29/120 B cushions.
+// 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+6/-64 B; same 36/29/120 B cushions.
+// 2026-09-29 (PHD-02, owner-scoped route planning): measured +97/+52/+44 B; same 36/29/120 B cushions.
+// 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2924/+883/+766 B; same 36/29/120 B cushions.
+// 2026-09-29 (H13, revision display state, ADR 0023): measured +3168/+1034/+880 B; same 36/29/120 B cushions.
+// 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+44/+48 B; same 36/29/120 B cushions.
+// 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-43/-36 B; same 36/29/120 B cushions.
+// 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +178/+98/+100 B; same 36/29/120 B cushions.
+// 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+188/+118 B; same 36/29/120 B cushions.
+// 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +360/+106/+102 B; same 36/29/120 B cushions.
+// 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +616/+262/+218 B; same 36/29/120 B cushions.
+// 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7525/+2732/+2094 B; cushions 36/29/120 B.
+// 2026-10-04 (2.1.0: bounded v2/locale/depth/React integration and owner/scheduler fixes):
+// Paired Node24.19/npm12.0.2, epoch1791096072; +7999/+2867/+2317 B raw/gzip/Brotli; reserves 36/29/120 B.
+// 2026-10-04 (2.1.0): merger reentrancy and accepted-locale/consumer recovery.
+// Node24.19/npm12.0.2, epoch1791096072; previous sample +314/+68/-57 B raw/gzip/Brotli; reserves 36/29/120 B.
+// 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
+// Node24.19/npm12.0.2, epoch1791096072: +153/+63/+14 B raw/gzip/Brotli;
+// retain the prior 36/29/120 B reserves.
+export const INLINE_FRAGMENT_BUDGET = { raw: 158_703, gzip: 50_272, brotli: 43_573 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -174,4 +220,37 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 127_186, gzip: 40_258, brotli: 35_3
 // 2026-09-19 (the sanitizer empties `is`): raw 121_616 → 121_657 (+41 B), gzip 38_444 → 38_453 (+9 B), brotli 33_814 → 33_819 (+5 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, LP0808 once for an escalation with nowhere to go, and `canEscalate`. The log in bundle-budgets.ts has the whole change.
 // 2026-09-19 (2.1: the sanitizer document named per call): raw 121_657 → 121_720 (+63 B), gzip 38_453 → 38_481 (+28 B), brotli 33_819 → 33_851 (+32 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, LP0808 once for an escalation with nowhere to go, and `canEscalate`. The log in bundle-budgets.ts has the whole change.
 // 2026-09-19 (2.1: one scope per runtime session): raw 121_720 → 122_234 (+514 B), gzip 38_481 → 38_675 (+194 B), brotli 33_851 → 34_027 (+176 B) — the measured difference against a build of this tree without the change, cushions kept; the LP0201/LP0203 split, LP0808 once for an escalation with nowhere to go, and `canEscalate`. The log in bundle-budgets.ts has the whole change.
-export const INLINE_ROUTE_BUDGET = { raw: 122_234, gzip: 38_675, brotli: 34_027 } as const;
+// 2026-09-22 (2.1: the morph takes its ownership rule): raw 122_234 → 122_149 (−85 B), gzip 38_675 → 38_684 (+9 B), brotli 34_027 → 34_043 (+16 B); cushions kept. The reason and common measurement are in bundle-budgets.ts.
+// 2026-09-23 (H08): raw 122_149 → 122_403 (+254 B), gzip 38_684 → 38_738 (+54 B), brotli 34_043 → 34_079 (+36 B); the ordered managed-head projection replaces the duplicate-collapsing map and removes stale attributes while keeping owned and foreign tags. Measured against the same H03/H06/morph snapshot, cushions kept. H14 does not enter the route prelude.
+// 2026-09-24 (2.1, router-commit replay): +904 raw / +209 gzip / +192 brotli in a paired build; the prior cushion stays unchanged. The common measurement and reason are in bundle-budgets.ts.
+// 2026-09-24 (2.1 source freeze): 132_025 raw / 41_427 gzip / 36_152 brotli; the prior 20 B raw, 10 B gzip and 120 B brotli cushions stay unchanged.
+// 2026-09-24 (streamed React hydration): 132_521 raw / 41_563 gzip / 36_365
+// brotli (+496 / +136 / +213); only the common root-wide dehydrated-boundary
+// scan moves, and the prior 20 B / 10 B / 120 B cushions stay unchanged.
+// 2026-09-24 (H01 route fidelity): 132_521 / 41_563 / 36_365 →
+// 132_572 / 41_585 / 36_346; the prior cushions stay unchanged.
+// 2026-09-25 (H11): +282 raw / +75 gzip / +24 brotli; response guards,
+// same HEAD epoch and prior cushions (bundle-budgets.ts).
+// 2026-09-27 (PHD-05): shared guarded island handoff and deduplication,
+// measured +167/+93/+97 B; retain 20/10/120 B cushions. Prelude unchanged.
+// 2026-09-28 (H05 fragment islands, ADR 0021): measured +3291/+793/+605 B; same 20/10/120 B cushions.
+// 2026-09-28 (PHD-07, strategy work a newer revision supersedes or outlives): measured +569/+148/+154 B; same 20/10/120 B cushions.
+// 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -8/+6/-15 B; same 20/10/120 B cushions.
+// 2026-09-29 (PHD-02, owner-scoped route planning): measured +97/+62/+52 B; same 20/10/120 B cushions.
+// 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2924/+880/+793 B; same 20/10/120 B cushions.
+// 2026-09-29 (H13, revision display state, ADR 0023): measured +3164/+1042/+845 B; same 20/10/120 B cushions.
+// 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +71/+41/+43 B; same 20/10/120 B cushions.
+// 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -149/-22/-4 B; same 20/10/120 B cushions.
+// 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +180/+73/+69 B; same 20/10/120 B cushions.
+// 2026-10-01 (PHD-13, the first write waits for SvelteKit's root to mount, ADR 0015): measured +426/+194/+156 B; same 20/10/120 B cushions.
+// 2026-10-02 (H06, a fragment render lands in the boundary that replaced its own): measured +360/+122/+92 B; same 20/10/120 B cushions.
+// 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +616/+253/+230 B; same 20/10/120 B cushions.
+// 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7525/+2679/+2114 B; cushions 20/10/120 B.
+// 2026-10-04 (2.1.0: bounded v2/locale/depth/React integration and owner/scheduler fixes):
+// Paired Node24.19/npm12.0.2, epoch1791096072; +7999/+2813/+2245 B raw/gzip/Brotli; reserves 20/10/120 B.
+// 2026-10-04 (2.1.0): merger reentrancy and accepted-locale/consumer recovery.
+// Node24.19/npm12.0.2, epoch1791096072; previous sample +314/+52/+25 B raw/gzip/Brotli; reserves 20/10/120 B.
+// 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
+// Node24.19/npm12.0.2, epoch1791096072: +22/+10/+29 B raw/gzip/Brotli;
+// retain the prior 20/10/120 B reserves.
+export const INLINE_ROUTE_BUDGET = { raw: 153_118, gzip: 48_291, brotli: 41_947 } as const;

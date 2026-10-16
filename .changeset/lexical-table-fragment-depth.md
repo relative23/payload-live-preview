@@ -2,4 +2,4 @@
 'payload-live-preview': minor
 ---
 
-Accept nested Lexical rich-text tables in fragment requests by raising the default field depth limit from 12 to 64. Add `limits.fieldDepth` to fragment endpoints with a supported range of 0 to 64, keeping validation before authorization bounded. Projects can set a stricter limit such as 24 without forking the package.
+Add `limits.fieldDepth` to fragment endpoints with an integer range of 0 to 64. The default and hard ceiling remain 64; projects can require a stricter cap such as 24. Requests beyond that cap receive a distinct 400 response with the configured limit before authorization. Keep the contributor's nested Lexical table fixture as a regression for the existing default.

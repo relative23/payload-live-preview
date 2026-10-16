@@ -3,7 +3,11 @@
  * runs (`RuntimeState`). Both are shared by the pipeline collaborators.
  */
 
-import type { PayloadFieldSchema, PayloadLivePreviewMessage } from '@/types/payload-protocol';
+import type {
+  PayloadFieldSchema,
+  PayloadLivePreviewData,
+  PayloadLivePreviewMessage,
+} from '@/types/payload-protocol';
 import type { EventEmitter } from '@events/emitter';
 import type { SchemaIndex } from '@schema/index';
 import type { SanitizerPolicyMode } from '@security/sanitizer';
@@ -21,8 +25,10 @@ import { ProtocolTracker } from './protocol-tracker';
 import { RelationshipTracker } from './relationship-tracker';
 import { FieldRevealer } from './reveal';
 import { RevealLedger } from './reveal-ledger';
+import { RevisionDisplayLedger } from './revision-display';
 import type { RuntimeOptions } from './runtime-options';
 import type { ConnectionState, HeartbeatTimer } from './state';
+import type { SubfieldCoverage } from './subfield-coverage';
 import type { StrategyHandlers } from './strategies';
 import type { CachedElement, FieldRenderer, RichTextRenderer } from './types';
 import type { FlushStats, UpdateScheduler } from './update-scheduler';
@@ -31,12 +37,20 @@ import type { FlushStats, UpdateScheduler } from './update-scheduler';
 export interface UpdateTransaction {
   readonly revision: MessageRevision;
   readonly message: PayloadLivePreviewMessage;
+  /** Raw fields captured once when the data-bearing update or replay was accepted. */
+  readonly rawData: Record<string, unknown>;
   readonly locale: string | undefined;
   readonly schema: readonly PayloadFieldSchema[] | undefined;
   readonly schemaIndex: SchemaIndex | undefined;
   readonly receivedAt: number;
   /** A save in another document may change populated values only, so render everything. */
   readonly forceRender: boolean;
+  /** Whether this transaction came from a newly accepted remote message and contributes to revision counters. */
+  readonly countsAsUpdate: boolean;
+  /** Latest raw or populated data this revision rendered, retained for late streamed bindings. */
+  renderData: PayloadLivePreviewData | undefined;
+  /** Fragment boundaries already handed to the strategy for this revision. */
+  readonly fragmentBoundariesRun: WeakSet<Element>;
   /** Top-level fields whose value changed since the previous message, plus their dependents. */
   touched: ReadonlySet<string>;
   /** The connection's first message, where every field counts as changed. */
@@ -87,6 +101,8 @@ export interface RuntimeDeps {
   /** How long a burst of messages may share one merge; the scheduler's debounce window. */
   readonly mergeWindowMs: number;
   readonly scopeBindingsByOwner: boolean;
+  /** ADR 0022: whether one bound descendant covers a group, or each changed path needs its own. */
+  readonly subfieldCoverage: SubfieldCoverage;
   readonly lockedOrigin: () => string | undefined;
   readonly skipUnchanged: boolean;
   readonly dependencies: Readonly<Record<string, readonly string[]>>;
@@ -123,6 +139,8 @@ export class RuntimeState {
   warnedUnattributableMessage = false;
   warnedVisibilityGate = false;
   warnedFragmentFallback = false;
+  /** LP0809 is reported once: every later island would fail for the same page-level reason. */
+  warnedIslandStart = false;
   /** LP0808 is said once: escalation was asked for and nothing on the page can do it. */
   warnedEscalationUnavailable = false;
   /** LP0503 is reported once: a drifting sender repeats the same shape on every keystroke. */
@@ -151,20 +169,36 @@ export class RuntimeState {
   warnedForeignSource = false;
   /** Identity of the value each element last applied; reset when the markup is re-rendered. */
   lastAppliedIdentity = new WeakMap<Element, string>();
+  /** The next full snapshot follows a router commit, not the initial server baseline. */
+  navigationReplayPending = false;
+  /** New bindings streamed into the current navigated document receive its latest accepted data. */
+  navigationBindingReplay = false;
   /** What each owned field was last seen with, for the reveal decision only. */
   readonly revealLedger = new RevealLedger();
+  /** How completely the page shows the latest accepted revision (ADR 0023). */
+  readonly display = new RevisionDisplayLedger<UpdateTransaction>();
   readonly fragmentStats = { rendered: 0, failed: 0, superseded: 0 };
-  readonly routeStats = { refreshes: 0, failed: 0, refused: 0, loopStopped: 0 };
-  fragmentController: AbortController | null = null;
+  readonly routeStats = { refreshes: 0, partial: 0, failed: 0, refused: 0, loopStopped: 0 };
+  /**
+   * Every fragment batch still rendering, with the boundaries it has not
+   * settled yet; streamed bindings can start more than one per revision.
+   */
+  readonly fragmentControllers = new Map<AbortController, ReadonlySet<Element>>();
   routeController: AbortController | null = null;
   /** The trailing run a refused refresh asked for; at most one, and always the newest. */
   routeRetry: ReturnType<typeof setTimeout> | null = null;
   /**
    * A trailing run a newer revision took over before it ran. That revision
    * plans from its own diff, which no longer names the field the older one
-   * changed, so the debt is carried here until a refresh runs.
+   * changed, so the debt is carried here until a refresh runs. A refresh
+   * already running is not owed: it lands for the newer revision.
    */
   routeRefreshOwed = false;
+  /**
+   * Boundaries a newer revision cut short before they settled: the same debt,
+   * per boundary, settled when a render of the boundary starts.
+   */
+  readonly fragmentsOwed = new Set<Element>();
   readonly readyTimers: ReturnType<typeof setTimeout>[] = [];
   readonly revealer = new FieldRevealer();
   readonly changes = new FieldChangeTracker();
@@ -183,29 +217,46 @@ export class RuntimeState {
   }
 
   complete(transaction: UpdateTransaction): void {
+    // Asked again after a refresh re-applies it: only then is a refused route settled.
+    this.display.requestSettle(transaction);
     if (transaction.completed) return;
     transaction.completed = true;
-    this.completedCount += 1;
+    if (transaction.countsAsUpdate) this.completedCount += 1;
+  }
+
+  /** A new route or session starts clean: no refresh or boundary render is owed to it. */
+  forgetOwedWork(): void {
+    this.routeRefreshOwed = false;
+    this.fragmentsOwed.clear();
   }
 
   /**
-   * Abort in-flight strategy work; a newer revision or a stop supersedes it.
-   * The trailing route refresh goes with it: the revision that asked for it is
-   * no longer the one on screen, and the newer one runs it instead — its
-   * message carries the older one's values too, so `routeRefreshOwed` makes
-   * it plan the refresh its own diff would not.
+   * A newer revision supersedes the older one's revision-bound work: boundary
+   * renders carry its fields, and a trailing refresh runs for the revision that
+   * asked. Both become debts the newer revision settles, because its message
+   * carries the older one's values too while its own diff no longer names them
+   * (PHD-07). The route refresh in flight is not revision-bound — it renders
+   * the server's view of the route — so it runs on and lands for whichever
+   * revision is current then; only a refresh of that revision's own replaces it.
    */
-  abortStrategies(): void {
+  supersedeStrategies(): void {
     if (this.routeRetry !== null) {
       clearTimeout(this.routeRetry);
       this.routeRetry = null;
       this.routeRefreshOwed = true;
     }
-    for (const key of ['fragmentController', 'routeController'] as const) {
-      const controller = this[key];
-      if (controller === null) continue;
-      this[key] = null;
+    for (const [controller, unsettled] of this.fragmentControllers) {
+      for (const boundary of unsettled) this.fragmentsOwed.add(boundary);
       controller.abort();
     }
+    this.fragmentControllers.clear();
+  }
+
+  /** Abort all strategy work, the route refresh included: a navigation, a lost connection or a stop. */
+  abortStrategies(): void {
+    this.supersedeStrategies();
+    const route = this.routeController;
+    this.routeController = null;
+    route?.abort();
   }
 }

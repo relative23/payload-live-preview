@@ -232,10 +232,12 @@ inline runtime (adapters) cannot carry a function; `renderRichText` is a
 `registerLexicalNode(type, render)` adds a node renderer to `lexicalToHtml`.
 In the browser the runtime sanitizes the whole rendered document, so a
 custom node cannot introduce a script or an event handler however it is
-written. On the server `lexicalToHtml` sanitizes when a sanitizer document
-was set (`setSanitizerDocument()` with linkedom or jsdom); **without one it
+written. On the server `lexicalToHtml` sanitizes when it has a sanitizer document
+(`{ document }` with the call, from linkedom or jsdom); **without one it
 returns the HTML as rendered and warns once**, because silently unsanitized
-output is the worse failure. The built-in nodes escape their own output;
+output is the worse failure. `{ requireDocument: true }` makes it throw
+instead, which 3.0 does by default
+([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)). The built-in nodes escape their own output;
 custom nodes are responsible for theirs — see [docs/security.md](security.md).
 Pass `{ sanitize: false }` when the caller sanitizes downstream itself; that
 opts out of the warning too.
@@ -398,7 +400,7 @@ binding inside it, and the keyed morph never enters it
 ([ADR 0008 — Keyed morph: what it keeps, what it never crosses](architecture/0008-keyed-morph-ownership.md)).
 Instead, an update is dispatched on each island root as a
 `payload-live-preview:update` DOM event whose `detail` is
-`{ fields, revision, receivedAt, locale }` — for every revision that carried a
+`{ fields, revision, receivedAt, locale, displayed }` — for every revision that carried a
 change, whether or not a binding outside the islands was written. A page whose
 only bindings sit inside islands hears every edit, and so does an island that
 alone shows the field an editor is typing into, `skipUnchanged` (on by default)
@@ -406,16 +408,49 @@ or not:
 
 ```ts
 // inside a React island
+const [update, setUpdate] = useState<IslandUpdateDetail>();
 useEffect(() => {
   const root = ref.current?.closest('[data-payload-island]');
-  const onUpdate = (e: Event) => setFields((e as CustomEvent<IslandUpdateDetail>).detail.fields);
+  const onUpdate = (e: Event) => setUpdate((e as CustomEvent<IslandUpdateDetail>).detail);
   root?.addEventListener('payload-live-preview:update', onUpdate);
   return () => root?.removeEventListener('payload-live-preview:update', onUpdate);
 }, []);
+// After React committed the render of `update.fields`:
+useEffect(() => {
+  update?.displayed();
+}, [update]);
 ```
+
+`displayed()` tells the runtime that the island has rendered that revision.
+The runtime cannot see an island render, so until every island a revision was
+handed to has called it, `inspect().revisions.display` says `unconfirmed`
+rather than `current` ([ADR 0023](architecture/0023-revision-display-state.md)).
+Calling it twice, late or for a superseded revision does nothing, and an island
+that never calls it changes nothing else.
+
+An Astro island keeps its `ssr` attribute until hydration has installed the
+component listeners. The runtime holds the current snapshot while that marker
+is present and dispatches it when Astro removes the marker. If another document
+is accepted first, the newly hydrated island receives that newer snapshot.
+
+There is no equivalent readiness signal for a generic
+`data-payload-island`. Its event listener must be installed before the first
+live-preview update that it needs to observe. A component that cannot make that
+guarantee should listen to Payload's window messages through its framework
+integration instead; adding the marker alone does not buffer events for a late
+listener.
+
+With `scopeBindingsByOwner` enabled, the event reaches only an island root
+owned by the document named in the update. Foreign and unowned islands receive
+nothing. During navigation replay, changing an island's live
+`data-payload-owner` marker to the current document replays the retained
+snapshot once; owner markers have no replay effect while scoping is off.
 
 An island that uses Payload's official `useLivePreview` hook needs nothing
 from the bridge: the admin's `postMessage` reaches the window the island
 lives in, and this runtime keeps its hands off the island's DOM. An island
-that wants the runtime's patching after all opts in with
-`data-payload-island="patch"` and receives no event.
+that wants direct binding writes after all opts in with
+`data-payload-island="patch"` and receives no event. On an ordinary element,
+that value also lets the keyed morph enter. It does not override another morph
+boundary: an `astro-island` custom element still owns its subtree under the
+separate custom-element rule.

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import type { FieldRenderer } from '@core/types';
@@ -101,9 +101,11 @@ describe('root replacement', () => {
     await tick();
     expect(rt.inspect().bindings.elements).toBe(0);
     document.getElementById('host')!.innerHTML = '<span data-payload-field="title">late</span>';
-    // The structural observer debounces; wait past it.
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    expect(rt.inspect().bindings.elements).toBe(1);
+    // The structural observer debounces; wait until it has run, not a fixed
+    // time past it (PHD-15).
+    await vi.waitFor(() => {
+      expect(rt.inspect().bindings.elements).toBe(1);
+    });
     const done = afterUpdate();
     post({ title: 'seen' });
     await done;

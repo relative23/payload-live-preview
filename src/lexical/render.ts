@@ -19,6 +19,12 @@ export interface LexicalRenderOptions {
    */
   readonly document?: SanitizerDocument;
   /**
+   * Throw instead of returning unsanitised HTML when no document is available:
+   * the `SanitizerEnvironmentError` `sanitizeHtml()` throws (ADR 0025). Off in
+   * 2.x, where the call warns once and returns the markup; the default in 3.0.
+   */
+  readonly requireDocument?: boolean;
+  /**
    * Called for every `block` or `inlineBlock` the registry has no renderer
    * for, with the block's slug as Payload sent it and the class its empty
    * placeholder carries. The `richText` write listens: it is the one caller
@@ -40,13 +46,14 @@ export function isLexicalContent(value: unknown): value is LexicalRoot {
   return Array.isArray(root.children);
 }
 
-/** Render a Lexical document to HTML; without a document (`options.document` or `setSanitizerDocument()`) the result is unsanitised and warns once. */
+/** Render a Lexical document to HTML; without a document the result is unsanitised and warns once, or throws under `requireDocument`. */
 export function lexicalToHtml(content: LexicalRoot, options: LexicalRenderOptions = {}): string {
   if (!isLexicalContent(content)) return '';
   const html = createContext(options.onUnrenderedBlock).renderChildren(content.root.children);
   if (options.sanitize === false) return html;
   if (options.document !== undefined) return sanitizeHtml(html, { document: options.document });
-  if (hasSanitizerDocument()) return sanitizeHtml(html);
+  // Without a DOM this throws the sanitizer's own error.
+  if (options.requireDocument === true || hasSanitizerDocument()) return sanitizeHtml(html);
   warnNoSanitizerOnce();
   return html;
 }
@@ -106,7 +113,8 @@ function warnNoSanitizerOnce(): void {
   try {
     console.warn(
       '[live-preview] lexicalToHtml() has no sanitizer document and returned unsanitised HTML; ' +
-        'call setSanitizerDocument() (linkedom/jsdom) for server rendering, see "HTML sanitization" in docs/security.md.',
+        'pass { document } (linkedom, jsdom) per call. 3.0 throws here instead: opt in now with ' +
+        '{ requireDocument: true }. See "HTML sanitization" in docs/security.md.',
     );
   } catch {
     // Diagnostics never become a second failure.

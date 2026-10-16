@@ -55,9 +55,10 @@ export const HTML_SINKS: ReadonlyMap<string, HtmlSinkJustification> = new Map([
   ['src/field-types/text.ts::trustedHtml(escapeAndLinebreak(text))', 'escaped'],
   // Sanitised first, then parsed inertly to be adopted — safe twice over.
   ['src/core/structural-applier.ts::trustedHtml(safe)', 'sanitised'],
-  // The sanitizer's own parse. Untrusted markup by definition; it is read back
-  // only after the fragment has been walked and stripped.
-  ['src/security/sanitizer.ts::trustedHtml(html)', 'inert-parse'],
+  // The sanitizer's own parse. Untrusted markup by definition on the first pass,
+  // and its own previous output on the passes after (ADR 0016, 2026-10-02); it
+  // is read back only after the fragment has been walked and stripped.
+  ['src/security/sanitizer.ts::trustedHtml(markup)', 'inert-parse'],
   // A fragment the project's server rendered, parsed here and morphed into the
   // boundary. Sanitising it would strip the page's own legitimate markup.
   ['src/core/strategy-runner.ts::trustedHtml(html)', 'trusted-origin'],
@@ -101,12 +102,10 @@ export const ATTRIBUTE_SINKS: ReadonlyMap<string, AttributeSinkJustification> = 
   ['src/fragment/route.ts::current.setAttribute(attribute.name, attribute.value)', 'copied'],
   ['src/core/structural-applier.ts::first.setAttribute(KEY_ATTRIBUTE, key)', 'binding-stamp'],
   // The auto-binding search stamps the `data-payload-*` names it derived and
-  // the field it matched (ADR 0014).
+  // the field it matched (ADR 0014). Its rollback journal contains only those
+  // same package-owned names and restores their previous values on supersession.
   ['src/core/auto-bind.ts::element.setAttribute(name, value)', 'binding-stamp'],
-  [
-    'src/core/auto-bind.ts::element.setAttribute(GUESSED_ATTRIBUTE, candidate.matched)',
-    'binding-stamp',
-  ],
+  ['src/core/auto-bind.ts::mutation.element.setAttribute(name, before)', 'binding-stamp'],
   ["src/field-types/url.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
   ["src/field-types/relationship.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
   ["src/field-types/upload.ts::element.setAttribute('href', url)", 'url-validated'],
@@ -126,21 +125,22 @@ export const ATTRIBUTE_SINKS: ReadonlyMap<string, AttributeSinkJustification> = 
   // Development furniture: the live region and the unbound-fields overlay,
   // styled from this package's own constants; `position` is the plugin's own
   // option, and a consumer's CSS on a consumer's page is not a wire value.
-  ["src/core/a11y.ts::element.setAttribute('style', STYLE)", 'constant'],
+  // Written through the CSSOM, which a strict `style-src` does not refuse (PHD-03).
+  ['src/core/a11y.ts::element.style.cssText = STYLE', 'constant'],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::field.setAttribute('style', 'position:fixed;opacity:0;pointer-events:none;')",
+    "src/plugins/built-in/unbound-fields-overlay.ts::field.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'",
     'constant',
   ],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::button.setAttribute('style', BUTTON_STYLE)",
+    'src/plugins/built-in/unbound-fields-overlay.ts::button.style.cssText = BUTTON_STYLE',
     'constant',
   ],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::panel.setAttribute('style', PANEL_STYLE + position)",
+    'src/plugins/built-in/unbound-fields-overlay.ts::panel.style.cssText = PANEL_STYLE + position',
     'constant',
   ],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::title.setAttribute('style', 'font-weight:600;margin-bottom:4px;')",
+    "src/plugins/built-in/unbound-fields-overlay.ts::title.style.cssText = 'font-weight:600;margin-bottom:4px;'",
     'constant',
   ],
 ]);

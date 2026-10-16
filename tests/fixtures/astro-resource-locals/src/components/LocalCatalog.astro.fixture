@@ -1,0 +1,9 @@
+---
+/** Public Container locals bridge the 4.9.0 API's missing props option.
+ * The page and endpoint still use one static catalog, with no dynamic component lookup.
+ */
+import Blocks from './Blocks.astro';
+const catalog = Astro.locals.resourceCatalog;
+if (!catalog) throw new Error('Missing verified catalog');
+---
+<Blocks {...catalog} />

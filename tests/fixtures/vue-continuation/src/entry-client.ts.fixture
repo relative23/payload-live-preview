@@ -1,0 +1,20 @@
+/**
+ * Hydrate the server's selected view without a second read or authorization cache.
+ * Native departure unmounts the actual Vue app and its scope; a persisted
+ * back/forward-cache restoration must reload through current server access.
+ */
+import { createSSRApp } from 'vue';
+import Preview from './Preview.vue';
+import type { PreviewView } from './types';
+
+const root = document.querySelector<HTMLElement>('#vue-app');
+if (!root?.dataset.previewView) throw new Error('Missing authorized preview view');
+const view = JSON.parse(root.dataset.previewView) as PreviewView;
+delete root.dataset.previewView;
+const app = createSSRApp(Preview, { ...view });
+app.mount(root);
+window.addEventListener('pagehide', () => {
+  app.unmount();
+  root.dataset.stopped = 'true';
+}, { once: true });
+window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });

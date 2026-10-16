@@ -4,18 +4,20 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-yIQFf015.js';
-import { b } from '../../fragment-endpoint-yIQFf015.js';
-import { b as b_2 } from '../../locals-CNUGYbA_.js';
-import { c } from '../../fragment-endpoint-yIQFf015.js';
-import { F } from '../../fragment-endpoint-yIQFf015.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-yIQFf015.js';
-import { L as LivePreviewLocals } from '../../locals-CNUGYbA_.js';
-import { P as PreviewAdapterOptions } from '../../options-uHKrDM2U.js';
+import { a } from '../../fragment-endpoint-CfOVCRHt.js';
+import { b } from '../../fragment-endpoint-CfOVCRHt.js';
+import { b as b_2 } from '../../locals-CEg7out0.js';
+import { c } from '../../fragment-endpoint-CfOVCRHt.js';
+import { F } from '../../fragment-endpoint-CfOVCRHt.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-CfOVCRHt.js';
+import { L as LivePreviewLocals } from '../../locals-CEg7out0.js';
+import { P as PreviewAdapterOptions } from '../../options-Bq-ZDz1F.js';
 
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (event: {
     readonly request: Request;
+    readonly platform?: unknown;
+    readonly locals?: unknown;
 }) => Promise<Response>;
 
 // @public
@@ -76,9 +78,12 @@ export type SvelteKitHandle = <Event extends SvelteKitRequestEvent>(input: {
 // @public (undocumented)
 interface SvelteKitRequestEvent {
     // (undocumented)
+    readonly isDataRequest?: boolean;
+    // (undocumented)
     readonly locals: b_2;
     // (undocumented)
     readonly request: Request;
+    readonly url?: URL;
 }
 
 // Warning: (ae-forgotten-export) The symbol "ResolveOptions" needs to be exported by the entry point index.d.ts
@@ -88,7 +93,7 @@ type SvelteKitResolve<Event> = (event: Event, opts?: ResolveOptions) => Response
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/sveltekit/index.d.ts:33:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:36:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, open, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
+import { format, resolveConfig } from 'prettier';
 import { describe, expect, it } from 'vitest';
 import {
   findPackageLockMetadataViolations,
@@ -40,8 +41,9 @@ function readPackageLockMetadataInput(
       manifest: readJson(resolve(repositoryRoot, 'package.json')),
       lockfile: readJson(resolve(repositoryRoot, 'package-lock.json')),
     },
-    fixtures: LOCAL_FILE_PACKAGE_FIXTURES.map(({ label, directory }) => ({
+    fixtures: LOCAL_FILE_PACKAGE_FIXTURES.map(({ label, directory, mode }) => ({
       label,
+      mode,
       manifest: readJson(resolve(repositoryRoot, directory, 'package.json')),
       lockfile: readJson(resolve(repositoryRoot, directory, 'package-lock.json')),
     })),
@@ -62,6 +64,11 @@ async function createStaleLockfileMetadataRepository(): Promise<{
   const nextVersion = '7.8.10';
   const targetPaths = [resolve(repositoryRoot, 'package-lock.json')];
 
+  await writeJson(
+    resolve(repositoryRoot, '.prettierrc.json'),
+    readJson(resolve(ROOT, '.prettierrc.json')),
+  );
+
   await writeJson(resolve(repositoryRoot, 'package.json'), { name, version: nextVersion });
   await writeJson(targetPaths[0]!, {
     name,
@@ -72,7 +79,7 @@ async function createStaleLockfileMetadataRepository(): Promise<{
     },
   });
 
-  for (const { directory } of LOCAL_FILE_PACKAGE_FIXTURES) {
+  for (const { directory, mode } of LOCAL_FILE_PACKAGE_FIXTURES) {
     const fixtureDirectory = resolve(repositoryRoot, directory);
     const targetPath = resolve(fixtureDirectory, 'package-lock.json');
     targetPaths.push(targetPath);
@@ -81,28 +88,66 @@ async function createStaleLockfileMetadataRepository(): Promise<{
       name: `${directory.replaceAll('/', '-')}-fixture`,
       dependencies: { [name]: LOCAL_PACKAGE_SPECIFIER },
     });
+    const packages: Record<string, unknown> = {
+      '': { dependencies: { [name]: LOCAL_PACKAGE_SPECIFIER } },
+      [`node_modules/${name}`]:
+        mode === 'copy'
+          ? { version: currentVersion, resolved: LOCAL_PACKAGE_SPECIFIER }
+          : { resolved: '../..', link: true },
+    };
+    if (mode === 'link') packages['../..'] = { version: currentVersion };
     await writeJson(targetPath, {
       name: `${directory.replaceAll('/', '-')}-fixture`,
       lockfileVersion: 3,
-      packages: {
-        '': { dependencies: { [name]: LOCAL_PACKAGE_SPECIFIER } },
-        [`node_modules/${name}`]: {
-          version: currentVersion,
-          resolved: LOCAL_PACKAGE_SPECIFIER,
-        },
-      },
+      packages,
     });
   }
+
+  const matrixPath = resolve(repositoryRoot, 'quality/compat-matrix.json');
+  targetPaths.push(matrixPath);
+  await mkdir(dirname(matrixPath), { recursive: true });
+  const matrix = {
+    featureEvidence: [
+      {
+        id: 'root-package',
+        browsers: ['chromium', 'firefox', 'webkit'],
+        version: {
+          kind: 'exact',
+          value: currentVersion,
+          package: name,
+          source: { kind: 'root-package' },
+        },
+        evidence: { status: 'configured', sources: ['first.ts', 'second.ts'] },
+      },
+      {
+        id: 'framework-lock',
+        version: {
+          kind: 'exact',
+          value: '7.3.2',
+          package: 'astro',
+          source: { kind: 'lockfile', fixture: 'examples/astro-payload' },
+        },
+      },
+    ],
+  };
+  await writeFile(
+    matrixPath,
+    await format(JSON.stringify(matrix), {
+      ...(await resolveConfig(matrixPath)),
+      filepath: matrixPath,
+    }),
+    'utf8',
+  );
 
   return { repositoryRoot, targetPaths };
 }
 
-async function findLockfileTemporaryPaths(targetPaths: readonly string[]): Promise<string[]> {
+async function findMetadataTemporaryPaths(targetPaths: readonly string[]): Promise<string[]> {
   const paths: string[] = [];
   for (const targetPath of targetPaths) {
     const directory = dirname(targetPath);
     for (const entry of await readdir(directory)) {
-      if (entry.startsWith('.package-lock.json.') && entry.endsWith('.tmp')) {
+      if (entry.startsWith(`.${basename(targetPath)}.`) && entry.endsWith('.tmp')) {
         paths.push(resolve(directory, entry));
       }
     }
@@ -110,9 +155,33 @@ async function findLockfileTemporaryPaths(targetPaths: readonly string[]): Promi
   return paths;
 }
 
+function fixtureVersionEntry(
+  fixture: Parameters<typeof findPackageLockMetadataViolations>[0]['fixtures'][number],
+  packageName: string,
+): { version?: string } {
+  const lockfile = fixture.lockfile as {
+    packages: Record<string, { version?: string }>;
+  };
+  const path = fixture.mode === 'copy' ? `node_modules/${packageName}` : '../..';
+  const entry = lockfile.packages[path];
+  if (entry === undefined) throw new Error(`${fixture.label} is missing ${path}`);
+  return entry;
+}
+
 describe('workspace package-lock identity contract', () => {
   it('keeps package.json, the root lock, and all file:../.. fixture entries synchronized', () => {
-    expect(LOCAL_FILE_PACKAGE_FIXTURES).toHaveLength(4);
+    expect(LOCAL_FILE_PACKAGE_FIXTURES.map(({ directory }) => directory)).toEqual([
+      'examples/astro-payload',
+      'examples/nextjs-payload',
+      'examples/sveltekit-payload',
+      'examples/nuxt-payload',
+      'examples/payload-backend',
+      'examples/astro-hybrid',
+      'examples/astro-inline',
+      'examples/astro-middleware',
+      'examples/pure-html',
+      'examples/vanilla-client',
+    ]);
     expect(findPackageLockMetadataViolations(readPackageLockMetadataInput())).toEqual([]);
   });
 
@@ -141,13 +210,14 @@ describe('workspace package-lock identity contract', () => {
     ]);
   });
 
-  it.each([0, 1, 2] as const)(
+  it.each([0, 1, 2, 3, 4] as const)(
     'rejects stale or redirected file:../.. fixture lock entry %i',
     (index) => {
       const input = readPackageLockMetadataInput();
       const { name, version } = repositoryPackageIdentity();
       const fixtures = structuredClone(input.fixtures) as {
         label: string;
+        mode: 'copy' | 'link';
         manifest: { dependencies: Record<string, string> };
         lockfile: {
           packages: Record<
@@ -179,6 +249,31 @@ describe('workspace package-lock identity contract', () => {
     },
   );
 
+  it('rejects redirected and stale linked file:../.. metadata', () => {
+    const input = readPackageLockMetadataInput();
+    const { name, version } = repositoryPackageIdentity();
+    const fixtures = structuredClone(input.fixtures);
+    const fixture = fixtures.find(({ mode }) => mode === 'link');
+    if (fixture?.mode !== 'link') {
+      throw new Error('missing Astro hybrid link fixture');
+    }
+    const lockfile = fixture.lockfile as {
+      packages: Record<string, { link?: boolean; resolved?: string; version?: string }>;
+    };
+    lockfile.packages[`node_modules/${name}`] = { resolved: 'file:../..', link: false };
+    lockfile.packages['../..'] = { version: '0.0.0' };
+
+    expect(
+      findPackageLockMetadataViolations({ ...input, fixtures }).filter((violation) =>
+        violation.startsWith(`${fixture.label}:`),
+      ),
+    ).toEqual([
+      `${fixture.label}: package-lock.json linked entry must resolve to ../..`,
+      `${fixture.label}: package-lock.json linked entry must retain link: true`,
+      `${fixture.label}: linked file:../.. target version must match ${name}@${version}; run npm run version`,
+    ]);
+  });
+
   it('synchronizes only package identity metadata and is idempotent', () => {
     const input = readPackageLockMetadataInput();
     const { name, version } = repositoryPackageIdentity();
@@ -193,10 +288,7 @@ describe('workspace package-lock identity contract', () => {
     rootLockfile.packages['']!.name = 'stale-name';
     rootLockfile.packages['']!.version = '0.0.0';
     for (const fixture of stale.fixtures) {
-      const lockfile = fixture.lockfile as {
-        packages: Record<string, { version?: string }>;
-      };
-      lockfile.packages[`node_modules/${name}`]!.version = '0.0.0';
+      fixtureVersionEntry(fixture, name).version = '0.0.0';
     }
     const original = structuredClone(stale);
     const expected = structuredClone(original);
@@ -210,10 +302,7 @@ describe('workspace package-lock identity contract', () => {
     expectedRootLockfile.packages['']!.name = name;
     expectedRootLockfile.packages['']!.version = version;
     for (const fixture of expected.fixtures) {
-      const lockfile = fixture.lockfile as {
-        packages: Record<string, { version?: string }>;
-      };
-      lockfile.packages[`node_modules/${name}`]!.version = version;
+      fixtureVersionEntry(fixture, name).version = version;
     }
 
     const synchronized = synchronizePackageLockMetadata(stale);
@@ -274,7 +363,7 @@ describe('workspace package-lock identity contract', () => {
             await rename(source, target);
           },
         }),
-      ).resolves.toBe(5);
+      ).resolves.toBe(targetPaths.length);
 
       expect(
         findPackageLockMetadataViolations(readPackageLockMetadataInput(repositoryRoot)),
@@ -284,33 +373,28 @@ describe('workspace package-lock identity contract', () => {
           JSON.parse(readFileSync(targetPath, 'utf8'));
         }).not.toThrow();
       }
-      expect(await findLockfileTemporaryPaths(targetPaths)).toEqual([]);
+      const matrixPath = targetPaths.at(-1)!;
+      const matrixSource = await readFile(matrixPath, 'utf8');
+      expect(
+        await format(matrixSource, {
+          ...(await resolveConfig(matrixPath)),
+          filepath: matrixPath,
+        }),
+      ).toBe(matrixSource);
+      const matrix = JSON.parse(matrixSource) as {
+        featureEvidence: { id: string; version: { value: string } }[];
+      };
+      expect(matrix.featureEvidence.map(({ id, version }) => [id, version.value])).toEqual([
+        ['root-package', '7.8.10'],
+        ['framework-lock', '7.3.2'],
+      ]);
+      expect(await findMetadataTemporaryPaths(targetPaths)).toEqual([]);
       expect(events).toEqual([
-        'open:1',
-        'write:1',
-        'sync:1',
-        'close:1',
-        'open:2',
-        'write:2',
-        'sync:2',
-        'close:2',
-        'open:3',
-        'write:3',
-        'sync:3',
-        'close:3',
-        'open:4',
-        'write:4',
-        'sync:4',
-        'close:4',
-        'open:5',
-        'write:5',
-        'sync:5',
-        'close:5',
-        'rename:1',
-        'rename:2',
-        'rename:3',
-        'rename:4',
-        'rename:5',
+        ...targetPaths.flatMap((_, index) => {
+          const ordinal = String(index + 1);
+          return [`open:${ordinal}`, `write:${ordinal}`, `sync:${ordinal}`, `close:${ordinal}`];
+        }),
+        ...targetPaths.map((_, index) => `rename:${String(index + 1)}`),
       ]);
     } finally {
       await rm(repositoryRoot, { recursive: true, force: true });
@@ -370,7 +454,7 @@ describe('workspace package-lock identity contract', () => {
         await expect(
           Promise.all(targetPaths.map((path) => readFile(path, 'utf8'))),
         ).resolves.toEqual(before);
-        expect(await findLockfileTemporaryPaths(targetPaths)).toEqual([]);
+        expect(await findMetadataTemporaryPaths(targetPaths)).toEqual([]);
       } finally {
         await rm(repositoryRoot, { recursive: true, force: true });
       }
@@ -401,7 +485,7 @@ describe('workspace package-lock identity contract', () => {
       await expect(Promise.all(targetPaths.map((path) => readFile(path, 'utf8')))).resolves.toEqual(
         before,
       );
-      expect(await findLockfileTemporaryPaths(targetPaths)).toEqual([]);
+      expect(await findMetadataTemporaryPaths(targetPaths)).toEqual([]);
     } finally {
       await rm(repositoryRoot, { recursive: true, force: true });
     }
@@ -434,7 +518,7 @@ describe('workspace package-lock identity contract', () => {
       await expect(Promise.all(targetPaths.map((path) => readFile(path, 'utf8')))).resolves.toEqual(
         before,
       );
-      expect(await findLockfileTemporaryPaths(targetPaths)).toEqual([]);
+      expect(await findMetadataTemporaryPaths(targetPaths)).toEqual([]);
     } finally {
       await rm(repositoryRoot, { recursive: true, force: true });
     }
@@ -458,7 +542,7 @@ describe('workspace package-lock identity contract', () => {
       await expect(Promise.all(targetPaths.map((path) => readFile(path, 'utf8')))).resolves.toEqual(
         before,
       );
-      expect(await findLockfileTemporaryPaths(targetPaths)).toEqual([]);
+      expect(await findMetadataTemporaryPaths(targetPaths)).toEqual([]);
     } finally {
       await rm(repositoryRoot, { recursive: true, force: true });
     }
@@ -467,7 +551,9 @@ describe('workspace package-lock identity contract', () => {
   it('is idempotent on disk without opening or replacing any file', async () => {
     const { repositoryRoot, targetPaths } = await createStaleLockfileMetadataRepository();
     try {
-      await expect(synchronizePackageLockMetadataFiles(repositoryRoot)).resolves.toBe(5);
+      await expect(synchronizePackageLockMetadataFiles(repositoryRoot)).resolves.toBe(
+        targetPaths.length,
+      );
       const synchronized = await Promise.all(targetPaths.map((path) => readFile(path, 'utf8')));
 
       await expect(
@@ -481,7 +567,7 @@ describe('workspace package-lock identity contract', () => {
       await expect(Promise.all(targetPaths.map((path) => readFile(path, 'utf8')))).resolves.toEqual(
         synchronized,
       );
-      expect(await findLockfileTemporaryPaths(targetPaths)).toEqual([]);
+      expect(await findMetadataTemporaryPaths(targetPaths)).toEqual([]);
     } finally {
       await rm(repositoryRoot, { recursive: true, force: true });
     }

@@ -18,7 +18,10 @@ function packageSpecifier(name: string, exportName: string): string {
   return exportName === '.' ? name : `${name}/${exportName.slice(2)}`;
 }
 
-function conditionTarget(value: unknown, condition: 'import' | 'require'): string | undefined {
+function conditionTarget(
+  value: unknown,
+  condition: 'import' | 'require' | 'default',
+): string | undefined {
   if (!isRecord(value)) return undefined;
   const branch = value[condition];
   if (typeof branch === 'string') return branch;
@@ -52,7 +55,12 @@ function partitionExportSpecifiers(
           : runtimeEsm;
       target.push(packageSpecifier(packageName, exportName));
     }
-    if (conditionTarget(conditions, 'require') !== undefined) {
+    // A `default` beside `import` is an ESM file Node loads through require(esm)
+    // (Next.js requires a next.config.ts compiled to CommonJS).
+    if (
+      conditionTarget(conditions, 'require') !== undefined ||
+      conditionTarget(conditions, 'default') !== undefined
+    ) {
       const target = CODEGEN_EXPORT_NAMES.has(exportName) ? codegenCjs : runtimeCjs;
       target.push(packageSpecifier(packageName, exportName));
     }
@@ -102,6 +110,7 @@ function esmRuntimeExports(packageName: string): Readonly<Record<string, readonl
     [packageSpecifier(packageName, './sveltekit')]: ['livePreviewHandle'],
     [packageSpecifier(packageName, './nuxt')]: ['livePreviewNitroPlugin'],
     [packageSpecifier(packageName, './payload')]: ['buildLivePreviewUrl'],
+    [packageSpecifier(packageName, './plugin')]: ['livePreview'],
     [packageSpecifier(packageName, './server')]: ['definePreview', 'authorizePreviewRequest'],
     [packageSpecifier(packageName, './client')]: [
       'LivePreviewClient',
@@ -123,9 +132,11 @@ function esmRuntimeExports(packageName: string): Readonly<Record<string, readonl
 
 function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonly string[]>> {
   return {
+    [packageSpecifier(packageName, './nextjs')]: ['withLivePreview', 'createLivePreviewMiddleware'],
     [packageSpecifier(packageName, '.')]: ['LivePreviewClient', 'createPreviewFocusReporter'],
     [packageSpecifier(packageName, './core')]: ['EventEmitter', 'initLivePreview'],
     [packageSpecifier(packageName, './payload')]: ['buildLivePreviewUrl'],
+    [packageSpecifier(packageName, './plugin')]: ['livePreview'],
     [packageSpecifier(packageName, './server')]: ['definePreview', 'authorizePreviewRequest'],
     [packageSpecifier(packageName, './client')]: [
       'LivePreviewClient',
@@ -151,24 +162,156 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
  * unsanitised HTML on a server that had called the root's setter. The fake
  * document counts the one `createElement('template')` a sanitising pass makes.
  *
+ * The setter's own deprecation warning (ADR 0026) is counted apart: called
+ * through both entries, it prints once, since the issued keys live on the realm.
+ *
  * The probe is a fixed text; the two specifiers arrive as arguments
  * (`process.argv[1]` and `[2]`), so no value is spliced into code.
  */
 const SHARED_SANITIZER_DOCUMENT_BODY = [
-  'let calls = 0; const warnings = [];',
-  'console.warn = (message) => { warnings.push(String(message)); };',
+  'let calls = 0; const warnings = []; const deprecations = [];',
+  "console.warn = (message) => { const text = String(message); (text.includes('is removed in 3.0') ? deprecations : warnings).push(text); };",
   "root.setSanitizerDocument({ createElement: () => { calls += 1; return { innerHTML: '', content: { childNodes: [] } }; } });",
   "lexical.lexicalToHtml({ root: { type: 'root', children: [{ type: 'paragraph', children: [{ type: 'text', text: 'x', format: 0 }] }] } });",
   "if (calls !== 1 || warnings.length > 0) throw new Error('lexicalToHtml from /lexical did not use the document set through the root: ' + calls + ' template(s), ' + JSON.stringify(warnings));",
   'lexical.setSanitizerDocument(null);',
   "root.lexicalToHtml({ root: { type: 'root', children: [] } });",
   "if (calls !== 1 || warnings.length !== 1) throw new Error('clearing through /lexical did not clear the root: ' + calls + ' template(s), ' + warnings.length + ' warning(s)');",
+  "if (deprecations.length !== 1) throw new Error('setSanitizerDocument() through two entries did not warn exactly once: ' + JSON.stringify(deprecations));",
 ].join(' ');
 
 const SHARED_SANITIZER_DOCUMENT_PROBES: Readonly<Record<'esm' | 'cjs', string>> = {
   esm: `const root = await import(process.argv[1]); const lexical = await import(process.argv[2]); ${SHARED_SANITIZER_DOCUMENT_BODY}`,
   cjs: `const root = require(process.argv[1]); const lexical = require(process.argv[2]); (async () => { ${SHARED_SANITIZER_DOCUMENT_BODY} })().catch((error) => { console.error(error); process.exit(1); });`,
 };
+
+/**
+ * Characterise the public `/lexical` entry in Node, where no DOM is global.
+ * Built-ins escape their inputs, while custom renderers are trusted code and
+ * stay unsanitised when the caller supplies no parser; that path must warn.
+ * Explicit per-call documents isolate concurrent requests, and the legacy
+ * root-entry setter remains a cross-bundle fallback until 3.0 (ADR 0002).
+ *
+ * The executable markup below is a fixed probe string. Package specifiers are
+ * process arguments, never interpolated into this source.
+ */
+const DOMLESS_LEXICAL_BODY = [
+  "if (typeof globalThis.document !== 'undefined') throw new Error('Node unexpectedly has a global document');",
+  'lexical.registerDefaultBlocks();',
+  'lexical.registerLexicalNode(\'package-smoke-active-node\', () => \'<script data-plp-smoke="node">globalThis.__plpPackageSmoke = true</script><a href="javascript:alert(1)">node</a>\');',
+  'lexical.registerBlockRenderer(\'package-smoke-active-block\', () => \'<img src="/pixel.png" onerror="globalThis.__plpPackageSmoke = true"><a href="javascript:alert(1)">block</a>\');',
+  "const content = { root: { type: 'root', children: [{ type: 'paragraph', children: [{ type: 'text', text: 'built <img src=x onerror=alert(1)>', format: 0 }] }, { type: 'block', fields: { blockType: 'callout', text: 'default <svg onload=alert(1)>' } }, { type: 'package-smoke-active-node' }, { type: 'block', fields: { blockType: 'package-smoke-active-block' } }] } };",
+  'const warnings = []; const originalWarn = console.warn;',
+  'console.warn = (message) => { warnings.push(String(message)); };',
+  'let withoutDocument;',
+  'try { withoutDocument = lexical.lexicalToHtml(content); } finally { console.warn = originalWarn; }',
+  "if (!withoutDocument.includes('&lt;img src&#x3D;x onerror&#x3D;alert(1)&gt;')) throw new Error('built-in text did not escape markup without a DOM');",
+  "if (!withoutDocument.includes('&lt;svg onload&#x3D;alert(1)&gt;')) throw new Error('built-in block did not escape fields without a DOM');",
+  "if (!withoutDocument.includes('<script data-plp-smoke=\"node\">') || !withoutDocument.includes(' onerror=\"globalThis.__plpPackageSmoke = true\"')) throw new Error('DOM-less trusted custom markup contract changed');",
+  "if (warnings.length !== 1 || !warnings[0].includes('returned unsanitised HTML') || !warnings[0].includes('requireDocument: true')) throw new Error('DOM-less render did not emit its warning exactly once: ' + JSON.stringify(warnings));",
+  // ADR 0025: under requireDocument the same call refuses, with the sanitizer's own error.
+  'let refused;',
+  'try { lexical.lexicalToHtml(content, { requireDocument: true }); } catch (error) { refused = error; }',
+  "if (refused?.name !== 'SanitizerEnvironmentError') throw new Error('requireDocument did not refuse a DOM-less render: ' + String(refused));",
+  "const documentFacade = () => { const dom = new JSDOM('<!doctype html><html><body></body></html>'); let calls = 0; return { value: { createElement: (tag) => { calls += 1; return dom.window.document.createElement(tag); } }, calls: () => calls, close: () => { dom.window.close(); } }; };",
+  'const first = documentFacade(); const second = documentFacade(); const fallback = documentFacade();',
+  "const assertSanitised = (html, label) => { if (html.includes('<script') || html.includes(' onerror=\"') || html.includes('href=\"javascript:')) throw new Error(label + ' kept active custom markup: ' + html); };",
+  'try {',
+  '  root.setSanitizerDocument(fallback.value);',
+  '  const [firstHtml, secondHtml] = await Promise.all([Promise.resolve().then(() => lexical.lexicalToHtml(content, { document: first.value })), Promise.resolve().then(() => lexical.lexicalToHtml(content, { document: second.value }))]);',
+  "  assertSanitised(firstHtml, 'first per-call document'); assertSanitised(secondHtml, 'second per-call document');",
+  // The sanitizer parses what it rewrote again to confirm it settled (ADR 0016), so the count is
+  // the parses one rendering takes, the same for every document and never zero.
+  '  const parses = first.calls();',
+  "  if (parses < 1 || second.calls() !== parses || fallback.calls() !== 0) throw new Error('per-call documents were not isolated: ' + [first.calls(), second.calls(), fallback.calls()].join('/'));",
+  '  const fallbackHtml = lexical.lexicalToHtml(content);',
+  "  assertSanitised(fallbackHtml, 'global fallback document');",
+  "  if (fallback.calls() !== parses) throw new Error('global fallback document was called ' + String(fallback.calls()) + ' times, not ' + String(parses));",
+  '} finally {',
+  '  lexical.setSanitizerDocument(null); first.close(); second.close(); fallback.close();',
+  '}',
+  "if (typeof globalThis.document !== 'undefined') throw new Error('the Lexical smoke installed a global document');",
+  "if (globalThis.__plpPackageSmoke !== undefined) throw new Error('the fixed custom markup executed inside the smoke');",
+].join('\n');
+
+const DOMLESS_LEXICAL_PROBES: Readonly<Record<'esm' | 'cjs', string>> = {
+  esm: `const { JSDOM } = await import('jsdom'); const root = await import(process.argv[1]); const lexical = await import(process.argv[2]); ${DOMLESS_LEXICAL_BODY}`,
+  cjs: `const { JSDOM } = require('jsdom'); const root = require(process.argv[1]); const lexical = require(process.argv[2]); (async () => { ${DOMLESS_LEXICAL_BODY} })().catch((error) => { console.error(error); process.exit(1); });`,
+};
+
+/** The Next component may be imported and refuse a request with no React installed. */
+const NEXT_SCRIPT_OPTIONAL_PEER_PROBE = `
+const { strict: assert } = await import('node:assert');
+const { createRequire } = await import('node:module');
+const localRequire = createRequire(process.cwd() + '/next-script-peer-probe.cjs');
+assert.throws(() => localRequire.resolve('react'), { code: 'MODULE_NOT_FOUND' });
+const next = await import(process.argv[1]);
+const server = await import(process.argv[2]);
+const site = 'https://preview.example.test';
+const request = new Request(site + '/?preview=true');
+const options = { defaults: 'v2', inject: 'always', allowedOrigins: [site] };
+for (const outcome of ['missing-credential', 'invalid']) {
+  assert.equal(await next.LivePreviewScript({ ...options, request,
+    authorizePreview: () => ({ authorized: false, outcome, context: null }) }), null);
+}
+const verdict = await server.authorizePreviewRequest(request,
+  { type: 'verifier', verify: () => ({ subject: 'editor' }) });
+assert.equal(verdict.authorized, true);
+await assert.rejects(() => next.LivePreviewScript({ ...options, request,
+  authorizePreview: () => verdict }),
+  (error) => error.code === 'ERR_MODULE_NOT_FOUND' && error.message.includes("'react'"));
+`;
+
+/** Fixed public-entry contract; package names are argv, never generated code. */
+const PAYLOAD_SCOPE_PROBE = `
+const { strict: assert } = await import('node:assert');
+const root = await import(process.argv[1]);
+const server = await import(process.argv[2]);
+const site = 'https://preview.example.test';
+const cms = 'https://cms.example.test';
+const verdict = await root.authorizePreviewRequest(new Request(site + '/page'), {
+  type: 'verifier', verify: () => ({ expiresAt: Date.now() + 60000,
+    scope: { audience: site, path: '/page', locale: 'de', payload: {
+      serverURL: cms, document: { kind: 'collection', slug: 'posts', id: 'a' }, maxDepth: 1,
+    } }, payloadHeaders: { cookie: 'payload-token=package-scope-user' },
+  }),
+});
+assert.equal(verdict.authorized, true);
+let reads = 0;
+const preview = server.definePreview({ serverURL: cms, depth: 1, fetch: async (url, init) => {
+  reads += 1;
+  assert.equal(new URL(url).pathname, '/api/posts/a');
+  assert.equal(new Headers(init.headers).get('cookie'), 'payload-token=package-scope-user');
+  return { ok: true, status: 200, json: async () => ({ id: 'a', title: 'draft' }) };
+} });
+const read = { collection: 'posts', id: 'a', locale: 'de', authorization: verdict.context };
+assert.equal((await preview.fetchDocument(read)).data.title, 'draft');
+assert.equal((await preview.fetchDocument({ ...read, id: 'b' })).reason, 'scope');
+assert.equal(reads, 1);
+for (const adapter of ['astro', 'nextjs', 'sveltekit', 'nuxt']) {
+  const { createFragmentEndpoint } = await import(process.argv[1] + '/' + adapter);
+  let propsCalls = 0;
+  const endpoint = createFragmentEndpoint({ authorizePreview: () => verdict.context,
+    registry: { hero: { component: () => null, props: (input) => {
+      propsCalls += 1; return { title: input.fields.title };
+    } } }, render: async (_component, props) => '<h1>' + props.title + '</h1>',
+  });
+  for (const id of ['a', 'b']) {
+    const request = new Request(site + '/payload/fragment', { method: 'POST',
+      headers: { origin: site, 'content-type': 'application/json' },
+      body: JSON.stringify({ fragment: 'hero', route: '/page', search: '', revision: 1,
+        locale: 'de', collectionSlug: 'posts', fields: { id, title: 'UNSAVED' } }),
+    });
+    const response = adapter === 'astro' || adapter === 'sveltekit'
+      ? await endpoint({ request }) : await endpoint(request);
+    assert.equal(response.status, id === 'a' ? 200 : 403, adapter);
+    const body = await response.json();
+    if (id === 'a') assert.equal(body.html, '<h1>UNSAVED</h1>');
+    else assert.deepEqual(body, { error: 'unauthorized' });
+  }
+  assert.equal(propsCalls, 1, adapter);
+}
+`;
 
 function codegenBinary(codegenConsumer: string): string {
   return process.platform === 'win32'
@@ -246,6 +389,8 @@ async function checkPackedCli(
 export async function checkPackedImportSmokes(inputs: {
   readonly consumer: string;
   readonly codegenConsumer: string;
+  /** Isolated Node consumer with the reviewed SSR DOM installed explicitly. */
+  readonly lexicalConsumer: string;
   /** Installs the peers the entries in `PEER_REQUIRED_EXPORT_NAMES` import. */
   readonly peerConsumer: string;
   readonly codegenPackageRoot: string;
@@ -281,6 +426,36 @@ export async function checkPackedImportSmokes(inputs: {
   );
   if (esm.status !== 0) {
     failures.push(`peer-free ESM import smoke failed:\n${detailFor(esm)}`);
+  }
+
+  const nextScript = run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '--eval',
+      NEXT_SCRIPT_OPTIONAL_PEER_PROBE,
+      packageSpecifier(inputs.packageName, './nextjs'),
+      packageSpecifier(inputs.packageName, './server'),
+    ],
+    inputs.consumer,
+  );
+  if (nextScript.status !== 0) {
+    failures.push(`peer-free Next script authorization failed:\n${detailFor(nextScript)}`);
+  }
+
+  const scoped = run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '--eval',
+      PAYLOAD_SCOPE_PROBE,
+      packageSpecifier(inputs.packageName, '.'),
+      packageSpecifier(inputs.packageName, './server'),
+    ],
+    inputs.consumer,
+  );
+  if (scoped.status !== 0) {
+    failures.push(`packed document-scope contract failed:\n${detailFor(scoped)}`);
   }
 
   const codegenEsm = run(
@@ -339,6 +514,25 @@ export async function checkPackedImportSmokes(inputs: {
     if (shared.status !== 0) {
       failures.push(
         `${format} sanitizer document is not shared across entries:\n${detailFor(shared)}`,
+      );
+    }
+  }
+
+  for (const format of ['esm', 'cjs'] as const) {
+    const lexical = run(
+      process.execPath,
+      [
+        `--input-type=${format === 'esm' ? 'module' : 'commonjs'}`,
+        '--eval',
+        DOMLESS_LEXICAL_PROBES[format],
+        packageSpecifier(inputs.packageName, '.'),
+        packageSpecifier(inputs.packageName, './lexical'),
+      ],
+      inputs.lexicalConsumer,
+    );
+    if (lexical.status !== 0) {
+      failures.push(
+        `${format} DOM-less Lexical sanitizer-context smoke failed:\n${detailFor(lexical)}`,
       );
     }
   }

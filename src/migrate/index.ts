@@ -4,10 +4,12 @@
  * package binds are touched; see ADR 0007.
  */
 import { applyTextEdits, parseScript } from './ast';
+import { expandDefaultsV1 } from './codemods/expand-defaults-v1';
 import { moveFetchPreviewHelpers } from './codemods/move-fetch-preview-helpers';
 import { renameAdminOriginsOption } from './codemods/rename-admin-origins-option';
 import { renameBindingsAuthorizedOption } from './codemods/rename-bindings-authorized-option';
 import { renameIsPreviewRequest } from './codemods/rename-is-preview-request';
+import { renameOnUnboundChange } from './codemods/rename-on-unbound-change';
 import { scriptBlocks } from './script-blocks';
 import type {
   Codemod,
@@ -40,6 +42,8 @@ const IMPLEMENTATIONS: readonly CodemodImplementation[] = [
   renameAdminOriginsOption,
   renameBindingsAuthorizedOption,
   moveFetchPreviewHelpers,
+  renameOnUnboundChange,
+  expandDefaultsV1,
 ];
 
 /**

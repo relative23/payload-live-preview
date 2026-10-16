@@ -247,6 +247,36 @@ describe('security properties', () => {
     },
   );
 
+  it.prop(
+    [
+      fc.constantFrom('javascript', 'data', 'vbscript', 'file', 'blob', 'about'),
+      fc.array(
+        fc.constantFrom(
+          ' ',
+          '\t',
+          '\n',
+          '\u0001',
+          '\u00a0',
+          '\u200b',
+          '\u2028',
+          '\ufeff',
+          '\u3000',
+        ),
+        { minLength: 1, maxLength: 3 },
+      ),
+      fc.nat(),
+      TOKEN,
+    ],
+    propertyParameters(0x55524c34),
+  )(
+    'rejects a dangerous scheme with whitespace or control characters spelled into it',
+    (scheme, gaps, position, suffix) => {
+      const at = position % (scheme.length + 1);
+      const spelled = scheme.slice(0, at) + gaps.join('') + scheme.slice(at);
+      expect(isSafeUrl(`${spelled}:${suffix}`), JSON.stringify(spelled)).toBe(false);
+    },
+  );
+
   it('trims safe relative/external URLs but never finds an origin in the middle of a path', () => {
     expect(isSafeUrl('  plain/path  ')).toBe(true);
     expect(isSafeUrl('plain')).toBe(true);

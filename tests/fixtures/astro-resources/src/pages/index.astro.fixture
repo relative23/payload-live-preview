@@ -1,0 +1,8 @@
+---
+/** The public page has no resource catalog or draft fields.
+ * ClientRouter lets the browser prove that page-owned styles leave on a swap.
+ */
+import { ClientRouter } from 'astro:transitions';
+---
+<html lang="en"><head><meta charset="utf-8" /><title>Public resource shell</title><ClientRouter /></head>
+<body><h1>Public shell</h1><iframe id="preview" title="Preview"></iframe></body></html>

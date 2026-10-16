@@ -2,7 +2,8 @@
  * End-to-end tests for the Nuxt adapter (`livePreviewNitroPlugin`).
  *
  * The fixture is the Nuxt example under `examples/nuxt-payload`, expected to
- * be running on port 4176 (`npm --prefix examples/nuxt-payload run dev`). The
+ * be running on port 4176 (`npm --prefix examples/nuxt-payload run dev`), or
+ * the production build at `PLP_NUXT_ORIGIN`. The
  * static `/admin.html` page emulates the Payload admin: it embeds `/` in an
  * iframe and posts updates whenever the form changes. Because the iframe load
  * carries `Sec-Fetch-Dest: iframe`, the plugin's default `'preview-only'`
@@ -13,9 +14,18 @@
  * the Astro example (port 4173), and this spec must not depend on it.
  */
 import { expect, test, type Frame, type Page } from '@playwright/test';
-import { requirePreviewFrame } from '../helpers/preview';
+import {
+  acceptedRevisions,
+  countReadyHandshakes,
+  installNavigationProbe,
+  readNavigationProbe,
+  requirePreviewFrame,
+  waitForPreviewFrame,
+  waitForStartupReadies,
+  waitForStarted,
+} from '../helpers/preview';
 
-const APP = 'http://localhost:4176';
+const APP = process.env['PLP_NUXT_ORIGIN'] ?? 'http://localhost:4176';
 
 interface HydrationApi {
   inspect: () => { hydration: { mode: string; state: string } };
@@ -64,6 +74,147 @@ test.describe('nuxt live preview — admin → iframe updates', () => {
       return win.__pwned === true;
     });
     expect(pwned).toBe(false);
+  });
+
+  test('locally reapplies one unchanged unsaved document after each committed route', async ({
+    page,
+  }) => {
+    await countReadyHandshakes(page);
+    await page.goto(`${APP}/admin.html?target=/navigation`);
+    const frame = await waitForPreviewFrame(page, '/navigation');
+    const title = frame.locator('[data-payload-field="title"]');
+    await expect(title).toBeVisible();
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            typeof (window as Window & { __livePreviewRouteRefresh?: unknown })
+              .__livePreviewRouteRefresh,
+        ),
+      )
+      .toBe('function');
+    await waitForStartupReadies(page);
+    await installNavigationProbe(page);
+
+    await page.getByTestId('title-input').fill('Unsaved across Nuxt navigation');
+    await expect(title).toHaveText('Unsaved across Nuxt navigation');
+    await expect.poll(async () => (await readNavigationProbe(page)).documents.length).toBe(1);
+    const accepted = await acceptedRevisions(frame);
+
+    await frame.getByTestId('navigate-query').click();
+    await expect.poll(() => new URL(frame.url()).search).toBe('?view=query');
+    await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(1);
+    await expect.poll(async () => (await readNavigationProbe(page)).ready).toBe(1);
+    const queryReplay = await readNavigationProbe(page);
+    expect(queryReplay.documents).toHaveLength(1);
+    expect(queryReplay.titles).toContain('Server title for one');
+    expect(await acceptedRevisions(frame)).toBe(accepted);
+    await expect(title).toHaveText('Unsaved across Nuxt navigation');
+
+    await frame.getByTestId('navigate-two').click();
+    await expect.poll(() => new URL(frame.url()).pathname).toBe('/navigation-two');
+    await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(2);
+    await expect.poll(async () => (await readNavigationProbe(page)).ready).toBe(2);
+    const firstReplay = await readNavigationProbe(page);
+    expect(firstReplay.documents).toHaveLength(1);
+    expect(firstReplay.titles).toContain('Server title for two');
+    expect(await acceptedRevisions(frame)).toBe(accepted);
+    await expect(title).toHaveText('Unsaved across Nuxt navigation');
+
+    await frame.getByTestId('navigate-rapid').click();
+    await expect.poll(() => new URL(frame.url()).pathname).toBe('/navigation-final');
+    await expect.poll(async () => (await readNavigationProbe(page)).events).toBe(3);
+    await expect.poll(async () => (await readNavigationProbe(page)).ready).toBe(3);
+    await page.waitForTimeout(600);
+    const rapidReplay = await readNavigationProbe(page);
+    expect(rapidReplay.documents).toHaveLength(1);
+    expect(rapidReplay.titles).toContain('Server title for final');
+    expect(rapidReplay.titles).not.toContain('Server title for slow');
+    expect(await acceptedRevisions(frame)).toBe(accepted);
+    await expect(title).toHaveText('Unsaved across Nuxt navigation');
+
+    await frame.evaluate(() => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            typeof (window as Window & { __livePreviewRouteRefresh?: unknown })
+              .__livePreviewRouteRefresh,
+        ),
+      )
+      .toBe('undefined');
+  });
+
+  test('preserves query-carried preview intent and credentials across navigation', async ({
+    page,
+  }) => {
+    // This v1-profile fixture treats the token as opaque. The contract here is
+    // URL retention; signed-token authorization is covered by the strict suites.
+    await page.goto(`${APP}/navigation?preview=true&previewToken=kept-for-navigation`);
+
+    await page.getByTestId('navigate-query').click();
+    await expect.poll(() => new URL(page.url()).searchParams.get('view')).toBe('query');
+    expect(new URL(page.url()).searchParams.get('preview')).toBe('true');
+    expect(new URL(page.url()).searchParams.get('previewToken')).toBe('kept-for-navigation');
+
+    await page.getByTestId('navigate-two').click();
+    await expect.poll(() => new URL(page.url()).pathname).toBe('/navigation-two');
+    expect(new URL(page.url()).searchParams.get('preview')).toBe('true');
+    expect(new URL(page.url()).searchParams.get('previewToken')).toBe('kept-for-navigation');
+    expect(new URL(page.url()).searchParams.get('view')).toBe('query');
+
+    await page.getByTestId('navigate-rapid').click();
+    await expect.poll(() => new URL(page.url()).pathname).toBe('/navigation-final');
+    expect(new URL(page.url()).searchParams.get('preview')).toBe('true');
+    expect(new URL(page.url()).searchParams.get('previewToken')).toBe('kept-for-navigation');
+    expect(new URL(page.url()).searchParams.get('view')).toBe('query');
+  });
+
+  test('awaits refreshNuxtData before reapplying the unsaved document', async ({ page }) => {
+    await page.goto(`${APP}/admin.html?target=/navigation`);
+    const frame = await waitForPreviewFrame(page, '/navigation');
+    await waitForStarted(frame);
+    const title = frame.locator('[data-payload-field="title"]');
+    await expect(title).toHaveText('Hello from the demo');
+
+    await page.getByTestId('title-input').fill('Unsaved across refreshNuxtData');
+    await expect(title).toHaveText('Unsaved across refreshNuxtData');
+    const generation = await frame.getByTestId('navigation-generation').textContent();
+
+    // `subtitle` is intentionally absent from this route. The unbound edit
+    // invokes the native refresh seam; the endpoint-backed generation proves
+    // Nuxt settled new async data before the runtime reapplied this revision.
+    await page.getByTestId('subtitle-input').fill('Unsaved and deliberately unbound');
+    await expect(frame.getByTestId('navigation-generation')).not.toHaveText(generation ?? '');
+    await expect(title).toHaveText('Unsaved across refreshNuxtData');
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            (
+              window as Window & {
+                __livePreview?: {
+                  inspect: () => { route: { refreshes: number; partial: number } };
+                };
+              }
+            ).__livePreview?.inspect().route.refreshes ?? 0,
+        ),
+      )
+      .toBe(1);
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            (
+              window as Window & {
+                __livePreview?: { inspect: () => { route: { partial: number } } };
+              }
+            ).__livePreview?.inspect().route.partial ?? 0,
+        ),
+      )
+      .toBe(1);
   });
 });
 

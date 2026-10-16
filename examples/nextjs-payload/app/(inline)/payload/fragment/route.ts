@@ -11,9 +11,13 @@
 import { createFragmentEndpoint, defineFragment } from 'payload-live-preview/nextjs';
 import { Hero } from '../../hybrid/Hero';
 import { heroProps } from '../../hybrid/document';
-import { strategy } from '../../../preview';
+import { SITE, strategy } from '../../../preview';
 
 export const POST = createFragmentEndpoint({
   registry: { hero: defineFragment(Hero, ({ fields }) => heroProps(fields)) },
   authorize: strategy,
+  // Behind TLS termination Next sees the loopback upstream URL, while the
+  // browser correctly sends the public HTTPS Origin. Name that public origin
+  // explicitly rather than trusting forwarded headers or disabling the check.
+  allowedOrigins: [SITE],
 });

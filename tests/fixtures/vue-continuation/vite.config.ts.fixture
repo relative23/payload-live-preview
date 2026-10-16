@@ -1,0 +1,16 @@
+/**
+ * Compile the same real SFC for browser hydration and native Node SSR.
+ * Runtime dependencies resolve inside this clean app; no source aliases,
+ * Nuxt layer or development server participates in the accepted build.
+ */
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+
+export default defineConfig(({ isSsrBuild }) => ({
+  plugins: [vue()],
+  build: {
+    manifest: !isSsrBuild,
+    sourcemap: false,
+    ...(isSsrBuild ? {} : { rolldownOptions: { input: 'src/entry-client.ts' } }),
+  },
+}));

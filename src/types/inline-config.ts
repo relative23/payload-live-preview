@@ -79,21 +79,40 @@ export interface InlineScriptConfig {
    * throws `Hydration failed` and regenerates the tree, and the write is gone.
    * Under `'vue'` it holds the write until Vue has mounted the app around them
    * — otherwise Vue's hydration repairs the write back to the server's value,
-   * quietly. The Next.js and Nuxt adapters set it on every script they emit; a
-   * page built by hand with `generateInlineScript()` may. Omitted: the runtime
-   * starts on `DOMContentLoaded`, as on a static page.
+   * quietly. Under `'sveltekit'` it holds the write until SvelteKit's root has
+   * mounted, on a page SvelteKit's client runs on — otherwise Svelte's
+   * hydration sets its own text back over it, as quietly. The Next.js, Nuxt
+   * and SvelteKit adapters set it on every script they emit; a page built by
+   * hand with `generateInlineScript()` may. Omitted: the runtime starts on
+   * `DOMContentLoaded`, as on a static page.
    */
-  readonly hydration?: 'react' | 'vue';
+  readonly hydration?: 'react' | 'vue' | 'sveltekit';
   /**
    * Which defaults the omitted options fall back to, resolved by the generator
    * rather than the runtime, whose own fallbacks are the 2.0 rows: `'v1'`
    * writes its four runtime rows into their slots (an explicit option still
    * wins) and relaxes the `mergeDepth` check. The resolved value always
-   * travels, in the last slot, so a reader of the served page knows what an
+   * travels in slot 24, so a reader of the served page knows what an
    * empty slot means instead of guessing it — `pll doctor --v2` reads it. The
-   * runtime does not: every row the profile decides is already in its slot.
+   * runtime does not use that value: every row the profile decides is already
+   * in its slot. Slot 24 stays fixed as later options are appended.
    */
   readonly defaults?: DefaultsProfile;
+  /**
+   * Document events fired after a client router committed new markup. Each
+   * rebuilds the binding cache and locally reapplies the last accepted state.
+   * Adapter integrations set this from their framework lifecycle. It is a
+   * low-level generator fact, not a `PreviewAdapterOptions` field. Empty by
+   * default.
+   */
+  readonly softNavigationEvents?: readonly string[];
+  /**
+   * How a group counts as covered (ADR 0022). `'descendant'`, the 2.x default:
+   * one bound path inside it covers all of it. `'declared'`: each changed path
+   * inside such a group needs its own binding or a `data-payload-covers`
+   * declaration; an uncovered one is an unbound change.
+   */
+  readonly subfieldCoverage?: 'descendant' | 'declared';
   /**
    * A runtime artifact to embed instead of the full one — today only
    * `LEAN_RUNTIME` from `payload-live-preview/lean`, which leaves out the
@@ -153,4 +172,6 @@ export const INLINE_CONFIG_KEYS = [
   'autoBind',
   'hydration',
   'defaults',
+  'softNavigationEvents',
+  'subfieldCoverage',
 ] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'runtime'>[];

@@ -1,0 +1,32 @@
+/**
+ * The real React effect supplies a lifetime witness for native Astro islands.
+ * Test-only events contain fixture presentation data, never credentials.
+ */
+import { createContext, useContext, useEffect, useState } from 'react';
+import './react-panel.css';
+
+export interface Authority { locale: string; subject: string; path: string }
+const AuthorityContext = createContext<Authority>({ locale: '', subject: '', path: '' });
+function Details({ title }: { title: string }) {
+  const authority = useContext(AuthorityContext);
+  const [count, setCount] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+    const witness = (phase: string) => window.dispatchEvent(new CustomEvent('plp:test:react-lifecycle', {
+      detail: { phase, title },
+    }));
+    witness('mount');
+    return () => { witness('unmount'); };
+  }, []);
+  return <aside className="react-panel" data-testid="react-panel"
+    data-react-hydrated={String(hydrated)} data-react-locale={authority.locale}
+    data-react-subject={authority.subject} data-react-path={authority.path}>
+    <h3 data-testid="react-title">{title}</h3>
+    <output data-testid="react-derived">{Array.from(title).length}</output>
+    <button type="button" data-testid="react-counter" onClick={() => setCount(value => value + 1)}>{count}</button>
+  </aside>;
+}
+export default function ReactPanel({ title, authority }: { title: string; authority: Authority }) {
+  return <AuthorityContext.Provider value={authority}><Details title={title} /></AuthorityContext.Provider>;
+}

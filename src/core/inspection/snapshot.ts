@@ -46,6 +46,7 @@ export function buildInspection(deps: RuntimeDeps, state: RuntimeState): LivePre
       completed: state.completedCount,
       skippedUnchanged: state.skippedUnchangedCount,
       active: active === null ? undefined : active.revision.revision,
+      display: state.display.snapshot(),
     },
     bindings: {
       elements: cache.elementCount,

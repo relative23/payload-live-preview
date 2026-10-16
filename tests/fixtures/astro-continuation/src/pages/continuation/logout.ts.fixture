@@ -1,0 +1,4 @@
+/** Logout revokes the local mapping and the actual Payload session. Replaying old cookies cannot restore the removed host record. */
+import type { APIRoute } from 'astro';
+import { dispatch } from '../../server/host';
+export const ALL: APIRoute = ({ request }) => dispatch(request, 'logout');

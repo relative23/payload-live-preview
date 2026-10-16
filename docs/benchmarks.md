@@ -1,26 +1,32 @@
 # Benchmarks
 
 Hot-path timings from `npm run test:bench -- --run` (Vitest bench, jsdom,
-Node 24.18, 2026-08). jsdom is not a browser — read these as **relative
-regression signals**, not absolute browser timings. Refresh this table when
-touching the cache, scheduler, message bus, sanitizer, or Lexical renderer.
+Node 24.19, 2026-10, on a machine shared with other jobs). jsdom is not a
+browser — read these as **relative regression signals**, not absolute browser
+timings. Refresh this table when touching the cache, scheduler, message bus,
+sanitizer, or Lexical renderer.
 
 | Hot path                                          |   ops/sec |     mean |
 | ------------------------------------------------- | --------: | -------: |
-| `resolveFieldValue` — 4-level nested path         | 7,467,094 |  0.13 µs |
-| `diffArray` — 100 items (insert + remove + moves) |   254,369 |   3.9 µs |
-| `escapeHtml` — ~2 KB string                       |   132,718 |   7.5 µs |
-| No-listener `elementUpdate` path — 300 bindings   |   768,610 |   1.3 µs |
-| `lexicalToHtml` — 30 paragraphs with links        |     1,556 | 0.643 ms |
-| `sanitizeHtml` — ~2 KB mixed document             |     1,169 | 0.856 ms |
-| Ordered async token pipeline — 1,000 messages     |       518 | 1.931 ms |
-| `ElementCache.buildFromRoot` — 300 bound elements |       216 | 4.633 ms |
+| `resolveFieldValue` — 4-level nested path         | 7,738,966 |  0.13 µs |
+| `diffArray` — 100 items (insert + remove + moves) |   251,847 |   4.0 µs |
+| `escapeHtml` — ~2 KB string                       |   136,328 |   7.3 µs |
+| No-listener `elementUpdate` path — 300 bindings   |   768,567 |   1.3 µs |
+| `lexicalToHtml` — 30 paragraphs with links        |       776 | 1.289 ms |
+| `sanitizeHtml` — ~2 KB mixed document             |       537 | 1.862 ms |
+| Ordered async token pipeline — 1,000 messages     |       312 | 3.205 ms |
+| `ElementCache.buildFromRoot` — 300 bound elements |       127 | 7.874 ms |
+
+`sanitizeHtml` parses markup it rewrote a second time, to confirm that its
+output settled (ADR 0016, addendum of 2026-10-02). This document is one the
+sanitizer rewrites, so the time doubled: about 0.95 ms before and 2 ms after,
+measured back to back on this machine. Clean, canonical markup takes one parse.
 
 Interpretation for a live-editing session: a keystroke triggers field
-resolution (~µs), possibly a Lexical render + sanitize (~1.5 ms for a
+resolution (~µs), possibly a Lexical render + sanitize (~3.2 ms for a
 sizeable rich-text field), and a scheduler flush. The dominant cost —
 cache building — happens once at startup and after DOM mutations, not
-per keystroke; 300 bindings build in ~4.6 ms. Dotted-path lookup validates every
+per keystroke; 300 bindings build in ~7.9 ms. Dotted-path lookup validates every
 segment as an own, pollution-safe property and still completes in about 0.13 µs.
 Each measured representative operation on the per-keystroke path stays comfortably
 below a 60 fps frame budget (16.7 ms), even in jsdom, which is substantially slower

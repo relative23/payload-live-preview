@@ -1,13 +1,13 @@
 /**
- * The interaction gate: how many merge requests one burst of typing costs, and
- * how long a single keystroke takes to reach the page.
- *
- * The runtime is driven in jsdom against a merge endpoint that answers without
- * delay, so both numbers are the package's own and reproduce run to run. The
- * network half of what an editor waits for is carried by the request count
- * instead: an update that makes no request cannot wait for one.
+ * The interaction gate measures merge requests per typing burst and keystroke
+ * arrival. It imports runtime sources into jsdom with an immediate modelled
+ * merge endpoint. Timings include host scheduling; request counts describe work
+ * under that model. Each attempt preserves its warm-up and measured samples.
  */
 
+import { createHash, randomUUID } from 'node:crypto';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
 import {
   findInteractionViolations,
@@ -41,6 +41,17 @@ const SETTLE_MS = 300;
  */
 const ROUTE_SETTLE_MS = 1_600;
 const PROBE_TIMEOUT_MS = 5_000;
+
+interface LatencySample {
+  readonly step: number;
+  readonly population: 'warmup' | 'measured';
+  readonly sentAtMs: number;
+  readonly arrivedAtMs: number;
+  readonly latencyMs: number;
+}
+
+const latencySamples = new Map<string, LatencySample[]>();
+const measurements = new Map<string, InteractionMeasurement>();
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -248,6 +259,8 @@ async function measureBurst(
 async function measureLatency(scenario: InteractionScenario): Promise<readonly number[]> {
   const probe = scenario.probe;
   if (probe === undefined) return [];
+  const rawSamples: LatencySample[] = [];
+  latencySamples.set(scenario.name, rawSamples);
   const session = openPage(scenario);
   try {
     post(scenario.base, false);
@@ -259,7 +272,15 @@ async function measureLatency(scenario: InteractionScenario): Promise<readonly n
       const arrived = waitForText(element, probe.expect(step));
       const sentAt = performance.now();
       post(scenario.keystroke(step), true);
-      samples.push((await arrived) - sentAt);
+      const arrivedAt = await arrived;
+      samples.push(arrivedAt - sentAt);
+      rawSamples.push({
+        step,
+        population: step < LATENCY_WARMUP ? 'warmup' : 'measured',
+        sentAtMs: sentAt,
+        arrivedAtMs: arrivedAt,
+        latencyMs: arrivedAt - sentAt,
+      });
       await sleep(LATENCY_GAP_MS);
     }
     return samples.slice(LATENCY_WARMUP);
@@ -312,25 +333,119 @@ function report(
 
 async function main(): Promise<void> {
   const budgets = new Map(INTERACTION_BUDGETS.map((budget) => [budget.scenario, budget]));
+  const definitionViolations: { scenario: string; reason: string }[] = [];
   let failures = 0;
-  for (const scenario of SCENARIOS) {
-    const budget = budgets.get(scenario.name);
-    if (budget === undefined) {
-      console.error(`FAIL ${scenario.name}: no budget names this scenario`);
-      failures += 1;
-      continue;
+  let gatePassed = false;
+  let reportFailure: { cause: unknown } | undefined;
+  let failure: { name: string; message: string } | null = null;
+  try {
+    for (const scenario of SCENARIOS) {
+      const budget = budgets.get(scenario.name);
+      if (budget === undefined) {
+        console.error(`FAIL ${scenario.name}: no budget names this scenario`);
+        definitionViolations.push({
+          scenario: scenario.name,
+          reason: 'no budget names this scenario',
+        });
+        failures += 1;
+        continue;
+      }
+      const measurement = await measure(scenario);
+      measurements.set(scenario.name, measurement);
+      failures += report(scenario, measurement, budget);
     }
-    failures += report(scenario, await measure(scenario), budget);
+    for (const budget of INTERACTION_BUDGETS) {
+      if (SCENARIOS.some((scenario) => scenario.name === budget.scenario)) continue;
+      console.error(`FAIL ${budget.scenario}: a budget for a scenario the gate does not run`);
+      definitionViolations.push({
+        scenario: budget.scenario,
+        reason: 'a budget for a scenario the gate does not run',
+      });
+      failures += 1;
+    }
+    dom.window.close();
+    if (failures > 0) {
+      throw new Error(`interaction gate failed with ${failures} violation(s)`);
+    }
+    gatePassed = true;
+  } catch (error) {
+    failure =
+      error instanceof Error
+        ? { name: error.name, message: error.message }
+        : { name: 'Error', message: String(error) };
+    throw error;
+  } finally {
+    // Persist after the measured work; a reporting error must not replace a gate failure.
+    try {
+      const atUTC = new Date().toISOString();
+      const output = resolve(
+        process.env['PLP_INTERACTION_REPORT_PATH'] ??
+          `test-results/interaction/${atUTC.replace(/[.:]/g, '-')}-${randomUUID()}.json`,
+      );
+      const evidence = {
+        schemaVersion: 1,
+        atUTC,
+        outcome: gatePassed ? 'passed' : 'failed',
+        failure,
+        nodeVersion: process.version,
+        packageVersion: (
+          JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+            version: string;
+          }
+        ).version,
+        epoch: process.env['SOURCE_DATE_EPOCH'] ?? null,
+        scope: 'runtime sources imported into jsdom with an immediate modelled merge endpoint',
+        units: {
+          timestamps: 'milliseconds since performance.timeOrigin',
+          latency: 'milliseconds',
+          requests: 'count per typing burst',
+          routeRefreshes: 'count per typing burst',
+          baselineSearch: 'milliseconds',
+        },
+        timeOriginMs: performance.timeOrigin,
+        benchmarkSHA256: createHash('sha256')
+          .update(readFileSync(new URL(import.meta.url)))
+          .digest('hex'),
+        budgetSourceSHA256: createHash('sha256')
+          .update(readFileSync(new URL('./interaction-budgets.ts', import.meta.url)))
+          .digest('hex'),
+        scenarioSourceSHA256: createHash('sha256')
+          .update(readFileSync(new URL('./interaction-scenarios.ts', import.meta.url)))
+          .digest('hex'),
+        pinnedBudgets: INTERACTION_BUDGETS,
+        typingBurst: { keystrokes: KEYSTROKES, intervalMs: KEYSTROKE_INTERVAL_MS },
+        latencyPopulation: {
+          warmupSamples: LATENCY_WARMUP,
+          measuredSamples: LATENCY_SAMPLES,
+          gapMs: LATENCY_GAP_MS,
+          probeTimeoutMs: PROBE_TIMEOUT_MS,
+        },
+        settleMs: { merge: SETTLE_MS, route: ROUTE_SETTLE_MS },
+        definitionViolations,
+        scenarios: SCENARIOS.map((scenario) => {
+          const measurement = measurements.get(scenario.name);
+          const budget = budgets.get(scenario.name);
+          return {
+            scenario: scenario.name,
+            measurement: measurement ?? null,
+            budget: budget ?? null,
+            violations:
+              measurement === undefined || budget === undefined
+                ? []
+                : findInteractionViolations(measurement, budget),
+            latencySamples: latencySamples.get(scenario.name) ?? [],
+          };
+        }),
+      };
+      mkdirSync(dirname(output), { recursive: true });
+      writeFileSync(output, JSON.stringify(evidence, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
+      console.log(`Interaction report: ${output}`);
+    } catch (reportError) {
+      if (gatePassed) reportFailure = { cause: reportError };
+      else console.error('Failed to save interaction report:', reportError);
+    }
   }
-  for (const budget of INTERACTION_BUDGETS) {
-    if (SCENARIOS.some((scenario) => scenario.name === budget.scenario)) continue;
-    console.error(`FAIL ${budget.scenario}: a budget for a scenario the gate does not run`);
-    failures += 1;
-  }
-  dom.window.close();
-  if (failures > 0) {
-    throw new Error(`interaction gate failed with ${failures} violation(s)`);
-  }
+  if (reportFailure !== undefined) throw reportFailure.cause;
 }
 
 await main();

@@ -1,0 +1,29 @@
+/** The packed strategy and sanitizer own fragment writes. The element owns only its client lifetime and unbound visitor controls. */
+import { LivePreviewClient } from 'payload-live-preview/client';
+import { createFragmentStrategy } from 'payload-live-preview/fragment';
+
+export function mountPreview(root: HTMLElement): () => void {
+  const { id, locale, origin } = JSON.parse(root.dataset.previewConfig ?? '{}') as { id: number; locale: string; origin: string };
+  const node = (name: string) => root.querySelector<HTMLElement>('[data-testid="' + name + '"]')!;
+  const lifetime = new AbortController();
+  const client = new LivePreviewClient({
+    root, allowedOrigins: [origin], defaults: 'v2', autoStart: false, debug: false,
+    autoBind: 'off', disableLocalhostMatching: true,
+    strategies: { fragment: createFragmentStrategy({ endpoint: '/payload/resource-fragment' }) },
+  });
+  client.events.on('beforeUpdate', event => {
+    if (event.data.collectionSlug !== 'articles' || String(event.data.fields.id) !== String(id) || event.data.locale !== locale) event.cancel();
+  });
+  let renders = 0;
+  client.events.on('fragmentRender', event => {
+    node('status').textContent = event.status;
+    if (event.status === 'rendered') node('renders').textContent = String(++renders);
+  });
+  let count = 0;
+  node('counter').addEventListener('click', () => { node('counter').textContent = String(++count); }, { signal: lifetime.signal });
+  const stop = () => { lifetime.abort(); void client.destroy(); root.dataset.stopped = 'true'; };
+  window.addEventListener('pagehide', stop, { signal: lifetime.signal, once: true });
+  client.start();
+  node('ready').textContent = 'ready';
+  return stop;
+}

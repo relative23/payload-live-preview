@@ -28,7 +28,8 @@ const shell = (title, body, attributes = '') =>
 
 const indexBody =
   '<h1 data-payload-field="title" data-testid="title">Hello</h1>' +
-  '<p data-payload-field="subtitle" data-testid="subtitle">sub</p>';
+  '<p data-payload-field="subtitle" data-testid="subtitle">sub</p>' +
+  '<p data-payload-field="price" data-payload-type="fixture:money" data-testid="price"></p>';
 
 const revealBody =
   '<h1 data-payload-field="heroTitle" data-testid="hero">Top</h1>' +

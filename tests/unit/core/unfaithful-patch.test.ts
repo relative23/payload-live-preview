@@ -108,6 +108,46 @@ describe('a value the binding cannot represent', () => {
     runtime.destroy();
   });
 
+  it('only escalates through a fragment boundary owned by the current document', async () => {
+    const cases = [
+      { owner: ' data-payload-owner="global:home"', fragments: ['hero'], routes: 0 },
+      { owner: ' data-payload-owner="global:other"', fragments: [], routes: 1 },
+      { owner: '', fragments: [], routes: 1 },
+    ] as const;
+
+    for (const expected of cases) {
+      document.body.innerHTML =
+        `<section data-payload-fragment="hero"${expected.owner}>` +
+        `<div data-payload-owner="global:home">${UNWRITABLE_TITLE}</div></section>`;
+      const route = fakeRoute();
+      const fragment = fakeFragment();
+      const runtime = start({
+        scopeBindingsByOwner: true,
+        strategies: { route, fragment },
+        warn: () => {},
+      });
+
+      fireMessage({
+        type: 'payload-live-preview',
+        globalSlug: 'home',
+        data: { title: 'Server rendered' },
+      });
+      await vi.advanceTimersByTimeAsync(50);
+      fireMessage({
+        type: 'payload-live-preview',
+        globalSlug: 'home',
+        data: { title: 'Typed in the admin' },
+      });
+      await vi.advanceTimersByTimeAsync(50);
+
+      expect(
+        fragment.rendered.map((element) => element.getAttribute('data-payload-fragment')),
+      ).toEqual(expected.fragments);
+      expect(route.refreshes).toBe(expected.routes);
+      runtime.destroy();
+    }
+  });
+
   it('reports canEscalate for a fragment strategy alone', () => {
     document.body.innerHTML = `<section data-payload-fragment="hero">${UNWRITABLE_TITLE}</section>`;
     const runtime = start({ strategies: { fragment: fakeFragment() }, warn: () => {} });

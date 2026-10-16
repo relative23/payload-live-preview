@@ -25,17 +25,24 @@ questions to answer are three as well:
 
 The modules that answer them are the **trusted core**:
 
-| Module                          |     Lines | Decides                                                                        |
-| ------------------------------- | --------: | ------------------------------------------------------------------------------ |
-| `src/core/message-guards.ts`    |        95 | which shapes are a message at all                                              |
-| `src/core/message-bus.ts`       |       386 | which window may send, in which order verdicts commit, when a callback may run |
-| `src/core/data-merger.ts`       |       202 | the one request that carries cookies: to where, with what, and which one wins  |
-| `src/core/attribute-binding.ts` |        68 | which attribute a remote value may become                                      |
-| `src/security/url-validator.ts` |        44 | which URL is a URL                                                             |
-| `src/security/escape.ts`        |        48 | how text becomes markup without becoming markup                                |
-| `src/security/sanitizer.ts`     |       453 | which tags and attributes CMS content keeps                                    |
-| `src/security/trusted-types.ts` |        87 | the one policy every HTML sink goes through                                    |
-| **Total**                       | **1 383** | 1 032 without blank and comment lines; 41 exported names                       |
+| Module                          |     Lines | Decides                                                     |
+| ------------------------------- | --------: | ----------------------------------------------------------- |
+| `src/core/message-guards.ts`    |        95 | which shapes are a message                                  |
+| `src/core/message-bus.ts`       |       467 | which window may send and which verdict commits             |
+| `src/core/data-merger.ts`       |       302 | credentialed transport and which attempt wins               |
+| `src/core/legacy-population.ts` |       424 | bounded v2 planning, response identity and body teardown    |
+| `src/core/attribute-binding.ts` |        68 | which attribute a remote value may become                   |
+| `src/security/url-validator.ts` |        60 | which URL is safe                                           |
+| `src/security/escape.ts`        |        48 | how text becomes escaped markup                             |
+| `src/security/sanitizer.ts`     |       500 | which tags and attributes CMS content keeps                 |
+| `src/security/trusted-types.ts` |        87 | the policy every HTML sink goes through                     |
+| **Total**                       | **2 051** | 1 639 without blank/comment lines; 47 exported declarations |
+
+Measured on 2026-10-03. The full 424-line population primitive is counted:
+417 lines in the initial v2 correction, then two lines for the separately
+reviewed native-stream work bound, two for shared polymorphic-target work
+and three for bounded block-definition lookup. Delegating these checks does
+not remove them from the reader's trust scope.
 
 The boundary is not a feeling about which files are important. A module is in
 the core because it **holds a capability**: it listens to messages, sends a
@@ -52,14 +59,15 @@ and is listed nowhere fails the build.
 
 ### The three gates
 
-**1. The core cannot grow.** `scripts/check-trusted-core.ts` counts the eight
+**1. The core cannot grow.** `scripts/check-trusted-core.ts` counts the nine
 modules the way `wc -l` does and holds the total at the number in
 `trusted-core.json` — the exact measurement, no headroom. A line added to the
 core is a line every reader has to trust, so adding one means raising the
-number and writing down why, next to the number. The same file lists the five
-modules the core imports from outside itself (the field-schema parser, a
-diagnostic wrapper, a thenable guard, the protocol version constant, one
-warning); a sixth fails until it is reviewed too.
+number and writing down why, next to the number. The same file lists the six
+modules the core imports from outside itself: the field-schema parser,
+a diagnostic wrapper, a thenable guard, the protocol version constant,
+a development warning and the sanitizer report. A new dependency fails
+until it is reviewed too.
 
 **2. Nothing outside the core can do what the core does.** The capability rule
 in `scripts/architecture-rules.ts` holds every module to the capabilities the
@@ -75,9 +83,10 @@ or `formaction` cannot be written by name at all. A `fetch` that appears in a
 renderer is a red build, and so is a justification whose site has moved.
 
 **3. The core's tests notice a changed line.** A Stryker profile mutates the
-eight modules and nothing else (`STRYKER_SCOPE=core`), with every mutant killed
-as the target. The measured score is in
-[quality/mutation-policy-core.json](../quality/mutation-policy-core.json):
+nine modules and nothing else (`STRYKER_SCOPE=core`), with every mutant killed
+as the target. The retained historical score is in
+[quality/mutation-policy-core.json](../quality/mutation-policy-core.json).
+Its earlier eight-module measurements were
 1 202 mutants on 2026-09-11, 99.17 % killed, 10 survived and none left
 unexecuted by a test, 13 minutes. 2.0.1 adds ten in the sanitizer's `name`
 check for LP0409, all killed: 1 212 mutants, the same ten survivors, the same
@@ -102,11 +111,19 @@ is not a document, `ready` with data, the global `fetch`), 39 lines were
 guards no test could reach and are gone, about a hundred were cheap
 boundary tests, and the ten above are what is left.
 
+The latest retained eight-module policy has 1 331 mutants and a 99.25 %
+minimum. That result does not measure the new nine-module source. Its full
+core and expanded Nightly measurements remain required, with no lowering of
+existing score, coverage, timeout or error controls. The four new critical
+coverage cells cover the population primitive, document session, parser and
+walker; their configured thresholds are targets until complete coverage is
+measured on the final source.
+
 These three rest on two that already existed: the layer rules (no upward
 import, no Node builtin in browser code, nothing browser-facing imports the
 server side) and the API reports under `etc/api/`, which since this audit mark
 every exported name a project is not meant to import as `@internal` —
-552 public names and 126 internal, the split measured by `scripts/surface-usage.ts` against what the examples import and the guides name, then closed under what every public signature reaches. The names stay exported, so nothing that compiled stops
+586 public names and 123 internal, the split measured by `scripts/surface-usage.ts` against what the examples import and the guides name, then closed under what every public signature reaches. The names stay exported, so nothing that compiled stops
 compiling; the split is a statement in the report, held byte for byte by
 `npm run test:package`.
 
@@ -124,7 +141,7 @@ function that is handed `fetch` under another name. The core's own imports are
 held exact so that this stays a short list to check by hand.
 
 A thousand lines is about what one reader holds in one sitting, and that was
-the size this core set out to be. It is 1 383, and the difference is not a
+the size this core set out to be. It is 2 051, and the difference is not a
 second responsibility hiding in the list:
 133 of the sanitizer's lines are the allow-lists a reader has to read anyway,
 and about 130 of the bus's are the queue that commits token verdicts in arrival
@@ -148,8 +165,9 @@ gate or test that holds it.
   every optional scalar has its type or is absent; `null` counts as absent,
   because JSON bridges send it (`isLivePreviewMessage`, `normalizeLivePreviewMessage`).
 - **G3** `fieldSchemaJSON` is parsed entry by entry and a throw becomes an
-  empty schema. A malformed schema can change which renderer a field gets,
-  never what is written.
+  empty schema. The normalized schema supplies renderer types and v2 relation
+  targets, without granting authorization. The population primitive validates
+  every destination, ID and response independently before filling a document.
 - **G4** Unknown fields are kept, so the protocol can grow without a release.
 
 Held by: the core mutation profile; `tests/unit/core/message-bus-shapes.test.ts`.
@@ -185,12 +203,14 @@ Held by: `message-ingress` is core-only (gate 2); the core mutation profile;
 ordering, generations) and the fast-check models in
 `tests/unit/property/message-bus*.property.test.ts`.
 
-### 3. `data-merger.ts` — the one request that carries cookies
+### 3. `data-merger.ts` — credentialed reads and which attempt wins
 
-- **M1** The request goes to `<serverURL><apiRoute>/<collection>/<id>` or
-  `/globals/<slug>`, as a POST with `X-Payload-HTTP-Method-Override: GET`, and
-  nowhere else; `serverURL` loses its trailing slashes without a regular
-  expression that could backtrack.
+- **M1** Payload 3 requests its collection document or global by POST with
+  `X-Payload-HTTP-Method-Override: GET`. Payload 2 instead reads schema-owned
+  relationship IDs by collection GET, with no body or method override.
+  Scalar v2 updates settle locally. Legacy destinations stay on the configured
+  CMS origin and refuse redirects; `serverURL` loses trailing slashes without
+  a regular expression that could backtrack.
 - **M2** A slug or id with `/`, `\`, a control character, a lone surrogate,
   `.`/`..`, an empty string or over its length limit (128 for a slug, 512 for
   an id) never becomes a URL segment, and a slug with `?` or `#` does not
@@ -202,12 +222,39 @@ ordering, generations) and the fast-check models in
   response that arrives after being superseded is dropped even if a fetch shim
   ignored the signal — the attempt counter alone decides, since nothing but
   this class aborts the signal and only after the counter moved (`attempt`).
-- **M5** A non-OK response, a non-object body or an exception is
-  `unavailable` — the raw values are shown, never a partial document or an
-  error body.
+- **M5** A non-OK response, invalid body or exception is `unavailable`.
+  A successful legacy plan requires every requested response identity before
+  the independent document is returned. A hook keeps its last good document;
+  the DOM runtime may retain the raw update, but never applies a partial
+  population or an HTTP error body.
 
 Held by: `network` and `credentialed-request` reviewed per module (gate 2);
 the core mutation profile; `tests/unit/core/data-merger-*.test.ts`.
+
+### 3b. `legacy-population.ts` — the delegated v2 population primitive
+
+- **L1** Only schema-owned relationships/uploads and rich-text relation nodes
+  plan reads. An arbitrary root or JSON `relationTo`/`value` pair does not.
+- **L2** An independent structured-data copy is bounded by 64 levels,
+  10,000 nodes and 1,048,576 UTF-16 code units of string values.
+  Invalid IDs, collection names,
+  cycles and sparse arrays are refused.
+- **L3** The planner limits IDs to 1,000, requests to 64 and URLs to
+  8,192 characters. Each query contains at most 20 IDs, preserves locale
+  and depth, and stays on the configured CMS origin.
+- **L4** Each response must contain every requested identity exactly once,
+  with no unexpected identity. All requests must succeed before the caller
+  receives the populated document.
+- **L5** Native bodies stop at one MiB and 10,000 chunks, including empty
+  chunks. This bounds stream work as well as bytes.
+- **L6** Supersession/refusal cancels an unfinished reader, releases its
+  lock and removes its abort listener. A hostile pending read cannot start
+  another old read chain after the attempt has been replaced.
+
+Held by: the counted core primitive and resource inventory;
+`tests/unit/core/data-merger-v2*.test.ts` and
+`tests/unit/core/legacy-population-stream-work.test.ts`. Both DOM and session
+caller regressions use the anonymized observed v2 message shape.
 
 ### 4. `attribute-binding.ts` — which attribute a remote value may become
 
@@ -267,8 +314,9 @@ Held by: the core mutation profile; `tests/unit/security/escape.test.ts`.
   neither clobber a global nor add a binding. Other `data-*` pass only when
   listed in `allowedDataAttributes`. `'compat'` keeps them, as 1.x did.
 - **S5** `href`, `src`, `cite` and `poster` are removed when `isSafeUrl`
-  refuses them; every `srcset` candidate is checked and the attribute goes if
-  one fails.
+  refuses them; every `srcset` candidate is checked, whole as well as by its
+  URL, and the attribute goes if one fails. `isSafeUrl` reads a scheme through
+  whitespace and control characters, as DOMPurify does.
 - **S6** An anchor to another HTTP origin gets `rel="noopener noreferrer"` and,
   if it had none, `target="_blank"`.
 - **S7** The policy is resolved per call: an explicit option, else the
@@ -283,6 +331,12 @@ Held by: the core mutation profile; `tests/unit/security/escape.test.ts`.
   immutable and the serializer writes it back after the attribute is gone, so
   a removed `is` would reach the re-parse and upgrade the element to the
   page's customized built-in of that name. An empty `is` names nothing.
+- **S10** The output is a fixed point. The sanitizer parses, sanitises and
+  writes again until a pass changes nothing, at most six parses; an output that
+  does not settle is returned as an empty string, with a development warning.
+  Unwrapping an unknown tag can leave a tree no parser produces, and the
+  consumer's `innerHTML` rebuilds it, so the string handed back is the one
+  that rebuild gives.
 
 Held by: `html-sink` reviewed as `inert-parse` (gate 2); the nightly and core
 mutation profiles; `tests/unit/security/sanitizer*.test.ts` (allow-lists,
@@ -291,7 +345,9 @@ fixed-point properties in `tests/unit/property/security.property.test.ts`;
 and, since 2.0.6, the XSS corpus (`tests/unit/security/xss-corpus.ts`, run by
 `sanitizer-corpus.test.ts` under every policy against an oracle that reads no
 allow-list, and against DOMPurify as the reference engine) with the aimed
-fuzz in `tests/unit/property/sanitizer-fuzz.property.test.ts` (ADR 0016).
+fuzz in `tests/unit/property/sanitizer-fuzz.property.test.ts`, which the Deep
+Quality workflow also runs daily with 10 000 inputs and a new seed (ADR 0016),
+and, since 2.1, `tests/unit/security/sanitizer-settling.test.ts` for S10.
 
 ### 8. `trusted-types.ts` — the one policy
 

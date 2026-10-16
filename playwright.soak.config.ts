@@ -1,6 +1,7 @@
 import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test';
 
 const isCI = process.env['CI'] === 'true';
+const astroPort = process.env['PLP_E2E_PORT'] ?? '4173';
 const requestedDuration = Number.parseInt(process.env['PLP_SOAK_DURATION_MS'] ?? '', 10);
 const durationMs =
   Number.isFinite(requestedDuration) && requestedDuration > 0 ? requestedDuration : 0;
@@ -28,16 +29,15 @@ const config: PlaywrightTestConfig = {
       ]
     : [['list'], ['./scripts/playwright-zero-skip-reporter.ts']],
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${astroPort}`,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium-soak', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command:
-      'npm --prefix examples/astro-payload run build && npm --prefix examples/astro-payload run preview',
+    command: `npm --prefix examples/astro-payload run build && cd examples/astro-payload && npx astro preview --host --port ${astroPort}`,
     env: { ASTRO_PREVIEW_BACKGROUND: '1' },
-    url: 'http://localhost:4173/admin',
+    url: `http://localhost:${astroPort}/admin`,
     reuseExistingServer: !isCI,
     timeout: 120_000,
   },

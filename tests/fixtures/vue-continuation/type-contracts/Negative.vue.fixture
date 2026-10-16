@@ -1,0 +1,6 @@
+<script setup lang="ts">
+// The consumer temporarily includes this counterexample, then removes only
+// that copied file. Production templates must pass the same strict command.
+const title: string = 'not a number';
+</script>
+<template><p>{{ title.toFixed(2) }}</p></template>

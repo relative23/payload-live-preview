@@ -144,7 +144,7 @@ export async function inspectPackedManifest(
       '--package-lock=false',
       '--omit=optional',
       '--offline',
-      '--legacy-peer-deps',
+      '--legacy-peer-deps=false',
       '--no-save',
       tarball,
     ],

@@ -43,6 +43,13 @@ export interface LivePreviewClientConfig {
    * and listed in `inspect().bindings.guessed`. Default `'off'`.
    */
   readonly autoBind?: 'off' | 'unique';
+  /**
+   * How a group counts as covered (ADR 0022). `'descendant'` (default): one
+   * bound path inside it covers all of it. `'declared'`: each changed path
+   * inside such a group needs its own binding or a `data-payload-covers`
+   * declaration; an uncovered one is an unbound change.
+   */
+  readonly subfieldCoverage?: 'descendant' | 'declared';
   /** Fields whose change re-applies other bindings regardless of their own value: `{ price: ['priceLabel'] }`. Used with `skipUnchanged`. */
   readonly dependencies?: Readonly<Record<string, readonly string[]>>;
   /** Strategy handlers beyond patching; `createFragmentStrategy()` from `payload-live-preview/fragment` builds one. */

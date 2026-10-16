@@ -1,0 +1,8 @@
+/** This isolated app uses Nuxt's own SSR and Vue compiler. Server credentials never enter runtimeConfig.public. */
+export default defineNuxtConfig({
+  compatibilityDate: '2026-08-01',
+  devtools: { enabled: false },
+  telemetry: false,
+  ssr: true,
+  nitro: { preset: 'node-server' },
+});

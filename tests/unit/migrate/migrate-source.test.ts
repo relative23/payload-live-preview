@@ -1,14 +1,17 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { CODEMODS, importsThisPackage, migrateSource } from '@migrate/index';
 
 const EVERYTHING = [
   "import { isPreviewRequest, createPreviewBindings, fetchPreviewGlobal } from 'payload-live-preview';",
+  "import { livePreview } from 'payload-live-preview/astro';",
   'export async function load({ request }) {',
   '  const preview = isPreviewRequest(request, { adminOrigins: [env.ADMIN] });',
   '  const bindings = createPreviewBindings({ authorized: preview });',
   "  const site = await fetchPreviewGlobal({ serverURL: env.CMS, global: 'site', depth: 1, authorization });",
   '  return { site, bindings };',
   '}',
+  "export const integration = livePreview({ defaults: 'v1', onUnboundChange: 'route' });",
   '',
 ].join('\n');
 
@@ -36,6 +39,11 @@ describe('migrateSource', () => {
     expect(once.output).toContain('authorization: preview');
     expect(once.output).toContain(
       "definePreview({ serverURL: env.CMS, depth: 1 }).fetchGlobal({ global: 'site', authorization })",
+    );
+    expect(once.output).toContain(
+      "livePreview({ strict: false, previewSignals: ['query', 'fetch-dest', 'referer'], " +
+        "disableReferrerDetection: false, eventSourcePolicy: 'any', skipUnchanged: false, " +
+        "sanitizerPolicy: 'compat', onUnfaithfulPatch: 'escalate' })",
     );
     const twice = migrateSource(once.output);
     expect(twice.output).toBe(once.output);
@@ -110,9 +118,10 @@ describe('migrateSource', () => {
   });
 
   it('every codemod names a real ledger entry', () => {
+    const ledger = readFileSync('docs/architecture/0007-v2-defaults-and-renames-ledger.md', 'utf8');
+    const rows = new Set([...ledger.matchAll(/^\| (\d+) +\|/gmu)].map((match) => Number(match[1])));
     for (const codemod of CODEMODS) {
-      expect(codemod.ledgerEntry).toBeGreaterThanOrEqual(1);
-      expect(codemod.ledgerEntry).toBeLessThanOrEqual(13);
+      expect(rows).toContain(codemod.ledgerEntry);
       expect(codemod.summary.length).toBeGreaterThan(10);
     }
   });

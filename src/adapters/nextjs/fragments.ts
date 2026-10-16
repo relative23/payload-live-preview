@@ -51,16 +51,14 @@ interface ReactRuntime {
 }
 
 const loadReact = lazyPeer(async (): Promise<ReactRuntime> => {
-  // Through variables so the bundler leaves them as runtime imports; see the
-  // module comment on why they are peers.
-  const reactSpecifier = 'react';
-  const serverSpecifier = 'react-dom/server';
+  // Literal specifiers let the consumer's bundler resolve the same renderer peers
+  // as its components. Loading still waits for the first fragment render.
   try {
     const [react, server] = await Promise.all([
-      import(/* @vite-ignore */ reactSpecifier) as Promise<{
+      import('react') as Promise<{
         createElement: ReactRuntime['createElement'];
       }>,
-      import(/* @vite-ignore */ serverSpecifier) as Promise<{
+      import('react-dom/server') as Promise<{
         renderToString: ReactRuntime['renderToString'];
       }>,
     ]);

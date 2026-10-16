@@ -1,0 +1,4 @@
+/** Use Kit's native plugin so routing and module isolation stay real. No test shim renders the Svelte components. */
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+export default defineConfig({ plugins: [sveltekit()] });

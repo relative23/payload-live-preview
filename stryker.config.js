@@ -91,7 +91,7 @@ const coveragePolicy = JSON.parse(readFileSync(join(root, 'quality/coverage-poli
 const criticalFiles = Object.keys(coveragePolicy.criticalFiles ?? {});
 const nightlyMutate = [...new Set([...criticalFiles, ...prMutate, 'src/core/a11y.ts'])].sort();
 /**
- * The trusted core (`quality/trusted-core.json`): the eight modules a reader
+ * The trusted core (`quality/trusted-core.json`): the nine modules a reader
  * has to trust before handing the package a page, mutated on their own so the
  * figure `docs/audit.md` quotes is theirs and not the average of sixty files.
  * The target is every mutant killed; the policy file holds the measured score.

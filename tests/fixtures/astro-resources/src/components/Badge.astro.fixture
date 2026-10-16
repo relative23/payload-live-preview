@@ -1,0 +1,9 @@
+---
+/** A nested component adds a second scoped resource to the same catalog.
+ * Its style must survive first insertion and subsequent fragment morphs.
+ */
+---
+<span data-testid="resource-badge">Nested resource</span>
+<style>
+  span { letter-spacing: 3px; font-weight: 700; }
+</style>

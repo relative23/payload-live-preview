@@ -42,6 +42,9 @@ export function edgeGlobals(): Record<string, unknown> {
     structuredClone,
     AbortController,
     AbortSignal,
+    // Web-platform clocks and abort reasons used by server request lifetimes.
+    performance,
+    DOMException,
     fetch: () => Promise.reject(new Error('edge check: unexpected fetch')),
   };
 }

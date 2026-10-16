@@ -57,9 +57,11 @@ start without `authorizePreview`, without explicit `https` admin origins
 (outside development), or with referrer trust — including the trust the `'v1'`
 signal set implies. Astro's `livePreview()` integration in its default
 `mode: 'inline'` and in `'loader'` injects at build time and checks none of
-this; its `'middleware'` mode refuses the strict default outright, because it
-cannot carry the hook. `defaults: 'v1'` restores the 1.x intent-only behavior, with a
-one-time development warning, for a staged migration.
+this; its `'middleware'` mode takes the hook by module reference
+(`authorizePreviewModule`, ADR 0024) and refuses the strict default without
+one. `strict: false` restores the 1.x intent-only behavior, with a one-time
+development warning, for a staged migration; so does the deprecated
+`defaults: 'v1'`, which 3.0 removes.
 
 When verification fails or is unavailable the adapters serve the ordinary
 published response unchanged. A response an adapter did change — runtime
@@ -90,7 +92,8 @@ followed by a write lets two requests that carry the same token and arrive
 together both pass. `true` admits the token; any other answer refuses it as
 `replayed`, a throw as `unavailable`. The 1.x `isUsed`/`markUsed` shape is
 still accepted, deprecated, and removed in 3.0: it is the two-step shape and
-has exactly that race.
+has exactly that race. A strategy that checks a token against it warns once in
+development.
 
 ```ts
 const replay = {
@@ -130,15 +133,21 @@ So the `PayloadLivePreviewMessage.data?: Record<string, unknown>` contract is en
 ## HTML sanitization
 
 Browser/live Lexical output and `html`-typed fields run through a curated DOM
-sanitizer. During SSR, `lexicalToHtml()` uses that same backstop only when a DOM
-has been supplied with `setSanitizerDocument()`; without one, built-in node
-renderers remain escape-by-default, while custom node/block renderers must sanitize
-their own HTML:
+sanitizer. During SSR, `lexicalToHtml()` uses that same backstop only when it
+has a DOM: the `document` passed with the call, the deprecated
+`setSanitizerDocument()` slot, or a global one. Without one, built-in node
+renderers remain escape-by-default, custom node and block renderers' markup is
+returned as written, and the call warns once. With `requireDocument: true` it
+throws `SanitizerEnvironmentError` instead, as `sanitizeHtml()` always does;
+that becomes the default in 3.0
+([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)). The
+sanitizer:
 
 - **Allow-listed tags only.** Removes `<script>`, `<style>`, `<iframe>`, `<object>`, `<embed>`, `<link>`, `<meta>`, `<form>` and every form control, `<svg>`, `<math>`, `<template>`, `<noscript>`, frames.
 - **Inline event handlers stripped.** Every `on*` attribute is removed.
 - **`style` attributes stripped** to neutralize the CSS-injection vector.
-- **URL attributes validated.** `href`, `src`, `srcset`, `poster`, `cite` go through `isSafeUrl`.
+- **URL attributes validated.** `href`, `src`, `srcset`, `poster`, `cite` go through `isSafeUrl`; a `srcset` candidate is tested as a whole as well as by its URL.
+- **The output is a fixed point.** The sanitizer parses, sanitises and writes again until a pass changes nothing, so the string it returns is the one a consumer's `innerHTML` rebuilds. Output that does not settle after six parses is returned as an empty string, with a development warning.
 - **External `<a>` hardened.** Auto-applies `rel="noopener noreferrer"` and `target="_blank"`.
 - **HTML comments removed.**
 - **`is` emptied, not removed.** A parsed element's `is` value is immutable
@@ -206,7 +215,7 @@ registered with `registerRouteRefresh()` parses nothing.
 - hash / query fragments
 - plain relative paths
 
-Everything else — `javascript:`, `data:`, `vbscript:`, `file:`, `blob:`, `about:`, custom schemes — is rejected. Comparison is case-insensitive; tabs and newlines are removed and leading whitespace is trimmed first, as the URL parser does. Backslash forms the parser resolves to another origin (`/\evil.com`, `\\evil.com`) count as protocol-relative, so `isExternalHttpUrl()` reports them external and the sanitizer hardens such links with `noopener`.
+Everything else — `javascript:`, `data:`, `vbscript:`, `file:`, `blob:`, `about:`, custom schemes — is rejected. Comparison is case-insensitive; tabs and newlines are removed and leading whitespace is trimmed first, as the URL parser does. A value the URL parser cannot read as absolute is also tested with every space and control character removed, as DOMPurify does: `java script:` and `foo :` spell a scheme outside the list and are rejected, while `my file.png` is not. Backslash forms the parser resolves to another origin (`/\evil.com`, `\\evil.com`) count as protocol-relative, so `isExternalHttpUrl()` reports them external and the sanitizer hardens such links with `noopener`.
 
 ## CSP integration
 

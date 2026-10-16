@@ -104,7 +104,10 @@ describe('pll migrate', () => {
   it('prints every codemod notice the registry declares, so a new one needs no CLI change', async () => {
     const { CODEMODS } = await import('@migrate/index');
     const withNotice = CODEMODS.filter((codemod) => codemod.notice !== undefined);
-    expect(withNotice.map((codemod) => codemod.id)).toEqual(['rename-is-preview-request']);
+    expect(withNotice.map((codemod) => codemod.id)).toEqual([
+      'rename-is-preview-request',
+      'expand-defaults-v1',
+    ]);
   });
 
   it('prints no rename note when nothing was renamed', async () => {

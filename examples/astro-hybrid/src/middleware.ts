@@ -48,11 +48,18 @@ const establishPreviewToken = defineMiddleware(async (context, next) => {
 
 // The page injects on intent and does not gate injection on authorization —
 // the real cross-origin admin shares no session with this fixture, and
-// authorization lives at the fragment endpoint instead. `defaults: 'v1'`
+// authorization lives at the fragment endpoint instead. `strict: false`
 // keeps injection ungated (2.0's strict default would require
 // authorizePreview here); the endpoint stays strict via its own strategy.
+// The other rows are what `defaults: 'v1'` stood for, as `pll migrate`
+// wrote them out (ADR 0026).
 const COMMON = {
-  defaults: 'v1',
+  strict: false,
+  previewSignals: ['query', 'fetch-dest', 'referer'],
+  disableReferrerDetection: false,
+  eventSourcePolicy: 'any',
+  skipUnchanged: false,
+  sanitizerPolicy: 'compat',
   allowedOrigins: ADMIN_ORIGINS,
   debug: true,
   debounceMs: 25,
@@ -76,7 +83,7 @@ const withFragments = createLivePreviewMiddleware({
 const withRouteFallback = createLivePreviewMiddleware({
   ...COMMON,
   routeStrategy: true,
-  onUnboundChange: 'route',
+  onUnfaithfulPatch: 'escalate',
 });
 
 /**

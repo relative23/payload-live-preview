@@ -1,0 +1,212 @@
+{
+  "visibility": "portable-development-fixture-handoff",
+  "originalInputsUnchanged": true,
+  "sourceFiles": [
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/prepare.mjs",
+      "sourceSHA256": "59f755c6bd7d696ef9feb8f2bc2aab49edd27e7316a2f251a83975b5b06709e4",
+      "handoff": "v2/prepare.mjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/install.mjs",
+      "sourceSHA256": "8cb38057104e509fd7268509328e9df6b7889061fa53c5d01eb132f09322ed8a",
+      "handoff": "v2/install.mjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/run.mjs",
+      "sourceSHA256": "256684a937efb319c613ecb4e96cf8350584be62a6a97351b0e49f60c7d22bba",
+      "handoff": "v2/run.mjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/identity.mjs",
+      "sourceSHA256": "d3d0749f9c0904e55a97ebc3785f5b0cd4b32c3252e71468008db42b04435d74",
+      "handoff": "v2/identity.mjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/audit.mjs",
+      "sourceSHA256": "bd66b0b0be2884bf81ed08aad838ee05bbfd2bc6035477ce184dc6199dec208b",
+      "handoff": "v2/audit.mjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/archive-inspect.py",
+      "sourceSHA256": "b00e7be9bc8b086fee47e32ed7ea25660d32962d2140ee0d18bcd18209fdeecb",
+      "handoff": "v2/archive-inspect.py"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/template/diagnostics.cjs",
+      "sourceSHA256": "afaacf4e8f77099e5641fa72864aa0e1591008b7dd8013bfe4d60edd89c3a881",
+      "handoff": "v2/template/diagnostics.cjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/template/package.json",
+      "sourceSHA256": "5ed24ec9deeb57d0b1ffd09449af2cfc1f67c9c7bac0d433fad748b417908009",
+      "handoff": "v2/template/package.json"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/template/payload.config.js",
+      "sourceSHA256": "7969bcbdd1666c3368ec2da3a87b0e926cf49a16e8f81dfb55d612165803e094",
+      "handoff": "v2/template/payload.config.js"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/template/preview.mjs",
+      "sourceSHA256": "717f99e8cf0f119ce230ba6e5f962a14ee0ef582ad765bbed8fb93980162762f",
+      "handoff": "v2/template/preview.mjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/template/server.cjs",
+      "sourceSHA256": "ca10dcc9cf8382a5d777154d978d4723f0762c4581a412f0957f204ed6bb061a",
+      "handoff": "v2/template/server.cjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/browser/config.cjs",
+      "sourceSHA256": "2633f2436842e940c94e88d4a36c0fbafa2c58a7edb6f12c3add847761712c17",
+      "handoff": "v2/browser/config.cjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/browser/payload2.spec.cjs",
+      "sourceSHA256": "336387bd7d221215faf5cf8764eca8db422f6b1bc39d5d5c0cf9eeed4f154ae4",
+      "handoff": "v2/browser/payload2.spec.cjs"
+    },
+    {
+      "source": "test-results/hardening/r4-payload2-real-admin/browser/reporter.cjs",
+      "sourceSHA256": "3350c1498d41bc126da4251ade7c783c4583480678b7aca784ebb3f6ecfca35c",
+      "handoff": "v2/browser/reporter.cjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/bounded-stage-diagnostic.mjs",
+      "sourceSHA256": "8f5b24da482450c24ff986956d0afa9b81712d59eaf0673a8eb11923c5e57d55",
+      "handoff": "shared/bounded-stage-diagnostic.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/close-boundary.mjs",
+      "sourceSHA256": "072f29ae59ebe7beb008432d16eab5e205f7274d3eb41b421d8adf2eb61500e2",
+      "handoff": "shared/close-boundary.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/diagnostics.mjs",
+      "sourceSHA256": "a1b905738ad29c703bc5fb3c0998a9cf3d1ec6f16882cd4a311f251474e4f00a",
+      "handoff": "shared/diagnostics.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/resolve-consumer-import.mjs",
+      "sourceSHA256": "637003b5a0a550cc80bceeeccdccea8836496a9b40210082bad8d83a23b387d6",
+      "handoff": "shared/resolve-consumer-import.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/reporter.mjs",
+      "sourceSHA256": "ac968bffc56e58fbf57138a7627aaef80cdbe954c0c702318100d2c0f2f753f4",
+      "handoff": "shared/reporter.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/serve-cms.mjs",
+      "sourceSHA256": "5a57a255eccbac84c1b7e6dfe962c8bfaeea3b3745149c3119eebd4563f6a8d3",
+      "handoff": "shared/serve-cms.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/lifecycle.diagnostic.spec.mjs",
+      "sourceSHA256": "ad248c4bd5dcff9a794ec76373ce6ee1d89d7a107cc1bdd057de97362c1c068e",
+      "handoff": "shared/lifecycle.diagnostic.spec.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/verify-result-diagnostic.mjs",
+      "sourceSHA256": "2e53fbc62855a600c29d8888b6559d093edacf74bd30a7b0107ea09e32f94f5d",
+      "handoff": "shared/verify-result-diagnostic.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/fixtures-diagnostic/ledger.mjs",
+      "sourceSHA256": "c2ef22a09c2f05dd6d95471dd8813ae1374f39dda3af489bd7b77a55ac16ab67",
+      "handoff": "frontend/ledger.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/fixtures-diagnostic/payload.config.ts.fixture",
+      "sourceSHA256": "e493c9fd61d623cc8982562ce77c3d5d2c3b62ce443d2e5e7c65beb3bc6d1404",
+      "handoff": "frontend/payload.config.ts.fixture"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/fixtures-diagnostic/react-app.mjs",
+      "sourceSHA256": "8d45c0bdda6c08b242216ed944919178703812cfa0834ba0a21e897ca09625c6",
+      "handoff": "frontend/react-app.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/fixtures-diagnostic/react-client.mjs",
+      "sourceSHA256": "9cdcbc1d2cc2252c60f267bebd781c8125d018779ba269bb1003665bb6fcf9e2",
+      "handoff": "frontend/react-client.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/fixtures-diagnostic/react-ssr.mjs",
+      "sourceSHA256": "1ed9524350b7698565562ae4650a5c2629e80d49eab9a6ea74a5bc5f6176056c",
+      "handoff": "frontend/react-ssr.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/fixtures-diagnostic/server.mjs",
+      "sourceSHA256": "71980771549385e4f24458386da686666d5520e74549d717b0dedd86b2fbc5f1",
+      "handoff": "frontend/server.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/fixtures-diagnostic/vue-app.mjs",
+      "sourceSHA256": "ba7489f978e7dad32e8af10958316ae842bb5a1dbf0c86b00f6ef9f47b007ff6",
+      "handoff": "frontend/vue-app.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/fixtures-diagnostic/vue-client.mjs",
+      "sourceSHA256": "71e84e875df790c9b703a65c892764a35d4e0e1c617bf8062d3761c34a15d79b",
+      "handoff": "frontend/vue-client.mjs"
+    },
+    {
+      "source": "test-results/hardening/r6-real-lifecycle/fixtures-diagnostic/vue-ssr.mjs",
+      "sourceSHA256": "d48b29ec4ff4fd1534d169f34fefd0a73db7d594727735426e9fa23d8540fd05",
+      "handoff": "frontend/vue-ssr.mjs"
+    },
+    {
+      "source": "examples/payload-backend/next.config.mjs",
+      "sourceSHA256": "cd8a791eb106b7f480a266d542e19437a4e2470cc21184b0ded7585880b07afc",
+      "handoff": "admin/next.config.mjs"
+    },
+    {
+      "source": "examples/payload-backend/next-env.d.ts",
+      "sourceSHA256": "0f70629890b72a0a82e91972cc032c04b658b26c265373cb711cf576bfbf8fcc",
+      "handoff": "admin/next-env.d.ts"
+    },
+    {
+      "source": "examples/payload-backend/tsconfig.json",
+      "sourceSHA256": "fa8b69f3f4a0a55e35efc0c57e8a7a3fb8650a7b2b443c78e3bd5196358ca59d",
+      "handoff": "admin/tsconfig.json"
+    },
+    {
+      "source": "examples/payload-backend/src/app/(payload)/admin/[[...segments]]/not-found.tsx",
+      "sourceSHA256": "2986009a95f8f69cac3ea82c3be666620e471197407a6023c357aab1d3c7e35c",
+      "handoff": "admin/src/app/(payload)/admin/[[...segments]]/not-found.tsx"
+    },
+    {
+      "source": "examples/payload-backend/src/app/(payload)/admin/[[...segments]]/page.tsx",
+      "sourceSHA256": "8a44e9ac2a44b3af7607e9c985c460366ebcdcb16597c72ac741d8b2de5c6c1a",
+      "handoff": "admin/src/app/(payload)/admin/[[...segments]]/page.tsx"
+    },
+    {
+      "source": "examples/payload-backend/src/app/(payload)/admin/importMap.js",
+      "sourceSHA256": "2abd2188b1ca36932e4baee75be0530e46b70f6251eb4b0b9169648fe882ae97",
+      "handoff": "admin/src/app/(payload)/admin/importMap.js"
+    },
+    {
+      "source": "examples/payload-backend/src/app/(payload)/api/[...slug]/route.ts",
+      "sourceSHA256": "8a90d705f062353243997b37c374d7c69af7d340b3dbdaa3e9c74b0d98c88592",
+      "handoff": "admin/src/app/(payload)/api/[...slug]/route.ts"
+    },
+    {
+      "source": "examples/payload-backend/src/app/(payload)/api/graphql/route.ts",
+      "sourceSHA256": "e26f6305147aebc75d7f2d31b661c43da041f3a122c8aab28b53dc001d80aa76",
+      "handoff": "admin/src/app/(payload)/api/graphql/route.ts"
+    },
+    {
+      "source": "examples/payload-backend/src/app/(payload)/layout.tsx",
+      "sourceSHA256": "755158b04ff94785a3a1f10ec3028aaf559060279b099351aca7cf48544690df",
+      "handoff": "admin/src/app/(payload)/layout.tsx"
+    }
+  ],
+  "changes": [
+    "Explicit portable repo argument for v2 tools",
+    "Own app-root CLI paths for Next/Payload",
+    "Bounded credential-free wire-shape observation for v3/v4"
+  ],
+  "historicalSources": "Origin records only; historical files are not runtime dependencies. All required fixtures and official receipts travel in this portable source tree."
+}

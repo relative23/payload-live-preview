@@ -87,6 +87,8 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly FragmentStrategyUnavailable: "LP0806";
     readonly UnboundChangeRefresh: "LP0807";
     readonly EscalationUnavailable: "LP0808";
+    readonly IslandStartUnavailable: "LP0809";
+    readonly RouteRefreshUnconfirmed: "LP0810";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
 }>;
@@ -247,6 +249,7 @@ export interface InspectionRevisions {
     readonly accepted: number;
     readonly active: number | undefined;
     readonly completed: number;
+    readonly display: RevisionDisplay | undefined;
     readonly skippedUnchanged: number;
     readonly superseded: number;
 }
@@ -257,6 +260,7 @@ export interface InspectionRoute {
     // (undocumented)
     readonly handler: boolean;
     readonly loopStopped: number;
+    readonly partial: number;
     // (undocumented)
     readonly refreshes: number;
     readonly refused: number;
@@ -285,7 +289,7 @@ export class LivePreviewClient {
     get events(): EventEmitter;
     inspect(): LivePreviewInspection;
     get plugins(): readonly string[];
-    // (undocumented)
+    refreshAfterNavigation(): void;
     refreshCache(): void;
     resume(): boolean;
     start(): boolean;
@@ -327,6 +331,7 @@ export interface LivePreviewClientConfig {
     readonly serverURL?: string;
     readonly skipUnchanged?: boolean;
     readonly strategies?: StrategyHandlers;
+    readonly subfieldCoverage?: 'descendant' | 'declared';
     readonly validateToken?: (token: string | undefined, origin: string) => boolean | Promise<boolean>;
     readonly visibilityGateThreshold?: number;
 }
@@ -397,6 +402,7 @@ export interface LivePreviewEventMap {
         readonly detail: PayloadDocumentEventDetail;
         readonly timestamp: number;
     };
+    readonly revisionDisplay: RevisionDisplay;
 }
 
 // @public
@@ -406,7 +412,7 @@ export interface LivePreviewInspection {
     readonly fidelity: InspectionFidelity;
     readonly fragments: InspectionFragments;
     readonly hydration: {
-        readonly mode: 'off' | 'react' | 'vue';
+        readonly mode: 'off' | 'react' | 'vue' | 'sveltekit';
         readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
     };
     // (undocumented)
@@ -593,6 +599,40 @@ export type RendererKey = FieldType | CustomRendererKey;
 export function reportPreviewFocus(target: FocusReportTarget, field: string, targetOrigin: string): void;
 
 // @public
+export interface RevisionDisplay {
+    readonly awaitingIslands: number;
+    readonly deferred: number;
+    readonly revision: number;
+    readonly shortfalls: readonly RevisionShortfall[];
+    readonly state: RevisionDisplayState;
+}
+
+// @public
+export type RevisionDisplayState = 'pending' | 'current' | 'partial' | 'unconfirmed' | 'superseded';
+
+// @public
+export type RevisionShortfall = {
+    readonly kind: 'fragment';
+    readonly id: string;
+    readonly key: string | undefined;
+    readonly code: DiagnosticCode;
+} | {
+    readonly kind: 'route-saved';
+} | {
+    readonly kind: 'route-failed';
+    readonly outcome: RouteOutcome;
+} | {
+    readonly kind: 'unfaithful' | 'unbound';
+    readonly field: string;
+} | {
+    readonly kind: 'write';
+    readonly field: string;
+    readonly code: DiagnosticCode;
+} | {
+    readonly kind: 'merge';
+};
+
+// @public
 export type RichTextRenderer = (value: unknown, context: {
     readonly fieldName: string;
     readonly element: Element;
@@ -601,7 +641,6 @@ export type RichTextRenderer = (value: unknown, context: {
 
 // @public
 export interface RouteContext {
-    // (undocumented)
     readonly isCurrent: () => boolean;
     // (undocumented)
     readonly log: (code: DiagnosticCode, detail: string) => void;
@@ -614,7 +653,12 @@ export interface RouteContext {
 }
 
 // @public
-export type RouteOutcome = 'refreshed' | 'failed' | 'refused' | 'superseded';
+export type RouteOutcome = 'refreshed' | 'partial' | 'failed' | 'refused' | 'superseded';
+
+// @public
+export interface RoutePlanContext {
+    readonly inScope: (element: Element) => boolean;
+}
 
 // @public
 export type RouteRefresh = () => void | Promise<void>;
@@ -622,7 +666,7 @@ export type RouteRefresh = () => void | Promise<void>;
 // @public
 export interface RouteStrategy {
     // (undocumented)
-    readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => boolean;
+    readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>, context?: RoutePlanContext) => boolean;
     // (undocumented)
     readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }

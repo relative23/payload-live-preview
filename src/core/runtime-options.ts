@@ -67,10 +67,12 @@ export interface RuntimeOptions {
    * lands on markup React keeps rather than on markup React is about to
    * compare with its own render and throw away; under `'vue'` until Vue has
    * mounted an app around a binding (and, on Nuxt, hydrated its Suspense), so
-   * the write is not put back by Vue's repair. Capped at five seconds, then
-   * LP0607. The Next.js and Nuxt adapters set it; nothing else does by default.
+   * the write is not put back by Vue's repair; under `'sveltekit'` until
+   * SvelteKit's root has mounted, so Svelte's hydration does not set its own
+   * text back over the write. Capped at five seconds, then LP0607. The
+   * Next.js, Nuxt and SvelteKit adapters set it; nothing else does by default.
    */
-  readonly hydration?: 'react' | 'vue';
+  readonly hydration?: 'react' | 'vue' | 'sveltekit';
   /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn — a renderer that cannot represent the value, a Lexical
@@ -111,10 +113,18 @@ export interface RuntimeOptions {
   /** `rootMargin` for the IntersectionObserver. */
   readonly intersectionRootMargin?: string;
   /**
-   * Restrict every update to bindings owned by the document the message
-   * describes (`data-payload-owner`). Unowned bindings are then out of scope.
+   * Restrict binding writes, fragment fields and island events to subtrees owned
+   * by the document the message describes (`data-payload-owner`). Unowned
+   * subtrees are then out of scope.
    */
   readonly scopeBindingsByOwner?: boolean;
+  /**
+   * How a group counts as covered (ADR 0022). `'descendant'`, the 2.x default:
+   * one bound path inside it covers all of it. `'declared'`: each changed path
+   * inside such a group needs its own binding or a `data-payload-covers`
+   * declaration, and an uncovered one is an unbound change.
+   */
+  readonly subfieldCoverage?: 'descendant' | 'declared';
   /** Which windows may post updates. `defaults: 'v2'` sets `'parent-or-opener'`. */
   readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
   /** Apply every update regardless of visibility. */

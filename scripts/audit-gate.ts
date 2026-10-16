@@ -2,6 +2,7 @@
  * Audit every project against its reviewed advisory and exposure register.
  * Exact dependency and caller identities bind temporary exceptions; expired,
  * unused, malformed or changed exposure records fail before they can allow a finding.
+ * Reviewed exposure can remain bound after an advisory no longer names the package version.
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -223,12 +224,13 @@ export function selectAuditProject(
       `invalid project record ${key}`,
     );
     requireValue(
-      value['exceptions'].length === 0
-        ? value['exposure'] === null && value['exposureSha256'] === null
-        : typeof value['exposure'] === 'string' &&
-            value['exposure'].length > 0 &&
-            typeof value['exposureSha256'] === 'string' &&
-            SHA.test(value['exposureSha256']),
+      (value['exceptions'].length === 0 &&
+        value['exposure'] === null &&
+        value['exposureSha256'] === null) ||
+        (typeof value['exposure'] === 'string' &&
+          value['exposure'].length > 0 &&
+          typeof value['exposureSha256'] === 'string' &&
+          SHA.test(value['exposureSha256'])),
       `invalid exposure binding ${key}`,
     );
     const seen = new Set<string>();

@@ -1,11 +1,21 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+  chmodSync,
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   evaluateAuditGate,
+  exposureDigest,
   findingsFromAudit,
   type AuditException,
   type AuditRegister,
@@ -253,4 +263,96 @@ describe('audit-gate entry point', () => {
       rmSync(root, { recursive: true, force: true });
     }
   }, 60_000);
+});
+
+describe('clean project exposure at the CLI', () => {
+  it.each(['none', 'source', 'caller', 'empty-descriptor', 'descriptor-digest'])(
+    'keeps reviewed clean exposure enforced: %s',
+    (change) => {
+      const root = mkdtempSync(join(tmpdir(), 'plp-audit-clean-exposure-'));
+      try {
+        mkdirSync(join(root, 'quality'));
+        mkdirSync(join(root, 'bin'));
+        const source = 'export const http = true;\n';
+        writeFileSync(join(root, 'app.ts'), source);
+        writeFileSync(join(root, 'package.json'), '{"scripts":{"dev":"http"}}');
+        const integrity = 'sha512-' + Buffer.alloc(64, 1).toString('base64');
+        const lock = { packages: { 'node_modules/caller': { version: '1.0.0', integrity } } };
+        let descriptor: unknown = {
+          sources: { 'app.ts': createHash('sha256').update(source).digest('hex') },
+          directories: [],
+          absentFiles: [],
+          json: [{ path: 'package.json', values: { scripts: { dev: 'http' } }, absent: [] }],
+          callers: { 'node_modules/caller': ['1.0.0', integrity] },
+        };
+        if (change === 'source') writeFileSync(join(root, 'app.ts'), 'export const http = false;');
+        if (change === 'caller') lock.packages['node_modules/caller'].version = '1.0.1';
+        if (change === 'empty-descriptor') {
+          descriptor = { sources: {}, directories: [], absentFiles: [], json: [], callers: {} };
+        }
+        writeFileSync(join(root, 'package-lock.json'), JSON.stringify(lock));
+        writeFileSync(join(root, 'quality/exposure.json'), JSON.stringify(descriptor));
+        writeFileSync(
+          join(root, 'quality/audit-exceptions.json'),
+          JSON.stringify({
+            schemaVersion: 2,
+            projects: {
+              '.': {
+                exposure: 'quality/exposure.json',
+                exposureSha256:
+                  change === 'descriptor-digest' ? 'a'.repeat(64) : exposureDigest(descriptor),
+                exceptions: [],
+              },
+            },
+          }),
+        );
+        const clean = {
+          vulnerabilities: {},
+          metadata: {
+            vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0, total: 0 },
+          },
+        };
+        const npm = join(root, 'bin/npm');
+        writeFileSync(
+          npm,
+          `#!${process.execPath}\nprocess.stdout.write(${JSON.stringify(JSON.stringify(clean))});\n`,
+        );
+        chmodSync(npm, 0o700);
+        for (const file of ['audit-gate.ts', 'audit-registry.mjs', 'audit-graph.mjs']) {
+          copyFileSync(resolve(process.cwd(), 'scripts', file), join(root, file));
+        }
+        const loader = pathToFileURL(
+          resolve(process.cwd(), 'node_modules/tsx/dist/loader.mjs'),
+        ).href;
+        const result = spawnSync(
+          process.execPath,
+          ['--import', loader, join(root, 'audit-gate.ts')],
+          {
+            cwd: root,
+            env: { ...process.env, PATH: `${join(root, 'bin')}:${process.env['PATH'] ?? ''}` },
+            encoding: 'utf8',
+            timeout: 10_000,
+            killSignal: 'SIGKILL',
+          },
+        );
+        expect(result.error).toBeUndefined();
+        expect(result.signal).toBeNull();
+        expect(result.status).toBe(change === 'none' ? 0 : 1);
+        if (change === 'none') {
+          expect(result.stdout).toContain('0 exact reviewed advisory exceptions');
+        } else {
+          const expected = {
+            source: 'source exposure changed',
+            caller: 'caller identity changed',
+            'empty-descriptor': 'malformed exposure',
+            'descriptor-digest': 'changed exposure descriptor',
+          }[change];
+          expect(result.stderr).toContain(expected);
+          expect(result.stdout).toBe('');
+        }
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+  );
 });

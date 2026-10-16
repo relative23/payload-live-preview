@@ -168,7 +168,7 @@ describe('the reviewed inventory', () => {
       ([, justification]) => justification === 'inert-parse' || justification === 'trusted-origin',
     );
     expect(raw.map(([key]) => key)).toEqual([
-      'src/security/sanitizer.ts::trustedHtml(html)',
+      'src/security/sanitizer.ts::trustedHtml(markup)',
       'src/core/strategy-runner.ts::trustedHtml(html)',
     ]);
   });

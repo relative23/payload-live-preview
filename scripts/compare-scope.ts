@@ -26,10 +26,36 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
  * measurement that produces it; a change means this line moves and someone
  * says why in the commit.
  *
- * 750 for the protocol and the merge (theirs: 185), 149 for the hook session
+ * 837 for the protocol and the merge (theirs: 185), 149 for the hook session
  * (their React wrapper is a separate package and not measured here).
+ * 2026-09-24: +60 protocol lines retain an already accepted, token-stripped
+ * message for local navigation replay and fence every replay against a newer
+ * generation or reentrant acceptance. That state belongs at ingress because
+ * only the bus knows a message passed origin, source, shape and token checks.
+ * 2026-09-25: +27 code lines bind explicit merge response identities to their
+ * dispatched target, with a reentrant-validation fence. Errors-only documents
+ * remain valid: the installed Payload global REST handler can return one.
+ * 2026-09-29 (H13, ADR 0023): +9 hook-session lines carry `revision`, the
+ * message the snapshot's data came from, so a component can tell merged from
+ * painted; it is compared and published like the other snapshot fields.
+ * 2026-09-29 (PHD-11): -2 protocol lines. The replay's detach guard and its
+ * second reentrancy guard repeated checks the origin match and the first guard
+ * already make, and its null branch could not be reached on a value that is
+ * itself a structured clone; the core mutation run named all three.
  */
-export const REVIEWED_SCOPE_LINES = 899;
+// 2026-10-03: +485 measured code lines for schema-owned v2 collection GETs,
+// including the whole 402-code-line primitive and the separate stream-work guard.
+// 2026-10-03: +2 code lines charge repeated allowed-target scans to shared planning work.
+// 2026-10-03: +3 code lines charge actual block-definition lookup candidates.
+// 2026-10-04: +8 measured merger code lines fence endpoint/body/response getters;
+// -4 guard code lines delegate normalization to the existing fail-closed parser.
+// 2026-10-04: -1 measured code line removes the legacy planner's duplicate cleared-value
+// check for monomorphic relations. The central relationship validator still skips cleared
+// values, while traversal, identity, request and response-body limits remain unchanged.
+// 2026-10-08: +1 measured code line normalizes Payload v2's numeric empty-row
+// sentinel only for schema-owned arrays and blocks in the planner's document copy.
+// The existing malformed-container guard and traversal limits still apply.
+export const REVIEWED_SCOPE_LINES = 1487;
 
 interface OurFile {
   readonly file: string;
@@ -53,6 +79,10 @@ const GROUPS: readonly ScopeGroup[] = [
       { file: 'src/core/message-bus.ts', does: 'ingress: origin, source, shape, token queue' },
       { file: 'src/core/message-guards.ts', does: 'per-type shape guards' },
       { file: 'src/core/data-merger.ts', does: 'the REST merge, with abort and ordering' },
+      {
+        file: 'src/core/legacy-population.ts',
+        does: 'bounded v2 GET planning, response identity and body teardown',
+      },
       { file: 'src/detection/origin.ts', does: 'which origins are trusted, and locking' },
       { file: 'src/types/payload-protocol.ts', does: 'the wire shapes both sides read' },
     ],

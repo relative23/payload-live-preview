@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   countDeclarations,
   countInterfaceMembers,
@@ -93,9 +93,17 @@ describe('counting the surface', () => {
 });
 
 describe('the reviewed budget', () => {
+  // Measured once for the file. Alone it takes 0.4 to 0.8 s; three runs of it,
+  // in a suite under coverage beside foreign load, crossed the 5 s default
+  // (PHD-15). The limit is generous because nothing else waits on it.
+  let measured: Awaited<ReturnType<typeof measureComplexity>>;
+  beforeAll(async () => {
+    measured = await measureComplexity();
+  }, 60_000);
+
   it('matches the surface exactly, with no headroom anywhere', async () => {
     const reviewed = await budget();
-    const measurement = await measureComplexity();
+    const measurement = measured;
 
     expect(findComplexityViolations(measurement, reviewed)).toEqual([]);
     for (const [metric, actual] of Object.entries(measurement.totals)) {
@@ -121,7 +129,7 @@ describe('the reviewed budget', () => {
 
   it('fails on growth, and on a budget for something that is gone', async () => {
     const reviewed = await budget();
-    const measurement = await measureComplexity();
+    const measurement = measured;
 
     const grown = {
       ...measurement,
@@ -151,8 +159,8 @@ describe('the reviewed budget', () => {
     ]);
   });
 
-  it('refuses a metric nobody reviewed', async () => {
-    const measurement = await measureComplexity();
+  it('refuses a metric nobody reviewed', () => {
+    const measurement = measured;
 
     const violations = findComplexityViolations(measurement, {
       schemaVersion: 1,

@@ -49,6 +49,12 @@ export function owesForceRender(
   return previous !== null && previous.forceRender && !previous.completed;
 }
 
+/** A fully read candidate whose identity can be committed after the revision gate. */
+export interface RelationshipInspection {
+  readonly identity: string;
+  readonly edit: PayloadDocumentEventDetail | null;
+}
+
 /** Remembers the last document event the panel sent, so its repeats are one event. */
 export class RelationshipTracker {
   /**
@@ -63,12 +69,25 @@ export class RelationshipTracker {
    * event about another document. `null` for a message without the field, for
    * the repeat, and for the previewed document's own save.
    */
-  edit(message: PayloadLivePreviewMessage): PayloadDocumentEventDetail | null {
+  inspect(message: PayloadLivePreviewMessage): RelationshipInspection | null {
     const event = message.externallyUpdatedRelationship;
     if (typeof event !== 'object' || event === null) return null;
     const identity = JSON.stringify([event.entitySlug, readDocumentId(event), event.updatedAt]);
     const isNew = identity !== this.lastIdentity;
-    this.lastIdentity = identity;
-    return isNew && namesAnotherDocument(event, message) ? event : null;
+    return {
+      identity,
+      edit: isNew && namesAnotherDocument(event, message) ? event : null,
+    };
+  }
+
+  /**
+   * Claim an inspection only after its revision is still current. Reading the
+   * candidate may run synthetic accessors, so mutating in `inspect` would let
+   * a stale outer message overwrite the identity a reentrant message set.
+   */
+  commit(inspection: RelationshipInspection): PayloadDocumentEventDetail | null {
+    const isNew = inspection.identity !== this.lastIdentity;
+    this.lastIdentity = inspection.identity;
+    return isNew ? inspection.edit : null;
   }
 }

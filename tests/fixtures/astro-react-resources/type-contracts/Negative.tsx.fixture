@@ -1,0 +1,4 @@
+/** The native checker must reject React template expressions, not only Astro. */
+export default function Negative({ title }: { title: string }) {
+  return <p>{title.toFixed(2)}</p>;
+}

@@ -1,3 +1,7 @@
+/**
+ * Maintainer fixtures retain exact install-script verdicts in both local package topologies.
+ * These checks reject missing fixtures and version drift before dependency lifecycle scripts run.
+ */
 import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
@@ -8,6 +12,7 @@ import {
   findMaintainerInstallPolicyViolations,
   findMutationPolicyManifestViolations,
   findPackageSmokeIsolationViolations,
+  LOCAL_FILE_PACKAGE_FIXTURES,
   MAINTAINER_INSTALL_POLICIES,
   PACKAGE_SMOKE_INSTALL_ARGS,
   PACKAGE_SMOKE_NPMRC,
@@ -16,7 +21,7 @@ import {
 } from '../../scripts/release-contracts';
 
 const ROOT = resolve(import.meta.dirname, '../..');
-const MAINTAINER_INSTALL_POLICY_INDEXES = [0, 1, 2, 3, 4, 5] as const;
+const MAINTAINER_INSTALL_POLICY_INDEXES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(path, 'utf8'));
@@ -168,6 +173,17 @@ describe('packed-package consumer isolation contract', () => {
 });
 
 describe('maintainer install-script policy contract', () => {
+  it('reviews install-script policy for every local package fixture', () => {
+    const reviewedDirectories = new Set(
+      MAINTAINER_INSTALL_POLICIES.map((profile) => profile.directory),
+    );
+    expect(
+      LOCAL_FILE_PACKAGE_FIXTURES.filter(
+        (fixture) => !reviewedDirectories.has(fixture.directory),
+      ).map((fixture) => fixture.directory),
+    ).toEqual([]);
+  });
+
   it('keeps the statically inventoried policy cases exhaustive', () => {
     expect(MAINTAINER_INSTALL_POLICY_INDEXES).toEqual(
       MAINTAINER_INSTALL_POLICIES.map((_, index) => index),

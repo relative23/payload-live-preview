@@ -16,6 +16,7 @@ import { exposeDecision } from '@adapters/shared/locals';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PageFacts } from '@adapters/shared/policy-options';
 import type { PreviewRequestLike } from '@adapters/shared/preview-request';
+import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
 export type { LivePreviewLocals } from '@adapters/shared/locals';
@@ -30,7 +31,10 @@ export type LivePreviewNuxtOptions = PreviewAdapterOptions<PreviewRequestLike>;
  * hydration is about to repair. Knowledge the adapter has, not an option a
  * project sets.
  */
-const VUE_PAGE: PageFacts = { hydration: 'vue' };
+const VUE_PAGE: PageFacts = {
+  hydration: 'vue',
+  softNavigationEvents: [NAVIGATION_COMMIT_EVENT],
+};
 
 interface HeadersLike {
   get(name: string): string | null;

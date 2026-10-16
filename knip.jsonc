@@ -39,6 +39,18 @@
     "src/fragment/route-inline.ts",
     "scripts/api-contracts.ts",
     "tests/**/*.{test,spec,bench}.ts",
+    // The hardening config discovers this characterization through a Vitest
+    // include glob, which Knip cannot follow as a static import.
+    "tests/reproductions/current-source.characterization.ts",
+    "tests/reproductions/preview-continuation.package.characterization.ts",
+    "tests/reproductions/fragment-island-delivery.characterization.ts",
+    "tests/reproductions/payload-error-field.ts",
+    "tests/reproductions/preview-continuation-payload-acl.ts",
+    "tests/reproductions/preview-unsaved-payload.ts",
+    "tests/reproductions/preview-related-drafts.ts",
+    // The host fixtures run under Node, Deno and Bun from esbuild bundles that
+    // `build.ts` writes; no module imports the entries.
+    "tests/fixtures/web-hosts/{build,node,deno,bun}.ts",
     "*.config.ts",
   ],
   // Analyze the complete maintained TS/JS surface. Build output, fixtures and

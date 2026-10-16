@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
-import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
+import { NEXT_ORIGIN, post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 /**
  * `delivery: 'asset'` through the Next.js adapter. Both fixtures live in
@@ -16,7 +16,7 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * nothing because the first one's copy is still good.
  */
 
-const APP = 'http://localhost:4174';
+const APP = NEXT_ORIGIN;
 // A diagnostic code the runtime carries and the bootstrap — 679 bytes of
 // context check and one `createElement('script')` — does not.
 const RUNTIME_MARKER = 'LP0101';
@@ -49,12 +49,15 @@ test.describe('asset delivery (Next.js)', () => {
 
   test('the asset is immutable and matches the integrity the page stated', async ({ page }) => {
     const html = await pageBody(page, '/asset?preview=true');
-    const src = /"(\/payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(html)?.[1];
+    const src = /"((?:\/[\w.-]+)*\/payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(
+      html,
+    )?.[1];
     const integrity = /"(sha384-[A-Za-z0-9+/=]+)"/u.exec(html)?.[1];
     expect(src).toBeDefined();
     expect(integrity).toBeDefined();
 
-    const response = await page.request.get(`${APP}${src!}`);
+    // The page states the full path, base path included.
+    const response = await page.request.get(`${new URL(APP).origin}${src!}`);
 
     expect(response.status()).toBe(200);
     expect(response.headers()['cache-control']).toBe('public, max-age=31536000, immutable');
@@ -88,7 +91,7 @@ test.describe('asset delivery (Next.js)', () => {
     page,
   }) => {
     const urlIn = (html: string): string | undefined =>
-      /"(\/payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(html)?.[1];
+      /"((?:\/[\w.-]+)*\/payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u.exec(html)?.[1];
 
     const first = urlIn(await pageBody(page, '/asset?preview=true'));
     const second = urlIn(await pageBody(page, '/asset?preview=true&cb=2'));

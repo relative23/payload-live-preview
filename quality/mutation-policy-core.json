@@ -21,6 +21,7 @@
   "scope": [
     "src/core/attribute-binding.ts",
     "src/core/data-merger.ts",
+    "src/core/legacy-population.ts",
     "src/core/message-bus.ts",
     "src/core/message-guards.ts",
     "src/security/escape.ts",
@@ -29,8 +30,8 @@
     "src/security/url-validator.ts"
   ],
   "baseline": {
-    "total": 1227,
-    "mutationScoreMinimum": 99.19,
+    "total": 1331,
+    "mutationScoreMinimum": 99.25,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 0,
     "noCoverageMaximum": 0,
@@ -41,7 +42,7 @@
   "equivalent": [
     {
       "file": "src/core/message-bus.ts",
-      "line": 144,
+      "line": 173,
       "column": 9,
       "mutator": "LogicalOperator",
       "original": "target === undefined || listener === undefined",
@@ -50,7 +51,7 @@
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 144,
+      "line": 173,
       "column": 9,
       "mutator": "ConditionalExpression",
       "original": "target === undefined",
@@ -59,7 +60,7 @@
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 144,
+      "line": 173,
       "column": 33,
       "mutator": "ConditionalExpression",
       "original": "listener === undefined",
@@ -68,7 +69,7 @@
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 335,
+      "line": 416,
       "column": 13,
       "mutator": "BlockStatement",
       "original": "{ return false; }",
@@ -77,16 +78,16 @@
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 345,
+      "line": 426,
       "column": 13,
       "mutator": "BlockStatement",
       "original": "{ return false; }",
       "replacement": "{}",
-      "why": "an empty catch makes `matchesOrigin` return `undefined`, and both callers negate that the same way they negate `false`: the message is refused as `origin` either way."
+      "why": "an empty catch makes `matchesOrigin` return `undefined`, and all three callers negate that the same way they negate `false`: the message is refused as `origin` either way."
     },
     {
       "file": "src/core/message-bus.ts",
-      "line": 356,
+      "line": 437,
       "column": 9,
       "mutator": "ConditionalExpression",
       "original": "handler === undefined",
@@ -95,25 +96,16 @@
     },
     {
       "file": "src/security/trusted-types.ts",
-      "line": 56,
-      "column": 10,
-      "mutator": "ConditionalExpression",
-      "original": "typeof create === 'function'",
-      "replacement": "true",
-      "why": "an object without `createPolicy` is returned as the factory, and the `createPolicy` call then throws a TypeError inside the try in `resolvePolicy`, whose catch sets the policy to `null` \u2014 the value the guard leads to."
-    },
-    {
-      "file": "src/security/trusted-types.ts",
       "line": 66,
       "column": 7,
       "mutator": "ConditionalExpression",
       "original": "api === undefined",
       "replacement": "false",
-      "why": "`undefined.createPolicy` throws a TypeError inside the same try, whose catch sets the policy to `null` \u2014 the value the branch sets when there is no API."
+      "why": "`undefined.createPolicy` throws a TypeError inside the same try, whose catch sets the policy to `null` — the value the branch sets when there is no API."
     },
     {
       "file": "src/security/url-validator.ts",
-      "line": 11,
+      "line": 8,
       "column": 23,
       "mutator": "Regex",
       "original": "/^(?:\\.{1,2}\\/|[a-zA-Z0-9_-]+\\/?)/",
@@ -122,12 +114,13 @@
     },
     {
       "file": "src/security/url-validator.ts",
-      "line": 24,
+      "line": 41,
       "column": 7,
       "mutator": "ConditionalExpression",
       "original": "trimmed.length === 0",
       "replacement": "false",
       "why": "an empty string reaches `new URL('')`, which throws, and the relative-path pattern does not match it, so the same `false` comes out of the catch; the early return only saves the parse."
     }
-  ]
+  ],
+  "$comment": " 2026-10-03: Scope includes the reviewed legacy population change. The retained total/score and all drift, no-coverage, timeout, error and ignored controls are historical starting controls, not a new result. A complete non-incremental run on the final new source must establish the exact total/score and new measured shard weights before acceptance; equivalent cases remain unchanged pending exact report review. 2026-10-04: Remove the createPolicy condition-to-true equivalence after an authentic changing-getter counterexample: original keeps the string fallback, while the mutant creates a policy. Correct the origin-catch explanation to the three actual negating callers. Total, score and every drift/coverage/timeout/error/ignored limit remain unchanged historical controls until the fresh full nine-module report is reviewed; no new equivalence is granted."
 }

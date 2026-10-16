@@ -4,7 +4,7 @@
  *
  * An empty slot means whatever the generation that wrote the script meant by
  * it, and that is exactly what changed between 1.x and 2.0. So the script
- * names the defaults it was resolved against, in its last slot, and this reads
+ * names the defaults it was resolved against in slot 24, and this reads
  * the answer instead of guessing it. A script without the marker predates it —
  * 1.x or 2.0.0-beta.0 — and is read as 1.x, with a line that says so.
  */
@@ -149,7 +149,10 @@ function remedyFor(origin: Origin, row: ReadinessRow, value: unknown): string {
   const wanted = `\`${row.key}: ${literal(V2_RUNTIME_DEFAULTS[row.key])}\``;
   switch (origin) {
     case 'profile':
-      return `Set ${wanted} or drop \`defaults: 'v1'\` once ${row.condition}.`;
+      return (
+        `Set ${wanted} or drop \`defaults: 'v1'\` once ${row.condition}. 3.0 removes the ` +
+        'profile; `pll migrate` writes its rows out, so each can go on its own.'
+      );
     case 'explicit':
       return `Drop the explicit \`${row.key}: ${literal(value)}\` once ${row.condition}; 2.0 defaults to ${wanted}.`;
     case 'unmarked':

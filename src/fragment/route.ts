@@ -5,7 +5,14 @@
  * LP0805 and handed back for a trailing run. See ADR 0011.
  */
 
-import { morphElement, OWNED_ATTRIBUTE } from '@core/morph';
+import {
+  astroIslandsIn,
+  isMorphBoundary,
+  OWNED_ATTRIBUTE,
+  releaseDisconnectedIslands,
+  retainIslandBoundary,
+} from '@core/islands';
+import { morphElement } from '@core/morph';
 import { KEY_ATTRIBUTE } from '@core/structural-applier';
 import { parseDependencyList } from '@core/dependencies';
 import { readRouteRefresh } from '@core/route-refresh';
@@ -39,6 +46,9 @@ export interface RouteStrategyOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 8_000;
+const UNCONFIRMED_REFRESH =
+  'route refresh returned no promise; re-applied before the host committed (see LivePreviewRouteRefresh)';
+
 const DEFAULT_MIN_INTERVAL_MS = 1_000;
 
 /** An explicit `data-payload-strategy="route"`, or a binding in `<head>`. @internal */
@@ -54,48 +64,61 @@ function fieldsOf(element: Element): readonly string[] {
   return own === null || own.length === 0 ? depends : [own, ...depends];
 }
 
-function headKeyOf(element: Element): string | null {
+function isManagedHeadElement(element: Element): boolean {
+  if (element.hasAttribute(OWNED_ATTRIBUTE)) return false;
   if (element.tagName === 'META') {
-    const name = element.getAttribute('name') ?? element.getAttribute('property');
-    return name === null ? null : `meta:${name}`;
+    return element.hasAttribute('name') || element.hasAttribute('property');
   }
-  if (element.tagName === 'LINK' && element.getAttribute('rel') === 'canonical') {
-    return 'link:canonical';
-  }
-  return null;
+  return element.tagName === 'LINK' && element.getAttribute('rel') === 'canonical';
 }
 
 /**
- * Make `<title>`, named `<meta>` and the canonical `<link>` match the fresh
- * head, removals included — it is the server's own render of this URL. A tag
- * marked `data-payload-owned` belongs to a script and is left alone.
+ * Make `<title>` and the ordered direct children this strategy manages match
+ * the fresh head, including duplicates and removals. A tag marked
+ * `data-payload-owned` belongs to a script and is left alone.
  */
 function syncHead(live: Document, fresh: Document): void {
-  if (fresh.title !== live.title) live.title = fresh.title;
-  const liveByKey = new Map<string, Element>();
-  for (const element of live.head.querySelectorAll('meta, link')) {
-    const key = headKeyOf(element);
-    if (key !== null && !liveByKey.has(key)) liveByKey.set(key, element);
+  const liveTitle = Array.from(live.head.children).find((element) => element.tagName === 'TITLE');
+  const freshTitle = Array.from(fresh.head.children).find((element) => element.tagName === 'TITLE');
+  if (
+    !liveTitle?.hasAttribute(OWNED_ATTRIBUTE) &&
+    !freshTitle?.hasAttribute(OWNED_ATTRIBUTE) &&
+    fresh.title !== live.title
+  ) {
+    live.title = fresh.title;
   }
-  const freshKeys = new Set<string>();
-  for (const element of fresh.head.querySelectorAll('meta, link')) {
-    const key = headKeyOf(element);
-    if (key === null) continue;
-    freshKeys.add(key);
-    const current = liveByKey.get(key);
-    if (current === undefined) {
-      live.head.append(live.importNode(element, true));
-      continue;
-    }
-    if (current.hasAttribute(OWNED_ATTRIBUTE)) continue;
-    for (const attribute of Array.from(element.attributes)) {
-      if (current.getAttribute(attribute.name) !== attribute.value) {
-        current.setAttribute(attribute.name, attribute.value);
+
+  const liveSlots = Array.from(live.head.children).filter(isManagedHeadElement);
+  const targets = Array.from(fresh.head.children).filter(isManagedHeadElement);
+  const paired = Math.min(liveSlots.length, targets.length);
+  liveSlots.slice(0, paired).forEach((current, index) => {
+    const target = targets[index];
+    if (target === undefined) return;
+    if (current.tagName === target.tagName) {
+      for (const attribute of Array.from(current.attributes)) {
+        if (!target.hasAttribute(attribute.name)) current.removeAttribute(attribute.name);
       }
+      for (const attribute of Array.from(target.attributes)) {
+        if (current.getAttribute(attribute.name) !== attribute.value) {
+          current.setAttribute(attribute.name, attribute.value);
+        }
+      }
+      return;
     }
+    const replacement = live.importNode(target, true);
+    current.replaceWith(replacement);
+    liveSlots[index] = replacement;
+  });
+
+  let anchor = liveSlots.at(-1);
+  for (const target of targets.slice(liveSlots.length)) {
+    const addition = live.importNode(target, true);
+    if (anchor === undefined) live.head.append(addition);
+    else anchor.after(addition);
+    anchor = addition;
   }
-  for (const [key, element] of liveByKey) {
-    if (!freshKeys.has(key) && !element.hasAttribute(OWNED_ATTRIBUTE)) element.remove();
+  for (const surplus of liveSlots.slice(targets.length)) {
+    surplus.remove();
   }
 }
 
@@ -103,13 +126,14 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const minIntervalMs = options.minIntervalMs ?? DEFAULT_MIN_INTERVAL_MS;
   let lastRefreshAt = -Infinity;
+  let saidUnconfirmed = false;
 
   return {
-    plan(root, changedFields) {
+    plan(root, changedFields, context) {
       for (const element of root.querySelectorAll(
         `[${FIELD_ATTRIBUTE}], [${STRATEGY_ATTRIBUTE}="route"]`,
       )) {
-        if (!isRouteBound(element)) continue;
+        if (!isRouteBound(element) || context?.inScope(element) === false) continue;
         const fields = fieldsOf(element);
         if (fields.length === 0 || fields.some((field) => changedFields.has(field))) return true;
       }
@@ -149,12 +173,21 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
           // The host owns this DOM: it re-renders the route itself, so there is
           // no second HTML request and no morph over a reconciler's own nodes.
           // Awaited, because the runtime re-applies the revision straight after.
+          // A host that returns nothing cannot be waited for (ADR 0028).
           try {
-            await hostRefresh();
+            const settled: unknown = hostRefresh();
+            if (
+              typeof (settled as { then?: unknown } | null | undefined)?.then !== 'function' &&
+              !saidUnconfirmed
+            ) {
+              saidUnconfirmed = true;
+              context.log('LP0810', UNCONFIRMED_REFRESH);
+            }
+            await settled;
           } catch (error) {
             return failure(error);
           }
-          return context.isCurrent() ? 'refreshed' : 'superseded';
+          return context.isCurrent() ? 'partial' : 'superseded';
         }
         let response: Response;
         try {
@@ -187,12 +220,16 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
           // node cannot mispair them; fragment boundaries keep their children —
           // the fragment strategy re-renders those for this revision and must
           // not lose the focused input inside one.
+          const islands = astroIslandsIn(live.body);
           morphElement(live.body, fresh.body, {
+            boundary: isMorphBoundary,
+            retainBoundary: retainIslandBoundary,
             keyAttributes: [KEY_ATTRIBUTE, FRAGMENT_KEY_ATTRIBUTE, FRAGMENT_ATTRIBUTE],
             retainChildrenOf: (element) => element.hasAttribute(FRAGMENT_ATTRIBUTE),
           });
+          releaseDisconnectedIslands(islands);
           view.scrollTo(x, y);
-          return 'refreshed';
+          return 'partial';
         } catch (error) {
           return failure(error);
         }

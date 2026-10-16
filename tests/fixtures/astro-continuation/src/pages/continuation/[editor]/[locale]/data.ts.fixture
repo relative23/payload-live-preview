@@ -1,0 +1,4 @@
+/** Data requests retain the same server-owned target and current user's ACL. Posting form values is never a save or a new authorization grant. */
+import type { APIRoute } from 'astro';
+import { dispatch } from '../../../../server/host';
+export const ALL: APIRoute = ({ request }) => dispatch(request, request.method === 'POST' ? 'update' : 'load', '/data');

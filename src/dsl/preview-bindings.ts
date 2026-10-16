@@ -75,6 +75,14 @@ export interface PreviewBindings {
     id: string,
     options?: FragmentBoundaryOptions,
   ) => FragmentBoundaryAttributes | SuppressedBinding;
+  /**
+   * Field paths the page accounts for without binding them, and everything
+   * below them (`data-payload-covers`, ADR 0022), or nothing while
+   * unauthorized.
+   */
+  covers: (
+    ...paths: readonly string[]
+  ) => Readonly<Record<'data-payload-covers', string>> | SuppressedBinding;
 }
 
 /** Built whether or not the response is authorized, so a bad id fails everywhere, not only in preview. */
@@ -101,6 +109,19 @@ function boundaryAttributes(
     ...(key !== undefined ? { 'data-payload-fragment-key': key } : {}),
     ...(dependsOn.length > 0 ? { 'data-payload-depends': dependsOn.join(',') } : {}),
   };
+}
+
+/** A path is a field name or a dotted path inside one; whitespace would split it into two. */
+function coverAttribute(paths: readonly string[]): Readonly<Record<'data-payload-covers', string>> {
+  for (const path of paths) {
+    if (path.length === 0 || /[\s,]/u.test(path)) {
+      throw new RangeError(
+        `createPreviewBindings().covers(): "${path}" is not a field path — a name or a dotted ` +
+          'path without spaces or commas.',
+      );
+    }
+  }
+  return { 'data-payload-covers': paths.join(' ') };
 }
 
 /** Request-scoped `bind`, `bindByPath` and `owner`, all suppressed unless `authorization` is a real context. */
@@ -131,6 +152,12 @@ export function createPreviewBindings(options: PreviewBindingsOptions): PreviewB
     ): FragmentBoundaryAttributes | SuppressedBinding => {
       const attributes = boundaryAttributes(id, boundaryOptions);
       return authorized ? attributes : SUPPRESSED;
+    },
+    covers: (
+      ...paths: readonly string[]
+    ): Readonly<Record<'data-payload-covers', string>> | SuppressedBinding => {
+      const attributes = coverAttribute(paths);
+      return authorized && paths.length > 0 ? attributes : SUPPRESSED;
     },
   });
 }

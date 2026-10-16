@@ -16,10 +16,9 @@ export {
   ISLAND_ATTRIBUTE,
   OWNED_ATTRIBUTE,
   isMorphBoundary,
-  isMorphCompatible,
-  morphElement,
-  type MorphOptions,
-} from './core/morph';
+  retainIslandBoundary,
+} from './core/islands';
+export { isMorphCompatible, morphElement, type MorphOptions } from './core/morph';
 export {
   dependencyMapFromBinding,
   mergeDependencyMaps,

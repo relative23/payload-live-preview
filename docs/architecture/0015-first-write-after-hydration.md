@@ -64,20 +64,23 @@ hook says `supportsFiber`, and from then on calls
 `hook.onCommitFiberRoot(rendererId, root)` after every commit, each call
 guarded by `typeof … === 'function'` and a `try/catch`. React DevTools, and
 every profiler built beside it, read commits this way. It is not a hydration
-API, but a commit is the moment React has taken the tree over, and the first
-commit whose root holds our bindings is the moment before which nothing may be
-written. The probe, run inside the same measurement:
+API, but a qualifying commit is the moment React has taken the tree over. The
+root must hold our bindings, and its committed Fiber tree must have no server
+boundary that is still dehydrated. Nothing may be written before then. The
+probe, run inside the same measurement:
 
-| t (ms) | hook call                                                                                                             |
-| -----: | --------------------------------------------------------------------------------------------------------------------- |
-|   74.8 | `inject` — React has evaluated, 27 ms **after** the first message: the runtime cannot learn "React is coming" in time |
-|  119.8 | `onCommitFiberRoot`, container `NEXTJS-PORTAL` (Next's dev overlay owns a root of its own; no binding inside), ×3     |
-|  149.3 | `onCommitFiberRoot`, container `#document`, holds the bindings — hydration committed (here: failed and regenerated)   |
+| t (ms) | hook call                                                                                                                 |
+| -----: | ------------------------------------------------------------------------------------------------------------------------- |
+|   74.8 | `inject` — React has evaluated, 27 ms **after** the first message: the runtime cannot learn "React is coming" in time     |
+|  119.8 | `onCommitFiberRoot`, container `NEXTJS-PORTAL` (Next's dev overlay owns a root of its own; no binding inside), ×3         |
+|  149.3 | `onCommitFiberRoot`, container `#document`, holds the bindings — qualifying commit (here: after failure and regeneration) |
 
 Two things follow. "Whether" cannot be observed in time and has to be
 **declared** by whoever emits the script. "When" can be observed, but only if
 the observer is in place before `react-dom` evaluates, and only if it ignores
-roots that do not hold a binding — the dev overlay's commits come first.
+roots that do not hold a binding or still contain dehydrated server boundaries.
+The dev overlay's commits come first; streamed App Router commits may come in
+several steps (2026-09-24 addendum).
 
 ### Why the alternatives do not reach the goal
 
@@ -123,7 +126,7 @@ The value names the framework and not a boolean, because the observation in §2
 is React's. A second framework gets a second value and a second observer, or
 none; `true` would promise a generality the runtime does not have.
 
-### 2. Hydrated means: React committed a root that holds a binding
+### 2. Hydrated means: React committed the binding root without a dehydrated boundary
 
 The runtime arms the instrumentation hook before React can evaluate: in inline
 delivery it is itself the first script in `<head>`; in asset delivery the
@@ -138,15 +141,21 @@ with `supportsFiber: true`, a `renderers` map and an `inject` that files each
 renderer under its own id, which is what Fast Refresh walks when it attaches
 (a hook without the map stopped the fixture from hydrating at all, measured)
 — and wraps `onCommitFiberRoot` on the hook that is there, calling the
-previous function first so React DevTools keeps working. The wrapper settles once, on the first
-commit whose `root.containerInfo` is a `Document` or contains an element with
-`data-payload-field`. A root without a binding — the dev overlay's portal, a
-widget — is not ours to wait for. The state lives on one named `window` slot
-so the bootstrap and the runtime, two bundles, share it: the bootstrap only
-records the containers React committed into, and the runtime, which alone
-knows what a binding is, judges the backlog when it subscribes and every
-commit after — so the armed bootstrap stays within the bytes a bootstrap is
-allowed.
+previous function first so React DevTools keeps working. The wrapper settles
+once, on the first commit whose `root.containerInfo` is a `Document` or contains
+an element with `data-payload-field`, and whose committed Fiber tree has no
+dehydrated server boundary. React 18/19 Suspense (tag 13) and React 19 Activity
+(tag 31) carry the server Comment in `memoizedState.dehydrated` until a later
+commit claims it; a `null` value is a client fallback, not pending hydration.
+A root without a binding — the dev overlay's portal, a widget — is not ours to
+wait for.
+
+The state lives on one named `window` slot so the bootstrap and the runtime,
+two bundles, share it. The bootstrap records the Fiber roots React committed,
+and the runtime, which alone knows what a binding is, judges the backlog when
+it subscribes and every commit after. Keeping the root, rather than only its
+container, preserves the boundary state when asset delivery sees a commit
+before the runtime arrives.
 
 ### 3. Until then the runtime does not start
 
@@ -349,3 +358,136 @@ on the fixture, recorded from before the frame's scripts run: before this
 addendum `["Hero image", "Mountains at dusk", "Hero image"]` — the write, the
 repair, the admin's second message; after it `["Hero image"]`, no
 `Hydration completed` line, `inspect().hydration` = `{ vue, committed }`.
+
+## Addendum, 2026-09-24 — streamed React roots need the final boundary commit
+
+**Status:** Accepted • refinement of §2 after a cold Next 16 App Router page
+showed that a root commit is not necessarily the end of hydration.
+
+The `/soft-navigation/one` fixture commits its `Document` while three nested
+Suspense fibers still point at dehydrated server Comments. The old test saw the
+binding in that container and settled immediately. The admin wrote `Hello from
+the demo` at about 221 ms; the final App Router hydration commit followed at
+about 234 ms, regenerated the segment as `Server title for one`, and reported a
+hydration mismatch. `inspect().hydration` still said `committed`, so the
+diagnostic was wrong as well as the page.
+
+The observer now keeps each `FiberRoot` and walks its committed tree before it
+settles. A Suspense or Activity fiber with a non-null Comment in
+`memoizedState.dehydrated` keeps the wait open; the later commit, after React
+clears that state, settles it. Other component state named `dehydrated` is
+ignored by checking the Fiber tag and the Comment shape. This reads the same
+DevTools commit object §2 already accepted, adds no timer, and introduces no
+host-facing API.
+
+The check is deliberately root-wide. Mapping one DOM binding back to its Fiber
+would need another private React seam, while parsing server Comment ranges
+would duplicate React's protocol. An unrelated boundary that stays dehydrated
+can therefore hold the preview until the existing 5 s cap and LP0607. That is a
+visible delay rather than a write into markup React may still replace.
+
+The regression suite holds both orders: a partial root recorded by the asset
+bootstrap before the runtime subscribes, and a partial root observed live.
+After rebuilding and reinstalling the copied package fixture, a run begun with
+a cleared `.next` cache passed 10 fresh-page WebKit repeats. A second run
+against the resulting dev server passed 20 consecutive fresh-page repeats.
+Each run kept the one startup document through initial hydration, then observed
+the slow server destination before replaying the retained unsaved document.
+
+## Addendum, 2026-10-01 — SvelteKit
+
+**Status:** Accepted • PHD-13, measured on `examples/sveltekit-payload` on
+2026-09-30 and 2026-10-01.
+
+The record above says SvelteKit (Svelte 5) leaves the first write alone. That
+was measured on `/`, which the fixture serves with `csr = false`: no client,
+nothing to hydrate. On `/navigation`, which SvelteKit does hydrate, the full
+development suite lost the first unsaved edit once in Chromium, and under
+eight workers the case failed 7 of 40 runs in Firefox (5 of 40 with 20-second
+expectations). A recorder in the frame showed the same order in every failing
+run: the runtime writes the title, and 4 to 20 ms later Svelte sets the
+server's title back on the same node. Svelte's hydration claims the server's
+nodes and runs each template effect once; `set_text` writes its own value
+wherever the node's text differs. A value written before then is put back
+quietly, as with Vue. On a fast machine the client has usually hydrated before
+the first message arrives, which is why the earlier measurement and most runs
+never saw it.
+
+### What SvelteKit gives
+
+| signal                                                                              | usable                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<div id="svelte-announcer">`, rendered by the generated root under `{#if mounted}` | **yes**: `mounted` is set in the root's `onMount`, after the tree below has hydrated; the same in 2.0.0 and 2.70.2 (read in their source); state, so a late runtime finds it |
+| `afterNavigate` with `type: 'enter'`                                                | no: it needs a component on the page, and the adapter mounts none                                                                                                            |
+| the client's own `hydrated` and `started` flags                                     | no: module state, not reachable from a script                                                                                                                                |
+| Svelte's properties on nodes (`__t`, `__attributes`)                                | no: internal, and set during the render rather than after it                                                                                                                 |
+
+### Decision
+
+The SvelteKit adapter declares `hydration: 'sveltekit'` on every script its
+handle emits, under §1's rule. The value names SvelteKit and not Svelte: the
+signal is SvelteKit's root, and a Svelte app mounted without SvelteKit renders
+no announcer.
+
+Under it the runtime waits, as in §3, until the announcer is in the document,
+watched by a `MutationObserver` that disconnects when it appears, at the cap,
+or when the runtime stops. A page served with `csr = false` would never render
+it, so the wait first asks whether SvelteKit's client runs at all: its start
+script assigns a global (`__sveltekit_dev`, or `__sveltekit_` and the app's
+version hash) only on a page it will hydrate, and by `DOMContentLoaded` that
+classic script has run. Without the global the runtime starts at once and
+`inspect().hydration` reads `{ mode: 'sveltekit', state: 'committed' }`, as it
+does after a bfcache restore. The cap, LP0607 (naming the SvelteKit mount) and
+`inspect().hydration` are §4's.
+
+The browser case holds SvelteKit's client module back three seconds, so the
+order the loaded suite produced happens on every run: against the package
+before this addendum the title ends as the server's in Chromium, Firefox and
+WebKit, 3 of 3.
+
+### What counts as failure, for SvelteKit
+
+F1, F5 and F6 apply as written. F2 does not arise (state, not an event). F7 is
+the `csr = false` page: the fixture serves `/`, `/hybrid` and `/owners-hybrid`
+that way, and their specs measure what they did. New:
+
+**F10 — SvelteKit renames the announcer or the global.** A renamed announcer
+costs every hydrated page the cap and LP0607; a renamed global makes the runtime
+start as it did before this addendum. The browser case fails on either with
+the fixture's SvelteKit (2.70.2); both names are the same in 2.0.0, the first
+release of the supported major, read in its source on 2026-10-01.
+
+**F11 — a streamed `{#await}` resolves after the mount.** Its resolved branch is
+rendered on the client, after the root mounted; bindings inside it are new
+elements, found by the binding cache as before (the fixture's `stream` step).
+
+## Native reload readiness (2026-10-05)
+
+A full iframe reload creates a new runtime. Its `started` flag records a requested
+start before the hydration wait finishes; the message listener is attached only
+when that wait settles. The real-admin reload test now uses the same readiness
+check as its initial-start test: started and hydration no longer waiting, before
+the next form edit. The title and retained subtitle assertions and their deadlines
+remain unchanged.
+
+The original Firefox run retained the saved title after that edit. Its trace
+recorded the edit before the new document's cache and ready traffic, but did not
+record the hydration state or message delivery at that instant. This establishes
+the test's readiness defect, not a separate runtime defect. The original failure
+is retained; the corrected test must pass on the current archive before the lane
+is accepted.
+
+## Native readiness during navigation (2026-10-05)
+
+A later real-admin startup run failed in Firefox when the preview navigated
+between title visibility and the first runtime inspection. The browser trace
+records two successful preview document requests and an immediate execution-
+context error during inspection. The earlier full-reload case passed in that
+run; this separate startup failure does not establish a runtime defect.
+
+Both readiness checks now use Playwright's `Locator.waitForFunction`, which
+resolves the current body again after navigation. They wait for the same started
+flag and settled hydration, with the same 30-second deadline. A
+missing runtime cannot satisfy the predicate, and script errors still fail the
+check. Title and subtitle assertions are unchanged. The original failed run
+is retained; native acceptance still requires the complete current lane.

@@ -49,9 +49,10 @@ preview answers every request with `Cache-Control: private, no-store`
 
 By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
-that finds itself in a preview context fetches the runtime. Measured on the
-Next.js fixture, that is a 1 331-byte `<script>` element in the page instead
-of a 125 215-byte one — about one per cent, and more than the Astro row below
+that finds itself in a preview context fetches the runtime. The current
+Next.js fixture's delivery is a 1 344-byte `<script>` element in the page
+against 158 609 bytes for authorized inline delivery: about one per cent,
+and more than the Astro row below
 because a Next page's bootstrap also arms the wait for React's first commit
 before it fetches ([ADR 0015](architecture/0015-first-write-after-hydration.md)). On Next it is the second step down, not the first: a layout
 that can await the verdict renders `<LivePreviewScript />` and sends a public
@@ -98,7 +99,7 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The runtime is about 112 KB of JavaScript (about 35 KB gzip). The number that
+The default inline script is about 141 KiB of JavaScript (about 44 KiB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
 rather than by the framework. Three outcomes, each held by an E2E case in
 `tests/e2e/specs/public-response.spec.ts` against the budgets in
@@ -106,18 +107,20 @@ rather than by the framework. Three outcomes, each held by an E2E case in
 preview intent. What that case pins to the byte is the delivery's overhead: the
 `<script>` element, tag included, minus the runtime it embeds. The runtime is
 gated on its own (`INLINE_BUDGET` in `scripts/bundle-budgets.ts`) and grows
-with the package, so the Bytes column is the whole element as this page was
-written: the pinned overhead, plus the 113 468-byte runtime in the two rows that
-carry it.
+with the package. The Bytes column is calculated from the pinned delivery
+overhead, plus the current 144 476-byte runtime artifact in the two rows that
+carry it. These are uncompressed bytes for the directly emitted script
+element. The Next.js rows also count its escaped copy in the RSC flight payload,
+whose encoding adds bytes; "twice" counts the two occurrences.
 
 | Setup                                                  | A public visitor receives | Bytes          | Why                                                                               |
 | ------------------------------------------------------ | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
 | SvelteKit handle, Nuxt Nitro plugin, Astro middleware  | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
 | Next.js, `<LivePreviewScript />` in the root layout    | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
-| Next.js, `delivery: 'asset'`                           | the bootstrap             | 1 331, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
-| Astro static build, `mode: 'loader'`                   | the bootstrap             | 772            | a static page has no request to decide for, so the check happens in the browser   |
-| Astro static build, `mode: 'inline'`                   | the whole runtime         | 113 604        | nothing decides and nothing is deferred                                           |
-| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 125 215, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
+| Next.js, `delivery: 'asset'`                           | the bootstrap             | 1 344, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
+| Astro static build, `mode: 'loader'`                   | the bootstrap             | 792            | a static page has no request to decide for, so the check happens in the browser   |
+| Astro static build, `mode: 'inline'`                   | the whole runtime         | 144 632        | nothing decides and nothing is deferred                                           |
+| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 158 609, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
 
 The last row is the one exception to "no cookie, no preview intent": no fixture
 serves it to the public any longer, because the Next example moved to the second
@@ -136,7 +139,7 @@ visitor to a statically built site pays under one per cent of what the inline
 build costs them, and a visitor to a site whose server decides pays nothing at
 all.
 
-772 bytes is the floor of this table, and it is not zero. A page built ahead of
+792 bytes is the floor of this table, and it is not zero. A page built ahead of
 time has no request to decide for, so the check has to travel with the page;
 `mode: 'loader'` is the one delivery here that cannot reach zero, and saying so
 is more useful than a smaller number that stops being true the moment somebody
@@ -219,9 +222,9 @@ are not part of the deployed application.
 
 ## A smaller runtime for pages that need less
 
-Every page that carries the runtime carries about 35 KB gzip of it. A site
-whose preview needs neither server-rendered boundaries nor keyed arrays can
-carry about 28 KB instead:
+The default inline script carries about 44 KiB gzip. A site whose preview
+needs neither server-rendered boundaries nor keyed arrays can carry about
+36 KiB with the lean inline script instead:
 
 ```ts
 import { LEAN_RUNTIME } from 'payload-live-preview/lean';
@@ -238,6 +241,80 @@ for text, numbers, dates, images, uploads, relationships and rich text.
 
 The import is what puts the artifact in your build, so a project that stays on
 the default ships nothing extra.
+
+## The fragment endpoint on another runtime
+
+The host and proxy results in this section and the next are measurements from
+2026-10-02 on earlier source-built archives, recorded in
+[ADR 0011](architecture/0011-fragment-protocol-and-abuse-model.md#4c-other-runtimes-and-proxies-2026-10-02).
+They retain the observed transport limits and failure modes. Current 2.1
+acceptance requires fresh host and proxy results from the archive being accepted.
+
+`createFragmentEndpoint` from `payload-live-preview/nextjs` takes a `Request`
+and returns a `Response`, and it loads no Node module until its default
+renderer runs. With a renderer of your own it runs wherever those two types
+exist. A bare Node 24.19 server, Deno 2.9.7 and Bun 1.4.2 each passed the 19
+native cases that the four framework servers pass: the three phases and the
+total deadline, a client that leaves during a phase or an upload, a body of
+exactly 64 KiB and one byte over it in two-byte text, a chunked body cut at the
+limit, a declared length refused on the headers alone, a gzip body refused as
+malformed, and keep-alive reuse. The 12 cases that apply to HTTP/2 passed on
+Deno with TLS. Deno differs in one place: when a client drops an upload it
+fails the request's body stream and leaves `request.signal` alone. The endpoint
+still answers 400 before it authorizes, within 50 ms.
+
+The endpoint reads the bytes that arrive and does not undo a
+`Content-Encoding`. A gzip body, even one that would inflate to 8 MB, is refused
+as malformed. A host or proxy that inflates request bodies has to apply its own
+limit to the inflated size; none of the hosts and proxies tested did.
+
+A Node server that builds the `Request` itself must not answer before the body
+is read and then keep the connection. The next request on that connection is
+read as the rest of the body and waits. Send `Connection: close`, as the
+SvelteKit and Nuxt bindings do, or drain the body. A bridge that did neither
+held every second 300 kB request from Chromium and Firefox until its timeout.
+
+## The fragment endpoint behind a proxy
+
+The endpoint's limits hold wherever it runs: 64 KiB of body, one deadline, work
+cancelled when the client goes away. A proxy decides when the client hears of
+them. Through nginx 1.27, Caddy 2.11 and Traefik 3.3 in front of the Node
+server, over HTTP/1.1 and HTTP/2, a client that left during a phase cancelled
+the server's work, and the deadline's 504 reached the client. An upload that
+stays half-sent differs by proxy. A browser sends its small body at once and
+does not meet this; a slow or abandoned upload does.
+
+| In front of the endpoint                                                         | An upload that stays half-sent                                                                                                                    |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| nginx with `proxy_request_buffering off`; Caddy or Traefik with an HTTP/2 client | The endpoint answers 504 at its deadline and the client hears it then (0.4 s in the test).                                                        |
+| Caddy or Traefik with an HTTP/1.1 client that keeps its connection alive         | The endpoint answers at 0.4 s. The client hears it when its upload ends (1 s in the test).                                                        |
+| nginx with its default buffering                                                 | Nothing reaches the endpoint until the body is whole, so its body deadline never runs. `client_body_timeout` (60 s by default) bounds the upload. |
+
+A body over the limit is refused before it is read, and the host then closes or
+drains the connection. A client that is still sending can get a reset instead of
+the 413, and a proxy a 502. The page treats that like any failed request: it
+reports `LP0801` and patches the boundary from the same revision. Whether the
+413 arrives is a race between that close and the data still in flight, so its
+share moves with load. Chromium, Firefox and WebKit sent ten requests each of
+90 kB, 300 kB and 2 MB, twice (180 per host), at a load average of 5 to 10 on
+the test machine, and again at 16:
+
+- Deno, Bun and nginx with `proxy_request_buffering off` returned the 413 every
+  time in both sets (180 of 180 each). nginx with `client_max_body_size 256k` did
+  for every size over that limit, which it refuses itself before the endpoint is
+  asked (120 of 120 in each set).
+- Caddy and Traefik lost 4 and 6 of the 180 to a 502 in the first set, and a Node
+  bridge that closes with the body unread lost 20, all of them WebKit at 2 MB,
+  to a network error. nginx with its default buffering lost none in the first
+  set and 39 and 37 of 60 at 90 kB and 300 kB in the second.
+- Asked directly, the Astro and Next.js servers returned the 413 every time (90
+  of 90 each). Chromium got it every time from the SvelteKit and Nuxt servers,
+  whose bindings close the connection; Firefox and WebKit lost some to a network
+  error, WebKit 10 of 10 at 2 MB from SvelteKit.
+
+A request body limit on the proxy that answers before it forwards anything, such
+as nginx's `client_max_body_size` set a little above `limits.bodyBytes`, keeps
+the 413 for the sizes it covers.
 
 ## A static site with the fragment endpoint as a service
 
@@ -303,14 +380,15 @@ The runtime binds a document. Three kinds of navigation change what that means:
   body on its own.
 - **Soft navigation inside the body.** View Transitions and client routers
   (Astro's client router, the Next.js, SvelteKit and Nuxt routers) replace
-  parts of the body without a load. The runtime's mutation observer sees
-  bindings appear and vanish and rebuilds the cache after a 100 ms debounce.
-  The inline runtime binds no router event — only the host knows which its
-  router fires — so a page that needs an immediate rebuild calls
-  `__livePreview.refresh()` from its router's after-navigation hook, or
-  passes `softNavigationEvents: ['astro:page-load']` to
-  `bindNavigationLifecycle` when it drives the client itself.
+  parts of the body without a load. Adapter-generated scripts listen for the
+  commit event their integration declares: Astro uses its ClientRouter events,
+  while the Next.js, SvelteKit and Nuxt guides install a small host bridge for
+  the package's navigation event. A hand-written integration can call
+  `__livePreview.refreshAfterNavigation()` after its router commits or pass
+  `softNavigationEvents` to `bindNavigationLifecycle`. Plain `refresh()` only
+  rescans bindings and does not cross a navigation boundary.
 
-While suspended the runtime receives nothing. On restore it sends the `ready`
-handshake again and the admin answers with the current document, so the page
-catches up without an editor's keystroke.
+While suspended the runtime receives nothing. On restore it locally reapplies
+the last fully accepted document, provided the heartbeat deadline did not
+expire, then sends a best-effort `ready` handshake. An expired session forgets
+that snapshot instead of writing stale editor state.

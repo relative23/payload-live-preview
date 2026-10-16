@@ -1,0 +1,18 @@
+---
+/**
+ * This Astro component includes a non-Astro child tagged for a named server
+ * renderer. The application build knows the component, but a new container
+ * must still receive that renderer explicitly.
+ */
+import { H05ForeignComponent } from './h05-foreign-component';
+
+interface Props {
+  marker: string;
+}
+
+const { marker } = Astro.props;
+---
+
+<div data-testid="h05-foreign-wrapper">
+  <H05ForeignComponent label={marker} />
+</div>

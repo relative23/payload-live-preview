@@ -3,6 +3,7 @@
 import type { PayloadDocumentEventDetail, PayloadLivePreviewData } from '@/types/payload-protocol';
 import type { UpdateSource } from '@core/strategies';
 import type { DiagnosticCode } from '@core/diagnostic-codes';
+import type { RevisionDisplay } from '@core/revision-display';
 
 export interface LivePreviewEventMap {
   /** Once per startup attempt, after observers, cache and message listening are active. A rolled-back attempt emits it again on retry. */
@@ -66,6 +67,13 @@ export interface LivePreviewEventMap {
     readonly revision: number;
     readonly receivedAt: number;
   };
+
+  /**
+   * A revision left `pending`: it is current, partial (with the shortfalls
+   * that kept it from being current), unconfirmed by an island, or superseded.
+   * Fires again when an unconfirmed revision is confirmed (ADR 0023).
+   */
+  readonly revisionDisplay: RevisionDisplay;
 
   /** A `payload-document-event` message arrived (document save). */
   readonly documentSave: { readonly timestamp: number };

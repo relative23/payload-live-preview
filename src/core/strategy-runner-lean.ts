@@ -14,7 +14,7 @@ import { reportOmittedFeature } from './profile';
 import type { StrategyRunner } from './strategy-runner';
 import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
-import { unboundChangedFields, type OwnerScope } from './unbound-fields';
+import { declaredSubfields, unboundChangedFields, type OwnerScope } from './unbound-fields';
 import type { CachedElement } from './types';
 
 /** What `UpdatePipeline` calls on a runner; both profiles satisfy it. */
@@ -23,7 +23,7 @@ export type StrategyRunnerLike = Pick<
   | 'planFragments'
   | 'escalateUnfaithful'
   | 'hasUnboundChange'
-  | 'hasRouteBinding'
+  | 'plansRoute'
   | 'runFragments'
   | 'refreshRoute'
   | 'warnFragmentFallback'
@@ -37,8 +37,13 @@ export function createLeanStrategyRunner(
   return {
     planFragments: (): null => null,
     // Nothing to escalate to. The pipeline still drains its queue, so a page
-    // that keeps producing findings does not keep producing entries.
-    escalateUnfaithful: (): void => undefined,
+    // that keeps producing findings does not keep producing entries; the
+    // patches stay as they are, and the revision says so (ADR 0023).
+    escalateUnfaithful: (transaction, _data, targets): void => {
+      for (const { fieldName: field } of targets) {
+        state.display.shortfall(transaction, { kind: 'unfaithful', field });
+      }
+    },
     // Nothing here to escalate to, and the finding is still worth recording:
     // a page that changes a field it does not bind is the page
     // `inspect().fidelity` is read on, and `escalated` staying 0 beside it is
@@ -50,11 +55,19 @@ export function createLeanStrategyRunner(
         transaction.touched,
         transaction.locale,
         ownerKeys,
+        declaredSubfields(
+          deps.subfieldCoverage,
+          state.changes.previousFields,
+          transaction.renderData?.fields,
+        ),
       );
-      for (const fieldName of unbound) reportUnboundChange(state, fieldName);
+      for (const field of unbound) {
+        reportUnboundChange(state, field);
+        state.display.shortfall(transaction, { kind: 'unbound', field });
+      }
       return false;
     },
-    hasRouteBinding: (): boolean => false,
+    plansRoute: (): boolean => false,
     runFragments: (): Promise<void> => Promise.resolve(),
     // A page that carries a route prelude anyway (it can be injected by hand)
     // still gets no refresh here: this runtime has no code for one.

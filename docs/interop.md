@@ -11,7 +11,7 @@ does not own your components.
 | You have                                                                    | Use                                       | Why                                                                                                                                                                           |
 | --------------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A client-rendered React or Vue app that fetches the document itself         | `@payloadcms/live-preview-react` / `-vue` | The hook hands your components the merged document; re-rendering is what they do anyway.                                                                                      |
-| Server-rendered pages (Astro, Next App Router, SvelteKit, Nuxt, plain HTML) | this package                              | The page is HTML; the runtime patches bound elements, keeps focus and visitor state, and needs no client framework.                                                           |
+| Server-rendered pages (Astro, Next App Router, SvelteKit, Nuxt, plain HTML) | this package                              | The runtime patches bound elements without a client framework; compatible nodes retained by a fragment or route morph keep their live properties.                             |
 | Both on one page (islands inside an SSR shell)                              | this package, islands opt in              | A hydrated island owns its subtree and re-renders on a `payload-live-preview:update` event, which follows a write outside the islands ([renderers.md](renderers.md#islands)). |
 
 For React Server Components, Payload's `RefreshRouteOnSave` is the
@@ -27,15 +27,24 @@ save-triggered equivalent of this package's route strategy.
   the same captures, so the two packages cannot drift apart unnoticed.
 - **The merge.** Payload 3.x posts raw form values; populated relationships
   come from a REST request the official client and this runtime make the
-  same way (`serverURL`, `depth`). Payload 2.x posts populated data and a
-  `fieldSchemaJSON`; the runtime detects that on the wire
-  (`protocol.profile === 'payload-2'`) and skips the request. A session
+  same way (`serverURL`, `depth`). The measured Payload 2.32.3 sender can
+  post raw relationship IDs. It sends `fieldSchemaJSON` on the first send
+  and after a window-type change; later messages can omit it. This package
+  retains accepted schema within each session and uses credentialed collection
+  GETs when population is needed, with the configured depth and any supplied
+  locale. The v2 schema path does not use the v3 method-override POST. A session
   captured from a real Payload 2.32.3 admin
   (`tests/fixtures/wire-corpus/payload-2.32.3.json`) is replayed with the 3.x
   and 4.0 canary captures; it edits text, rich text and an array across a save,
   and contains no relationship field.
-- **The handshake.** Both post `ready: true` to the admin; the admin answers
-  with the current document.
+- **The handshake.** Both post `ready: true` to announce that the receiver is
+  listening. This is a best-effort hint, not a document or schema resend
+  guarantee. In the measured Payload 2.32.3 provider, replacing a hook or
+  reloading only the child iframe does not itself reset the parent's
+  readiness state or first-send schema cache. A fresh hook starts from its
+  own `initialData` and cannot borrow another session's schema. For recovery
+  through a new first send, reload the admin page or establish a genuine
+  provider and sender remount; toggling a panel alone does not prove that reset.
 
 ## Moving from `@payloadcms/live-preview-react`
 

@@ -16,15 +16,19 @@
     },
     "src/core/navigation-lifecycle.ts::windowTarget?.addEventListener('pagehide', onPageHide);": {
       "release": "caller",
-      "why": "registerNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
+      "why": "bindNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
     },
     "src/core/navigation-lifecycle.ts::windowTarget?.addEventListener('pageshow', onPageShow);": {
       "release": "caller",
-      "why": "registerNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
+      "why": "bindNavigationLifecycle() returns the disposer that removes it; the client calls it on destroy()."
     },
     "src/core/navigation-lifecycle.ts::for (const name of softEvents) documentTarget?.addEventListener(name, onSoftNavigation);": {
       "release": "caller",
-      "why": "registerNavigationLifecycle() returns the disposer that removes every soft-navigation listener; the client calls it on destroy()."
+      "why": "The soft-navigation listener refreshes the document after each declared router commit. The returned disposer removes every listener on runtime teardown."
+    },
+    "src/core/navigation-lifecycle.ts::if (observesAstro) documentTarget?.addEventListener(ASTRO_AFTER_SWAP_EVENT, onAstroAfterSwap);": {
+      "release": "caller",
+      "why": "The Astro swap listener distinguishes a client-router commit from Astro's initial page-load signal. The returned disposer removes it on runtime teardown."
     },
     "src/core/message-bus.ts::target.addEventListener('message', listener);": {
       "release": "scope",
@@ -36,11 +40,15 @@
     },
     "src/core/data-merger.ts::controller = new AbortController();": {
       "release": "scope",
-      "why": "The merge request in flight; DataMerger.destroy() aborts it, and the session scope owns that destroy."
+      "why": "2026-10-03: Both legacy collection GETs and v3 merge POSTs acquire an owned controller. A newer merge aborts the old one; DataMerger.destroy() aborts any remaining request, and the session scope owns that destroy."
     },
     "src/core/hydration.ts::timer = setTimeout(() => {": {
       "release": "scope",
       "why": "The cap on the wait for the framework's first commit; the cancel the startup host hands to the scope clears it, and it clears itself when the commit lands."
+    },
+    "src/core/hydration-sveltekit.ts::const observer = new MutationObserver(() => {": {
+      "release": "scope",
+      "why": "Watches for SvelteKit's announcer during the wait for its root to mount; disconnected when it appears, at the cap, or by the cancel the startup host hands to the scope."
     },
     "src/core/startup.ts::root.addEventListener('DOMContentLoaded', onReady, { once: true });": {
       "release": "scope",
@@ -70,7 +78,7 @@
       "release": "caller",
       "why": "The page-wide handle initLivePreview() installs; its own destroy() deletes it, and a handover replaces it (ADR 0011)."
     },
-    "src/core/merge-need.ts::this.timer = setTimeout(() => {": {
+    "src/core/merge-need.ts::const timer = setTimeout(() => {": {
       "release": "scope",
       "why": "The merge window's trailing flush; MergeNeed.destroy() clears it, and the scope owns that destroy."
     },
@@ -93,6 +101,14 @@
     "src/core/hydration-vue.ts::Object.defineProperty(this, VUE_APP_PROPERTY, {": {
       "release": "global",
       "why": "The per-element own property the accessor writes when Vue assigns its app; belongs to the page's element, not to a session (ADR 0015, addendum)."
+    },
+    "src/core/legacy-population.ts::Object.defineProperty(record, key, {": {
+      "release": "caller",
+      "why": "2026-10-03: Defines an own data slot on an independent bounded document copy, never a global accessor. The caller owns the resulting document lifetime."
+    },
+    "src/core/legacy-population.ts::signal.addEventListener('abort', abort, { once: true });": {
+      "release": "caller",
+      "why": "2026-10-03: The population operation owns this abort listener. Its finally removes it on success, refusal, failure or supersession; that same primitive cancels unfinished native readers and releases their lock."
     }
   }
 }

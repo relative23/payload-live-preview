@@ -1,0 +1,62 @@
+/**
+ * A pending native body owns its cancellation subscription and reader lock.
+ * Cancelling the producer releases that subscription before invoking its hook,
+ * while the caller's observer remains owned by the caller.
+ */
+import { getEventListeners } from 'node:events';
+import { ReadableStream as NativeReadableStream } from 'node:stream/web';
+import { transferableAbortController } from 'node:util';
+import { describe, expect, it } from 'vitest';
+import { populationBody } from '@core/legacy-population';
+
+describe('legacy population — abort subscription ownership', () => {
+  it('releases its native abort subscription before the producer cancellation hook', async () => {
+    const owner = transferableAbortController();
+    const observed: Event[] = [];
+    const observer = (event: Event) => {
+      observed.push(event);
+    };
+    owner.signal.addEventListener('abort', observer);
+    let beginReading!: () => void;
+    const reading = new Promise<void>((resolve) => {
+      beginReading = resolve;
+    });
+    let listenersDuringCancellation: unknown[] | undefined;
+    const stream = new NativeReadableStream<Uint8Array>(
+      {
+        pull() {
+          beginReading();
+        },
+        cancel() {
+          listenersDuringCancellation = getEventListeners(owner.signal, 'abort');
+        },
+      },
+      { highWaterMark: 0 },
+    );
+    const pending = populationBody(
+      new Response(stream as unknown as ReadableStream<Uint8Array>),
+      owner.signal,
+      () => true,
+    );
+    const settled = pending.then(
+      () => 'resolved',
+      () => 'refused',
+    );
+    try {
+      await reading;
+      expect(stream.locked).toBe(true);
+      expect(getEventListeners(owner.signal, 'abort')).toContain(observer);
+      owner.abort();
+      expect(listenersDuringCancellation).toEqual([observer]);
+      expect(observed[0]?.target).toBe(owner.signal);
+      await expect(settled).resolves.toBe('refused');
+      expect(stream.locked).toBe(false);
+      expect(getEventListeners(owner.signal, 'abort')).toEqual([observer]);
+    } finally {
+      owner.abort();
+      await settled;
+      owner.signal.removeEventListener('abort', observer);
+    }
+    expect(getEventListeners(owner.signal, 'abort')).toEqual([]);
+  });
+});

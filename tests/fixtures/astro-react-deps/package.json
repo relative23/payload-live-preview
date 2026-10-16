@@ -1,0 +1,35 @@
+{
+  "name": "payload-live-preview-astro-react-resource-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@12.0.2",
+  "scripts": {
+    "typecheck": "astro check --minimumFailingSeverity warning",
+    "build": "npm run typecheck && astro build",
+    "start": "node ./dist/server/entry.mjs"
+  },
+  "dependencies": {
+    "astro": "7.3.2",
+    "@astrojs/node": "11.1.4",
+    "@astrojs/react": "6.0.6",
+    "vite": "8.1.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "payload-live-preview": "file:../../.."
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "typescript": "5.9.3",
+    "@types/node": "22.20.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7"
+  },
+  "overrides": {
+    "esbuild": "0.28.1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": false
+  }
+}

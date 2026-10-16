@@ -4,20 +4,25 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-yIQFf015.js';
-import { a as a_2 } from '../../options-uHKrDM2U.js';
-import { b } from '../../fragment-endpoint-yIQFf015.js';
-import { c } from '../../fragment-endpoint-yIQFf015.js';
-import { F } from '../../fragment-endpoint-yIQFf015.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-yIQFf015.js';
-import { L as LivePreviewLocals } from '../../locals-CNUGYbA_.js';
-import { P as PreviewAdapterOptions } from '../../options-uHKrDM2U.js';
+import { a } from '../../fragment-endpoint-CfOVCRHt.js';
+import { a as a_2 } from '../../options-Bq-ZDz1F.js';
+import { b } from '../../fragment-endpoint-CfOVCRHt.js';
+import { c } from '../../fragment-endpoint-CfOVCRHt.js';
+import { F } from '../../fragment-endpoint-CfOVCRHt.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-CfOVCRHt.js';
+import { L as LivePreviewLocals } from '../../locals-CEg7out0.js';
+import { P as PreviewAdapterOptions } from '../../options-Bq-ZDz1F.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;
 
 // @public
-export function createFragmentEndpoint(options: FragmentEndpointOptions): (request: Request) => Promise<Response>;
+export function createFragmentEndpoint(options: FragmentEndpointOptions): (request: Request, event?: {
+    readonly node?: {
+        readonly req?: unknown;
+    };
+    readonly context?: unknown;
+}) => Promise<Response>;
 
 // @public
 export function createRuntimeAssetRoute(options?: LivePreviewNuxtOptions): (request: Request) => Response;

@@ -1,0 +1,22 @@
+---
+/**
+ * H05's page intentionally does not import the fragment component. This makes
+ * a component that first appears through the endpoint prove its own assets.
+ */
+export const prerender = false;
+---
+
+<html lang={Astro.params.locale ?? 'en'}>
+  <head>
+    <meta charset="utf-8" />
+    <title>H05 Astro context probe</title>
+  </head>
+  <body>
+    <main
+      id="h05-mount"
+      data-page-locale={Astro.params.locale ?? ''}
+      data-page-slug={Astro.params.slug ?? ''}
+    >
+    </main>
+  </body>
+</html>

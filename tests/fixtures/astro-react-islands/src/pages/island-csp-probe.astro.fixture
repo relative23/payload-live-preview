@@ -1,0 +1,9 @@
+---
+// A fixed prerendered build artifact supplies hashes for Astro's own bootstrap.
+// It contains no request, editor, authorization or CMS data.
+import ReactPanel from '../components/ReactPanel';
+export const prerender = true;
+---
+<!doctype html><html lang="en"><head><title>Fixed island build probe</title></head>
+<body><ReactPanel client:load title="Fixed build probe"
+  authority={{ locale: '', subject: '', path: '' }} /></body></html>

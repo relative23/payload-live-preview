@@ -91,6 +91,7 @@ describe('payload-session strategy', () => {
     expect(result.context.payloadHeaders).toEqual({ cookie: 'payload-token=tok.en' });
     expect(seen[0]?.input).toBe(`${CMS}/api/users/me?depth=0`);
     expect(seen[0]?.headers['cookie']).toBe('payload-token=tok.en');
+    expect(seen[0]?.headers['origin']).toBeUndefined();
     expect(Object.isFrozen(result.context)).toBe(true);
   });
 

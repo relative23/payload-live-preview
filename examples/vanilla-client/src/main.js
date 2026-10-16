@@ -21,3 +21,21 @@ window.__lpClient = initLivePreview({
 // The unbound-fields overlay is a plugin, never part of the runtime: it lists
 // the fields an update carried that this page has nowhere to put.
 void window.__lpClient?.use(createUnboundFieldsOverlayPlugin());
+
+// A project's own renderer, under a namespaced key (docs/renderers.md): what a
+// static page's inline script cannot carry, since a function does not survive
+// being written into it, and a bundled client can.
+void window.__lpClient?.use({
+  name: 'fixture-renderers',
+  init: (context) => {
+    context.registerFieldRenderer({
+      name: 'fixture:money',
+      render: (target, value) => {
+        target.element.textContent = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(Number(value));
+      },
+    });
+  },
+});

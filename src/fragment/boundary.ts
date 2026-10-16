@@ -3,10 +3,9 @@
 import type { DiagnosticCode } from '@core/diagnostic-codes';
 import { isInsideIsland } from '@core/islands';
 import { parseDependencyList } from '@core/dependencies';
-import { FRAGMENT_ATTRIBUTE } from '@core/strategies';
+import { FRAGMENT_ATTRIBUTE, FRAGMENT_KEY_ATTRIBUTE } from '@core/strategies';
 
-/** Distinguishes several boundaries of one registry id; unique among siblings. @internal */
-export const FRAGMENT_KEY_ATTRIBUTE = 'data-payload-fragment-key';
+export { FRAGMENT_KEY_ATTRIBUTE };
 const DEPENDS_ATTRIBUTE = 'data-payload-depends';
 
 /** @internal */

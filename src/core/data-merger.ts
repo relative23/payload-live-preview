@@ -1,12 +1,13 @@
 /**
- * Server-side merge for Payload 3.x, whose admin posts raw form values with
- * relationships as bare ids. Like the official client, the update is re-fetched
- * through the REST API with `X-Payload-HTTP-Method-Override: GET`, which
- * merges the form values into the stored document and returns it populated.
- * Only the newest request matters: a newer merge aborts the one in flight.
+ * Payload 3 raw form values use its REST merge with the method-override header.
+ * Payload 2 sends a schema instead of a target, so it uses local values and
+ * collection GETs to populate references. A newer merge aborts the one in flight,
+ * and captured attempt identity drops obsolete results even when a shim ignores abort.
  */
 
 import { isolateDiagnostic, noopDiagnostic } from './diagnostics';
+import type { PayloadFieldSchema } from '@/types/payload-protocol';
+import { fillLegacyPopulation, planLegacyPopulation, populationBody } from './legacy-population';
 
 export interface DataMergerOptions {
   /** Payload server origin, e.g. `https://cms.example.com`. */
@@ -20,6 +21,7 @@ export interface DataMergerOptions {
 }
 
 export interface MergeRequest {
+  readonly schema?: readonly PayloadFieldSchema[] | undefined;
   readonly collectionSlug?: string | undefined;
   readonly globalSlug?: string | undefined;
   readonly data: Record<string, unknown>;
@@ -31,6 +33,12 @@ export type MergeResult =
   | { readonly status: 'merged'; readonly doc: Record<string, unknown> }
   | { readonly status: 'superseded' }
   | { readonly status: 'unavailable' };
+
+interface MergeTarget {
+  readonly path: string;
+  readonly field: 'id' | 'globalType';
+  readonly value: string;
+}
 
 function hasControlCharacter(value: string): boolean {
   for (const character of value) {
@@ -95,32 +103,62 @@ export class DataMerger {
     this.log = isolateDiagnostic(options.log ?? noopDiagnostic);
   }
 
-  /** Collections need an `id` in the form values; globals only their slug. */
+  /** A v2 schema plans local values and GETs; a v3 target needs its document identity. */
   canMerge(request: MergeRequest): boolean {
-    return this.endpointOf(request) !== null;
+    try {
+      const schema = request.schema;
+      if (schema !== undefined) {
+        planLegacyPopulation(
+          request.data,
+          schema,
+          this.serverURL,
+          this.apiRoute,
+          this.depth,
+          request.locale,
+        );
+        return true;
+      }
+      return this.endpointOf(request) !== null;
+    } catch {
+      return false;
+    }
   }
 
   /**
-   * The path under `apiRoute`, or `null` when no safe one exists. A request
+   * The path and its response identity, or `null` when no safe one exists. A request
    * accessor that throws counts as none, and so does a lone surrogate, which
    * `encodeURIComponent` refuses with a `URIError`.
    */
-  private endpointOf(request: MergeRequest): string | null {
+  private endpointOf(request: MergeRequest): MergeTarget | null {
     try {
       // An empty global slug means "collection document" on the wire.
       const globalSlug = request.globalSlug;
       if (globalSlug) {
-        return isSafeSlug(globalSlug) ? `globals/${encodeURIComponent(globalSlug)}` : null;
+        return isSafeSlug(globalSlug)
+          ? {
+              path: `globals/${encodeURIComponent(globalSlug)}`,
+              field: 'globalType',
+              value: globalSlug,
+            }
+          : null;
       }
       const collectionSlug = request.collectionSlug ?? '';
       const id: unknown = request.data['id'];
       if (!isSafeSlug(collectionSlug) || !isSafeId(id)) return null;
-      return `${encodeURIComponent(collectionSlug)}/${encodeURIComponent(String(id))}`;
+      return {
+        path: `${encodeURIComponent(collectionSlug)}/${encodeURIComponent(String(id))}`,
+        field: 'id',
+        value: String(id),
+      };
     } catch {
       return null;
     }
   }
 
+  /**
+   * Fulfills merged, superseded or unavailable. Supported request, fetch and
+   * response failures are outcomes; isolated diagnostics cannot reject the merge.
+   */
   async merge(request: MergeRequest): Promise<MergeResult> {
     if (this.destroyDepth > 0) return { status: 'superseded' };
     // Claim the attempt before aborting: abort listeners and fetch shims are
@@ -131,21 +169,73 @@ export class DataMerger {
     const previous = this.inflight;
     this.inflight = null;
     let controller: AbortController | null = null;
+    let legacy = false;
     const superseded = (): boolean => this.attempt !== attempt;
     try {
       previous?.abort();
       if (superseded()) return { status: 'superseded' };
+      const schema = request.schema;
+      legacy = schema !== undefined;
+      if (schema !== undefined) {
+        const plan = planLegacyPopulation(
+          request.data,
+          schema,
+          this.serverURL,
+          this.apiRoute,
+          this.depth,
+          request.locale,
+        );
+        if (superseded()) return { status: 'superseded' };
+        if (plan.requests.length === 0) return { status: 'merged', doc: plan.doc };
+        const fetchFn = this.fetchFn ?? (typeof fetch === 'function' ? fetch : undefined);
+        if (superseded()) return { status: 'superseded' };
+        if (fetchFn === undefined) return { status: 'unavailable' };
+        controller = new AbortController();
+        this.inflight = controller;
+        for (const population of plan.requests) {
+          const response = await fetchFn(population.url, {
+            method: 'GET',
+            credentials: 'include',
+            redirect: 'error',
+            signal: controller.signal,
+          });
+          if (superseded()) return { status: 'superseded' };
+          const ok = response.ok;
+          if (superseded()) return { status: 'superseded' };
+          if (!ok) {
+            const status = response.status;
+            if (superseded()) return { status: 'superseded' };
+            controller.abort();
+            if (superseded()) return { status: 'superseded' };
+            this.log('merge HTTP', status);
+            return superseded() ? { status: 'superseded' } : { status: 'unavailable' };
+          }
+          const body = await populationBody(response, controller.signal, () => !superseded());
+          if (superseded()) return { status: 'superseded' };
+          fillLegacyPopulation(population, body);
+          if (superseded()) return { status: 'superseded' };
+        }
+        return { status: 'merged', doc: plan.doc };
+      }
       // The endpoint reads the request's own values, which may be consumer
       // getters that start a newer merge before throwing.
       const endpoint = this.endpointOf(request);
-      if (endpoint === null) {
-        return superseded() ? { status: 'superseded' } : { status: 'unavailable' };
-      }
+      if (superseded()) return { status: 'superseded' };
+      if (endpoint === null) return { status: 'unavailable' };
       const fetchFn = this.fetchFn ?? (typeof fetch === 'function' ? fetch : undefined);
+      if (superseded()) return { status: 'superseded' };
       if (fetchFn === undefined) return { status: 'unavailable' };
+      // Serialize before publishing the controller: accessors may accept newer work.
+      const body = JSON.stringify({
+        data: request.data,
+        depth: this.depth,
+        flattenLocales: false,
+        locale: request.locale,
+      });
+      if (superseded()) return { status: 'superseded' };
       controller = new AbortController();
       this.inflight = controller;
-      const url = `${this.serverURL}${this.apiRoute}/${endpoint}`;
+      const url = `${this.serverURL}${this.apiRoute}/${endpoint.path}`;
       const response = await fetchFn(url, {
         method: 'POST',
         credentials: 'include',
@@ -155,30 +245,53 @@ export class DataMerger {
         },
         // The admin already flattens locales before posting; an absent locale
         // is left out of the JSON.
-        body: JSON.stringify({
-          data: request.data,
-          depth: this.depth,
-          flattenLocales: false,
-          locale: request.locale,
-        }),
+        body,
         signal: controller.signal,
       });
       // A fetch shim may ignore the signal; the attempt is authoritative.
       if (superseded()) return { status: 'superseded' };
-      if (!response.ok) {
-        this.log('merge HTTP', response.status, url);
-        return { status: 'unavailable' };
+      const ok = response.ok;
+      if (superseded()) return { status: 'superseded' };
+      if (!ok) {
+        const status = response.status;
+        if (superseded()) return { status: 'superseded' };
+        this.log('merge HTTP', status, url);
+        return superseded() ? { status: 'superseded' } : { status: 'unavailable' };
       }
-      const merged: unknown = await response.json();
+      const json: () => Promise<unknown> = response.json.bind(response);
+      if (superseded()) return { status: 'superseded' };
+      const merged: unknown = await json();
       if (superseded()) return { status: 'superseded' };
       if (merged === null || typeof merged !== 'object' || Array.isArray(merged)) {
         this.log('merge invalid', url);
-        return { status: 'unavailable' };
+        return superseded() ? { status: 'superseded' } : { status: 'unavailable' };
       }
-      return { status: 'merged', doc: merged as Record<string, unknown> };
+      const doc = merged as Record<string, unknown>;
+      // Missing IDs remain compatible with projected responses. An explicit
+      // identity must match the dispatched target, never mutable request data.
+      const identity = doc[endpoint.field];
+      const wrongIdentity =
+        Object.hasOwn(doc, endpoint.field) &&
+        (endpoint.field === 'id'
+          ? !isSafeId(identity) || String(identity) !== endpoint.value
+          : identity !== endpoint.value);
+      if (superseded()) return { status: 'superseded' };
+      if (wrongIdentity) {
+        this.log('merge invalid', url);
+        return superseded() ? { status: 'superseded' } : { status: 'unavailable' };
+      }
+      return { status: 'merged', doc };
     } catch (error) {
       if (superseded()) return { status: 'superseded' };
-      this.log('merge exception', error);
+      if (legacy) {
+        controller?.abort();
+        if (superseded()) return { status: 'superseded' };
+      }
+      this.log(
+        'merge exception',
+        legacy ? new Error('legacy population could not be resolved') : error,
+      );
+      if (superseded()) return { status: 'superseded' };
       return { status: 'unavailable' };
     } finally {
       // Only the newest attempt's controller is ever in flight: a superseded

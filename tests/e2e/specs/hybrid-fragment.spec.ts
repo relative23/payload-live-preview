@@ -77,6 +77,38 @@ test.describe('hybrid fragment preview', () => {
     expect((await fragments(frame)).rendered).toBe(2);
   });
 
+  test('a document with a list in a column block is rendered by the server, not refused as too deep (ADR 0027)', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+    const text = { type: 'text', text: 'Punkt', format: 0 };
+    // layout[0].columns[0].richText.root.children[0].children[0].children[0].format: 13 levels.
+    const layout = [
+      {
+        blockType: 'content',
+        columns: [
+          {
+            richText: {
+              root: {
+                type: 'root',
+                children: [{ type: 'list', children: [{ type: 'listitem', children: [text] }] }],
+              },
+            },
+          },
+        ],
+      },
+    ];
+    await post(
+      page,
+      { title: 'Deep page', subtitle: 'Server rendered', body: 'a b', layout },
+      OWNER,
+    );
+    await expect(frame.getByTestId('hero-subtitle')).toHaveText('Server rendered');
+    const stats = await fragments(frame);
+    expect(stats.rendered).toBe(1);
+    expect(stats.failed).toBe(0);
+  });
+
   test('a fragment render equals the full server render of the same document', async ({ page }) => {
     const frame = await open(page);
     const ssr = await frame.getByTestId('hero').innerHTML();
@@ -236,6 +268,131 @@ test.describe('hybrid fragment preview', () => {
     expect(stats.rendered).toBe(0);
   });
 
+  test('a boundary remounted while its render is in flight shows that render (H06)', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+    let release: (() => void) | undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requests = 0;
+    await page.route(`${APP}/payload/fragment`, async (intercepted) => {
+      requests += 1;
+      const response = await intercepted.fetch();
+      if (requests === 1) await held;
+      await intercepted.fulfill({ response });
+    });
+
+    await post(
+      page,
+      { title: 'Rendered after remount', subtitle: 'Server only', body: 'a b' },
+      OWNER,
+    );
+    await expect.poll(() => requests).toBe(1);
+    // A host component re-rendering its region: the boundary leaves the
+    // document and a fresh copy with the same identity takes its place.
+    await frame.evaluate(() => {
+      const boundary = document.querySelector('[data-payload-fragment="hero"]');
+      if (boundary === null) throw new Error('boundary missing');
+      const copy = boundary.cloneNode(true);
+      boundary.replaceWith(copy);
+    });
+    release?.();
+
+    await expect(frame.getByTestId('hero-subtitle')).toHaveText('Server only');
+    await expect(frame.getByTestId('hero-title')).toHaveText('Rendered after remount');
+  });
+
+  test('a boundary remounted while its render fails is the one patched (H06)', async ({ page }) => {
+    const frame = await open(page);
+    let release: (() => void) | undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requests = 0;
+    await page.route(`${APP}/payload/fragment`, async (intercepted) => {
+      requests += 1;
+      await held;
+      await intercepted.fulfill({ status: 503, body: 'down' });
+    });
+
+    await post(page, { title: 'Patched after remount', body: 'a b' }, OWNER);
+    await expect.poll(() => requests).toBe(1);
+    await frame.evaluate(() => {
+      const boundary = document.querySelector('[data-payload-fragment="hero"]');
+      if (boundary === null) throw new Error('boundary missing');
+      boundary.replaceWith(boundary.cloneNode(true));
+    });
+    release?.();
+
+    await expect(frame.getByTestId('hero-title')).toHaveText('Patched after remount');
+  });
+
+  test('the admin locale reaches the fragment render, and a newer locale wins (H06)', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+    const locales: unknown[] = [];
+    page.on('request', (request) => {
+      if (!request.url().endsWith('/payload/fragment')) return;
+      locales.push((request.postDataJSON() as { locale?: string }).locale);
+    });
+    const title = frame.getByTestId('hero-title');
+
+    await post(page, { title: 'Erster', body: 'a' }, { ...OWNER, locale: 'de' });
+    await expect(title).toHaveAttribute('lang', 'de');
+    await expect(title).toHaveText('Erster');
+    // Wait for the French request: consecutive messages can coalesce before a
+    // render starts, while this case needs the English revision to supersede it.
+    const frenchRequested = page.waitForRequest(
+      (request) =>
+        request.url() === `${APP}/payload/fragment` &&
+        (request.postDataJSON() as { locale?: string }).locale === 'fr',
+    );
+    await post(page, { title: 'Deuxième', body: 'slow:1500 a' }, { ...OWNER, locale: 'fr' });
+    await frenchRequested;
+    await post(page, { title: 'Third', body: 'a' }, { ...OWNER, locale: 'en' });
+    await expect(title).toHaveAttribute('lang', 'en');
+    await page.waitForTimeout(2_000);
+
+    expect(locales).toEqual(['de', 'fr', 'en']);
+    expect((await fragments(frame)).superseded).toBeGreaterThanOrEqual(1);
+    await expect(title).toHaveAttribute('lang', 'en');
+    await expect(title).toHaveText('Third');
+  });
+
+  test('a response for another boundary key never morphs its server HTML', async ({ page }) => {
+    const frame = await open(page);
+    let mismatchedResponses = 0;
+    await page.route(`${APP}/payload/fragment`, async (intercepted) => {
+      const response = await intercepted.fetch();
+      const body = (await response.json()) as {
+        boundary: { id: string; key?: string };
+      } & Record<string, unknown>;
+      mismatchedResponses += 1;
+      await intercepted.fulfill({
+        response,
+        json: { ...body, boundary: { ...body.boundary, key: 'another-instance' } },
+      });
+    });
+
+    await post(
+      page,
+      { title: 'Patched after mismatch', subtitle: 'Must not be morphed', body: 'two words' },
+      OWNER,
+    );
+    await expect.poll(() => mismatchedResponses).toBe(1);
+    await expect(frame.getByTestId('hero-title')).toHaveText('Patched after mismatch');
+    await expect(frame.getByTestId('hero-subtitle')).toHaveCount(0);
+    // Derived server output stays at the last accepted render; only direct
+    // bindings receive the deterministic fallback patch.
+    await expect(frame.getByTestId('hero-words')).toHaveText('3 words');
+    const stats = await fragments(frame);
+    expect(stats.failed).toBe(1);
+    expect(stats.rendered).toBe(0);
+  });
+
   test('a head binding refreshes the whole route once, keeps scroll and focus, and the unsaved title lands on the fresh markup', async ({
     page,
   }) => {
@@ -253,6 +410,103 @@ test.describe('hybrid fragment preview', () => {
     // route refresh is covered by the route unit test in jsdom).
     expect(await frame.evaluate(() => window.scrollY)).toBeGreaterThan(500);
     expect((await route(frame)).loopStopped).toBe(0);
+  });
+
+  test('the browser route fallback reconciles repeated managed head tags and leaves foreign ownership alone', async ({
+    page,
+  }) => {
+    const frame = await open(page);
+    await frame.evaluate(() => {
+      document.head.insertAdjacentHTML(
+        'beforeend',
+        '<meta name="og:image" content="/old-name.png" data-stale="yes">' +
+          '<style id="foreign-style">:root{--foreign:1}</style>' +
+          '<meta property="og:image" content="/owned.png" data-payload-owned>' +
+          '<meta property="og:image" content="/old-property.png">' +
+          '<link rel="alternate" href="/old-alt">' +
+          '<link rel="canonical" href="/old" data-stale="yes">' +
+          '<link rel="canonical" href="/owned" data-payload-owned>',
+      );
+    });
+
+    let refreshRequests = 0;
+    await page.route(frame.url(), async (intercepted) => {
+      if (intercepted.request().headers()['x-payload-live-preview'] !== 'route') {
+        await intercepted.continue();
+        return;
+      }
+      refreshRequests += 1;
+      const response = await intercepted.fetch();
+      const body = (await response.text()).replace(
+        /<head>[\s\S]*?<\/head>/u,
+        '<head><meta charset="utf-8"><title data-payload-field="title">Server title</title>' +
+          '<meta property="og:image" content="/one.png" data-order="1">' +
+          '<meta property="og:image" content="/two.png" data-order="2">' +
+          '<meta name="og:image" content="/named.png" data-order="3">' +
+          '<link rel="canonical" href="/fresh" hreflang="en">' +
+          '<style id="fresh-style">:root{--fresh:1}</style>' +
+          '<link rel="alternate" href="/fresh-alt"></head>',
+      );
+      await intercepted.fulfill({ response, body });
+    });
+
+    await post(page, { title: 'Unsaved head title' }, OWNER);
+    await expect.poll(() => refreshRequests).toBe(1);
+    await expect.poll(() => frame.title()).toBe('Unsaved head title');
+    expect(
+      await frame.evaluate(() => {
+        const managed = Array.from(document.head.children)
+          .filter(
+            (element) =>
+              !element.hasAttribute('data-payload-owned') &&
+              ((element.tagName === 'META' &&
+                (element.hasAttribute('name') || element.hasAttribute('property'))) ||
+                (element.tagName === 'LINK' && element.getAttribute('rel') === 'canonical')),
+          )
+          .map((element) => ({
+            tag: element.tagName,
+            attributes: Object.fromEntries(
+              Array.from(element.attributes).map(({ name, value }) => [name, value]),
+            ),
+          }));
+        return {
+          managed,
+          ownedMeta: document.querySelector('meta[data-payload-owned]')?.getAttribute('content'),
+          ownedCanonical: document
+            .querySelector('link[rel="canonical"][data-payload-owned]')
+            ?.getAttribute('href'),
+          foreignStyle: document.getElementById('foreign-style')?.textContent,
+          alternate: document.querySelector('link[rel="alternate"]')?.getAttribute('href'),
+          insertedFreshStyle: document.getElementById('fresh-style') !== null,
+          staleAttributes: document.head.querySelectorAll('[data-stale]').length,
+        };
+      }),
+    ).toEqual({
+      managed: [
+        {
+          tag: 'META',
+          attributes: { property: 'og:image', content: '/one.png', 'data-order': '1' },
+        },
+        {
+          tag: 'META',
+          attributes: { property: 'og:image', content: '/two.png', 'data-order': '2' },
+        },
+        {
+          tag: 'META',
+          attributes: { name: 'og:image', content: '/named.png', 'data-order': '3' },
+        },
+        {
+          tag: 'LINK',
+          attributes: { rel: 'canonical', href: '/fresh', hreflang: 'en' },
+        },
+      ],
+      ownedMeta: '/owned.png',
+      ownedCanonical: '/owned',
+      foreignStyle: ':root{--foreign:1}',
+      alternate: '/old-alt',
+      insertedFreshStyle: false,
+      staleAttributes: 0,
+    });
   });
 
   test('two revisions inside the minimum interval: one route refresh, the second is refused and patched', async ({

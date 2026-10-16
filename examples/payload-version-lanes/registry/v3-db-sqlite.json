@@ -1,0 +1,20 @@
+[
+  {
+    "version": "3.90.2",
+    "peerDependencies": {
+      "payload": "3.90.2"
+    },
+    "dependencies": {
+      "uuid": "13.0.2",
+      "prompts": "2.4.2",
+      "drizzle-kit": "0.31.7",
+      "drizzle-orm": "0.45.2",
+      "to-snake-case": "1.0.0",
+      "@libsql/client": "0.14.0",
+      "@payloadcms/drizzle": "3.90.2",
+      "console-table-printer": "2.12.1"
+    },
+    "dist.tarball": "https://registry.npmjs.org/@payloadcms/db-sqlite/-/db-sqlite-3.90.2.tgz",
+    "dist.integrity": "sha512-lkcr6HTPe+8K0atSkXp7hYUJHUAKMiheW0BWwkavjSkBF8UDRuhjaD08gCdRF9QuWVJjxO9YEe15NZsouB5ayQ=="
+  }
+]

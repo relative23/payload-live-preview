@@ -4,23 +4,23 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-yIQFf015.js';
-import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-CNUGYbA_.js';
-import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-CNUGYbA_.js';
-import { b } from '../../fragment-endpoint-yIQFf015.js';
-import { c } from '../../fragment-endpoint-yIQFf015.js';
-import { c as createLivePreviewMiddleware } from '../../middleware-CWObDO37.js';
-import { F } from '../../fragment-endpoint-yIQFf015.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-yIQFf015.js';
-import { h as hasPreviewIntent } from '../../options-uHKrDM2U.js';
-import { L as LivePreviewAstroOptions } from '../../middleware-CWObDO37.js';
-import { L as LivePreviewLocals } from '../../locals-CNUGYbA_.js';
-import { a as LivePreviewMiddleware } from '../../middleware-CWObDO37.js';
-import { N as NONCE_LOCALS_KEY } from '../../locals-CNUGYbA_.js';
-import { P as PreviewAdapterOptions } from '../../options-uHKrDM2U.js';
-import { a as PreviewRequestLike } from '../../options-uHKrDM2U.js';
-import { b as PreviewRequestOptions } from '../../options-uHKrDM2U.js';
-import { c as PreviewSignal } from '../../options-uHKrDM2U.js';
+import { a } from '../../fragment-endpoint-CfOVCRHt.js';
+import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-CEg7out0.js';
+import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-CEg7out0.js';
+import { b } from '../../fragment-endpoint-CfOVCRHt.js';
+import { c } from '../../fragment-endpoint-CfOVCRHt.js';
+import { c as createLivePreviewMiddleware } from '../../middleware-wn0ylJDV.js';
+import { F } from '../../fragment-endpoint-CfOVCRHt.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-CfOVCRHt.js';
+import { h as hasPreviewIntent } from '../../options-Bq-ZDz1F.js';
+import { L as LivePreviewAstroOptions } from '../../middleware-wn0ylJDV.js';
+import { L as LivePreviewLocals } from '../../locals-CEg7out0.js';
+import { a as LivePreviewMiddleware } from '../../middleware-wn0ylJDV.js';
+import { N as NONCE_LOCALS_KEY } from '../../locals-CEg7out0.js';
+import { P as PreviewAdapterOptions } from '../../options-Bq-ZDz1F.js';
+import { a as PreviewRequestLike } from '../../options-Bq-ZDz1F.js';
+import { b as PreviewRequestOptions } from '../../options-Bq-ZDz1F.js';
+import { c as PreviewSignal } from '../../options-Bq-ZDz1F.js';
 
 // @public
 export type AstroComponentLike = object;
@@ -52,6 +52,27 @@ export interface AstroIntegrationLike {
     // (undocumented)
     readonly hooks: {
         readonly 'astro:config:setup': (ctx: AstroConfigSetupContext) => void;
+        readonly 'astro:config:done': (ctx: {
+            readonly config: {
+                readonly output?: string;
+                readonly build?: {
+                    readonly server?: URL;
+                };
+            };
+            readonly buildOutput?: string;
+        }) => void;
+        readonly 'astro:build:ssr': (ctx: {
+            readonly manifest: {
+                readonly entryModules?: Readonly<Record<string, string>>;
+                readonly base?: string;
+                readonly assetsPrefix?: string | Readonly<Record<string, string>>;
+            };
+        }) => void;
+        readonly 'astro:build:done': (ctx: {
+            readonly logger?: {
+                readonly info: (message: string) => void;
+            };
+        }) => Promise<void>;
     };
     // (undocumented)
     readonly name: string;
@@ -64,6 +85,7 @@ export { AUTHORIZATION_OUTCOME_LOCALS_KEY }
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (context: {
     readonly request: Request;
+    readonly locals?: unknown;
 }) => Promise<Response>;
 
 export { createLivePreviewMiddleware }
@@ -100,6 +122,9 @@ export { FragmentRenderInput }
 
 export { hasPreviewIntent }
 
+// @public
+export type IslandModuleResolver = (specifier: string) => Promise<string>;
+
 // @public @deprecated (undocumented)
 export const isPreviewRequest: typeof hasPreviewIntent;
 
@@ -129,6 +154,9 @@ export function renderLivePreviewScript(options?: RenderScriptOptions): string;
 export interface RenderScriptOptions extends LivePreviewAstroOptions {
     readonly nonce?: string;
 }
+
+// @public
+export const resolveIslandModule: IslandModuleResolver;
 
 // @public (undocumented)
 interface RollupEmitContext {
@@ -171,10 +199,10 @@ interface VitePluginLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/astro/index.d.ts:32:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:32:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:51:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:62:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:33:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:33:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:52:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:63:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

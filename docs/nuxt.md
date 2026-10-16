@@ -1,6 +1,8 @@
 # Nuxt
 
-Nuxt 3 with server-side rendering. A Nitro plugin injects the runtime into authorized preview responses and merges the CSP; a server handler decides before the Vue app renders, so pages can read the decision from `event.context`.
+Nuxt with server-side rendering. A Nitro plugin injects the runtime into authorized preview responses and merges the CSP; a server handler decides before the Vue app renders, so pages can read the decision from `event.context`.
+
+Nuxt 3 reached its [end of life](https://nuxt.com/docs/4.x/community/roadmap) on 31 July 2026 and is no longer supported here officially. It keeps working: the example still runs on Nuxt 3.21.11, and nothing in 2.x breaks it on purpose. A copy of the example in Nuxt 4.5.2's `app/` layout passes the same production suite (54/54, measured 2026-10-02).
 
 Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to.
 
@@ -12,14 +14,13 @@ npm install payload-live-preview
 
 ## The short setup
 
-One line in `nuxt.config.ts`, if every option is data:
+One entry in `nuxt.config.ts` and one server module for the authorization hook:
 
 ```ts
 export default defineNuxtConfig({
   modules: ['payload-live-preview/nuxt-module'],
   livePreview: {
-    // The module cannot carry authorizePreview (below), so it runs on the 1.x profile.
-    defaults: 'v1',
+    authorizePreviewModule: './server/utils/live-preview-auth',
     allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
     serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
     mergeDepth: 1,
@@ -27,9 +28,26 @@ export default defineNuxtConfig({
 });
 ```
 
-The module writes a Nitro plugin into `.nuxt/` and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
+```ts
+// server/utils/live-preview-auth.ts
+import { authorizePreviewRequest } from 'payload-live-preview/server';
 
-What it cannot carry is a function. The options are serialized into the generated plugin, so `authorizePreview` and `shouldInject` are not part of the module's option type — and under the strict 2.0 default the plugin refuses to start without `authorizePreview`. The short setup therefore needs `defaults: 'v1'` (or `strict: false`), and then injects on client-controlled intent alone. A preview under the strict default writes the plugin below with `authorizePreview`, which is three lines rather than one.
+export default (request: Request) =>
+  authorizePreviewRequest(request, {
+    type: 'payload-session',
+    serverURL: process.env.PAYLOAD_URL!,
+  });
+```
+
+The module writes a Nitro plugin into Nuxt's build directory (`.nuxt/`, or `node_modules/.cache/nuxt/.nuxt/` while Nuxt 4 builds) and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
+
+Nuxt accepts `livePreview` as a config key, but types its value loosely. To have
+the options checked, write `livePreview: { … } satisfies LivePreviewModuleOptions`,
+with the type imported from `payload-live-preview/nuxt-module`.
+
+The options are serialized into the generated plugin, so a function cannot travel in them: `authorizePreview` travels by reference instead ([ADR 0024](architecture/0024-authorization-by-module-reference.md)). The plugin imports the module `authorizePreviewModule` names and passes its default export on, so the strict 2.0 default holds. With the reference the module also registers the server handler below, so the decision is made before the app renders and a page reads it on `event.context`, as [Read `event.context`](#read-eventcontext) shows. A path beginning with `./` is relative to the project root and an alias such as `~/` is Nuxt's own: the module writes the file either one names, with its extension, because `nuxt dev` loads the generated plugin as it stands and cannot find a TypeScript file by its bare path (the production build can). A package specifier is passed to Nitro unchanged, and a path outside the project is refused. `shouldInject` has no such reference; a preview that needs it writes the plugin below by hand.
+
+Without either, the strict default refuses to start. `strict: false` then injects on client-controlled intent alone, which is not authorization: anyone who adds the query parameter receives the runtime. The deprecated `defaults: 'v1'` does the same and goes in 3.0 ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)).
 
 ## One options object
 
@@ -89,7 +107,7 @@ export default defineEventHandler(defineLivePreviewServerHandler(livePreviewOpti
 export const livePreviewOptions = {
   allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
   delivery: 'asset',
-  defaults: 'v1', // for the module, as in the short setup
+  authorizePreviewModule: './server/utils/live-preview-auth', // for the module, as in the short setup
 } as const;
 ```
 
@@ -143,6 +161,70 @@ const bindings = useState('preview-bindings', () => {
 
 On a public response the helpers return empty objects, and the markup carries no `data-payload-*` attribute at all. The initial draft read is server code — `definePreview()` from `payload-live-preview/server` — and a Nitro route that serves the page's data is its own request, so it authorizes that request with the same strategy; [authorization.md](authorization.md) has the read.
 
+## Client navigation and route refreshes
+
+The Nitro adapter arms preview responses for the package's navigation event;
+it does not import Nuxt's client router or install a browser plugin. Add this
+application-owned plugin:
+
+```ts
+// plugins/payload-live-preview-navigation.client.ts
+import { nextTick } from 'vue';
+import { registerRouteRefresh } from 'payload-live-preview';
+
+const NAVIGATION_COMMIT_EVENT = 'payload-live-preview:navigation';
+
+export default defineNuxtPlugin((nuxtApp) => {
+  let committedRoute = nuxtApp.$router.currentRoute.value.fullPath;
+  const removeLoadingEnd = nuxtApp.hook('page:loading:end', () => {
+    const route = nuxtApp.$router.currentRoute.value.fullPath;
+    if (route === committedRoute) return;
+    committedRoute = route;
+    document.dispatchEvent(new Event(NAVIGATION_COMMIT_EVENT));
+  });
+  const removeRefresh = registerRouteRefresh(async () => {
+    await refreshNuxtData();
+    await nextTick();
+  });
+
+  let cleaned = false;
+  const cleanup = (): void => {
+    if (cleaned) return;
+    cleaned = true;
+    removeLoadingEnd();
+    removeRefresh();
+    window.removeEventListener('pagehide', onPageHide);
+  };
+  const onPageHide = (event: PageTransitionEvent): void => {
+    if (!event.persisted) cleanup();
+  };
+
+  window.addEventListener('pagehide', onPageHide);
+  import.meta.hot?.dispose(cleanup);
+});
+```
+
+`page:loading:end` runs after a destination's Suspense has resolved and also
+after a same-page query update, where Nuxt does not emit `page:finish`.
+Comparing `fullPath` skips the initial hook and duplicate finishes, while a
+cancelled navigation never becomes the committed route. The hook reads the
+route immediately so a redirect cannot make an earlier completion claim the
+later route.
+`refreshNuxtData()` settles the current page's `useAsyncData` and
+`useFetch` calls before the runtime reapplies an unsaved document. The cleanup
+keeps a bfcache page intact but unregisters both seams on an ordinary unload or
+hot replacement.
+
+Keep query-carried preview intent and credentials when building Nuxt links or
+calling `navigateTo`. A token scoped to one pathname cannot authorize another:
+for a cross-path navigation, have Payload mint the destination URL or use a
+session or deliberately site-scoped credential instead of reusing that token.
+
+This plugin and its event dispatch are host code, not a Nuxt bridge exported by
+the package. After the event, the runtime rebuilds its bindings and locally
+reapplies the last accepted editor document; it does not require the editor to
+answer another `ready`.
+
 ## Server-rendered boundaries
 
 A patch reaches what the markup annotates. It cannot create a section the
@@ -161,12 +243,15 @@ const endpoint = createFragmentEndpoint({
   registry: { hero: { component: Hero, props: ({ fields }) => heroProps(fields) } },
 });
 
-export default defineEventHandler((event) => endpoint(toWebRequest(event)));
+export default defineEventHandler((event) => endpoint(toWebRequest(event), event));
 ```
 
 The binding takes a `Request`, which is what `toWebRequest()` makes of the H3
-event; this package therefore needs no `h3` dependency to describe its own
-signature. Point the script at the route — `fragments: { endpoint:
+event. Pass that event as the second argument so Node HTTP/1 client disconnects
+reach authorization, props and rendering even after the upload has finished.
+The one-argument form still works with the Web request's signal, but H3 1.x's
+`toWebRequest()` does not link that signal to the socket. No `h3` dependency is
+needed in this package's signature. Point the script at the route — `fragments: { endpoint:
 '/payload/fragment' }` in the plugin's options — and mark the region with
 `data-payload-fragment="hero"`.
 
@@ -174,16 +259,63 @@ Vue renders through `renderToString()` from `vue/server-renderer`, one SSR app
 per render. `vue` is an optional peer imported at the first render.
 
 The component is rendered inside the Nitro bundle, and Nitro's rollup does not
-know single-file components. Add the plugin once:
+know single-file components. Add the plugins once:
 
 ```ts
 // nuxt.config.ts
+import { fileURLToPath } from 'node:url';
 import vue from '@vitejs/plugin-vue';
-export default defineNuxtConfig({ nitro: { rollupConfig: { plugins: [vue()] } } });
+import { fragmentComponentPlugins } from 'payload-live-preview/nuxt-module';
+
+export default defineNuxtConfig({
+  nitro: {
+    rollupConfig: {
+      // Nuxt 4 keeps components under app/; on a Nuxt 3 layout use './'.
+      plugins: fragmentComponentPlugins(vue, {
+        srcDir: fileURLToPath(new URL('./app/', import.meta.url)),
+      }),
+    },
+  },
+});
 ```
 
-Without it the server build fails on the first `.vue` import from `server/`. The
-alternative is a `defineComponent` in a `.ts` file, which Nitro reads as it is.
+`fragmentComponentPlugins` returns Vue's plugin and one more. Vue's plugin
+hashes each component's scope id from its path under `srcDir`, as Nuxt's own
+build does; with another directory the ids differ and no scoped rule reaches
+what a fragment renders. The other plugin turns every `<style>` block into an
+empty module in the server bundle, where rollup would otherwise fail on the
+CSS. The page's build delivers that CSS, so the page imports every component
+its fragments render, even one it shows empty until the first unsaved value
+([ADR 0029](architecture/0029-fragment-components-and-locals-belong-to-the-page.md)).
+`@vitejs/plugin-vue` is your own dependency, and a component whose `defineProps`
+names an imported type needs `typescript` installed.
+
+A fragment is a standalone Vue app, as Nuxt's own islands are
+([ADR 0030](architecture/0030-nuxt-fragments-are-standalone-vue-apps.md)). It
+renders from its props, so read what it needs from Nuxt in the route and pass
+it in: `locals` is the request's `event.context`, and Nitro's
+`useRuntimeConfig()` works in the route.
+
+```ts
+registry: {
+  notice: {
+    component: Notice,
+    props: ({ fields, locals }) => ({
+      text: String(fields['notice'] ?? ''),
+      edition: (locals as { edition?: string } | undefined)?.edition ?? '',
+      site: useRuntimeConfig().public.siteName,
+    }),
+  },
+},
+```
+
+Nuxt's app composables are not there: a component that calls `useHead()` or
+`useNuxtApp()` fails with `useHead is not defined`. The endpoint answers 500 in
+production as in development, and says why in development only, as it does for
+any render that throws; the runtime patches the boundary instead. The page owns `<head>`; a binding there uses the route strategy.
+
+The alternative to the plugins is a `defineComponent` in a `.ts` file, which
+Nitro reads as it is.
 Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
 
 ## Caveats
@@ -191,6 +323,7 @@ Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
 - **Hydration and the first write.** Vue's hydration repairs what differs from its own render, quietly — a value the runtime wrote before it is put back. So every script the plugin emits declares `hydration: 'vue'`, and under it the runtime does not start — no `ready`, no listener — until Vue has mounted the app around the bindings, and until a Suspense still hydrating at that moment has resolved; the admin's first document then lands on markup Vue is done with. On the example that is about 70 ms after the runtime could otherwise have started. A page whose Vue never mounts starts after five seconds and reports `LP0607`; `inspect().hydration` reads `{ mode: 'vue', state }`, with `state` `waiting`, `committed` or `timed-out` (`idle` belongs to a page that declared no hydration). How the runtime sees the mount, and what can go wrong: [ADR 0015, addendum](architecture/0015-first-write-after-hydration.md#addendum-2026-09-11-vue-and-the-nuxt-adapter).
 - **Hydrated components.** The runtime patches the server-rendered markup. A Vue component that re-renders a bound node overwrites the patch: bind fields in server-rendered regions, mark a client-owned root with `data-payload-island` ([renderers.md](renderers.md)), or use the official `@payloadcms/live-preview-vue` composable inside client components.
 - **Hydration and boundaries.** The same applies to a fragment boundary, with one extra wrinkle: hydration resets what Vue owns, so a boundary the server re-rendered _before_ the page finished hydrating is thrown away — the runtime rendered it, `inspect().fragments.rendered` counts it, and the markup is gone. Once hydrated, Vue is idle and a morph survives. Put boundaries in markup Vue does not own (a server component, or a region marked `data-payload-island` for the runtime to own alone) if an update can arrive that early.
+- **`nuxt dev` and refused requests.** Under `nuxt dev` the answer to a request refused before its body was read (a fragment request over the 64 KiB cap gets its 413 that way) sometimes never arrives. With 16 concurrent requests, Nuxt's development server lost 1 to 17 of 400 such answers from the fragment endpoint, and 16 to 32 of 400 from a plain Nitro route that returns 413 the same way; the production server answered all 400. The runtime then reports `LP0801` with a timeout after five seconds instead of `endpoint answered 413`.
 - **Array templates.** Vue reads `{{ … }}` as its own interpolation, so an inline template is silently empty. Bind it as a string:
 
 ```vue

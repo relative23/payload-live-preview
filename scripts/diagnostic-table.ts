@@ -83,7 +83,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0606:
     'Posting the `ready` handshake threw (`error` event, context `ready`); without it the admin never sends the document. Read the attached error: the built-in sender tolerates a malformed origin, so the cause is the host window or a custom `sendReady`.',
   LP0607:
-    "The page declared `hydration: 'react'` (the Next.js adapter does) or `'vue'` (the Nuxt adapter does) and, within five seconds, React committed no tree holding a binding or Vue mounted no app around one, so the runtime started as it would on a static page; a hydration that completes later regenerates the tree, or repairs it, and reverts the first write, once. Usually the client bundle failed to load or was very slow — check the network panel. On a page nothing hydrates, drop the option from `generateInlineScript()`. `inspect().hydration.state` reads `timed-out`.",
+    "The page declared `hydration: 'react'` (the Next.js adapter does), `'vue'` (the Nuxt adapter does) or `'sveltekit'` (the SvelteKit handle does) and, within five seconds, React committed no tree holding a binding, Vue mounted no app around one, or SvelteKit's root did not mount (its `#svelte-announcer` never appeared), so the runtime started as it would on a static page; a hydration that completes later regenerates the tree, or repairs it, and reverts the first write, once. Usually the client bundle failed to load or was very slow — check the network panel. On a page nothing hydrates, drop the option from `generateInlineScript()`. `inspect().hydration.state` reads `timed-out`.",
   LP0701:
     'If you use an adapter, check its `inject` mode and whether a proxy strips `Sec-Fetch-Dest`. If you start the client yourself, this line is expected.',
   LP0702:
@@ -105,7 +105,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0710:
     "Correct for `inject: 'always'`. Under `'preview-only'` it means every request counts as intent: check `previewSignals` and `previewQueryParams`.",
   LP0801:
-    "Network, timeout, or any status but 2xx, 401 and 403 from the fragment endpoint (its own 400, 404, 405, 413, 415 and 500 among them); the boundary was patched from the same revision. Check the endpoint's logs and its limits.",
+    "Network, timeout, or any status but 2xx, 401 and 403 from the fragment endpoint (its own 400, 404, 405, 413, 415 and 500 among them); the boundary was patched from the same revision. Check the endpoint's logs and its limits: a 413 means the document is larger than `limits.bodyBytes` (64 KiB by default, about 4 500 words of rich text). Behind some proxies, and from Firefox and WebKit on some hosts, that 413 arrives as a 502 or a network error: [deployment.md](deployment.md#the-fragment-endpoint-behind-a-proxy).",
   LP0802:
     'Wrong content type, shape, size or boundary; patched instead. Make sure the request reaches the fragment endpoint itself, not a proxy or an error page.',
   LP0803:
@@ -123,6 +123,10 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'The block renders as an empty placeholder, and the live markup and the rendered document did not line up — a paragraph the server dropped, a second wrapper around the field (one `<div class="prose">` around the blocks is understood and kept) — so the placeholder was written over what the server had rendered, and that markup is gone from the preview until the page reloads. This is the case `onUnfaithfulPatch` decides: under the default `\'escalate\'` the enclosing fragment boundary or the whole route is re-rendered by the server when the page has a strategy for it, and `inspect().fidelity` counts the patch either way (`unfaithful` up, `escalated` up only when a strategy took it). Register a renderer with `registerBlockRenderer(slug, …)` so the block is drawn in the browser and nothing has to be kept.',
   LP0806:
     'Configure `fragments: { endpoint }` on the adapter so boundaries render on the server; until then they are patched.',
+  LP0809:
+    "Once per session. Fragment scripts never run, so the page itself must load Astro's island element and each client directive a fragment island uses: render an island with that directive on the page (the finite catalog of ADR 0020). See ADR 0021.",
+  LP0810:
+    "Once per page, under `debug`. A function given to `registerRouteRefresh()` returned nothing, so the runtime could not wait for the host's commit and re-applied the unsaved revision at once, on markup the router may still replace. Return a promise that settles after the commit: `LivePreviewRouteRefresh` does for Next's `router.refresh`, and the SvelteKit and Nuxt recipes await their data and the next tick. See ADR 0028.",
   LP0808:
     "Once per session. Set `routeStrategy: true` (an adapter that serves the runtime asset, or the route prelude) or `fragments: { endpoint }` so a server can draw what the patch could not, or set `onUnfaithfulPatch: 'warn'` to keep the patch and say so; `inspect().fidelity.canEscalate` reports which it is.",
   LP0807:

@@ -13,7 +13,9 @@ inline script, so an adapter row is also an inline-script row.
 
 The defaults are the `v2` table. `defaults: 'v1'` restores every 1.x row at
 once on the client, the inline script and the adapters; an explicit option
-always wins. The ledger of what changed is
+always wins. It is deprecated: 3.0 removes it, an adapter given it warns once
+in development, and `pll migrate` writes the rows it stands for into the
+options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The ledger of what changed is
 [ADR 0007 — 2.0 defaults, migration policy, and the renames ledger](architecture/0007-v2-defaults-and-renames-ledger.md).
 
 | Option                     | Client | Inline script | Adapter                                                  | Server (`definePreview`) | Default (v2)                                        | With `defaults: 'v1'`                |
@@ -47,7 +49,9 @@ always wins. The ledger of what changed is
 | `onUnfaithfulPatch`        | —      | yes           | yes                                                      | —                        | `'escalate'`                                        | same                                 |
 | `onUnboundChange`          | —      | yes           | yes                                                      | —                        | — (alias, deprecated)                               | same                                 |
 | `autoBind`                 | yes    | yes           | yes                                                      | —                        | `'off'`                                             | same                                 |
-| `hydration`                | —      | yes           | set by the Next.js and Nuxt adapters                     | —                        | — (start on `DOMContentLoaded`)                     | same                                 |
+| `subfieldCoverage`         | yes    | yes           | yes                                                      | —                        | `'descendant'`                                      | same                                 |
+| `hydration`                | —      | yes           | set by the Next.js, Nuxt and SvelteKit adapters          | —                        | — (start on `DOMContentLoaded`)                     | same                                 |
+| `softNavigationEvents`     | —      | yes           | set by Astro, Next.js, SvelteKit and Nuxt                | —                        | `[]`                                                | same                                 |
 | `resolveRenderer`          | yes    | —             | —                                                        | —                        | —                                                   | same                                 |
 | `renderRichText`           | yes    | —             | —                                                        | —                        | built-in Lexical renderer                           | same                                 |
 | `root`                     | yes    | —             | —                                                        | —                        | `document`                                          | same                                 |
@@ -56,6 +60,7 @@ always wins. The ledger of what changed is
 | `defaults`                 | yes    | yes           | yes                                                      | —                        | `'v2'`                                              | `'v1'`                               |
 | `strict`                   | —      | —             | yes                                                      | —                        | `true`                                              | `false`                              |
 | `authorizePreview`         | —      | —             | yes                                                      | —                        | — (required under `strict`)                         | same                                 |
+| `authorizePreviewModule`   | —      | —             | Astro `mode: 'middleware'`, the Nuxt module              | —                        | — (the hook by reference, ADR 0024)                 | same                                 |
 | `previewSignals`           | —      | —             | yes                                                      | —                        | `['query']`                                         | `['query', 'fetch-dest', 'referer']` |
 | `previewQueryParams`       | —      | —             | yes                                                      | —                        | `['preview', 'draft', 'livePreview']`               | same                                 |
 | `inject`                   | —      | —             | yes                                                      | —                        | `'preview-only'`                                    | same                                 |
@@ -99,10 +104,14 @@ fifty-two rows.
   ever loosening a policy the site already sends.
 - **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
   `routeStrategy`, `onUnfaithfulPatch`, `strategies`, `dependencies`,
-  `autoBind`. Three strategies exist because patching cannot create markup and
-  a route refresh cannot be done per keystroke
+  `autoBind`, `subfieldCoverage`. Three strategies exist because patching
+  cannot create markup and a route refresh cannot be done per keystroke
   ([overview](architecture/overview.md#the-five-objects)); `autoBind` is how a
-  page with no `data-payload-field` at all gets its bindings.
+  page with no `data-payload-field` at all gets its bindings;
+  `subfieldCoverage: 'declared'` makes an edit inside a partly bound group
+  count as unbound unless the page binds or covers that path
+  ([bindings](bindings.md#what-a-page-accounts-for),
+  [ADR 0022](architecture/0022-subfield-coverage-is-declared.md)).
 - **What the page does with a value** — `sanitizerPolicy`, `resolveRenderer`,
   `renderRichText`, `revealEditedField`, `scopeBindingsByOwner`. Unsaved editor
   input is untrusted input; the rest is how a site renders what it already
@@ -138,10 +147,11 @@ Notes on the rows that need one:
   tag with `renderLivePreviewScript()` (Astro, Next.js, Nuxt).
 - `delivery: 'asset'` replaces the inlined runtime with a bootstrap of a few
   hundred bytes that fetches it as `<assetPath>/runtime.<hash>.js` — but only
-  once it finds itself in a preview context. Measured on the Next.js fixture by
-  `tests/e2e/specs/public-response.spec.ts`: 1 331 bytes in the page (605 of
-  them the arming for React's first commit a Next page needs, ADR 0015)
-  instead of 115 031, and one response the browser may
+  once it finds itself in a preview context. The current Next.js fixture's
+  delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
+  in its direct script element, including the arming for React's first commit
+  (ADR 0015), against 158 609 for authorized inline delivery. It fetches one
+  response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
   integrity check and what a proxy must not do to the file are in
@@ -150,16 +160,24 @@ Notes on the rows that need one:
   `'loader'` injects a small bootstrap that fetches the runtime as a hashed,
   SRI-verified asset only inside a preview; `'middleware'` registers the
   request-time middleware from serialized options, so it cannot carry
-  `authorizePreview` or `shouldInject` and refuses the `strict` default —
-  register `createLivePreviewMiddleware()` yourself for those. The loader
-  asset's caching and CSP are in
+  `authorizePreview` or `shouldInject` as functions. It takes the hook by
+  module reference instead, `authorizePreviewModule`, and refuses the `strict`
+  default without one; register `createLivePreviewMiddleware()` yourself for
+  `shouldInject`. The loader asset's caching and CSP are in
   [docs/deployment.md](deployment.md#the-runtime-as-a-cached-asset).
+- `authorizePreviewModule` (Astro `mode: 'middleware'`, the Nuxt module): a
+  server module whose default export is the `authorizePreview` hook. A path
+  beginning with `./` is relative to the project root; a package or alias
+  specifier is passed to the bundler unchanged; one outside the project is
+  refused. The generated code throws when the server loads it if the export
+  is not a function
+  ([ADR 0024](architecture/0024-authorization-by-module-reference.md)).
 - `manageCsp: 'full'` also manages a nonce'd `script-src`; `strictDynamic`
   adds `'strict-dynamic'`, after which CSP 3 ignores `'self'` and host
   sources, so every script on the page must carry the nonce.
 - `runtime` chooses which artifact the page carries. The default is the full
-  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is 28 940 bytes gzip
-  against 35 809 as an inline script — it leaves out the fragment and route strategies, the keyed
+  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is about 36 KiB gzip
+  against 44 KiB for the default inline script — it leaves out the fragment and route strategies, the keyed
   morph, the structural arrays, the item templates, the screen-reader
   announcer and auto-binding, and reports LP0104 when a page needs one of them
   rather than doing nothing. It is an import rather than a string option so the second artifact
@@ -182,7 +200,11 @@ Notes on the rows that need one:
 - `routeStrategy` puts the route strategy alone ahead of the runtime, for a page
   that wants a route refresh without a fragment endpoint. `fragmentEndpoint`
   implies it and the two are never emitted together, because the fragment
-  prelude already carries the route strategy.
+  prelude already carries the route strategy. Its GET or registered host
+  refresh receives no live-preview fields, so the built-in strategy reports a
+  successful render as `partial`. The runtime reapplies reachable bindings;
+  server-derived or unbound output may still reflect saved data
+  ([ADR 0018](architecture/0018-route-refresh-fidelity.md)).
 - `onUnfaithfulPatch` decides what happens when the runtime knows a patch cannot
   reach what the server would have drawn: a value no renderer can represent, a
   Lexical block whose markup the write has to drop, or a changed field the page
@@ -198,7 +220,8 @@ Notes on the rows that need one:
   and `escalated` for the ones a strategy took — so a page that has nowhere to
   escalate to shows the gap rather than hiding it.
   `onUnboundChange` is the 2.0 name for the same decision and still decides when
-  it is given — `'route'` means `'escalate'` — until it is removed in 3.0.
+  it is given — `'route'` means `'escalate'` — until it is removed in 3.0. An
+  adapter given it warns once in development, and `pll migrate` renames it.
 - `hydration: 'react'` holds the runtime's start — no `ready`, no listener —
   until React has committed the tree that holds the bindings, so the first
   write lands on markup React keeps instead of on markup React is about to
@@ -207,9 +230,12 @@ Notes on the rows that need one:
   adapter sets it on every script it emits. `hydration: 'vue'` holds it until
   Vue has mounted the app around the bindings — and, on Nuxt, until a Suspense
   still hydrating at the mount has resolved — so the write is not repaired
-  back to the server's value by Vue's hydration; the Nuxt adapter sets it. A
-  page built by hand with `generateInlineScript()` may set either. Capped at
-  five seconds, then `LP0607`.
+  back to the server's value by Vue's hydration; the Nuxt adapter sets it.
+  `hydration: 'sveltekit'` holds it until SvelteKit's root has mounted, so
+  Svelte's hydration does not set its own text back over the write; the
+  SvelteKit handle sets it, and a page served with `csr = false` starts at
+  once. A page built by hand with `generateInlineScript()` may set any of
+  them. Capped at five seconds, then `LP0607`.
 - `autoBind: 'unique'` lets the runtime find bindings by value on the
   connection's first message, once: a scalar whose value is the whole content
   of exactly one element in the body is bound to that element as if
@@ -242,6 +268,31 @@ Notes on the rows that need one:
   [docs/reveal.md](reveal.md), `scopeBindingsByOwner` in
   [docs/bindings.md](bindings.md).
 
+## Payload config plugin
+
+`livePreview()` from `payload-live-preview/plugin` is a separate configuration
+surface. It transforms `payload.config.ts`; these options are not serialized
+into the frontend runtime:
+
+| Option         | Meaning                                                                                                               | Default     |
+| -------------- | --------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `baseUrl`      | Frontend origin used by the installed `admin.livePreview.url` callback                                                | required    |
+| `collections`  | Collection slug to a path string or `({ data, locale }) => string`                                                    | `{}`        |
+| `globals`      | Global slug to a path string or `({ data, locale }) => string`                                                        | `{}`        |
+| `fallback`     | Path for an unmapped entity or a resolver that returns `''`                                                           | `'/'`       |
+| `previewParam` | Query parameter appended as `<name>=true`; keep a custom name in the adapter's `previewQueryParams`; `null` adds none | `'preview'` |
+| `breakpoints`  | Toolbar breakpoints with number or CSS-string dimensions; a supplied list replaces the root list                      | preserved   |
+
+The mapped keys are added to the existing root collection/global lists with
+stable order and no duplicates. Other root Live Preview fields are preserved.
+The plugin refuses a competing root URL and a URL on a selected entity when
+either is already present. A plugin that runs later in Payload's effective
+execution order can still replace that URL; make this transform run after
+URL-writing plugins or compose their callbacks explicitly. It accepts no
+signing secret, token or authorization hook. Full setup and conflict rules:
+[payload.md](payload.md). The reason this cross-version surface stays structural
+and authorization-free is [ADR 0017](architecture/0017-structural-payload-config-plugin.md).
+
 ## What the adapters publish per request
 
 The Astro middleware, the SvelteKit handle and the Nuxt server handler or
@@ -262,8 +313,8 @@ in the route when a page needs the authorization.
 ## Package entries
 
 The root import does not carry every export. These live only in a focused
-entry: `definePreview()` in `/server`, `buildLivePreviewUrl()` in `/payload`,
-`LEAN_RUNTIME` in `/lean`, `createFragmentStrategy()` and
+entry: `livePreview()` in `/plugin`, `definePreview()` in `/server`,
+`buildLivePreviewUrl()` in `/payload`, `LEAN_RUNTIME` in `/lean`, `createFragmentStrategy()` and
 `createRouteStrategy()` in `/fragment`, `PluginManager` and
 `createUnboundFieldsOverlayPlugin()` in `/plugins`, `registerLexicalNode()` and
 `registerDefaultBlocks()` in `/lexical`, and the structural renderer and keyed
@@ -288,29 +339,30 @@ ones, as `@beta` on the declarations in the API reports (`etc/api/*.api.md`):
   minor with a changeset, and the exit codes and the report shapes are the
   contract.
 
-| Entry                                                | Class        | Contents                                                                                                                                                                    |
-| ---------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `payload-live-preview`                               | Stable       | Client, inline script generator, renderers, built-in plugins, authorization and binding helpers; not the exports named above.                                               |
-| `payload-live-preview/core`                          | Stable       | The client and runtime without the built-in plugin constructors, generator or adapters.                                                                                     |
-| `payload-live-preview/client`                        | Stable       | `LivePreviewClient` and `initLivePreview()` alone.                                                                                                                          |
-| `payload-live-preview/structural`                    | Experimental | The structural array renderer, the keyed morph and the `data-payload-depends` helpers; `morphElement()` and `MorphOptions` are `@beta`, the engine behind ADR 0008.         |
-| `payload-live-preview/lexical`                       | Stable       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`, `setSanitizerDocument()`.                                                    |
-| `payload-live-preview/plugins`                       | Stable       | `PluginManager`, plugin types and the built-in plugins.                                                                                                                     |
-| `payload-live-preview/fragment`                      | Stable       | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                                                                            |
-| `payload-live-preview/server`                        | Stable       | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `bind()`.                                                                 |
-| `payload-live-preview/payload`                       | Stable       | `buildLivePreviewUrl()` for `payload.config.ts`; imports nothing from `payload`.                                                                                            |
-| `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | Stable       | One framework adapter each.                                                                                                                                                 |
-| `payload-live-preview/nuxt-module`                   | Stable       | The Nuxt module: registers the Nitro plugin from `nuxt.config.ts`; data options only, no `authorizePreview` or `shouldInject`.                                              |
-| `payload-live-preview/react`                         | Stable       | `useLivePreviewDocument()`: the merged document as a hook (needs `react`).                                                                                                  |
-| `payload-live-preview/vue`                           | Stable       | The same as a composable (needs `vue`).                                                                                                                                     |
-| `payload-live-preview/lean`                          | Experimental | `LEAN_RUNTIME`: the smaller runtime artifact, as a value for the `runtime` option. Passing it is stable; the artifact's fields (`RuntimeArtifact`) may gain one in a minor. |
-| `payload-live-preview/annotate`                      | Experimental | `livePreviewAnnotate()`: the build-time annotator as a Vite plugin (`@beta`). No `ts-morph`.                                                                                |
-| `payload-live-preview/astro/RichText.astro`          | Stable       | The `RichText` component.                                                                                                                                                   |
-| `payload-live-preview/astro/PreviewBoundary.astro`   | Stable       | The `PreviewBoundary` component.                                                                                                                                            |
-| `payload-live-preview/codegen`                       | Tooling      | Type generation from a Payload config (needs `ts-morph`).                                                                                                                   |
-| `payload-live-preview/codegen/astro`                 | Tooling      | `livePreviewCodegen()`: the Astro integration that runs that generation on start and in `astro dev`.                                                                        |
-| `payload-live-preview/doctor`                        | Tooling      | `runDoctor()` and `analyzeProbe()`: the `pll doctor` checks as a library.                                                                                                   |
-| `payload-live-preview/migrate`                       | Tooling      | `migrateSource()` and the codemods behind `pll migrate` (needs `ts-morph`).                                                                                                 |
+| Entry                                                | Class        | Contents                                                                                                                                                                                                  |
+| ---------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payload-live-preview`                               | Stable       | Client, inline script generator, renderers, built-in plugins, authorization and binding helpers; not the exports named above.                                                                             |
+| `payload-live-preview/core`                          | Stable       | The client and runtime without the built-in plugin constructors, generator or adapters.                                                                                                                   |
+| `payload-live-preview/client`                        | Stable       | `LivePreviewClient` and `initLivePreview()` alone.                                                                                                                                                        |
+| `payload-live-preview/structural`                    | Experimental | The structural array renderer, the keyed morph and the `data-payload-depends` helpers; `morphElement()`, `MorphOptions` and `isMorphBoundary()` are `@beta`, the engine and package rule behind ADR 0008. |
+| `payload-live-preview/lexical`                       | Stable       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`, `setSanitizerDocument()`.                                                                                  |
+| `payload-live-preview/plugins`                       | Stable       | `PluginManager`, plugin types and the built-in plugins.                                                                                                                                                   |
+| `payload-live-preview/fragment`                      | Stable       | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                                                                                                          |
+| `payload-live-preview/server`                        | Stable       | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `bind()`.                                                                                               |
+| `payload-live-preview/plugin`                        | Stable       | `livePreview()` configures Payload 2.32.3 or 3.x structurally: one root URL callback, merged entity lists and optional root breakpoints; no authentication or Payload import.                             |
+| `payload-live-preview/payload`                       | Stable       | The lower-level `buildLivePreviewUrl()` callback for manual or nullable `payload.config.ts` routing; imports nothing from `payload`.                                                                      |
+| `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | Stable       | One framework adapter each.                                                                                                                                                                               |
+| `payload-live-preview/nuxt-module`                   | Stable       | The Nuxt module: registers the Nitro plugin from `nuxt.config.ts`; data options, `authorizePreview` by module reference (`authorizePreviewModule`), no `shouldInject`.                                    |
+| `payload-live-preview/react`                         | Stable       | `useLivePreviewDocument()`: the merged document as a hook (needs `react`).                                                                                                                                |
+| `payload-live-preview/vue`                           | Stable       | The same as a composable (needs `vue`).                                                                                                                                                                   |
+| `payload-live-preview/lean`                          | Experimental | `LEAN_RUNTIME`: the smaller runtime artifact, as a value for the `runtime` option. Passing it is stable; the artifact's fields (`RuntimeArtifact`) may gain one in a minor.                               |
+| `payload-live-preview/annotate`                      | Experimental | `livePreviewAnnotate()`: the build-time annotator as a Vite plugin (`@beta`). No `ts-morph`.                                                                                                              |
+| `payload-live-preview/astro/RichText.astro`          | Stable       | The `RichText` component.                                                                                                                                                                                 |
+| `payload-live-preview/astro/PreviewBoundary.astro`   | Stable       | The `PreviewBoundary` component.                                                                                                                                                                          |
+| `payload-live-preview/codegen`                       | Tooling      | Type generation from a Payload config (needs `ts-morph`).                                                                                                                                                 |
+| `payload-live-preview/codegen/astro`                 | Tooling      | `livePreviewCodegen()`: the Astro integration that runs that generation on start and in `astro dev`.                                                                                                      |
+| `payload-live-preview/doctor`                        | Tooling      | `runDoctor()` and `analyzeProbe()`: the `pll doctor` checks as a library.                                                                                                                                 |
+| `payload-live-preview/migrate`                       | Tooling      | `migrateSource()` and the codemods behind `pll migrate` (needs `ts-morph`).                                                                                                                               |
 
 `payload-live-preview/astro/middleware-entry` also exists; Astro's
 `mode: 'middleware'` registers it and nothing else imports it.
@@ -324,7 +376,13 @@ update through the Payload REST API (`POST` with
 request the official client makes) and renders the populated document; on
 failure it renders the raw values.
 
-It asks only when the answer can change what the page shows. A page whose every
+Payload 2 uses the accepted `fieldSchemaJSON` instead of a v3 merge
+target. It retains the schema for later updates that omit it, settles scalar
+values locally and populates raw relationship/upload IDs with bounded
+credentialed collection GETs. The GETs preserve locale and depth and never
+send the method-override POST ([ADR 0010](architecture/0010-protocol-capabilities-by-observation.md)).
+
+The DOM runtime asks only when the answer can change what the page shows. A page whose every
 binding renders a plain scalar of a top-level field, and a page with no binding,
 no island, no `data-payload-fragment` boundary and no `beforeUpdate`/`afterUpdate`
 listener, never merge at all; a message that moved no field anything populates is
