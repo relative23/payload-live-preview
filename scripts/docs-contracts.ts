@@ -15,6 +15,16 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { INLINE_BUDGET } from './bundle-budgets';
+import {
+  deliveryClaims,
+  deliveryClaimViolations,
+  deliveryFamilies,
+  deliveryOverhead,
+  sizeClaimViolations,
+  type DeliveryFacts,
+} from './docs-size-claims';
+
+export { sizeClaimViolations } from './docs-size-claims';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 
@@ -365,22 +375,6 @@ export function brokenLinks(
   return violations;
 }
 
-/**
- * The README states the runtime's transfer size once. It drifted from 21 KB to
- * 29 KB without anyone noticing, so the claim is held to the release gate's
- * budget within a kilobyte.
- */
-export function sizeClaimViolations(text: string, file: string, gzipBudget: number): string[] {
-  const claims = [...text.matchAll(/about (\d+) KB gzip/gu)];
-  const expected = Math.round(gzipBudget / 1024);
-  return claims
-    .filter((claim) => Math.abs(Number(claim[1]) - expected) > 1)
-    .map((claim) => {
-      const line = text.slice(0, claim.index).split('\n').length;
-      return `${file}:${String(line)} says about ${claim[1] ?? ''} KB gzip, the budget is ${String(expected)} KB`;
-    });
-}
-
 /** Resolve a link relative to the page that carries it; a directory counts as a page too. */
 function linkTarget(from: string): (path: string) => string | undefined {
   return (path) => {
@@ -448,6 +442,19 @@ async function main(): Promise<void> {
   };
 
   const violations: string[] = [];
+  const budgets = await readFile(resolve(ROOT, 'tests/fixtures/delivery-budgets.ts'), 'utf8');
+  const { RUNTIME_BUILD_INFO } = await import('../src/inline/runtime.generated');
+  const facts: DeliveryFacts = {
+    runtime: RUNTIME_BUILD_INFO.size,
+    nextBootstrap: deliveryOverhead(budgets, 'Next.js, delivery: asset'),
+    astroLoader: deliveryOverhead(budgets, 'Astro, static build, mode: loader'),
+    astroInline: deliveryOverhead(budgets, 'Astro, static build, mode: inline'),
+    nextAuthorized: deliveryOverhead(
+      budgets,
+      'Next.js, script in the root layout, authorized editor',
+    ),
+  };
+  const seen = new Set<string>();
   const files = await docFiles();
   for (const file of files) {
     const text = await readFile(file, 'utf8');
@@ -462,8 +469,19 @@ async function main(): Promise<void> {
     violations.push(...nullGuardViolations(text, name));
     violations.push(...esmOnlyListViolations(text, name, esmOnly, covered));
     violations.push(...brokenLinks(text, name, linkTarget(file)));
-    if (name === 'README.md') {
-      violations.push(...sizeClaimViolations(text, name, INLINE_BUDGET.gzip));
+    // A decision record states the numbers of the day it was written ("about 20 KB gzip" is what
+    // DOMPurify would have cost in ADR 0016); the guides and the README state the current ones.
+    if (name.startsWith('docs/architecture/')) continue;
+    violations.push(...sizeClaimViolations(text, name, INLINE_BUDGET.gzip));
+    const claims = deliveryClaims(text, facts);
+    for (const claim of claims) seen.add(claim.family);
+    violations.push(...deliveryClaimViolations(claims, name));
+  }
+  for (const [family] of deliveryFamilies(facts)) {
+    if (!seen.has(family)) {
+      violations.push(
+        `no page states the ${family} any more: update deliveryFamilies() in scripts/docs-contracts.ts with the new wording`,
+      );
     }
   }
   for (const extra of ['CONTRIBUTING.md', 'examples/README.md', 'tests/README.md']) {
