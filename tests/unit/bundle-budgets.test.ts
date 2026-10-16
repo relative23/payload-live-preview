@@ -12,15 +12,18 @@ import { findBudgetViolations, measureBundle } from '../../scripts/bundle-measur
 
 describe('release bundle budgets', () => {
   it('pins the exact inline patch-delta and transfer-size ceilings', () => {
+    // 2026-10-16 (the json-only population body refuses an interruption): +12/+2/+75 default,
+    // +12/+2/0 lean, +12/+10/+26 route, +12/+11/+15 fragments (Brotli rises only where it rose);
+    // reserves unchanged.
     // 2026-10-10 (PR 125, ADR 0008 §10): +66/+14/+16 default, +21/+8/+14 lean, +111/+26/+62 route,
     // +111/+27/+74 fragments; reserves unchanged.
     // 2026-10-08: paired Node24.19/npm12.0.2, epoch1791096072; after empty Payload2
     // fields and fragment response fixes. Exact measured deltas retain each
     // profile's previous raw/gzip reserves and its 120-byte Brotli reserve.
-    expect(INLINE_BUDGET).toEqual({ raw: 144_634, gzip: 45_513, brotli: 39_900 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 117_506, gzip: 36_935, brotli: 32_644 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 153_229, gzip: 48_317, brotli: 42_009 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 158_814, gzip: 50_299, brotli: 43_647 });
+    expect(INLINE_BUDGET).toEqual({ raw: 144_646, gzip: 45_515, brotli: 39_975 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 117_518, gzip: 36_937, brotli: 32_644 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 153_241, gzip: 48_327, brotli: 42_035 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 158_826, gzip: 50_310, brotli: 43_662 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

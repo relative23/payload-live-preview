@@ -102,4 +102,30 @@ describe('legacy population — abort subscription ownership', () => {
     expect(cancelled).toBe(1);
     expect(listeners.size).toBe(0);
   });
+
+  it('refuses instead of resolving the interruption marker when a json-only response is pending', async () => {
+    // An injected shim without a body has nothing to cancel: the interruption alone ends the wait, and it must end
+    // as the module's refusal like the stream branch does, never as the marker handed back as the parsed value.
+    const listeners = new Set<() => void>();
+    const signal = {
+      aborted: false,
+      addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+      removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener),
+    } as unknown as AbortSignal;
+    const response = {
+      body: null,
+      json: () => new Promise<unknown>(() => undefined),
+    } as unknown as Response;
+    const settled = populationBody(response, signal, () => true).then(
+      (value: unknown) => ({ resolved: value }),
+      (error: unknown) => error,
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+    for (const listener of listeners) listener();
+    const outcome = await settled;
+    expect(outcome).toBeInstanceOf(Error);
+    expect((outcome as Error).message).toBe('invalid or oversized legacy population');
+    expect(listeners.size).toBe(0);
+  });
 });

@@ -517,7 +517,9 @@
 // retain the prior 10/5/120 B reserves.
 // 2026-10-10 (PR 125, `data-payload-morph` opts a custom element into the morph, ADR 0008 §10): paired Node24.19/npm12.0.2, epoch1791096072;
 // +66/+14/+16 B raw/gzip/Brotli; retain the prior 10/5/120 B reserves.
-export const INLINE_BUDGET = { raw: 144_634, gzip: 45_513, brotli: 39_900 } as const;
+// 2026-10-16 (the json-only population body refuses an interruption, as its stream branch does): paired Node24.19/npm12.0.2, epoch1791096072,
+// the build of this source against the build before the one statement; +12/+2/+75 B raw/gzip/Brotli; retain the prior reserves (Brotli rises only where it rose).
+export const INLINE_BUDGET = { raw: 144_646, gzip: 45_515, brotli: 39_975 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

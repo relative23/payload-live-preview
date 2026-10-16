@@ -359,6 +359,7 @@ export async function populationBody(
         interrupted,
       ]);
       check();
+      if (value === obsolete) fail();
       return value;
     }
     const getReader: () => ReadableStreamDefaultReader<Uint8Array> = body.getReader.bind(body);
