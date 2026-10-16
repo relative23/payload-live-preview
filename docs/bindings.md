@@ -37,7 +37,7 @@ page is about:
 <p>{wordCount(page.body)} words</p>
 ```
 
-Three lines against twelve, and the boundary version also fixes what the
+Three lines against four, and the boundary version also fixes what the
 bindings cannot: the `subtitle` paragraph does not exist while the field is
 empty, so an editor filling it sees nothing, and the word count is derived, so
 no field names it.
@@ -76,7 +76,7 @@ cannot render.
 | `data-payload-array`           | Treat the value as an array                                                                                                                                                                                                                                                         | `data-payload-array`                               |
 | `data-payload-array-template`  | Markup per array item; `{{field}}` reads the item                                                                                                                                                                                                                                   | `data-payload-array-template="<li>{{title}}</li>"` |
 | `data-payload-array-separator` | Separator for arrays of primitives                                                                                                                                                                                                                                                  | `data-payload-array-separator=" · "`               |
-| `data-payload-structural`      | Diff-based keyed updates for arrays: unaffected items keep their DOM state ([docs/renderers.md](renderers.md))                                                                                                                                                                      | `data-payload-structural`                          |
+| `data-payload-structural`      | Diff-based keyed updates for arrays: unaffected items keep their DOM state ([ADR 0008](architecture/0008-keyed-morph-ownership.md))                                                                                                                                                 | `data-payload-structural`                          |
 | `data-payload-nested-key`      | Inside an array template: the item field holding a nested array                                                                                                                                                                                                                     | `data-payload-nested-key="slides"`                 |
 | `data-payload-nested-template` | The template for that nested array's items                                                                                                                                                                                                                                          | `data-payload-nested-template="<li>{{t}}</li>"`    |
 | `data-payload-key`             | The item's `id`, for keyed pairing. The runtime writes it on each item it renders that has an `id`; write it on server-rendered items so the first update pairs them by `id` rather than by position. It never replaces the `id` in the data: an item without one pairs by position | `data-payload-key={item.id}`                       |
@@ -112,16 +112,18 @@ A bound date is written as a localised date and time, a bound number with the
 locale's grouping. `data-payload-format` picks something else, from a closed
 vocabulary:
 
-| Value                                  | Writes                                     |
-| -------------------------------------- | ------------------------------------------ |
-| `date`                                 | `17 Oct 2026`                              |
-| `date:short` `:medium` `:long` `:full` | `17/10/2026` … `Saturday, 17 October 2026` |
-| `time`                                 | `15:05`                                    |
-| `datetime`                             | `17 Oct 2026, 15:05` (the default)         |
-| `number`                               | `1,234.5`                                  |
-| `number:0` … `number:4`                | fixed fraction digits                      |
-| `currency:EUR` (any ISO 4217)          | `€12.00`                                   |
-| `percent`                              | `25%` for `0.25`                           |
+| Value                                      | Writes                                                        |
+| ------------------------------------------ | ------------------------------------------------------------- |
+| `date`                                     | `17 Oct 2026`                                                 |
+| `date:short` `:medium` `:long` `:full`     | `17/10/2026` … `Saturday, 17 October 2026`                    |
+| `time`                                     | `15:05`                                                       |
+| `time:short` `:medium` `:long` `:full`     | `15:05` … `15:05:09 Central European Summer Time`             |
+| `datetime`                                 | `17 Oct 2026, 15:05` (the default)                            |
+| `datetime:short` `:medium` `:long` `:full` | `17/10/2026, 15:05` … `Saturday, 17 October 2026 at 15:05:09` |
+| `number`                                   | `1,234.5`                                                     |
+| `number:0` … `number:4`                    | fixed fraction digits                                         |
+| `currency:EUR` (any ISO 4217)              | `€12.00`                                                      |
+| `percent`                                  | `25%` for `0.25`                                              |
 
 ```astro
 <time data-payload-field="startsAt" data-payload-format="date:long">17 October 2026</time>
@@ -164,7 +166,7 @@ an empty string. Bind it as a string:
 <script lang="ts">
   const template = '<li><a data-payload-href="url">{{title}}</a></li>';
 </script>
-<ul data-payload-field="posts" data-payload-array-template={template}></ul>
+<ul data-payload-field="posts" data-payload-array data-payload-array-template={template}></ul>
 ```
 
 ```vue
@@ -172,7 +174,7 @@ an empty string. Bind it as a string:
 const template = '<li><a data-payload-href="url">{{title}}</a></li>';
 </script>
 <template>
-  <ul data-payload-field="posts" :data-payload-array-template="template"></ul>
+  <ul data-payload-field="posts" data-payload-array :data-payload-array-template="template"></ul>
 </template>
 ```
 
@@ -250,10 +252,10 @@ in the page. Where the value is the whole content of **exactly one** element —
 its only text node, or one attribute the writer may set, an `<img src>` for an
 upload — that element is bound to the field as if the attribute stood there.
 Where it is found nowhere, more than once, as part of a longer text, or split
-across nodes, nothing is bound, and the field is as unbound as it was: LP0201
+across nodes, nothing is bound, and the field is as unbound as it was: LP0203
 names it once the page has at least one binding, declared or guessed — a page
-left with none gets no LP0201 at all — and `onUnfaithfulPatch` escalates an
-edit to it.
+left with none gets neither LP0203 nor LP0201 — and `onUnfaithfulPatch`
+escalates an edit to it.
 
 A guess is a binding like any other afterwards, with one difference you can
 see: the element carries `data-payload-guessed` with the value it was found by,
@@ -272,10 +274,11 @@ What it never does, so a wrong element is not rewritten on every keystroke:
 - A declared `data-payload-field` wins, as an anchor and as a veto: the element
   and its subtree are spoken for. A page that carries one attribute is not
   thereby opted into guessing for the rest; `autoBind` is what opts in.
-- It never looks for a value shorter than thirteen characters, one that is
-  only digits, a boolean, a single lower-case token (an enum value, a slug) or
-  a locale code — those match by accident. So a `count` of `12` is never
-  guessed; neither is a `status` of `published`.
+- It never looks for a value shorter than thirteen characters, one made only
+  of digits and the separators a date, a price or a phone number carries
+  (spaces and `. , : + / -`), a boolean, a single lower-case token (an enum
+  value, a slug) or a locale code — those match by accident. So a `count` of
+  `12` is never guessed; neither is a `status` of `published`.
 - It searches once. A value that first appears in a later message is never
   bound, because by then the page is what the runtime made it. The one page
   it searches again is one the server rendered again: a route refresh, or a
@@ -353,7 +356,7 @@ group the page reaches only below the top level, each changed path needs a
 binding of its own, a binding on the path above it, or a declaration; an
 uncovered one is an unbound change: LP0203 and `inspect().fidelity.fields`
 name it (`hero.description`), and `onUnfaithfulPatch` decides whether the
-route or a fragment is rendered for it.
+route is refreshed for it.
 
 A page that shows part of a document on purpose says so with
 `data-payload-covers`: field paths it accounts for, and everything below them.
@@ -488,7 +491,7 @@ These are left alone and listed with a reason:
 | `<p>Published {page.date}</p>`                           | A binding replaces the element's whole text, label included. Split the markup first.                                        |
 | `<p>{formatDate(page.date)}</p>`                         | Derived: no single field to name. `data-payload-format` covers dates and numbers ([above](#formatting-a-date-or-a-number)). |
 | `<p>{page.internalNote}</p>`                             | The schema has no such field, so the binding would name something that never arrives.                                       |
-| `{page.slides.map((slide) => <li>{slide.caption}</li>)}` | `slide` is a loop item, not the document; array items are annotated by hand ([structural arrays](#field-types)).            |
+| `{page.slides.map((slide) => <li>{slide.caption}</li>)}` | `slide` is a loop item, not the document; bind the array on its container ([attributes](#attribute-reference)).             |
 
 A loop item is a name bound as the first parameter of a `map`, `flatMap` or
 `forEach` callback, as a `for … of` variable or as a Svelte

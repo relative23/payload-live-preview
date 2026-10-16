@@ -334,7 +334,7 @@ const template = '<li><a data-payload-href="url">{{title}}</a></li>';
 </script>
 
 <template>
-  <ul data-payload-field="posts" :data-payload-array-template="template"></ul>
+  <ul data-payload-field="posts" data-payload-array :data-payload-array-template="template"></ul>
 </template>
 ```
 

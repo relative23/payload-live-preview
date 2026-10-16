@@ -35,7 +35,11 @@ The tag goes into `<head>`. The script stays inert outside the admin's preview i
 <h1 data-payload-field="title">Hello</h1>
 <p data-payload-field="subtitle"></p>
 <img data-payload-field="hero" data-payload-type="image" src="/hero.jpg" alt="" />
-<ul data-payload-field="tags" data-payload-array-template="<li>{{value}}</li>"></ul>
+<ul
+  data-payload-field="tags"
+  data-payload-array
+  data-payload-array-template="<li>{{value}}</li>"
+></ul>
 ```
 
 Render an element even when its field is empty: the runtime patches elements that exist, and an edit to an initially empty field needs somewhere to land. Rich text is detected from the value shape, in the lean artifact too. Every attribute, the field types and the owner marker for pages with several documents: [bindings.md](bindings.md).
