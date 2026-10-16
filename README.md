@@ -12,7 +12,7 @@
 
 Payload publishes the framework-independent `@payloadcms/live-preview` client and the official `@payloadcms/live-preview-react` and `@payloadcms/live-preview-vue` wrappers. Those hooks feed a hydrated component tree; they do not own server markup outside that tree. This package covers that markup. Mark one boundary per server-rendered component, or individual fields on a static page, and edits reach the iframe as the editor types. Scalar patches and successful fragment renders need neither a rebuild nor a full-page reload; a route-level change uses the configured route refresh. Client-rendered apps can instead use this package's React or Vue entry. Its v2 sanitizer and request-time policy defaults are strict; static delivery has no request to authorize. The package has no direct dependencies; framework entries use optional peers.
 
-One runtime serves every framework, and every framework adapter's example app runs end to end in Chromium, Firefox and WebKit on every push to `main` and on pull requests. Astro has the most coverage: the widest version matrix (4.x to 7.x), the only end-to-end tests against a real Payload admin, the `RichText` and `PreviewBoundary` components, and the annotator as a Vite plugin (`pll-codegen annotate` itself also reads `.jsx`, `.tsx` and `.svelte`).
+One runtime serves every framework, and every framework adapter's example app runs end to end in Chromium, Firefox and WebKit on every push to `main` and on pull requests. Astro has the most coverage: the widest version matrix (4.x to 7.x), the only end-to-end tests against a real Payload admin that CI runs, the `RichText` and `PreviewBoundary` components, and the annotator as a Vite plugin (`pll-codegen annotate` itself also reads `.jsx`, `.tsx` and `.svelte`).
 
 **New here? Start with the [Astro guide](docs/astro.md), or pick your framework in the [documentation index](docs/README.md).**
 
@@ -27,7 +27,7 @@ One runtime serves every framework, and every framework adapter's example app ru
 - **Tooling.** `pll doctor <url>` requests a page as a visitor and as the admin's iframe and reports the difference; `pll migrate` rewrites 1.x APIs to their 2.0 names; `pll-codegen` generates types from the Payload config, and `pll-codegen annotate` finds the bindings a template can take unambiguously.
 - **Authorization before anything privileged.** Where an adapter decides per request with `authorizePreview`, draft reads, runtime injection, CSP changes and binding attributes follow one verified decision, and the client-controlled intent signals unlock nothing. The setups that decide less are named under [Security model](#security-model).
 - **Strict by default.** Escape-by-default sanitizer, URL and `srcset` validation, policed attribute writes, prototype-pollution guards, per-instance clients, typed bindings with `pll-codegen`.
-- **Also in the box.** `revealEditedField` scrolls the field being typed in into view ([docs/reveal.md](docs/reveal.md)); a hydrated island keeps its subtree and re-renders itself from a `payload-live-preview:update` event ([docs/hybrid.md](docs/hybrid.md#islands-on-the-same-page)); `data-payload-owner` scopes bindings on a page that previews several documents, `PreviewBoundary` keeps an anchor for a field that is still empty, and `autoBind: 'unique'` finds bindings by value ([docs/bindings.md](docs/bindings.md)); array items render from a template through a keyed morph (`payload-live-preview/structural`); an `aria-live` region announces connect, update and disconnect; the runtime binds again after a back/forward-cache restore or a soft navigation, and the Next.js and Nuxt adapters wait for hydration before the first write.
+- **Also in the box.** `revealEditedField` scrolls the field being typed in into view ([docs/reveal.md](docs/reveal.md)); a hydrated island keeps its subtree and re-renders itself from a `payload-live-preview:update` event ([docs/hybrid.md](docs/hybrid.md#islands-on-the-same-page)); `data-payload-owner` scopes bindings on a page that previews several documents, `PreviewBoundary` keeps an anchor for a field that is still empty, and `autoBind: 'unique'` finds bindings by value ([docs/bindings.md](docs/bindings.md)); array items render from a template through a keyed morph (`payload-live-preview/structural`); an `aria-live` region announces connect, update and disconnect; the runtime binds again after a back/forward-cache restore or a soft navigation, and the Next.js, SvelteKit and Nuxt adapters wait for hydration before the first write.
 
 ## Compatibility
 
@@ -40,12 +40,12 @@ One runtime serves every framework, and every framework adapter's example app ru
 
 <!-- compat-matrix:start -->
 
-| Framework | Supported      | Tested in CI on every push (version, browsers)                                    |
-| --------- | -------------- | --------------------------------------------------------------------------------- |
-| Astro     | >=4.0.0 <8.0.0 | 7.3.2 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
-| Next.js   | App Router, 16 | 16.3.8 (chromium, firefox, webkit)                                                |
-| SvelteKit | 2.x            | 2.70.2 (chromium, firefox, webkit)                                                |
-| Nuxt      | 3.x            | 3.21.11 (chromium, firefox, webkit)                                               |
+| Framework | Supported                                                                    | Tested in CI on every push (version, browsers)                                    |
+| --------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Astro     | >=4.0.0 <8.0.0                                                               | 7.3.2 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
+| Next.js   | App Router, 16                                                               | 16.3.8 (chromium, firefox, webkit)                                                |
+| SvelteKit | 2.x                                                                          | 2.70.2 (chromium, firefox, webkit)                                                |
+| Nuxt      | 3.x (end of life since 31 July 2026: kept working, not officially supported) | 3.21.11 (chromium, firefox, webkit)                                               |
 
 Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 

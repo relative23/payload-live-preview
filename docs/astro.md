@@ -65,7 +65,7 @@ livePreview({
 
 Under a strict CSP the asset is a same-origin script with an `integrity` attribute and needs no `'unsafe-inline'`. The bootstrap is an inline `<script>` without a nonce, because a static build has no request to derive one from; its content is deterministic for a package version and configuration, so a `'sha256-…'` source expression covers it.
 
-**`'middleware'`** injects at request time in `output: 'server'` projects, into a response the server authorized and no other. The integration serializes its options into the build, so it cannot carry the `authorizePreview` hook as a function; it takes the module that exports it ([ADR 0024](architecture/0024-authorization-by-module-reference.md)):
+**`'middleware'`** injects at request time on pages that render on demand (`output: 'server'`, or `prerender = false` under an adapter), into a response the server authorized and no other. The integration serializes its options into the build, so it cannot carry the `authorizePreview` hook as a function; it takes the module that exports it ([ADR 0024](architecture/0024-authorization-by-module-reference.md)):
 
 ```ts
 livePreview({
@@ -99,7 +99,7 @@ With `strict: false` (or the deprecated `defaults: 'v1'`) and no hook, the middl
 On an SSR page, one attribute per component is enough: the region is rendered
 again from the unsaved form state, so conditional sections and derived values
 stay correct without naming a single field. It needs the endpoint from
-[hybrid.md](hybrid.md), and `output: 'server'`.
+[hybrid.md](hybrid.md), served at request time (`output: 'server'`, or an adapter with `prerender = false` on the endpoint route).
 
 ```astro
 <section data-payload-fragment="hero" data-payload-depends="title,subtitle,hero">
@@ -191,7 +191,7 @@ Three strategies exist. `payload-session` is the one above. `signed-token` verif
 The page reuses that request-scoped decision for the draft query and for the binding attributes, instead of authorizing again or trusting the intent signal:
 
 ```ts
-// src/lib/preview.ts — server-only; the adapter spreads `runtimeOptions`
+// src/lib/preview.ts — server-only; spread `preview.runtimeOptions` into the adapter options to keep `serverURL`, `apiRoute` and `mergeDepth` in step with the read
 import { definePreview } from 'payload-live-preview/server';
 export const preview = definePreview({ serverURL: import.meta.env.PAYLOAD_URL, depth: 1 });
 ```
@@ -240,7 +240,7 @@ Wrap such a component in a `data-payload-fragment` boundary, export an endpoint 
 
 - **Empty fields need an anchor.** If you render a binding only when the field is non-empty, editing a previously-empty field has nowhere to land. Render the node unconditionally (`<div data-payload-field="subtitle">{subtitle ?? ''}</div>`) or use `PreviewBoundary`.
 - **Client islands.** Bind fields in server-rendered regions. A hydrated island that re-renders a bound node overwrites the live patch; mark its root with `data-payload-island` so the runtime never patches or morphs into it. Native `<astro-island>` roots are also boundaries. While Astro keeps their `ssr` marker, the runtime holds the current snapshot and sends it after hydration removes the marker ([renderers.md](renderers.md#islands)). An island inside a fragment hydrates from the build's own modules and takes later revisions through Astro's props handoff; its container needs `resolve: resolveIslandModule` ([hybrid.md](hybrid.md#first-use-astro-resources), ADR 0021).
-- **`Referrer-Policy: no-referrer`** on the admin breaks zero-config origin detection. Set `allowedOrigins` explicitly (you already do).
+- **`Referrer-Policy: no-referrer`** on the admin removes the referrer fallback of origin detection. That fallback is on only with `disableReferrerDetection: false` (the `defaults: 'v1'` profile), so under the 2.x defaults the header changes nothing. Set `allowedOrigins` explicitly either way (you already do).
 - **`serverURL` credentials.** Browser-side REST merging uses `credentials: 'include'`; Payload still has to authorize that request. The initial server-side draft read forwards only the credentials the verified context carries.
 
 ## Working examples

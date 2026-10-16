@@ -30,14 +30,16 @@ export default defineNuxtConfig({
 
 ```ts
 // server/utils/live-preview-auth.ts
-import { authorizePreviewRequest } from 'payload-live-preview/server';
+import { authorizePreviewRequest, type PreviewRequestLike } from 'payload-live-preview/server';
 
-export default (request: Request) =>
+export default (request: PreviewRequestLike) =>
   authorizePreviewRequest(request, {
     type: 'payload-session',
     serverURL: process.env.PAYLOAD_URL!,
   });
 ```
+
+The hook receives the `{ url, headers }` object Nitro supplies (`PreviewRequestLike`), not a `Request`; `authorizePreviewRequest()` accepts it as it is.
 
 The module writes a Nitro plugin into Nuxt's build directory (`.nuxt/`, or `node_modules/.cache/nuxt/.nuxt/` while Nuxt 4 builds) and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
 
@@ -121,7 +123,7 @@ const asset = createRuntimeAssetRoute(livePreviewOptions);
 export default defineEventHandler((event) => asset(toWebRequest(event)));
 ```
 
-`nuxt.config.ts` then reads `livePreview: livePreviewOptions`. Under the strict default, put `delivery: 'asset'` into the hand-written plugin's options object [above](#one-options-object) instead, and hand the route that object. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
+`nuxt.config.ts` then reads `livePreview: livePreviewOptions`; the strict default holds because `authorizePreviewModule` names the hook. A hand-written plugin takes `delivery: 'asset'` in its own options object [above](#one-options-object), and the route is handed that object. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
 
 Move the route folder and set `assetPath` together if the app is not served from the site root. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 
@@ -342,4 +344,4 @@ const template = '<li><a data-payload-href="url">{{title}}</a></li>';
 
 ## When something does not update
 
-`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md). The doctor's preview request carries `?preview=true`; behind `authorizePreview` it needs an editor's credentials: a Payload session as `--header "Cookie: payload-token=…"`, a signed token in the URL as `?previewToken=…` (the visitor request drops it), or `--header "x-preview-token: …"` only where the strategy sets `transport: { kind: 'header' }`. Headers go with the preview request only and are never printed; the URL is printed as given.
+`__livePreview.inspect()` in the preview iframe's console names the cause in most cases; the readings, `pll doctor` and every diagnostic code are in [troubleshooting.md](troubleshooting.md). The doctor's preview request carries `?preview=true`; behind `authorizePreview` it needs an editor's credentials: a Payload session as `--header "Cookie: payload-token=…"`, a signed token in the URL as `?previewToken=…` (the visitor request drops it), or `--header "x-preview-token: …"` only where the strategy sets `transport: { kind: 'header' }`. Headers go with the preview request only and their values are never printed; a token in the URL is printed as `previewToken=…`.
