@@ -156,7 +156,7 @@ export class StrategyRunner {
    * because the finding is the same one under every mode and on a page with no
    * strategy — and that page is what `inspect().fidelity` is read on. What the
    * mode still decides is what is *done*: `'warn'` adds no line of its own
-   * (LP0201 already names the field) and `'ignore'` keeps the stale value,
+   * (LP0203, or LP0201 for an empty value, already names the field) and `'ignore'` keeps the stale value,
    * exactly as before; only the ledger sees them now.
    *
    * The baseline message is skipped, because there every field counts as

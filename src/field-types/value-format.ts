@@ -90,8 +90,8 @@ export function warnUnknownFormat(element: Element, fieldName: string, spec: str
   warned.add(element);
   safeConsoleWarn(
     `[live-preview] LP0408: data-payload-format="${spec}" on "${fieldName}" is not a ` +
-      'known format; the default formatting was used. Known: date, date:short|medium|long|full, ' +
-      'time, datetime, number, number:0-4, currency:XXX, percent.',
+      'known format; the default formatting was used. Known: date, time, datetime (each also ' +
+      ':short|medium|long|full), number, number:0-4, currency:XXX, percent.',
   );
 }
 

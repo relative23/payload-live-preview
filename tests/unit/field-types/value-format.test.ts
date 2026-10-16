@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { emptyContext, makeTarget, rendererNamed } from './helpers';
+import { parseValueFormat } from '@field-types/value-format';
 
 /**
  * `data-payload-format` — the closed vocabulary that decides how a date or a
@@ -71,6 +72,25 @@ describe('data-payload-format — a vocabulary it does not know', () => {
 
     expect(element.textContent).not.toBe('');
     expect(warn.mock.calls.filter((call) => String(call[0]).includes('LP0408'))).toHaveLength(1);
+    warn.mockRestore();
+  });
+
+  it('lists the styles of time and datetime as well as those of date', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const element = document.createElement('span');
+    rendererNamed('date').render(
+      makeTarget(element, { format: 'time:like-a-poem' }),
+      INSTANT,
+      context,
+    );
+
+    const message = String(warn.mock.calls.find((call) => String(call[0]).includes('LP0408'))?.[0]);
+    expect(message).toContain('date, time, datetime (each also :short|medium|long|full)');
+    for (const name of ['date', 'time', 'datetime']) {
+      for (const style of ['short', 'medium', 'long', 'full']) {
+        expect(parseValueFormat(`${name}:${style}`)).toBeDefined();
+      }
+    }
     warn.mockRestore();
   });
 

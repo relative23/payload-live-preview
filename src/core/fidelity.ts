@@ -98,8 +98,8 @@ export function reportUnfaithfulPatch(
  * that page is the one `inspect().fidelity` was written for, and it was the one
  * page the reading said nothing about.
  *
- * No message of its own: LP0201 already names the field, once, from the same
- * rule. The return value says whether this was the first time, so an escalation
+ * No message of its own: LP0203 (LP0201 when the value is empty) already names
+ * the field, once, from the same rule. The return value says whether this was the first time, so an escalation
  * is counted against the findings it answered rather than against a keystroke.
  */
 export function reportUnboundChange(state: RuntimeState, fieldName: string): boolean {

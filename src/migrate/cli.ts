@@ -21,10 +21,7 @@ Options:
   -h, --help            Show this help
 
 Codemods, in the order they run:
-  rename-is-preview-request
-  rename-admin-origins-option
-  rename-bindings-authorized-option
-  move-fetch-preview-helpers
+${CODEMODS.map((codemod) => `  ${codemod.id}`).join('\n')}
 
 Exit codes:
   0  nothing needs a human (changes applied, or would be with --write)

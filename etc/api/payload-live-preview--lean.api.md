@@ -4,7 +4,7 @@
 
 ```ts
 
-// @public
+// @beta
 export const LEAN_RUNTIME: RuntimeArtifact;
 
 // @public

@@ -54,7 +54,7 @@ export interface PreviewTokenReplayStore {
 }
 
 /**
- * @deprecated The 1.x store shape, removed in 3.0. Its two calls cannot be one
+ * @deprecated The store shape of the 2.0 beta, removed in 3.0. Its two calls cannot be one
  * step, so two requests with the same token that arrive together both pass
  * `isUsed` before either reaches `markUsed`. Implement
  * {@link PreviewTokenReplayStore.consume} instead.
@@ -76,7 +76,7 @@ export interface SignedTokenStrategy {
   readonly transport?: PreviewTokenTransport;
   /** Resolve the request's locale for the `loc` binding. Unset: tokens with `loc` are refused as `wrong-locale`. */
   readonly locale?: (request: PreviewAuthorizationRequest) => string | undefined;
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 1.x shape is accepted until 3.0
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 beta shape is accepted until 3.0
   readonly replay?: PreviewTokenReplayStore | PreviewTokenReplayChecks;
   readonly crypto?: SubtleCryptoLike;
   readonly now?: () => number;
@@ -330,11 +330,11 @@ export async function authorizeToken(
 /**
  * `true` when `id` was not seen before. A store that returns anything but
  * `true` from `consume` refuses the token: fail closed, since a forgotten
- * return would otherwise admit every replay. The 1.x shape keeps its two
+ * return would otherwise admit every replay. The 2.0 beta shape keeps its two
  * steps and its race; that is why it is deprecated rather than emulated.
  */
 async function consumeTokenId(
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 1.x shape is accepted until 3.0
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 beta shape is accepted until 3.0
   store: PreviewTokenReplayStore | PreviewTokenReplayChecks,
   id: string,
   expiresAt: number,

@@ -91,7 +91,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   AuditRuntimeMissing: 'LP0701',
   /** The preview response declares no `frame-ancestors`. */
   AuditNoFrameAncestors: 'LP0702',
-  /** `X-Frame-Options` forbids framing, which no CSP can undo; `SAMEORIGIN` forbids it from another origin only. */
+  /** `X-Frame-Options` forbids framing on a response that declares no `frame-ancestors`; `SAMEORIGIN` forbids it from another origin only. */
   AuditFrameOptionsBlocks: 'LP0703',
   /** Binding attributes are served to anonymous visitors. */
   AuditBindingsExposed: 'LP0704',

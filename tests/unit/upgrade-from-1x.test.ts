@@ -9,11 +9,12 @@ import {
 /**
  * What a 1.x project keeps.
  *
- * Measured against the published 1.8.1 surface: of the 114 names its root entry
- * exported, eight are absent from 2.0. Seven of those moved behind
- * `definePreview()` (ADR 0007, ledger row 9) or changed shape, where an alias
- * would restore the very defaults the move removed. One was a plain rename, and
- * that one is aliased — so the single most common 1.x import keeps compiling.
+ * Measured against the published 1.8.1 surface: of the 103 names its root entry
+ * exported, six are absent from 2.0: the fetch helpers and their option types,
+ * which moved behind `definePreview()` (ADR 0007, ledger row 9), where an alias
+ * would restore the very defaults the move removed. The one plain rename,
+ * `isPreviewRequest`, is aliased — so the single most common 1.x import keeps
+ * compiling.
  */
 
 describe('the 1.x name that stayed', () => {

@@ -1,4 +1,4 @@
-/** `debug` plugin: logs every lifecycle event through the plugin context. */
+/** `debug` plugin: logs init, connect, disconnect, cacheRefresh, beforeUpdate, afterUpdate and error through the plugin context. */
 
 import type { LivePreviewPlugin } from '../types';
 

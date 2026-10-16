@@ -118,7 +118,7 @@ describe('same-origin admin', () => {
   it('rejects X-Frame-Options: DENY even for a same-origin admin', () => {
     const report = analyzeProbe(
       withPreview(BOUND, {
-        'content-security-policy': "frame-ancestors 'self'",
+        'content-security-policy': "default-src 'self'",
         'x-frame-options': 'DENY',
       }),
       sameContext,
@@ -127,20 +127,64 @@ describe('same-origin admin', () => {
   });
 });
 
+/**
+ * A response that carries a `frame-ancestors` directive is framed by that directive alone: the HTML
+ * Standard skips the X-Frame-Options check for it. Measured in Chromium 151, Firefox 153 and WebKit
+ * 26.5 with `DENY` and `SAMEORIGIN` beside a directive that admits the framer: the page loads in all
+ * three. Only a response without the directive is decided by the header.
+ */
 describe('X-Frame-Options', () => {
-  it.each([['DENY'], ['sameorigin']])('reports LP0703 for %s, which no CSP can undo', (value) => {
-    const probe = healthy();
-    const report = analyzeProbe(
-      {
-        ...probe,
-        previewResponse: response({
-          headers: { ...probe.previewResponse.headers, 'x-frame-options': value },
-          body: probe.previewResponse.body,
+  it.each([['DENY'], ['sameorigin']])(
+    'reports LP0703 for %s on a response that declares no frame-ancestors',
+    (value) => {
+      const report = analyzeProbe(
+        withPreview(BOUND, {
+          'content-security-policy': "default-src 'self'",
+          'x-frame-options': value,
         }),
-      },
+        context,
+      );
+      expect(report.findings.find((f) => f.code === 'LP0703')?.level).toBe('error');
+    },
+  );
+
+  it.each([['DENY'], ['sameorigin']])(
+    'leaves %s alone when the same response carries a frame-ancestors that admits the admin',
+    (value) => {
+      const probe = healthy();
+      const report = analyzeProbe(
+        {
+          ...probe,
+          previewResponse: response({
+            headers: { ...probe.previewResponse.headers, 'x-frame-options': value },
+            body: probe.previewResponse.body,
+          }),
+        },
+        context,
+      );
+      expect(report.findings.map((f) => f.code)).not.toContain('LP0703');
+      expect(report.errors).toBe(0);
+    },
+  );
+
+  it('still reports the directive that refuses the admin, header or not', () => {
+    const report = analyzeProbe(
+      withPreview(BOUND, {
+        'content-security-policy': "frame-ancestors 'none'",
+        'x-frame-options': 'DENY',
+      }),
       context,
     );
-    expect(report.findings.find((f) => f.code === 'LP0703')?.level).toBe('error');
+    const codes = report.findings.map((f) => f.code);
+    expect(codes).toContain('LP0702');
+    expect(codes).not.toContain('LP0703');
+  });
+
+  it('says that the header decides because the response declares no frame-ancestors', () => {
+    const report = analyzeProbe(withPreview(BOUND, { 'x-frame-options': 'DENY' }), context);
+    const finding = report.findings.find((f) => f.code === 'LP0703');
+    expect(finding?.detail).toContain('no frame-ancestors');
+    expect(finding?.detail).not.toContain('No frame-ancestors directive can override it');
   });
 });
 

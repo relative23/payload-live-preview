@@ -38,7 +38,9 @@ describe('LP0409', () => {
     expect(message).toContain('LP0409');
     expect(message).toContain('data-partner-scroll');
     expect(message).toContain("sanitizerPolicy: 'compat'");
-    expect(message).toContain('allowedDataAttributes');
+    // The runtime's own writes take no `allowedDataAttributes`, so the way out it offers is the template's own markup.
+    expect(message).toContain('an element the template owns');
+    expect(message).not.toContain('allowedDataAttributes');
   });
 
   it('gives `id` its own reason, not the data-attribute one', () => {

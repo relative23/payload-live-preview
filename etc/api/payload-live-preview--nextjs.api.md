@@ -4,12 +4,12 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-CfOVCRHt.js';
-import { b } from '../../fragment-endpoint-CfOVCRHt.js';
-import { c } from '../../fragment-endpoint-CfOVCRHt.js';
-import { F } from '../../fragment-endpoint-CfOVCRHt.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-CfOVCRHt.js';
-import { P as PreviewAdapterOptions } from '../../options-Bq-ZDz1F.js';
+import { a } from '../../fragment-endpoint-B2qcRw5T.js';
+import { b } from '../../fragment-endpoint-B2qcRw5T.js';
+import { c } from '../../fragment-endpoint-B2qcRw5T.js';
+import { F } from '../../fragment-endpoint-B2qcRw5T.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-B2qcRw5T.js';
+import { P as PreviewAdapterOptions } from '../../options-Cm8fC7dj.js';
 
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (request: Request) => Promise<Response>;

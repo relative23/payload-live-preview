@@ -48,7 +48,7 @@ function reason(name: string): string {
     );
   }
   return (
-    'List it in `allowedDataAttributes` if the page needs it, or set ' +
+    'Put it on an element the template owns, or set ' +
     "`sanitizerPolicy: 'compat'` to keep every `data-*` as 1.x did"
   );
 }
