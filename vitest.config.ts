@@ -18,7 +18,17 @@ function propertyExplorationTimeout(): number | undefined {
   return Math.min(600_000, 5_000 * Math.ceil(runs / 100));
 }
 
-const explorationTimeout = propertyExplorationTimeout();
+/**
+ * The coverage job runs every test under v8 instrumentation on a two-core runner. A test that
+ * takes half a second on the development host took 5 to 7 s there, so the 5 s default failed a
+ * different test in each CI run of the 2.1 pull request (zero-config, trusted-core). Under CI the
+ * default is 20 s; a test that needs more still says so itself.
+ */
+function runnerTimeout(): number | undefined {
+  return process.env['CI'] === 'true' ? 20_000 : undefined;
+}
+
+const testTimeout = propertyExplorationTimeout() ?? runnerTimeout();
 
 export default defineConfig({
   plugins: [
@@ -38,7 +48,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: false,
-    ...(explorationTimeout === undefined ? {} : { testTimeout: explorationTimeout }),
+    ...(testTimeout === undefined ? {} : { testTimeout }),
     // The static test policy catches focused tests; this closes the runner-level hatch.
     allowOnly: false,
     retry: 0,
