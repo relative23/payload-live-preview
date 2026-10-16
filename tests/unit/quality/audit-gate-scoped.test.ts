@@ -202,22 +202,22 @@ describe('scoped audit register', () => {
   );
 
   it('accepts the last UTC day and rejects expiry even in an inactive project', () => {
+    const [lastDay] = Object.values(model.projects)
+      .flatMap((project) => project.exceptions.map((exception) => exception.expires))
+      .sort();
+    expect(lastDay).toBeDefined();
+    const nextDay = new Date(Date.parse(`${lastDay}T00:00:00Z`) + 86_400_000);
     expect(() =>
       selectAuditProject(
         model,
         process.cwd(),
         'examples/pure-html',
-        new Date('2026-10-10T23:59:59Z'),
+        new Date(`${lastDay}T23:59:59Z`),
       ),
     ).not.toThrow();
-    expect(() =>
-      selectAuditProject(
-        model,
-        process.cwd(),
-        'examples/pure-html',
-        new Date('2026-10-11T00:00:00Z'),
-      ),
-    ).toThrow('expired');
+    expect(() => selectAuditProject(model, process.cwd(), 'examples/pure-html', nextDay)).toThrow(
+      'expired',
+    );
   });
 
   it.each(['2026-02-30', '2026-13-01', '2028-02-30', '2026-10-1', '2026-10-10T00:00:00Z'])(

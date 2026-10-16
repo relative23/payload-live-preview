@@ -9,7 +9,7 @@
     "examples/nuxt-payload/lib/hero.ts": "50e148f1c6b1c10f89e6b850c5fd33dccfe4f037ccadc36c49ab4ff5a5c36d6f",
     "examples/nuxt-payload/lib/live-preview.ts": "24055b136367083d4266a4253032ae6a42d3d8f9832d4454d54c49a5fdbb3c2a",
     "examples/nuxt-payload/lib/preview.ts": "78f14b8a622b1c66298d82ef94a6c45b35af9fc126c2edecf434d9dcde410d83",
-    "examples/nuxt-payload/nuxt.config.ts": "f5a45a9df6ca4ade33fb3822ab1e8426b0aee4c58e5ceb598ecc7c296ac74110",
+    "examples/nuxt-payload/nuxt.config.ts": "2ff0c990b33798da26b5ddf96ee8131a886e4a864f73b9687823349fae834e4d",
     "examples/nuxt-payload/pages/composable.vue": "b5e24b818e5b3cc769fbd5fab7c9daf21a9ae994e4f9ab0cec7093a42c61e4f3",
     "examples/nuxt-payload/pages/hybrid-host.vue": "861a4867649350d1b1d4bab88f6fed5abaf0bbab0e5493c7994ea6894b182552",
     "examples/nuxt-payload/pages/hybrid.vue": "88e886e697e2133fbc28b3803cb7217f9c77e9e1bc875bd4f23c02f6249365f0",

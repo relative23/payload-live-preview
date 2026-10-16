@@ -12,8 +12,8 @@
           "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
           "graphSha256": "93bb2fae72a34402a2809507b0635ae96aaf820aee101fc5c7345f84e4a7914a",
           "reason": "No patched braces 3 release. Changesets 2 is retained while a CLI 3 migration remains unverified; its major replacement suggestion is pinned with this graph.",
-          "reachability": "SRI-verified Changesets config/git and Manypkg entrypoints discover one root package and match changed files with the fixed default **. Fixed, linked and ignore are empty; custom changedFilePatterns and workspace metadata are absent. Source and configuration projections reject drift.",
-          "expires": "2026-10-10"
+          "reachability": "SRI-verified Changesets config/git and Manypkg entrypoints discover one root package and match changed files with the fixed default **. Fixed, linked and ignore are empty; custom changedFilePatterns and workspace metadata are absent. Source and configuration projections reject drift. Re-triaged 2026-10-10 against a fresh audit: graph digest, version and integrity are unchanged, no patched release exists (npm latest 3.0.3), and micromatch is still the only package that requires it.",
+          "expires": "2026-10-24"
         }
       ]
     },
@@ -34,7 +34,7 @@
     },
     "examples/nuxt-payload": {
       "exposure": "quality/audit-exposure/nuxt-payload.json",
-      "exposureSha256": "b3cb43847b730adbee0510ebcc3cf83aa3bb73566bbe8edb0027f4cac8ae3636",
+      "exposureSha256": "8ef2c0aa2da13e461f22dea0846a50103403f24d364ea588c1025866419b7a18",
       "exceptions": [
         {
           "id": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
@@ -43,18 +43,18 @@
           "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
           "graphSha256": "fb441fbe692f82138ce97f98280030234a943d344366521d05dba49817a41866",
           "reason": "No patched braces 3 release. This exception covers only the reviewed Nuxt fixture and the exact Nitro/glob dependency graph.",
-          "reachability": "Nitro compiles fixed build globs and local filenames; this fixture supplies no custom asset, scan or ignore patterns and passes no request data into glob configuration. The 2.1 routes, shared lifetime probe, Nuxt module, production launchers, complete source/configuration set and exact Nitro caller are pinned.",
-          "expires": "2026-10-10"
+          "reachability": "Nitro compiles fixed build globs and local filenames; this fixture supplies no custom asset, scan or ignore patterns and passes no request data into glob configuration. The 2.1 routes, shared lifetime probe, Nuxt module, production launchers, complete source/configuration set and exact Nitro caller are pinned. Re-triaged 2026-10-10 against a fresh audit: graph digest, version and integrity are unchanged, no patched release exists (npm latest 3.0.3), and micromatch is still the only package that requires it.",
+          "expires": "2026-10-24"
         },
         {
           "id": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
           "package": "node-forge",
           "version": "1.4.0",
           "integrity": "sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==",
-          "graphSha256": "0f1660a9cfb67ef31805caa13564601af9be61ddfc41a1aa784079007c18795d",
+          "graphSha256": "a29148d4363bb5bb2afd2a9a68d3c55b0cc1977baebe8b56545c16dec7610305",
           "reason": "No patched node-forge 1 release. The reviewed Listhen caller generates and signs development certificates; the advisory concerns RSA signature verification.",
-          "reachability": "Development commands keep HTTPS and PFX disabled. Production uses OpenSSL certificates and a Node TLS proxy before Nitro; no RSA verification was found in the retained Listhen caller. Exact callers, launchers, server definitions and the complete source/configuration set detect exposure changes.",
-          "expires": "2026-10-10"
+          "reachability": "Development commands keep HTTPS and PFX disabled. Production uses OpenSSL certificates and a Node TLS proxy before Nitro; no RSA verification was found in the retained Listhen caller. Exact callers, launchers, server definitions and the complete source/configuration set detect exposure changes. Re-triaged 2026-10-10 against a fresh audit: no patched release exists (npm latest 1.4.0), version and integrity are unchanged and listhen is still the only package that requires node-forge; the advisory graph changed twice that day (graphSha256 is the last digest): the lock update moved the locked nodes, and once the simple-git findings left the graph through the override, npm's suggested fix moved from nuxt 3.7.4 to nuxt 4.6.1, a major step. The graph reaches @nuxt/cli, @nuxt/nitro-server, @nuxt/vite-builder, listhen, nitropack and nuxt through listhen. That suggestion is not adopted: this fixture stays on Nuxt 3 (3.21.11 is the last 3.x), and by registry metadata @nuxt/nitro-server 4.6.1 still requires nitropack ^2.13.4, which requires listhen ^1.9.1 and so node-forge ^1.4.0, so the major step is not shown to remove the path.",
+          "expires": "2026-10-24"
         }
       ]
     },
