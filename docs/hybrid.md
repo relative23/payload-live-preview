@@ -108,10 +108,10 @@ export const POST = createFragmentEndpoint({
 
 #### What `props` receives
 
-`props` is called with the boundary's `id` and `key`, the unsaved `fields`,
-`locale`, `collectionSlug` and `globalSlug`, the page `route`, the request's
-verified `authorization`, an abort `signal`, the `request` itself, and
-`locals`: what the framework's own server code put on the fragment request,
+`props` is called with the boundary's `id` and `key`, the `revision`, the
+unsaved `fields`, `locale`, `collectionSlug` and `globalSlug`, the page `route`,
+the request's verified `authorization`, an abort `signal`, the `request` itself,
+and `locals`: what the framework's own server code put on the fragment request,
 as a page's `load` or middleware sees it on the page request. That is
 Astro's `context.locals`, SvelteKit's `event.locals` and Nuxt's
 `event.context`; Next.js has no such object, so `locals` is `undefined` there.
@@ -258,9 +258,9 @@ This is measured on Astro 7.3.2 with `@astrojs/react` 6.0.6 in three browsers
 
 The finite page-owned native React recipe now has a separate
 [24-case native contract](../tests/e2e/continuation/astro-owner.spec.ts) on
-exact Astro 7.3.2 / `@astrojs/react` 6.0.6 / React 19.2.8. The unreleased
-PHD-05 core correction restores island events beside fragment work without
-duplicate fallback delivery. PHD-06 is application glue: a
+exact Astro 7.3.2 / `@astrojs/react` 6.0.6 / React 19.2.8. The PHD-05 core
+correction restores island events beside fragment work without duplicate
+fallback delivery. PHD-06 is application glue: a
 [page-owned store](../tests/fixtures/astro-react-owned/src/client/island-snapshots.ts.fixture)
 subscribes before the preview client starts, and React subscribes before reading
 the latest selected snapshot. Real delayed module loading, newer revisions,
@@ -331,14 +331,14 @@ Rendered with `render()` from `svelte/server`, and only its `body`: what a
 component puts in `<svelte:head>` belongs to the document head, which the route
 strategy owns. `svelte` is an optional peer imported at the first render.
 
-That import names `svelte/server` outright, unlike the other bindings' hidden
-specifiers, and it has to: Svelte keeps the current component context in a
-module variable, and a component compiled by Vite reaches it through Vite's own
-module graph. A copy resolved past the bundler would be a second instance with
-an empty context, and every render would fail on it. If one ever does — a build
-that externalizes this package without also externalizing `svelte`, say — add
-`ssr: { noExternal: ['payload-live-preview'] }` to `vite.config.ts` so both come
-from the same graph.
+That import names `svelte/server` outright, unlike the Astro and Nuxt bindings,
+which import theirs through a variable, and it has to: Svelte keeps the current
+component context in a module variable, and a component compiled by Vite reaches
+it through Vite's own module graph. A copy resolved past the bundler would be a
+second instance with an empty context, and every render would fail on it. If one
+ever does — a build that externalizes this package without also externalizing
+`svelte`, say — add `ssr: { noExternal: ['payload-live-preview'] }` to
+`vite.config.ts` so both come from the same graph.
 
 ### Nuxt
 
@@ -498,9 +498,12 @@ in whatever it does hand a handler — that is all either binding does.
 - Same-origin only. A request whose `Sec-Fetch-Site` is anything but
   `same-origin` (or `none`) is refused before `Origin` is read, and the
   runtime's fragment client only posts to a path on the page's own origin.
-  `allowedOrigins` on the endpoint admits a named `Origin` only for a client
-  that sends no `Sec-Fetch-Site`; it does not open the endpoint to a preview
-  page served elsewhere.
+  `allowedOrigins` on the endpoint adds `Origin` values accepted when
+  `Sec-Fetch-Site` is absent, `same-origin` or `none` — behind TLS termination,
+  say, where the server sees an upstream URL and the browser sends the public
+  origin. A fetch the browser marks `same-site` or `cross-site` is refused
+  whatever the list says, so it does not open the endpoint to a preview page
+  served elsewhere.
 
 ## Turning it on in the page
 
@@ -553,8 +556,8 @@ Patching reaches what the markup annotates. Edit a field with no
 has nowhere to put the new one. A framework hook that re-renders the component
 tree does not have that failure mode, and that is the one thing it does better.
 
-A strategy to escalate to closes it, and nothing else is needed — escalating is
-what `onUnfaithfulPatch` does by default:
+The route strategy closes it, and nothing else is needed — escalating is what
+`onUnfaithfulPatch` does by default:
 
 ```js
 // astro.config.mjs reads process.env: import.meta.env has no PUBLIC_ variables there (docs/astro.md)
@@ -579,16 +582,23 @@ per element, because the cause is the markup rather than the edit.
 
 What counts as covered: a binding on the field, on the same field under the
 message's locale suffix, or on a path inside it — `data-payload-field="hero.eyebrow"`
-covers the field `hero`, because the diff names top-level fields. The document
-fields Payload sends with every update (`id`, `updatedAt`, `_status` and their
-kin) never count, and neither does the connection's first message, where every
-field looks changed and the page was just rendered from them.
+covers the field `hero`, because the diff names top-level fields. A
+`data-payload-covers` declaration counts too, and so does a field that a boundary
+or a route marker lists in `data-payload-depends` when the page configures the
+strategy that renders it ([bindings.md](bindings.md#what-a-page-accounts-for)).
+The document fields Payload sends with every update (`id`, `updatedAt`,
+`_status` and their kin) never count, and neither does the connection's first
+message, where every field looks changed and the page was just rendered from
+them.
 
 The refresh is throttled by the route strategy's own `minIntervalMs` (1 s by
 default), and a revision refreshes at most once — a second attempt is refused
 as `LP0805`. A page that binds little and edits much will still refresh often;
-that is the trade, and `onUnfaithfulPatch: 'warn'` is the other side of it: the
-same findings, reported as `LP0411`, with the patch left where it is.
+that is the trade, and `onUnfaithfulPatch: 'warn'` is the other side of it: it
+hands nothing to a server and leaves the patch where it is. It reports a patch
+that fell short as `LP0411`, once per element. A changed field with no binding
+is not one of those: `inspect().fidelity` counts it under every mode, and
+`LP0203` names a scalar one (`LP0201` when its value is empty).
 
 A refresh still running when the next revision arrives keeps running: the
 route is the server's, so the refresh lands for that revision and the runtime
@@ -607,25 +617,27 @@ even when its own changes lie outside it.
   revision — `pending`, `current`, `partial` with the shortfalls that kept it
   from being current (a boundary that fell back to a patch, with its code; a
   route render that showed the saved draft or failed; a patch or an unbound
-  field kept; a write that did not happen; a failed re-fetch), `unconfirmed`
-  while an island has not called `displayed()`, or `superseded`. The
-  `revisionDisplay` event carries the same record when a revision leaves
-  `pending`, and with `enableA11y` a partial revision is announced
+  field kept; a write that did not happen; a failed re-fetch) or `unconfirmed`
+  while an island has not called `displayed()`. The `revisionDisplay` event
+  carries the same record when a revision leaves `pending`, and reports
+  `superseded` for one that a newer revision replaced while it was still
+  `pending`; with `enableA11y` a partial revision is announced
   ([ADR 0023](architecture/0023-revision-display-state.md)).
 - `inspect().fragments`: `{ handler, inFlight, rendered, failed, superseded }`.
-- `inspect().fidelity`: `{ mode, unfaithful, escalated, fields }` — every
-  finding of this kind, and how many of them a strategy was handed: the patches
-  the runtime knew could not match the server (LP0411), once per binding, and
-  the changed fields it had no binding for at all, once per field.
-  `unfaithful` above `escalated` with both `handler`s `false` is a page that
-  keeps degraded patches for want of a strategy.
+- `inspect().fidelity`: `{ mode, canEscalate, unfaithful, escalated, fields }` —
+  every finding of this kind, and how many of them a strategy was handed: the
+  patches the runtime knew could not match the server (LP0411), once per
+  binding, and the changed fields it had no binding for at all, once per field.
+  `canEscalate` says whether a fragment or route strategy exists to hand
+  anything to; `unfaithful` above `escalated` with `canEscalate` `false` is a
+  page that keeps degraded patches for want of a strategy.
 - Codes: `LP0801` request failed (network, timeout, or any non-2xx status
-  but 401/403 — the endpoint's own 400, 404, 405, 408, 413, 415 and 500 too) · `LP0802`
-  response invalid (type, shape, size, wrong boundary) · `LP0803` endpoint
-  refused (401/403) · `LP0804` a late response for a superseded revision
-  was discarded · `LP0805` a route refresh was refused by the loop guard ·
-  `LP0806` a boundary asks for `fragment` but no client is configured —
-  patched instead.
+  but 401/403 — the endpoint's own 400, 404, 405, 408, 413, 415, 500 and 504
+  too) · `LP0802` response invalid (type, shape, size, wrong boundary) ·
+  `LP0803` endpoint refused (401/403) · `LP0804` a late response for a
+  superseded revision was discarded · `LP0805` a route refresh was refused by
+  the loop guard or the minimum interval · `LP0806` a boundary asks for
+  `fragment` but no client is configured — patched instead.
 
 ## The route strategy
 

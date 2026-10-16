@@ -19,7 +19,8 @@ Every update passes through the same stages before a renderer sees a value:
    through unchanged.
 
 Renderers therefore receive the populated, transformed value. `context`
-carries `allFields` (the whole transformed update), `locale`, the field
+carries `allFields` (the whole populated update, before the transforms: a
+transform changes only the value its own binding receives), `locale`, the field
 `schema` when the admin sent one, `renderRichText` when the client was
 configured with one, and `reportUnfaithful(target, reason)` — call it when your
 renderer can only approximate the value, and `onUnfaithfulPatch` asks a server
@@ -75,7 +76,7 @@ A project renderer registers under a **namespaced** key —
 The namespace is what keeps built-in safety intact: an un-namespaced unknown
 type such as `richtext` (lowercase) is treated as what it is, a typo, and the
 element falls back to the heuristics. Keys match
-`^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$`.
+`^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$`, ignoring case.
 
 ```ts
 client.use({
@@ -101,9 +102,23 @@ change the page must show, not a message to ignore.
 
 | Value                                                                       | Every renderer does                                                          |
 | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `null`, `undefined`, `''`                                                   | Clears the element and counts as a write                                     |
+| `null`, `''`                                                                | Clears the element and counts as a write                                     |
 | An unsafe URL (fails `isSafeUrl`)                                           | Clears the URL attribute, warns `LP0401` once per element, counts as a write |
-| A value with no usable URL (media object without `url`, a bare relation id) | Leaves the element untouched and counts as **no** write                      |
+| A value with no usable URL (media object without `url`, a bare relation id) | Leaves the URL attribute as it was                                           |
+
+The renderers differ in what they have left to write. `image` and `upload` have
+nothing else, so they leave the element untouched and count as **no** write; the
+runtime treats that as a patch that fell short, and `onUnfaithfulPatch` decides
+what follows (`LP0411`). `relationship` writes its label, or the bare id, as
+text and keeps `href`.
+
+A field the update leaves out is not a clear. When an update carries no value
+for a binding's path — the key is missing or `undefined`, or a dotted path leads
+through a missing or `null` group — no renderer runs: the binding keeps what it
+shows, and its field is added to `inspect().bindings.absentFields`. `null` and
+`''` are values, and clear. A transform that returns `undefined` is the one way
+a renderer is handed `undefined`, and every built-in renderer clears on it as it
+does on `null`.
 
 What "clears" means per renderer:
 
@@ -124,7 +139,8 @@ Setting `src` alone leaves a server-rendered `srcset` winning, so the
 `<img>` never changes. `image` and `upload` therefore rebuild the whole set:
 each `PayloadMedia.sizes` entry with a `url` and a numeric `width` becomes a
 candidate (checked with `isSafeUrl`, commas and spaces percent-encoded), and
-the base `url`/`width` is appended. Media with no usable `sizes` removes
+the base `url`/`width` is appended when the media has a numeric `width`. Media
+with no usable `sizes` removes
 `srcset` **and** `sizes`. An author-written `sizes` layout hint survives a
 rebuild — it describes the layout, not the media.
 
@@ -137,9 +153,10 @@ carries a scheme is used as written.
 ## Class hooks the renderers emit
 
 The sanitizer strips `style` under both policies and, under the default
-`'strict'`, every `data-*` not listed in `allowedDataAttributes` (`'compat'`
-keeps them all, `data-payload-*` included), so the Lexical renderers express
-everything through classes. Nothing is JSON-serialized into
+`'strict'`, every `data-*` (a direct `sanitizeHtml()` call can list some in
+`allowedDataAttributes`, the renderers cannot; `'compat'` keeps them all,
+`data-payload-*` included), so the Lexical renderers express everything through
+classes. Nothing is JSON-serialized into
 an attribute. Style these, or replace the node with `registerLexicalNode` /
 `registerBlockRenderer` from `payload-live-preview/lexical` and render with that
 entry's `lexicalToHtml` ([`renderRichText`](#renderrichtext-one-renderer-for-ssr-and-preview)).
@@ -275,14 +292,16 @@ client.events.on('documentSave', () => location.reload());
 ```
 
 Events: `init` · `connect` · `disconnect` · `beforeUpdate` · `afterUpdate` ·
-`elementUpdate` · `cacheRefresh` · `fragmentRender` · `documentSave` ·
-`relationshipUpdate` · `error` · `destroy`.
+`elementUpdate` · `cacheRefresh` · `fragmentRender` · `revisionDisplay` ·
+`documentSave` · `relationshipUpdate` · `error` · `destroy`.
 
 `beforeUpdate`, `afterUpdate` and `elementUpdate` carry `revision`,
 `receivedAt` (when the runtime accepted the message, Unix ms) and `source`
 (`'patch'`, `'fragment'` or `'route'`: the strategy that produced the
 update). `fragmentRender` fires per boundary and revision with `status`
-`'rendered'` or `'failed'` and the diagnostic `code`. `relationshipUpdate`
+`'rendered'` or `'failed'` and the diagnostic `code`. `revisionDisplay` carries
+the record `inspect().revisions.display` holds when a revision leaves `pending`
+([hybrid.md](hybrid.md#what-you-observe)). `relationshipUpdate`
 fires once per save in a _related_ document (an admin drawer), read off
 `externallyUpdatedRelationship`; that update re-renders every bound field even
 under `skipUnchanged`, because populated values may have changed while the
@@ -350,13 +369,13 @@ The contract is recorded in
 
 ### Built-in plugins
 
-| Plugin                               | Effect                                                                                           |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| `highlightPlugin`                    | Flashes an outline on updated elements (respects reduced motion).                                |
-| `debugPlugin`                        | Logs every lifecycle event to the console.                                                       |
-| `createAnalyticsPlugin()`            | Collects update statistics, exposed via `getStats()`.                                            |
-| `documentSavePlugin({ strategy })`   | Reacts to admin saves: `'silent'` · `'reload'` (scroll-preserving) · `'revalidate'` · `'fetch'`. |
-| `createUnboundFieldsOverlayPlugin()` | Development overlay listing the fields an update carried that the page cannot show.              |
+| Plugin                               | Effect                                                                                                                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `highlightPlugin`                    | Flashes an outline on updated elements (respects reduced motion).                                                                                                             |
+| `debugPlugin`                        | Logs `init`, `connect`, `disconnect`, `cacheRefresh`, `beforeUpdate`, `afterUpdate` and `error` through the client's debug log (`debug: true`; on by default in development). |
+| `createAnalyticsPlugin()`            | Collects update statistics, exposed via `getStats()`.                                                                                                                         |
+| `documentSavePlugin({ strategy })`   | Reacts to admin saves: `'silent'` · `'reload'` (scroll-preserving) · `'revalidate'` · `'fetch'`.                                                                              |
+| `createUnboundFieldsOverlayPlugin()` | Development overlay listing the fields an update carried that the page cannot show.                                                                                           |
 
 ### `unbound-fields`: what the page is still missing
 
@@ -375,7 +394,7 @@ in the DOM, so an entry disappears the moment you save the file that binds it.
 A click copies `data-payload-field="…"` for that field. Fields Payload sends with
 every document (`id`, `updatedAt`, `_status` and their kin) never appear, and a
 binding on a path inside a field — `hero.eyebrow` for `hero` — counts as covering
-it, exactly as the runtime's own LP0201 does.
+it, exactly as the runtime's own LP0201 and LP0203 do.
 
 It mounts only when the client runs with `debug: true` (`onlyWithDebug: false`
 overrides that), and it is a plugin rather than part of the runtime for one
