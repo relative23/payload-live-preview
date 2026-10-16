@@ -7,7 +7,7 @@
       "nodes": ["node_modules/@nuxt/cli"],
       "fixAvailable": {
         "name": "nuxt",
-        "version": "4.6.1",
+        "version": "4.6.2",
         "isSemVerMajor": true
       }
     },
@@ -17,7 +17,7 @@
       "nodes": ["node_modules/@nuxt/nitro-server"],
       "fixAvailable": {
         "name": "nuxt",
-        "version": "4.6.1",
+        "version": "4.6.2",
         "isSemVerMajor": true
       }
     },
@@ -27,7 +27,7 @@
       "nodes": ["node_modules/@nuxt/vite-builder"],
       "fixAvailable": {
         "name": "nuxt",
-        "version": "4.6.1",
+        "version": "4.6.2",
         "isSemVerMajor": true
       }
     },
@@ -62,7 +62,7 @@
       "nodes": ["node_modules/listhen"],
       "fixAvailable": {
         "name": "nuxt",
-        "version": "4.6.1",
+        "version": "4.6.2",
         "isSemVerMajor": true
       }
     },
@@ -78,7 +78,7 @@
       "nodes": ["node_modules/nitropack"],
       "fixAvailable": {
         "name": "nuxt",
-        "version": "4.6.1",
+        "version": "4.6.2",
         "isSemVerMajor": true
       }
     },
@@ -95,7 +95,7 @@
       "nodes": ["node_modules/node-forge"],
       "fixAvailable": {
         "name": "nuxt",
-        "version": "4.6.1",
+        "version": "4.6.2",
         "isSemVerMajor": true
       }
     },
@@ -105,7 +105,7 @@
       "nodes": ["node_modules/nuxt"],
       "fixAvailable": {
         "name": "nuxt",
-        "version": "4.6.1",
+        "version": "4.6.2",
         "isSemVerMajor": true
       }
     }
