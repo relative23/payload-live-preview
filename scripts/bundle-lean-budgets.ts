@@ -133,4 +133,6 @@
 // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
 // Node24.19/npm12.0.2, epoch1791096072: +22/+9/+18 B raw/gzip/Brotli;
 // retain the prior 13/7/120 B reserves.
-export const INLINE_LEAN_BUDGET = { raw: 117_485, gzip: 36_927, brotli: 32_630 } as const;
+// 2026-10-10 (PR 125, `data-payload-morph` opts a custom element into the morph, ADR 0008 §10): paired Node24.19/npm12.0.2, epoch1791096072;
+// +21/+8/+14 B raw/gzip/Brotli; retain the prior 13/7/120 B reserves.
+export const INLINE_LEAN_BUDGET = { raw: 117_506, gzip: 36_935, brotli: 32_644 } as const;

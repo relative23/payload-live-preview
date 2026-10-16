@@ -6,7 +6,9 @@
  * state exception and keeps focus across a retained move; which subtrees it
  * never enters is the coordinator's rule, handed in as
  * `MorphOptions.boundary` and defaulting to the package's (`isMorphBoundary`
- * in islands.ts). See ADR 0008, §9 for the line between the two.
+ * in islands.ts). See ADR 0008, §9 for the line between the two. A custom
+ * element is such a boundary unless both of its sides carry
+ * `data-payload-morph` (§10).
  */
 
 import { isMorphBoundary } from './islands';

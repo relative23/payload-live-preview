@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 489,
-    "suites": 924,
-    "tests": 4207,
+    "files": 491,
+    "suites": 927,
+    "tests": 4217,
     "benchmarks": 12
   },
   "groups": {
@@ -39,9 +39,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 55,
-      "suites": 58,
-      "tests": 240,
+      "files": 56,
+      "suites": 59,
+      "tests": 243,
       "benchmarks": 0
     },
     "integration": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 397,
-      "suites": 821,
-      "tests": 3833,
+      "files": 398,
+      "suites": 823,
+      "tests": 3840,
       "benchmarks": 0
     }
   },
@@ -260,6 +260,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/e2e/specs/hybrid-custom-element-morph.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/e2e/specs/hybrid-fragment.spec.ts",
       "group": "e2e",
       "suites": 1,
@@ -424,7 +431,7 @@
       "path": "tests/e2e/specs/structural-morph.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 6,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -1838,7 +1845,7 @@
       "path": "tests/unit/core/morph.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 25,
+      "tests": 29,
       "benchmarks": 0
     },
     {
@@ -2413,6 +2420,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 20,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/fragment/custom-element-morph.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {

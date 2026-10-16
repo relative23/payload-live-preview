@@ -13,16 +13,24 @@ export const ISLAND_ATTRIBUTE = 'data-payload-island';
 export const ISLAND_SELECTOR = `astro-island, [${ISLAND_ATTRIBUTE}]`;
 /** The opt-out for a subtree the site scripts itself: the morph never enters it. @internal */
 export const OWNED_ATTRIBUTE = 'data-payload-owned';
+/**
+ * The opt-in for a custom element: present on the live and on the rendered host
+ * (its value is ignored), the morph edits the host's attributes and light DOM
+ * instead of retaining it whole (ADR 0008 §10). @internal
+ */
+export const MORPH_ATTRIBUTE = 'data-payload-morph';
 
 /**
  * The ownership rule (ADR 0008 §4): a subtree the morph never enters. Custom
- * elements own their subtree, islands are a framework's, `contenteditable`
+ * elements own their subtree unless the template opts in with
+ * `data-payload-morph` (§10), islands are a framework's, `contenteditable`
  * is the visitor's, `data-payload-owned` is the site's. The coordinators hand
  * this rule to the engine as `MorphOptions.boundary`; the engine itself only
  * pairs, edits and keeps focus (§9). @beta
  */
 export function isMorphBoundary(element: Element): boolean {
-  if (element.tagName.toLowerCase().includes('-')) return true;
+  const customElement = element.tagName.toLowerCase().includes('-');
+  if (customElement && !element.hasAttribute(MORPH_ATTRIBUTE)) return true;
   if (isIslandBoundary(element) || element.hasAttribute(OWNED_ATTRIBUTE)) return true;
   const editable = element.getAttribute('contenteditable');
   return editable !== null && editable !== 'false';
