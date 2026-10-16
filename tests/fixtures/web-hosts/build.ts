@@ -13,6 +13,10 @@ const shared: BuildOptions = {
   bundle: true,
   format: 'esm',
   mainFields: ['module', 'main'],
+  // The default renderer imports its React peers by literal specifier so a consumer's bundler
+  // resolves them with its components. This probe never reaches that renderer, so the peers stay
+  // imports: bundled, they would put React's Node build into the Deno and Bun files.
+  external: ['react', 'react-dom'],
   alias: { 'payload-live-preview/nextjs': resolve('dist/adapters/nextjs/index.js') },
   outdir: out,
   outExtension: { '.js': '.mjs' },
