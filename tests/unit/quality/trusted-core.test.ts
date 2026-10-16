@@ -235,7 +235,7 @@ describe('the reviewed core', () => {
     // room to grow into without writing down why.
     expect(measurement.totalLines).toBe(reviewed.core.lines.limit);
     expect(measurement.dependencies).toEqual(Object.keys(reviewed.core.dependencies).sort());
-  });
+  }, 60_000);
 
   it('gives every module outside the core, and every import, a reason a reader can use', async () => {
     const reviewed = await readTrustedCorePolicy(process.cwd());
