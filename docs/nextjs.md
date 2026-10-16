@@ -30,7 +30,7 @@ either way, and the only question the component answers is who receives them.
 | Way                                                       | A public visitor receives | Pick it when                                                                  |
 | --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
 | `<LivePreviewScript />`, an async server component        | nothing                   | the default: the render can await an authorization verdict                    |
-| `livePreviewScriptProps()` with `delivery: 'asset'`       | a 1 367-byte bootstrap    | the script is built once at module scope and the page has no verdict to await |
+| `livePreviewScriptProps()` with `delivery: 'asset'`       | a 1 344-byte bootstrap    | the script is built once at module scope and the page has no verdict to await |
 | `livePreviewScriptProps()` or `renderLivePreviewScript()` | the whole runtime         | a page that is not gated at all, or HTML a server assembles as a string       |
 
 ## Nothing for a public visitor
@@ -99,7 +99,7 @@ below.
 
 When the script is built once at module scope and there is no verdict to
 await, `delivery: 'asset'` puts a bootstrap in the page instead of the runtime —
-a 1 367-byte `<script>` element, measured on the example, rendered twice like
+a 1 344-byte `<script>` element, measured on the example, rendered twice like
 anything else in a layout's head — which arms the wait for React's first
 commit ([hydration caveat](#hydration-caveat)) and fetches the runtime only
 once the page finds itself in a preview context:
@@ -170,7 +170,7 @@ payload, so the runtime was most of what an anonymous visitor received. The
 same request answers 15 327 bytes with `<LivePreviewScript />`. That component
 is the version of this layout that waits; `delivery: 'asset'` above is the
 version that keeps the module-scope props and replaces the runtime with the
-1 367-byte bootstrap. What each choice costs a visitor, measured per framework:
+1 344-byte bootstrap. What each choice costs a visitor, measured per framework:
 [deployment.md](deployment.md#what-a-public-visitor-pays).
 
 `livePreviewScriptProps()` takes a `nonce` for a CSP you manage yourself, and puts it where the framework expects it — a prop, not markup inside the body. `renderLivePreviewScript()` returns the complete `<script>` tag instead, for HTML a server assembles as a string; JSX cannot render that.
