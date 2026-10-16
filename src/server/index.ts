@@ -24,7 +24,7 @@ export {
   type PreviewAuthorizationStrategy,
   type PreviewAuthorizationStrategyName,
   type PreviewTokenClaims,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 1.x shape exists to be re-exported
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 beta shape exists to be re-exported
   type PreviewTokenReplayChecks,
   type PreviewTokenReplayStore,
   type PreviewTokenTransport,

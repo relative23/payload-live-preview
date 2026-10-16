@@ -168,6 +168,17 @@ describe('pll migrate', () => {
     expect(out).not.toContain('dist/');
   });
 
+  it('lists every codemod that runs in its help, in the order they run', async () => {
+    const { CODEMODS } = await import('@migrate/index');
+    expect(await run(['migrate', '--help'])).toBe(0);
+    const listed = out
+      .split('Codemods, in the order they run:\n')[1]!
+      .split('\n\n')[0]!
+      .split('\n')
+      .map((line) => line.trim());
+    expect(listed).toEqual(CODEMODS.map((codemod) => codemod.id));
+  });
+
   it('prints help, requires a path, rejects an unknown option and an unreadable path', async () => {
     expect(await run(['migrate', '--help'])).toBe(0);
     expect(out).toContain('pll migrate');

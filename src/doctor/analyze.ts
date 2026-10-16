@@ -162,8 +162,12 @@ function framingFindings(
     }
   }
   const frameOptions = preview.headers['x-frame-options'];
+  // A response with a `frame-ancestors` directive is framed by that directive alone: the HTML
+  // Standard skips the header for it (measured in Chromium, Firefox and WebKit). The header
+  // decides only where the response declares none; the directive's own verdict is LP0702.
   const blocks =
     frameOptions !== undefined &&
+    frameAncestors === undefined &&
     (/deny/iu.test(frameOptions) || (/sameorigin/iu.test(frameOptions) && !sameOrigin));
   if (blocks) {
     // `SAMEORIGIN` refuses a frame from *another* origin, so it is a verdict
@@ -179,25 +183,27 @@ function framingFindings(
             level: 'error',
             title: `X-Frame-Options: ${frameOptions} blocks the preview iframe`,
             detail:
-              'This header is older than CSP and browsers honour it independently. No ' +
-              'frame-ancestors directive can override it.',
+              'This header is older than CSP. A browser applies it to a response that has no ' +
+              'frame-ancestors directive, and this response has no frame-ancestors.',
             remedy:
-              'Remove X-Frame-Options for preview responses. It is usually set by a proxy ' +
-              'or a security middleware rather than by the app.',
+              'Remove X-Frame-Options for preview responses, or serve a frame-ancestors ' +
+              'directive that admits the admin: the header is then ignored. It is usually ' +
+              'set by a proxy or a security middleware rather than by the app.',
           }
         : {
             code: 'LP0703',
             level: 'warning',
             title: `X-Frame-Options: ${frameOptions} blocks every frame from another origin`,
             detail:
-              'This header is older than CSP and browsers honour it independently, and no ' +
-              'frame-ancestors directive can override it. SAMEORIGIN refuses a frame from ' +
-              'another origin only, and no admin origin was given: whether it blocks this ' +
-              'preview depends on where the admin is served, which this probe cannot see.',
+              'This header is older than CSP. A browser applies it to a response that has no ' +
+              'frame-ancestors directive, and this response has no frame-ancestors. SAMEORIGIN ' +
+              'refuses a frame from another origin only, and no admin origin was given: whether ' +
+              'it blocks this preview depends on where the admin is served, which this probe ' +
+              'cannot see.',
             remedy:
               'Re-run with --admin <origin> to have it judged. If the admin is on another ' +
-              'origin, remove X-Frame-Options for preview responses; a proxy or a security ' +
-              'middleware usually sets it.',
+              'origin, remove X-Frame-Options for preview responses or serve a frame-ancestors ' +
+              'directive that admits it; a proxy or a security middleware usually sets the header.',
           },
     );
   }
@@ -237,7 +243,8 @@ function bindingFindings(
         'scheduler stops writing offscreen elements and buffers them until they scroll into ' +
         'view. On a page nobody scrolls, that is never.',
       remedy:
-        'Raise visibilityGateThreshold if the whole page must stay live, or confirm that ' +
+        'Raise visibilityGateThreshold on LivePreviewClient or generateInlineScript() (the ' +
+        'adapters do not forward it) if the whole page must stay live, or confirm that ' +
         'deferring below the fold is acceptable here.',
     });
   }

@@ -153,7 +153,7 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly authorizePreview?: (
     request: Req,
   ) => PreviewAuthorizationHookResult | Promise<PreviewAuthorizationHookResult>;
-  /** Refuse insecure configuration at startup: `authorizePreview`, https `allowedOrigins`, no referrer trust. Default `true`; `defaults: 'v1'` restores `false`. */
+  /** Refuse insecure configuration at startup: `authorizePreview`, non-empty `allowedOrigins` (`https:` in production), no `'referer'` signal. Default `true`; `defaults: 'v1'` restores `false`. */
   readonly strict?: boolean;
   /** `'v2'` (default) is the 2.0 table, `'v1'` stages a migration on the 1.x one; explicit options win. See ADR 0007. */
   readonly defaults?: DefaultsProfile;

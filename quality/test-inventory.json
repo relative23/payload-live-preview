@@ -22,7 +22,7 @@
   "totals": {
     "files": 493,
     "suites": 933,
-    "tests": 4238,
+    "tests": 4243,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 400,
       "suites": 829,
-      "tests": 3861,
+      "tests": 3866,
       "benchmarks": 0
     }
   },
@@ -2258,7 +2258,7 @@
       "path": "tests/unit/doctor/analyze-framing.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 18,
+      "tests": 21,
       "benchmarks": 0
     },
     {
@@ -2391,7 +2391,7 @@
       "path": "tests/unit/field-types/value-format.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2573,7 +2573,7 @@
       "path": "tests/unit/migrate/cli.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 9,
+      "tests": 10,
       "benchmarks": 0
     },
     {

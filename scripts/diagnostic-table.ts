@@ -53,7 +53,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0202:
     "The message carries neither a global slug nor a collection slug, so owner scoping cannot route it; nothing was applied. Check the admin's live-preview setup for that collection, or turn `scopeBindingsByOwner` off on that page.",
   LP0301:
-    'Raise `visibilityGateThreshold` (or set `disableVisibilityGate`), or accept that below-the-fold updates wait for a scroll.',
+    'Raise `visibilityGateThreshold` (or set `disableVisibilityGate`) on `LivePreviewClient` or `generateInlineScript()` (the adapters do not forward either), or accept that below-the-fold updates wait for a scroll.',
   LP0401:
     'The attribute (`on*`, `style`, `srcdoc`, `formaction`, `id`, `name`, …) or the value (a `javascript:` or `data:` URL) is refused by design. Bind a different attribute or fix the value; the rules are in [security.md](security.md).',
   LP0402:
@@ -89,17 +89,17 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0702:
     'Let the adapter manage CSP, or add the admin origin to your own `frame-ancestors`. As an error the served policy does not admit `--admin`: add that origin to `allowedOrigins`.',
   LP0703:
-    'Remove `X-Frame-Options` from preview responses; a proxy or a security middleware usually sets it, and no CSP directive overrides it. As a warning it means the audit was given no `--admin`: `SAMEORIGIN` blocks only a frame from another origin, so pass the admin origin to have it judged.',
+    'Remove `X-Frame-Options` from preview responses, or serve a `frame-ancestors` directive that admits the admin, which makes browsers ignore the header; a proxy or a security middleware usually sets it. As a warning it means the audit was given no `--admin`: `SAMEORIGIN` blocks only a frame from another origin, so pass the admin origin to have it judged.',
   LP0704:
     'Gate binding emission on an authorized preview context with `createPreviewBindings()`; its suppressed form emits nothing at all.',
   LP0705:
-    'Raise `visibilityGateThreshold` if the whole page must stay live, or confirm that deferring below the fold is acceptable here.',
+    'Raise `visibilityGateThreshold` on `LivePreviewClient` or `generateInlineScript()` (the adapters do not forward it) if the whole page must stay live, or confirm that deferring below the fold is acceptable here.',
   LP0706:
     'Give every binding an owning `data-payload-owner` ancestor, or leave `scopeBindingsByOwner` off until they all have one.',
   LP0707:
     'Add binding attributes to the markup; `pll-codegen --inventory` lists every field the schema makes addressable.',
   LP0708:
-    'Point the audit at a route that renders an HTML document. Redirects are reported, not followed, so probe the final URL; a redirect to a login needs a session the probe cannot supply.',
+    'Point the audit at a route that renders an HTML document. Redirects are reported, not followed, so probe the final URL; a redirect to a login needs credentials: pass `--header "Cookie: payload-token=…"` or a signed token as `?previewToken=…`.',
   LP0709:
     "A runtime row is at its 1.x value — set explicitly, by `defaults: 'v1'`, or read from a script older than 2.0.0-rc.1 that does not name its defaults (an `info` line says so). The finding says which, and what to change.",
   LP0710:
@@ -114,9 +114,9 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0805:
     "Two different refusals share this code, and neither loses an edit. A second refresh for one revision is the loop guard, counted in `inspect().route.loopStopped`. A refresh inside the strategy's `minIntervalMs` is the brake: it is counted in `inspect().route.refused` and run once when the window closes, and the page is patched meanwhile. Nothing to do in either case.",
   LP0408:
-    'Use one of the known formats — `date`, `date:short|medium|long|full`, `time`, `datetime`, `number`, `number:0-4`, `currency:XXX`, `percent` — or drop the attribute and format on the server behind a fragment.',
+    'Use one of the known formats — `date`, `date:short|medium|long|full`, `time`, `time:short|medium|long|full`, `datetime`, `datetime:short|medium|long|full`, `number`, `number:0-4`, `currency:XXX`, `percent` — or drop the attribute and format on the server behind a fragment.',
   LP0409:
-    "Upgrading from 1.x: `sanitizerPolicy` defaults to `'strict'` since 2.0, which drops `id`, `name` and every `data-*` from written markup. Put the hook on an element the template owns, list the attribute in `allowedDataAttributes`, or set `sanitizerPolicy: 'compat'` to keep the 1.x behaviour. `allowedDataAttributes` cannot admit `data-payload-*`; only `'compat'` keeps it, which lets rich text add a binding ([security.md](security.md)).",
+    "Upgrading from 1.x: `sanitizerPolicy` defaults to `'strict'` since 2.0, which drops `id`, `name` and every `data-*` from written markup. Put the hook on an element the template owns, or set `sanitizerPolicy: 'compat'` to keep the 1.x behaviour. `allowedDataAttributes` is an option of your own `sanitizeHtml()` calls: the runtime's writes take no such list. It could not admit `data-payload-*` anyway; only `'compat'` keeps it, which lets rich text add a binding ([security.md](security.md)).",
   LP0410:
     'The block renders as an empty placeholder, and the preview kept what the server rendered for it in its place — this line is spoken by the write, once it has. Call `registerBlockRenderer(slug, …)` (or `registerDefaultBlocks()`) to render it in the browser too. When the write could not keep it, `LP0413` is reported instead; a container the page left empty gets the placeholder and neither line.',
   LP0413:

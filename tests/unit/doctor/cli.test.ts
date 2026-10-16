@@ -364,7 +364,7 @@ describe('pll doctor output', () => {
   it('emits JSON for --json and exits 2 on an error-level finding', async () => {
     const { fetchImpl } = serverFetch(
       { publicBody: '<h1>t</h1>', previewBody: BOUND },
-      { 'content-security-policy': `frame-ancestors ${ADMIN}`, 'x-frame-options': 'DENY' },
+      { 'content-security-policy': "script-src 'self'", 'x-frame-options': 'DENY' },
     );
     expect(await run(['doctor', 'https://example.com/', '--json'], fetchImpl)).toBe(2);
     const parsed = JSON.parse(out) as { findings: { code: string }[]; errors: number };

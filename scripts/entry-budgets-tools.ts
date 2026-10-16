@@ -55,7 +55,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +19/+12/+3 B; same 17/12/94 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +89/+49/+34 B; same 17/12/94 B cushions.
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+7/+12 B; same 17/12/94 B cushions.
-  'doctor.js': { raw: 19_510, gzip: 7_734, brotli: 6_806 },
+  // 2026-10-17 (LP0703 yields to `frame-ancestors`, LP0705 says where the visibility gate can be set): measured +302/+65/+56 B; same 17/12/94 B cushions.
+  'doctor.js': { raw: 19_812, gzip: 7_799, brotli: 6_862 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -91,7 +92,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +19/+6/+2 B; same 42/19/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5539/+1689/+1557 B; same 42/19/120 B cushions.
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+8/+13 B; same 42/19/120 B cushions.
-  'doctor-cli.js': { raw: 49_573, gzip: 17_311, brotli: 15_508 },
+  // 2026-10-17 (LP0703 yields to `frame-ancestors`, LP0705 says where the visibility gate can be set): measured +223/+77/+91 B; same 42/19/120 B cushions.
+  'doctor-cli.js': { raw: 49_796, gzip: 17_388, brotli: 15_599 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
   'migrate.js': { raw: 19_975, gzip: 6_976, brotli: 6_333 },

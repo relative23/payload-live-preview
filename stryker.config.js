@@ -93,7 +93,7 @@ const nightlyMutate = [...new Set([...criticalFiles, ...prMutate, 'src/core/a11y
 /**
  * The trusted core (`quality/trusted-core.json`): the nine modules a reader
  * has to trust before handing the package a page, mutated on their own so the
- * figure `docs/audit.md` quotes is theirs and not the average of sixty files.
+ * figure `docs/audit.md` quotes is theirs and not the average of eighty files.
  * The target is every mutant killed; the policy file holds the measured score.
  */
 const coreMutate = Object.keys(

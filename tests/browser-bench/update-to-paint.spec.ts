@@ -114,10 +114,10 @@ async function openScenario(page: Page, count: number): Promise<Frame> {
 /**
  * Install the probe in the frame: it records, for the bound element under
  * test, the time of the mutation and the time of the next animation frame.
- * Times are `performance.now()` in the frame's own clock; the host posts its
- * timestamp inside the message so no cross-document clock is compared —
- * same-origin frames share the time origin, and the message carries the
- * host's reading of it.
+ * Times are `performance.now()` in each document's own clock; the host posts
+ * its reading inside the message. The two clocks do not share a time origin:
+ * the frame's started later, by its navigation, so the latency reads low by
+ * that offset (docs/benchmarks.md, "One caveat on the absolute figures").
  */
 async function installProbe(frame: Frame): Promise<void> {
   await frame.evaluate(() => {
