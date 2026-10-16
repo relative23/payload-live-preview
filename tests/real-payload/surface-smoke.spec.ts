@@ -56,12 +56,20 @@ test.describe(`real Payload admin → ${SURFACE} live preview`, () => {
       () => {
         const runtime = (
           window as Window & {
-            __livePreview?: { inspect(): { started: boolean; hydration: { state: string } } };
+            __livePreview?: {
+              inspect(): { started: boolean; hydration: { mode: string; state: string } };
+            };
           }
         ).__livePreview;
         if (runtime === undefined) return false;
         const { started, hydration } = runtime.inspect();
-        return started && (hydration.state === 'committed' || hydration.state === 'timed-out');
+        // With hydration off (plain HTML) the state stays `idle` for good, so `mode` decides.
+        return (
+          started &&
+          (hydration.mode === 'off' ||
+            hydration.state === 'committed' ||
+            hydration.state === 'timed-out')
+        );
       },
       undefined,
       { timeout: 30_000 },
@@ -130,12 +138,20 @@ test.describe(`real Payload admin → ${SURFACE} live preview`, () => {
       () => {
         const runtime = (
           window as Window & {
-            __livePreview?: { inspect(): { started: boolean; hydration: { state: string } } };
+            __livePreview?: {
+              inspect(): { started: boolean; hydration: { mode: string; state: string } };
+            };
           }
         ).__livePreview;
         if (runtime === undefined) return false;
         const { started, hydration } = runtime.inspect();
-        return started && (hydration.state === 'committed' || hydration.state === 'timed-out');
+        // With hydration off (plain HTML) the state stays `idle` for good, so `mode` decides.
+        return (
+          started &&
+          (hydration.mode === 'off' ||
+            hydration.state === 'committed' ||
+            hydration.state === 'timed-out')
+        );
       },
       undefined,
       { timeout: 30_000 },
