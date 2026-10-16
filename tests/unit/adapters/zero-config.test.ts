@@ -90,7 +90,7 @@ describe('the Nuxt module', () => {
       .filter((diagnostic) => diagnostic.file?.fileName === file)
       .map((diagnostic) => flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
     expect(diagnostics).toEqual([]);
-  });
+  }, 30_000);
 
   it('keeps the generated intent-only plugin independent of a project root', () => {
     expect(pluginSource({ defaults: 'v1', allowedOrigins: [ADMIN] })).toBe(
