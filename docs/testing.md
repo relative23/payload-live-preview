@@ -261,7 +261,7 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   number, and why it moved. It is the byte budget's counterpart for the thing a
   reader pays instead of bandwidth.
 - `scripts/check-trusted-core.ts` · part of `npm run test:architecture` — the
-  eight modules a reader has to trust before handing the package a page, held
+  nine modules a reader has to trust before handing the package a page, held
   at their measured line count and their reviewed imports from outside
   ([quality/trusted-core.json](../quality/trusted-core.json)). The capability
   rules beside it in `architecture-rules.ts` and `sink-rules.ts` say which
