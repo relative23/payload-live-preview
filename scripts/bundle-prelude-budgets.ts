@@ -131,7 +131,9 @@
 // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
 // Node24.19/npm12.0.2, epoch1791096072: +153/+63/+14 B raw/gzip/Brotli;
 // retain the prior 36/29/120 B reserves.
-export const INLINE_FRAGMENT_BUDGET = { raw: 158_703, gzip: 50_272, brotli: 43_573 } as const;
+// 2026-10-10 (PR 125, `data-payload-morph` opts a custom element into the morph, ADR 0008 §10): paired Node24.19/npm12.0.2, epoch1791096072;
+// +111/+27/+74 B raw/gzip/Brotli; retain the prior reserves.
+export const INLINE_FRAGMENT_BUDGET = { raw: 158_814, gzip: 50_299, brotli: 43_647 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -253,4 +255,6 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 158_703, gzip: 50_272, brotli: 43_5
 // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
 // Node24.19/npm12.0.2, epoch1791096072: +22/+10/+29 B raw/gzip/Brotli;
 // retain the prior 20/10/120 B reserves.
-export const INLINE_ROUTE_BUDGET = { raw: 153_118, gzip: 48_291, brotli: 41_947 } as const;
+// 2026-10-10 (PR 125, `data-payload-morph` opts a custom element into the morph, ADR 0008 §10): paired Node24.19/npm12.0.2, epoch1791096072;
+// +111/+26/+62 B raw/gzip/Brotli; retain the prior reserves.
+export const INLINE_ROUTE_BUDGET = { raw: 153_229, gzip: 48_317, brotli: 42_009 } as const;

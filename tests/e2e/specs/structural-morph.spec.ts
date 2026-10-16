@@ -31,6 +31,64 @@ const BASE = [
 ];
 
 test.describe('keyed morph — what survives a structural update', () => {
+  test('an opted-in custom element updates light DOM without reconnecting or losing state', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      customElements.define(
+        'x-morph-test',
+        class extends HTMLElement {
+          connections = 0;
+          state = 0;
+          connectedCallback(): void {
+            this.connections += 1;
+            if (this.shadowRoot === null) {
+              this.attachShadow({ mode: 'open' }).innerHTML = '<slot></slot><b>shadow</b>';
+              this.addEventListener('click', () => {
+                this.state += 1;
+              });
+            }
+          }
+        },
+      );
+    });
+    // Extend this test's response only; no consumer or example changes.
+    await page.route('**/structural/', async (route) => {
+      const response = await route.fetch();
+      const body = (await response.text()).replaceAll(
+        '<x-counter></x-counter>',
+        "<x-counter></x-counter><x-morph-test data-payload-morph title='{{title}}'><span>{{title}}</span></x-morph-test>",
+      );
+      await route.fulfill({ response, body });
+    });
+    const frame = await open(page);
+    await frame.evaluate(() => {
+      const host = document.querySelector<HTMLElement & { state: number }>(
+        '[data-payload-key="a"] x-morph-test',
+      )!;
+      host.state = 42;
+      Object.assign(window, { __morphHost: host, __morphShadow: host.shadowRoot });
+    });
+    await postRows(page, [{ id: 'a', title: 'Alpha, edited' }, BASE[1]!, BASE[2]!]);
+    const host = frame.locator('[data-payload-key="a"] x-morph-test');
+    await expect(host.locator('span')).toHaveText('Alpha, edited');
+    await expect(host).toHaveAttribute('title', 'Alpha, edited');
+    await host.locator('span').click();
+    expect(
+      await frame.evaluate(() => {
+        const current = document.querySelector<
+          HTMLElement & { state: number; connections: number }
+        >('[data-payload-key="a"] x-morph-test')!;
+        return {
+          sameHost: current === Reflect.get(window, '__morphHost'),
+          sameShadow: current.shadowRoot === Reflect.get(window, '__morphShadow'),
+          connections: current.connections,
+          state: current.state,
+        };
+      }),
+    ).toEqual({ sameHost: true, sameShadow: true, connections: 1, state: 43 });
+  });
+
   test('node identity survives a keyed move and an edit', async ({ page }) => {
     const frame = await open(page);
     await frame.evaluate(() => {

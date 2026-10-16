@@ -515,7 +515,9 @@
 // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
 // Node24.19/npm12.0.2, epoch1791096072: +22/+11/-54 B raw/gzip/Brotli;
 // retain the prior 10/5/120 B reserves.
-export const INLINE_BUDGET = { raw: 144_568, gzip: 45_499, brotli: 39_884 } as const;
+// 2026-10-10 (PR 125, `data-payload-morph` opts a custom element into the morph, ADR 0008 §10): paired Node24.19/npm12.0.2, epoch1791096072;
+// +66/+14/+16 B raw/gzip/Brotli; retain the prior 10/5/120 B reserves.
+export const INLINE_BUDGET = { raw: 144_634, gzip: 45_513, brotli: 39_900 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

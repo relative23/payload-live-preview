@@ -228,6 +228,39 @@ That is it: the inline script detects the admin's iframe and starts patching. Ri
 
 A binding is patched in place by default. A `data-payload-fragment` boundary is rendered by your server from the unsaved form state instead — conditional sections, derived values, custom blocks, the component's own logic — and morphed into the page. Compatible retained nodes keep their focus and live properties; a node that changes kind, loses its pairing or crosses an ownership boundary is replaced and loses that state. The runtime posts the fields to the same-origin endpoint named in `fragments: { endpoint }`, built with `createFragmentEndpoint()`, which every adapter entry exports — Astro renders through its container API, Next.js through `react-dom/server`, SvelteKit through `svelte/server`, Nuxt through `vue/server-renderer` — and patches the boundary's own bindings when the server cannot render. With `routeStrategy: true` or `fragments` set, a binding in `<head>`, or one marked `data-payload-strategy="route"`, refreshes the whole route once per revision. The route morph follows the same retention rule and restores focus after a retained keyed move; it does not promise state for replaced nodes. Without either strategy the binding is patched like any other. The route is matched by top-level field name, so a dotted binding such as `meta.title` refreshes it only with `data-payload-depends="meta"`. Markup, endpoint, deployment requirements and the abuse model: [docs/hybrid.md](docs/hybrid.md).
 
+Custom elements are protected from fragment, route and structural morphs by
+default. Add the opt-in attribute `data-payload-morph` to a custom element in
+your template when you want live preview to update its attributes and
+server-rendered light DOM (the children inside the element).
+
+```html
+<my-component data-payload-morph>
+  <!-- Server-rendered content that live preview can update -->
+</my-component>
+```
+
+The attribute must appear on the element already on the preview page and in
+the updated HTML returned by your template. Adding it to the template normally
+covers both. The attribute opts in when present; its value is ignored.
+Compatible hosts with the same tag and namespace retain their identity,
+instance properties and listeners while attributes and light DOM update.
+If only one version has the attribute, or the elements are incompatible, the
+existing replacement behavior applies.
+Shadow roots are never touched; islands, `data-payload-owned`, editable content
+and nested protected descendants remain protected. Ordinary elements are unchanged.
+
+The morph makes the host's attributes and light DOM match the server's markup,
+so what a component added to its own host or built inside it is removed or
+replaced on the next update (the state attributes `open`, `value`, `checked` and
+`selected` are left alone unless the template names them). Keep markup a
+component owns in its shadow root, or mark it `data-payload-owned`. Components
+must react to child changes, refresh cached references, preserve UI state, and
+clean up listeners or observers. `connectedCallback` does not rerun for child
+updates; DOM moves can still reconnect a retained host. Consumers may emit the
+marker only in preview mode on initial and subsequent renders; preview
+detection stays in the application. See
+[ADR 0008](docs/architecture/0008-keyed-morph-ownership.md#10-custom-element-light-dom-opt-in-2026-10-10).
+
 ## Events and plugins
 
 ```ts
