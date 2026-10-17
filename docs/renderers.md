@@ -162,6 +162,17 @@ image and video blocks) is written as delivered too, so it loads in a preview on
 another origin only when Payload returns absolute URLs, which its own
 `serverURL` makes it do.
 
+A Lexical `upload` node renders only from a populated media document. On
+Payload 3 the admin posts the node with the media's ID as its `value` (measured
+on 3.90.2: `value: 16`), and the merge fills the relationship and upload fields
+the schema names, not the nodes inside rich text. The node therefore renders as
+nothing: an image inside rich text is missing from the first update, which
+writes every bound field, until the page is loaded from the server again. A
+`relationship` node with a bare ID renders as a span that reads `#` and its
+collection. The package does not look these documents up. A page that has to
+show them while the editor works renders the field on the server with its own
+lookup ([hybrid.md](hybrid.md)).
+
 ### Email
 
 `email` is its own renderer, not an alias of `url`. A value with no scheme
