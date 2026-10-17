@@ -26,10 +26,14 @@ export const livePreviewOptions = {
   // fixture (defaults: 'v2' + authorizePreview) and the real-payload suites,
   // which also run this one: with PLP_PAYLOAD_SERVER_URL set it is strict and
   // the editor's session decides.
+  // A real admin posts a relationship as an id; the runtime populates it from Payload's REST API as
+  // the editor, so a binding on the populated path (`author.email`) has something to show.
   ...(process.env['PLP_PAYLOAD_SERVER_URL']
     ? ({
         defaults: 'v2',
         authorizePreviewModule: './server/utils/live-preview-auth',
+        serverURL: process.env['PLP_PAYLOAD_SERVER_URL'],
+        mergeDepth: 1,
       } as const)
     : ({ defaults: 'v1' } as const)),
 } as const;

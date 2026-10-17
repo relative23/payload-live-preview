@@ -39,7 +39,8 @@ const PREVIEW_SECRET =
 export const SITE = PREVIEW_ADMIN_ORIGIN;
 
 /** Set when a real Payload admin frames this site: its session authorizes the preview. */
-const PAYLOAD_SERVER_URL = process.env['PLP_PAYLOAD_SERVER_URL']?.trim() || undefined;
+/** Set when a real Payload admin frames the site (tests/real-payload): the editor's session and the REST API are its. */
+export const PAYLOAD_SERVER_URL = process.env['PLP_PAYLOAD_SERVER_URL']?.trim() || undefined;
 
 /** The cookie `/preview-session` writes and the layout reads back. */
 export const PREVIEW_COOKIE = 'previewToken';

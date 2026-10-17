@@ -39,6 +39,9 @@
   <header class="grid">
     <h1 {...b.title}>{initial.title}</h1>
     <p {...b.subtitle}>{initial.subtitle}</p>
+    {#if data.populated}
+      <p>Author: <span {...b.authorEmail} data-testid="author-email"></span></p>
+    {/if}
   </header>
   <img {...b.hero} src={initial.hero.url} alt={initial.hero.alt} />
   <div {...b.body}>

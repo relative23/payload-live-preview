@@ -22,7 +22,7 @@
   "totals": {
     "files": 495,
     "suites": 936,
-    "tests": 4260,
+    "tests": 4262,
     "benchmarks": 12
   },
   "groups": {
@@ -53,7 +53,7 @@
     "real-payload": {
       "files": 6,
       "suites": 6,
-      "tests": 24,
+      "tests": 26,
       "benchmarks": 0
     },
     "soak": {
@@ -704,7 +704,7 @@
       "path": "tests/real-payload/surface-session.spec.ts",
       "group": "real-payload",
       "suites": 1,
-      "tests": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     {
