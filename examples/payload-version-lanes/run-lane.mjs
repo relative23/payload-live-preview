@@ -31,7 +31,7 @@ const acceptance = {
   lifecycle: {
     status: 'native-v2-hook-lifecycle-scoped-passed',
     limitation:
-      'Real v2 native hooks, disposal, document change and iframe reload; not capacity, cross-site cookies, native Safari or the release matrix.',
+      'Real v2 native hooks in development bundles on Linux engines: an owner replaced while a read is held, a document change by navigation and a reload of the preview frame, each followed by an admin restart; not a late successful response of a replaced owner, an expiring session, a foreign origin, production builds, capacity, cross-site cookies, native Safari or the release matrix.',
   },
   population: {
     status: 'native-v2-hook-population-scoped-passed',

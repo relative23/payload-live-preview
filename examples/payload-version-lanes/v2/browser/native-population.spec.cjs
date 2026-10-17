@@ -10,66 +10,15 @@ const { createHash } = require('node:crypto');
 const { join } = require('node:path');
 const { test, expect } = require('./test-tool.cjs');
 const { redactor } = require('../template/diagnostics.cjs');
+const { choose, open, saved, signIn, state } = require('./admin.cjs');
 const settings = JSON.parse(readFileSync(process.env.PLP_P2_RUN_FILE, 'utf8'));
 const redact = redactor(settings);
 const titles = settings.specTitles['native-population.spec.cjs'];
-const selector = `iframe.live-preview-iframe[src^="${settings.site}/${settings.surface}"]`;
 const UNSAVED_SUBTITLE = 'Payload 2 native unsaved subtitle';
-
-async function signIn(page) {
-  try {
-    await page.goto('/admin/login');
-    await page.locator('#field-email').fill(settings.email);
-    await page.locator('#field-password').fill(settings.password);
-    await page.locator('button[type="submit"]').click();
-    await page.waitForURL(/\/admin(?!\/login)/u);
-  } catch {
-    throw new Error('Real Payload 2 form login did not complete; credential details withheld');
-  }
-}
-
-async function state(frame) {
-  return frame.evaluate(() => structuredClone(window.__r6));
-}
 
 // What the admin posted to the preview, kept by the page itself from its first script on.
 async function wire(frame) {
   return frame.evaluate(() => structuredClone(window.__populationWire));
-}
-
-// The hook has to be listening before the first edit. A live status and the schema packet in the
-// consumer's own ledger show that it is, so a case that types at once does not race it.
-async function open(page) {
-  await page.goto('/admin/globals/homepage');
-  await expect(page.locator('#field-title')).toBeVisible();
-  await page.locator('a[href$="/admin/globals/homepage/preview"]').click();
-  await expect(page.locator(selector)).toHaveAttribute('src', /[?&]preview=true(?:&|$)/u);
-  const element = await page.locator(selector).elementHandle();
-  const frame = await element.contentFrame();
-  expect(frame).not.toBeNull();
-  await expect.poll(() => frame.evaluate(() => window.__r6?.ready)).toBe(true);
-  await expect(frame.getByTestId('status')).toHaveText('live');
-  await expect
-    .poll(async () => (await state(frame)).traffic.some((row) => row.schemaShape === 'array'))
-    .toBe(true);
-  return frame;
-}
-
-async function saved(page) {
-  const response = await page
-    .context()
-    .request.get(settings.admin + '/api/globals/homepage?depth=0');
-  expect(response.status()).toBe(200);
-  return response.json();
-}
-
-async function choose(page, name) {
-  await page.locator('#field-author').getByRole('combobox').click();
-  // react-select 5.7.4 gives its option divs no role, so Payload's rs prefix is the handle.
-  await page
-    .locator('#field-author .rs__option')
-    .filter({ hasText: new RegExp('^' + name + '$', 'u') })
-    .click();
 }
 
 async function probe(page, mode) {
@@ -155,7 +104,7 @@ test.afterEach(async ({ page }, info) => {
     try {
       observation = await frame.evaluate(() => ({
         wire: window.__populationWire,
-        ledger: structuredClone(window.__r6),
+        ledger: window.__r6Witness.export(),
         status: document.querySelector('[data-testid=status]')?.textContent,
         title: document.querySelector('[data-testid=title]')?.textContent,
       }));
@@ -202,8 +151,8 @@ test(titles.hydration, async ({ page, browser }, info) => {
     ),
   ).toBe(true);
   const proof = await state(frame);
-  expect(proof.hydrationErrors).toEqual([]);
-  expect(proof.validationErrors).toEqual([]);
+  expect(proof.hydrationErrorCount).toBe(0);
+  expect(proof.validationErrorCount).toBe(0);
   writeFileSync(
     join(settings.run, 'browser-' + info.project.name + '.json'),
     JSON.stringify(

@@ -57,8 +57,11 @@ const run = mkdtempSync(join(here, 'runs', 'p2-'));
 const app = join(run, 'app');
 cpSync(join(here, 'template'), app, { recursive: true });
 if (surface !== 'dom') {
+  // The client and server entries come from the v3 consumers' frontend; the apps and the ledger
+  // are this lane's own and replace the shared files of the same name.
   cpSync(join(here, 'native-frontend'), join(app, 'frontend'), { recursive: true });
-  cpSync(join(here, 'native/ledger.mjs'), join(app, 'frontend/ledger.mjs'));
+  for (const file of ['ledger.mjs', 'react-app.mjs', 'vue-app.mjs'])
+    cpSync(join(here, 'native', file), join(app, 'frontend', file));
   const manifest = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'));
   Object.assign(manifest.dependencies, {
     vue: '3.5.42',

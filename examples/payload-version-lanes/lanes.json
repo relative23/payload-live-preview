@@ -36,11 +36,11 @@
         "Payload 2 authorizes cookie-only without triggering the new Origin retry",
         "an explicitly listed origin is accepted and an unlisted origin is refused"
       ],
-      "nativeLifecycleTitles": [
-        "native disposal aborts a held real v2 read and a replacement accepts the next edit",
-        "the real v2 admin document change creates a fresh native consumer",
-        "iframe reload starts from an authorized saved read and accepts a fresh real v2 schema"
-      ],
+      "nativeLifecycleTitles": {
+        "freshOwner": "same-realm fresh owner refuses retired work before distinct provider recovery",
+        "documentNavigation": "real admin navigation owns saved SSR data and first-schema population",
+        "childReload": "child reload refuses schema-less updates before distinct provider recovery"
+      },
       "nativePopulationTitles": {
         "hydration": "native SSR hydrates and the authentic first v2 schema message settles live",
         "unsavedTitle": "a real unsaved title reaches the native tree while the saved document stays unchanged",

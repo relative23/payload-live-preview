@@ -108,7 +108,6 @@ export const App = defineComponent({
         ),
         h('article', null, [
           h('h1', { 'data-testid': 'title' }, data.value.title),
-          h('p', { 'data-testid': 'subtitle' }, data.value.subtitle),
           h('p', { 'data-testid': 'status' }, session.value.status.value),
           h('p', { 'data-testid': 'revision' }, String(session.value.revision.value)),
           h(
