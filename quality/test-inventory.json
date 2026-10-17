@@ -22,7 +22,7 @@
   "totals": {
     "files": 505,
     "suites": 953,
-    "tests": 4332,
+    "tests": 4339,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 409,
       "suites": 845,
-      "tests": 3936,
+      "tests": 3943,
       "benchmarks": 0
     }
   },
@@ -3168,7 +3168,7 @@
       "path": "tests/unit/quality/payload-lane-ledger.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 15,
       "benchmarks": 0
     },
     {

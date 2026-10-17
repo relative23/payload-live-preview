@@ -1,10 +1,12 @@
 /**
  * The Payload 2 lane reads every native case from one record the preview page keeps about its own
- * hook: the admin's messages, the owners and their reads, and checkpoints named by the specs. These
- * cases hold that record to what the specs rely on: a message from a stranger leaves no row, an
- * owner knows whether it started from its own seed before any message, an aborted read keeps its
- * order, an error leaves a count and no text, and the exported record can cross the browser's
- * clone. The module runs in its own Node process against a minimal window, as the page would.
+ * hook: the admin's messages and those it turned away, the owners and their reads, the receiver the
+ * hook listens on, and checkpoints named by the specs. These cases hold that record to what the
+ * specs rely on: a stranger leaves a refusal and no row, an owner knows whether it started from its
+ * own seed before any message, an aborted read keeps its order and the window it was issued for, a
+ * chosen receiver is watched like the first, an error leaves a count and no text, and the exported
+ * record can cross the browser's clone. The module runs in its own Node process against a minimal
+ * window, as the page would.
  */
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -18,6 +20,7 @@ const LEDGER = resolve(
 interface Call {
   readonly authorPopulation: boolean;
   readonly method: string;
+  readonly target: string;
   readonly aborted: boolean;
   readonly abortSeq: number | null;
   readonly status: number | null;
@@ -25,14 +28,31 @@ interface Call {
   readonly settledSeq: number | null;
 }
 
+interface Row {
+  readonly target: string;
+  readonly reason?: string;
+  readonly origin?: string;
+  readonly marker?: string;
+  readonly schemaShape?: string;
+}
+
 interface Witness {
   readonly sequence: number;
+  readonly target: string;
   readonly owners: readonly Record<string, unknown>[];
-  readonly traffic: readonly Record<string, unknown>[];
+  readonly traffic: readonly Row[];
+  readonly refusedTraffic: readonly Row[];
+  readonly foreignOrigin: number;
   readonly calls: readonly Call[];
   readonly phases: readonly Record<string, unknown>[];
   readonly hydrationErrorCount: number;
   readonly validationErrorCount: number;
+}
+
+interface Options {
+  readonly allowedOrigins: readonly string[];
+  readonly eventSourcePolicy: string;
+  readonly hasTarget: boolean;
 }
 
 interface Outcome {
@@ -41,6 +61,20 @@ interface Outcome {
   readonly afterStrangers: Witness;
   readonly owners: Witness;
   readonly aborted: Witness;
+  readonly control: {
+    readonly selected: readonly number[];
+    readonly refusals: readonly string[];
+    readonly witness: Witness;
+  };
+  readonly options: {
+    readonly plain: Options;
+    readonly switched: Options;
+    readonly secondary: Options;
+  };
+  readonly stubborn: {
+    readonly signalReachedFetch: boolean;
+    readonly witness: Witness;
+  };
   readonly checkpoints: {
     readonly known: unknown;
     readonly unknown: unknown;
@@ -53,13 +87,15 @@ interface Outcome {
 const PROGRAM = `
 import { pathToFileURL } from 'node:url';
 const ADMIN = 'http://admin.test:4570';
+const PREVIEW = 'http://preview.test:4571';
 const listeners = [];
+const secondaryListeners = [];
 const parent = {};
 const { beginOwner, connection, installControls, ledger, observeSnapshot } = await import(
   pathToFileURL(process.env.PLP_LEDGER).href
 );
 const noWindow = { ledger: ledger(), owner: beginOwner('react', 'homepage', 1, {}) };
-globalThis.window = {
+const own = {
   parent,
   addEventListener: (type, fn) => listeners.push([type, fn]),
   removeEventListener: (type, fn) => {
@@ -67,13 +103,30 @@ globalThis.window = {
     if (at >= 0) listeners.splice(at, 1);
   },
 };
-const post = (data, init = {}) => {
-  const event = { origin: init.origin ?? ADMIN, source: init.source ?? parent, data };
-  for (const [type, fn] of listeners) if (type === 'message') fn(event);
+const secondary = {
+  parent,
+  location: { origin: PREVIEW },
+  addEventListener: (type, fn) => secondaryListeners.push([type, fn]),
 };
+const elsewhere = {
+  parent,
+  get location() {
+    throw new DOMException('cross-origin', 'SecurityError');
+  },
+  addEventListener: () => undefined,
+};
+parent.frames = [own, secondary, elsewhere];
+globalThis.window = own;
+globalThis.location = { origin: PREVIEW };
+const send = (to, data, init = {}) => {
+  const event = { origin: init.origin ?? ADMIN, source: init.source ?? parent, data };
+  for (const [type, fn] of to) if (type === 'message') fn(event);
+};
+const post = (data, init) => send(listeners, data, init);
 const message = (extra = {}) => ({ type: 'payload-live-preview', data: { title: 'T' }, ...extra });
 const witness = () => window.__r6Witness.export();
-installControls(ADMIN);
+const selected = [];
+installControls(ADMIN, (_target, index) => selected.push(index));
 
 const shapes = [];
 for (const schema of [[{ name: 'title' }], '[]', undefined, { name: 'title' }]) {
@@ -81,8 +134,11 @@ for (const schema of [[{ name: 'title' }], '[]', undefined, { name: 'title' }]) 
   shapes.push(witness().traffic.at(-1).schemaShape);
 }
 const before = witness().traffic.length;
-post(message(), { origin: 'http://stranger.test' });
-post(message(), { source: {} });
+post(message({ data: { title: 'Stranger title' } }), { origin: 'http://stranger.test' });
+post(message({ data: { title: 'Other window title' } }), { source: {} });
+post(message({ data: { title: 42 } }), { origin: 'http://stranger-two.test' });
+post(message({ data: { title: 'x'.repeat(3000) } }), { origin: 'http://stranger-three.test' });
+post(message({ data: { title: ['x'] } }), { origin: 'http://stranger-four.test' });
 post({ type: 'payload-live-preview' });
 post(message({ globalSlug: 'homepage' }));
 const afterStrangers = witness();
@@ -113,6 +169,53 @@ await fetchFn('http://admin.test:4570/api/globals/homepage?answered', { method: 
 await connection(ADMIN, undefined, null).fetchFn('http://admin.test:4570/api/authors?answered');
 const aborted = witness();
 
+const control = (data, init) => {
+  try {
+    post({ type: 'r6-control', ...data }, init);
+    return 'returned';
+  } catch (error) {
+    return error.message;
+  }
+};
+const refusals = [
+  control({ action: 'target', index: 0 }),
+  control({ action: 'target', index: 2 }),
+  control({ action: 'target', index: 1 }, { source: {} }),
+  control({ action: 'target', index: 1 }, { origin: 'http://stranger.test' }),
+  control({ action: 'other', index: 1 }),
+  control({ action: 'target', index: 'one' }),
+];
+if (selected.length !== 0) throw new Error('a refused control selected a receiver');
+if (control({ action: 'target', index: 1 }) !== 'returned') throw new Error('the control failed');
+send(secondaryListeners, message({ fieldSchemaJSON: [] }));
+send(secondaryListeners, message(), { origin: 'http://stranger.test' });
+send(secondaryListeners, message(), { source: {} });
+const controlWitness = witness();
+
+const plain = connection(ADMIN, undefined, owner);
+globalThis.window.__r6Knobs = {
+  policy: 'any',
+  origins: ['http://127.0.0.1:4571'],
+  fetch: 'stubborn',
+};
+const switched = connection(ADMIN, undefined, owner);
+const toSecondary = connection(ADMIN, secondary, owner);
+const options = {
+  plain: { allowedOrigins: plain.allowedOrigins, eventSourcePolicy: plain.eventSourcePolicy, hasTarget: 'target' in plain },
+  switched: { allowedOrigins: switched.allowedOrigins, eventSourcePolicy: switched.eventSourcePolicy, hasTarget: 'target' in switched },
+  secondary: { allowedOrigins: toSecondary.allowedOrigins, eventSourcePolicy: toSecondary.eventSourcePolicy, hasTarget: toSecondary.target === secondary },
+};
+let signalReachedFetch = null;
+globalThis.fetch = async (_input, init) => {
+  signalReachedFetch = init?.signal !== undefined;
+  return { status: 200 };
+};
+const slowController = new AbortController();
+const slow = switched.fetchFn('http://admin.test:4570/api/authors?where[id][in]=3', { signal: slowController.signal });
+slowController.abort();
+await slow;
+const stubborn = { signalReachedFetch, witness: witness() };
+
 const known = window.__r6Witness.checkpoint('final');
 const unknown = window.__r6Witness.checkpoint('somewhere else');
 const checkpoints = { known, unknown, witness: witness() };
@@ -122,7 +225,7 @@ const errors = { text: JSON.stringify(witness()), witness: witness() };
 
 for (let index = 0; index < 250; index += 1) post(message());
 const bound = witness();
-console.log(JSON.stringify({ noWindow, shapes, afterStrangers, owners, aborted, checkpoints, errors, bound }));
+console.log(JSON.stringify({ noWindow, shapes, afterStrangers, owners, aborted, control: { selected, refusals, witness: controlWitness }, options, stubborn, checkpoints, errors, bound }));
 `;
 
 function run(): Outcome {
@@ -152,6 +255,35 @@ describe('Payload 2 lane receiver record', () => {
     expect(outcome.afterStrangers.validationErrorCount).toBe(1);
   });
 
+  it('counts a message from another origin and lists a message from another window apart', () => {
+    expect(outcome.afterStrangers.foreignOrigin).toBe(4);
+    expect(outcome.afterStrangers.refusedTraffic.map((row) => row.reason)).toEqual([
+      'foreign-origin',
+      'wrong-source',
+      'foreign-origin',
+      'foreign-origin',
+      'foreign-origin',
+    ]);
+  });
+
+  it('keeps of a refused message the receiver, the origin and a bounded title, nothing else', () => {
+    const row = (origin: string, marker?: string, reason = 'foreign-origin') => ({
+      seq: expect.any(Number) as number,
+      target: 'primary',
+      origin,
+      ...(marker === undefined ? {} : { marker }),
+      reason,
+    });
+    expect(outcome.afterStrangers.refusedTraffic).toEqual([
+      row('http://stranger.test', 'Stranger title'),
+      row('http://admin.test:4570', 'Other window title', 'wrong-source'),
+      // A title that is no string, or longer than 2048 characters, leaves no marker.
+      row('http://stranger-two.test'),
+      row('http://stranger-three.test'),
+      row('http://stranger-four.test'),
+    ]);
+  });
+
   it('tells an owner that started from its own seed before any message from one that did not', () => {
     const [first, second, third] = outcome.owners.owners;
     expect(first).toMatchObject({ initialOwnData: true, initialBeforeIngress: true });
@@ -174,6 +306,65 @@ describe('Payload 2 lane receiver record', () => {
     expect(outcome.aborted.calls).toHaveLength(3);
   });
 
+  it('names the window a read was issued for', () => {
+    expect(outcome.aborted.calls.map((call) => call.target)).toEqual([
+      'primary',
+      'primary',
+      'primary',
+    ]);
+    expect(outcome.stubborn.witness.calls.at(-1)).toMatchObject({ target: 'primary' });
+  });
+
+  it('hands over the receiver the admin names and refuses every other control', () => {
+    expect(outcome.control.selected).toEqual([1]);
+    expect(outcome.control.witness.target).toBe('secondary');
+    expect(outcome.control.refusals).toEqual([
+      'The target control needs a second direct admin child',
+      // The browser itself refuses to read the origin of a window of another origin.
+      'cross-origin',
+      'returned',
+      'returned',
+      'returned',
+      'returned',
+    ]);
+  });
+
+  it('watches the chosen receiver like the first under its own label', () => {
+    const { traffic, refusedTraffic, foreignOrigin } = outcome.control.witness;
+    expect(traffic.filter((row) => row.target === 'secondary')).toEqual([
+      expect.objectContaining({ schemaShape: 'array' }),
+    ]);
+    expect(refusedTraffic.filter((row) => row.target === 'secondary')).toEqual([
+      expect.objectContaining({ reason: 'foreign-origin' }),
+      expect.objectContaining({ reason: 'wrong-source' }),
+    ]);
+    expect(foreignOrigin).toBe(outcome.afterStrangers.foreignOrigin + 1);
+  });
+
+  it('configures the hook from the switches of the spec and from the receiver it is given', () => {
+    const { plain, switched, secondary } = outcome.options;
+    expect(plain).toEqual({
+      allowedOrigins: ['http://admin.test:4570'],
+      eventSourcePolicy: 'parent-or-opener',
+      hasTarget: false,
+    });
+    expect(switched).toMatchObject({
+      allowedOrigins: ['http://admin.test:4570', 'http://127.0.0.1:4571'],
+      eventSourcePolicy: 'any',
+      hasTarget: false,
+    });
+    expect(secondary.hasTarget).toBe(true);
+  });
+
+  it('lets a stubborn fetch drop the abort signal while the record still sees the abort', () => {
+    expect(outcome.stubborn.signalReachedFetch).toBe(false);
+    expect(outcome.stubborn.witness.calls.at(-1)).toMatchObject({
+      aborted: true,
+      status: 200,
+      threw: false,
+    });
+  });
+
   it('accepts only the checkpoints the specs name', () => {
     expect(typeof outcome.checkpoints.known).toBe('number');
     expect(outcome.checkpoints.unknown).toBeNull();
@@ -181,7 +372,7 @@ describe('Payload 2 lane receiver record', () => {
       { phase: 'final', seq: outcome.checkpoints.known },
     ]);
     expect(outcome.checkpoints.witness.validationErrorCount).toBe(
-      outcome.aborted.validationErrorCount + 1,
+      outcome.stubborn.witness.validationErrorCount + 1,
     );
   });
 

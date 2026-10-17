@@ -1,8 +1,11 @@
 /**
  * Passive observations distinguish native owners in one receiver document. Only closed metadata
  * leaves this module; the installed SDK still owns every subscription, schema, abort and merge,
- * and fetch is delegated unchanged. Both v2 browser probes read the record through
- * window.__r6Witness.export(), so no error text or header reaches a report.
+ * and fetch is delegated unchanged. The v2 browser probes read the record through
+ * window.__r6Witness.export(), so no error text or header reaches a report; the one free text it
+ * keeps is the bounded title of a message it turned away, as the v3 record does. A few switches
+ * the specs set before the page runs (window.__r6Knobs) change how the hook is configured, never
+ * what it does: the source policy, further allowed origins and a fetch that ignores the abort.
  */
 const LIMIT = 200;
 const seeds = new WeakMap();
@@ -22,8 +25,14 @@ const PHASES = [
   'provider-recovery',
   'other-document',
   'child-reload-initial',
+  'target-switch',
+  'sign-out',
+  'sign-in',
   'final',
 ];
+
+// The switches of the specs, or none when the page has no window or no spec set them.
+const knobs = () => (typeof window === 'undefined' ? {} : (window.__r6Knobs ?? {}));
 
 // The hydration and validation hooks only count: the report carries the number, never the text.
 // The object holds a function, so the export below copies the count and not the object.
@@ -44,7 +53,11 @@ export function ledger() {
       document: '',
       sequence: 0,
       owners: [],
+      target: 'primary',
       traffic: [],
+      refusedTraffic: [],
+      foreignOrigin: 0,
+      observedWindows: new WeakSet(),
       calls: [],
       snapshots: [],
       commits: [],
@@ -150,16 +163,38 @@ export function commitSnapshot(owner, snapshot) {
   });
 }
 
-export function installControls(admin) {
+// A short public string or nothing: an origin, or the marker title a spec gave a message.
+const publicText = (value, longest) =>
+  typeof value === 'string' && value.length <= longest ? value : undefined;
+
+// What the record keeps of a message it turned away, like the v3 record: the receiver, the sender's
+// origin, the marker title and why. Never the data of the form.
+const refusal = (label, event, reason) => ({
+  seq: next(),
+  target: label,
+  origin: publicText(event.origin, 256),
+  marker: publicText(event.data.data.title, 2048),
+  reason,
+});
+
+// The messages one window may receive. The record keeps what this module itself accepts as the
+// admin's message and what it turns away, and whether the hook took a message is read from what the
+// hook then did. A message of the right type from another origin is counted, never listed as traffic.
+function observeInbox(inbox, label, admin) {
   const state = ledger();
-  const observe = (event) => {
-    if (
-      event.origin !== admin ||
-      event.source !== window.parent ||
-      event.data?.type !== 'payload-live-preview' ||
-      !event.data.data
-    )
+  if (state.observedWindows.has(inbox)) return;
+  state.observedWindows.add(inbox);
+  inbox.addEventListener('message', (event) => {
+    if (event.data?.type !== 'payload-live-preview' || !event.data.data) return;
+    if (event.origin !== admin) {
+      state.foreignOrigin = Math.min(LIMIT + 1, state.foreignOrigin + 1);
+      append('refusedTraffic', refusal(label, event, 'foreign-origin'));
       return;
+    }
+    if (event.source !== inbox.parent) {
+      append('refusedTraffic', refusal(label, event, 'wrong-source'));
+      return;
+    }
     const keys = ['type', 'data', 'fieldSchemaJSON', 'externallyUpdatedRelationship'];
     if (Object.keys(event.data).some((key) => !keys.includes(key))) {
       state.validationErrors.push();
@@ -167,6 +202,7 @@ export function installControls(admin) {
     }
     append('traffic', {
       seq: next(),
+      target: label,
       parentSource: true,
       originMatchesAdmin: true,
       schemaShape: Array.isArray(event.data.fieldSchemaJSON)
@@ -179,12 +215,35 @@ export function installControls(admin) {
       hasExplicitTarget:
         Object.hasOwn(event.data, 'collectionSlug') || Object.hasOwn(event.data, 'globalSlug'),
     });
-  };
-  window.addEventListener('message', observe);
-  return () => window.removeEventListener('message', observe);
+  });
 }
 
-async function observedFetch(owner, input, init) {
+// The admin document can name a second direct child of its own as the receiver: the app starts a
+// hook on that window and this module watches it too. The window has to share the preview's origin.
+export function installControls(admin, selectTarget) {
+  observeInbox(window, 'primary', admin);
+  const control = (event) => {
+    if (
+      event.origin !== admin ||
+      event.source !== window.parent ||
+      event.data?.type !== 'r6-control'
+    )
+      return;
+    if (event.data.action !== 'target' || !Number.isSafeInteger(event.data.index)) return;
+    const target = window.parent.frames[event.data.index];
+    if (!target || target === window)
+      throw new Error('The target control needs a second direct admin child');
+    if (target.location.origin !== location.origin)
+      throw new Error('Target must share the preview origin');
+    observeInbox(target, 'secondary', admin);
+    ledger().target = 'secondary';
+    selectTarget?.(target, event.data.index);
+  };
+  window.addEventListener('message', control);
+  return () => window.removeEventListener('message', control);
+}
+
+async function observedFetch(owner, input, init, label, stubborn) {
   if (!owner) return fetch(input, init);
   const state = ledger();
   if (state.calls.length >= LIMIT) throw new Error('Fixture REST count exceeds its bound');
@@ -193,6 +252,7 @@ async function observedFetch(owner, input, init) {
   const row = {
     id: state.calls.length + 1,
     owner: owner.id,
+    target: label,
     startSeq: next(),
     authorPopulation: url.pathname === '/api/authors' && url.searchParams.has('where[id][in]'),
     method: method === 'GET' || method === 'POST' ? method : 'other',
@@ -211,7 +271,9 @@ async function observedFetch(owner, input, init) {
   };
   init?.signal?.addEventListener('abort', aborted, { once: true });
   try {
-    const response = await fetch(input, init);
+    // A stubborn consumer's fetch ignores the signal: the record still sees the abort, the browser's
+    // request goes on and its answer arrives late, which is what the late-answer cases need.
+    const response = await fetch(input, stubborn ? { ...init, signal: undefined } : init);
     row.status = response.status;
     return response;
   } catch (error) {
@@ -245,7 +307,10 @@ function exportWitness() {
     document: state.document,
     sequence: state.sequence,
     owners: state.owners,
+    target: state.target,
     traffic: state.traffic,
+    refusedTraffic: state.refusedTraffic,
+    foreignOrigin: state.foreignOrigin,
     calls: state.calls,
     snapshots: state.snapshots,
     commits: state.commits,
@@ -264,14 +329,17 @@ export function initialData(document) {
   return { title: 'Initial ' + document, subtitle: 'Initial subtitle', author: null };
 }
 
-export function connection(admin, _target, owner) {
+export function connection(admin, target, owner) {
+  const { fetch: fetchMode, origins, policy } = knobs();
+  const label = target === undefined ? 'primary' : 'secondary';
   return {
     serverURL: admin,
-    allowedOrigins: [admin],
+    allowedOrigins: [admin, ...(origins ?? [])],
     depth: 1,
-    fetchFn: (input, init) => observedFetch(owner, input, init),
-    eventSourcePolicy: 'parent-or-opener',
+    fetchFn: (input, init) => observedFetch(owner, input, init, label, fetchMode === 'stubborn'),
+    eventSourcePolicy: policy ?? 'parent-or-opener',
     enableReferrerDetection: false,
     enableLocalhostMatching: false,
+    ...(target === undefined ? {} : { target }),
   };
 }
