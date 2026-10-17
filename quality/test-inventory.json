@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 505,
-    "suites": 953,
-    "tests": 4340,
+    "files": 506,
+    "suites": 955,
+    "tests": 4345,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 409,
-      "suites": 845,
-      "tests": 3944,
+      "files": 410,
+      "suites": 847,
+      "tests": 3949,
       "benchmarks": 0
     }
   },
@@ -2868,6 +2868,13 @@
       "group": "unit",
       "suites": 7,
       "tests": 25,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/acl-gate-tsconfig.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
       "benchmarks": 0
     },
     {

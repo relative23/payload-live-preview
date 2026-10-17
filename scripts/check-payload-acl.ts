@@ -6,10 +6,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFile, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { deriveGateTsconfig } from './acl-gate-tsconfig';
 import {
   PACKAGE_SMOKE_INSTALL_ARGS,
   findPackageSmokeIsolationViolations,
@@ -41,12 +42,18 @@ const digest = createHash('sha256')
 const repository = process.cwd();
 const fixture = resolve(repository, 'tests/fixtures/payload-acl');
 const directory = await mkdtemp(resolve(tmpdir(), 'plp-acl-consumer-'));
-const command = (executable: string, args: string[], cwd: string): void => {
+const configuration = await mkdtemp(resolve(tmpdir(), 'plp-acl-tsconfig-'));
+const command = (
+  executable: string,
+  args: string[],
+  cwd: string,
+  extraEnvironment: Record<string, string> = {},
+): void => {
   const result = spawnSync(executable, args, {
     cwd,
     stdio: 'inherit',
     timeout: 180_000,
-    env: sanitizeNpmScriptEnvironment(process.env),
+    env: { ...sanitizeNpmScriptEnvironment(process.env), ...extraEnvironment },
   });
   assert.equal(
     result.status,
@@ -105,6 +112,17 @@ try {
       store: 'process-local reference',
     }),
   );
+  // tsx maps the repository's aliases onto every resolution, the consumer's included: without the entries
+  // that name the package, the reproduction finds the installed copy and refuses a fallback to `src/`.
+  const gateTsconfig = resolve(configuration, 'tsconfig.json');
+  await writeFile(
+    gateTsconfig,
+    JSON.stringify(
+      deriveGateTsconfig(await readFile(resolve(repository, 'tsconfig.json'), 'utf8'), repository),
+      null,
+      2,
+    ),
+  );
   command(
     process.execPath,
     [
@@ -119,8 +137,10 @@ try {
       ...(values['require-related-drafts'] ? ['--require-related-drafts'] : []),
     ],
     repository,
+    { TSX_TSCONFIG_PATH: gateTsconfig },
   );
 } finally {
-  // The only recursive removal is the exact directory this invocation created.
+  // The only recursive removals are the exact directories this invocation created.
   await rm(directory, { recursive: true, force: true });
+  await rm(configuration, { recursive: true, force: true });
 }
