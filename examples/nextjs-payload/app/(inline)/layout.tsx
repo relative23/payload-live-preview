@@ -22,15 +22,17 @@
  * cached asset instead. Two route groups rather than two example apps: the
  * delivery is the only difference, and one dev server shows both.
  *
- * No `serverURL` is configured: this fixture has no real Payload backend,
- * updates come straight from the mock admin's postMessage.
+ * No `serverURL` is configured unless a real Payload admin frames the site
+ * (`PLP_PAYLOAD_SERVER_URL`, tests/real-payload): the mock admin's updates come
+ * straight from its postMessage, and there is no backend to populate from.
  */
 import type { ReactNode } from 'react';
 import { headers } from 'next/headers';
 import { LivePreviewScript } from 'payload-live-preview/nextjs';
 import { styles } from '../styles';
-import { SITE, authorizePreview } from '../preview';
+import { PAYLOAD_SERVER_URL, SITE, authorizePreview } from '../preview';
 import { BASE_PATH } from '../../base-path.mjs';
+import { PopulatedBindings } from './PopulatedBindings';
 
 const previewOptions = {
   allowedOrigins: [SITE],
@@ -45,6 +47,10 @@ const previewOptions = {
   authorizePreview,
 } as const;
 
+/** A real admin posts a relationship as an id; with these the runtime populates it from Payload's REST API as the editor. */
+const realAdminOptions =
+  PAYLOAD_SERVER_URL === undefined ? {} : { serverURL: PAYLOAD_SERVER_URL, mergeDepth: 1 };
+
 export const metadata = {
   title: 'Live Preview Demo',
 };
@@ -58,11 +64,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             path, and the cookie the hook verifies is not bound to one. */}
         <LivePreviewScript
           {...previewOptions}
+          {...realAdminOptions}
           request={new Request(SITE, { headers: await headers() })}
         />
         <style dangerouslySetInnerHTML={{ __html: styles }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {PAYLOAD_SERVER_URL === undefined ? null : <PopulatedBindings />}
+      </body>
     </html>
   );
 }
