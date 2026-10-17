@@ -3,6 +3,8 @@
  * apart from the gate so that the log can grow without taking the gate past the line limit: the gate measures and
  * compares, this file decides what a consumer may cost.
  */
+// 2026-10-17 (media URLs resolve against `serverURL`): paired builds at the same HEAD epoch1792233083 (Node24.19/npm12.0.2); the five rows that carry the runtime move by their measured gzip delta
+// (root client +128, generator +70, core client +118, Next middleware +73, lean +80) and keep their cushions.
 // 2026-10-10 (PR 125, `data-payload-morph`, ADR 0008 §10): paired builds at the same HEAD epoch1791096072 (Node24.19/npm12.0.2); the eight rows that carry the runtime or the sanitizer move by their
 // measured gzip delta (root client +15, generator +42, core client +16, Next middleware +36, lean +8, `./structural` +11, both `lexicalToHtml` +8) and keep their cushions.
 // 2026-10-08 (ADR 0004/0010): response-body cleanup and numeric v2 rows; paired old/current consumer gzip deltas preserve all thirteen reserves.
@@ -426,7 +428,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 55_557,
+    gzip: 55_685,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -437,7 +439,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 53_246,
+    gzip: 53_316,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -448,7 +450,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 55_547,
+    gzip: 55_665,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -473,7 +475,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 58_495,
+    gzip: 58_568,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
@@ -484,7 +486,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 37_253,
+    gzip: 37_333,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

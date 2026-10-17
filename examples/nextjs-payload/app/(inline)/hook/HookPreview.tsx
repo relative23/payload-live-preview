@@ -5,7 +5,7 @@ interface Homepage {
   title?: string;
   subtitle?: string;
   author?: { email?: string } | number | null;
-  image?: { filename?: string } | number | null;
+  image?: { filename?: string; url?: string } | number | null;
 }
 
 export function HookPreview(props: {
@@ -28,6 +28,9 @@ export function HookPreview(props: {
       </p>
       <p data-testid="image">
         {typeof data.image === 'object' && data.image !== null ? data.image.filename : ''}
+      </p>
+      <p data-testid="image-url">
+        {typeof data.image === 'object' && data.image !== null ? data.image.url : ''}
       </p>
       <p>
         status <span data-testid="status">{status}</span>, revision{' '}

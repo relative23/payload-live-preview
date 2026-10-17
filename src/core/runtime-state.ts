@@ -98,6 +98,8 @@ export interface RuntimeDeps {
   readonly warn: (...args: unknown[]) => void;
   readonly a11y: A11yAnnouncer | null;
   readonly merger: DataMerger | null;
+  /** The server the merger reads from: where a media path in a populated document points. */
+  readonly serverURL: string | undefined;
   /** How long a burst of messages may share one merge; the scheduler's debounce window. */
   readonly mergeWindowMs: number;
   readonly scopeBindingsByOwner: boolean;

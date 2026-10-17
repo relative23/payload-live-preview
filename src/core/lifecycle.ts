@@ -166,6 +166,7 @@ export class LivePreviewRuntime {
       log,
       warn,
       a11y: createA11y(options),
+      serverURL: merge?.serverURL,
       merger:
         merge === undefined
           ? null

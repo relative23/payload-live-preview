@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
+import { buildBuiltinRenderers } from '@field-types/index';
 import { deferred, fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
 /**
@@ -46,6 +47,42 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     expect(document.querySelector('h1')?.textContent).toBe('merged title');
     runtime.destroy();
   });
+  it('resolves the media path of a populated upload against the server it asked', async () => {
+    // Payload returns `/api/media/file/a.png` when its own config sets no `serverURL`. The preview is
+    // framed on another origin, so the renderers need the server the runtime was given.
+    document.body.innerHTML =
+      '<span data-payload-field="image.filename"></span>' +
+      '<img data-payload-field="image" data-payload-type="upload" alt="">';
+    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: 'post-1',
+          image: { id: 7, url: '/api/media/file/a.png', filename: 'a.png', mimeType: 'image/png' },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    const runtime = makeRuntime({
+      renderers: buildBuiltinRenderers(),
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn },
+    });
+    runtime.start();
+
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: 'post-1', image: 7 },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(fetchFn).toHaveBeenCalledOnce();
+    expect(document.querySelector('span')?.textContent).toBe('a.png');
+    expect(document.querySelector('img')?.getAttribute('src')).toBe(
+      'https://cms.example.com/api/media/file/a.png',
+    );
+    runtime.destroy();
+  });
+
   it('stops cleanly when the merge is superseded, without an escaping rejection', async () => {
     // Dropping the early return here does not change what lands in the DOM —
     // the revision is superseded either way — so only the absence of a failure

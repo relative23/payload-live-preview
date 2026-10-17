@@ -165,6 +165,9 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
     await expect(preview.getByTestId('image')).toHaveText(SEEDED_MEDIA.filename, {
       timeout: 15_000,
     });
+    // The hook hands the document over as Payload returned it: the media's `url` is the path on
+    // Payload's origin, which the component resolves itself (docs/react.md).
+    await expect(preview.getByTestId('image-url')).toHaveText(SEEDED_MEDIA.path);
     await expect(preview.getByTestId('status')).toHaveText('live');
     await expect(preview.getByTestId('error')).toHaveCount(0);
   });

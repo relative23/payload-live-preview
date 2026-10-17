@@ -11,7 +11,7 @@ import { isEmptyValue } from './utils';
 
 const uploadRenderer: FieldRenderer = {
   name: 'upload',
-  render: /* @__PURE__ */ markNoWriteCallback((target, value) => {
+  render: /* @__PURE__ */ markNoWriteCallback((target, value, context) => {
     const element = target.element;
     if (isEmptyValue(value)) {
       clear(element);
@@ -19,7 +19,7 @@ const uploadRenderer: FieldRenderer = {
     }
     const media = readMedia(value);
     if (media === undefined) return false;
-    const outcome = acceptUrl(element, target.fieldName, media.url);
+    const outcome = acceptUrl(element, target.fieldName, media.url, context.serverURL);
     if (outcome.kind === 'none') return false;
     if (outcome.kind === 'unsafe') {
       clear(element);
@@ -28,7 +28,7 @@ const uploadRenderer: FieldRenderer = {
     const url = outcome.url;
     if (element.tagName === 'IMG') {
       const img = element as HTMLImageElement;
-      writeImage(img, url, media);
+      writeImage(img, url, media, context.serverURL);
       if (media.alt !== undefined) img.alt = media.alt;
       return;
     }

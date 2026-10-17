@@ -153,7 +153,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 158 875 for authorized inline delivery. It fetches one
+  (ADR 0015), against 159 206 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -413,6 +413,8 @@ restores the 1.x default of `1`. The depth must match the `depth` of the
 initial page fetch, or nested relationships that were objects on first load
 degrade to ids after the first edit. `definePreview({ serverURL, depth })`
 binds both once: spread its `runtimeOptions` (`serverURL`, `apiRoute`,
-`mergeDepth`) into the adapter. The preview page must reach the Payload API
+`mergeDepth`) into the adapter. `serverURL` is also the server a media
+document's relative `url` resolves against ([Media URLs](renderers.md#media-urls)).
+The preview page must reach the Payload API
 with the editor's credentials — same-site cookies, or CORS with credentials
 ([docs/authorization.md](authorization.md)).

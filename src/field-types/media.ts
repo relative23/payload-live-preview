@@ -1,7 +1,7 @@
 /** `<img>` writes shared by the image and upload renderers. */
 
 import { isSafeUrl } from '@security/url-validator';
-import type { MediaShape } from '@lexical/value-shapes';
+import { resolveMediaUrl, type MediaShape } from '@lexical/value-shapes';
 
 const IMAGE_SOURCE_ATTRIBUTES = ['src', 'srcset', 'sizes'] as const;
 
@@ -11,15 +11,17 @@ export function clearImage(img: HTMLImageElement): void {
 
 /**
  * A server-rendered `srcset` would keep winning over a new `src`, so it is
- * rebuilt from the media's `sizes` or removed together with `sizes`.
+ * rebuilt from the media's `sizes` or removed together with `sizes`. `url` is
+ * already resolved; the candidates of the `srcset` are resolved against `serverURL`.
  */
 export function writeImage(
   img: HTMLImageElement,
   url: string,
   media: MediaShape | undefined,
+  serverURL?: string,
 ): void {
   img.src = url;
-  const srcset = buildSrcset(media);
+  const srcset = buildSrcset(media, serverURL);
   if (srcset === undefined) {
     img.removeAttribute('srcset');
     img.removeAttribute('sizes');
@@ -28,18 +30,22 @@ export function writeImage(
   img.setAttribute('srcset', srcset);
 }
 
-function buildSrcset(media: MediaShape | undefined): string | undefined {
+function buildSrcset(
+  media: MediaShape | undefined,
+  serverURL: string | undefined,
+): string | undefined {
   if (media?.sizes === undefined) return undefined;
   const candidates: string[] = [];
   for (const size of Object.values(media.sizes)) {
-    if (typeof size.url !== 'string' || typeof size.width !== 'number' || !isSafeUrl(size.url)) {
-      continue;
-    }
-    candidates.push(`${srcsetUrl(size.url)} ${String(size.width)}w`);
+    if (typeof size.url !== 'string' || typeof size.width !== 'number') continue;
+    const url = resolveMediaUrl(size.url, serverURL);
+    if (!isSafeUrl(url)) continue;
+    candidates.push(`${srcsetUrl(url)} ${String(size.width)}w`);
   }
   if (candidates.length === 0) return undefined;
-  if (typeof media.width === 'number' && typeof media.url === 'string' && isSafeUrl(media.url)) {
-    candidates.push(`${srcsetUrl(media.url)} ${String(media.width)}w`);
+  if (typeof media.width === 'number' && typeof media.url === 'string') {
+    const url = resolveMediaUrl(media.url, serverURL);
+    if (isSafeUrl(url)) candidates.push(`${srcsetUrl(url)} ${String(media.width)}w`);
   }
   return candidates.join(', ');
 }

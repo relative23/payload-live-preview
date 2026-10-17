@@ -19,7 +19,7 @@ export class BindingWriter {
   /** The instance's share of every `RenderContext`, built once: a write allocates the context alone. */
   private readonly instanceContext: Pick<
     RenderContext,
-    'renderRichText' | 'sanitizerPolicy' | 'reportUnfaithful'
+    'renderRichText' | 'sanitizerPolicy' | 'serverURL' | 'reportUnfaithful'
   >;
 
   constructor(
@@ -29,6 +29,7 @@ export class BindingWriter {
     this.instanceContext = definedOnly({
       renderRichText: deps.renderRichText,
       sanitizerPolicy: deps.sanitizerPolicy,
+      serverURL: deps.serverURL,
       // A renderer already holds its target, so one closure per instance says
       // as much as one per write and allocates nothing during an update.
       reportUnfaithful: (target: CachedElement, reason: string): void => {

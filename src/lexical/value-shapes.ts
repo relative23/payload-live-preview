@@ -35,6 +35,26 @@ export function readMedia(value: unknown): MediaShape | undefined {
   return asRecord(value);
 }
 
+/**
+ * A media document's URL as the preview should load it. Unless its config sets
+ * `serverURL`, Payload returns a path on its own origin (`/api/media/file/a.png`);
+ * its admin resolves the path against the server, and the preview, framed on
+ * another origin, would otherwise ask itself for the file. Only such a path is
+ * Payload's to place: any other URL, and every URL when no server is known, is
+ * written as delivered. A result on another origin than the server's (`/\host`
+ * is one, to the URL parser) is discarded.
+ */
+export function resolveMediaUrl(url: string, serverURL: string | undefined): string {
+  if (serverURL === undefined || serverURL === '' || !url.startsWith('/')) return url;
+  try {
+    const server = new URL(serverURL);
+    const resolved = new URL(url, server);
+    return resolved.origin === server.origin ? resolved.href : url;
+  } catch {
+    return url;
+  }
+}
+
 /** Reduce `value` to `[a-z0-9_-]` so it can be a class-name fragment without escaping. */
 export function sanitizeIdent(value: string): string {
   return value.replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase();
