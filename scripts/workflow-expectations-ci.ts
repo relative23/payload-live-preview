@@ -239,6 +239,37 @@ export const CI: WorkflowSpec = {
         },
       ],
     },
+    // The other targets of playwright.real-payload.config.ts: the frameworks whose preview verifies
+    // the editor's real session, the hook and composable pages, and the plain HTML page. The example
+    // a target frames is looked up by name; a target the config knows and this matrix lacks is a test
+    // that never runs on a push.
+    'real-payload-surfaces': {
+      needs: ['build'],
+      matrix: {
+        target: ['nextjs', 'sveltekit', 'nuxt', 'nextjs-hook', 'nuxt-composable', 'html'],
+        browser: [...BROWSERS],
+      },
+      steps: [
+        ...FIXTURE_SETUP,
+        { run: 'npx playwright install --with-deps ${{ matrix.browser }}' },
+        DOWNLOAD_DIST,
+        {
+          run: 'npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"',
+          env: {
+            EXAMPLE:
+              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html"}\')[matrix.target] }}',
+          },
+        },
+        fixtureInstall('payload-backend'),
+        {
+          run: 'npm run test:e2e:real-payload',
+          env: {
+            PLP_REAL_PAYLOAD_TARGET: '${{ matrix.target }}',
+            PLP_REAL_PAYLOAD_BROWSERS: '${{ matrix.browser }}',
+          },
+        },
+      ],
+    },
     'release-gates': callCriticalGates('300000', RELEASE_PUSH),
   },
 };
