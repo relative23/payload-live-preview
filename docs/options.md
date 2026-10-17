@@ -131,7 +131,7 @@ fifty-five rows.
 
 Notes on the rows that need one:
 
-- `strict` refuses at startup, not on a public response: it requires
+- `strict` refuses when the adapter is created (when its module loads; `<LivePreviewScript />` creates it on its first render), not on a public response: it requires
   `authorizePreview`, non-empty `allowedOrigins` (`https:` ones in
   production), and no `'referer'` in the resolved `previewSignals`. Astro's
   `livePreview()` integration does not apply it in `mode: 'inline'` or

@@ -242,7 +242,7 @@ reworded; a code does not — so a log filter, an alert rule, or a bug report
 that names `LP0301` still means the same thing after the sentence around it
 changes. Codes are never reused for a different meaning and never renumbered.
 The development warnings about options that 3.0 removes, and the errors a
-`strict` adapter throws at startup, are plain sentences with no code.
+`strict` adapter throws when it is created, are plain sentences with no code.
 
 <!-- diagnostic-codes:start -->
 

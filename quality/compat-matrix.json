@@ -535,7 +535,7 @@
     {
       "id": "plain-html-packed-consumer",
       "surface": "Plain HTML",
-      "feature": "immutable-tarball build, CSP and authorized service path",
+      "feature": "immutable-tarball build, nonce and hash CSP, and the origin rules",
       "version": {
         "kind": "exact",
         "value": "2.0.5",
@@ -546,11 +546,40 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "authorized renderer service not yet provided",
+      "backend": "static pages and a mock admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "e2e"
+        },
+        "sources": [
+          "tests/e2e/specs/plain-html-tarball.spec.ts",
+          "examples/pure-html/package.json",
+          "scripts/check-package.ts"
+        ]
+      }
+    },
+    {
+      "id": "plain-html-authorized-service",
+      "surface": "Plain HTML",
+      "feature": "authorized renderer service path",
+      "version": {
+        "kind": "exact",
+        "value": "2.0.5",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "authorized Node host (tests/e2e/continuation/html-owner.spec.ts), run locally and in no workflow",
       "browsers": ["chromium"],
       "evidence": {
         "status": "open",
-        "sources": ["examples/pure-html/package.json", "scripts/check-package.ts"]
+        "sources": ["tests/e2e/continuation/html-owner.spec.ts"]
       }
     },
     {
