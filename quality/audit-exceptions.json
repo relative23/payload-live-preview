@@ -19,7 +19,7 @@
     },
     "examples/astro-payload": {
       "exposure": "quality/audit-exposure/astro-payload.json",
-      "exposureSha256": "d8dd6588c4fceeab3f82569d970662ad4bfa6c708fd3a8de164587557aef71fc",
+      "exposureSha256": "302bd53c247d382931afe2c1889d9f366af6dd72b339c4ba474e4378907946f8",
       "exceptions": []
     },
     "examples/nextjs-payload": {
@@ -34,7 +34,7 @@
     },
     "examples/nuxt-payload": {
       "exposure": "quality/audit-exposure/nuxt-payload.json",
-      "exposureSha256": "1f2085b63b8a4f4a7988ad08547032f0e88dd16478561e686a6b15aa0a0ae1e4",
+      "exposureSha256": "6aeb024983cc5dfaac069e79c38b7b439ebb66b494e929b16c7ab04c56aa3cd9",
       "exceptions": [
         {
           "id": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
@@ -60,7 +60,7 @@
     },
     "examples/astro-hybrid": {
       "exposure": "quality/audit-exposure/astro-hybrid.json",
-      "exposureSha256": "cf3d92a97f16020f33a2b38bd3417bcc8a92968b438650ca53c8f572166de199",
+      "exposureSha256": "e2c8c0c9bc0f1aaaea4340052ccf77d285f162dda4774b113ac56df3a2dcbea5",
       "exceptions": []
     },
     "examples/pure-html": {
@@ -75,12 +75,12 @@
     },
     "examples/astro-inline": {
       "exposure": "quality/audit-exposure/astro-inline.json",
-      "exposureSha256": "294ec6985eb04de4969a177fe56f786a923120667091a04040f812042f4b0485",
+      "exposureSha256": "b8673264ab59e29e6ba65a58769b666cc55850003953e26caea9f686b9f5f8f9",
       "exceptions": []
     },
     "examples/astro-middleware": {
       "exposure": "quality/audit-exposure/astro-middleware.json",
-      "exposureSha256": "1fc8d0002802a1c3d5eaa6b12947cd8f0415e3a15a8341a93aebc9275ecb5d0d",
+      "exposureSha256": "ac6406a8ba11eeebf2753930b58861a31fd0aa13a3eb5387a2c69a72d85b3b4d",
       "exceptions": []
     },
     "examples/payload-backend": {

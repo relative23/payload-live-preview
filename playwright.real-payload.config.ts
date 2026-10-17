@@ -6,7 +6,8 @@ const isCI = process.env['CI'] === 'true';
  * fixture (default), the SSR hybrid fixture (`PLP_REAL_PAYLOAD_TARGET=hybrid`,
  * fragment and route strategies against the real admin), or another framework's
  * example (`nextjs`, `sveltekit`, `nuxt`, `astro-session`) whose preview authorizes
- * the editor's real session, or the plain HTML example (`html`).
+ * the editor's real session, the plain HTML example (`html`), or the Next.js example
+ * framed from an admin that keeps its autoLogin (`nextjs-autologin`).
  */
 const requested = process.env['PLP_REAL_PAYLOAD_TARGET'] ?? 'astro';
 /**
@@ -24,8 +25,12 @@ interface Surface {
   readonly command: string;
   /** The page of the example the admin frames; `/` unless the example has a page of its own. */
   readonly path?: string;
-  /** `hook`: a React hook or Vue composable page, tested by `surface-hook.spec.ts`. */
-  readonly spec?: 'hook';
+  /**
+   * `hook`: a React hook or Vue composable page, tested by `surface-hook.spec.ts`.
+   * `autologin`: the example's session check against an admin that keeps Payload's
+   * autoLogin, tested by `surface-autologin.spec.ts`.
+   */
+  readonly spec?: 'hook' | 'autologin';
 }
 const SESSION_SURFACES: Record<string, Surface> = {
   nextjs: { port: '4474', directory: 'nextjs-payload', command: 'npx next dev --port 4474' },
@@ -54,6 +59,14 @@ const SESSION_SURFACES: Record<string, Surface> = {
     path: '/composable',
     spec: 'hook',
   },
+  // The Next.js example against an admin that keeps its autoLogin: nobody signs in and no
+  // cookie exists, so the session check the example runs has nothing to forward.
+  'nextjs-autologin': {
+    port: '4474',
+    directory: 'nextjs-payload',
+    command: 'npx next dev --port 4474',
+    spec: 'autologin',
+  },
 };
 /** A plain HTML page has no request time: the runtime is baked in and the origin rule is its gate. */
 const STATIC_SURFACES: Record<string, Surface> = {
@@ -75,8 +88,10 @@ const ADMIN = 'http://localhost:3001';
  * The session is real where the preview site verifies it. Payload's autoLogin
  * authenticates every request on the server and issues no cookie, so there the
  * test signs in through the login form and the preview receives `payload-token`.
+ * The `autologin` surface is the one that keeps autoLogin on, to show that the
+ * site then sees nobody.
  */
-const session = SESSION_SURFACES[requested] !== undefined;
+const session = SESSION_SURFACES[requested] !== undefined && surface?.spec !== 'autologin';
 process.env['PLP_REAL_PAYLOAD_SESSION'] = session ? '1' : '';
 process.env['PLP_REAL_PAYLOAD_PORT'] = previewPort;
 process.env['PLP_REAL_PAYLOAD_SURFACE'] = target;
@@ -117,9 +132,11 @@ const config: PlaywrightTestConfig = {
         ? /^(?!.*(?:hybrid|surface)-).*\.spec\.ts$/u
         : surface.spec === 'hook'
           ? /surface-hook\.spec\.ts$/u
-          : session
-            ? /surface-(?:smoke|session)\.spec\.ts$/u
-            : /surface-smoke\.spec\.ts$/u,
+          : surface.spec === 'autologin'
+            ? /surface-autologin\.spec\.ts$/u
+            : session
+              ? /surface-(?:smoke|session)\.spec\.ts$/u
+              : /surface-smoke\.spec\.ts$/u,
   fullyParallel: false,
   forbidOnly: true,
   // A pass on retry must not hide nondeterminism in the release fixture.

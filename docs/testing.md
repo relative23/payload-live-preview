@@ -352,8 +352,10 @@ What is proven about the Payload wire protocol, from the outside in:
    middleware examples (Astro's built and served by Node; the Next.js one also
    as a React hook page, the Nuxt one as a Vue composable page), where the
    preview verifies the editor's session and the test signs in through the
-   real login form. CI runs every target on every push: the Astro default in
-   Chromium, the others in all three browsers.
+   real login form. A further target frames the Next.js example from an admin
+   that keeps `autoLogin`, which issues no cookie: the preview serves the
+   public page and the admin keeps working. CI runs every target on every
+   push: the Astro default in Chromium, the others in all three browsers.
 2. **Browser E2E** (`tests/e2e/`) drives a real browser and a real iframe
    across Chromium, Firefox and WebKit: `postMessage` → runtime → DOM. Its
    `/admin` page emulates the Payload admin, so it can exercise edge cases
