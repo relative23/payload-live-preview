@@ -50,22 +50,31 @@ test.describe('fragment preview (Next.js)', () => {
     expect((await fragments(frame)).handler).toBe(true);
     await expect(frame.getByTestId('hero-subtitle')).toHaveCount(0);
 
-    const fragmentResponse = page.waitForResponse(
-      (response) =>
-        response.request().method() === 'POST' &&
-        response.url() === `${APP}/payload/fragment` &&
-        response.frame() === frame,
-    );
+    // The runtime's request is held at the route, so Playwright reads the answer itself. Asked for the body of a
+    // browser-made response through the DevTools protocol, Chromium sometimes has no data
+    // (`Network.getResponseBody: No data found`) although the page received and applied it.
+    const answers: { status: number; headers: Record<string, string>; text: string }[] = [];
+    await page.route(`${APP}/payload/fragment`, async (route) => {
+      const response = await route.fetch();
+      answers.push({
+        status: response.status(),
+        headers: response.headers(),
+        text: await response.text(),
+      });
+      await route.fulfill({ response });
+    });
     await post(page, { title: 'With subtitle', subtitle: 'From the form', body: 'one two' }, OWNER);
-    const response = await fragmentResponse;
+    await expect.poll(() => answers.length).toBeGreaterThan(0);
+    const [answer] = answers;
+    if (answer === undefined) throw new Error('The fragment endpoint did not answer.');
     await test.info().attach('next-fragment-response-headers', {
-      body: JSON.stringify({ status: response.status(), headers: response.headers() }),
+      body: JSON.stringify({ status: answer.status, headers: answer.headers }),
       contentType: 'application/json',
     });
-    expect(response.status()).toBe(200);
-    const responseText = await response.text();
+    expect(answer.status).toBe(200);
+    const responseText = answer.text;
     await test.info().attach('next-fragment-response', {
-      body: JSON.stringify({ status: response.status(), body: responseText }),
+      body: JSON.stringify({ status: answer.status, body: responseText }),
       contentType: 'application/json',
     });
     const responseBody: unknown = JSON.parse(responseText);
