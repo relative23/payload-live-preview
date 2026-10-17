@@ -176,9 +176,10 @@ and 7.3.2 in all three browsers. Astro 4 uses the original
 `ViewTransitions` export for the same native navigation owner. Additional
 framework hydration and untested versions remain separate verification work.
 
-The retained pre-fix archive reproduces a default-renderer bug on exact Astro
-4.9.0: its Container API does not consume `props`, so the endpoint returns
-HTTP 200 without the requested unsaved component. The source-built correction measured on 2026-09-27 uses an internal
+On exact Astro 4.9.0 the Container API does not consume `props`. Measured on
+2026-09-27 with an archive from before the correction, the default renderer then
+answered HTTP 200 without the requested unsaved component; that archive is not
+part of the current checks. The correction uses an internal
 Astro-compiled template that forwards registry-selected props through fresh
 Container `locals`. It needs no
 application `render` override, new public entry or extra build configuration.
@@ -196,9 +197,10 @@ It validates the registered component identity and data fields, derives context
 from verified authorization, and gives each render fresh locals. It never
 copies browser-selected locals or component names into the container.
 
-The explicit recipe's 2026-09-27 measurements passed the same nine native
+The explicit recipe's 2026-09-27 measurements passed nine native
 resource/context/lifetime cases on Astro 4.9.0 and 7.3.2, in Chromium, Firefox
-and WebKit. The page
+and WebKit; the [contract](../tests/e2e/continuation/astro-resources.spec.ts)
+lists four cases per browser today. The page
 still owns the finite catalog's CSS and live region. It is not selected by the
 package default and was not itself a repair for PHD-04. It remains useful when
 the component needs verified page context. Neither it nor the default bridge
@@ -221,8 +223,9 @@ renderer registers `@astrojs/react/server.js` with the public
 [endpoint](../tests/fixtures/astro-react-resources/src/pages/payload/resource-fragment.ts.fixture)
 and [native contract](../tests/e2e/continuation/astro-react-resources.spec.ts).
 Two unsaved revisions, computed external CSS and verified request-local React
-provider values pass in Chromium, Firefox and WebKit. Omitting that registration
-produces HTTP 500 in the same native fixture.
+provider values pass in Chromium, Firefox and WebKit. The helper can build the
+same fixture without that registration (`PLP_ASTRO_RESOURCE_RENDERER=react-unconfigured`)
+as a counterexample; no spec asserts what that build answers.
 
 Without a `client:*` directive this produces React server HTML, not an
 interactive React root in each updated fragment. The page eagerly includes the
@@ -258,8 +261,11 @@ This is measured on Astro 7.3.2 with `@astrojs/react` 6.0.6 in three browsers
 [ADR 0021](architecture/0021-fragment-islands-hydrate-from-the-build.md)), for
 React islands with `client:load`. The other directives (`client:idle`,
 `client:visible`, `client:media`, `client:only`) and the clients of other
-frameworks are not measured. `resolve` needs Astro 4.16 or later, and
-`astro dev` is not supported yet.
+frameworks are not measured. `resolve` is a container option of Astro 4.16 and
+later, and the island lane runs Astro 7.3.2 and 4.16.19; earlier versions are
+not claimed, and neither is `astro dev`. Without the build's table the render
+refuses with a message that names `livePreview()` and `astro build`
+([unit test](../tests/unit/adapters/astro-island-modules.test.ts)).
 
 The finite page-owned native React recipe now has a separate
 [24-case native contract](../tests/e2e/continuation/astro-owner.spec.ts) on
