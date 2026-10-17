@@ -106,11 +106,14 @@ export default buildConfig({
   // Seed a throwaway editor + homepage content on first boot so the E2E
   // has something to edit immediately.
   onInit: async (payload) => {
-    const existing = await payload.find({ collection: 'users', limit: 1 });
+    // Payload 4 turns `overrideAccess` off by default for the Local API. The seed has no user to
+    // authorize as, so it asks for the override on every call; Payload 3 accepts it unchanged.
+    const existing = await payload.find({ collection: 'users', limit: 1, overrideAccess: true });
     if (existing.docs.length === 0) {
       await payload.create({
         collection: 'users',
         data: { email: 'e2e@example.com', password: 'test1234' },
+        overrideAccess: true,
       });
     }
     const media = await payload.find({ collection: 'media', limit: 1 });
@@ -137,6 +140,7 @@ export default buildConfig({
         image: null,
         tags: [{ label: 'alpha' }, { label: 'beta' }],
       },
+      overrideAccess: true,
     });
   },
 });
