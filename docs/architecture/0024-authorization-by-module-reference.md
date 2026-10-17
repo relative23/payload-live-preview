@@ -117,3 +117,15 @@ when it reads no such file, for the bundler to report. An alias is read from
 grows by +570 B raw, +235 B gzip and +223 B brotli. The Nuxt example runs this
 setup when `PLP_PAYLOAD_SERVER_URL` names the admin, and the real-admin suite
 exercises it in `nuxt dev` with the editor's real session.
+
+## Addendum (2026-10-17): inline and loader refuse the functions
+
+`authorizePreviewModule` was refused in `mode: 'inline'` and `'loader'`, which run no server hook, but
+`authorizePreview` and `shouldInject` passed there as functions were accepted and never called. The
+first of them reads as the preview's access control, so a configuration that carried it looked
+protected and was not. Both are now refused at startup in those modes, with the message the
+middleware mode already gives, naming `authorizePreviewModule` and `createLivePreviewMiddleware()` as
+the places they can run. The options that only describe a request (`strict`, `previewSignals`,
+`previewQueryParams`, `inject`, the CSP options) stay accepted, because a shared options object
+carries them legitimately. Ledger row 24 of ADR 0007 records the 3.0 form: the two functions leave
+`LivePreviewAstroOptions`, as they already leave the Nuxt module's.

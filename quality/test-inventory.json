@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 493,
-    "suites": 933,
-    "tests": 4243,
+    "suites": 934,
+    "tests": 4247,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 400,
-      "suites": 829,
-      "tests": 3866,
+      "suites": 830,
+      "tests": 3870,
       "benchmarks": 0
     }
   },
@@ -745,8 +745,8 @@
     {
       "path": "tests/unit/adapters/astro-integration.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 15,
+      "suites": 3,
+      "tests": 19,
       "benchmarks": 0
     },
     {

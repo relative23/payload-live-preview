@@ -119,6 +119,32 @@ const VIRTUAL_OPTIONS_ID = 'virtual:payload-live-preview/options';
 const RESOLVED_VIRTUAL_OPTIONS_ID = `\0${VIRTUAL_OPTIONS_ID}`;
 const MIDDLEWARE_ENTRYPOINT = 'payload-live-preview/astro/middleware-entry';
 
+/**
+ * Inline and loader delivery decide once, at build time, for every page, so a function meant to run
+ * per request would never be called, and `authorizePreview` is the one a project reads as the
+ * preview's access control. The middleware mode refuses both for its own reason (it serializes its
+ * options); here the refusal names where each can run.
+ */
+function refuseRequestFunctions(options: LivePreviewAstroOptions): void {
+  const mode = options.mode === 'loader' ? 'loader' : 'inline';
+  if (options.authorizePreview !== undefined) {
+    throw new Error(
+      `payload-live-preview: \`authorizePreview\` cannot be used with mode '${mode}' — inline and ` +
+        'loader delivery run no server hook, so the function would never be called. Use mode ' +
+        "'middleware' with `authorizePreviewModule`, or register " +
+        '`createLivePreviewMiddleware({ authorizePreview, ... })` in src/middleware.ts (ADR 0024).',
+    );
+  }
+  if (options.shouldInject !== undefined) {
+    throw new Error(
+      `payload-live-preview: \`shouldInject\` cannot be used with mode '${mode}' — inline and ` +
+        'loader delivery decide once, at build time, for every page, so the function would never ' +
+        "be called. Use mode 'middleware' with `previewQueryParams` or `previewSignals`, or " +
+        'register `createLivePreviewMiddleware({ shouldInject, ... })` in src/middleware.ts.',
+    );
+  }
+}
+
 /** Build the integration. The injected runtime stays inert outside the admin's preview iframe. */
 export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegrationLike {
   let serverDir: URL | undefined;
@@ -153,6 +179,7 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
               'inline and loader delivery run no server hook (ADR 0024).',
           );
         }
+        refuseRequestFunctions(options);
         if (options.autoInject === false) return;
         if (options.mode === 'loader') {
           setupLoaderMode(ctx, options);
