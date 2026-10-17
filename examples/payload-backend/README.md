@@ -10,15 +10,21 @@ What it is:
 - **SQLite** (`@payloadcms/db-sqlite`, `file:./e2e.db`) — no external
   database, boots anywhere.
 - A `homepage` **global** with `title`, `subtitle`, `body` (Lexical rich
-  text) and a `tags` array — the fields the Astro preview page binds.
+  text) and a `tags` array — the fields the Astro preview page binds — and two
+  fields the admin posts as ids: an `author` relationship to `users` and an
+  `image` upload to `media`.
+- A `media` **upload collection**: its files live in the git-ignored `media/`
+  directory, there is no `sharp`, and one 1×1 PNG (`e2e-pixel.png`) is seeded on
+  first boot. The real-admin specs choose it in the upload field's drawer.
 - **Live Preview** configured through the copy-installed
   `payload-live-preview/plugin`, pointing the `homepage` iframe at the Astro
   preview app (`FRONTEND_URL`, default `http://localhost:4173`) and adding the
   `Plugin mobile` toolbar breakpoint.
 - **Auto-login** of a seeded editor (`e2e@example.com` / `test1234`) and
-  an `onInit` that creates that user when it is missing and, on every boot,
-  writes `title`, `subtitle` and `tags` back to their seeded values, so E2E
-  runs start from known content and require no credential typing.
+  an `onInit` that creates that user and the media document when they are
+  missing and, on every boot, writes `title`, `subtitle` and `tags` back to
+  their seeded values and empties `image`, so E2E runs start from known content
+  and require no credential typing.
 
 Surfaces whose preview verifies the editor's session (`payload-session`) need a
 real cookie, which auto-login never issues: `PLP_REAL_PAYLOAD_LOGIN=1` leaves it
@@ -26,7 +32,8 @@ off and the Playwright suite signs in through the login form. The suite starts
 the backend and the surface named by `PLP_REAL_PAYLOAD_TARGET` (`astro`,
 `hybrid`, `nextjs`, `sveltekit`, `nuxt`, `html`, and the hook and composable
 pages `nextjs-hook` and `nuxt-composable`) with `FRONTEND_URL` pointing at it. A
-schema change needs a fresh `e2e.db`: the dev push does not repeat itself.
+schema change needs a fresh `e2e.db` (and, for the media, a fresh `media/`): the
+dev push does not repeat itself.
 
 > ⚠️ Throwaway fixture. The secret is hard-coded and auth auto-logs-in. The
 > database is not reset: `e2e.db` persists between boots, and `body` keeps

@@ -5,7 +5,8 @@
  * with the iframe request. The runtime is part of the response only for that
  * request. `surface-smoke.spec.ts` holds what every surface shares.
  */
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type FrameLocator, type Page } from '@playwright/test';
+import { SEEDED_MEDIA, chooseSeededMedia, waitForPopulation } from './upload-media';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs';
@@ -36,6 +37,52 @@ async function openPreview(page: Page): Promise<void> {
     await expect.poll(isOpen, { timeout: 15_000 }).toBe(true);
   }
   await expect(page.locator(PREVIEW_IFRAME)).toBeVisible({ timeout: 60_000 });
+}
+
+/** The runtime in the preview has started: the admin's next message is one it hears. */
+async function runtimeStarted(preview: FrameLocator): Promise<void> {
+  await preview
+    .locator('body')
+    .waitForFunction(
+      () =>
+        (
+          window as Window & { __livePreview?: { inspect(): { started: boolean } } }
+        ).__livePreview?.inspect().started === true,
+      undefined,
+      { timeout: 30_000 },
+    );
+}
+
+/**
+ * Cuts the preview's population request that carries `field`'s chosen value, on the network: the
+ * admin's own calls to its API go through, and so does the request the page makes at load, which
+ * carries no value yet. `cuts()` counts the requests that were cut, `restore()` lets the next one through.
+ */
+async function cutPopulation(
+  page: Page,
+  field: string,
+): Promise<{ cuts: () => number; restore: () => void }> {
+  let failing = true;
+  let cut = 0;
+  await page.route('http://localhost:3001/api/globals/homepage**', async (route) => {
+    const request = route.request();
+    const fromPreview = request.frame().url().startsWith(PREVIEW_ORIGIN);
+    if (failing && fromPreview && request.headers()['x-payload-http-method-override'] === 'GET') {
+      const body = request.postDataJSON() as { data?: Record<string, unknown> } | null;
+      if (body?.data?.[field] != null) {
+        cut += 1;
+        await route.abort('failed');
+        return;
+      }
+    }
+    await route.continue();
+  });
+  return {
+    cuts: () => cut,
+    restore: () => {
+      failing = false;
+    },
+  };
 }
 
 test.describe(`real Payload session → ${SURFACE} preview`, () => {
@@ -102,28 +149,13 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
     const preview = page.frameLocator(PREVIEW_IFRAME);
     const author = preview.locator('[data-payload-field="author.email"]');
     await expect(author).toBeAttached({ timeout: 60_000 });
-    await preview
-      .locator('body')
-      .waitForFunction(
-        () =>
-          (
-            window as Window & { __livePreview?: { inspect(): { started: boolean } } }
-          ).__livePreview?.inspect().started === true,
-        undefined,
-        { timeout: 30_000 },
-      );
+    await runtimeStarted(preview);
     await expect(author).toHaveText('');
 
     // The admin posts the relationship as an id; the runtime asks Payload's REST API for the document
     // with the editor's session (a credentialed POST that Payload reads as a GET), and the binding on
     // `author.email` shows the populated value.
-    const asked = page.waitForResponse(
-      (response) =>
-        response.url().startsWith('http://localhost:3001/api/globals/homepage') &&
-        response.request().method() === 'POST' &&
-        response.request().headers()['x-payload-http-method-override'] === 'GET',
-      { timeout: 30_000 },
-    );
+    const asked = waitForPopulation(page);
     await page.locator('#field-author').click();
     await page.getByRole('option', { name: 'e2e@example.com' }).click();
     expect((await asked).status()).toBe(200);
@@ -139,38 +171,66 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
     const author = preview.locator('[data-payload-field="author.email"]');
     const subtitle = preview.locator('[data-payload-field="subtitle"]');
     await expect(author).toBeAttached({ timeout: 60_000 });
-    await preview
-      .locator('body')
-      .waitForFunction(
-        () =>
-          (
-            window as Window & { __livePreview?: { inspect(): { started: boolean } } }
-          ).__livePreview?.inspect().started === true,
-        undefined,
-        { timeout: 30_000 },
-      );
+    await runtimeStarted(preview);
 
-    // Only the preview's population request is cut: the admin's own calls to its API go through.
-    let failing = true;
-    let cut = 0;
-    await page.route('http://localhost:3001/api/globals/homepage**', async (route) => {
-      const request = route.request();
-      const fromPreview = request.frame().url().startsWith(PREVIEW_ORIGIN);
-      if (failing && fromPreview && request.headers()['x-payload-http-method-override'] === 'GET') {
-        cut += 1;
-        await route.abort('failed');
-        return;
-      }
-      await route.continue();
-    });
+    const network = await cutPopulation(page, 'author');
     await page.locator('#field-author').click();
     await page.getByRole('option', { name: 'e2e@example.com' }).click();
-    await expect.poll(() => cut, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect.poll(network.cuts, { timeout: 15_000 }).toBeGreaterThan(0);
     await expect(author).toHaveText('');
 
-    failing = false;
+    network.restore();
     await page.locator('#field-subtitle').fill('Typed once the network is back');
     await expect(subtitle).toHaveText('Typed once the network is back');
     await expect(author).toHaveText('e2e@example.com');
+  });
+
+  test('an upload chosen in the real admin is populated as the editor and shown by bindings on the media', async ({
+    page,
+  }) => {
+    await signIn(page);
+    await openPreview(page);
+    const preview = page.frameLocator(PREVIEW_IFRAME);
+    const filename = preview.locator('[data-payload-field="image.filename"]');
+    const image = preview.locator('[data-payload-field="image"]');
+    await expect(filename).toBeAttached({ timeout: 60_000 });
+    await runtimeStarted(preview);
+    await expect(filename).toHaveText('');
+    await expect(image).not.toHaveAttribute('src');
+
+    // The admin posts the upload as the media's id, like a relationship; the runtime asks Payload for the
+    // document, and the `upload` renderer writes what it finds. `src` is the URL Payload returned: the
+    // backend sets no `serverURL`, so that is a path on the admin's origin, not on the preview's.
+    const asked = waitForPopulation(page);
+    await chooseSeededMedia(page);
+    expect((await asked).status()).toBe(200);
+    await expect(filename).toHaveText(SEEDED_MEDIA.filename);
+    await expect(image).toHaveAttribute('alt', SEEDED_MEDIA.alt);
+    await expect(image).toHaveAttribute('src', /\/api\/media\/file\/e2e-pixel\.png$/u);
+  });
+
+  test('an upload population that fails on the network leaves the page as it was, and the next change populates', async ({
+    page,
+  }) => {
+    await signIn(page);
+    await openPreview(page);
+    const preview = page.frameLocator(PREVIEW_IFRAME);
+    const filename = preview.locator('[data-payload-field="image.filename"]');
+    const image = preview.locator('[data-payload-field="image"]');
+    const subtitle = preview.locator('[data-payload-field="subtitle"]');
+    await expect(filename).toBeAttached({ timeout: 60_000 });
+    await runtimeStarted(preview);
+
+    const network = await cutPopulation(page, 'image');
+    await chooseSeededMedia(page);
+    await expect.poll(network.cuts, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect(filename).toHaveText('');
+    await expect(image).not.toHaveAttribute('src');
+
+    network.restore();
+    await page.locator('#field-subtitle').fill('Typed once the network is back');
+    await expect(subtitle).toHaveText('Typed once the network is back');
+    await expect(filename).toHaveText(SEEDED_MEDIA.filename);
+    await expect(image).toHaveAttribute('src', /\/api\/media\/file\/e2e-pixel\.png$/u);
   });
 });

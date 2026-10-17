@@ -41,6 +41,8 @@
     <p {...b.subtitle}>{initial.subtitle}</p>
     {#if data.populated}
       <p>Author: <span {...b.authorEmail} data-testid="author-email"></span></p>
+      <p>Image: <span {...b.imageFilename} data-testid="image-filename"></span></p>
+      <img {...b.image} data-testid="image" alt="" />
     {/if}
   </header>
   <img {...b.hero} src={initial.hero.url} alt={initial.hero.alt} />

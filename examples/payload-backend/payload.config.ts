@@ -1,3 +1,4 @@
+import { rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { buildConfig } from 'payload';
@@ -19,6 +20,18 @@ const PREVIEW_PATH = process.env.PLP_REAL_PAYLOAD_PATH || '/';
  */
 const SITE_ORIGINS = (process.env.PLP_REAL_PAYLOAD_ORIGINS ?? '').split(',').filter(Boolean);
 const ADMIN_ORIGIN = 'http://localhost:3001';
+
+/** Where the `media` collection keeps its files: beside the config, git-ignored, created on first upload. */
+const MEDIA_DIRECTORY = path.resolve(dirname, 'media');
+/** The one file the seed uploads: a valid 1×1 PNG, small enough to live in the config. */
+const SEED_MEDIA = {
+  name: 'e2e-pixel.png',
+  alt: 'A single pixel',
+  data: Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  ),
+} as const;
 
 export default buildConfig({
   secret: 'e2e-fixture-secret-not-for-production',
@@ -63,6 +76,12 @@ export default buildConfig({
       admin: { useAsTitle: 'email' },
       fields: [],
     },
+    {
+      // The target of the homepage's upload field. No `imageSizes`: Payload then needs no `sharp`.
+      slug: 'media',
+      upload: { staticDir: MEDIA_DIRECTORY },
+      fields: [{ name: 'alt', type: 'text' }],
+    },
   ],
   globals: [
     {
@@ -73,6 +92,8 @@ export default buildConfig({
         // A relationship the hook has to populate: the admin posts its id, so the
         // merge re-fetches the document from this API as the editor.
         { name: 'author', type: 'relationship', relationTo: 'users' },
+        // An upload the same way: the admin posts the media's id, the merge brings the document.
+        { name: 'image', type: 'upload', relationTo: 'media' },
         { name: 'body', type: 'richText' },
         {
           name: 'tags',
@@ -92,11 +113,28 @@ export default buildConfig({
         data: { email: 'e2e@example.com', password: 'test1234' },
       });
     }
+    const media = await payload.find({ collection: 'media', limit: 1 });
+    if (media.docs.length === 0) {
+      // A file left by an earlier database would make Payload rename this one.
+      rmSync(path.join(MEDIA_DIRECTORY, SEED_MEDIA.name), { force: true });
+      await payload.create({
+        collection: 'media',
+        data: { alt: SEED_MEDIA.alt },
+        file: {
+          data: SEED_MEDIA.data,
+          mimetype: 'image/png',
+          name: SEED_MEDIA.name,
+          size: SEED_MEDIA.data.length,
+        },
+        overrideAccess: true,
+      });
+    }
     await payload.updateGlobal({
       slug: 'homepage',
       data: {
         title: 'Seeded title',
         subtitle: 'Seeded subtitle',
+        image: null,
         tags: [{ label: 'alpha' }, { label: 'beta' }],
       },
     });
