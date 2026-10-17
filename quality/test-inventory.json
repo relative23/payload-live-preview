@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 493,
-    "suites": 934,
-    "tests": 4247,
+    "files": 501,
+    "suites": 948,
+    "tests": 4303,
     "benchmarks": 12
   },
   "groups": {
@@ -39,9 +39,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 56,
-      "suites": 59,
-      "tests": 243,
+      "files": 57,
+      "suites": 61,
+      "tests": 249,
       "benchmarks": 0
     },
     "integration": {
@@ -51,9 +51,9 @@
       "benchmarks": 0
     },
     "real-payload": {
-      "files": 6,
-      "suites": 6,
-      "tests": 20,
+      "files": 7,
+      "suites": 7,
+      "tests": 31,
       "benchmarks": 0
     },
     "soak": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 400,
-      "suites": 830,
-      "tests": 3870,
+      "files": 406,
+      "suites": 841,
+      "tests": 3909,
       "benchmarks": 0
     }
   },
@@ -96,6 +96,13 @@
       "group": "browser-bench",
       "suites": 0,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/astro-floor-base.spec.ts",
+      "group": "e2e",
+      "suites": 2,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -694,17 +701,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/real-payload/surface-autologin.spec.ts",
+      "group": "real-payload",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/real-payload/surface-hook.spec.ts",
       "group": "real-payload",
       "suites": 1,
-      "tests": 5,
+      "tests": 9,
       "benchmarks": 0
     },
     {
       "path": "tests/real-payload/surface-session.spec.ts",
       "group": "real-payload",
       "suites": 1,
-      "tests": 1,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -2850,6 +2864,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/astro-floor-fixtures.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/astro-host-fixture-config.test.ts",
       "group": "unit",
       "suites": 1,
@@ -2867,7 +2888,7 @@
       "path": "tests/unit/quality/astro-island-fixture.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -2895,7 +2916,7 @@
       "path": "tests/unit/quality/astro-resource-fixture-config.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -2966,6 +2987,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/compat-matrix-jobs.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -3088,6 +3116,20 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/native-consumer.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/next-build-arguments.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/nextjs-fixture-preview-config.test.ts",
       "group": "unit",
       "suites": 1,
@@ -3097,12 +3139,26 @@
     {
       "path": "tests/unit/quality/payload-lane-audit.test.ts",
       "group": "unit",
+      "suites": 2,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/payload-lane-plan.test.ts",
+      "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 7,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/quality/playwright-runtime-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/real-payload-targets.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 2,
