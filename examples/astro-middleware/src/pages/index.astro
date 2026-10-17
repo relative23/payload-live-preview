@@ -1,10 +1,16 @@
 ---
-// Bound fields for the patch test; the inline runtime is baked into <head>.
+// Bound fields for the patch test; the integration's middleware injects the runtime into a preview.
+// Against a real admin (PLP_PAYLOAD_SERVER_URL, tests/real-payload) there is a binding on a populated
+// path too: the admin posts a relationship as an id, and the runtime asks its REST API for the document.
+const populated = (process.env['PLP_PAYLOAD_SERVER_URL'] ?? '') !== '';
 ---
 <html lang="en">
   <head><meta charset="utf-8" /><title>Astro middleware preview</title></head>
   <body style="margin:0;font:16px/1.5 system-ui,sans-serif">
     <h1 data-payload-field="title" data-testid="title">Hello</h1>
     <p data-payload-field="subtitle" data-testid="subtitle">sub</p>
+    {populated && (
+      <p>Author: <span data-payload-field="author.email" data-testid="author-email"></span></p>
+    )}
   </body>
 </html>

@@ -458,7 +458,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [nextjs, sveltekit, nuxt, nextjs-hook, nuxt-composable, html]
+        target: [nextjs, sveltekit, nuxt, nextjs-hook, nuxt-composable, html, astro-session]
         browser: [chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -478,7 +478,7 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist
       - env:
-          EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html"}')[matrix.target] }}
+          EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware"}')[matrix.target] }}
         run: npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"
       - run: npm ci --no-audit --no-fund --prefix examples/payload-backend
       - env:

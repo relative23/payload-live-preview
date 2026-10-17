@@ -5,15 +5,18 @@ const isCI = process.env['CI'] === 'true';
  * Which frontend the admin's Live Preview iframe points at: the static Astro
  * fixture (default), the SSR hybrid fixture (`PLP_REAL_PAYLOAD_TARGET=hybrid`,
  * fragment and route strategies against the real admin), or another framework's
- * example (`nextjs`, `sveltekit`, `nuxt`) whose preview authorizes the editor's
- * real session, or the plain HTML example (`html`).
+ * example (`nextjs`, `sveltekit`, `nuxt`, `astro-session`) whose preview authorizes
+ * the editor's real session, or the plain HTML example (`html`).
  */
 const requested = process.env['PLP_REAL_PAYLOAD_TARGET'] ?? 'astro';
 /**
  * The frameworks whose example verifies the editor's real session
- * (`payload-session`) before it starts the runtime. Each runs its dev server:
- * a production build refuses an admin origin that is not HTTPS, and this admin
- * is plain HTTP on localhost.
+ * (`payload-session`) before it starts the runtime. None runs with
+ * `NODE_ENV=production`: strict mode refuses an admin origin that is not HTTPS
+ * only there, and this admin is plain HTTP on localhost. The Next.js, SvelteKit
+ * and Nuxt examples run their dev server; Astro's built Node server qualifies
+ * because nothing sets NODE_ENV (`astro dev` daemonizes in Astro 7, which
+ * Playwright reads as a crash).
  */
 interface Surface {
   readonly port: string;
@@ -28,6 +31,13 @@ const SESSION_SURFACES: Record<string, Surface> = {
   nextjs: { port: '4474', directory: 'nextjs-payload', command: 'npx next dev --port 4474' },
   sveltekit: { port: '4475', directory: 'sveltekit-payload', command: 'npx vite dev --port 4475' },
   nuxt: { port: '4476', directory: 'nuxt-payload', command: 'npx nuxt dev --port 4476' },
+  // The Astro integration's middleware delivery under the strict default: the hook is
+  // `payload-session`, in the module PLP_PAYLOAD_SERVER_URL makes astro.config.mjs name.
+  'astro-session': {
+    port: '4478',
+    directory: 'astro-middleware',
+    command: 'npm run build && HOST=127.0.0.1 PORT=4478 node ./dist/server/entry.mjs',
+  },
   // The React hook and the Vue composable: pages of the same examples that render
   // from the merged document instead of from bindings the DOM runtime patches.
   'nextjs-hook': {
