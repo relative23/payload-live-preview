@@ -1,7 +1,8 @@
 /**
  * Run only after the coordinator releases CPU and browser resources. This
- * creates one labeled disposable Mongo container and two loopback processes,
- * records the exact installed identities, and stops only resources it created.
+ * creates one labeled disposable Mongo container (capped at 2 GiB, removed when
+ * it stops) and two loopback processes, records the exact installed identities,
+ * and stops only resources it created.
  */
 import { createRequire } from 'node:module';
 import {
@@ -158,14 +159,30 @@ async function stop() {
     }
     // Pin the exact created ID as well as run/name/image labels; a reused name is insufficient.
     const removed = spawnSync('docker', ['rm', '--force', containerId], { encoding: 'utf8' });
+    // The container removes itself when it stops (--rm), so the daemon is a second remover and
+    // may answer "removal already in progress"; what counts is that the container is gone.
+    const gone = removed.status === 0 || (await containerGone(containerId));
     appendFileSync(
       join(run, 'cleanup.log'),
-      'owned-container-remove exit ' + removed.status + '\n',
+      'owned-container-remove exit ' +
+        removed.status +
+        (gone ? '' : ' container still present') +
+        '\n',
       { mode: 0o600 },
     );
-    if (removed.status !== 0) process.exitCode = 1;
+    if (!gone) process.exitCode = 1;
   }
 }
+
+async function containerGone(id) {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    if (spawnSync('docker', ['container', 'inspect', id], { encoding: 'utf8' }).status !== 0)
+      return true;
+    await new Promise((done) => setTimeout(done, 500));
+  }
+  return false;
+}
+
 for (const signal of ['SIGINT', 'SIGTERM'])
   process.once(signal, async () => {
     await stop();
@@ -219,6 +236,10 @@ try {
     [
       'create',
       '--pull=never',
+      // The host shares its memory with every other job: cap the container, let it remove itself.
+      '--memory=2g',
+      '--memory-swap=2g',
+      '--rm',
       '--name',
       settings.container,
       '--label',

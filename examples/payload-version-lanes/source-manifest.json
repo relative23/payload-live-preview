@@ -231,8 +231,8 @@
       "bytes": 5621
     },
     "v2/run.mjs": {
-      "sha256": "704877b7adba71db2cee83a37de43158b477cd38b505f002daf6a925fe76d4e8",
-      "bytes": 12421
+      "sha256": "f9ac3e249d74b69910ae055e711e5b56bfb53f73de4b784ab2e28126c3f9feb0",
+      "bytes": 13221
     },
     "v2/template/diagnostics.cjs": {
       "sha256": "1aff789a6df025d88828d7aa55cdbb60c8af70cd181a486f2a332da3baf152eb",
