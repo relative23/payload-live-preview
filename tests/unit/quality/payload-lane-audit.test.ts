@@ -3,6 +3,8 @@
  * it finds. These cases pin what the audit reports and leaves alone, and that the file it read is
  * the file it rewrites: a path swapped for a link or another file in between is refused. Each case
  * runs the lane's module in its own Node process, as the lane does; links, FIFOs and modes are POSIX.
+ * The lane's one Docker call is read as text, never run: the host shares its memory with every
+ * other job, so the Mongo container has to carry a limit and remove itself.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
@@ -211,5 +213,18 @@ describe('Payload 2 lane credential audit', () => {
     expect(result).toBeUndefined();
     expect(error?.message).toBe('Execution artifact changed during the audit: leak.log');
     expect(readFileSync(join(run, 'leak.log'), 'utf8')).toBe('not part of the audit\n');
+  });
+});
+
+describe('Payload 2 lane Mongo container', () => {
+  // The options of the one `docker create`: everything between the verb and the image, because an
+  // option after the image would reach mongod instead of Docker.
+  const options = /'create',([\s\S]*?)settings\.mongoImage/u.exec(
+    readFileSync(join(LANE, 'run.mjs'), 'utf8'),
+  )?.[1];
+
+  it.each(['--memory=2g', '--memory-swap=2g', '--rm'])('is created with %s', (flag) => {
+    expect(options).toBeDefined();
+    expect(options).toContain(`'${flag}'`);
   });
 });
