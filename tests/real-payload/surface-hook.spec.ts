@@ -162,4 +162,69 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
     await expect(preview.getByTestId('title')).toContainText('<img src=x');
     expect(await preview.getByTestId('title').locator('img').count()).toBe(0);
   });
+
+  test('a merge the server refuses once the session has ended keeps the last good document, and signing in again brings the preview back', async ({
+    page,
+  }) => {
+    const preview = page.frameLocator(PREVIEW_IFRAME);
+    await expect(preview.getByTestId('status')).toHaveText('live', { timeout: 60_000 });
+    await page.locator('#field-title').fill('Typed while the session is alive');
+    await expect(preview.getByTestId('title')).toHaveText('Typed while the session is alive');
+    await expect(preview.getByTestId('revision')).not.toHaveText('0');
+    const goodRevision = await preview.getByTestId('revision').textContent();
+
+    // Payload's own route ends the session: it expires `payload-token`, which the hook's merge
+    // request carries from the preview's origin. The admin page stays where it is.
+    const loggedOut = await page.context().request.post('/api/users/logout');
+    expect(loggedOut.ok()).toBe(true);
+    await page.locator('#field-title').fill('Typed after the session ended');
+    await expect(preview.getByTestId('status')).toHaveText('unavailable', { timeout: 15_000 });
+    // The refusal names the status; which of the two Payload answers is its business.
+    await expect(preview.getByTestId('error')).toContainText(/\b40[13]\b/u);
+    await expect(preview.getByTestId('title')).toHaveText('Typed while the session is alive');
+    await expect(preview.getByTestId('revision')).toHaveText(goodRevision ?? '');
+
+    const loggedIn = await page.context().request.post('/api/users/login', {
+      data: { email: 'e2e@example.com', password: 'test1234' },
+    });
+    expect(loggedIn.ok()).toBe(true);
+    await page.locator('#field-title').fill('Typed after signing in again');
+    await expect(preview.getByTestId('title')).toHaveText('Typed after signing in again');
+    await expect(preview.getByTestId('status')).toHaveText('live');
+    await expect(preview.getByTestId('error')).toHaveCount(0);
+  });
+
+  test('a merge request that fails on the network keeps the last good document, and the next change catches up', async ({
+    page,
+  }) => {
+    const preview = page.frameLocator(PREVIEW_IFRAME);
+    await expect(preview.getByTestId('status')).toHaveText('live', { timeout: 60_000 });
+    await page.locator('#field-title').fill('Typed before the network fails');
+    await expect(preview.getByTestId('title')).toHaveText('Typed before the network fails');
+
+    // Only the preview's merge request is cut: the admin's own calls to its API go through.
+    let failing = true;
+    let cut = 0;
+    await page.route('http://localhost:3001/api/globals/homepage**', async (route) => {
+      const request = route.request();
+      const fromPreview = request.frame().url().startsWith(`http://localhost:${PORT}`);
+      if (failing && fromPreview && request.headers()['x-payload-http-method-override'] === 'GET') {
+        cut += 1;
+        await route.abort('failed');
+        return;
+      }
+      await route.continue();
+    });
+    await page.locator('#field-title').fill('Typed while the network fails');
+    await expect(preview.getByTestId('status')).toHaveText('unavailable', { timeout: 15_000 });
+    await expect(preview.getByTestId('error')).not.toBeEmpty();
+    await expect(preview.getByTestId('title')).toHaveText('Typed before the network fails');
+    expect(cut).toBeGreaterThan(0);
+
+    failing = false;
+    await page.locator('#field-title').fill('Typed once the network is back');
+    await expect(preview.getByTestId('title')).toHaveText('Typed once the network is back');
+    await expect(preview.getByTestId('status')).toHaveText('live');
+    await expect(preview.getByTestId('error')).toHaveCount(0);
+  });
 });
