@@ -8,16 +8,14 @@ const { join } = require('node:path');
 const { defineConfig, devices } = require('./test-tool.cjs');
 const settings = JSON.parse(readFileSync(process.env.PLP_P2_RUN_FILE, 'utf8'));
 
+// The run file names the spec files of this surface; nothing else in the directory is a test.
+const specs = Object.keys(settings.specTitles).map((file) =>
+  join(__dirname, file).replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'),
+);
+
 module.exports = defineConfig({
   testDir: __dirname,
-  testMatch: new RegExp(
-    '^' +
-      join(
-        __dirname,
-        settings.surface === 'dom' ? 'payload2.spec.cjs' : 'native-lifecycle.spec.cjs',
-      ).replace(/[.*+?^${}()|[\]\\]/gu, '\\$&') +
-      '$',
-  ),
+  testMatch: new RegExp('^(?:' + specs.join('|') + ')$'),
   outputDir: join(settings.run, 'browser-artifacts'),
   forbidOnly: true,
   fullyParallel: false,

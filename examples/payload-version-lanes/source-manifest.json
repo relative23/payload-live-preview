@@ -3,8 +3,8 @@
   "status": "portable-development-fixture-sources-not-native-results",
   "files": {
     "README.md": {
-      "sha256": "50d840ed77173306861330a519ceff9aa7d2d938744f47cf519dc1f900213826",
-      "bytes": 4328
+      "sha256": "5f801b6093b50c3e6b45e51f179bd8e22095a3f4dcf64b40523ad843bf14ab3c",
+      "bytes": 5018
     },
     "admin/next-env.d.ts": {
       "sha256": "0f70629890b72a0a82e91972cc032c04b658b26c265373cb711cf576bfbf8fcc",
@@ -63,8 +63,8 @@
       "bytes": 2273
     },
     "frontend/react-app.mjs": {
-      "sha256": "fb919a0a5e02bf29fb3a08d376618f4474e7178e7ad995c0155a50d31755d286",
-      "bytes": 3993
+      "sha256": "7c16a1ededa6aab68de8be4ab8c8f93cec58a0dc6f0bc65f178837ae6963b208",
+      "bytes": 4060
     },
     "frontend/react-client.mjs": {
       "sha256": "a9070cc1b696cc32955a18f40321f307b5c06fbdfcfe76df118736d56f9d3e64",
@@ -79,8 +79,8 @@
       "bytes": 3452
     },
     "frontend/vue-app.mjs": {
-      "sha256": "6b2ebc79338892b7a6dbdeb809cd5590d58f385337185962d63ec8dd16174e89",
-      "bytes": 4561
+      "sha256": "3501197d9df4acd8e1693d64f1cff26627aa00e93f9928fe970dfdcafa43ccac",
+      "bytes": 4631
     },
     "frontend/vue-client.mjs": {
       "sha256": "71e84e875df790c9b703a65c892764a35d4e0e1c617bf8062d3761c34a15d79b",
@@ -103,8 +103,8 @@
       "bytes": 1935
     },
     "lanes.json": {
-      "sha256": "3c273cb577f7c4ba3f0f7eee69577937f6b4b88a8b755a50e6b39c6e45974fa8",
-      "bytes": 11212
+      "sha256": "6bab98093de0c1768d6f5d6e65b5797d94adbf409493e91af4dda14920d53464",
+      "bytes": 12058
     },
     "lifecycle.config.mjs": {
       "sha256": "17e8d0226b1afdf2c21697e7bb73382963b8c97688157c313376ae3290e57ec5",
@@ -115,12 +115,12 @@
       "bytes": 7310
     },
     "prepare-lane.mjs": {
-      "sha256": "028621047bd987301fbb3c745d714c9a772d2084ee919ec22a8c06658f629e0c",
-      "bytes": 7866
+      "sha256": "5b640f55103acc9f2e51ecda5c98168ad2cc062ba049e8bf106e7921a7d33305",
+      "bytes": 7899
     },
     "readiness.mjs": {
-      "sha256": "286125acad9c0bb75f6c84eb9dc6beedc075f70aa9ee0f431016cb7ba2af98ac",
-      "bytes": 4663
+      "sha256": "5fa21ec9bb66345cbba49664d59cfb30a4088138d05bc353494611e67708f3fa",
+      "bytes": 5093
     },
     "registry/v3-db-sqlite.json": {
       "sha256": "76eab90b831708000a5563d502c42be21dfbbd94ecd0e86484ae3964ccaadcf1",
@@ -155,8 +155,8 @@
       "bytes": 582
     },
     "run-lane.mjs": {
-      "sha256": "06d748f5e5f68a1f4038e85a77650ce400a08dc6e9a11fd4ad2be20d8a58b222",
-      "bytes": 10377
+      "sha256": "d8953e6d91bd1f6892ddaf9aa1a33ad2ab667248c58a89a80df2d93ddff89e71",
+      "bytes": 10714
     },
     "shared/bounded-stage-diagnostic.mjs": {
       "sha256": "6ed85966b70d790c2ce3c9366b2a9d865e61c2b186f9761b55069287ccb00f6b",
@@ -203,8 +203,8 @@
       "bytes": 3973
     },
     "v2/browser/config.cjs": {
-      "sha256": "5c826a92dd0aac868e6e23c266efb402a97b793d7157098ea406ed1a36e0d3fb",
-      "bytes": 1330
+      "sha256": "9c7c5b7e3281a4bce0f6e2d351e3b8a9cd8dea1e2012935e8ae7592d5b32b003",
+      "bytes": 1393
     },
     "v2/browser/payload2.spec.cjs": {
       "sha256": "3847628e8038c1d0480b665ac6bc10060f975fc5e85168a15412ab2babc3b77e",
@@ -219,20 +219,20 @@
       "bytes": 982
     },
     "v2/identity.mjs": {
-      "sha256": "1140966fe32e6c9ca3bb65fbd238c9cfc1b65e99b4f81a339a72f6bf6c0af61b",
-      "bytes": 5814
+      "sha256": "d8351f044b679f115104e3be8251f468c4961f4a02ed0580e87da30f5ff77d50",
+      "bytes": 7102
     },
     "v2/install.mjs": {
       "sha256": "70a8e41f48538cbb9403efa4f2978ca3f04f4880e8909ff98a55dbecd70d6d58",
       "bytes": 3080
     },
     "v2/prepare.mjs": {
-      "sha256": "55b58b2f4bec98ff7712fa26a35940806836d4d4cd430fd9810b3a012b6e15a4",
-      "bytes": 5621
+      "sha256": "04f59a81292df72060ab07a782facb3f5df0992427c377aac798bd1176a58b03",
+      "bytes": 6270
     },
     "v2/run.mjs": {
-      "sha256": "f9ac3e249d74b69910ae055e711e5b56bfb53f73de4b784ab2e28126c3f9feb0",
-      "bytes": 13221
+      "sha256": "1b4bf94a18a601ab0ce7bff56f5921452e72904314f1fbe300e2a22f2e11c9f7",
+      "bytes": 13363
     },
     "v2/template/diagnostics.cjs": {
       "sha256": "1aff789a6df025d88828d7aa55cdbb60c8af70cd181a486f2a332da3baf152eb",
@@ -277,6 +277,14 @@
     "v2/native/ledger.mjs": {
       "sha256": "3efdfa553d978c8d61ebf88269373ac97df3c9c35a6c6f8ec6229a4b83d49a39",
       "bytes": 3230
+    },
+    "plan.mjs": {
+      "sha256": "bd441ea14755cedbce442a7540eb016ac121c2992c5ab45cef5aa28bb616d1ed",
+      "bytes": 1614
+    },
+    "v2/browser/native-population.spec.cjs": {
+      "sha256": "c55b4f4ea50c562480384417f8a4cebb9293cfebda183fcb4373b721255d354c",
+      "bytes": 11793
     }
   }
 }

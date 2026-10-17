@@ -22,6 +22,7 @@ import {
   digest,
   readRunSettings,
   packageIdentity,
+  planTitles,
   verifyInstalledCandidate,
   ownsContainer,
 } from './identity.mjs';
@@ -333,19 +334,23 @@ try {
   });
   const report = JSON.parse(readFileSync(join(run, 'browser-results.json'), 'utf8'));
   identity.browserTotals = report.totals;
+  const planned = planTitles(settings.specTitles);
   if (
     exitCode === 0 &&
     (report.status !== 'passed' ||
-      report.totals.total !== (settings.surface === 'dom' ? 8 : 3) * settings.browsers.length ||
+      report.totals.total !== planned.length * settings.browsers.length ||
       report.totals.passed !== report.totals.total ||
       report.totals.skipped !== 0 ||
       report.errors.length !== 0 ||
-      settings.browsers.some(
-        (browser) =>
-          report.tests.filter(
-            (test) => test.project === browser && test.status === 'passed' && test.retry === 0,
-          ).length !== (settings.surface === 'dom' ? 8 : 3),
-      ))
+      settings.browsers.some((browser) => {
+        const passed = report.tests.filter(
+          (test) => test.project === browser && test.status === 'passed' && test.retry === 0,
+        );
+        return (
+          JSON.stringify(passed.map((test) => test.title).sort()) !==
+          JSON.stringify([...planned].sort())
+        );
+      }))
   )
     throw new Error('Browser result is incomplete, skipped, retried or not the expected matrix');
   identity.finishedAt = new Date().toISOString();

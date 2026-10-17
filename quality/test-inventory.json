@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 495,
-    "suites": 937,
-    "tests": 4263,
+    "files": 496,
+    "suites": 938,
+    "tests": 4269,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 402,
-      "suites": 833,
-      "tests": 3880,
+      "files": 403,
+      "suites": 834,
+      "tests": 3886,
       "benchmarks": 0
     }
   },
@@ -3113,6 +3113,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/payload-lane-plan.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 6,
       "benchmarks": 0
     },
     {

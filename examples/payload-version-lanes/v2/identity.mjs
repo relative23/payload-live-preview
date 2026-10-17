@@ -52,7 +52,33 @@ export function readRunSettings(here, input) {
     settings.browsers.some((name) => !['chromium', 'firefox', 'webkit'].includes(name))
   )
     throw new Error('Unexpected browser selection');
+  const problem = specTitlesProblem(settings.specTitles);
+  if (problem) throw new Error('Unexpected case plan: ' + problem);
   return { settings, runFile, run, app };
+}
+
+/** Every title a case plan lists, whether a spec holds an array of titles or titles by key. */
+export const planTitles = (plan) =>
+  Object.values(plan).flatMap((titles) => (Array.isArray(titles) ? titles : Object.values(titles)));
+
+/**
+ * Why a case plan cannot drive a run, or undefined when it can: spec files by name, each with
+ * titles, every title a non-empty string and written once across the plan.
+ */
+export function specTitlesProblem(plan) {
+  if (plan === null || typeof plan !== 'object' || Array.isArray(plan))
+    return 'expected an object of spec files';
+  const specs = Object.entries(plan);
+  if (specs.length === 0) return 'no spec file';
+  for (const [file, titles] of specs) {
+    if (!/^[a-z0-9-]+\.spec\.cjs$/u.test(file)) return 'unexpected spec file name';
+    if (titles === null || typeof titles !== 'object' || Object.keys(titles).length === 0)
+      return 'no titles for ' + file;
+  }
+  const all = planTitles(plan);
+  if (all.some((title) => typeof title !== 'string' || title.trim() === ''))
+    return 'a title is not a non-empty string';
+  return new Set(all).size === all.length ? undefined : 'a title is written twice';
 }
 
 export function packageIdentity(appPath, name, entry = name) {
