@@ -13,6 +13,8 @@ const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs-hook';
 const PATH = process.env['PLP_REAL_PAYLOAD_PATH'] ?? '/hook';
 const PREVIEW_IFRAME = `iframe[src*="localhost:${PORT}${PATH}"]`;
+/** The admin's own requests carry its origin; with Payload's CSRF list on, one without it is not the editor's. */
+const ADMIN_ORIGIN = { origin: 'http://localhost:3001' };
 
 test.describe(`real Payload admin → ${SURFACE}`, () => {
   test.beforeEach(async ({ page }) => {
@@ -203,7 +205,9 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
 
     // Payload's own route ends the session: it expires `payload-token`, which the hook's merge
     // request carries from the preview's origin. The admin page stays where it is.
-    const loggedOut = await page.context().request.post('/api/users/logout');
+    const loggedOut = await page
+      .context()
+      .request.post('/api/users/logout', { headers: ADMIN_ORIGIN });
     expect(loggedOut.ok()).toBe(true);
     await page.locator('#field-title').fill('Typed after the session ended');
     await expect(preview.getByTestId('status')).toHaveText('unavailable', { timeout: 15_000 });
@@ -214,6 +218,7 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
 
     const loggedIn = await page.context().request.post('/api/users/login', {
       data: { email: 'e2e@example.com', password: 'test1234' },
+      headers: ADMIN_ORIGIN,
     });
     expect(loggedIn.ok()).toBe(true);
     await page.locator('#field-title').fill('Typed after signing in again');

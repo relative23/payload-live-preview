@@ -11,6 +11,8 @@ const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs';
 const PREVIEW_ORIGIN = `http://localhost:${PORT}`;
 const PREVIEW_IFRAME = `iframe[src*="localhost:${PORT}"]`;
+/** The admin's own requests carry its origin; with Payload's CSRF list on, one without it is not the editor's. */
+const ADMIN_ORIGIN = { origin: 'http://localhost:3001' };
 
 test.describe(`real Payload session → ${SURFACE} preview`, () => {
   test('a request without the session gets no runtime, the editor’s gets it', async ({
@@ -67,13 +69,16 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
 
     // Payload's own route ends the session: it expires `payload-token`. The admin page stays where it
     // is, so the frame is the only thing that can show what the preview site decides next.
-    const loggedOut = await page.context().request.post('/api/users/logout');
+    const loggedOut = await page
+      .context()
+      .request.post('/api/users/logout', { headers: ADMIN_ORIGIN });
     expect(loggedOut.ok()).toBe(true);
     await reload();
     await expect.poll(runtime, { timeout: 30_000 }).toBe('undefined');
 
     const loggedIn = await page.context().request.post('/api/users/login', {
       data: { email: 'e2e@example.com', password: 'test1234' },
+      headers: ADMIN_ORIGIN,
     });
     expect(loggedIn.ok()).toBe(true);
     await reload();
