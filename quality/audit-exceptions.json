@@ -12,14 +12,14 @@
           "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
           "graphSha256": "93bb2fae72a34402a2809507b0635ae96aaf820aee101fc5c7345f84e4a7914a",
           "reason": "No patched braces 3 release. Changesets 2 is retained while a CLI 3 migration remains unverified; its major replacement suggestion is pinned with this graph.",
-          "reachability": "SRI-verified Changesets config/git and Manypkg entrypoints discover one root package and match changed files with the fixed default **. Fixed, linked and ignore are empty; custom changedFilePatterns and workspace metadata are absent. Source and configuration projections reject drift. Re-triaged 2026-10-10 against a fresh audit: graph digest, version and integrity are unchanged, no patched release exists (npm latest 3.0.3), and micromatch is still the only package that requires it. Re-triaged 2026-10-17 against a fresh audit: graph digest, version and integrity are unchanged, still no patched release (npm latest 3.0.3, the advisory covers <= 3.0.3), and micromatch is still the only package that requires it.",
-          "expires": "2026-11-07"
+          "reachability": "SRI-verified Changesets config/git and Manypkg entrypoints discover one root package and match changed files with the fixed default **. Fixed, linked and ignore are empty; custom changedFilePatterns and workspace metadata are absent. Source and configuration projections reject drift. Re-triaged 2026-10-10 against a fresh audit: graph digest, version and integrity are unchanged, no patched release exists (npm latest 3.0.3), and micromatch is still the only package that requires it.",
+          "expires": "2026-10-24"
         }
       ]
     },
     "examples/astro-payload": {
       "exposure": "quality/audit-exposure/astro-payload.json",
-      "exposureSha256": "302bd53c247d382931afe2c1889d9f366af6dd72b339c4ba474e4378907946f8",
+      "exposureSha256": "792400c3023961781ef5c17476f19abec8e565773014e0871bdae20023fbbe5f",
       "exceptions": []
     },
     "examples/nextjs-payload": {
@@ -34,7 +34,7 @@
     },
     "examples/nuxt-payload": {
       "exposure": "quality/audit-exposure/nuxt-payload.json",
-      "exposureSha256": "dddb1caaee5b84dc195252889fa0cf664fd6afc28924603902e7266e78b63bf0",
+      "exposureSha256": "5a4ea88d35685f1531cb45a820e4dbd677169b2307f9ac555d9160c57d2344c6",
       "exceptions": [
         {
           "id": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
@@ -43,8 +43,8 @@
           "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
           "graphSha256": "fb441fbe692f82138ce97f98280030234a943d344366521d05dba49817a41866",
           "reason": "No patched braces 3 release. This exception covers only the reviewed Nuxt fixture and the exact Nitro/glob dependency graph.",
-          "reachability": "Nitro compiles fixed build globs and local filenames; this fixture supplies no custom asset, scan or ignore patterns and passes no request data into glob configuration. The 2.1 routes, shared lifetime probe, Nuxt module, production launchers, complete source/configuration set and exact Nitro caller are pinned. Re-triaged 2026-10-10 against a fresh audit: graph digest, version and integrity are unchanged, no patched release exists (npm latest 3.0.3), and micromatch is still the only package that requires it. Re-triaged 2026-10-17 against a fresh audit: graph digest, version and integrity are unchanged, still no patched release (npm latest 3.0.3, the advisory covers <= 3.0.3), and micromatch is still the only package that requires it.",
-          "expires": "2026-11-07"
+          "reachability": "Nitro compiles fixed build globs and local filenames; this fixture supplies no custom asset, scan or ignore patterns and passes no request data into glob configuration. The 2.1 routes, shared lifetime probe, Nuxt module, production launchers, complete source/configuration set and exact Nitro caller are pinned. Re-triaged 2026-10-10 against a fresh audit: graph digest, version and integrity are unchanged, no patched release exists (npm latest 3.0.3), and micromatch is still the only package that requires it.",
+          "expires": "2026-10-24"
         },
         {
           "id": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
@@ -53,14 +53,14 @@
           "integrity": "sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==",
           "graphSha256": "655f0339683813471dd2a6f61407d42d34d0de92fdd5ccb937ff141f1118ecfc",
           "reason": "No patched node-forge 1 release. The reviewed Listhen caller generates and signs development certificates; the advisory concerns RSA signature verification.",
-          "reachability": "Development commands keep HTTPS and PFX disabled. Production uses OpenSSL certificates and a Node TLS proxy before Nitro; no RSA verification was found in the retained Listhen caller. Exact callers, launchers, server definitions and the complete source/configuration set detect exposure changes. Re-triaged 2026-10-10 against a fresh audit: no patched release exists (npm latest 1.4.0), version and integrity are unchanged and listhen is still the only package that requires node-forge; the advisory graph changed twice that day (graphSha256 is the last digest): the lock update moved the locked nodes, and once the simple-git findings left the graph through the override, npm's suggested fix moved from nuxt 3.7.4 to nuxt 4.6.1, a major step. The graph reaches @nuxt/cli, @nuxt/nitro-server, @nuxt/vite-builder, listhen, nitropack and nuxt through listhen. That suggestion is not adopted: this fixture stays on Nuxt 3 (3.21.11 is the last 3.x), and by registry metadata @nuxt/nitro-server 4.6.1 still requires nitropack ^2.13.4, which requires listhen ^1.9.1 and so node-forge ^1.4.0, so the major step is not shown to remove the path. Re-triaged 2026-10-16 after the digest moved once more: npm's suggested fix went from nuxt 4.6.1 to 4.6.2 (published 2026-10-16 17:37 UTC), still a major step and not adopted. By registry metadata @nuxt/nitro-server 4.6.2 still requires nitropack ^2.13.4, which requires listhen ^1.9.1 and so node-forge ^1.4.0, so the step is not shown to remove the path; node-forge has no patched release (npm latest 1.4.0, the advisory covers <= 1.4.0), and the locked version and integrity are unchanged. Re-triaged 2026-10-17 against a fresh audit: graph digest, version and integrity are unchanged, still no patched release (npm latest 1.4.0, the advisory covers <= 1.4.0), and listhen is still the only package that requires node-forge.",
-          "expires": "2026-11-07"
+          "reachability": "Development commands keep HTTPS and PFX disabled. Production uses OpenSSL certificates and a Node TLS proxy before Nitro; no RSA verification was found in the retained Listhen caller. Exact callers, launchers, server definitions and the complete source/configuration set detect exposure changes. Re-triaged 2026-10-10 against a fresh audit: no patched release exists (npm latest 1.4.0), version and integrity are unchanged and listhen is still the only package that requires node-forge; the advisory graph changed twice that day (graphSha256 is the last digest): the lock update moved the locked nodes, and once the simple-git findings left the graph through the override, npm's suggested fix moved from nuxt 3.7.4 to nuxt 4.6.1, a major step. The graph reaches @nuxt/cli, @nuxt/nitro-server, @nuxt/vite-builder, listhen, nitropack and nuxt through listhen. That suggestion is not adopted: this fixture stays on Nuxt 3 (3.21.11 is the last 3.x), and by registry metadata @nuxt/nitro-server 4.6.1 still requires nitropack ^2.13.4, which requires listhen ^1.9.1 and so node-forge ^1.4.0, so the major step is not shown to remove the path. Re-triaged 2026-10-16 after the digest moved once more: npm's suggested fix went from nuxt 4.6.1 to 4.6.2 (published 2026-10-16 17:37 UTC), still a major step and not adopted. By registry metadata @nuxt/nitro-server 4.6.2 still requires nitropack ^2.13.4, which requires listhen ^1.9.1 and so node-forge ^1.4.0, so the step is not shown to remove the path; node-forge has no patched release (npm latest 1.4.0, the advisory covers <= 1.4.0), and the locked version and integrity are unchanged.",
+          "expires": "2026-10-24"
         }
       ]
     },
     "examples/astro-hybrid": {
       "exposure": "quality/audit-exposure/astro-hybrid.json",
-      "exposureSha256": "e2c8c0c9bc0f1aaaea4340052ccf77d285f162dda4774b113ac56df3a2dcbea5",
+      "exposureSha256": "d362026430b154ae0490c1a97a095e7280a27199b2628fe6f955d8ac2e89b97e",
       "exceptions": []
     },
     "examples/pure-html": {
@@ -75,12 +75,12 @@
     },
     "examples/astro-inline": {
       "exposure": "quality/audit-exposure/astro-inline.json",
-      "exposureSha256": "b8673264ab59e29e6ba65a58769b666cc55850003953e26caea9f686b9f5f8f9",
+      "exposureSha256": "d99d63cc0b73e2c1f07fc65140023d50921cc3766d02c2beade7abadddc32301",
       "exceptions": []
     },
     "examples/astro-middleware": {
       "exposure": "quality/audit-exposure/astro-middleware.json",
-      "exposureSha256": "ac6406a8ba11eeebf2753930b58861a31fd0aa13a3eb5387a2c69a72d85b3b4d",
+      "exposureSha256": "74f6ababec826e567630ebfe7cb8160fedc875074ca71280f1bedd083a1d1ffc",
       "exceptions": []
     },
     "examples/payload-backend": {

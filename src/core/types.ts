@@ -83,6 +83,13 @@ export interface RenderContext {
   /** The project's rich-text renderer, when the client was configured with one. */
   readonly renderRichText?: RichTextRenderer;
   /**
+   * The Payload server the runtime reads populated documents from (`serverURL`),
+   * absent without one. A renderer that writes a URL out of a media document
+   * resolves a path against it, as Payload's admin does; the built-in `upload`
+   * and `image` renderers do.
+   */
+  readonly serverURL?: string;
+  /**
    * This instance's sanitizer policy, for every HTML write the renderer makes.
    * Absent, the process default set by `setSanitizerPolicy()` applies.
    */

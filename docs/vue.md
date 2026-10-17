@@ -69,6 +69,13 @@ messages `data` came from: `0` for `initialData`, unchanged when a merge fails.
 `status` describes the merge; Vue patches the DOM afterwards, so a watcher with
 `flush: 'post'` on `revision` runs once the editor can see it.
 
+`data` is the document as Payload's REST API returned it. A media document's `url`
+is a path on Payload's own origin (`/api/media/file/a.png`) unless its config sets
+`serverURL`, so a page on another origin resolves it first:
+`new URL(data.value.image.url, serverURL)`. The DOM runtime does this for its
+`upload` and `image` bindings ([Media URLs](renderers.md#media-urls)); the
+composable leaves it to your component.
+
 ## Scope
 
 Call it from `setup()`, or inside an `effectScope()`. The subscription — a window

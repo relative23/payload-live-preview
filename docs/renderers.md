@@ -22,7 +22,8 @@ Renderers therefore receive the populated, transformed value. `context`
 carries `allFields` (the whole populated update, before the transforms: a
 transform changes only the value its own binding receives), `locale`, the field
 `schema` when the admin sent one, `renderRichText` when the client was
-configured with one, and `reportUnfaithful(target, reason)` — call it when your
+configured with one, `serverURL` when it has one, and
+`reportUnfaithful(target, reason)` — call it when your
 renderer can only approximate the value, and `onUnfaithfulPatch` asks a server
 to draw that region instead of leaving the approximation on the page
 ([docs/options.md](options.md)).
@@ -145,6 +146,21 @@ the base `url`/`width` is appended when the media has a numeric `width`. Media
 with no usable `sizes` removes
 `srcset` **and** `sizes`. An author-written `sizes` layout hint survives a
 rebuild — it describes the layout, not the media.
+
+### Media URLs
+
+Unless its config sets `serverURL`, Payload returns a media `url` as a path on
+its own origin (`/api/media/file/a.png`). That path works in the admin, which
+is served from there; in a preview framed on another origin it would ask the
+preview's own server for the file. With `serverURL` configured, `image` and
+`upload` therefore resolve the path of a media document, and of every `sizes`
+candidate, against it; `context.serverURL` carries it to your own renderers.
+Every other URL is written as delivered: an absolute or protocol-relative URL, a
+string or a sibling field an author typed, and every URL when the runtime has no
+`serverURL`. Media inside rich text (Lexical `upload` nodes and the optional
+image and video blocks) is written as delivered too, so it loads in a preview on
+another origin only when Payload returns absolute URLs, which its own
+`serverURL` makes it do.
 
 ### Email
 

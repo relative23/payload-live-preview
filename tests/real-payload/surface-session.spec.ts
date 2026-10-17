@@ -6,7 +6,12 @@
  * request. `surface-smoke.spec.ts` holds what every surface shares.
  */
 import { expect, test, type FrameLocator, type Page } from '@playwright/test';
-import { SEEDED_MEDIA, chooseSeededMedia, waitForPopulation } from './upload-media';
+import {
+  SEEDED_MEDIA,
+  chooseSeededMedia,
+  expectImageLoaded,
+  waitForPopulation,
+} from './upload-media';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs';
@@ -199,14 +204,16 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
     await expect(image).not.toHaveAttribute('src');
 
     // The admin posts the upload as the media's id, like a relationship; the runtime asks Payload for the
-    // document, and the `upload` renderer writes what it finds. `src` is the URL Payload returned: the
-    // backend sets no `serverURL`, so that is a path on the admin's origin, not on the preview's.
+    // document, and the `upload` renderer writes what it finds. The backend sets no `serverURL`, so Payload
+    // returns a path on its own origin; the preview is on another one, and the file loads only because the
+    // runtime resolves the path against the `serverURL` it was given.
     const asked = waitForPopulation(page);
     await chooseSeededMedia(page);
     expect((await asked).status()).toBe(200);
     await expect(filename).toHaveText(SEEDED_MEDIA.filename);
     await expect(image).toHaveAttribute('alt', SEEDED_MEDIA.alt);
-    await expect(image).toHaveAttribute('src', /\/api\/media\/file\/e2e-pixel\.png$/u);
+    await expect(image).toHaveAttribute('src', SEEDED_MEDIA.src);
+    await expectImageLoaded(image);
   });
 
   test('an upload population that fails on the network leaves the page as it was, and the next change populates', async ({
@@ -231,6 +238,6 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
     await page.locator('#field-subtitle').fill('Typed once the network is back');
     await expect(subtitle).toHaveText('Typed once the network is back');
     await expect(filename).toHaveText(SEEDED_MEDIA.filename);
-    await expect(image).toHaveAttribute('src', /\/api\/media\/file\/e2e-pixel\.png$/u);
+    await expect(image).toHaveAttribute('src', SEEDED_MEDIA.src);
   });
 });

@@ -416,6 +416,7 @@ export interface RenderContext {
     readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
     readonly sanitizerPolicy?: SanitizerPolicyMode;
     readonly schema: PayloadFieldSchema | undefined;
+    readonly serverURL?: string;
 }
 
 // @public
