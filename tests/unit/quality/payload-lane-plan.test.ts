@@ -1,9 +1,9 @@
 /**
  * The Payload 2 lane plans its browser cases from lanes.json alone: the preparation, the harness
  * run, the result check and the discovery listing read one plan per probe. These cases hold that
- * plan to the specs that write their own titles and to the count the README prints, so a claim
- * about the lane cannot outgrow what the lane executes. The plan module runs in its own Node
- * process, as the lane does; it is plain ESM next to the lane, not part of the package.
+ * plan to the specs that write their own titles or use its keys and to the count the README
+ * prints, so a claim about the lane cannot outgrow what the lane executes. The plan module runs in
+ * its own Node process, as the lane does; it is plain ESM next to the lane, not part of the package.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -35,6 +35,7 @@ interface Plan {
 interface LaneDefinition {
   readonly lanes: {
     readonly v2: Readonly<Record<string, unknown>> & {
+      readonly nativeLifecycleTitles: Readonly<Record<string, string>>;
       readonly nativePopulationTitles: Readonly<Record<string, string>>;
     };
   };
@@ -131,20 +132,23 @@ describe('Payload 2 lane case plan', () => {
     });
   });
 
-  it('keeps the titles written in the specs in step with lanes.json', () => {
+  it('keeps the titles written in the DOM spec in step with lanes.json', () => {
     const { probes } = plan();
     expect(writtenTitles('payload2.spec.cjs')).toEqual(probes.dom.specs['payload2.spec.cjs']);
-    expect(writtenTitles('native-lifecycle.spec.cjs')).toEqual(
-      probes.lifecycle.specs['native-lifecycle.spec.cjs'],
-    );
   });
 
-  it('writes no title of its own in the population spec and uses every key lanes.json names', () => {
-    const source = readFileSync(resolve(LANE, 'v2/browser/native-population.spec.cjs'), 'utf8');
-    expect(writtenTitles('native-population.spec.cjs')).toEqual([]);
-    const used = [...source.matchAll(/\btitles\.(\w+)/gu)].map((match) => match[1]);
-    expect([...new Set(used)].sort()).toEqual(Object.keys(lane.nativePopulationTitles).sort());
-  });
+  it.each([
+    ['native-lifecycle.spec.cjs', 'nativeLifecycleTitles'],
+    ['native-population.spec.cjs', 'nativePopulationTitles'],
+  ] as const)(
+    'writes no title of its own in %s and uses every key lanes.json names',
+    (file, key) => {
+      const source = readFileSync(resolve(LANE, 'v2/browser', file), 'utf8');
+      expect(writtenTitles(file)).toEqual([]);
+      const used = [...source.matchAll(/\btitles\.(\w+)/gu)].map((match) => match[1]);
+      expect([...new Set(used)].sort()).toEqual(Object.keys(lane[key]).sort());
+    },
+  );
 
   it('prints the planned count of every probe in the lane README', () => {
     const { probes } = plan();

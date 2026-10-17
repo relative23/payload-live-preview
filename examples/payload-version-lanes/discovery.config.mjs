@@ -1,7 +1,8 @@
 /**
- * List the exact prepared case set with the repository's pinned test tooling.
- * No dependency consumer, compiler, database, admin or browser is started here;
- * the installed probe uses its own separate configuration and package graph.
+ * List the exact prepared case set of a v3 or v4 cell with the repository's pinned test tooling.
+ * No dependency consumer, compiler, database, admin or browser is started here; the installed
+ * probe uses its own separate configuration and package graph. A v2 cell lists its cases through
+ * the browser config of its harness (readiness.mjs), which reads its plan from lanes.json.
  */
 import { defineConfig, devices } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -17,16 +18,9 @@ process.env.PLP_R6_ADMIN = 'http://localhost:' + prepared.ports.admin;
 process.env.PLP_R6_FRONTEND = 'http://localhost:' + prepared.ports.frontend;
 process.env.PLP_R6_ADMIN_PORT = String(prepared.ports.admin);
 process.env.PLP_R6_FRONTEND_PORT = String(prepared.ports.frontend);
-if (prepared.lane === 'v2') process.env.PLP_P2_RUN_FILE = prepared.runFile;
 const file = resolve(
   directory,
-  prepared.lane === 'v2'
-    ? prepared.surface === 'dom'
-      ? 'v2/browser/payload2.spec.cjs'
-      : 'v2/browser/native-lifecycle.spec.cjs'
-    : prepared.probe === 'wire'
-      ? 'wire.spec.mjs'
-      : 'shared/lifecycle.diagnostic.spec.mjs',
+  prepared.probe === 'wire' ? 'wire.spec.mjs' : 'shared/lifecycle.diagnostic.spec.mjs',
 );
 export default defineConfig({
   testDir: dirname(file),
