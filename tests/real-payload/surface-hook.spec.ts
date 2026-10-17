@@ -176,6 +176,18 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
     await page.locator('#field-title').fill('Title typed before the reload');
     await expect(preview.getByTestId('title')).toHaveText('Title typed before the reload');
 
+    // The reloaded page can take the admin's next message once its hook has announced itself: a
+    // change typed before the hook is mounted is a message nobody hears.
+    await page.evaluate(() => {
+      const counter = window as Window & { __previewReady?: number };
+      counter.__previewReady = 0;
+      window.addEventListener('message', (event) => {
+        const data = event.data as { type?: string; ready?: boolean } | null;
+        if (data?.type === 'payload-live-preview' && data.ready === true) {
+          counter.__previewReady = (counter.__previewReady ?? 0) + 1;
+        }
+      });
+    });
     await page.locator(PREVIEW_IFRAME).evaluate(
       (frame) =>
         new Promise<void>((resolve) => {
@@ -184,6 +196,13 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
           element.setAttribute('src', element.src);
         }),
     );
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => (window as Window & { __previewReady?: number }).__previewReady ?? 0),
+        { timeout: 60_000 },
+      )
+      .toBeGreaterThan(0);
     await expect(preview.getByTestId('title')).not.toHaveText('Title typed before the reload');
     await expect(preview.getByTestId('status')).toHaveText('idle');
 
