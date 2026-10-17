@@ -40,6 +40,9 @@ const config: PlaywrightTestConfig = {
     },
     url: `${origin}${basePath}/admin.html`,
     ignoreHTTPSErrors: true,
+    // The script builds before it serves; see playwright.next-production.config.ts.
+    stdout: 'pipe',
+    stderr: 'pipe',
     reuseExistingServer: false,
     timeout: 180_000,
     gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
