@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 493,
-    "suites": 933,
-    "tests": 4243,
+    "files": 495,
+    "suites": 936,
+    "tests": 4256,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 400,
-      "suites": 829,
-      "tests": 3866,
+      "files": 402,
+      "suites": 832,
+      "tests": 3879,
       "benchmarks": 0
     }
   },
@@ -2969,6 +2969,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/compat-matrix-jobs.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/compat-version-sync.test.ts",
       "group": "unit",
       "suites": 1,
@@ -3085,6 +3092,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 15,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/next-build-arguments.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
       "benchmarks": 0
     },
     {

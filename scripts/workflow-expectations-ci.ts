@@ -180,6 +180,36 @@ export const CI: WorkflowSpec = {
         },
       ],
     },
+    // Next.js 15 over the Next.js fixture, whose lockfile pins 16. The production build is webpack
+    // there and the base path is where an older Next differs from the newest, so both run beside the
+    // development suite.
+    'next-matrix': {
+      needs: ['build'],
+      matrix: { next: [15] },
+      steps: [
+        ...FIXTURE_SETUP,
+        { run: 'npx playwright install --with-deps chromium' },
+        DOWNLOAD_DIST,
+        {
+          run: 'npm --prefix examples/nextjs-payload install --no-audit --no-fund "next@^${{ matrix.next }}"',
+        },
+        {
+          run: [
+            'npx playwright test --project=chromium -g "[Nn]ext"',
+            'tests/e2e/specs/auto-bind-hit-rate.spec.ts',
+            'tests/e2e/specs/fragment-request-bounds.spec.ts',
+            'tests/e2e/specs/navigation-lifecycle-per-framework.spec.ts',
+            'tests/e2e/specs/nextjs-asset-delivery.spec.ts',
+            'tests/e2e/specs/nextjs-fragment.spec.ts',
+            'tests/e2e/specs/nextjs-live-preview.spec.ts',
+            'tests/e2e/specs/reveal.spec.ts',
+          ].join(' '),
+          env: { PLP_E2E_SERVERS: 'nextjs' },
+        },
+        { run: 'npm run test:e2e:next-webpack-production -- --project=chromium' },
+        { run: 'npm run test:e2e:next-base-path -- --project=chromium' },
+      ],
+    },
     'real-payload-e2e': {
       needs: ['build'],
       steps: [

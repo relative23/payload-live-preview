@@ -201,6 +201,66 @@
       }
     },
     {
+      "id": "next-base-floating-fifteen",
+      "surface": "Next.js",
+      "feature": "base live preview, fragments and asset delivery in the floating 15.x matrix; not an exact-floor result",
+      "version": {
+        "kind": "floor",
+        "value": "15.5.0",
+        "package": "next",
+        "source": {
+          "kind": "declared-feature-floor"
+        },
+        "configuredRange": "^15"
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and signed fragment endpoint",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "next-matrix"
+        },
+        "sources": [
+          ".github/workflows/ci.yml",
+          "tests/e2e/specs/nextjs-live-preview.spec.ts",
+          "tests/e2e/specs/nextjs-fragment.spec.ts"
+        ]
+      }
+    },
+    {
+      "id": "next-production-floating-fifteen",
+      "surface": "Next.js",
+      "feature": "webpack production build and base path in the floating 15.x matrix; not an exact-floor result",
+      "version": {
+        "kind": "floor",
+        "value": "15.5.0",
+        "package": "next",
+        "source": {
+          "kind": "declared-feature-floor"
+        },
+        "configuredRange": "^15"
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and signed fragment endpoint",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "next-matrix"
+        },
+        "sources": [
+          "playwright.next-webpack-production.config.ts",
+          "playwright.next-base-path.config.ts",
+          "scripts/next-build-arguments.mjs"
+        ]
+      }
+    },
+    {
       "id": "next-production-lifecycle",
       "surface": "Next.js",
       "feature": "production build/start, native navigation and real-admin unsaved output",
@@ -931,7 +991,7 @@
     {
       "name": "Next.js",
       "package": "next",
-      "supported": "App Router, 16",
+      "supported": "App Router, 15.5 and 16",
       "fixture": "examples/nextjs-payload",
       "tested": [
         {
@@ -939,6 +999,12 @@
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E"
+        },
+        {
+          "major": 15,
+          "source": "next-matrix",
+          "browsers": ["chromium"],
+          "job": "Next.js matrix"
         }
       ]
     },
@@ -1030,7 +1096,7 @@
   ],
   "vite": {
     "measured": "2026-09-06",
-    "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE \u2014 every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 5 through 8. Remove this line when the dev tooling accepts 8."
+    "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE — every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 5 through 8. Remove this line when the dev tooling accepts 8."
   },
   "hooks": [
     {
