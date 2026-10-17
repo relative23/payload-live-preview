@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { startNativeContinuation } from '../helpers/native-continuation';
 import { openResourcePreview, sendResourceRevision } from '../helpers/astro-resource-browser';
+import { astroResourceVersion } from '../helpers/astro-resource-versions';
 
 let fixture: Awaited<ReturnType<typeof startNativeContinuation>>;
 let artifact: string;
@@ -176,7 +177,7 @@ test.beforeAll(async ({ browser, browserName }, info) => {
   test.setTimeout(240_000);
   expect(process.env['PLP_ASTRO_RESOURCE_RENDERER']).toBe('react-islands');
   artifact = resolve(
-    'test-results/hardening/h05-astro-islands/native',
+    astroResourceVersion(process.env['PLP_ASTRO_RESOURCE_VERSION'], 'react-islands').artifactRoot,
     process.env['PLP_HOST_RUN'] ?? 'native-first',
     browserName,
     'worker-' + String(info.workerIndex),
