@@ -23,10 +23,9 @@
         "frontend": 4571,
         "mongo": 27222
       },
-      "expectedCases": 24,
       "surface": "dom",
       "mongoImage": "mongo@sha256:9854f7139445d766a9523571d6f047530c45547460ffcf8259eb2bf4264632ca",
-      "scope": "Original R4 real-admin DOM/session/relationship characterization, unchanged exact v2 runtime template. No native React/Vue/H19 claim. Optional React/Vue lifecycle probes each list9 cases per CSRF variant; execution remains separate from a source declaration.",
+      "scope": "Original R4 real-admin DOM/session/relationship characterization, unchanged exact v2 runtime template. No H19 closure claim. Optional React/Vue probes list the native lifecycle and population titles below for each CSRF variant; execution remains separate from a source declaration.",
       "expectedTitles": [
         "the packed plugin supplies the preview URL and Payload 2 schema is observed",
         "unsaved title reaches the preview and leaves the database unchanged",
@@ -42,7 +41,16 @@
         "the real v2 admin document change creates a fresh native consumer",
         "iframe reload starts from an authorized saved read and accepts a fresh real v2 schema"
       ],
-      "nativeLifecycleCasesPerSurfaceVariant": 9,
+      "nativePopulationTitles": {
+        "hydration": "native SSR hydrates and the authentic first v2 schema message settles live",
+        "unsavedTitle": "a real unsaved title reaches the native tree while the saved document stays unchanged",
+        "sessionSchema": "a subsequent schema-free subtitle update uses the session schema",
+        "markupAsText": "scalar markup stays text in the native renderer",
+        "populatedRelationship": "the real relationship id is populated by credentialed cross-origin collection GET",
+        "nextRelationship": "relationship changes after the first schema populate the next id rather than keep the old author",
+        "editorSession": "only the real editor session receives the native preview and its initial saved read",
+        "csrfVariant": "the real v2 session keeps cookie-only and explicit Origin behavior in its pinned CSRF variant"
+      },
       "nativeLifecycleVersions": {
         "vue": "3.5.42",
         "@vue/server-renderer": "3.5.42",

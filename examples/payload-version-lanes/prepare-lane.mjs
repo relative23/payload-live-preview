@@ -17,6 +17,7 @@ import {
   sourceContract,
   freshOutput,
 } from './inputs.mjs';
+import { engines, v2Cases, v2ProbeFits, v2Specs } from './plan.mjs';
 
 export function prepareLane(options) {
   const { definition, manifestSHA256 } = sourceContract();
@@ -41,8 +42,7 @@ export function prepareLane(options) {
   const probe = options.probe ?? (surface === 'dom' ? 'dom' : 'lifecycle');
   assert.ok(
     options.lane === 'v2'
-      ? (surface === 'dom' && probe === 'dom') ||
-          (['react', 'vue'].includes(surface) && probe === 'lifecycle')
+      ? v2ProbeFits(probe, surface)
       : ['react', 'vue'].includes(surface) && ['lifecycle', 'wire'].includes(probe),
   );
   assert.ok(
@@ -74,7 +74,8 @@ export function prepareLane(options) {
         PLP_P2_ADMIN_PORT: String(lane.ports.admin),
         PLP_P2_SITE_PORT: String(lane.ports.frontend),
         PLP_P2_MONGO_PORT: String(lane.ports.mongo),
-        PLP_P2_BROWSERS: 'chromium,firefox,webkit',
+        PLP_P2_BROWSERS: engines.join(','),
+        PLP_P2_SPEC_TITLES: JSON.stringify(v2Specs(lane, probe)),
       },
     });
     writeFileSync(resolve(out, 'prepare.log'), result.stdout + result.stderr, {
@@ -186,7 +187,7 @@ export function prepareLane(options) {
     out,
     repo,
     ports: lane.ports,
-    expectedCases: options.lane === 'v2' ? (surface === 'dom' ? 24 : 9) : probe === 'wire' ? 3 : 12,
+    expectedCases: options.lane === 'v2' ? v2Cases(lane, probe) : probe === 'wire' ? 3 : 12,
     archiveSource: archive,
     archiveSHA256: options.sha256,
     archiveVersion: inventory.version,
