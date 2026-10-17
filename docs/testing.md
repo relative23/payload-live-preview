@@ -460,6 +460,7 @@ export PLP_CONTINUATION_TARBALL=/tmp/release-artifact/payload-live-preview-<vers
 npx playwright test --config playwright.astro-floor-base.config.ts                                   # port 4290
 PLP_ASTRO_RESOURCE_VERSION=4.16.19 npx playwright test --config playwright.astro-islands.config.ts   # port 4287
 PLP_ASTRO_RESOURCE_VERSION=4.9.0 npx playwright test --config playwright.astro-resources.config.ts   # port 4287
+npx playwright test --config playwright.astro-owner.config.ts                                       # port 4287, Astro 7.3.2, page-owned React
 ```
 
 What they do not show. The parent is a mock, so neither is a real-admin result. The island
