@@ -128,11 +128,12 @@ transform run after any plugin that may write a Live Preview URL in Payload's
 effective execution order, or compose both routing policies explicitly. The
 complete merge and conflict rules are in [docs/payload.md](docs/payload.md).
 
-Payload 3.89 enables its native Live Preview after a collection document's
-first save. This applies to function-valued and fixed string URLs alike; the
-create screen has no preview toggle or iframe. The plugin uses one function
-to route several entities, and Payload does not evaluate it in that initial
-create state.
+In the Payload 3.90.2 admin, a collection document gets its native Live
+Preview after its first save. The create screen has no preview toggle and no
+frame, for a function-valued URL and for a fixed string alike. The frame that
+appears after the save loads the URL the plugin's function builds from the saved
+document. `tests/real-payload/surface-create.spec.ts` checks this in Chromium,
+Firefox and WebKit.
 
 Use the lower-level callback when another plugin owns the surrounding config or
 when a document may have no preview route:
