@@ -18,7 +18,7 @@
     "examples/astro-payload/src/sanitizer.ts": "91dccf9b97bd9041a64f32c465ed2670efe496e51d17bd3b693a3cac579802c8",
     "examples/astro-payload/tsconfig.json": "b5b0a5b04a14cddd7713c5e1c82e86c79c17c2f86b170e26e9b170b3d5e01cd9",
     "playwright.config.ts": "715a83a82cbec342ce844d3fa4cf0c129611be85571c7842568d3b00673b9a7c",
-    "playwright.real-payload.config.ts": "99635ce5613dc478db27d6116d3b950ad32401ede94c61eb9df133e71a9e83d1"
+    "playwright.real-payload.config.ts": "6d4a9aa65b351cd61b46206fb852d0717abe6dd30341ee2eef56afc146f488ef"
   },
   "directories": ["examples/astro-payload"],
   "absentFiles": [],
