@@ -66,7 +66,7 @@ The framework hooks and fragment renderers run twice on every push: at the floor
 
 ### Local 2.1 prerelease checks
 
-The following checks passed on the `2.1.0` package archive on 2026-10-05. These are local results, separate from the CI jobs listed above. Browser counts include Chromium, Firefox and WebKit on Linux.
+The following checks passed on the `2.1.0` package archive on 2026-10-05. These are local results, separate from the CI jobs listed above. Browser counts include Chromium, Firefox and WebKit on Linux. The Payload 2.32.3 row was run again on 2026-10-17 on a package archive built from this repository; `examples/payload-version-lanes` runs it, with `--probe=population` for React and Vue.
 
 | Version        | Checked population                                              | Passed cases                 |
 | -------------- | --------------------------------------------------------------- | ---------------------------- |
@@ -76,7 +76,7 @@ The following checks passed on the `2.1.0` package archive on 2026-10-05. These 
 | Astro 4.0.0    | Base adapter, static output and scoped updates                  | 15 browser cases             |
 | Astro 4.16.19  | Native React islands, CSP and navigation ownership              | 12 browser cases             |
 
-The Node checks do not cover framework builds or development tools. The Next checks use a controlled preview cookie and fragment tokens; they do not use a real Payload admin. The Payload 2 graph still has upstream audit findings, including a critical finding in the 2026-10-05 audit. Its passing preview cases establish compatibility, not a clean dependency graph. Separate Payload 3 lifecycle and Payload 4 canary checks are not included in this table.
+The Node checks do not cover framework builds or development tools. The Next checks use a controlled preview cookie and fragment tokens; they do not use a real Payload admin. The Payload 2 graph still has upstream audit findings, including a critical finding in the 2026-10-05 audit. Its passing preview cases establish compatibility, not a clean dependency graph. Separate Payload 2 hook lifecycle, Payload 3 lifecycle and Payload 4 canary checks are not included in this table.
 
 **A client-rendered app takes a hook.** `useLivePreviewDocument()` from `payload-live-preview/react` or `payload-live-preview/vue` returns the merged document and re-renders your tree. Payload 3 updates use the method-override merge request; Payload 2 scalar updates settle locally and raw relationships use schema-based collection GETs. A newer update aborts any request in flight; an HTTP error is refused instead of becoming the document; each hook has a session of its own, so two previews on one page keep their own documents ([docs/react.md](docs/react.md), [docs/vue.md](docs/vue.md)). The official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` hooks ship in lockstep with Payload and remain the safe default if that matters more to you; running either alongside the DOM runtime on one page: [docs/interop.md](docs/interop.md).
 
