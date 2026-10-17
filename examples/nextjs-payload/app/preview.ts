@@ -1,6 +1,6 @@
 /**
  * The fixture's preview authorization, in one place because three callers have
- * to agree on it: the root layout's `<LivePreviewScript />`, the fragment
+ * to agree on it: the root layout's `LivePreviewScript`, the fragment
  * endpoint, and the entry route the mock admin frames.
  *
  * A real deployment keeps the secret in the environment and shares it with the

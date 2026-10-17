@@ -18,6 +18,17 @@ suite (54) and the base-path suite (63) passed on Next.js 15.5.25 in Chromium, F
 and the documented quickstart builds and serves. Only the reason for the exclusion was gone; the
 other, that nothing would catch a regression, was not.
 
+The job then found what those runs had not. The first-write case of the webpack production suite
+failed in about one load in ten on a two-core runner, with `Minified React error #418`, and kept the
+push from a green run. The cause is not in the runtime: the React that Next.js 15.5.28 ships
+(19.2.0-canary-0bdb9206) begins to hydrate `<head>` before the part of the stream that holds an async
+server component's output has arrived, and reports a hydration mismatch. An inert 159 KB script
+rendered by an async component does the same (10 of 20 loads with the last 700 bytes of the document
+held back for 300 ms); Next.js 16.3.8 (19.3.0-canary-cbb046ab) does not (0 of 20). Awaiting the
+component in the layout, so that its script is part of the layout's own part of the stream, produced
+the error in 0 of 60 loads and 0 of 20 under the delay. The harness was a throw-away one; the
+numbers are in [nextjs.md](../nextjs.md#await-it-in-the-layout).
+
 ## Decision
 
 1. Next.js 15.5 and 16 (App Router) are supported. Earlier 15 minors are not claimed: nothing ran
@@ -34,7 +45,10 @@ other, that nothing would catch a regression, was not.
    Next.js 16 builds with Turbopack unless told `--webpack`. Next.js 15 builds with webpack and does
    not know that flag.
 5. A Turbopack production build on Next.js 15 (`next build --turbopack`) is not claimed: no suite runs it.
-6. When Next.js stops patching 15, or the job turns red on something the adapter cannot fix, 15
+6. The documented layout awaits `LivePreviewScript` (`await LivePreviewScript({ … })`, rendered as
+   `{livePreview}` in `<head>`) and so does the fixture's. The element form `<LivePreviewScript />`
+   is not recommended on any version: on 15.5 it fails about one load in ten on a slow machine.
+7. When Next.js stops patching 15, or the job turns red on something the adapter cannot fix, 15
    leaves the README row in the next minor, as an Astro major would (ADR 0009 §2).
 
 ## Consequences

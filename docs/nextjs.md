@@ -2,7 +2,7 @@
 
 For App Router projects on Next.js 15.5 and 16 whose pages are rendered on the server or at build time. The runtime patches server-rendered markup; its first write waits for React to hydrate, and a client component that re-renders a bound element can still revert a patch (see the caveat below).
 
-Next.js 15.5 and 16 are tested. The `next-matrix` job installs `next@^15` into [`examples/nextjs-payload`](../examples/nextjs-payload) on every push and runs the Next.js cases of the default suite (`next dev`), the webpack production suite and the base-path suite in Chromium; local runs on 15.5.25 (2026-10-17) passed the same suites in Chromium, Firefox and WebKit (72, 54 and 63 cases), and the quickstarts below build and serve. Earlier 15 minors are not claimed, and no suite runs Next.js 15's `next build --turbopack`. On 2.0.x, 30 of the 42 end-to-end cases failed on Next.js 15.5.25 with `Cannot find module 'react'` (measured 2026-09-17), because `<LivePreviewScript />` loaded `react`, and the fragment endpoint `react` and `react-dom/server`, through imports whose specifiers were computed at runtime, which Next.js 15's server bundle did not resolve; 2.1 imports them by literal specifier. Next.js 16 is tested in CI with its default bundler, Turbopack; a webpack production build passes the same preview and fragment suites in a local check (54 browser cases on 16.3.8, 2026-10-05). [ADR 0031](architecture/0031-nextjs-15-is-supported-because-a-job-installs-it.md) records why.
+Next.js 15.5 and 16 are tested. The `next-matrix` job installs `next@^15` into [`examples/nextjs-payload`](../examples/nextjs-payload) on every push and runs the Next.js cases of the default suite (`next dev`), the webpack production suite and the base-path suite in Chromium; local runs on 15.5.28 (2026-10-17, with the awaited layout below) passed the same suites in Chromium, Firefox and WebKit (72, 54 and 63 cases), and the quickstarts below build and serve. Earlier 15 minors are not claimed, and no suite runs Next.js 15's `next build --turbopack`. On 2.0.x, 30 of the 42 end-to-end cases failed on Next.js 15.5.25 with `Cannot find module 'react'` (measured 2026-09-17), because `<LivePreviewScript />` loaded `react`, and the fragment endpoint `react` and `react-dom/server`, through imports whose specifiers were computed at runtime, which Next.js 15's server bundle did not resolve; 2.1 imports them by literal specifier. Next.js 16 is tested in CI with its default bundler, Turbopack; a webpack production build passes the same preview and fragment suites in a local check (54 browser cases on 16.3.8, 2026-10-05). [ADR 0031](architecture/0031-nextjs-15-is-supported-because-a-job-installs-it.md) records why.
 
 > A client-rendered React app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) hook: it re-renders your real component tree, so conditional sections and custom components update with full fidelity. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
 
@@ -29,15 +29,16 @@ either way, and the only question the component answers is who receives them.
 
 | Way                                                       | A public visitor receives | Pick it when                                                                  |
 | --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
-| `<LivePreviewScript />`, an async server component        | nothing                   | the default: the render can await an authorization verdict                    |
+| `await LivePreviewScript(…)`, an async server component   | nothing                   | the default: the render can await an authorization verdict                    |
 | `livePreviewScriptProps()` with `delivery: 'asset'`       | a 1 344-byte bootstrap    | the script is built once at module scope and the page has no verdict to await |
 | `livePreviewScriptProps()` or `renderLivePreviewScript()` | the whole runtime         | a page that is not gated at all, or HTML a server assembles as a string       |
 
 ## Nothing for a public visitor
 
-`<LivePreviewScript />` is an async server component. It runs the same policy
-the middleware runs — intent, then `authorizePreview` — and renders nothing at
-all for a request that is not an authorized preview. Not a bootstrap: nothing.
+`LivePreviewScript` is an async server component. Awaited in the layout, it runs
+the same policy the middleware runs — intent, then `authorizePreview` — and
+returns nothing at all for a request that is not an authorized preview. Not a
+bootstrap: nothing.
 
 ```tsx
 // app/layout.tsx
@@ -47,24 +48,23 @@ import { LivePreviewScript } from 'payload-live-preview/nextjs';
 import { authorizePreviewRequest } from 'payload-live-preview/server';
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Awaited, not rendered as <LivePreviewScript />: see "Await it in the layout" below.
+  const livePreview = await LivePreviewScript({
+    request: new Request(process.env.SITE_ORIGIN!, { headers: await headers() }),
+    // A layout cannot see the query string (below), so the verdict is the gate.
+    inject: 'always',
+    allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+    serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+    mergeDepth: 1,
+    authorizePreview: (request) =>
+      authorizePreviewRequest(request, {
+        type: 'payload-session',
+        serverURL: process.env.PAYLOAD_URL!,
+      }),
+  });
   return (
     <html lang="en">
-      <head>
-        <LivePreviewScript
-          request={new Request(process.env.SITE_ORIGIN!, { headers: await headers() })}
-          // A layout cannot see the query string (below), so the verdict is the gate.
-          inject="always"
-          allowedOrigins={[process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!]}
-          serverURL={process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!}
-          mergeDepth={1}
-          authorizePreview={(request) =>
-            authorizePreviewRequest(request, {
-              type: 'payload-session',
-              serverURL: process.env.PAYLOAD_URL!,
-            })
-          }
-        />
-      </head>
+      <head>{livePreview}</head>
       <body>{children}</body>
     </html>
   );
@@ -83,17 +83,43 @@ build time has no request to decide for, and takes the asset route below.
 URL.** A layout therefore cannot see `?preview=true`, and the default intent
 signal — `previewSignals: ['query']` — cannot fire there. Two ways round it:
 
-- `inject="always"`, as above. Intent is skipped and `authorizePreview` is the
+- `inject: 'always'`, as above. Intent is skipped and `authorizePreview` is the
   only gate, which is the stricter reading anyway: intent is client-controlled
   and never authorization ([authorization.md](authorization.md)).
-- Render the component in a **page** instead, which does get `searchParams`, and
+- Call the component in a **page** instead, which does get `searchParams`, and
   pass the real URL: `new Request(url, { headers: await headers() })`. Intent
   then works as the cheap pre-filter it is, and the `signed-token` strategy —
   which binds a token to a path — has the path it needs.
 
-The element carries a `nonce` prop for a CSP you manage yourself, and it is
-rendered only when the script is. Everything else on it is the adapter options
-below.
+The component takes a `nonce` prop for a CSP you manage yourself, and the
+element it returns carries it only when the script is rendered. Everything else
+on it is the adapter options below.
+
+### Await it in the layout
+
+Call the component, as above, rather than rendering `<LivePreviewScript />`. An
+element of an async server component reaches the browser as a part of React's
+stream of its own, after the page. The React that Next.js 15.5 ships begins to
+hydrate `<head>` before that part has arrived and reports `Minified React error
+#418`, a hydration mismatch. The runtime is not involved: an inert 159 KB script
+rendered by an async component in `<head>` does the same. Measured on 2026-10-17
+with Next.js 15.5.28 (webpack production build, two CPU cores, Chromium, the
+first-write case of `nextjs-live-preview.spec.ts`), with a throw-away harness
+that is not part of the repository:
+
+| Layout renders                                      | Next.js 15.5.28 | Next.js 16.3.8 |
+| --------------------------------------------------- | --------------- | -------------- |
+| `<LivePreviewScript />`, loads as served            | 10 of 118       | 0 of 40        |
+| `<LivePreviewScript />`, last 700 bytes held 300 ms | 8 of 20         | 0 of 20        |
+| an inert script in an async component, same delay   | 10 of 20        | 0 of 20        |
+| `await LivePreviewScript(…)`, loads as served       | 0 of 60         | not measured   |
+| `await LivePreviewScript(…)`, last 700 bytes held   | 0 of 20         | 0 of 20        |
+
+Two further loads of the first row ended in `net::ERR_NETWORK_CHANGED`, a change
+of the host's network, and are not counted. The call is an ordinary function
+call: the component uses no hook and no client state. Prefer the awaited form on
+every Next.js version; on 15.5 it is the one that was measured to hydrate
+without the error.
 
 ## The runtime as a cached asset
 
@@ -188,8 +214,9 @@ layout was still written like this: a 116 413-byte `<script>` element in a
 258 227-byte response to a request with no cookie and no preview intent — and
 Next renders it twice, once into the HTML and once more into the RSC flight
 payload, so the runtime was most of what an anonymous visitor received. The
-same request answers 15 327 bytes with `<LivePreviewScript />`. That component
-is the version of this layout that waits; `delivery: 'asset'` above is the
+same request carries no script element and no extra byte when the layout awaits
+`LivePreviewScript` (`tests/fixtures/delivery-budgets.ts` holds both at 0). That
+component is the version of this layout that waits; `delivery: 'asset'` above is the
 version that keeps the module-scope props and replaces the runtime with the
 1 344-byte bootstrap. What each choice costs a visitor, measured per framework:
 [deployment.md](deployment.md#what-a-public-visitor-pays).
@@ -407,7 +434,7 @@ When it is not there, the strategy fetches and morphs as before.
 ## Example
 
 [`examples/nextjs-payload`](../examples/nextjs-payload) on Next.js 16 — the
-`(inline)` root layout with `<LivePreviewScript />`, `inject: 'always'` and a
+`(inline)` root layout awaiting `LivePreviewScript` with `inject: 'always'` and a
 signed-token `authorizePreview`, so an anonymous request to any of its pages
 carries no runtime at all; the `(asset)` root layout with
 `livePreviewScriptProps()` and `delivery: 'asset'`, for the comparison; and

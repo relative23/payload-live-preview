@@ -26,21 +26,25 @@
  * import { LivePreviewScript } from 'payload-live-preview/nextjs';
  *
  * export default async function RootLayout({ children }: { children: ReactNode }) {
+ *   const livePreview = await LivePreviewScript({
+ *     request: new Request(SITE_URL, { headers: await headers() }),
+ *     inject: 'always',
+ *     allowedOrigins: [ADMIN_URL],
+ *     authorizePreview: authorize,
+ *   });
  *   return (
  *     <html lang="en">
- *       <head>
- *         <LivePreviewScript
- *           request={new Request(SITE_URL, { headers: await headers() })}
- *           inject="always"
- *           allowedOrigins={[ADMIN_URL]}
- *           authorizePreview={authorize}
- *         />
- *       </head>
+ *       <head>{livePreview}</head>
  *       <body>{children}</body>
  *     </html>
  *   );
  * }
  * ```
+ *
+ * It is awaited rather than rendered as `<LivePreviewScript />`: an element of
+ * an async server component arrives in React's stream after the page, and the
+ * React that Next.js 15.5 ships begins to hydrate `<head>` before it has, which
+ * it reports as error #418 (docs/nextjs.md, "Await it in the layout").
  *
  * A `Request` rather than a shape of our own: it is what `authorizePreview`
  * and `shouldInject` already receive from the middleware, so one options object
@@ -102,8 +106,9 @@ const loadCreateElement = lazyPeer(async (): Promise<CreateElement> => {
 });
 
 /**
- * Renders the runtime for an authorized preview and nothing at all for
- * everyone else. Mount it in the layout or page that owns `<head>`.
+ * Resolves to the runtime's `<script>` element for an authorized preview and to
+ * `null` for everyone else. Await it in the layout or page that owns `<head>`
+ * and render the result there.
  */
 export async function LivePreviewScript(
   props: LivePreviewScriptComponentProps,

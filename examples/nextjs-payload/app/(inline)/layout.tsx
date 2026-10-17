@@ -12,6 +12,12 @@
  * bytes for an anonymous request to `/`, the whole runtime for one carrying the
  * cookie `/preview-session` writes.
  *
+ * It is awaited here rather than rendered as `<LivePreviewScript />`: an element
+ * of an async server component reaches the browser as a part of the stream of
+ * its own, after the page, and the React that Next.js 15.5 ships begins to
+ * hydrate `<head>` before that part has arrived and reports error #418
+ * (docs/nextjs.md, "Await it in the layout").
+ *
  * `inject: 'always'` is not a loosening. Next hands a server component the
  * request headers and cookies but not its URL, so the default `previewSignals:
  * ['query']` cannot see `?preview=true` here and would refuse every request.
@@ -56,17 +62,18 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
+  // The URL is the caller's to supply and a layout has none, so the site origin
+  // stands in for it; with `inject: 'always'` nothing reads the path, and the
+  // cookie the hook verifies is not bound to one.
+  const livePreview = await LivePreviewScript({
+    ...previewOptions,
+    ...realAdminOptions,
+    request: new Request(SITE, { headers: await headers() }),
+  });
   return (
     <html lang="en">
       <head>
-        {/* The URL is the caller's to supply and a layout has none, so the site
-            origin stands in for it; with `inject: 'always'` nothing reads the
-            path, and the cookie the hook verifies is not bound to one. */}
-        <LivePreviewScript
-          {...previewOptions}
-          {...realAdminOptions}
-          request={new Request(SITE, { headers: await headers() })}
-        />
+        {livePreview}
         <style dangerouslySetInnerHTML={{ __html: styles }} />
       </head>
       <body>

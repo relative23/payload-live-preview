@@ -1,8 +1,8 @@
 /**
  * End-to-end tests for the documented Next.js (App Router) wiring.
  *
- * The fixture is `examples/nextjs-payload`: the root layout renders
- * `<LivePreviewScript />`, the async server component that waits for
+ * The fixture is `examples/nextjs-payload`: the root layout awaits
+ * `LivePreviewScript`, the async server component that waits for
  * `authorizePreview` before it renders anything — the pattern
  * docs/nextjs.md documents (no middleware injection). The static mock
  * admin at `/admin.html` enters through `/preview-session`, which mints

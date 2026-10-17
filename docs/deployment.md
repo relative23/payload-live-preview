@@ -55,7 +55,7 @@ against 159 206 bytes for authorized inline delivery: about one per cent,
 and more than the Astro row below
 because a Next page's bootstrap also arms the wait for React's first commit
 before it fetches ([ADR 0015](architecture/0015-first-write-after-hydration.md)). On Next it is the second step down, not the first: a layout
-that can await the verdict renders `<LivePreviewScript />` and sends a public
+that can await the verdict awaits `LivePreviewScript` and sends a public
 visitor nothing at all ([nextjs.md](nextjs.md#nothing-for-a-public-visitor));
 the asset is for a script built at module scope, with no verdict to await.
 
@@ -113,14 +113,14 @@ carry it. These are uncompressed bytes for the directly emitted script
 element. The Next.js rows also count its escaped copy in the RSC flight payload,
 whose encoding adds bytes; "twice" counts the two occurrences.
 
-| Setup                                                  | A public visitor receives | Bytes          | Why                                                                               |
-| ------------------------------------------------------ | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
-| SvelteKit handle, Nuxt Nitro plugin, Astro middleware  | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
-| Next.js, `<LivePreviewScript />` in the root layout    | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
-| Next.js, `delivery: 'asset'`                           | the bootstrap             | 1 344, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
-| Astro static build, `mode: 'loader'`                   | the bootstrap             | 792            | a static page has no request to decide for, so the check happens in the browser   |
-| Astro static build, `mode: 'inline'`                   | the whole runtime         | 145 053        | nothing decides and nothing is deferred                                           |
-| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime         | 159 206, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
+| Setup                                                    | A public visitor receives | Bytes          | Why                                                                               |
+| -------------------------------------------------------- | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
+| SvelteKit handle, Nuxt Nitro plugin, Astro middleware    | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
+| Next.js, `await LivePreviewScript(…)` in the root layout | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
+| Next.js, `delivery: 'asset'`                             | the bootstrap             | 1 344, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
+| Astro static build, `mode: 'loader'`                     | the bootstrap             | 792            | a static page has no request to decide for, so the check happens in the browser   |
+| Astro static build, `mode: 'inline'`                     | the whole runtime         | 145 053        | nothing decides and nothing is deferred                                           |
+| Next.js, `livePreviewScriptProps()` in the root layout   | the whole runtime         | 159 206, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
 
 The last row is the one exception to "no cookie, no preview intent": no fixture
 serves it to the public any longer, because the Next example moved to the second
@@ -154,7 +154,7 @@ table.
 
 Three ways to move a row up:
 
-- **A Next.js layout or page**: render `<LivePreviewScript />` from
+- **A Next.js layout or page**: await `LivePreviewScript` from
   `payload-live-preview/nextjs` instead of spreading
   `livePreviewScriptProps()`. It is an async server component, so it can await
   the authorization verdict and render nothing — not a bootstrap, nothing — for
