@@ -18,7 +18,27 @@ import { source, read, digest, json, preparedContract } from './inputs.mjs';
 import { boundedStages } from './shared/bounded-stage-diagnostic.mjs';
 import { diagnostic } from './shared/diagnostics.mjs';
 import { verifyOwnedGraph } from './owned-graph.mjs';
+import { engines, v2Titles } from './plan.mjs';
 import { verifyInstalledCandidate } from './v2/identity.mjs';
+
+// What a passed v2 probe may be quoted for, and what it does not show.
+const acceptance = {
+  dom: {
+    status: 'native-v2-dom-session-scoped-passed',
+    limitation:
+      'Real v2 DOM/session and chosen relationship; not native hooks, a v4 profile or the release matrix.',
+  },
+  lifecycle: {
+    status: 'native-v2-hook-lifecycle-scoped-passed',
+    limitation:
+      'Real v2 native hooks, disposal, document change and iframe reload; not capacity, cross-site cookies, native Safari or the release matrix.',
+  },
+  population: {
+    status: 'native-v2-hook-population-scoped-passed',
+    limitation:
+      'Real v2 native hooks fed by the admin form and relationship picker, with session gating; not lifecycle, capacity, cross-site cookies, native Safari or the release matrix.',
+  },
+};
 
 function idle() {
   const result = spawnSync('ps', ['-eo', 'pid,args'], {
@@ -173,12 +193,9 @@ export async function runLane(action, options) {
       assert.equal(report.totals.failed, 0);
       assert.equal(report.candidateSha256, prepared.archiveSHA256);
       assert.equal(report.variant, prepared.variant);
-      for (const browser of ['chromium', 'firefox', 'webkit']) {
+      const titles = v2Titles(prepared.laneDefinition, prepared.probe);
+      for (const browser of engines) {
         const tests = report.tests.filter((test) => test.project === browser);
-        const titles =
-          prepared.surface === 'dom'
-            ? prepared.laneDefinition.expectedTitles
-            : prepared.laneDefinition.nativeLifecycleTitles;
         assert.equal(tests.length, titles.length);
         assert.deepEqual(tests.map((test) => test.title).sort(), [...titles].sort());
         for (const test of tests) {
@@ -194,19 +211,13 @@ export async function runLane(action, options) {
       const audit = read(resolve(settings.run, 'credential-audit.json'));
       assert.deepEqual(audit.findings, []);
       json(resolve(queue, 'accepted-v2.json'), {
-        status:
-          prepared.surface === 'dom'
-            ? 'native-v2-dom-session-scoped-passed'
-            : 'native-v2-hook-lifecycle-scoped-passed',
+        status: acceptance[prepared.probe].status,
         expectedCases: prepared.expectedCases,
         surface: prepared.surface,
         archiveSHA256: prepared.archiveSHA256,
         variant: prepared.variant,
         browserReportSHA256: digest(resolve(settings.run, 'browser-results.json')),
-        limitation:
-          prepared.surface === 'dom'
-            ? 'Real v2 DOM/session and chosen relationship; not native hooks, a v4 profile or the release matrix.'
-            : 'Real v2 native hooks, disposal, document change and iframe reload; not capacity, cross-site cookies, native Safari or the release matrix.',
+        limitation: acceptance[prepared.probe].limitation,
       });
     } else {
       await stage(

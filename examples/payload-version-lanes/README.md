@@ -6,7 +6,7 @@ Use this example from the repository root with a selected package archive.
 
 | Lane | Admin | Required Node | Native probe |
 | --- | --- | --- | --- |
-| `v2` | Express/Webpack, React 18.3.1, pinned Mongo | 20.19.0 | 24 DOM/session cases |
+| `v2` | Express/Webpack, React 18.3.1, pinned Mongo | 20.19.0 | 24 DOM/session cases, or per React or Vue surface 9 lifecycle or 24 population cases |
 | `v3` | Next 16.3.4, React 19.2.8, Vue 3.5.42 | 20.19.0 | 12 lifecycle cases per surface, or 3 saved-wire cases |
 | `v4` | Next 16.3.4, React 19.2.8, Vue 3.5.42 | 24.15.0 | Separate canary characterization |
 
@@ -35,20 +35,25 @@ node "$task_lane" prepare --repo="$task_repo" --lane=v3 --surface=react \
 node "$task_lane" discover --repo="$task_repo" --prepared="$task_out/prepared.json"
 ```
 
-Use a new output for each preparation. React and Vue lifecycle probes use
-separate consumers; `--surface=vue` selects Vue. The v2 consumer retains its own
-CSRF variants and does not use the current v3 demo:
+Use a new output for each preparation. React and Vue probes use separate
+consumers; `--surface=vue` selects Vue. The v2 consumer retains its own CSRF
+variants and does not use the current v3 demo. A v2 React or Vue cell runs one
+probe: `--probe=lifecycle`, the default, or `--probe=population`:
 
 ```bash
 node "$task_lane" prepare --repo="$task_repo" --lane=v2 --variant=frontend-only \
   --tarball="$task_archive" --sha256="$task_sha" --out="$task_dir/v2-dom"
+node "$task_lane" prepare --repo="$task_repo" --lane=v2 --surface=react --probe=population \
+  --variant=server-url --tarball="$task_archive" --sha256="$task_sha" --out="$task_dir/v2-react"
 node "$task_lane" prepare --repo="$task_repo" --lane=v4 --surface=vue --probe=wire \
   --tarball="$task_archive" --sha256="$task_sha" --out="$task_dir/v4-wire"
 ```
 
 `--variant=server-url` selects the second v2 CSRF configuration. v2 requires
 the exact Mongo image named in `lanes.json` to be present locally; the runner
-does not pull it. v3/v4 create fresh SQLite paths. No existing demo database is used.
+does not pull it. Its container is capped at 2 GiB, memory and swap, and removes
+itself when it stops. v3/v4 create fresh SQLite paths. No existing demo database is used.
+The titles of each v2 probe are listed in `lanes.json`; every case count comes from them.
 
 ## Install and probe
 
@@ -81,7 +86,9 @@ to 25 minutes. Each stage records its raw exit, signal, timeout and owned proces
 groups. Cancellation or a leftover group keeps the gate red. There are no retries.
 
 Lifecycle probes use the installed React hook or Vue composable with real admin
-traffic. Saved-wire probes record bounded message shapes and verify a populated
+traffic. The v2 population probe types into the real admin form, picks a relationship
+and checks the messages the admin sent, the credentialed collection reads and the
+painted tree. Saved-wire probes record bounded message shapes and verify a populated
 saved document with the editor's cookie and a configured Origin. Shape metadata
 keeps array and string schemas distinct and retains no schema or credential values.
 These scoped developmental results do not complete the release matrix or replace

@@ -8,6 +8,8 @@ import { spawnSync } from 'node:child_process';
 import { realpathSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { source, read, json, sourceContract, preparedContract } from './inputs.mjs';
+import { engines, v2Specs } from './plan.mjs';
+import { planTitles } from './v2/identity.mjs';
 
 export function listLanes() {
   const { definition, manifestSHA256, inputs } = sourceContract();
@@ -86,7 +88,7 @@ export function discoverLane(options) {
   const report = JSON.parse(result.stdout);
   assert.deepEqual(report.errors, []);
   assert.equal(report.config.webServer, null);
-  assert.equal(report.config.projects.length, 3);
+  assert.equal(report.config.projects.length, engines.length);
   assert.ok(
     report.config.projects.every((project) => project.retries === 0 && project.repeatEach === 1),
   );
@@ -102,19 +104,26 @@ export function discoverLane(options) {
   for (const suite of report.suites) collect(suite);
   assert.equal(cases.length, prepared.expectedCases);
   assert.equal(new Set(cases.map((item) => item.project + ':' + item.title)).size, cases.length);
-  assert.equal(new Set(cases.map((item) => item.file)).size, 1);
-  for (const browser of ['chromium', 'firefox', 'webkit'])
+  for (const browser of engines)
     assert.equal(
       cases.filter((item) => item.project === browser).length,
-      prepared.expectedCases / 3,
+      prepared.expectedCases / engines.length,
     );
-  const expectedFile =
+  // A v2 probe lists the spec file and titles its plan names; v3 and v4 run one spec each.
+  const specs =
     prepared.lane === 'v2'
-      ? 'payload2.spec.cjs'
-      : prepared.probe === 'wire'
-        ? 'wire.spec.mjs'
-        : 'lifecycle.diagnostic.spec.mjs';
-  assert.ok(cases.every((item) => item.file === expectedFile));
+      ? v2Specs(prepared.laneDefinition, prepared.probe)
+      : { [prepared.probe === 'wire' ? 'wire.spec.mjs' : 'lifecycle.diagnostic.spec.mjs']: [] };
+  assert.deepEqual([...new Set(cases.map((item) => item.file))].sort(), Object.keys(specs).sort());
+  if (prepared.lane === 'v2')
+    for (const browser of engines)
+      assert.deepEqual(
+        cases
+          .filter((item) => item.project === browser)
+          .map((item) => item.title)
+          .sort(),
+        planTitles(specs).sort(),
+      );
   const receipt = {
     status: 'exact-discovery-passed-native-not-executed',
     lane: prepared.lane,

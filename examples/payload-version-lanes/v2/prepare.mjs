@@ -16,6 +16,7 @@ import {
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { planTitles, specTitlesProblem } from './identity.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const input = process.env.PLP_P2_TARBALL;
@@ -42,6 +43,14 @@ if (!['frontend-only', 'server-url'].includes(variant))
 
 const surface = process.env.PLP_P2_SURFACE ?? 'dom';
 if (!['dom', 'react', 'vue'].includes(surface)) throw new Error('Unexpected v2 native surface');
+// The lane hands over the probe's spec file and titles from lanes.json. The browser config, the
+// spec and the result check read them from the run file, so none of them keeps a count of its own.
+const specTitles = JSON.parse(process.env.PLP_P2_SPEC_TITLES ?? 'null');
+const planProblem = specTitlesProblem(specTitles);
+if (planProblem) throw new Error('PLP_P2_SPEC_TITLES must carry the case plan: ' + planProblem);
+for (const file of Object.keys(specTitles))
+  if (!existsSync(join(here, 'browser', file)))
+    throw new Error('The case plan names a missing spec');
 
 mkdirSync(join(here, 'runs'), { recursive: true });
 const run = mkdtempSync(join(here, 'runs', 'p2-'));
@@ -82,6 +91,7 @@ const settings = {
   app,
   variant,
   surface,
+  specTitles,
   adminPort,
   sitePort,
   mongoPort,
@@ -142,6 +152,6 @@ console.log(
     preparation: join(run, 'preparation.json'),
     candidateSha256: sha256,
     variant,
-    plannedBrowserTests: (surface === 'dom' ? 8 : 3) * settings.browsers.length,
+    plannedBrowserTests: planTitles(specTitles).length * settings.browsers.length,
   }),
 );
