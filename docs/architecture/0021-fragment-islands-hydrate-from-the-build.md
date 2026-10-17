@@ -159,3 +159,15 @@ placeholder, the fail-closed resolver, identity, handoff, slots, unmount and
 only for missing exports. The full nightly mutation scope
 (9 464 mutants) passes its policy with 86.03%, 68 uncovered and no errors; the
 first run found two uncovered `LP0809` branches, which tests now cover.
+
+## Measured at the floor (2026-10-17)
+
+The island contract above ran from the repository only on Astro 7.3.2. It now also runs on Astro
+4.16.19, the first release whose container takes `resolve`, with `@astrojs/react` 3.6.3, React
+18.3.1 and Vite 5.4.21 in a lock of its own (`tests/fixtures/astro-react-versions/4.16.19`), under
+the build-hash CSP. The four cases of `astro-islands.spec.ts` pass 12 of 12 in Chromium, Firefox and
+WebKit on a source-built archive, and in Chromium on every push (the `astro-floor-islands` job, which
+installs the archive the Build job stores). With `PLP_ASTRO_ISLAND_TABLE=omit`, which builds the same
+app without the integration's table, the first case fails on its visible assertion (both fragment
+requests return HTTP 500, so no card renders) and the three page-control cases still pass. The scope
+and limits above otherwise stand: `client:load` only, the React client only, no `astro dev`.
