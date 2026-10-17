@@ -178,16 +178,17 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
 
     // The reloaded page can take the admin's next message once its hook has announced itself: a
     // change typed before the hook is mounted is a message nobody hears.
-    await page.evaluate(() => {
+    await page.evaluate((previewOrigin) => {
       const counter = window as Window & { __previewReady?: number };
       counter.__previewReady = 0;
       window.addEventListener('message', (event) => {
+        if (event.origin !== previewOrigin) return;
         const data = event.data as { type?: string; ready?: boolean } | null;
         if (data?.type === 'payload-live-preview' && data.ready === true) {
           counter.__previewReady = (counter.__previewReady ?? 0) + 1;
         }
       });
-    });
+    }, `http://localhost:${PORT}`);
     await page.locator(PREVIEW_IFRAME).evaluate(
       (frame) =>
         new Promise<void>((resolve) => {
