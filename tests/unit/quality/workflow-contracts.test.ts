@@ -192,6 +192,21 @@ describe('workflow contracts', () => {
       violation: 'ci.yml job astro-matrix does not run the reviewed matrix',
     },
     {
+      label: 'a Next.js matrix that tests the version the fixture pins',
+      file: 'ci.yml',
+      original: 'next: [15]',
+      replacement: 'next: [16]',
+      violation: 'ci.yml job next-matrix does not run the reviewed matrix',
+    },
+    {
+      label: 'a Next.js matrix without the webpack production build',
+      file: 'ci.yml',
+      original: '      - run: npm run test:e2e:next-webpack-production -- --project=chromium\n',
+      replacement: '',
+      violation:
+        'ci.yml job next-matrix step run "npm run test:e2e:next-webpack-production -- --project=chromium" must exist exactly once (found 0)',
+    },
+    {
       label: 'release gates on every push',
       file: 'ci.yml',
       original:
@@ -405,6 +420,7 @@ describe('workflow contracts', () => {
     const ci = parseWorkflow(readWorkflows().get('ci.yml') ?? '');
     expect(matrixValues(ci, 'unit', 'node')).toEqual([20, 22, 24, 26]);
     expect(matrixValues(ci, 'astro-matrix', 'astro')).toEqual([6, 5, 4]);
+    expect(matrixValues(ci, 'next-matrix', 'next')).toEqual([15]);
     expect(matrixValues(ci, 'lint', 'node')).toEqual([]);
   });
 });
