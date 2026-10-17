@@ -6,6 +6,7 @@ import {
   BUILD_RUNTIME,
   CHECKOUT,
   CI_FIXTURES,
+  DOWNLOAD_ARCHIVE,
   DOWNLOAD_DIST,
   FIXTURE_SETUP,
   RELEASE_PUSH,
@@ -208,6 +209,35 @@ export const CI: WorkflowSpec = {
         },
         { run: 'npm run test:e2e:next-webpack-production -- --project=chromium' },
         { run: 'npm run test:e2e:next-base-path -- --project=chromium' },
+      ],
+    },
+    // The Astro floors the matrix above cannot reach. Each consumes the archive the Build job stored,
+    // in a consumer of its own with a reviewed lock; the run line names the archive and the Playwright
+    // scope, so a job that quietly tests the checkout instead stops matching.
+    'astro-floor-base': {
+      needs: ['build'],
+      timeoutMinutes: 25,
+      steps: [
+        ...FIXTURE_SETUP,
+        { run: 'npx playwright install --with-deps chromium' },
+        DOWNLOAD_ARCHIVE,
+        {
+          run: 'PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-floor-base.config.ts --project=chromium',
+        },
+      ],
+    },
+    'astro-floor-islands': {
+      needs: ['build'],
+      timeoutMinutes: 25,
+      matrix: { astro: ['4.16.19'] },
+      steps: [
+        ...FIXTURE_SETUP,
+        { run: 'npx playwright install --with-deps chromium' },
+        DOWNLOAD_ARCHIVE,
+        {
+          run: 'PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-islands.config.ts --project=chromium',
+          env: { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
+        },
       ],
     },
     'real-payload-e2e': {

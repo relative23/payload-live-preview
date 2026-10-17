@@ -377,6 +377,83 @@ jobs:
             test-results/
           retention-days: 7
 
+  # The two Astro floors the matrix above cannot reach: `astro@^4` installs the newest 4.x, not the
+  # lower bound the peer range promises. Both consume the archive the Build job stored, byte for byte
+  # what the Release workflow publishes, in a consumer of their own with a reviewed lock.
+  # Static base adapter at the peer floor (4.0.0), built in both delivery modes against a mock
+  # parent, with two control builds that must fail the same assertions.
+  astro-floor-base:
+    name: Astro floor 4.0.0 (static base adapter)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-candidate-${{ github.sha }}
+          path: release-artifact
+      - run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-floor-base.config.ts --project=chromium
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-astro-floor-base
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # React client:load islands inside native fragments at the first Astro whose container resolves
+  # island modules (4.16.19), with the React 18 integration of that era, under the build-hash CSP.
+  astro-floor-islands:
+    name: Astro floor (React islands, Astro ${{ matrix.astro }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        astro: ['4.16.19']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-candidate-${{ github.sha }}
+          path: release-artifact
+      - env:
+          PLP_ASTRO_RESOURCE_VERSION: ${{ matrix.astro }}
+        run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-islands.config.ts --project=chromium
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-astro-floor-islands-${{ matrix.astro }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   real-payload-e2e:
     name: Real Payload E2E
     needs: build
