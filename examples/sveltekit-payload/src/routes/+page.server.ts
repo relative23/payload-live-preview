@@ -30,6 +30,10 @@ export const load: PageServerLoad = ({ locals }) => {
       publishedAt: preview.bind('publishedAt'),
       tags: preview.bind('tags', { type: 'array', arrayTemplate: '<li>{{value}}</li>' }),
       ctaLabel: preview.bind('ctaLabel', { href: 'ctaUrl' }),
+      // The populated path of the relationship a real admin posts as an id (hooks.server.ts asks
+      // the runtime to populate it); the page renders it only against a real admin.
+      authorEmail: preview.bind('author.email'),
     },
+    populated: PAYLOAD_SERVER_URL !== undefined,
   };
 };

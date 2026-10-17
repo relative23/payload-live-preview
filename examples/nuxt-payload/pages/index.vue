@@ -27,6 +27,8 @@ const initial = {
 };
 
 useHead({ title: 'Live Preview Demo' });
+// Set when a real Payload admin frames the site (tests/real-payload): the binding below needs it.
+const populated = (useRuntimeConfig().public.payloadUrl as string) !== '';
 </script>
 
 <template>
@@ -34,6 +36,9 @@ useHead({ title: 'Live Preview Demo' });
     <header class="grid">
       <h1 data-payload-field="title">{{ initial.title }}</h1>
       <p data-payload-field="subtitle">{{ initial.subtitle }}</p>
+      <p v-if="populated">
+        Author: <span data-payload-field="author.email" data-testid="author-email"></span>
+      </p>
     </header>
 
     <img

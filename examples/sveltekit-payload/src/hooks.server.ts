@@ -58,6 +58,9 @@ const options = {
         ? { type: 'signed-token', secret: PREVIEW_TOKEN_SECRET, audience: PREVIEW_AUDIENCE }
         : { type: 'payload-session', serverURL: PAYLOAD_SERVER_URL },
     ),
+  // A real admin posts a relationship as an id; the runtime populates it from Payload's REST API
+  // as the editor, so a binding on the populated path (`author.email`) has something to show.
+  ...(PAYLOAD_SERVER_URL === undefined ? {} : { serverURL: PAYLOAD_SERVER_URL, mergeDepth: 1 }),
 } satisfies LivePreviewSvelteKitOptions;
 
 export const assetOptions = { ...options, delivery: 'asset' } as const;
