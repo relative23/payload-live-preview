@@ -21,6 +21,11 @@ const PROBES = {
     titles: 'nativePopulationTitles',
     surfaces: ['react', 'vue'],
   },
+  guards: {
+    file: 'native-guards.spec.cjs',
+    titles: 'nativeGuardsTitles',
+    surfaces: ['react', 'vue'],
+  },
 };
 
 /** Whether the probe can drive the surface. */

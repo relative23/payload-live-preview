@@ -41,6 +41,15 @@
         "documentNavigation": "real admin navigation owns saved SSR data and first-schema population",
         "childReload": "child reload refuses schema-less updates before distinct provider recovery"
       },
+      "nativeGuardsTitles": {
+        "lateResponse": "a late successful response of a replaced owner leaves the record and the tree as they were",
+        "foreignSenders": "a window of the admin origin that is not the admin and a foreign origin are refused while the admin's own message is taken",
+        "originAlone": "with every window allowed, the origin check alone refuses an origin nobody listed",
+        "noOriginLock": "a second listed origin is taken after the first and an origin that is not listed is still refused",
+        "receiverSwitch": "naming another frame as the receiver of a running session restores the seed, retires the old window and acts once on the new one",
+        "receiverSwitchHeld": "an answer to a read held at the receiver switch cannot change the new session",
+        "authExpiry": "a sign-out in the same context makes the next update unavailable with the HTTP status and a sign-in brings it back"
+      },
       "nativePopulationTitles": {
         "hydration": "native SSR hydrates and the authentic first v2 schema message settles live",
         "unsavedTitle": "a real unsaved title reaches the native tree while the saved document stays unchanged",
