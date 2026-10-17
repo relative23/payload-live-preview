@@ -207,6 +207,29 @@ describe('workflow contracts', () => {
         'ci.yml job next-matrix step run "npm run test:e2e:next-webpack-production -- --project=chromium" must exist exactly once (found 0)',
     },
     {
+      label: 'a real-admin matrix that drops a target',
+      file: 'ci.yml',
+      original: 'target: [nextjs, sveltekit, nuxt, nextjs-hook, nuxt-composable, html]',
+      replacement: 'target: [nextjs, sveltekit, nuxt, nextjs-hook, nuxt-composable]',
+      violation: 'ci.yml job real-payload-surfaces does not run the reviewed matrix',
+    },
+    {
+      label: 'a real-admin matrix on one engine',
+      file: 'ci.yml',
+      original: 'nuxt-composable, html]\n        browser: [chromium, firefox, webkit]',
+      replacement: 'nuxt-composable, html]\n        browser: [chromium]',
+      violation: 'ci.yml job real-payload-surfaces does not run the reviewed matrix',
+    },
+    {
+      label: 'a real-admin matrix without the Payload backend',
+      file: 'ci.yml',
+      original:
+        '        run: npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"\n      - run: npm ci --no-audit --no-fund --prefix examples/payload-backend\n',
+      replacement: '        run: npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"\n',
+      violation:
+        'ci.yml job real-payload-surfaces step run "npm ci --no-audit --no-fund --prefix examples/payload-backend" must exist exactly once (found 0)',
+    },
+    {
       label: 'release gates on every push',
       file: 'ci.yml',
       original:
