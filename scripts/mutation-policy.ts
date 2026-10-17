@@ -136,6 +136,14 @@ function compareRatchetedMaximum(
  * edit the number. A slowdown still fails: timeouts above the ceiling
  * are a regression, and a timeout counts as detected, so the score is unaffected
  * either way.
+ *
+ * The error count is the same kind of figure for the mutants that never end:
+ * one whose loop records every spin ends as a timeout where the clock fires
+ * first and as a runtime error ("Worker exited unexpectedly", two restarts
+ * failed) where the worker runs out of heap first. The 16.10. run and the CI
+ * run of 17.10. disagree on exactly one such mutant, in message-bus.ts, on a
+ * byte-identical file. Errors are a ceiling as well, and the PR and core
+ * profiles keep theirs at zero.
  */
 function compareCeiling(
   violations: string[],
@@ -401,7 +409,7 @@ export function evaluateMutationReport(
     baseline.noCoverageMaximum,
   );
   compareCeiling(violations, notices, 'timeout mutants', summary.timeout, baseline.timeoutMaximum);
-  compareRatchetedMaximum(violations, 'error mutants', summary.errors, baseline.errorMaximum);
+  compareCeiling(violations, notices, 'error mutants', summary.errors, baseline.errorMaximum);
   compareRatchetedMaximum(violations, 'ignored mutants', summary.ignored, baseline.ignoredMaximum);
   if (policy.equivalent !== undefined) {
     violations.push(...findEquivalenceViolations(report, policy.equivalent));

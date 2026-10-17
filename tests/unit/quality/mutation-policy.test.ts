@@ -326,12 +326,34 @@ describe('nightly mutation policy', () => {
     expect(result.violations).toEqual([
       '[improvement] mutation score 87.5 exceeds reviewed minimum 71.4286; ratchet the policy',
       '[improvement] no-coverage mutants improved from 1 to 0; ratchet the policy',
-      '[improvement] error mutants improved from 1 to 0; ratchet the policy',
     ]);
-    // Timeouts are the exception: see below.
+    // Timeouts and runner crashes are the exceptions: see below.
     expect(result.notices).toContain(
       '[drift] timeout mutants 0 is below the reviewed ceiling 1; ' +
         'expected for a machine-dependent count, worth lowering if it persists',
+    );
+    expect(result.notices).toContain(
+      '[drift] error mutants 0 is below the reviewed ceiling 1; ' +
+        'expected for a machine-dependent count, worth lowering if it persists',
+    );
+  });
+
+  it('treats the error count as a ceiling too, because a mutant that never ends crashes some runners', () => {
+    // The same mutant, a drain loop that no longer dequeues, is a timeout where the clock fires first and a
+    // runtime error where the worker runs out of heap first (the 16.10. run and the CI run of 17.10. differ
+    // exactly there). The count is a property of the machine, so fewer errors must not stop a release,
+    // and more than the reviewed ceiling still does.
+    const without = report({
+      'src/core/cache.ts': ['Killed', 'Survived', 'NoCoverage', 'Timeout'],
+      'src/security/csp.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
+    });
+    expect(
+      evaluateMutationReport(without, policy({ errorMaximum: 1 })).violations.filter((v) =>
+        v.includes('error'),
+      ),
+    ).toEqual([]);
+    expect(evaluateMutationReport(report(), policy({ errorMaximum: 0 })).violations).toContain(
+      '[regression] error mutants 1 exceed reviewed maximum 0',
     );
   });
 
