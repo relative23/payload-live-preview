@@ -1,8 +1,8 @@
 /**
  * Run only after the coordinator releases CPU and browser resources. This
  * creates one labeled disposable Mongo container (capped at 2 GiB, removed when
- * it stops) and two loopback processes, records the exact installed identities,
- * and stops only resources it created.
+ * it stops, run as the calling user) and two loopback processes, records the exact
+ * installed identities, and stops only resources it created.
  */
 import { createRequire } from 'node:module';
 import {
@@ -241,6 +241,10 @@ try {
       '--memory=2g',
       '--memory-swap=2g',
       '--rm',
+      // The image's own user would leave a data directory only root can delete: run mongod as the
+      // user who owns the run directory.
+      '--user',
+      `${process.getuid()}:${process.getgid()}`,
       '--name',
       settings.container,
       '--label',
