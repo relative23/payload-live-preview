@@ -197,3 +197,11 @@ records the raw-ID observation and the collection-GET correction.
 No public name, literal or default is removed for this bug fix. A future
 replacement of these labels would require an additive API and a separately
 reviewed 3.0 migration.
+
+## Addendum (2026-10-17): what a conflict stops
+
+Of the six codemods, `rename-is-preview-request` and `move-fetch-preview-helpers`
+make no edit in a script that holds a spot they cannot rewrite; the other four
+skip only that spot and rewrite the rest of the file. The CLI exits `3` for any
+reported conflict, and `move-fetch-preview-helpers` also lists a note beside each
+call it rewrote. [docs/migration.md](../migration.md) has the exact behaviour.

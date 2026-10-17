@@ -88,7 +88,7 @@ nine modules and nothing else (`STRYKER_SCOPE=core`), with every mutant killed
 as the target. The retained score is in
 [quality/mutation-policy-core.json](../quality/mutation-policy-core.json): the
 complete run of the nine modules on 2026-10-16, four workers, 29 minutes,
-measured 2 080 mutants, 98.94 % killed, 22 survived and none left unexecuted by
+measured 2 080 mutants, 98.94 % detected (a timeout counts as detected), 22 survived and none left unexecuted by
 a test. Each of the 22 is on that file's `equivalent` list — by file, line,
 mutator and the text it replaced — with one sentence saying why the program
 does the same with and without it: 13 in `legacy-population.ts`, six in
@@ -322,10 +322,12 @@ Held by: the core mutation profile; `tests/unit/security/escape.test.ts`.
 - **S3** `on*` and `style` attributes are removed on every tag, before the
   allow-list is consulted, so no extension can re-admit them.
 - **S4** Under `'strict'` — the 2.0 default — `id`, `name` and every
-  `data-payload-*` are removed and reported once (LP0409): CMS content can
-  neither clobber a global nor add a binding. Other `data-*` pass only when a
-  `sanitizeHtml()` call lists them in `allowedDataAttributes`; the runtime's own
-  writes list none, so it removes them too. `'compat'` keeps them, as 1.x did.
+  `data-payload-*` are removed: CMS content can neither clobber a global nor add
+  a binding. LP0409 reports each of them once, except `name`, which it reports
+  only where `additionalAllowedAttributes` would let `'compat'` keep it. Other
+  `data-*` pass only when a `sanitizeHtml()` call lists them in
+  `allowedDataAttributes`; the runtime's own writes list none, so it removes
+  them too. `'compat'` keeps `id` and every `data-*`, as 1.x did.
 - **S5** `href`, `src`, `cite` and `poster` are removed when `isSafeUrl`
   refuses them; every `srcset` candidate is checked, whole as well as by its
   URL, and the attribute goes if one fails. `isSafeUrl` reads a scheme through
@@ -356,8 +358,9 @@ mutation profiles; `tests/unit/security/sanitizer*.test.ts` (allow-lists,
 attributes, policy, environment, the LP0409 report); the sanitizer
 fixed-point properties in `tests/unit/property/security.property.test.ts`;
 and, since 2.0.6, the XSS corpus (`tests/unit/security/xss-corpus.ts`, run by
-`sanitizer-corpus.test.ts` under every policy against an oracle that reads no
-allow-list, and against DOMPurify as the reference engine) with the aimed
+`sanitizer-corpus.test.ts` under `strict`, `compat` and the item-template
+options against an oracle that reads no allow-list, and under `strict` and the
+item-template options against DOMPurify as the reference engine) with the aimed
 fuzz in `tests/unit/property/sanitizer-fuzz.property.test.ts`, which the Deep
 Quality workflow also runs daily with 10 000 inputs and a new seed (ADR 0016),
 and, since 2.1, `tests/unit/security/sanitizer-settling.test.ts` for S10.

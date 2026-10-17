@@ -95,22 +95,24 @@ client.use({
 
 ## Value semantics: one contract for every renderer
 
-Every built-in renderer answers the same three questions the same way. The
-rule that matters most: **a clear is a write.** An emptied field counts in
+Every built-in renderer answers two questions the same way: what an empty
+value does and what an unsafe URL does. The rule that matters most: **a clear is a write.** An emptied field counts in
 `updatedCount` and fires `afterUpdate`, because "the value went away" is a
 change the page must show, not a message to ignore.
 
-| Value                                                                       | Every renderer does                                                          |
-| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `null`, `''`                                                                | Clears the element and counts as a write                                     |
-| An unsafe URL (fails `isSafeUrl`)                                           | Clears the URL attribute, warns `LP0401` once per element, counts as a write |
-| A value with no usable URL (media object without `url`, a bare relation id) | Leaves the URL attribute as it was                                           |
+| Value                             | Every renderer does                                                          |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| `null`, `''`                      | Clears the element and counts as a write                                     |
+| An unsafe URL (fails `isSafeUrl`) | Clears the URL attribute, warns `LP0401` once per element, counts as a write |
 
-The renderers differ in what they have left to write. `image` and `upload` have
-nothing else, so they leave the element untouched and count as **no** write; the
-runtime treats that as a patch that fell short, and `onUnfaithfulPatch` decides
-what follows (`LP0411`). `relationship` writes its label, or the bare id, as
-text and keeps `href`.
+A value that carries no usable URL, a media object without `url` or a bare
+relation id, is the third question, and the renderers differ in what they have
+left to write. `image` and `upload` have nothing else, so they leave the element
+untouched and count as **no** write; the runtime treats that as a patch that
+fell short, and `onUnfaithfulPatch` decides what follows (`LP0411`).
+`relationship` writes its label, or the bare id, as text and keeps `href`. `url`
+and `email` take strings: an object is written as JSON text, is no safe URL, and
+clears `href` (`LP0401`).
 
 A field the update leaves out is not a clear. When an update carries no value
 for a binding's path — the key is missing or `undefined`, or a dotted path leads

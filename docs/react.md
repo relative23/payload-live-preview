@@ -120,7 +120,9 @@ React wrapper.
 The failed update is not retried: this hook reports it and catches up on the
 next message. On Payload 3 the hook sends one merge request per accepted
 message, at any typing pace: 18 requests for an 18-keystroke burst. The DOM
-runtime asks less. It sends none for an edit that moves no populated value;
+runtime asks less. It sends none for an edit that moves no populated value (the
+first message on a page that reads one, and the first value of a field that held
+none, still ask);
 for the others it sends one request when a burst of updates starts and one when
 it ends, a burst being updates less than `debounceMs` (50 ms by default) apart.
 `npm run test:interaction` records 0 requests for a plain text field and 2 for

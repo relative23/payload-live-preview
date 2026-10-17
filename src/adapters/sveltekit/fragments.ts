@@ -45,8 +45,8 @@ interface SvelteServer {
 }
 
 /**
- * Written as a real specifier, unlike the other bindings' variable ones, and it
- * has to stay one.
+ * Written as a real specifier, unlike the Astro and Nuxt bindings' variable ones,
+ * and it has to stay one.
  *
  * Svelte's server renderer keeps the current component context in a module
  * variable, and a component compiled by Vite reaches that variable through
