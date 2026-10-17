@@ -49,7 +49,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0201:
     'Render the binding anchor unconditionally so an edit to an initially empty field has somewhere to land; `data-payload-boundary` keeps a hidden anchor for it.',
   LP0203:
-    "Expected on a page that shows a subset of the document; nothing to fix unless the page should show the field. `inspect().fidelity.fields` lists such fields and `createUnboundFieldsOverlayPlugin()` from `payload-live-preview/plugins` shows them in the preview. Bind the field to patch it in place, or let `onUnfaithfulPatch: 'escalate'` hand the change to a route or fragment strategy.",
+    "Expected on a page that shows a subset of the document; nothing to fix unless the page should show the field. `inspect().fidelity.fields` lists such fields and `createUnboundFieldsOverlayPlugin()` from `payload-live-preview/plugins` shows them in the preview. Bind the field to patch it in place, or let `onUnfaithfulPatch: 'escalate'` hand the change to the route strategy.",
   LP0202:
     "The message carries neither a global slug nor a collection slug, so owner scoping cannot route it; nothing was applied. Check the admin's live-preview setup for that collection, or turn `scopeBindingsByOwner` off on that page.",
   LP0301:

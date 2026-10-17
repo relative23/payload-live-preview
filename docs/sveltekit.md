@@ -219,11 +219,11 @@ the abuse model: [hybrid.md](hybrid.md).
 
 - **Hydration and the first write.** Svelte's hydration sets a text the runtime wrote before it back to its own value, quietly. So every script the handle emits declares `hydration: 'sveltekit'`, and under it the runtime does not start (no `ready`, no listener) until SvelteKit's root has mounted; the admin's first document then lands on markup Svelte is done with. A route served with `csr = false` has no client and starts at once. A page whose client never mounts starts after five seconds and reports `LP0607`; `inspect().hydration` reads `{ mode: 'sveltekit', state }`. How the runtime sees the mount, and what can go wrong: [ADR 0015, addendum](architecture/0015-first-write-after-hydration.md#addendum-2026-10-01--sveltekit).
 - **Hydration.** A component that re-renders a bound element from its own state overwrites the live patch. Bind fields in server-rendered markup, and mark a client-owned root with `data-payload-island` so the runtime never patches or morphs into it ([renderers.md](renderers.md)).
-- **Array templates.** Svelte reads `{…}` in an attribute as its own interpolation, so an inline `{{title}}` is a compile error. Bind the template as a string:
+- **Array templates.** Svelte reads `{…}` in an attribute as an expression, so an inline `{{title}}` is not the template text: it renders an object, or fails on a `title` that is not declared. Bind the template as a string:
 
 ```svelte
 <script lang="ts">
-  const template = '<li><a data-payload-href="url">{{title}}</a></li>';
+  const template = '<li><a href="{{url}}">{{title}}</a></li>';
 </script>
 
 <ul data-payload-field="posts" data-payload-array data-payload-array-template={template}></ul>

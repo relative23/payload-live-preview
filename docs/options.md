@@ -104,7 +104,7 @@ fifty-five rows.
   the page and the injected script has to be allowed to run, without the package
   ever loosening a policy the site already sends.
 - **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
-  `routeStrategy`, `onUnfaithfulPatch` and its 2.0 name `onUnboundChange`,
+  `routeStrategy`, `onUnfaithfulPatch` and its 1.x name `onUnboundChange`,
   `strategies`, `dependencies`, `autoBind`, `subfieldCoverage`. Three
   strategies exist because patching cannot create markup and a route refresh
   cannot be done per keystroke
@@ -132,8 +132,8 @@ fifty-five rows.
 Notes on the rows that need one:
 
 - `strict` refuses at startup, not on a public response: it requires
-  `authorizePreview`, non-empty `allowedOrigins` (`https:` ones outside
-  development), and no `'referer'` in the resolved `previewSignals`. Astro's
+  `authorizePreview`, non-empty `allowedOrigins` (`https:` ones in
+  production), and no `'referer'` in the resolved `previewSignals`. Astro's
   `livePreview()` integration does not apply it in `mode: 'inline'` or
   `'loader'`, which inject at build time and build no per-request policy;
   `'middleware'` refuses it unless `authorizePreviewModule` names the hook
@@ -218,18 +218,19 @@ Notes on the rows that need one:
   has no binding for at all. `'escalate'`, the default, hands a patch that fell
   short to the fragment strategy when a boundary covers its element and to the
   route otherwise, and a changed field with no binding to the route alone. It
-  does nothing without `fragments` or `routeStrategy` (an unbound field needs
-  `routeStrategy`) — and says so once, as LP0808, the first time it has
+  does nothing without `fragments` or `routeStrategy` (an unbound field is
+  answered by the route strategy, which either option brings) — and says so
+  once, as LP0808, the first time it has
   something to hand over and nothing to hand it to; `inspect().fidelity.canEscalate`
   reports whether any strategy exists. `'warn'` reports a patch that fell short
-  as LP0411 and keeps it, and a field with no binding is named by LP0203 under
-  every mode; `'ignore'` keeps the patch silently. It skips the connection's
+  as LP0411 and keeps it, and a scalar field with no binding is named by LP0203
+  under every mode; `'ignore'` keeps the patch silently. It skips the connection's
   first message, where every field counts as changed and the page has just been
   rendered from them ([docs/hybrid.md](hybrid.md#a-change-nothing-binds)).
   `inspect().fidelity` counts the findings under every mode — `unfaithful`,
   and `escalated` for the ones a strategy took — so a page that has nowhere to
   escalate to shows the gap rather than hiding it.
-  `onUnboundChange` is the 2.0 name for the same decision and still decides when
+  `onUnboundChange` is the 1.x name for the same decision and still decides when
   it is given — `'route'` means `'escalate'` — until it is removed in 3.0. An
   adapter given it warns once in development, and `pll migrate` renames it.
 - `hydration: 'react'` holds the runtime's start — no `ready`, no listener —

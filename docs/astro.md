@@ -88,7 +88,7 @@ export default (request: Request) =>
   });
 ```
 
-A path beginning with `./` is relative to the project root; a package specifier is passed to Vite unchanged, and one outside the project is refused. The module is server code: the middleware imports it, and the page never does. If its default export is not a function, the server says so when it loads. Step 5 describes the hook and its strategies; composing `createLivePreviewMiddleware()` yourself, as shown there, does the same with the function in hand.
+A path beginning with `./` is relative to the project root; a package specifier is passed to Vite unchanged, and a reference beginning `../` is refused. The module is server code: the middleware imports it, and the page never does. If its default export is not a function, the server says so when it loads. Step 5 describes the hook and its strategies; composing `createLivePreviewMiddleware()` yourself, as shown there, does the same with the function in hand.
 
 #### Intent-only delivery is not authorization
 
