@@ -163,6 +163,34 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
     expect(await preview.getByTestId('title').locator('img').count()).toBe(0);
   });
 
+  test('after a frame reload the page forgets the unsaved edit, and the next change brings the whole unsaved document back', async ({
+    page,
+  }) => {
+    // Payload posts the form's document when its form state changes, not when the frame reloads:
+    // the reloaded page shows what it renders by itself, and one change after the reload is what
+    // brings both the new edit and the one typed before the reload back.
+    const preview = page.frameLocator(PREVIEW_IFRAME);
+    await expect(preview.getByTestId('status')).toHaveText('live', { timeout: 60_000 });
+    await page.locator('#field-title').fill('Title typed before the reload');
+    await expect(preview.getByTestId('title')).toHaveText('Title typed before the reload');
+
+    await page.locator(PREVIEW_IFRAME).evaluate(
+      (frame) =>
+        new Promise<void>((resolve) => {
+          const element = frame as HTMLIFrameElement;
+          element.addEventListener('load', () => resolve(), { once: true });
+          element.setAttribute('src', element.src);
+        }),
+    );
+    await expect(preview.getByTestId('title')).not.toHaveText('Title typed before the reload');
+    await expect(preview.getByTestId('status')).toHaveText('idle');
+
+    await page.locator('#field-subtitle').fill('Subtitle typed after the reload');
+    await expect(preview.getByTestId('subtitle')).toHaveText('Subtitle typed after the reload');
+    await expect(preview.getByTestId('title')).toHaveText('Title typed before the reload');
+    await expect(preview.getByTestId('status')).toHaveText('live');
+  });
+
   test('a merge the server refuses once the session has ended keeps the last good document, and signing in again brings the preview back', async ({
     page,
   }) => {
