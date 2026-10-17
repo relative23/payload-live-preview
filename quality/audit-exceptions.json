@@ -80,7 +80,7 @@
     },
     "examples/astro-middleware": {
       "exposure": "quality/audit-exposure/astro-middleware.json",
-      "exposureSha256": "af4b8ac6128e082de02f67ad67d716e8c7d8a5b57ed3f9b0f409e509a40241ea",
+      "exposureSha256": "1651a41a054d31eab3b9a2508d4aa09eab5e4642d3ccacf32de201e7da14ba1a",
       "exceptions": []
     },
     "examples/payload-backend": {
