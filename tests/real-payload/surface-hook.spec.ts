@@ -8,6 +8,7 @@
  * `PLP_REAL_PAYLOAD_TARGET` (`nextjs-hook`, `nuxt-composable`) and the admin.
  */
 import { expect, test } from '@playwright/test';
+import { SEEDED_MEDIA, chooseSeededMedia, waitForPopulation } from './upload-media';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs-hook';
@@ -130,13 +131,7 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
       expect((await routeState()).locked).toBe('http://localhost:3001');
     }
     const partialBefore = SURFACE === 'nextjs-hook' ? await routePartial() : undefined;
-    const asked = page.waitForResponse(
-      (response) =>
-        response.url().startsWith('http://localhost:3001/api/globals/homepage') &&
-        response.request().method() === 'POST' &&
-        response.request().headers()['x-payload-http-method-override'] === 'GET',
-      { timeout: 30_000 },
-    );
+    const asked = waitForPopulation(page);
     await page.locator('#field-author').click();
     await page.getByRole('option', { name: 'e2e@example.com' }).click();
     // The merge is a credentialed POST that Payload reads as a GET (its method
@@ -151,6 +146,25 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
         timeout: 15_000,
       });
     }
+    await expect(preview.getByTestId('status')).toHaveText('live');
+    await expect(preview.getByTestId('error')).toHaveCount(0);
+  });
+
+  test("an upload is populated by Payload's REST API as the editor, and the hook hands the media document to the component tree", async ({
+    page,
+  }) => {
+    const preview = page.frameLocator(PREVIEW_IFRAME);
+    await expect(preview.getByTestId('title')).toBeVisible({ timeout: 60_000 });
+    // Visible SSR markup can precede the hook's initial population request: wait for that merge, so
+    // the one asked for below is the editor's choice.
+    await expect(preview.getByTestId('status')).toHaveText('live');
+    await expect(preview.getByTestId('image')).toHaveText('');
+    const asked = waitForPopulation(page);
+    await chooseSeededMedia(page);
+    expect((await asked).status()).toBe(200);
+    await expect(preview.getByTestId('image')).toHaveText(SEEDED_MEDIA.filename, {
+      timeout: 15_000,
+    });
     await expect(preview.getByTestId('status')).toHaveText('live');
     await expect(preview.getByTestId('error')).toHaveCount(0);
   });
