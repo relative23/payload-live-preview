@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 495,
-    "suites": 936,
-    "tests": 4265,
+    "files": 496,
+    "suites": 938,
+    "tests": 4278,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 402,
-      "suites": 832,
-      "tests": 3879,
+      "files": 403,
+      "suites": 834,
+      "tests": 3892,
       "benchmarks": 0
     }
   },
@@ -1621,7 +1621,7 @@
       "path": "tests/unit/core/lifecycle-data-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -2355,8 +2355,8 @@
     {
       "path": "tests/unit/field-types/media-renderers.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 19,
+      "suites": 4,
+      "tests": 26,
       "benchmarks": 0
     },
     {
@@ -2511,6 +2511,13 @@
       "group": "unit",
       "suites": 9,
       "tests": 22,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/lexical/media-url.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {

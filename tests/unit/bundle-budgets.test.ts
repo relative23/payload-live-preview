@@ -20,10 +20,10 @@ describe('release bundle budgets', () => {
     // 2026-10-08: paired Node24.19/npm12.0.2, epoch1791096072; after empty Payload2
     // fields and fragment response fixes. Exact measured deltas retain each
     // profile's previous raw/gzip reserves and its 120-byte Brotli reserve.
-    expect(INLINE_BUDGET).toEqual({ raw: 144_646, gzip: 45_515, brotli: 39_975 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 117_518, gzip: 36_937, brotli: 32_644 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 153_241, gzip: 48_327, brotli: 42_035 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 158_826, gzip: 50_310, brotli: 43_662 });
+    expect(INLINE_BUDGET).toEqual({ raw: 144_977, gzip: 45_583, brotli: 40_016 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 117_849, gzip: 37_044, brotli: 32_710 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 153_572, gzip: 48_393, brotli: 42_063 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 159_157, gzip: 50_377, brotli: 43_724 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

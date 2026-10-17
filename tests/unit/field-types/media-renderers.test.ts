@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { RenderContext } from '@core/types';
 import { emptyContext, makeTarget, rendererNamed } from './helpers';
 
 describe('image renderer', () => {
@@ -208,4 +209,98 @@ describe('upload renderer', () => {
     expect(rendererNamed('upload').render(makeTarget(el), 'abc123', emptyContext())).toBe(false);
     expect(el.src).toBe('https://cdn.example.com/before.jpg');
   });
+});
+
+describe('media renderers — a path on the Payload server', () => {
+  // Payload returns a media `url` as a path on its own origin unless its config sets `serverURL`.
+  // The admin resolves that path against the server; the preview is on another origin.
+  const SERVER = 'https://cms.example.com';
+  const withServer = (allFields: Record<string, unknown> = {}): RenderContext => ({
+    ...emptyContext(allFields),
+    serverURL: SERVER,
+  });
+  const media = {
+    url: '/api/media/file/a.jpg',
+    alt: 'x',
+    filename: 'a.jpg',
+    width: 1600,
+    sizes: { thumb: { url: '/api/media/file/a-400x300.jpg', width: 400 } },
+  };
+
+  it('resolves an upload on <img>, in src and in every srcset candidate', () => {
+    const el = document.createElement('img');
+    rendererNamed('upload').render(makeTarget(el), media, withServer());
+    expect(el.getAttribute('src')).toBe('https://cms.example.com/api/media/file/a.jpg');
+    expect(el.getAttribute('srcset')).toBe(
+      'https://cms.example.com/api/media/file/a-400x300.jpg 400w, https://cms.example.com/api/media/file/a.jpg 1600w',
+    );
+  });
+
+  it('resolves an upload on <a> and in the anchor it injects elsewhere', () => {
+    const link = document.createElement('a');
+    rendererNamed('upload').render(makeTarget(link), media, withServer());
+    expect(link.getAttribute('href')).toBe('https://cms.example.com/api/media/file/a.jpg');
+    expect(link.textContent).toBe('a.jpg');
+
+    const block = document.createElement('div');
+    rendererNamed('upload').render(makeTarget(block), media, withServer());
+    expect(block.innerHTML).toContain('<a href="https://cms.example.com/api/media/file/a.jpg"');
+  });
+
+  it('resolves an image given as a media object, on <img> and as a background', () => {
+    const img = document.createElement('img');
+    rendererNamed('image').render(makeTarget(img), media, withServer());
+    expect(img.getAttribute('src')).toBe('https://cms.example.com/api/media/file/a.jpg');
+    expect(img.getAttribute('srcset')).toContain(
+      'https://cms.example.com/api/media/file/a-400x300.jpg 400w',
+    );
+
+    const box = document.createElement('div');
+    rendererNamed('image').render(makeTarget(box), media, withServer());
+    expect(box.style.backgroundImage).toMatch(
+      /url\(["']?https:\/\/cms\.example\.com\/api\/media\/file\/a\.jpg["']?\)/,
+    );
+  });
+
+  it('writes the path as delivered when the runtime knows no server', () => {
+    const el = document.createElement('img');
+    rendererNamed('upload').render(makeTarget(el), media, emptyContext());
+    expect(el.getAttribute('src')).toBe('/api/media/file/a.jpg');
+    expect(el.getAttribute('srcset')).toContain('/api/media/file/a-400x300.jpg 400w');
+    expect(el.getAttribute('srcset')).not.toContain('cms.example.com');
+  });
+
+  it.each([
+    ['an absolute URL', 'https://cdn.example.com/a.jpg'],
+    ['a protocol-relative URL', '//cdn.example.com/a.jpg'],
+    ['a backslash that the URL parser reads as a second slash', '/\\cdn.example.com/a.jpg'],
+  ])('leaves %s as it is', (_name, url) => {
+    const el = document.createElement('img');
+    rendererNamed('upload').render(makeTarget(el), { url }, withServer());
+    expect(el.getAttribute('src')).toBe(url);
+  });
+
+  it('leaves a URL that is not a media document as the page wrote it', () => {
+    // A plain string and a sibling text field hold what an author typed: relative to the site.
+    const plain = document.createElement('img');
+    rendererNamed('image').render(makeTarget(plain), '/img/hero.jpg', withServer());
+    expect(plain.getAttribute('src')).toBe('/img/hero.jpg');
+
+    const sibling = document.createElement('img');
+    rendererNamed('image').render(
+      makeTarget(sibling, { srcField: 'assetUrl' }),
+      'label',
+      withServer({ assetUrl: '/img/sibling.jpg' }),
+    );
+    expect(sibling.getAttribute('src')).toBe('/img/sibling.jpg');
+  });
+
+  it.each(['not a url', 'javascript:alert(1)', ''])(
+    'keeps the path when %j cannot resolve it',
+    (serverURL) => {
+      const el = document.createElement('img');
+      rendererNamed('upload').render(makeTarget(el), media, { ...emptyContext(), serverURL });
+      expect(el.getAttribute('src')).toBe('/api/media/file/a.jpg');
+    },
+  );
 });

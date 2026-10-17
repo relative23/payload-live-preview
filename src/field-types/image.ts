@@ -23,7 +23,13 @@ const imageRenderer: FieldRenderer = {
     }
     const preferLocale = target.locale !== undefined;
     const { media, candidate } = pickSource(target, value, context, preferLocale);
-    const outcome = acceptUrl(element, target.fieldName, candidate);
+    // Only a media document's path is Payload's; a string an author typed is the site's own.
+    const outcome = acceptUrl(
+      element,
+      target.fieldName,
+      candidate,
+      media === undefined ? undefined : context.serverURL,
+    );
     if (outcome.kind === 'none') return false;
     if (outcome.kind === 'unsafe') {
       clear(element);
@@ -31,7 +37,7 @@ const imageRenderer: FieldRenderer = {
     }
     if (element.tagName === 'IMG') {
       const img = element as HTMLImageElement;
-      writeImage(img, outcome.url, media);
+      writeImage(img, outcome.url, media, context.serverURL);
       const alt = pickAlt(media, target.altField, context.allFields, context.locale, preferLocale);
       if (alt !== undefined) img.alt = alt;
       return;

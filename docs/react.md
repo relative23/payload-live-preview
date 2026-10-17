@@ -85,6 +85,13 @@ useEffect(() => {
 }, [revision]);
 ```
 
+`data` is the document as Payload's REST API returned it. A media document's `url`
+is a path on Payload's own origin (`/api/media/file/a.png`) unless its config sets
+`serverURL`, so a page on another origin resolves it first:
+`new URL(data.image.url, serverURL)`. The DOM runtime does this for its `upload`
+and `image` bindings ([Media URLs](renderers.md#media-urls)); the hook leaves it
+to your component.
+
 ## Measured against the official package
 
 `@payloadcms/live-preview` is Payload's framework-independent message and merge

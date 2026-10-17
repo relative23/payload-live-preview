@@ -4,6 +4,8 @@
  * log reached the 500-line limit the way `entry-budgets.ts` did before it —
  * every reason recorded here stays where the notes that cite it point.
  */
+// 2026-10-17 (media URLs resolve against `serverURL`): paired builds at the same HEAD epoch1792233083 (Node24.19/npm12.0.2); every row that embeds the runtime moves by its exact measured
+// delta (raw +331 adapters/lean/inline, +340 core/client, +671 index barrels; gzip +64 to +173) and keeps its reserves; a Brotli budget rises only where Brotli rose.
 // 2026-10-05 (ADR 0004): accepted data snapshots and owned merge outcomes; paired 2.1.0 measurements at epoch1791096072 (Node24.19/npm12.0.2) retain each row's reserves.
 // 2026-10-05 (ADR 0004): trailing merge timers own their requests and handles.
 // Measured against the prior 2.1.0 archive with Node24.19/npm12.0.2, epoch1791096072;
@@ -519,7 +521,7 @@
 // +66/+14/+16 B raw/gzip/Brotli; retain the prior 10/5/120 B reserves.
 // 2026-10-16 (the json-only population body refuses an interruption, as its stream branch does): paired Node24.19/npm12.0.2, epoch1791096072,
 // the build of this source against the build before the one statement; +12/+2/+75 B raw/gzip/Brotli; retain the prior reserves (Brotli rises only where it rose).
-export const INLINE_BUDGET = { raw: 144_646, gzip: 45_515, brotli: 39_975 } as const;
+export const INLINE_BUDGET = { raw: 144_977, gzip: 45_583, brotli: 40_016 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the
