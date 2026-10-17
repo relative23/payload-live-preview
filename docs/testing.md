@@ -358,7 +358,12 @@ What is proven about the Payload wire protocol, from the outside in:
    public page and the admin keeps working. CI runs every target on every
    push: the Astro default in Chromium, the others in all three browsers, and
    the Next.js session target and its hook page once more in Chromium with
-   Payload's CSRF list on.
+   Payload's CSRF list on. On a host that starts and stops containers while a
+   dev-server target runs, Chromium can report `net::ERR_NETWORK_CHANGED` for
+   the preview's module requests; the page then keeps its server render and a
+   hook page stays `idle`. That is the host, not the package: it was seen on a
+   shared workstation and not on the CI runners, and a local run with that
+   line in the trace's console is repeated, not loosened.
 2. **Browser E2E** (`tests/e2e/`) drives a real browser and a real iframe
    across Chromium, Firefox and WebKit: `postMessage` → runtime → DOM. Its
    `/admin` page emulates the Payload admin, so it can exercise edge cases

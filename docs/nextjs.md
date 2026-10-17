@@ -224,7 +224,7 @@ import { authorizePreviewRequest } from 'payload-live-preview/server';
 const livePreview = createLivePreviewMiddleware({
   allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
   autoInject: false, // the layout already carries the script
-  // Required under the strict default: without the hook the adapter refuses to start.
+  // Required under the strict default: without the hook the adapter throws when this module loads.
   authorizePreview: (request) =>
     authorizePreviewRequest(request, {
       type: 'payload-session',
