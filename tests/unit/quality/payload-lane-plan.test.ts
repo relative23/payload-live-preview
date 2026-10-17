@@ -60,6 +60,27 @@ for (const probe of ['dom', 'lifecycle', 'population']) {
 console.log(JSON.stringify({ engines, probes, fits }));
 `;
 
+// The harness checks the plan it is handed twice, when the run file is written and when it is read.
+const CHECK = `
+import { pathToFileURL } from 'node:url';
+const { specTitlesProblem } = await import(pathToFileURL(process.env.PLP_IDENTITY).href);
+const plans = JSON.parse(process.env.PLP_PLANS);
+console.log(JSON.stringify(plans.map((plan) => specTitlesProblem(plan) ?? null)));
+`;
+
+function problems(plans: readonly unknown[]): (string | null)[] {
+  const stdout = execFileSync(process.execPath, ['--input-type=module', '-e', CHECK], {
+    encoding: 'utf8',
+    timeout: 20_000,
+    env: {
+      ...process.env,
+      PLP_IDENTITY: resolve(LANE, 'v2/identity.mjs'),
+      PLP_PLANS: JSON.stringify(plans),
+    },
+  });
+  return JSON.parse(stdout) as (string | null)[];
+}
+
 function plan(): Plan {
   const stdout = execFileSync(process.execPath, ['--input-type=module', '-e', PROGRAM], {
     encoding: 'utf8',
@@ -143,5 +164,35 @@ describe('Payload 2 lane case plan', () => {
     expect(row).toContain(`${probes.dom.cases} per variant, six variants`);
     const matrix = readFileSync(resolve(ROOT, 'quality/compat-matrix.json'), 'utf8');
     expect(matrix).toContain(`(${probes.dom.cases} browser cases per variant)`);
+  });
+
+  it('refuses a case plan that names no spec, no title or a title twice', () => {
+    expect(
+      problems([
+        { 'a.spec.cjs': ['one'] },
+        { 'a.spec.cjs': ['one'], 'b.spec.cjs': { two: 'two' } },
+        null,
+        [],
+        {},
+        { 'a.js': ['one'] },
+        { 'a.spec.cjs': [] },
+        { 'a.spec.cjs': ['one', 'one'] },
+        { 'a.spec.cjs': ['one'], 'b.spec.cjs': { again: 'one' } },
+        { 'a.spec.cjs': [''] },
+        { 'a.spec.cjs': [1] },
+      ]),
+    ).toEqual([
+      null,
+      null,
+      'expected an object of spec files',
+      'expected an object of spec files',
+      'no spec file',
+      'unexpected spec file name',
+      'no titles for a.spec.cjs',
+      'a title is written twice',
+      'a title is written twice',
+      'a title is not a non-empty string',
+      'a title is not a non-empty string',
+    ]);
   });
 });
