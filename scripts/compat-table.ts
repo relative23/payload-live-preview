@@ -10,6 +10,7 @@ import { promisify } from 'node:util';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { matrixValues, parseWorkflow } from './workflow-contracts';
+import { matrixJobProblems, type MATRIX_JOBS } from './compat-matrix-jobs';
 import {
   featureEvidenceProblems,
   peerFloor,
@@ -36,7 +37,7 @@ const TOOLING_ENTRIES = ['./annotate', './codegen', './codegen/astro', './doctor
 interface Tested {
   readonly version?: string;
   readonly major?: number;
-  readonly source: 'lockfile' | 'astro-matrix';
+  readonly source: 'lockfile' | (typeof MATRIX_JOBS)[number]['source'];
   readonly browsers: readonly string[];
   readonly job: string;
   /** The Vite range this framework version declares; absent for a framework that has none. */
@@ -333,17 +334,11 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
       }
     }
   }
-  const astroMajors =
-    matrix.frameworks
-      .find((framework) => framework.package === 'astro')
-      ?.tested.filter((entry) => entry.source === 'astro-matrix')
-      .map((entry) => String(entry.major)) ?? [];
-  const workflowAstro = matrixValues(workflow, 'astro-matrix', 'astro').map(String);
-  if (astroMajors.join(',') !== workflowAstro.join(',')) {
-    problems.push(
-      `Astro matrix: file lists [${astroMajors.join(', ')}], workflow runs [${workflowAstro.join(', ')}]`,
-    );
-  }
+  problems.push(
+    ...matrixJobProblems(matrix.frameworks, (job, key) =>
+      matrixValues(workflow, job, key).map(String),
+    ),
+  );
   const corpusVersions = (await readdir(resolve(ROOT, 'tests/fixtures/wire-corpus')))
     .filter((file) => file.endsWith('.json'))
     .map((file) => file.replace(/^payload-/u, '').replace(/\.json$/u, ''))

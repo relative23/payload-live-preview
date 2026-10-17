@@ -43,7 +43,7 @@ One runtime serves every framework, and every framework adapter's example app ru
 | Framework | Supported                                                                    | Tested in CI on every push (version, browsers)                                    |
 | --------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Astro     | >=4.0.0 <8.0.0                                                               | 7.3.2 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
-| Next.js   | App Router, 16                                                               | 16.3.8 (chromium, firefox, webkit)                                                |
+| Next.js   | App Router, 15.5 and 16                                                      | 16.3.8 (chromium, firefox, webkit); 15.x (chromium)                               |
 | SvelteKit | 2.x                                                                          | 2.70.2 (chromium, firefox, webkit)                                                |
 | Nuxt      | 3.x (end of life since 31 July 2026: kept working, not officially supported) | 3.21.11 (chromium, firefox, webkit)                                               |
 

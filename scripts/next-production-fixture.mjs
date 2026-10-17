@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bindProxyLifetime } from './fixture-proxy-lifetime.mjs';
+import { effectiveBundler, nextBuildArguments } from './next-build-arguments.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const FIXTURE = process.env['PLP_NEXT_FIXTURE_DIRECTORY']
@@ -35,11 +36,17 @@ const bundler = process.env['PLP_NEXT_BUILD_BUNDLER'];
 if (bundler !== undefined && bundler !== 'webpack' && bundler !== 'turbopack') {
   throw new Error('PLP_NEXT_BUILD_BUNDLER must be webpack or turbopack.');
 }
-const buildArguments = ['run', 'build'];
-if (bundler !== undefined) buildArguments.push('--', `--${bundler}`);
-process.stdout.write(`Next production fixture build bundler: ${bundler ?? 'turbopack'}\n`);
+/** @type {{ version: string }} */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- plain Node entry; the file is Next's own manifest
+const nextManifest = JSON.parse(
+  readFileSync(resolve(FIXTURE, 'node_modules/next/package.json'), 'utf8'),
+);
+const nextMajor = Number(nextManifest.version.split('.')[0]);
+process.stdout.write(
+  `Next production fixture build bundler: ${effectiveBundler(bundler, nextMajor)} (Next ${String(nextMajor)})\n`,
+);
 
-const build = spawnSync('npm', buildArguments, {
+const build = spawnSync('npm', nextBuildArguments(bundler, nextMajor), {
   cwd: FIXTURE,
   env: environment,
   stdio: 'inherit',
