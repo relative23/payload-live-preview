@@ -31,7 +31,7 @@
     {
       "id": "astro-base-floor",
       "surface": "Astro",
-      "feature": "base adapter at the declared framework floor",
+      "feature": "base adapter at the declared framework floor: static output, loader and inline delivery",
       "version": {
         "kind": "floor",
         "value": "4.0.0",
@@ -45,8 +45,17 @@
       "backend": "mock admin",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "open",
-        "sources": ["package.json", "src/adapters/astro/index.ts"]
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "astro-floor-base"
+        },
+        "sources": [
+          "package.json",
+          "src/adapters/astro/index.ts",
+          "tests/e2e/continuation/astro-floor-base.spec.ts",
+          "tests/fixtures/astro-floor-base-deps/package-lock.json"
+        ]
       }
     },
     {
@@ -120,6 +129,38 @@
       "evidence": {
         "status": "open",
         "sources": ["src/adapters/astro/fragments.ts", "tests/e2e/specs/hybrid-fragment.spec.ts"]
+      }
+    },
+    {
+      "id": "astro-islands-floor",
+      "surface": "Astro",
+      "feature": "React client:load islands inside native fragments at the first Astro whose container resolves island modules",
+      "version": {
+        "kind": "floor",
+        "value": "4.16.19",
+        "package": "astro",
+        "source": {
+          "kind": "workflow-matrix",
+          "file": "ci.yml",
+          "job": "astro-floor-islands",
+          "key": "astro"
+        }
+      },
+      "mode": "production",
+      "packageForm": "packed-tarball",
+      "backend": "mock admin and Payload 3.90.2 REST authorization fixture without an admin UI",
+      "browsers": ["chromium"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "astro-floor-islands"
+        },
+        "sources": [
+          "src/adapters/astro/island-modules.ts",
+          "tests/e2e/continuation/astro-islands.spec.ts",
+          "tests/fixtures/astro-react-versions/4.16.19/package-lock.json"
+        ]
       }
     },
     {
