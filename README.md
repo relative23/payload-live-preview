@@ -66,7 +66,7 @@ The framework hooks and fragment renderers run twice on every push: at the floor
 
 ### Local 2.1 prerelease checks
 
-The following checks passed on the `2.1.0` package archive on 2026-10-05. These are local results, separate from the CI jobs listed above. Browser counts include Chromium, Firefox and WebKit on Linux.
+The following checks passed on the `2.1.0` package archive on 2026-10-05. These are local results, separate from the CI jobs listed above. Browser counts include Chromium, Firefox and WebKit on Linux. The Payload 2.32.3 row was run again on 2026-10-17 on a package archive built from this repository; `examples/payload-version-lanes` runs it, with `--probe=population` for React and Vue.
 
 | Version        | Checked population                                              | Passed cases                 |
 | -------------- | --------------------------------------------------------------- | ---------------------------- |
@@ -76,7 +76,7 @@ The following checks passed on the `2.1.0` package archive on 2026-10-05. These 
 | Astro 4.0.0    | Base adapter, static output and scoped updates                  | 15 browser cases             |
 | Astro 4.16.19  | Native React islands, CSP and navigation ownership              | 12 browser cases             |
 
-The Node checks do not cover framework builds or development tools. The Next checks use a controlled preview cookie and fragment tokens; they do not use a real Payload admin. The Payload 2 graph still has upstream audit findings, including a critical finding in the 2026-10-05 audit. Its passing preview cases establish compatibility, not a clean dependency graph. Separate Payload 3 lifecycle and Payload 4 canary checks are not included in this table.
+The Node checks do not cover framework builds or development tools. The Next checks use a controlled preview cookie and fragment tokens; they do not use a real Payload admin. The Payload 2 graph still has upstream audit findings, including a critical finding in the 2026-10-05 audit. Its passing preview cases establish compatibility, not a clean dependency graph. Separate Payload 2 hook lifecycle, Payload 3 lifecycle and Payload 4 canary checks are not included in this table.
 
 The two Astro rows can be repeated from the repository. The `astro-floor-base` and `astro-floor-islands` jobs run their specs on every push in Chromium ([Astro peer floors](docs/testing.md#astro-peer-floors)), and on 2026-10-17 the same specs passed in all three engines: 36 of 36 cases for Astro 4.0.0 (loader and inline delivery with five cases each, plus two control builds per engine; the 15 cases above were loader delivery only) and 12 of 12 for Astro 4.16.19.
 
