@@ -128,7 +128,9 @@ on 2026-09-28. The current 2.1 verification scopes are separate: base integratio
 on Astro 4.0.0, fragment islands on 4.16.19, and resources, verified React
 context and page ownership on 7.3.2. Each scope needs its own results from the
 archive being accepted; the earlier exact-version results do not complete
-that acceptance.
+that acceptance. The first two run from the package archive on every push, in
+Chromium, with the other engines run by hand ([Astro peer
+floors](testing.md#astro-peer-floors)).
 
 A successful isolated container render does not register the component's CSS
 with the page. On the measured Astro 7.3.2 production path, a component imported

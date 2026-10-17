@@ -46,3 +46,12 @@ found it, which is the argument for having one.
   only; engine-specific behaviour is covered once, on Astro 7.
 - Installing another major into the fixture mutates its manifest in the CI
   checkout only; the committed lockfile stays on Astro 7.
+
+## Addendum (2026-10-17): the lower bound is a job too
+
+`astro@^4` resolves to the newest 4.x, so the Astro 4 row above says nothing about 4.0.0, the lower
+bound the range promises. The `astro-floor-base` job installs exactly 4.0.0 into a consumer of its
+own and runs the static base adapter in both delivery modes from the archive the Build job stores;
+`astro-floor-islands` does the same for the React island contract at 4.16.19 (ADR 0021).
+`quality/compat-matrix.json` lists both as evidence cells, and
+[Astro peer floors](../testing.md#astro-peer-floors) says what they show and what they do not.
