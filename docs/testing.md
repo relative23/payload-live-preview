@@ -355,7 +355,12 @@ What is proven about the Payload wire protocol, from the outside in:
    preview verifies the editor's session and the test signs in through the
    real login form. A further target frames the Next.js example from an admin
    that keeps `autoLogin`, which issues no cookie: the preview serves the
-   public page and the admin keeps working. CI runs every target on every
+   public page and the admin keeps working. The `create` target gives the
+   admin two collections, one routed by the plugin's function and one with a
+   fixed string URL, and frames the SvelteKit example's pages for them: on the
+   create screen neither has a preview toggle or frame, and after the first
+   save the frame takes the editor's unsaved edits while REST reads show that
+   the collection kept only the save. CI runs every target on every
    push: the Astro default in Chromium, the others in all three browsers, and
    the Next.js session target and its hook page once more in Chromium with
    Payload's CSRF list on. On a host that starts and stops containers while a

@@ -6,8 +6,9 @@ const isCI = process.env['CI'] === 'true';
  * fixture (default), the SSR hybrid fixture (`PLP_REAL_PAYLOAD_TARGET=hybrid`,
  * fragment and route strategies against the real admin), or another framework's
  * example (`nextjs`, `sveltekit`, `nuxt`, `astro-session`) whose preview authorizes
- * the editor's real session, the plain HTML example (`html`), or the Next.js example
- * framed from an admin that keeps its autoLogin (`nextjs-autologin`).
+ * the editor's real session, the plain HTML example (`html`), the Next.js example
+ * framed from an admin that keeps its autoLogin (`nextjs-autologin`), or the SvelteKit
+ * example's collection pages framed from an admin with two more collections (`create`).
  */
 const requested = process.env['PLP_REAL_PAYLOAD_TARGET'] ?? 'astro';
 /**
@@ -29,8 +30,10 @@ interface Surface {
    * `hook`: a React hook or Vue composable page, tested by `surface-hook.spec.ts`.
    * `autologin`: the example's session check against an admin that keeps Payload's
    * autoLogin, tested by `surface-autologin.spec.ts`.
+   * `create`: the create screen and the first save of a collection document, tested by
+   * `surface-create.spec.ts` against an admin that has those collections.
    */
-  readonly spec?: 'hook' | 'autologin';
+  readonly spec?: 'hook' | 'autologin' | 'create';
 }
 const SESSION_SURFACES: Record<string, Surface> = {
   nextjs: { port: '4474', directory: 'nextjs-payload', command: 'npx next dev --port 4474' },
@@ -66,6 +69,14 @@ const SESSION_SURFACES: Record<string, Surface> = {
     directory: 'nextjs-payload',
     command: 'npx next dev --port 4474',
     spec: 'autologin',
+  },
+  // The SvelteKit example's `/mapped/<id>` and `/manual` pages, framed from an admin that has
+  // the `mapped-pages` and `manual-pages` collections (PLP_REAL_PAYLOAD_COLLECTIONS).
+  create: {
+    port: '4475',
+    directory: 'sveltekit-payload',
+    command: 'npx vite dev --port 4475',
+    spec: 'create',
   },
 };
 /** A plain HTML page has no request time: the runtime is baked in and the origin rule is its gate. */
@@ -134,9 +145,11 @@ const config: PlaywrightTestConfig = {
           ? /surface-hook\.spec\.ts$/u
           : surface.spec === 'autologin'
             ? /surface-autologin\.spec\.ts$/u
-            : session
-              ? /surface-(?:smoke|session)\.spec\.ts$/u
-              : /surface-smoke\.spec\.ts$/u,
+            : surface.spec === 'create'
+              ? /surface-create\.spec\.ts$/u
+              : session
+                ? /surface-(?:smoke|session)\.spec\.ts$/u
+                : /surface-smoke\.spec\.ts$/u,
   fullyParallel: false,
   forbidOnly: true,
   // A pass on retry must not hide nondeterminism in the release fixture.
@@ -200,6 +213,7 @@ const config: PlaywrightTestConfig = {
               PLP_REAL_PAYLOAD_ORIGINS: previewURL,
             }
           : {}),
+        ...(surface?.spec === 'create' ? { PLP_REAL_PAYLOAD_COLLECTIONS: '1' } : {}),
       },
       url: `${ADMIN}/admin`,
       reuseExistingServer: !isCI,

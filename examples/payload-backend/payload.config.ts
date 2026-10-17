@@ -1,7 +1,7 @@
 import { rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { buildConfig } from 'payload';
+import { buildConfig, type CollectionConfig, type Field } from 'payload';
 import { sqliteAdapter } from '@payloadcms/db-sqlite';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { livePreview } from 'payload-live-preview/plugin';
@@ -20,6 +20,34 @@ const PREVIEW_PATH = process.env.PLP_REAL_PAYLOAD_PATH || '/';
  */
 const SITE_ORIGINS = (process.env.PLP_REAL_PAYLOAD_ORIGINS ?? '').split(',').filter(Boolean);
 const ADMIN_ORIGIN = 'http://localhost:3001';
+
+/**
+ * `PLP_REAL_PAYLOAD_COLLECTIONS=1` (the `create` target) adds the two collections whose create screen
+ * the spec looks at. Every other target runs without them, so none sees them in the admin's navigation,
+ * and they get a database of their own: a boot without them would have to drop their tables from a
+ * shared `e2e.db`.
+ */
+const COLLECTIONS = process.env.PLP_REAL_PAYLOAD_COLLECTIONS === '1';
+
+/** The two fields the preview pages bind: a required title and an optional subtitle. A fresh list per collection, since Payload sanitizes the objects in place. */
+const documentFields = (): Field[] => [
+  { name: 'title', type: 'text', required: true },
+  { name: 'subtitle', type: 'text' },
+];
+
+const CREATE_STATE_COLLECTIONS: CollectionConfig[] = [
+  // Routed by the plugin: `collections` in the plugin options maps this slug to a function of the saved document.
+  { slug: 'mapped-pages', admin: { useAsTitle: 'title' }, fields: documentFields() },
+  // Not mapped: Payload's own option with a fixed string, which the plugin leaves alone.
+  {
+    slug: 'manual-pages',
+    admin: {
+      useAsTitle: 'title',
+      livePreview: { url: `${FRONTEND_URL}/manual?preview=true` },
+    },
+    fields: documentFields(),
+  },
+];
 
 /** Where the `media` collection keeps its files: beside the config, git-ignored, created on first upload. */
 const MEDIA_DIRECTORY = path.resolve(dirname, 'media');
@@ -60,12 +88,18 @@ export default buildConfig({
     livePreview({
       baseUrl: FRONTEND_URL,
       globals: { homepage: PREVIEW_PATH },
+      collections: COLLECTIONS
+        ? { 'mapped-pages': ({ data }) => `/mapped/${String(data['id'])}` }
+        : {},
       breakpoints: [{ name: 'plugin-mobile', label: 'Plugin mobile', width: 390, height: 844 }],
     }),
   ],
   editor: lexicalEditor(),
   db: sqliteAdapter({
-    client: { url: process.env.DATABASE_URI || 'file:./e2e.db' },
+    client: {
+      url:
+        process.env.DATABASE_URI || (COLLECTIONS ? 'file:./e2e-collections.db' : 'file:./e2e.db'),
+    },
   }),
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   collections: [
@@ -82,6 +116,7 @@ export default buildConfig({
       upload: { staticDir: MEDIA_DIRECTORY },
       fields: [{ name: 'alt', type: 'text' }],
     },
+    ...(COLLECTIONS ? CREATE_STATE_COLLECTIONS : []),
   ],
   globals: [
     {

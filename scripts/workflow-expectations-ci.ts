@@ -286,9 +286,10 @@ export const CI: WorkflowSpec = {
     },
     // The other targets of playwright.real-payload.config.ts: the frameworks whose preview verifies
     // the editor's real session (Astro's built Node server among them), the hook and composable
-    // pages, the plain HTML page, and the Next.js example framed from an admin that keeps its
-    // autoLogin. The example a target frames is looked up by name; a target the config knows and
-    // this matrix lacks is a test that never runs on a push.
+    // pages, the plain HTML page, the Next.js example framed from an admin that keeps its
+    // autoLogin, and the SvelteKit example's collection pages framed from an admin that has two
+    // collections for the create screen. The example a target frames is looked up by name; a
+    // target the config knows and this matrix lacks is a test that never runs on a push.
     'real-payload-surfaces': {
       needs: ['build'],
       matrix: {
@@ -301,6 +302,7 @@ export const CI: WorkflowSpec = {
           'html',
           'astro-session',
           'nextjs-autologin',
+          'create',
         ],
         browser: [...BROWSERS],
       },
@@ -312,7 +314,7 @@ export const CI: WorkflowSpec = {
           run: 'npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"',
           env: {
             EXAMPLE:
-              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload"}\')[matrix.target] }}',
+              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload"}\')[matrix.target] }}',
           },
         },
         fixtureInstall('payload-backend'),

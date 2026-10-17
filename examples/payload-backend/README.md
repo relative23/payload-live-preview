@@ -35,6 +35,15 @@ pages `nextjs-hook` and `nuxt-composable`) with `FRONTEND_URL` pointing at it. A
 schema change needs a fresh `e2e.db` (and, for the media, a fresh `media/`): the
 dev push does not repeat itself.
 
+The `create` target sets `PLP_REAL_PAYLOAD_COLLECTIONS=1`, which adds two
+collections to the admin, `mapped-pages` (its preview URL comes from the
+plugin's `collections` mapping, `/mapped/<id>`) and `manual-pages` (a fixed
+string URL in Payload's own `admin.livePreview.url`). They exist only in that
+profile, so no other target sees them, and the profile keeps its own database,
+`e2e-collections.db`, which a schema change replaces like `e2e.db`. Locally,
+Playwright reuses an admin that already listens on 3001: stop it before you
+switch to this target.
+
 > ⚠️ Throwaway fixture. The secret is hard-coded and auth auto-logs-in. The
 > database is not reset: `e2e.db` persists between boots, and `body` keeps
 > whatever was last saved. Never deploy this.
