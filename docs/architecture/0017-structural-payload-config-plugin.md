@@ -123,3 +123,25 @@ The mapped collection delivered unsaved edits after its first save; its create
 screen and the manually configured collection's create screen had no preview.
 The package keeps the structural URL contract and leaves this native admin
 restriction intact. README and the Payload guide now describe that limit.
+
+## Addendum (2026-10-17): the create screen is measured in the repository
+
+The 2026-10-03 observation came from one run against Payload 3.89.0 whose spec
+lived outside the repository. The `create` target of the real-admin suite now
+repeats it against the 3.90.2 admin that the fixture installs, in Chromium,
+Firefox and WebKit on every push (`tests/real-payload/surface-create.spec.ts`).
+The fixture gives that admin two collections: `mapped-pages`, routed by this
+plugin's function, and `manual-pages`, with a fixed string URL.
+
+On the create screen of both, the preview toggle, the panel and the frame are
+absent, before and after the editor types. After the first save the toggle
+appears. The frame loads `/mapped/<id>?preview=true` for the first collection
+and the fixed string for the second, and the editor's unsaved edits reach it
+under the owner marker `collection:mapped-pages:<id>` or `collection:manual-pages`.
+REST reads before and after show the saved document unchanged and no document
+with the typed title.
+
+The reading of Payload's source has not changed: its Document view passes
+`isLivePreviewEnabled && operation !== 'create'` to the preview provider, and
+`handleLivePreview` evaluates a function-valued URL only when the operation is
+not `create`. The suite observes what the first does and not the second.

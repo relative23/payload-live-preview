@@ -92,24 +92,32 @@ The default frontend adapters recognize query intent through `preview`,
 marker; configure another intent signal or explicit delivery path. None of
 these signals authorize a draft request.
 
-Payload 3.89 disables its native Live Preview while a collection document is
-in its initial create state: neither a function-valued URL nor a fixed
-entity-level `admin.livePreview.url` string provides a preview toggle or iframe.
-It also does not evaluate the function this plugin uses to route mapped
-entities until the first save. The first real-admin create-state run confirms
-the absence of the preview toggle for both URL forms; the mapped collection
-then delivers unsaved edits after saving. The real-admin fixture runs the Astro (static, hybrid and middleware), Next.js, SvelteKit,
-Nuxt and plain HTML examples, a React hook page and a Vue composable page
-against a real Payload 3.90.2 admin and proves unsaved edits on an existing
+Payload 3.90.2 gives a collection document its native Live Preview only after
+the first save. On the create screen there is no preview toggle, no panel and no
+frame, whether the collection's URL comes from this plugin's function or from a
+fixed `admin.livePreview.url` string, and typing does not change that. After the
+save the toggle appears and the frame loads the saved document: the URL the
+plugin's function returns for a collection it maps (`/mapped/<id>` in the
+fixture), the fixed string for one it does not. The editor's unsaved edits reach
+the frame, and REST reads before and after show that the collection holds only
+the save. The `create` target of the real-admin
+suite (`tests/real-payload/surface-create.spec.ts`) measures all of this in
+Chromium, Firefox and WebKit. In Payload's source (`handleLivePreview` in
+`@payloadcms/ui`, read in 3.90.2) a function-valued URL is evaluated only for a
+saved document; the suite does not test that part.
+
+The real-admin fixture runs the Astro (static, hybrid and middleware), Next.js,
+SvelteKit, Nuxt and plain HTML examples, a React hook page and a Vue composable
+page against a real Payload 3.90.2 admin and proves unsaved edits on an existing
 global. CI runs the Astro target in Chromium and every other target in Chromium,
 Firefox and WebKit; `PLP_REAL_PAYLOAD_BROWSERS` selects the engines locally.
-The Next.js, SvelteKit, Nuxt and Astro middleware previews
-authorize the editor's real session (`payload-session`); the hook and the
-composable populate a relationship through a credentialed request to the
-admin's REST API from the preview's own origin. Those surface suites cover
-an existing global; the create-state observation above is separate. Payload posts the
-document when its form state changes, not when the frame loads, so a bare reload
-of the preview frame shows the saved document until the next change in the form.
+The Next.js, SvelteKit, Nuxt and Astro middleware previews authorize the
+editor's real session (`payload-session`); the hook and the composable populate
+a relationship through a credentialed request to the admin's REST API from the
+preview's own origin. Those surface suites cover an existing global; the `create`
+target covers collection documents. Payload posts the document when its form
+state changes, not when the frame loads, so a bare reload of the preview frame
+shows the saved document until the next change in the form.
 
 The config plugin's path resolvers return strings. For a document that should
 have no iframe, use the lower-level `buildLivePreviewUrl()` callback directly:
