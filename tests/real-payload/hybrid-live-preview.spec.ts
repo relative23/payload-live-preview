@@ -3,10 +3,16 @@ import { expect, test, type Frame, type Page } from '@playwright/test';
 /**
  * The hybrid strategies against a REAL Payload admin (roadmap 1.7.0
  * production gate): the admin at :3001 frames the SSR hybrid fixture at
- * :4177, the fixture authorizes the editor's session through
- * `/api/users/me`, and typing in the real admin drives patch (footer),
- * fragment (the subtitle section rendered by Astro on the server) and route
- * (the title, bound in `<head>`) — in whichever engine this project runs.
+ * :4177, and typing in the real admin drives patch (footer), fragment (the
+ * subtitle section rendered by Astro on the server) and route (the title,
+ * bound in `<head>`) — in whichever engine this project runs.
+ *
+ * The admin is auto-logged-in and shares no session with the fixture, so the
+ * fixture mints a preview token for the framed request and authorizes its
+ * fragment endpoint with that token (examples/astro-hybrid/src/middleware.ts).
+ * That is not an authorization by the editor's session: the targets whose
+ * preview verifies the session through `/api/users/me` are the ones
+ * `surface-session.spec.ts` covers.
  */
 
 const PORT = process.env['PLP_E2E_PORT'] ?? '4177';
@@ -50,7 +56,7 @@ test.describe('real Payload admin → hybrid fixture', () => {
       .toBe(true);
   });
 
-  test('the session-authorized page carries the fragment and route clients', async ({ page }) => {
+  test('the framed page carries the fragment and route clients', async ({ page }) => {
     const frame = previewFrame(page);
     if (!frame) throw new Error('preview frame missing');
     const state = await frame.evaluate(() => {
