@@ -3,8 +3,8 @@
   "status": "portable-development-fixture-sources-not-native-results",
   "files": {
     "README.md": {
-      "sha256": "63f1e26cded2a4d0250e23ea0b466ffee7ab3bdde67f239395c8ebe1a14b7140",
-      "bytes": 5043
+      "sha256": "e6ecdd67dc26e163ff76b40e0cfbd3b7ce4e046286ee9fbb8d9f0cf69b495f1f",
+      "bytes": 5974
     },
     "admin/next-env.d.ts": {
       "sha256": "0f70629890b72a0a82e91972cc032c04b658b26c265373cb711cf576bfbf8fcc",
