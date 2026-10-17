@@ -859,6 +859,36 @@
       }
     },
     {
+      "id": "payload-collection-create-state-current",
+      "surface": "Payload plugin",
+      "feature": "a collection document has no native preview on its create screen, for a plugin-routed and a fixed string URL, and takes unsaved edits after its first save",
+      "version": {
+        "kind": "exact",
+        "value": "3.90.2",
+        "package": "payload",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/payload-backend"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.90.2 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "tests/real-payload/surface-create.spec.ts",
+          "playwright.real-payload.config.ts",
+          "examples/payload-backend/payload.config.ts"
+        ]
+      }
+    },
+    {
       "id": "sveltekit-real-admin-session-current",
       "surface": "SvelteKit",
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",

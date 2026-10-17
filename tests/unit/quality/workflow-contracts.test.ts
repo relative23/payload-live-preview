@@ -285,6 +285,13 @@ describe('workflow contracts', () => {
       violation: 'ci.yml job real-payload-surfaces does not run the reviewed matrix',
     },
     {
+      label: 'a real-admin matrix without the create-state target',
+      file: 'ci.yml',
+      original: '            create,\n',
+      replacement: '',
+      violation: 'ci.yml job real-payload-surfaces does not run the reviewed matrix',
+    },
+    {
       label: 'a real-admin matrix on one engine',
       file: 'ci.yml',
       original: '          ]\n        browser: [chromium, firefox, webkit]',
