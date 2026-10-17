@@ -4,7 +4,8 @@
  * the file it rewrites: a path swapped for a link or another file in between is refused. Each case
  * runs the lane's module in its own Node process, as the lane does; links, FIFOs and modes are POSIX.
  * The lane's one Docker call is read as text, never run: the host shares its memory with every
- * other job, so the Mongo container has to carry a limit and remove itself.
+ * other job, so the Mongo container has to carry a limit and remove itself, and it runs as the
+ * calling user so that the run directory stays removable.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
@@ -226,5 +227,13 @@ describe('Payload 2 lane Mongo container', () => {
   it.each(['--memory=2g', '--memory-swap=2g', '--rm'])('is created with %s', (flag) => {
     expect(options).toBeDefined();
     expect(options).toContain(`'${flag}'`);
+  });
+
+  // mongod as root-mapped uid 999 leaves a data directory the caller cannot delete; it has to run
+  // as the user who owns the run directory.
+  it('runs mongod as the user who owns the run directory', () => {
+    expect(options).toContain("'--user'");
+    expect(options).toContain('process.getuid()');
+    expect(options).toContain('process.getgid()');
   });
 });
