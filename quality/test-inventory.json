@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 502,
-    "suites": 949,
-    "tests": 4305,
+    "files": 504,
+    "suites": 952,
+    "tests": 4328,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 406,
-      "suites": 841,
-      "tests": 3909,
+      "files": 408,
+      "suites": 844,
+      "tests": 3932,
       "benchmarks": 0
     }
   },
@@ -1642,7 +1642,7 @@
       "path": "tests/unit/core/lifecycle-data-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -2376,8 +2376,8 @@
     {
       "path": "tests/unit/field-types/media-renderers.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 19,
+      "suites": 4,
+      "tests": 26,
       "benchmarks": 0
     },
     {
@@ -2532,6 +2532,13 @@
       "group": "unit",
       "suites": 9,
       "tests": 22,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/lexical/media-url.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -3147,14 +3154,21 @@
       "path": "tests/unit/quality/payload-lane-audit.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 7,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/payload-lane-ledger.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/quality/payload-lane-plan.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {
