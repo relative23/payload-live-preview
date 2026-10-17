@@ -207,6 +207,47 @@ describe('workflow contracts', () => {
         'ci.yml job next-matrix step run "npm run test:e2e:next-webpack-production -- --project=chromium" must exist exactly once (found 0)',
     },
     {
+      label: 'an Astro floor job that stops reading the archive the Build job stored',
+      file: 'ci.yml',
+      original:
+        '          name: release-candidate-${{ github.sha }}\n          path: release-artifact\n      - run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-floor-base.config.ts',
+      replacement:
+        '          name: dist-${{ github.sha }}\n          path: release-artifact\n      - run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-floor-base.config.ts',
+      violation: 'ci.yml job astro-floor-base step uses actions/download-artifact must exist',
+    },
+    {
+      label: 'an Astro floor run that cannot fail',
+      file: 'ci.yml',
+      original:
+        'npx playwright test --config playwright.astro-floor-base.config.ts --project=chromium',
+      replacement:
+        'npx playwright test --config playwright.astro-floor-base.config.ts --project=chromium || true',
+      violation:
+        'ci.yml job astro-floor-base step run "PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-floor-base.config.ts --project=chromium" must exist exactly once (found 0)',
+    },
+    {
+      label: 'an Astro floor job that may fail',
+      file: 'ci.yml',
+      original: '  astro-floor-base:\n    name: Astro floor 4.0.0 (static base adapter)\n',
+      replacement:
+        '  astro-floor-base:\n    name: Astro floor 4.0.0 (static base adapter)\n    continue-on-error: true\n',
+      violation: 'ci.yml job astro-floor-base permits failures',
+    },
+    {
+      label: 'an island floor that tests another Astro than the one it names',
+      file: 'ci.yml',
+      original: "astro: ['4.16.19']",
+      replacement: "astro: ['5.18.2']",
+      violation: 'ci.yml job astro-floor-islands does not run the reviewed matrix',
+    },
+    {
+      label: 'an island floor that does not tell the spec which Astro it installs',
+      file: 'ci.yml',
+      original: '          PLP_ASTRO_RESOURCE_VERSION: ${{ matrix.astro }}\n',
+      replacement: '          PLP_ASTRO_RESOURCE_VERSION: 7.3.2\n',
+      violation: 'env.PLP_ASTRO_RESOURCE_VERSION is not "${{ matrix.astro }}"',
+    },
+    {
       label: 'a real-admin matrix that drops a target',
       file: 'ci.yml',
       original: 'target: [nextjs, sveltekit, nuxt, nextjs-hook, nuxt-composable, html]',
@@ -444,6 +485,7 @@ describe('workflow contracts', () => {
     expect(matrixValues(ci, 'unit', 'node')).toEqual([20, 22, 24, 26]);
     expect(matrixValues(ci, 'astro-matrix', 'astro')).toEqual([6, 5, 4]);
     expect(matrixValues(ci, 'next-matrix', 'next')).toEqual([15]);
+    expect(matrixValues(ci, 'astro-floor-islands', 'astro')).toEqual(['4.16.19']);
     expect(matrixValues(ci, 'lint', 'node')).toEqual([]);
   });
 });

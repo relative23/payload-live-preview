@@ -26,6 +26,11 @@ export const DOWNLOAD_DIST: StepSpec = {
   uses: 'actions/download-artifact',
   with: { name: 'dist-${{ github.sha }}', path: 'dist' },
 };
+/** The exact archive the Build job stored, which the Release workflow later publishes. */
+export const DOWNLOAD_ARCHIVE: StepSpec = {
+  uses: 'actions/download-artifact',
+  with: { name: 'release-candidate-${{ github.sha }}', path: 'release-artifact' },
+};
 export const FIXTURE_CACHE: StepSpec = {
   uses: 'actions/setup-node',
   with: { 'cache-dependency-path': 'package-lock.json\nexamples/*/package-lock.json' },
