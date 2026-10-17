@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 495,
-    "suites": 936,
-    "tests": 4262,
+    "files": 496,
+    "suites": 937,
+    "tests": 4264,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 402,
-      "suites": 832,
-      "tests": 3879,
+      "files": 403,
+      "suites": 833,
+      "tests": 3881,
       "benchmarks": 0
     }
   },
@@ -3117,6 +3117,13 @@
     },
     {
       "path": "tests/unit/quality/playwright-runtime-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/real-payload-targets.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 2,

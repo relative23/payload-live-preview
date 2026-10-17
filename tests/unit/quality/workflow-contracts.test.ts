@@ -209,16 +209,31 @@ describe('workflow contracts', () => {
     {
       label: 'a real-admin matrix that drops a target',
       file: 'ci.yml',
-      original: 'target: [nextjs, sveltekit, nuxt, nextjs-hook, nuxt-composable, html]',
-      replacement: 'target: [nextjs, sveltekit, nuxt, nextjs-hook, nuxt-composable]',
+      original: 'nuxt-composable, html, astro-session]',
+      replacement: 'nuxt-composable, astro-session]',
+      violation: 'ci.yml job real-payload-surfaces does not run the reviewed matrix',
+    },
+    {
+      label: 'a real-admin matrix without the Astro session target',
+      file: 'ci.yml',
+      original: 'nuxt-composable, html, astro-session]',
+      replacement: 'nuxt-composable, html]',
       violation: 'ci.yml job real-payload-surfaces does not run the reviewed matrix',
     },
     {
       label: 'a real-admin matrix on one engine',
       file: 'ci.yml',
-      original: 'nuxt-composable, html]\n        browser: [chromium, firefox, webkit]',
-      replacement: 'nuxt-composable, html]\n        browser: [chromium]',
+      original: 'html, astro-session]\n        browser: [chromium, firefox, webkit]',
+      replacement: 'html, astro-session]\n        browser: [chromium]',
       violation: 'ci.yml job real-payload-surfaces does not run the reviewed matrix',
+    },
+    {
+      label: 'a real-admin matrix that frames another example for the Astro session target',
+      file: 'ci.yml',
+      original: '"astro-session":"astro-middleware"',
+      replacement: '"astro-session":"astro-payload"',
+      violation:
+        'ci.yml job real-payload-surfaces step run "npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"" env.EXAMPLE is not',
     },
     {
       label: 'a real-admin matrix without the Payload backend',

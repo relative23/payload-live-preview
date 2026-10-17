@@ -778,6 +778,36 @@
       }
     },
     {
+      "id": "astro-real-admin-session-current",
+      "surface": "Astro",
+      "feature": "live preview against the real Payload admin, with the editor's real session (payload-session), middleware delivery on the built Node server run without NODE_ENV=production",
+      "version": {
+        "kind": "exact",
+        "value": "7.2.9",
+        "package": "astro",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/astro-middleware"
+        }
+      },
+      "mode": "production",
+      "packageForm": "linked-worktree",
+      "backend": "Payload 3.90.2 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts",
+          "playwright.real-payload.config.ts"
+        ]
+      }
+    },
+    {
       "id": "plain-html-real-admin-current",
       "surface": "Plain HTML",
       "feature": "live preview against the real Payload admin, runtime baked in, origin rule as the gate",

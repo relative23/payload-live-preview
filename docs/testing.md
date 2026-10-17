@@ -348,11 +348,12 @@ What is proven about the Payload wire protocol, from the outside in:
    runtime → DOM, driven by Payload's own admin code.
    `PLP_REAL_PAYLOAD_TARGET` picks the app the admin frames: the static Astro
    app (the default, with the seeded editor auto-logged-in), the SSR hybrid
-   app, a plain HTML page, or the Next.js, SvelteKit and Nuxt examples (the
-   React hook page of the first and the Vue composable page of the last
-   included), where the preview verifies the editor's session and the test
-   signs in through the real login form. CI runs every target on every push:
-   the Astro default in Chromium, the others in all three browsers.
+   app, a plain HTML page, or the Next.js, SvelteKit, Nuxt and Astro
+   middleware examples (Astro's built and served by Node; the Next.js one also
+   as a React hook page, the Nuxt one as a Vue composable page), where the
+   preview verifies the editor's session and the test signs in through the
+   real login form. CI runs every target on every push: the Astro default in
+   Chromium, the others in all three browsers.
 2. **Browser E2E** (`tests/e2e/`) drives a real browser and a real iframe
    across Chromium, Firefox and WebKit: `postMessage` → runtime → DOM. Its
    `/admin` page emulates the Payload admin, so it can exercise edge cases
