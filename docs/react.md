@@ -65,10 +65,11 @@ A hook instance owns one document session. A fresh `initialData` object on an
 ordinary re-render does not replace data that already merged. If the same
 component can move from one CMS document to another, remount it with a key that
 includes the document owner and id. This releases the old session and starts a
-new one from the new `initialData`. On Payload 2 that session has no field
-schema yet, and Payload 2.32.3 sends the schema once per window: the next
-update reports `'unavailable'` and reads nothing until the admin page is loaded
-again ([interop.md](interop.md#what-is-shared-exactly)).
+new one from the new `initialData`. On Payload 2 that session starts without a
+field schema, and Payload 2.32.3 sends the schema only with its first message
+to the preview: the next update reports `'unavailable'` and reads nothing until
+the admin page is loaded again
+([interop.md](interop.md#what-is-shared-exactly)).
 
 The return value is `{ data, isLoading, status, error, revision }`. `data` and
 `isLoading` are Payload's two names. `isLoading` is `true` until an update
