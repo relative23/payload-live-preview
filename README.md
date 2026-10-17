@@ -224,7 +224,7 @@ That is it: the inline script detects the admin's iframe and starts patching. Ri
 
 ### Other frameworks
 
-- **Next.js (App Router)** — `<LivePreviewScript />` in `app/layout.tsx`, the adapter middleware for headers: [docs/nextjs.md](docs/nextjs.md).
+- **Next.js (App Router)** — `await LivePreviewScript(…)` in `app/layout.tsx`, the adapter middleware for headers: [docs/nextjs.md](docs/nextjs.md).
 - **SvelteKit** — `livePreviewHandle()` in `hooks.server.ts`: [docs/sveltekit.md](docs/sveltekit.md).
 - **Nuxt** — a Nitro plugin plus a server handler: [docs/nuxt.md](docs/nuxt.md).
 - **Plain HTML** — `generateInlineScript()` at build time: [docs/html.md](docs/html.md).

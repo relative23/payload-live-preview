@@ -182,6 +182,10 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
     // read in one file — this one proves the public pays nothing, that one
     // proves the editor still gets the runtime, down to the byte of tag, config
     // statement and fragment prelude this fixture asks for.
+    //
+    // 2026-10-17: the layout awaits the component instead of rendering it
+    // (ADR 0031). The row did not move: the element it returns is the same, only
+    // the part of the stream it travels in changed.
     why: 'LP-8 closed: a component that can decline to render is the only thing that gets a Next layout to zero',
   },
   {
