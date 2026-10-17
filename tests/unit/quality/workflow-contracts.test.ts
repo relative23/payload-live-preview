@@ -248,6 +248,22 @@ describe('workflow contracts', () => {
       violation: 'env.PLP_ASTRO_RESOURCE_VERSION is not "${{ matrix.astro }}"',
     },
     {
+      label: 'a fragment ladder that drops its floor',
+      file: 'ci.yml',
+      original: "astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2']",
+      replacement: "astro: ['4.16.19', '5.18.2', '6.4.8', '7.3.2']",
+      violation: 'ci.yml job astro-fragment-versions does not run the reviewed matrix',
+    },
+    {
+      label: 'a fragment ladder that runs every version as the newest',
+      file: 'ci.yml',
+      original:
+        '          PLP_ASTRO_RESOURCE_VERSION: ${{ matrix.astro }}\n        run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts',
+      replacement:
+        '          PLP_ASTRO_RESOURCE_VERSION: 7.3.2\n        run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts',
+      violation: 'env.PLP_ASTRO_RESOURCE_VERSION is not "${{ matrix.astro }}"',
+    },
+    {
       label: 'a real-admin matrix that drops a target',
       file: 'ci.yml',
       original: '            html,\n',
@@ -523,6 +539,13 @@ describe('workflow contracts', () => {
     expect(matrixValues(ci, 'astro-matrix', 'astro')).toEqual([6, 5, 4]);
     expect(matrixValues(ci, 'next-matrix', 'next')).toEqual([15]);
     expect(matrixValues(ci, 'astro-floor-islands', 'astro')).toEqual(['4.16.19']);
+    expect(matrixValues(ci, 'astro-fragment-versions', 'astro')).toEqual([
+      '4.9.0',
+      '4.16.19',
+      '5.18.2',
+      '6.4.8',
+      '7.3.2',
+    ]);
     expect(matrixValues(ci, 'lint', 'node')).toEqual([]);
   });
 });

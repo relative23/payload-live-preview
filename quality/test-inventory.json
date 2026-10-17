@@ -22,7 +22,7 @@
   "totals": {
     "files": 498,
     "suites": 943,
-    "tests": 4277,
+    "tests": 4278,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 404,
       "suites": 837,
-      "tests": 3894,
+      "tests": 3895,
       "benchmarks": 0
     }
   },
@@ -2909,7 +2909,7 @@
       "path": "tests/unit/quality/astro-resource-fixture-config.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {
