@@ -164,14 +164,17 @@ another origin only when Payload returns absolute URLs, which its own
 
 A Lexical `upload` node renders only from a populated media document. On
 Payload 3 the admin posts the node with the media's ID as its `value` (measured
-on 3.90.2: `value: 16`), and the merge fills the relationship and upload fields
-the schema names, not the nodes inside rich text. The node therefore renders as
-nothing: an image inside rich text is missing from the first update, which
-writes every bound field, until the page is loaded from the server again. A
-`relationship` node with a bare ID renders as a span that reads `#` and its
-collection. The package does not look these documents up. A page that has to
-show them while the editor works renders the field on the server with its own
-lookup ([hybrid.md](hybrid.md)).
+on 3.90.2: `value: 16`), and Payload fills it in when the runtime asks it to
+populate the document: the same document comes back with the media document in
+place. The runtime asks only for a field it knows can hold populated values, and
+it learns that from the element. For rich text that is `data-payload-richtext`
+or `data-payload-type="richText"`; the renderer recognises Lexical by its shape,
+the merge decision does not. An element with neither is written from the bare
+ID. Its `upload` node renders as nothing, so an image inside the rich text is
+gone from the first update, which writes every bound field, until the page loads
+from the server again, and a `relationship` node renders as a span that reads
+`#` and its collection. Mark every rich-text element that can hold uploads or
+relationships.
 
 ### Email
 
