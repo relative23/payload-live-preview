@@ -163,6 +163,7 @@ refused. A version of any other shape is refused. The pipeline is ADR
 | Resource retention                        | exact handle counts, forced-GC Node leak gate, Chromium heap soak                                                                                                                                               | main push + scheduled      |
 | Protocol ecosystem drift                  | captured real messages and pinned/latest/canary Payload watch                                                                                                                                                   | PR + scheduled             |
 | Peer floors the hooks promise             | React 18.0.0, Vue 3.3.0 and Svelte 5.0.0 installed over the lockfile; hook, route-refresh and fragment suite (the SvelteKit one against a component compiled by `svelte/compiler` and the real `svelte/server`) | pull request               |
+| Peer floors the Astro adapter promises    | the stored archive in reviewed locks: Astro 4.0.0 static base adapter (both deliveries, two controls), Astro 4.16.19 React islands in fragments; [details](#astro-peer-floors)                                  | pull request               |
 
 The machine-readable inventory is [quality/test-inventory.json](../quality/test-inventory.json).
 It is regenerated with `tsx scripts/test-policy.ts --write`; CI fails if it is
@@ -403,6 +404,53 @@ three engines; the Astro
 by the `astro-matrix` job, and Next.js 15.5 by the `next-matrix` job, which
 installs it over the Next.js fixture and runs the development, webpack
 production and base-path suites in Chromium.
+
+## Astro peer floors
+
+`astro@^4` installs the newest 4.x, so the `astro-matrix` job cannot say what the lower
+bound of the peer range does. Two more jobs run on every push, in Chromium. Each installs
+the archive the Build job stored (`release-candidate-<sha>`, the bytes the Release workflow
+publishes) into a consumer of its own, whose lockfile was reviewed once and is installed as
+it stands, not resolved at run time:
+
+- `astro-floor-base` — Astro 4.0.0, the lower bound of `peerDependencies.astro`
+  ([lock](../tests/fixtures/astro-floor-base-deps/package-lock.json),
+  [spec](../tests/e2e/continuation/astro-floor-base.spec.ts)). A static page with the
+  shipped `RichText.astro` and `PreviewBoundary.astro` is built with `livePreview()` in
+  `loader` and in `inline` delivery and framed by a mock parent that posts the observed
+  Payload message shape: the public page stays inactive, the runtime starts in the frame, a
+  title update arrives as plain text, the empty boundary fills and empties, and a second
+  document is ignored. A `.astro` template that transpiles but does not type-check must be
+  rejected (TS2551) before the clean build. Two control builds change one thing each — no
+  integration, and an `allowedOrigins` that does not name the parent, with the localhost
+  shortcut off — and the same assertions must fail on them, or a pass could come from the
+  static page alone.
+- `astro-floor-islands` — Astro 4.16.19 with `@astrojs/react` 3.6.3 and React 18.3.1
+  ([lock](../tests/fixtures/astro-react-versions/4.16.19/package-lock.json),
+  [spec](../tests/e2e/continuation/astro-islands.spec.ts)), the first Astro whose container
+  takes `resolve` (ADR 0021). The four cases of the island contract run under the
+  build-hash CSP: consecutive unsaved revisions keep the island's state, the page control
+  hydrates, unlisted inline script and style stay blocked, and soft navigation unmounts it.
+
+To run them yourself, build and pack once, then point both at the archive. The first install
+needs the registry; later ones use the npm cache. Without `--project=chromium` all three
+engines run, one after the other:
+
+```sh
+npm run build
+npm run test:package -- --artifact-dir /tmp/release-artifact --source-commit "$(git rev-parse HEAD)"
+export PLP_CONTINUATION_TARBALL=/tmp/release-artifact/payload-live-preview-<version>.tgz
+npx playwright test --config playwright.astro-floor-base.config.ts                                   # port 4290
+PLP_ASTRO_RESOURCE_VERSION=4.16.19 npx playwright test --config playwright.astro-islands.config.ts   # port 4287
+```
+
+What they do not show. The parent is a mock, so neither is a real-admin result. The island
+lane measures `client:load` only. The two locks are the floor versions themselves, so
+`npm audit --package-lock-only` reports the advisories of those versions (counted on
+2026-10-17: one critical and nine high for the Astro 4.0.0 lock, one critical and eight high for
+the Astro 4.16.19 lock). Only the tests install them, in a temporary directory outside the
+repository; the base lane serves a static build and the island lane a Node server on loopback
+behind a throw-away TLS proxy. `fixture-audit` covers `examples/`, not these locks.
 
 ## Tree-shaking gate
 
