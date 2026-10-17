@@ -22,7 +22,7 @@
   "totals": {
     "files": 496,
     "suites": 938,
-    "tests": 4269,
+    "tests": 4270,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 403,
       "suites": 834,
-      "tests": 3886,
+      "tests": 3887,
       "benchmarks": 0
     }
   },
@@ -3119,7 +3119,7 @@
       "path": "tests/unit/quality/payload-lane-plan.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 7,
       "benchmarks": 0
     },
     {
