@@ -42,6 +42,7 @@ import {
   astroResourceVersion,
   prepareAstroResourceVersion,
 } from './astro-resource-versions';
+import { copyFixtureTemplates, deriveArchiveConsumer } from './native-consumer';
 
 const ROOT = process.cwd();
 interface NativeACLFixture extends ACLFixture {
@@ -51,19 +52,6 @@ interface NativeACLFixture extends ACLFixture {
 type StartACLFixture = (options: { versionedRelated: boolean }) => Promise<NativeACLFixture>;
 const checksum = (value: Uint8Array | string): string =>
   createHash('sha256').update(value).digest('hex');
-async function templates(source: string, destination: string): Promise<void> {
-  await mkdir(destination, { recursive: true });
-  for (const item of await readdir(source, { withFileTypes: true })) {
-    if (item.isDirectory()) await templates(join(source, item.name), join(destination, item.name));
-    else {
-      await copyFile(
-        join(source, item.name),
-        join(destination, item.name.replace(/\.fixture$/u, '')),
-      );
-    }
-  }
-}
-
 export async function startNativeContinuation(
   artifact: string,
   framework: 'next' | 'sveltekit' | 'nuxt' | 'astro' | 'html' | 'vue',
@@ -181,7 +169,12 @@ export async function startNativeContinuation(
     logs.push(`npm ${args.join(' ')}\n${result.stdout}\n${result.stderr}`);
     assert.equal(result.status, 0, 'Isolated dependency install failed; see setup log');
   };
-  const install = PACKAGE_SMOKE_INSTALL_ARGS.filter((arg) => arg !== '--omit=optional');
+  // A cold CI runner has no npm cache, so `--offline` would fail the first install. The
+  // lock's integrity hashes pin every byte either way; only the archive is a local file.
+  const install = [
+    ...PACKAGE_SMOKE_INSTALL_ARGS.filter((arg) => arg !== '--omit=optional' && arg !== '--offline'),
+    '--prefer-offline',
+  ];
   let backend: NativeACLFixture | undefined;
   let child: ReturnType<typeof spawn> | undefined;
   const close = async (): Promise<void> => {
@@ -217,74 +210,9 @@ export async function startNativeContinuation(
       pathToFileURL(join(cms, 'acl-fixture.ts')).href
     )) as { startACLFixture: StartACLFixture };
     backend = await start({ versionedRelated: true });
-    const manifest = JSON.parse(await readFile(join(dependencyRoot, 'package.json'), 'utf8')) as {
-      dependencies: Record<string, string>;
-      devDependencies?: Record<string, string>;
-      allowScripts?: Record<string, boolean>;
-    };
-    const lock = JSON.parse(await readFile(join(dependencyRoot, 'package-lock.json'), 'utf8')) as {
-      packages: Record<
-        string,
-        {
-          version?: string;
-          dependencies?: Record<string, string>;
-          devDependencies?: Record<string, string>;
-          [key: string]: unknown;
-        }
-      >;
-    };
-    // Replace only the workspace package record with the reviewed archive.
-    // A second npm install would re-resolve transitive peers (notably Vite).
-    delete manifest.dependencies['payload-live-preview'];
-    delete lock.packages['']!.dependencies!['payload-live-preview'];
-    delete lock.packages['node_modules/payload-live-preview'];
-    // Preserve the fixture's reviewed, version-specific approvals. In particular
-    // Nuxt's locked esbuild needs its approved binary validation install hook.
-    manifest.allowScripts ??= {};
-    manifest.devDependencies ??= {};
-    // Record the exact selected direct versions in the derived manifest too.
-    for (const group of ['dependencies', 'devDependencies'] as const) {
-      const dependencies = manifest[group] ?? {};
-      for (const name of Object.keys(dependencies)) {
-        const version = lock.packages[`node_modules/${name}`]?.version;
-        assert.ok(version, 'Missing pinned consumer dependency');
-        dependencies[name] = version;
-        lock.packages['']![group]![name] = version;
-      }
-    }
-    const packed = spawnSync('tar', ['-xOf', archive, 'package/package.json'], {
-      encoding: 'utf8',
-    });
-    assert.equal(packed.status, 0, 'Cannot inspect the retained archive manifest');
-    const packageManifest = JSON.parse(packed.stdout) as {
-      name: string;
-      version: string;
-      dependencies?: Record<string, string>;
-      peerDependencies?: Record<string, string>;
-      peerDependenciesMeta?: Record<string, { optional?: boolean }>;
-      engines?: Record<string, string>;
-      bin?: Record<string, string>;
-      license?: string;
-    };
-    assert.equal(packageManifest.name, 'payload-live-preview');
-    const location = `file:${archive}`;
-    manifest.dependencies['payload-live-preview'] = location;
-    lock.packages['']!.dependencies!['payload-live-preview'] = location;
-    lock.packages['node_modules/payload-live-preview'] = {
-      version: packageManifest.version,
-      resolved: location,
-      integrity: `sha512-${createHash('sha512')
-        .update(await readFile(archive))
-        .digest('base64')}`,
-      ...(packageManifest.dependencies ? { dependencies: packageManifest.dependencies } : {}),
-      peerDependencies: packageManifest.peerDependencies,
-      peerDependenciesMeta: packageManifest.peerDependenciesMeta,
-      engines: packageManifest.engines,
-      bin: packageManifest.bin,
-      license: packageManifest.license,
-    };
-    await writeFile(join(app, 'package.json'), JSON.stringify(manifest));
-    await writeFile(join(app, 'package-lock.json'), JSON.stringify(lock));
+    const consumer = await deriveArchiveConsumer(dependencyRoot, archive);
+    await writeFile(join(app, 'package.json'), JSON.stringify(consumer.manifest));
+    await writeFile(join(app, 'package-lock.json'), JSON.stringify(consumer.lock));
     if (isHTML) await writeFile(join(app, '.npmrc'), PACKAGE_SMOKE_NPMRC);
     else await copyFile(join(dependencyRoot, '.npmrc'), join(app, '.npmrc'));
     command(
@@ -337,21 +265,23 @@ export async function startNativeContinuation(
       const actual = await realpath(join(app, 'node_modules', name));
       assert.ok(actual.startsWith(`${app}/node_modules/`), 'Consumer dependency escaped isolation');
     }
-    await templates(resolve(ROOT, `tests/fixtures/${framework}-continuation`), app);
+    await copyFixtureTemplates(resolve(ROOT, `tests/fixtures/${framework}-continuation`), app);
     if (isAstroResources) {
-      await templates(resolve(ROOT, 'tests/fixtures/astro-resources'), app);
+      await copyFixtureTemplates(resolve(ROOT, 'tests/fixtures/astro-resources'), app);
       await prepareAstroResourceVersion(app, resourceVersion!.version);
       if (resourceRenderer === 'package-default') {
         // This exact floor is a reproduction, not a green context/resource claim:
         // its public Container API has no props option. Exercise the packed default.
-        await templates(resolve(ROOT, 'tests/fixtures/astro-resource-floor'), app);
+        await copyFixtureTemplates(resolve(ROOT, 'tests/fixtures/astro-resource-floor'), app);
       }
       if (resourceRenderer === 'locals-catalog') {
-        await templates(resolve(ROOT, 'tests/fixtures/astro-resource-locals'), app);
+        await copyFixtureTemplates(resolve(ROOT, 'tests/fixtures/astro-resource-locals'), app);
       }
-      if (isAstroReact) await templates(resolve(ROOT, 'tests/fixtures/astro-react-resources'), app);
+      if (isAstroReact) {
+        await copyFixtureTemplates(resolve(ROOT, 'tests/fixtures/astro-react-resources'), app);
+      }
       if (resourceRenderer === 'react-islands') {
-        await templates(resolve(ROOT, 'tests/fixtures/astro-react-islands'), app);
+        await copyFixtureTemplates(resolve(ROOT, 'tests/fixtures/astro-react-islands'), app);
       }
       if (resourceRenderer === 'react-owned') {
         // Reuse the reviewed bootstrap policy, not the broken fragment islands.
@@ -372,7 +302,7 @@ export async function startNativeContinuation(
             join(app, 'src', path),
           );
         }
-        await templates(resolve(ROOT, 'tests/fixtures/astro-react-owned'), app);
+        await copyFixtureTemplates(resolve(ROOT, 'tests/fixtures/astro-react-owned'), app);
         await mkdir(artifact, { recursive: true });
         for (const [path, name] of [
           ['@astrojs/react/dist/client.js', 'react-client.js'],
@@ -527,7 +457,7 @@ export async function startNativeContinuation(
         }
       ).version;
       if (name !== 'payload-live-preview') {
-        assert.equal(versions[name], lock.packages[`node_modules/${name}`]!.version);
+        assert.equal(versions[name], consumer.lock.packages[`node_modules/${name}`]!.version);
       }
     }
     await writeFile(
@@ -559,7 +489,7 @@ export async function startNativeContinuation(
           profile,
           resourceRenderer,
           internalPort,
-          frameworkLockSHA256: checksum(JSON.stringify(lock)),
+          frameworkLockSHA256: checksum(JSON.stringify(consumer.lock)),
           baseline,
         },
         null,

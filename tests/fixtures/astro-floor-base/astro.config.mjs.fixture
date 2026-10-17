@@ -1,0 +1,34 @@
+/**
+ * The original Astro 4 peer floor, built through the package's public integration export.
+ * One static page serves both delivery modes. A control removes the one capability the
+ * spec's visible-behavior assertions depend on, so a pass cannot come from the page alone.
+ */
+import { defineConfig } from 'astro/config';
+import { livePreview } from 'payload-live-preview/astro';
+
+const mode = process.env.PLP_ASTRO_FLOOR_DELIVERY ?? 'loader';
+const control = process.env.PLP_ASTRO_FLOOR_CONTROL ?? 'none';
+const origin = process.env.PLP_ASTRO_FLOOR_ORIGIN;
+if (!origin) throw new Error('PLP_ASTRO_FLOOR_ORIGIN must name the serving origin');
+if (!['inline', 'loader'].includes(mode)) throw new Error('Unreviewed delivery mode');
+if (!['none', 'no-integration', 'wrong-origin'].includes(control)) {
+  throw new Error('Unreviewed control');
+}
+export default defineConfig({
+  output: 'static',
+  integrations:
+    control === 'no-integration'
+      ? []
+      : [
+          livePreview({
+            mode,
+            allowedOrigins: control === 'wrong-origin' ? ['https://refused.example.invalid'] : [origin],
+            // On localhost the runtime trusts every localhost origin by default, which would admit
+            // the mock parent whatever the allow-list says. Off, only `allowedOrigins` decides, so the
+            // wrong-origin control differs from the real build in that one value.
+            disableLocalhostMatching: true,
+            debounceMs: 25,
+            scopeBindingsByOwner: true,
+          }),
+        ],
+});
