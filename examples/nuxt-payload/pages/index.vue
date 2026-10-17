@@ -39,6 +39,16 @@ const populated = (useRuntimeConfig().public.payloadUrl as string) !== '';
       <p v-if="populated">
         Author: <span data-payload-field="author.email" data-testid="author-email"></span>
       </p>
+      <p v-if="populated">
+        Image: <span data-payload-field="image.filename" data-testid="image-filename"></span>
+      </p>
+      <img
+        v-if="populated"
+        data-payload-field="image"
+        data-payload-type="upload"
+        data-testid="image"
+        alt=""
+      />
     </header>
 
     <img

@@ -34,7 +34,7 @@
     },
     "examples/nuxt-payload": {
       "exposure": "quality/audit-exposure/nuxt-payload.json",
-      "exposureSha256": "c5edcbd222881d17d132e88cb4498ac31cd7b13dfb93dd1fbe92373a26239cc9",
+      "exposureSha256": "7f65f4227a4c8cd4c90250c56d8c834a5f7a02547cdda08d2b7791151d4d4140",
       "exceptions": [
         {
           "id": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",

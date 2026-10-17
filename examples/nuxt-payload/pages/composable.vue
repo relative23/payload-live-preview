@@ -11,6 +11,7 @@ interface Homepage {
   title?: string;
   subtitle?: string;
   author?: { email?: string } | number | null;
+  image?: { filename?: string } | number | null;
 }
 
 const admin = useRuntimeConfig().public.payloadUrl as string;
@@ -28,6 +29,9 @@ const { data, status, error, revision } = useLivePreviewDocument<Homepage>({
     <p data-testid="subtitle">{{ data.subtitle }}</p>
     <p data-testid="author">
       {{ typeof data.author === 'object' && data.author ? data.author.email : '' }}
+    </p>
+    <p data-testid="image">
+      {{ typeof data.image === 'object' && data.image ? data.image.filename : '' }}
     </p>
     <p>
       status <span data-testid="status">{{ status }}</span

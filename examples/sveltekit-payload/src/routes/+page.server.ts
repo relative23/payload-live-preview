@@ -33,6 +33,9 @@ export const load: PageServerLoad = ({ locals }) => {
       // The populated path of the relationship a real admin posts as an id (hooks.server.ts asks
       // the runtime to populate it); the page renders it only against a real admin.
       authorEmail: preview.bind('author.email'),
+      // The same for an upload: the media's file name, and the image itself.
+      imageFilename: preview.bind('image.filename'),
+      image: preview.bind('image', { type: 'upload' }),
     },
     populated: PAYLOAD_SERVER_URL !== undefined,
   };

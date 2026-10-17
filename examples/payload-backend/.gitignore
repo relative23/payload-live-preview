@@ -5,3 +5,5 @@ next-env.d.ts
 *.db-*
 payload-types.ts
 src/app/(payload)/admin/importMap.js
+# The files of the `media` collection, written by the seed and by uploads.
+/media/
