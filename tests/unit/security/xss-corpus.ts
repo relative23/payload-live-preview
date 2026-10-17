@@ -1,10 +1,11 @@
 /**
  * An XSS corpus for the sanitizer, independent of its allow-lists: what an
  * attacker sends, grouped by the trick it relies on. Every vector is run
- * under every policy by `sanitizer-corpus.test.ts` against one oracle (no
- * script-capable construct survives) and against DOMPurify (nothing we keep
- * is something it drops). A finding adds a vector to `REGRESSIONS` with the
- * date and the fix; the corpus never shrinks.
+ * under `strict`, `compat` and the item-template options by
+ * `sanitizer-corpus.test.ts` against one oracle (no script-capable construct
+ * survives), and under `strict` and the item-template options against
+ * DOMPurify (nothing we keep is something it drops). A finding adds a vector
+ * to `REGRESSIONS` with the date and the fix; the corpus never shrinks.
  *
  * The vectors are written from the well-known classes — handlers, URL
  * schemes and their encodings, raw-text and foreign-content mutation (mXSS),

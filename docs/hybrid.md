@@ -629,7 +629,7 @@ even when its own changes lie outside it.
   patches the runtime knew could not match the server (LP0411), once per
   binding, and the changed fields it had no binding for at all, once per field.
   `canEscalate` says whether a fragment or route strategy exists to hand
-  anything to; `unfaithful` above `escalated` with `canEscalate` `false` is a
+  anything to (a field with no binding needs the route); `unfaithful` above `escalated` with `canEscalate` `false` is a
   page that keeps degraded patches for want of a strategy.
 - Codes: `LP0801` request failed (network, timeout, or any non-2xx status
   but 401/403 — the endpoint's own 400, 404, 405, 408, 413, 415, 500 and 504
@@ -708,7 +708,7 @@ the route and fragment morphs never enter it (an `<astro-island>` they keep
 takes rendered props through Astro's own handoff, ADR 0021), and it re-renders itself from a
 `payload-live-preview:update` event — or with the official
 `@payloadcms/live-preview-react`/`-vue` hook if that is what renders it
-([docs/interop.md](interop.md)). The event follows every flush that carried a
+([docs/interop.md](interop.md)). The event follows every revision that carried a
 change, whether or not a binding outside the islands was written — a page whose
 bindings all sit inside islands still hears every edit
 ([docs/renderers.md](renderers.md#islands)). Patch boundaries, fragment boundaries and

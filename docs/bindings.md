@@ -110,7 +110,7 @@ are not watched, so changing one rebuilds nothing by itself.
 
 A bound date is written as a localised date and time, a bound number with the
 locale's grouping. `data-payload-format` picks something else, from a closed
-vocabulary:
+vocabulary (the examples are for an `en-GB` page):
 
 | Value                                      | Writes                                                        |
 | ------------------------------------------ | ------------------------------------------------------------- |
