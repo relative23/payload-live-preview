@@ -31,6 +31,10 @@ const config: PlaywrightTestConfig = {
     env: { ...process.env, PLP_NEXT_ORIGIN: origin, PLP_NEXT_INTERNAL_PORT: internalPort },
     url: `${origin}/admin.html`,
     ignoreHTTPSErrors: true,
+    // The fixture script builds before it serves: a build error is what the job log has to show
+    // when Playwright reports only "not able to start" with the script's exit code.
+    stdout: 'pipe',
+    stderr: 'pipe',
     // Reusing a development server would make this gate report production
     // coverage without ever running `next build`/`next start`.
     reuseExistingServer: false,
