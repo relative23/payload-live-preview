@@ -22,7 +22,7 @@
   "totals": {
     "files": 506,
     "suites": 955,
-    "tests": 4346,
+    "tests": 4348,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 410,
       "suites": 847,
-      "tests": 3950,
+      "tests": 3952,
       "benchmarks": 0
     }
   },
@@ -1642,7 +1642,7 @@
       "path": "tests/unit/core/lifecycle-data-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 14,
+      "tests": 16,
       "benchmarks": 0
     },
     {

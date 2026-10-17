@@ -220,7 +220,7 @@ On a static build there is no server to render it, so the fields are bound indiv
 
 Which to reach for, and what each costs: [docs/bindings.md](docs/bindings.md#how-much-markup-this-actually-needs). `pll-codegen annotate` adds the unambiguous bindings and names each one it refuses, with the reason; without `--write` it only reports, and exits with `3` when it found work.
 
-That is it: the inline script detects the admin's iframe and starts patching. Rich text is detected from the value shape; `data-payload-richtext` only forces it. Payload 2.x and 3.x can post raw form values, so relationship and upload fields arrive as IDs until `serverURL` with `mergeDepth` re-fetches the populated document ([docs/options.md](docs/options.md)). Injection modes, request-time middleware, authorization and the initial draft read: [docs/astro.md](docs/astro.md).
+That is it: the inline script detects the admin's iframe and starts patching. Rich text is written from the value shape, but a rich-text element that can hold uploads or relationships needs `data-payload-richtext`: only then does the runtime ask Payload to fill those nodes in ([docs/renderers.md](docs/renderers.md#media-urls)). Payload 2.x and 3.x can post raw form values, so relationship and upload fields arrive as IDs until `serverURL` with `mergeDepth` re-fetches the populated document ([docs/options.md](docs/options.md)). Injection modes, request-time middleware, authorization and the initial draft read: [docs/astro.md](docs/astro.md).
 
 ### Other frameworks
 
