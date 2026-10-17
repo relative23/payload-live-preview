@@ -546,13 +546,17 @@ test.describe('native production host continuation', () => {
   }) => {
     const publicResponse = await page.request.get('/');
     const publicHTML = await publicResponse.text();
+    // An empty or failed answer holds no draft data either: the page has to be there for the absence to mean anything.
+    expect(publicResponse.status()).toBe(200);
+    expect(publicHTML).toContain('<html');
     expect(publicHTML).not.toContain('draft-de');
     expect(publicHTML).not.toContain('payload-live-preview');
-    for (const path of [
-      '/continuation/a/de?preview=true&locale=de',
-      '/continuation/a/de/data?preview=true&locale=de',
-    ]) {
+    for (const [path, status] of [
+      ['/continuation/a/de?preview=true&locale=de', 200],
+      ['/continuation/a/de/data?preview=true&locale=de', 403],
+    ] as const) {
       const response = await page.request.get(path);
+      expect(response.status()).toBe(status);
       expect(response.headers()['cache-control']).toContain('no-store');
       expect(response.headers()['vary']?.toLowerCase()).toContain('cookie');
       expect(response.headers()['referrer-policy']).toBe('no-referrer');
