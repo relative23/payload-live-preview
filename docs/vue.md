@@ -89,7 +89,10 @@ starts from its own `initialData`. On Payload 2 that session starts without a
 field schema, and Payload 2.32.3 sends the schema only with its first message
 to the preview: the next update reports `'unavailable'` and reads nothing until
 the admin page is loaded again
-([interop.md](interop.md#what-is-shared-exactly)).
+([interop.md](interop.md#what-is-shared-exactly)). A read the old scope started
+can still answer after that, for example when a custom `fetchFn` (an option
+meant for tests) ignores the abort signal. The answer changes nothing: the new
+session keeps what it has and starts no read for it.
 
 ## Measured against the official package
 

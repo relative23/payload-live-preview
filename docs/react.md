@@ -69,7 +69,10 @@ new one from the new `initialData`. On Payload 2 that session starts without a
 field schema, and Payload 2.32.3 sends the schema only with its first message
 to the preview: the next update reports `'unavailable'` and reads nothing until
 the admin page is loaded again
-([interop.md](interop.md#what-is-shared-exactly)).
+([interop.md](interop.md#what-is-shared-exactly)). A read the old session
+started can still answer after that, for example when a custom `fetchFn` (an
+option meant for tests) ignores the abort signal. The answer changes nothing:
+the new session keeps what it has and starts no read for it.
 
 The return value is `{ data, isLoading, status, error, revision }`. `data` and
 `isLoading` are Payload's two names. `isLoading` is `true` until an update
@@ -149,7 +152,10 @@ a request; raw relationship IDs are grouped into bounded collection `GET`
 requests with the configured `depth` and message locale. Those reads include
 the editor's credentials and never send the method-override POST.
 An invalid or incomplete population keeps the last good document and reports
-`'unavailable'`. The DOM runtime uses the same merger
+`'unavailable'`, and so does a read that Payload refuses. When the editor's
+session ends in the middle of a preview, Payload 2.32.3 answers the next read
+with 403: `error` names it, `data` and `revision` stay, and the first update
+after a new sign-in is `'live'` again. The DOM runtime uses the same merger
 ([ADR 0010](architecture/0010-protocol-capabilities-by-observation.md)).
 
 Origin trust is this package's, not the admin's word: a message is accepted only
