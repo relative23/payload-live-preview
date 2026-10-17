@@ -53,8 +53,11 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
     }
     await expect(page.locator(PREVIEW_IFRAME)).toBeVisible({ timeout: 60_000 });
     const body = page.frameLocator(PREVIEW_IFRAME).locator('body');
+    // A read that lands while the frame navigates loses its execution context: that is "not yet".
     const runtime = (): Promise<string> =>
-      body.evaluate(() => typeof (window as Window & { __livePreview?: unknown }).__livePreview);
+      body
+        .evaluate(() => typeof (window as Window & { __livePreview?: unknown }).__livePreview)
+        .catch(() => 'navigating');
     const reload = (): Promise<void> =>
       page.locator(PREVIEW_IFRAME).evaluate(
         (frame) =>
