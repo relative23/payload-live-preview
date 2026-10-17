@@ -388,7 +388,9 @@ a real admin — the latter as early warning only. The
 four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all
 three engines; the Astro
 4–7 peer range is wider than the single-major browser fixture and is backed
-by the `astro-matrix` job.
+by the `astro-matrix` job, and Next.js 15.5 by the `next-matrix` job, which
+installs it over the Next.js fixture and runs the development, webpack
+production and base-path suites in Chromium.
 
 ## Tree-shaking gate
 
