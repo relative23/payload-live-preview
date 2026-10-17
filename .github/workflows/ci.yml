@@ -448,6 +448,50 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  # The targets whose preview verifies the editor's real session (or, for html, the origin
+  # rule) against the real Payload admin. The fixture each target frames is looked up by name.
+  real-payload-surfaces:
+    name: Real Payload E2E (${{ matrix.target }}, ${{ matrix.browser }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [nextjs, sveltekit, nuxt, nextjs-hook, nuxt-composable, html]
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+      - env:
+          EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html"}')[matrix.target] }}
+        run: npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"
+      - run: npm ci --no-audit --no-fund --prefix examples/payload-backend
+      - env:
+          PLP_REAL_PAYLOAD_TARGET: ${{ matrix.target }}
+          PLP_REAL_PAYLOAD_BROWSERS: ${{ matrix.browser }}
+        run: npm run test:e2e:real-payload
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-real-payload-${{ matrix.target }}-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 7
+
   release-gates:
     name: Release Gates
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/2.0')

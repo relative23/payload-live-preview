@@ -137,7 +137,7 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.89.0 admin",
+      "backend": "Payload 3.90.2 admin",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -685,6 +685,173 @@
           "examples/payload-backend/payload.config.ts",
           "tests/real-payload/homepage-live-preview.spec.ts"
         ]
+      }
+    },
+    {
+      "id": "next-real-admin-session-current",
+      "surface": "Next.js",
+      "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
+      "version": {
+        "kind": "exact",
+        "value": "16.3.8",
+        "package": "next",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nextjs-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.90.2 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts",
+          "playwright.real-payload.config.ts"
+        ]
+      }
+    },
+    {
+      "id": "sveltekit-real-admin-session-current",
+      "surface": "SvelteKit",
+      "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
+      "version": {
+        "kind": "exact",
+        "value": "2.70.2",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.90.2 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts",
+          "playwright.real-payload.config.ts"
+        ]
+      }
+    },
+    {
+      "id": "nuxt-real-admin-session-current",
+      "surface": "Nuxt",
+      "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
+      "version": {
+        "kind": "exact",
+        "value": "3.21.11",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.90.2 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts",
+          "playwright.real-payload.config.ts"
+        ]
+      }
+    },
+    {
+      "id": "plain-html-real-admin-current",
+      "surface": "Plain HTML",
+      "feature": "live preview against the real Payload admin, runtime baked in, origin rule as the gate",
+      "version": {
+        "kind": "exact",
+        "value": "2.0.5",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.90.2 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": ["tests/real-payload/surface-smoke.spec.ts", "playwright.real-payload.config.ts"]
+      }
+    },
+    {
+      "id": "react-hook-real-admin-current",
+      "surface": "React hook",
+      "feature": "document merge hook on a Next.js page against the real Payload admin",
+      "version": {
+        "kind": "exact",
+        "value": "19.2.7",
+        "package": "react",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nextjs-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.90.2 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"]
+      }
+    },
+    {
+      "id": "vue-composable-real-admin-current",
+      "surface": "Vue composable",
+      "feature": "document merge composable on a Nuxt page against the real Payload admin",
+      "version": {
+        "kind": "exact",
+        "value": "3.5.43",
+        "package": "vue",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.90.2 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"]
       }
     },
     {
