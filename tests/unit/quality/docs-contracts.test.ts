@@ -80,7 +80,13 @@ describe('heading slugs', () => {
       '## Payload 3.x: populated relationships (`serverURL`)',
       'payload-3x-populated-relationships-serverurl',
     ],
-    ['# Über  Umlaute', 'über-umlaute'],
+    // GitHub turns every space into a hyphen and does not collapse them, so a dropped dash or ampersand leaves two.
+    ['# Über  Umlaute', 'über--umlaute'],
+    [
+      '## Addendum, 2026-09-11 — Vue, and the Nuxt adapter',
+      'addendum-2026-09-11--vue-and-the-nuxt-adapter',
+    ],
+    ['## Tips & tricks', 'tips--tricks'],
   ])('%s → %s', (heading, slug) => {
     expect(headingSlugs(`${heading}\n`).has(slug)).toBe(true);
   });

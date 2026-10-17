@@ -318,7 +318,10 @@ export function esmOnlyListViolations(
     );
 }
 
-/** GitHub's heading slugs: lower case, punctuation dropped, spaces to hyphens; fenced code is not a heading. */
+/**
+ * GitHub's heading slugs: lower case, punctuation dropped, every space to its own hyphen (a dropped dash
+ * or ampersand between two spaces leaves two); fenced code is not a heading.
+ */
 export function headingSlugs(text: string): Set<string> {
   const slugs = new Set<string>();
   let fenced = false;
@@ -331,7 +334,7 @@ export function headingSlugs(text: string): Set<string> {
       .toLowerCase()
       .replace(/[^\p{L}\p{N}\s-]/gu, '')
       .trim()
-      .replace(/\s+/gu, '-');
+      .replace(/\s/gu, '-');
     slugs.add(slug);
   }
   return slugs;
