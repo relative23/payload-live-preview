@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 497,
-    "suites": 939,
-    "tests": 4280,
+    "files": 503,
+    "suites": 951,
+    "tests": 4326,
     "benchmarks": 12
   },
   "groups": {
@@ -39,9 +39,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 56,
-      "suites": 59,
-      "tests": 243,
+      "files": 57,
+      "suites": 61,
+      "tests": 249,
       "benchmarks": 0
     },
     "integration": {
@@ -51,9 +51,9 @@
       "benchmarks": 0
     },
     "real-payload": {
-      "files": 6,
-      "suites": 6,
-      "tests": 26,
+      "files": 7,
+      "suites": 7,
+      "tests": 31,
       "benchmarks": 0
     },
     "soak": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 404,
-      "suites": 835,
-      "tests": 3897,
+      "files": 408,
+      "suites": 844,
+      "tests": 3932,
       "benchmarks": 0
     }
   },
@@ -96,6 +96,13 @@
       "group": "browser-bench",
       "suites": 0,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/astro-floor-base.spec.ts",
+      "group": "e2e",
+      "suites": 2,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -694,17 +701,24 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/real-payload/surface-autologin.spec.ts",
+      "group": "real-payload",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/real-payload/surface-hook.spec.ts",
       "group": "real-payload",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
       "path": "tests/real-payload/surface-session.spec.ts",
       "group": "real-payload",
       "suites": 1,
-      "tests": 4,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -745,8 +759,8 @@
     {
       "path": "tests/unit/adapters/astro-integration.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 15,
+      "suites": 3,
+      "tests": 19,
       "benchmarks": 0
     },
     {
@@ -1621,7 +1635,7 @@
       "path": "tests/unit/core/lifecycle-data-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -2355,8 +2369,8 @@
     {
       "path": "tests/unit/field-types/media-renderers.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 19,
+      "suites": 4,
+      "tests": 26,
       "benchmarks": 0
     },
     {
@@ -2511,6 +2525,13 @@
       "group": "unit",
       "suites": 9,
       "tests": 22,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/lexical/media-url.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -2850,6 +2871,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/astro-floor-fixtures.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 9,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/astro-host-fixture-config.test.ts",
       "group": "unit",
       "suites": 1,
@@ -2867,7 +2895,7 @@
       "path": "tests/unit/quality/astro-island-fixture.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -2895,7 +2923,7 @@
       "path": "tests/unit/quality/astro-resource-fixture-config.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -3095,6 +3123,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/native-consumer.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/next-build-arguments.test.ts",
       "group": "unit",
       "suites": 2,
@@ -3131,6 +3166,13 @@
     },
     {
       "path": "tests/unit/quality/playwright-runtime-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/real-payload-targets.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 2,
