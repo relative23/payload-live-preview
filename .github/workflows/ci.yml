@@ -454,6 +454,47 @@ jobs:
             test-results/
           retention-days: 7
 
+  # Native fragment rendering and page-owned resources (ADR 0020) on the exact Astro versions the
+  # record names, from the archive the Build job stored. The floor is 4.9.0, where the container takes
+  # no props and the packed default renders the catalog; the rest run the verified-context case too.
+  astro-fragment-versions:
+    name: Astro fragment rendering (Astro ${{ matrix.astro }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-candidate-${{ github.sha }}
+          path: release-artifact
+      - env:
+          PLP_ASTRO_RESOURCE_VERSION: ${{ matrix.astro }}
+        run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts --project=chromium
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-astro-fragment-${{ matrix.astro }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   real-payload-e2e:
     name: Real Payload E2E
     needs: build

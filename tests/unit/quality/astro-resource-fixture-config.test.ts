@@ -44,6 +44,16 @@ describe('Astro resource consumer configuration', () => {
     expect(endpoint).not.toContain('headers: input.request.headers');
   });
 
+  it('leaves out the application-renderer case only where the packed default is the renderer', () => {
+    const config = read('playwright.astro-resources.config.ts');
+    expect(config).toContain("=== 'package-default'");
+    expect(config).toContain('...(packageDefault');
+    const title = /grepInvert: \/([^/]+)\/u/u.exec(config)?.[1];
+    expect(title).toBeDefined();
+    // Exactly one test carries the title, so the exclusion cannot drift onto another case.
+    expect(read('tests/e2e/continuation/astro-resources.spec.ts').split(title!).length - 1).toBe(1);
+  });
+
   it('selects the bounded resource profile without changing the default Astro host', () => {
     const helper = read('tests/e2e/helpers/native-continuation.ts');
     expect(helper).toContain("profile: 'continuation' | 'astro-resources' = 'continuation'");

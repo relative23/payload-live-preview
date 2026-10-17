@@ -119,16 +119,27 @@
         "value": "4.9.0",
         "package": "astro",
         "source": {
-          "kind": "declared-feature-floor"
+          "kind": "workflow-matrix",
+          "file": "ci.yml",
+          "job": "astro-fragment-versions",
+          "key": "astro"
         }
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "mock admin and signed fragment endpoint",
+      "backend": "mock admin and Payload 3.90.2 REST authorization fixture without an admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "open",
-        "sources": ["src/adapters/astro/fragments.ts", "tests/e2e/specs/hybrid-fragment.spec.ts"]
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "astro-fragment-versions"
+        },
+        "sources": [
+          "src/adapters/astro/fragments.ts",
+          "tests/e2e/continuation/astro-resources.spec.ts",
+          "tests/fixtures/astro-resource-versions/4.9.0/package-lock.json"
+        ]
       }
     },
     {

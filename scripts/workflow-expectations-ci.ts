@@ -240,6 +240,21 @@ export const CI: WorkflowSpec = {
         },
       ],
     },
+    // Native fragment rendering and page-owned resources on the exact Astro versions the record names.
+    'astro-fragment-versions': {
+      needs: ['build'],
+      timeoutMinutes: 25,
+      matrix: { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2'] },
+      steps: [
+        ...FIXTURE_SETUP,
+        { run: 'npx playwright install --with-deps chromium' },
+        DOWNLOAD_ARCHIVE,
+        {
+          run: 'PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts --project=chromium',
+          env: { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
+        },
+      ],
+    },
     'real-payload-e2e': {
       needs: ['build'],
       steps: [
