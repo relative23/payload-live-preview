@@ -24,8 +24,8 @@ subfield coverage and an aimed sanitizer fuzz, plus model-based state machines f
 MessageBus attachments, scheduler revision ownership, and plugin resource ownership.
 The final scheduled profile completes all 36 tests at 10,000 runs per property,
 including its contract for replayable environment overrides. On a development
-host with two workers (2026-10-17) that took 206 seconds, 205 of them the aimed
-sanitizer fuzz.
+host with two workers (two runs on 2026-10-17) that took about 3.5 minutes,
+almost all of it the aimed sanitizer fuzz.
 
 ## Stryker profiles
 
