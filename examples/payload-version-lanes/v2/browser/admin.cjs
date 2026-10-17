@@ -8,6 +8,9 @@
 const { readFileSync } = require('node:fs');
 const { expect } = require('./test-tool.cjs');
 const settings = JSON.parse(readFileSync(process.env.PLP_P2_RUN_FILE, 'utf8'));
+// Playwright repeats a read whose pooled connection the server reset (a "socket hang up") up to this
+// many times; no other error is repeated and a case never is.
+const READ_RETRIES = 3;
 const selector = `iframe.live-preview-iframe[src^="${settings.site}/${settings.surface}"]`;
 
 async function signIn(page) {
@@ -79,7 +82,9 @@ async function choose(page, name) {
 async function saved(page, slug = 'homepage') {
   const response = await page
     .context()
-    .request.get(settings.admin + '/api/globals/' + slug + '?depth=0');
+    .request.get(settings.admin + '/api/globals/' + slug + '?depth=0', {
+      maxRetries: READ_RETRIES,
+    });
   expect(response.status()).toBe(200);
   return response.json();
 }
@@ -142,7 +147,9 @@ async function quiet(frame, { stableFor = 600, limit = 10_000 } = {}) {
 async function authorId(page, name) {
   const response = await page
     .context()
-    .request.get(settings.admin + '/api/authors?where[name][equals]=' + encodeURIComponent(name));
+    .request.get(settings.admin + '/api/authors?where[name][equals]=' + encodeURIComponent(name), {
+      maxRetries: READ_RETRIES,
+    });
   expect(response.status()).toBe(200);
   const author = (await response.json()).docs.find((row) => row.name === name);
   expect(author).toBeDefined();
@@ -180,7 +187,7 @@ function holdRead(page, id, { onHeld } = {}) {
       return;
     }
     try {
-      const actual = await route.fetch();
+      const actual = await route.fetch({ maxRetries: READ_RETRIES });
       expect(actual.status()).toBe(200);
       await onHeld?.();
       seen();
