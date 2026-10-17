@@ -162,14 +162,17 @@ Notes on the rows that need one:
 - `mode` (Astro): `'inline'` bakes the runtime into every page at build time;
   `'loader'` injects a small bootstrap that fetches the runtime as a hashed,
   SRI-verified asset only inside a preview. Neither decides anything per
-  request, so the options that act on a request (`authorizePreview`,
-  `shouldInject`, `strict`, `previewSignals`, `previewQueryParams`, `inject` and
-  the CSP options) have no effect there. `'middleware'` registers the
-  request-time middleware from serialized options, so it cannot carry
-  `authorizePreview` or `shouldInject` as functions. It takes the hook by
-  module reference instead, `authorizePreviewModule`, and refuses the `strict`
-  default without one; register `createLivePreviewMiddleware()` yourself for
-  `shouldInject`. The loader asset's caching and CSP are in
+  request. `authorizePreview` and `shouldInject` are functions that would have
+  to run on one, so both modes refuse them at startup, as they refuse
+  `authorizePreviewModule`, and the message names where they can run. The
+  options that only describe a request (`strict`, `previewSignals`,
+  `previewQueryParams`, `inject` and the CSP options) are accepted and have no
+  effect there, so one options object can be shared. `'middleware'` registers
+  the request-time middleware from serialized options, so it cannot carry
+  `authorizePreview` or `shouldInject` as functions either. It takes the hook
+  by module reference instead, `authorizePreviewModule`, and refuses the
+  `strict` default without one; register `createLivePreviewMiddleware()`
+  yourself for `shouldInject`. The loader asset's caching and CSP are in
   [docs/deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 - `authorizePreviewModule` (Astro `mode: 'middleware'`, the Nuxt module): a
   server module whose default export is the `authorizePreview` hook. A path
