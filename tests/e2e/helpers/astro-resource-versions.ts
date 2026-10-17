@@ -15,6 +15,15 @@ export function astroResourceVersion(
   dependencyRoot: string;
   artifactRoot: string;
 } {
+  if (renderer === 'react-islands' && version === '4.16.19') {
+    // The first Astro whose container takes `resolve`. Its own lock pairs it with the
+    // React 18 integration of that era; only the island contract is measured there.
+    return {
+      version,
+      dependencyRoot: `tests/fixtures/astro-react-versions/${version}`,
+      artifactRoot: `test-results/hardening/h05-astro-islands/native-${version}`,
+    };
+  }
   if (
     renderer === 'react-server' ||
     renderer === 'react-unconfigured' ||

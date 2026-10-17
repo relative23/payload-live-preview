@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>Mock parent for the Astro floor</title></head>
+  <body>
+    <iframe id="preview" title="Astro floor preview" src="/?preview=true"></iframe>
+  </body>
+</html>

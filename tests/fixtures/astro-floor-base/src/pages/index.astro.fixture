@@ -1,0 +1,23 @@
+---
+/**
+ * Static Astro markup must compile the shipped components at the exact peer floor.
+ * A fixed owner keeps an unrelated document from patching the page.
+ */
+import RichText from 'payload-live-preview/astro/RichText.astro';
+import PreviewBoundary from 'payload-live-preview/astro/PreviewBoundary.astro';
+
+const body = { root: { type: 'root', children: [
+  { type: 'paragraph', children: [{ type: 'text', text: 'Saved rich text' }] },
+] } };
+---
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>Astro 4 floor</title></head>
+  <body>
+    <article data-payload-owner="collection:pages:7">
+      <h1 data-payload-field="title" data-payload-type="text">Saved title</h1>
+      <PreviewBoundary field="subtitle" value="" as="p" data-testid="subtitle" />
+      <RichText field="body" value={body} />
+    </article>
+  </body>
+</html>
