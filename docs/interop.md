@@ -42,9 +42,11 @@ save-triggered equivalent of this package's route strategy.
   guarantee. In the measured Payload 2.32.3 provider, replacing a hook or
   reloading only the child iframe does not itself reset the parent's
   readiness state or first-send schema cache. A fresh hook starts from its
-  own `initialData` and cannot borrow another session's schema. For recovery
-  through a new first send, reload the admin page or establish a genuine
-  provider and sender remount; toggling a panel alone does not prove that reset.
+  own `initialData` and cannot borrow another session's schema, so it reports
+  `'unavailable'` and reads nothing. Loading the admin page again sends a
+  schema with its first message and the preview populates again. The lifecycle
+  probe of `examples/payload-version-lanes` measures both steps in development
+  builds.
 
 ## Moving from `@payloadcms/live-preview-react`
 

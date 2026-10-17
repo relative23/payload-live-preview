@@ -78,7 +78,10 @@ a call without one throws rather than leaking both for the life of the page.
 The options belong to that scope; they are not reactive inputs. If a route reuses
 the component for another CMS document, key and remount the preview component by
 document owner and id. Disposal cancels the old session, and the new setup call
-starts from its own `initialData`.
+starts from its own `initialData`. On Payload 2 that session has no field schema
+yet, and Payload 2.32.3 sends the schema once per window: the next update
+reports `'unavailable'` and reads nothing until the admin page is loaded again
+([interop.md](interop.md#what-is-shared-exactly)).
 
 ## Measured against the official package
 
