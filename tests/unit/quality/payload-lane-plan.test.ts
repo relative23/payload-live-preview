@@ -170,6 +170,18 @@ describe('Payload 2 lane case plan', () => {
     expect(matrix).toContain(`(${probes.dom.cases} browser cases per variant)`);
   });
 
+  it('prints in the README and the ledger the count every variant of the lifecycle checks plans', () => {
+    const { probes } = plan();
+    // React and Vue, each in two modes: the DOM runtime has no lifecycle probe.
+    const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf8');
+    const row = readme
+      .split('\n')
+      .find((line) => line.startsWith('| Payload 2.32.3 |') && line.includes('lifecycle'));
+    expect(row).toContain(`${probes.lifecycle.cases} per variant, four variants`);
+    const matrix = readFileSync(resolve(ROOT, 'quality/compat-matrix.json'), 'utf8');
+    expect(matrix).toContain(`(${probes.lifecycle.cases} browser cases per variant)`);
+  });
+
   it('refuses a case plan that names no spec, no title or a title twice', () => {
     expect(
       problems([

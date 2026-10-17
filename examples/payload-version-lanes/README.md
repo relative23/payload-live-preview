@@ -37,7 +37,8 @@ node "$task_lane" discover --repo="$task_repo" --prepared="$task_out/prepared.js
 
 Use a new output for each preparation. React and Vue probes use separate
 consumers; `--surface=vue` selects Vue. The v2 consumer retains its own CSRF
-variants and does not use the current v3 demo. A v2 React or Vue cell runs one
+variants and does not use the current v3 demo; its React and Vue pages are
+`v2/native`, not the v3 `frontend`. A v2 React or Vue cell runs one
 probe: `--probe=lifecycle`, the default, or `--probe=population`:
 
 ```bash
@@ -85,11 +86,23 @@ Installation is bounded to 20 minutes, compilation to 2 minutes and native tests
 to 25 minutes. Each stage records its raw exit, signal, timeout and owned process
 groups. Cancellation or a leftover group keeps the gate red. There are no retries.
 
-Lifecycle probes use the installed React hook or Vue composable with real admin
-traffic. The v2 population probe types into the real admin form, picks a relationship
-and checks the messages the admin sent, the credentialed collection reads and the
-painted tree. Saved-wire probes record bounded message shapes and verify a populated
-saved document with the editor's cookie and a configured Origin. Shape metadata
-keeps array and string schemas distinct and retains no schema or credential values.
+The v2 lifecycle probe runs three journeys with the installed React hook or Vue
+composable against the real admin. The first replaces the hook's owner while a
+collection read is held, and the replacement aborts that read. The second changes the
+document by navigation, and the third reloads the preview frame. Payload 2.32.3 sends
+the field schema with the first message to a window and again only when the window
+type changes, so an owner started later gets updates without one. The probe requires
+that owner to start from its own seed and to refuse the update without a collection
+read; a restarted admin page then populates again. The aborted read settles after the
+new owner has started, and the probe shows that this commits nothing. It does not
+provoke a late successful response of a replaced owner, and it does not cover an
+expiring session, a foreign origin or a production build. The bundles are development
+builds and the engines run on Linux.
+
+The v2 population probe types into the real admin form, picks a relationship and
+checks the messages the admin sent, the credentialed collection reads and the painted
+tree. Saved-wire probes record bounded message shapes and verify a populated saved
+document with the editor's cookie and a configured Origin. Shape metadata keeps array
+and string schemas distinct and retains no schema or credential values.
 These scoped developmental results do not complete the release matrix or replace
 production builds, version floors or native Safari and screenreader checks.
