@@ -54,7 +54,7 @@ The controls keep deliberately narrow responsibilities:
 (`createLivePreviewMiddleware()`, `livePreviewHandle()`,
 `defineLivePreviewServerHandler()`, `livePreviewNitroPlugin()`) refuses to
 start without `authorizePreview`, without non-empty `allowedOrigins`, with an
-origin that is not `https:` (outside development), or with `'referer'` among
+origin that is not `https:` (in production), or with `'referer'` among
 the resolved `previewSignals`, which the `'v1'` signal set includes. Astro's
 `livePreview()` integration in its default `mode: 'inline'` and in `'loader'`
 injects at build time and checks none of this; its `'middleware'` mode takes

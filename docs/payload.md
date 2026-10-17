@@ -101,7 +101,9 @@ the absence of the preview toggle for both URL forms; the mapped collection
 then delivers unsaved edits after saving. The real-admin fixture runs the Astro (static and hybrid), Next.js, SvelteKit,
 Nuxt and plain HTML examples, a React hook page and a Vue composable page
 against a real Payload 3.90.2 admin and proves unsaved edits on an existing
-global in Chromium, Firefox and WebKit. The Next.js, SvelteKit and Nuxt previews
+global. CI runs the Astro target in Chromium and the hybrid target in Chromium,
+Firefox and WebKit; the other targets run the same spec locally, and
+`PLP_REAL_PAYLOAD_BROWSERS` selects the engines. The Next.js, SvelteKit and Nuxt previews
 authorize the editor's real session (`payload-session`); the hook and the
 composable populate a relationship through a credentialed request to the
 admin's REST API from the preview's own origin. Those surface suites cover

@@ -158,20 +158,22 @@ all is left in the output as written: that is a typo in the template, and the
 page is where you will see it.
 
 **Svelte and Vue templates.** The `{{field}}` in `data-payload-array-template`
-is read by this package, but Svelte reads `{...}` and Vue reads `{{ ... }}` as
-their own interpolation, so the template written inline is a compile error or
-an empty string. Bind it as a string:
+is read by this package. Svelte reads `{...}` in an attribute as an expression,
+so a template written inline there is not the text you wrote: it renders an
+object, or fails on a name that is not declared. Bind it as a string. Vue leaves
+an attribute value alone, so an inline template works there, and a bound string
+only keeps a long one out of the markup:
 
 ```svelte
 <script lang="ts">
-  const template = '<li><a data-payload-href="url">{{title}}</a></li>';
+  const template = '<li><a href="{{url}}">{{title}}</a></li>';
 </script>
 <ul data-payload-field="posts" data-payload-array data-payload-array-template={template}></ul>
 ```
 
 ```vue
 <script setup lang="ts">
-const template = '<li><a data-payload-href="url">{{title}}</a></li>';
+const template = '<li><a href="{{url}}">{{title}}</a></li>';
 </script>
 <template>
   <ul data-payload-field="posts" data-payload-array :data-payload-array-template="template"></ul>

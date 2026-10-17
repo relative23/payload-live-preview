@@ -39,7 +39,7 @@ export default (request: PreviewRequestLike) =>
   });
 ```
 
-The hook receives the `{ url, headers }` object Nitro supplies (`PreviewRequestLike`), not a `Request`; `authorizePreviewRequest()` accepts it as it is.
+The hook receives a `{ url, headers }` object (`PreviewRequestLike`) that the module builds from the H3 event, not a `Request`; `authorizePreviewRequest()` accepts it as it is.
 
 The module writes a Nitro plugin into Nuxt's build directory (`.nuxt/`, or `node_modules/.cache/nuxt/.nuxt/` while Nuxt 4 builds) and registers it — the same plugin the next sections write by hand, and readable there if you want to see what it became. Options may also be passed inline (`modules: [['payload-live-preview/nuxt-module', { … }]]`); inline options win over the `livePreview` key.
 
@@ -47,7 +47,7 @@ Nuxt accepts `livePreview` as a config key, but types its value loosely. To have
 the options checked, write `livePreview: { … } satisfies LivePreviewModuleOptions`,
 with the type imported from `payload-live-preview/nuxt-module`.
 
-The options are serialized into the generated plugin, so a function cannot travel in them: `authorizePreview` travels by reference instead ([ADR 0024](architecture/0024-authorization-by-module-reference.md)). The plugin imports the module `authorizePreviewModule` names and passes its default export on, so the strict 2.0 default holds. With the reference the module also registers the server handler below, so the decision is made before the app renders and a page reads it on `event.context`, as [Read `event.context`](#read-eventcontext) shows. A path beginning with `./` is relative to the project root and an alias such as `~/` is Nuxt's own: the module writes the file either one names, with its extension, because `nuxt dev` loads the generated plugin as it stands and cannot find a TypeScript file by its bare path (the production build can). A package specifier is passed to Nitro unchanged, and a path outside the project is refused. `shouldInject` has no such reference; a preview that needs it writes the plugin below by hand.
+The options are serialized into the generated plugin, so a function cannot travel in them: `authorizePreview` travels by reference instead ([ADR 0024](architecture/0024-authorization-by-module-reference.md)). The plugin imports the module `authorizePreviewModule` names and passes its default export on, so the strict 2.0 default holds. With the reference the module also registers the server handler below, so the decision is made before the app renders and a page reads it on `event.context`, as [Read `event.context`](#read-eventcontext) shows. A path beginning with `./` is relative to the project root and an alias such as `~/` is Nuxt's own: the module writes the file either one names, with its extension, because `nuxt dev` loads the generated plugin as it stands and cannot find a TypeScript file by its bare path (the production build can). A package specifier is passed to Nitro unchanged, and a reference beginning `../` is refused. `shouldInject` has no such reference; a preview that needs it writes the plugin below by hand.
 
 Without either, the strict default refuses to start. It does the same for an `http:` admin origin in a production build (`NODE_ENV=production`): the server stops at startup and the error names the origin, while `nuxt dev` accepts it. `strict: false` then injects on client-controlled intent alone, which is not authorization: anyone who adds the query parameter receives the runtime. The deprecated `defaults: 'v1'` does the same and goes in 3.0 ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)).
 
@@ -326,11 +326,11 @@ Registry, limits, the fallback and the abuse model: [hybrid.md](hybrid.md).
 - **Hydrated components.** The runtime patches the server-rendered markup. A Vue component that re-renders a bound node overwrites the patch: bind fields in server-rendered regions, mark a client-owned root with `data-payload-island` ([renderers.md](renderers.md)), or use the official `@payloadcms/live-preview-vue` composable inside client components.
 - **Hydration and boundaries.** The same applies to a fragment boundary, with one extra wrinkle: hydration resets what Vue owns, so a boundary the server re-rendered _before_ the page finished hydrating is thrown away — the runtime rendered it, `inspect().fragments.rendered` counts it, and the markup is gone. Once hydrated, Vue is idle and a morph survives. Put boundaries in markup Vue does not own (a server component, or a region marked `data-payload-island` for the runtime to own alone) if an update can arrive that early.
 - **`nuxt dev` and refused requests.** Under `nuxt dev` the answer to a request refused before its body was read (a fragment request over the 64 KiB cap gets its 413 that way) sometimes never arrives. With 16 concurrent requests, Nuxt's development server lost 1 to 17 of 400 such answers from the fragment endpoint, and 16 to 32 of 400 from a plain Nitro route that returns 413 the same way; the production server answered all 400. The runtime then reports `LP0801` with a timeout after five seconds instead of `endpoint answered 413`.
-- **Array templates.** Vue reads `{{ … }}` as its own interpolation, so an inline template is silently empty. Bind it as a string:
+- **Array templates.** Vue leaves an attribute value alone, so an inline `data-payload-array-template="<li>{{title}}</li>"` reaches the page as written. A bound string keeps a long template out of the markup:
 
 ```vue
 <script setup lang="ts">
-const template = '<li><a data-payload-href="url">{{title}}</a></li>';
+const template = '<li><a href="{{url}}">{{title}}</a></li>';
 </script>
 
 <template>

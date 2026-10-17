@@ -352,7 +352,8 @@ site origin, the path, the locale and its lifetime;
 [security.md](security.md) what a leaked token is worth.
 
 **The `serverURL` merge is a cross-origin request.** With `serverURL` set, the
-runtime in the preview page re-fetches every update from Payload's REST API
+runtime in the preview page re-fetches each update that can change a populated
+value from Payload's REST API
 with `credentials: 'include'`, so Payload must accept a credentialed
 cross-origin request from the site: list the site origin in Payload's `cors`
 and `csrf` settings, and let the auth collection's cookie travel cross-site
