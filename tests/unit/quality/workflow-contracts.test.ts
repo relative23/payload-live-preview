@@ -230,6 +230,21 @@ describe('workflow contracts', () => {
         'ci.yml job real-payload-surfaces step run "npm ci --no-audit --no-fund --prefix examples/payload-backend" must exist exactly once (found 0)',
     },
     {
+      label: 'a CSRF-list run that drops the list',
+      file: 'ci.yml',
+      original: "          PLP_REAL_PAYLOAD_CSRF: '1'\n",
+      replacement: '',
+      violation:
+        'ci.yml job real-payload-csrf step run "npm run test:e2e:real-payload" env.PLP_REAL_PAYLOAD_CSRF is not "1"',
+    },
+    {
+      label: 'a CSRF-list run that drops the hook target',
+      file: 'ci.yml',
+      original: 'target: [nextjs, nextjs-hook]',
+      replacement: 'target: [nextjs]',
+      violation: 'ci.yml job real-payload-csrf does not run the reviewed matrix',
+    },
+    {
       label: 'release gates on every push',
       file: 'ci.yml',
       original:
