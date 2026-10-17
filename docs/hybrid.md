@@ -227,7 +227,7 @@ interactive React root in each updated fragment. The page eagerly includes the
 finite shared catalog's CSS. Page providers, executable module names and
 resource URLs are not copied from form data.
 
-A fragment component can also contain a `client:*` island. Its container then
+A fragment component can also contain a `client:load` island. Its container then
 needs three things: the framework's server renderer, its client renderer, and
 `resolve: resolveIslandModule`, which maps each island module to the URL this
 build emitted. `livePreview()` in the Astro integrations writes that table into
@@ -253,8 +253,11 @@ revision removes is replaced or released. A module the build did not emit, or a
 build without the table, fails the render instead of sending a source path.
 This is measured on Astro 7.3.2 with `@astrojs/react` 6.0.6 in three browsers
 ([native contract](../tests/e2e/continuation/astro-islands.spec.ts),
-[ADR 0021](architecture/0021-fragment-islands-hydrate-from-the-build.md)).
-`resolve` needs Astro 4.16 or later, and `astro dev` is not supported yet.
+[ADR 0021](architecture/0021-fragment-islands-hydrate-from-the-build.md)), for
+React islands with `client:load`. The other directives (`client:idle`,
+`client:visible`, `client:media`, `client:only`) and the clients of other
+frameworks are not measured. `resolve` needs Astro 4.16 or later, and
+`astro dev` is not supported yet.
 
 The finite page-owned native React recipe now has a separate
 [24-case native contract](../tests/e2e/continuation/astro-owner.spec.ts) on
