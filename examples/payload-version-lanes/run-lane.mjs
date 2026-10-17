@@ -13,7 +13,7 @@ import {
   realpathSync,
   writeFileSync,
 } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { source, read, digest, json, preparedContract } from './inputs.mjs';
 import { boundedStages } from './shared/bounded-stage-diagnostic.mjs';
 import { diagnostic } from './shared/diagnostics.mjs';
@@ -40,6 +40,22 @@ const acceptance = {
   },
 };
 
+// What a mutation job looks like in the process table.
+const MUTATION_JOB =
+  /(?:@stryker-mutator\/core|\.bin\/stryker|stryker run|resume-run-nightly\.mjs)/u;
+// Only these programs run a job. A shell, a lock wrapper or a systemd scope that carries the same
+// words is a command queued behind the machine lock, which has not started anything yet.
+const JOB_PROGRAMS = new Set(['node', 'nodejs', 'npm', 'npx', 'stryker']);
+
+/** Whether the process table (`ps -eo pid,args`) shows a mutation job that is running. */
+export function mutationJobRunning(table) {
+  return table.split('\n').some((line) => {
+    const command = line.trim().replace(/^\d+\s+/u, '');
+    const program = command.split(/\s+/u, 1)[0] ?? '';
+    return JOB_PROGRAMS.has(basename(program)) && MUTATION_JOB.test(command);
+  });
+}
+
 function idle() {
   const result = spawnSync('ps', ['-eo', 'pid,args'], {
     encoding: 'utf8',
@@ -48,12 +64,7 @@ function idle() {
   });
   assert.equal(result.status, 0);
   assert.ok(!result.error);
-  assert.ok(
-    !/(?:@stryker-mutator\/core|\.bin\/stryker|stryker run|resume-run-nightly\.mjs)/u.test(
-      result.stdout,
-    ),
-    'A mutation job is still active',
-  );
+  assert.ok(!mutationJobRunning(result.stdout), 'A mutation job is still active');
 }
 
 export async function runLane(action, options) {
