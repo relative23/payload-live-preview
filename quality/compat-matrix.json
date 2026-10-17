@@ -749,6 +749,35 @@
       }
     },
     {
+      "id": "next-real-admin-autologin-current",
+      "surface": "Next.js",
+      "feature": "an admin that keeps autoLogin issues no cookie, so the payload-session check serves the public page while the admin works",
+      "version": {
+        "kind": "exact",
+        "value": "16.3.8",
+        "package": "next",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nextjs-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.90.2 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "tests/real-payload/surface-autologin.spec.ts",
+          "playwright.real-payload.config.ts"
+        ]
+      }
+    },
+    {
       "id": "sveltekit-real-admin-session-current",
       "surface": "SvelteKit",
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
