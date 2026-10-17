@@ -51,8 +51,8 @@ node "$task_lane" prepare --repo="$task_repo" --lane=v4 --surface=vue --probe=wi
 
 `--variant=server-url` selects the second v2 CSRF configuration. v2 requires
 the exact Mongo image named in `lanes.json` to be present locally; the runner
-does not pull it. Its container is capped at 2 GiB, memory and swap, and removes
-itself when it stops. v3/v4 create fresh SQLite paths. No existing demo database is used.
+does not pull it. Its container is capped at 2 GiB, memory and swap, runs as the
+calling user and removes itself when it stops. v3/v4 create fresh SQLite paths. No existing demo database is used.
 The titles of each v2 probe are listed in `lanes.json`; every case count comes from them.
 
 ## Install and probe
