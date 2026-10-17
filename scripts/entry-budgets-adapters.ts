@@ -56,7 +56,10 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +153/+100/+98 B raw/gzip/Brotli;
   // retain the prior 106/27/167 B reserves.
-  'adapters/astro/index.js': { raw: 208_188, gzip: 65_204, brotli: 55_439 },
+  // 2026-10-17: inline and loader delivery refuse authorizePreview and shouldInject with a message that
+  // names where each can run. Node24.19/npm12.0.2: measured 208 900 / 65 334 / 55 343 B raw/gzip/Brotli;
+  // the same 106/27/167 B reserves.
+  'adapters/astro/index.js': { raw: 209_006, gzip: 65_361, brotli: 55_510 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).

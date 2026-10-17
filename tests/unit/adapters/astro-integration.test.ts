@@ -73,6 +73,67 @@ describe('livePreview integration — inline mode', () => {
   });
 });
 
+describe('livePreview integration — hooks that need a request', () => {
+  // Inline and loader delivery decide once, at build time, for every page; a function that is meant
+  // to run per request never would. The middleware mode already refuses both, the Nuxt module's
+  // options do not have them, and `authorizePreviewModule` is refused here the same way.
+  const setup = (options: Parameters<typeof livePreview>[0]): ReturnType<typeof vi.fn> => {
+    const injectScript = vi.fn();
+    livePreview(options).hooks['astro:config:setup']({ injectScript, updateConfig: vi.fn() });
+    return injectScript;
+  };
+  const authorize = (): null => null;
+  const decide = (): boolean => false;
+
+  it.each([
+    ['inline', undefined],
+    ['inline', 'inline' as const],
+    ['loader', 'loader' as const],
+  ])('refuses authorizePreview in %s delivery, naming where it can run (mode %s)', (name, mode) => {
+    expect(() =>
+      setup({ ...(mode === undefined ? {} : { mode }), authorizePreview: authorize }),
+    ).toThrow(
+      `payload-live-preview: \`authorizePreview\` cannot be used with mode '${name}' — inline and ` +
+        'loader delivery run no server hook, so the function would never be called. Use mode ' +
+        "'middleware' with `authorizePreviewModule`, or register " +
+        '`createLivePreviewMiddleware({ authorizePreview, ... })` in src/middleware.ts (ADR 0024).',
+    );
+  });
+
+  it.each([
+    ['inline', undefined],
+    ['loader', 'loader' as const],
+  ])('refuses shouldInject in %s delivery, naming where it can run (mode %s)', (name, mode) => {
+    expect(() => setup({ ...(mode === undefined ? {} : { mode }), shouldInject: decide })).toThrow(
+      `payload-live-preview: \`shouldInject\` cannot be used with mode '${name}' — inline and ` +
+        'loader delivery decide once, at build time, for every page, so the function would never ' +
+        "be called. Use mode 'middleware' with `previewQueryParams` or `previewSignals`, or " +
+        'register `createLivePreviewMiddleware({ shouldInject, ... })` in src/middleware.ts.',
+    );
+  });
+
+  it('refuses them before it injects anything, and with autoInject: false too', () => {
+    const injectScript = vi.fn();
+    expect(() =>
+      livePreview({ autoInject: false, authorizePreview: authorize }).hooks['astro:config:setup']({
+        injectScript,
+      }),
+    ).toThrow(/authorizePreview/u);
+    expect(() =>
+      livePreview({ autoInject: false, shouldInject: decide }).hooks['astro:config:setup']({
+        injectScript,
+      }),
+    ).toThrow(/shouldInject/u);
+    expect(injectScript).not.toHaveBeenCalled();
+  });
+
+  it('still accepts the options that only describe a request, which a shared object may carry', () => {
+    expect(
+      setup({ strict: false, previewSignals: ['query'], previewQueryParams: ['preview'] }),
+    ).toHaveBeenCalledOnce();
+  });
+});
+
 describe('livePreview integration — middleware mode', () => {
   function makeSetupContext() {
     const injectScript = vi.fn();
