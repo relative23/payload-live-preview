@@ -404,7 +404,7 @@ through; the bytes barely move — `initLivePreview` from `./core` is held to
 `TREE_SHAKING_FIXTURES` in `scripts/tree-shaking-budgets.ts`, with the reason
 each one moved; the first measurement, and why the barrel did not tree-shake
 before it, are in
-[benchmarks.md](benchmarks.md#tree-shaking-what-one-import-costs).
+[benchmarks.md](benchmarks.md#tree-shaking--what-one-import-costs).
 
 ## Failure handling
 
