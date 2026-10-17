@@ -51,8 +51,8 @@
       "bytes": 3149
     },
     "discovery.config.mjs": {
-      "sha256": "3e0603b5743a7d8731cf8a369eac59ff99e743c1daac763b4c5e9c4f82f3763a",
-      "bytes": 1944
+      "sha256": "7f6cfc7a586f301f89ebfae138eff8b11737d00380dfe680f4c5aa7b025e1636",
+      "bytes": 1853
     },
     "frontend/ledger.mjs": {
       "sha256": "a33db71fc55ae33114143f7ec3a94023ba9430435dfec8d5cef266e1316d302b",
@@ -63,8 +63,8 @@
       "bytes": 2273
     },
     "frontend/react-app.mjs": {
-      "sha256": "7c16a1ededa6aab68de8be4ab8c8f93cec58a0dc6f0bc65f178837ae6963b208",
-      "bytes": 4060
+      "sha256": "fb919a0a5e02bf29fb3a08d376618f4474e7178e7ad995c0155a50d31755d286",
+      "bytes": 3993
     },
     "frontend/react-client.mjs": {
       "sha256": "a9070cc1b696cc32955a18f40321f307b5c06fbdfcfe76df118736d56f9d3e64",
@@ -79,8 +79,8 @@
       "bytes": 3452
     },
     "frontend/vue-app.mjs": {
-      "sha256": "3501197d9df4acd8e1693d64f1cff26627aa00e93f9928fe970dfdcafa43ccac",
-      "bytes": 4631
+      "sha256": "6b2ebc79338892b7a6dbdeb809cd5590d58f385337185962d63ec8dd16174e89",
+      "bytes": 4561
     },
     "frontend/vue-client.mjs": {
       "sha256": "71e84e875df790c9b703a65c892764a35d4e0e1c617bf8062d3761c34a15d79b",
@@ -103,8 +103,8 @@
       "bytes": 1935
     },
     "lanes.json": {
-      "sha256": "6bab98093de0c1768d6f5d6e65b5797d94adbf409493e91af4dda14920d53464",
-      "bytes": 12058
+      "sha256": "e3e3a7badd45337c27bc28c1199b1ab812a22271be76fe2a5698cd12fe476645",
+      "bytes": 12097
     },
     "lifecycle.config.mjs": {
       "sha256": "17e8d0226b1afdf2c21697e7bb73382963b8c97688157c313376ae3290e57ec5",
@@ -155,8 +155,8 @@
       "bytes": 582
     },
     "run-lane.mjs": {
-      "sha256": "d8953e6d91bd1f6892ddaf9aa1a33ad2ab667248c58a89a80df2d93ddff89e71",
-      "bytes": 10714
+      "sha256": "73f7ad28d6d5bd981e1939018b718406e0e176cbb16d1012bb75ac67c76c4221",
+      "bytes": 10957
     },
     "shared/bounded-stage-diagnostic.mjs": {
       "sha256": "6ed85966b70d790c2ce3c9366b2a9d865e61c2b186f9761b55069287ccb00f6b",
@@ -207,8 +207,8 @@
       "bytes": 1393
     },
     "v2/browser/payload2.spec.cjs": {
-      "sha256": "3847628e8038c1d0480b665ac6bc10060f975fc5e85168a15412ab2babc3b77e",
-      "bytes": 8870
+      "sha256": "47783a3d75c83a97dd4efc6a2ea07c324660eeec83ec6883e540b127725f7ac2",
+      "bytes": 8488
     },
     "v2/browser/reporter.cjs": {
       "sha256": "13a9cc8db9b7d3a9a287af3603a202786f17714f8fba68a2434ea785698c8180",
@@ -227,8 +227,8 @@
       "bytes": 3080
     },
     "v2/prepare.mjs": {
-      "sha256": "04f59a81292df72060ab07a782facb3f5df0992427c377aac798bd1176a58b03",
-      "bytes": 6270
+      "sha256": "2ca667dde410773fba383f4870ff8c5f862f4130118ea68b7257840a1f430a15",
+      "bytes": 6500
     },
     "v2/run.mjs": {
       "sha256": "7d3a0722ca6471031cb5f3900e853d9f3554c95cbb7265581542828d05a089cb",
@@ -267,24 +267,36 @@
       "bytes": 3835
     },
     "v2/browser/native-lifecycle.spec.cjs": {
-      "sha256": "aedbf5bbdd3dc4276aa6f5a0b86418feceabb00240fdf4217d0a1e5af32a3b26",
-      "bytes": 10108
+      "sha256": "230e9089bbf48e0e9b882d6e53180b47eadaf6e76eb46bb9571d55970e5885ca",
+      "bytes": 18432
     },
     "v2/native/build.mjs": {
       "sha256": "bcf3600e83d251eead1bfb07dcef8827798d12d7fd04cd7897c3507f4920ca49",
       "bytes": 3527
     },
     "v2/native/ledger.mjs": {
-      "sha256": "3efdfa553d978c8d61ebf88269373ac97df3c9c35a6c6f8ec6229a4b83d49a39",
-      "bytes": 3230
+      "sha256": "e41e0f52eadeb976f210eea8302a6a5bd72216a7d5e579fe460812fec6cdff01",
+      "bytes": 8084
     },
     "plan.mjs": {
       "sha256": "bd441ea14755cedbce442a7540eb016ac121c2992c5ab45cef5aa28bb616d1ed",
       "bytes": 1614
     },
     "v2/browser/native-population.spec.cjs": {
-      "sha256": "c55b4f4ea50c562480384417f8a4cebb9293cfebda183fcb4373b721255d354c",
-      "bytes": 11793
+      "sha256": "b7b0368a82fee4ce3a03b70588e2ef1cd6d3cffa40fe27156a2fe6bef569f5d8",
+      "bytes": 9792
+    },
+    "v2/browser/admin.cjs": {
+      "sha256": "2694d57ae899acb5c3f507a54603a3097434a9294eea09e13c3dd28c6a43193b",
+      "bytes": 3791
+    },
+    "v2/native/react-app.mjs": {
+      "sha256": "60de6237aa2ac855f6c668f6e8ff1514444fee45daefa4380a2248766ca7f736",
+      "bytes": 3805
+    },
+    "v2/native/vue-app.mjs": {
+      "sha256": "23b2f9f67dc9acbd62c55332ea1c20618bdb9c144284a47ef802db5e7e6386cb",
+      "bytes": 4347
     }
   }
 }

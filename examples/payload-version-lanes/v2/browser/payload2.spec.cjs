@@ -6,20 +6,9 @@
 const { readFileSync, writeFileSync } = require('node:fs');
 const { join } = require('node:path');
 const { expect, test } = require('./test-tool.cjs');
+const { signIn } = require('./admin.cjs');
 const settings = JSON.parse(readFileSync(process.env.PLP_P2_RUN_FILE, 'utf8'));
 const iframe = `iframe.live-preview-iframe[src^="${settings.site}"]`;
-
-async function signIn(page) {
-  try {
-    await page.goto('/admin/login');
-    await page.locator('#field-email').fill(settings.email);
-    await page.locator('#field-password').fill(settings.password);
-    await page.locator('button[type="submit"]').click();
-    await page.waitForURL(/\/admin(?!\/login)/u);
-  } catch {
-    throw new Error('Real Payload 2 form login did not complete; credential details withheld');
-  }
-}
 
 async function openPreview(page) {
   await page.addInitScript((admin) => {

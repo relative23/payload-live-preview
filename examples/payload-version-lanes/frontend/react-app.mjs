@@ -49,7 +49,6 @@ function Preview({ admin, document, receiverIndex, generation, seed }) {
     'article',
     null,
     h('h1', { 'data-testid': 'title' }, snapshot.data.title),
-    h('p', { 'data-testid': 'subtitle' }, snapshot.data.subtitle),
     h('p', { 'data-testid': 'status' }, snapshot.status),
     h('p', { 'data-testid': 'revision' }, String(snapshot.revision)),
     h(
