@@ -10,16 +10,11 @@ const { createHash } = require('node:crypto');
 const { join } = require('node:path');
 const { test, expect } = require('./test-tool.cjs');
 const { redactor } = require('../template/diagnostics.cjs');
-const { choose, open, saved, signIn, state } = require('./admin.cjs');
+const { choose, open, recordWire, saved, signIn, state, wire } = require('./admin.cjs');
 const settings = JSON.parse(readFileSync(process.env.PLP_P2_RUN_FILE, 'utf8'));
 const redact = redactor(settings);
 const titles = settings.specTitles['native-population.spec.cjs'];
 const UNSAVED_SUBTITLE = 'Payload 2 native unsaved subtitle';
-
-// What the admin posted to the preview, kept by the page itself from its first script on.
-async function wire(frame) {
-  return frame.evaluate(() => structuredClone(window.__populationWire));
-}
 
 async function probe(page, mode) {
   const response = await page
@@ -72,26 +67,7 @@ test.beforeEach(async ({ page }) => {
     const row = rows.get(response.request());
     if (row) row.status = response.status();
   });
-  await page.addInitScript((admin) => {
-    window.__populationWire = [];
-    if (window.parent === window) return;
-    window.addEventListener('message', (event) => {
-      if (
-        event.origin !== admin ||
-        event.source !== window.parent ||
-        event.data?.type !== 'payload-live-preview' ||
-        !event.data.data
-      )
-        return;
-      if (window.__populationWire.length >= 200 || JSON.stringify(event.data).length > 65_536)
-        return;
-      window.__populationWire.push({
-        origin: event.origin,
-        parentSource: true,
-        packet: structuredClone(event.data),
-      });
-    });
-  }, settings.admin);
+  await recordWire(page);
   await signIn(page);
 });
 
@@ -103,7 +79,7 @@ test.afterEach(async ({ page }, info) => {
   if (frame) {
     try {
       observation = await frame.evaluate(() => ({
-        wire: window.__populationWire,
+        wire: window.__adminWire,
         ledger: window.__r6Witness.export(),
         status: document.querySelector('[data-testid=status]')?.textContent,
         title: document.querySelector('[data-testid=title]')?.textContent,

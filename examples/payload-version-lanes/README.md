@@ -6,7 +6,7 @@ Use this example from the repository root with a selected package archive.
 
 | Lane | Admin | Required Node | Native probe |
 | --- | --- | --- | --- |
-| `v2` | Express/Webpack, React 18.3.1, pinned Mongo | 20.19.0 | 24 DOM/session cases, or per React or Vue surface 9 lifecycle or 24 population cases |
+| `v2` | Express/Webpack, React 18.3.1, pinned Mongo | 20.19.0 | 24 DOM/session cases, or per React or Vue surface 9 lifecycle, 21 guard or 24 population cases |
 | `v3` | Next 16.3.4, React 19.2.8, Vue 3.5.42 | 20.19.0 | 12 lifecycle cases per surface, or 3 saved-wire cases |
 | `v4` | Next 16.3.4, React 19.2.8, Vue 3.5.42 | 24.15.0 | Separate canary characterization |
 
@@ -39,7 +39,7 @@ Use a new output for each preparation. React and Vue probes use separate
 consumers; `--surface=vue` selects Vue. The v2 consumer retains its own CSRF
 variants and does not use the current v3 demo; its React and Vue pages are
 `v2/native`, not the v3 `frontend`. A v2 React or Vue cell runs one
-probe: `--probe=lifecycle`, the default, or `--probe=population`:
+probe: `--probe=lifecycle`, the default, `--probe=guards` or `--probe=population`:
 
 ```bash
 node "$task_lane" prepare --repo="$task_repo" --lane=v2 --variant=frontend-only \
@@ -94,10 +94,26 @@ the field schema with the first message to a window and again only when the wind
 type changes, so an owner started later gets updates without one. The probe requires
 that owner to start from its own seed and to refuse the update without a collection
 read; a restarted admin page then populates again. The aborted read settles after the
-new owner has started, and the probe shows that this commits nothing. It does not
-provoke a late successful response of a replaced owner, and it does not cover an
-expiring session, a foreign origin or a production build. The bundles are development
-builds and the engines run on Linux.
+new owner has started, and the probe shows that this commits nothing. The read is
+aborted there; the guards probe below lets a genuine answer arrive after the abort. The
+bundles are development builds and the engines run on Linux.
+
+The v2 guards probe holds the same hooks to seven more cases. A late answer: a real
+read is held, its owner is replaced, and only then is the genuine answer released to a
+consumer whose fetch ignores the abort; the replacement already holds a state of its own,
+and the old owner commits and paints nothing while the new one starts no read. Senders:
+recorded admin messages are sent again from a window of the admin's origin that is not
+the admin and from a foreign origin, which the default source policy refuses, and again
+with `eventSourcePolicy: 'any'`, where the origin check alone refuses an origin nobody
+listed; a second listed origin is taken after the first, so a hook does not lock to the
+first origin. Receiver: the admin names a second frame as the receiver of a running
+session, once with a read in flight; the new session starts from the seed, the old window
+gets no read, and a recorded message acts once on the new one. Session: Payload's logout
+route ends the session in the middle of a preview; the next update is unavailable and
+its error names the HTTP status, which is 403 on Payload 2.32.3, the last good document
+stays, and a sign-in through the form in a second page brings the preview back. No case
+saves anything. The guards run development builds on Linux engines; they do not cover a
+token that expires by time, a production build or Payload 3.
 
 The v2 population probe types into the real admin form, picks a relationship and
 checks the messages the admin sent, the credentialed collection reads and the painted

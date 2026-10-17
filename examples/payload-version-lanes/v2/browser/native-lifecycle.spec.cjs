@@ -12,15 +12,11 @@ const { isDeepStrictEqual } = require('node:util');
 const { join } = require('node:path');
 const { test, expect } = require('./test-tool.cjs');
 const { redactor } = require('../template/diagnostics.cjs');
-const { choose, open, saved, signIn, state } = require('./admin.cjs');
+const { choose, mark, open, saved, signIn, state } = require('./admin.cjs');
 const settings = JSON.parse(readFileSync(process.env.PLP_P2_RUN_FILE, 'utf8'));
 const redact = redactor(settings);
 const titles = settings.specTitles['native-lifecycle.spec.cjs'];
 const MAX_PHASES = 12;
-
-function mark(frame, phase) {
-  return frame.evaluate((value) => window.__r6Witness.checkpoint(value), phase);
-}
 
 async function capture(page, phase, frame) {
   expect(page.__nativeProof.phases.length).toBeLessThan(MAX_PHASES);

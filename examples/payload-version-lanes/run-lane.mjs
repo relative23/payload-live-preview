@@ -31,7 +31,12 @@ const acceptance = {
   lifecycle: {
     status: 'native-v2-hook-lifecycle-scoped-passed',
     limitation:
-      'Real v2 native hooks in development bundles on Linux engines: an owner replaced while a read is held, a document change by navigation and a reload of the preview frame, each followed by an admin restart; not a late successful response of a replaced owner, an expiring session, a foreign origin, production builds, capacity, cross-site cookies, native Safari or the release matrix.',
+      'Real v2 native hooks in development bundles on Linux engines: an owner replaced while a read is held, a document change by navigation and a reload of the preview frame, each followed by an admin restart; not the cases of the guards probe (a late answer, foreign senders, a receiver switch, a sign-out), production builds, capacity, cross-site cookies, native Safari or the release matrix.',
+  },
+  guards: {
+    status: 'native-v2-hook-guards-scoped-passed',
+    limitation:
+      'Real v2 native hooks in development bundles on Linux engines: a late answer to a replaced owner or session, windows and origins the hook must not take, a receiver switch in a running session and a sign-out in the middle of one; not production builds, an expiry by time, Payload 3, capacity, cross-site cookies, native Safari or the release matrix.',
   },
   population: {
     status: 'native-v2-hook-population-scoped-passed',

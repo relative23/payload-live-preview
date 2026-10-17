@@ -53,7 +53,7 @@ Vite 5 through 8: that is what the supported framework majors install (Astro 7 â
 
 The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, which the `hook-matrix` job installs over the lockfile (React 18.0.0, Vue 3.3.0, Svelte 5.0.0), and at what the lockfile installs (React 19.2.8, Vue 3.5.42, Svelte 5.56.9); the SvelteKit renderer is measured against a component compiled by `svelte/compiler` and rendered by the real `svelte/server`.
 
-- Payload 2.32.3: wire corpus captured from a real admin and replayed in tests/integration/wire-corpus.test.ts, plus fieldSchemaJSON typing in tests/integration/schema-driven.test.ts; local prerelease checks also exercise the real admin in DOM, React and Vue previews, each in frontend-only and serverURL modes (24 browser cases per variant), and run the React hook and the Vue composable through three lifecycle journeys in development builds (9 browser cases per variant); the legacy dependency graph retains upstream audit findings.
+- Payload 2.32.3: wire corpus captured from a real admin and replayed in tests/integration/wire-corpus.test.ts, plus fieldSchemaJSON typing in tests/integration/schema-driven.test.ts; local prerelease checks also exercise the real admin in DOM, React and Vue previews, each in frontend-only and serverURL modes (24 browser cases per variant), and run the React hook and the Vue composable through three lifecycle journeys (9 browser cases per variant) and seven guard journeys (21 browser cases per variant) in development builds; the legacy dependency graph retains upstream audit findings.
 - Payload 3.85.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
 - Payload 3.88.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
 - Payload 3.89.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
@@ -66,18 +66,19 @@ The framework hooks and fragment renderers run twice on every push: at the floor
 
 ### Local 2.1 prerelease checks
 
-The following checks passed on the `2.1.0` package archive on 2026-10-05. These are local results, separate from the CI jobs listed above. Browser counts include Chromium, Firefox and WebKit on Linux. The Payload 2.32.3 rows were run again on 2026-10-17 on a package archive built from this repository; `examples/payload-version-lanes` runs them, with `--probe=population` or `--probe=lifecycle` for React and Vue.
+The following checks passed on the `2.1.0` package archive on 2026-10-05. These are local results, separate from the CI jobs listed above. Browser counts include Chromium, Firefox and WebKit on Linux. The Payload 2.32.3 rows were run again on 2026-10-17 on a package archive built from this repository; `examples/payload-version-lanes` runs them, with `--probe=population`, `--probe=lifecycle` or `--probe=guards` for React and Vue.
 
-| Version        | Checked population                                              | Passed cases                 |
-| -------------- | --------------------------------------------------------------- | ---------------------------- |
-| Payload 2.32.3 | DOM, React and Vue, each with frontend-only and serverURL modes | 24 per variant, six variants |
-| Payload 2.32.3 | React and Vue hook lifecycle, frontend-only and serverURL       | 9 per variant, four variants |
-| Node 20.19.0   | Peer-free runtime exports and bounded HTTP/Web API behavior     | 9 runtime cases              |
-| Next.js 16.3.8 | Webpack production preview and fragment rendering               | 54 browser cases             |
-| Astro 4.0.0    | Base adapter, static output and scoped updates                  | 15 browser cases             |
-| Astro 4.16.19  | Native React islands, CSP and navigation ownership              | 12 browser cases             |
+| Version        | Checked population                                              | Passed cases                  |
+| -------------- | --------------------------------------------------------------- | ----------------------------- |
+| Payload 2.32.3 | DOM, React and Vue, each with frontend-only and serverURL modes | 24 per variant, six variants  |
+| Payload 2.32.3 | React and Vue hook lifecycle, frontend-only and serverURL       | 9 per variant, four variants  |
+| Payload 2.32.3 | React and Vue hook guards, frontend-only and serverURL          | 21 per variant, four variants |
+| Node 20.19.0   | Peer-free runtime exports and bounded HTTP/Web API behavior     | 9 runtime cases               |
+| Next.js 16.3.8 | Webpack production preview and fragment rendering               | 54 browser cases              |
+| Astro 4.0.0    | Base adapter, static output and scoped updates                  | 15 browser cases              |
+| Astro 4.16.19  | Native React islands, CSP and navigation ownership              | 12 browser cases              |
 
-The Node checks do not cover framework builds or development tools. The Next checks use a controlled preview cookie and fragment tokens; they do not use a real Payload admin. The Payload 2 graph still has upstream audit findings, including a critical finding in the 2026-10-05 audit. Its passing preview cases establish compatibility, not a clean dependency graph. Payload 3 lifecycle and Payload 4 canary checks are not included in this table. The Payload 2 lifecycle row runs development builds on Linux engines. It covers an owner replaced while a read is held, a document change by navigation and a reload of the preview frame; it does not provoke a late successful response of a replaced owner, and it does not cover an expiring session, a foreign origin or a production build.
+The Node checks do not cover framework builds or development tools. The Next checks use a controlled preview cookie and fragment tokens; they do not use a real Payload admin. The Payload 2 graph still has upstream audit findings, including a critical finding in the 2026-10-05 audit. Its passing preview cases establish compatibility, not a clean dependency graph. Payload 3 lifecycle and Payload 4 canary checks are not included in this table. The Payload 2 lifecycle and guards rows run development builds on Linux engines. The lifecycle row covers an owner replaced while a read is held, a document change by navigation and a reload of the preview frame. The guards row covers a late successful response of a replaced owner, messages from a foreign window and a foreign origin, a receiver switch in a running session and a sign-out in the middle of one; neither row covers a token that expires by time or a production build.
 
 The two Astro rows can be repeated from the repository. The `astro-floor-base` and `astro-floor-islands` jobs run their specs on every push in Chromium ([Astro peer floors](docs/testing.md#astro-peer-floors)), and on 2026-10-17 the same specs passed in all three engines: 36 of 36 cases for Astro 4.0.0 (loader and inline delivery with five cases each, plus two control builds per engine; the 15 cases above were loader delivery only) and 12 of 12 for Astro 4.16.19.
 

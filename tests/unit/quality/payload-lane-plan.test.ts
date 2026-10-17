@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT = resolve(import.meta.dirname, '../../..');
 const LANE = resolve(ROOT, 'examples/payload-version-lanes');
 const BROWSERS = ['chromium', 'firefox', 'webkit'];
-const PROBES = ['dom', 'lifecycle', 'population'] as const;
+const PROBES = ['dom', 'lifecycle', 'population', 'guards'] as const;
 
 interface Plan {
   readonly engines: readonly string[];
@@ -36,6 +36,7 @@ interface LaneDefinition {
   readonly lanes: {
     readonly v2: Readonly<Record<string, unknown>> & {
       readonly nativeLifecycleTitles: Readonly<Record<string, string>>;
+      readonly nativeGuardsTitles: Readonly<Record<string, string>>;
       readonly nativePopulationTitles: Readonly<Record<string, string>>;
     };
   };
@@ -50,7 +51,7 @@ const { engines, v2Cases, v2ProbeFits, v2Specs, v2Titles } = await import(
 const lane = JSON.parse(readFileSync(process.env.PLP_LANES, 'utf8')).lanes.v2;
 const probes = {};
 const fits = {};
-for (const probe of ['dom', 'lifecycle', 'population']) {
+for (const probe of ['dom', 'lifecycle', 'population', 'guards']) {
   probes[probe] = {
     specs: v2Specs(lane, probe),
     titles: v2Titles(lane, probe),
@@ -125,10 +126,12 @@ describe('Payload 2 lane case plan', () => {
     expect(Object.keys(probes.dom.specs)).toEqual(['payload2.spec.cjs']);
     expect(Object.keys(probes.lifecycle.specs)).toEqual(['native-lifecycle.spec.cjs']);
     expect(Object.keys(probes.population.specs)).toEqual(['native-population.spec.cjs']);
+    expect(Object.keys(probes.guards.specs)).toEqual(['native-guards.spec.cjs']);
     expect(fits).toEqual({
       dom: ['dom'],
       lifecycle: ['react', 'vue'],
       population: ['react', 'vue'],
+      guards: ['react', 'vue'],
     });
   });
 
@@ -140,6 +143,7 @@ describe('Payload 2 lane case plan', () => {
   it.each([
     ['native-lifecycle.spec.cjs', 'nativeLifecycleTitles'],
     ['native-population.spec.cjs', 'nativePopulationTitles'],
+    ['native-guards.spec.cjs', 'nativeGuardsTitles'],
   ] as const)(
     'writes no title of its own in %s and uses every key lanes.json names',
     (file, key) => {
@@ -157,6 +161,7 @@ describe('Payload 2 lane case plan', () => {
     expect(row).toContain(`${probes.dom.cases} DOM/session cases`);
     expect(row).toContain(`${probes.lifecycle.cases} lifecycle`);
     expect(row).toContain(`${probes.population.cases} population cases`);
+    expect(row).toContain(`${probes.guards.cases} guard`);
   });
 
   it('prints in the README the count every variant of the population checks plans', () => {
@@ -180,6 +185,18 @@ describe('Payload 2 lane case plan', () => {
     expect(row).toContain(`${probes.lifecycle.cases} per variant, four variants`);
     const matrix = readFileSync(resolve(ROOT, 'quality/compat-matrix.json'), 'utf8');
     expect(matrix).toContain(`(${probes.lifecycle.cases} browser cases per variant)`);
+  });
+
+  it('prints in the README and the ledger the count every variant of the guards checks plans', () => {
+    const { probes } = plan();
+    // React and Vue, each in two modes, like the lifecycle checks.
+    const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf8');
+    const row = readme
+      .split('\n')
+      .find((line) => line.startsWith('| Payload 2.32.3 |') && line.includes('guards'));
+    expect(row).toContain(`${probes.guards.cases} per variant, four variants`);
+    const matrix = readFileSync(resolve(ROOT, 'quality/compat-matrix.json'), 'utf8');
+    expect(matrix).toContain(`(${probes.guards.cases} browser cases per variant)`);
   });
 
   it('refuses a case plan that names no spec, no title or a title twice', () => {
