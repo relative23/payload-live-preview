@@ -492,6 +492,49 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  # Payload's CSRF list on: a cookie that arrives without an Origin header is refused, which is how a
+  # preview site's server forwards the editor's session. The package repeats the admin's origin
+  # (docs/authorization.md); the target that verifies the session and the one that merges as the
+  # editor run once more with the list to show that it does.
+  real-payload-csrf:
+    name: Real Payload E2E (${{ matrix.target }}, CSRF list)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [nextjs, nextjs-hook]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+      - run: npm ci --no-audit --no-fund --prefix examples/nextjs-payload
+      - run: npm ci --no-audit --no-fund --prefix examples/payload-backend
+      - env:
+          PLP_REAL_PAYLOAD_TARGET: ${{ matrix.target }}
+          PLP_REAL_PAYLOAD_CSRF: '1'
+        run: npm run test:e2e:real-payload
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-real-payload-csrf-${{ matrix.target }}
+          path: playwright-report/
+          retention-days: 7
+
   release-gates:
     name: Release Gates
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/2.0')

@@ -270,6 +270,23 @@ export const CI: WorkflowSpec = {
         },
       ],
     },
+    // Payload's CSRF list on, for the target that verifies the editor's session and the one that
+    // merges as the editor: the package repeats the admin's origin on the forwarded cookie.
+    'real-payload-csrf': {
+      needs: ['build'],
+      matrix: { target: ['nextjs', 'nextjs-hook'] },
+      steps: [
+        ...FIXTURE_SETUP,
+        { run: 'npx playwright install --with-deps chromium' },
+        DOWNLOAD_DIST,
+        fixtureInstall('nextjs-payload'),
+        fixtureInstall('payload-backend'),
+        {
+          run: 'npm run test:e2e:real-payload',
+          env: { PLP_REAL_PAYLOAD_TARGET: '${{ matrix.target }}', PLP_REAL_PAYLOAD_CSRF: '1' },
+        },
+      ],
+    },
     'release-gates': callCriticalGates('300000', RELEASE_PUSH),
   },
 };
