@@ -208,8 +208,11 @@ as data. `--v2` also reads the served inline configuration and reports every
 runtime row still at its `defaults: 'v1'` value as `LP0709` (referrer trust,
 message source, sanitizer policy, `skipUnchanged`). An empty slot counts as the
 value of the defaults the script names; a script without that marker (1.x,
-`2.0.0-beta.0`) is read as 1.x, with an `info` line saying so. The findings are
-`LP0701`–`LP0710` in the table below.
+`2.0.0-beta.0`) is read as 1.x, with an `info` line saying so. A response without
+the text `var __LIVE_PREVIEW_CONFIG__=` (loader mode outside a preview context, a
+preview behind `authorizePreview` asked without credentials, or a page that writes
+its own configuration element) gets an `info` `LP0709` instead, and no row is
+checked. The findings are `LP0701`–`LP0710` in the table below.
 
 The preview request carries `?preview=true` (or the first `--param` name),
 the parameter `buildLivePreviewUrl()` writes and the only signal the 2.0
