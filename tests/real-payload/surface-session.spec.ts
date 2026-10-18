@@ -5,7 +5,7 @@
  * with the iframe request. The runtime is part of the response only for that
  * request. `surface-smoke.spec.ts` holds what every surface shares.
  */
-import { expect, test, type FrameLocator, type Page } from '@playwright/test';
+import { expect, test, type FrameLocator, type Page, type TestInfo } from '@playwright/test';
 import {
   SEEDED_MEDIA,
   chooseSeededMedia,
@@ -56,6 +56,74 @@ async function runtimeStarted(preview: FrameLocator): Promise<void> {
       undefined,
       { timeout: 30_000 },
     );
+}
+
+/** The runtime's own debug lines in the preview, kept so a failing case can show what the runtime said. */
+function watchRuntime(page: Page): string[] {
+  const lines: string[] = [];
+  page.on('console', (message) => {
+    const text = message.text();
+    if (text.includes('[live-preview]') && lines.length < 60) lines.push(text.slice(0, 240));
+  });
+  return lines;
+}
+
+/**
+ * Runs what a case expects after its cut request was let through again. The recovery has failed on a CI runner in
+ * WebKit without a local reproduction (2026-10-18: the second request answered 200 with the populated document and the
+ * frame kept the old text), so a failure attaches what the frame says about itself and then fails as before: whether it
+ * is given animation frames (the runtime writes on one), whether it counts as visible, the runtime's own inspection,
+ * its debug lines and what the bound element shows by then.
+ */
+async function expectRecovery(
+  page: Page,
+  info: TestInfo,
+  runtimeLog: readonly string[],
+  expectations: () => Promise<void>,
+): Promise<void> {
+  try {
+    await expectations();
+  } catch (error) {
+    const frame = page.frames().find((candidate) => candidate.url().startsWith(PREVIEW_ORIGIN));
+    const state = await frame
+      ?.evaluate(
+        () =>
+          new Promise<Record<string, unknown>>((resolve) => {
+            let ticks = 0;
+            const started = performance.now();
+            const tick = (): void => {
+              ticks += 1;
+              if (performance.now() - started < 600) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+            setTimeout(() => {
+              const api = (window as Window & { __livePreview?: { inspect?: () => unknown } })
+                .__livePreview;
+              let inspection: unknown;
+              try {
+                inspection = api?.inspect?.() ?? null;
+              } catch (inspectError) {
+                inspection = String(inspectError);
+              }
+              resolve({
+                visibilityState: document.visibilityState,
+                hasFocus: document.hasFocus(),
+                readyState: document.readyState,
+                animationFramesIn600ms: ticks,
+                subtitleNow:
+                  document.querySelector('[data-payload-field="subtitle"]')?.textContent ?? null,
+                inspection,
+              });
+            }, 700);
+          }),
+      )
+      .catch((evaluateError: unknown) => ({ evaluateError: String(evaluateError) }));
+    await info.attach('preview-state-after-failed-recovery.json', {
+      body: JSON.stringify({ state: state ?? 'no preview frame', runtimeLog }, null, 2),
+      contentType: 'application/json',
+    });
+    throw error;
+  }
 }
 
 /**
@@ -169,7 +237,8 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
 
   test('a population request that fails on the network leaves the page as it was, and the next change populates', async ({
     page,
-  }) => {
+  }, info) => {
+    const runtimeLog = watchRuntime(page);
     await signIn(page);
     await openPreview(page);
     const preview = page.frameLocator(PREVIEW_IFRAME);
@@ -186,8 +255,10 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
 
     network.restore();
     await page.locator('#field-subtitle').fill('Typed once the network is back');
-    await expect(subtitle).toHaveText('Typed once the network is back');
-    await expect(author).toHaveText('e2e@example.com');
+    await expectRecovery(page, info, runtimeLog, async () => {
+      await expect(subtitle).toHaveText('Typed once the network is back');
+      await expect(author).toHaveText('e2e@example.com');
+    });
   });
 
   test('an upload chosen in the real admin is populated as the editor and shown by bindings on the media', async ({
@@ -218,7 +289,8 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
 
   test('an upload population that fails on the network leaves the page as it was, and the next change populates', async ({
     page,
-  }) => {
+  }, info) => {
+    const runtimeLog = watchRuntime(page);
     await signIn(page);
     await openPreview(page);
     const preview = page.frameLocator(PREVIEW_IFRAME);
@@ -236,8 +308,10 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
 
     network.restore();
     await page.locator('#field-subtitle').fill('Typed once the network is back');
-    await expect(subtitle).toHaveText('Typed once the network is back');
-    await expect(filename).toHaveText(SEEDED_MEDIA.filename);
-    await expect(image).toHaveAttribute('src', SEEDED_MEDIA.src);
+    await expectRecovery(page, info, runtimeLog, async () => {
+      await expect(subtitle).toHaveText('Typed once the network is back');
+      await expect(filename).toHaveText(SEEDED_MEDIA.filename);
+      await expect(image).toHaveAttribute('src', SEEDED_MEDIA.src);
+    });
   });
 });
