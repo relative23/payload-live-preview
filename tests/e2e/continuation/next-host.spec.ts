@@ -76,7 +76,10 @@ async function openFrame(page: Page, editor: 'a' | 'b', locale: 'de' | 'en'): Pr
     .frames()
     .find((value) => value.url().includes(`/continuation/${editor}/${locale}`));
   if (!frame) throw new Error('Native preview frame did not mount');
-  await expect(frame.getByTestId('ready')).toHaveText('ready');
+  // Mounting is the precondition of every case here, not what any of them measures: the Astro island once needed more
+  // than the default five seconds in a cold browser on a loaded host (1 of 15 Chromium runs of "isolates two real
+  // logins", 2026-10-18).
+  await expect(frame.getByTestId('ready')).toHaveText('ready', { timeout: 20_000 });
   await expect(frame.getByTestId('status')).toHaveText('idle');
   if (ssr) {
     const response = await ssr;
@@ -551,8 +554,11 @@ test.describe('native production host continuation', () => {
     expect(publicHTML).toContain('<html');
     expect(publicHTML).not.toContain('draft-de');
     expect(publicHTML).not.toContain('payload-live-preview');
+    // Without a cookie the document of the preview route is answered 200 by Next, Nuxt and SvelteKit and refused with
+    // 403 by Astro, the HTML host and Vue (measured on the packed archive); the data route refuses in every host.
+    const refusedDocument = ['astro', 'html', 'vue'].includes(fixture.framework);
     for (const [path, status] of [
-      ['/continuation/a/de?preview=true&locale=de', 200],
+      ['/continuation/a/de?preview=true&locale=de', refusedDocument ? 403 : 200],
       ['/continuation/a/de/data?preview=true&locale=de', 403],
     ] as const) {
       const response = await page.request.get(path);
