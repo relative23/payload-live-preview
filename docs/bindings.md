@@ -192,7 +192,10 @@ attributes (`data-payload-richtext`, `data-payload-html`,
 `data-payload-structural`, `data-payload-array`), then `<img>` → `image`,
 `<a>` → `url`, `<time>` → `date`, `<input type="checkbox|number">` →
 `checkbox`, `number`, `<input type="date|datetime-local">` → `date`. Everything else is `text`. Lexical values are
-recognized by shape, so `data-payload-field` alone is enough for rich text.
+recognized by shape, so `data-payload-field` alone renders rich text. An element that
+can hold uploads or relationships also needs `data-payload-richtext` (or
+`data-payload-type="richText"`): only then does the runtime ask Payload to fill
+those nodes in ([renderers.md](renderers.md#media-urls)).
 
 Custom renderers register through the plugin system under a namespaced key
 such as `acme:money`. What a renderer receives, how it is chosen and what a

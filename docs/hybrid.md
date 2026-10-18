@@ -729,6 +729,8 @@ hook islands coexist on one page.
 
 One revision per admin message. A newer message aborts the previous
 revision's fragment requests; a response that arrives late is discarded;
-identical boundaries in one revision share a request; at most four
-requests run at once (`maxConcurrent` on `createFragmentStrategy()`). Slow
-fragment A can never overwrite fast fragment B.
+identical boundaries in one revision share a request; the client keeps at
+most four requests in flight (`maxConcurrent` on `createFragmentStrategy()`).
+An aborted request leaves that count as soon as its fetch settles, while the
+browser and the server may still be finishing it, so a server can see more than
+four for a moment. Slow fragment A can never overwrite fast fragment B.
