@@ -252,8 +252,7 @@ the default ships nothing extra.
 The host and proxy results in this section and the next are measurements from
 2026-10-02 on earlier source-built archives, recorded in
 [ADR 0011](architecture/0011-fragment-protocol-and-abuse-model.md#4c-other-runtimes-and-proxies-2026-10-02).
-They retain the observed transport limits and failure modes. Current 2.1
-acceptance requires fresh host and proxy results from the archive being accepted.
+They retain the observed transport limits and failure modes.
 
 `createFragmentEndpoint` from `payload-live-preview/nextjs` takes a `Request`
 and returns a `Response`, and it loads no Node module until its default

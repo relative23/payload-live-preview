@@ -267,16 +267,17 @@ Notes on the rows that need one:
   one flush when it closes. Typing therefore costs one frame at the start of a
   phrase and one at the end of it, not 50 ms per keystroke. `debounceMs: 0`
   removes the window entirely — and with it the merge coalescing that shares it.
-- `intersectionRootMargin` cannot pull a write in ahead of the fold inside a
+- `intersectionRootMargin` may not pull a write in ahead of the fold inside a
   preview iframe. With an implicit root the browser measures the intersection
   against the top-level viewport and clips it to the frame's own box, and a
-  preview is always framed: measured on a footer at `top: 2347` in a 600 px
-  frame, `'3000px'` and `'0px'` both report `isIntersecting: false` and both
-  defer the write (LP0301). What does work is the replay — the write lands as
-  soon as the element is scrolled into view. `visibilityGateThreshold` does not
-  share the limitation: it counts bindings rather than pixels and decides
-  whether the gate runs at all, so a page that must stay live below the fold
-  raises it or sets `disableVisibilityGate`.
+  preview is always framed. An observation recorded for this package (a footer
+  far below a 600 px frame stayed deferred, LP0301, with a margin of `'3000px'`
+  as with `'0px'`) is not held by any test here, so treat the option as unproven
+  for a framed preview. What does work is the replay — the write lands as soon
+  as the element is scrolled into view. `visibilityGateThreshold` does not share
+  the doubt: it counts bindings rather than pixels and decides whether the gate
+  runs at all, so a page that must stay live below the fold raises it or sets
+  `disableVisibilityGate`.
 - `dependencies` and `data-payload-depends` say the same thing from two sides;
   both matter only under `skipUnchanged`. `revealEditedField` is described in
   [docs/reveal.md](reveal.md), `scopeBindingsByOwner` in
@@ -412,8 +413,10 @@ adapter, `generateInlineScript()` and `LivePreviewClient` throw when
 restores the 1.x default of `1`. The depth must match the `depth` of the
 initial page fetch, or nested relationships that were objects on first load
 degrade to ids after the first edit. `definePreview({ serverURL, depth })`
-binds both once: spread its `runtimeOptions` (`serverURL`, `apiRoute`,
-`mergeDepth`) into the adapter. `serverURL` is also the server a media
+binds both once: where the browser reaches Payload at the same origin as your
+server code, spread its `runtimeOptions` (`serverURL`, `apiRoute`, `mergeDepth`)
+into the adapter; otherwise pass the browser's origin as `serverURL` and take
+`apiRoute` and `mergeDepth` from it. `serverURL` is also the server a media
 document's relative `url` resolves against ([Media URLs](renderers.md#media-urls)).
 The preview page must reach the Payload API
 with the editor's credentials — same-site cookies, or CORS with credentials

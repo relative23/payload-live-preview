@@ -46,7 +46,9 @@ answer — is
 - Bindings inside the boundary still work as the **fallback**: if the
   server cannot render (network, timeout, refusal, bad response), the
   runtime patches them from the same revision and reports an `LP08xx`
-  code. The editor never sees stale content presented as current.
+  code. What the bindings do not cover (a derived value, a conditional section)
+  keeps the previous server render until a render succeeds, and
+  `inspect().revisions.display` says `partial` with the shortfall named.
 
 A boundary inside an island (`<astro-island>`, `data-payload-island`) is the
 island's business and is never rendered by the server.
@@ -121,15 +123,13 @@ what server code set, nothing from the request body
 
 #### First-use Astro resources
 
-The Astro results below are historical measurements on earlier source-built
+The Astro results below are dated measurements on earlier source-built
 archives, recorded in [ADR 0020](architecture/0020-astro-page-owned-resources.md)
 on 2026-09-27 and [ADR 0021](architecture/0021-fragment-islands-hydrate-from-the-build.md)
-on 2026-09-28. The current 2.1 verification scopes are separate: base integration
+on 2026-09-28. The specs named below are what runs today: base integration
 on Astro 4.0.0, fragment islands on 4.16.19, and resources, verified React
-context and page ownership on 7.3.2. Each scope needs its own results from the
-archive being accepted; the earlier exact-version results do not complete
-that acceptance. The first two run from the package archive on every push, in
-Chromium, with the other engines run by hand ([Astro peer
+context and page ownership on 7.3.2. The first two run from the package archive
+on every push, in Chromium, with the other engines run by hand ([Astro peer
 floors](testing.md#astro-peer-floors)).
 
 A successful isolated container render does not register the component's CSS
@@ -202,7 +202,8 @@ resource/context/lifetime cases on Astro 4.9.0 and 7.3.2, in Chromium, Firefox
 and WebKit; the [contract](../tests/e2e/continuation/astro-resources.spec.ts)
 lists four cases per browser today. The page
 still owns the finite catalog's CSS and live region. It is not selected by the
-package default and was not itself a repair for PHD-04. It remains useful when
+package default and was not itself the repair of the default-renderer defect on
+Astro 4.9.0. It remains useful when
 the component needs verified page context. Neither it nor the default bridge
 claims support for arbitrary runtime modules or additional hydration.
 
@@ -268,10 +269,11 @@ refuses with a message that names `livePreview()` and `astro build`
 ([unit test](../tests/unit/adapters/astro-island-modules.test.ts)).
 
 The finite page-owned native React recipe now has a separate
-[24-case native contract](../tests/e2e/continuation/astro-owner.spec.ts) on
-exact Astro 7.3.2 / `@astrojs/react` 6.0.6 / React 19.2.8. The PHD-05 core
-correction restores island events beside fragment work without duplicate
-fallback delivery. PHD-06 is application glue: a
+[native contract](../tests/e2e/continuation/astro-owner.spec.ts) of eight cases
+per browser (24 runs in three browsers) on exact Astro 7.3.2 /
+`@astrojs/react` 6.0.6 / React 19.2.8. A core correction restores island events
+beside fragment work without duplicate fallback delivery. What remains is
+application glue: a
 [page-owned store](../tests/fixtures/astro-react-owned/src/client/island-snapshots.ts.fixture)
 subscribes before the preview client starts, and React subscribes before reading
 the latest selected snapshot. Real delayed module loading, newer revisions,
@@ -354,7 +356,9 @@ ever does — a build that externalizes this package without also externalizing
 ### Nuxt
 
 Nitro hands a route handler an H3 event rather than a `Request`, so the endpoint
-is wrapped once:
+is wrapped once (`TOKEN_SECRET` and `SITE_ORIGIN` stand for the secret the Payload
+side shares for signed tokens and this site's own origin, see
+[authorization.md](authorization.md)):
 
 ```ts
 // server/routes/payload/fragment.post.ts
@@ -375,16 +379,11 @@ render because an app carries the props it was created with. `vue` is an
 optional peer imported at the first render.
 
 One build note: the component is rendered inside the Nitro bundle, and Nitro's
-rollup does not know what a single-file component is. Teach it once —
-
-```ts
-// nuxt.config.ts
-import vue from '@vitejs/plugin-vue';
-export default defineNuxtConfig({ nitro: { rollupConfig: { plugins: [vue()] } } });
-```
-
-— or write the fragment's component as a `defineComponent` in a `.ts` file,
-which Nitro reads as it is.
+rollup does not know what a single-file component is. Teach it once with
+`fragmentComponentPlugins()` from `payload-live-preview/nuxt-module` (the setup,
+and why it needs `srcDir`: [nuxt.md](nuxt.md#server-rendered-boundaries)), or
+write the fragment's component as a `defineComponent` in a `.ts` file, which
+Nitro reads as it is.
 
 ### Another component system
 
@@ -436,7 +435,7 @@ in whatever it does hand a handler — that is all either binding does.
   with a 64 KiB default cap. One 5 s deadline covers the complete body read;
   props and rendering then receive separate 5 s windows. Configure these with
   `limits` (`bodyBytes`, `timeoutMs`). The request
-  carries the whole document: 64 KiB holds about 4 500 words of rich text,
+  carries the whole document: 64 KiB holds at least about 4 500 words of rich text,
   and a page with layout blocks measured 6 to 15 KB
   ([ADR 0027](architecture/0027-fragment-requests-within-measured-bounds.md)).
   A larger document is answered 413 and patched instead (`LP0801`); raise
@@ -537,7 +536,7 @@ fragment client ahead of the runtime; a page without it gets the runtime
 alone. The Astro integration (`livePreview()`) takes the same option in every
 mode; loader mode emits the prelude in the bootstrap, and the runtime asset
 stays the same for every page. Every adapter takes the same
-`fragments` option — `livePreviewScriptProps()` in a Next.js layout
+`fragments` option — the options of `LivePreviewScript(…)` in a Next.js layout
 ([nextjs.md](nextjs.md)), the SvelteKit handle, the Nuxt plugin — because the
 option only names a path the runtime posts to, whoever serves it.
 `generateInlineScript()` calls it `fragmentEndpoint`. `LivePreviewClient` takes
@@ -550,8 +549,8 @@ from `payload-live-preview/fragment`.
 A page that wants route refreshes and no server-rendered boundaries sets
 `routeStrategy: true` instead — in `generateInlineScript()` and in every
 adapter's options. The script then carries a second, smaller prelude with the
-route strategy alone: 3 510 bytes gzip when compressed separately, against
-the fragment prelude's 5 484,
+route strategy alone: about 3.5 KB gzip when compressed separately, against
+about 5.5 KB for the fragment prelude,
 because the endpoint request, the fragment protocol and its abort scaffolding
 stay behind.
 

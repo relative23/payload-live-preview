@@ -6,7 +6,7 @@ Next.js 15.5 and 16 are tested. The `next-matrix` job installs `next@^15` into [
 
 > A client-rendered React app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) hook: it re-renders your real component tree, so conditional sections and custom components update with full fidelity. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
 
-Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to. Under the strict default a production run needs `PUBLIC_PAYLOAD_ADMIN_ORIGIN` to be an `https:` origin: with `http://localhost:3000`, `next start` answers every route with a 500 that names the rule, while `next dev` accepts it.
+Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to, `SITE_ORIGIN` this site's own origin, and `PREVIEW_TOKEN_SECRET` the secret the Payload side shares for signed tokens. Under the strict default a production run needs `PUBLIC_PAYLOAD_ADMIN_ORIGIN` to be an `https:` origin: with `http://localhost:3000`, `next start` answers every route with a 500 that names the rule, while `next dev` accepts it.
 
 ## Install
 
@@ -209,11 +209,11 @@ change per request, and the script body is the same bytes every time.
 
 The script stays inert outside the admin's preview iframe, but written this
 way it ships to everyone: `livePreviewScriptProps()` is synchronous, so it
-cannot wait for a verdict and does not try. Measured on the example while its
-layout was still written like this: a 116 413-byte `<script>` element in a
-258 227-byte response to a request with no cookie and no preview intent — and
-Next renders it twice, once into the HTML and once more into the RSC flight
-payload, so the runtime was most of what an anonymous visitor received. The
+cannot wait for a verdict and does not try. Next renders the script twice, once
+into the HTML and once more into the RSC flight payload, so while the example's
+layout was written like this the runtime was most of what an anonymous visitor
+received (the byte counts are in the table of
+[deployment.md](deployment.md#what-a-public-visitor-pays)). The
 same request carries no script element and no extra byte when the layout awaits
 `LivePreviewScript` (`tests/fixtures/delivery-budgets.ts` holds both at 0). That
 component is the version of this layout that waits; `delivery: 'asset'` above is the
@@ -263,6 +263,10 @@ export async function proxy(request: NextRequest) {
   return livePreview(request, NextResponse.next());
 }
 ```
+
+On Next.js 15.5 name the file `middleware.ts` and export the function as
+`middleware`: only Next.js 16 knows the `proxy` name (15.5.28 defines the file
+name `middleware` alone, 16.3.8 both).
 
 The strict default also requires `https:` admin origins in production and no referer trust. The three strategies — `payload-session`, `signed-token`, `verifier` — and what each one binds: [authorization.md](authorization.md).
 
@@ -327,8 +331,9 @@ export const POST = createFragmentEndpoint({
 });
 ```
 
-Point the script at it — `livePreviewScriptProps({ ..., fragments: { endpoint:
-'/payload/fragment' } })` in the layout above — and mark the region with
+Point the script at it — `fragments: { endpoint: '/payload/fragment' }` in the
+options of `LivePreviewScript(…)` (or `livePreviewScriptProps(…)`) in the layout
+above — and mark the region with
 `data-payload-fragment="hero"`. `defineFragment()` ties the component to the
 props it is given, so a renamed prop fails the build rather than the preview.
 React is rendered with `renderToString()`, one synchronous component: a server

@@ -156,13 +156,13 @@ size.
 | ---------------------------------------------------------------- | ------------ |
 | `escapeHtml` from `payload-live-preview`                         | 214 B        |
 | `lexicalToHtml` from `payload-live-preview`                      | 5,701 B      |
-| `initLivePreview` from `payload-live-preview`                    | 55,557 B     |
-| `generateInlineScript` from `payload-live-preview`               | 53,246 B     |
-| `initLivePreview` from `payload-live-preview/core`               | 55,547 B     |
+| `initLivePreview` from `payload-live-preview`                    | 55,685 B     |
+| `generateInlineScript` from `payload-live-preview`               | 53,316 B     |
+| `initLivePreview` from `payload-live-preview/core`               | 55,665 B     |
 | `lexicalToHtml` from `payload-live-preview/lexical`              | 5,840 B      |
 | `morphElement` from `payload-live-preview/structural`            | 1,581 B      |
-| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 58,495 B     |
-| `LEAN_RUNTIME` from `payload-live-preview/lean`                  | 37,253 B     |
+| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 58,568 B     |
+| `LEAN_RUNTIME` from `payload-live-preview/lean`                  | 37,333 B     |
 | `useLivePreviewDocument` from `payload-live-preview/react`       | 8,603 B      |
 | `useLivePreviewDocument` from `payload-live-preview/vue`         | 8,585 B      |
 | `PluginManager` from `payload-live-preview/plugins`              | 3,373 B      |

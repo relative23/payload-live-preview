@@ -126,7 +126,7 @@ Which to reach for, and what each costs:
 [bindings.md](bindings.md#how-much-markup-this-actually-needs). `pll-codegen annotate`
 writes the unambiguous field bindings for you and reports the rest.
 
-Rich text is detected automatically. The `<RichText />` component renders the field through the same built-in Lexical serializer the runtime uses for live patches, which reduces drift between the server render and the preview and gives an empty field a stable anchor. Exact markup parity also needs the same sanitizer availability and the same custom node and block registrations in both JavaScript realms; server-side registrations are not copied into the prebuilt inline runtime.
+Rich text is written from the value shape. An element that can hold uploads or relationships also needs `data-payload-richtext`, because only then does the runtime ask Payload to fill those nodes in; `<RichText />` writes it for you. The `<RichText />` component renders the field through the same built-in Lexical serializer the runtime uses for live patches, which reduces drift between the server render and the preview and gives an empty field a stable anchor. Exact markup parity also needs the same sanitizer availability and the same custom node and block registrations in both JavaScript realms; server-side registrations are not copied into the prebuilt inline runtime.
 
 ```astro
 ---
@@ -191,7 +191,7 @@ Three strategies exist. `payload-session` is the one above. `signed-token` verif
 The page reuses that request-scoped decision for the draft query and for the binding attributes, instead of authorizing again or trusting the intent signal:
 
 ```ts
-// src/lib/preview.ts — server-only; spread `preview.runtimeOptions` into the adapter options to keep `serverURL`, `apiRoute` and `mergeDepth` in step with the read
+// src/lib/preview.ts — server-only; where the browser reaches Payload at the same origin as this server, spread `preview.runtimeOptions` into the adapter options to keep `serverURL`, `apiRoute` and `mergeDepth` in step with the read
 import { definePreview } from 'payload-live-preview/server';
 export const preview = definePreview({ serverURL: import.meta.env.PAYLOAD_URL, depth: 1 });
 ```
@@ -235,6 +235,10 @@ It writes `data-payload-strategy="patch"` explicitly. Markup whose conditional l
 ## Fragments
 
 Wrap such a component in a `data-payload-fragment` boundary, export an endpoint from a route with `createFragmentEndpoint()` (from `payload-live-preview/astro`), and pass its path to the integration or the middleware as `fragments: { endpoint: '/payload/fragment' }`. The runtime then posts the unsaved fields to that endpoint and morphs the server-rendered result in. A boundary on a page without a configured endpoint is patched instead and reports `LP0806` once. Markup, endpoint, registry and deployment requirements: [hybrid.md](hybrid.md).
+
+## Client navigation
+
+With Astro's `<ClientRouter />` no bridge is needed: the integration declares `astro:page-load`, so after each swap the runtime rebuilds its bindings and reapplies the last accepted editor document. The first `astro:page-load` of a document is ignored, because it is not a router commit. The Next.js, SvelteKit and Nuxt guides install a small host bridge instead ([deployment.md](deployment.md)).
 
 ## Gotchas
 

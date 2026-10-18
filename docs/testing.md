@@ -478,11 +478,11 @@ The root barrel tree-shakes, and that is measured rather than declared:
 built package, resolved through `node_modules` so `exports` and `sideEffects`
 apply as after `npm install`, and holds each to a gzip budget. Importing
 `escapeHtml` from the root is held to 214 B, `lexicalToHtml` to 5,701 B,
-`initLivePreview` to 55,557 B (the client with its built-in renderers, Lexical
-included), `generateInlineScript` to 53,246 B (the inline runtime source and
+`initLivePreview` to 55,685 B (the client with its built-in renderers, Lexical
+included), `generateInlineScript` to 53,316 B (the inline runtime source and
 nothing of the client). The focused entries give a bundler less to look
 through; the bytes barely move — `initLivePreview` from `./core` is held to
-55,547 B, `lexicalToHtml` from `./lexical` to 5,840 B. The budgets are
+55,665 B, `lexicalToHtml` from `./lexical` to 5,840 B. The budgets are
 `TREE_SHAKING_FIXTURES` in `scripts/tree-shaking-budgets.ts`, with the reason
 each one moved; the first measurement, and why the barrel did not tree-shake
 before it, are in

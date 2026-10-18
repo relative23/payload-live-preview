@@ -42,7 +42,7 @@ The tag goes into `<head>`. The script stays inert outside the admin's preview i
 ></ul>
 ```
 
-Render an element even when its field is empty: the runtime patches elements that exist, and an edit to an initially empty field needs somewhere to land. Rich text is detected from the value shape, in the lean artifact too. Every attribute, the field types and the owner marker for pages with several documents: [bindings.md](bindings.md).
+Render an element even when its field is empty: the runtime patches elements that exist, and an edit to an initially empty field needs somewhere to land. Rich text is written from the value shape, in the lean artifact too; an element that can hold uploads or relationships also needs `data-payload-richtext` ([bindings.md](bindings.md)). Every attribute, the field types and the owner marker for pages with several documents: [bindings.md](bindings.md).
 
 ## Content Security Policy
 

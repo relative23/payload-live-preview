@@ -235,8 +235,10 @@ export default defineEventHandler(async (event) => {
 `timeout`, `aborted`, `invalid-json`, `no-fetch`, `scope`); `errorMode: 'throw'`
 throws `PreviewFetchError`. Per-read options: `authorization`, `locale`,
 `headers` (the context's win on conflict), `signal`, `errorMode`. `depth`
-serves the read and the runtime merge alike: spread `preview.runtimeOptions`
-into the adapter. The same `authorization` gates the binding attributes
+serves the read and the runtime merge alike: where the browser reaches Payload
+at the same origin as your server code, spread `preview.runtimeOptions` into the
+adapter; otherwise pass the browser's origin as `serverURL` and take `apiRoute`
+and `mergeDepth` from it. The same `authorization` gates the binding attributes
 ([docs/bindings.md](bindings.md)) and the fragment endpoint ([docs/hybrid.md](hybrid.md)).
 
 ### Bind a verifier to one Payload document

@@ -23,7 +23,7 @@ export interface BindOptions {
   readonly attribute?: string;
   /** Explicit field type, bypassing schema detection. */
   readonly type?: string;
-  /** Mark the binding as Lexical rich text; needed only when the initial render is empty. */
+  /** Mark the binding as Lexical rich text; needed for an element that can hold uploads or relationships, or when the initial render is empty. */
   readonly richtext?: boolean;
   /** Render the value as sanitised HTML rather than text. */
   readonly html?: boolean;
