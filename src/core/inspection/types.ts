@@ -81,8 +81,9 @@ export interface InspectionBindings {
    */
   readonly absentFields: readonly string[];
   /**
-   * Field names that arrived but matched no binding — a markup problem.
-   * A name in neither this list nor `fieldNames` was never sent. Cumulative.
+   * Scalar fields (and one group level) that arrived but matched no binding.
+   * Arrays, relationships, rich text, `null` and the fields Payload sends with
+   * every update are never listed. Cumulative.
    */
   readonly orphanFields: readonly string[];
   /** Whether `scopeBindingsByOwner` is active. */

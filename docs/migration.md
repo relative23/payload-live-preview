@@ -32,6 +32,18 @@ spreads; module options in `nuxt.config` are not among them, so write the rows
 out there by hand. A client built in the browser (`LivePreviewClient`,
 `initLivePreview()`) does not warn; the codemods cover its options.
 
+## Upgrading to 2.1
+
+2.1 asks for one change: Astro's `livePreview()` now throws at startup when
+`mode: 'inline'` or `'loader'` is given `authorizePreview`, `shouldInject` or
+`authorizePreviewModule`. Those modes decide once, at build time, and never
+called them, so a configuration that carried one ran on 2.0 with the function
+ignored. Move the hook to `mode: 'middleware'` with `authorizePreviewModule`, or
+register `createLivePreviewMiddleware({ authorizePreview })` in
+`src/middleware.ts`; the error message names both ([Astro](astro.md),
+[options.md](options.md), row 24 of the
+[ADR 0007 ledger](architecture/0007-v2-defaults-and-renames-ledger.md)).
+
 ## Upgrading to 2.0
 
 2.0 flips a table of defaults toward security and performance, renames a few
@@ -89,16 +101,16 @@ Each row is an entry of the readiness table in
 [ADR 0007 — 2.0 defaults, migration policy, and the renames ledger](architecture/0007-v2-defaults-and-renames-ledger.md).
 `defaults: 'v1'` sets the whole left column; a single option moves one row.
 
-| Row                | `defaults: 'v1'`                   | 2.0 default                              | Option                                  | Watch for                                                                     |
-| ------------------ | ---------------------------------- | ---------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
-| Authorization      | response changes on intent alone   | `authorizePreview` required              | `strict`                                | a page that showed preview to anyone now needs a real editor session or token |
-| Intent signals     | `['query','fetch-dest','referer']` | `['query']`                              | `previewSignals`                        | a flow that relied on the admin referer alone must add `?preview=true`        |
-| Referrer trust     | on                                 | off                                      | `disableReferrerDetection: true`        | same as above                                                                 |
-| Message source     | any origin-valid window            | parent/opener only                       | `eventSourcePolicy: 'parent-or-opener'` | a custom embedding that posts from another window                             |
-| Unchanged bindings | re-applied                         | skipped                                  | `skipUnchanged: true`                   | a renderer with side effects that expected every message                      |
-| Sanitizer          | `id` and every `data-*` pass       | `id`, `name` and every `data-*` stripped | `sanitizerPolicy: 'strict'`             | rich text that relies on `id` or `data-*` (list the CSP `trusted-types` name) |
-| `allowedOrigins`   | optional                           | required, non-empty, `https:`            | set it explicitly                       | a dev-only origin left implicit                                               |
-| `mergeDepth`       | `1`                                | required with `serverURL`                | `mergeDepth: <depth of your query>`     | populated relationships degrade to IDs when the depths differ                 |
+| Row                | `defaults: 'v1'`                   | 2.0 default                              | Option                                  | Watch for                                                                                                                                        |
+| ------------------ | ---------------------------------- | ---------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Authorization      | response changes on intent alone   | `authorizePreview` required              | `strict`                                | a page that showed preview to anyone now needs a real editor session or token                                                                    |
+| Intent signals     | `['query','fetch-dest','referer']` | `['query']`                              | `previewSignals`                        | a flow that relied on the admin referer alone must add `?preview=true`                                                                           |
+| Referrer trust     | on                                 | off                                      | `disableReferrerDetection: true`        | same as above                                                                                                                                    |
+| Message source     | any origin-valid window            | parent/opener only                       | `eventSourcePolicy: 'parent-or-opener'` | a custom embedding that posts from another window                                                                                                |
+| Unchanged bindings | re-applied                         | skipped                                  | `skipUnchanged: true`                   | a renderer with side effects that expected every message                                                                                         |
+| Sanitizer          | `id` and every `data-*` pass       | `id`, `name` and every `data-*` stripped | `sanitizerPolicy: 'strict'`             | rich text that relies on `id` or `data-*`; a site that enforces Trusted Types also lists `payload-live-preview` in its `trusted-types` directive |
+| `allowedOrigins`   | optional                           | required, non-empty, `https:`            | set it explicitly                       | a dev-only origin left implicit                                                                                                                  |
+| `mergeDepth`       | `1`                                | required with `serverURL`                | `mergeDepth: <depth of your query>`     | populated relationships degrade to IDs when the depths differ                                                                                    |
 
 ### Renamed, moved and removed
 

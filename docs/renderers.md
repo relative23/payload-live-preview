@@ -22,8 +22,9 @@ Renderers therefore receive the populated, transformed value. `context`
 carries `allFields` (the whole populated update, before the transforms: a
 transform changes only the value its own binding receives), `locale`, the field
 `schema` when the admin sent one, `renderRichText` when the client was
-configured with one, `serverURL` when it has one, and
-`reportUnfaithful(target, reason)` — call it when your
+configured with one, `serverURL` when it has one, `sanitizerPolicy` (this
+instance's policy for every HTML write the renderer makes; absent, the process
+default applies), and `reportUnfaithful(target, reason)` — call it when your
 renderer can only approximate the value, and `onUnfaithfulPatch` asks a server
 to draw that region instead of leaving the approximation on the page
 ([docs/options.md](options.md)).

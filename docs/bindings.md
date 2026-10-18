@@ -84,6 +84,7 @@ cannot render.
 | `data-payload-format`          | How a date or number is written; a closed vocabulary, see below                                                                                                                                                                                                                     | `data-payload-format="currency:EUR"`               |
 | `data-payload-owner`           | The document this subtree belongs to (see below)                                                                                                                                                                                                                                    | `data-payload-owner="global:homepage"`             |
 | `data-payload-depends`         | Fields whose change re-applies this binding under `skipUnchanged`; separated by commas or whitespace                                                                                                                                                                                | `data-payload-depends="price currency"`            |
+| `data-payload-covers`          | Field paths the page accounts for without binding them, and everything below them: editing one is neither reported as unbound nor sent to a server render ([below](#what-a-page-accounts-for))                                                                                      | `data-payload-covers="hero.description seo"`       |
 | `data-payload-strategy`        | `patch` (default), `fragment` (server-rendered) or `route` (whole-route refresh); any other value is left alone with `LP0407`. Without it: inside a fragment boundary → fragment, in `<head>` → route, else patch ([docs/hybrid.md](hybrid.md))                                     | `data-payload-strategy="route"`                    |
 | `data-payload-fragment`        | A fragment boundary; the value is a registry id the endpoint renders                                                                                                                                                                                                                | `data-payload-fragment="hero"`                     |
 | `data-payload-fragment-key`    | Distinguishes several boundaries of one id on a page                                                                                                                                                                                                                                | `data-payload-fragment-key="a"`                    |
@@ -131,7 +132,7 @@ vocabulary (the examples are for an `en-GB` page):
 ```
 
 The locale is the element's `data-payload-locale`, else the message's, else the
-document's `lang`. A `<time>` keeps the ISO instant in its `datetime` attribute
+document's `lang`, then the browser's language, then `en`. A `<time>` keeps the ISO instant in its `datetime` attribute
 whatever the label says.
 
 Leaving the attribute off is not neutral: the renderer still has to pick a

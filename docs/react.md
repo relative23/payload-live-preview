@@ -60,6 +60,7 @@ credentials; keep preview tokens and other secrets in server-only variables.
 | `eventSourcePolicy`       | `'parent-or-opener'` | `'any'` accepts a message from any window at an allowed origin         |
 | `enableReferrerDetection` | `false`              | Trust `document.referrer` as an origin source                          |
 | `enableLocalhostMatching` | `true`               | Match `localhost` origins in development                               |
+| `target`                  | the global `window`  | Window to listen on; the session moves when it changes                 |
 
 A hook instance owns one document session. A fresh `initialData` object on an
 ordinary re-render does not replace data that already merged. If the same
