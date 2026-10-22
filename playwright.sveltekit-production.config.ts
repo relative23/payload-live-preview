@@ -28,7 +28,9 @@ const config: PlaywrightTestConfig = {
   webServer: {
     name: 'sveltekit-production',
     command: 'node scripts/sveltekit-production-fixture.mjs',
-    env: { ...process.env, PLP_SVELTE_ORIGIN: origin, PLP_SVELTE_INTERNAL_PORT: internalPort },
+    // Playwright passes process.env to the server itself; spreading it here would put the
+    // whole environment, credentials included, into the JSON report, which serializes webServer.env.
+    env: { PLP_SVELTE_ORIGIN: origin, PLP_SVELTE_INTERNAL_PORT: internalPort },
     url: `${origin}/admin.html`,
     ignoreHTTPSErrors: true,
     reuseExistingServer: false,
