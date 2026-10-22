@@ -15,7 +15,7 @@
     "@payloadcms/db-sqlite": "3.90.2",
     "@payloadcms/next": "3.90.2",
     "@payloadcms/richtext-lexical": "3.90.2",
-    "next": "^16.3.8",
+    "next": "^16.4.2",
     "payload": "3.90.2",
     "payload-live-preview": "file:../..",
     "react": "^19.0.0",
@@ -34,7 +34,7 @@
     "fsevents@2.3.3": false
   },
   "overrides": {
-    "dompurify": "3.4.13",
+    "dompurify": "3.4.17",
     "esbuild": "^0.25.0",
     "payload": {
       "undici": "7.29.1"
