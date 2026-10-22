@@ -78,6 +78,52 @@ describe('audit advisory identity', () => {
     ).toThrow('inconsistent severity');
   });
 
+  // npm does not carry a severity around a cycle of packages: on 2026-10-22, with nuxt reaching node-forge's
+  // high advisory through @nuxt/cli, @nuxt/vite-builder (via nuxt, and nuxt via it) reported moderate.
+  it('accepts a lower aggregate on a cycle and reports the high leaf it reaches', () => {
+    const findings = findingsFromAudit({
+      vulnerabilities: {
+        builder: { severity: 'moderate', via: ['framework'] },
+        framework: {
+          severity: 'high',
+          via: ['builder', 'cli', { url: BRACES, severity: 'moderate' }],
+        },
+        cli: { severity: 'high', via: [{ url: FORGE, severity: 'high' }] },
+      },
+    });
+    expect(findings).toContainEqual({
+      id: FORGE,
+      package: 'builder',
+      advisoryPackage: 'cli',
+      severity: 'high',
+    });
+  });
+
+  it('still rejects a lower aggregate that no cycle explains', () => {
+    expect(() =>
+      findingsFromAudit({
+        vulnerabilities: {
+          builder: { severity: 'moderate', via: ['cli'] },
+          cli: { severity: 'high', via: [{ url: FORGE, severity: 'high' }] },
+        },
+      }),
+    ).toThrow('inconsistent severity');
+  });
+
+  it('still rejects a cycle member whose own advisory is above its aggregate', () => {
+    expect(() =>
+      findingsFromAudit({
+        vulnerabilities: {
+          builder: {
+            severity: 'moderate',
+            via: ['framework', { url: FORGE, severity: 'critical' }],
+          },
+          framework: { severity: 'critical', via: ['builder'] },
+        },
+      }),
+    ).toThrow('inconsistent severity');
+  });
+
   it('keeps the actual leaf severity when the aggregate mixes high and low', () => {
     expect(
       findingsFromAudit({

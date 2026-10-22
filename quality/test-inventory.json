@@ -22,7 +22,7 @@
   "totals": {
     "files": 506,
     "suites": 955,
-    "tests": 4352,
+    "tests": 4355,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 410,
       "suites": 847,
-      "tests": 3956,
+      "tests": 3959,
       "benchmarks": 0
     }
   },
@@ -2972,7 +2972,7 @@
       "path": "tests/unit/quality/audit-gate-scoped.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 29,
+      "tests": 32,
       "benchmarks": 0
     },
     {

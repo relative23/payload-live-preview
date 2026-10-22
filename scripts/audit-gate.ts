@@ -134,15 +134,39 @@ export function findingsFromAudit(auditJson: unknown): AuditFinding[] {
     }
     return found;
   };
+  const onCycle = (start: string): boolean => {
+    const seen = new Set<string>();
+    const pending = [start];
+    while (pending.length > 0) {
+      const entry = vulnerabilities[pending.pop()!];
+      if (!object(entry) || !Array.isArray(entry['via'])) continue;
+      for (const via of entry['via']) {
+        if (typeof via !== 'string') continue;
+        if (via === start) return true;
+        if (seen.has(via)) continue;
+        seen.add(via);
+        pending.push(via);
+      }
+    }
+    return false;
+  };
   const findings: AuditFinding[] = [];
   for (const [name, entry] of Object.entries(vulnerabilities)) {
     requireValue(object(entry), `malformed vulnerability ${name}`);
     const found = leaves(name);
     requireValue(found.length > 0, `no leaf advisory for ${name}`);
     const rank = (severity: string): number => SEVERITIES.findIndex((value) => value === severity);
+    const claimed = rank(entry['severity'] as string);
+    const reached = Math.max(...found.map(({ severity }) => rank(severity)));
+    const own = Math.max(
+      -1,
+      ...found.filter(({ leaf }) => leaf === name).map(({ severity }) => rank(severity)),
+    );
+    // npm does not carry a severity around a cycle of packages (2026-10-22: @nuxt/vite-builder via nuxt, nuxt via it,
+    // reported moderate while nuxt reached node-forge's high advisory). On a cycle a lower aggregate is accepted as
+    // long as the package's own advisories are not above it; the findings below come from the leaves either way.
     requireValue(
-      Math.max(...found.map(({ severity }) => rank(severity))) ===
-        rank(entry['severity'] as string),
+      claimed === reached || (claimed < reached && claimed >= own && onCycle(name)),
       `inconsistent severity for ${name}`,
     );
     const seen = new Set<string>();
