@@ -302,7 +302,7 @@ const PROTOCOL_WATCH: WorkflowSpec = {
       continueOnError: '${{ matrix.soft-fail }}',
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         { run: 'npm run build' },
         fixtureInstall('astro-payload'),
         {
