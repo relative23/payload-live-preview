@@ -98,7 +98,7 @@ jobs:
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: bash scripts/ci-install-browser.sh chromium
       # No build job to download from in a scheduled workflow, so the artefact
       # the fixtures inject is built here.
       - run: npm run build

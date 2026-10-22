@@ -149,7 +149,7 @@ export const CI: WorkflowSpec = {
       matrix: { browser: [...BROWSERS] },
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps ${{ matrix.browser }}' },
+        { run: 'bash scripts/ci-install-browser.sh ${{ matrix.browser }}' },
         DOWNLOAD_DIST,
         ...CI_FIXTURES.map(fixtureInstall),
         { run: 'npx playwright test --project=${{ matrix.browser }}' },
@@ -160,7 +160,7 @@ export const CI: WorkflowSpec = {
       matrix: { astro: [6, 5, 4] },
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         DOWNLOAD_DIST,
         {
           run: 'npm --prefix examples/astro-payload install --no-audit --no-fund --dangerously-allow-all-scripts "astro@^${{ matrix.astro }}"',
@@ -189,7 +189,7 @@ export const CI: WorkflowSpec = {
       matrix: { next: [15] },
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         DOWNLOAD_DIST,
         {
           run: 'npm --prefix examples/nextjs-payload install --no-audit --no-fund "next@^${{ matrix.next }}"',
@@ -219,7 +219,7 @@ export const CI: WorkflowSpec = {
       timeoutMinutes: 25,
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         DOWNLOAD_ARCHIVE,
         {
           run: 'PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-floor-base.config.ts --project=chromium',
@@ -232,7 +232,7 @@ export const CI: WorkflowSpec = {
       matrix: { astro: ['4.16.19'] },
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         DOWNLOAD_ARCHIVE,
         {
           run: 'PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-islands.config.ts --project=chromium',
@@ -247,7 +247,7 @@ export const CI: WorkflowSpec = {
       matrix: { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2'] },
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         DOWNLOAD_ARCHIVE,
         {
           run: 'PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts --project=chromium',
@@ -259,7 +259,7 @@ export const CI: WorkflowSpec = {
       needs: ['build'],
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         DOWNLOAD_DIST,
         fixtureInstall('astro-payload'),
         fixtureInstall('payload-backend'),
@@ -271,7 +271,7 @@ export const CI: WorkflowSpec = {
       matrix: { browser: [...BROWSERS] },
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps ${{ matrix.browser }}' },
+        { run: 'bash scripts/ci-install-browser.sh ${{ matrix.browser }}' },
         DOWNLOAD_DIST,
         fixtureInstall('astro-hybrid'),
         fixtureInstall('payload-backend'),
@@ -308,7 +308,7 @@ export const CI: WorkflowSpec = {
       },
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps ${{ matrix.browser }}' },
+        { run: 'bash scripts/ci-install-browser.sh ${{ matrix.browser }}' },
         DOWNLOAD_DIST,
         {
           run: 'npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"',
@@ -334,7 +334,7 @@ export const CI: WorkflowSpec = {
       matrix: { target: ['nextjs', 'nextjs-hook'] },
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         DOWNLOAD_DIST,
         fixtureInstall('nextjs-payload'),
         fixtureInstall('payload-backend'),
@@ -480,7 +480,7 @@ export const CRITICAL_GATES: WorkflowSpec = {
         },
         NPM_VERSION,
         NPM_CI,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         {
           uses: 'actions/download-artifact',
           with: { name: '${{ inputs.dist-artifact }}', path: 'dist' },
@@ -529,7 +529,7 @@ export const DEEP_QUALITY: WorkflowSpec = {
       needs: ['build'],
       steps: [
         ...FIXTURE_SETUP,
-        { run: 'npx playwright install --with-deps chromium' },
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
         DOWNLOAD_DIST,
         fixtureInstall('astro-payload'),
         { run: 'npm run test:browser-bench' },
