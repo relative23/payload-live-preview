@@ -6,16 +6,18 @@ import ZeroSkipReporter from './scripts/zero-skip-reporter';
 /**
  * `PLP_PROPERTY_RUNS` multiplies the cases every property explores, so the
  * deadline has to grow with it. Without this the scheduled exploration fails on
- * the clock rather than on a counterexample: the sanitizer property needs ~2.5 s
- * for 10,000 cases here and more than the 5 s default on a slower runner, which
- * is a property of the machine and says nothing about the code.
+ * the clock rather than on a counterexample. The costliest property is the aimed
+ * sanitizer fuzz (three policies, every output sanitized again and held against
+ * DOMPurify): 10,000 cases took 293 to 482 s in the nightly runs of 16 to 21
+ * October 2026 and passed 500 s on 22 October with a seed that passes here in
+ * 177 s. 10 s per 100 cases leaves it twice the slowest green run.
  */
 function propertyExplorationTimeout(): number | undefined {
   const raw = process.env['PLP_PROPERTY_RUNS'];
   if (raw === undefined || !/^\d+$/.test(raw)) return undefined;
   const runs = Number(raw);
   if (!Number.isSafeInteger(runs) || runs <= 100) return undefined;
-  return Math.min(600_000, 5_000 * Math.ceil(runs / 100));
+  return Math.min(1_200_000, 10_000 * Math.ceil(runs / 100));
 }
 
 /**
