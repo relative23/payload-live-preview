@@ -28,7 +28,9 @@ const config: PlaywrightTestConfig = {
   webServer: {
     name: 'nextjs-production',
     command: 'node scripts/next-production-fixture.mjs',
-    env: { ...process.env, PLP_NEXT_ORIGIN: origin, PLP_NEXT_INTERNAL_PORT: internalPort },
+    // Playwright passes process.env to the server itself; spreading it here would put the
+    // whole environment, credentials included, into the JSON report, which serializes webServer.env.
+    env: { PLP_NEXT_ORIGIN: origin, PLP_NEXT_INTERNAL_PORT: internalPort },
     url: `${origin}/admin.html`,
     ignoreHTTPSErrors: true,
     // The fixture script builds before it serves: a build error is what the job log has to show

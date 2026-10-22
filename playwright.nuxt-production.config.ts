@@ -24,7 +24,9 @@ const config: PlaywrightTestConfig = {
   webServer: {
     name: 'nuxt-production',
     command: 'node scripts/nuxt-production-fixture.mjs',
-    env: { ...process.env, PLP_NUXT_ORIGIN: origin, PLP_NUXT_INTERNAL_PORT: internalPort },
+    // Playwright passes process.env to the server itself; spreading it here would put the
+    // whole environment, credentials included, into the JSON report, which serializes webServer.env.
+    env: { PLP_NUXT_ORIGIN: origin, PLP_NUXT_INTERNAL_PORT: internalPort },
     url: `${origin}/admin.html`,
     ignoreHTTPSErrors: true,
     reuseExistingServer: false,
