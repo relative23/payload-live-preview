@@ -167,6 +167,36 @@ describe('rename-is-preview-request: conflicts leave the file untouched', () => 
     ]);
   });
 
+  // A re-export straight from the package has no import for packageBindings() to find; docs/migration.md
+  // says anything that cannot be rewritten safely is listed, so the unaliased form is listed and the file
+  // kept, and an alias keeps the module's own name while the package's changes.
+  it('reports a re-export straight from the package under the old name', () => {
+    const src = "export { isPreviewRequest } from 'payload-live-preview';\n";
+    const { output, conflicts } = migrateSource(src, ONLY);
+    expect(output).toBe(src);
+    expect(conflicts).toEqual([
+      expect.objectContaining({
+        line: 1,
+        reason: expect.stringContaining('re-exported straight from the package') as string,
+      }),
+    ]);
+  });
+
+  it('renames the package side of an aliased re-export and keeps the module its name', () => {
+    expect(
+      migrateSource(
+        "export { isPreviewRequest as guard } from 'payload-live-preview/server';\n",
+        ONLY,
+      ).output,
+    ).toBe("export { hasPreviewIntent as guard } from 'payload-live-preview/server';\n");
+    expect(
+      migrateSource(
+        "export { isPreviewRequest as hasPreviewIntent } from 'payload-live-preview';\n",
+        ONLY,
+      ).output,
+    ).toBe("export { hasPreviewIntent } from 'payload-live-preview';\n");
+  });
+
   it.each([
     [
       'a local wrapper function',

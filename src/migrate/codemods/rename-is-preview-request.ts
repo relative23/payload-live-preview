@@ -3,9 +3,11 @@ import {
   declaresName,
   memberAccesses,
   packageBindings,
+  packageReexports,
   referencesTo,
   replaceNode,
   type PackageBinding,
+  type PackageReexport,
 } from '../ast';
 import type { CodemodImplementation, CodemodConflict, CodemodPlan, TextEdit } from '../types';
 
@@ -27,10 +29,27 @@ function renameBinding(binding: PackageBinding): TextEdit {
 
 function plan(
   bindings: readonly PackageBinding[],
+  reexports: readonly PackageReexport[],
   script: Parameters<CodemodImplementation['apply']>[0],
 ): CodemodPlan {
   const blocking: CodemodConflict[] = [];
   const edits: TextEdit[] = [];
+  for (const reexport of reexports) {
+    if (reexport.alias === undefined) {
+      // Renaming it would rename this module's export too; its importers decide.
+      blocking.push(
+        conflict(
+          reexport.line,
+          `${OLD_NAME} is re-exported straight from the package under its old name; write ` +
+            `export { ${NEW_NAME} as ${OLD_NAME} } from '${reexport.specifier}', or rename it and its importers by hand`,
+        ),
+      );
+    } else if (reexport.alias === NEW_NAME) {
+      edits.push(replaceNode(reexport.importedNode.getParentOrThrow(), NEW_NAME));
+    } else {
+      edits.push(replaceNode(reexport.importedNode, NEW_NAME));
+    }
+  }
   const existing = declaresName(
     script,
     NEW_NAME,
@@ -94,7 +113,8 @@ export const renameIsPreviewRequest: CodemodImplementation = {
     '(docs/migration.md).',
   apply(script) {
     const bindings = packageBindings(script).filter((binding) => binding.imported === OLD_NAME);
-    if (bindings.length === 0) return { edits: [], conflicts: [] };
-    return plan(bindings, script);
+    const reexports = packageReexports(script).filter((reexport) => reexport.imported === OLD_NAME);
+    if (bindings.length === 0 && reexports.length === 0) return { edits: [], conflicts: [] };
+    return plan(bindings, reexports, script);
   },
 };

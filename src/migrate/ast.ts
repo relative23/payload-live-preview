@@ -69,6 +69,37 @@ export interface PackageBinding {
   readonly declaration: Node;
 }
 
+/** A name the script re-exports straight from the package: `export { name } from 'payload-live-preview'`. */
+export interface PackageReexport {
+  /** The exported name, as the package spells it. */
+  readonly imported: string;
+  readonly specifier: string;
+  /** The node spelling the package's name; rewritten when the export is renamed. */
+  readonly importedNode: Node;
+  /** The name the module exports it under, when the specifier has `as`. */
+  readonly alias: string | undefined;
+  readonly line: number;
+}
+
+/** packageBindings() sees imports; a re-export from the package binds nothing locally and needs its own pass. */
+export function packageReexports(script: SourceFile): readonly PackageReexport[] {
+  const out: PackageReexport[] = [];
+  for (const declaration of script.getExportDeclarations()) {
+    const specifier = declaration.getModuleSpecifierValue();
+    if (specifier === undefined || !isPackageSpecifier(specifier)) continue;
+    for (const spec of declaration.getNamedExports()) {
+      out.push({
+        imported: spec.getName(),
+        specifier,
+        importedNode: spec.getNameNode(),
+        alias: spec.getAliasNode()?.getText(),
+        line: spec.getStartLineNumber(),
+      });
+    }
+  }
+  return out;
+}
+
 export function packageBindings(script: SourceFile): readonly PackageBinding[] {
   const { Node, SyntaxKind } = loadTsMorph();
   const out: PackageBinding[] = [];
