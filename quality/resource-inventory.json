@@ -62,6 +62,10 @@
       "release": "scope",
       "why": "The debounce; UpdateScheduler.destroy() clears it, and the scope owns that destroy."
     },
+    "src/core/update-scheduler.ts::this.frameFallback = setTimeout(run, FRAME_FALLBACK_MS);": {
+      "release": "scope",
+      "why": "The fallback for an animation frame the browser does not give; the frame that comes first clears it, and UpdateScheduler.destroy() clears a pending one \u2014 the scope owns that destroy."
+    },
     "src/core/update-scheduler.ts::this.deadlineTimer = setTimeout(() => {": {
       "release": "scope",
       "why": "The deadline that forces a flush; UpdateScheduler.destroy() clears it, and the scope owns that destroy."

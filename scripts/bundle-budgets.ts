@@ -521,7 +521,14 @@
 // +66/+14/+16 B raw/gzip/Brotli; retain the prior 10/5/120 B reserves.
 // 2026-10-16 (the json-only population body refuses an interruption, as its stream branch does): paired Node24.19/npm12.0.2, epoch1791096072,
 // the build of this source against the build before the one statement; +12/+2/+75 B raw/gzip/Brotli; retain the prior reserves (Brotli rises only where it rose).
-export const INLINE_BUDGET = { raw: 144_977, gzip: 45_583, brotli: 40_016 } as const;
+// 2026-10-23 (a write no longer waits for an animation frame the browser does not give: a 100 ms fallback in the scheduler, after
+// WebKit gave a visible preview frame none for seconds): paired Node24.19/npm12.0.2, epoch1792703690, this source against the same HEAD
+// without the change; +297/+68/+130 B raw/gzip/Brotli; prior reserves kept. The entry rows move with the same change (raw / gzip /
+// brotli): `adapters/astro/index.js` +297 / +65 / +64, `adapters/astro/middleware-entry.js` +297 / +65 / +75, `adapters/nextjs/index.js`
+// +297 / +58 / +91, `adapters/nuxt/index.js` +297 / +59 / +57, `adapters/sveltekit/index.js` +297 / +68 / +117, `client.cjs` +289 / +47 /
+// +110, `client.js` +289 / +48 / +26, `core.cjs` +289 / +45 / +35, `core.js` +289 / +49 / +31, `index.cjs` +586 / +114 / +79, `index.js`
+// +586 / +118 / +130, `lean.cjs` +297 / +72 / +76, `lean.js` +297 / +71 / 0 (measured lower); the lean and prelude inline rows in their files.
+export const INLINE_BUDGET = { raw: 145_274, gzip: 45_651, brotli: 40_146 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

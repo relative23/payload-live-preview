@@ -33,8 +33,13 @@ describe('UpdateScheduler — leading edge', () => {
     scheduler.schedule(update(entry(document.createElement('p')), 'A'));
 
     expect(frames).toHaveLength(1);
-    // Not "a shorter debounce": no timer is armed for this write at all.
-    expect(vi.getTimerCount()).toBe(0);
+    // Not "a shorter debounce": the one timer is the frame's fallback
+    // (update-scheduler-frame-fallback.test.ts), and the window passing neither
+    // writes nor asks for another frame.
+    expect(vi.getTimerCount()).toBe(1);
+    vi.advanceTimersByTime(50);
+    expect(frames).toHaveLength(1);
+    expect(apply).not.toHaveBeenCalled();
     frames[0]?.(0);
     expect(apply).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ value: 'A' }));
     scheduler.destroy();
@@ -71,7 +76,8 @@ describe('UpdateScheduler — leading edge', () => {
     scheduler.schedule(update(target, 'B'));
 
     expect(frames).toHaveLength(2);
-    expect(vi.getTimerCount()).toBe(0);
+    // The second frame's fallback, and no debounce timer beside it.
+    expect(vi.getTimerCount()).toBe(1);
     scheduler.destroy();
   });
 
