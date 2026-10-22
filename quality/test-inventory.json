@@ -22,7 +22,7 @@
   "totals": {
     "files": 506,
     "suites": 955,
-    "tests": 4348,
+    "tests": 4352,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 410,
       "suites": 847,
-      "tests": 3952,
+      "tests": 3956,
       "benchmarks": 0
     }
   },
@@ -2622,7 +2622,7 @@
       "path": "tests/unit/migrate/move-fetch-preview-helpers.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 11,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -2643,7 +2643,7 @@
       "path": "tests/unit/migrate/rename-is-preview-request.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 14,
+      "tests": 16,
       "benchmarks": 0
     },
     {

@@ -117,12 +117,35 @@ describe('move-fetch-preview-helpers: never leaves a call site without its impor
     ]);
   });
 
-  it('keeps the whole file intact when one of several calls cannot be rewritten', () => {
+  it('keeps the whole file intact when one of several calls cannot be rewritten, and says nothing was rewritten', () => {
     const src =
       "import { fetchPreviewDocument } from 'payload-live-preview';\nawait fetchPreviewDocument({ serverURL, collection: 'a', depth: 1, authorization });\nawait fetchPreviewDocument(opts);\n";
     const { output, conflicts } = migrateSource(src, ONLY);
     expect(output).toBe(src);
-    expect(conflicts.map((c) => c.line)).toEqual([3, 2]);
+    // The call on line 2 could have been rewritten, but the file is held back: a note that it
+    // "was rewritten" would tell the reader the opposite of what happened.
+    expect(conflicts.map((c) => c.line)).toEqual([3]);
+    expect(conflicts.some((c) => c.reason.includes('was rewritten'))).toBe(false);
+  });
+
+  it('keeps the advice about a key without a home when the file is held back', () => {
+    const src =
+      "import { fetchPreviewDocument } from 'payload-live-preview';\nawait fetchPreviewDocument({ serverURL, collection: 'a', id, depth: 1, authorization });\nawait fetchPreviewDocument(opts);\n";
+    const { output, conflicts } = migrateSource(src, ONLY);
+    expect(output).toBe(src);
+    expect(conflicts.some((c) => c.line === 2 && c.reason.includes('`id`'))).toBe(true);
+    expect(conflicts.some((c) => c.reason.includes('was rewritten'))).toBe(false);
+  });
+
+  it('reports a re-export straight from the package', () => {
+    const src =
+      "export { fetchPreviewDocument, fetchPreviewGlobal as global } from 'payload-live-preview';\n";
+    const { output, conflicts } = migrateSource(src, ONLY);
+    expect(output).toBe(src);
+    expect(conflicts.map((c) => c.line)).toEqual([1, 1]);
+    expect(conflicts.every((c) => c.reason.includes('re-exported straight from the package'))).toBe(
+      true,
+    );
   });
 
   it('reports a require() binding and a foreign definePreview instead of rewriting', () => {

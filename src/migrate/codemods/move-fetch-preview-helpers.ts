@@ -8,9 +8,11 @@ import {
   declaresName,
   loadTsMorph,
   packageBindings,
+  packageReexports,
   propertyKey,
   referencesTo,
   type PackageBinding,
+  type PackageReexport,
 } from '../ast';
 import type { CodemodImplementation, CodemodConflict, CodemodPlan, TextEdit } from '../types';
 import type {
@@ -51,7 +53,10 @@ function conflict(line: number, reason: string): CodemodConflict {
 
 interface RewrittenCall {
   readonly edit: TextEdit;
-  readonly notes: readonly CodemodConflict[];
+  /** What the rewrite did; only true when the file is rewritten. */
+  readonly done: CodemodConflict;
+  /** What a reader has to place by hand, rewritten or not. */
+  readonly advice: readonly CodemodConflict[];
 }
 
 function rewriteCall(
@@ -82,15 +87,14 @@ function rewriteCall(
   const text = `definePreview({ ${server.join(', ')} }).${method}${generic}({ ${read.join(', ')} })`;
   const droppedNote = dropped.length === 0 ? '' : `, and ${dropped.join('/')} was dropped`;
   const line = call.getStartLineNumber();
-  const notes = [
-    conflict(
-      line,
-      `${imported}() was rewritten onto definePreview().${method}(); it now returns a ` +
-        `PreviewFetchResult (check ok/data) and needs a real authorization for drafts${droppedNote}`,
-    ),
-  ];
+  const done = conflict(
+    line,
+    `${imported}() was rewritten onto definePreview().${method}(); it now returns a ` +
+      `PreviewFetchResult (check ok/data) and needs a real authorization for drafts${droppedNote}`,
+  );
+  const advice: CodemodConflict[] = [];
   if (unplaceable.length > 0) {
-    notes.push(
+    advice.push(
       conflict(
         line,
         `${imported}() was passed ${unplaceable.map((key) => `\`${key}\``).join(', ')}, which ` +
@@ -99,7 +103,7 @@ function rewriteCall(
       ),
     );
   }
-  return { edit: { start: call.getStart(), end: call.getEnd(), text }, notes };
+  return { edit: { start: call.getStart(), end: call.getEnd(), text }, done, advice };
 }
 
 function importLine(quote: string, names: readonly string[], specifier: string): string {
@@ -171,10 +175,22 @@ function rewriteImports(script: SourceFile, bindings: readonly PackageBinding[])
   return edits;
 }
 
-function plan(script: SourceFile, bindings: readonly PackageBinding[]): CodemodPlan {
+function plan(
+  script: SourceFile,
+  bindings: readonly PackageBinding[],
+  reexports: readonly PackageReexport[],
+): CodemodPlan {
   const { Node } = loadTsMorph();
-  const blocking: CodemodConflict[] = [];
+  const blocking: CodemodConflict[] = reexports.map((reexport) =>
+    conflict(
+      reexport.line,
+      `${reexport.imported} is re-exported straight from the package; it became ` +
+        `definePreview().${METHOD[reexport.imported] ?? reexport.imported}() on ${SERVER_SPECIFIER}, ` +
+        'so rewrite the re-export and its importers by hand',
+    ),
+  );
   const notes: CodemodConflict[] = [];
+  const advice: CodemodConflict[] = [];
   const edits: TextEdit[] = [];
   for (const binding of bindings) {
     if (binding.kind === 'require') {
@@ -220,7 +236,8 @@ function plan(script: SourceFile, bindings: readonly PackageBinding[]): CodemodP
       }
       const rewritten = rewriteCall(call, options, binding.imported);
       edits.push(rewritten.edit);
-      notes.push(...rewritten.notes);
+      notes.push(rewritten.done, ...rewritten.advice);
+      advice.push(...rewritten.advice);
     }
   }
   const serverDeclaration = script
@@ -236,7 +253,8 @@ function plan(script: SourceFile, bindings: readonly PackageBinding[]): CodemodP
       ),
     );
   }
-  if (blocking.length > 0) return { edits: [], conflicts: [...blocking, ...notes] };
+  // A held-back file was not rewritten, so "was rewritten" would say the opposite; the advice still holds.
+  if (blocking.length > 0) return { edits: [], conflicts: [...blocking, ...advice] };
   edits.push(...rewriteImports(script, bindings));
   return { edits, conflicts: notes };
 }
@@ -250,7 +268,10 @@ export const moveFetchPreviewHelpers: CodemodImplementation = {
     const bindings = packageBindings(script).filter(
       (binding) => binding.specifier === PACKAGE_NAME && binding.imported in METHOD,
     );
-    if (bindings.length === 0) return { edits: [], conflicts: [] };
-    return plan(script, bindings);
+    const reexports = packageReexports(script).filter(
+      (reexport) => reexport.specifier === PACKAGE_NAME && reexport.imported in METHOD,
+    );
+    if (bindings.length === 0 && reexports.length === 0) return { edits: [], conflicts: [] };
+    return plan(script, bindings, reexports);
   },
 };
