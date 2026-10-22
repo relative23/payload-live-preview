@@ -38,9 +38,12 @@ out there by hand. A client built in the browser (`LivePreviewClient`,
 `mode: 'inline'` or `'loader'` is given `authorizePreview`, `shouldInject` or
 `authorizePreviewModule`. Those modes decide once, at build time, and never
 called them, so a configuration that carried one ran on 2.0 with the function
-ignored. Move the hook to `mode: 'middleware'` with `authorizePreviewModule`, or
+ignored. Use `mode: 'middleware'`, with `authorizePreviewModule` for the verdict
+and `previewQueryParams` or `previewSignals` for what `shouldInject` decided, or
 register `createLivePreviewMiddleware({ authorizePreview })` in
-`src/middleware.ts`; the error message names both ([Astro](astro.md),
+`src/middleware.ts`. The errors for `authorizePreview` and `shouldInject` name
+both ways; the one for `authorizePreviewModule` says it applies to
+`mode: 'middleware'` ([Astro](astro.md),
 [options.md](options.md), row 24 of the
 [ADR 0007 ledger](architecture/0007-v2-defaults-and-renames-ledger.md)).
 
@@ -57,7 +60,7 @@ profile.
 ### Run the tooling first
 
 ```bash
-npx pll migrate ./src            # dry run: shows the renames it would make
+npx pll migrate ./src            # dry run: lists the files and codemods it would change
 npx pll migrate ./src --write    # apply them
 npx pll migrate ./src --only rename-is-preview-request   # one codemod
 npx pll doctor https://www.example.com/page --admin https://cms.example.com --v2

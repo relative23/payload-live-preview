@@ -62,6 +62,8 @@ to a listed origin to send it from the first request and disable the retry.
 `payloadHeaders` retains the headers of the accepted request for draft reads.
 Payload 2.32.3 accepts the cookie-only request even with a CSRF list; preserving
 it also preserves sessions whose list holds only the frontend's origin.
+The real-admin suites end a session by signing out through Payload's logout
+route; a session that ends because its token expired is not exercised.
 
 Options: `serverURL` (required), `origin` (optional explicit origin),
 `usersSlug` (`users`), `cookieName` (`payload-token`), `timeoutMs` (`3000`,

@@ -363,7 +363,10 @@ What is proven about the Payload wire protocol, from the outside in:
    the collection kept only the save. CI runs every target on every
    push: the Astro default in Chromium, the others in all three browsers, and
    the Next.js session target and its hook page once more in Chromium with
-   Payload's CSRF list on. On a host that starts and stops containers while a
+   Payload's CSRF list on. The Next.js, SvelteKit and Nuxt targets run their
+   development servers, and the admin itself runs `next dev`; the Astro, hybrid
+   and HTML targets serve a build. The three browsers are Playwright's Chromium,
+   Firefox and WebKit builds on Linux; Safari itself is not run. On a host that starts and stops containers while a
    dev-server target runs, Chromium can report `net::ERR_NETWORK_CHANGED` for
    the preview's module requests; the page then keeps its server render and a
    hook page stays `idle`. That is the host, not the package: it was seen on a

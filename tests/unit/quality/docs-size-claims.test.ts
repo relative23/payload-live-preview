@@ -92,10 +92,9 @@ describe('the delivery byte claims', () => {
       '158 885',
       '158 609',
     ],
-    ['Next.js bootstrap', 'a 1 344-byte bootstrap', '1 344', '1 367'],
     [
-      'Next.js bootstrap element',
-      'a 1 344-byte `<script>` element, measured on the example, rendered twice',
+      'Next.js bootstrap on the example',
+      'that carries the options (1 344 bytes on the\nexample, 1 364 with the options below',
       '1 344',
       '1 367',
     ],
