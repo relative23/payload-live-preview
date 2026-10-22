@@ -57,6 +57,13 @@ export interface FlushStats {
 export const DEFAULT_DEBOUNCE_MS = 50;
 /** Exported so `pll doctor` can prove its own copy of the number has not drifted. */
 export const DEFAULT_VISIBILITY_THRESHOLD = 50;
+/**
+ * Longest a write waits for an animation frame. WebKit gave a visible
+ * cross-origin preview frame none for seconds (the real-admin suite, 2026-10-22,
+ * `animationFramesIn600ms: 0`): the document had arrived and the page kept the
+ * old text. Frames come every 16 to 33 ms where they come at all.
+ */
+const FRAME_FALLBACK_MS = 100;
 
 interface BufferEntry {
   target: CachedElement;
@@ -85,6 +92,7 @@ export class UpdateScheduler {
   private debounceToken = 0;
   private deadlineTimer: ReturnType<typeof setTimeout> | null = null;
   private frameHandle: number | null = null;
+  private frameFallback: ReturnType<typeof setTimeout> | null = null;
   private frameToken = 0;
   /** End of the window the leading write opened; inside it a write waits for the debounce. */
   private windowUntil = 0;
@@ -283,18 +291,32 @@ export class UpdateScheduler {
     const token = (this.frameToken += 1);
     const handle = this.frameHandle;
     this.frameHandle = null;
+    this.clearFrameFallback();
     if (handle !== null) this.cancelFrame(handle);
     if (this.frameToken !== token) return;
     let completed = false;
-    const next = this.scheduleFrame(() => {
-      if (this.frameToken !== token) return;
+    // The frame or the fallback, whichever comes first, writes; the other finds the token spent.
+    const run = (): void => {
+      if (this.frameToken !== token || completed) return;
       completed = true;
+      const frame = this.frameHandle;
       this.frameHandle = null;
+      this.clearFrameFallback();
+      if (frame !== null) this.cancelFrame(frame);
       this.flush();
-    });
+    };
+    const next = this.scheduleFrame(run);
     // An injected scheduler may run the callback synchronously; never publish a spent handle.
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!completed && this.frameToken === token) this.frameHandle = next;
+    if (completed || this.frameToken !== token) return;
+    this.frameHandle = next;
+    this.frameFallback = setTimeout(run, FRAME_FALLBACK_MS);
+  }
+
+  private clearFrameFallback(): void {
+    // clearTimeout ignores undefined, so a null guard here would be a branch without a behaviour.
+    clearTimeout(this.frameFallback ?? undefined);
+    this.frameFallback = null;
   }
 
   private flush(): FlushStats {
@@ -405,6 +427,7 @@ export class UpdateScheduler {
     this.debounceTimer = null;
     this.frameHandle = null;
     this.clearDeadline();
+    this.clearFrameFallback();
     if (debounceTimer !== null) clearTimeout(debounceTimer);
     if (frameHandle !== null) this.cancelFrame(frameHandle);
   }

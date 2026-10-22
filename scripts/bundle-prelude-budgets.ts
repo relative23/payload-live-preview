@@ -135,7 +135,8 @@
 // +111/+27/+74 B raw/gzip/Brotli; retain the prior reserves.
 // 2026-10-16 (the json-only population body refuses an interruption, as its stream branch does): paired Node24.19/npm12.0.2, epoch1791096072,
 // the build of this source against the build before the one statement; +12/+11/+15 B raw/gzip/Brotli; retain the prior reserves (Brotli rises only where it rose).
-export const INLINE_FRAGMENT_BUDGET = { raw: 159_157, gzip: 50_377, brotli: 43_724 } as const;
+// 2026-10-23 (the scheduler's frame fallback, recorded with INLINE_BUDGET): paired, +297/+68/+117 B raw/gzip/Brotli; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 159_454, gzip: 50_445, brotli: 43_841 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -261,4 +262,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 159_157, gzip: 50_377, brotli: 43_7
 // +111/+26/+62 B raw/gzip/Brotli; retain the prior reserves.
 // 2026-10-16 (the json-only population body refuses an interruption, as its stream branch does): paired Node24.19/npm12.0.2, epoch1791096072,
 // the build of this source against the build before the one statement; +12/+10/+26 B raw/gzip/Brotli; retain the prior reserves (Brotli rises only where it rose).
-export const INLINE_ROUTE_BUDGET = { raw: 153_572, gzip: 48_393, brotli: 42_063 } as const;
+// 2026-10-23 (the scheduler's frame fallback, recorded with INLINE_BUDGET): paired, +297/+68/+136 B raw/gzip/Brotli; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 153_869, gzip: 48_461, brotli: 42_199 } as const;

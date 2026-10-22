@@ -153,7 +153,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 159 206 for authorized inline delivery. It fetches one
+  (ADR 0015), against 159 503 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -264,7 +264,9 @@ Notes on the rows that need one:
 - `debounceMs` is the window a burst of messages shares, not a delay on every
   one: the first write of a quiet phase is applied on the next animation frame
   and opens the window, and everything that arrives inside it is coalesced into
-  one flush when it closes. Typing therefore costs one frame at the start of a
+  one flush when it closes. A write waits at most 100 ms for that frame: WebKit
+  gave a visible preview frame none for seconds (2026-10-22), and the fallback
+  timer writes instead. Typing therefore costs one frame at the start of a
   phrase and one at the end of it, not 50 ms per keystroke. `debounceMs: 0`
   removes the window entirely — and with it the merge coalescing that shares it.
 - `intersectionRootMargin` may not pull a write in ahead of the fold inside a

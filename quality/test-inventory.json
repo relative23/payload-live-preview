@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 506,
-    "suites": 955,
-    "tests": 4355,
+    "files": 507,
+    "suites": 957,
+    "tests": 4364,
     "benchmarks": 12
   },
   "groups": {
@@ -40,8 +40,8 @@
     },
     "e2e": {
       "files": 57,
-      "suites": 61,
-      "tests": 249,
+      "suites": 62,
+      "tests": 250,
       "benchmarks": 0
     },
     "integration": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 410,
-      "suites": 847,
-      "tests": 3959,
+      "files": 411,
+      "suites": 848,
+      "tests": 3967,
       "benchmarks": 0
     }
   },
@@ -297,8 +297,8 @@
     {
       "path": "tests/e2e/specs/live-preview.spec.ts",
       "group": "e2e",
-      "suites": 3,
-      "tests": 9,
+      "suites": 4,
+      "tests": 10,
       "benchmarks": 0
     },
     {
@@ -2203,6 +2203,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/update-scheduler-frame-fallback.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
       "benchmarks": 0
     },
     {

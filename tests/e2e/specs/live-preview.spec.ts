@@ -82,6 +82,39 @@ test.describe('live preview — admin → iframe updates', () => {
   });
 });
 
+// WebKit gave a visible cross-origin preview frame no animation frame for seconds
+// (the real-admin suite's report of 2026-10-22: `animationFramesIn600ms: 0`), and
+// a write that waits only for a frame then never lands. This frame has none at all.
+test.describe('live preview — a preview frame without animation frames', () => {
+  test('an update from the admin still reaches the page', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (window.top === window) return;
+      window.requestAnimationFrame = () => 0;
+      window.cancelAnimationFrame = () => undefined;
+    });
+    await page.goto('/admin');
+    const preview = page.frameLocator('[data-testid="preview-frame"]');
+    await expect(preview.locator('[data-payload-field="title"]')).toBeVisible();
+    const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
+    const ticks = await frame?.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          let count = 0;
+          requestAnimationFrame(() => (count += 1));
+          setTimeout(() => {
+            resolve(count);
+          }, 300);
+        }),
+    );
+    expect(ticks, 'the preview frame gets no animation frame').toBe(0);
+
+    await page.getByTestId('title-input').fill('Typed without a frame');
+    await expect(preview.locator('[data-payload-field="title"]')).toHaveText(
+      'Typed without a frame',
+    );
+  });
+});
+
 test.describe('live preview — origin enforcement', () => {
   test('messages from an untrusted origin are ignored', async ({ page }) => {
     await page.goto('/');
