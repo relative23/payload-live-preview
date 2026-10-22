@@ -432,8 +432,9 @@ in whatever it does hand a handler — that is all either binding does.
   installs the peer afterwards is not answered from a stale failure. Pass
   `render` for another component system or for a test.
 - **Limits**: the endpoint counts the bytes consumed from the request stream,
-  with a 64 KiB default cap. One 5 s deadline covers the complete body read;
-  props and rendering then receive separate 5 s windows. Configure these with
+  with a 64 KiB default cap. One 5 s deadline covers the complete body read
+  (`408 {"error":"body"}` when it passes); props and rendering then receive
+  separate 5 s windows (`500 {"error":"render"}` when one passes). Configure these with
   `limits` (`bodyBytes`, `timeoutMs`). The request
   carries the whole document: 64 KiB holds at least about 4 500 words of rich text,
   and a page with layout blocks measured 6 to 15 KB
@@ -478,7 +479,11 @@ in whatever it does hand a handler — that is all either binding does.
   phase starts after cancellation, and a late result is not accepted. Work
   that ignores the signal can continue; synchronous code cannot be interrupted
   by these timers. Host execution and concurrent-request limits are still
-  required for a hard resource bound.
+  required for a hard resource bound. Cancelling saves the phases that have not
+  started, not the host's cost of taking a request: in a capacity measurement on
+  2026-10-22 (one client against a Next.js 16 server, in three engines), a burst in which 76 of 80 requests were cancelled before rendering
+  cost 1.6 to 2.1 ms of server CPU per request, about what completed requests of
+  the same size cost (1.85 to 1.95 ms).
 - **A render that throws** answers `500 {"error":"render"}` — the reason never
   leaves the server — and logs the boundary's id and the message once per
   process, outside production. Without that line a component that throws on

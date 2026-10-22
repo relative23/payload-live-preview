@@ -158,6 +158,9 @@ session ends in the middle of a preview, Payload 2.32.3 answers the next read
 with 403: `error` names it, `data` and `revision` stay, and the first update
 after a new sign-in is `'live'` again. The DOM runtime uses the same merger
 ([ADR 0010](architecture/0010-protocol-capabilities-by-observation.md)).
+The real-admin runs of the hook and the composable (Payload 2.32.3 and 3.90.2)
+use development bundles; a production build of both is server-rendered,
+hydrated and taken through its lifecycle against the mock admin (`tests/e2e/specs/react-vue-tarball.spec.ts`).
 
 Origin trust is this package's, not the admin's word: a message is accepted only
 from an allowed origin, and by default only from the window that framed or

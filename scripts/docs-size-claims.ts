@@ -90,10 +90,10 @@ export function deliveryFamilies(
       /against (\d[\d ]*\d) (?:bytes )?for authorized inline delivery/gu,
       facts.runtime + facts.nextAuthorized,
     ],
-    ['Next.js bootstrap', /(\d[\d ]*\d)-byte bootstrap/gu, facts.nextBootstrap],
+    // The bootstrap carries the options, so its size is the example's: the guide names that.
     [
-      'Next.js bootstrap element',
-      /(\d[\d ]*\d)-byte `<script>` element, measured on the example/gu,
+      'Next.js bootstrap on the example',
+      /(\d[\d ]*\d) bytes on the\s+example/gu,
       facts.nextBootstrap,
     ],
     [

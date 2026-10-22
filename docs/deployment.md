@@ -249,10 +249,13 @@ the default ships nothing extra.
 
 ## The fragment endpoint on another runtime
 
-The host and proxy results in this section and the next are measurements from
+The host and proxy results in this section and the next were measured on
 2026-10-02 on earlier source-built archives, recorded in
-[ADR 0011](architecture/0011-fragment-protocol-and-abuse-model.md#4c-other-runtimes-and-proxies-2026-10-02).
-They retain the observed transport limits and failure modes.
+[ADR 0011](architecture/0011-fragment-protocol-and-abuse-model.md#4c-other-runtimes-and-proxies-2026-10-02),
+and repeated on 2026-10-22 on the 2.1.0 release candidate with the same hosts,
+proxies and versions: 527 cases, all passed. The suites
+(`playwright.fragment-hosts.config.ts`, `playwright.fragment-lifetime.config.ts`)
+start Docker containers and run by hand, not in CI.
 
 `createFragmentEndpoint` from `payload-live-preview/nextjs` takes a `Request`
 and returns a `Response`, and it loads no Node module until its default
