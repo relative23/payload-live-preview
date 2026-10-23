@@ -480,10 +480,10 @@ in whatever it does hand a handler — that is all either binding does.
   that ignores the signal can continue; synchronous code cannot be interrupted
   by these timers. Host execution and concurrent-request limits are still
   required for a hard resource bound. Cancelling saves the phases that have not
-  started, not the host's cost of taking a request: in a capacity measurement on
-  2026-10-22 (one client against a Next.js 16 server, in three engines), a burst in which 76 of 80 requests were cancelled before rendering
+  started, not the host's cost of taking a request: in capacity measurements on
+  2026-10-22 and 2026-10-23 (one client against a Next.js 16 server, in three engines), a burst in which 76 of 80 requests were cancelled before rendering
   cost 1.6 to 2.1 ms of server CPU per request, about what completed requests of
-  the same size cost (1.85 to 1.95 ms).
+  the same size cost (1.7 to 1.95 ms).
 - **A render that throws** answers `500 {"error":"render"}` — the reason never
   leaves the server — and logs the boundary's id and the message once per
   process, outside production. Without that line a component that throws on

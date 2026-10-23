@@ -252,8 +252,8 @@ the default ships nothing extra.
 The host and proxy results in this section and the next were measured on
 2026-10-02 on earlier source-built archives, recorded in
 [ADR 0011](architecture/0011-fragment-protocol-and-abuse-model.md#4c-other-runtimes-and-proxies-2026-10-02),
-and repeated on 2026-10-22 on the 2.1.0 release candidate with the same hosts,
-proxies and versions: 527 cases, all passed. The suites
+and repeated with the same hosts, proxies and versions on two 2.1.0 release
+candidates, on 2026-10-22 and 2026-10-23: 527 cases each time, all passed. The suites
 (`playwright.fragment-hosts.config.ts`, `playwright.fragment-lifetime.config.ts`)
 start Docker containers and run by hand, not in CI.
 
@@ -268,7 +268,7 @@ limit, a declared length refused on the headers alone, a gzip body refused as
 malformed, and keep-alive reuse. The 12 cases that apply to HTTP/2 passed on
 Deno with TLS. Deno differs in one place: when a client drops an upload it
 fails the request's body stream and leaves `request.signal` alone. The endpoint
-still answers 400 before it authorizes, within 50 ms.
+still answers 400 before it authorizes.
 
 The endpoint reads the bytes that arrive and does not undo a
 `Content-Encoding`. A gzip body, even one that would inflate to 8 MB, is refused
@@ -305,8 +305,8 @@ the 413, and a proxy a 502. The page treats that like any failed request: it
 reports `LP0801` and patches the boundary from the same revision. Whether the
 413 arrives is a race between that close and the data still in flight, so its
 share moves with load. Chromium, Firefox and WebKit sent ten requests each of
-90 kB, 300 kB and 2 MB, twice (180 per host), at a load average of 5 to 10 on
-the test machine, and again at 16:
+90 kB, 300 kB and 2 MB, twice (180 per host), on 2026-10-02 at a load average
+of 5 to 10 on the test machine, and again at 16:
 
 - Deno, Bun and nginx with `proxy_request_buffering off` returned the 413 every
   time in both sets (180 of 180 each). nginx with `client_max_body_size 256k` did
@@ -320,6 +320,11 @@ the test machine, and again at 16:
   of 90 each). Chromium got it every time from the SvelteKit and Nuxt servers,
   whose bindings close the connection; Firefox and WebKit lost some to a network
   error, WebKit 10 of 10 at 2 MB from SvelteKit.
+
+These shares come from that one measurement. The later runs check that no
+request over the limit is accepted, not how often the 413 arrives, and their
+counts differ: on 2026-10-23 the Node bridge lost 15 of 90, all in WebKit, 5 of
+them at 300 kB.
 
 A request body limit on the proxy that answers before it forwards anything, such
 as nginx's `client_max_body_size` set a little above `limits.bodyBytes`, keeps
