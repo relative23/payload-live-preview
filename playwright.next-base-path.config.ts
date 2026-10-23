@@ -9,7 +9,8 @@ import { defineConfig, type PlaywrightTestConfig } from '@playwright/test';
 import base from './playwright.config';
 
 const origin = process.env['PLP_NEXT_ORIGIN'] ?? 'https://localhost:4292';
-const internalPort = process.env['PLP_NEXT_INTERNAL_PORT'] ?? '42920';
+// The private listener sits below the ephemeral range (32768-60999), so an outbound connection cannot claim it.
+const internalPort = process.env['PLP_NEXT_INTERNAL_PORT'] ?? '14292';
 const basePath = process.env['PLP_NEXT_BASE_PATH'] ?? '/docs';
 process.env['PLP_NEXT_ORIGIN'] = origin;
 process.env['PLP_NEXT_INTERNAL_PORT'] = internalPort;
