@@ -528,7 +528,11 @@
 // +297 / +58 / +91, `adapters/nuxt/index.js` +297 / +59 / +57, `adapters/sveltekit/index.js` +297 / +68 / +117, `client.cjs` +289 / +47 /
 // +110, `client.js` +289 / +48 / +26, `core.cjs` +289 / +45 / +35, `core.js` +289 / +49 / +31, `index.cjs` +586 / +114 / +79, `index.js`
 // +586 / +118 / +130, `lean.cjs` +297 / +72 / +76, `lean.js` +297 / +71 / 0 (measured lower); the lean and prelude inline rows in their files.
-export const INLINE_BUDGET = { raw: 145_274, gzip: 45_651, brotli: 40_146 } as const;
+// 2026-10-23 (the Version PR's own build): the release candidate of #117 at 71ee21a, version string 2.1.0 and its epoch, measured
+// gzip `lean.js` 37 351 against 37 350 (red), `lean.cjs` 37 358, this row 45 651, `fragment.cjs` 6 480 and `index.cjs` 110 349 — 0 to
+// 3 B under ceilings that kept no gzip reserve. Each of the five gzip ceilings is that measurement + 5 B, the reserve of the other
+// rows; raw and Brotli stay. The entry rows are recorded here, as above.
+export const INLINE_BUDGET = { raw: 145_274, gzip: 45_656, brotli: 40_146 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

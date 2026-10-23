@@ -105,7 +105,7 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +22/+5/+77 B raw/gzip/Brotli;
   // retain the prior 9/6/133 B reserves.
-  'lean.cjs': { raw: 118_496, gzip: 37_358, brotli: 33_080 },
+  'lean.cjs': { raw: 118_496, gzip: 37_363, brotli: 33_080 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 757 → 91 791 (+34 B, measured 91 738 → 91 772).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 791 → 91 840 (+49 B, measured 91 772 → 91 821); gzip 29 171 → 29 183 (+12 B, measured 29 167 → 29 179).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 91 840 → 91 858 (+18 B, measured 91 821 → 91 839); gzip 29 183 → 29 190 (+7 B, measured 29 179 → 29 186).
@@ -128,7 +128,7 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +22/+6/-39 B raw/gzip/Brotli;
   // retain the prior 9/6/120 B reserves.
-  'lean.js': { raw: 118_485, gzip: 37_350, brotli: 33_001 },
+  'lean.js': { raw: 118_485, gzip: 37_356, brotli: 33_001 },
   // 2026-09-16 (2.0.1 Version PR): gzip 5 602 → 5 612. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 5 600 against a cushion of 2 B. Twelve bytes over that measurement  as the rows that never flipped carry.
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 16 307 → 16 527 (+220 B, measured 16 305 → 16 525); gzip 5 612 → 5 665 (+53 B, measured 5 600 → 5 653); brotli 5 072 → 5 162 (measured 5 072; under the 2 % notice).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 16 527 → 16 755 (+228 B, measured 16 525 → 16 753); gzip 5 665 → 5 720 (+55 B, measured 5 653 → 5 708).
@@ -172,7 +172,7 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +133/+49/+43 B raw/gzip/Brotli;
   // retain the prior 20/3/120 B reserves.
-  'fragment.cjs': { raw: 16_997, gzip: 6_483, brotli: 5_834 },
+  'fragment.cjs': { raw: 16_997, gzip: 6_485, brotli: 5_834 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+429/+364 B; same 20/9/79 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+16/+17 B; same 20/9/79 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured -4/-2/-1 B; same 20/9/79 B cushions.
