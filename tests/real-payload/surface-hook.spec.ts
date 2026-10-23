@@ -18,6 +18,10 @@ const PREVIEW_IFRAME = `iframe[src*="localhost:${PORT}${PATH}"]`;
 const ADMIN_ORIGIN = { origin: 'http://localhost:3001' };
 
 test.describe(`real Payload admin → ${SURFACE}`, () => {
+  // The first test of a run also pays for the browser's first page and the preview page's cold compile.
+  // On a CI runner WebKit once took 20.5 s to create that page, and the frame wait below allows 60 s.
+  test.describe.configure({ timeout: 120_000 });
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/login');
     await page.locator('#field-email').fill('e2e@example.com');
