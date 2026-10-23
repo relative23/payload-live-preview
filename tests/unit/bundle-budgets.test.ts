@@ -22,7 +22,8 @@ describe('release bundle budgets', () => {
     // profile's previous raw/gzip reserves and its 120-byte Brotli reserve.
     // 2026-10-23 (the scheduler's frame fallback): +297/+68/+130 default, +297/+71/+75 lean,
     // +297/+68/+136 route, +297/+68/+117 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 145_274, gzip: 45_651, brotli: 40_146 });
+    // 2026-10-23 (the Version PR's own build): gzip + 5 B over its measurement; raw and Brotli unchanged.
+    expect(INLINE_BUDGET).toEqual({ raw: 145_274, gzip: 45_656, brotli: 40_146 });
     expect(INLINE_LEAN_BUDGET).toEqual({ raw: 118_146, gzip: 37_115, brotli: 32_785 });
     expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 153_869, gzip: 48_461, brotli: 42_199 });
     expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 159_454, gzip: 50_445, brotli: 43_841 });
