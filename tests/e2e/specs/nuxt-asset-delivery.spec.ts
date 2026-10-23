@@ -58,8 +58,12 @@ test.describe('asset delivery (Nuxt)', () => {
   });
 
   test('a page without preview intent gets neither runtime nor bootstrap', async ({ request }) => {
-    const html = await (await request.get(`${APP}/`)).text();
+    const response = await request.get(`${APP}/`);
+    const html = await response.text();
 
+    // The page itself is served, so the absences below are the gate's, not an error page's.
+    expect(response.status()).toBe(200);
+    expect(html).toContain('Hello from the demo');
     expect(html).not.toMatch(ASSET_URL);
     expect(html).not.toContain('__LIVE_PREVIEW_CONFIG__');
   });

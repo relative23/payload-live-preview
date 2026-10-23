@@ -61,6 +61,9 @@ test.describe('asset delivery (SvelteKit)', () => {
     const response = await request.get(`${APP}/asset?preview=true`);
 
     const html = await response.text();
+    // The page itself is served, so the absences below are the gate's, not an error page's.
+    expect(response.status()).toBe(200);
+    expect(html).toContain('Hello from the demo');
     expect(html).not.toMatch(ASSET_URL);
     expect(html).not.toContain('__LIVE_PREVIEW_CONFIG__');
     expect(html).not.toMatch(/\sdata-payload-[a-z-]+="/u);
