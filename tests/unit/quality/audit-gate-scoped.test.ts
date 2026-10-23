@@ -175,9 +175,9 @@ describe('scoped audit register', () => {
     );
   });
 
+  // The braces advisory was withdrawn on 2026-10-23 and its exceptions left the register. The recorded
+  // audits predate that, so the gate is evaluated on the bound advisory's findings alone.
   it.each([
-    { project: '.', name: 'root', leaf: 'braces', id: BRACES },
-    { project: 'examples/nuxt-payload', name: 'nuxt-payload', leaf: 'braces', id: BRACES },
     { project: 'examples/nuxt-payload', name: 'nuxt-payload', leaf: 'node-forge', id: FORGE },
   ])('binds the measured $project/$leaf graph', ({ project, leaf, id, name }) => {
     const entry = model.projects[project]?.exceptions.find(
@@ -197,7 +197,7 @@ describe('scoped audit register', () => {
     const selected = selectAuditProject(model, process.cwd(), project, TODAY);
     expect(
       evaluateAuditGate(
-        findings,
+        findings.filter((finding) => finding.id === id),
         { schemaVersion: 2, exceptions: selected.project.exceptions },
         TODAY,
       ).ok,
@@ -234,9 +234,9 @@ describe('scoped audit register', () => {
       evaluateAuditGate([], { schemaVersion: 2, exceptions: selected.project.exceptions }, TODAY)
         .ok,
     ).toBe(true);
-    const root = selectAuditProject(model, process.cwd(), '.', TODAY);
+    const nuxt = selectAuditProject(model, process.cwd(), 'examples/nuxt-payload', TODAY);
     expect(
-      evaluateAuditGate([], { schemaVersion: 2, exceptions: root.project.exceptions }, TODAY).ok,
+      evaluateAuditGate([], { schemaVersion: 2, exceptions: nuxt.project.exceptions }, TODAY).ok,
     ).toBe(false);
   });
 
@@ -270,7 +270,7 @@ describe('scoped audit register', () => {
     'rejects a non-calendar ISO expiry %s even in an inactive project',
     (expires) => {
       const value = structuredClone(model);
-      const entry = value.projects['.']?.exceptions[0];
+      const entry = value.projects['examples/nuxt-payload']?.exceptions[0];
       expect(entry).toBeDefined();
       Object.assign(entry ?? {}, { expires });
       expect(() => selectAuditProject(value, process.cwd(), 'examples/pure-html', TODAY)).toThrow();
@@ -281,7 +281,7 @@ describe('scoped audit register', () => {
     'rejects malformed inactive %s',
     (field) => {
       const value = structuredClone(model);
-      const entry = value.projects['.']?.exceptions[0];
+      const entry = value.projects['examples/nuxt-payload']?.exceptions[0];
       expect(entry).toBeDefined();
       Object.assign(entry ?? {}, { [field]: '' });
       expect(() => selectAuditProject(value, process.cwd(), 'examples/pure-html', TODAY)).toThrow();
@@ -290,23 +290,24 @@ describe('scoped audit register', () => {
 
   it('rejects duplicate declarations and a missing descriptor binding', () => {
     const value = structuredClone(model);
-    const root = value.projects['.'];
-    expect(root).toBeDefined();
-    root?.exceptions.push({ ...root.exceptions[0]! });
+    const nuxt = value.projects['examples/nuxt-payload'];
+    expect(nuxt).toBeDefined();
+    nuxt?.exceptions.push({ ...nuxt.exceptions[0]! });
     expect(() => selectAuditProject(value, process.cwd(), 'examples/pure-html', TODAY)).toThrow(
       'duplicate',
     );
     const unbound = structuredClone(model);
-    if (unbound.projects['.']) unbound.projects['.'].exposureSha256 = null;
+    const bound = unbound.projects['examples/nuxt-payload'];
+    if (bound) bound.exposureSha256 = null;
     expect(() => selectAuditProject(unbound, process.cwd(), 'examples/pure-html', TODAY)).toThrow(
       'exposure',
     );
   });
 
   it('fails a new GHSA instead of covering it by leaf package name', () => {
-    const findings = findingsFromAudit(fixture('root'));
-    const selected = selectAuditProject(model, process.cwd(), '.', TODAY);
-    const changed = findings.map((finding) => ({ ...finding, id: FORGE }));
+    const findings = findingsFromAudit(fixture('nuxt-payload')).filter(({ id }) => id === FORGE);
+    const selected = selectAuditProject(model, process.cwd(), 'examples/nuxt-payload', TODAY);
+    const changed = findings.map((finding) => ({ ...finding, id: BRACES }));
     expect(
       evaluateAuditGate(
         changed,

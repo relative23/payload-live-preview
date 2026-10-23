@@ -320,6 +320,11 @@ sources or callers, and digest mismatches still fail, including when the audit
 reports zero findings. The four clean Astro profiles retain those bindings for
 the known latent cache behavior.
 
+GitHub withdrew the braces advisory on 2026-10-23. From then on the audit gate
+refused both braces exceptions as matching no current advisory, and they were
+removed. The node-forge exception in Nuxt is the only active one. The root keeps
+its reviewed descriptor and digest as a clean project.
+
 ### 11. Publish runs from the certified workflow source (2026-10-04)
 
 Changing `GITHUB_SHA` and `GITHUB_REF` for the npm process changes the claimed
