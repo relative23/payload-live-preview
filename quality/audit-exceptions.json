@@ -23,7 +23,7 @@
     },
     "examples/nuxt-payload": {
       "exposure": "quality/audit-exposure/nuxt-payload.json",
-      "exposureSha256": "eb87e182c4b299492d8f572214be3cd043b4e9c10698b2cd4c3e2210f56648f4",
+      "exposureSha256": "78d6b99bdd378cd2648b68e9e5ecc600df101836c908e4e20fee060051f56954",
       "exceptions": [
         {
           "id": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
@@ -59,7 +59,7 @@
     },
     "examples/astro-middleware": {
       "exposure": "quality/audit-exposure/astro-middleware.json",
-      "exposureSha256": "1651a41a054d31eab3b9a2508d4aa09eab5e4642d3ccacf32de201e7da14ba1a",
+      "exposureSha256": "d95f407757ebf10f1203f7a9d603c038138fe7bf2437d674cb289ec6d5f6a1f1",
       "exceptions": []
     },
     "examples/payload-backend": {

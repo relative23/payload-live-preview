@@ -8,7 +8,8 @@ import { defineConfig, type PlaywrightTestConfig } from '@playwright/test';
 import base from './playwright.config';
 
 const origin = process.env['PLP_SVELTE_ORIGIN'] ?? 'https://localhost:4275';
-const internalPort = process.env['PLP_SVELTE_INTERNAL_PORT'] ?? '42750';
+// The private listener sits below the ephemeral range (32768-60999), so an outbound connection cannot claim it.
+const internalPort = process.env['PLP_SVELTE_INTERNAL_PORT'] ?? '14275';
 process.env['PLP_SVELTE_ORIGIN'] = origin;
 process.env['PLP_SVELTE_INTERNAL_PORT'] = internalPort;
 

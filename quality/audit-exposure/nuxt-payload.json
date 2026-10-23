@@ -32,10 +32,10 @@
     "examples/shared/fragment-lifetime-probe.ts": "3490df5f3818d9d02e2f9066feabb6b31f00405175ba340ef02c6def1edf0bc9",
     "playwright.config.ts": "715a83a82cbec342ce844d3fa4cf0c129611be85571c7842568d3b00673b9a7c",
     "playwright.fragment-lifetime.config.ts": "c2dac52bfb8d24ecc72b8e2fa81c343be404baa85601254c5a6f9b023899a071",
-    "playwright.nuxt-production.config.ts": "52de12581bacdcbc277255288f4c6c624adef702cac7428824bfb29c3cdbe61d",
+    "playwright.nuxt-production.config.ts": "cd46c65535ba0df2f133ec9ef66d21eb2a7e7ce7f148aff64e4106e073ef5a07",
     "playwright.real-payload.config.ts": "db81a7c9a1ad982f2a1731ffb5d2121a6dd04080f49ed2b127a5656f82278e54",
     "scripts/fixture-proxy-lifetime.mjs": "1404361dbfc1d740daa0b80cb40301016c351726210ae865daca85784700a3f5",
-    "scripts/node-production-fixture.mjs": "c21664b2a88ffcda836eead013b63692a5d0db3ae6f7b4c33d349ce69ea379bd",
+    "scripts/node-production-fixture.mjs": "b106d3c7b9a408506149b5d1fa40de0fdea2461cb393fb3aac726c101cd36e0b",
     "scripts/nuxt-production-fixture.mjs": "23f0901a640383662021cd08722d7ad511327ab72aff0ed88c08d401b7eed8be",
     "src/adapters/nuxt/module.ts": "e24ee9d83a47784c0533d260519517ecc19bea990c07259fba597b71ac3f0d7a"
   },

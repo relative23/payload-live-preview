@@ -25,7 +25,8 @@ if (publicUrl.protocol !== 'https:') {
   throw new Error('PLP_NEXT_ORIGIN must use HTTPS for the production fixture.');
 }
 const publicPort = Number(publicUrl.port || 443);
-const internalPort = Number(process.env['PLP_NEXT_INTERNAL_PORT'] ?? '42740');
+// The private listener sits below the ephemeral range (32768-60999), so an outbound connection cannot claim it.
+const internalPort = Number(process.env['PLP_NEXT_INTERNAL_PORT'] ?? '14274');
 const environment = {
   ...process.env,
   NODE_ENV: 'production',

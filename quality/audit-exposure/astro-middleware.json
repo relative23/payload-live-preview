@@ -15,7 +15,7 @@
     "playwright.real-payload.config.ts": "db81a7c9a1ad982f2a1731ffb5d2121a6dd04080f49ed2b127a5656f82278e54",
     "scripts/astro-production-fixture.mjs": "6708448c67e8bb6f4590c57b9b0343b242c99e5cb0454e9fcecc248eb2889dca",
     "scripts/fixture-proxy-lifetime.mjs": "1404361dbfc1d740daa0b80cb40301016c351726210ae865daca85784700a3f5",
-    "scripts/node-production-fixture.mjs": "c21664b2a88ffcda836eead013b63692a5d0db3ae6f7b4c33d349ce69ea379bd"
+    "scripts/node-production-fixture.mjs": "b106d3c7b9a408506149b5d1fa40de0fdea2461cb393fb3aac726c101cd36e0b"
   },
   "directories": ["examples/astro-middleware"],
   "absentFiles": [],

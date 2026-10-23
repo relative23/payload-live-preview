@@ -56,9 +56,10 @@ export function runNodeProductionFixture(framework) {
     throw new Error(`${prefix}_ORIGIN must use HTTPS for the production fixture.`);
   }
   const publicPort = Number(publicUrl.port || 443);
+  // The private listener sits below the ephemeral range (32768-60999), so an outbound connection cannot claim it.
   const internalPort = Number(
     process.env[`${prefix}_INTERNAL_PORT`] ??
-      (isNuxt ? '42760' : isAstro ? '42770' : isHTML ? '14288' : isVue ? '14289' : '42750'),
+      (isNuxt ? '14276' : isAstro ? '14277' : isHTML ? '14288' : isVue ? '14289' : '14275'),
   );
   const environment = {
     ...process.env,

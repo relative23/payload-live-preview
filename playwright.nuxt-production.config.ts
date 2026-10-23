@@ -8,7 +8,8 @@ import { defineConfig, type PlaywrightTestConfig } from '@playwright/test';
 import base from './playwright.config';
 
 const origin = process.env['PLP_NUXT_ORIGIN'] ?? 'https://localhost:4276';
-const internalPort = process.env['PLP_NUXT_INTERNAL_PORT'] ?? '42760';
+// The private listener sits below the ephemeral range (32768-60999), so an outbound connection cannot claim it.
+const internalPort = process.env['PLP_NUXT_INTERNAL_PORT'] ?? '14276';
 process.env['PLP_NUXT_ORIGIN'] = origin;
 process.env['PLP_NUXT_INTERNAL_PORT'] = internalPort;
 
