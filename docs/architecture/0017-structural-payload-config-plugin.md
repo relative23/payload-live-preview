@@ -145,3 +145,20 @@ The reading of Payload's source has not changed: its Document view passes
 `isLivePreviewEnabled && operation !== 'create'` to the preview provider, and
 `handleLivePreview` evaluates a function-valued URL only when the operation is
 not `create`. The suite observes what the first does and not the second.
+
+## Addendum (2026-10-24): one measurement against Payload 4.0.0-beta.4
+
+A consumer project that runs 2.1.0 from npm replaced its hand-written
+`admin.livePreview` callback with this plugin and drove the real Payload
+4.0.0-beta.4 admin in headless Chromium. Its config type-checks against Payload
+4's declarations, and after `buildConfig` the root holds the three mapped
+collections, an empty globals list, the plugin's URL function and the two
+breakpoints. For six collection documents in two locales the preview frame loads
+the URL the hand-written callback produced, apart from the order of the query
+parameters, and the breakpoint menu is the same. The resolvers received the
+document's locale.
+
+The structural types needed no change for this pre-release. The run happened once,
+outside CI, and did not cover globals, the create screen, drafts and autosave,
+other plugins that write a Live Preview URL or replacing existing breakpoints.
+The decision above still names Payload 2.32.3 and 3.x.
