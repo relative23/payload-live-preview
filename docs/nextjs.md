@@ -173,7 +173,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`. The bootstrap loads it with `integrity` and `crossorigin="anonymous"`. Your own `script-src` must allow `'self'` for the asset and a hash or nonce for the bootstrap. The middleware's `manageCsp: 'full'` does not cover it: Next.js middleware has no `locals`, so the nonce that option writes into the header never reaches the layout's script.
+The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`. The bootstrap loads it with `integrity` and `crossorigin="anonymous"`. Your own `script-src` must allow `'self'` for the asset and a hash or nonce for the bootstrap. The middleware's `manageCsp: 'full'` cannot cover it: Next.js middleware has no `locals`, so a nonce it chose would never reach the layout's script. On a response it does not inject into, such as `NextResponse.next()`, it therefore writes `frame-ancestors` only and warns once in development.
 
 Move the route file and set `assetPath` together if the app is not served from the site root — the bootstrap requests exactly what `assetPath` says. With `runtime: LEAN_RUNTIME` both sides must see that option too, since the artifact decides the hash. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 

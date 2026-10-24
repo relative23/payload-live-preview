@@ -1,11 +1,12 @@
 import { runInNewContext } from 'node:vm';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createLivePreviewMiddleware,
   livePreviewScriptProps,
   renderLivePreviewScript,
 } from '@adapters/nextjs/index';
 import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
+import { resetDevWarnings } from '@/types/dev-warning';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 
 const ADMIN = 'https://admin.example.com';
@@ -237,6 +238,79 @@ describe('createLivePreviewMiddleware — the nonce', () => {
     );
     expect(await result.text()).not.toContain('nonce="attacker"');
     expect(result.headers.get('content-security-policy')).not.toContain('attacker');
+  });
+});
+
+/**
+ * In `proxy.ts` the middleware gets `NextResponse.next()`, which has no body, and the
+ * layout renders the script without ever seeing the middleware's nonce. A `script-src`
+ * nonce that no element carries would block that script and Next's own inline scripts.
+ */
+describe('createLivePreviewMiddleware — a full CSP with nothing to carry its nonce', () => {
+  beforeEach(() => {
+    resetDevWarnings();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const full = (extra: { readonly autoInject?: boolean } = {}) =>
+    createLivePreviewMiddleware({
+      defaults: 'v1',
+      inject: 'always',
+      allowedOrigins: [ADMIN],
+      manageCsp: 'full',
+      ...extra,
+    });
+
+  it.each([
+    ['the layout carries the script', { autoInject: false }, () => htmlResponse()],
+    ['the response has no body', {}, () => new Response(null)],
+    [
+      'the response is not HTML',
+      {},
+      () => new Response('{}', { headers: { 'content-type': 'application/json' } }),
+    ],
+  ])('writes frame-ancestors and no nonce when %s', async (_, extra, response) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = await full(extra)(request(), response());
+    const csp = result.headers.get('content-security-policy') ?? '';
+    expect(csp).toContain(`frame-ancestors 'self' ${ADMIN}`);
+    expect(csp).not.toContain('nonce-');
+    expect(csp).not.toContain('script-src');
+    expect(result.headers.get('cache-control')).toContain('no-store');
+  });
+
+  it("keeps the site's own script-src as it was", async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const own = "default-src 'self'; script-src 'self' 'nonce-site'";
+    const result = await full({ autoInject: false })(
+      request(),
+      new Response(null, { headers: { 'content-security-policy': own } }),
+    );
+    const csp = result.headers.get('content-security-policy') ?? '';
+    expect(csp).toContain("script-src 'self' 'nonce-site'");
+    expect(csp).not.toMatch(/'nonce-(?!site')/u);
+    expect(csp).toContain(`frame-ancestors 'self' ${ADMIN}`);
+  });
+
+  it('says so once in development, naming the option', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const middleware = full({ autoInject: false });
+    await middleware(request(), new Response(null));
+    await middleware(request(), new Response(null));
+    const ours = warn.mock.calls.filter(([message]) =>
+      String(message).includes("manageCsp: 'full'"),
+    );
+    expect(ours).toHaveLength(1);
+  });
+
+  it('still writes the nonce when the middleware injects the script itself', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = await full()(request(), htmlResponse());
+    const nonce = /nonce="([^"]+)"/u.exec(await result.text())?.[1];
+    expect(nonce).toBeTruthy();
+    expect(result.headers.get('content-security-policy')).toContain(`'nonce-${String(nonce)}'`);
   });
 });
 

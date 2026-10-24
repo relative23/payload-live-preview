@@ -144,7 +144,11 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +153/+95/+82 B raw/gzip/Brotli;
   // retain the prior 34/22/160 B reserves.
-  'adapters/nextjs/index.js': { raw: 203_183, gzip: 63_518, brotli: 53_959 },
+  // 2026-10-24 (2.1.1): the middleware keeps `frame-ancestors` under `manageCsp: 'full'`
+  // when no injected script can carry the nonce, and warns once in development.
+  // Node24.22.1/npm12.0.2, same tree with and without the change: +476/+221/+209 B
+  // raw/gzip/Brotli; retain the reserves it had, 28/13/142 B.
+  'adapters/nextjs/index.js': { raw: 203_659, gzip: 63_739, brotli: 54_168 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin

@@ -477,10 +477,13 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +2600 B gzip.
     // Node24.19/npm12.0.2, epoch1791096072; retain the original 72 B gzip reserve.
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +41 B gzip; retain 72 B.
+    // 2026-10-24 (2.1.1): `manageCsp: 'full'` keeps `frame-ancestors` when no script carries
+    // the nonce, with a development warning. Node24.22.1, same tree with and without it:
+    // 58_570 → 58_755, +185 B gzip; retain the 57 B it had.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 58_627,
+    gzip: 58_812,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
