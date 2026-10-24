@@ -59,6 +59,7 @@ The framework hooks and fragment renderers run twice on every push: at the floor
 - Payload 3.89.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
 - Payload 3.90.2: real admin E2E fixture (examples/payload-backend), run by CI on every push.
 - Payload 4.0.0-canary.33: wire corpus captured from a real Payload 4 admin in a one-off upgrade round, replayed in tests/integration/wire-corpus.test.ts; the fixture itself stays on 3.x.
+- Payload 4.0.0-beta.4 (pre-release): measured once on 2026-10-24, outside CI, in a consumer project that runs 2.1.0 from npm (Next 16, Node 24, Postgres 18, the real admin driven by headless Chromium). The config plugin type-checks against Payload's declarations and passes its config sanitizing. For six collection documents in two locales, the admin's preview frame loads the URL a hand-written callback produced, apart from the order of the query parameters, with the same breakpoint menu and no page errors, and the locale reaches the path resolvers. Against an admin with a `csrf` list, the `payload-session` strategy authorizes once its `origin` option is set. That run did not cover globals, the create screen, drafts and autosave, other plugins that write a Live Preview URL, or replacing existing breakpoints, and no CI job installs 4.0.0-beta.4.
 - Payload latest: daily protocol watch executes @payloadcms/live-preview@latest against the corpus.
 - Payload 4.0 pre-releases: daily protocol watch against @payloadcms/live-preview@canary, early warning only.
 
@@ -137,6 +138,10 @@ frame, for a function-valued URL and for a fixed string alike. The frame that
 appears after the save loads the URL the plugin's function builds from the saved
 document. `tests/real-payload/surface-create.spec.ts` checks this in Chromium,
 Firefox and WebKit.
+
+Payload 4 is still a pre-release. The plugin was measured once against
+4.0.0-beta.4, outside CI; the [compatibility list](#compatibility) says what
+that run covered and what it left out.
 
 Use the lower-level callback when another plugin owns the surrounding config or
 when a document may have no preview route:
