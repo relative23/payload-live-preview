@@ -90,7 +90,7 @@ jobs:
         with:
           name: dist-${{ github.sha }}
           path: dist
-      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
+      - run: bash scripts/ci-install-fixture.sh examples/astro-payload
       # A trend, not a gate: timing on a shared runner is noise. The spec fails
       # only when a measurement could not be taken.
       - name: Measure update-to-paint on the 300 / 1,000 / 5,000-binding scenarios

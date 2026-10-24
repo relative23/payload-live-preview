@@ -156,10 +156,10 @@ describe('workflow contracts', () => {
     {
       label: 'a dropped browser fixture',
       file: 'ci.yml',
-      original: '      - run: npm ci --no-audit --no-fund --prefix examples/astro-middleware\n',
+      original: '      - run: bash scripts/ci-install-fixture.sh examples/astro-middleware\n',
       replacement: '',
       violation:
-        'ci.yml job e2e step run "npm ci --no-audit --no-fund --prefix examples/astro-middleware" must exist exactly once (found 0)',
+        'ci.yml job e2e step run "bash scripts/ci-install-fixture.sh examples/astro-middleware" must exist exactly once (found 0)',
     },
     {
       label: 'a dropped fixture audit',
@@ -304,16 +304,16 @@ describe('workflow contracts', () => {
       original: '"astro-session":"astro-middleware"',
       replacement: '"astro-session":"astro-payload"',
       violation:
-        'ci.yml job real-payload-surfaces step run "npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"" env.EXAMPLE is not',
+        'ci.yml job real-payload-surfaces step run "bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"" env.EXAMPLE is not',
     },
     {
       label: 'a real-admin matrix without the Payload backend',
       file: 'ci.yml',
       original:
-        '        run: npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"\n      - run: npm ci --no-audit --no-fund --prefix examples/payload-backend\n',
-      replacement: '        run: npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"\n',
+        '        run: bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"\n      - run: bash scripts/ci-install-fixture.sh examples/payload-backend\n',
+      replacement: '        run: bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"\n',
       violation:
-        'ci.yml job real-payload-surfaces step run "npm ci --no-audit --no-fund --prefix examples/payload-backend" must exist exactly once (found 0)',
+        'ci.yml job real-payload-surfaces step run "bash scripts/ci-install-fixture.sh examples/payload-backend" must exist exactly once (found 0)',
     },
     {
       label: 'a CSRF-list run that drops the list',

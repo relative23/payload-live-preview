@@ -102,7 +102,7 @@ jobs:
       # No build job to download from in a scheduled workflow, so the artefact
       # the fixtures inject is built here.
       - run: npm run build
-      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
+      - run: bash scripts/ci-install-fixture.sh examples/astro-payload
       # The install mutates the fixture manifest in this checkout only; the
       # resolved version is printed so the log states what was tested.
       # `--no-package-lock`: the fixture lockfile pins the whole @payloadcms tree,
