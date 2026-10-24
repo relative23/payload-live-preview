@@ -229,6 +229,28 @@ the abuse model: [hybrid.md](hybrid.md).
 <ul data-payload-field="posts" data-payload-array data-payload-array-template={template}></ul>
 ```
 
+## Point the Payload admin at this site
+
+The admin has to know which URL to show for each document. In the Payload project's `payload.config.ts`, the config plugin from `payload-live-preview/plugin` maps collections and globals to paths on this site and enables Live Preview for them. If Payload is a separate project, install `payload-live-preview` there too.
+
+```ts
+// payload.config.ts
+import { livePreview } from 'payload-live-preview/plugin';
+
+export default buildConfig({
+  // collections, db, editor …
+  plugins: [
+    livePreview({
+      baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+      collections: { posts: ({ data }) => `/blog/${String(data['slug'] ?? '')}` },
+      globals: { homepage: '/' },
+    }),
+  ],
+});
+```
+
+The callback appends `?preview=true`, a preview intent that authorizes nothing. Breakpoints, merge rules and conflicts are in [payload.md](payload.md). A document without a route that should show no preview, another plugin that already sets the Live Preview URL, or a signed token in the URL need the lower-level `buildLivePreviewUrl()` from `payload-live-preview/payload` instead ([payload.md](payload.md), [authorization.md](authorization.md#signed-token)).
+
 ## Example
 
 [`examples/sveltekit-payload`](../examples/sveltekit-payload) — `livePreviewHandle()` with the `signed-token` strategy and owner-scoped bindings on SvelteKit 2, and `/hybrid` with its endpoint at `src/routes/payload/fragment/+server.ts`. Run in Chromium, Firefox and WebKit.

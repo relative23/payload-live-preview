@@ -147,7 +147,27 @@ That is the whole frontend. Open the page inside the admin's preview and edits a
 
 ## 4. Point the Payload admin at your Astro URLs
 
-In `payload.config.ts`, `admin.livePreview.url` tells the admin which frontend URL to show for each document; `buildLivePreviewUrl` from `payload-live-preview/payload` turns per-collection slug resolvers into that callback. The README's [Configure Payload](../README.md#configure-payload) section has the complete example. The helper appends `?preview=true`, which the frontend reads as preview intent — a delivery hint, not a credential. To make the iframe request verifiable without a cookie, wrap the callback and add a token from `issuePreviewToken()`; the middleware in step 5 then verifies it with the `signed-token` strategy. Both sides are in [authorization.md](authorization.md).
+The admin has to know which frontend URL to show for each document. In the Payload project's `payload.config.ts`, the config plugin from `payload-live-preview/plugin` maps collections and globals to paths on this site, enables Live Preview for them and installs the `admin.livePreview.url` callback. If Payload is a separate project, install `payload-live-preview` there too.
+
+```ts
+// payload.config.ts
+import { livePreview } from 'payload-live-preview/plugin';
+
+export default buildConfig({
+  // collections, db, editor …
+  plugins: [
+    livePreview({
+      baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:4321',
+      collections: { posts: ({ data }) => `/blog/${String(data['slug'] ?? '')}` },
+      globals: { homepage: '/' },
+    }),
+  ],
+});
+```
+
+The callback appends `?preview=true`, which the frontend reads as preview intent — a delivery hint, not a credential. Breakpoints, merge rules and conflicts are in [payload.md](payload.md).
+
+Use `buildLivePreviewUrl` from `payload-live-preview/payload` instead when a document without a route should show no preview (the plugin's resolvers return strings), when another plugin already sets the Live Preview URL, or when the iframe request has to be verifiable without a cookie. The plugin takes no secret, so for the last case wrap the helper's callback and add a token from `issuePreviewToken()`; the middleware in step 5 then verifies it with the `signed-token` strategy. Both sides are in [authorization.md](authorization.md).
 
 ## 5. Authorize, then read the draft
 

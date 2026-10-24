@@ -23,6 +23,9 @@ imports it at module scope, as a hook must; `./nextjs` loads `react`, and
 `react-dom/server` for a fragment endpoint, only at the first render that needs
 it. The published `./react` file starts with `'use client'`.
 
+The Payload admin also has to know which URL of your app to show for each
+document; the config plugin in [payload.md](payload.md) sets that up.
+
 ## The hook
 
 ```tsx

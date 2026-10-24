@@ -437,6 +437,28 @@ another `ready` for the unsaved state to survive the commit.
 
 When it is not there, the strategy fetches and morphs as before.
 
+## Point the Payload admin at this site
+
+The admin has to know which URL to show for each document. In the Payload project's `payload.config.ts`, the config plugin from `payload-live-preview/plugin` maps collections and globals to paths on this site and enables Live Preview for them. If Payload is a separate project, install `payload-live-preview` there too.
+
+```ts
+// payload.config.ts
+import { livePreview } from 'payload-live-preview/plugin';
+
+export default buildConfig({
+  // collections, db, editor …
+  plugins: [
+    livePreview({
+      baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+      collections: { posts: ({ data }) => `/blog/${String(data['slug'] ?? '')}` },
+      globals: { homepage: '/' },
+    }),
+  ],
+});
+```
+
+The callback appends `?preview=true`, a preview intent that authorizes nothing. Breakpoints, merge rules and conflicts are in [payload.md](payload.md). A document without a route that should show no preview, another plugin that already sets the Live Preview URL, or a signed token in the URL need the lower-level `buildLivePreviewUrl()` from `payload-live-preview/payload` instead ([payload.md](payload.md), [authorization.md](authorization.md#signed-token)).
+
 ## Example
 
 [`examples/nextjs-payload`](../examples/nextjs-payload) on Next.js 16 — the
