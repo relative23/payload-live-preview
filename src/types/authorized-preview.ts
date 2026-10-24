@@ -73,7 +73,11 @@ export interface AuthorizedPreviewContext {
 // would refuse the other's contexts in the package while unit tests passed.
 const BRAND = Symbol.for(AUTHORIZED_PREVIEW_BRAND_KEY);
 
-/** Whether `value` was produced by `authorizePreviewRequest()`; a copy or JSON round trip is not. */
+/**
+ * Whether `value` carries the brand `authorizePreviewRequest()` gives it. A JSON round trip or an
+ * unfrozen copy does not; a frozen spread copy keeps the registry symbol and passes, because the
+ * brand is a runtime check, not a cryptographic one (ADR 0006).
+ */
 export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext {
   return (
     typeof value === 'object' &&

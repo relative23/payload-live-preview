@@ -21,9 +21,11 @@ if (scope !== 'pr' && scope !== 'nightly' && scope !== 'core') {
  * so the verdict does not depend on how the work was divided.
  *
  * Files are packed heaviest-first onto the currently lightest shard, weighted by
- * how many test executions each file actually costs — the sum of `coveredBy`
- * over its mutants, recorded in `quality/mutation-shard-weights.json` from the
- * last full report. File size was the first attempt and is a poor stand-in: it
+ * what each file actually costs to test — the measured duration of the tests
+ * that cover its mutants, summed per file and recorded in
+ * `quality/mutation-shard-weights.json` from the last full report
+ * (`scripts/mutation-shard-weights.ts`; execution counts when a report carries
+ * no timings). File size was the first attempt and is a poor stand-in: it
  * ranges from 0.07 to 5.78 test executions per byte across this scope, so a
  * size-balanced split ran 61 minutes in one shard and past 90 in another.
  * Without the file, size is the fallback, which is still better than nothing.

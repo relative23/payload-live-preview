@@ -125,8 +125,9 @@ export interface PreviewWhere {
 /** Options every read shares; `fetchDocument` and `fetchGlobal` add their target. */
 export interface PreviewReadOptions {
   /**
-   * The verdict from `authorizePreviewRequest()`. Only a real context reads the
-   * draft; `null`, a copy or a JSON round trip reads the published document.
+   * The verdict from `authorizePreviewRequest()`. Only a context that passes
+   * `isAuthorizedPreviewContext()` reads the draft; `null`, an unfrozen copy or a
+   * JSON round trip reads the published document.
    */
   readonly authorization: AuthorizedPreviewContext | null;
   readonly locale?: string;
