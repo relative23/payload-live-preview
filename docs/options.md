@@ -76,6 +76,20 @@ options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The led
 | `runtime`                  | —      | yes           | yes                                                      | —                        | — (the full runtime)                                | same                                 |
 | `nonce`                    | —      | —             | render helpers only                                      | —                        | —                                                   | same                                 |
 
+Three option objects outside these four places have options of their own.
+`useLivePreviewDocument()` from `/react` and `/vue` takes `initialData` and
+`serverURL` (both required) and names some rows differently: `depth` (`1`),
+`enableReferrerDetection` (`false`), `enableLocalhostMatching` (`true`)
+([docs/react.md](react.md#the-hook)).
+`withLivePreview()` in `next.config.ts` takes `allowedOrigins` (required,
+non-empty), `previewQueryParams` (`['preview', 'draft', 'livePreview']`) and
+`allowDevOrigins` (`true`) ([docs/nextjs.md](nextjs.md#headers-on-preview-requests)).
+`createFragmentEndpoint()` takes `registry`, `authorizePreview` or `authorize`
+(exactly one of the two), `render`, `allowedOrigins` and `limits`
+(`bodyBytes`, `timeoutMs`, `fieldDepth`, `totalTimeoutMs`)
+([docs/hybrid.md](hybrid.md#what-both-decide)). The Payload config plugin has
+its own table [below](#payload-config-plugin).
+
 ### Why each of these exists
 
 Every option is a decision someone had to be able to make differently. Grouped
@@ -131,7 +145,7 @@ fifty-five rows.
 
 Notes on the rows that need one:
 
-- `strict` refuses when the adapter is created (when its module loads; `LivePreviewScript` creates it on its first call), not on a public response: it requires
+- `strict` refuses when the adapter is created (when its module loads; `LivePreviewScript` creates one each time it renders, so its first render throws), not on a public response: it requires
   `authorizePreview`, non-empty `allowedOrigins` (`https:` ones in
   production), and no `'referer'` in the resolved `previewSignals`. Astro's
   `livePreview()` integration does not apply it in `mode: 'inline'` or
@@ -140,7 +154,7 @@ Notes on the rows that need one:
   (below).
 - `authorizePreview` runs on requests carrying preview intent. Only a context
   produced by `authorizePreviewRequest()` authorizes; anything else — a
-  `{ authorized: true }` literal, a copy, `null` — refuses, and a refusal
+  `{ authorized: true }` literal, an unfrozen copy, `null` — refuses, and a refusal
   leaves the response as rendered: no runtime, no CSP change, no nonce.
   [docs/authorization.md](authorization.md) has the strategies.
 - `previewSignals` and `previewQueryParams` are intent, not authorization.
@@ -341,7 +355,7 @@ Lexical node or block renderer registered through one entry is not seen by
 another ([docs/renderers.md](renderers.md#renderrichtext-one-renderer-for-ssr-and-preview));
 the document given to `setSanitizerDocument()` is held once for all of them
 since 2.0.2, and since 2.1 a call names its own (`sanitizeHtml(html, { document })`,
-`lexicalToHtml(content, { document })`). The adapters, `annotate`, `codegen/astro`, `doctor`, `migrate` and
+`lexicalToHtml(content, { document })`). The adapters (`react`, `vue` and `nuxt-module` included), `annotate`, `codegen/astro`, `doctor`, `migrate` and
 the `.astro` components are ESM-only; the rest ship ESM and CommonJS builds.
 
 Every entry has a stability class, stated here and, for the experimental
@@ -361,7 +375,7 @@ ones, as `@beta` on the declarations in the API reports (`etc/api/*.api.md`):
 | `payload-live-preview`                               | Stable       | Client, inline script generator, renderers, built-in plugins, authorization and binding helpers; not the exports named above.                                                                             |
 | `payload-live-preview/core`                          | Stable       | The client and runtime without the built-in plugin constructors, generator or adapters.                                                                                                                   |
 | `payload-live-preview/client`                        | Stable       | `LivePreviewClient` and `initLivePreview()` alone.                                                                                                                                                        |
-| `payload-live-preview/structural`                    | Experimental | The structural array renderer, the keyed morph and the `data-payload-depends` helpers; `morphElement()`, `MorphOptions` and `isMorphBoundary()` are `@beta`, the engine and package rule behind ADR 0008. |
+| `payload-live-preview/structural`                    | Experimental | The structural array renderer, the keyed morph and the `data-payload-depends` helpers; `morphElement()`, `MorphOptions`, `isMorphBoundary()` and `retainIslandBoundary()` are `@beta`, ADR 0008's engine. |
 | `payload-live-preview/lexical`                       | Stable       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`, `setSanitizerDocument()`.                                                                                  |
 | `payload-live-preview/plugins`                       | Stable       | `PluginManager`, plugin types and the built-in plugins.                                                                                                                                                   |
 | `payload-live-preview/fragment`                      | Stable       | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                                                                                                          |
@@ -370,7 +384,7 @@ ones, as `@beta` on the declarations in the API reports (`etc/api/*.api.md`):
 | `payload-live-preview/payload`                       | Stable       | The lower-level `buildLivePreviewUrl()` callback for manual or nullable `payload.config.ts` routing; imports nothing from `payload`.                                                                      |
 | `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | Stable       | One framework adapter each.                                                                                                                                                                               |
 | `payload-live-preview/nuxt-module`                   | Stable       | The Nuxt module: registers the Nitro plugin from `nuxt.config.ts`; data options, `authorizePreview` by module reference (`authorizePreviewModule`), no `shouldInject`.                                    |
-| `payload-live-preview/react`                         | Stable       | `useLivePreviewDocument()`: the merged document as a hook (needs `react`).                                                                                                                                |
+| `payload-live-preview/react`                         | Stable       | `useLivePreviewDocument()`: the merged document as a hook, and `LivePreviewRouteRefresh`, which lends the runtime the router's refresh (needs `react`).                                                   |
 | `payload-live-preview/vue`                           | Stable       | The same as a composable (needs `vue`).                                                                                                                                                                   |
 | `payload-live-preview/lean`                          | Experimental | `LEAN_RUNTIME`: the smaller runtime artifact, as a value for the `runtime` option. Passing it is stable; the artifact's fields (`RuntimeArtifact`) may gain one in a minor.                               |
 | `payload-live-preview/annotate`                      | Experimental | `livePreviewAnnotate()`: the build-time annotator as a Vite plugin (`@beta`). No `ts-morph`.                                                                                                              |

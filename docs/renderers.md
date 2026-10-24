@@ -333,7 +333,8 @@ Events: `init` · `connect` · `disconnect` · `beforeUpdate` · `afterUpdate` �
 (`'patch'`, `'fragment'` or `'route'`: the strategy that produced the
 update). `fragmentRender` fires per boundary and revision with `status`
 `'rendered'` or `'failed'` and the diagnostic `code`. `revisionDisplay` carries
-the record `inspect().revisions.display` holds when a revision leaves `pending`
+the record `inspect().revisions.display` holds when a revision leaves `pending`,
+and again when its islands confirm an `unconfirmed` one
 ([hybrid.md](hybrid.md#what-you-observe)). `relationshipUpdate`
 fires once per save in a _related_ document (an admin drawer), read off
 `externallyUpdatedRelationship`; that update re-renders every bound field even

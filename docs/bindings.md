@@ -248,6 +248,12 @@ import RichText from 'payload-live-preview/astro/RichText.astro';
 <RichText value={page.body} field="body" class="prose" />
 ```
 
+Props: `value`, `field` (without it no binding is written), `as` (default
+`div`), `class`, and `document` / `requireDocument` for the sanitizer on a
+server without a global DOM ([astro.md](astro.md#3-mark-what-should-update)).
+Neither component is gated by the request's authorization: both write their
+`data-payload-*` attributes on every response.
+
 ## Letting the runtime find bindings by value
 
 `autoBind: 'unique'` (off by default, on the client, the inline script and

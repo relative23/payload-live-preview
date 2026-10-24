@@ -17,8 +17,9 @@ use — the first preview request that reaches the hook, not startup.
 The `context` is an `AuthorizedPreviewContext`: frozen, branded, produced
 only there, carrying `strategy`, `subject`, `authorizedAt`, `expiresAt`,
 `scope` (`audience`, `path`, `locale`, optional `payload`) and `payloadHeaders`, the request
-material a draft read forwards to Payload. A copy or a JSON round trip is not
-accepted anywhere. Threat model: [ADR 0006 — Authorized preview context](architecture/0006-authorized-preview-context.md).
+material a draft read forwards to Payload. Pass the object itself: a spread
+copy, which is not frozen, or a JSON round trip is refused wherever a context
+is read. Threat model: [ADR 0006 — Authorized preview context](architecture/0006-authorized-preview-context.md).
 
 ## Strategies
 
@@ -233,7 +234,7 @@ export default defineEventHandler(async (event) => {
 ```
 
 `fetchDocument` and `fetchGlobal` return `{ ok, data, draft, status }` or
-`{ ok: false, reason, status, cause }` (`reason`: `http`, `network`,
+`{ ok: false, reason, status, draft, cause }` (`reason`: `http`, `network`,
 `timeout`, `aborted`, `invalid-json`, `no-fetch`, `scope`); `errorMode: 'throw'`
 throws `PreviewFetchError`. Per-read options: `authorization`, `locale`,
 `headers` (the context's win on conflict), `signal`, `errorMode`. `depth`

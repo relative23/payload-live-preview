@@ -85,7 +85,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0607:
     "The page declared `hydration: 'react'` (the Next.js adapter does), `'vue'` (the Nuxt adapter does) or `'sveltekit'` (the SvelteKit handle does) and, within five seconds, React committed no tree holding a binding, Vue mounted no app around one, or SvelteKit's root did not mount (its `#svelte-announcer` never appeared), so the runtime started as it would on a static page; a hydration that completes later regenerates the tree, or repairs it, and reverts the first write, once. Usually the client bundle failed to load or was very slow — check the network panel. On a page nothing hydrates, drop the option from `generateInlineScript()`. `inspect().hydration.state` reads `timed-out`.",
   LP0701:
-    'If you use an adapter, check its `inject` mode and whether a proxy strips `Sec-Fetch-Dest`. If you start the client yourself, this line is expected.',
+    'Expected on a correctly configured deployment when the audit sends no credentials: under the strict default a preview request without them gets no runtime. Pass what an editor\'s browser sends — `--header "Cookie: payload-token=…"` or a signed token as `?previewToken=…` — to audit the authorized response. If it persists, check the adapter\'s `inject` mode and `previewSignals`; if you start the client yourself, this line is expected.',
   LP0702:
     'Let the adapter manage CSP, or add the admin origin to your own `frame-ancestors`. As an error the served policy does not admit `--admin`: add that origin to `allowedOrigins`.',
   LP0703:

@@ -121,10 +121,11 @@ boundary tests, and the ten above are what was left.
 
 The Nightly scope, 80 files, was measured in full the same day
 ([quality/mutation-policy.json](../quality/mutation-policy.json)): 11 585
-mutants, 88.20 %, 54 without coverage. The four new critical coverage cells
-cover the population primitive, document session, parser and walker; their
-configured thresholds are targets until complete coverage is measured on the
-final source.
+mutants, 88.20 %, 54 without coverage; two measured changes on 2026-10-23
+moved the baseline to 11 592 mutants and 53 without coverage. The four critical
+coverage cells added in 2.1 cover the population primitive, document session,
+parser and walker; the Coverage job holds their floors (95 % of lines and
+branches, every function) on every push, like every other critical file.
 
 These three rest on two that already existed: the layer rules (no upward
 import, no Node builtin in browser code, nothing browser-facing imports the

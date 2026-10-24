@@ -77,6 +77,8 @@ That name uses Vite's default `VITE_` public prefix. The value is an origin the
 browser must know, not a credential; keep tokens and secrets out of public
 environment variables. With another bundler, use its equivalent public setting.
 
+A client you start yourself does not follow a back/forward-cache restore or a client router's navigation on its own, as the inline runtime does: `bindNavigationLifecycle(client, { softNavigationEvents })` from the root entry adds both ([deployment.md](deployment.md#navigation)).
+
 `client.events`, plugins and custom renderers are in [renderers.md](renderers.md).
 
 ## Body swap caveat

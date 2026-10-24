@@ -2,7 +2,7 @@
 
 For App Router projects on Next.js 15.5 and 16 whose pages are rendered on the server or at build time. The runtime patches server-rendered markup; its first write waits for React to hydrate, and a client component that re-renders a bound element can still revert a patch (see the caveat below).
 
-Next.js 15.5 and 16 are tested. The `next-matrix` job installs `next@^15` into [`examples/nextjs-payload`](../examples/nextjs-payload) on every push and runs the Next.js cases of the default suite (`next dev`), the webpack production suite and the base-path suite in Chromium; local runs on 15.5.28 (2026-10-17, with the awaited layout below) passed the same suites in Chromium, Firefox and WebKit (72, 54 and 63 cases), and the quickstarts below build and serve. Earlier 15 minors are not claimed, and no suite runs Next.js 15's `next build --turbopack`. On 2.0.x, 30 of the 42 end-to-end cases failed on Next.js 15.5.25 with `Cannot find module 'react'` (measured 2026-09-17), because `<LivePreviewScript />` loaded `react`, and the fragment endpoint `react` and `react-dom/server`, through imports whose specifiers were computed at runtime, which Next.js 15's server bundle did not resolve; 2.1 imports them by literal specifier. Next.js 16 is tested in CI with its default bundler, Turbopack; a webpack production build passes the same preview and fragment suites in a local check (54 browser cases on 16.3.8, 2026-10-05). [ADR 0031](architecture/0031-nextjs-15-is-supported-because-a-job-installs-it.md) records why.
+Next.js 15.5 and 16 are tested. The `next-matrix` job installs `next@^15` into [`examples/nextjs-payload`](../examples/nextjs-payload) on every push and runs the Next.js cases of the default suite (`next dev`), the webpack production suite and the base-path suite in Chromium; local runs on 15.5.28 (2026-10-17, with the awaited layout below) passed the same suites in Chromium, Firefox and WebKit (72, 54 and 63 cases), and the quickstarts below build and serve. Earlier 15 minors are not claimed, and no suite runs Next.js 15's `next build --turbopack`. On 2.0.x, 30 of the 42 end-to-end cases failed on Next.js 15.5.25 with `Cannot find module 'react'` (measured 2026-09-17), because `<LivePreviewScript />` loaded `react`, and the fragment endpoint `react` and `react-dom/server`, through imports whose specifiers were computed at runtime, which Next.js 15's server bundle did not resolve; 2.1 imports them by literal specifier. Next.js 16 is tested in CI with its default bundler, Turbopack; a webpack production build passes the same preview and fragment suites in a local check (54 browser cases on 16.4.2, 2026-10-23, on the archive published as 2.1.0). [ADR 0031](architecture/0031-nextjs-15-is-supported-because-a-job-installs-it.md) records why.
 
 > A client-rendered React app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) hook: it re-renders your real component tree, so conditional sections and custom components update with full fidelity. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
 
@@ -126,7 +126,8 @@ without the error.
 When the script is built once at module scope and there is no verdict to
 await, `delivery: 'asset'` puts a bootstrap in the page instead of the runtime —
 a `<script>` element of about 1.3 KB that carries the options (1 344 bytes on the
-example, 1 364 with the options below; measured 2026-10-22), rendered twice like
+example, 1 345 with the options below and `http://localhost:3000` as the admin
+origin), rendered twice like
 anything else in a layout's head — which arms the wait for React's first
 commit ([hydration caveat](#hydration-caveat)) and fetches the runtime only
 once the page finds itself in a preview context:
@@ -172,7 +173,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`. The bootstrap loads it with `integrity` and `crossorigin="anonymous"`; with `manageCsp: 'full'` the middleware's `script-src` allows `'self'`, and under `strictDynamic` the nonce on the bootstrap covers the script it inserts; otherwise your own `script-src` must allow `'self'` for the asset and a hash or nonce for the bootstrap.
+The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`. The bootstrap loads it with `integrity` and `crossorigin="anonymous"`. Your own `script-src` must allow `'self'` for the asset and a hash or nonce for the bootstrap. The middleware's `manageCsp: 'full'` does not cover it: Next.js middleware has no `locals`, so the nonce that option writes into the header never reaches the layout's script.
 
 Move the route file and set `assetPath` together if the app is not served from the site root — the bootstrap requests exactly what `assetPath` says. With `runtime: LEAN_RUNTIME` both sides must see that option too, since the artifact decides the hash. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 
@@ -352,8 +353,9 @@ but the runtime requests exactly the paths it is given. Put the base path into
 the preview token to the path the browser shows, base path included, which
 is what Payload's `livePreview.url` builds. A redirect a route handler writes
 itself is not prefixed either. A rewrite keeps the browser's URL, and the
-preview works on it unchanged. The Next.js suites pass against a production
-build served under `/docs`.
+preview works on it unchanged. `npm run test:e2e:next-base-path` runs the
+Next.js specs against a production build served under `/docs`; CI runs it on
+Next.js 15, in Chromium.
 
 ## Hydration caveat
 
@@ -366,9 +368,10 @@ throws `Hydration failed because the server rendered text didn't match the
 client`, regenerates the tree on the client, and the write is gone. So every
 script this adapter emits declares `hydration: 'react'`, and under it the
 runtime does not start — no `ready`, no listener — until React has committed
-the tree that holds the bindings; the admin's first document then lands on
-markup React keeps. On the example that is 105–115 ms after `DOMContentLoaded`
-on a warm dev server. If React commits nothing within five seconds the runtime
+the tree that holds the bindings with no streamed Suspense boundary still
+waiting to hydrate; the admin's first document then lands on markup React
+keeps. ADR 0015 measured 105–115 ms after `DOMContentLoaded` on the example's
+warm dev server. If React commits nothing within five seconds the runtime
 starts anyway and reports `LP0607`; `inspect().hydration` reads
 `{ mode: 'react', state }`, with `state` `waiting`, `committed` or `timed-out`
 (`idle` belongs to a page that declared no hydration). How the runtime sees the commit, and what can go

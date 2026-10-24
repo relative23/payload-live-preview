@@ -63,10 +63,13 @@ credentials; keep preview tokens and other secrets in server-only variables.
 | `eventSourcePolicy`       | `'parent-or-opener'` | `'any'` accepts a message from any window at an allowed origin         |
 | `enableReferrerDetection` | `false`              | Trust `document.referrer` as an origin source                          |
 | `enableLocalhostMatching` | `true`               | Match `localhost` origins in development                               |
-| `target`                  | the global `window`  | Window to listen on; the session moves when it changes                 |
+| `target`                  | the global `window`  | Window to listen on                                                    |
 
 A hook instance owns one document session. A fresh `initialData` object on an
-ordinary re-render does not replace data that already merged. If the same
+ordinary re-render does not replace data that already merged. A changed value
+of any other option except `fetchFn` (an array of `allowedOrigins` is compared
+by its entries) replaces the session with a new one that starts from the
+current `initialData`, so merged data is dropped. If the same
 component can move from one CMS document to another, remount it with a key that
 includes the document owner and id. This releases the old session and starts a
 new one from the new `initialData`. On Payload 2 that session starts without a
@@ -116,8 +119,9 @@ All five cases run twice in this repository — against the session this hook us
 in [`document-session.test.ts`](../tests/unit/adapters/document-session.test.ts),
 and against the lockfile's exact `@payloadcms/live-preview` 3.88.0 in
 [`payload-hook-comparison.test.ts`](../tests/unit/adapters/payload-hook-comparison.test.ts),
-which imports the installed package rather than describing it (last verified
-2026-09-23). These are client-session tests, not React rendering or tarball
+which imports the installed package rather than describing it. Both run in
+`npm run test:unit`, which CI runs on every push to `main` and every pull
+request. These are client-session tests, not React rendering or tarball
 consumer tests.
 
 The scheduled `npm run test:upstream-findings` is a separate drift probe. It

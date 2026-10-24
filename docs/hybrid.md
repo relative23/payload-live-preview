@@ -29,11 +29,14 @@ answer — is
 </section>
 ```
 
-- `data-payload-fragment="hero"` — a **registry id** (`[a-z][a-z0-9-]*`).
-  Never a path or a module name: the server decides what `hero` renders.
+- `data-payload-fragment="hero"` — a **registry id** (`[a-z][a-z0-9-]*`, at
+  most 64 characters). Never a path or a module name: the server decides what
+  `hero` renders.
   `createPreviewBindings().boundary('hero', { dependsOn: [...] })` writes these
   three attributes from the request's authorization, so an unauthorized response
   carries no boundary either ([bindings.md](bindings.md#keeping-binding-attributes-off-public-responses)).
+  It throws a `RangeError` for any other id, and for a `key` that is empty or
+  longer than 128 characters.
 - `data-payload-depends` — the fields that re-render the boundary. Without
   it, every update does.
 - `data-payload-fragment-key` — when one id renders several boundaries on a
@@ -126,11 +129,12 @@ what server code set, nothing from the request body
 The Astro results below are dated measurements on earlier source-built
 archives, recorded in [ADR 0020](architecture/0020-astro-page-owned-resources.md)
 on 2026-09-27 and [ADR 0021](architecture/0021-fragment-islands-hydrate-from-the-build.md)
-on 2026-09-28. The specs named below are what runs today: base integration
-on Astro 4.0.0, fragment islands on 4.16.19, and resources, verified React
-context and page ownership on 7.3.2. The first two run from the package archive
-on every push, in Chromium, with the other engines run by hand ([Astro peer
-floors](testing.md#astro-peer-floors)).
+on 2026-09-28. The specs named below are what runs today. Three jobs run from
+the package archive on every push, in Chromium: base integration on Astro
+4.0.0, fragment islands on 4.16.19, and fragment rendering with page-owned
+resources on 4.9.0, 4.16.19, 5.18.2, 6.4.8 and 7.3.2. The other engines, the
+islands on 7.3.2, verified React context and page ownership are run by hand
+([Astro peer floors](testing.md#astro-peer-floors)).
 
 A successful isolated container render does not register the component's CSS
 with the page. On the measured Astro 7.3.2 production path, a component imported
@@ -416,7 +420,7 @@ in whatever it does hand a handler — that is all either binding does.
 
 - **Registry**: the only things the endpoint can render. Props are computed
   on the server from the request's fields; nothing in the request selects
-  code.
+  code. An id the registry does not hold is answered `404 {"error":"fragment"}`.
 - **Authorization**: `authorizePreview` is the middleware's hook — same type,
   same rules; a context `authorizePreviewRequest()` produced authorizes,
   anything else refuses. When there is no hook to share, `authorize` takes a
@@ -426,6 +430,10 @@ in whatever it does hand a handler — that is all either binding does.
   authorizes the **page route** the browser reports, with the request's own
   cookies and query, so a token stays bound to the route it was issued for
   and a session is the visitor's own. There is no unsigned endpoint.
+  A context bound to a locale refuses a request for another locale, and one
+  bound to a Payload document (`scope.payload`) refuses another document; both
+  answer `403 {"error":"unauthorized"}`
+  ([authorization.md](authorization.md#bind-a-verifier-to-one-payload-document)).
   The strategies are described in [docs/authorization.md](authorization.md).
 - **Renderer**: the imported binding's own, loaded once per process at the
   first render and forgotten again if that import failed, so a project that
@@ -549,6 +557,10 @@ option only names a path the runtime posts to, whoever serves it.
 `{ fragment: createFragmentStrategy({ endpoint }), route: createRouteStrategy() }`
 from `payload-live-preview/fragment`.
 
+The lean runtime carries no strategy runner: `runtime: LEAN_RUNTIME` together
+with `fragments` (`fragmentEndpoint`) or `routeStrategy` throws when the script
+is generated ([options.md](options.md)).
+
 ### The route strategy on its own
 
 A page that wants route refreshes and no server-rendered boundaries sets
@@ -634,7 +646,8 @@ even when its own changes lie outside it.
   route render that showed the saved draft or failed; a patch or an unbound
   field kept; a write that did not happen; a failed re-fetch) or `unconfirmed`
   while an island has not called `displayed()`. The `revisionDisplay` event
-  carries the same record when a revision leaves `pending`, and reports
+  carries the same record when a revision leaves `pending`, again when its
+  islands confirm an `unconfirmed` one, and reports
   `superseded` for one that a newer revision replaced while it was still
   `pending`; with `enableA11y` a partial revision is announced
   ([ADR 0023](architecture/0023-revision-display-state.md)).
@@ -652,7 +665,12 @@ even when its own changes lie outside it.
   `LP0803` endpoint refused (401/403) · `LP0804` a late response for a
   superseded revision was discarded · `LP0805` a route refresh was refused by
   the loop guard or the minimum interval · `LP0806` a boundary asks for
-  `fragment` but no client is configured — patched instead.
+  `fragment` but no client is configured — patched instead · `LP0807` a
+  changed field with no binding refreshed the route · `LP0808`
+  `onUnfaithfulPatch: 'escalate'` found no fragment or route strategy · `LP0809`
+  a fragment inserted an Astro island the page cannot start · `LP0810` a host's
+  route refresh returned no promise. What to do about each:
+  [troubleshooting.md](troubleshooting.md#diagnostic-codes).
 
 ## The route strategy
 
@@ -662,8 +680,9 @@ layout, route params, global providers. A binding there — anything in
 `data-payload-depends` naming its fields) — makes the revision a **route
 refresh**: the runtime fetches the current URL again (same cookies and
 query, header `x-payload-live-preview: route`), syncs `<title>`, `<meta>`
-and the canonical link, morphs `<body>` in place (islands and custom
-elements are boundaries it does not cross), rescans, and re-applies the
+and the canonical link, morphs `<body>` in place (islands, `data-payload-owned`
+subtrees, editable content and custom elements without `data-payload-morph` are
+boundaries it does not cross), rescans, and re-applies the
 revision so the unsaved state lands on the fresh markup. Compatible retained
 nodes keep their live properties, and a retained keyed move restores focus;
 replaced nodes lose their state. The head sync mirrors the fresh document both
@@ -674,6 +693,16 @@ leaves it alone in both directions. At most one refresh per revision; a
 second request for the same revision, or one inside `minIntervalMs` (1 s) of
 the previous, is refused with `LP0805` and the elements are patched instead.
 A failed refresh (`LP0801`/`LP0802`) also falls back to patching.
+
+A page whose DOM a framework router owns can hand the strategy that router's
+own refresh with `registerRouteRefresh()`, or `<LivePreviewRouteRefresh>` from
+`payload-live-preview/react` in Next.js. The strategy then calls it instead of
+the GET and the morph, waits for the promise it returns, and re-applies the
+revision on the committed markup; a refresh that returns no promise is reported
+once, under `debug`, as `LP0810` (ADR 0028). The recipes are in
+[nextjs.md](nextjs.md#client-navigation-and-route-refreshes),
+[sveltekit.md](sveltekit.md#client-navigation-and-route-refreshes) and
+[nuxt.md](nuxt.md#client-navigation-and-route-refreshes).
 
 The GET and a registered host refresh receive no live-preview fields. The
 built-in strategy therefore reports `partial`: the runtime reapplies every
