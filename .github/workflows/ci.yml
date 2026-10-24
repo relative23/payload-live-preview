@@ -256,15 +256,15 @@ jobs:
           path: dist
       # Every fixture installs the freshly built package from its immutable
       # lockfile (`file:../..`, kept in sync by the version script).
-      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
-      - run: npm ci --no-audit --no-fund --prefix examples/nextjs-payload
-      - run: npm ci --no-audit --no-fund --prefix examples/sveltekit-payload
-      - run: npm ci --no-audit --no-fund --prefix examples/nuxt-payload
-      - run: npm ci --no-audit --no-fund --prefix examples/astro-hybrid
-      - run: npm ci --no-audit --no-fund --prefix examples/pure-html
-      - run: npm ci --no-audit --no-fund --prefix examples/vanilla-client
-      - run: npm ci --no-audit --no-fund --prefix examples/astro-inline
-      - run: npm ci --no-audit --no-fund --prefix examples/astro-middleware
+      - run: bash scripts/ci-install-fixture.sh examples/astro-payload
+      - run: bash scripts/ci-install-fixture.sh examples/nextjs-payload
+      - run: bash scripts/ci-install-fixture.sh examples/sveltekit-payload
+      - run: bash scripts/ci-install-fixture.sh examples/nuxt-payload
+      - run: bash scripts/ci-install-fixture.sh examples/astro-hybrid
+      - run: bash scripts/ci-install-fixture.sh examples/pure-html
+      - run: bash scripts/ci-install-fixture.sh examples/vanilla-client
+      - run: bash scripts/ci-install-fixture.sh examples/astro-inline
+      - run: bash scripts/ci-install-fixture.sh examples/astro-middleware
       - run: npx playwright test --project=${{ matrix.browser }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
@@ -517,8 +517,8 @@ jobs:
         with:
           name: dist-${{ github.sha }}
           path: dist
-      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
-      - run: npm ci --no-audit --no-fund --prefix examples/payload-backend
+      - run: bash scripts/ci-install-fixture.sh examples/astro-payload
+      - run: bash scripts/ci-install-fixture.sh examples/payload-backend
       - run: npm run test:e2e:real-payload
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
@@ -553,8 +553,8 @@ jobs:
         with:
           name: dist-${{ github.sha }}
           path: dist
-      - run: npm ci --no-audit --no-fund --prefix examples/astro-hybrid
-      - run: npm ci --no-audit --no-fund --prefix examples/payload-backend
+      - run: bash scripts/ci-install-fixture.sh examples/astro-hybrid
+      - run: bash scripts/ci-install-fixture.sh examples/payload-backend
       - env:
           PLP_REAL_PAYLOAD_TARGET: hybrid
           PLP_REAL_PAYLOAD_BROWSERS: ${{ matrix.browser }}
@@ -611,8 +611,8 @@ jobs:
           path: dist
       - env:
           EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload"}')[matrix.target] }}
-        run: npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"
-      - run: npm ci --no-audit --no-fund --prefix examples/payload-backend
+        run: bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"
+      - run: bash scripts/ci-install-fixture.sh examples/payload-backend
       - env:
           PLP_REAL_PAYLOAD_TARGET: ${{ matrix.target }}
           PLP_REAL_PAYLOAD_BROWSERS: ${{ matrix.browser }}
@@ -654,8 +654,8 @@ jobs:
         with:
           name: dist-${{ github.sha }}
           path: dist
-      - run: npm ci --no-audit --no-fund --prefix examples/nextjs-payload
-      - run: npm ci --no-audit --no-fund --prefix examples/payload-backend
+      - run: bash scripts/ci-install-fixture.sh examples/nextjs-payload
+      - run: bash scripts/ci-install-fixture.sh examples/payload-backend
       - env:
           PLP_REAL_PAYLOAD_TARGET: ${{ matrix.target }}
           PLP_REAL_PAYLOAD_CSRF: '1'

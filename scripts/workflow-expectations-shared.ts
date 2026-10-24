@@ -56,7 +56,7 @@ export const CI_FIXTURES = [
 ] as const;
 
 export const fixtureInstall = (fixture: string): StepSpec => ({
-  run: `npm ci --no-audit --no-fund --prefix examples/${fixture}`,
+  run: `bash scripts/ci-install-fixture.sh examples/${fixture}`,
 });
 export const fixtureAudit = (fixture: string): StepSpec => ({
   run: `node scripts/audit-gate.ts --package-lock-only --prefix examples/${fixture}`,

@@ -194,7 +194,7 @@ jobs:
         with:
           name: ${{ inputs.dist-artifact }}
           path: dist
-      - run: npm ci --no-audit --no-fund --prefix examples/astro-payload
+      - run: bash scripts/ci-install-fixture.sh examples/astro-payload
       - name: Exercise sustained browser updates against the built runtime
         env:
           PLP_SOAK_DURATION_MS: ${{ inputs.soak-duration-ms }}

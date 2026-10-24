@@ -311,7 +311,7 @@ export const CI: WorkflowSpec = {
         { run: 'bash scripts/ci-install-browser.sh ${{ matrix.browser }}' },
         DOWNLOAD_DIST,
         {
-          run: 'npm ci --no-audit --no-fund --prefix "examples/$EXAMPLE"',
+          run: 'bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"',
           env: {
             EXAMPLE:
               '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload"}\')[matrix.target] }}',
