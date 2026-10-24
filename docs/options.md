@@ -198,7 +198,10 @@ Notes on the rows that need one:
   ([ADR 0024](architecture/0024-authorization-by-module-reference.md)).
 - `manageCsp: 'full'` also manages a nonce'd `script-src`; `strictDynamic`
   adds `'strict-dynamic'`, after which CSP 3 ignores `'self'` and host
-  sources, so every script on the page must carry the nonce.
+  sources, so every script on the page must carry the nonce. The Next.js
+  middleware writes that `script-src` only into a response it injects the
+  script into; on any other response, such as `NextResponse.next()`, it keeps
+  `frame-ancestors` and warns once in development.
 - `runtime` chooses which artifact the page carries. The default is the full
   one; `LEAN_RUNTIME` from `payload-live-preview/lean` is about 36 KiB gzip
   against 44 KiB for the default inline script — it leaves out the fragment and route strategies, the keyed

@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 507,
-    "suites": 957,
-    "tests": 4364,
+    "suites": 958,
+    "tests": 4368,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 411,
-      "suites": 848,
-      "tests": 3967,
+      "suites": 849,
+      "tests": 3971,
       "benchmarks": 0
     }
   },
@@ -927,8 +927,8 @@
     {
       "path": "tests/unit/adapters/nextjs.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 18,
+      "suites": 7,
+      "tests": 22,
       "benchmarks": 0
     },
     {

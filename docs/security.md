@@ -228,7 +228,7 @@ values are split on CSP ASCII whitespace, directive-name matching uses ASCII-onl
 case folding, and the first case-insensitive duplicate wins. A later duplicate can
 therefore neither relax nor replace the directive a browser actually applies.
 
-Full `script-src` management is opt-in (`manageCsp: 'full'`): a per-request cryptographic nonce (Web Crypto, 128-bit) builds `script-src 'self' 'nonce-…' <extras>`. `'strict-dynamic'` is a further opt-in (`strictDynamic: true`) because under CSP 3 it makes browsers ignore `'self'` and host sources — framework hydration scripts without a nonce would break. Only enable it on fully nonce-disciplined pages.
+Full `script-src` management is opt-in (`manageCsp: 'full'`): a per-request cryptographic nonce (Web Crypto, 128-bit) builds `script-src 'self' 'nonce-…' <extras>`. `'strict-dynamic'` is a further opt-in (`strictDynamic: true`) because under CSP 3 it makes browsers ignore `'self'` and host sources — framework hydration scripts without a nonce would break. Only enable it on fully nonce-disciplined pages. The Next.js middleware cannot hand its nonce to the layout, so it writes this `script-src` only into a response it injects the script into and otherwise keeps `frame-ancestors` ([nextjs.md](nextjs.md#the-runtime-as-a-cached-asset)).
 
 ## Policed attribute writes
 

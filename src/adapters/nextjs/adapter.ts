@@ -5,17 +5,24 @@
  * for HTML a server assembles as a string.
  */
 
-import { createPreviewPolicy } from '@adapters/shared/policy';
+import {
+  createPreviewPolicy,
+  type PreviewDecision,
+  type PreviewPolicy,
+} from '@adapters/shared/policy';
 import {
   applyDecision,
   bindDecisionHooks,
+  injectIntoResponse,
   renderScriptBody,
   renderScriptTag,
+  withCspHeader,
 } from '@adapters/shared/response';
 import { assertNonce } from '@inline/generator';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PageFacts } from '@adapters/shared/policy-options';
 import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
+import { warnOnce } from '@/types/dev-warning';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
 
@@ -46,8 +53,36 @@ export function createLivePreviewMiddleware(
   return async (request, response) => {
     const decision = await policy.decide(request, bindDecisionHooks(policy, options, request));
     if (!decision.isPreview) return response;
-    return applyDecision(response, policy, decision, policy.nonce());
+    return decision.cspMode === 'full'
+      ? withCarriedNonce(response, policy, decision)
+      : applyDecision(response, policy, decision, policy.nonce());
   };
+}
+
+/**
+ * `manageCsp: 'full'` lets only a script that carries its nonce run. In
+ * `proxy.ts` the response is `NextResponse.next()`, which has no body, and the
+ * layout renders the script without ever seeing that nonce; a `script-src`
+ * nonce nothing carries would block it and Next's own inline scripts. A
+ * response the middleware cannot inject into therefore keeps `frame-ancestors`.
+ */
+async function withCarriedNonce(
+  response: Response,
+  policy: PreviewPolicy,
+  decision: PreviewDecision,
+): Promise<Response> {
+  const nonce = policy.nonce();
+  if (decision.inject) {
+    const injected = await injectIntoResponse(response, policy.scriptTag(nonce));
+    if (injected !== response) return withCspHeader(injected, policy, decision, nonce);
+  }
+  warnOnce(
+    'nextjs-full-csp-without-carrier',
+    "`manageCsp: 'full'` wrote `frame-ancestors` only: the middleware had no HTML body to put " +
+      'the script in, and a nonce that reaches no script would block it. Keep `script-src` in your ' +
+      'own policy and pass its nonce to `LivePreviewScript`.',
+  );
+  return withCspHeader(response, policy, { ...decision, cspMode: 'frame-ancestors' }, nonce);
 }
 
 /** What a `<script>` element needs to carry the runtime; see `livePreviewScriptProps`. */
