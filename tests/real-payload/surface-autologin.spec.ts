@@ -21,7 +21,9 @@ const PUBLIC_TITLE = 'Hello from the demo';
 async function openAdmin(page: Page): Promise<void> {
   await page.goto('/admin/globals/homepage');
   await expect(page.locator('#field-title')).toBeVisible();
-  await page.waitForLoadState('networkidle');
+  // Not networkidle: WebKit can keep a form-state POST the admin aborted in Playwright's
+  // in-flight count, and the page then never idles (CI run 40096404670). Wait for the toggler.
+  await expect(page.locator('.live-preview-toggler')).toBeVisible({ timeout: 15_000 });
 }
 
 /** The Live Preview panel open and the preview's frame in it. */
