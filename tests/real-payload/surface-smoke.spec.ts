@@ -34,7 +34,9 @@ test.describe(`real Payload admin → ${SURFACE} live preview`, () => {
     await signIn(page);
     await page.goto('/admin/globals/homepage');
     await expect(page.locator('#field-title')).toBeVisible();
-    await page.waitForLoadState('networkidle');
+    // Not networkidle: WebKit can keep a form-state POST the admin aborted in Playwright's
+    // in-flight count, and the page then never idles (CI run 40096404670). Wait for the toggler.
+    await expect(page.locator('.live-preview-toggler')).toBeVisible({ timeout: 15_000 });
 
     // The toggle is a per-user preference and may already be open.
     const panel = page.locator('.live-preview-window');
