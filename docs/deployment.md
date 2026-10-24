@@ -3,12 +3,14 @@
 What a preview response looks like on the wire, what sits between the admin
 and the page, and what each layer must let through. The audit for a deployed
 site is `pll doctor` ([troubleshooting.md](troubleshooting.md#auditing-a-deployment-pll-doctor)).
-Its preview request carries `?preview=true`, the intent a 2.0 adapter counts.
+Its preview request carries `?preview=true`, the intent a 2.0 adapter counts;
+`--param <name>` sends another where `previewQueryParams` replaces the default.
 A preview behind `authorizePreview` refuses that request without an editor's
 credentials, so pass them the way the strategy reads them: a Payload session as
 `--header "Cookie: payload-token=…"`, a signed token in the URL
 (`pll doctor "https://www.example.com/page?previewToken=…"`, which the visitor
-request drops), or `--header "x-preview-token: …"` only where the strategy sets
+request drops; `--token-param <name>` where the strategy's `transport` reads
+another parameter), or `--header "x-preview-token: …"` only where the strategy sets
 `transport: { kind: 'header' }`. Headers go with the preview request only and
 their values are never printed; a token in the URL is printed as `previewToken=…`.
 
@@ -99,7 +101,7 @@ identical, and they decide how to host the file:
 
 ## What a public visitor pays
 
-The default inline script is about 141 KiB of JavaScript (about 44 KiB gzip). The number that
+The default inline script is about 142 KiB of JavaScript (about 44 KiB gzip). The number that
 matters is not that but who receives it, and that is decided by the delivery
 rather than by the framework. Three outcomes, each held by an E2E case in
 `tests/e2e/specs/public-response.spec.ts` against the budgets in
@@ -206,8 +208,8 @@ is whatever the last hop in front of the site lets through.
 ## Edge runtimes
 
 The adapter entries (`payload-live-preview/astro`, `/nextjs`, `/sveltekit`,
-`/nuxt`), `payload-live-preview/server`, `/fragment` and `/payload` run in a
-Web-platform-only context: no `process`, no `Buffer`, no `node:` module. That
+`/nuxt`), `payload-live-preview/server`, `/fragment`, `/payload` and `/plugin`
+run in a Web-platform-only context: no `process`, no `Buffer`, no `node:` module. That
 is executed, not declared — the package build loads every one of those entries
 into such a context and drives a preview request through it. Signed tokens use
 Web Crypto (`crypto.subtle`), which edge runtimes provide.
@@ -238,8 +240,8 @@ livePreview({ runtime: LEAN_RUNTIME, allowedOrigins: [ADMIN] });
 ```
 
 What it leaves out — the fragment and route strategies, the keyed morph, the
-structural arrays, the item templates, the screen-reader announcer — and what a
-page is told when it needs one anyway (LP0104): [options.md](options.md) and
+structural arrays, the item templates, the screen-reader announcer,
+auto-binding — and what a page is told when it needs one anyway (LP0104): [options.md](options.md) and
 [troubleshooting.md](troubleshooting.md). Everything else is the same runtime:
 the same message bus, the same origin rules, the same merge, the same renderers
 for text, numbers, dates, images, uploads, relationships and rich text.
@@ -369,10 +371,10 @@ back to the raw values, and relationship fields show IDs.
 
 ## Upgrading a monorepo
 
-The Payload side imports `payload-live-preview/payload` (`buildLivePreviewUrl`)
-and, where it mints signed tokens (Payload 3), `issuePreviewToken`; the site
-imports the adapter, `authorizePreviewRequest` and
-`payload-live-preview/server`. Keep both on one version of the package —
+The Payload side imports `payload-live-preview/plugin` (`livePreview()`) or
+`payload-live-preview/payload` (`buildLivePreviewUrl`) and, where it mints
+signed tokens (Payload 3), `issuePreviewToken`; the site imports the adapter,
+`authorizePreviewRequest` and `payload-live-preview/server`. Keep both on one version of the package —
 one entry in one lockfile is the simplest way — and at least on the same
 major.
 

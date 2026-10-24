@@ -161,9 +161,11 @@ the mutant total, the minimum score, and the no-coverage, timeout, error and
 ignored maxima. `npm run test:mutation:policy` fails on a regression and on an
 improvement alike until a maintainer ratchets the file, so a scope reduction and
 a better score are both visible review events rather than silent changes to the
-quality contract. Two numbers are not exact: the score passes within
+quality contract. Three numbers are not exact: the score passes within
 `mutationScoreDriftMutants` mutants of the recorded minimum, and
-`timeoutMaximum` is a ceiling — more timeouts fail, fewer print a notice.
+`timeoutMaximum` and `errorMaximum` are ceilings — more fail, fewer print a
+notice. The error ceiling is 1: a mutant that never ends, which one runner
+records as a timeout, crashed a worker on another (2026-10-17).
 Earlier baselines — an eight-file slice, then fourteen files — are in this
 file's Git history; their numbers describe a scope that no longer exists.
 

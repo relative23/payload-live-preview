@@ -45,8 +45,9 @@ It is deliberately quiet:
 - It honors **`prefers-reduced-motion`** (no smooth-scroll animation then).
 - The first message is a **baseline** — the initial document load never scrolls,
   and neither does a binding that has just appeared on the page.
-- A value too large or too complex to compare (over 64 KB, or cyclic) never
-  claims to have changed, so it cannot take the reveal from a field that did.
+- A value too large or too complex to compare (longer than 65 536 characters,
+  counted as JSON for an object, or cyclic) never claims to have changed, so it
+  cannot take the reveal from a field that did.
 - It runs **after** the writes land, so the fragment and route strategies
   scroll to the element they just rendered, not to the one they replaced.
 - On a page previewing **several documents**, with `scopeBindingsByOwner` on

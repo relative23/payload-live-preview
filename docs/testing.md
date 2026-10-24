@@ -105,10 +105,13 @@ mutation-policy verdict is graded on the merged report.
    on the same commit; every `[regression]` and `[improvement]` line names a
    number to record.
 5. Record `total`, `mutationScoreMinimum` (two decimals) and
-   `noCoverageMaximum` from the report under `baseline`. `errorMaximum` and
-   `ignoredMaximum` stay at zero. `timeoutMaximum` is a ceiling, not the
-   report's count: it sits above the measured timeouts with room for a slow
-   runner; fewer print a `[drift]` notice and only more fail. The score passes
+   `noCoverageMaximum` from the report under `baseline`. `ignoredMaximum`
+   stays at zero. `timeoutMaximum` and `errorMaximum` are ceilings, not the
+   report's counts: the timeout ceiling sits above the measured timeouts with
+   room for a slow runner, and the error ceiling holds the mutants that never
+   end, which one runner records as a timeout and another as a crashed worker
+   (the PR and core policies keep it at zero); fewer print a `[drift]` notice
+   and only more fail. The score passes
    within `mutationScoreDriftMutants` mutants of the recorded value, and a
    `[drift]` line for it is a notice, not a number to record.
 6. Refresh the shard weights from the same report (the two commands above) and
@@ -408,7 +411,9 @@ covered by a corpus captured from a real 2.32.3 admin, captured-message
 integration tests and `fieldSchemaJSON` typing;
 3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.90.2 by the
 real-admin E2E on every push; 4.0.0-canary.33 by a corpus captured from a real
-Payload 4 admin in a one-off upgrade round (the fixture stays on 3.x); `latest`
+Payload 4 admin in a one-off upgrade round (the fixture stays on 3.x);
+4.0.0-beta.4 by one measurement of the config plugin against a real admin,
+outside CI ([compatibility list](../README.md#compatibility)); `latest`
 and the 4.0 pre-releases by the nightly watch — wire format, sender source and
 a real admin — the latter as early warning only. The
 four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all
@@ -469,7 +474,7 @@ npx playwright test --config playwright.astro-owner.config.ts                   
 What they do not show. The parent is a mock, so neither is a real-admin result. The island
 lane measures `client:load` only. The locks are the exact versions themselves, so
 `npm audit --package-lock-only` reports the advisories of those versions (counted on
-2026-10-17: one critical and nine high for the Astro 4.0.0 lock, one critical and eight high for
+2026-10-24: one critical and four high for the Astro 4.0.0 lock, one critical and five high for
 the Astro 4.16.19 React lock). Only the tests install them, in a temporary directory outside the
 repository; the base lane serves a static build and the other lanes a Node server on loopback
 behind a throw-away TLS proxy. `fixture-audit` covers `examples/`, not these locks.
@@ -481,11 +486,11 @@ The root barrel tree-shakes, and that is measured rather than declared:
 built package, resolved through `node_modules` so `exports` and `sideEffects`
 apply as after `npm install`, and holds each to a gzip budget. Importing
 `escapeHtml` from the root is held to 214 B, `lexicalToHtml` to 5,701 B,
-`initLivePreview` to 55,685 B (the client with its built-in renderers, Lexical
-included), `generateInlineScript` to 53,316 B (the inline runtime source and
+`initLivePreview` to 55,745 B (the client with its built-in renderers, Lexical
+included), `generateInlineScript` to 53,382 B (the inline runtime source and
 nothing of the client). The focused entries give a bundler less to look
 through; the bytes barely move — `initLivePreview` from `./core` is held to
-55,665 B, `lexicalToHtml` from `./lexical` to 5,840 B. The budgets are
+55,726 B, `lexicalToHtml` from `./lexical` to 5,840 B. The budgets are
 `TREE_SHAKING_FIXTURES` in `scripts/tree-shaking-budgets.ts`, with the reason
 each one moved; the first measurement, and why the barrel did not tree-shake
 before it, are in

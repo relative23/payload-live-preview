@@ -12,7 +12,7 @@ table.
 | `lexicalToHtml()` without a sanitizer document throws instead of warning     | `lexicalToHtml(content, { requireDocument: true })`, `<RichText requireDocument />`                                    | pass a `document` (linkedom, jsdom) per call; the build names every render without one                                                                                          |
 | a partly bound group counts as covered path by path                          | `subfieldCoverage: 'declared'`                                                                                         | LP0203 names each uncovered path; declare the ones the page leaves out on purpose with `data-payload-covers`                                                                    |
 | `setSanitizerDocument()` is removed                                          | pass `document` per call                                                                                               | `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, the `RichText` `document` prop                                                                      |
-| `defaults: 'v1'` is removed                                                  | `npx pll migrate ./src --write`                                                                                        | the rows it stood for become explicit options with the same values; `pll doctor --v2` names each one, so they can go one at a time                                              |
+| `defaults: 'v1'` is removed                                                  | `npx pll migrate ./src --write`                                                                                        | the rows it stood for become explicit options with the same values, so they can go one at a time; `pll doctor --v2` names each runtime row still at its 1.x value               |
 | `onUnboundChange`, `isPreviewRequest()` and `adminOrigins` are removed       | `npx pll migrate ./src --write`                                                                                        | the codemods rename them: `onUnfaithfulPatch` (`'route'` is `'escalate'`), `hasPreviewIntent()`, `allowedOrigins`                                                               |
 | the `signed-token` replay store `{ isUsed, markUsed }` is removed            | implement `consume(id, expiresAt)`                                                                                     | one check-and-record step; [security.md](security.md) has a Redis example                                                                                                       |
 | `new OriginDetector()` no longer trusts `document.referrer` by default       | `new OriginDetector({ enableReferrerDetection: false })`                                                               | pass `enableReferrerDetection: true` where a detector you build yourself relies on the referrer                                                                                 |
@@ -55,7 +55,9 @@ APIs, and removes the 1.x names. Two tools carry the mechanical part:
 audits a served page against the defaults table. `defaults: 'v1'` restores the
 1.x table on any adapter, `generateInlineScript()` or `LivePreviewClient`, so a
 site can move one row at a time; an explicit option always wins over the
-profile.
+profile. 3.0 removes the profile; since 2.1 the adapters and
+`generateInlineScript()` warn about it in development
+([Preparing for 3.0](#preparing-for-30)).
 
 ### Run the tooling first
 

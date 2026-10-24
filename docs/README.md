@@ -19,6 +19,7 @@ Related: [renderers.md](renderers.md) (events, transforms, renderers, plugins), 
 ## For maintainers
 
 - [testing.md](testing.md) — the test tiers, local commands, coverage and mutation policy.
+- [testing/mutation-and-property-testing.md](testing/mutation-and-property-testing.md) — the property seeds, the Stryker profiles and their baselines.
 - [benchmarks.md](benchmarks.md) — hot-path timings, update-to-paint, tree shaking.
 - [architecture/overview.md](architecture/overview.md) — what the package is: two screens, one message, five objects, every rule with its reason.
 - [audit.md](audit.md) — the trusted core: the nine modules a page's owner has to trust, read in order with every invariant named and the gate that holds it.
@@ -27,7 +28,7 @@ Related: [renderers.md](renderers.md) (events, transforms, renderers, plugins), 
 
 ## Glossary
 
-- **Preview intent** — the request asks for a preview: a query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`) and, when configured, `Sec-Fetch-Dest: iframe` or an admin referer. Client-controlled; never authorization.
+- **Preview intent** — the request asks for a preview: by default a query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`); `previewSignals` can add `Sec-Fetch-Dest: iframe` or an admin referer. Client-controlled; never authorization.
 - **Authorization** — the verified context `authorizePreviewRequest()` produces for a request it accepts. The adapters publish it as `livePreviewAuthorization` on `Astro.locals`, SvelteKit's `event.locals` and Nuxt's `event.context`.
 - **Outcome** — the string in `livePreviewAuthorizationOutcome`: `'authorized'`, or the reason for a refusal (`'missing-credential'`, `'expired'`, `'wrong-audience'`, …).
 - **Binding** — an element carrying `data-payload-field`; the runtime patches it in place.

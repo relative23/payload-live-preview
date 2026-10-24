@@ -52,9 +52,9 @@ The controls keep deliberately narrow responsibilities:
 
 `strict` is the default: an adapter that decides per request
 (`createLivePreviewMiddleware()`, `livePreviewHandle()`,
-`defineLivePreviewServerHandler()`, `livePreviewNitroPlugin()`) refuses to
-start without `authorizePreview`, without non-empty `allowedOrigins`, with an
-origin that is not `https:` (in production), or with `'referer'` among
+`defineLivePreviewServerHandler()`, `livePreviewNitroPlugin()`, and Next.js's
+`LivePreviewScript` on its first render) refuses to start without
+`authorizePreview`, without non-empty `allowedOrigins`, with an origin that is not `https:` (in production), or with `'referer'` among
 the resolved `previewSignals`, which the `'v1'` signal set includes. Astro's
 `livePreview()` integration in its default `mode: 'inline'` and in `'loader'`
 injects at build time and checks none of this; its `'middleware'` mode takes

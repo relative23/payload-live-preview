@@ -8,6 +8,9 @@ runtime plugin and not a frontend adapter.
 The entry is structural: it imports neither Payload 2 nor Payload 3. The same
 transform handles the callback arguments used by Payload 2.32.3
 (`documentInfo`) and Payload 3.x (`collectionConfig` / `globalConfig`).
+Payload 4 is still a pre-release: the plugin was measured once against
+4.0.0-beta.4, outside CI, and the [compatibility list](../README.md#compatibility)
+says what that run covered and what it left out.
 
 ## Configure the panel
 
@@ -109,8 +112,11 @@ saved document; the suite does not test that part.
 The real-admin fixture runs the Astro (static, hybrid and middleware), Next.js,
 SvelteKit, Nuxt and plain HTML examples, a React hook page and a Vue composable
 page against a real Payload 3.90.2 admin and proves unsaved edits on an existing
-global. CI runs the Astro target in Chromium and every other target in Chromium,
-Firefox and WebKit; `PLP_REAL_PAYLOAD_BROWSERS` selects the engines locally.
+global. CI runs the static Astro target in Chromium and every other target in
+Chromium, Firefox and WebKit, and runs the Next.js session and hook targets once
+more in Chromium with Payload's `csrf` list set
+([authorization.md](authorization.md#payload-session));
+`PLP_REAL_PAYLOAD_BROWSERS` selects the engines locally.
 The Next.js, SvelteKit, Nuxt and Astro middleware previews authorize the
 editor's real session (`payload-session`); the hook and the composable populate
 a relationship through a credentialed request to the admin's REST API from the

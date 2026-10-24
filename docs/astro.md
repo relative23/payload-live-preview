@@ -50,11 +50,11 @@ Astro evaluates `astro.config.mjs` before it loads `.env`, and `import.meta.env`
 
 ### Injection modes
 
-`mode` selects how the runtime reaches a page. A static build has no request to decide on, so `'inline'` and `'loader'` are delivery choices and not authorization boundaries: neither changes a response header, carries a nonce or reads a draft, and the injected runtime does not start at all outside a preview frame. What an editor is shown is decided by whatever fetches the draft — see [authorization.md](authorization.md). `'middleware'` is the mode that runs per request, and the one the policy engine gates; for that reason `'inline'` and `'loader'` refuse `authorizePreview` and `shouldInject` at startup instead of leaving a function in the configuration that nothing would call.
+`mode` selects how the runtime reaches a page. A static build has no request to decide on, so `'inline'` and `'loader'` are delivery choices and not authorization boundaries: neither changes a response header, carries a nonce or reads a draft, and the injected runtime does not start at all outside a preview frame. What an editor is shown is decided by whatever fetches the draft — see [authorization.md](authorization.md). `'middleware'` is the mode that runs per request, and the one the policy engine gates; for that reason `'inline'` and `'loader'` refuse `authorizePreview`, `shouldInject` and `authorizePreviewModule` at startup instead of leaving a hook in the configuration that nothing would call.
 
 **`'inline'` (the default)** bakes the runtime into every page at build time. It works without a server, and every ordinary visitor downloads about 44 KiB gzip with the default inline script for a feature only an editor uses.
 
-**`'loader'`** keeps the pages small. Each page carries a bootstrap of a few hundred bytes that checks the preview context and fetches the runtime as a content-hashed, SRI-verified asset only inside a preview. The asset is published once at `/_payload-live-preview/runtime.<hash>.js` (below Astro's `base`, when one is set), cached across every page, and identical for every site on the same package version, so it carries no deployment secret. `astro dev` serves the same path from memory. The price is one extra request the first time an editor opens a preview.
+**`'loader'`** keeps the pages small. Each page carries a bootstrap of a few hundred bytes that checks the preview context and fetches the runtime as a content-hashed, SRI-verified asset only inside a preview. The asset is published once at `/_payload-live-preview/runtime.<hash>.js` (below Astro's `base`, when one is set), cached across every page, and identical for every site on the same package version and runtime artifact (`runtime: LEAN_RUNTIME` is another file), so it carries no deployment secret. `astro dev` serves the same path from memory. The price is one extra request the first time an editor opens a preview.
 
 ```ts
 livePreview({
@@ -173,7 +173,7 @@ Use `buildLivePreviewUrl` from `payload-live-preview/payload` instead when a doc
 
 Live preview patches the DOM after the page loads; the initial server render is still yours. Draft reads need a server-side authorization decision. `hasPreviewIntent()` only detects intent: anyone can add the query parameter or load a page in an iframe.
 
-The middleware makes that decision through `authorizePreview`. The hook runs only on requests carrying preview intent, and a refusal leaves the response exactly as rendered: no runtime, no CSP change, no nonce in `Astro.locals`. The verified context is published as `Astro.locals.livePreviewAuthorization` and the hook's outcome (`'authorized'`, `'expired'`, `'missing-credential'`, …) as `Astro.locals.livePreviewAuthorizationOutcome`. A response the middleware changed is sent with `Cache-Control: private, no-store`. The strict default refuses a configuration instead of serving it. `astro dev` and `astro build` stop when the integration names no hook (`authorizePreviewModule`). The other rules are checked when Astro loads the middleware, which is with the first request: with no explicit `allowedOrigins`, with an `http:` admin origin under `NODE_ENV=production`, or with referer trust, the server starts and every request answers with a 500 that names the rule, so no runtime is ever served. `defaults: 'v1'` opts back into the earlier behavior for a staged migration.
+The middleware makes that decision through `authorizePreview`. The hook runs only on requests carrying preview intent, and a refusal leaves the response exactly as rendered: no runtime, no CSP change, no nonce in `Astro.locals`. The verified context is published as `Astro.locals.livePreviewAuthorization` and the hook's outcome (`'authorized'`, `'expired'`, `'missing-credential'`, …) as `Astro.locals.livePreviewAuthorizationOutcome`. A response the middleware changed is sent with `Cache-Control: private, no-store`. The strict default refuses a configuration instead of serving it. `astro dev` and `astro build` stop when the integration in `mode: 'middleware'` names no hook (`authorizePreviewModule`). The other rules, and a hand-composed `createLivePreviewMiddleware()` without `authorizePreview`, are checked when Astro loads the middleware, which is with the first request: with no explicit `allowedOrigins`, with an `http:` admin origin under `NODE_ENV=production`, or with referer trust, the server starts and every request answers with a 500 that names the rule, so no runtime is ever served. The deprecated `defaults: 'v1'` opts back into the earlier behavior for a staged migration.
 
 ```ts
 // src/middleware.ts
@@ -205,6 +205,8 @@ declare global {
   }
 }
 ```
+
+To place the tag yourself, give the middleware `autoInject: false`: it still decides and publishes on `Astro.locals`, and under the default `manageCsp` merges the CSP and marks the response `private, no-store`, but injects nothing. `renderLivePreviewScript()` from `payload-live-preview/astro` returns the complete tag for `<Fragment set:html={…} />`. It builds the tag for whoever renders it, so render it only when `Astro.locals.livePreviewAuthorization` is set, and pass the same options with `nonce: Astro.locals.livePreviewNonce`.
 
 Three strategies exist. `payload-session` is the one above. `signed-token` verifies a short-lived HMAC token the Payload side mints with `issuePreviewToken()` — bound to this site, this path, the locale and a few minutes — which is how a preview works without a cookie crossing origins. `verifier` is your own async function for an SSO or edge-auth setup; it returns claims or `null`. [authorization.md](authorization.md) has all three and the threat model behind them.
 
@@ -258,7 +260,7 @@ Wrap such a component in a `data-payload-fragment` boundary, export an endpoint 
 
 ## Client navigation
 
-With Astro's `<ClientRouter />` no bridge is needed: the integration declares `astro:page-load`, so after each swap the runtime rebuilds its bindings and reapplies the last accepted editor document. The first `astro:page-load` of a document is ignored, because it is not a router commit. The Next.js, SvelteKit and Nuxt guides install a small host bridge instead ([deployment.md](deployment.md)).
+With Astro's `<ClientRouter />` no bridge is needed: the integration declares `astro:page-load`, so after each swap the runtime rebuilds its bindings and reapplies the last accepted editor document. The first `astro:page-load` of a document is ignored, because it is not a router commit. The Next.js, SvelteKit and Nuxt guides install a small host bridge instead ([deployment.md](deployment.md#navigation)).
 
 ## Gotchas
 

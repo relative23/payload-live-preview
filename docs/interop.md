@@ -56,7 +56,13 @@ project:
 1. Stop calling `useLivePreview()` in the components that render the region.
 2. Annotate the **rendered** DOM with `data-payload-field` attributes
    ([bindings.md](bindings.md)).
-3. Mount this package once: an adapter, or `generateInlineScript()`.
+3. Mount this package once: an adapter, or `generateInlineScript()`. An
+   adapter that decides per request (`inject: 'preview-only'`, the default)
+   injects the runtime only when the URL carries a `preview`, `draft` or
+   `livePreview` query parameter set to `true` or `1`. Add one to the admin's
+   preview URL, or let the config plugin from `payload-live-preview/plugin`
+   write that URL; it throws while the old `admin.livePreview.url` is still in
+   place ([payload.md](payload.md#merge-rules)).
 4. Updates flow into the DOM directly; no re-render is involved.
 
 Keep bindings outside hydrated React, Vue or Svelte islands: a later

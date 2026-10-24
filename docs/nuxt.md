@@ -362,7 +362,7 @@ The callback appends `?preview=true`, a preview intent that authorizes nothing. 
 
 ## Example
 
-[`examples/nuxt-payload`](../examples/nuxt-payload) — the module `payload-live-preview/nuxt-module` on Nuxt 3, with `delivery: 'asset'` and `defaults: 'v1'`, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
+[`examples/nuxt-payload`](../examples/nuxt-payload) — the module `payload-live-preview/nuxt-module` on Nuxt 3, with `delivery: 'asset'` and `defaults: 'v1'` against the mock admin and the strict default with `authorizePreviewModule` against a real Payload admin, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
 
 ## When something does not update
 
