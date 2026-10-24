@@ -83,6 +83,28 @@ environment variables. With another bundler, use its equivalent public setting.
 
 The runtime binds what is in the document and watches it. Elements added later are bound after the mutation debounce, and a router that replaces `document.body` on navigation is followed: observers and bindings move to the new body. Values already patched into the old markup are gone until the next update arrives, and a script of your own that rewrites a bound element's content overwrites the patch the same way.
 
+## Point the Payload admin at this site
+
+The admin has to know which URL to show for each document. In the Payload project's `payload.config.ts`, the config plugin from `payload-live-preview/plugin` maps collections and globals to paths on this site and enables Live Preview for them. If Payload is a separate project, install `payload-live-preview` there too.
+
+```ts
+// payload.config.ts
+import { livePreview } from 'payload-live-preview/plugin';
+
+export default buildConfig({
+  // collections, db, editor …
+  plugins: [
+    livePreview({
+      baseUrl: process.env.FRONTEND_URL!,
+      collections: { posts: ({ data }) => `/blog/${String(data['slug'] ?? '')}` },
+      globals: { homepage: '/' },
+    }),
+  ],
+});
+```
+
+The callback appends `?preview=true`, a preview intent that authorizes nothing. Breakpoints, merge rules and conflicts are in [payload.md](payload.md). A document without a route that should show no preview, another plugin that already sets the Live Preview URL, or a signed token in the URL need the lower-level `buildLivePreviewUrl()` from `payload-live-preview/payload` instead ([payload.md](payload.md), [authorization.md](authorization.md#signed-token)).
+
 ## Examples
 
 - [`examples/pure-html`](../examples/pure-html) — static HTML carrying the inline runtime from `generateInlineScript()`.

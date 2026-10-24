@@ -24,6 +24,9 @@ npm install payload-live-preview
 `vue` is an optional peer this package does not install. The `./vue` entry and
 the Nuxt fragment renderer are the only places that need it.
 
+The Payload admin also has to know which URL of your app to show for each
+document; the config plugin in [payload.md](payload.md) sets that up.
+
 ## The composable
 
 ```vue
