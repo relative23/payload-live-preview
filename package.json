@@ -1,6 +1,6 @@
 {
   "name": "payload-live-preview",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Live preview for Payload CMS on server-rendered and static frontends: DOM patches, server-rendered fragments, React and Vue hooks. Strict DOM defaults, no direct dependencies; framework entries use optional peers.",
   "author": "relative23",
   "license": "MIT",

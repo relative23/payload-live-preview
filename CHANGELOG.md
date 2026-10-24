@@ -1,5 +1,14 @@
 # payload-live-preview
 
+## 2.1.1
+
+### Patch Changes
+
+- 0465371: The guides are brought in line with the 2.1.0 code. The fragment guide names the Astro jobs that run on every push, the host router refresh (`registerRouteRefresh()`, `<LivePreviewRouteRefresh>`), the 404 and 403 answers of the endpoint, the 64-character id limit and the diagnostics `LP0807` to `LP0810`. The options reference names the options of `useLivePreviewDocument()`, `withLivePreview()` and `createFragmentEndpoint()`. The Next.js guide no longer says that `manageCsp: 'full'` covers the asset bootstrap: the nonce it writes into the header never reaches the layout's script. The React guide says which option changes start a new session, the deployment guide names `/plugin` for the Payload side of a monorepo, and the testing pages carry the current mutation ceilings, tree-shaking budgets and advisory counts. The README's local release checks are dated to the run on the published 2.1.0 archive. Documentation only.
+- 69a9aa0: The Next.js middleware no longer blocks the preview under `manageCsp: 'full'`. In `proxy.ts` it receives `NextResponse.next()`, which has no body, and the layout renders the script without ever seeing the middleware's nonce; the `script-src` nonce it wrote was carried by no element, so the browser blocked the preview script and Next's own inline scripts with it. A response the middleware cannot inject the script into now keeps `frame-ancestors` only, and the middleware warns once in development. A response it does inject into still gets the nonce. To manage `script-src`, keep it in your own policy and pass its nonce to `LivePreviewScript`.
+- 81de640: The compatibility list names Payload 4.0.0-beta.4, a pre-release, and states what a one-off measurement of the config plugin against its real admin covered and what it did not. Documentation only; the package code is unchanged.
+- d7f1906: The framework guides show the config plugin as the way to point the Payload admin at the site. The Astro guide's step 4 named only the lower-level `buildLivePreviewUrl()` helper, and the Next.js, SvelteKit, Nuxt, plain HTML, React and Vue guides had no Payload step at all. Each now has the plugin and names the three cases that still need the helper: a document without a route, another plugin that sets the Live Preview URL, a signed token in the URL. Documentation only.
+
 ## 2.1.0
 
 ### Minor Changes
