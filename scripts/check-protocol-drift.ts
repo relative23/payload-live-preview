@@ -32,7 +32,7 @@
  * fails — a behavioural signal, not a brittle grep.
  *
  * Run nightly in CI (`protocol-watch.yml`) against `@latest` and, as a
- * soft-fail early warning, `@canary`.
+ * soft-fail early warning, `@beta` (Payload 4.0 pre-releases).
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -243,7 +243,7 @@ async function main(): Promise<void> {
         const sources = readSenderSources(channel, senderDir);
         console.log(
           `[protocol-watch] sender ${channel.distTag} = ${sources.version} @ ${sources.ref}` +
-            (sources.exact ? '' : ' (branch: canary builds carry no tag)'),
+            (sources.exact ? '' : ' (branch: this build carries no tag)'),
         );
         const built = readSenderMessages(WINDOW_PATH, sources.window);
         const declared = readDeclaredProperties(sources.types);

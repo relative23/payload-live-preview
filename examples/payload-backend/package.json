@@ -12,11 +12,11 @@
     "e2e:serve": "payload generate:importmap && next dev --port 3001"
   },
   "dependencies": {
-    "@payloadcms/db-sqlite": "3.90.2",
-    "@payloadcms/next": "3.90.2",
-    "@payloadcms/richtext-lexical": "3.90.2",
+    "@payloadcms/db-sqlite": "3.92.0",
+    "@payloadcms/next": "3.92.0",
+    "@payloadcms/richtext-lexical": "3.92.0",
     "next": "^16.4.2",
-    "payload": "3.90.2",
+    "payload": "3.92.0",
     "payload-live-preview": "file:../..",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -35,13 +35,15 @@
   },
   "overrides": {
     "dompurify": "3.4.17",
-    "esbuild": "^0.25.0",
     "happy-dom": "21.0.4",
     "payload": {
       "undici": "7.30.1"
     },
     "@payloadcms/next": {
       "sass": "1.79.6"
+    },
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.0"
     }
   }
 }

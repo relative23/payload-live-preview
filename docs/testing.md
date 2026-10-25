@@ -389,7 +389,7 @@ What is proven about the Payload wire protocol, from the outside in:
    runtime, envelope quirks included: `collectionSlug` absent on a global,
    `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields.
 4. **Nightly protocol watch** (`.github/workflows/protocol-watch.yml`) executes
-   the real `@payloadcms/live-preview@latest` and `@canary` (Payload 4.0
+   the real `@payloadcms/live-preview@latest` and `@beta` (Payload 4.0
    pre-releases) against the corpus and asserts that their behavior — the
    `ready` handshake, event discriminators, the `mergeData` REST request —
    still matches the runtime's invariants. It also **reads their sender**: the
@@ -401,7 +401,7 @@ What is proven about the Payload wire protocol, from the outside in:
    comparison in `docs/react.md` is checked against the package a reader would
    install rather than against the version it was written for. The second job
    of the same workflow points `examples/payload-backend` at each channel and
-   runs the real admin E2E against it; `canary` is a major and may not boot, so
+   runs the real admin E2E against it; `beta` is a major and may not boot, so
    that row is soft-fail like its wire-format twin.
 
 Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
@@ -409,7 +409,7 @@ quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches
 drift the moment Payload ships it. Per Payload version that means: 2.x is
 covered by a corpus captured from a real 2.32.3 admin, captured-message
 integration tests and `fieldSchemaJSON` typing;
-3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.90.2 by the
+3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.92.0 by the
 real-admin E2E on every push; 4.0.0-canary.33 by a corpus captured from a real
 Payload 4 admin in a one-off upgrade round (the fixture stays on 3.x);
 4.0.0-beta.4 by one measurement of the config plugin against a real admin,

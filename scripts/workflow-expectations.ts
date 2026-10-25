@@ -296,7 +296,7 @@ const PROTOCOL_WATCH: WorkflowSpec = {
       ],
     },
     // The nightly half that needs a running admin: the same E2E CI runs against
-    // the pinned fixture, here against whatever `latest` and `canary` are now.
+    // the pinned fixture, here against whatever `latest` and `beta` are now.
     'admin-e2e': {
       timeoutMinutes: 30,
       continueOnError: '${{ matrix.soft-fail }}',
