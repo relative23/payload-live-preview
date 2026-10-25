@@ -127,7 +127,7 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "mock admin and Payload 3.90.2 REST authorization fixture without an admin UI",
+      "backend": "mock admin and Payload 3.92.0 REST authorization fixture without an admin UI",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -159,7 +159,7 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "mock admin and Payload 3.90.2 REST authorization fixture without an admin UI",
+      "backend": "mock admin and Payload 3.92.0 REST authorization fixture without an admin UI",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -189,7 +189,7 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -745,7 +745,7 @@
       "feature": "config plugin URL and breakpoint behavior in a real admin",
       "version": {
         "kind": "exact",
-        "value": "3.90.2",
+        "value": "3.92.0",
         "package": "payload",
         "source": {
           "kind": "lockfile",
@@ -754,7 +754,7 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -783,7 +783,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -813,7 +813,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin with the CSRF list",
+      "backend": "Payload 3.92.0 admin with the CSRF list",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -844,7 +844,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -864,7 +864,7 @@
       "feature": "a collection document has no native preview on its create screen, for a plugin-routed and a fixed string URL, and takes unsaved edits after its first save",
       "version": {
         "kind": "exact",
-        "value": "3.90.2",
+        "value": "3.92.0",
         "package": "payload",
         "source": {
           "kind": "lockfile",
@@ -873,7 +873,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -903,7 +903,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -933,7 +933,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -963,7 +963,7 @@
       },
       "mode": "production",
       "packageForm": "linked-worktree",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -992,7 +992,7 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -1018,7 +1018,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -1044,7 +1044,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.90.2 admin",
+      "backend": "Payload 3.92.0 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -1442,7 +1442,7 @@
       "source": "corpus"
     },
     {
-      "version": "3.90.2",
+      "version": "3.92.0",
       "how": "real admin E2E fixture (examples/payload-backend), run by CI on every push",
       "source": "tests"
     },
@@ -1453,7 +1453,7 @@
     },
     {
       "version": "4.0.0-beta.4 (pre-release)",
-      "how": "measured once on 2026-10-24, outside CI, in a consumer project that runs 2.1.0 from npm (Next 16, Node 24, Postgres 18, the real admin driven by headless Chromium). The config plugin type-checks against Payload's declarations and passes its config sanitizing. For six collection documents in two locales, the admin's preview frame loads the URL a hand-written callback produced, apart from the order of the query parameters, with the same breakpoint menu and no page errors, and the locale reaches the path resolvers. Against an admin with a `csrf` list, the `payload-session` strategy authorizes once its `origin` option is set. That run did not cover globals, the create screen, drafts and autosave, other plugins that write a Live Preview URL, or replacing existing breakpoints, and no CI job installs 4.0.0-beta.4"
+      "how": "measured once on 2026-10-24, outside CI, in a consumer project that runs 2.1.0 from npm (Next 16, Node 24, Postgres 18, the real admin driven by headless Chromium). The config plugin type-checks against Payload's declarations and passes its config sanitizing. For six collection documents in two locales, the admin's preview frame loads the URL a hand-written callback produced, apart from the order of the query parameters, with the same breakpoint menu and no page errors, and the locale reaches the path resolvers. Against an admin with a `csrf` list, the `payload-session` strategy authorizes once its `origin` option is set. That run did not cover globals, the create screen, drafts and autosave, other plugins that write a Live Preview URL, or replacing existing breakpoints. Since 2026-10-25 the nightly protocol watch installs payload@beta into the admin fixture as a soft-fail early warning"
     },
     {
       "version": "latest",
@@ -1462,7 +1462,7 @@
     },
     {
       "version": "4.0 pre-releases",
-      "how": "daily protocol watch against @payloadcms/live-preview@canary, early warning only",
+      "how": "daily protocol watch against @payloadcms/live-preview@beta and the real admin against payload@beta, early warning only",
       "source": "watch"
     }
   ],

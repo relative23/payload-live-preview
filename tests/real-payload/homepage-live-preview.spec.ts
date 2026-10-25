@@ -27,7 +27,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
 const previewPort = process.env['PLP_E2E_PORT'] ?? '4173';
-/** The Payload the admin runs: the nightly watch installs 3.x's latest and 4's canary over the fixture. */
+/** The Payload the admin runs: the nightly watch installs 3.x's latest and 4's beta over the fixture. */
 const payloadMajor = Number(
   (
     JSON.parse(

@@ -6,8 +6,10 @@ name: Protocol Watch
 # drives a real admin against the fixture frontend, so protocol drift
 # surfaces as a red run instead of silent breakage in consumer projects.
 #
-# Nightly rather than weekly since Z13: canary moves daily, and the point of
-# the canary row is to hear about Payload 4 before it ships, not six days after.
+# Nightly rather than weekly since Z13: Payload 4's pre-releases move fast, and
+# the point of that row is to hear about Payload 4 before it ships, not six days
+# after. Since 2026-10-25 the row follows `beta`: canary stopped at
+# 4.0.0-canary.39 (2026-10-08) once the betas began, and beta.4 is newer.
 
 on:
   schedule:
@@ -32,10 +34,10 @@ jobs:
           # latest is the gate: drift here = broken for real users NOW.
           - dist-tag: latest
             soft-fail: false
-          # canary (e.g. Payload 4.0 pre-releases) is an early-warning
+          # beta (the Payload 4.0 pre-releases) is an early-warning
           # signal, not a gate — pre-release protocols may legitimately
           # churn before stabilising.
-          - dist-tag: canary
+          - dist-tag: beta
             soft-fail: true
     continue-on-error: ${{ matrix.soft-fail }}
     steps:
@@ -52,7 +54,7 @@ jobs:
       - run: npx tsx scripts/check-protocol-drift.ts
         env:
           PROTOCOL_WATCH_PACKAGE: '@payloadcms/live-preview@${{ matrix.dist-tag }}'
-      # Only for the gate matrix entry: `canary` churns before it stabilises,
+      # Only for the gate matrix entry: `beta` churns before it stabilises,
       # and an issue per pre-release would train everyone to ignore the label.
       - name: File the drift as an issue
         if: failure() && matrix.dist-tag == 'latest'
@@ -77,14 +79,15 @@ jobs:
         include:
           - dist-tag: latest
             soft-fail: false
-            node: 22
-          # canary is a major (Payload 4) and may not even boot this fixture;
+            # Payload 3.92 needs ^22.23.4, and a bare 22 resolved to 22.23.3 on the runners (2026-10-25)
+            node: 22.23.4
+          # beta is a major (Payload 4) and may not even boot this fixture;
           # a red run here is news, not a broken build. It needs its own Node:
-          # payload@4 and @payloadcms/next@4 declare `node >=24.15.0`, so on 22
-          # the row could never boot the admin whatever else was fixed.
-          - dist-tag: canary
+          # payload@4 and @payloadcms/next@4 declare `node >=24.22.1` (4.0.0-beta.4),
+          # so on 22 the row could never boot the admin whatever else was fixed.
+          - dist-tag: beta
             soft-fail: true
-            node: 24
+            node: 24.22.1
     continue-on-error: ${{ matrix.soft-fail }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

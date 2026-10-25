@@ -31,7 +31,8 @@ export interface SenderChannel {
 
 export const SENDER_CHANNELS: readonly SenderChannel[] = [
   { distTag: 'latest', fallbackRef: '3.x' },
-  { distTag: 'canary', fallbackRef: 'main' },
+  // Payload 4's pre-releases: canary stopped at 4.0.0-canary.39 once the betas began (2026-10-08).
+  { distTag: 'beta', fallbackRef: 'main' },
 ];
 
 export interface SenderSources {
