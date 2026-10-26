@@ -95,7 +95,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   AuditFrameOptionsBlocks: 'LP0703',
   /** Binding attributes are served to anonymous visitors. */
   AuditBindingsExposed: 'LP0704',
-  /** More bindings than the default visibility gate will write eagerly. */
+  /** More bindings than the visibility gate will write eagerly. */
   AuditGateThresholdExceeded: 'LP0705',
   /** Owner markers exist, but some bindings are outside all of them. */
   AuditUnownedBindings: 'LP0706',

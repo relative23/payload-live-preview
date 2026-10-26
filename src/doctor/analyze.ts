@@ -6,7 +6,8 @@
  */
 import { DIAGNOSTIC_CODES } from '../core/diagnostic-codes';
 import { frameAncestorsAdmits, frameAncestorsOf } from './csp';
-import { analyzeV2Readiness } from './readiness';
+import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
+import { analyzeV2Readiness, readInlineConfig } from './readiness';
 import type {
   DoctorContext,
   DoctorFinding,
@@ -210,10 +211,34 @@ function framingFindings(
   return findings;
 }
 
+/** The gate as the served script configures it; `threshold` is undefined when the gate is off. */
+interface ServedGate {
+  readonly threshold: number | undefined;
+  readonly configured: boolean;
+}
+
+/**
+ * Read from the inline configuration, because an adapter now forwards both
+ * options: judged against the default, a page that raised its threshold
+ * would be told to raise it. A page whose script cannot be read (loader
+ * mode, a client the page starts itself) is judged against the default.
+ */
+function servedGate(body: string): ServedGate {
+  const config = readInlineConfig(body);
+  const slot = (key: (typeof INLINE_CONFIG_KEYS)[number]): unknown =>
+    config?.[INLINE_CONFIG_KEYS.indexOf(key)];
+  if (slot('disableVisibilityGate') === true) return { threshold: undefined, configured: true };
+  const threshold = slot('visibilityGateThreshold');
+  return typeof threshold === 'number'
+    ? { threshold, configured: true }
+    : { threshold: DEFAULT_VISIBILITY_GATE_THRESHOLD, configured: false };
+}
+
 function bindingFindings(
   previewMarkup: string,
   publicMarkup: string,
   runtime: boolean,
+  gate: ServedGate,
 ): DoctorFinding[] {
   const findings: DoctorFinding[] = [];
   const previewBindings = count(previewMarkup, BINDING_ATTRIBUTE);
@@ -233,19 +258,19 @@ function bindingFindings(
         'createPreviewBindings(), whose suppressed form emits nothing at all.',
     });
   }
-  if (previewBindings > DEFAULT_VISIBILITY_GATE_THRESHOLD) {
+  if (gate.threshold !== undefined && previewBindings > gate.threshold) {
     findings.push({
       code: 'LP0705',
       level: 'warning',
-      title: `${String(previewBindings)} bindings exceed the default visibility gate`,
+      title: `${String(previewBindings)} bindings exceed the ${gate.configured ? 'configured' : 'default'} visibility gate`,
       detail:
-        `Above visibilityGateThreshold (${String(DEFAULT_VISIBILITY_GATE_THRESHOLD)}) the ` +
+        `Above visibilityGateThreshold (${String(gate.threshold)}) the ` +
         'scheduler stops writing offscreen elements and buffers them until they scroll into ' +
         'view. On a page nobody scrolls, that is never.',
       remedy:
-        'Raise visibilityGateThreshold on LivePreviewClient or generateInlineScript() (the ' +
-        'adapters do not forward it) if the whole page must stay live, or confirm that ' +
-        'deferring below the fold is acceptable here.',
+        'Raise visibilityGateThreshold, or set disableVisibilityGate, on the adapter, ' +
+        'LivePreviewClient or generateInlineScript() if the whole page must stay live, or ' +
+        'confirm that deferring below the fold is acceptable here.',
     });
   }
   if (runtime && previewBindings === 0) {
@@ -337,7 +362,12 @@ export function analyzeProbe(
   }
   findings.push(...framingFindings(preview, runtimeInPreview, context));
   findings.push(
-    ...bindingFindings(visibleMarkup(preview.body), visibleMarkup(pub.body), runtimeInPreview),
+    ...bindingFindings(
+      visibleMarkup(preview.body),
+      visibleMarkup(pub.body),
+      runtimeInPreview,
+      servedGate(preview.body),
+    ),
   );
   if (pub.body.includes(RUNTIME_MARKER)) {
     findings.push({

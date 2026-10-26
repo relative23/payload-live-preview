@@ -108,6 +108,32 @@ describe('binding health', () => {
     expect(exact.findings.map((f) => f.code)).not.toContain('LP0705');
   });
 
+  describe('reads the gate the served script configures', () => {
+    const served = (options: Parameters<typeof generateInlineScript>[0], bindings: number) =>
+      analyzeProbe(
+        withPreview(
+          `<script>${generateInlineScript({ allowedOrigins: [ADMIN], ...options })}</script>` +
+            Array.from({ length: bindings }, (_, i) => field(i)).join(''),
+          CSP,
+        ),
+        context,
+      ).findings.find((f) => f.code === 'LP0705');
+
+    it('stays quiet under a raised threshold the page stays below', () => {
+      expect(served({ visibilityGateThreshold: 200 }, 120)).toBeUndefined();
+    });
+
+    it('stays quiet when the script turns the gate off', () => {
+      expect(served({ disableVisibilityGate: true }, 120)).toBeUndefined();
+    });
+
+    it('names the configured threshold when the page exceeds it', () => {
+      const finding = served({ visibilityGateThreshold: 10 }, 11);
+      expect(finding?.title).toBe('11 bindings exceed the configured visibility gate');
+      expect(finding?.detail).toContain('visibilityGateThreshold (10)');
+    });
+  });
+
   it('reports LP0707 when the runtime has nothing to write into', () => {
     const report = analyzeProbe(withPreview(`${RUNTIME}<h1>Title</h1>`), context);
     expect(report.findings.find((f) => f.code === 'LP0707')?.level).toBe('error');

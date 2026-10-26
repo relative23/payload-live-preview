@@ -4,8 +4,8 @@
 
 ```ts
 
-import { a } from '../../options-Cm8fC7dj.js';
-import { P } from '../../options-Cm8fC7dj.js';
+import { a } from '../../options-CnYybG51.js';
+import { P } from '../../options-CnYybG51.js';
 
 // @public
 export function fragmentComponentPlugins(vue: VuePluginFactory, options: {

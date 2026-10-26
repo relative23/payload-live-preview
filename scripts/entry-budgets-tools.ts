@@ -56,7 +56,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +89/+49/+34 B; same 17/12/94 B cushions.
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+7/+12 B; same 17/12/94 B cushions.
   // 2026-10-17 (LP0703 yields to `frame-ancestors`, LP0705 says where the visibility gate can be set): measured +302/+65/+56 B; same 17/12/94 B cushions.
-  'doctor.js': { raw: 19_812, gzip: 7_799, brotli: 6_862 },
+  // 2026-10-26 (the adapters forward the visibility gate, and the doctor reads it): paired Node24.22.1/npm12.0.2; +337/+106/+108 B; prior reserves kept.
+  'doctor.js': { raw: 20_149, gzip: 7_905, brotli: 6_970 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -94,7 +95,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+8/+13 B; same 42/19/120 B cushions.
   // 2026-10-17 (LP0703 yields to `frame-ancestors`, LP0705 says where the visibility gate can be set): measured +223/+77/+91 B; same 42/19/120 B cushions.
   // 2026-10-22 (pll migrate lists a re-export straight from the package and keeps no rewrite note in a held-back file): measured 49 754 → 50 731 / 17 369 → 17 577 / 15 479 → 15 651 (+977/+208/+172 B); same 42/19/120 B cushions.
-  'doctor-cli.js': { raw: 50_773, gzip: 17_596, brotli: 15_771 },
+  // 2026-10-26 (the adapters forward the visibility gate, and the doctor reads it): paired Node24.22.1/npm12.0.2; +341/+94/+105 B; prior reserves kept.
+  'doctor-cli.js': { raw: 51_114, gzip: 17_690, brotli: 15_876 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
   // 2026-10-22 (the same codemod change): measured 19 958 → 20 931 / 6 964 → 7 166 / 6 240 → 6 427 (+973/+202/+187 B); same 17/12/93 B cushions.

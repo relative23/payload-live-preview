@@ -99,6 +99,8 @@ describe('inlineScriptConfig', () => {
     ['debug', true, 'debug', true],
     ['debounceMs', 5, 'debounceMs', 5],
     ['heartbeatMs', 1000, 'heartbeatMs', 1000],
+    ['disableVisibilityGate', true, 'disableVisibilityGate', true],
+    ['visibilityGateThreshold', 200, 'visibilityGateThreshold', 200],
     ['skipUnchanged', false, 'skipUnchanged', false],
     ['scopeBindingsByOwner', true, 'scopeBindingsByOwner', true],
     ['disableReferrerDetection', false, 'disableReferrerDetection', false],
