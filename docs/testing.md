@@ -410,10 +410,9 @@ drift the moment Payload ships it. Per Payload version that means: 2.x is
 covered by a corpus captured from a real 2.32.3 admin, captured-message
 integration tests and `fieldSchemaJSON` typing;
 3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.92.0 by the
-real-admin E2E on every push; 4.0.0-canary.33 and 4.0.0-beta.4 by corpora
-captured from a real Payload 4 admin (the fixture stays on 3.x), and
-4.0.0-beta.4 also by one measurement of the config plugin against a real admin,
-outside CI ([compatibility list](../README.md#compatibility)); `latest`
+real-admin E2E on every push; 4.0.0-beta.4 by a corpus captured from a real
+Payload 4 admin (the fixture stays on 3.x) and by one measurement of the config
+plugin against a real admin, outside CI ([compatibility list](../README.md#compatibility)); `latest`
 and the 4.0 pre-releases by the nightly watch — wire format, sender source and
 a real admin — the latter as early warning only. The
 four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all

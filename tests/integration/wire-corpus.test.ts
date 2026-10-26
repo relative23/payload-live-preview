@@ -32,7 +32,6 @@ const CAPTURES = [
   { version: '3.88.0' },
   { version: '3.89.0' },
   { version: '4.0.0-beta.4' },
-  { version: '4.0.0-canary.33' },
 ] as const;
 
 function load(version: string): Corpus {
