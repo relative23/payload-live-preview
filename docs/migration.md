@@ -18,12 +18,13 @@ table.
 | `new OriginDetector()` no longer trusts `document.referrer` by default       | `new OriginDetector({ enableReferrerDetection: false })`                                                               | pass `enableReferrerDetection: true` where a detector you build yourself relies on the referrer                                                                                 |
 | a route refresh that returns nothing is no longer taken as committed         | return a promise that settles after the host's commit; `LP0810` names a refresh that returns no promise, under `debug` | `LivePreviewRouteRefresh` does it for Next.js; the SvelteKit and Nuxt recipes await their data and the next tick; a host that renders synchronously returns `Promise.resolve()` |
 | the `@internal` names the public entries still export at runtime are removed | `etc/api/*.api.md` lists every `@internal` name                                                                        | stop importing them; a name you need gets a public or `@beta` class first                                                                                                       |
+| Payload 2.x is no longer supported                                           | 2.x releases keep supporting it; Payload 3.x and 4.x are what 3.0 supports                                             | upgrade the CMS to Payload 3 with Payload's own migration guide; the frontend options stay as they are                                                                          |
 
 Each form 3.0 removes warns once per process while it runs in development,
 never in production, and names what replaces it, so the server log lists what
 is left. The rows that change a default or a surface instead of removing a form
 (sub-field coverage, referrer trust, the route refresh, the `@internal` names)
-say nothing at run time, except that `LP0810` names a refresh that returns no
+and the end of Payload 2 support say nothing at run time, except that `LP0810` names a refresh that returns no
 promise, under `debug`. The first row is the one that also warns in production. The first three rows are not mechanical rewrites: whether a call site
 has a DOM, or which fields a page shows on purpose, is a fact about the
 project that `pll migrate` cannot read from the source. The codemods rewrite

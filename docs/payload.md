@@ -9,7 +9,9 @@ The entry is structural: it imports neither Payload 2 nor Payload 3. The same
 transform handles the callback arguments used by Payload 2.32.3
 (`documentInfo`) and Payload 3.x (`collectionConfig` / `globalConfig`).
 Payload 4 is still a pre-release and the direction of this package: support
-becomes official with the stable 4.0 release. The plugin was measured once
+becomes official with the stable 4.0 release. Payload 2 support ends with 3.0
+of this package ([ADR 0007](architecture/0007-v2-defaults-and-renames-ledger.md#ledger),
+entry 25); every 2.x release keeps it. The plugin was measured once
 against 4.0.0-beta.4, outside CI, and the
 [compatibility list](../README.md#compatibility) says what that run covered and
 what it left out.
