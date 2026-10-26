@@ -93,6 +93,13 @@ describe('what 3.0 removes warns once in development (ADR 0026)', () => {
     );
   });
 
+  it('warns from the generator alone, for a page that calls it without an adapter', () => {
+    generateInlineScript({ onUnboundChange: 'ignore' });
+
+    expect(warnings()).toHaveLength(1);
+    expect(warnings()[0]).toMatch(/`onUnboundChange`.*removed in 3\.0/u);
+  });
+
   it("defaults: 'v1' names the codemod that writes its rows out, from an adapter or the generator", () => {
     expect(resolvePolicyOptions({ defaults: 'v1' }).strict).toBe(false);
     expect(generateInlineScript({ defaults: 'v1' })).toContain('"v1"');

@@ -64,6 +64,9 @@ describe('readInlineConfig', () => {
     ['["a,,b","]",",["]', ['a,,b', ']', ',[']],
     ['["\\"quoted\\",,"]', ['"quoted",,']],
     ['["\\u003Cscript>"]', ['<script>']],
+    // An escaped quote ends nothing: the elision after the string is still one.
+    ['["a\\"",,1]', ['a"', null, 1]],
+    ['[1, ,2]', [1, null, 2]],
   ])('turns %s into JSON %j', (literal, expected) => {
     expect(readInlineConfig(`var __LIVE_PREVIEW_CONFIG__=${literal};rest`)).toEqual(expected);
   });
@@ -184,9 +187,16 @@ describe('analyzeV2Readiness', () => {
 
   it('does not judge the rows against a generation it does not know', () => {
     const later = `var __LIVE_PREVIEW_CONFIG__=[["https://cms.example.com"]${','.repeat(24)}"v3"];`;
-    const findings = analyzeV2Readiness(probe(later));
-    expect(findings).toEqual([expect.objectContaining({ code: 'LP0709', level: 'info' })]);
-    expect(findings[0]?.detail).toContain('"v3"');
+    expect(analyzeV2Readiness(probe(later))).toEqual([
+      {
+        code: 'LP0709',
+        level: 'info',
+        title: 'The inline configuration names defaults this doctor does not know',
+        detail:
+          "Its `defaults` marker is \"v3\"; this version reads 'v1' and 'v2', so no row was judged.",
+        remedy: 'Run the `pll doctor` of the package version that generated the page.',
+      },
+    ]);
   });
 
   it('returns one info finding when there is no readable inline config', () => {
@@ -196,8 +206,110 @@ describe('analyzeV2Readiness', () => {
     });
     expect(findings).toHaveLength(1);
     expect(findings[0]?.level).toBe('info');
+    expect(findings[0]?.title).toBe(
+      'Could not read the inline configuration for a v2 readiness check',
+    );
+    expect(findings[0]?.detail).toBe(
+      'The preview response carried no readable `__LIVE_PREVIEW_CONFIG__` inline script or JSON configuration element.',
+    );
     // A preview behind authorizePreview serves no config to a request without credentials.
-    expect(findings[0]?.remedy).toContain('--header');
-    expect(findings[0]?.remedy).toContain('?previewToken=');
+    expect(findings[0]?.remedy).toBe(
+      'Run this against a page with the inline runtime (not loader mode without a preview context). ' +
+        'A preview behind authorizePreview serves it only to a request with credentials: pass them with --header, or a signed token as ?previewToken=… in the URL.',
+    );
+  });
+});
+
+/**
+ * The words are what a reader acts on, so they are held here: per row the 1.x
+ * value, the 2.0 value, what the old value does and what has to hold first.
+ */
+describe('the words of each LP0709 row', () => {
+  const ROWS = [
+    [
+      'disableReferrerDetection',
+      'false',
+      'true',
+      'Referrer trust is still on',
+      'the runtime accepts the admin referer as a preview signal.',
+      'no preview flow relies on the admin referer alone',
+    ],
+    [
+      'eventSourcePolicy',
+      "'any'",
+      "'parent-or-opener'",
+      'Messages are accepted from any window',
+      'any window that passes the origin check may post updates.',
+      'no window but the parent or opener posts updates',
+    ],
+    [
+      'sanitizerPolicy',
+      "'compat'",
+      "'strict'",
+      'Sanitizer is in compat mode',
+      'id and every data-* pass.',
+      'rich text no longer relies on `id` or `data-*`',
+    ],
+    [
+      'skipUnchanged',
+      'false',
+      'true',
+      'Unchanged bindings are re-applied every message',
+      'every binding is written again on every message.',
+      'no renderer relies on running again for a value that did not change',
+    ],
+  ] as const;
+  const rowFindings = (inline: string) =>
+    analyzeV2Readiness(probe(inline)).filter((finding) => finding.level === 'warning');
+
+  it('reads a script without a marker as 1.x, and says what upgrading sets', () => {
+    const findings = analyzeV2Readiness(probe(FROM_1_8_1.plain));
+    expect(findings.filter((finding) => finding.level === 'warning')).toEqual(
+      ROWS.map(([key, v1, v2, title, effect, condition]) => ({
+        code: 'LP0709',
+        level: 'warning',
+        title,
+        detail: `${key} is ${v1}: ${effect} The script names no defaults, so its empty slot is read as the 1.x value.`,
+        remedy: `Upgrading to 2.0 sets \`${key}: ${v2}\`; check first that ${condition}.`,
+      })),
+    );
+    expect(findings.find((finding) => finding.level === 'info')).toEqual({
+      code: 'LP0709',
+      level: 'info',
+      title: 'The inline configuration does not say which defaults it was generated against',
+      detail:
+        'Scripts carry a `defaults` marker from 2.0.0-rc.1 on; this one has none, so a 1.x or 2.0.0-beta.0 generator wrote it. An empty slot is read as its 1.x value, which is what a 1.x runtime runs.',
+      remedy:
+        'On 1.x the warnings stand as written. On 2.0.0-beta.0 an empty slot already runs its 2.0 value, so a warning about one does not apply there; upgrade and run `pll doctor --v2` again to read the marker.',
+    });
+  });
+
+  it("names the profile under `defaults: 'v1'`", () => {
+    const inline = `var __LIVE_PREVIEW_CONFIG__=[["https://cms.example.com"]${','.repeat(24)}"v1"];`;
+    expect(rowFindings(inline)).toEqual(
+      ROWS.map(([key, v1, v2, title, effect, condition]) => ({
+        code: 'LP0709',
+        level: 'warning',
+        title,
+        detail: `${key} is ${v1}: ${effect} The script was generated with \`defaults: 'v1'\`.`,
+        remedy:
+          `Set \`${key}: ${v2}\` or drop \`defaults: 'v1'\` once ${condition}. ` +
+          '3.0 removes the profile; `pll migrate` writes its rows out, so each can go on its own.',
+      })),
+    );
+  });
+
+  it('names a value the script sets itself', () => {
+    const inline =
+      'var __LIVE_PREVIEW_CONFIG__=[["https://cms.example.com"],,,,,,,,,,,false,,,false,"any","compat",,,,,,,,"v2"];';
+    expect(rowFindings(inline)).toEqual(
+      ROWS.map(([key, v1, v2, title, effect, condition]) => ({
+        code: 'LP0709',
+        level: 'warning',
+        title,
+        detail: `${key} is ${v1}: ${effect} The script sets it explicitly.`,
+        remedy: `Drop the explicit \`${key}: ${v1}\` once ${condition}; 2.0 defaults to \`${key}: ${v2}\`.`,
+      })),
+    );
   });
 });

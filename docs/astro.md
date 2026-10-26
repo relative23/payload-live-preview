@@ -126,7 +126,7 @@ Which to reach for, and what each costs:
 [bindings.md](bindings.md#how-much-markup-this-actually-needs). `pll-codegen annotate`
 writes the unambiguous field bindings for you and reports the rest.
 
-Rich text is written from the value shape, and a value that holds an upload, a relationship or a block has the runtime ask Payload to fill those nodes in, whatever the element declares. The `<RichText />` component renders the field through the same built-in Lexical serializer the runtime uses for live patches, which reduces drift between the server render and the preview and gives an empty field a stable anchor. Exact markup parity also needs the same sanitizer availability and the same custom node and block registrations in both JavaScript realms; server-side registrations are not copied into the prebuilt inline runtime.
+Rich text is written from the value shape, and on an element with no `data-payload-type` a value that holds an upload, a relationship or a block has the runtime ask Payload to fill those nodes in. The `<RichText />` component renders the field through the same built-in Lexical serializer the runtime uses for live patches, which reduces drift between the server render and the preview and gives an empty field a stable anchor. Exact markup parity also needs the same sanitizer availability and the same custom node and block registrations in both JavaScript realms; server-side registrations are not copied into the prebuilt inline runtime.
 
 ```astro
 ---

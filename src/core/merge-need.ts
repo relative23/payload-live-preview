@@ -17,7 +17,7 @@ import type { ElementCache } from './cache';
 import type { DataMerger, MergeRequest, MergeResult } from './data-merger';
 import type { DependencyMap } from './dependencies';
 import { looksLikeLexicalRoot } from './binding-writer';
-import { resolveFieldValue } from './field-value';
+import { bindingValue } from './field-value';
 import { FieldChangeTracker } from './field-changes';
 import type { RuntimeDeps, UpdateTransaction } from './runtime-state';
 import { FRAGMENT_ATTRIBUTE } from './strategies';
@@ -340,7 +340,8 @@ function rendersRichTextByShape(
   for (const binding of cache.values()) {
     // A declared type is what the writer renders; only the default `text` goes by the shape.
     if (binding.fieldType !== 'text' || binding.explicitFieldType === true) continue;
-    const value = resolveFieldValue(raw, binding.fieldName, locale);
+    // Read as the writer reads it, the binding's own locale first.
+    const value = bindingValue(raw, binding, binding.fieldName, locale);
     if (looksLikeLexicalRoot(value) && holdsReference((value as { root: unknown }).root)) {
       return true;
     }
@@ -348,11 +349,17 @@ function rendersRichTextByShape(
   return false;
 }
 
-/** Walked with a stack rather than recursion, because the editor decides how deep a tree goes. */
+/**
+ * Walked with a stack rather than recursion, because the editor decides how
+ * deep a tree goes. A message is a structured clone, which keeps a cycle, so a
+ * node is walked once.
+ */
 function holdsReference(root: unknown): boolean {
   const pending: unknown[] = [root];
+  const seen = new Set<object>();
   for (let node = pending.pop(); node !== undefined; node = pending.pop()) {
-    if (typeof node !== 'object' || node === null) continue;
+    if (typeof node !== 'object' || node === null || seen.has(node)) continue;
+    seen.add(node);
     const { type, fields, children } = node as {
       readonly type?: unknown;
       readonly fields?: { readonly linkType?: unknown } | null;

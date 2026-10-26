@@ -8,6 +8,7 @@
  * Payload 3.90.2, 2026-10-17).
  */
 import { describe, expect, it, vi, type Mock } from 'vitest';
+import type { FieldRenderer } from '@core/types';
 import { buildBuiltinRenderers } from '@field-types/index';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
@@ -201,6 +202,71 @@ describe('a rich-text value on an element that declares no type', () => {
 
     expect(fetchFn).not.toHaveBeenCalled();
     expect(document.querySelector('[data-payload-field="content"]')?.textContent).toBe('Intro');
+    runtime.destroy();
+  });
+
+  it("reads the value in the binding's own locale, as the writer does", async () => {
+    const english = lexical();
+    const fetchFn = answering(null);
+    fetchFn.mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ id: 'post-1', content: english, content_de: lexical(upload(image)) }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      ),
+    );
+    document.body.innerHTML = '<div data-payload-field="content" data-payload-locale="de"></div>';
+    const runtime = makeRuntime({
+      renderers: buildBuiltinRenderers(),
+      dataMerge: { serverURL: SERVER, fetchFn },
+    });
+    runtime.start();
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      locale: 'en',
+      data: { id: 'post-1', content: english, content_de: lexical(upload(16)) },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(fetchFn).toHaveBeenCalledOnce();
+    expect(document.querySelector('[data-payload-field="content"] img')?.getAttribute('src')).toBe(
+      image.url,
+    );
+    runtime.destroy();
+  });
+
+  it('walks a node once, so a cycle the structured clone kept ends the walk', async () => {
+    // A getter stands in for the cycle, so a walk that never ends fails instead of hanging.
+    let visits = 0;
+    const node: Record<string, unknown> = { type: 'paragraph', version: 1 };
+    Object.defineProperty(node, 'children', {
+      enumerable: true,
+      get() {
+        visits += 1;
+        if (visits > 1000) throw new Error('the walk did not end');
+        return [node];
+      },
+    });
+    const fetchFn = answering(null);
+    document.body.innerHTML = UNDECLARED;
+    // A renderer that does not walk the tree, so the count is the decision's own.
+    const richText: FieldRenderer = { name: 'richText', render: () => undefined };
+    const runtime = makeRuntime({
+      renderers: { ...buildBuiltinRenderers(), richText },
+      dataMerge: { serverURL: SERVER, fetchFn },
+    });
+    runtime.start();
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: 'post-1', content: { root: { type: 'root', version: 1, children: [node] } } },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(visits).toBeLessThan(10);
+    expect(fetchFn).not.toHaveBeenCalled();
     runtime.destroy();
   });
 });

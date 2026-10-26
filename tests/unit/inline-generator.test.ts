@@ -171,6 +171,16 @@ describe('generateInlineScript', () => {
     expect(withNonce).toBe(generateInlineScript());
   });
 
+  it('refuses a strategy with the lean runtime, which has nothing to answer it', () => {
+    expect(() => generateInlineScript({ runtime: LEAN_RUNTIME, routeStrategy: true })).toThrow(
+      new Error(
+        '[live-preview] the lean runtime and the fragment or route strategy exclude each other: ' +
+          'it carries no strategy runner, so the prelude would have nothing to talk to. ' +
+          'Drop the runtime option, or drop `fragmentEndpoint`/`routeStrategy`.',
+      ),
+    );
+  });
+
   it('refuses serverURL without mergeDepth under the 2.0 defaults, like the client and the adapters', () => {
     expect(() => generateInlineScript({ serverURL: 'https://cms.example.com' })).toThrow(
       /mergeDepth/u,
@@ -351,6 +361,21 @@ describe('generateInlineScript', () => {
     expect(config[10]).toBe('500px');
   });
 
+  // JSON writes these as null, and the runtime would take its default without a word.
+  it('refuses a number the wire cannot carry, and names the option', () => {
+    for (const threshold of [Number.POSITIVE_INFINITY, Number.NaN]) {
+      expect(() => generateInlineScript({ visibilityGateThreshold: threshold })).toThrow(
+        /`visibilityGateThreshold` is (Infinity|NaN).*`disableVisibilityGate: true`/u,
+      );
+    }
+    expect(() => generateInlineScript({ debounceMs: Number.POSITIVE_INFINITY })).toThrow(
+      new Error(
+        '[live-preview] `debounceMs` is Infinity, which the inline configuration writes as null, ' +
+          'so the runtime would never see it. Pass a finite number.',
+      ),
+    );
+  });
+
   it('forwards origin-detection toggles into the runtime config', () => {
     const script = generateInlineScript({
       disableReferrerDetection: true,
@@ -451,7 +476,9 @@ describe('wrapWithScriptTag', () => {
   });
 
   it('rejects nonces with invalid characters', () => {
-    expect(() => wrapWithScriptTag('x', { nonce: 'bad"injection' })).toThrow(RangeError);
+    expect(() => wrapWithScriptTag('x', { nonce: 'bad"injection' })).toThrow(
+      new RangeError('nonce contains characters CSP does not allow'),
+    );
     expect(() => wrapWithScriptTag('x', { nonce: '<script>' })).toThrow(RangeError);
   });
 });

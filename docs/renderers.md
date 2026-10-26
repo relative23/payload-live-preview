@@ -170,9 +170,10 @@ populate the document: the same document comes back with the media document in
 place. The runtime asks for a field that can hold populated values, and for rich
 text it reads that from the value, as the renderer does: a Lexical tree with an
 `upload`, `relationship` or `block` node, a link to a document, or a node this
-package does not know is asked for whatever the element declares; a tree of
-paragraphs, headings, lists, quotes, code, tables and links to URLs alone is
-not. `data-payload-richtext` or `data-payload-type="richText"` has the field
+package does not know is asked for on an element that has no type of its own (no
+`data-payload-type`, and not an `<img>`, `<a>`, `<time>` or a checkbox, number
+or date `<input>`); a tree of paragraphs, headings, lists, quotes, code, tables
+and links to URLs alone is not. `data-payload-richtext` or `data-payload-type="richText"` has the field
 asked for on every edit, and `data-payload-type="text"` writes it as plain text
 and asks nothing. Without a merge (no `serverURL`) the `upload` node renders as
 nothing and a `relationship` node as a span that reads `#` and its collection.

@@ -282,7 +282,9 @@ describe('a value the binding cannot represent', () => {
     const said = warnings.filter((line) => line.includes('LP0808'));
     expect(said).toHaveLength(1);
     expect(said[0]).not.toContain('no route or fragment strategy is configured');
-    expect(said[0]).toContain('1 field(s) fell short outside every data-payload-fragment boundary');
+    expect(said[0]).toContain(
+      '1 field(s) fell short, not all of them inside a data-payload-fragment boundary of this document',
+    );
     expect(said[0]).toContain('no route strategy is configured');
     expect(said[0]).toContain("onUnfaithfulPatch: 'warn' to keep the patch and say so");
     runtime.destroy();
@@ -302,7 +304,62 @@ describe('a value the binding cannot represent', () => {
 
     const said = warnings.filter((line) => line.includes('LP0808'));
     expect(said).toHaveLength(1);
-    expect(said[0]).toContain('outside every data-payload-fragment boundary');
+    expect(said[0]).toContain('not all of them inside a data-payload-fragment boundary');
+    runtime.destroy();
+  });
+
+  // A boundary is handed all of a revision's findings or none, so one inside it
+  // goes to the route with the rest, and the line counts it too.
+  it('says what holds when only some of the fields lie inside a boundary', async () => {
+    document.body.innerHTML =
+      `<section data-payload-fragment="hero">${UNWRITABLE_TITLE}</section>` +
+      '<h2 data-payload-field="subtitle"><span class="mark">Server rendered</span></h2>';
+    const warnings: string[] = [];
+    const runtime = start({
+      strategies: { fragment: fakeFragment() },
+      warn: (...args: unknown[]) => {
+        warnings.push(String(args[0]));
+      },
+    });
+
+    for (const data of [
+      { title: 'Server rendered', subtitle: 'Server rendered' },
+      { title: 'Typed', subtitle: 'Typed too' },
+    ]) {
+      fireMessage({ type: 'payload-live-preview', data });
+      await vi.advanceTimersByTimeAsync(50);
+    }
+
+    const said = warnings.filter((line) => line.includes('LP0808'));
+    expect(said).toHaveLength(1);
+    expect(said[0]).toContain('2 field(s) fell short, not all of them inside');
+    expect(said[0]).not.toContain('outside every');
+    runtime.destroy();
+  });
+
+  it("does not count another document's boundary as this one's", async () => {
+    document.body.innerHTML =
+      '<section data-payload-fragment="hero" data-payload-owner="global:other">' +
+      `<div data-payload-owner="global:home">${UNWRITABLE_TITLE}</div></section>`;
+    const warnings: string[] = [];
+    const runtime = start({
+      scopeBindingsByOwner: true,
+      strategies: { fragment: fakeFragment() },
+      warn: (...args: unknown[]) => {
+        warnings.push(String(args[0]));
+      },
+    });
+
+    for (const title of ['Server rendered', 'Typed']) {
+      fireMessage({ type: 'payload-live-preview', globalSlug: 'home', data: { title } });
+      await vi.advanceTimersByTimeAsync(50);
+    }
+
+    const said = warnings.filter((line) => line.includes('LP0808'));
+    expect(said).toHaveLength(1);
+    expect(said[0]).toContain(
+      'not all of them inside a data-payload-fragment boundary of this document',
+    );
     runtime.destroy();
   });
 });
