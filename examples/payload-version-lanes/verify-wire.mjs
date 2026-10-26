@@ -1,7 +1,7 @@
 /**
  * Accept only one saved-document characterization in each requested engine.
  * Actual messages and a populated saved read accompany the exact archive;
- * canary observations require profile review and confer no stable support.
+ * pre-release observations require profile review and confer no stable support.
  */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';

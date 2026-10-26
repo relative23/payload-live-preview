@@ -1,7 +1,7 @@
 /**
  * Classify bounded metadata from the actual parent admin's message stream.
- * A package version never chooses a protocol profile, and the previous canary33
- * corpus cannot certify the current canary37; a production profile awaits review.
+ * A package version never chooses a protocol profile, and a corpus of another
+ * version certifies nothing here; a production profile awaits review.
  */
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -53,7 +53,7 @@ const result = {
       ? 'document-or-relationship-event-wire'
       : 'unknown-wire',
   productionProfileChanged: false,
-  canary33UsedAsCanary37Evidence: false,
+  otherVersionCorpusUsedAsEvidence: false,
   limitation:
     'Bounded credential-free shape metadata, not the complete immutable protocol corpus or a public v4 support claim.',
 };

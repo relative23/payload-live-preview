@@ -1,15 +1,15 @@
 [
   {
-    "version": "4.0.0-canary.37",
+    "version": "4.0.0-beta.4",
     "peerDependencies": {
-      "next": ">=16.2.6 <17.0.0",
+      "next": ">=16.4.0 <17.0.0",
       "graphql": "^16.8.1",
-      "payload": "4.0.0-canary.37"
+      "payload": "4.0.0-beta.4"
     },
     "engines": {
-      "node": ">=24.15.0"
+      "node": ">=24.22.1"
     },
-    "dist.integrity": "sha512-q2RNpSJekK6xtbPS3u2WoMzBCHeaWJ3oYAz/rBYnJudf7EpOWuscpOeu2ERteS62wzIdlgIYotnYdpPLENi31w==",
-    "dist.tarball": "https://registry.npmjs.org/@payloadcms/next/-/next-4.0.0-canary.37.tgz"
+    "dist.integrity": "sha512-abQ/AjGpx44vSQeTukkPE/1SgKmsdWcZjdFOrYU8ofDsHC9dc3IFQX/Yi5Cg3X395WhB09TZHB8oqbZ8r86V3Q==",
+    "dist.tarball": "https://registry.npmjs.org/@payloadcms/next/-/next-4.0.0-beta.4.tgz"
   }
 ]

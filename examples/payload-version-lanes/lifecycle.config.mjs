@@ -1,6 +1,6 @@
 /**
  * Exercise exactly one isolated native consumer in three engines with no retries.
- * Every generated path stays in its new work directory; a canary run measures
+ * Every generated path stays in its new work directory; a pre-release run measures
  * that family only and cannot grant a stable-family or Nodefloor guarantee.
  */
 import assert from 'node:assert/strict';

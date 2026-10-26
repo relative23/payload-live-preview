@@ -1,13 +1,13 @@
 [
   {
-    "version": "4.0.0-canary.37",
+    "version": "4.0.0-beta.4",
     "peerDependencies": {
       "graphql": "^16.8.1"
     },
     "engines": {
-      "node": ">=24.15.0"
+      "node": ">=24.22.1"
     },
-    "dist.integrity": "sha512-PF2GFp9NGo0G9Un//BHWYezQwTNw6Dk9A0puEbR/nsQKyU+Fxz0ftAne2LPANAC5Rk5nchspSSObNXPNrtESoQ==",
-    "dist.tarball": "https://registry.npmjs.org/payload/-/payload-4.0.0-canary.37.tgz"
+    "dist.integrity": "sha512-dBQY7gAQsQWMLnh3HabHkTHb+8KFn1LcQJh+mLUQfNcbWUU6NDl77Q8U/sNz05QmUBwkEhkLvc7MgnFKkWK5Ow==",
+    "dist.tarball": "https://registry.npmjs.org/payload/-/payload-4.0.0-beta.4.tgz"
   }
 ]
