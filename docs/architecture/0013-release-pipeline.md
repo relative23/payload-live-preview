@@ -312,6 +312,15 @@ the request-cache reuse methods implicated by that probe. This evidence applies
 to those pinned callers and reviewed example sources. It is not a general
 reachability result for other Astro applications or http-cache-semantics users.
 
+On 2026-10-26 the four Astro examples moved to Astro 7.4.2, and their caller
+pins with them. Its remote image cache, `dist/assets/build/remote.js`, is the
+same code as in 7.3.2 once formatting and export style are normalised, and it
+still asks http-cache-semantics only for `storable()` and `timeToLive()`. Its
+caller, `dist/assets/build/generate.js`, changed how it loads the image
+service, records referenced images and copies cached files, not how it stores
+or revalidates a cached remote image. The check above therefore carries over
+to the 7.4.2 callers, with the same limits.
+
 An exposure descriptor can therefore remain mandatory on a project with no
 current audit exceptions. The register accepts a validated descriptor/digest
 pair for such a clean project, or no descriptor at all. An active exception

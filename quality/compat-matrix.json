@@ -8,7 +8,7 @@
       "feature": "base live preview and structural updates",
       "version": {
         "kind": "exact",
-        "value": "7.3.2",
+        "value": "7.4.2",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -90,7 +90,7 @@
       "feature": "native fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "7.2.9",
+        "value": "7.4.2",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -180,7 +180,7 @@
       "feature": "real Payload admin to production preview",
       "version": {
         "kind": "exact",
-        "value": "7.3.2",
+        "value": "7.4.2",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -206,7 +206,7 @@
       "feature": "base live preview and asset delivery",
       "version": {
         "kind": "exact",
-        "value": "16.4.2",
+        "value": "16.4.3",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -232,7 +232,7 @@
       "feature": "synchronous fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "16.4.2",
+        "value": "16.4.3",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -318,7 +318,7 @@
       "feature": "production build/start, native navigation and real-admin unsaved output",
       "version": {
         "kind": "exact",
-        "value": "16.4.2",
+        "value": "16.4.3",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -774,7 +774,7 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
       "version": {
         "kind": "exact",
-        "value": "16.4.2",
+        "value": "16.4.3",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -804,7 +804,7 @@
       "feature": "live preview against the real Payload admin with Payload's CSRF list on, with the editor's real session and the hook's merge request",
       "version": {
         "kind": "exact",
-        "value": "16.4.2",
+        "value": "16.4.3",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -835,7 +835,7 @@
       "feature": "an admin that keeps autoLogin issues no cookie, so the payload-session check serves the public page while the admin works",
       "version": {
         "kind": "exact",
-        "value": "16.4.2",
+        "value": "16.4.3",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -954,7 +954,7 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session), middleware delivery on the built Node server run without NODE_ENV=production",
       "version": {
         "kind": "exact",
-        "value": "7.2.9",
+        "value": "7.4.2",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -1142,7 +1142,7 @@
       "feature": "ClientRouter commit and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "7.2.9",
+        "value": "7.4.2",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -1172,7 +1172,7 @@
       "feature": "App Router commit, streamed binding and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "16.4.2",
+        "value": "16.4.3",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -1323,11 +1323,11 @@
       "fixture": "examples/astro-payload",
       "tested": [
         {
-          "version": "7.3.2",
+          "version": "7.4.2",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E",
-          "vite": "^8.0.13"
+          "vite": "^8.3.4"
         },
         {
           "major": 6,
@@ -1363,7 +1363,7 @@
       "fixture": "examples/nextjs-payload",
       "tested": [
         {
-          "version": "16.4.2",
+          "version": "16.4.3",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E"

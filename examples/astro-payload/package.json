@@ -15,7 +15,6 @@
     "payload-live-preview": "file:../.."
   },
   "allowScripts": {
-    "esbuild@0.28.1": true,
     "fsevents@2.3.3": false
   },
   "devDependencies": {
