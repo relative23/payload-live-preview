@@ -66,6 +66,10 @@ test.describe('wire corpus', () => {
     });
     await page.goto('/admin/globals/homepage');
     await expect(page.locator('#field-title')).toBeVisible();
+    // The fixture seeds the global on boot (payload.config.ts, onInit). A seed that
+    // throws leaves an empty document, and the corpus would record a session no
+    // editor has: under Payload 4.0.0-beta.4 the first message carried `tags: 0`.
+    await expect(page.locator('#field-subtitle')).toHaveValue('Seeded subtitle');
     await page.waitForLoadState('networkidle');
     const panel = page.locator('.live-preview-window');
     const isOpen = async (): Promise<boolean> =>
