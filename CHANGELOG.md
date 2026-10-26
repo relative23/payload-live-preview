@@ -1,5 +1,12 @@
 # payload-live-preview
 
+## 2.1.2
+
+### Patch Changes
+
+- 477f367: The compatibility list and the guides name Payload 3.92.0, the version the real-admin tests now run against, in place of 3.90.2. The nightly protocol watch follows Payload 4's `beta` tag instead of `canary`, which stopped at 4.0.0-canary.39 when the betas began, and installs `payload@beta` into the admin fixture as a soft-fail early warning. Documentation only; the package code is unchanged.
+- 83170e0: A route refresh shows a field no binding covers once the document is saved. The refresh asks the server again, and the server renders the saved document, so the field keeps its saved value; nothing asked again after Payload saved, and the edit stayed out of the preview until the next change in the form. When the route was last rendered from the saved document for a revision, the runtime now renders it once more when Payload reports the save (`payload-document-event`, after every save, the autosave included), and reapplies the current revision on top. A second save with nothing new in between renders nothing more.
+
 ## 2.1.1
 
 ### Patch Changes
