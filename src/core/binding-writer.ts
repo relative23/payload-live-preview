@@ -177,8 +177,12 @@ function invokeRenderer(
   return renderer.render(target, value, context);
 }
 
-/** Same shape test as `isLexicalContent`, duplicated so core does not pull the Lexical renderer. */
-function looksLikeLexicalRoot(value: unknown): boolean {
+/**
+ * Same shape test as `isLexicalContent`, duplicated so core does not pull the
+ * Lexical renderer. The merge decision asks it too, so it reads a value the way
+ * this writer will render it.
+ */
+export function looksLikeLexicalRoot(value: unknown): boolean {
   if (typeof value !== 'object' || value === null || !('root' in value)) return false;
   const root = value.root;
   return (

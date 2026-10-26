@@ -167,15 +167,15 @@ A Lexical `upload` node renders only from a populated media document. On
 Payload 3 the admin posts the node with the media's ID as its `value` (measured
 on 3.90.2: `value: 16`), and Payload fills it in when the runtime asks it to
 populate the document: the same document comes back with the media document in
-place. The runtime asks only for a field it knows can hold populated values, and
-it learns that from the element. For rich text that is `data-payload-richtext`
-or `data-payload-type="richText"`; the renderer recognises Lexical by its shape,
-the merge decision does not. An element with neither is written from the bare
-ID. Its `upload` node renders as nothing, so an image inside the rich text is
-gone from the first update, which writes every bound field, until the page loads
-from the server again, and a `relationship` node renders as a span that reads
-`#` and its collection. Mark every rich-text element that can hold uploads or
-relationships.
+place. The runtime asks for a field that can hold populated values, and for rich
+text it reads that from the value, as the renderer does: a Lexical tree with an
+`upload`, `relationship` or `block` node, a link to a document, or a node this
+package does not know is asked for whatever the element declares; a tree of
+paragraphs, headings, lists, quotes, code, tables and links to URLs alone is
+not. `data-payload-richtext` or `data-payload-type="richText"` has the field
+asked for on every edit, and `data-payload-type="text"` writes it as plain text
+and asks nothing. Without a merge (no `serverURL`) the `upload` node renders as
+nothing and a `relationship` node as a span that reads `#` and its collection.
 
 ### Email
 

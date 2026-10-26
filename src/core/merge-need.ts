@@ -16,6 +16,8 @@ import { lookupSchema, type SchemaIndex } from '@schema/index';
 import type { ElementCache } from './cache';
 import type { DataMerger, MergeRequest, MergeResult } from './data-merger';
 import type { DependencyMap } from './dependencies';
+import { looksLikeLexicalRoot } from './binding-writer';
+import { resolveFieldValue } from './field-value';
 import { FieldChangeTracker } from './field-changes';
 import type { RuntimeDeps, UpdateTransaction } from './runtime-state';
 import { FRAGMENT_ATTRIBUTE } from './strategies';
@@ -42,6 +44,31 @@ const SELF_SUFFICIENT_TYPES: ReadonlySet<string> = new Set([
   'json',
   'ui',
   'html',
+]);
+
+/**
+ * Lexical nodes whose whole content is in the message. Anything else — an
+ * upload, a relationship, a block, a node this package does not know — may name
+ * a document the server fills in, and so may a link whose target is one.
+ */
+const SELF_SUFFICIENT_NODES: ReadonlySet<string> = new Set([
+  'root',
+  'paragraph',
+  'text',
+  'heading',
+  'quote',
+  'list',
+  'listitem',
+  'linebreak',
+  'tab',
+  'horizontalrule',
+  'code',
+  'code-highlight',
+  'table',
+  'tablerow',
+  'tablecell',
+  'link',
+  'autolink',
 ]);
 
 /** The raw diff answers "what did the editor move", which no dependency map changes. */
@@ -86,7 +113,9 @@ export class MergeNeed {
    *
    * 1. **Nothing on the page reads a populated value**, either because nobody
    *    reads anything (LP-4) or because every binding renders a plain scalar.
-   *    See `readsPopulatedValues`.
+   *    See `readsPopulatedValues`. A binding that declares no type and holds
+   *    rich text naming a document is not plain, whatever its element says:
+   *    see `rendersRichTextByShape`.
    * 2. **Nothing populated moved** (LP-3): the fields the editor changed are
    *    scalars that name no document, so they are taken from the message and
    *    the rest is carried over from what the last merge resolved. Typing a
@@ -98,7 +127,10 @@ export class MergeNeed {
    */
   decide(deps: RuntimeDeps, transaction: UpdateTransaction): MergePlan {
     const raw = transaction.rawData;
-    if (!readsPopulatedValues(deps)) {
+    if (
+      !readsPopulatedValues(deps) &&
+      !rendersRichTextByShape(deps.cache, raw, transaction.locale)
+    ) {
       if (transaction.forceRender) this.resolvedLocale = null;
       return { merge: false, fields: raw };
     }
@@ -289,6 +321,49 @@ function readsPopulatedValues(deps: RuntimeDeps): boolean {
     deps.strategies.fragment !== undefined &&
     deps.root.querySelector(`[${FRAGMENT_ATTRIBUTE}]`) !== null
   );
+}
+
+/**
+ * Whether a binding that declares no type holds rich text with something in it
+ * the server fills in. The writer renders a Lexical root as rich text whatever
+ * the element says (binding-writer.ts), and Payload 3's admin posts the nodes
+ * inside it as bare IDs, so without this the image in a rich-text field was
+ * written from its ID — which draws nothing — on a page that marked the
+ * element with `data-payload-field` alone. Asked of the value, because the
+ * same field holds an upload in one message and none in the next.
+ */
+function rendersRichTextByShape(
+  cache: ElementCache,
+  raw: Record<string, unknown>,
+  locale: string | undefined,
+): boolean {
+  for (const binding of cache.values()) {
+    // A declared type is what the writer renders; only the default `text` goes by the shape.
+    if (binding.fieldType !== 'text' || binding.explicitFieldType === true) continue;
+    const value = resolveFieldValue(raw, binding.fieldName, locale);
+    if (looksLikeLexicalRoot(value) && holdsReference((value as { root: unknown }).root)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Walked with a stack rather than recursion, because the editor decides how deep a tree goes. */
+function holdsReference(root: unknown): boolean {
+  const pending: unknown[] = [root];
+  for (let node = pending.pop(); node !== undefined; node = pending.pop()) {
+    if (typeof node !== 'object' || node === null) continue;
+    const { type, fields, children } = node as {
+      readonly type?: unknown;
+      readonly fields?: { readonly linkType?: unknown } | null;
+      readonly children?: unknown;
+    };
+    // `has` answers false for a type that is missing or not a string, and that node is asked for too.
+    if (!SELF_SUFFICIENT_NODES.has(type as string)) return true;
+    if (fields?.linkType === 'internal') return true;
+    if (Array.isArray(children)) for (const child of children as unknown[]) pending.push(child);
+  }
+  return false;
 }
 
 function isScalar(value: unknown): boolean {

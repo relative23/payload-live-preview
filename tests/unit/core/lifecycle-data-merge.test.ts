@@ -84,8 +84,8 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
   });
 
   // Payload 3's admin posts the nodes inside rich text as bare IDs too. The server fills them in when the runtime
-  // asks (measured on 3.90.2: the same document with `value: 16` comes back with the media document), but the
-  // runtime asks only for a field it knows can hold a populated value, and it learns that from the element.
+  // asks (measured on 3.90.2: the same document with `value: 16` comes back with the media document). An element
+  // that declares no type is asked for by the value's shape: merge-need-rich-text-shape.test.ts.
   const lexicalDocument = (upload: unknown): unknown => ({
     root: {
       type: 'root',
@@ -131,32 +131,6 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     expect(document.querySelector('[data-payload-field="content"] img')?.getAttribute('src')).toBe(
       'https://cms.example.com/api/media/file/a.jpg',
     );
-    runtime.destroy();
-  });
-
-  it('writes a rich-text element that declares no type from the bare ID, and asks nothing', async () => {
-    // The renderer recognises Lexical by its shape, the merge decision does not: the element below is written
-    // as rich text and the upload node, a bare ID, renders as nothing. `data-payload-richtext` is what changes it.
-    document.body.innerHTML = '<div data-payload-field="content"></div>';
-    const fetchFn = vi.fn<typeof fetch>();
-    const runtime = makeRuntime({
-      renderers: buildBuiltinRenderers(),
-      dataMerge: { serverURL: 'https://cms.example.com', fetchFn },
-    });
-    runtime.start();
-
-    fireMessage({
-      type: 'payload-live-preview',
-      collectionSlug: 'posts',
-      data: { id: 'post-1', content: lexicalDocument(16) },
-    });
-    await vi.advanceTimersByTimeAsync(50);
-
-    expect(fetchFn).not.toHaveBeenCalled();
-    expect(document.querySelector('[data-payload-field="content"]')?.textContent).toContain(
-      'Intro',
-    );
-    expect(document.querySelector('[data-payload-field="content"] img')).toBeNull();
     runtime.destroy();
   });
 

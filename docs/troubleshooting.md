@@ -51,11 +51,11 @@ the message and costs no request, except the first value of a field that held
 none. `protocol.profile` says which Payload is on
 the wire: `payload-2` uses the accepted schema to populate raw references by
 collection GET, while scalar edits settle locally. A failed merge falls back to
-the raw values and logs the HTTP status under `debug: true`. The merge reaches the nodes inside rich text only for an element that declares
-it: without `data-payload-richtext` (or `data-payload-type="richText"`) the
-runtime sends no request, a Lexical `upload` node renders as nothing and a
-`relationship` node as a `#` placeholder with its collection
-([renderers.md](renderers.md#media-urls)). When the site and
+the raw values and logs the HTTP status under `debug: true`. The merge reaches the nodes inside rich text whenever the value holds one (an
+`upload`, a `relationship`, a block, a link to a document); only
+`data-payload-type="text"` keeps a field out. Without the merge a Lexical
+`upload` node renders as nothing and a `relationship` node as a `#` placeholder
+with its collection ([renderers.md](renderers.md#media-urls)). When the site and
 Payload are on different domains, that request needs CORS with credentials —
 see [deployment.md](deployment.md).
 

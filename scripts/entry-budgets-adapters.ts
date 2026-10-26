@@ -62,7 +62,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+138/+133 B; prior reserves kept.
   // 2026-10-26 (the adapters forward the visibility gate, and the doctor reads it): paired Node24.22.1/npm12.0.2; +180/+37/+24 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+76/+43 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 210_391, gzip: 65_746, brotli: 55_850 },
+  // 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+221/+171 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 211_003, gzip: 65_967, brotli: 56_021 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -92,7 +93,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+146/+129 B; prior reserves kept.
   // 2026-10-26 (the adapters forward the visibility gate, and the doctor reads it): paired Node24.22.1/npm12.0.2; +180/+27/+84 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+78/+39 B; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 185_700, gzip: 58_006, brotli: 49_399 },
+  // 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+223/+80 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 186_312, gzip: 58_229, brotli: 49_479 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -157,7 +159,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+144/+126 B; prior reserves kept.
   // 2026-10-26 (the adapters forward the visibility gate, and the doctor reads it): paired Node24.22.1/npm12.0.2; +180/+28/+46 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+77/+5 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 204_416, gzip: 63_988, brotli: 54_345 },
+  // 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+219/+116 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 205_028, gzip: 64_207, brotli: 54_461 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -236,7 +239,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+149/+156 B; prior reserves kept.
   // 2026-10-26 (the adapters forward the visibility gate, and the doctor reads it): paired Node24.22.1/npm12.0.2; +180/+33/+44 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+76/+4 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 204_687, gzip: 64_090, brotli: 54_329 },
+  // 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+222/+118 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 205_299, gzip: 64_312, brotli: 54_447 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -268,5 +272,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+149/+64 B; prior reserves kept.
   // 2026-10-26 (the adapters forward the visibility gate, and the doctor reads it): paired Node24.22.1/npm12.0.2; +180/+26/+17 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+74/+51 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 203_764, gzip: 63_777, brotli: 54_125 },
+  // 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+216/+222 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 204_376, gzip: 63_993, brotli: 54_347 },
 };
