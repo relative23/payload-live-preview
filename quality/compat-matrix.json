@@ -1456,6 +1456,10 @@
       "how": "measured once on 2026-10-24, outside CI, in a consumer project that runs 2.1.0 from npm (Next 16, Node 24, Postgres 18, the real admin driven by headless Chromium). The config plugin type-checks against Payload's declarations and passes its config sanitizing. For six collection documents in two locales, the admin's preview frame loads the URL a hand-written callback produced, apart from the order of the query parameters, with the same breakpoint menu and no page errors, and the locale reaches the path resolvers. Against an admin with a `csrf` list, the `payload-session` strategy authorizes once its `origin` option is set. That run did not cover globals, the create screen, drafts and autosave, other plugins that write a Live Preview URL, or replacing existing breakpoints. Since 2026-10-25 the nightly protocol watch installs payload@beta into the admin fixture as a soft-fail early warning"
     },
     {
+      "version": "4.0.0-beta.4 with Astro 7.4.2 (pre-release)",
+      "how": "measured on 2026-10-26, outside CI, with a 2.2 release candidate on a consumer site (the real admin driven by headless Chromium). Typing into a title and a text line patched the preview, typing into a rich-text field updated it through 7 fragment renders that answered 200, the frame never reloaded, and all 31 live-preview messages had the shape of the recorded capture. Relationship and upload population were not part of the run"
+    },
+    {
       "version": "latest",
       "how": "daily protocol watch executes @payloadcms/live-preview@latest against the corpus",
       "source": "watch"
