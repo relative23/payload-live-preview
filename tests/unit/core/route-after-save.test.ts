@@ -1,0 +1,168 @@
+/**
+ * A route refresh asks the server again, and the server renders what is saved:
+ * a field no binding covers shows its saved value, which the runtime reports as
+ * a `partial` render (ADR 0018). Once Payload saves the document, the server
+ * has the edit — and nothing used to ask it again, so the preview kept the old
+ * value until the next change in the form. Payload says when it saved:
+ * `payload-document-event`, after every save, the autosave included.
+ */
+
+import { describe, expect, it, vi } from 'vitest';
+import type { FragmentStrategy, RouteOutcome, RouteStrategy } from '@core/strategies';
+import type { LivePreviewRuntime } from '@core/lifecycle';
+import { fragmentStrategyFrom } from '@fragment/index';
+import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
+
+/** Answers every refresh with `outcome` and never claims a binding of its own. */
+function fakeRoute(outcome: RouteOutcome): RouteStrategy & { refreshes: number } {
+  const strategy = {
+    refreshes: 0,
+    plan: (): boolean => false,
+    refresh: (): Promise<RouteOutcome> => {
+      strategy.refreshes += 1;
+      return Promise.resolve(outcome);
+    },
+  };
+  return strategy;
+}
+
+type RuntimeOptions = Parameters<typeof makeRuntime>[0];
+
+function start(route: RouteStrategy, options: RuntimeOptions = {}): LivePreviewRuntime {
+  document.body.innerHTML = '<h1 data-payload-field="title">Server rendered</h1>';
+  const runtime = makeRuntime({ strategies: { route }, warn: () => {}, ...options });
+  runtime.start();
+  return runtime;
+}
+
+async function send(data: Record<string, unknown>): Promise<void> {
+  fireMessage({ type: 'payload-live-preview', data });
+  await vi.advanceTimersByTimeAsync(50);
+}
+
+async function saved(): Promise<void> {
+  fireMessage({ type: 'payload-document-event', action: 'updated' });
+  await vi.advanceTimersByTimeAsync(50);
+}
+
+/** The connection's first message, then an edit of a field the page does not bind. */
+async function editUnbound(callout: string): Promise<void> {
+  await send({ title: 'Server rendered', callout: 'saved callout' });
+  await send({ title: 'Server rendered', callout });
+}
+
+describe('a route render that could only show the saved document', () => {
+  it('runs once more when Payload reports the save', async () => {
+    const route = fakeRoute('partial');
+    const runtime = start(route);
+    await editUnbound('typed, not yet saved');
+    expect(route.refreshes).toBe(1);
+
+    await saved();
+
+    expect(route.refreshes).toBe(2);
+    runtime.destroy();
+  });
+
+  it('runs once per save that follows it, not on every later save', async () => {
+    const route = fakeRoute('partial');
+    const runtime = start(route);
+    await editUnbound('typed, not yet saved');
+
+    await saved();
+    await saved();
+
+    expect(route.refreshes).toBe(2);
+    runtime.destroy();
+  });
+
+  it('still runs when the revisions after it touched only bound fields', async () => {
+    const route = fakeRoute('partial');
+    const runtime = start(route);
+    await editUnbound('typed, not yet saved');
+    await send({ title: 'Patched in place', callout: 'typed, not yet saved' });
+    expect(route.refreshes).toBe(1);
+
+    await saved();
+
+    expect(route.refreshes).toBe(2);
+    runtime.destroy();
+  });
+
+  it('re-applies the current revision onto the markup the save produced', async () => {
+    const route = fakeRoute('partial');
+    const runtime = start(route);
+    await editUnbound('typed, not yet saved');
+    await send({ title: 'Typed after the refresh', callout: 'typed, not yet saved' });
+
+    await saved();
+
+    expect(document.querySelector('h1')?.textContent).toBe('Typed after the refresh');
+    runtime.destroy();
+  });
+});
+
+describe('a save with nothing left to refresh', () => {
+  it('asks nothing after a render that carried the unsaved document', async () => {
+    const route = fakeRoute('refreshed');
+    const runtime = start(route);
+    await editUnbound('typed, not yet saved');
+
+    await saved();
+
+    expect(route.refreshes).toBe(1);
+    runtime.destroy();
+  });
+
+  it('asks nothing when every change so far was patched in place', async () => {
+    const route = fakeRoute('partial');
+    const runtime = start(route);
+    await send({ title: 'Server rendered', callout: 'saved callout' });
+    await send({ title: 'Patched in place', callout: 'saved callout' });
+
+    await saved();
+
+    expect(route.refreshes).toBe(0);
+    runtime.destroy();
+  });
+
+  it('asks nothing after a navigation whose replay patched every field in place', async () => {
+    const route = fakeRoute('partial');
+    const runtime = start(route);
+    await send({ title: 'Server rendered' });
+    await send({ title: 'Patched in place' });
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(50);
+
+    await saved();
+
+    expect(route.refreshes).toBe(0);
+    runtime.destroy();
+  });
+});
+
+describe('a throw after the refresh a save asked for', () => {
+  it('is logged instead of left unhandled', async () => {
+    const log = vi.fn<(...args: unknown[]) => void>();
+    const base = fragmentStrategyFrom(() => Promise.resolve({ status: 'rendered', html: '' }));
+    let armed = false;
+    const fragment: FragmentStrategy = {
+      ...base,
+      plan: (root, changed) => {
+        if (armed) throw new Error('plan exploded');
+        return base.plan(root, changed);
+      },
+    };
+    const route = fakeRoute('partial');
+    const runtime = start(route, { strategies: { route, fragment }, log });
+    await editUnbound('typed, not yet saved');
+    armed = true;
+
+    await saved();
+
+    const failures = log.mock.calls.filter(([message]) => message === 'route refresh failed:');
+    expect(route.refreshes).toBe(2);
+    expect(failures).toHaveLength(1);
+    runtime.destroy();
+  });
+});

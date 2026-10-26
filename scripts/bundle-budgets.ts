@@ -532,7 +532,8 @@
 // gzip `lean.js` 37 351 against 37 350 (red), `lean.cjs` 37 358, this row 45 651, `fragment.cjs` 6 480 and `index.cjs` 110 349 — 0 to
 // 3 B under ceilings that kept no gzip reserve. Each of the five gzip ceilings is that measurement + 5 B, the reserve of the other
 // rows; raw and Brotli stay. The entry rows are recorded here, as above.
-export const INLINE_BUDGET = { raw: 145_274, gzip: 45_656, brotli: 40_146 } as const;
+// 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2, epoch1792958286, this source against the same HEAD without the change; +368/+145/+113 B raw/gzip/Brotli; prior reserves kept.
+export const INLINE_BUDGET = { raw: 145_642, gzip: 45_801, brotli: 40_259 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

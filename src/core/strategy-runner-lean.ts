@@ -26,6 +26,7 @@ export type StrategyRunnerLike = Pick<
   | 'plansRoute'
   | 'runFragments'
   | 'refreshRoute'
+  | 'refreshAfterSave'
   | 'warnFragmentFallback'
   | 'warnUnsupportedStrategy'
 >;
@@ -75,6 +76,8 @@ export function createLeanStrategyRunner(
       reportOmittedFeature('route refreshes');
       return Promise.resolve();
     },
+    // No route was rendered, so no save has one to render again.
+    refreshAfterSave: (): void => undefined,
     warnFragmentFallback: (target: CachedElement): void => {
       reportOmittedFeature('server-rendered fragments');
       warnFragmentFallback(deps, state, target);

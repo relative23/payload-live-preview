@@ -167,7 +167,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 159 503 for authorized inline delivery. It fetches one
+  (ADR 0015), against 159 855 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -230,7 +230,8 @@ Notes on the rows that need one:
   prelude already carries the route strategy. Its GET or registered host
   refresh receives no live-preview fields, so the built-in strategy reports a
   successful render as `partial`. The runtime reapplies reachable bindings;
-  server-derived or unbound output may still reflect saved data
+  server-derived or unbound output may still reflect saved data until Payload
+  reports the save, which renders such a route once more
   ([ADR 0018](architecture/0018-route-refresh-fidelity.md)).
 - `onUnfaithfulPatch` decides what happens when the runtime knows a patch cannot
   reach what the server would have drawn: a value no renderer can represent, a

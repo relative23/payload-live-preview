@@ -592,4 +592,9 @@ export class UpdatePipeline {
     const target = this.deps.cache.get(fieldName)?.[0];
     return target === undefined ? 'no-element' : revealBinding(this.state.revealer, target);
   }
+
+  /** Payload saved the document; a route rendered from the older save may render again. */
+  documentSaved(): void {
+    this.strategies.refreshAfterSave();
+  }
 }

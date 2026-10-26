@@ -430,10 +430,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +3259 B gzip.
     // Node24.19/npm12.0.2, epoch1791096072; retain the original 24 B gzip reserve.
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +25 B gzip; retain 24 B.
+    // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
+    // without the change: +170 B gzip; retain the reserve it had.
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 55_745,
+    gzip: 55_915,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -441,10 +443,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +2610 B gzip.
     // Node24.19/npm12.0.2, epoch1791096072; retain the original 65 B gzip reserve.
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +37 B gzip; retain 65 B.
+    // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
+    // without the change: +147 B gzip; retain the reserve it had.
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 53_382,
+    gzip: 53_529,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -452,10 +456,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +3286 B gzip.
     // Node24.19/npm12.0.2, epoch1791096072; retain the original 24 B gzip reserve.
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +20 B gzip; retain 24 B.
+    // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
+    // without the change: +172 B gzip; retain the reserve it had.
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 55_726,
+    gzip: 55_898,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -480,10 +486,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-24 (2.1.1): `manageCsp: 'full'` keeps `frame-ancestors` when no script carries
     // the nonce, with a development warning. Node24.22.1, same tree with and without it:
     // 58_570 → 58_755, +185 B gzip; retain the 57 B it had.
+    // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
+    // without the change: +139 B gzip; retain the reserve it had.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 58_812,
+    gzip: 58_951,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
@@ -491,10 +499,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +2578 B gzip.
     // Node24.19/npm12.0.2, epoch1791096072; retain the original 60 B gzip reserve.
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +42 B gzip; retain 60 B.
+    // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
+    // without the change: +37 B gzip; retain the reserve it had.
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 37_404,
+    gzip: 37_441,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

@@ -197,6 +197,12 @@ export class RuntimeState {
    */
   routeRefreshOwed = false;
   /**
+   * The route was last rendered from the saved document for a revision holding
+   * edits that render could not show (`partial`, ADR 0018): the next save, which
+   * puts them on the server, renders it again.
+   */
+  routeAwaitsSave = false;
+  /**
    * Boundaries a newer revision cut short before they settled: the same debt,
    * per boundary, settled when a render of the boundary starts.
    */
@@ -229,6 +235,7 @@ export class RuntimeState {
   /** A new route or session starts clean: no refresh or boundary render is owed to it. */
   forgetOwedWork(): void {
     this.routeRefreshOwed = false;
+    this.routeAwaitsSave = false;
     this.fragmentsOwed.clear();
   }
 

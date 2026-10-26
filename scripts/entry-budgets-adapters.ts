@@ -59,7 +59,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-17: inline and loader delivery refuse authorizePreview and shouldInject with a message that
   // names where each can run. Node24.19/npm12.0.2: measured 208 900 / 65 334 / 55 343 B raw/gzip/Brotli;
   // the same 106/27/167 B reserves. 2026-10-17 (media URLs resolve against `serverURL`): +331/+69/+76 B on top.
-  'adapters/astro/index.js': { raw: 209_634, gzip: 65_495, brotli: 55_650 },
+  // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+138/+133 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 210_002, gzip: 65_633, brotli: 55_783 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -86,7 +87,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +153/+104/+160 B raw/gzip/Brotli;
   // retain the prior 16/12/120 B reserves.
-  'adapters/astro/middleware-entry.js': { raw: 184_943, gzip: 57_755, brotli: 49_147 },
+  // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+146/+129 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 185_311, gzip: 57_901, brotli: 49_276 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -148,7 +150,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // when no injected script can carry the nonce, and warns once in development.
   // Node24.22.1/npm12.0.2, same tree with and without the change: +476/+221/+209 B
   // raw/gzip/Brotli; retain the reserves it had, 28/13/142 B.
-  'adapters/nextjs/index.js': { raw: 203_659, gzip: 63_739, brotli: 54_168 },
+  // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+144/+126 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 204_027, gzip: 63_883, brotli: 54_294 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -224,7 +227,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +153/+99/+147 B raw/gzip/Brotli;
   // retain the prior 15/12/120 B reserves.
-  'adapters/nuxt/index.js': { raw: 203_930, gzip: 63_832, brotli: 54_125 },
+  // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+149/+156 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 204_298, gzip: 63_981, brotli: 54_281 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -253,5 +257,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-08: measured 2.1.0 after fixes for empty v2 fields and fragment response ownership.
   // Node24.19/npm12.0.2, epoch1791096072: +153/+97/+105 B raw/gzip/Brotli;
   // retain the prior 16/15/120 B reserves.
-  'adapters/sveltekit/index.js': { raw: 203_007, gzip: 63_528, brotli: 53_993 },
+  // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +368/+149/+64 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 203_375, gzip: 63_677, brotli: 54_057 },
 };

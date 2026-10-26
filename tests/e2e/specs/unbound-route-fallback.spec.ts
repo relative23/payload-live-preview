@@ -43,6 +43,15 @@ async function route(frame: Frame): Promise<RouteStats> {
  * changed and the page was just rendered from them — so it is sent here before
  * anything is measured, exactly as the admin sends it on connect.
  */
+/** Payload's word that the document was saved, posted the way the admin posts it after every save. */
+async function saved(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="preview-frame"]');
+    if (iframe?.contentWindow == null) throw new Error('preview frame is unavailable');
+    iframe.contentWindow.postMessage({ type: 'payload-document-event' }, window.location.origin);
+  });
+}
+
 async function connect(page: Page, frame: Frame): Promise<void> {
   await post(page, { title: 'Hybrid preview', tagline: 'Nothing binds this line' }, OWNER);
   await expect.poll(async () => (await route(frame)).handler).toBe(true);
@@ -67,6 +76,28 @@ test.describe('a change nothing binds', () => {
     await expect(frame.getByTestId('title')).toHaveText('Unsaved title after the route render');
     await expect(frame.getByTestId('tagline')).toHaveText('Nothing binds this line');
     expect(await route(frame)).toMatchObject({ partial: 1, failed: 0 });
+  });
+
+  /**
+   * The saved-only render above cannot show the edit; once Payload saves the
+   * document, the server can. The runtime asks it again then, once, rather than
+   * leaving the saved value until the next change in the form.
+   */
+  test('renders the route again once Payload reports the save, and only once', async ({ page }) => {
+    const frame = await open(page);
+    await connect(page, frame);
+    await post(page, { title: 'Hybrid preview', tagline: 'Edited, and bound to nothing' }, OWNER);
+    await expect.poll(async () => (await route(frame)).refreshes).toBe(1);
+    const afterEdit = await frame.getByTestId('route-stamp').textContent();
+
+    await saved(page);
+
+    await expect.poll(async () => (await route(frame)).refreshes).toBe(2);
+    await expect(frame.getByTestId('route-stamp')).not.toHaveText(afterEdit ?? '');
+    await saved(page);
+    // A second save with nothing new in between renders nothing more.
+    await page.waitForTimeout(1500);
+    expect((await route(frame)).refreshes).toBe(2);
   });
 
   test('leaves a revision that only touches bound fields to the patch', async ({ page }) => {

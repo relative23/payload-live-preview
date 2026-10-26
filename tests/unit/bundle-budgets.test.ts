@@ -23,10 +23,12 @@ describe('release bundle budgets', () => {
     // 2026-10-23 (the scheduler's frame fallback): +297/+68/+130 default, +297/+71/+75 lean,
     // +297/+68/+136 route, +297/+68/+117 fragments; reserves unchanged.
     // 2026-10-23 (the Version PR's own build): gzip + 5 B over its measurement; raw and Brotli unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 145_274, gzip: 45_656, brotli: 40_146 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 118_146, gzip: 37_115, brotli: 32_785 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 153_869, gzip: 48_461, brotli: 42_199 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 159_454, gzip: 50_445, brotli: 43_841 });
+    // 2026-10-25 (a saved-only route render runs again on Payload's save): +368/+145/+113 default,
+    // +159/+32/+3 lean, +368/+163/+130 route, +368/+137/+93 fragments; reserves unchanged.
+    expect(INLINE_BUDGET).toEqual({ raw: 145_642, gzip: 45_801, brotli: 40_259 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 118_305, gzip: 37_147, brotli: 32_788 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 154_237, gzip: 48_624, brotli: 42_329 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 159_822, gzip: 50_582, brotli: 43_934 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {
