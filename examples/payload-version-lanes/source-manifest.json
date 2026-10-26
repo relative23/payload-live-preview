@@ -3,8 +3,8 @@
   "status": "portable-development-fixture-sources-not-native-results",
   "files": {
     "README.md": {
-      "sha256": "c6be2f842546ef9012763f7028ff7836984869f660582795d93c09e819366468",
-      "bytes": 7320
+      "sha256": "96d3ffc082ff7c67a549f4a53726dd1eab375a274c2e803ea52691086a5ef8ff",
+      "bytes": 7395
     },
     "admin/next-env.d.ts": {
       "sha256": "0f70629890b72a0a82e91972cc032c04b658b26c265373cb711cf576bfbf8fcc",
@@ -55,8 +55,8 @@
       "bytes": 1853
     },
     "frontend/ledger.mjs": {
-      "sha256": "a33db71fc55ae33114143f7ec3a94023ba9430435dfec8d5cef266e1316d302b",
-      "bytes": 7376
+      "sha256": "0d9a17944965566179c54f3a476f902356850076ca518514fc4b3dc1e96c7f62",
+      "bytes": 7779
     },
     "frontend/payload.config.ts.fixture": {
       "sha256": "37387f14a24206773183220639acb2a49197439c343429c0ae66d4fab39e8a26",
@@ -99,16 +99,16 @@
       "bytes": 2595
     },
     "lane.mjs": {
-      "sha256": "88d7a6aa8373734d862b72d03f3ee0fd3a998316497f5db4f239034213d85d3f",
-      "bytes": 1935
+      "sha256": "32dfa21697d4f10f0e96c3317d8c3a50d4a78c3407a553519ab9b18ce8a22ec2",
+      "bytes": 1940
     },
     "lanes.json": {
-      "sha256": "cbe548e22b0bb4368b0773bc00f7cb77bdcaef1cf0e130d53a1f4cc9e2811079",
-      "bytes": 13047
+      "sha256": "6a6ba1b2a20a6f072573f0f81d4f4611e02758ad818bccbda7e44ba57b53ea91",
+      "bytes": 13032
     },
     "lifecycle.config.mjs": {
-      "sha256": "17e8d0226b1afdf2c21697e7bb73382963b8c97688157c313376ae3290e57ec5",
-      "bytes": 3253
+      "sha256": "d1087b240c84cdca22729ec5ea4e7385c7d7a702d903ba275255df8094864743",
+      "bytes": 3258
     },
     "owned-graph.mjs": {
       "sha256": "324aee491f4a77e96de6ec19f4ff0b0f1e557289686ceda79baaf599cee9d319",
@@ -139,20 +139,20 @@
       "bytes": 1530
     },
     "registry/v4-db-sqlite.json": {
-      "sha256": "d28e3b8f486b1156d703e6397c2d622a1a4de5cd0a7102dd7d88d34337cf3499",
-      "bytes": 338
+      "sha256": "007d91fd62bc55ac981622f57514f58eb28556280335db8f36d06a423462091a",
+      "bytes": 329
     },
     "registry/v4-next.json": {
-      "sha256": "b6c06ad17c88e808c95ccbdd111c885341ff24fd0e36d5e41d372f037fa9b0c6",
-      "bytes": 440
+      "sha256": "23fe4be4aa9fdc6f3aa17c6422cda5a7047f11cdd1d8ee33870bf0ac8c532835",
+      "bytes": 431
     },
     "registry/v4-payload.json": {
-      "sha256": "0af14d19f4384ed7b7d350690a0aa97f2e17fb2e01f9da86dd4cf63ac0a68a52",
-      "bytes": 364
+      "sha256": "ef85fff73b9f372831ce731cb4920ee670536de8c809e86dbecb3bfb71908d0d",
+      "bytes": 358
     },
     "registry/v4-richtext-lexical.json": {
-      "sha256": "dc5fb3d0944711800821b1f364a0a63c6711c3942873afdfbdccf9a76d8fec9e",
-      "bytes": 582
+      "sha256": "91b53e6ae385d2fa8198eec4df0c8fb7719995bf3afc67d45932c1da8c135e66",
+      "bytes": 573
     },
     "run-lane.mjs": {
       "sha256": "7fb5ac37bdfb9722f1eb26d7a52ec212282df4faa821d3fe1198b3a04d8f7d9d",
@@ -255,12 +255,12 @@
       "bytes": 3718
     },
     "verify-wire.mjs": {
-      "sha256": "e0bfa0a42b69ce782e8308e6005fbd6456e99ead813010e9f8b8dcecd3a018bc",
-      "bytes": 3279
+      "sha256": "5af84c171d87b110633783effd559b260dc33a58b9ea65a06d8ffa38ee8ef232",
+      "bytes": 3284
     },
     "wire-review.mjs": {
-      "sha256": "a1bb86fef8ee1dc6dc65facf4a12c7a142e51a4edc563d487beaadd919b1d396",
-      "bytes": 2813
+      "sha256": "0471dcca2b264c00b740457fb9ddda7b85618473382b7c995677dd8831b7c1a7",
+      "bytes": 2801
     },
     "wire.spec.mjs": {
       "sha256": "aee56a954bef76964b27bf3bd2c37660fd26585fd9b0ef4fe8b7a0267fba41e0",

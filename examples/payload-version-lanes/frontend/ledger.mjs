@@ -41,7 +41,13 @@ const DATA_KEYS = new Set([
   'globalType',
   'createdAt',
   'updatedAt',
+  // Payload 4.0.0-beta.4 adds hidden authorship relationships to every global. The form
+  // posts both keys, undefined until a signed-in user saves; JSON captures drop them.
+  'createdBy',
+  'updatedBy',
 ]);
+// Key names go into the ledger only in this shape, never a value.
+const PUBLIC_KEY = /^[a-zA-Z0-9_-]{1,64}$/u;
 const publicMarker = (value) =>
   typeof value === 'string' && value.length <= 2048 ? value : undefined;
 
@@ -58,8 +64,9 @@ function fixtureMessage(value) {
     throw new Error('Unexpected message key');
   if (!value.data || Array.isArray(value.data) || typeof value.data !== 'object')
     throw new Error('Expected field record');
-  if (Object.keys(value.data).some((key) => !DATA_KEYS.has(key)))
-    throw new Error('Unexpected field key');
+  const unexpected = Object.keys(value.data).find((key) => !DATA_KEYS.has(key));
+  if (unexpected !== undefined)
+    throw new Error('Unexpected field key ' + (PUBLIC_KEY.test(unexpected) ? unexpected : '?'));
   if (!['homepage', 'otherpage'].includes(value.globalSlug)) throw new Error('Unexpected global');
   if (value.collectionSlug !== undefined || value.externallyUpdatedRelationship != null)
     throw new Error('Unexpected collection/drawer event');
@@ -97,7 +104,7 @@ export function observeInbox(target, label, admin) {
           type,
           parentSource: true,
           keys: Object.keys(event.data)
-            .filter((key) => /^[a-zA-Z0-9_-]{1,64}$/u.test(key))
+            .filter((key) => PUBLIC_KEY.test(key))
             .slice(0, 24)
             .sort(),
           schemaShape: schemaShape(event.data.fieldSchemaJSON),
