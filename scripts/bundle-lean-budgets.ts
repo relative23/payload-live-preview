@@ -138,4 +138,5 @@
 // 2026-10-16 (the json-only population body refuses an interruption, as its stream branch does): paired Node24.19/npm12.0.2, epoch1791096072,
 // the build of this source against the build before the one statement; +12/+2/-2 B raw/gzip/Brotli; retain the prior reserves (Brotli rises only where it rose).
 // 2026-10-23 (the scheduler's frame fallback, recorded with INLINE_BUDGET): paired, +297/+71/+75 B raw/gzip/Brotli; prior reserves kept.
-export const INLINE_LEAN_BUDGET = { raw: 118_146, gzip: 37_115, brotli: 32_785 } as const;
+// 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2, epoch1792958286, this source against the same HEAD without the change; +159/+32/+3 B raw/gzip/Brotli; prior reserves kept.
+export const INLINE_LEAN_BUDGET = { raw: 118_305, gzip: 37_147, brotli: 32_788 } as const;

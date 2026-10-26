@@ -97,6 +97,7 @@ export class LivePreviewRuntime {
       onDocumentEvent: () => {
         this.state.protocol.observe(['document-events'], log);
         void emitter.emit('documentSave', { timestamp: Date.now() });
+        this.pipeline.documentSaved();
       },
       onFocusField: (field) => {
         if (this.deps.revealEditedField) this.pipeline.revealField(field);

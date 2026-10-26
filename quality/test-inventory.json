@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 508,
-    "suites": 959,
-    "tests": 4372,
+    "files": 509,
+    "suites": 962,
+    "tests": 4381,
     "benchmarks": 12
   },
   "groups": {
@@ -41,7 +41,7 @@
     "e2e": {
       "files": 57,
       "suites": 62,
-      "tests": 250,
+      "tests": 251,
       "benchmarks": 0
     },
     "integration": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 412,
-      "suites": 850,
-      "tests": 3975,
+      "files": 413,
+      "suites": 853,
+      "tests": 3983,
       "benchmarks": 0
     }
   },
@@ -487,7 +487,7 @@
       "path": "tests/e2e/specs/unbound-route-fallback.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -2035,6 +2035,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/route-after-save.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 8,
       "benchmarks": 0
     },
     {

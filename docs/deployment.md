@@ -53,7 +53,7 @@ By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. The current
 Next.js fixture's delivery is a 1 344-byte `<script>` element in the page
-against 159 503 bytes for authorized inline delivery: about one per cent,
+against 159 855 bytes for authorized inline delivery: about one per cent,
 and more than the Astro row below
 because a Next page's bootstrap also arms the wait for React's first commit
 before it fetches ([ADR 0015](architecture/0015-first-write-after-hydration.md)). On Next it is the second step down, not the first: a layout
@@ -110,7 +110,7 @@ preview intent. What that case pins to the byte is the delivery's overhead: the
 `<script>` element, tag included, minus the runtime it embeds. The runtime is
 gated on its own (`INLINE_BUDGET` in `scripts/bundle-budgets.ts`) and grows
 with the package. The Bytes column is calculated from the pinned delivery
-overhead, plus the current 145 194-byte runtime artifact in the two rows that
+overhead, plus the current 145 546-byte runtime artifact in the two rows that
 carry it. These are uncompressed bytes for the directly emitted script
 element. The Next.js rows also count its escaped copy in the RSC flight payload,
 whose encoding adds bytes; "twice" counts the two occurrences.
@@ -121,8 +121,8 @@ whose encoding adds bytes; "twice" counts the two occurrences.
 | Next.js, `await LivePreviewScript(…)` in the root layout | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
 | Next.js, `delivery: 'asset'`                             | the bootstrap             | 1 344, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
 | Astro static build, `mode: 'loader'`                     | the bootstrap             | 792            | a static page has no request to decide for, so the check happens in the browser   |
-| Astro static build, `mode: 'inline'`                     | the whole runtime         | 145 350        | nothing decides and nothing is deferred                                           |
-| Next.js, `livePreviewScriptProps()` in the root layout   | the whole runtime         | 159 503, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
+| Astro static build, `mode: 'inline'`                     | the whole runtime         | 145 702        | nothing decides and nothing is deferred                                           |
+| Next.js, `livePreviewScriptProps()` in the root layout   | the whole runtime         | 159 855, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
 
 The last row is the one exception to "no cookie, no preview intent": no fixture
 serves it to the public any longer, because the Next example moved to the second

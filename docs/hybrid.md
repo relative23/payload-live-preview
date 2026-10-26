@@ -583,8 +583,8 @@ Patching reaches what the markup annotates. Edit a field with no
 has nowhere to put the new one. A framework hook that re-renders the component
 tree does not have that failure mode, and that is the one thing it does better.
 
-The route strategy closes it, and nothing else is needed — escalating is what
-`onUnfaithfulPatch` does by default:
+The route strategy answers it, and escalating is what `onUnfaithfulPatch` does
+by default:
 
 ```js
 // astro.config.mjs reads process.env: import.meta.env has no PUBLIC_ variables there (docs/astro.md)
@@ -598,8 +598,13 @@ livePreview({
 
 A revision that changes a field no binding covers then refreshes the whole
 route. The built-in strategy reapplies every reachable binding; server-owned
-output stays saved unless the host renderer knows the unsaved revision. Where a
-binding exists the page is still patched in place, with focus and scroll intact.
+output stays saved unless the host renderer knows the unsaved revision, so an
+unbound field still shows its saved value at that point. Once Payload reports the
+save (`payload-document-event`, after every save, the autosave included), the
+route renders once more and shows it; a second save with nothing new in between
+renders nothing more. Without a save, the edit stays out of the preview until
+the next one. Where a binding exists the page is still patched in place, with
+focus and scroll intact.
 
 The same decision covers the other ways a patch falls short of the server's own
 render: a value no renderer can represent, and a Lexical block whose markup the

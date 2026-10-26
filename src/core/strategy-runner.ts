@@ -27,7 +27,12 @@ import {
   type RouteStrategy,
 } from './strategies';
 import { KEY_ATTRIBUTE } from './structural-applier';
-import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
+import {
+  warnEscalationUnavailable,
+  warnFragmentFallback,
+  warnIslandStart,
+  warnUnsupportedStrategy,
+} from './strategy-warnings';
 import { declaredSubfields, unboundChangedFields, type OwnerScope } from './unbound-fields';
 import type { CachedElement } from './types';
 
@@ -115,7 +120,7 @@ export class StrategyRunner {
     if (route === undefined) {
       // Only 'escalate' queues a patch for this method (fidelity.ts), so the
       // page that reaches here with no strategy is the one the line is for.
-      this.warnEscalationUnavailable(targets.length);
+      warnEscalationUnavailable(this.deps, this.state, targets.length);
       this.kept(transaction, targets);
       return;
     }
@@ -128,22 +133,6 @@ export class StrategyRunner {
     for (const target of targets) {
       this.state.display.shortfall(transaction, { kind: 'unfaithful', field: target.fieldName });
     }
-  }
-
-  /**
-   * The default asks for a server render and this page has nothing to ask.
-   * Said once, with the count that brought it up: a page that keeps producing
-   * findings is the page that needs the line, not one line per finding.
-   */
-  private warnEscalationUnavailable(count: number): void {
-    const { deps, state } = this;
-    if (state.warnedEscalationUnavailable) return;
-    state.warnedEscalationUnavailable = true;
-    deps.warn(
-      `[live-preview] LP0808: onUnfaithfulPatch: 'escalate' has nowhere to go: ${String(count)} field(s) fell short ` +
-        'and no route or fragment strategy is configured. Set routeStrategy: true or fragments: { endpoint }, ' +
-        "or onUnfaithfulPatch: 'warn' to keep the patch and say so.",
-    );
   }
 
   /**
@@ -183,7 +172,9 @@ export class StrategyRunner {
     const [first] = unbound;
     if (first === undefined) return false;
     if (deps.onUnfaithfulPatch !== 'escalate' || deps.strategies.route === undefined) {
-      if (deps.onUnfaithfulPatch === 'escalate') this.warnEscalationUnavailable(unbound.length);
+      if (deps.onUnfaithfulPatch === 'escalate') {
+        warnEscalationUnavailable(deps, state, unbound.length);
+      }
       for (const field of unbound) state.display.shortfall(transaction, { kind: 'unbound', field });
       return false;
     }
@@ -192,7 +183,6 @@ export class StrategyRunner {
     return true;
   }
 
-  /** Whether a touched field is bound to an element the route owns. */
   /**
    * Whether the route is asked for, by the strategy's planner or by a route
    * binding of a touched field, each only inside the update's owner scope: a
@@ -250,7 +240,7 @@ export class StrategyRunner {
         const target = isCurrent() ? live(boundary) : undefined;
         if (target === undefined) return;
         morphFragment(target, html, (island, blocker) => {
-          this.warnIslandStart(island, blocker);
+          warnIslandStart(this.deps, this.state, island, blocker);
         });
       },
       patch: (boundary) => {
@@ -356,7 +346,24 @@ export class StrategyRunner {
     // A refusal counts as asked as well: the trailing run below is this
     // revision's one refresh, and nothing else may start a second.
     transaction.routeRefreshed = true;
-    await this.runRoute(transaction, data, strategy).catch((error: unknown) => {
+    await this.runRoute(transaction, data, strategy, false).catch((error: unknown) => {
+      this.routeFailed(error);
+    });
+  }
+
+  /**
+   * Payload saved the document, and the route was last rendered from the older
+   * save (`routeAwaitsSave`): render it again, now that the server has the edits.
+   * Payload posts the event once the save landed, so no delay is guessed at.
+   */
+  refreshAfterSave(): void {
+    const { deps, state } = this;
+    const { route } = deps.strategies;
+    const current = state.activeUpdate;
+    // A stopped runtime has no active update, so this also refuses after stop().
+    if (!state.routeAwaitsSave || route === undefined || current?.renderData === undefined) return;
+    deps.log('route', 'document saved; refreshing the route');
+    this.runRoute(current, current.renderData, route, true).catch((error: unknown) => {
       this.routeFailed(error);
     });
   }
@@ -380,13 +387,14 @@ export class StrategyRunner {
     data: PayloadLivePreviewData,
     strategy: RouteStrategy,
     delayMs: number,
+    forSave: boolean,
   ): void {
     const { state } = this;
     if (state.routeRetry !== null) clearTimeout(state.routeRetry);
     state.routeRetry = setTimeout(() => {
       state.routeRetry = null;
       if (!state.isCurrent(transaction)) return;
-      this.runRoute(transaction, data, strategy).catch((error: unknown) => {
+      this.runRoute(transaction, data, strategy, forSave).catch((error: unknown) => {
         this.routeFailed(error);
       });
     }, delayMs);
@@ -402,6 +410,7 @@ export class StrategyRunner {
     transaction: UpdateTransaction,
     data: PayloadLivePreviewData,
     strategy: RouteStrategy,
+    forSave: boolean,
   ): Promise<void> {
     const { deps, state } = this;
     const stats = state.routeStats;
@@ -421,7 +430,7 @@ export class StrategyRunner {
           deps.log('route', code, detail);
         },
         retryAfter: (delayMs) => {
-          this.armRouteRetry(transaction, data, strategy, delayMs);
+          this.armRouteRetry(transaction, data, strategy, delayMs, forSave);
         },
       });
     } catch (error) {
@@ -452,6 +461,7 @@ export class StrategyRunner {
     if (outcome === 'refreshed' || outcome === 'partial') {
       stats.refreshes += 1;
       if (outcome === 'partial') stats.partial += 1;
+      state.routeAwaitsSave = outcome === 'partial' && !forSave;
       // Route markup has no local application identities; every prior stamp is stale.
       state.lastAppliedIdentity = new WeakMap();
       // The fresh markup carries no stamp: the guesses go back on before the
@@ -486,17 +496,6 @@ export class StrategyRunner {
     // Either way the page shows what it can now: the window holds back the
     // server, not the bindings this revision could already have written.
     if (currentData !== undefined) this.host.reapply(current, currentData);
-  }
-
-  /** LP0809, once: fragment scripts never run, so the page must already start Astro islands. */
-  private warnIslandStart(island: Element, blocker: 'element' | 'directive'): void {
-    if (this.state.warnedIslandStart) return;
-    this.state.warnedIslandStart = true;
-    const missing =
-      blocker === 'element' ? '<astro-island>' : `client:${island.getAttribute('client') ?? ''}`;
-    this.deps.warn(
-      `[live-preview] LP0809: a fragment island cannot start: this page never loaded ${missing}; render one on the page`,
-    );
   }
 
   /** LP0806, once: a fragment boundary with no handler is patched instead. */

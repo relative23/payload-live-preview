@@ -87,3 +87,20 @@ before. The late-binding path already checked owners.
 `tests/unit/core/route-owner-scope.test.ts` and
 `tests/e2e/specs/route-owner-scope.spec.ts` pin it; the native case asked for
 one route request on the previous source in three browsers and none now.
+
+## Addendum (2026-10-25): a saved-only render renders again on the save
+
+A partial render shows the saved document, and nothing asked for the route
+again once the document was saved: an unbound field kept its old value in the
+preview until the next change in the form. Payload posts
+`payload-document-event` after every save, the autosave included, and only once
+the save has landed. When the route was last rendered `partial` for a revision,
+the runtime now runs the route strategy once more on that event and reapplies the
+current revision onto the fresh markup. The render the save asked for does not
+arm the next one, so a second save with nothing new in between asks nothing; a
+full (`refreshed`) render or a new route starts clean. The render is still
+reported as `partial`: the strategy cannot prove that the save held the newest
+revision. Payload 2 posts no document event, so nothing changes there.
+`tests/unit/core/route-after-save.test.ts` pins the runtime and
+`tests/e2e/specs/unbound-route-fallback.spec.ts` the browser path, in Chromium,
+Firefox and WebKit.
