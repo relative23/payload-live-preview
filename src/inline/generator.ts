@@ -83,12 +83,30 @@ function buildConfigLiteral(config: InlineScriptConfig): string {
   // `null` counts as omitted, and omitted slots stay empty (`[,,1]`): a JSON
   // `null` would bypass the runtime's destructuring defaults. Defaults remains
   // in its established slot 24; later rows are append-only and may be absent.
-  const values: unknown[] = INLINE_CONFIG_KEYS.map((key) => config[key] ?? profile[key]);
+  const values: unknown[] = INLINE_CONFIG_KEYS.map((key) => {
+    const value = config[key] ?? profile[key];
+    assertSerializable(key, value);
+    return value;
+  });
   while (values.at(-1) === undefined) values.pop();
   // `<` is escaped so a value containing `</script>` cannot end the tag.
   return `[${values
     .map((value) => (value === undefined ? '' : JSON.stringify(value)))
     .join(',')}]`.replace(/</g, '\\u003C');
+}
+
+/**
+ * JSON writes `Infinity` and `NaN` as `null`, which the runtime does not read
+ * as the number: the option would be lost without a word.
+ */
+function assertSerializable(key: string, value: unknown): void {
+  if (typeof value !== 'number' || Number.isFinite(value)) return;
+  const instead =
+    key === 'visibilityGateThreshold' ? ' To never defer, set `disableVisibilityGate: true`.' : '';
+  throw new Error(
+    `[live-preview] \`${key}\` is ${String(value)}, which the inline configuration writes as null, ` +
+      `so the runtime would never see it. Pass a finite number.${instead}`,
+  );
 }
 
 /**

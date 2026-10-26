@@ -29,10 +29,12 @@ describe('release bundle budgets', () => {
     // +209/+88/+43 route, +209/+76/+54 fragments; reserves unchanged.
     // 2026-10-26 (the merge decision reads rich text by its shape): +612/+206/+173 default,
     // +615/+199/+137 lean, +612/+242/+166 route, +612/+199/+199 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 146_463, gzip: 46_082, brotli: 40_510 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 118_920, gzip: 37_346, brotli: 32_925 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 155_058, gzip: 48_954, brotli: 42_538 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 160_643, gzip: 50_857, brotli: 44_187 });
+    // 2026-10-26 (the 2.2 review fixes): +60/+23/+17 default, +31/+21/+31 lean,
+    // +60/+22/+25 route, +60/+21/+22 fragments; reserves unchanged.
+    expect(INLINE_BUDGET).toEqual({ raw: 146_523, gzip: 46_105, brotli: 40_527 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 118_951, gzip: 37_367, brotli: 32_956 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 155_118, gzip: 48_976, brotli: 42_563 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 160_703, gzip: 50_878, brotli: 44_209 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

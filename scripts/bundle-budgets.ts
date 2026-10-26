@@ -536,7 +536,9 @@
 // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+75/+78 B; prior reserves kept.
 // 2026-10-26 (the merge decision reads rich text by its shape): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2): `core.cjs` +656 / +185 / +173, `core.js` +656 / +212 / +121, `index.cjs` +1268 / +391 / -1917 and `index.js` +1268 / +379 / -1910; the two index brotli budgets are not lowered, the drop is compression, not code.
 // 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+206/+173 B; prior reserves kept.
-export const INLINE_BUDGET = { raw: 146_463, gzip: 46_082, brotli: 40_510 } as const;
+// 2026-10-26 (the 2.2 review fixes): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +75 / +15 / -3, `core.js` +75 / +15 / +26, `index.cjs` +486 / +144 / +77, `index.js` +486 / +141 / +187.
+// 2026-10-26 (the 2.2 review fixes): paired Node24.22.1/npm12.0.2; +60/+23/+17 B; prior reserves kept.
+export const INLINE_BUDGET = { raw: 146_523, gzip: 46_105, brotli: 40_527 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

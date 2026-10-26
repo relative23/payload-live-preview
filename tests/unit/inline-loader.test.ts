@@ -71,6 +71,11 @@ describe('generateLoaderScript — substitution', () => {
     expect(script).toContain('var __LP_RUNTIME_INTEGRITY__=');
     expect(script).toContain(TARGET.runtimeSrc);
     expect(script).toContain(TARGET.integrity);
+    // One statement per line, so a prelude that ends without a semicolon still ends.
+    const [config, src, integrity] = script.split('\n');
+    expect(config).toMatch(/^var __LIVE_PREVIEW_CONFIG__=\[.*\];$/u);
+    expect(src).toBe(`var __LP_RUNTIME_SRC__="${TARGET.runtimeSrc}";`);
+    expect(integrity).toBe(`var __LP_RUNTIME_INTEGRITY__="${TARGET.integrity}";`);
   });
 
   it('carries the configuration but not the runtime', () => {

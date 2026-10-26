@@ -32,6 +32,8 @@ function page(head: string, bindings = 1): DoctorProbe {
   };
 }
 
+const ID = '__LIVE_PREVIEW_CONFIG__';
+
 const SALA = {
   allowedOrigins: [ADMIN],
   serverURL: 'https://cms.example.com',
@@ -68,8 +70,68 @@ describe('readServedConfig', () => {
       'text that does not parse',
       '<script id="__LIVE_PREVIEW_CONFIG__" type="application/json">{x</script>',
     ],
+    ['a number', '<script id="__LIVE_PREVIEW_CONFIG__" type="application/json">5</script>'],
+    [
+      // The first element is the one the page's client reads, as `getElementById` finds it.
+      'an element that does not parse, ahead of one that does',
+      '<script id="__LIVE_PREVIEW_CONFIG__" type="application/json">{x</script>' +
+        '<script id="__LIVE_PREVIEW_CONFIG__" type="application/json">{"debug":true}</script>',
+    ],
+    ['null', '<script id="__LIVE_PREVIEW_CONFIG__" type="application/json">null</script>'],
+    [
+      'an id that only starts with the name',
+      '<script id="__LIVE_PREVIEW_CONFIG__2" type="application/json">{"debug":true}</script>',
+    ],
+    [
+      'a type that only starts with application/json',
+      '<script id="__LIVE_PREVIEW_CONFIG__" type="application/jsonp">{"debug":true}</script>',
+    ],
   ])('reads nothing from %s', (_name, markup) => {
     expect(readServedConfig(markup)).toBeUndefined();
+  });
+
+  it('skips what a comment holds, as the browser does', () => {
+    expect(readServedConfig(`<!-- ${element(SALA)} -->`)).toBeUndefined();
+    const oldTuple = '<!-- <script>var __LIVE_PREVIEW_CONFIG__=[,,,,,,,,true];</script> -->';
+    const config = readServedConfig(oldTuple + element({ debug: true }));
+    expect(config?.source).toBe('element');
+    expect(config?.value('debug')).toBe(true);
+  });
+
+  it('reads the id attribute in any case, and its value exactly', () => {
+    const upper = element({ debug: true }, 'type="application/json"').replace(' id=', ' ID=');
+    expect(readServedConfig(upper)?.value('debug')).toBe(true);
+    const lower = element({ debug: true }).replace(
+      '__LIVE_PREVIEW_CONFIG__',
+      '__live_preview_config__',
+    );
+    expect(readServedConfig(lower)).toBeUndefined();
+  });
+
+  it.each([
+    [
+      'a ">" in a double-quoted value',
+      `<script data-note="a>b" ID="${ID}" type="application/json">`,
+    ],
+    [
+      'a ">" in a single-quoted value',
+      `<script data-note='a>b' id='${ID}' type='application/json'>`,
+    ],
+    ['spaces around "="', `<script id = "${ID}" type = "application/json">`],
+    ['unquoted values, the type last', `<script id=${ID} type=application/json>`],
+    ['unquoted values, the id last', `<script type=application/json id=${ID}>`],
+  ])('reads the element written with %s', (_name, open) => {
+    expect(readServedConfig(`${open}{"debug":true}</script>`)?.value('debug')).toBe(true);
+  });
+
+  it('reads an element closed by an end tag with junk before its ">"', () => {
+    const markup = `<script id="${ID}" type="application/json">{"debug":true}</script >`;
+    expect(readServedConfig(markup)?.value('debug')).toBe(true);
+  });
+
+  it('passes over the scripts before the element', () => {
+    const markup = `<script>var analytics = 1;</script><script src="/app.js"></script>${element({ debug: true })}`;
+    expect(readServedConfig(markup)?.value('debug')).toBe(true);
   });
 });
 
@@ -100,5 +162,19 @@ describe('the doctor on a page with a configuration element', () => {
     expect(lp0705(element({ allowedOrigins: [ADMIN] }))?.title).toBe(
       '120 bindings exceed the default visibility gate',
     );
+    expect(lp0705(`<!-- ${element({ disableVisibilityGate: true })} -->`)?.title).toBe(
+      '120 bindings exceed the default visibility gate',
+    );
+  });
+
+  it('says the configuration, not the runtime, reaches visitors when only the element does', () => {
+    const served = page(element(SALA));
+    const report = analyzeProbe(
+      { ...served, publicResponse: response({ body: `<h1>Title</h1>${element(SALA)}` }) },
+      context,
+    );
+    const lp0710 = report.findings.find((finding) => finding.code === 'LP0710');
+    expect(lp0710?.title).toBe('Preview configuration is also served to anonymous visitors');
+    expect(lp0710?.detail).toContain('a client it starts itself');
   });
 });

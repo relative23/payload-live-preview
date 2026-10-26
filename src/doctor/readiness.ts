@@ -16,9 +16,14 @@ import {
 } from '@/types/defaults-profile';
 import type { DoctorFinding, DoctorProbe } from './types';
 
-const CONFIG_MARKER = 'var __LIVE_PREVIEW_CONFIG__=';
-const SCRIPT = /<script\b([^>]*)>([\s\S]*?)<\/script\b[^>]*>/giu;
-const CONFIG_ID = /(?:^|\s)id\s*=\s*["']?__LIVE_PREVIEW_CONFIG__(?=["'\s]|$)/u;
+const CONFIG_NAME = '__LIVE_PREVIEW_CONFIG__';
+const CONFIG_MARKER = `var ${CONFIG_NAME}=`;
+// A comment or a script, in document order, so a script inside a comment is
+// skipped as the browser skips it. A quoted attribute value may hold `>`.
+const COMMENT_OR_SCRIPT =
+  /<!--[\s\S]*?-->|<script\b((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/script\b[^>]*>/giu;
+// The attribute name in any case, the value exactly, as `getElementById` compares it.
+const CONFIG_ID = /(?:^|\s)[iI][dD]\s*=\s*["']?__LIVE_PREVIEW_CONFIG__(?=["'\s]|$)/u;
 const JSON_TYPE = /(?:^|\s)type\s*=\s*["']?application\/json(?=["'\s;]|$)/iu;
 
 type InlineKey = (typeof INLINE_CONFIG_KEYS)[number];
@@ -162,14 +167,18 @@ export function readInlineConfig(body: string): readonly unknown[] | undefined {
  * @internal
  */
 export function readServedConfig(body: string): ServedConfig | undefined {
-  const tuple = readInlineConfig(body);
+  // Both ways spell the name, and the scan below is slow on hostile markup.
+  if (!body.includes(CONFIG_NAME)) return undefined;
+  const scripts = servedScripts(body);
+  const inline = scripts.find(({ text }) => text.includes(CONFIG_MARKER));
+  const tuple = inline === undefined ? undefined : readInlineConfig(inline.text);
   if (tuple !== undefined) {
     return {
       source: 'inline',
       value: (key) => tuple[INLINE_CONFIG_KEYS.indexOf(key)] ?? undefined,
     };
   }
-  const named = readConfigElement(body);
+  const named = readConfigElement(scripts);
   if (named === undefined) return undefined;
   return {
     source: 'element',
@@ -177,8 +186,25 @@ export function readServedConfig(body: string): ServedConfig | undefined {
   };
 }
 
-function readConfigElement(body: string): Readonly<Record<string, unknown>> | undefined {
-  for (const [, attributes = '', text = ''] of body.matchAll(SCRIPT)) {
+interface ServedScript {
+  readonly attributes: string;
+  readonly text: string;
+}
+
+/** The scripts a browser would run or read, without those inside a comment. */
+function servedScripts(body: string): readonly ServedScript[] {
+  const scripts: ServedScript[] = [];
+  for (const [, attributes, text] of body.matchAll(COMMENT_OR_SCRIPT)) {
+    // A comment captures neither group.
+    if (attributes !== undefined && text !== undefined) scripts.push({ attributes, text });
+  }
+  return scripts;
+}
+
+function readConfigElement(
+  scripts: readonly ServedScript[],
+): Readonly<Record<string, unknown>> | undefined {
+  for (const { attributes, text } of scripts) {
     if (!CONFIG_ID.test(attributes)) continue;
     if (!JSON_TYPE.test(attributes)) return undefined;
     try {

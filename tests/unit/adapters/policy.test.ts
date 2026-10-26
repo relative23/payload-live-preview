@@ -7,6 +7,7 @@ import {
   normalizeCspMode,
 } from '@adapters/shared/policy';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
+import { generateInlineScript } from '@inline/generator';
 import { LEAN_RUNTIME } from '@/lean';
 
 /** The shared policy's decisions, pinned by name rather than through four framework fixtures. */
@@ -123,6 +124,11 @@ describe('inlineScriptConfig', () => {
 
   it.each(WIRE)('leaves %s off the wire when it is not given', (_option, _value, wireKey) => {
     expect(inlineScriptConfig({})).not.toHaveProperty(wireKey);
+  });
+
+  it('has the script refuse a gate threshold it could only write as null', () => {
+    const config = inlineScriptConfig({ visibilityGateThreshold: Number.POSITIVE_INFINITY });
+    expect(() => generateInlineScript(config)).toThrow(/disableVisibilityGate: true/u);
   });
 
   it('forwards only the options that were given, so runtime defaults stay the single source', () => {

@@ -140,4 +140,5 @@
 // 2026-10-23 (the scheduler's frame fallback, recorded with INLINE_BUDGET): paired, +297/+71/+75 B raw/gzip/Brotli; prior reserves kept.
 // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2, epoch1792958286, this source against the same HEAD without the change; +159/+32/+3 B raw/gzip/Brotli; prior reserves kept.
 // 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +615/+199/+137 B; prior reserves kept.
-export const INLINE_LEAN_BUDGET = { raw: 118_920, gzip: 37_346, brotli: 32_925 } as const;
+// 2026-10-26 (the 2.2 review fixes): paired Node24.22.1/npm12.0.2; +31/+21/+31 B; prior reserves kept.
+export const INLINE_LEAN_BUDGET = { raw: 118_951, gzip: 37_367, brotli: 32_956 } as const;

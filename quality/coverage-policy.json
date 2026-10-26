@@ -287,6 +287,11 @@
       "functions": 100,
       "branches": 89
     },
+    "src/doctor/readiness.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 95
+    },
     "src/events/emitter.ts": {
       "lines": 100,
       "functions": 100,
@@ -316,6 +321,11 @@
       "lines": 100,
       "functions": 100,
       "branches": 88
+    },
+    "src/inline/generator.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
     },
     "src/plugins/manager.ts": {
       "lines": 99,
@@ -411,5 +421,5 @@
       "src/inline/runtime.generated.ts"
     ]
   },
-  "$comment": "2026-10-03: Four added critical cells own legacy schema persistence, normalization, linear indexing and bounded population/teardown. Their 95/100/95 values are explicit acceptance targets, not a claimed complete coverage measurement. All existing floors and global/diff controls stay unchanged; full coverage of the final integrated source remains required. 2026-10-04: MergeNeed owns successful population reuse and retry eligibility for later accepted updates. Real same-locale relationship-change failures exposed an untested cache-validity gap; add its 100/100/100 acceptance target without changing existing global, diff or file floors. This scope addition does not claim measured coverage. 2026-10-24: these acceptance targets are enforced: vitest.config.ts spreads every criticalFiles entry into the coverage thresholds, so the Coverage job fails below them on every push."
+  "$comment": "2026-10-03: Four added critical cells own legacy schema persistence, normalization, linear indexing and bounded population/teardown. Their 95/100/95 values are explicit acceptance targets, not a claimed complete coverage measurement. All existing floors and global/diff controls stay unchanged; full coverage of the final integrated source remains required. 2026-10-04: MergeNeed owns successful population reuse and retry eligibility for later accepted updates. Real same-locale relationship-change failures exposed an untested cache-validity gap; add its 100/100/100 acceptance target without changing existing global, diff or file floors. This scope addition does not claim measured coverage. 2026-10-24: these acceptance targets are enforced: vitest.config.ts spreads every criticalFiles entry into the coverage thresholds, so the Coverage job fails below them on every push. 2026-10-26 (2.2 review): src/inline/generator.ts and src/doctor/readiness.ts become critical files, and with that part of the nightly mutation scope. The generator writes the configuration every adapter page runs on, and a silent mistake there (a gate threshold of Infinity serialized as null) reached every such page; readiness.ts reads the configuration a served page carries and decides LP0705 and LP0709. Measured: generator.ts 100/100/100, readiness.ts 100 % of lines and functions and 95.56 % of branches (86 of 90; two are the unreachable `?? ''` fallbacks of the tuple reader). The floors are those values, rounded down."
 }

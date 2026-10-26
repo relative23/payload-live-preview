@@ -370,13 +370,20 @@ export function analyzeProbe(
     ),
   );
   if (pub.body.includes(RUNTIME_MARKER)) {
+    // A page that starts its own client serves only the JSON element, which spells the name too.
+    const inline = pub.body.includes(`var ${RUNTIME_MARKER}=`);
     findings.push({
       code: DIAGNOSTIC_CODES.RuntimeOnPublicPage,
       level: 'info',
-      title: 'Runtime is also served to anonymous visitors',
-      detail:
-        'A request with no preview intent received the inline runtime. That is correct for ' +
-        "inject: 'always' and unintended for 'preview-only'.",
+      title: inline
+        ? 'Runtime is also served to anonymous visitors'
+        : 'Preview configuration is also served to anonymous visitors',
+      detail: inline
+        ? 'A request with no preview intent received the inline runtime. That is correct for ' +
+          "inject: 'always' and unintended for 'preview-only'."
+        : 'A request with no preview intent received the configuration element a page writes ' +
+          'for a client it starts itself. That is correct if the page starts the client for ' +
+          'every request, and unintended if it writes the element only for a preview.',
       remedy: '',
     });
   }
