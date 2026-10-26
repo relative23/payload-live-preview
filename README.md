@@ -33,11 +33,11 @@ One runtime serves every framework. The Astro, Next.js, SvelteKit and Nuxt adapt
 
 | Payload | Status                                     | Checked by                                                                                                                                                                |
 | ------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2.x     | supported throughout 2.x                   | the 2.32.3 wire corpus replayed in CI; real-admin release checks of the DOM runtime and the React and Vue hooks ([docs/testing.md](docs/testing.md#local-release-checks)) |
+| 2.x     | supported                                  | the 2.32.3 wire corpus replayed in CI; real-admin release checks of the DOM runtime and the React and Vue hooks ([docs/testing.md](docs/testing.md#local-release-checks)) |
 | 3.x     | supported                                  | the real admin on every push (3.92.0, three engines); the 3.85, 3.88 and 3.89 wire corpora replayed in CI                                                                 |
 | 4.x     | pre-release, the direction of this package | the 4.0.0-canary.33 wire corpus replayed in CI; the real-admin suite against `payload@beta` every night, as an early warning                                              |
 
-**Payload 4** is where this package is headed. Its pre-releases are followed as they appear, and support becomes official with the stable 4.0 release; until then the nightly run against `payload@beta` warns early and does not gate a release. The Payload 4 pre-release captured so far passes the same protocol checks as the 3.x corpora. As of 4.0.0-beta.4, Payload 4 needs Node 24.22.1 or later, and its admin Next.js 16.4 or later. Payload 2.x and 3.x stay supported throughout the 2.x line of this package.
+**Payload 4** is where this package is headed. Its pre-releases are followed as they appear, and support becomes official with the stable 4.0 release; until then the nightly run against `payload@beta` warns early and does not gate a release. The Payload 4 pre-release captured so far passes the same protocol checks as the 3.x corpora. As of 4.0.0-beta.4, Payload 4 needs Node 24.22.1 or later, and its admin Next.js 16.4 or later. Payload 2.x and 3.x stay supported. Dropping a Payload major would be a breaking change: it would come only with a major release of this package and be announced ahead in the [ADR 0007 ledger](docs/architecture/0007-v2-defaults-and-renames-ledger.md), and none is planned.
 
 What differs between Payload 2 and 3:
 
