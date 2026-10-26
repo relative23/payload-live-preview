@@ -1,8 +1,9 @@
 /**
  * The Payload 2 lane plans its browser cases from lanes.json alone: the preparation, the harness
  * run, the result check and the discovery listing read one plan per probe. These cases hold that
- * plan to the specs that write their own titles or use its keys and to the count the README
- * prints, so a claim about the lane cannot outgrow what the lane executes. The plan module runs in
+ * plan to the specs that write their own titles or use its keys and to the counts the lane README
+ * and the release checks in docs/testing.md print, so a claim about the lane cannot outgrow what
+ * the lane executes. The plan module runs in
  * its own Node process, as the lane does; it is plain ESM next to the lane, not part of the package.
  */
 import { execFileSync } from 'node:child_process';
@@ -164,21 +165,21 @@ describe('Payload 2 lane case plan', () => {
     expect(row).toContain(`${probes.guards.cases} guard`);
   });
 
-  it('prints in the README the count every variant of the population checks plans', () => {
+  it('prints in the release checks the count every variant of the population checks plans', () => {
     const { probes } = plan();
     // DOM, React and Vue, each in two modes: one count for all six variants.
     expect(probes.population.cases).toBe(probes.dom.cases);
-    const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf8');
+    const readme = readFileSync(resolve(ROOT, 'docs/testing.md'), 'utf8');
     const row = readme.split('\n').find((line) => line.startsWith('| Payload 2.32.3 |'));
     expect(row).toContain(`${probes.dom.cases} per variant, six variants`);
     const matrix = readFileSync(resolve(ROOT, 'quality/compat-matrix.json'), 'utf8');
     expect(matrix).toContain(`(${probes.dom.cases} browser cases per variant)`);
   });
 
-  it('prints in the README and the ledger the count every variant of the lifecycle checks plans', () => {
+  it('prints in the release checks and the ledger the count every variant of the lifecycle checks plans', () => {
     const { probes } = plan();
     // React and Vue, each in two modes: the DOM runtime has no lifecycle probe.
-    const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf8');
+    const readme = readFileSync(resolve(ROOT, 'docs/testing.md'), 'utf8');
     const row = readme
       .split('\n')
       .find((line) => line.startsWith('| Payload 2.32.3 |') && line.includes('lifecycle'));
@@ -187,10 +188,10 @@ describe('Payload 2 lane case plan', () => {
     expect(matrix).toContain(`(${probes.lifecycle.cases} browser cases per variant)`);
   });
 
-  it('prints in the README and the ledger the count every variant of the guards checks plans', () => {
+  it('prints in the release checks and the ledger the count every variant of the guards checks plans', () => {
     const { probes } = plan();
     // React and Vue, each in two modes, like the lifecycle checks.
-    const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf8');
+    const readme = readFileSync(resolve(ROOT, 'docs/testing.md'), 'utf8');
     const row = readme
       .split('\n')
       .find((line) => line.startsWith('| Payload 2.32.3 |') && line.includes('guards'));

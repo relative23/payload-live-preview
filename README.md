@@ -3,7 +3,7 @@
 [![CI](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node >= 20.19](https://img.shields.io/badge/node-%3E%3D20.19-brightgreen)](package.json)
-[![Payload 2.x / 3.x](https://img.shields.io/badge/Payload-2.x%20%2F%203.x-black)](https://payloadcms.com)
+[![Payload 2.x / 3.x / 4.x beta](https://img.shields.io/badge/Payload-2.x%20%2F%203.x%20%2F%204.x%20beta-black)](#compatibility)
 [![npm](https://img.shields.io/npm/v/payload-live-preview?color=cb3837&logo=npm)](https://www.npmjs.com/package/payload-live-preview)
 
 ![The Payload admin posts every keystroke; the runtime in the preview iframe patches the bound element in place, has your server render a fragment boundary, or refreshes the route](.github/social-preview.png)
@@ -12,9 +12,9 @@
 
 Payload publishes the framework-independent `@payloadcms/live-preview` client and the official `@payloadcms/live-preview-react` and `@payloadcms/live-preview-vue` wrappers. Those hooks feed a hydrated component tree; they do not own server markup outside that tree. This package covers that markup. Mark one boundary per server-rendered component, or individual fields on a static page, and edits reach the iframe as the editor types. Scalar patches and successful fragment renders need neither a rebuild nor a full-page reload; a route-level change uses the configured route refresh. Client-rendered apps can instead use this package's React or Vue entry. Its v2 sanitizer and request-time policy defaults are strict; static delivery has no request to authorize. The package has no direct dependencies; framework entries use optional peers.
 
-One runtime serves every framework, and every framework adapter's example app runs end to end in Chromium, Firefox and WebKit on every push to `main` and on pull requests. Astro has the most coverage: the widest version matrix (4.x to 7.x), the `RichText` and `PreviewBoundary` components, and the annotator as a Vite plugin (`pll-codegen annotate` itself also reads `.jsx`, `.tsx` and `.svelte`).
+One runtime serves every framework. The Astro, Next.js, SvelteKit and Nuxt adapters authorize a preview request, merge `frame-ancestors` into your CSP and render fragment boundaries on your server, and each adapter's example app runs end to end against a real Payload admin in Chromium, Firefox and WebKit on every push to `main` and on pull requests. Where the adapters differ, the difference comes from the framework: [Frameworks](#frameworks) lists it.
 
-**New here? Start with the [Astro guide](docs/astro.md), or pick your framework in the [documentation index](docs/README.md).**
+**New here?** Configure Payload, then add your framework's adapter under [Quick start](#quick-start). The [documentation index](docs/README.md) has the reading path.
 
 ## Highlights
 
@@ -30,6 +30,16 @@ One runtime serves every framework, and every framework adapter's example app ru
 - **Also in the box.** `revealEditedField` scrolls the field being typed in into view ([docs/reveal.md](docs/reveal.md)); a hydrated island keeps its subtree and re-renders itself from a `payload-live-preview:update` event ([docs/hybrid.md](docs/hybrid.md#islands-on-the-same-page)); `data-payload-owner` scopes bindings on a page that previews several documents, `PreviewBoundary` keeps an anchor for a field that is still empty, and `autoBind: 'unique'` finds bindings by value ([docs/bindings.md](docs/bindings.md)); array items render from a template through a keyed morph (`payload-live-preview/structural`); an `aria-live` region announces connect, update and disconnect; the runtime binds again after a back/forward-cache restore or a soft navigation, and the Next.js, SvelteKit and Nuxt adapters wait for hydration before the first write.
 
 ## Compatibility
+
+| Payload | Status                                     | Checked by                                                                                                                                                                |
+| ------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.x     | supported throughout 2.x                   | the 2.32.3 wire corpus replayed in CI; real-admin release checks of the DOM runtime and the React and Vue hooks ([docs/testing.md](docs/testing.md#local-release-checks)) |
+| 3.x     | supported                                  | the real admin on every push (3.92.0, three engines); the 3.85, 3.88 and 3.89 wire corpora replayed in CI                                                                 |
+| 4.x     | pre-release, the direction of this package | the 4.0.0-canary.33 wire corpus replayed in CI; the real-admin suite against `payload@beta` every night, as an early warning                                              |
+
+**Payload 4** is where this package is headed. Its pre-releases are followed as they appear, and support becomes official with the stable 4.0 release; until then the nightly run against `payload@beta` warns early and does not gate a release. The Payload 4 pre-release captured so far passes the same protocol checks as the 3.x corpora. As of 4.0.0-beta.4, Payload 4 needs Node 24.22.1 or later, and its admin Next.js 16.4 or later. Payload 2.x and 3.x stay supported throughout the 2.x line of this package.
+
+What differs between Payload 2 and 3:
 
 |                                                | Payload 2.x                                                                                                                                              | Payload 3.x                                                           |
 | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
@@ -69,24 +79,6 @@ Nuxt 4 has no row because no CI job installs it. A copy of the Nuxt example in N
 
 **A client-rendered app takes a hook.** `useLivePreviewDocument()` from `payload-live-preview/react` or `payload-live-preview/vue` returns the merged document and re-renders your tree. Payload 3 updates use the method-override merge request; Payload 2 scalar updates settle locally and raw relationships use schema-based collection GETs. A newer update aborts any request in flight; an HTTP error is refused instead of becoming the document; each hook has a session of its own, so two previews on one page keep their own documents ([docs/react.md](docs/react.md), [docs/vue.md](docs/vue.md)). The official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` hooks ship in lockstep with Payload and remain the safe default if that matters more to you; running either alongside the DOM runtime on one page: [docs/interop.md](docs/interop.md).
 
-### Local 2.1.0 release checks
-
-The following checks passed on 2026-10-23 on the package archive that was published as 2.1.0; the npm tarball differs from it only in the build timestamp. These are local results, separate from the CI jobs listed above. Browser counts include Chromium, Firefox and WebKit on Linux. `examples/payload-version-lanes` runs the Payload 2.32.3 rows, with `--probe=population`, `--probe=lifecycle` or `--probe=guards` for React and Vue.
-
-| Version        | Checked population                                                                                                                                                                                                  | Passed cases                  |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| Payload 2.32.3 | DOM, React and Vue, each with frontend-only and serverURL modes                                                                                                                                                     | 24 per variant, six variants  |
-| Payload 2.32.3 | React and Vue hook lifecycle, frontend-only and serverURL                                                                                                                                                           | 9 per variant, four variants  |
-| Payload 2.32.3 | React and Vue hook guards, frontend-only and serverURL                                                                                                                                                              | 21 per variant, four variants |
-| Node 20.19.0   | Peer-free consumer of the archive: every export without a peer under ESM and CommonJS, CLI help, inline script, signed tokens, `payload-session` and the fragment endpoint with its body, deadline and depth limits | 11 runtime cases              |
-| Next.js 16.4.2 | Webpack production preview and fragment rendering                                                                                                                                                                   | 54 browser cases              |
-| Astro 4.0.0    | Base adapter with loader and inline delivery, static output and scoped updates, two control builds                                                                                                                  | 36 browser cases              |
-| Astro 4.16.19  | Native React islands, CSP and navigation ownership                                                                                                                                                                  | 12 browser cases              |
-
-The Node row runs the official 20.19.0 binary with no framework or optional peer installed; its fragment endpoint uses a custom renderer and its session check a local `/me` stub, not a real Payload admin, and it covers no framework build, development server or browser. The Next checks use a controlled preview cookie and fragment tokens; they do not use a real Payload admin. The Payload 2 graph still has upstream audit findings, including a critical finding in the 2026-10-05 audit. Its passing preview cases establish compatibility, not a clean dependency graph. Payload 3 lifecycle and Payload 4 canary checks are not included in this table. The Payload 2 lifecycle and guards rows run development builds on Linux engines. The lifecycle row covers an owner replaced while a read is held, a document change by navigation and a reload of the preview frame. The guards row covers a late successful response of a replaced owner, messages from a foreign window and a foreign origin, a receiver switch in a running session and a sign-out in the middle of one; neither row covers a token that expires by time or a production build.
-
-The two Astro rows can be repeated from the repository. The `astro-floor-base` and `astro-floor-islands` jobs run their specs on every push in Chromium ([Astro peer floors](docs/testing.md#astro-peer-floors)); the counts above are all three engines, with loader and inline delivery at five cases each and two control builds per engine for Astro 4.0.0.
-
 ## Install
 
 ```bash
@@ -107,7 +99,8 @@ import { livePreview } from 'payload-live-preview/plugin';
 export default buildConfig({
   plugins: [
     livePreview({
-      baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:4321',
+      // Your site's origin. In development: Astro 4321, Next.js and Nuxt 3000, SvelteKit 5173.
+      baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
       collections: {
         posts: ({ data }) => `/blog/${String(data['slug'] ?? '')}`,
         services: ({ data, locale }) => `/${locale ?? 'en'}/services/${String(data['slug'] ?? '')}`,
@@ -139,9 +132,9 @@ appears after the save loads the URL the plugin's function builds from the saved
 document. `tests/real-payload/surface-create.spec.ts` checks this in Chromium,
 Firefox and WebKit.
 
-Payload 4 is still a pre-release. The plugin was measured once against
-4.0.0-beta.4, outside CI; the [compatibility list](#compatibility) says what
-that run covered and what it left out.
+Payload 4 is still a pre-release ([Compatibility](#compatibility)). The plugin
+was measured once against 4.0.0-beta.4, outside CI; the compatibility list says
+what that run covered and what it left out.
 
 Use the lower-level callback when another plugin owns the surrounding config or
 when a document may have no preview route:
@@ -153,7 +146,7 @@ export default buildConfig({
   admin: {
     livePreview: {
       url: buildLivePreviewUrl({
-        baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:4321',
+        baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
         collections: {
           posts: ({ data }) => `/blog/${String(data['slug'] ?? '')}`,
           services: ({ data, locale }) =>
@@ -186,6 +179,10 @@ strategies, and the initial draft read.
 
 ## Quick start
 
+Install the package, give the Payload admin your site's URLs ([Configure Payload](#configure-payload)), add your framework's adapter, then mark what should update. Each framework guide goes from there to a working preview and names its runnable example.
+
+The snippets read the admin origin the browser sees from `PUBLIC_PAYLOAD_ADMIN_ORIGIN` and, where they authorize, Payload's own origin from `PAYLOAD_URL`; the Next.js layout also needs the site's own origin as `SITE_ORIGIN`. The `payload-session` strategy accepts an editor signed in to that admin ([docs/authorization.md](docs/authorization.md)).
+
 ### Astro
 
 ```js
@@ -207,36 +204,151 @@ export default defineConfig({
 });
 ```
 
-Then mark what should update. On a server-rendered page that is one attribute per component — the region is rendered again from the unsaved form state, so everything in it stays correct, conditional sections and derived values included:
+The default `inline` mode writes the runtime into every page at build time, where it starts only inside the admin's preview frame. `mode: 'middleware'` decides per request with an `authorizePreview` module, as the adapters below do: [docs/astro.md](docs/astro.md).
 
-```astro
+### Next.js (App Router)
+
+```tsx
+// app/layout.tsx
+import type { ReactNode } from 'react';
+import { headers } from 'next/headers';
+import { LivePreviewScript } from 'payload-live-preview/nextjs';
+import { authorizePreviewRequest } from 'payload-live-preview/server';
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Awaited, not rendered as <LivePreviewScript />: docs/nextjs.md says why.
+  const livePreview = await LivePreviewScript({
+    request: new Request(process.env.SITE_ORIGIN!, { headers: await headers() }),
+    // A layout cannot see the query string, so the verdict is the gate.
+    inject: 'always',
+    allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+    serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+    mergeDepth: 1,
+    authorizePreview: (request) =>
+      authorizePreviewRequest(request, {
+        type: 'payload-session',
+        serverURL: process.env.PAYLOAD_URL!,
+      }),
+  });
+  return (
+    <html lang="en">
+      <head>{livePreview}</head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Awaited in the layout, the server component returns nothing for a request that is not an authorized preview. The adapter middleware merges `frame-ancestors` and marks the preview response `private, no-store`: [docs/nextjs.md](docs/nextjs.md).
+
+### SvelteKit
+
+```ts
+// src/hooks.server.ts
+import { env } from '$env/dynamic/private';
+import { env as publicEnv } from '$env/dynamic/public';
+import { livePreviewHandle } from 'payload-live-preview/sveltekit';
+import { authorizePreviewRequest } from 'payload-live-preview/server';
+
+const adminOrigin = publicEnv.PUBLIC_PAYLOAD_ADMIN_ORIGIN ?? '';
+
+export const handle = livePreviewHandle({
+  allowedOrigins: [adminOrigin],
+  // Payload 3.x: re-fetch the populated document; mergeDepth is required with serverURL.
+  serverURL: adminOrigin,
+  mergeDepth: 1,
+  // Required under the strict default: without the hook the handle refuses to
+  // start, and every route fails, not only the preview.
+  authorizePreview: (request) =>
+    authorizePreviewRequest(request, { type: 'payload-session', serverURL: env.PAYLOAD_URL ?? '' }),
+});
+```
+
+The handle authorizes the request, injects the runtime into the `<head>` of an authorized preview response and merges the CSP: [docs/sveltekit.md](docs/sveltekit.md).
+
+### Nuxt
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['payload-live-preview/nuxt-module'],
+  livePreview: {
+    authorizePreviewModule: './server/utils/live-preview-auth',
+    allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+    serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+    mergeDepth: 1,
+  },
+});
+```
+
+```ts
+// server/utils/live-preview-auth.ts
+import { authorizePreviewRequest, type PreviewRequestLike } from 'payload-live-preview/server';
+
+export default (request: PreviewRequestLike) =>
+  authorizePreviewRequest(request, {
+    type: 'payload-session',
+    serverURL: process.env.PAYLOAD_URL!,
+  });
+```
+
+The module registers a Nitro plugin and a server handler, and takes the authorization hook by module reference: [docs/nuxt.md](docs/nuxt.md).
+
+### Plain HTML
+
+```ts
+// build.ts — runs at build time, never in the browser
+import { generateInlineScript, wrapWithScriptTag } from 'payload-live-preview';
+
+const script = generateInlineScript({
+  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
+  // Payload 3.x: re-fetch the populated document; mergeDepth is required with serverURL.
+  serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
+  mergeDepth: 1,
+});
+
+const tag = wrapWithScriptTag(script); // `<script>…</script>`; pass { nonce } for a CSP nonce
+const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">${tag}</head><body>…</body></html>`;
+```
+
+The tag goes into `<head>`; the script stays inert outside the admin's preview frame: [docs/html.md](docs/html.md).
+
+### Mark what should update
+
+The attributes are plain HTML, written the same way in `.astro`, JSX, Svelte and Vue templates. On a server-rendered page that is one attribute per component — the region is rendered again from the unsaved form state, so everything in it stays correct, conditional sections and derived values included:
+
+```html
 <section data-payload-fragment="hero" data-payload-depends="title,subtitle,body">
-  <Hero {...page} />
+  <!-- the hero component, rendered by your server -->
 </section>
 ```
 
-The attribute needs a renderer behind it: a route exporting `createFragmentEndpoint()` with `authorizePreview` or `authorize`, served at request time (an SSR adapter, `prerender = false` on that route), and its path in the options above as `fragments: { endpoint: '/payload/fragment' }` ([docs/hybrid.md](docs/hybrid.md)). Without `fragments` the bindings inside the boundary are patched instead (`LP0806`), and a boundary with none inside does not update.
+The attribute needs a renderer behind it: a route exporting `createFragmentEndpoint()` from your adapter's entry, with `authorizePreview` or `authorize`, served at request time, and its path in the adapter options as `fragments: { endpoint: '/payload/fragment' }` ([docs/hybrid.md](docs/hybrid.md)). Without `fragments` the bindings inside the boundary are patched instead (`LP0806`), and a boundary with none inside does not update.
 
-On a static build there is no server to render it, so the fields are bound individually — and inside a boundary too. A direct patch retains the target element. A component render or fragment morph can retain it as well when type, key and position stay compatible, but may replace it when they do not:
+Without a server to render it — on a static build, for one — the fields are bound individually, and inside a boundary too. A direct patch retains the target element. A component render or fragment morph can retain it as well when type, key and position stay compatible, but may replace it when they do not:
 
-```astro
-<h1 data-payload-field="title">{title}</h1>
+```html
+<h1 data-payload-field="title">…</h1>
 <div data-payload-field="body">…server-rendered rich text…</div>
-<img data-payload-field="hero" alt={alt} src={url} />
+<img data-payload-field="hero" alt="…" src="…" />
 ```
 
 Which to reach for, and what each costs: [docs/bindings.md](docs/bindings.md#how-much-markup-this-actually-needs). `pll-codegen annotate` adds the unambiguous bindings and names each one it refuses, with the reason; without `--write` it only reports, and exits with `3` when it found work.
 
-That is it: the inline script detects the admin's iframe and starts patching. Rich text is written from the value shape, and a value that holds an upload or a relationship has the runtime ask Payload to fill it in ([docs/renderers.md](docs/renderers.md#media-urls)). Payload 2.x and 3.x can post raw form values, so relationship and upload fields arrive as IDs until `serverURL` with `mergeDepth` re-fetches the populated document ([docs/options.md](docs/options.md)). Injection modes, request-time middleware, authorization and the initial draft read: [docs/astro.md](docs/astro.md).
+That is it: the runtime detects the admin's iframe and starts patching. Rich text is written from the value shape, and a value that holds an upload or a relationship has the runtime ask Payload to fill it in ([docs/renderers.md](docs/renderers.md#media-urls)). The admin posts raw form values, so relationship and upload fields arrive as IDs until `serverURL` with `mergeDepth` re-fetches the populated document ([docs/options.md](docs/options.md)). Authorization and the initial draft read: your framework's guide and [docs/authorization.md](docs/authorization.md).
 
-### Other frameworks
+## Frameworks
 
-- **Next.js (App Router)** — `await LivePreviewScript(…)` in `app/layout.tsx`, the adapter middleware for headers: [docs/nextjs.md](docs/nextjs.md).
-- **SvelteKit** — `livePreviewHandle()` in `hooks.server.ts`: [docs/sveltekit.md](docs/sveltekit.md).
-- **Nuxt** — a Nitro plugin plus a server handler: [docs/nuxt.md](docs/nuxt.md).
-- **Plain HTML** — `generateInlineScript()` at build time: [docs/html.md](docs/html.md).
+|                                                          | Astro                                           | Next.js                                                          | SvelteKit                                               | Nuxt                                                    |
+| -------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
+| Decides per request: authorizes, injects, merges the CSP | `mode: 'middleware'`                            | `await LivePreviewScript(…)` and `createLivePreviewMiddleware()` | `livePreviewHandle()`                                   | `payload-live-preview/nuxt-module`                      |
+| The runtime as a hashed, cached asset                    | `mode: 'loader'`                                | `delivery: 'asset'` and `createRuntimeAssetRoute()`              | `delivery: 'asset'` and `createRuntimeAssetRoute()`     | `delivery: 'asset'` and `createRuntimeAssetRoute()`     |
+| Renders a fragment boundary with                         | Astro's container API                           | `react-dom/server`                                               | `svelte/server`                                         | `vue/server-renderer`                                   |
+| First write waits for hydration                          | islands keep their own subtree                  | yes                                                              | yes                                                     | yes                                                     |
+| Rich text and empty fields on the server                 | the `RichText` and `PreviewBoundary` components | `lexicalToHtml()` and a `data-payload-boundary` element          | `lexicalToHtml()` and a `data-payload-boundary` element | `lexicalToHtml()` and a `data-payload-boundary` element |
+| `pll-codegen annotate` reads                             | `.astro`, also as a Vite plugin                 | `.jsx`, `.tsx`                                                   | `.svelte`                                               | not `.vue` files                                        |
 
-Whatever the framework, the admin also needs your frontend's URLs: the config plugin under [Configure Payload](#configure-payload) supplies them.
+Astro also writes the runtime into a static build (`inline`, `loader`). Its `RichText` and `PreviewBoundary` components write the same markup the other frameworks write by hand with `lexicalToHtml()` and a `data-payload-boundary` element ([docs/bindings.md](docs/bindings.md)). The test depth differs: CI installs Astro 4 to 7 and Next.js 15.5 and 16, SvelteKit 2 and Nuxt 3. Nuxt 3 reached its end of life on 31 July 2026, and no job installs Nuxt 4 yet.
 
 ## Patch, fragment, route
 

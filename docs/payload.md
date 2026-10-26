@@ -8,9 +8,11 @@ runtime plugin and not a frontend adapter.
 The entry is structural: it imports neither Payload 2 nor Payload 3. The same
 transform handles the callback arguments used by Payload 2.32.3
 (`documentInfo`) and Payload 3.x (`collectionConfig` / `globalConfig`).
-Payload 4 is still a pre-release: the plugin was measured once against
-4.0.0-beta.4, outside CI, and the [compatibility list](../README.md#compatibility)
-says what that run covered and what it left out.
+Payload 4 is still a pre-release and the direction of this package: support
+becomes official with the stable 4.0 release. The plugin was measured once
+against 4.0.0-beta.4, outside CI, and the
+[compatibility list](../README.md#compatibility) says what that run covered and
+what it left out.
 
 ## Configure the panel
 
@@ -22,7 +24,8 @@ import { livePreview } from 'payload-live-preview/plugin';
 export default buildConfig({
   plugins: [
     livePreview({
-      baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:4321',
+      // Your site's origin. In development: Astro 4321, Next.js and Nuxt 3000, SvelteKit 5173.
+      baseUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
       collections: {
         posts: ({ data }) => `/blog/${String(data['slug'] ?? '')}`,
         services: ({ data, locale }) => `/${locale ?? 'en'}/services/${String(data['slug'] ?? '')}`,
