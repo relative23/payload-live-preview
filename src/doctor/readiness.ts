@@ -1,6 +1,6 @@
 /**
- * `pll doctor --v2`: read the served inline configuration and report each
- * runtime row still at its 1.x value (ADR 0007).
+ * `pll doctor --v2`: read the served configuration and report each runtime row
+ * still at its 1.x value (ADR 0007).
  *
  * An empty slot means whatever the generation that wrote the script meant by
  * it, and that is exactly what changed between 1.x and 2.0. So the script
@@ -17,7 +17,19 @@ import {
 import type { DoctorFinding, DoctorProbe } from './types';
 
 const CONFIG_MARKER = 'var __LIVE_PREVIEW_CONFIG__=';
-const DEFAULTS_SLOT = INLINE_CONFIG_KEYS.indexOf('defaults');
+const SCRIPT = /<script\b([^>]*)>([\s\S]*?)<\/script\b[^>]*>/giu;
+const CONFIG_ID = /(?:^|\s)id\s*=\s*["']?__LIVE_PREVIEW_CONFIG__(?=["'\s]|$)/u;
+const JSON_TYPE = /(?:^|\s)type\s*=\s*["']?application\/json(?=["'\s;]|$)/iu;
+
+type InlineKey = (typeof INLINE_CONFIG_KEYS)[number];
+
+/** The configuration a preview response serves, whichever way the page writes it. */
+export interface ServedConfig {
+  /** `inline`: the generator's tuple. `element`: the JSON a page writes for a client it starts itself. */
+  readonly source: 'inline' | 'element';
+  /** The option under its inline name; `undefined` when the page does not set it. */
+  value(key: InlineKey): unknown;
+}
 
 /** A runtime row of the readiness table, as a finding words it. */
 interface ReadinessRow {
@@ -69,7 +81,8 @@ const UNREADABLE: DoctorFinding = {
   code: 'LP0709',
   level: 'info',
   title: 'Could not read the inline configuration for a v2 readiness check',
-  detail: 'The preview response carried no readable `__LIVE_PREVIEW_CONFIG__` inline script.',
+  detail:
+    'The preview response carried no readable `__LIVE_PREVIEW_CONFIG__` inline script or JSON configuration element.',
   remedy:
     'Run this against a page with the inline runtime (not loader mode without a preview context). ' +
     'A preview behind authorizePreview serves it only to a request with credentials: pass them with --header, or a signed token as ?previewToken=… in the URL.',
@@ -140,6 +153,46 @@ export function readInlineConfig(body: string): readonly unknown[] | undefined {
   }
 }
 
+/**
+ * The inline tuple first, because it is what the runtime reads; else a
+ * `<script type="application/json" id="__LIVE_PREVIEW_CONFIG__">` holding an
+ * object that names the options as the client and the inline script spell
+ * them. That is how a page that starts `LivePreviewClient` itself can show the
+ * doctor its options. Never evaluated: a page controls this text.
+ * @internal
+ */
+export function readServedConfig(body: string): ServedConfig | undefined {
+  const tuple = readInlineConfig(body);
+  if (tuple !== undefined) {
+    return {
+      source: 'inline',
+      value: (key) => tuple[INLINE_CONFIG_KEYS.indexOf(key)] ?? undefined,
+    };
+  }
+  const named = readConfigElement(body);
+  if (named === undefined) return undefined;
+  return {
+    source: 'element',
+    value: (key) => (Object.hasOwn(named, key) ? (named[key] ?? undefined) : undefined),
+  };
+}
+
+function readConfigElement(body: string): Readonly<Record<string, unknown>> | undefined {
+  for (const [, attributes = '', text = ''] of body.matchAll(SCRIPT)) {
+    if (!CONFIG_ID.test(attributes)) continue;
+    if (!JSON_TYPE.test(attributes)) return undefined;
+    try {
+      const value: unknown = JSON.parse(text);
+      return typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? (value as Readonly<Record<string, unknown>>)
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 /** `'compat'` rather than `"compat"`: remedies are read as source code. */
 function literal(value: unknown): string {
   return typeof value === 'string' ? `'${value}'` : JSON.stringify(value);
@@ -186,19 +239,21 @@ function unknownGeneration(marker: unknown): DoctorFinding {
  * One `LP0709` finding per runtime row not yet at its 2.0 value. An empty slot
  * has the value of the generation the script names, and the 1.x value when it
  * names none; a generation this version does not know is not judged at all.
+ * A configuration element is written for a 2.x client, whose omitted options
+ * are the 2.0 rows unless it names `'v1'`.
  * @internal
  */
 export function analyzeV2Readiness(probe: DoctorProbe): readonly DoctorFinding[] {
-  const config = readInlineConfig(probe.previewResponse.body);
+  const config = readServedConfig(probe.previewResponse.body);
   if (config === undefined) return [UNREADABLE];
-  const marker = config[DEFAULTS_SLOT] ?? undefined;
+  const marker = config.value('defaults');
   if (marker !== undefined && marker !== 'v1' && marker !== 'v2') {
     return [unknownGeneration(marker)];
   }
-  const generation = marker;
+  const generation = marker ?? (config.source === 'element' ? 'v2' : undefined);
   const fallback = generation === 'v2' ? V2_RUNTIME_DEFAULTS : V1_RUNTIME_DEFAULTS;
   const findings = ROWS.flatMap((row) => {
-    const slot = config[INLINE_CONFIG_KEYS.indexOf(row.key)] ?? undefined;
+    const slot = config.value(row.key);
     const value = slot ?? fallback[row.key];
     if (value === V2_RUNTIME_DEFAULTS[row.key]) return [];
     const origin: Origin =

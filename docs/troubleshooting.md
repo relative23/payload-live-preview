@@ -213,15 +213,19 @@ intent, for an adapter whose `previewQueryParams` replaces the default
 the query parameter a `signed-token` strategy reads when its transport is not the
 default `previewToken`; it is treated the same way: dropped from the visitor request,
 counted as the credential, never printed. `--json` emits the report
-as data. `--v2` also reads the served inline configuration and reports every
+as data. `--v2` also reads the served configuration and reports every
 runtime row still at its `defaults: 'v1'` value as `LP0709` (referrer trust,
 message source, sanitizer policy, `skipUnchanged`). An empty slot counts as the
 value of the defaults the script names; a script without that marker (1.x,
-`2.0.0-beta.0`) is read as 1.x, with an `info` line saying so. A response without
-the text `var __LIVE_PREVIEW_CONFIG__=` (loader mode outside a preview context, a
-preview behind `authorizePreview` asked without credentials, or a page that writes
-its own configuration element) gets an `info` `LP0709` instead, and no row is
-checked. The findings are `LP0701`–`LP0710` in the table below.
+`2.0.0-beta.0`) is read as 1.x, with an `info` line saying so. A page that starts
+`LivePreviewClient` itself can show the doctor its options as JSON in a
+`<script type="application/json" id="__LIVE_PREVIEW_CONFIG__">` element, under
+the names the client takes; an option it leaves out is read as the client's 2.x
+default unless the object sets `defaults: 'v1'`. The same configuration decides
+the threshold `LP0705` is judged against. A response with neither the text
+`var __LIVE_PREVIEW_CONFIG__=` nor that element (loader mode outside a preview
+context, or a preview behind `authorizePreview` asked without credentials) gets
+an `info` `LP0709` instead, and no row is checked. The findings are `LP0701`–`LP0710` in the table below.
 
 The preview request carries `?preview=true` (or the first `--param` name),
 the parameter `buildLivePreviewUrl()` writes and the only signal the 2.0

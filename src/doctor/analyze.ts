@@ -6,8 +6,7 @@
  */
 import { DIAGNOSTIC_CODES } from '../core/diagnostic-codes';
 import { frameAncestorsAdmits, frameAncestorsOf } from './csp';
-import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
-import { analyzeV2Readiness, readInlineConfig } from './readiness';
+import { analyzeV2Readiness, readServedConfig } from './readiness';
 import type {
   DoctorContext,
   DoctorFinding,
@@ -218,17 +217,18 @@ interface ServedGate {
 }
 
 /**
- * Read from the inline configuration, because an adapter now forwards both
+ * Read from the served configuration, because an adapter now forwards both
  * options: judged against the default, a page that raised its threshold
- * would be told to raise it. A page whose script cannot be read (loader
- * mode, a client the page starts itself) is judged against the default.
+ * would be told to raise it. A page whose configuration cannot be read
+ * (loader mode, a client the page starts without a configuration element) is
+ * judged against the default.
  */
 function servedGate(body: string): ServedGate {
-  const config = readInlineConfig(body);
-  const slot = (key: (typeof INLINE_CONFIG_KEYS)[number]): unknown =>
-    config?.[INLINE_CONFIG_KEYS.indexOf(key)];
-  if (slot('disableVisibilityGate') === true) return { threshold: undefined, configured: true };
-  const threshold = slot('visibilityGateThreshold');
+  const config = readServedConfig(body);
+  if (config?.value('disableVisibilityGate') === true) {
+    return { threshold: undefined, configured: true };
+  }
+  const threshold = config?.value('visibilityGateThreshold');
   return typeof threshold === 'number'
     ? { threshold, configured: true }
     : { threshold: DEFAULT_VISIBILITY_GATE_THRESHOLD, configured: false };
