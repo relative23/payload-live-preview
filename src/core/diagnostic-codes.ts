@@ -117,7 +117,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   FragmentStrategyUnavailable: 'LP0806',
   /** A revision changed a field with no binding; `onUnfaithfulPatch` refreshed the route. */
   UnboundChangeRefresh: 'LP0807',
-  /** `onUnfaithfulPatch: 'escalate'` found no route or fragment strategy to hand an unfaithful patch to; the page keeps it. */
+  /** `onUnfaithfulPatch: 'escalate'` found no route or fragment strategy, or no boundary, to hand an unfaithful patch to; the page keeps it. */
   EscalationUnavailable: 'LP0808',
   /** A fragment inserted an Astro island the page cannot start: it never loaded the island element or that client directive. */
   IslandStartUnavailable: 'LP0809',

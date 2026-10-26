@@ -128,7 +128,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0810:
     "Once per page, under `debug`. A function given to `registerRouteRefresh()` returned nothing, so the runtime could not wait for the host's commit and re-applied the unsaved revision at once, on markup the router may still replace. Return a promise that settles after the commit: `LivePreviewRouteRefresh` does for Next's `router.refresh`, and the SvelteKit and Nuxt recipes await their data and the next tick. See ADR 0028.",
   LP0808:
-    "Once per session. Set `routeStrategy: true` (an adapter that serves the runtime asset, or the route prelude) or `fragments: { endpoint }` so a server can draw what the patch could not, or set `onUnfaithfulPatch: 'warn'` to keep the patch and say so; `inspect().fidelity.canEscalate` reports which it is.",
+    "Once per session. Set `routeStrategy: true` (an adapter that serves the runtime asset, or the route prelude) or `fragments: { endpoint }` so a server can draw what the patch could not, or set `onUnfaithfulPatch: 'warn'` to keep the patch and say so; `inspect().fidelity.canEscalate` reports which it is. With a fragment strategy and no route (a client given `strategies.fragment` alone), the line says the fields fell short outside every boundary: cover them with a `data-payload-fragment` boundary or add the route strategy.",
   LP0807:
     "Informational: the field has no `data-payload-field` anywhere on the page, so the route was refreshed instead of patched. Bind the field to patch it in place, or set `onUnfaithfulPatch: 'ignore'` to accept the stale value.",
   LP0411:

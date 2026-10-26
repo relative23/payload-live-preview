@@ -264,6 +264,47 @@ describe('a value the binding cannot represent', () => {
     expect(route.handler).toBe(false);
     runtime.destroy();
   });
+
+  // A fragment strategy is configured here, so a line saying none is would send
+  // the reader to look for a configuration that is already there.
+  it('names the missing boundary when a fragment strategy is there and covers nothing', async () => {
+    document.body.innerHTML = UNWRITABLE_TITLE;
+    const warnings: string[] = [];
+    const runtime = start({
+      strategies: { fragment: fakeFragment() },
+      warn: (...args: unknown[]) => {
+        warnings.push(String(args[0]));
+      },
+    });
+
+    await connectThenEdit({ title: 'Typed in the admin' }, { title: 'Typed again' });
+
+    const said = warnings.filter((line) => line.includes('LP0808'));
+    expect(said).toHaveLength(1);
+    expect(said[0]).not.toContain('no route or fragment strategy is configured');
+    expect(said[0]).toContain('1 field(s) fell short outside every data-payload-fragment boundary');
+    expect(said[0]).toContain('no route strategy is configured');
+    expect(said[0]).toContain("onUnfaithfulPatch: 'warn' to keep the patch and say so");
+    runtime.destroy();
+  });
+
+  it('says the same for a changed field no binding and no boundary covers', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">Server rendered</h1>';
+    const warnings: string[] = [];
+    const runtime = start({
+      strategies: { fragment: fakeFragment() },
+      warn: (...args: unknown[]) => {
+        warnings.push(String(args[0]));
+      },
+    });
+
+    await connectThenEdit({ title: 'Server rendered', callout: 'the section is not on the page' });
+
+    const said = warnings.filter((line) => line.includes('LP0808'));
+    expect(said).toHaveLength(1);
+    expect(said[0]).toContain('outside every data-payload-fragment boundary');
+    runtime.destroy();
+  });
 });
 
 /**

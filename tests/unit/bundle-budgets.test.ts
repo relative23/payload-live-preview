@@ -25,10 +25,12 @@ describe('release bundle budgets', () => {
     // 2026-10-23 (the Version PR's own build): gzip + 5 B over its measurement; raw and Brotli unchanged.
     // 2026-10-25 (a saved-only route render runs again on Payload's save): +368/+145/+113 default,
     // +159/+32/+3 lean, +368/+163/+130 route, +368/+137/+93 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 145_642, gzip: 45_801, brotli: 40_259 });
+    // 2026-10-26 (LP0808 names the missing boundary): +209/+75/+78 default, lean unchanged,
+    // +209/+88/+43 route, +209/+76/+54 fragments; reserves unchanged.
+    expect(INLINE_BUDGET).toEqual({ raw: 145_851, gzip: 45_876, brotli: 40_337 });
     expect(INLINE_LEAN_BUDGET).toEqual({ raw: 118_305, gzip: 37_147, brotli: 32_788 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 154_237, gzip: 48_624, brotli: 42_329 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 159_822, gzip: 50_582, brotli: 43_934 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 154_446, gzip: 48_712, brotli: 42_372 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 160_031, gzip: 50_658, brotli: 43_988 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {
