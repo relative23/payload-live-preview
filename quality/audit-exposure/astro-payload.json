@@ -38,8 +38,8 @@
   ],
   "callers": {
     "node_modules/astro": [
-      "7.3.2",
-      "sha512-ysTcdpGP61XZpHoMRYC/CK19DQ94qkBvzXMtXEo0gEqPNkmOU/Tv++CtWmzaI4nF2Ck8RXFdiWvdlTWa2oOr9w=="
+      "7.4.2",
+      "sha512-FAH4cdDlFaVnQGjazLTEIC5vJqGlo5XANc1wIbzQHIqAjJTll/RWTUs+SPNW1JdezG4YGxMZllaE5A41T2kzhA=="
     ],
     "node_modules/http-cache-semantics": [
       "4.3.0",
