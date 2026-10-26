@@ -368,6 +368,7 @@
   ],
   "peerDependencies": {
     "astro": ">=4.0.0 <8.0.0",
+    "payload": "^2.0.0 || ^3.0.0 || ^4.0.0-0",
     "react": ">=18",
     "react-dom": ">=18",
     "svelte": ">=5",
@@ -377,6 +378,9 @@
   },
   "peerDependenciesMeta": {
     "astro": {
+      "optional": true
+    },
+    "payload": {
       "optional": true
     },
     "react": {
