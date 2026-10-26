@@ -534,7 +534,9 @@
 // rows; raw and Brotli stay. The entry rows are recorded here, as above.
 // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2, epoch1792958286, this source against the same HEAD without the change; +368/+145/+113 B raw/gzip/Brotli; prior reserves kept.
 // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+75/+78 B; prior reserves kept.
-export const INLINE_BUDGET = { raw: 145_851, gzip: 45_876, brotli: 40_337 } as const;
+// 2026-10-26 (the merge decision reads rich text by its shape): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2): `core.cjs` +656 / +185 / +173, `core.js` +656 / +212 / +121, `index.cjs` +1268 / +391 / -1917 and `index.js` +1268 / +379 / -1910; the two index brotli budgets are not lowered, the drop is compression, not code.
+// 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+206/+173 B; prior reserves kept.
+export const INLINE_BUDGET = { raw: 146_463, gzip: 46_082, brotli: 40_510 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

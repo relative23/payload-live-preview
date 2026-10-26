@@ -138,7 +138,8 @@
 // 2026-10-23 (the scheduler's frame fallback, recorded with INLINE_BUDGET): paired, +297/+68/+117 B raw/gzip/Brotli; prior reserves kept.
 // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2, epoch1792958286, this source against the same HEAD without the change; +368/+137/+93 B raw/gzip/Brotli; prior reserves kept.
 // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+76/+54 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 160_031, gzip: 50_658, brotli: 43_988 } as const;
+// 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+199/+199 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 160_643, gzip: 50_857, brotli: 44_187 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -267,4 +268,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 160_031, gzip: 50_658, brotli: 43_9
 // 2026-10-23 (the scheduler's frame fallback, recorded with INLINE_BUDGET): paired, +297/+68/+136 B raw/gzip/Brotli; prior reserves kept.
 // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2, epoch1792958286, this source against the same HEAD without the change; +368/+163/+130 B raw/gzip/Brotli; prior reserves kept.
 // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+88/+43 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 154_446, gzip: 48_712, brotli: 42_372 } as const;
+// 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+242/+166 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 155_058, gzip: 48_954, brotli: 42_538 } as const;

@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 509,
-    "suites": 963,
-    "tests": 4386,
+    "files": 510,
+    "suites": 964,
+    "tests": 4392,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 413,
-      "suites": 854,
-      "tests": 3988,
+      "files": 414,
+      "suites": 855,
+      "tests": 3994,
       "benchmarks": 0
     }
   },
@@ -1642,7 +1642,7 @@
       "path": "tests/unit/core/lifecycle-data-merge.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 16,
+      "tests": 15,
       "benchmarks": 0
     },
     {
@@ -1769,6 +1769,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/merge-need-rich-text-shape.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
       "benchmarks": 0
     },
     {

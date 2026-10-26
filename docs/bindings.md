@@ -70,7 +70,7 @@ cannot render.
 | `data-payload-href`            | Read `href` from another field                                                                                                                                                                                                                                                      | `data-payload-href="ctaUrl"`                       |
 | `data-payload-src`             | Read `src` from another field                                                                                                                                                                                                                                                       | `data-payload-src="hero.url"`                      |
 | `data-payload-alt`             | Read `alt` from another field                                                                                                                                                                                                                                                       | `data-payload-alt="hero.alt"`                      |
-| `data-payload-richtext`        | Force Lexical rendering (usually detected from the value) and let the runtime ask Payload to fill in uploads and relationships                                                                                                                                                      | `data-payload-richtext`                            |
+| `data-payload-richtext`        | Force Lexical rendering (usually detected from the value) and ask Payload to fill in its nodes on every edit, not only when the value holds one                                                                                                                                     | `data-payload-richtext`                            |
 | `data-payload-html`            | Render the value as sanitized HTML                                                                                                                                                                                                                                                  | `data-payload-html`                                |
 | `data-payload-text`            | Let a text write replace element children. Without it a text binding whose element has element children is skipped with `LP0402`, so a styled wrapper is not destroyed                                                                                                              | `data-payload-text`                                |
 | `data-payload-array`           | Treat the value as an array                                                                                                                                                                                                                                                         | `data-payload-array`                               |
@@ -193,10 +193,11 @@ attributes (`data-payload-richtext`, `data-payload-html`,
 `data-payload-structural`, `data-payload-array`), then `<img>` → `image`,
 `<a>` → `url`, `<time>` → `date`, `<input type="checkbox|number">` →
 `checkbox`, `number`, `<input type="date|datetime-local">` → `date`. Everything else is `text`. Lexical values are
-recognized by shape, so `data-payload-field` alone renders rich text. An element that
-can hold uploads or relationships also needs `data-payload-richtext` (or
-`data-payload-type="richText"`): only then does the runtime ask Payload to fill
-those nodes in ([renderers.md](renderers.md#media-urls)).
+recognized by shape, so `data-payload-field` alone renders rich text, and a
+value that holds an upload, a relationship, a block or a link to a document has
+the runtime ask Payload to fill those nodes in
+([renderers.md](renderers.md#media-urls)). `data-payload-type="text"` writes
+the value as plain text and asks nothing.
 
 Custom renderers register through the plugin system under a namespaced key
 such as `acme:money`. What a renderer receives, how it is chosen and what a
