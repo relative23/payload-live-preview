@@ -154,24 +154,24 @@
       },
       "expectedCasesPerSurface": 12,
       "surfaces": ["react", "vue"],
-      "scope": "Fresh isolated regular dependency consumer, actual native SSR/hydration/remount/document/target and credential-free actual wire metadata. v4 remains a canary characterization with profile review required, never transferred to v3 support."
+      "scope": "Fresh isolated regular dependency consumer, actual native SSR/hydration/remount/document/target and credential-free actual wire metadata. v4 remains a pre-release characterization with profile review required, never transferred to v3 support."
     },
     "v4": {
-      "version": "4.0.0-canary.37",
-      "nodeMinimum": "24.15.0",
-      "admin": "Next16.3.4 webpack",
+      "version": "4.0.0-beta.4",
+      "nodeMinimum": "24.22.1",
+      "admin": "Next16.4.3 webpack",
       "versions": {
-        "payload": "4.0.0-canary.37",
-        "@payloadcms/next": "4.0.0-canary.37",
-        "@payloadcms/db-sqlite": "4.0.0-canary.37",
-        "@payloadcms/richtext-lexical": "4.0.0-canary.37",
-        "next": "16.3.4",
+        "payload": "4.0.0-beta.4",
+        "@payloadcms/next": "4.0.0-beta.4",
+        "@payloadcms/db-sqlite": "4.0.0-beta.4",
+        "@payloadcms/richtext-lexical": "4.0.0-beta.4",
+        "next": "16.4.3",
         "react": "19.2.8",
         "react-dom": "19.2.8",
         "vue": "3.5.42",
         "@vue/server-renderer": "3.5.42",
         "graphql": "16.14.2",
-        "@faceless-ui/modal": "3.0.1",
+        "@faceless-ui/modal": "3.0.2",
         "@faceless-ui/scroll-info": "2.0.0",
         "esbuild": "0.28.2",
         "@playwright/test": "1.62.1",
@@ -184,57 +184,57 @@
       "officialReceipts": [
         {
           "name": "payload",
-          "version": "4.0.0-canary.37",
+          "version": "4.0.0-beta.4",
           "peerDependencies": {
             "graphql": "^16.8.1"
           },
-          "nodeEngine": ">=24.15.0",
-          "primarySource": "https://registry.npmjs.org/payload/-/payload-4.0.0-canary.37.tgz",
-          "integrity": "sha512-PF2GFp9NGo0G9Un//BHWYezQwTNw6Dk9A0puEbR/nsQKyU+Fxz0ftAne2LPANAC5Rk5nchspSSObNXPNrtESoQ==",
+          "nodeEngine": ">=24.22.1",
+          "primarySource": "https://registry.npmjs.org/payload/-/payload-4.0.0-beta.4.tgz",
+          "integrity": "sha512-dBQY7gAQsQWMLnh3HabHkTHb+8KFn1LcQJh+mLUQfNcbWUU6NDl77Q8U/sNz05QmUBwkEhkLvc7MgnFKkWK5Ow==",
           "receiptSource": "registry/v4-payload.json",
-          "receiptSHA256": "0af14d19f4384ed7b7d350690a0aa97f2e17fb2e01f9da86dd4cf63ac0a68a52"
+          "receiptSHA256": "ef85fff73b9f372831ce731cb4920ee670536de8c809e86dbecb3bfb71908d0d"
         },
         {
           "name": "@payloadcms/next",
-          "version": "4.0.0-canary.37",
+          "version": "4.0.0-beta.4",
           "peerDependencies": {
-            "next": ">=16.2.6 <17.0.0",
+            "next": ">=16.4.0 <17.0.0",
             "graphql": "^16.8.1",
-            "payload": "4.0.0-canary.37"
+            "payload": "4.0.0-beta.4"
           },
-          "nodeEngine": ">=24.15.0",
-          "primarySource": "https://registry.npmjs.org/@payloadcms/next/-/next-4.0.0-canary.37.tgz",
-          "integrity": "sha512-q2RNpSJekK6xtbPS3u2WoMzBCHeaWJ3oYAz/rBYnJudf7EpOWuscpOeu2ERteS62wzIdlgIYotnYdpPLENi31w==",
+          "nodeEngine": ">=24.22.1",
+          "primarySource": "https://registry.npmjs.org/@payloadcms/next/-/next-4.0.0-beta.4.tgz",
+          "integrity": "sha512-abQ/AjGpx44vSQeTukkPE/1SgKmsdWcZjdFOrYU8ofDsHC9dc3IFQX/Yi5Cg3X395WhB09TZHB8oqbZ8r86V3Q==",
           "receiptSource": "registry/v4-next.json",
-          "receiptSHA256": "b6c06ad17c88e808c95ccbdd111c885341ff24fd0e36d5e41d372f037fa9b0c6"
+          "receiptSHA256": "23fe4be4aa9fdc6f3aa17c6422cda5a7047f11cdd1d8ee33870bf0ac8c532835"
         },
         {
           "name": "@payloadcms/db-sqlite",
-          "version": "4.0.0-canary.37",
+          "version": "4.0.0-beta.4",
           "peerDependencies": {
-            "payload": "4.0.0-canary.37"
+            "payload": "4.0.0-beta.4"
           },
           "nodeEngine": null,
-          "primarySource": "https://registry.npmjs.org/@payloadcms/db-sqlite/-/db-sqlite-4.0.0-canary.37.tgz",
-          "integrity": "sha512-TFoEiWLHGOpe+e1zCzM8WN6cm/yRrpFBYcZeXiDFUu+MsftmGsFSlv43xZssLzIIyd92VZx3KFc8G9QqGOq+ZA==",
+          "primarySource": "https://registry.npmjs.org/@payloadcms/db-sqlite/-/db-sqlite-4.0.0-beta.4.tgz",
+          "integrity": "sha512-wBYg3izzaG8AmIquo3yX0tGJgrLQNmkC/YMPHAZa2mPzVGnjnuc2b+8sHhXJm02MKf7LHd/d3pIuDYYoLfL8Ig==",
           "receiptSource": "registry/v4-db-sqlite.json",
-          "receiptSHA256": "d28e3b8f486b1156d703e6397c2d622a1a4de5cd0a7102dd7d88d34337cf3499"
+          "receiptSHA256": "007d91fd62bc55ac981622f57514f58eb28556280335db8f36d06a423462091a"
         },
         {
           "name": "@payloadcms/richtext-lexical",
-          "version": "4.0.0-canary.37",
+          "version": "4.0.0-beta.4",
           "peerDependencies": {
             "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
-            "payload": "4.0.0-canary.37",
+            "payload": "4.0.0-beta.4",
             "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1",
-            "@faceless-ui/modal": "3.0.1",
+            "@faceless-ui/modal": "3.0.2",
             "@faceless-ui/scroll-info": "2.0.0"
           },
-          "nodeEngine": ">=24.15.0",
-          "primarySource": "https://registry.npmjs.org/@payloadcms/richtext-lexical/-/richtext-lexical-4.0.0-canary.37.tgz",
-          "integrity": "sha512-J6cv5Ilvl+/HsuygR4M+g683Vu6AyClqN77GSp0suI+j1cKyIFgUPVWTVhnoX02wx1oDTRio66u93ZaTqcrjAQ==",
+          "nodeEngine": ">=24.22.1",
+          "primarySource": "https://registry.npmjs.org/@payloadcms/richtext-lexical/-/richtext-lexical-4.0.0-beta.4.tgz",
+          "integrity": "sha512-5YOj8fAd0kl7EZRv6XMkkJWWiX2PvIOo9Uwu+PI4GDY6qJyVTX2oO78kNYPDevYfY4P0tfZEn+TBItsHWD1SCg==",
           "receiptSource": "registry/v4-richtext-lexical.json",
-          "receiptSHA256": "dc5fb3d0944711800821b1f364a0a63c6711c3942873afdfbdccf9a76d8fec9e"
+          "receiptSHA256": "91b53e6ae385d2fa8198eec4df0c8fb7719995bf3afc67d45932c1da8c135e66"
         }
       ],
       "ports": {
@@ -243,7 +243,7 @@
       },
       "expectedCasesPerSurface": 12,
       "surfaces": ["react", "vue"],
-      "scope": "Fresh isolated regular dependency consumer, actual native SSR/hydration/remount/document/target and credential-free actual wire metadata. v4 remains a canary characterization with profile review required, never transferred to v3 support."
+      "scope": "Fresh isolated regular dependency consumer, actual native SSR/hydration/remount/document/target and credential-free actual wire metadata. v4 remains a pre-release characterization with profile review required, never transferred to v3 support."
     }
   },
   "separation": "Every prepare uses a new output, exact package manifest, own vendor archive, own lock and new DB. v2 never uses the v3 demo or v4 packages. v4 never contributes Node20 support. No latest/range dependency or peer-bypass option.",
@@ -255,6 +255,6 @@
     "Explicit resource release; no active mutation",
     "Fresh own DB and no earlier native probe output"
   ],
-  "v4ProfileDecision": "Observed credential-free wire shape only; existing canary33 corpus is not canary37 evidence. A production v4 profile requires a separate actual corpus and review under ADR0010.",
+  "v4ProfileDecision": "Observed credential-free wire shape only. The 4.0.0-beta.4 corpus in tests/fixtures/wire-corpus is the captured evidence for this version; a production v4 profile still requires review under ADR0010.",
   "integrationTarget": "examples/payload-version-lanes; a portable developmental fixture with no dependency trees, reports, databases, private maintainer docs or retained archives in its source tree."
 }

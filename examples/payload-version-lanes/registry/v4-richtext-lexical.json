@@ -1,17 +1,17 @@
 [
   {
-    "version": "4.0.0-canary.37",
+    "version": "4.0.0-beta.4",
     "peerDependencies": {
       "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
-      "payload": "4.0.0-canary.37",
+      "payload": "4.0.0-beta.4",
       "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1",
-      "@faceless-ui/modal": "3.0.1",
+      "@faceless-ui/modal": "3.0.2",
       "@faceless-ui/scroll-info": "2.0.0"
     },
     "engines": {
-      "node": ">=24.15.0"
+      "node": ">=24.22.1"
     },
-    "dist.integrity": "sha512-J6cv5Ilvl+/HsuygR4M+g683Vu6AyClqN77GSp0suI+j1cKyIFgUPVWTVhnoX02wx1oDTRio66u93ZaTqcrjAQ==",
-    "dist.tarball": "https://registry.npmjs.org/@payloadcms/richtext-lexical/-/richtext-lexical-4.0.0-canary.37.tgz"
+    "dist.integrity": "sha512-5YOj8fAd0kl7EZRv6XMkkJWWiX2PvIOo9Uwu+PI4GDY6qJyVTX2oO78kNYPDevYfY4P0tfZEn+TBItsHWD1SCg==",
+    "dist.tarball": "https://registry.npmjs.org/@payloadcms/richtext-lexical/-/richtext-lexical-4.0.0-beta.4.tgz"
   }
 ]

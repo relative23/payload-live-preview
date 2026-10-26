@@ -1,5 +1,5 @@
 /**
- * Keep Payload 2, stable 3 and current 4-canary testing independently repeatable.
+ * Keep Payload 2, stable 3 and current 4 pre-release testing independently repeatable.
  * Prepare/discovery are offline and light. Installs and native probes require
  * explicit coordinator resource release, exact archives and reviewed own locks.
  */
