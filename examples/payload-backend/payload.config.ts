@@ -151,7 +151,7 @@ export default buildConfig({
         overrideAccess: true,
       });
     }
-    const media = await payload.find({ collection: 'media', limit: 1 });
+    const media = await payload.find({ collection: 'media', limit: 1, overrideAccess: true });
     if (media.docs.length === 0) {
       // A file left by an earlier database would make Payload rename this one.
       rmSync(path.join(MEDIA_DIRECTORY, SEED_MEDIA.name), { force: true });
