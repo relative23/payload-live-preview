@@ -38,7 +38,9 @@ export function warnUnsupportedStrategy(
 /**
  * LP0808, once: the default asks for a server render and this page has nothing
  * to ask. Said with the count that brought it up: a page that keeps producing
- * findings is the page that needs the line, not one line per finding.
+ * findings is the page that needs the line, not one line per finding. A page
+ * with a fragment strategy and no route reaches here too, when no boundary
+ * covers the field, and is told that rather than that nothing is configured.
  */
 export function warnEscalationUnavailable(
   deps: RuntimeDeps,
@@ -47,10 +49,13 @@ export function warnEscalationUnavailable(
 ): void {
   if (state.warnedEscalationUnavailable) return;
   state.warnedEscalationUnavailable = true;
+  const shortfall = `[live-preview] LP0808: onUnfaithfulPatch: 'escalate' has nowhere to go: ${String(count)} field(s) fell short`;
+  const warnInstead = "or onUnfaithfulPatch: 'warn' to keep the patch and say so.";
   deps.warn(
-    `[live-preview] LP0808: onUnfaithfulPatch: 'escalate' has nowhere to go: ${String(count)} field(s) fell short ` +
-      'and no route or fragment strategy is configured. Set routeStrategy: true or fragments: { endpoint }, ' +
-      "or onUnfaithfulPatch: 'warn' to keep the patch and say so.",
+    deps.strategies.fragment === undefined
+      ? `${shortfall} and no route or fragment strategy is configured. Set routeStrategy: true or fragments: { endpoint }, ${warnInstead}`
+      : `${shortfall} outside every data-payload-fragment boundary, and no route strategy is configured. ` +
+          `Cover them with a boundary or add the route strategy, ${warnInstead}`,
   );
 }
 

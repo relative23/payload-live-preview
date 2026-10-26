@@ -533,7 +533,8 @@
 // 3 B under ceilings that kept no gzip reserve. Each of the five gzip ceilings is that measurement + 5 B, the reserve of the other
 // rows; raw and Brotli stay. The entry rows are recorded here, as above.
 // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2, epoch1792958286, this source against the same HEAD without the change; +368/+145/+113 B raw/gzip/Brotli; prior reserves kept.
-export const INLINE_BUDGET = { raw: 145_642, gzip: 45_801, brotli: 40_259 } as const;
+// 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +209/+75/+78 B; prior reserves kept.
+export const INLINE_BUDGET = { raw: 145_851, gzip: 45_876, brotli: 40_337 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

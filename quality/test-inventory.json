@@ -22,7 +22,7 @@
   "totals": {
     "files": 509,
     "suites": 963,
-    "tests": 4384,
+    "tests": 4386,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 413,
       "suites": 854,
-      "tests": 3986,
+      "tests": 3988,
       "benchmarks": 0
     }
   },
@@ -2188,7 +2188,7 @@
       "path": "tests/unit/core/unfaithful-patch.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 18,
+      "tests": 20,
       "benchmarks": 0
     },
     {

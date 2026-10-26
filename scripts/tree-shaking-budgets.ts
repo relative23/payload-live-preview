@@ -432,10 +432,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +25 B gzip; retain 24 B.
     // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
     // without the change: +170 B gzip; retain the reserve it had.
+    // 2026-10-26 (LP0808 names the missing boundary): Node24.22.1, the same HEAD with and
+    // without the change: +86 B gzip; retain the reserve it had.
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 55_915,
+    gzip: 56_001,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -445,10 +447,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +37 B gzip; retain 65 B.
     // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
     // without the change: +147 B gzip; retain the reserve it had.
+    // 2026-10-26 (LP0808 names the missing boundary): Node24.22.1, the same HEAD with and
+    // without the change: +73 B gzip; retain the reserve it had.
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 53_529,
+    gzip: 53_602,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -458,10 +462,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +20 B gzip; retain 24 B.
     // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
     // without the change: +172 B gzip; retain the reserve it had.
+    // 2026-10-26 (LP0808 names the missing boundary): Node24.22.1, the same HEAD with and
+    // without the change: +87 B gzip; retain the reserve it had.
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 55_898,
+    gzip: 55_985,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -490,10 +496,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // without the change: +139 B gzip; retain the reserve it had.
     // 2026-10-26 (the adapters forward the visibility gate): Node24.22.1, the same HEAD with and
     // without the change: +29 B gzip; retain the reserve it had.
+    // 2026-10-26 (LP0808 names the missing boundary): Node24.22.1, the same HEAD with and
+    // without the change: +76 B gzip; retain the reserve it had.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 58_980,
+    gzip: 59_056,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
