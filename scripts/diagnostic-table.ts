@@ -57,7 +57,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0401:
     'The attribute (`on*`, `style`, `srcdoc`, `formaction`, `id`, `name`, …) or the value (a `javascript:` or `data:` URL) is refused by design. Bind a different attribute or fix the value; the rules are in [security.md](security.md).',
   LP0402:
-    'Move `data-payload-field` to the element that holds the value, or add `data-payload-text` to replace the children anyway.',
+    "Move `data-payload-field` to the element that holds the value, or add `data-payload-text` to replace the children anyway; markup inside them, such as a `<span lang>`, is then gone until the page is rendered again. Under `onUnfaithfulPatch: 'escalate'`, the default, the skipped write is an unfaithful patch, so a server can draw the element instead and the markup stays: a `data-payload-fragment` boundary around it is rendered from the draft, and the route strategy renders the page again once Payload has saved the draft.",
   LP0403: 'Add `data-payload-array-template` to the container.',
   LP0404:
     'Give every item a stable `id`; without one items pair by position and an insert re-renders every row after it.',
