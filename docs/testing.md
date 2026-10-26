@@ -423,6 +423,28 @@ by the `astro-matrix` job, and Next.js 15.5 by the `next-matrix` job, which
 installs it over the Next.js fixture and runs the development, webpack
 production and base-path suites in Chromium.
 
+## Local release checks
+
+Checks run by hand on the package archive of a release, on this machine and apart from CI.
+
+### 2.1.0 (2026-10-23)
+
+The following checks passed on 2026-10-23 on the package archive that was published as 2.1.0; the npm tarball differs from it only in the build timestamp. These are local results, separate from the CI jobs. Browser counts include Chromium, Firefox and WebKit on Linux. `examples/payload-version-lanes` runs the Payload 2.32.3 rows, with `--probe=population`, `--probe=lifecycle` or `--probe=guards` for React and Vue.
+
+| Version        | Checked population                                                                                                                                                                                                  | Passed cases                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Payload 2.32.3 | DOM, React and Vue, each with frontend-only and serverURL modes                                                                                                                                                     | 24 per variant, six variants  |
+| Payload 2.32.3 | React and Vue hook lifecycle, frontend-only and serverURL                                                                                                                                                           | 9 per variant, four variants  |
+| Payload 2.32.3 | React and Vue hook guards, frontend-only and serverURL                                                                                                                                                              | 21 per variant, four variants |
+| Node 20.19.0   | Peer-free consumer of the archive: every export without a peer under ESM and CommonJS, CLI help, inline script, signed tokens, `payload-session` and the fragment endpoint with its body, deadline and depth limits | 11 runtime cases              |
+| Next.js 16.4.2 | Webpack production preview and fragment rendering                                                                                                                                                                   | 54 browser cases              |
+| Astro 4.0.0    | Base adapter with loader and inline delivery, static output and scoped updates, two control builds                                                                                                                  | 36 browser cases              |
+| Astro 4.16.19  | Native React islands, CSP and navigation ownership                                                                                                                                                                  | 12 browser cases              |
+
+The Node row runs the official 20.19.0 binary with no framework or optional peer installed; its fragment endpoint uses a custom renderer and its session check a local `/me` stub, not a real Payload admin, and it covers no framework build, development server or browser. The Next checks use a controlled preview cookie and fragment tokens; they do not use a real Payload admin. The Payload 2 graph still has upstream audit findings, including a critical finding in the 2026-10-05 audit. Its passing preview cases establish compatibility, not a clean dependency graph. Payload 3 lifecycle and Payload 4 canary checks are not included in this table. The Payload 2 lifecycle and guards rows run development builds on Linux engines. The lifecycle row covers an owner replaced while a read is held, a document change by navigation and a reload of the preview frame. The guards row covers a late successful response of a replaced owner, messages from a foreign window and a foreign origin, a receiver switch in a running session and a sign-out in the middle of one; neither row covers a token that expires by time or a production build.
+
+The two Astro rows can be repeated from the repository. The `astro-floor-base` and `astro-floor-islands` jobs run their specs on every push in Chromium ([Astro peer floors](#astro-peer-floors)); the counts above are all three engines, with loader and inline delivery at five cases each and two control builds per engine for Astro 4.0.0.
+
 ## Astro peer floors
 
 `astro@^4` installs the newest 4.x, so the `astro-matrix` job cannot say what the lower
