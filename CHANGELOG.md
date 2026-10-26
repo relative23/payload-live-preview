@@ -12,6 +12,7 @@
 
 - 6bfe14d: LP0808 says what is missing on a page with a fragment strategy and no route strategy. When no `data-payload-fragment` boundary covers a field that fell short, the line said that no route or fragment strategy was configured, which sent the reader looking for a configuration that was already there. It now says that not all of the fields lie inside a boundary of this document, and names the two ways out: a boundary around them, or the route strategy.
 - 5287b97: Payload 2.x support ends with payload-live-preview 3.0. Every 2.x release keeps supporting Payload 2 (tested against 2.32.3); 3.0 supports Payload 3.x and 4.x. Nothing changes in 2.x. The plan is entry 25 of the ADR 0007 ledger and a row under "Preparing for 3.0" in docs/migration.md; moving a site to Payload 3 is the migration.
+- `payload` is declared as an optional peer dependency, `^2.0.0 || ^3.0.0 || ^4.0.0-0`, so a package index can read which Payload versions this release works with. Until now the only Payload name in the manifest was a development dependency on `@payloadcms/live-preview`, which package indexes listed as "3.88.0+". npm does not install an optional peer; a project that has Payload installed outside that range, such as 1.x, gets npm's `ERESOLVE` error (measured with npm 12.0.2).
 
 ## 2.1.2
 
