@@ -1,5 +1,18 @@
 # payload-live-preview
 
+## 2.2.0
+
+### Minor Changes
+
+- a4d939e: The adapters accept `disableVisibilityGate` and `visibilityGateThreshold` and pass them to the inline script. Until now both options existed only on `LivePreviewClient` and `generateInlineScript()`, so a page served through an adapter with more than 50 bindings held its off-screen writes until they were scrolled into view, and nothing in the adapter options could change that. `pll doctor` now judges `LP0705` against the threshold the served script sets, and reports nothing when the script turns the gate off. `generateInlineScript()` now refuses a numeric option that JSON cannot write, such as `visibilityGateThreshold: Infinity` or `NaN`, instead of writing it as `null`, which the runtime read as unset; for the threshold the error points to `disableVisibilityGate: true`.
+- 7e21047: `pll doctor` reads the options of a page that starts `LivePreviewClient` itself. Such a page has no inline script to read, so `--v2` reported the configuration as unreadable, and `LP0705` judged the page against the default visibility gate even when it had raised the threshold. The doctor now also reads a `<script type="application/json" id="__LIVE_PREVIEW_CONFIG__">` element whose object names the options as the client takes them. An option left out is read as the client's 2.x default unless the object sets `defaults: 'v1'`. The inline script still wins when a page carries both, and neither is read from inside an HTML comment. When a visitor's response carries only the element, `LP0710` says the configuration reached the visitor rather than the runtime.
+- e12a6f7: The runtime asks Payload to fill in the uploads and relationships inside rich text on an element that declares no type. The writer renders a Lexical value as rich text whatever the element says, but the merge decision read only the element, so a rich-text field bound with `data-payload-field` alone was written from the bare IDs Payload's admin posts: an image inside the text was gone with the first edit, and a relationship read `#` and its collection. The decision now reads the value as well: a Lexical tree with an `upload`, `relationship` or block node, a link to a document, or a node the package does not know is asked for; a tree of paragraphs, headings, lists, quotes, code, tables and links to URLs is not, so typing plain rich text still costs no request. `data-payload-type="text"` keeps the value plain text and asks nothing. On a page whose rich text holds such nodes, typing now sends merge requests to Payload, coalesced the same way as for `data-payload-richtext`.
+
+### Patch Changes
+
+- 6bfe14d: LP0808 says what is missing on a page with a fragment strategy and no route strategy. When no `data-payload-fragment` boundary covers a field that fell short, the line said that no route or fragment strategy was configured, which sent the reader looking for a configuration that was already there. It now says that not all of the fields lie inside a boundary of this document, and names the two ways out: a boundary around them, or the route strategy.
+- 5287b97: Payload 2.x support ends with payload-live-preview 3.0. Every 2.x release keeps supporting Payload 2 (tested against 2.32.3); 3.0 supports Payload 3.x and 4.x. Nothing changes in 2.x. The plan is entry 25 of the ADR 0007 ledger and a row under "Preparing for 3.0" in docs/migration.md; moving a site to Payload 3 is the migration.
+
 ## 2.1.2
 
 ### Patch Changes

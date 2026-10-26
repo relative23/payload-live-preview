@@ -1,5 +1,0 @@
----
-'payload-live-preview': minor
----
-
-The runtime asks Payload to fill in the uploads and relationships inside rich text on an element that declares no type. The writer renders a Lexical value as rich text whatever the element says, but the merge decision read only the element, so a rich-text field bound with `data-payload-field` alone was written from the bare IDs Payload's admin posts: an image inside the text was gone with the first edit, and a relationship read `#` and its collection. The decision now reads the value as well: a Lexical tree with an `upload`, `relationship` or block node, a link to a document, or a node the package does not know is asked for; a tree of paragraphs, headings, lists, quotes, code, tables and links to URLs is not, so typing plain rich text still costs no request. `data-payload-type="text"` keeps the value plain text and asks nothing. On a page whose rich text holds such nodes, typing now sends merge requests to Payload, coalesced the same way as for `data-payload-richtext`.
