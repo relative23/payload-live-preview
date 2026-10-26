@@ -62,6 +62,14 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly debounceMs?: number;
   /** Heartbeat timeout in ms. Default `0` (off): the Payload admin sends no keepalive. */
   readonly heartbeatMs?: number;
+  /** Apply every update regardless of viewport position. Default `false`. */
+  readonly disableVisibilityGate?: boolean;
+  /**
+   * Binding count above which off-screen updates wait until their element
+   * scrolls into view. Default `50`. A preview nobody scrolls needs it raised,
+   * or `disableVisibilityGate`.
+   */
+  readonly visibilityGateThreshold?: number;
   /** Skip bindings whose value did not change. Default `true`; `defaults: 'v1'` restores `false`. */
   readonly skipUnchanged?: boolean;
   /** Scroll the preview to the field being edited. Default `false`. */

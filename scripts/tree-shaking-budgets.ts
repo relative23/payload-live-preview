@@ -488,10 +488,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 58_570 → 58_755, +185 B gzip; retain the 57 B it had.
     // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
     // without the change: +139 B gzip; retain the reserve it had.
+    // 2026-10-26 (the adapters forward the visibility gate): Node24.22.1, the same HEAD with and
+    // without the change: +29 B gzip; retain the reserve it had.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 58_951,
+    gzip: 58_980,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

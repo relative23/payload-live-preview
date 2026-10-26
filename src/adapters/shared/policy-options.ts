@@ -82,6 +82,12 @@ export function inlineScriptConfig(
     ...(options.debug !== undefined ? { debug: options.debug } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
+    ...(options.disableVisibilityGate !== undefined
+      ? { disableVisibilityGate: options.disableVisibilityGate }
+      : {}),
+    ...(options.visibilityGateThreshold !== undefined
+      ? { visibilityGateThreshold: options.visibilityGateThreshold }
+      : {}),
     ...(resolved.skipUnchanged !== undefined ? { skipUnchanged: resolved.skipUnchanged } : {}),
     ...(options.scopeBindingsByOwner !== undefined
       ? { scopeBindingsByOwner: options.scopeBindingsByOwner }
