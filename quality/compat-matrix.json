@@ -340,7 +340,7 @@
       "feature": "server handle, base live preview and asset delivery",
       "version": {
         "kind": "exact",
-        "value": "2.70.2",
+        "value": "2.70.3",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -366,7 +366,7 @@
       "feature": "native fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "2.70.2",
+        "value": "2.70.3",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -392,7 +392,7 @@
       "feature": "production preview, hydrated navigation and real-admin unsaved output",
       "version": {
         "kind": "exact",
-        "value": "2.70.2",
+        "value": "2.70.3",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -894,7 +894,7 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
       "version": {
         "kind": "exact",
-        "value": "2.70.2",
+        "value": "2.70.3",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -1009,7 +1009,7 @@
       "feature": "document merge hook on a Next.js page against the real Payload admin",
       "version": {
         "kind": "exact",
-        "value": "19.2.7",
+        "value": "19.3.1",
         "package": "react",
         "source": {
           "kind": "lockfile",
@@ -1035,7 +1035,7 @@
       "feature": "document merge composable on a Nuxt page against the real Payload admin",
       "version": {
         "kind": "exact",
-        "value": "3.5.43",
+        "value": "3.5.44",
         "package": "vue",
         "source": {
           "kind": "lockfile",
@@ -1202,7 +1202,7 @@
       "feature": "afterNavigate commit, invalidation and streamed binding replay",
       "version": {
         "kind": "exact",
-        "value": "2.70.2",
+        "value": "2.70.3",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -1383,7 +1383,7 @@
       "fixture": "examples/sveltekit-payload",
       "tested": [
         {
-          "version": "2.70.2",
+          "version": "2.70.3",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E",
@@ -1481,7 +1481,7 @@
       "peer": ">=18",
       "job": "hook-matrix",
       "floor": "18.0.0",
-      "current": "19.2.8",
+      "current": "19.3.1",
       "suites": [
         "tests/unit/adapters/react-hook.test.tsx",
         "tests/unit/adapters/react-route-refresh.test.tsx",
@@ -1494,7 +1494,7 @@
       "peer": ">=3.3",
       "job": "hook-matrix",
       "floor": "3.3.0",
-      "current": "3.5.42",
+      "current": "3.5.44",
       "suites": [
         "tests/unit/adapters/vue-composable.test.ts",
         "tests/unit/core/hydration-vue.test.ts",
@@ -1507,7 +1507,7 @@
       "peer": ">=5",
       "job": "hook-matrix",
       "floor": "5.0.0",
-      "current": "5.56.9",
+      "current": "5.57.3",
       "suites": [
         "tests/unit/adapters/sveltekit-fragments-real.test.ts",
         "tests/unit/adapters/sveltekit-fragments.test.ts"
