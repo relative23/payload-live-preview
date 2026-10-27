@@ -12,6 +12,7 @@ import {
   expectImageLoaded,
   waitForPopulation,
 } from './upload-media';
+import { openLivePreviewPanel } from './live-preview-panel';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs';
@@ -36,13 +37,7 @@ async function openPreview(page: Page): Promise<void> {
   // Not networkidle: WebKit can keep a form-state POST the admin aborted in Playwright's
   // in-flight count, and the page then never idles (CI run 40096404670). Wait for the toggler.
   await expect(page.locator('.live-preview-toggler')).toBeVisible({ timeout: 15_000 });
-  const panel = page.locator('.live-preview-window');
-  const isOpen = async (): Promise<boolean> =>
-    panel.evaluate((el) => el instanceof HTMLElement && el.offsetWidth > 0).catch(() => false);
-  if (!(await isOpen())) {
-    await page.locator('.live-preview-toggler').click();
-    await expect.poll(isOpen, { timeout: 15_000 }).toBe(true);
-  }
+  await openLivePreviewPanel(page);
   await expect(page.locator(PREVIEW_IFRAME)).toBeVisible({ timeout: 60_000 });
 }
 

@@ -7,6 +7,7 @@
  * and an admin that has the two collections (`create`).
  */
 import { expect, test, type FrameLocator, type Page } from '@playwright/test';
+import { openLivePreviewPanel } from './live-preview-panel';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4475';
 const ADMIN_ORIGIN = 'http://localhost:3001';
@@ -123,14 +124,7 @@ async function expectNoPreview(page: Page): Promise<void> {
 
 /** The Live Preview panel open and the runtime in its frame started: the admin's next message is one it hears. */
 async function openPreview(page: Page): Promise<FrameLocator> {
-  // The toggle is a per-user preference and may already be open.
-  const panel = page.locator('.live-preview-window');
-  const isOpen = async (): Promise<boolean> =>
-    panel.evaluate((el) => el instanceof HTMLElement && el.offsetWidth > 0).catch(() => false);
-  if (!(await isOpen())) {
-    await page.locator('.live-preview-toggler').click();
-    await expect.poll(isOpen, { timeout: 15_000 }).toBe(true);
-  }
+  await openLivePreviewPanel(page);
   await expect(page.locator(PREVIEW_IFRAME)).toBeVisible(COLD);
   const preview = page.frameLocator(PREVIEW_IFRAME);
   // A read that lands while the frame navigates loses its context: that is "not yet".

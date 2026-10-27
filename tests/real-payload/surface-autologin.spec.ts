@@ -7,6 +7,7 @@
  * autoLogin; `playwright.real-payload.config.ts` starts both (`nextjs-autologin`).
  */
 import { expect, test, type Page, type Response } from '@playwright/test';
+import { openLivePreviewPanel } from './live-preview-panel';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs-autologin';
@@ -28,13 +29,7 @@ async function openAdmin(page: Page): Promise<void> {
 
 /** The Live Preview panel open and the preview's frame in it. */
 async function openPanel(page: Page): Promise<void> {
-  const panel = page.locator('.live-preview-window');
-  const isOpen = async (): Promise<boolean> =>
-    panel.evaluate((el) => el instanceof HTMLElement && el.offsetWidth > 0).catch(() => false);
-  if (!(await isOpen())) {
-    await page.locator('.live-preview-toggler').click();
-    await expect.poll(isOpen, { timeout: 15_000 }).toBe(true);
-  }
+  await openLivePreviewPanel(page);
   await expect(page.locator(PREVIEW_IFRAME)).toBeVisible({ timeout: 60_000 });
   await expect(page.locator(PREVIEW_IFRAME)).toHaveAttribute('src', /[?&]preview=true(?:&|$)/u);
 }
