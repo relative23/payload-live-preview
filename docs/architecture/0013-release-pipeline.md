@@ -334,6 +334,13 @@ refused both braces exceptions as matching no current advisory, and they were
 removed. The node-forge exception in Nuxt is the only active one. The root keeps
 its reviewed descriptor and digest as a clean project.
 
+node-forge 1.4.1 was published on 2026-10-27, outside the advisory's affected
+range (<= 1.4.0), and its changelog lists the fix for this advisory. The Nuxt
+example's lockfile moved to it within Listhen's `^1.4.0` range. Its audit then
+reported no high or critical finding, the gate refused the exception as unused,
+and the exception was removed. The register has no active exception now. The
+Nuxt example keeps its reviewed descriptor and digest as a clean project.
+
 ### 11. Publish runs from the certified workflow source (2026-10-04)
 
 Changing `GITHUB_SHA` and `GITHUB_REF` for the npm process changes the claimed
