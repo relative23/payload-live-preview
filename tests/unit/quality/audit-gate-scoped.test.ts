@@ -151,6 +151,25 @@ const model = JSON.parse(
     { exposure: string | null; exposureSha256: string | null; exceptions: AuditException[] }
   >;
 };
+// The last exception, node-forge in Nuxt, left the register on 2026-10-27 when the example moved to
+// node-forge 1.4.1, outside the advisory's range. The recorded Nuxt audit predates that, so the register
+// cases add back the entry that bound it.
+const RECORDED_FORGE: AuditException = {
+  id: FORGE,
+  package: 'node-forge',
+  version: '1.4.0',
+  integrity:
+    'sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==',
+  graphSha256: 'c6c7ced624023c52e41e4bbdc648b79ae2807fee08c7e9f3102668346a7b593e',
+  reason: 'No patched node-forge 1 release.',
+  reachability: 'Development commands keep HTTPS and PFX disabled.',
+  expires: '2026-11-21',
+};
+const withRecordedForge = (): typeof model => {
+  const value = structuredClone(model);
+  value.projects['examples/nuxt-payload']?.exceptions.push(structuredClone(RECORDED_FORGE));
+  return value;
+};
 describe('scoped audit register', () => {
   it('retains a reviewed clean-project descriptor without creating an exception', () => {
     const value = structuredClone(model);
@@ -180,7 +199,8 @@ describe('scoped audit register', () => {
   it.each([
     { project: 'examples/nuxt-payload', name: 'nuxt-payload', leaf: 'node-forge', id: FORGE },
   ])('binds the measured $project/$leaf graph', ({ project, leaf, id, name }) => {
-    const entry = model.projects[project]?.exceptions.find(
+    const register = withRecordedForge();
+    const entry = register.projects[project]?.exceptions.find(
       (value) => value.package === leaf && value.id === id,
     );
     expect(entry).toBeDefined();
@@ -194,7 +214,7 @@ describe('scoped audit register', () => {
       version: entry.version,
       integrity: entry.integrity,
     });
-    const selected = selectAuditProject(model, process.cwd(), project, TODAY);
+    const selected = selectAuditProject(register, process.cwd(), project, TODAY);
     expect(
       evaluateAuditGate(
         findings.filter((finding) => finding.id === id),
@@ -234,7 +254,12 @@ describe('scoped audit register', () => {
       evaluateAuditGate([], { schemaVersion: 2, exceptions: selected.project.exceptions }, TODAY)
         .ok,
     ).toBe(true);
-    const nuxt = selectAuditProject(model, process.cwd(), 'examples/nuxt-payload', TODAY);
+    const nuxt = selectAuditProject(
+      withRecordedForge(),
+      process.cwd(),
+      'examples/nuxt-payload',
+      TODAY,
+    );
     expect(
       evaluateAuditGate([], { schemaVersion: 2, exceptions: nuxt.project.exceptions }, TODAY).ok,
     ).toBe(false);
@@ -248,28 +273,29 @@ describe('scoped audit register', () => {
   );
 
   it('accepts the last UTC day and rejects expiry even in an inactive project', () => {
-    const [lastDay] = Object.values(model.projects)
+    const register = withRecordedForge();
+    const [lastDay] = Object.values(register.projects)
       .flatMap((project) => project.exceptions.map((exception) => exception.expires))
       .sort();
     expect(lastDay).toBeDefined();
     const nextDay = new Date(Date.parse(`${lastDay}T00:00:00Z`) + 86_400_000);
     expect(() =>
       selectAuditProject(
-        model,
+        register,
         process.cwd(),
         'examples/pure-html',
         new Date(`${lastDay}T23:59:59Z`),
       ),
     ).not.toThrow();
-    expect(() => selectAuditProject(model, process.cwd(), 'examples/pure-html', nextDay)).toThrow(
-      'expired',
-    );
+    expect(() =>
+      selectAuditProject(register, process.cwd(), 'examples/pure-html', nextDay),
+    ).toThrow('expired');
   });
 
   it.each(['2026-02-30', '2026-13-01', '2028-02-30', '2026-10-1', '2026-10-10T00:00:00Z'])(
     'rejects a non-calendar ISO expiry %s even in an inactive project',
     (expires) => {
-      const value = structuredClone(model);
+      const value = withRecordedForge();
       const entry = value.projects['examples/nuxt-payload']?.exceptions[0];
       expect(entry).toBeDefined();
       Object.assign(entry ?? {}, { expires });
@@ -280,7 +306,7 @@ describe('scoped audit register', () => {
   it.each(['id', 'version', 'integrity', 'graphSha256', 'reason', 'reachability', 'expires'])(
     'rejects malformed inactive %s',
     (field) => {
-      const value = structuredClone(model);
+      const value = withRecordedForge();
       const entry = value.projects['examples/nuxt-payload']?.exceptions[0];
       expect(entry).toBeDefined();
       Object.assign(entry ?? {}, { [field]: '' });
@@ -289,7 +315,7 @@ describe('scoped audit register', () => {
   );
 
   it('rejects duplicate declarations and a missing descriptor binding', () => {
-    const value = structuredClone(model);
+    const value = withRecordedForge();
     const nuxt = value.projects['examples/nuxt-payload'];
     expect(nuxt).toBeDefined();
     nuxt?.exceptions.push({ ...nuxt.exceptions[0]! });
@@ -306,15 +332,16 @@ describe('scoped audit register', () => {
 
   it('fails a new GHSA instead of covering it by leaf package name', () => {
     const findings = findingsFromAudit(fixture('nuxt-payload')).filter(({ id }) => id === FORGE);
-    const selected = selectAuditProject(model, process.cwd(), 'examples/nuxt-payload', TODAY);
+    const selected = selectAuditProject(
+      withRecordedForge(),
+      process.cwd(),
+      'examples/nuxt-payload',
+      TODAY,
+    );
+    const register = { schemaVersion: 2, exceptions: selected.project.exceptions };
+    expect(evaluateAuditGate(findings, register, TODAY).ok).toBe(true);
     const changed = findings.map((finding) => ({ ...finding, id: BRACES }));
-    expect(
-      evaluateAuditGate(
-        changed,
-        { schemaVersion: 2, exceptions: selected.project.exceptions },
-        TODAY,
-      ).ok,
-    ).toBe(false);
+    expect(evaluateAuditGate(changed, register, TODAY).ok).toBe(false);
   });
 
   it('binds caller versions, integrities, paths and parent fix suggestions', () => {
