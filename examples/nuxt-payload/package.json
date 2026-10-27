@@ -17,7 +17,7 @@
     "@vitejs/plugin-vue": "^6.0.8",
     "nuxt": "^3.19.2",
     "typescript": "^5.9.3",
-    "vue": "^3.5.22"
+    "vue": "^3.5.44"
   },
   "allowScripts": {
     "esbuild@0.28.2": true,

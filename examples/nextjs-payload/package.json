@@ -11,8 +11,8 @@
   "dependencies": {
     "next": "^16.4.2",
     "payload-live-preview": "file:../..",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

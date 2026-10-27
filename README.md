@@ -54,14 +54,14 @@ What differs between Payload 2, 3 and 4:
 | --------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Astro     | >=4.0.0 <8.0.0                                                               | 7.4.2 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
 | Next.js   | App Router, 15.5 and 16                                                      | 16.4.3 (chromium, firefox, webkit); 15.x (chromium)                               |
-| SvelteKit | 2.x                                                                          | 2.70.2 (chromium, firefox, webkit)                                                |
+| SvelteKit | 2.x                                                                          | 2.70.3 (chromium, firefox, webkit)                                                |
 | Nuxt      | 3.x (end of life since 31 July 2026: kept working, not officially supported) | 3.21.11 (chromium, firefox, webkit)                                               |
 
 Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
 Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 2 → 5/6/7/8, Nuxt 3 → 7), measured 2026-09-06. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
-The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the `hook-matrix` job runs after installing the floors over the lockfile (React 18.0.0, Vue 3.3.0, Svelte 5.0.0), and at what the lockfile installs (React 19.2.8, Vue 3.5.42, Svelte 5.56.9), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by `svelte/compiler` and rendered by the real `svelte/server`.
+The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the `hook-matrix` job runs after installing the floors over the lockfile (React 18.0.0, Vue 3.3.0, Svelte 5.0.0), and at what the lockfile installs (React 19.3.1, Vue 3.5.44, Svelte 5.57.3), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by `svelte/compiler` and rendered by the real `svelte/server`.
 
 - Payload 2.32.3: wire corpus captured from a real admin and replayed in tests/integration/wire-corpus.test.ts, plus fieldSchemaJSON typing in tests/integration/schema-driven.test.ts; local release checks also exercise the real admin in DOM, React and Vue previews, each in frontend-only and serverURL modes (24 browser cases per variant), and run the React hook and the Vue composable through three lifecycle journeys (9 browser cases per variant) and seven guard journeys (21 browser cases per variant) in development builds; the legacy dependency graph retains upstream audit findings.
 - Payload 3.85.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
