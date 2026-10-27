@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { expect, test, type Frame, type Page } from '@playwright/test';
+import { openLivePreviewPanel } from './live-preview-panel';
 
 /**
  * Records the wire corpus (roadmap 1.8.0): every message the REAL Payload
@@ -71,13 +72,7 @@ test.describe('wire corpus', () => {
     // editor has: under Payload 4.0.0-beta.4 the first message carried `tags: 0`.
     await expect(page.locator('#field-subtitle')).toHaveValue('Seeded subtitle');
     await page.waitForLoadState('networkidle');
-    const panel = page.locator('.live-preview-window');
-    const isOpen = async (): Promise<boolean> =>
-      panel.evaluate((el) => el instanceof HTMLElement && el.offsetWidth > 0).catch(() => false);
-    if (!(await isOpen())) {
-      await page.locator('.live-preview-toggler').click();
-      await expect.poll(isOpen, { timeout: 15_000 }).toBe(true);
-    }
+    await openLivePreviewPanel(page);
     await expect(page.locator(PREVIEW_IFRAME)).toBeVisible({ timeout: 30_000 });
     const preview = page.frameLocator(PREVIEW_IFRAME);
     await expect(preview.locator('[data-payload-field="title"]')).toBeVisible();

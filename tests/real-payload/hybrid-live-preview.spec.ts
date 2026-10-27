@@ -1,4 +1,5 @@
 import { expect, test, type Frame, type Page } from '@playwright/test';
+import { openLivePreviewPanel } from './live-preview-panel';
 
 /**
  * The hybrid strategies against a REAL Payload admin (roadmap 1.7.0
@@ -36,14 +37,8 @@ test.describe('real Payload admin → hybrid fixture', () => {
     await expect(page.locator('#field-title')).toBeVisible();
     // Not networkidle: the hybrid preview keeps the network busy (fragment and
     // route fetches), so the page never idles. Wait for the toggler instead.
-    const panel = page.locator('.live-preview-window');
     await expect(page.locator('.live-preview-toggler')).toBeVisible({ timeout: 15_000 });
-    const isOpen = async (): Promise<boolean> =>
-      panel.evaluate((el) => el instanceof HTMLElement && el.offsetWidth > 0).catch(() => false);
-    if (!(await isOpen())) {
-      await page.locator('.live-preview-toggler').click();
-      await expect.poll(isOpen, { timeout: 15_000 }).toBe(true);
-    }
+    await openLivePreviewPanel(page);
     await expect(page.locator(PREVIEW_IFRAME)).toBeVisible({ timeout: 30_000 });
     await expect
       .poll(

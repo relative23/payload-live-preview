@@ -11,6 +11,7 @@
  * the surface named by `PLP_REAL_PAYLOAD_TARGET` and the admin beside it.
  */
 import { expect, test, type Page } from '@playwright/test';
+import { openLivePreviewPanel } from './live-preview-panel';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs';
@@ -38,14 +39,7 @@ test.describe(`real Payload admin → ${SURFACE} live preview`, () => {
     // in-flight count, and the page then never idles (CI run 40096404670). Wait for the toggler.
     await expect(page.locator('.live-preview-toggler')).toBeVisible({ timeout: 15_000 });
 
-    // The toggle is a per-user preference and may already be open.
-    const panel = page.locator('.live-preview-window');
-    const isOpen = async (): Promise<boolean> =>
-      panel.evaluate((el) => el instanceof HTMLElement && el.offsetWidth > 0).catch(() => false);
-    if (!(await isOpen())) {
-      await page.locator('.live-preview-toggler').click();
-      await expect.poll(isOpen, { timeout: 15_000 }).toBe(true);
-    }
+    await openLivePreviewPanel(page);
     const iframe = page.locator(PREVIEW_IFRAME);
     await expect(iframe).toBeVisible({ timeout: 60_000 });
     await expect(iframe).toHaveAttribute('src', /[?&]preview=true(?:&|$)/u);

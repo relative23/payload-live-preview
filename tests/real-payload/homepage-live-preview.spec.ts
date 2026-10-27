@@ -25,6 +25,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { openLivePreviewPanel } from './live-preview-panel';
 
 const previewPort = process.env['PLP_E2E_PORT'] ?? '4173';
 /** The Payload the admin runs: the nightly watch installs 3.x's latest and 4's beta over the fixture. */
@@ -51,17 +52,7 @@ test.describe('real Payload admin → live preview iframe', () => {
     // Let the admin hydrate so the toggler's click handler is attached.
     await page.waitForLoadState('networkidle');
 
-    // Drive the Live Preview panel to OPEN. Payload persists the toggle as
-    // a per-user preference, so it may already be open on a warm profile;
-    // decide from the panel's rendered size (a 0×0 panel is closed) rather
-    // than the iframe, which its loader keeps hidden until `onLoad` fires.
-    const panel = page.locator('.live-preview-window');
-    const isOpen = async (): Promise<boolean> =>
-      panel.evaluate((el) => el instanceof HTMLElement && el.offsetWidth > 0).catch(() => false);
-    if (!(await isOpen())) {
-      await page.locator('.live-preview-toggler').click();
-      await expect.poll(isOpen, { timeout: 15_000 }).toBe(true);
-    }
+    await openLivePreviewPanel(page);
 
     // A cold Astro build and preview start can take several seconds before the
     // loader reveals the iframe, so allow generous headroom here.
