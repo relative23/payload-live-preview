@@ -250,7 +250,7 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   packs the dist-tag, imports the real `dist/index.js` into a synthetic window
   and compares each observation against the one recorded when the comparison was
   written. Deliberately outside `npm run check` and `npm run build`: it needs the
-  network and someone else's registry. It runs in the nightly protocol watch,
+  network and someone else's registry. It runs in the daily protocol watch,
   where a red run usually means upstream fixed something and a row in
   `docs/react.md` has to go.
 - `scripts/diagnostic-table.ts` · `npm run diagnostics:check` — the
@@ -388,7 +388,7 @@ What is proven about the Payload wire protocol, from the outside in:
    verbatim from a Payload 3.85 admin through the real `MessageBus` and
    runtime, envelope quirks included: `collectionSlug` absent on a global,
    `externallyUpdatedRelationship: null`, `_status`/`id` alongside real fields.
-4. **Nightly protocol watch** (`.github/workflows/protocol-watch.yml`) executes
+4. **Daily protocol watch** (`.github/workflows/protocol-watch.yml`) executes
    the real `@payloadcms/live-preview@latest` and `@beta` (Payload 4.0
    pre-releases) against the corpus and asserts that their behavior — the
    `ready` handshake, event discriminators, the `mergeData` REST request —
@@ -413,7 +413,7 @@ integration tests and `fieldSchemaJSON` typing;
 real-admin E2E on every push; 4.0.0-beta.4 by a corpus captured from a real
 Payload 4 admin (the fixture stays on 3.x) and by one measurement of the config
 plugin against a real admin, outside CI ([compatibility list](../README.md#compatibility)); `latest`
-and the 4.0 pre-releases by the nightly watch — wire format, sender source and
+and the 4.0 pre-releases by the daily watch — wire format, sender source and
 a real admin — the latter as early warning only. The
 four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all
 three engines; the Astro
