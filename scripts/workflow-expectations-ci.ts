@@ -474,7 +474,7 @@ export const CRITICAL_GATES: WorkflowSpec = {
         {
           uses: 'actions/setup-node',
           with: {
-            'node-version': '22.23.2',
+            'node-version': '22.23.4',
             'cache-dependency-path': 'package-lock.json\nexamples/*/package-lock.json',
           },
         },
