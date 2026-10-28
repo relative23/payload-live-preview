@@ -109,6 +109,20 @@ describe('a field of a variable nothing in the file ties to the previewed docume
   });
 });
 
+describe('a link', () => {
+  // A5: a `tel:` link and a `mailto:` footer link. An `<a>` binding is a
+  // `url` binding, which writes the value into `href` too, so `mailto:` or the
+  // link's own target would be lost on the first message.
+  it('is refused, with the reason', async () => {
+    const outcome = await annotate(
+      `${PAGE_ANCHOR}\n<a href={\`mailto:\${page.email}\`}>{page.email}</a>`,
+    );
+
+    expect(outcome.bound).toEqual([]);
+    expect(reasons(outcome)).toEqual([expect.stringContaining('writes the value into `href`')]);
+  });
+});
+
 describe('a binding written as a spread', () => {
   // A6: a hero and an info card on two sites. The gated helper's spread was
   // not seen as a binding, so the scan proposed a second, ungated
@@ -141,5 +155,56 @@ describe('a binding written as a spread', () => {
 
     expect(outcome.bound).toEqual([]);
     expect(reasons(outcome)).toEqual([expect.stringContaining('spreads attributes')]);
+  });
+});
+
+describe('code that is not template', () => {
+  // A3: 19 report lines on two sites about the content of `<script>` and
+  // `<style>` blocks, a layout's and a section's among them.
+  it.each([
+    ['a script', "<script>\n  import { boot } from './boot';\n  boot({ page });\n</script>"],
+    ['a style sheet', '<style>\n  h1 { color: red; }\n</style>'],
+    [
+      'an Astro style with variables',
+      '<style define:vars={{ accent }}>\n  h1 { color: var(--accent); }\n</style>',
+    ],
+  ])('is not read in %s', async (_label, block) => {
+    const outcome = await annotate(`${PAGE_ANCHOR}\n${block}`);
+
+    expect(outcome.refusals).toEqual([]);
+  });
+
+  it.each([
+    ['a string in a script', "<script>el.innerHTML = '<b>{page.subtitle}</b>';</script>"],
+    ['a comment', '<!-- <p>{page.subtitle}</p> -->'],
+    ['Astro frontmatter', "---\nconst sample = '<p>{page.subtitle}</p>';\n---"],
+  ])('is never annotated in %s', async (_label, block) => {
+    // The plugin has always skipped frontmatter; the codemod read it, so the
+    // two routes did not decide the same way.
+    const source = block.startsWith('---')
+      ? `${block}\n${PAGE_ANCHOR}`
+      : `${PAGE_ANCHOR}\n${block}`;
+
+    const outcome = await annotate(source);
+
+    expect(outcome.bound).toEqual([]);
+  });
+});
+
+describe('the document title', () => {
+  // A4: a head component's `<title>{page.title}</title>` became `title`. The
+  // head belongs to the route strategy, and the title there is usually the
+  // field plus a suffix the template adds elsewhere.
+  it.each([
+    [
+      'in the head',
+      `<html><head><title>{page.title}</title></head><body>${PAGE_ANCHOR}</body></html>`,
+    ],
+    ['in a head component', `<title>{page.title}</title>\n<meta name="x" />\n${PAGE_ANCHOR}`],
+  ])('is refused %s', async (_label, template) => {
+    const outcome = await annotate(template);
+
+    expect(outcome.bound).toEqual([]);
+    expect(reasons(outcome)).toEqual([expect.stringContaining('`<title>`')]);
   });
 });

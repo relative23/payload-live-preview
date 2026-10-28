@@ -18,7 +18,7 @@
  * route look alike, and on four sites 16 of the 17 bindings proposed without
  * it were wrong, most of them a field of some other document. Everything
  * else — an interpolation next to text, a call, a path the schema does not
- * know, a component instead of an element — is reported instead, with
+ * know, a link, a component instead of an element — is reported instead, with
  * the reason. A wrong `data-payload-field` is worse than a missing one: it
  * makes the runtime write a value into markup that was never meant for it.
  *
@@ -76,6 +76,14 @@ export interface ScanOptions {
 const ELEMENT =
   /<([a-z][a-z0-9-]*)((?:"[^"]*"|'[^']*'|\{(?:[^{}]|\{[^{}]*\})*\}|[^>"'{])*)>([^<]*)<\/\1\s*>/gu;
 
+/**
+ * Code inside a template: a script, a style sheet and a comment. Their braces
+ * are JavaScript and CSS, and markup in them is a string, so the element scan
+ * never reads them — the same three the doctor strips before it counts.
+ */
+const NOT_TEMPLATE =
+  /<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>|<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>|<!--[\s\S]*?-->/giu;
+
 /** The whole content is one interpolation, and nothing else. */
 const ONLY_INTERPOLATION = /^\s*\{([^{}]*)\}\s*$/u;
 
@@ -116,6 +124,37 @@ const LOOP_VARIABLES: readonly RegExp[] = [
   /\bfor\s*\(\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s+of\b/gu,
   /\{#each\s[^}]*?\sas\s+([A-Za-z_$][\w$]*)/gu,
 ];
+
+const FENCE = '---';
+
+/** Everything before the second `---`, and where the template starts. @internal */
+export function splitFrontmatter(code: string): {
+  readonly frontmatter: string;
+  readonly bodyOffset: number;
+} {
+  if (!code.startsWith(FENCE)) return { frontmatter: '', bodyOffset: 0 };
+  const end = code.indexOf(`\n${FENCE}`, FENCE.length);
+  if (end === -1) return { frontmatter: '', bodyOffset: 0 };
+  const bodyOffset = end + 1 + FENCE.length;
+  return { frontmatter: code.slice(FENCE.length, end), bodyOffset };
+}
+
+/** Every character but a line break as a space, so offsets and lines stay the file's own. */
+function blank(text: string): string {
+  return text.replace(/[^\n]/gu, ' ');
+}
+
+/**
+ * The source as the element scan reads it: Astro's frontmatter — TypeScript,
+ * where a template in a string is not the document — and the code blocks
+ * blanked out. A source that does not open with a fence has none, so this
+ * holds for every template language.
+ */
+function templateOnly(source: string): string {
+  const { bodyOffset } = splitFrontmatter(source);
+  const body = source.slice(bodyOffset).replace(NOT_TEMPLATE, blank);
+  return `${blank(source.slice(0, bodyOffset))}${body}`;
+}
 
 function loopVariables(source: string): ReadonlySet<string> {
   const names = new Set<string>();
@@ -204,10 +243,16 @@ function refusalReason(expression: string, file: FileContext): string | undefine
 }
 
 /**
- * Why this element cannot carry a binding whatever it prints: its attributes
- * decide, before the content is read.
+ * Why this element cannot carry a binding whatever it prints: its tag or its
+ * attributes decide, before the content is read.
  */
-function elementRefusal(attributes: string): string | undefined {
+function elementRefusal(tag: string, attributes: string): string | undefined {
+  if (tag === 'title') {
+    return '`<title>` belongs to the document head, which only a route refresh updates, and usually carries more than the field';
+  }
+  if (tag === 'a') {
+    return 'an `<a>` binding writes the value into `href` as well as the text — bind the label on an element inside the link, or set data-payload-type="text" by hand';
+  }
   if (ANY_SPREAD.test(attributes)) {
     return 'the element spreads attributes the scan cannot read, and one of them may already bind it';
   }
@@ -241,7 +286,7 @@ export function scanTemplate(source: string, options: ScanOptions): ScanResult {
   const candidates: AnnotationCandidate[] = [];
   const refusals: AnnotationRefusal[] = [];
   const items = loopVariables(source);
-  const elements = [...source.matchAll(ELEMENT)];
+  const elements = [...templateOnly(source).matchAll(ELEMENT)];
   const file: FileContext = {
     known: new Set(options.entities.flatMap((entity) => [...entity])),
     entities: options.entities,
@@ -254,7 +299,7 @@ export function scanTemplate(source: string, options: ScanOptions): ScanResult {
     // Bound already, by an attribute or a helper's spread: yours wins, always.
     if (bindingOf(attributes) !== null) continue;
     if (ANY_INTERPOLATION.exec(content) === null) continue;
-    const refusedElement = elementRefusal(attributes);
+    const refusedElement = elementRefusal(tag, attributes);
     if (refusedElement !== undefined) {
       refusals.push({ line, reason: refusedElement, expression: describe(content) });
       continue;

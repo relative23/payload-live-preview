@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 515,
-    "suites": 979,
-    "tests": 4470,
+    "suites": 982,
+    "tests": 4474,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 419,
-      "suites": 870,
-      "tests": 4072,
+      "suites": 873,
+      "tests": 4076,
       "benchmarks": 0
     }
   },
@@ -1116,8 +1116,8 @@
     {
       "path": "tests/unit/codegen/annotate-refusals.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 6,
+      "suites": 5,
+      "tests": 10,
       "benchmarks": 0
     },
     {
