@@ -6,7 +6,7 @@
     "examples/astro-hybrid/src/components/H05ContextProbe.astro": "1e178fea25cea4cec78c5ed59d7482498a5f82e5c290b7ceeaa964b12b32cfc4",
     "examples/astro-hybrid/src/components/Hero.astro": "5355cf34a68f1fd30c90beac40f5dfb41372abcaba3ad912fccd78d44a7c08d9",
     "examples/astro-hybrid/src/components/h05-foreign-component.ts": "48a7c27a60de98d879fa5fc57a0fa4214a00ca57b5b12e768f07fb8f41b7f9cb",
-    "examples/astro-hybrid/src/document.ts": "cf47d3e029a875a39bc73251635fdfd731aa2eaff84d90586f6487b549888826",
+    "examples/astro-hybrid/src/document.ts": "cd75a80b756d50171a35eee12a7bbe010c5548355d0f3ab5392c349abc5a8e82",
     "examples/astro-hybrid/src/env.d.ts": "9c9283a414423d9223e5ea86941b142443b8af7a007f77612dc2c098de2d2500",
     "examples/astro-hybrid/src/h05-context.ts": "63de8912cd840d02057fdc3ae57c5d6d824b13c103f288e485cdd1c5ae8025af",
     "examples/astro-hybrid/src/middleware.ts": "1d195ecd9a8680413b1682b86dd167543b333226dee0cdf75da9f4b3ba32547e",

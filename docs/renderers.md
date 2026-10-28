@@ -267,17 +267,28 @@ preview to produce exactly that markup, not the package's default. Pass the
 renderer to the client:
 
 ```ts
-import { sanitizeHtml } from 'payload-live-preview';
-import { lexicalToHtml, registerLexicalNode, type LexicalRoot } from 'payload-live-preview/lexical';
+import {
+  lexicalToHtml,
+  registerLexicalNode,
+  type LexicalRoot,
+  type SanitizerDocument,
+} from 'payload-live-preview/lexical';
 
 registerLexicalNode(
   'callout',
   (node, ctx) => `<aside class="callout">${ctx.renderChildren(node.children ?? [])}</aside>`,
 );
-export const renderRichText = (value: unknown) => lexicalToHtml(value as LexicalRoot);
 
-// server: sanitizeHtml(renderRichText(doc))
-// client: new LivePreviewClient({ renderRichText })
+// The browser sanitizes with its own document; a server render passes one.
+export const renderRichText = (value: unknown, document?: SanitizerDocument) =>
+  lexicalToHtml(value as LexicalRoot, {
+    ...(document === undefined ? {} : { document }),
+    requireDocument: true,
+  });
+
+// server, a document per request (jsdom):
+//   renderRichText(doc.body, new JSDOM('<!doctype html><html><body></body></html>').window.document)
+// client: new LivePreviewClient({ renderRichText: (value) => renderRichText(value) })
 ```
 
 `lexicalToHtml` and `registerLexicalNode` come from the same entry on purpose.
@@ -290,10 +301,13 @@ through the root entry, so block renderers registered with the root's
 `registerBlockRenderer` apply there, and nodes registered with
 `registerLexicalNode` do not.
 
-The runtime passes the renderer's output through the sanitizer. Sanitize the
-server output with the same `sanitizeHtml()` and the two are byte-equal. The
-inline runtime (adapters) cannot carry a function; `renderRichText` is a
-`LivePreviewClient` / `initLivePreview` option.
+The runtime passes the renderer's output through the sanitizer, and the server
+render goes through the same `sanitizeHtml()` with the document it is handed.
+With `requireDocument: true` a server call that has no document throws instead
+of returning the custom node's markup unsanitized. The client gets a wrapper
+because the runtime calls `renderRichText` with a context object as its second
+argument. The inline runtime (adapters) cannot carry a function;
+`renderRichText` is a `LivePreviewClient` / `initLivePreview` option.
 
 ### Custom Lexical nodes and the sanitizer
 

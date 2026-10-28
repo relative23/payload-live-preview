@@ -1,16 +1,28 @@
+import { JSDOM } from 'jsdom';
 import {
   isLexicalContent,
   lexicalToHtml,
   lexicalToPlainText,
   registerLexicalNode,
+  type SanitizerDocument,
 } from 'payload-live-preview/lexical';
 
 // A custom Lexical node the site defines: rendered by the server inside the
-// fragment, which is exactly what patching cannot do for an unknown node.
+// fragment, which is exactly what patching cannot do for an unknown node. The
+// built-in nodes escape what they interpolate; a custom one has to do the same.
 registerLexicalNode('callout', (node) => {
   const text = typeof node['text'] === 'string' ? node['text'] : '';
-  return `<aside class="callout" data-testid="callout">${text}</aside>`;
+  return `<aside class="callout">${escapeText(text)}</aside>`;
 });
+
+/**
+ * A DOM for the sanitizer, made for each render: SSR has no global document,
+ * and two requests in flight must not share one. With `requireDocument` a
+ * render that has none throws instead of returning unsanitised markup.
+ */
+function sanitizerDocument(): SanitizerDocument {
+  return new JSDOM('<!doctype html><html><body></body></html>').window.document;
+}
 
 /** The document the fixture renders; the admin's unsaved state overrides it. */
 export interface HeroDocument {
@@ -41,7 +53,9 @@ function renderBody(body: unknown): { bodyHtml: string; words: number } {
       ? body
       : '';
   const words = text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
-  const bodyHtml = isLexicalContent(body) ? lexicalToHtml(body) : `<p>${escapeText(text)}</p>`;
+  const bodyHtml = isLexicalContent(body)
+    ? lexicalToHtml(body, { document: sanitizerDocument(), requireDocument: true })
+    : `<p>${escapeText(text)}</p>`;
   return { bodyHtml, words };
 }
 
