@@ -58,7 +58,7 @@ export function diagnoseOrphanFields(
       report(context, isAddressable, rawName, locale, value);
       continue;
     }
-    if (!isPlainObject(value) || isAddressable(rawName)) continue;
+    if (!isPlainObject(value) || isAddressable(rawName) || isJoinResult(value)) continue;
     // A group with no anchor anywhere. `admission.priceFrom` is as bindable as
     // `slug` and was reported as neither, so the report names the scalar
     // instead of staying silent about the object around it. One level only:
@@ -80,7 +80,7 @@ export function diagnoseOrphanFields(
   const uncovered = uncoveredDocumentPaths(cache, fields, locale, ownerKeys, strategies);
   for (const { path, value } of uncovered) {
     if (isBindableScalar(value)) report(context, isAddressable, path, locale, value);
-    if (!isPlainObject(value)) continue;
+    if (!isPlainObject(value) || isJoinResult(value)) continue;
     for (const [childName, childValue] of Object.entries(value)) {
       if (isBindableScalar(childValue)) {
         report(context, isAddressable, `${path}.${childName}`, locale, childValue);
@@ -117,6 +117,15 @@ function report(
 function isBindableScalar(value: unknown): boolean {
   const type = typeof value;
   return type === 'string' || type === 'number' || type === 'boolean' || type === 'bigint';
+}
+
+/**
+ * What Payload puts in a join field: other documents and the page metadata
+ * beside them (`hasNextPage`, `totalDocs`). A join is virtual, so nothing in it
+ * is a field of this document an editor types into or a page anchors.
+ */
+function isJoinResult(value: Record<string, unknown>): boolean {
+  return Array.isArray(value['docs']) && typeof value['hasNextPage'] === 'boolean';
 }
 
 /** A group, as opposed to an array or a null: the one shape worth looking into. */

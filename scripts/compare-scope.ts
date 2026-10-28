@@ -58,7 +58,9 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // 2026-10-16: +1 measured code line makes the body-less branch of the population body refuse
 // when its interruption marker wins the race, as the stream branch already does; before, the
 // marker could come back as the parsed value. No limit, capability or request path changes.
-export const REVIEWED_SCOPE_LINES = 1488;
+// 2026-10-29: +11 measured code lines in origin.ts read the frame's parent where the browser names it
+// (`location.ancestorOrigins`) and send the ready handshake there instead of to the guessed localhost ports.
+export const REVIEWED_SCOPE_LINES = 1499;
 
 interface OurFile {
   readonly file: string;

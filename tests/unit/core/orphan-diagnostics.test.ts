@@ -50,8 +50,9 @@ function afterUpdate(): Promise<void> {
     });
   });
 }
-function start(): void {
+function start(subfieldCoverage: 'descendant' | 'declared' = 'descendant'): void {
   runtime = new LivePreviewRuntime({
+    subfieldCoverage,
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],
@@ -123,5 +124,39 @@ describe('a field with no binding', () => {
     await done;
     expect(lines('LP0203')[0]).toContain('field "meta.title"');
     expect(lines('LP0201')[0]).toContain('the empty field "meta.description"');
+  });
+
+  it('is not a join field, whose value lists other documents', async () => {
+    // Measured on a site: LP0203 named `events.hasNextPage`, the page metadata
+    // Payload puts beside a join field's documents. A join is not a field of
+    // this document the editor can type into, and neither is anything in it.
+    const done = afterUpdate();
+    post({ title: 'new', events: { docs: [12, 13], hasNextPage: false, totalDocs: 2 } });
+    await done;
+    expect(lines('LP0203')).toEqual([]);
+    expect(lines('LP0201')).toEqual([]);
+    expect(runtime?.inspect().bindings.orphanFields).toEqual([]);
+  });
+
+  it('still names a group that only looks partly like one', async () => {
+    const done = afterUpdate();
+    post({
+      title: 'new',
+      files: { docs: ['brochure.pdf'], label: 'Brochure' },
+      pager: { hasNextPage: true, label: 'More' },
+    });
+    await done;
+    expect(lines('LP0203').some((line) => line.includes('"files.label"'))).toBe(true);
+    expect(lines('LP0203').some((line) => line.includes('"pager.label"'))).toBe(true);
+  });
+
+  it("is not a join inside a group either, under subfieldCoverage: 'declared'", async () => {
+    runtime?.destroy();
+    document.body.innerHTML = '<h1 data-payload-field="venue.name">old</h1>';
+    start('declared');
+    const done = afterUpdate();
+    post({ venue: { name: 'Hall', events: { docs: [], hasNextPage: false, totalDocs: 0 } } });
+    await done;
+    expect(lines('LP0203')).toEqual([]);
   });
 });

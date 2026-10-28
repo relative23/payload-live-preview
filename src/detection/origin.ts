@@ -1,7 +1,8 @@
 /**
  * Which admin origins the runtime trusts: explicit ones always, the
  * `document.referrer` origin only when none is configured, any localhost port
- * in development. See docs/security.md §1.
+ * in development. See docs/security.md §1. The handshake goes to the trusted
+ * origins, and to guessed localhost ports only while the browser names no parent.
  */
 
 import { isDevMode, isInIframe } from './environment';
@@ -33,6 +34,7 @@ const enum OriginSlot {
   AllowLocalhost,
   ReferrerWasAvailable,
   LockedOrigin,
+  ParentOrigin,
 }
 
 type OriginState = [
@@ -41,7 +43,19 @@ type OriginState = [
   allowLocalhost: boolean,
   referrerWasAvailable: boolean,
   lockedOrigin: string | undefined,
+  parentOrigin: string | undefined,
 ];
+
+/**
+ * The framing parent's origin, where the browser names it: Chromium and WebKit
+ * do (`location.ancestorOrigins`), Firefox does not. Never a trust source, only
+ * where the handshake is worth sending.
+ */
+function readParentOrigin(): string | undefined {
+  if (typeof location === 'undefined') return undefined;
+  const ancestors = (location as { readonly ancestorOrigins?: ArrayLike<string> }).ancestorOrigins;
+  return ancestors?.[0];
+}
 
 /** The trusted-origin policy: the union of the candidate sources, narrowed to one by `lockOrigin()`. */
 export class OriginDetector {
@@ -74,6 +88,7 @@ export class OriginDetector {
       allowLocalhost,
       referrerOrigin !== undefined,
       undefined,
+      readParentOrigin(),
     ];
   }
 
@@ -114,7 +129,12 @@ export class OriginDetector {
     return this.#state[OriginSlot.LockedOrigin];
   }
 
-  /** Every origin the `ready` handshake is broadcast to; the localhost pattern expands to the common dev ports. */
+  /**
+   * Every origin the `ready` handshake is broadcast to. The localhost pattern
+   * expands to the common dev ports, a guess that costs a console error per
+   * wrong port, so a parent the browser names replaces it: that origin when the
+   * pattern trusts it, none when it is not on localhost.
+   */
   enumerate(): string[] {
     if (this.#state[OriginSlot.LockedOrigin] !== undefined) {
       return [this.#state[OriginSlot.LockedOrigin]];
@@ -126,7 +146,10 @@ export class OriginDetector {
     ) {
       result.add(this.#state[OriginSlot.ReferrerOrigin]);
     }
-    if (this.#state[OriginSlot.AllowLocalhost]) {
+    const parent = this.#state[OriginSlot.ParentOrigin];
+    if (this.#state[OriginSlot.AllowLocalhost] && parent !== undefined) {
+      if (LOCALHOST_PATTERN.test(parent)) result.add(parent);
+    } else if (this.#state[OriginSlot.AllowLocalhost]) {
       for (const port of LOCALHOST_HANDSHAKE_PORTS) {
         result.add(`http://localhost:${String(port)}`);
         result.add(`http://127.0.0.1:${String(port)}`);

@@ -134,6 +134,30 @@ test('5,000 bindings: a burst of updates leaves the newest value on screen and n
   await expect.poll(async () => (await snapshot(frame)).scheduler.pending).toBe(0);
 });
 
+test('300 bindings: a hidden empty-field anchor is written and shown at once', async ({ page }) => {
+  // The gate holds a write until its element intersects the viewport, and a
+  // hidden element never does. Measured on a site: a button label emptied and
+  // typed again stayed away for 20 s. This anchor sits at the top of the page,
+  // where the reader looks, and is hidden only because its field is empty.
+  const frame = await openScenario(page, '300');
+  await frame.evaluate(() => {
+    document
+      .querySelector('ol')
+      ?.insertAdjacentHTML(
+        'afterbegin',
+        '<li><span data-testid="anchor" data-payload-field="label" data-payload-boundary hidden></span></li>',
+      );
+  });
+  await expect.poll(async () => (await snapshot(frame)).bindings.fields).toBe(301);
+  expect((await snapshot(frame)).scheduler.visibilityGateActive).toBe(true);
+
+  await post(page, { label: 'Book a table' });
+
+  const label = frame.getByTestId('anchor');
+  await expect(label).toBeVisible();
+  await expect(label).toHaveText('Book a table');
+});
+
 test('a large keyed array reorders and relabels under one message', async ({ page }) => {
   const frame = await openScenario(page, 'array');
   const rows = frame.locator('[data-testid="rows"] > li');
