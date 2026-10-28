@@ -16,22 +16,24 @@ const PACKAGE_JSON = resolve(ROOT, 'package.json');
 
 // Budgets include narrow headroom for patch-level correctness fixes while still
 // failing the unminified 1.0.4 artifacts. Public names and source maps are retained.
+// 2026-10-28 (1.8.2): every row the sanitizer reaches rose by exactly what its
+// own writer adds, measured in paired builds at one commit; cushions unchanged.
 const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
-  'adapters/astro/index.js': { raw: 78_500, gzip: 24_700, brotli: 21_900 },
-  'adapters/astro/middleware-entry.js': { raw: 74_500, gzip: 23_400, brotli: 20_700 },
-  'adapters/nextjs/index.js': { raw: 75_000, gzip: 23_400, brotli: 20_700 },
-  'adapters/nuxt/index.js': { raw: 75_000, gzip: 23_400, brotli: 20_700 },
-  'adapters/sveltekit/index.js': { raw: 74_000, gzip: 23_300, brotli: 20_600 },
+  'adapters/astro/index.js': { raw: 78_760, gzip: 24_805, brotli: 21_975 },
+  'adapters/astro/middleware-entry.js': { raw: 74_760, gzip: 23_499, brotli: 20_767 },
+  'adapters/nextjs/index.js': { raw: 75_260, gzip: 23_499, brotli: 20_767 },
+  'adapters/nuxt/index.js': { raw: 75_260, gzip: 23_499, brotli: 20_772 },
+  'adapters/sveltekit/index.js': { raw: 74_260, gzip: 23_407, brotli: 20_688 },
   'codegen-astro.js': { raw: 13_000, gzip: 4_300, brotli: 3_900 },
   'codegen-cli.js': { raw: 15_000, gzip: 4_800, brotli: 4_300 },
   'codegen.cjs': { raw: 13_000, gzip: 4_100, brotli: 3_700 },
   'codegen.js': { raw: 13_000, gzip: 4_100, brotli: 3_700 },
   'doctor-cli.js': { raw: 10_500, gzip: 4_400, brotli: 3_800 },
   'doctor.js': { raw: 8_700, gzip: 3_700, brotli: 3_150 },
-  'core.cjs': { raw: 78_000, gzip: 25_000, brotli: 22_000 },
-  'core.js': { raw: 78_000, gzip: 25_000, brotli: 22_000 },
-  'index.cjs': { raw: 159_500, gzip: 49_500, brotli: 37_000 },
-  'index.js': { raw: 159_000, gzip: 49_200, brotli: 37_000 },
+  'core.cjs': { raw: 78_264, gzip: 25_085, brotli: 22_082 },
+  'core.js': { raw: 78_264, gzip: 25_088, brotli: 22_088 },
+  'index.cjs': { raw: 160_044, gzip: 49_791, brotli: 37_078 },
+  'index.js': { raw: 159_543, gzip: 49_473, brotli: 37_147 },
   'payload.cjs': { raw: 1_100, gzip: 600, brotli: 500 },
   'payload.js': { raw: 1_100, gzip: 600, brotli: 500 },
 };
