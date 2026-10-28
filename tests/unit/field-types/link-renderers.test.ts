@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { resolveFieldType } from '@core/cache';
 import { emptyContext, makeTarget, rendererNamed } from './helpers';
 
 describe('url renderer', () => {
@@ -72,6 +73,29 @@ describe('url renderer', () => {
     el.href = 'https://before.example.com/';
     rendererNamed('url').render(makeTarget(el, { hrefField: 'linkTo' }), 'Visit', emptyContext());
     expect(el.getAttribute('href')).toBe('https://before.example.com/');
+  });
+});
+
+// Site audit of 27.10.2026, A5. docs/bindings.md: `<a>` without a type is a `url`
+// binding, and a `url` binding writes its value into `href` as well as the text.
+describe('a link label bound on the <a> itself', () => {
+  it('turns up in href, as the <a> heuristic says', () => {
+    const el = document.createElement('a');
+    el.setAttribute('href', '/de/impressum');
+    el.setAttribute('data-payload-field', 'legalNav.0.label');
+    expect(resolveFieldType(el)).toBe('url');
+    rendererNamed('url').render(makeTarget(el), 'Impressum', emptyContext());
+    expect(el.getAttribute('href')).toBe('Impressum');
+  });
+
+  it('leaves href alone under data-payload-type="text"', () => {
+    const el = document.createElement('a');
+    el.setAttribute('href', '/de/impressum');
+    el.setAttribute('data-payload-type', 'text');
+    expect(resolveFieldType(el)).toBe('text');
+    rendererNamed('text').render(makeTarget(el), 'Impressum', emptyContext());
+    expect(el.getAttribute('href')).toBe('/de/impressum');
+    expect(el.textContent).toBe('Impressum');
   });
 });
 

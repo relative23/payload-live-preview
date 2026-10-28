@@ -197,7 +197,10 @@ when the admin sends one (Payload 2.x), else from the element: the marker
 attributes (`data-payload-richtext`, `data-payload-html`,
 `data-payload-structural`, `data-payload-array`), then `<img>` → `image`,
 `<a>` → `url`, `<time>` → `date`, `<input type="checkbox|number">` →
-`checkbox`, `number`, `<input type="date|datetime-local">` → `date`. Everything else is `text`. Lexical values are
+`checkbox`, `number`, `<input type="date|datetime-local">` → `date`. Everything else is `text`.
+A `url` binding writes its value into `href` as well as into the text, so a
+link label bound on the `<a>` itself turns up in `href`: bind the label on an
+element inside the link, or set `data-payload-type="text"` on the `<a>`. Lexical values are
 recognized by shape, so `data-payload-field` alone renders rich text, and a
 value that holds an upload, a relationship, a block or a link to a document has
 the runtime ask Payload to fill those nodes in
