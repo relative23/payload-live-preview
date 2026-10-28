@@ -22,7 +22,7 @@
   "totals": {
     "files": 514,
     "suites": 975,
-    "tests": 4449,
+    "tests": 4451,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 418,
       "suites": 866,
-      "tests": 4051,
+      "tests": 4053,
       "benchmarks": 0
     }
   },
@@ -2405,7 +2405,7 @@
       "path": "tests/unit/field-types/html-renderers.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 29,
+      "tests": 31,
       "benchmarks": 0
     },
     {

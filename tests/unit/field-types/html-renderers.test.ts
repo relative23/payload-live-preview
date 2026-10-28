@@ -176,6 +176,31 @@ describe('richText renderer', () => {
         expect(wrapper?.children[0]?.textContent).toBe('intro');
       });
 
+      // Site audit of 27.10.2026, B1: a document of one element lost the template's wrapper.
+      it.each([
+        ['a document of one paragraph', '<p>old</p>'],
+        ['a document that shrinks to one paragraph', '<p>one</p><p>two</p>'],
+      ])('keeps the wrapper around %s', (_case, inside) => {
+        const el = document.createElement('div');
+        el.innerHTML = `<div class="prose">${inside}</div>`;
+        const wrapper = el.firstElementChild;
+        rendererNamed('richText').render(makeTarget(el), LEXICAL_DOC, emptyContext());
+        expect(el.firstElementChild).toBe(wrapper);
+        expect(el.innerHTML).toBe('<div class="prose"><p>hi</p></div>');
+      });
+
+      it('does not take a block of its own tag for a wrapper in a document of one element', () => {
+        registerBlockRenderer('note', () => '<div class="lp-block-note">new</div>');
+        const el = document.createElement('div');
+        el.innerHTML = '<div class="note">old</div>';
+        rendererNamed('richText').render(
+          makeTarget(el),
+          { root: { children: [{ type: 'block', fields: { blockType: 'note' } }] } },
+          emptyContext(),
+        );
+        expect(el.innerHTML).toBe('<div class="lp-block-note">new</div>');
+      });
+
       it('does not take a lone paragraph for a wrapper when the document gains a second', () => {
         const el = document.createElement('div');
         el.innerHTML = '<p>only</p>';
