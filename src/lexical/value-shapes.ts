@@ -13,7 +13,15 @@ export interface MediaShape {
   readonly width?: number;
   readonly height?: number;
   readonly sizes?: Readonly<
-    Record<string, { readonly url?: string; readonly width?: number; readonly height?: number }>
+    Record<
+      string,
+      {
+        readonly url?: string;
+        readonly width?: number;
+        readonly height?: number;
+        readonly mimeType?: string;
+      }
+    >
   >;
 }
 

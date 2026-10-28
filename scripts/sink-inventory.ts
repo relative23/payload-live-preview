@@ -110,8 +110,9 @@ export const ATTRIBUTE_SINKS: ReadonlyMap<string, AttributeSinkJustification> = 
   ["src/field-types/relationship.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
   ["src/field-types/upload.ts::element.setAttribute('href', url)", 'url-validated'],
   // Both callers (`image.ts`, `upload.ts`) hand over `outcome.url` from
-  // `acceptUrl`; every `srcset` candidate is checked here again.
-  ['src/field-types/media.ts::img.src = url', 'url-validated'],
+  // `acceptUrl`; a size chosen in its place and every `srcset` candidate is
+  // checked here again (`sizeSources`).
+  ['src/field-types/media.ts::img.src = chosen?.url ?? url', 'url-validated'],
   ["src/field-types/media.ts::img.setAttribute('srcset', srcset)", 'url-validated'],
   // `escapeCssUrl` stops the break-out from `url(...)`; `acceptUrl` before it
   // stopped the scheme.

@@ -109,7 +109,9 @@ change the page must show, not a message to ignore.
 
 A value that carries no usable URL, a media object without `url` or a bare
 relation id, is the third question, and the renderers differ in what they have
-left to write. `image` and `upload` have nothing else, so they leave the element
+left to write. For `image` that includes a string that names no address: one
+with whitespace in it, or with no `/`, `.` or `:` (alt text, a document id).
+`image` and `upload` have nothing else, so they leave the element
 untouched and count as **no** write; the runtime treats that as a patch that
 fell short, and `onUnfaithfulPatch` decides what follows (`LP0411`).
 `relationship` writes its label, or the bare id, as text and keeps `href`. `url`
@@ -140,13 +142,23 @@ What "clears" means per renderer:
 ### Responsive images
 
 Setting `src` alone leaves a server-rendered `srcset` winning, so the
-`<img>` never changes. `image` and `upload` therefore rebuild the whole set:
-each `PayloadMedia.sizes` entry with a `url` and a numeric `width` becomes a
-candidate (checked with `isSafeUrl`, commas and spaces percent-encoded), and
-the base `url`/`width` is appended when the media has a numeric `width`. Media
-with no usable `sizes` removes
-`srcset` **and** `sizes`. An author-written `sizes` layout hint survives a
-rebuild — it describes the layout, not the media.
+`<img>` never changes. `image` and `upload` therefore rebuild the whole set,
+from the picture the element shows. That is the `sizes` entry whose URL the
+element's `src` is, the size the template chose, and after the editor picks
+another image the size the last write chose; otherwise it is the original.
+`src` becomes that size's URL. Each `PayloadMedia.sizes` entry with a `url`
+and a numeric `width` becomes a candidate (checked with `isSafeUrl`, commas and
+spaces percent-encoded) when it has that picture's shape and format, and the
+base `url`/`width` is appended on the same terms when the media has a numeric
+`width`. A crop to another aspect ratio or a size in another `mimeType` is
+left out, and of two candidates with one width the first stays. A size without
+`height`, and every size of a picture without `width` and `height`, is kept:
+its shape cannot be told. Media with no
+usable `sizes` removes `srcset` **and** `sizes`. An author-written `sizes`
+layout hint survives a rebuild — it describes the layout, not the media. The
+`<source>` elements of a `<picture>` are not rewritten, and Payload 4's
+`variants` are not read: a picture that needs either is rendered by a fragment
+boundary or the route.
 
 ### Media URLs
 

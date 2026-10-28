@@ -5,14 +5,30 @@ import { resolveMediaUrl, type MediaShape } from '@lexical/value-shapes';
 
 const IMAGE_SOURCE_ATTRIBUTES = ['src', 'srcset', 'sizes'] as const;
 
+/** One image a media document offers: the original, or one of its `sizes`. */
+interface Source {
+  readonly name?: string;
+  readonly url: string;
+  readonly width: number;
+  readonly height?: number | undefined;
+  readonly mimeType?: string | undefined;
+}
+
+/** The size each `<img>` was last written with, so the next image the editor picks gets the same one. */
+const chosenSizes = new WeakMap<HTMLImageElement, string>();
+
 export function clearImage(img: HTMLImageElement): void {
   for (const name of IMAGE_SOURCE_ATTRIBUTES) img.removeAttribute(name);
 }
 
 /**
  * A server-rendered `srcset` would keep winning over a new `src`, so it is
- * rebuilt from the media's `sizes` or removed together with `sizes`. `url` is
- * already resolved; the candidates of the `srcset` are resolved against `serverURL`.
+ * rebuilt or removed together with `sizes`. It offers the picture the element
+ * shows: the size whose URL the element's `src` is — the template's choice, or
+ * the last write's once the editor picks another image — else the original,
+ * and of the rest only what has its shape and format, one per width. A crop
+ * of another shape is another picture. `url` is already resolved; the sizes
+ * are resolved against `serverURL`.
  */
 export function writeImage(
   img: HTMLImageElement,
@@ -20,34 +36,84 @@ export function writeImage(
   media: MediaShape | undefined,
   serverURL?: string,
 ): void {
-  img.src = url;
-  const srcset = buildSrcset(media, serverURL);
-  if (srcset === undefined) {
+  const sizes = sizeSources(media, serverURL);
+  const shown = img.getAttribute('src');
+  const chosen =
+    sizes.find((size) => shown !== null && sameUrl(img, size.url, shown)) ??
+    sizes.find((size) => size.name === chosenSizes.get(img));
+  if (chosen?.name === undefined) chosenSizes.delete(img);
+  else chosenSizes.set(img, chosen.name);
+  img.src = chosen?.url ?? url;
+  const shape = chosen ?? media;
+  const candidates = sizes.filter((size) => sameShape(size, shape));
+  if (candidates.length === 0) {
     img.removeAttribute('srcset');
     img.removeAttribute('sizes');
     return;
   }
+  if (typeof media?.width === 'number' && typeof media.url === 'string') {
+    const original = resolveMediaUrl(media.url, serverURL);
+    const source = { ...media, url: original, width: media.width };
+    if (isSafeUrl(original) && sameShape(source, shape)) candidates.push(source);
+  }
+  // Two candidates of one width say nothing the first does not; the browser keeps the first anyway.
+  const widths = new Set<number>();
+  const parts: string[] = [];
+  for (const source of candidates) {
+    if (widths.has(source.width)) continue;
+    widths.add(source.width);
+    parts.push(`${srcsetUrl(source.url)} ${String(source.width)}w`);
+  }
+  const srcset = parts.join(', ');
   img.setAttribute('srcset', srcset);
 }
 
-function buildSrcset(
-  media: MediaShape | undefined,
-  serverURL: string | undefined,
-): string | undefined {
-  if (media?.sizes === undefined) return undefined;
-  const candidates: string[] = [];
-  for (const size of Object.values(media.sizes)) {
+function sizeSources(media: MediaShape | undefined, serverURL: string | undefined): Source[] {
+  const sources: Source[] = [];
+  for (const [name, size] of Object.entries(media?.sizes ?? {})) {
     if (typeof size.url !== 'string' || typeof size.width !== 'number') continue;
     const url = resolveMediaUrl(size.url, serverURL);
-    if (!isSafeUrl(url)) continue;
-    candidates.push(`${srcsetUrl(url)} ${String(size.width)}w`);
+    if (isSafeUrl(url)) sources.push({ ...size, name, url, width: size.width });
   }
-  if (candidates.length === 0) return undefined;
-  if (typeof media.width === 'number' && typeof media.url === 'string') {
-    const url = resolveMediaUrl(media.url, serverURL);
-    if (isSafeUrl(url)) candidates.push(`${srcsetUrl(url)} ${String(media.width)}w`);
+  return sources;
+}
+
+function sameUrl(img: HTMLImageElement, a: string, b: string): boolean {
+  try {
+    return new URL(a, img.baseURI).href === new URL(b, img.baseURI).href;
+  } catch {
+    return a === b;
   }
-  return candidates.join(', ');
+}
+
+/**
+ * Whether `source` is the same picture as `shape` at another width. What
+ * either leaves out cannot tell them apart. Payload scales a size's height
+ * from the original's and rounds it, so a pixel at the larger width is the
+ * same shape.
+ */
+function sameShape(
+  source: Partial<Source>,
+  shape: (Pick<Source, 'height' | 'mimeType'> & { readonly width?: number }) | undefined,
+): boolean {
+  if (shape === undefined) return true;
+  if (
+    typeof source.mimeType === 'string' &&
+    typeof shape.mimeType === 'string' &&
+    source.mimeType !== shape.mimeType
+  ) {
+    return false;
+  }
+  const { width, height } = shape;
+  if (
+    typeof width !== 'number' ||
+    typeof height !== 'number' ||
+    typeof source.width !== 'number' ||
+    typeof source.height !== 'number'
+  ) {
+    return true;
+  }
+  return Math.abs(source.width * height - source.height * width) <= Math.max(width, source.width);
 }
 
 // Commas and whitespace delimit srcset candidates and cannot appear raw in a URL there.

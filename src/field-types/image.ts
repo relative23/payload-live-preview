@@ -1,7 +1,8 @@
 /**
  * `image` renderer: `src`/`alt`/`srcset` on an `<img>`, a CSS background on
  * anything else. The value is a media object, a URL string, or resolved from
- * the `data-payload-src` / `data-payload-alt` sibling fields.
+ * the `data-payload-src` / `data-payload-alt` sibling fields; a binding whose
+ * alt is its own field holds alt text, not a source.
  */
 
 import { escapeCssUrl } from '@security/escape';
@@ -13,16 +14,36 @@ import { clearImage, writeImage } from './media';
 import { acceptUrl } from './unsafe-url';
 import { isEmptyValue } from './utils';
 
+/** A path, a file name or a URL: a `/`, `.` or `:` somewhere, and no whitespace anywhere. */
+const NAMES_A_SOURCE = /^\S*[/.:]\S*$/;
+
 const imageRenderer: FieldRenderer = {
   name: 'image',
   render: /* @__PURE__ */ markNoWriteCallback((target, value, context) => {
     const element = target.element;
+    if (
+      element.tagName === 'IMG' &&
+      target.altField === target.fieldName &&
+      target.srcField === undefined &&
+      (typeof value === 'string' || isEmptyValue(value))
+    ) {
+      (element as HTMLImageElement).alt = value ?? '';
+      return;
+    }
     if (isEmptyValue(value)) {
       clear(element);
       return;
     }
     const preferLocale = target.locale !== undefined;
     const { media, candidate } = pickSource(target, value, context, preferLocale);
+    // A word or an id is no address, though the URL parser would take either for a relative path.
+    if (
+      media === undefined &&
+      typeof candidate === 'string' &&
+      !NAMES_A_SOURCE.test(candidate.trim())
+    ) {
+      return false;
+    }
     // Only a media document's path is Payload's; a string an author typed is the site's own.
     const outcome = acceptUrl(
       element,
