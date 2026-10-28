@@ -84,6 +84,37 @@ describe('richText renderer', () => {
 
   // LP-2: the empty placeholder for a block without a renderer used to be
   // written over markup the server had already rendered for that block.
+  // Site audit of 27.10.2026, B5: what Lexical leaves in a field an editor emptied.
+  it.each([
+    ['one empty paragraph', { root: { children: [{ type: 'paragraph', children: [] }] } }],
+    ['no node at all', { root: { children: [] } }],
+    [
+      'two empty paragraphs',
+      { root: { children: [{ type: 'paragraph' }, { type: 'paragraph', children: [] }] } },
+    ],
+  ])('empties the element for a Lexical value with %s, as for null', (_case, value) => {
+    const el = document.createElement('div');
+    el.innerHTML = '<p>old</p>';
+    rendererNamed('richText').render(makeTarget(el), value, emptyContext());
+    expect(el.innerHTML).toBe('');
+  });
+
+  it('writes a Lexical value whose paragraph holds anything', () => {
+    const el = document.createElement('div');
+    rendererNamed('richText').render(makeTarget(el), LEXICAL_DOC, emptyContext());
+    expect(el.innerHTML).toBe('<p>hi</p>');
+  });
+
+  it('writes a Lexical value with an empty paragraph beside one that holds text', () => {
+    const el = document.createElement('div');
+    rendererNamed('richText').render(
+      makeTarget(el),
+      { root: { children: [{ type: 'paragraph', children: [] }, ...LEXICAL_DOC.root.children] } },
+      emptyContext(),
+    );
+    expect(el.innerHTML).toBe('<p></p><p>hi</p>');
+  });
+
   describe('a block the registry cannot render', () => {
     // LP0410 and LP0413 go to the console, warn-once per block type and
     // verdict; most cases here are about the DOM, and the last three about

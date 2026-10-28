@@ -192,6 +192,20 @@ export function looksLikeLexicalRoot(value: unknown): boolean {
   );
 }
 
+/**
+ * A Lexical root that shows nothing: no node, or paragraphs with no children
+ * of their own, which is what Lexical leaves in a field an editor emptied.
+ * It is as empty as `null`, for the anchor that hides and for the rich-text
+ * write.
+ */
+export function isEmptyLexicalRoot(value: unknown): boolean {
+  if (!looksLikeLexicalRoot(value)) return false;
+  return (value as { root: { children: readonly unknown[] } }).root.children.every((node) => {
+    const { type, children } = (node ?? {}) as { type?: unknown; children?: unknown };
+    return type === 'paragraph' && (!Array.isArray(children) || children.length === 0);
+  });
+}
+
 function readElementSnapshot(element: Element): unknown {
   if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
     return (element as HTMLInputElement).value;
@@ -203,5 +217,5 @@ function readElementSnapshot(element: Element): unknown {
 function isEmptyFieldValue(value: unknown): boolean {
   if (value === null || value === undefined) return true;
   if (typeof value === 'string') return value.trim().length === 0;
-  return Array.isArray(value) && value.length === 0;
+  return (Array.isArray(value) && value.length === 0) || isEmptyLexicalRoot(value);
 }

@@ -17,6 +17,7 @@ import { isLexicalContent, lexicalToHtml } from '@lexical/render';
 import { UNRENDERED_BLOCK_SELECTOR } from '@lexical/nodes/block';
 import { trustedHtml } from '@security/trusted-types';
 import { sanitizeHtmlWithPolicy } from '@security/sanitizer';
+import { isEmptyLexicalRoot } from '@core/binding-writer';
 import { FIELD_ATTRIBUTE } from '@core/cache';
 import { safeConsoleWarn } from '@core/diagnostics';
 import { markNoWriteCallback } from '@core/internal-outcome';
@@ -49,6 +50,11 @@ const richTextRenderer: FieldRenderer = {
       return;
     }
     if (isLexicalContent(value)) {
+      // Empty paragraphs only: cleared as `null` is. A project renderer above decides for itself.
+      if (isEmptyLexicalRoot(value)) {
+        element.textContent = '';
+        return;
+      }
       // Slug by placeholder class: the class is what the write finds standing.
       const unrendered = new Map<string, string>();
       const lexical = lexicalToHtml(value, {

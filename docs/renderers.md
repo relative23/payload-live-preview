@@ -105,6 +105,7 @@ change the page must show, not a message to ignore.
 | Value                             | Every renderer does                                                          |
 | --------------------------------- | ---------------------------------------------------------------------------- |
 | `null`, `''`                      | Clears the element and counts as a write                                     |
+| A Lexical value with no content   | The same for the built-in `richText`: no node, or empty paragraphs only      |
 | An unsafe URL (fails `isSafeUrl`) | Clears the URL attribute, warns `LP0401` once per element, counts as a write |
 
 A value that carries no usable URL, a media object without `url` or a bare
