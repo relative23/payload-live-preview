@@ -96,16 +96,21 @@ cannot render.
 | `data-payload-guessed`         | Written by the runtime on every binding `autoBind` made, holding the value it matched; never write it yourself                                                                                                                                                                      | —                                                  |
 
 Binding metadata is live for the attributes the mutation observer watches:
-`data-payload-field`, `data-payload-owner` and `data-payload-island` anywhere,
-and on a bound element
+`data-payload-field`, `data-payload-owner`, `data-payload-island`,
+`data-payload-covers` and `data-payload-depends` anywhere, and on a bound element
 `data-payload-type`, `-attribute`, `-href`, `-src`, `-alt`, `-richtext`,
 `-html`, `-array`, `-array-template`, `-array-separator`, `-structural`,
-`-locale`, `-depends`, `-strategy`, `-boundary` and an input's native `type`.
-Changing one rebuilds the affected bindings after the mutation debounce.
+`-locale`, `-format`, `-strategy`, `-boundary` and an input's native `type`.
+Changing one rebuilds the affected bindings after the mutation debounce, and so
+does adding or removing an element that carries `data-payload-covers`.
+The next message writes a changed format or locale even when the value is the
+same: under `skipUnchanged` a write is unchanged only if the value, the format
+and the locale all are, and the locale is the element's own or, without one,
+the message's.
 Removing `ssr` from an `astro-island` instead replays the retained snapshot
 after hydration; it does not rebuild unrelated bindings.
-`data-payload-format`, `data-payload-fragment` and `data-payload-fragment-key`
-are not watched, so changing one rebuilds nothing by itself.
+`data-payload-fragment` and `data-payload-fragment-key` are not watched, so
+changing one rebuilds nothing by itself.
 
 ### Formatting a date or a number
 

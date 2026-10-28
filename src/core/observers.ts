@@ -7,6 +7,8 @@
 
 import {
   BINDING_ATTRIBUTES,
+  COVERS_ATTRIBUTE,
+  DEPENDS_ATTRIBUTE,
   FIELD_ATTRIBUTE,
   NAVIGATION_REPLAY_SELECTOR,
   OWNER_ATTRIBUTE,
@@ -31,6 +33,18 @@ const DEFAULT_ROOT_MARGIN = '200px';
 const ASTRO_SSR_ATTRIBUTE = 'ssr';
 /** `nodeType` is stable across realms; the global `Node` constructor is not. */
 const ELEMENT_NODE = 1;
+/**
+ * Read from elements that need not be bindings: the field, the owner a binding
+ * inherits, and what a page declares it accounts for — `data-payload-covers`
+ * anywhere, `data-payload-depends` on a boundary or route marker (ADR 0022).
+ */
+const WATCHED_ANYWHERE: readonly string[] = [
+  FIELD_ATTRIBUTE,
+  OWNER_ATTRIBUTE,
+  COVERS_ATTRIBUTE,
+  DEPENDS_ATTRIBUTE,
+];
+const TRACKED_SELECTOR = `[${FIELD_ATTRIBUTE}], [${COVERS_ATTRIBUTE}], ${ISLAND_SELECTOR}, ${NAVIGATION_REPLAY_SELECTOR}`;
 
 export class ObserverManager {
   private readonly callbacks: ObserverCallbacks;
@@ -73,7 +87,12 @@ export class ObserverManager {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: [...BINDING_ATTRIBUTES, ISLAND_ATTRIBUTE, ASTRO_SSR_ATTRIBUTE],
+        attributeFilter: [
+          ...BINDING_ATTRIBUTES,
+          COVERS_ATTRIBUTE,
+          ISLAND_ATTRIBUTE,
+          ASTRO_SSR_ATTRIBUTE,
+        ],
       });
     } catch (error) {
       mutation?.disconnect();
@@ -187,17 +206,14 @@ function hydratedAstroIsland(mutation: MutationRecord): Element | null {
 function hasStructuralImpact(mutations: readonly MutationRecord[]): boolean {
   for (const m of mutations) {
     if (m.type === 'attributes' && m.attributeName === ISLAND_ATTRIBUTE) return true;
-    if (
-      m.type === 'attributes' &&
-      m.attributeName !== null &&
-      BINDING_ATTRIBUTES.includes(m.attributeName)
-    ) {
-      // The field and owner attributes matter anywhere; other metadata (notably
-      // the native `type`) only on an element that is a binding.
+    if (m.type === 'attributes' && m.attributeName !== null) {
+      if (WATCHED_ANYWHERE.includes(m.attributeName)) return true;
+      // Other metadata (notably the native `type`) matters only on an element
+      // that is a binding.
       if (
-        m.attributeName === FIELD_ATTRIBUTE ||
-        m.attributeName === OWNER_ATTRIBUTE ||
-        (m.target.nodeType === ELEMENT_NODE && (m.target as Element).hasAttribute(FIELD_ATTRIBUTE))
+        BINDING_ATTRIBUTES.includes(m.attributeName) &&
+        m.target.nodeType === ELEMENT_NODE &&
+        (m.target as Element).hasAttribute(FIELD_ATTRIBUTE)
       ) {
         return true;
       }
@@ -211,12 +227,5 @@ function hasStructuralImpact(mutations: readonly MutationRecord[]): boolean {
 function containsTrackedElement(node: Node): boolean {
   if (node.nodeType !== ELEMENT_NODE) return false;
   const element = node as Element;
-  return (
-    element.hasAttribute(FIELD_ATTRIBUTE) ||
-    element.matches(ISLAND_SELECTOR) ||
-    element.matches(NAVIGATION_REPLAY_SELECTOR) ||
-    element.querySelector(
-      `[${FIELD_ATTRIBUTE}], ${ISLAND_SELECTOR}, ${NAVIGATION_REPLAY_SELECTOR}`,
-    ) !== null
-  );
+  return element.matches(TRACKED_SELECTOR) || element.querySelector(TRACKED_SELECTOR) !== null;
 }

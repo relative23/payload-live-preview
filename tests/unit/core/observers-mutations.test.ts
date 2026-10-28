@@ -15,6 +15,7 @@ const EXPECTED_BINDING_ATTRIBUTES = [
   'data-payload-array-template',
   'data-payload-array-separator',
   'data-payload-locale',
+  'data-payload-format',
   'data-payload-richtext',
   'data-payload-html',
   'data-payload-array',
@@ -94,6 +95,70 @@ describe('ObserverManager — mutations', () => {
     expect(onStructuralChange).toHaveBeenCalledOnce();
     observer.stop();
   });
+  // What a page declares it accounts for sits on elements that are not
+  // bindings, and the cache reads it from there (ADR 0022).
+  it.each(['data-payload-covers', 'data-payload-depends'] as const)(
+    'rebuilds when %s changes on an element that is not a binding',
+    async (attribute) => {
+      const root = document.body;
+      const declaration = document.createElement('i');
+      root.appendChild(declaration);
+      const onStructuralChange = vi.fn();
+      const observer = new ObserverManager(
+        { onStructuralChange, onVisibilityChange: () => {} },
+        { mutationDebounceMs: 10 },
+      );
+      observer.start(root);
+
+      declaration.setAttribute(attribute, 'seo');
+      await flushMutations();
+      vi.advanceTimersByTime(10);
+
+      expect(onStructuralChange).toHaveBeenCalledOnce();
+      observer.stop();
+    },
+  );
+  it('ignores binding metadata a non-binding does not carry for the cache', async () => {
+    const root = document.body;
+    const unbound = document.createElement('p');
+    root.appendChild(unbound);
+    const onStructuralChange = vi.fn();
+    const observer = new ObserverManager(
+      { onStructuralChange, onVisibilityChange: () => {} },
+      { mutationDebounceMs: 10 },
+    );
+    observer.start(root);
+
+    unbound.setAttribute('data-payload-format', 'number:2');
+    await flushMutations();
+    vi.advanceTimersByTime(10);
+
+    expect(onStructuralChange).not.toHaveBeenCalled();
+    observer.stop();
+  });
+  it.each(['added', 'removed'] as const)(
+    'rebuilds when an element declaring data-payload-covers is %s',
+    async (change) => {
+      const root = document.body;
+      const declaration = document.createElement('i');
+      declaration.setAttribute('data-payload-covers', 'seo');
+      if (change === 'removed') root.appendChild(declaration);
+      const onStructuralChange = vi.fn();
+      const observer = new ObserverManager(
+        { onStructuralChange, onVisibilityChange: () => {} },
+        { mutationDebounceMs: 10 },
+      );
+      observer.start(root);
+
+      if (change === 'added') root.appendChild(declaration);
+      else declaration.remove();
+      await flushMutations();
+      vi.advanceTimersByTime(10);
+
+      expect(onStructuralChange).toHaveBeenCalledOnce();
+      observer.stop();
+    },
+  );
   it('detects binding metadata changes in a different DOM realm', async () => {
     const iframe = document.createElement('iframe');
     document.body.appendChild(iframe);
