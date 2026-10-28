@@ -132,15 +132,20 @@ function writeKeepingUnrenderedBlocks(
  *
  * A wrapper is the element's only child, of a kind Lexical does not render
  * content as, with no binding of its own, standing where the rendered document
- * has several elements — and unlike every one of them: a `<div>` a registered
- * block renders is content, and the paragraph typed after it must not be
- * written into it. One rendered element says nothing either way, and the
- * positional pairing already answers for that case.
+ * has elements unlike it: a `<div>` a registered block renders is content, and
+ * the paragraph typed after it must not be written into it. A document of one
+ * element keeps the wrapper too, unless that element is a placeholder or of
+ * the wrapper's own tag: then the wrapper may be the block the server drew, and
+ * the positional pairing answers for it.
  */
 function wrapperOf(element: Element, rendered: Element): Element | null {
   const child = element.firstElementChild;
-  if (child?.nextElementSibling !== null || rendered.children.length < 2) return null;
+  const only = rendered.children.length === 1 ? rendered.firstElementChild : null;
+  if (child?.nextElementSibling !== null || rendered.children.length === 0) return null;
   if (!WRAPPER_TAGS.has(child.tagName) || child.hasAttribute(FIELD_ATTRIBUTE)) return null;
+  if (only?.tagName === child.tagName || only?.matches(UNRENDERED_BLOCK_SELECTOR) === true) {
+    return null;
+  }
   for (const block of rendered.children) {
     if (block.tagName === child.tagName && block.className === child.className) return null;
   }
