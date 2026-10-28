@@ -94,7 +94,6 @@ export const MAINTAINER_INSTALL_POLICIES = [
     npmrc: 'strict-allow-scripts=true\ninstall-links=true\n',
     packageManager: REVIEWED_PACKAGE_MANAGER,
     allowScripts: {
-      'esbuild@0.28.1': true,
       'fsevents@2.3.3': false,
     },
   },
