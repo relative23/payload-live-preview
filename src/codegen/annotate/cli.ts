@@ -54,8 +54,15 @@ What it refuses, with a reason per line:
 Exit codes:
   0  nothing left to do, or the files were written
   1  fatal error
+  2  no globals or collections found in the config; nothing was scanned
   3  a dry run found work; re-run with --write
 `;
+
+const EMPTY_SCHEMA =
+  'pll-codegen annotate: the schema is empty (0 globals, 0 collections), so nothing was scanned: ' +
+  'every field would have been refused as unknown. The warnings above name what could not be read. ' +
+  'Imports through a path alias (@/...) are not followed, so a config that reaches its collections ' +
+  'or globals that way reads as empty here.\n';
 
 export interface AnnotateArgs {
   readonly paths: readonly string[];
@@ -127,7 +134,16 @@ export async function runAnnotate(argv: readonly string[], io: AnnotateCliIo): P
     // The schema, not a heuristic, decides which paths exist; `generateTypes`
     // already knows how to read it, and its inventory is the same list the
     // runtime resolves bindings against.
-    const { inventory } = await generateTypes({ configPath: args.configPath });
+    const { inventory, schema, diagnostics } = await generateTypes({
+      configPath: args.configPath,
+    });
+    for (const diagnostic of diagnostics) io.err(`  warning: ${diagnostic}\n`);
+    if (schema.globals.length + schema.collections.length === 0) {
+      // Scanning against nothing would refuse every real field as unknown and
+      // exit 0, a report that blames the templates for a config it never read.
+      io.err(EMPTY_SCHEMA);
+      return 2;
+    }
     const files = await collectTemplates(args.paths);
     if (files.length === 0) {
       io.err(`pll-codegen annotate: no ${ANNOTATABLE_EXTENSIONS.join(', ')} files found.\n`);

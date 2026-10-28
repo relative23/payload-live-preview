@@ -336,7 +336,7 @@ Without a server to render it — on a static build, for one — the fields are 
 <img data-payload-field="hero" alt="…" src="…" />
 ```
 
-Which to reach for, and what each costs: [docs/bindings.md](docs/bindings.md#how-much-markup-this-actually-needs). `pll-codegen annotate` adds the unambiguous bindings and names each one it refuses, with the reason; without `--write` it only reports, and exits with `3` when it found work.
+Which to reach for, and what each costs: [docs/bindings.md](docs/bindings.md#how-much-markup-this-actually-needs). `pll-codegen annotate` adds the unambiguous bindings and names each one it refuses, with the reason; without `--write` it only reports, and exits with `3` when it found work and with `2` when the config yields no collection or global.
 
 That is it: the runtime detects the admin's iframe and starts patching. Rich text is written from the value shape, and a value that holds an upload or a relationship has the runtime ask Payload to fill it in ([docs/renderers.md](docs/renderers.md#media-urls)). The admin posts raw form values, so relationship and upload fields arrive as IDs until `serverURL` with `mergeDepth` re-fetches the populated document ([docs/options.md](docs/options.md)). Authorization and the initial draft read: your framework's guide and [docs/authorization.md](docs/authorization.md).
 

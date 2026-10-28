@@ -495,7 +495,11 @@ npx pll-codegen annotate src/pages --config ../backend/src/payload.config.ts --w
 
 Without `--write` nothing is touched; the report is the whole output, and the
 exit code is 3 when a dry run found work — a pre-commit hook can tell that apart
-from "nothing to do".
+from "nothing to do". A config that yields no collection and no global stops the
+run with exit code 2 before any template is read, and the warnings printed with
+it name what the schema extractor could not read. A config that reaches its
+collections through a path alias (`@/…`) reads as empty here: `pll-codegen
+--tsconfig` follows the alias, and the `annotate` subcommand takes no tsconfig.
 
 It annotates one shape, the one that means the same thing in Astro, JSX and
 Svelte: an element whose entire content is a single field access, on a variable
