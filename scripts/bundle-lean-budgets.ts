@@ -143,4 +143,5 @@
 // 2026-10-26 (the 2.2 review fixes): paired Node24.22.1/npm12.0.2; +31/+21/+31 B; prior reserves kept.
 // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +34/+33/+27 B; prior reserves kept.
 // 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1192/+389/+374 B; prior reserves kept.
-export const INLINE_LEAN_BUDGET = { raw: 120_177, gzip: 37_789, brotli: 33_357 } as const;
+// 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+265/+213 B; prior reserves kept.
+export const INLINE_LEAN_BUDGET = { raw: 120_881, gzip: 38_054, brotli: 33_570 } as const;

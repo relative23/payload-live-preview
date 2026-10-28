@@ -542,7 +542,9 @@
 // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +34/+21/+23 B; prior reserves kept.
 // 2026-10-28 (the renderers write what the element expects): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2, epoch1793120979): `core.cjs` +1251 / +449 / +306, `core.js` +1251 / +438 / +319, `index.cjs` +2445 / +824 / +2265, `index.js` +2445 / +828 / +2365.
 // 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1192/+403/+343 B; prior reserves kept.
-export const INLINE_BUDGET = { raw: 147_749, gzip: 46_529, brotli: 40_893 } as const;
+// 2026-10-28 (fidelity escalates again on a new value): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2, epoch1793120979): `core.cjs` +731 / +243 / +179, `core.js` +730 / +237 / +189, `index.cjs` +1434 / +479 / +636, `index.js` +1434 / +476 / +575.
+// 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+241/+301 B; prior reserves kept.
+export const INLINE_BUDGET = { raw: 148_453, gzip: 46_770, brotli: 41_194 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

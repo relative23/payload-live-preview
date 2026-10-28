@@ -167,7 +167,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 161 962 for authorized inline delivery. It fetches one
+  (ADR 0015), against 162 666 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -203,8 +203,8 @@ Notes on the rows that need one:
   script into; on any other response, such as `NextResponse.next()`, it keeps
   `frame-ancestors` and warns once in development.
 - `runtime` chooses which artifact the page carries. The default is the full
-  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is about 36 KiB gzip
-  against 44 KiB for the default inline script — it leaves out the fragment and route strategies, the keyed
+  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is about 37 KiB gzip
+  against 46 KiB for the default inline script — it leaves out the fragment and route strategies, the keyed
   morph, the structural arrays, the item templates, the screen-reader
   announcer and auto-binding, and reports LP0104 when a page needs one of them
   rather than doing nothing. It is an import rather than a string option so the second artifact
