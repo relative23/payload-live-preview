@@ -609,8 +609,11 @@ focus and scroll intact.
 The same decision covers the other ways a patch falls short of the server's own
 render: a value no renderer can represent, and a Lexical block whose markup the
 write has to drop. Those name an element, so they escalate to the fragment
-boundary around it when there is one, and to the route when there is not — once
-per element, because the cause is the markup rather than the edit.
+boundary around it when there is one, and to the route when there is not. A
+later edit of the same element escalates again, at most once a second per
+element, because what the server drew still shows the old value. The value it
+was last handed over with is not handed over again, because the re-apply after
+a route render gives it to the renderer once more.
 
 What counts as covered: a binding on the field, on the same field under the
 message's locale suffix, or on a path inside it — `data-payload-field="hero.eyebrow"`

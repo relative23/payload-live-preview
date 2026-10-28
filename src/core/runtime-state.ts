@@ -15,7 +15,7 @@ import type { A11yAnnouncer } from './a11y';
 import type { AutoBindMode, KeptGuesses } from './auto-bind';
 import type { ElementCache } from './cache';
 import type { DataMerger } from './data-merger';
-import type { UnfaithfulPatchMode } from './fidelity';
+import type { UnfaithfulPatchMode, UnfaithfulReport } from './fidelity';
 import type { HydrationMode, HydrationState } from './hydration';
 import { FieldChangeTracker } from './field-changes';
 import { MergeNeed } from './merge-need';
@@ -147,8 +147,8 @@ export class RuntimeState {
   warnedEscalationUnavailable = false;
   /** LP0503 is reported once: a drifting sender repeats the same shape on every keystroke. */
   warnedProtocolShape = false;
-  /** LP0411 is reported once per element; the markup that causes it does not change. */
-  readonly reportedUnfaithful = new WeakSet<Element>();
+  /** The value each element that fell short was last reported or handed over with, and when (`fidelity.ts`). */
+  readonly reportedUnfaithful = new WeakMap<Element, UnfaithfulReport>();
   /** Bindings whose first write has already been held against what the template printed (LP0412). */
   readonly checkedServerFormat = new WeakSet<Element>();
   /** Bindings this revision could not patch faithfully, drained by the flush that escalates them. */

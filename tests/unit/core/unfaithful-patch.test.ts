@@ -155,7 +155,7 @@ describe('a value the binding cannot represent', () => {
     runtime.destroy();
   });
 
-  it('escalates once per element, so a stuck value is not a refresh per keystroke', async () => {
+  it('escalates an element at most once a second, so typing is not a refresh per keystroke', async () => {
     document.body.innerHTML = UNWRITABLE_TITLE;
     const route = fakeRoute();
     const runtime = start({ strategies: { route }, warn: () => {} });
@@ -168,6 +168,45 @@ describe('a value the binding cannot represent', () => {
     );
 
     expect(route.refreshes).toBe(1);
+    runtime.destroy();
+  });
+
+  // C2, decided 27.10.2026: a later revision with a new value escalates again,
+  // because the region the server drew still shows the old one.
+  it('escalates again for a new value once a second has passed', async () => {
+    document.body.innerHTML = UNWRITABLE_TITLE;
+    const route = fakeRoute();
+    const runtime = start({ strategies: { route }, warn: () => {} });
+
+    await connectThenEdit({ title: 'one' });
+    const before = route.refreshes;
+    await vi.advanceTimersByTimeAsync(1000);
+    fireMessage({ type: 'payload-live-preview', data: { title: 'two' } });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(route.refreshes).toBe(before + 1);
+    // One binding fell short; the strategy was handed it twice.
+    expect(runtime.inspect().fidelity).toMatchObject({ unfaithful: 1, fields: ['title'] });
+    expect(runtime.inspect().fidelity.escalated).toBe(before + 1);
+    runtime.destroy();
+  });
+
+  it('never escalates again for the value it was last handed over with', async () => {
+    document.body.innerHTML = UNWRITABLE_TITLE;
+    const route = fakeRoute();
+    const runtime = start({ strategies: { route }, warn: () => {} });
+
+    await connectThenEdit();
+    await vi.advanceTimersByTimeAsync(1000);
+    fireMessage({ type: 'payload-live-preview', data: { title: 'one' } });
+    await vi.advanceTimersByTimeAsync(50);
+    const before = route.refreshes;
+    // The re-apply after a route render hands the renderer this value again, as does a repeat.
+    await vi.advanceTimersByTimeAsync(1000);
+    fireMessage({ type: 'payload-live-preview', data: { title: 'one' } });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(route.refreshes).toBe(before);
     runtime.destroy();
   });
 

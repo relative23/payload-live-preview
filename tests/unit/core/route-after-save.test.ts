@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { FragmentStrategy, RouteOutcome, RouteStrategy } from '@core/strategies';
 import type { LivePreviewRuntime } from '@core/lifecycle';
 import { fragmentStrategyFrom } from '@fragment/index';
+import { buildBuiltinRenderers } from '@field-types/index';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
 /** Answers every refresh with `outcome` and never claims a binding of its own. */
@@ -163,6 +164,36 @@ describe('a throw after the refresh a save asked for', () => {
     const failures = log.mock.calls.filter(([message]) => message === 'route refresh failed:');
     expect(route.refreshes).toBe(2);
     expect(failures).toHaveLength(1);
+    runtime.destroy();
+  });
+});
+
+/**
+ * The osteria kicker (site audit of 27.10.2026, C2): an element with markup
+ * inside (`<span lang="it">`) cannot be patched, so each edit is escalated and
+ * the route renders the saved draft once Payload saves. The second edit was
+ * never escalated, so no save rendered it again.
+ */
+describe('an element no patch can write, edited twice', () => {
+  it('reaches the route after each save', async () => {
+    const route = fakeRoute('partial');
+    document.body.innerHTML = '<p data-payload-field="kicker">La <span lang="it">cucina</span></p>';
+    const runtime = makeRuntime({
+      renderers: buildBuiltinRenderers(),
+      strategies: { route },
+      warn: () => {},
+    });
+    runtime.start();
+    await send({ kicker: 'La cucina' });
+    await send({ kicker: 'La cucina nuova' });
+    await saved();
+    const afterFirstSave = route.refreshes;
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await send({ kicker: 'La cucina di casa' });
+    await saved();
+
+    expect(route.refreshes).toBe(afterFirstSave + 2);
     runtime.destroy();
   });
 });
