@@ -12,6 +12,7 @@
 import { isBindingInScope } from './binding-owner';
 import type { ElementCache } from './cache';
 import {
+  pathChanged,
   uncoveredChangedPaths,
   type PathCoverage,
   type SubfieldCoverage,
@@ -261,6 +262,34 @@ export function declaredSubfields(
   return mode === 'declared' && previous !== undefined && next !== undefined
     ? { previous, next }
     : undefined;
+}
+
+/**
+ * `touched` with the paths inside its fields that route-bound elements name and
+ * that changed, for the route planners: a marker on `layout.1.note` asks about
+ * that path while the diff names `layout`. Without the previous message, which
+ * only the declared mode keeps, a path changes with its field.
+ */
+export function routeTouched(
+  cache: ElementCache,
+  touched: ReadonlySet<string>,
+  subfields?: SubfieldValues,
+): ReadonlySet<string> {
+  const named = cache.rendered.flatMap((declaration) =>
+    declaration.strategy === 'route' ? declaration.paths : [],
+  );
+  for (const [fieldName, bindings] of cache.entries()) {
+    if (bindings.some((binding) => binding.strategyKind === 'route')) named.push(fieldName);
+  }
+  const changed = new Set(touched);
+  for (const path of named) {
+    const [field = path] = path.split('.');
+    if (!touched.has(field)) continue;
+    if (subfields === undefined || pathChanged(path, subfields.previous, subfields.next)) {
+      changed.add(path);
+    }
+  }
+  return changed;
 }
 
 /**

@@ -1,0 +1,5 @@
+---
+'payload-live-preview': patch
+---
+
+The route strategy renders for changes the editor made, and for every change a route-bound element names. A route-bound element on a path inside a field (`data-payload-strategy="route"` on `layout.1.note`, a `<head>` binding of `meta.title`) never asked for a refresh, because the planners compared its path with top-level field names; it now asks when its field changes, and under `subfieldCoverage: 'declared'` only when the value at the path changes. Under `'declared'` with a merge, a keystroke rendered before the merge answered compared an upload's id with the document the previous answer held, called the upload changed and refreshed the route while the editor typed beside it; an id and the document it names now count as one value, and LP0203 names the upload rather than the fields of its document. The first message after `refreshAfterNavigation()` no longer refreshes the route it lands on: a field the new route does not bind is rendered once Payload reports the next save. A field bound inside a fragment boundary that does not depend on it is patched without LP0806 claiming that no fragment handler is configured.

@@ -31,6 +31,11 @@ interface OrphanDiagnosticContext {
   readonly warn: (...args: unknown[]) => void;
 }
 
+/**
+ * Asked of the message's own values, not of a merged document: where the form
+ * holds the id of an upload, a merge puts the upload's own fields, and those
+ * are not fields of this document an anchor could show.
+ */
 export function diagnoseOrphanFields(
   deps: Pick<RuntimeDeps, 'cache' | 'warn' | 'subfieldCoverage' | 'strategies'>,
   warned: Set<string>,

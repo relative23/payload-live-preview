@@ -420,6 +420,34 @@ describe('fragment strategy', () => {
     expect(rt.inspect().fragments.handler).toBe(false);
   });
 
+  it('patches a field bound inside a boundary that does not depend on it, without LP0806', async () => {
+    // Measured on a site: a boundary rendered from `title` holds a binding
+    // of `name` as well, the documented way to show both. An edit of `name`
+    // planned no boundary, and the empty plan read as "no handler": LP0806 said
+    // the fragment strategy was missing while the handler was configured.
+    document.body.innerHTML =
+      '<section data-payload-fragment="hero" data-payload-depends="title">' +
+      '<h1 data-payload-field="name">Old name</h1></section>';
+    const handler = vi.fn(() =>
+      Promise.resolve({
+        status: 'rendered' as const,
+        html: '<h1 data-payload-field="name">S</h1>',
+      }),
+    );
+    const rt = start(handler);
+    let done = once('afterUpdate');
+    post({ title: 'Saved title', name: 'Old name' });
+    await done;
+    handler.mockClear();
+    done = once('afterUpdate');
+    post({ title: 'Saved title', name: 'New name' });
+    await done;
+    expect(handler).not.toHaveBeenCalled();
+    expect(document.querySelector('h1')?.textContent).toBe('New name');
+    expect(warnings.filter((w) => w.includes('LP0806'))).toEqual([]);
+    expect(rt.inspect().fragments.handler).toBe(true);
+  });
+
   it('re-renders a boundary that depends on a derived field when a source in the dependency registry changes', async () => {
     document.body.innerHTML =
       '<section data-payload-fragment="price" data-payload-depends="priceLabel"><span>0</span></section>';

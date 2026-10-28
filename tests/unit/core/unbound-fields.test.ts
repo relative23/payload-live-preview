@@ -5,6 +5,7 @@ import {
   createPathCoverage,
   declaredSubfields,
   hasBindingBelow,
+  routeTouched,
   SYSTEM_FIELD_NAMES,
   unboundChangedFields,
   uncoveredDocumentPaths,
@@ -181,5 +182,36 @@ describe('the same rule from names alone', () => {
     expect(uncoveredNamePaths(fields, bound, undefined, ['seo', 'hero.cta'])).toEqual([
       'hero.note',
     ]);
+  });
+});
+
+describe('the paths a route-bound element names', () => {
+  const PAGE =
+    '<h2 data-payload-field="layout.0.heading">h</h2>' +
+    '<p data-payload-field="layout.1.note" data-payload-strategy="route">n</p>' +
+    '<aside data-payload-strategy="route" data-payload-depends="meta.title gallery">a</aside>' +
+    '<section data-payload-fragment="x" data-payload-depends="layout.0.heading"></section>';
+  const previous = { layout: [{ heading: 'H' }, { note: 'N' }], meta: { title: 'T' } };
+
+  it('join the touched fields when their field changed', () => {
+    const cache = cacheOf(PAGE);
+    const touched = routeTouched(cache, new Set(['layout', 'meta']));
+    expect([...touched].sort()).toEqual(['layout', 'layout.1.note', 'meta', 'meta.title']);
+    expect([...routeTouched(cache, new Set(['title']))]).toEqual(['title']);
+  });
+
+  it('count a field with one route binding among others', () => {
+    const cache = cacheOf(
+      '<p data-payload-field="layout.1.note">n</p>' +
+        '<p data-payload-field="layout.1.note" data-payload-strategy="route">n</p>',
+    );
+    expect([...routeTouched(cache, new Set(['layout']))]).toEqual(['layout', 'layout.1.note']);
+  });
+
+  it('join only when the value at the path changed, where the previous message is kept', () => {
+    const cache = cacheOf(PAGE);
+    const next = { layout: [{ heading: 'H2' }, { note: 'N' }], meta: { title: 'T2' } };
+    const touched = routeTouched(cache, new Set(['layout', 'meta']), { previous, next });
+    expect([...touched].sort()).toEqual(['layout', 'meta', 'meta.title']);
   });
 });

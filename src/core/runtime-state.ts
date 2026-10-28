@@ -55,6 +55,8 @@ export interface UpdateTransaction {
   touched: ReadonlySet<string>;
   /** The connection's first message, where every field counts as changed. */
   baseline: boolean;
+  /** The first message after a router commit or a restore: every field counts as changed, on markup the server just rendered. */
+  navigated: boolean;
   /** Dependents of changed fields; re-applied even when their own value is unchanged. */
   invalidated: ReadonlySet<string>;
   /**

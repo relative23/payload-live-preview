@@ -104,3 +104,24 @@ revision. Payload 2 posts no document event, so nothing changes there.
 `tests/unit/core/route-after-save.test.ts` pins the runtime and
 `tests/e2e/specs/unbound-route-fallback.spec.ts` the browser path, in Chromium,
 Firefox and WebKit.
+
+## Addendum (2026-10-28): what a route-bound path and a navigation ask for
+
+A route-bound element on a path inside a field never asked for a refresh:
+`data-payload-strategy="route"` on `layout.1.note`, or a `<head>` binding of
+`meta.title`. Both planners compared the element's path with the top-level
+names the diff produces. They now receive the touched fields together with the
+paths inside them that route-bound elements name and that changed. A path
+changes with its field; under `subfieldCoverage: 'declared'`, which keeps the
+previous message, only when the value at the path changed. A custom planner
+that reads top-level names sees them as before.
+
+The replay after `refreshAfterNavigation()` asked for a refresh that could
+bring nothing. It counts every field as changed, so on a route that binds little
+of the document every field was an unbound change, and the route the
+navigation had just rendered was fetched again: measured on a site about 35 ms
+after the swap, replacing what the host had added since. The replay is now
+answered like a partial render: no refresh, and the next save renders the
+route. A route marker still refreshes after a navigation.
+`tests/unit/core/route-nested-paths.test.ts` and
+`tests/unit/core/route-after-save.test.ts` pin both.
