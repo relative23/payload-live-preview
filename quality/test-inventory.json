@@ -22,7 +22,7 @@
   "totals": {
     "files": 514,
     "suites": 977,
-    "tests": 4459,
+    "tests": 4462,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 418,
       "suites": 868,
-      "tests": 4061,
+      "tests": 4064,
       "benchmarks": 0
     }
   },
@@ -2062,7 +2062,7 @@
       "path": "tests/unit/core/route-after-save.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 9,
+      "tests": 10,
       "benchmarks": 0
     },
     {
@@ -2447,7 +2447,7 @@
       "path": "tests/unit/field-types/text-renderers.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 15,
+      "tests": 17,
       "benchmarks": 0
     },
     {

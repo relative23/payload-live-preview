@@ -175,6 +175,24 @@ describe('a throw after the refresh a save asked for', () => {
  * never escalated, so no save rendered it again.
  */
 describe('an element no patch can write, edited twice', () => {
+  // B8: the first message carries what the server rendered, so it is no edit to escalate.
+  it('asks for no route on connecting, when the element already shows the value', async () => {
+    const route = fakeRoute('partial');
+    document.body.innerHTML = '<p data-payload-field="kicker">La <span lang="it">cucina</span></p>';
+    const runtime = makeRuntime({
+      renderers: buildBuiltinRenderers(),
+      strategies: { route },
+      warn: () => {},
+    });
+    runtime.start();
+    await send({ kicker: 'La cucina' });
+
+    expect(route.refreshes).toBe(0);
+    expect(runtime.inspect().fidelity.unfaithful).toBe(0);
+    expect(document.querySelector('[lang="it"]')?.textContent).toBe('cucina');
+    runtime.destroy();
+  });
+
   it('reaches the route after each save', async () => {
     const route = fakeRoute('partial');
     document.body.innerHTML = '<p data-payload-field="kicker">La <span lang="it">cucina</span></p>';
