@@ -1,7 +1,8 @@
 /**
  * `text` / `textarea` renderer. An element with structured children is left
  * alone (warned once) unless it opts in with `data-payload-text`, so a styled
- * wrapper is not destroyed by a value meant for its text node.
+ * wrapper is not destroyed by a value meant for its text node. An element whose
+ * text already reads the value is left alone either way.
  */
 
 import { isLexicalContent, lexicalToPlainText } from '@lexical/render';
@@ -26,6 +27,9 @@ export function createTextRenderer(name: RendererKey = 'text'): FieldRenderer {
         (element as HTMLInputElement | HTMLTextAreaElement).value = text;
         return;
       }
+      // Writing the same words again would only drop the markup the server
+      // drew around them, such as a `<span lang>`.
+      if (element.textContent.trim() === text.trim()) return;
       if (hasForeignChildren(element) && !element.hasAttribute(TEXT_OPT_IN_ATTRIBUTE)) {
         warnOnce(warnedElements, element, target.fieldName);
         return false;

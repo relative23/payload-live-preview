@@ -103,6 +103,35 @@ describe('text renderer', () => {
     warn.mockRestore();
   });
 
+  // Site audit of 27.10.2026, B8: the first message carries what the server
+  // rendered, and rewriting it dropped the markup around the words.
+  it('leaves an element alone whose text already reads the value, markup inside and all', () => {
+    const el = document.createElement('p');
+    el.setAttribute('data-payload-text', '');
+    el.innerHTML = 'La <span lang="it">cucina</span>';
+    const outcome = rendererNamed('text').render(makeTarget(el), 'La cucina', emptyContext());
+    expect(outcome).not.toBe(false);
+    expect(el.innerHTML).toBe('La <span lang="it">cucina</span>');
+  });
+
+  it('does not refuse structured markup that already reads the value', () => {
+    const el = document.createElement('h1');
+    el.innerHTML = '\n  <span class="mark">Server rendered</span>\n';
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const outcome = rendererNamed('text').render(
+        makeTarget(el),
+        'Server rendered',
+        emptyContext(),
+      );
+      expect(outcome).not.toBe(false);
+      expect(el.querySelector('.mark')?.textContent).toBe('Server rendered');
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('honours data-payload-text opt-in to overwrite structured markup', () => {
     const el = document.createElement('h1');
     el.setAttribute('data-payload-text', '');
