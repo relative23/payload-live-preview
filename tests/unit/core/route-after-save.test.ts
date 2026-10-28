@@ -142,6 +142,63 @@ describe('a save with nothing left to refresh', () => {
   });
 });
 
+/**
+ * A navigation is a server render of the new route: the replay of the last
+ * message lands on markup that was rendered from the saved document a moment
+ * ago. Measured on a site that binds nothing of the edited document on the
+ * page it navigated to: every field counted as an unbound change, LP0807
+ * refreshed the route about 35 ms after the swap, fetched the same bytes and
+ * replaced what the host had added to the page since.
+ */
+describe('a navigation onto a page that does not bind the document', () => {
+  async function navigateAway(runtime: LivePreviewRuntime): Promise<void> {
+    document.body.innerHTML = '<p>A page that shows none of this document</p>';
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(50);
+  }
+
+  it('does not refresh the route it just rendered', async () => {
+    const log = vi.fn<(...args: unknown[]) => void>();
+    const route = fakeRoute('partial');
+    const runtime = start(route, { log });
+    await send({ title: 'Server rendered', callout: 'saved callout' });
+    await send({ title: 'Patched in place', callout: 'saved callout' });
+
+    await navigateAway(runtime);
+
+    expect(route.refreshes).toBe(0);
+    expect(log.mock.calls.some((call) => call.includes('LP0807'))).toBe(false);
+    expect(runtime.inspect().route.refreshes).toBe(0);
+    // What the replay cannot show is the saved document, as after a partial render.
+    expect(runtime.inspect().revisions.display?.shortfalls).toEqual([{ kind: 'route-saved' }]);
+    runtime.destroy();
+  });
+
+  it('renders the route once Payload reports the save', async () => {
+    const route = fakeRoute('partial');
+    const runtime = start(route);
+    await send({ title: 'Server rendered', callout: 'saved callout' });
+    await navigateAway(runtime);
+
+    await saved();
+
+    expect(route.refreshes).toBe(1);
+    runtime.destroy();
+  });
+
+  it('still refreshes for a field the editor changes after the navigation', async () => {
+    const route = fakeRoute('partial');
+    const runtime = start(route);
+    await send({ title: 'Server rendered', callout: 'saved callout' });
+    await navigateAway(runtime);
+
+    await send({ title: 'Server rendered', callout: 'typed after the navigation' });
+
+    expect(route.refreshes).toBe(1);
+    runtime.destroy();
+  });
+});
+
 describe('a throw after the refresh a save asked for', () => {
   it('is logged instead of left unhandled', async () => {
     const log = vi.fn<(...args: unknown[]) => void>();

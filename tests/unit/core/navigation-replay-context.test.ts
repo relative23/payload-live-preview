@@ -275,9 +275,13 @@ describe('LivePreviewRuntime — navigation replay context', () => {
     runtime.navigationCommit();
     await vi.advanceTimersByTimeAsync(50);
 
-    expect(refresh).toHaveBeenCalledOnce();
+    // As the navigation's baseline it leaves the unbound field to the save.
+    expect(refresh).not.toHaveBeenCalled();
     expect(document.querySelector('h1')?.textContent).toBe('unsaved title');
     expect(runtime.updateCount).toBe(2);
+    fireMessage({ type: 'payload-document-event', action: 'updated' });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(refresh).toHaveBeenCalledOnce();
     runtime.destroy();
   });
 

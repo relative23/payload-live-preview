@@ -21,8 +21,9 @@ import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-sta
 import { thrownFragment } from './revision-display';
 import {
   liveBoundary,
+  planBoundaries,
   type FragmentContext,
-  type FragmentStrategy,
+  type FragmentPlan,
   type RouteOutcome,
   type RouteStrategy,
 } from './strategies';
@@ -33,7 +34,13 @@ import {
   warnIslandStart,
   warnUnsupportedStrategy,
 } from './strategy-warnings';
-import { declaredSubfields, unboundChangedFields, type OwnerScope } from './unbound-fields';
+import {
+  declaredSubfields,
+  routeTouched,
+  unboundChangedFields,
+  type OwnerScope,
+  type SubfieldValues,
+} from './unbound-fields';
 import type { CachedElement } from './types';
 
 /** What the pipeline lends the runner. */
@@ -50,14 +57,6 @@ export interface StrategyHost {
   readonly restoreGuesses: (transaction: UpdateTransaction, data: PayloadLivePreviewData) => void;
   /** Scroll to the binding this revision marked, if it has not been revealed yet. */
   readonly revealPending: (transaction: UpdateTransaction) => void;
-}
-
-export interface FragmentPlan {
-  readonly boundaries: readonly Element[];
-  readonly strategy: FragmentStrategy;
-  readonly ownerKeys: OwnerScope;
-  /** Whether a binding sits inside a boundary the strategy renders this revision. */
-  readonly covers: (target: CachedElement) => boolean;
 }
 
 export class StrategyRunner {
@@ -151,6 +150,9 @@ export class StrategyRunner {
    * The baseline message is skipped, because there every field counts as
    * changed and the page has just been rendered from them anyway — and so is
    * the re-apply after a refresh, which would otherwise report it all twice.
+   * A navigation's replay lands on the server's render of the saved document
+   * too: a refresh would fetch those bytes again, so it is answered as a
+   * partial render is, by the next save.
    */
   hasUnboundChange(transaction: UpdateTransaction, ownerKeys: OwnerScope): boolean {
     const { deps, state } = this;
@@ -160,11 +162,7 @@ export class StrategyRunner {
       transaction.touched,
       transaction.locale,
       ownerKeys,
-      declaredSubfields(
-        deps.subfieldCoverage,
-        state.changes.previousFields,
-        transaction.renderData?.fields,
-      ),
+      this.subfields(transaction),
       deps.strategies,
     );
     let answered = 0;
@@ -178,20 +176,37 @@ export class StrategyRunner {
       for (const field of unbound) state.display.shortfall(transaction, { kind: 'unbound', field });
       return false;
     }
+    if (transaction.navigated) {
+      state.routeAwaitsSave = true;
+      state.display.shortfall(transaction, { kind: 'route-saved' });
+      return false;
+    }
     deps.log('route', 'LP0807', `field "${first}" has no binding; refreshing the route`);
     state.escalatedCount += answered;
     return true;
   }
 
+  /** What the declared mode compares below the top level for this revision. */
+  private subfields(transaction: UpdateTransaction): SubfieldValues | undefined {
+    const { previousFields } = this.state.changes;
+    return declaredSubfields(
+      this.deps.subfieldCoverage,
+      previousFields,
+      transaction.renderData?.fields,
+    );
+  }
+
   /**
    * Whether the route is asked for, by the strategy's planner or by a route
    * binding of a touched field, each only inside the update's owner scope: a
-   * marker another document owns is that document's business (PHD-02).
+   * marker another document owns is that document's business (PHD-02). Both
+   * see the paths inside the touched fields that route-bound elements name.
    */
-  plansRoute(route: RouteStrategy, touched: ReadonlySet<string>, ownerKeys: OwnerScope): boolean {
+  plansRoute(route: RouteStrategy, transaction: UpdateTransaction, ownerKeys: OwnerScope): boolean {
     const owned = (owner: string | undefined): boolean =>
       ownerKeys === false || isBindingInScope(owner, ownerKeys);
     const inScope = (element: Element): boolean => owned(resolveBindingOwner(element));
+    const touched = routeTouched(this.deps.cache, transaction.touched, this.subfields(transaction));
     if (route.plan(this.deps.root, touched, { inScope })) return true;
     for (const [fieldName, bindings] of this.deps.cache.entries()) {
       if (!touched.has(fieldName)) continue;
@@ -544,22 +559,6 @@ function coveringBoundaries(targets: readonly CachedElement[]): Element[] | unde
     if (!boundaries.includes(boundary)) boundaries.push(boundary);
   }
   return boundaries;
-}
-
-/** A plan over boundaries already chosen, whichever question chose them. */
-function planBoundaries(
-  strategy: FragmentStrategy,
-  boundaries: readonly Element[],
-  ownerKeys: OwnerScope,
-): FragmentPlan {
-  const covered = new Set(boundaries);
-  return {
-    boundaries,
-    strategy,
-    ownerKeys,
-    covers: (target) =>
-      target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
-  };
 }
 
 /** Whether the document that owns `element` is inside the update's owner scope. */

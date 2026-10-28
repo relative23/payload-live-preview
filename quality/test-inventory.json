@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 515,
-    "suites": 983,
-    "tests": 4476,
+    "files": 517,
+    "suites": 991,
+    "tests": 4500,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 419,
-      "suites": 874,
-      "tests": 4078,
+      "files": 421,
+      "suites": 882,
+      "tests": 4102,
       "benchmarks": 0
     }
   },
@@ -1359,6 +1359,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/declared-coverage-population.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/diagnostic-codes.test.ts",
       "group": "unit",
       "suites": 4,
@@ -1460,7 +1467,7 @@
       "path": "tests/unit/core/fragment-strategy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 17,
+      "tests": 18,
       "benchmarks": 0
     },
     {
@@ -2068,8 +2075,15 @@
     {
       "path": "tests/unit/core/route-after-save.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 10,
+      "suites": 5,
+      "tests": 13,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/route-nested-paths.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -2180,8 +2194,8 @@
     {
       "path": "tests/unit/core/subfield-coverage-walk.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 8,
+      "suites": 4,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -2208,8 +2222,8 @@
     {
       "path": "tests/unit/core/unbound-fields.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 13,
+      "suites": 7,
+      "tests": 16,
       "benchmarks": 0
     },
     {

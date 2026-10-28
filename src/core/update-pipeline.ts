@@ -150,6 +150,7 @@ export class UpdatePipeline {
       fragmentBoundariesRun: new WeakSet(),
       touched: new Set(),
       baseline: false,
+      navigated: false,
       invalidated: new Set(),
       revealTarget: undefined,
       revealIdentities: [],
@@ -280,10 +281,9 @@ export class UpdatePipeline {
       state.navigationReplayPending = false;
       state.navigationBindingReplay = true;
     }
-    // A navigation replay needs the baseline's complete touched set and
-    // auto-binding pass, but it is not the initial connection baseline:
-    // absent unsaved fields may need a fragment or route render now.
+    // A navigation replay counts every field as changed but is not the baseline.
     transaction.baseline = changes.baseline && !navigationReplay;
+    transaction.navigated = navigationReplay;
     transaction.invalidated = refined ? NOTHING_CHANGED : changes.invalidated;
     transaction.touched = refined
       ? NOTHING_CHANGED
@@ -371,7 +371,7 @@ export class UpdatePipeline {
       !lateBindings &&
       route !== undefined &&
       !transaction.routeRefreshed &&
-      (unbound || owed || this.strategies.plansRoute(route, touched, ownerKeys)) &&
+      (unbound || owed || this.strategies.plansRoute(route, transaction, ownerKeys)) &&
       isCurrent()
     ) {
       state.routeRefreshOwed = false;
@@ -459,7 +459,7 @@ export class UpdatePipeline {
       diagnoseOrphanFields(
         deps,
         state.warnedOrphanFields,
-        data.fields,
+        transaction.rawData,
         transaction.locale,
         ownerKeys,
       );

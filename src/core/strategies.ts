@@ -6,6 +6,8 @@
  * more; the orchestration lives in `payload-live-preview/fragment`.
  */
 import type { DiagnosticCode } from './diagnostic-codes';
+import type { CachedElement } from './types';
+import type { OwnerScope } from './unbound-fields';
 
 /** What produced an update: the runtime's DOM patching, a server-rendered fragment, or a route refresh. */
 export type UpdateSource = 'patch' | 'fragment' | 'route';
@@ -91,6 +93,31 @@ export interface FragmentStrategy {
     context: FragmentContext,
     boundaries: readonly Element[],
   ) => Promise<FragmentReport>;
+}
+
+/** The boundaries a revision hands the fragment strategy, and the bindings they take from the patch. */
+export interface FragmentPlan {
+  readonly boundaries: readonly Element[];
+  readonly strategy: FragmentStrategy;
+  readonly ownerKeys: OwnerScope;
+  /** Whether a binding sits inside a boundary the strategy renders this revision. */
+  readonly covers: (target: CachedElement) => boolean;
+}
+
+/** A plan over boundaries already chosen, whichever question chose them. */
+export function planBoundaries(
+  strategy: FragmentStrategy,
+  boundaries: readonly Element[],
+  ownerKeys: OwnerScope,
+): FragmentPlan {
+  const covered = new Set(boundaries);
+  return {
+    boundaries,
+    strategy,
+    ownerKeys,
+    covers: (target) =>
+      target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
+  };
 }
 
 /** One revision, as the route strategy sees it. */

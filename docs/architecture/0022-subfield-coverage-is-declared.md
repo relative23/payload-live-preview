@@ -124,3 +124,15 @@ covers, boundaries and route-bound elements from the page.
   of §1a; a native case in three browsers in
   which a partially bound group's unbound sibling refreshes the route in
   declared mode and not with a cover; the full chain and nightly.
+
+## Addendum (2026-10-28): population is not a change
+
+With a merge (`serverURL`), a message inside the merge window renders the
+admin's own values before the server answers, and the admin posts an upload or
+relationship as its id. The comparison in §3 then met the id on one side and
+the document the previous answer held on the other, called the path reshaped
+and escalated while the editor typed beside it (measured on a site: LP0807 and
+a route refresh for a keystroke in a kicker). Two values that are equal but for
+a document standing where the other holds its id now count as one. LP0203 reads
+the message's own values, so it names the upload rather than the fields of its
+document. `tests/unit/core/declared-coverage-population.test.ts` pins both.

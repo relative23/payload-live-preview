@@ -624,7 +624,10 @@ strategy that renders it ([bindings.md](bindings.md#what-a-page-accounts-for)).
 The document fields Payload sends with every update (`id`, `updatedAt`,
 `_status` and their kin) never count, and neither does the connection's first
 message, where every field looks changed and the page was just rendered from
-them.
+them. The first message after a soft navigation (`refreshAfterNavigation()`)
+lands on a route the server rendered a moment ago, so it refreshes nothing
+either: a field the new route does not bind is rendered once Payload reports
+the next save, as after a partial refresh.
 
 The refresh is throttled by the route strategy's own `minIntervalMs` (1 s by
 default), and a revision refreshes at most once — a second attempt is refused
@@ -686,8 +689,11 @@ Some markup no boundary can own: the document head (title, meta), the
 layout, route params, global providers. A binding there — anything in
 `<head>`, or an element marked `data-payload-strategy="route"` (with
 `data-payload-depends` naming its fields) — makes the revision a **route
-refresh**: the runtime fetches the current URL again (same cookies and
-query, header `x-payload-live-preview: route`), syncs `<title>`, `<meta>`
+refresh** when one of those fields changed. A path inside a field
+(`meta.title`, `layout.1.note`) changes with its field; under
+`subfieldCoverage: 'declared'`, which keeps the previous message, only when the
+value at the path does. In a refresh the runtime fetches the current URL again
+(same cookies and query, header `x-payload-live-preview: route`), syncs `<title>`, `<meta>`
 and the canonical link, morphs `<body>` in place (islands, `data-payload-owned`
 subtrees, editable content and custom elements without `data-payload-morph` are
 boundaries it does not cross), rescans, and re-applies the

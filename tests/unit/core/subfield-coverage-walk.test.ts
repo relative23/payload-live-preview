@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  pathChanged,
   SUBFIELD_DEPTH_LIMIT,
   SUBFIELD_VISIT_LIMIT,
   uncoveredChangedPaths,
@@ -88,5 +89,103 @@ describe('uncoveredChangedPaths', () => {
     expect(found).toHaveLength(SUBFIELD_VISIT_LIMIT - 1);
     expect(found.at(-2)).toBe(`f.k${String(SUBFIELD_VISIT_LIMIT - 2)}`);
     expect(found.at(-1)).toBe('f');
+  });
+});
+
+/**
+ * Population is not an edit: the admin posts an upload or a relationship as
+ * its id, a merge answers with the document, and a revision rendered before the
+ * answer meets the one after it.
+ */
+describe('a document and the id it stands for', () => {
+  const MEDIA = { id: 2, alt: 'Plates', url: '/media/plates.jpg' };
+  const bound = coverage(['hero.kicker']);
+  const changed = (before: unknown, after: unknown): string[] =>
+    paths(
+      uncoveredChangedPaths(
+        'hero',
+        { kicker: 'K', media: before },
+        { kicker: 'K2', media: after },
+        bound,
+      ),
+    );
+
+  it('are one value, in either direction', () => {
+    expect(changed(2, MEDIA)).toEqual([]);
+    expect(changed(MEDIA, 2)).toEqual([]);
+    expect(changed('a1', { ...MEDIA, id: 'a1' })).toEqual([]);
+  });
+
+  it('are one value inside a polymorphic relationship and a list of them', () => {
+    expect(
+      changed({ relationTo: 'media', value: 2 }, { relationTo: 'media', value: MEDIA }),
+    ).toEqual([]);
+    expect(changed([2, 3], [MEDIA, { ...MEDIA, id: 3 }])).toEqual([]);
+  });
+
+  it('differ when the id does, or its type, or the order of a list', () => {
+    expect(changed(3, MEDIA)).toEqual(['hero.media']);
+    expect(changed('2', MEDIA)).toEqual(['hero.media']);
+    expect(changed([3, 2], [MEDIA, { ...MEDIA, id: 3 }])).toEqual(['hero.media']);
+    expect(changed(true, { ...MEDIA, id: true })).toEqual(['hero.media']);
+  });
+
+  it('differ when anything else about the shape does', () => {
+    expect(changed([2], [MEDIA, MEDIA])).toEqual(['hero.media']);
+    expect(changed({ value: 2 }, { value: MEDIA, extra: 1 })).toEqual(['hero.media']);
+    expect(changed({ value: 2, a: 1 }, { value: MEDIA, b: 1 })).toEqual(['hero.media']);
+    expect(changed([2], { 0: MEDIA })).toEqual(['hero.media']);
+    expect(changed([MEDIA], [MEDIA, 2])).toEqual(['hero.media']);
+    expect(
+      changed({ relationTo: 'media', value: 2 }, { relationTo: 'pages', value: MEDIA }),
+    ).toEqual(['hero.media']);
+  });
+});
+
+describe('a document and its id, past the size an identity has', () => {
+  const big = 'x'.repeat(IDENTITY_SIZE_LIMIT + 1);
+  const bound = coverage(['hero.kicker']);
+  const changed = (before: unknown, after: unknown): string[] =>
+    paths(
+      uncoveredChangedPaths(
+        'hero',
+        { kicker: 'K', media: before },
+        { kicker: 'K2', media: after },
+        bound,
+      ),
+    );
+
+  it('are one value without a walk, whatever the document holds', () => {
+    expect(changed(2, { id: 2, caption: big })).toEqual([]);
+    expect(changed({ id: 2, caption: big }, 2)).toEqual([]);
+  });
+
+  it('count as changed where only a walk could tell, and a cycle is never walked', () => {
+    expect(changed([2], [{ id: 2, caption: big }])).toEqual(['hero.media']);
+    expect(changed([{ id: 2, caption: big }], [2])).toEqual(['hero.media']);
+    const cyclic = (): Record<string, unknown> => {
+      const node: Record<string, unknown> = { id: 'n' };
+      node['self'] = node;
+      return node;
+    };
+    expect(changed(cyclic(), cyclic())).toEqual(['hero.media']);
+  });
+});
+
+describe('pathChanged', () => {
+  const before = { layout: [{ heading: 'Menu' }, { note: 'Saved', media: 2 }] };
+
+  it('compares the value at the path, not its field', () => {
+    const after = { layout: [{ heading: 'Menu of the day' }, { note: 'Saved', media: 2 }] };
+    expect(pathChanged('layout.1.note', before, after)).toBe(false);
+    expect(pathChanged('layout.0.heading', before, after)).toBe(true);
+  });
+
+  it('counts a path that appears or goes away as changed, and population as none', () => {
+    expect(pathChanged('layout.2.note', before, { layout: [{}, {}, { note: 'New' }] })).toBe(true);
+    expect(pathChanged('layout.1.note', before, { layout: [{}, {}] })).toBe(true);
+    const populated = { layout: [{ heading: 'Menu' }, { note: 'Saved', media: { id: 2 } }] };
+    expect(pathChanged('layout.1.media', before, populated)).toBe(false);
+    expect(pathChanged('layout.1.media', populated, before)).toBe(false);
   });
 });

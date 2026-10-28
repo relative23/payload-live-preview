@@ -378,7 +378,9 @@ group the page reaches only below the top level, each changed path needs a
 binding of its own, a binding on the path above it, or a declaration; an
 uncovered one is an unbound change: LP0203 and `inspect().fidelity.fields`
 name it (`hero.description`), and `onUnfaithfulPatch` decides whether the
-route is refreshed for it.
+route is refreshed for it. An upload or relationship counts as unchanged when
+only its population differs: the admin posts its id, and a merge with the
+server (`serverURL`) answers with the document.
 
 A page that shows part of a document on purpose says so with
 `data-payload-covers`: field paths it accounts for, and everything below them.

@@ -16,8 +16,7 @@ import { parseDependencyList } from './dependencies';
 import { bindingValue } from './field-value';
 import { dispatchIslandUpdate, isAwaitingIslandHydration } from './islands';
 import type { RuntimeDeps, RuntimeState, UpdateTransaction } from './runtime-state';
-import { resolveStrategy } from './strategies';
-import type { FragmentPlan } from './strategy-runner';
+import { planBoundaries, resolveStrategy, type FragmentPlan } from './strategies';
 import type { OwnerScope } from './unbound-fields';
 import { ownerKeysForUpdate } from './update-owner';
 
@@ -144,6 +143,11 @@ export class NavigationReplay {
     return fields;
   }
 
+  /**
+   * The boundaries of `plan` this revision has not rendered yet. `null` stays
+   * the answer for a page without a fragment strategy only: a plan left with no
+   * boundary still has a handler, and the pipeline reads `null` as LP0806.
+   */
   unrunFragmentPlan(
     transaction: UpdateTransaction,
     plan: FragmentPlan | null,
@@ -156,14 +160,7 @@ export class NavigationReplay {
         (onlyElements === undefined ||
           [...onlyElements].some((element) => element === boundary || boundary.contains(element))),
     );
-    if (boundaries.length === 0) return null;
-    const covered = new Set(boundaries);
-    return {
-      ...plan,
-      boundaries,
-      covers: (target) =>
-        target.fragmentBoundary !== undefined && covered.has(target.fragmentBoundary),
-    };
+    return planBoundaries(plan.strategy, boundaries, plan.ownerKeys);
   }
 
   private confirmation(island: Element, transaction: UpdateTransaction): () => void {

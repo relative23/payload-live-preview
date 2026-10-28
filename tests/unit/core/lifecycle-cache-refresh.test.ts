@@ -163,7 +163,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     expect(element.textContent).toBe('published after timeout');
     runtime.destroy();
   });
-  it('lets a navigation replay escalate an unsaved field absent from the new route', async () => {
+  it('leaves an unsaved field absent from the new route to the save', async () => {
     document.body.innerHTML = '<p data-payload-field="title">published</p>';
     const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
     const runtime = new LivePreviewRuntime({
@@ -184,7 +184,12 @@ describe('LivePreviewRuntime — cache refresh', () => {
 
     runtime.navigationCommit();
     await vi.advanceTimersByTimeAsync(50);
+    // The navigation rendered the route from the saved document a moment ago;
+    // a refresh would bring the same bytes, the save brings the field.
+    expect(refresh).not.toHaveBeenCalled();
 
+    fireMessage({ type: 'payload-document-event', action: 'updated' });
+    await vi.advanceTimersByTimeAsync(50);
     expect(refresh).toHaveBeenCalledOnce();
     runtime.destroy();
   });

@@ -25,6 +25,7 @@ function transaction(fields: Record<string, unknown>): UpdateTransaction {
     fragmentBoundariesRun: new WeakSet(),
     touched: new Set(['title']),
     baseline: false,
+    navigated: false,
     invalidated: new Set(),
     revealTarget: undefined,
     revealIdentities: [],
