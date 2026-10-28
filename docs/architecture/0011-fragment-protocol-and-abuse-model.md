@@ -89,6 +89,12 @@ as recorded in the 2026-10-03 addendum below.
 
 ### 3. Server contract (`createFragmentEndpoint`, Astro first)
 
+Note (2026-10-27): this section records the first stage, when only the Astro
+endpoint existed. Since 2.0.2, `payload-live-preview/nextjs`, `/sveltekit` and
+`/nuxt` export the same endpoint over the shared handler and render with
+`react-dom/server`, `svelte/server` and `vue/server-renderer`; see the 2.0.2
+note under section 5.
+
 The endpoint renders only what its **registry** names: `{ [id]: {
 component, props(input) } }`. Props are computed by the server from the
 input (fields, locale, slugs, route, the authorized context); nothing in
