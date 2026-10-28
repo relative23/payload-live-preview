@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 515,
-    "suites": 982,
-    "tests": 4474,
+    "suites": 983,
+    "tests": 4476,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 419,
-      "suites": 873,
-      "tests": 4076,
+      "suites": 874,
+      "tests": 4078,
       "benchmarks": 0
     }
   },
@@ -1102,8 +1102,8 @@
     {
       "path": "tests/unit/codegen/annotate-cli.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 5,
+      "suites": 3,
+      "tests": 7,
       "benchmarks": 0
     },
     {

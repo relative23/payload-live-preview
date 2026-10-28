@@ -99,6 +99,47 @@ describe('pll-codegen annotate', () => {
     expect(report).toContain('4: left alone — the schema has no field `missing`');
   });
 
+  describe('a config it cannot read', () => {
+    // Site audit of 2026-10-27 (A1), on two sites: the schema came back
+    // empty, the run exited 0, and every real field was reported as one "the
+    // schema has no field" — while the generator stops on the same config
+    // with exit 2.
+    it('stops with exit 2 when the config does not open, and names it', async () => {
+      const { out, err, io } = capture();
+
+      const code = await runAnnotate([templatePath, '--config', join(workDir, 'nope.ts')], io);
+
+      expect(code).toBe(2);
+      expect(err.join('')).toContain('Could not open');
+      expect(err.join('')).toContain('the schema is empty');
+      // Nothing was scanned, so there is no report claiming refusals.
+      expect(out.join('')).toBe('');
+    });
+
+    it('stops with exit 2 when the collections come through a path alias', async () => {
+      await mkdir(join(workDir, 'collections'), { recursive: true });
+      await writeFile(
+        join(workDir, 'collections', 'Pages.ts'),
+        "export const Pages = { slug: 'pages', fields: [{ name: 'title', type: 'text' }] };\n",
+        'utf8',
+      );
+      const aliased = join(workDir, 'aliased.config.ts');
+      await writeFile(
+        aliased,
+        "import { Pages } from '@/collections/Pages';\nexport default { collections: [Pages] };\n",
+        'utf8',
+      );
+      const { err, io } = capture();
+
+      const code = await runAnnotate([templatePath, '--config', aliased, '--write'], io);
+
+      expect(code).toBe(2);
+      expect(err.join('')).toContain('Skipped "Pages"');
+      expect(err.join('')).toContain('path alias');
+      expect(await readFile(templatePath, 'utf8')).toBe(TEMPLATE);
+    });
+  });
+
   it('refuses to run without a config or a path', async () => {
     const { err, io } = capture();
 
