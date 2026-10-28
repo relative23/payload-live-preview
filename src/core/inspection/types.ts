@@ -180,7 +180,7 @@ export interface InspectionFidelity {
   readonly canEscalate: boolean;
   /** Bindings reported unfaithful since start — once per element, like LP0411, and under every mode. */
   readonly unfaithful: number;
-  /** Of those, how many were handed to the fragment or route strategy. */
+  /** How many times one of those was handed to the fragment or route strategy; a later edit hands it again. */
   readonly escalated: number;
   /** The field names behind `unfaithful`, sorted. Cumulative. */
   readonly fields: readonly string[];

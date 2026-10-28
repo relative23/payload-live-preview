@@ -16,6 +16,8 @@ import type { CachedElement, FieldRenderer, RenderContext, RendererKey } from '.
 import type { ScheduledUpdate } from './update-scheduler';
 
 export class BindingWriter {
+  /** The value being written, which a renderer's report of a shortfall is about. */
+  private writing: unknown;
   /** The instance's share of every `RenderContext`, built once: a write allocates the context alone. */
   private readonly instanceContext: Pick<
     RenderContext,
@@ -33,7 +35,7 @@ export class BindingWriter {
       // A renderer already holds its target, so one closure per instance says
       // as much as one per write and allocates nothing during an update.
       reportUnfaithful: (target: CachedElement, reason: string): void => {
-        reportUnfaithfulPatch(deps, state, target, reason);
+        reportUnfaithfulPatch(deps, state, target, reason, this.writing);
       },
     });
   }
@@ -99,18 +101,25 @@ export class BindingWriter {
         // of this value is gone (Z20). Costs nothing unless this is the first
         // write to a binding a formatting renderer owns.
         const shown = watchServerFormatting(deps, state, target, type);
+        this.writing = value;
         const outcome = invokeRenderer(renderer, target, value, context);
         if (outcome === false && rendererUsesNoWriteOutcome(renderer)) {
           // The renderer refused the value it was given, so the element still
           // shows what the server put there — right until the next edit makes
           // it stale. That is the moment to ask for better markup.
-          reportUnfaithfulPatch(deps, state, target, `is a value ${renderer.name} cannot render`);
+          reportUnfaithfulPatch(
+            deps,
+            state,
+            target,
+            `is a value ${renderer.name} cannot render`,
+            value,
+          );
           return false;
         }
         if (shown !== undefined) reportServerFormatting(deps, target, shown);
       } else {
         deps.log('no renderer for', type);
-        reportUnfaithfulPatch(deps, state, target, `has no renderer for "${type}"`);
+        reportUnfaithfulPatch(deps, state, target, `has no renderer for "${type}"`, value);
         return false;
       }
     } catch (error) {
