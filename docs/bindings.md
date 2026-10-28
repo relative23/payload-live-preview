@@ -245,7 +245,9 @@ import PreviewBoundary from 'payload-live-preview/astro/PreviewBoundary.astro';
 Props: `field`, `value` (decides only whether the anchor starts hidden), `as`
 (default `div`), `type` (forwarded as `data-payload-type`); other attributes
 are forwarded to the wrapper. The anchor is a patch target; markup a server
-renders lives in a `data-payload-fragment` boundary instead.
+renders lives in a `data-payload-fragment` boundary instead. The visibility
+gate (`visibilityGateThreshold`) does not hold a write to an anchor that is
+hidden or has no size: it never scrolls into view, and the write shows it.
 
 For rich text, `RichText` renders the Lexical value through the same
 serializer the runtime uses for live updates and emits the binding with

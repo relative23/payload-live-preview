@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OriginDetector, normaliseOrigin } from '@detection/origin';
 
 const PRODUCTION = { enableReferrerDetection: false, forceDevMode: false } as const;
@@ -252,6 +252,78 @@ describe('OriginDetector — enumerate', () => {
     });
     detector.lockOrigin('https://a.com');
     expect(detector.enumerate()).toEqual(['https://a.com']);
+  });
+});
+
+/**
+ * The localhost ports are a guess at where a development admin runs, and every
+ * port that is not it costs a console error ("Unable to post message to …"):
+ * the real-admin trace of a site with explicit `allowedOrigins` showed 25 of
+ * them. Chromium and WebKit name the framing parent (`location.ancestorOrigins`);
+ * where they do, the handshake goes to that origin instead of the guess.
+ */
+describe('OriginDetector — the handshake to a parent the browser names', () => {
+  const DEV = { enableReferrerDetection: false, forceDevMode: true } as const;
+  function framedBy(origin: string): void {
+    Object.defineProperty(window.location, 'ancestorOrigins', {
+      value: [origin],
+      configurable: true,
+    });
+  }
+  afterEach(() => {
+    Reflect.deleteProperty(window.location, 'ancestorOrigins');
+  });
+
+  it('goes to the explicit origin alone when it frames the page', () => {
+    framedBy('http://localhost:3023');
+    const detector = new OriginDetector({ additionalOrigins: ['http://localhost:3023'], ...DEV });
+    expect(detector.enumerate()).toEqual(['http://localhost:3023']);
+  });
+
+  it('goes to a localhost parent alone when no origin is configured', () => {
+    framedBy('http://localhost:3000');
+    expect(new OriginDetector(DEV).enumerate()).toEqual(['http://localhost:3000']);
+  });
+
+  it('adds a localhost parent the configuration does not name, which development trusts', () => {
+    framedBy('http://localhost:3001');
+    const detector = new OriginDetector({ additionalOrigins: ['https://cms.example.com'], ...DEV });
+    expect(detector.enumerate()).toEqual(['https://cms.example.com', 'http://localhost:3001']);
+  });
+
+  it('adds no port for a parent on no localhost port', () => {
+    framedBy('https://elsewhere.example');
+    const detector = new OriginDetector({ additionalOrigins: ['https://cms.example.com'], ...DEV });
+    expect(detector.enumerate()).toEqual(['https://cms.example.com']);
+  });
+
+  it('keeps the ports where the browser names no parent', () => {
+    Object.defineProperty(window.location, 'ancestorOrigins', { value: [], configurable: true });
+    const detector = new OriginDetector({ additionalOrigins: ['http://localhost:3023'], ...DEV });
+    expect(detector.enumerate()).toContain('http://localhost:3000');
+    expect(detector.enumerate()).toContain('http://127.0.0.1:5173');
+  });
+
+  it('asks no browser API where there is none, as in a server render', () => {
+    vi.stubGlobal('location', undefined);
+    try {
+      const detector = new OriginDetector({
+        additionalOrigins: ['https://cms.example.com'],
+        ...DEV,
+      });
+      expect(detector.enumerate()).toContain('http://localhost:3000');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('leaves the ports off without development matching, whatever frames the page', () => {
+    framedBy('http://localhost:3000');
+    const detector = new OriginDetector({
+      additionalOrigins: ['https://cms.example.com'],
+      ...PRODUCTION,
+    });
+    expect(detector.enumerate()).toEqual(['https://cms.example.com']);
   });
 });
 

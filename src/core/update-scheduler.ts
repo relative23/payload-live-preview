@@ -3,7 +3,7 @@
  * first write of a quiet phase does not wait for the window: it goes out on the
  * next frame and opens the window that batches the rest of the burst, so an
  * isolated keystroke costs a frame instead of a whole debounce. The scheduler
- * never touches the DOM; the injected `apply` callback does.
+ * never writes the DOM; the injected `apply` callback does.
  */
 
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
@@ -333,7 +333,8 @@ export class UpdateScheduler {
     try {
       for (const entry of pending.values()) {
         if (!this.isCurrent(entry)) continue;
-        const visible = !gateActive || this.isVisible(entry.target.element);
+        const visible =
+          !gateActive || this.isVisible(entry.target.element) || nothingToScrollTo(entry.target);
         // The visibility callback is consumer code and may change the revision.
         if (!this.isCurrent(entry)) continue;
         batchEntry ??= entry;
@@ -431,6 +432,19 @@ export class UpdateScheduler {
     if (debounceTimer !== null) clearTimeout(debounceTimer);
     if (frameHandle !== null) this.cancelFrame(frameHandle);
   }
+}
+
+/**
+ * An empty-field anchor that is hidden, or has no size, never scrolls into
+ * view: the gate would hold the one write that can show it for good. Asked
+ * after the visibility callback, so only of an anchor not seen yet.
+ */
+function nothingToScrollTo(target: CachedElement): boolean {
+  if (target.hidesWhenEmpty !== true) return false;
+  const { element } = target;
+  if (element.hasAttribute('hidden')) return true;
+  const box = element.getBoundingClientRect();
+  return box.width === 0 || box.height === 0;
 }
 
 function compareRevision(a: MessageRevision, b: MessageRevision): number {
