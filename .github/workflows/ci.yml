@@ -392,7 +392,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          # compat:check counts a bare 22 as 22.0.0, and the floor consumer's lock needs 22.20 (2026-10-28)
+          node-version: 22.23.4
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -430,7 +431,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          # The ACL fixture installs Payload 3.92, which needs ^22.23.4; compat:check counts a bare 22 as 22.0.0 (2026-10-28)
+          node-version: 22.23.4
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -471,7 +473,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          # The ACL fixture installs Payload 3.92, which needs ^22.23.4; compat:check counts a bare 22 as 22.0.0 (2026-10-28)
+          node-version: 22.23.4
           cache: npm
           cache-dependency-path: |
             package-lock.json
