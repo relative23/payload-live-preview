@@ -413,7 +413,7 @@ quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches
 drift the moment Payload ships it. Per Payload version that means: 2.x is
 covered by a corpus captured from a real 2.32.3 admin, captured-message
 integration tests and `fieldSchemaJSON` typing;
-3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.92.0 by the
+3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.92.1 by the
 real-admin E2E on every push; 4.0.0-beta.4 by a corpus captured from a real
 Payload 4 admin (the fixture stays on 3.x) and by one measurement of the config
 plugin against a real admin, outside CI ([compatibility list](../README.md#compatibility)); `latest`

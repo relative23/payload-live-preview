@@ -12,11 +12,11 @@
     "e2e:serve": "payload generate:importmap && next dev --port 3001"
   },
   "dependencies": {
-    "@payloadcms/db-sqlite": "3.92.0",
-    "@payloadcms/next": "3.92.0",
-    "@payloadcms/richtext-lexical": "3.92.0",
+    "@payloadcms/db-sqlite": "3.92.1",
+    "@payloadcms/next": "3.92.1",
+    "@payloadcms/richtext-lexical": "3.92.1",
     "next": "^16.4.2",
-    "payload": "3.92.0",
+    "payload": "3.92.1",
     "payload-live-preview": "file:../..",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

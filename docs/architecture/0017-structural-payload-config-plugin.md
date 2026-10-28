@@ -128,7 +128,7 @@ restriction intact. README and the Payload guide now describe that limit.
 
 The 2026-10-03 observation came from one run against Payload 3.89.0 whose spec
 lived outside the repository. The `create` target of the real-admin suite now
-repeats it against the 3.90.2 admin that the fixture installed then (3.92.0 since 2026-10-25), in Chromium,
+repeats it against the 3.90.2 admin that the fixture installed then (3.92.0 since 2026-10-25, 3.92.1 since 2026-10-29), in Chromium,
 Firefox and WebKit on every push (`tests/real-payload/surface-create.spec.ts`).
 The fixture gives that admin two collections: `mapped-pages`, routed by this
 plugin's function, and `manual-pages`, with a fixed string URL.
