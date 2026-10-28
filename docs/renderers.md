@@ -234,8 +234,11 @@ what the page ends up with: the `richText` write pairs each placeholder with the
 element standing in its position in the live markup and leaves that element
 alone, so the `<figure>` your own server rendered for a `mediaBlock` survives an
 edit to another field. Pairing is positional — the server writes no id to match
-on — and stops where the child counts disagree, at which point the empty
-placeholder is written after all. The one wrapper a template puts around the
+on. Where the child counts disagree, because an edit added or removed a
+paragraph, it walks in from both ends and stops at two elements that cannot be
+one node: two tags, or a placeholder against an element of a tag the rendered
+document has beside it, so a paragraph is never taken for the block. A
+placeholder left in between is written as the empty placeholder after all. The one wrapper a template puts around the
 field — `<div class="prose">` around the blocks — is not a disagreement: the
 write pairs inside it and leaves it standing, so the classes the typography
 hangs on survive too, around a document of a single paragraph as well. A

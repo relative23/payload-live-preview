@@ -151,12 +151,62 @@ describe('richText renderer', () => {
 
     it('writes the placeholder when the two do not line up', () => {
       const el = document.createElement('div');
-      // The server dropped the empty outro paragraph: two children against three.
-      el.innerHTML = '<p>old</p><figure><img src="https://cdn.example.com/a.jpg"></figure>';
+      // A second wrapper: one child against three, and nothing in it pairs.
+      el.innerHTML =
+        '<div class="frame"><div class="prose"><p>old</p><figure><img src="https://cdn.example.com/a.jpg"></figure></div></div>';
       rendererNamed('richText').render(makeTarget(el), mediaDocument, emptyContext());
       expect(el.querySelector('img')).toBeNull();
       expect(el.querySelector('.lp-block')?.outerHTML).toBe(
         '<div class="lp-block lp-block--mediablock"></div>',
+      );
+    });
+
+    // Site audit of 27.10.2026, C10: an edit adds or removes a node, and the
+    // pairing walks in from both ends instead of giving up on the count.
+    it.each([
+      [
+        'a paragraph added before the block',
+        '<p>intro</p><figure>F</figure><p>outro</p>',
+        'before',
+      ],
+      ['a paragraph added after it', '<p>intro</p><figure>F</figure><p>outro</p>', 'after'],
+      [
+        'the paragraph before it removed',
+        '<p>x</p><p>intro</p><figure>F</figure><p>outro</p>',
+        'none',
+      ],
+      ['the server dropped the empty last paragraph', '<p>intro</p><figure>F</figure>', 'none'],
+    ])('keeps the block with %s', (_case, server, added) => {
+      const el = document.createElement('div');
+      el.innerHTML = server;
+      const figure = el.querySelector('figure');
+      const paragraph = (text: string) => ({
+        type: 'paragraph',
+        children: [{ type: 'text', text }],
+      });
+      const children = [
+        ...(added === 'before' ? [paragraph('new')] : []),
+        { type: 'block', fields: { blockType: 'mediaBlock' } },
+        ...(added === 'after' ? [paragraph('new')] : []),
+        paragraph('outro'),
+      ];
+      const context = { ...emptyContext(), reportUnfaithful: vi.fn() };
+      rendererNamed('richText').render(
+        makeTarget(el),
+        { root: { children: [paragraph('intro'), ...children] } },
+        context,
+      );
+      expect(el.querySelector('figure')).toBe(figure);
+      expect(el.querySelector('.lp-block')).toBeNull();
+      expect(context.reportUnfaithful).not.toHaveBeenCalled();
+    });
+
+    it('does not take a paragraph for the block', () => {
+      const el = document.createElement('div');
+      el.innerHTML = '<p>intro</p><p>outro</p>';
+      rendererNamed('richText').render(makeTarget(el), mediaDocument, emptyContext());
+      expect(el.innerHTML).toBe(
+        '<p>intro</p><div class="lp-block lp-block--mediablock"></div><p>outro</p>',
       );
     });
 
@@ -300,8 +350,8 @@ describe('richText renderer', () => {
     // said "keeping" while the write was about to lose the block.
     it('reports a block it lost through the context, once the write is done', () => {
       const el = document.createElement('div');
-      // The server dropped the empty outro paragraph: two children against three.
-      el.innerHTML = '<p>old</p><figure><img src="https://cdn.example.com/a.jpg"></figure>';
+      // Two paragraphs against three nodes: no element of another tag stands where the block does.
+      el.innerHTML = '<p>old</p><p>old</p>';
       const seen: string[] = [];
       const reportUnfaithful = vi.fn((_target: unknown, reason: string) => {
         seen.push(`${reason} | ${el.innerHTML}`);

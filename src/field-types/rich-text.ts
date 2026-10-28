@@ -155,24 +155,53 @@ function wrapperOf(element: Element, rendered: Element): Element | null {
 /**
  * Pair each placeholder with the live element in its position. Both trees
  * describe the same document, so position is the only key there is — the server
- * writes no id to match on. Descent stops where the child counts differ: the
- * two do not line up there, nothing is kept, and the placeholder is written,
- * which is what this renderer did before.
+ * writes no id to match on. Where the child counts differ, an edit added or
+ * removed a node somewhere in between: the pairing walks in from both ends and
+ * stops at the first two that cannot be one node, two tags, or a placeholder
+ * against an element of a tag the document renders beside it. A placeholder
+ * left in between is written, which is what this renderer did before.
  */
 function pairUnrenderedBlocks(
   live: Element,
   rendered: Element,
   kept: [placeholder: Element, live: Element][],
 ): void {
-  if (live.children.length !== rendered.children.length) return;
-  let liveChild = live.firstElementChild;
-  let renderedChild = rendered.firstElementChild;
+  const pair = (block: Element, element: Element): void => {
+    if (block.matches(UNRENDERED_BLOCK_SELECTOR)) kept.push([block, element]);
+    else pairUnrenderedBlocks(element, block, kept);
+  };
   // Nothing moves until every pairing is known, so walking siblings is stable.
-  while (liveChild !== null && renderedChild !== null) {
-    if (renderedChild.matches(UNRENDERED_BLOCK_SELECTOR)) kept.push([renderedChild, liveChild]);
-    else pairUnrenderedBlocks(liveChild, renderedChild, kept);
-    liveChild = liveChild.nextElementSibling;
-    renderedChild = renderedChild.nextElementSibling;
+  let element = live.firstElementChild;
+  let block = rendered.firstElementChild;
+  if (live.children.length === rendered.children.length) {
+    for (; element !== null && block !== null; element = element.nextElementSibling) {
+      pair(block, element);
+      block = block.nextElementSibling;
+    }
+    return;
+  }
+  const tags = new Set<string>();
+  for (const child of rendered.children) {
+    if (!child.matches(UNRENDERED_BLOCK_SELECTOR)) tags.add(child.tagName);
+  }
+  const fits = (candidate: Element, standing: Element): boolean =>
+    candidate.matches(UNRENDERED_BLOCK_SELECTOR)
+      ? !tags.has(standing.tagName)
+      : candidate.tagName === standing.tagName;
+  let front = 0;
+  for (; element !== null && block !== null && fits(block, element); front += 1) {
+    pair(block, element);
+    element = element.nextElementSibling;
+    block = block.nextElementSibling;
+  }
+  const shorter = Math.min(live.children.length, rendered.children.length);
+  element = live.lastElementChild;
+  block = rendered.lastElementChild;
+  for (let back = front; back < shorter && element !== null && block !== null; back += 1) {
+    if (!fits(block, element)) return;
+    pair(block, element);
+    element = element.previousElementSibling;
+    block = block.previousElementSibling;
   }
 }
 

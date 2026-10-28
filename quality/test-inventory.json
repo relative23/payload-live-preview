@@ -22,7 +22,7 @@
   "totals": {
     "files": 514,
     "suites": 977,
-    "tests": 4456,
+    "tests": 4459,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 418,
       "suites": 868,
-      "tests": 4058,
+      "tests": 4061,
       "benchmarks": 0
     }
   },
@@ -1628,7 +1628,7 @@
       "path": "tests/unit/core/lexical-block-preservation.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -2405,7 +2405,7 @@
       "path": "tests/unit/field-types/html-renderers.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 31,
+      "tests": 33,
       "benchmarks": 0
     },
     {
