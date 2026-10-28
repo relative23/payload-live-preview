@@ -131,13 +131,20 @@ React wrapper.
 
 ### Five where the results differ
 
-| Measured with                                                                  | `@payloadcms/live-preview` 3.88.0                                              | This hook                                                          |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                         |
-| Two messages, the first answered after 40 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands  |
-| HTTP 403 with Payload's error body, `{"errors":[{"message":…}]}`               | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403   |
-| Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | each keeps its own document (ADR 0002)                             |
-| `fetch` rejecting with `TypeError: Failed to fetch`                            | the rejection escapes the async listener                                       | last good document kept, `status: 'unavailable'`, `error` names it |
+| Measured with                                                                  | `@payloadcms/live-preview` 3.88.0                                              | This hook                                                                                                                                        |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                                                                                                       |
+| Two messages, the first answered after 40 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands                                                                                |
+| HTTP 403 with Payload's error body, `{"errors":[{"message":…}]}`               | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403                                                                                 |
+| Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | the merge for `2` fetches `pages/2`; each hook keeps its own state, requests and errors (ADR 0002), and both follow the document the admin sends |
+| `fetch` rejecting with `TypeError: Failed to fetch`                            | the rejection escapes the async listener                                       | last good document kept, `status: 'unavailable'`, `error` names it                                                                               |
+
+Both follow the document the admin sends: a hook takes every update from an
+allowed admin window, whichever document its `initialData` came from. On a page
+that previews document `1`, a second hook started from document `2` shows
+document `1` after the first update. Give the hook to the component that
+renders the document being edited, and render other documents from the data
+your server loaded.
 
 The failed update is not retried: this hook reports it and catches up on the
 next message. On Payload 3 the hook sends one merge request per accepted

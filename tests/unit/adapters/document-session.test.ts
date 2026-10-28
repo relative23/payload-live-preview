@@ -64,9 +64,9 @@ function open(options: Partial<Parameters<typeof createSession>[0]> = {}): Docum
 }
 
 function createSession(
-  options: Partial<{ serverURL: string; fetchFn: typeof fetch; depth: number }> = {},
+  options: Partial<{ serverURL: string; fetchFn: typeof fetch; depth: number; initial: Doc }> = {},
 ): DocumentSession<Doc> {
-  return new DocumentSession<Doc>(INITIAL, {
+  return new DocumentSession<Doc>(options.initial ?? INITIAL, {
     serverURL: options.serverURL ?? SERVER,
     allowedOrigins: [ADMIN],
     eventSourcePolicy: 'any',
@@ -212,7 +212,7 @@ describe('DocumentSession', () => {
     },
   );
 
-  it('5. gives two sessions on one page two documents', async () => {
+  it('5. keeps the snapshots and requests of two sessions on one page apart', async () => {
     const first = open({
       fetchFn: (() =>
         Promise.resolve(jsonResponse({ id: '1', title: 'First hook' }))) as unknown as typeof fetch,
@@ -230,6 +230,57 @@ describe('DocumentSession', () => {
     await until(second, (s) => s.status === 'live');
     expect(first.getSnapshot().data.title).toBe('First hook');
     expect(second.getSnapshot().data.title).toBe('Second hook');
+  });
+
+  it('keeps a failed merge in the session it failed in', async () => {
+    const first = open({ fetchFn: vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))) });
+    const second = open({
+      fetchFn: vi.fn(() => Promise.resolve(jsonResponse({ id: '1', title: 'Merged' }))),
+    });
+
+    window.dispatchEvent(update({ title: 'Typed' }));
+
+    const failed = await until(first, (s) => s.status === 'unavailable');
+    const merged = await until(second, (s) => s.status === 'live');
+    expect(failed.data).toEqual(INITIAL);
+    expect(failed.error?.message).toContain('Failed to fetch');
+    expect(merged.data).toEqual({ id: '1', title: 'Merged' });
+    expect(merged.error).toBeUndefined();
+  });
+
+  it('has two sessions on one page follow the document the admin sends, whichever one each started from', async () => {
+    // The boundary as it stands: a session takes every message the bus lets
+    // through and merges the document that message names. Nothing ties it to
+    // the document its initial data came from.
+    const answerFromUrl = (urls: string[]) =>
+      vi.fn((url: string) => {
+        urls.push(url);
+        const id = url.split('/').at(-1) ?? '';
+        return Promise.resolve(jsonResponse({ id, title: `Merged ${id}` }));
+      }) as unknown as typeof fetch;
+    const firstUrls: string[] = [];
+    const secondUrls: string[] = [];
+    const first = open({
+      initial: { id: '1', title: 'Page one' },
+      fetchFn: answerFromUrl(firstUrls),
+    });
+    const second = open({
+      initial: { id: '2', title: 'Page two' },
+      fetchFn: answerFromUrl(secondUrls),
+    });
+
+    window.dispatchEvent(update({ title: 'Typed into page one' }));
+    await until(first, (s) => s.revision === 1 && !s.isLoading);
+    await until(second, (s) => s.revision === 1 && !s.isLoading);
+    expect(second.getSnapshot().data).toEqual({ id: '1', title: 'Merged 1' });
+
+    window.dispatchEvent(update({ id: '2', title: 'Typed into page two' }));
+    await until(first, (s) => s.revision === 2 && !s.isLoading);
+    await until(second, (s) => s.revision === 2 && !s.isLoading);
+    expect(first.getSnapshot().data).toEqual({ id: '2', title: 'Merged 2' });
+    expect(second.getSnapshot().data).toEqual({ id: '2', title: 'Merged 2' });
+    expect(firstUrls).toEqual([`${SERVER}/api/pages/1`, `${SERVER}/api/pages/2`]);
+    expect(secondUrls).toEqual([`${SERVER}/api/pages/1`, `${SERVER}/api/pages/2`]);
   });
 
   it('refuses an update from an origin that is not allowed', async () => {
