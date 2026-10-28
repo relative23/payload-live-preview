@@ -97,7 +97,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0706:
     'Give every binding an owning `data-payload-owner` ancestor, or leave `scopeBindingsByOwner` off until they all have one.',
   LP0707:
-    'Add binding attributes to the markup; `pll-codegen --inventory` lists every field the schema makes addressable.',
+    'Add binding attributes or `data-payload-fragment` boundaries to the markup; `pll-codegen --inventory` lists every field the schema makes addressable.',
   LP0708:
     'Point the audit at a route that renders an HTML document. Redirects are reported, not followed, so probe the final URL; a redirect to a login needs credentials: pass `--header "Cookie: payload-token=…"` or a signed token as `?previewToken=…`.',
   LP0709:

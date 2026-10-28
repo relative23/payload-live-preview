@@ -99,7 +99,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   AuditGateThresholdExceeded: 'LP0705',
   /** Owner markers exist, but some bindings are outside all of them. */
   AuditUnownedBindings: 'LP0706',
-  /** The preview response carries no bindings at all. */
+  /** The preview response carries no bindings and no fragment boundary. */
   AuditNoBindings: 'LP0707',
   /** The URL did not return an HTML page, so nothing else can be judged. */
   AuditNotAPage: 'LP0708',
