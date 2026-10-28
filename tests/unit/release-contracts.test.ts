@@ -11,14 +11,17 @@ import {
   findPackageLockMetadataViolations,
   findPackageSmokeIsolationViolations,
   findReleaseWorkflowViolations,
+  gitBlobId,
   LOCAL_FILE_PACKAGE_FIXTURES,
   LOCAL_PACKAGE_SPECIFIER,
   MAINTAINER_INSTALL_POLICIES,
   PACKAGE_SMOKE_INSTALL_ARGS,
   PACKAGE_SMOKE_NPMRC,
   PACKAGE_SMOKE_PEER_BOOTSTRAP_ARGS,
+  ROUTED_RELEASE_WORKFLOW_BLOB,
   sanitizeNpmScriptEnvironment,
 } from '../../scripts/release-contracts';
+import { RELEASE_BRANCHES } from '../../scripts/release-gate';
 import {
   synchronizePackageLockMetadata,
   synchronizePackageLockMetadataFiles,
@@ -754,55 +757,88 @@ describe('workspace package-lock identity contract', () => {
   });
 });
 
-describe('release workflow exact-commit contract', () => {
+describe('release workflow guarded-source contract', () => {
   const ciWorkflow = readFileSync(CI_WORKFLOW, 'utf8');
+  const releaseWorkflow = readFileSync(RELEASE_WORKFLOW, 'utf8');
 
-  it('rejects a gate that omits the workflow_run head/default-SHA equality', () => {
-    const workflow = `jobs:
-  gate:
-    if: github.event.workflow_run.conclusion == 'success'
-  version:
-    needs: gate
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: \${{ github.event.workflow_run.head_sha }}
-      - env:
-          TESTED_SHA: \${{ github.event.workflow_run.head_sha }}
-  publish:
-    needs: gate
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: \${{ github.event.workflow_run.head_sha }}
-      - env:
-          TESTED_SHA: \${{ github.event.workflow_run.head_sha }}
-`;
+  it('computes the object id git and the GitHub contents API give a file', () => {
+    expect(gitBlobId('')).toBe('e69de29bb2d1d6434b8b29ae775ad8c2e48c5391');
+    expect(gitBlobId('hello\n')).toBe('ce013625030ba8dba906f756967f9e9ca394464a');
+  });
 
-    expect(findReleaseWorkflowViolations(workflow, ciWorkflow)).toContain(
-      'gate does not require exact tested commit',
+  it("refuses any byte that would make main's router refuse this branch", () => {
+    const edited = releaseWorkflow.replace('name: Release\n', 'name: Release\n\n');
+
+    expect(gitBlobId(releaseWorkflow)).toBe(ROUTED_RELEASE_WORKFLOW_BLOB);
+    expect(findReleaseWorkflowViolations(edited, ciWorkflow)).toContain(
+      `release workflow is blob ${gitBlobId(edited)}, not main's routed workflow ${ROUTED_RELEASE_WORKFLOW_BLOB}`,
     );
   });
 
-  it('does not accept an exact-commit expression that exists only in a YAML comment', () => {
-    const workflow = readFileSync(RELEASE_WORKFLOW, 'utf8').replace(
-      '      github.event.workflow_run.head_sha == github.sha',
-      '      true # github.event.workflow_run.head_sha == github.sha',
+  it('holds the gate condition to exactly the branches the release gate accepts', () => {
+    const withoutTwoZero = replaceInWorkflowJob(
+      releaseWorkflow,
+      'gate',
+      " ||\n      github.event.workflow_run.head_branch == 'release/2.0'",
+      '',
+    );
+    const withExtraBranch = replaceInWorkflowJob(
+      releaseWorkflow,
+      'gate',
+      "github.event.workflow_run.head_branch == 'release/2.0'",
+      "github.event.workflow_run.head_branch == 'release/2.0' ||\n      github.event.workflow_run.head_branch == 'release/9.x'",
+    );
+    const violation = `gate does not accept exactly the release branches ${RELEASE_BRANCHES.join(', ')}`;
+
+    expect(findReleaseWorkflowViolations(withoutTwoZero, ciWorkflow)).toContain(violation);
+    expect(findReleaseWorkflowViolations(withExtraBranch, ciWorkflow)).toContain(violation);
+  });
+
+  it('requires the dispatched re-entry and a successful push from this repository', () => {
+    const withoutDispatch = replaceInWorkflowJob(
+      releaseWorkflow,
+      'gate',
+      "github.event_name == 'workflow_dispatch' ||",
+      'false ||',
+    );
+    const withoutSameRepository = replaceInWorkflowJob(
+      releaseWorkflow,
+      'gate',
+      'github.event.workflow_run.head_repository.full_name == github.repository',
+      'true',
     );
 
-    expect(findReleaseWorkflowViolations(workflow, ciWorkflow)).toContain(
-      'gate does not require exact tested commit',
+    expect(findReleaseWorkflowViolations(withoutDispatch, ciWorkflow)).toContain(
+      'gate does not require a dispatched re-entry or a completed CI run',
+    );
+    expect(findReleaseWorkflowViolations(withoutSameRepository, ciWorkflow)).toContain(
+      'gate does not require same repository',
     );
   });
 
-  it('rejects fuzzy README matching that can hide a legitimate changeset', () => {
-    const workflow = readFileSync(RELEASE_WORKFLOW, 'utf8').replace(
-      'if [ -f "$changeset" ] && [ "$changeset" != ".changeset/README.md" ]; then',
-      "if ls .changeset/*.md 2>/dev/null | grep -qvi 'readme'; then",
+  it('decides only through the unit-tested release gate script', () => {
+    const inline = replaceInWorkflowJob(
+      releaseWorkflow,
+      'gate',
+      '        run: npx tsx scripts/release-gate.ts',
+      '        run: echo "publish=true" >> "$GITHUB_OUTPUT"',
     );
 
-    expect(findReleaseWorkflowViolations(workflow, ciWorkflow)).toContain(
-      'gate does not exclude only the Changesets README',
+    expect(findReleaseWorkflowViolations(inline, ciWorkflow)).toContain(
+      'release gate job does not decide through scripts/release-gate.ts',
+    );
+  });
+
+  it('does not accept a dispatch check that exists only in a YAML comment', () => {
+    const commented = replaceInWorkflowJob(
+      releaseWorkflow,
+      'gate',
+      "        if: github.event_name == 'workflow_dispatch'\n",
+      "        # if: github.event_name == 'workflow_dispatch'\n",
+    );
+
+    expect(findReleaseWorkflowViolations(commented, ciWorkflow)).toContain(
+      'release gate job does not refuse a dispatch whose workflow source differs from the certified run',
     );
   });
 
@@ -815,18 +851,11 @@ describe('release workflow exact-commit contract', () => {
       violation: 'version job does not depend on gate',
     },
     {
-      label: 'publish job exact-SHA condition',
-      job: 'publish',
-      original: '      github.event.workflow_run.head_sha == github.sha',
+      label: 'version job default-branch tip condition',
+      job: 'version',
+      original: '      needs.gate.outputs.tested_sha == github.sha',
       replacement: '      true',
-      violation: 'publish job does not require the exact tested commit',
-    },
-    {
-      label: 'gate job tested checkout ref',
-      job: 'gate',
-      original: '          ref: ${{ github.event.workflow_run.head_sha }}',
-      replacement: '          ref: main',
-      violation: 'gate job does not check out the tested commit',
+      violation: 'version job does not require the tested commit to be the default-branch tip',
     },
     {
       label: 'version job checkout comparison',
@@ -835,22 +864,58 @@ describe('release workflow exact-commit contract', () => {
       replacement: "        run: 'true'",
       violation: 'version job does not compare its checkout with the tested commit',
     },
+    {
+      label: 'publish job tested checkout ref',
+      job: 'publish',
+      original: '          ref: ${{ needs.gate.outputs.tested_sha }}',
+      replacement: '          ref: main',
+      violation: 'publish job does not check out the tested commit',
+    },
+    {
+      label: 'publish job certified workflow identity',
+      job: 'publish',
+      original: '      github.workflow_sha == needs.gate.outputs.tested_sha &&\n',
+      replacement: '',
+      violation: 'publish job does not require the certified source workflow',
+    },
+    {
+      label: 'source-dispatch routing condition',
+      job: 'source-dispatch',
+      original: "      github.event_name == 'workflow_run' &&\n",
+      replacement: '',
+      violation: 'source-dispatch job does not route only certified runs it cannot publish',
+    },
+    {
+      label: 'source-dispatch refusal of a moved branch',
+      job: 'source-dispatch',
+      original: 'if [ "$actual_head" != "$TESTED_SHA" ]; then',
+      replacement: 'if false; then',
+      violation:
+        'source-dispatch job does not refuse a branch that moved past the certified commit',
+    },
+    {
+      label: 'source-dispatch workflow comparison',
+      job: 'source-dispatch',
+      original: '[ "$source_workflow" != "$router_workflow" ]; then',
+      replacement: 'false; then',
+      violation:
+        'source-dispatch job does not refuse a source branch whose release workflow differs',
+    },
+    {
+      label: 'source-dispatch branch list',
+      job: 'source-dispatch',
+      original: '  main|release/1.x|release/2.0) ;;',
+      replacement: '  *) ;;',
+      violation: 'source-dispatch job does not accept exactly the release branches',
+    },
   ])('rejects a missing $label', ({ job, original, replacement, violation }) => {
-    const workflow = replaceInWorkflowJob(
-      readFileSync(RELEASE_WORKFLOW, 'utf8'),
-      job,
-      original,
-      replacement,
-    );
+    const workflow = replaceInWorkflowJob(releaseWorkflow, job, original, replacement);
 
     expect(findReleaseWorkflowViolations(workflow, ciWorkflow)).toContain(violation);
   });
 
   it('rejects a release trigger bound to a workflow other than CI', () => {
-    const workflow = readFileSync(RELEASE_WORKFLOW, 'utf8').replace(
-      '    workflows: [CI]',
-      '    workflows: [Docs]',
-    );
+    const workflow = releaseWorkflow.replace('    workflows: [CI]', '    workflows: [Docs]');
 
     expect(findReleaseWorkflowViolations(workflow, ciWorkflow)).toContain(
       'release is not triggered by completed CI workflows',
@@ -858,7 +923,7 @@ describe('release workflow exact-commit contract', () => {
   });
 
   it('rejects cancellable release and main-branch CI verdicts', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8').replace(
+    const release = releaseWorkflow.replace(
       '  cancel-in-progress: false',
       '  cancel-in-progress: true',
     );
@@ -870,13 +935,81 @@ describe('release workflow exact-commit contract', () => {
     expect(findReleaseWorkflowViolations(release, ciWorkflow)).toContain(
       'release workflow can cancel an in-flight publish',
     );
-    expect(
-      findReleaseWorkflowViolations(readFileSync(RELEASE_WORKFLOW, 'utf8'), cancellableCi),
-    ).toContain('CI main-branch verdict can be cancelled');
+    expect(findReleaseWorkflowViolations(releaseWorkflow, cancellableCi)).toContain(
+      'CI main-branch verdict can be cancelled',
+    );
+  });
+
+  it('requires release to download only the certified CI run artifact and recheck it', () => {
+    const withoutRunBinding = replaceInWorkflowJob(
+      releaseWorkflow,
+      'publish',
+      '          run-id: ${{ needs.gate.outputs.run_id }}',
+      '          run-id: latest',
+    );
+    const withoutRecheck = replaceInWorkflowJob(
+      releaseWorkflow,
+      'publish',
+      'npm run test:package -- --tarball',
+      'npm run test:package -- --artifact-dir',
+    );
+    const withFloatingVerifierNode = replaceInWorkflowJob(
+      releaseWorkflow,
+      'publish',
+      '          node-version: 22.23.2',
+      '          node-version: 22',
+    );
+
+    expect(findReleaseWorkflowViolations(withoutRunBinding, ciWorkflow)).toContain(
+      'publish job does not download the certified CI run artifact',
+    );
+    expect(findReleaseWorkflowViolations(withoutRecheck, ciWorkflow)).toContain(
+      'publish job does not recheck the downloaded tarball',
+    );
+    expect(findReleaseWorkflowViolations(withFloatingVerifierNode, ciWorkflow)).toContain(
+      'publish job does not pin the release verifier Node version',
+    );
+  });
+
+  it('rejects directory republishing in place of the exact verified tarball', () => {
+    const release = replaceInWorkflowJob(
+      releaseWorkflow,
+      'publish',
+      '          npm run release\n',
+      '          npx changeset publish\n',
+    );
+    const violations = findReleaseWorkflowViolations(release, ciWorkflow);
+
+    expect(violations).toContain('publish job does not publish the exact verified tarball');
+    expect(violations).toContain(
+      'publish job publishes something other than the exact verified tarball',
+    );
+  });
+
+  it('creates the tag and GitHub Release only after the registry proof, then smoke-tests', () => {
+    const withoutRelease = replaceInWorkflowJob(
+      releaseWorkflow,
+      'publish',
+      '        run: npx tsx scripts/github-release.ts',
+      '        run: gh release create "v$VERSION"',
+    );
+    const withoutSmoke = replaceInWorkflowJob(
+      releaseWorkflow,
+      'publish',
+      '        run: npm run test:smoke',
+      "        run: 'true'",
+    );
+
+    expect(findReleaseWorkflowViolations(withoutRelease, ciWorkflow)).toContain(
+      'publish job does not create the tag and GitHub Release after registry proof',
+    );
+    expect(findReleaseWorkflowViolations(withoutSmoke, ciWorkflow)).toContain(
+      'publish job does not smoke-test the published package',
+    );
   });
 
   it('pins every required CI job, Node/browser matrix, and release command', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8');
+    const release = releaseWorkflow;
     const withoutPackageGate = replaceInWorkflowJob(
       ciWorkflow,
       'build',
@@ -908,7 +1041,7 @@ describe('release workflow exact-commit contract', () => {
   });
 
   it('requires clean lockfile installs for every browser fixture', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8');
+    const release = releaseWorkflow;
     const weakened = [
       ['browser-soak', 'examples/astro-payload'],
       ['e2e', 'examples/astro-payload'],
@@ -932,7 +1065,7 @@ describe('release workflow exact-commit contract', () => {
   });
 
   it('requires CI to persist and upload the exact checked package archive and manifest', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8');
+    const release = releaseWorkflow;
     const withoutPersistentArtifact = replaceInWorkflowJob(
       ciWorkflow,
       'build',
@@ -963,80 +1096,8 @@ describe('release workflow exact-commit contract', () => {
     );
   });
 
-  it('requires release to download only the triggering CI run artifact and recheck it', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8');
-    const withoutRunBinding = replaceInWorkflowJob(
-      release,
-      'publish',
-      '          run-id: ${{ github.event.workflow_run.id }}',
-      '          run-id: latest',
-    );
-    const withoutRecheck = replaceInWorkflowJob(
-      release,
-      'publish',
-      'npm run test:package -- --tarball',
-      'npm run test:package -- --artifact-dir',
-    );
-    const withFloatingVerifierNode = replaceInWorkflowJob(
-      release,
-      'publish',
-      '          node-version: 22.23.2',
-      '          node-version: 22',
-    );
-
-    expect(findReleaseWorkflowViolations(withoutRunBinding, ciWorkflow)).toContain(
-      'publish job does not download the triggering CI run artifact',
-    );
-    expect(findReleaseWorkflowViolations(withoutRecheck, ciWorkflow)).toContain(
-      'publish job does not recheck the downloaded tarball',
-    );
-    expect(findReleaseWorkflowViolations(withFloatingVerifierNode, ciWorkflow)).toContain(
-      'publish job does not pin the release verifier Node version',
-    );
-  });
-
-  it('rejects directory republishing in place of the exact verified tarball', () => {
-    const release = replaceInWorkflowJob(
-      readFileSync(RELEASE_WORKFLOW, 'utf8'),
-      'publish',
-      '          publish: npm run release',
-      '          publish: changeset publish',
-    );
-
-    expect(findReleaseWorkflowViolations(release, ciWorkflow)).toContain(
-      'publish job does not publish the exact verified tarball',
-    );
-  });
-
-  it('pins Changesets tag push and GitHub Release reconciliation after registry proof', () => {
-    const release = replaceInWorkflowJob(
-      readFileSync(RELEASE_WORKFLOW, 'utf8'),
-      'publish',
-      '          createGithubReleases: true',
-      '          createGithubReleases: false',
-    );
-
-    expect(findReleaseWorkflowViolations(release, ciWorkflow)).toContain(
-      'publish job does not enable Changesets tag/GitHub Release reconciliation',
-    );
-  });
-
-  it('keeps an already complete historical version a no-op on later main commits', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8');
-    const withoutCompletedReleaseNoop = replaceInWorkflowJob(
-      release,
-      'gate',
-      '            if [ "$released" = "true" ]; then',
-      '            if [ "$tagged_sha" = "$TESTED_SHA" ]; then',
-    );
-
-    expect(findReleaseWorkflowViolations(withoutCompletedReleaseNoop, ciWorkflow)).toContain(
-      'release reconciliation does not preserve completed historical releases as a no-op',
-    );
-  });
-
   it('makes every new deterministic quality gate part of the release verdict', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8');
+    const release = releaseWorkflow;
     const withoutTestPolicy = replaceInWorkflowJob(
       ciWorkflow,
       'lint',
@@ -1072,7 +1133,7 @@ describe('release workflow exact-commit contract', () => {
   });
 
   it('requires PR mutation results to pass the exact zero-error report policy', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8');
+    const release = releaseWorkflow;
     const withoutPrPolicy = replaceInWorkflowJob(
       ciWorkflow,
       'mutation',
@@ -1104,7 +1165,7 @@ describe('release workflow exact-commit contract', () => {
   });
 
   it('binds complete mutation, leak and five-minute browser soaks to the release SHA', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8');
+    const release = releaseWorkflow;
     for (const job of ['critical-mutation', 'node-leak-soak', 'browser-soak'] as const) {
       const renamed = ciWorkflow.replace(`  ${job}:\n`, `  ${job}-advisory:\n`);
       expect(findReleaseWorkflowViolations(release, renamed)).toContain(
@@ -1170,7 +1231,7 @@ describe('release workflow exact-commit contract', () => {
   });
 
   it('rejects floating action tags in the tested and release workflows', () => {
-    const release = readFileSync(RELEASE_WORKFLOW, 'utf8');
+    const release = releaseWorkflow;
     const floatingCi = ciWorkflow.replace(/actions\/checkout@[a-f0-9]{40}/u, 'actions/checkout@v4');
     const floatingRelease = release.replace(
       /changesets\/action@[a-f0-9]{40}/u,
@@ -1185,34 +1246,7 @@ describe('release workflow exact-commit contract', () => {
     );
   });
 
-  it('rejects a registry lookup that merges stderr into the compared value', () => {
-    // The value is compared against the package version to decide whether to
-    // publish. npm writes config warnings to stderr, so merging them made an
-    // already-published version read as unpublished and sent the publisher at
-    // a version that was already on the registry.
-    const workflow = readFileSync(RELEASE_WORKFLOW, 'utf8').replace(
-      'registry_result=$(npm view "$name@$version" version 2>"$registry_stderr")',
-      'registry_result=$(npm view "$name@$version" version 2>&1)',
-    );
-
-    expect(findReleaseWorkflowViolations(workflow, ciWorkflow)).toContain(
-      'release registry lookup does not fail closed',
-    );
-  });
-
-  it('rejects a registry lookup that does not fail closed', () => {
-    const workflow = readFileSync(RELEASE_WORKFLOW, 'utf8').replace(
-      '            exit "$registry_status"',
-      '            published=',
-    );
-
-    expect(findReleaseWorkflowViolations(workflow, ciWorkflow)).toContain(
-      'release registry lookup does not fail closed',
-    );
-  });
-
-  it('keeps versioning and publishing bound to the exact CI-tested commit', () => {
-    const workflow = readFileSync(RELEASE_WORKFLOW, 'utf8');
-    expect(findReleaseWorkflowViolations(workflow, ciWorkflow)).toEqual([]);
+  it('keeps versioning and publishing bound to the certified source commit', () => {
+    expect(findReleaseWorkflowViolations(releaseWorkflow, ciWorkflow)).toEqual([]);
   });
 });

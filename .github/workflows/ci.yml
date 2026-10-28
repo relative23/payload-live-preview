@@ -3,7 +3,8 @@ name: CI
 on:
   # release/1.x carries 1.x security fixes (ADR 0013 section 7). Its pushes are
   # certified exactly like main's, release-critical gates included, because
-  # the Release workflow on main publishes from either branch.
+  # main's Release workflow hands a certified release/1.x commit to this
+  # branch's release.yml, which publishes it.
   push:
     branches: [main, release/1.x]
   pull_request:

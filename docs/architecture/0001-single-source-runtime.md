@@ -61,10 +61,10 @@ Both code paths are now produced from `src/core/runtime.ts`:
   Local builds without the environment variable retain a wall-clock timestamp.
 - The CI package gate persists its already-verified tgz plus a manifest binding the
   source/toolchain, raw SHA-1/SHA-256/SHA-512 digests, and complete npm inventory.
-  The `workflow_run` release downloads only that immutable artifact from the exact
-  triggering run, rechecks it without packing the checkout, and passes that tgz
-  directly to npm through trusted publishing. It downloads the registry archive
-  and proves exact equality before Changesets may create the tag and GitHub Release.
+  The release workflow downloads only that immutable artifact from the certified
+  CI run, rechecks it without packing the checkout, and passes that tgz directly
+  to npm through trusted publishing. It downloads the registry archive and proves
+  exact equality before the tag and GitHub Release are created.
 
 Both consumers share **every** primitive: cache, observers, message bus, scheduler, state, lifecycle, security stack.
 

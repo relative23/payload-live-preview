@@ -6,16 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { releaseTagForVersion } from './release-version';
-
-// On main these two types come from scripts/release-gate.ts. The gate runs from
-// main's checkout, so this branch carries only the half of the release it runs.
-export interface CommandResult {
-  readonly status: number;
-  readonly stdout: string;
-  readonly stderr: string;
-}
-
-export type CommandRunner = (executable: string, args: readonly string[]) => CommandResult;
+import type { CommandResult, CommandRunner } from './release-gate';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 

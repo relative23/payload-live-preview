@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   findCodspeedWorkflowViolations,
   findDeepQualityWorkflowViolations,
+  findReleaseGateViolations,
   findWorkflowActionPinViolations,
 } from '../../../scripts/quality-workflow-policy';
 
@@ -223,6 +224,20 @@ describe('test runner policy', () => {
     ] as const) {
       expect(findDeepQualityWorkflowViolations(mutated), label).not.toEqual([]);
     }
+  });
+
+  it('decides releases through the gate script that keeps npm stderr out of the version', () => {
+    const workflow = readRepositoryFile('.github/workflows/release.yml');
+    expect(findReleaseGateViolations(workflow)).toEqual([]);
+
+    const inline = workflow.replace(
+      '        run: npx tsx scripts/release-gate.ts',
+      '        run: echo "published=$(npm view payload-live-preview version 2>&1)"',
+    );
+    expect(findReleaseGateViolations(inline)).toEqual([
+      'release gate must not merge stderr into a captured value; redirect it to a file instead',
+      'release gate must decide through scripts/release-gate.ts, which reads the published version with stderr kept separate',
+    ]);
   });
 
   it('pins every remote GitHub Action to an immutable commit SHA', () => {

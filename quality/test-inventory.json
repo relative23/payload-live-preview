@@ -16,9 +16,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 100,
-    "suites": 303,
-    "tests": 1524,
+    "files": 101,
+    "suites": 307,
+    "tests": 1551,
     "benchmarks": 10
   },
   "groups": {
@@ -53,9 +53,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 84,
-      "suites": 274,
-      "tests": 1428,
+      "files": 85,
+      "suites": 278,
+      "tests": 1455,
       "benchmarks": 0
     }
   },
@@ -652,7 +652,7 @@
       "path": "tests/unit/quality/config-policy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -695,6 +695,13 @@
       "group": "unit",
       "suites": 5,
       "tests": 52,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/release-gate.test.ts",
+      "group": "unit",
+      "suites": 4,
+      "tests": 26,
       "benchmarks": 0
     },
     {
