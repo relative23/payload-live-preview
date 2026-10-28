@@ -168,7 +168,7 @@ const MAX_PASSES = 6;
 const ELEMENT_NODE = 1;
 const COMMENT_NODE = 8;
 
-/** Thrown by `sanitizeHtml()` when no `document` is available (SSR without `setSanitizerDocument()`). */
+/** Thrown by `sanitizeHtml()` without a `document`, or with one that cannot write what it cleaned. */
 export class SanitizerEnvironmentError extends Error {
   override readonly name = 'SanitizerEnvironmentError';
 }
@@ -348,8 +348,12 @@ export function sanitizeHtmlWithPolicy(
     const template = doc.createElement('template');
     // The sanitizer's own parse is a sink too: under Trusted Types it needs the policy.
     template.innerHTML = trustedHtml(markup);
-    sanitizeFragment(template.content, resolved);
-    const written = template.innerHTML;
+    // Read once, and never write the template back: linkedom's `content` is a
+    // copy of the template's children, so the template still held the parse
+    // and the input came back unsanitised (2.2.1).
+    const fragment = template.content;
+    sanitizeFragment(fragment, resolved);
+    const written = serialize(fragment);
     if (written === markup) return written;
     markup = written;
   }
@@ -370,6 +374,20 @@ function environmentError(): Error {
   return new SanitizerEnvironmentError(
     'sanitizeHtml needs a DOM; pass one per call during SSR: { document } (linkedom, jsdom).',
   );
+}
+
+/**
+ * Writes the cleaned nodes themselves, through an element of their own
+ * document, where a browser keeps them inert. No such element, or one that does
+ * not end up holding them, would write something else: refused, not returned.
+ */
+function serialize(fragment: ParentNode): string {
+  const writer = fragment.ownerDocument?.createElement('div');
+  if (writer === undefined) throw environmentError();
+  const first = fragment.firstChild;
+  writer.append(fragment);
+  if (writer.firstChild !== first) throw environmentError();
+  return writer.innerHTML;
 }
 
 function resolveDocument(): SanitizerDocument | undefined {

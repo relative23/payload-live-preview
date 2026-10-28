@@ -162,6 +162,18 @@ the `RichText` Astro component's `document` prop, e.g. linkedom's
 nothing is shared through the process. `setSanitizerDocument()` stays as the
 fallback for a call that names none and is deprecated for 3.0 (ADR 0007 ledger).
 
+**What it writes is what it cleaned.** Since 2.2.1 the sanitizer writes the
+cleaned nodes themselves, through an element of their own document. Up to
+2.2.0 it read the template back, and linkedom's `template.content` is a copy
+of the template's children: with a linkedom document, `sanitizeHtml()` returned
+its input unsanitised, in every release from 1.0.0 through
+`setSanitizerDocument()` and from 2.1.0 through `{ document }`. `lexicalToHtml()`
+escapes the values of its built-in nodes itself, so only markup from custom
+node renderers came through unsanitised.
+jsdom and happy-dom were not affected. A document that gives no such element,
+or one that does not end up holding the cleaned nodes, now makes the call
+throw `SanitizerEnvironmentError` instead.
+
 **One sanitizer document for every entry.** Since 2.0.2 the document given to
 `setSanitizerDocument()` is held on the global object, so one call through the
 root, `payload-live-preview/core` or `payload-live-preview/lexical` (which
