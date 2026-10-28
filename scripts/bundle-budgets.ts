@@ -8,8 +8,11 @@ export interface BundleMeasurement {
 
 export type BundleBudget = BundleMeasurement;
 
-/** Exact inline patch-delta and transfer-size ceilings used by the release gate. */
-export const INLINE_BUDGET = { raw: 68_500, gzip: 21_000, brotli: 18_600 } as const;
+/**
+ * Exact inline patch-delta and transfer-size ceilings used by the release gate.
+ * 2026-10-28 (1.8.2): +260 raw, +101 gzip, +88 brotli for the sanitizer's writer.
+ */
+export const INLINE_BUDGET = { raw: 68_760, gzip: 21_101, brotli: 18_688 } as const;
 
 export interface BudgetViolation {
   readonly metric: keyof BundleMeasurement;
