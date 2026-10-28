@@ -256,7 +256,7 @@ It writes `data-payload-strategy="patch"` explicitly. Markup whose conditional l
 
 ## Fragments
 
-Wrap such a component in a `data-payload-fragment` boundary, export an endpoint from a route with `createFragmentEndpoint()` (from `payload-live-preview/astro`), and pass its path to the integration or the middleware as `fragments: { endpoint: '/payload/fragment' }`. The runtime then posts the unsaved fields to that endpoint and morphs the server-rendered result in. A boundary on a page without a configured endpoint is patched instead and reports `LP0806` once. Markup, endpoint, registry and deployment requirements: [hybrid.md](hybrid.md).
+Wrap such a component in a `data-payload-fragment` boundary, export an endpoint from a route with `createFragmentEndpoint()` (from `payload-live-preview/astro`), and pass its path to the integration or the middleware as `fragments: { endpoint: '/payload/fragment' }`, with a trailing slash under `trailingSlash: 'always'` ([hybrid.md](hybrid.md#what-a-deployment-needs)). The runtime then posts the unsaved fields to that endpoint and morphs the server-rendered result in. A boundary on a page without a configured endpoint is patched instead and reports `LP0806` once. Markup, endpoint, registry and deployment requirements: [hybrid.md](hybrid.md).
 
 ## Client navigation
 

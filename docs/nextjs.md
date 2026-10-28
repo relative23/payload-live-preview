@@ -491,6 +491,47 @@ export default buildConfig({
 
 The callback appends `?preview=true`, a preview intent that authorizes nothing. Breakpoints, merge rules and conflicts are in [payload.md](payload.md). A document without a route that should show no preview, another plugin that already sets the Live Preview URL, or a signed token in the URL need the lower-level `buildLivePreviewUrl()` from `payload-live-preview/payload` instead ([payload.md](payload.md), [authorization.md](authorization.md#signed-token)).
 
+### Payload in the same Next.js app
+
+When the Payload admin runs inside this Next.js app, the admin and the site
+share one origin, which changes two things.
+
+The URLs can be paths. `baseUrl: ''` makes the plugin's callback return
+`/blog/…?preview=true` with no origin, and the Payload 3.92.0 admin resolves a
+relative Live Preview URL against its own origin (`formatAbsoluteURL()` in
+`@payloadcms/ui`). That is read from Payload's code; no test in this repository
+runs it. `allowedOrigins` and `serverURL` are then the app's own origin.
+
+The session can be checked in the process. The `payload-session` strategy asks
+Payload's `/me` route over HTTP, which a server in a container may not reach
+under the public origin. A `verifier` can ask the Local API instead:
+
+```ts
+// lib/authorize-preview.ts — server code
+import config from '@payload-config';
+import { getPayload } from 'payload';
+import {
+  authorizePreviewRequest,
+  type PreviewAuthorizationRequest,
+} from 'payload-live-preview/server';
+
+export const authorizePreview = (request: PreviewAuthorizationRequest) =>
+  authorizePreviewRequest(request, {
+    type: 'verifier',
+    verify: async ({ headers }) => {
+      const cookie = headers.get('cookie');
+      if (cookie === null) return null;
+      const payload = await getPayload({ config });
+      const { user } = await payload.auth({ headers: new Headers({ cookie }) });
+      return user === null ? null : { subject: String(user.id) };
+    },
+  });
+```
+
+It returns no `payloadHeaders`, so a draft read through `definePreview()`
+carries no credential; a page in the same app can read the draft through the
+Local API instead.
+
 ## Example
 
 [`examples/nextjs-payload`](../examples/nextjs-payload) on Next.js 16 — the

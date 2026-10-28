@@ -411,6 +411,14 @@ update through the Payload REST API (`POST` with
 request the official client makes) and renders the populated document; on
 failure it renders the raw values.
 
+The merge request has no deadline of its own. A fragment render gives up after
+5 seconds and a route refresh after 8, but a merge that never answers leaves its
+update unshown: after ten minutes the DOM runtime still shows what it showed
+before, with `inspect().revisions.display` at `pending`, and a hook still has
+`isLoading: true` and `status: 'idle'` with no `error`
+(`tests/unit/core/merge-without-deadline.test.ts`). A slow or stalled Payload
+API shows up as an update that never arrives, not as a failure.
+
 Payload 2 uses the accepted `fieldSchemaJSON` instead of a v3 merge
 target. It retains the schema for later updates that omit it, settles scalar
 values locally and populates raw relationship/upload IDs with bounded

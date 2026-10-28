@@ -147,7 +147,9 @@ renders the document being edited, and render other documents from the data
 your server loaded.
 
 The failed update is not retried: this hook reports it and catches up on the
-next message. On Payload 3 the hook sends one merge request per accepted
+next message. A merge request that never answers is not a failure: it has no
+deadline, and the hook stays `isLoading` with its last document
+([options.md](options.md#serverurl-and-mergedepth)). On Payload 3 the hook sends one merge request per accepted
 message, at any typing pace: 18 requests for an 18-keystroke burst. The DOM
 runtime asks less. It sends none for an edit that moves no populated value (the
 first message on a page that reads one, and the first value of a field that held

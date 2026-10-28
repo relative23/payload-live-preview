@@ -83,6 +83,14 @@ cannot inspect a URL written later in Payload's effective plugin execution
 order. Make it run after any URL-writing plugin when it should detect that
 conflict.
 
+That order is not always the list order. The `buildConfig()` of Payload
+3.90.2, 3.92.0 and 4.0.0-beta.4 sorts plugins by their `order` property, lower
+first and `0` when it is unset (Payload marks `order` experimental); plugins
+with the same `order` keep their list order. The function `livePreview()`
+returns has no `order`, so a URL-writing plugin with a higher one runs after it
+wherever it is listed. To move this plugin later, give it a higher value:
+`Object.assign(livePreview({ … }), { order: 1000 })`.
+
 ## Options
 
 | Option         | Meaning                                                                                                            | Default     |

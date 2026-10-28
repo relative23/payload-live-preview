@@ -124,6 +124,33 @@ It is typed `unknown`, so narrow it to the application's own type. It holds
 what server code set, nothing from the request body
 ([ADR 0029](architecture/0029-fragment-components-and-locals-belong-to-the-page.md)).
 
+#### Bindings inside a fragment component
+
+A component inside a boundary is rendered twice over: by the page for every
+visitor, and by the endpoint for an authorized preview. Its bindings have to
+follow the request that renders it, so hand them in as props built from that
+request's verdict: on the page from the adapter's decision, in the endpoint
+from `authorization`, which is always a verified context there. A component
+that reads the verdict itself, from `Astro.locals` say, sees none inside the
+endpoint's render (Astro's container passes props only), renders without
+bindings, and the morph then removes them from the page.
+
+```ts
+// src/lib/hero-bindings.ts — used by the page and by the endpoint
+import { createPreviewBindings, type AuthorizedPreviewContext } from 'payload-live-preview';
+
+export function heroBindings(authorization: AuthorizedPreviewContext | null) {
+  const preview = createPreviewBindings({ authorization });
+  return { title: preview.bind('title'), subtitle: preview.bind('subtitle') };
+}
+```
+
+The page passes `bindings={heroBindings(Astro.locals.livePreviewAuthorization ?? null)}`,
+the registry entry `props: ({ fields, authorization }) => ({ ...heroProps(fields), bindings: heroBindings(authorization) })`,
+and the component spreads them: `<h1 {...bindings.title}>{title}</h1>`. A
+public response then carries no binding attributes, and the endpoint's render
+carries the same ones as the page in a preview.
+
 #### First-use Astro resources
 
 The Astro results below are dated measurements on earlier source-built
@@ -504,7 +531,11 @@ in whatever it does hand a handler — that is all either binding does.
   whose path starts with `_` are private and never routed, so the endpoint
   belongs at `src/pages/payload/fragment.ts` (`/payload/fragment`), not under
   `_payload`. In Next.js it is `app/payload/fragment/route.ts`, and the path
-  follows the directory.
+  follows the directory. With `trailingSlash: 'always'` in `astro.config`, name
+  the path with its slash, `fragments: { endpoint: '/payload/fragment/' }`:
+  Astro 7.4.2 with the Node adapter answers a POST to `/payload/fragment` with
+  a 301 instead of running the endpoint (measured on 2026-10-28), a browser
+  follows a 301 with a GET, and the boundary falls back to its patch.
 - A server to render in: an Astro SSR adapter (`@astrojs/node`, Vercel, …)
   with `prerender = false` on the route, or a Next.js deployment that is not a
   fully static export. A static-only build has no process; run the endpoint as
@@ -703,10 +734,24 @@ replaced nodes lose their state. The head sync mirrors the fresh document both
 ways: a named `<meta>` or the canonical `<link>` that the server no longer
 renders is removed, because the refresh is that server's own render of this URL.
 Mark a tag your own script owns with `data-payload-owned` and the sync
-leaves it alone in both directions. At most one refresh per revision; a
+leaves it alone in both directions. Nothing else in the head is synced: the
+sync covers `<title>`, `<meta>` with a `name` or `property` and
+`<link rel="canonical">`, so a JSON-LD script, preload links and `hreflang`
+alternates keep what the page loaded with until the next full load. At most one refresh per revision; a
 second request for the same revision, or one inside `minIntervalMs` (1 s) of
 the previous, is refused with `LP0805` and the elements are patched instead.
 A failed refresh (`LP0801`/`LP0802`) also falls back to patching.
+
+The morph makes each retained element's attributes match the server's
+markup. An attribute a script set after the page loaded is removed on the next
+fragment or route render, except the state attributes `open`, `value`,
+`checked` and `selected`, which change only when the server's markup names
+them. That includes the `width` and `height` a script measured onto a
+`<canvas>`, and `popover`, `popovertarget` or `hidden` that an enhancement
+script sets on a custom element opted in with `data-payload-morph`. Mark such
+an element `data-payload-owned` so the morph leaves it alone, or render those
+attributes on the server in the preview, so the markup the morph matches
+already carries them.
 
 A page whose DOM a framework router owns can hand the strategy that router's
 own refresh with `registerRouteRefresh()`, or `<LivePreviewRouteRefresh>` from
@@ -780,4 +825,7 @@ identical boundaries in one revision share a request; the client keeps at
 most four requests in flight (`maxConcurrent` on `createFragmentStrategy()`).
 An aborted request leaves that count as soon as its fetch settles, while the
 browser and the server may still be finishing it, so a server can see more than
-four for a moment. Slow fragment A can never overwrite fast fragment B.
+four for a moment. The endpoint answers an aborted request
+`400 {"error":"request"}`, or `{"error":"body"}` when its body was not read
+yet. The browser never reads that answer, but a server that logs status codes
+shows those 400s beside the 200s while an editor types. Slow fragment A can never overwrite fast fragment B.

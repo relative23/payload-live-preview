@@ -207,6 +207,13 @@ the runtime ask Payload to fill those nodes in
 ([renderers.md](renderers.md#media-urls)). `data-payload-type="text"` writes
 the value as plain text and asks nothing.
 
+A `text` or `textarea` value with line breaks is written with a `<br>` for each
+break (`\n`, `\r\n` or `\r`), the text around them escaped, into any element
+but an `<input>` or `<textarea>`, which take the value as it is. A server that prints
+the same value as plain text shows it on one line unless the element has
+`white-space: pre-line`, so the preview and the published page differ. Give the
+element `pre-line`, or render the breaks as `<br>` on the server too.
+
 Custom renderers register through the plugin system under a namespaced key
 such as `acme:money`. What a renderer receives, how it is chosen and what a
 plugin owns is in [docs/renderers.md](renderers.md).
