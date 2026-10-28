@@ -393,8 +393,10 @@ and nested protected descendants remain protected. Ordinary elements are unchang
 The morph makes the host's attributes and light DOM match the server's markup,
 so what a component added to its own host or built inside it is removed or
 replaced on the next update (the state attributes `open`, `value`, `checked` and
-`selected` are left alone unless the template names them). Keep markup a
-component owns in its shadow root, or mark it `data-payload-owned`. Components
+`selected` are left alone unless the template names them). That includes
+`popover`, `popovertarget` or `hidden` set by an enhancement script; render
+them on the server in the preview instead. Keep markup a component owns in its
+shadow root, or mark it `data-payload-owned`. Components
 must react to child changes, refresh cached references, preserve UI state, and
 clean up listeners or observers. `connectedCallback` does not rerun for child
 updates; DOM moves can still reconnect a retained host. Consumers may emit the

@@ -244,6 +244,16 @@ adapter; otherwise pass the browser's origin as `serverURL` and take `apiRoute`
 and `mergeDepth` from it. The same `authorization` gates the binding attributes
 ([docs/bindings.md](bindings.md)) and the fragment endpoint ([docs/hybrid.md](hybrid.md)).
 
+Payload 4 can keep `_status` per locale. Payload 4.0.0-beta.4 sets
+`versions.drafts.localizeStatus` itself when the config has localization and
+the collection or global has localized fields, and a document can then be
+published in one locale and a draft in another. A public read (`authorization:
+null`) in a locale where it was never published finds nothing when the read
+access admits only published documents: on one site, an anonymous `GET
+/api/globals/site?locale=de&fallback-locale=en` answered `{}` on 2026-10-27.
+A preview request whose authorization fails reads the same way, so decide what
+that page shows, for example the locale that is published.
+
 ### Bind a verifier to one Payload document
 
 A server-owned verifier can add `scope.payload` with `serverURL`, optional

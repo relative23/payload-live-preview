@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 519,
-    "suites": 1001,
-    "tests": 4551,
+    "files": 520,
+    "suites": 1002,
+    "tests": 4554,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 423,
-      "suites": 892,
-      "tests": 4151,
+      "files": 424,
+      "suites": 893,
+      "tests": 4154,
       "benchmarks": 0
     }
   },
@@ -1818,6 +1818,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 12,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/merge-without-deadline.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
