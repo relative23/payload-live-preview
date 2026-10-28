@@ -283,7 +283,11 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   compatibility table is rendered from `quality/compat-matrix.json`; the check
   fails when the table, a fixture lockfile or the CI workflow matrix disagree.
   `npm run compat:write` re-renders it. Every version in that table is one a
-  fixture lockfile or a matrix job installs.
+  fixture lockfile or a matrix job installs. The same check reads every workflow
+  job that installs a fixture lockfile (through `scripts/ci-install-fixture.sh`,
+  `npm ci` or `npm install` with `--prefix`, or a Playwright helper listed in
+  `scripts/compat-engines.ts`) and fails when a locked package's `engines.node`
+  refuses the job's Node. A bare `node-version: 22` counts as 22.0.0.
 
 ## Coverage and mutation policy
 

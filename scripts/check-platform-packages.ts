@@ -21,7 +21,7 @@ export interface Platform {
   readonly libc: string | undefined;
 }
 
-interface LockEntry {
+export interface LockEntry {
   readonly version?: string;
   readonly os?: readonly string[];
   readonly cpu?: readonly string[];
@@ -80,6 +80,20 @@ function parentsInstallHere(
   return true;
 }
 
+/** Whether npm installs the lockfile entry at `path` on this platform, its parents included. */
+export function installsOn(
+  path: string,
+  packages: Readonly<Record<string, LockEntry>>,
+  platform: Platform,
+): boolean {
+  const entry = packages[path];
+  return (
+    entry !== undefined &&
+    installsHere(entry, platform) &&
+    parentsInstallHere(path, packages, platform)
+  );
+}
+
 /** The lockfile paths of the platform packages this platform should have and does not. */
 export function missingPlatformPackages(
   root: string,
@@ -95,8 +109,7 @@ export function missingPlatformPackages(
         path.startsWith('node_modules/') &&
         entry.inBundle !== true &&
         (entry.os ?? entry.cpu ?? entry.libc) !== undefined &&
-        installsHere(entry, platform) &&
-        parentsInstallHere(path, packages, platform) &&
+        installsOn(path, packages, platform) &&
         !existsSync(join(root, path, 'package.json')),
     )
     .map(([path, entry]) => `${path}@${entry.version ?? '?'}`);
