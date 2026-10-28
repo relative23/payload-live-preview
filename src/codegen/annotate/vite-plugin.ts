@@ -40,7 +40,15 @@
 
 import { readFileSync } from 'node:fs';
 import { annotatableEntities, type AnnotatableSchema } from './index';
-import { applyAnnotations, fieldAttribute, scanTemplate, type AnnotationRefusal } from './scan';
+import {
+  applyAnnotations,
+  fieldAttribute,
+  scanTemplate,
+  splitFrontmatter,
+  type AnnotationRefusal,
+} from './scan';
+
+export { splitFrontmatter } from './scan';
 
 /** The helper the rewritten markup calls, and the import that defines it. */
 const HELPER = '__lpPreview';
@@ -79,18 +87,6 @@ export interface AnnotateVitePlugin {
   load(id: string): { code: string; map: null } | null;
 }
 
-/** Everything before the second `---`, and where the template starts. @internal */
-export function splitFrontmatter(code: string): {
-  readonly frontmatter: string;
-  readonly bodyOffset: number;
-} {
-  if (!code.startsWith(FENCE)) return { frontmatter: '', bodyOffset: 0 };
-  const end = code.indexOf(`\n${FENCE}`, FENCE.length);
-  if (end === -1) return { frontmatter: '', bodyOffset: 0 };
-  const bodyOffset = end + 1 + FENCE.length;
-  return { frontmatter: code.slice(FENCE.length, end), bodyOffset };
-}
-
 /** The frontmatter with the helper in it, whether or not the file had one. */
 function withHelper(code: string, bodyOffset: number): string {
   const lines = `${IMPORT_LINE}\n${HELPER_LINE}\n`;
@@ -115,20 +111,16 @@ export function annotateSource(
   code: string,
   options: AnnotatePluginOptions,
 ): { readonly code: string; readonly refusals: readonly AnnotationRefusal[] } {
-  const entities = annotatableEntities(options.inventory);
-  const { bodyOffset } = splitFrontmatter(code);
-  // Frontmatter is TypeScript, not markup: scanning it would match a template
-  // written inside a string, and annotate something no browser ever sees.
-  const body = code.slice(bodyOffset);
-  const { candidates, refusals } = scanTemplate(body, { entities });
+  // The scanner never reads the frontmatter, so every candidate lies in the
+  // template and the fence stays where the helper goes.
+  const { candidates, refusals } = scanTemplate(code, {
+    entities: annotatableEntities(options.inventory),
+  });
   if (candidates.length === 0) return { code, refusals };
 
-  const shifted = candidates.map((candidate) => ({
-    ...candidate,
-    insertAt: candidate.insertAt + bodyOffset,
-  }));
+  const { bodyOffset } = splitFrontmatter(code);
   const gated = options.allowPublicBindings !== true;
-  const rewritten = applyAnnotations(code, shifted, (candidate) =>
+  const rewritten = applyAnnotations(code, candidates, (candidate) =>
     gated ? `{...${HELPER}.bind('${candidate.path}')}` : fieldAttribute(candidate),
   );
   return {

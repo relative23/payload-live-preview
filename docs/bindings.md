@@ -517,15 +517,17 @@ a string literal and the element prints exactly that field of the variable.
 
 These are left alone and listed with a reason:
 
-| Left alone                                                                             | Why                                                                                                                                      |
-| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `<p>Published {page.date}</p>`                                                         | A binding replaces the element's whole text, label included. Split the markup first.                                                     |
-| `<p>{formatDate(page.date)}</p>`                                                       | Derived: no single field to name. `data-payload-format` covers dates and numbers ([above](#formatting-a-date-or-a-number)).              |
-| `<p>{page.internalNote}</p>`                                                           | The schema has no such field, so the binding would name something that never arrives.                                                    |
-| `{page.slides.map((slide) => <li>{slide.caption}</li>)}`                               | `slide` is a loop item, not the document; bind the array on its container ([attributes](#attribute-reference)).                          |
-| `<h2>{post.title}</h2>`, the file binding no field of `post`                           | Nothing says `post` is the document being previewed. In a card it is another post, and the binding would write the page's title into it. |
-| `<p>{page.excerpt}</p>`, no collection having `excerpt` and the fields bound on `page` | One variable holds one document.                                                                                                         |
-| `<p {...rest}>{page.subtitle}</p>`                                                     | The scan cannot read the spread, and it may bind the element already.                                                                    |
+| Left alone                                                                             | Why                                                                                                                                                                        |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<p>Published {page.date}</p>`                                                         | A binding replaces the element's whole text, label included. Split the markup first.                                                                                       |
+| `<p>{formatDate(page.date)}</p>`                                                       | Derived: no single field to name. `data-payload-format` covers dates and numbers ([above](#formatting-a-date-or-a-number)).                                                |
+| `<p>{page.internalNote}</p>`                                                           | The schema has no such field, so the binding would name something that never arrives.                                                                                      |
+| `{page.slides.map((slide) => <li>{slide.caption}</li>)}`                               | `slide` is a loop item, not the document; bind the array on its container ([attributes](#attribute-reference)).                                                            |
+| `<h2>{post.title}</h2>`, the file binding no field of `post`                           | Nothing says `post` is the document being previewed. In a card it is another post, and the binding would write the page's title into it.                                   |
+| `<p>{page.excerpt}</p>`, no collection having `excerpt` and the fields bound on `page` | One variable holds one document.                                                                                                                                           |
+| `<a href={page.url}>{page.label}</a>`                                                  | An `<a>` binding writes its value into `href` too ([field types](#field-types)). Bind the label on an element inside the link, or add `data-payload-type="text"` yourself. |
+| `<title>{page.title}</title>`                                                          | The head belongs to the route strategy, and a title usually carries more than the field.                                                                                   |
+| `<p {...rest}>{page.subtitle}</p>`                                                     | The scan cannot read the spread, and it may bind the element already.                                                                                                      |
 
 A loop item is a name bound as the first parameter of a `map`, `flatMap` or
 `forEach` callback, as a `for … of` variable or as a Svelte
@@ -540,7 +542,8 @@ lowercase elements only, so a component, `<Hero title={page.title} />` or
 own business. An element that already carries `data-payload-field`, or spreads
 a call of `bind()` or `bindByPath()`, is skipped: yours wins, always. A value
 printed in an attribute, or in an element that also contains other elements, is
-not read at all.
+not read at all, and neither are `<script>`, `<style>`, HTML comments and
+Astro frontmatter: their braces are code, and markup in them is a string.
 
 A missing binding costs an editor one invisible edit; a wrong one writes a value
 into the wrong element on every keystroke. That asymmetry is why the tool reports

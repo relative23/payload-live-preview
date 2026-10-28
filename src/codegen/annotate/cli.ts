@@ -46,9 +46,10 @@ What it annotates:
 What it refuses, with a reason per line:
   a value printed beside other text, a call or an operator, a field printed
   from a loop item, a path the schema does not know, a variable the file binds
-  no field of, and an element that spreads attributes it cannot read. An
-  element already bound by data-payload-field or by a bind() spread is left as
-  it is, without a line.
+  no field of, a link (<a>), a <title>, and an element that spreads attributes
+  it cannot read. An element already bound by data-payload-field or by a
+  bind() spread is left as it is, without a line; <script>, <style>, comments
+  and Astro frontmatter are not read.
 
 Exit codes:
   0  nothing left to do, or the files were written

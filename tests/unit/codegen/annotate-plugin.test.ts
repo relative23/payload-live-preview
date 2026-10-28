@@ -88,6 +88,8 @@ describe('rewriting a template', () => {
       expect.stringContaining('printed beside other content'),
       expect.stringContaining('no field `missing`'),
     ]);
+    // Lines of the file, frontmatter included: what an editor jumps to.
+    expect(refusals.map((refusal) => refusal.line)).toEqual([3, 4]);
   });
 
   it('leaves a component that binds nothing by hand as it is', () => {
