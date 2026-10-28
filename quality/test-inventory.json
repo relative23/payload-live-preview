@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 520,
-    "suites": 1002,
-    "tests": 4555,
+    "files": 521,
+    "suites": 1004,
+    "tests": 4563,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 424,
-      "suites": 893,
-      "tests": 4154,
+      "files": 425,
+      "suites": 895,
+      "tests": 4162,
       "benchmarks": 0
     }
   },
@@ -3616,6 +3616,13 @@
       "path": "tests/unit/security/sanitizer-policy.test.ts",
       "group": "unit",
       "suites": 5,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/security/sanitizer-server-documents.test.ts",
+      "group": "unit",
+      "suites": 2,
       "tests": 8,
       "benchmarks": 0
     },

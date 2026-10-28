@@ -315,7 +315,8 @@ argument. The inline runtime (adapters) cannot carry a function;
 In the browser the runtime sanitizes the whole rendered document, so a
 custom node cannot introduce a script or an event handler however it is
 written. On the server `lexicalToHtml` sanitizes when it has a sanitizer document
-(`{ document }` with the call, from linkedom or jsdom); **without one it
+(`{ document }` with the call, from linkedom or jsdom; linkedom needs 2.2.1 or
+later, see [docs/security.md](security.md#html-sanitization)); **without one it
 returns the HTML as rendered and warns once**, because silently unsanitized
 output is the worse failure. `{ requireDocument: true }` makes it throw
 instead, which 3.0 does by default

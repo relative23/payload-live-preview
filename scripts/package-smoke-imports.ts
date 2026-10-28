@@ -160,7 +160,8 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
  * document supplied through one entry must reach the rich text another renders.
  * 2.0.1 kept it per copy: `lexicalToHtml` from `/lexical` warned and returned
  * unsanitised HTML on a server that had called the root's setter. The fake
- * document counts the one `createElement('template')` a sanitising pass makes.
+ * document counts the `createElement('template')` of each sanitising pass; its
+ * template's content writes through an element of its own document (2.2.1).
  *
  * The setter's own deprecation warning (ADR 0026) is counted apart: called
  * through both entries, it prints once, since the issued keys live on the realm.
@@ -171,12 +172,14 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
 const SHARED_SANITIZER_DOCUMENT_BODY = [
   'let calls = 0; const warnings = []; const deprecations = [];',
   "console.warn = (message) => { const text = String(message); (text.includes('is removed in 3.0') ? deprecations : warnings).push(text); };",
-  "root.setSanitizerDocument({ createElement: () => { calls += 1; return { innerHTML: '', content: { childNodes: [] } }; } });",
+  "const writer = { innerHTML: '', firstChild: null, append: () => undefined };",
+  "root.setSanitizerDocument({ createElement: () => { calls += 1; return { innerHTML: '', content: { childNodes: [], firstChild: null, ownerDocument: { createElement: () => writer } } }; } });",
   "lexical.lexicalToHtml({ root: { type: 'root', children: [{ type: 'paragraph', children: [{ type: 'text', text: 'x', format: 0 }] }] } });",
-  "if (calls !== 1 || warnings.length > 0) throw new Error('lexicalToHtml from /lexical did not use the document set through the root: ' + calls + ' template(s), ' + JSON.stringify(warnings));",
+  'const used = calls;',
+  "if (used < 1 || warnings.length > 0) throw new Error('lexicalToHtml from /lexical did not use the document set through the root: ' + calls + ' template(s), ' + JSON.stringify(warnings));",
   'lexical.setSanitizerDocument(null);',
   "root.lexicalToHtml({ root: { type: 'root', children: [] } });",
-  "if (calls !== 1 || warnings.length !== 1) throw new Error('clearing through /lexical did not clear the root: ' + calls + ' template(s), ' + warnings.length + ' warning(s)');",
+  "if (calls !== used || warnings.length !== 1) throw new Error('clearing through /lexical did not clear the root: ' + calls + ' template(s), ' + warnings.length + ' warning(s)');",
   "if (deprecations.length !== 1) throw new Error('setSanitizerDocument() through two entries did not warn exactly once: ' + JSON.stringify(deprecations));",
 ].join(' ');
 

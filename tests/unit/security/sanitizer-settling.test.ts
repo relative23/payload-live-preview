@@ -83,18 +83,30 @@ describe('sanitizeHtml settles on a fixed point', () => {
 });
 
 describe('sanitizeHtml when the output never settles', () => {
-  /** Every parse reads back different markup, as a parser that disagrees with itself would. */
+  /** Every parse writes back different markup, as a parser that disagrees with itself would. */
   function unsettled(): { document: SanitizerDocument; parses: () => number } {
     let parses = 0;
+    const writer = {
+      append: () => undefined,
+      firstChild: null,
+      get innerHTML(): string {
+        parses += 1;
+        return `<p>${String(parses)}</p>`;
+      },
+    };
+    const content = {
+      childNodes: [],
+      firstChild: null,
+      ownerDocument: { createElement: () => writer },
+    };
     return {
       document: {
         createElement: () => ({
           set innerHTML(_value: string) {},
           get innerHTML(): string {
-            parses += 1;
-            return `<p>${String(parses)}</p>`;
+            return '';
           },
-          content: { childNodes: [] } as unknown as ParentNode,
+          content: content as unknown as ParentNode,
         }),
       },
       parses: () => parses,
