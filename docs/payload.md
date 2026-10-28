@@ -108,7 +108,7 @@ The default frontend adapters recognize query intent through `preview`,
 marker; configure another intent signal or explicit delivery path. None of
 these signals authorize a draft request.
 
-Payload 3.92.0 gives a collection document its native Live Preview only after
+Payload 3.92.1 gives a collection document its native Live Preview only after
 the first save. On the create screen there is no preview toggle, no panel and no
 frame, whether the collection's URL comes from this plugin's function or from a
 fixed `admin.livePreview.url` string, and typing does not change that. After the
@@ -119,12 +119,12 @@ the frame, and REST reads before and after show that the collection holds only
 the save. The `create` target of the real-admin
 suite (`tests/real-payload/surface-create.spec.ts`) measures all of this in
 Chromium, Firefox and WebKit. In Payload's source (`handleLivePreview` in
-`@payloadcms/ui`, read in 3.92.0) a function-valued URL is evaluated only for a
+`@payloadcms/ui`, read in 3.92.1) a function-valued URL is evaluated only for a
 saved document; the suite does not test that part.
 
 The real-admin fixture runs the Astro (static, hybrid and middleware), Next.js,
 SvelteKit, Nuxt and plain HTML examples, a React hook page and a Vue composable
-page against a real Payload 3.92.0 admin and proves unsaved edits on an existing
+page against a real Payload 3.92.1 admin and proves unsaved edits on an existing
 global. CI runs the static Astro target in Chromium and every other target in
 Chromium, Firefox and WebKit, and runs the Next.js session and hook targets once
 more in Chromium with Payload's `csrf` list set

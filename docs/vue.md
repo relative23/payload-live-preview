@@ -97,7 +97,7 @@ can still answer after that, for example when a custom `fetchFn` (an option
 meant for tests) ignores the abort signal. The answer changes nothing: the new
 session keeps what it has and starts no read for it.
 
-The real-admin runs of the composable (Payload 2.32.3 and 3.92.0) use
+The real-admin runs of the composable (Payload 2.32.3 and 3.92.1) use
 development bundles; a production build is server-rendered, hydrated and taken
 through its lifecycle against the mock admin
 (`tests/e2e/specs/react-vue-tarball.spec.ts`).
