@@ -419,10 +419,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     why: 'a pure helper from the root barrel: the barrel itself costs nothing',
   },
   {
+    // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +2 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_701,
+    gzip: 5_703,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
@@ -439,10 +440,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-26 (the 2.2 review fixes): Node24.22.1, the same HEAD with and
     // without the change: +28 B gzip; retain the reserve it had.
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +26 B gzip; reserve kept.
+    // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +478 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 56_285,
+    gzip: 56_763,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -459,10 +461,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-26 (the 2.2 review fixes): Node24.22.1, the same HEAD with and
     // without the change: +175 B gzip; retain the reserve it had.
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +20 B gzip; reserve kept.
+    // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +412 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 54_023,
+    gzip: 54_435,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -479,10 +482,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-26 (the 2.2 review fixes): Node24.22.1, the same HEAD with and
     // without the change: +30 B gzip; retain the reserve it had.
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +41 B gzip; reserve kept.
+    // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +466 B gzip; reserve kept.
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 56_286,
+    gzip: 56_752,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -518,10 +522,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-26 (the 2.2 review fixes): Node24.22.1, the same HEAD with and
     // without the change: +176 B gzip; retain the reserve it had.
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +21 B gzip; reserve kept.
+    // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +412 B gzip; reserve kept.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 59_466,
+    gzip: 59_878,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
@@ -536,10 +541,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-26 (the 2.2 review fixes): Node24.22.1, the same HEAD with and
     // without the change: +11 B gzip; retain the reserve it had.
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +37 B gzip; reserve kept.
+    // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +385 B gzip; reserve kept.
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 37_689,
+    gzip: 38_074,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
