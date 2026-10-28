@@ -10,7 +10,7 @@
     "examples/astro-hybrid/src/env.d.ts": "9c9283a414423d9223e5ea86941b142443b8af7a007f77612dc2c098de2d2500",
     "examples/astro-hybrid/src/h05-context.ts": "63de8912cd840d02057fdc3ae57c5d6d824b13c103f288e485cdd1c5ae8025af",
     "examples/astro-hybrid/src/middleware.ts": "1d195ecd9a8680413b1682b86dd167543b333226dee0cdf75da9f4b3ba32547e",
-    "examples/astro-hybrid/src/pages/annotated.astro": "c35048e3bb2a12bd985e4e4ab2b616fbede747db0a9ca4c3730199d54d1d132e",
+    "examples/astro-hybrid/src/pages/annotated.astro": "19d68205f8af11220001ceff2a6582d85132803ed89464e766b1bafd9fd1d85f",
     "examples/astro-hybrid/src/pages/bench.astro": "b861a61e4ae96c11084889c1febc25bb104d214f6ceff4c0d99551fd635f147c",
     "examples/astro-hybrid/src/pages/h05/[locale]/[slug].astro": "602a80435700f1a5d76699edc001a50b9b2896b1db23f07aeea45222015a7bcd",
     "examples/astro-hybrid/src/pages/index.astro": "f084ce687872c15e8e3669b96246d168e52a5736796ee3b3922d219b59b34f2e",

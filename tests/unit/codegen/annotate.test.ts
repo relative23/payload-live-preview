@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  annotatableEntities,
   annotatablePaths,
   annotateTemplates,
   formatAnnotateReport,
@@ -113,7 +114,7 @@ describe('annotating a template', () => {
   it('is idempotent: the annotated file has nothing left to add', async () => {
     const { code } = await run();
 
-    const second = scanTemplate(code, { paths: annotatablePaths(INVENTORY) });
+    const second = scanTemplate(code, { entities: annotatableEntities(INVENTORY) });
 
     expect(second.candidates).toEqual([]);
   });
@@ -126,6 +127,15 @@ describe('the paths it will bind', () => {
     expect(annotatablePaths(INVENTORY).has('slides.*.caption')).toBe(false);
     expect(annotatablePaths(INVENTORY).has('hero.eyebrow')).toBe(true);
   });
+
+  it('keeps each collection and global apart, and the union is the same paths', () => {
+    const entities = annotatableEntities({
+      globals: [{ fields: [{ path: 'tagline' }] }],
+      collections: [{ fields: [{ path: 'title' }, { path: 'slides.*.caption' }] }],
+    });
+
+    expect(entities.map((paths) => [...paths])).toEqual([['tagline'], ['title']]);
+  });
 });
 
 describe('a loop item whose field shares a name with a document field', () => {
@@ -133,7 +143,9 @@ describe('a loop item whose field shares a name with a document field', () => {
   // `bind('title')`, silently, because the scanner dropped the root variable
   // and `title` is a top-level field. Typing into the page title would then
   // overwrite every slide heading in the preview.
-  const paths = new Set(['title', 'slides']);
+  const entities = [new Set(['title', 'subtitle', 'slides'])];
+  /** Bound by hand, so `page` is the document and only the loop item is refused. */
+  const anchor = '<p data-payload-field="subtitle">{page.subtitle}</p>';
 
   it.each([
     ['a .map callback', '{page.slides.map((slide) => <li><h2>{slide.title}</h2></li>)}'],
@@ -143,7 +155,9 @@ describe('a loop item whose field shares a name with a document field', () => {
     ['a Svelte each block', '{#each data.slides as slide}<h2>{slide.title}</h2>{/each}'],
     ['a for…of loop', '{(() => { for (const slide of page.slides) {} })()}<h2>{slide.title}</h2>'],
   ])('is refused in %s, not bound to the document field', (_label, loop) => {
-    const { candidates, refusals } = scanTemplate(`<h1>{page.title}</h1>${loop}`, { paths });
+    const { candidates, refusals } = scanTemplate(`${anchor}<h1>{page.title}</h1>${loop}`, {
+      entities,
+    });
 
     expect(candidates.map((candidate) => candidate.path)).toEqual(['title']);
     expect(refusals).toEqual([
@@ -156,20 +170,23 @@ describe('a loop item whose field shares a name with a document field', () => {
 });
 
 describe('the shapes the scanner accepts', () => {
-  const paths = new Set(['title']);
+  const entities = [new Set(['title', 'subtitle'])];
 
   it('takes the same shape in JSX and Svelte as in Astro', () => {
-    for (const source of ['<h1>{page.title}</h1>', '<h1>{ data.title }</h1>']) {
-      expect(scanTemplate(source, { paths }).candidates).toHaveLength(1);
+    for (const source of [
+      '<p data-payload-field="subtitle">{page.subtitle}</p><h1>{page.title}</h1>',
+      '<p data-payload-field="subtitle">{ data.subtitle }</p><h1>{ data.title }</h1>',
+    ]) {
+      expect(scanTemplate(source, { entities }).candidates).toHaveLength(1);
     }
   });
 
   it('refuses an uppercase tag, whose children belong to the component', () => {
-    expect(scanTemplate('<Title>{page.title}</Title>', { paths }).candidates).toEqual([]);
+    expect(scanTemplate('<Title>{page.title}</Title>', { entities }).candidates).toEqual([]);
   });
 
   it('refuses a bare identifier, which names no document', () => {
-    const result = scanTemplate('<h1>{title}</h1>', { paths });
+    const result = scanTemplate('<h1>{title}</h1>', { entities });
 
     expect(result.candidates).toEqual([]);
     expect(result.refusals[0]?.reason).toContain('not a plain field access');

@@ -28,7 +28,7 @@
     },
     "examples/astro-hybrid": {
       "exposure": "quality/audit-exposure/astro-hybrid.json",
-      "exposureSha256": "bd9d242928a99053f4b6f8cbe026288c3635a6daf7229c4de595c574d9206cbb",
+      "exposureSha256": "68387df266c5663b4974056c613d1c203beaf08554cea976187fcb1a4975540e",
       "exceptions": []
     },
     "examples/pure-html": {

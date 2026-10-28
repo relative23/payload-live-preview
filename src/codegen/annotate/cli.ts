@@ -36,13 +36,19 @@ Options:
   -h, --help            Show this help
 
 What it annotates:
-  An element whose entire content is one field access — <h1>{page.title}</h1> —
-  and whose path the schema has. Astro, JSX and Svelte templates.
+  An element whose entire content is one field access, <p>{page.subtitle}</p>,
+  on a variable the same file already binds a field of by hand:
+  <h1 data-payload-field="title">{page.title}</h1> or {...preview.bind('title')}.
+  That binding is what says page holds the document being previewed, and the
+  path must be in the collection or global that has the hand-bound fields.
+  Astro, JSX and Svelte templates.
 
 What it refuses, with a reason per line:
-  a value printed beside other text, a call or an operator, a path the schema
-  does not know, and a field printed from a loop item. An element that already
-  carries data-payload-field is left as it is, without a line.
+  a value printed beside other text, a call or an operator, a field printed
+  from a loop item, a path the schema does not know, a variable the file binds
+  no field of, and an element that spreads attributes it cannot read. An
+  element already bound by data-payload-field or by a bind() spread is left as
+  it is, without a line.
 
 Exit codes:
   0  nothing left to do, or the files were written

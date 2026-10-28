@@ -1,13 +1,14 @@
 /**
  * `livePreviewAnnotate()` — the annotator as a build step, so a template needs
- * no binding attributes written into it by hand.
+ * one binding written by hand per document it prints rather than one per field.
  *
  * It rewrites the same shape `pll-codegen annotate` rewrites, decided by the
  * same scanner (`./scan`), into a call rather than a fixed attribute:
  *
  * ```astro
- * <h1>{page.title}</h1>
- * → <h1 {...__lpPreview.bind('title')}>{page.title}</h1>
+ * <h1 {...preview.bind('title')}>{page.title}</h1>   bound by hand
+ * <p>{page.subtitle}</p>
+ * → <p {...__lpPreview.bind('subtitle')}>{page.subtitle}</p>
  * ```
  *
  * The difference is who may see it. A fixed attribute is in the HTML of every
@@ -38,7 +39,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { annotatablePaths, type AnnotatableSchema } from './index';
+import { annotatableEntities, type AnnotatableSchema } from './index';
 import { applyAnnotations, fieldAttribute, scanTemplate, type AnnotationRefusal } from './scan';
 
 /** The helper the rewritten markup calls, and the import that defines it. */
@@ -114,12 +115,12 @@ export function annotateSource(
   code: string,
   options: AnnotatePluginOptions,
 ): { readonly code: string; readonly refusals: readonly AnnotationRefusal[] } {
-  const paths = annotatablePaths(options.inventory);
+  const entities = annotatableEntities(options.inventory);
   const { bodyOffset } = splitFrontmatter(code);
   // Frontmatter is TypeScript, not markup: scanning it would match a template
   // written inside a string, and annotate something no browser ever sees.
   const body = code.slice(bodyOffset);
-  const { candidates, refusals } = scanTemplate(body, { paths });
+  const { candidates, refusals } = scanTemplate(body, { entities });
   if (candidates.length === 0) return { code, refusals };
 
   const shifted = candidates.map((candidate) => ({

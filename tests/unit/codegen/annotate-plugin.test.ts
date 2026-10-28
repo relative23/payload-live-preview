@@ -24,6 +24,7 @@ const inventory: PreviewInventory = {
       typeName: 'Home',
       fields: [
         { path: 'title', kind: 'scalar', localized: false, required: true },
+        { path: 'subtitle', kind: 'scalar', localized: false, required: false },
         { path: 'hero.eyebrow', kind: 'scalar', localized: false, required: false },
         { path: 'slides.*.caption', kind: 'scalar', localized: false, required: false },
       ],
@@ -33,11 +34,15 @@ const inventory: PreviewInventory = {
 };
 const options: AnnotatePluginOptions = { inventory };
 
+/** The gated binding the file writes by hand: it says `page` is the document. */
+const ANCHOR = "<p {...preview.bind('subtitle')}>{page.subtitle}</p>";
+
 const PAGE = `---
-const page = { title: 'x', hero: { eyebrow: 'y' } };
+const page = { title: 'x', subtitle: 's', hero: { eyebrow: 'y' } };
 ---
 <h1>{page.title}</h1>
 <p>{page.hero.eyebrow}</p>
+${ANCHOR}
 `;
 
 describe('rewriting a template', () => {
@@ -59,7 +64,7 @@ describe('rewriting a template', () => {
   });
 
   it('gives a file without frontmatter one', () => {
-    const { code } = annotateSource('<h1>{page.title}</h1>\n', options);
+    const { code } = annotateSource(`<h1>{page.title}</h1>\n${ANCHOR}\n`, options);
 
     expect(code.startsWith('---\n')).toBe(true);
     expect(code).toContain("<h1 {...__lpPreview.bind('title')}>");
@@ -85,9 +90,22 @@ describe('rewriting a template', () => {
     ]);
   });
 
+  it('leaves a component that binds nothing by hand as it is', () => {
+    // The scanner's rule, through the plugin: `post` in a card may be any
+    // post, so a gated `bind('title')` there would show the page's title.
+    const card = '---\nconst { post } = Astro.props;\n---\n<h2>{post.title}</h2>\n';
+
+    const { code, refusals } = annotateSource(card, options);
+
+    expect(code).toBe(card);
+    expect(refusals.map((refusal) => refusal.reason)).toEqual([
+      expect.stringContaining('binds no field of `post`'),
+    ]);
+  });
+
   it('never annotates markup written inside frontmatter', () => {
     // Frontmatter is TypeScript. A template in a string is not the document.
-    const source = `---\nconst sample = '<h1>{page.title}</h1>';\n---\n<p>{page.title}</p>\n`;
+    const source = `---\nconst sample = '<h1>{page.title}</h1>';\n---\n<p>{page.title}</p>\n${ANCHOR}\n`;
 
     const { code } = annotateSource(source, options);
 

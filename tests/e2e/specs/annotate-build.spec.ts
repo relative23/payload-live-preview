@@ -6,10 +6,12 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * `/annotated`).
  *
  * The page has no `data-payload-*` in its source — `src/pages/annotated.astro`
- * is what a site writes. The plugin rewrites each printed field into a call to
- * the helper the middleware's authorization decides, which is the whole point:
- * the binding exists for an editor and does not exist for anyone else. The
- * hand-annotated pages in the same fixture are what it is measured against.
+ * is what a site writes. It binds the title by hand through the gated helper,
+ * which says `page` holds the document, and the plugin rewrites the subtitle it
+ * prints into a call to the helper the middleware's authorization decides,
+ * which is the whole point: the binding exists for an editor and does not
+ * exist for anyone else. The hand-annotated pages in the same fixture are what
+ * it is measured against.
  */
 
 const APP = 'http://localhost:4177';
@@ -46,6 +48,7 @@ test.describe('bindings written at build time', () => {
   }) => {
     const html = await (await request.get(await tokenedUrl(request))).text();
 
+    // The title is the hand binding; the subtitle is the plugin's.
     expect(html).toContain('data-payload-field="title"');
     expect(html).toContain('data-payload-field="subtitle"');
     // `{Date.now()}` is a call, and the scanner refuses a call. A binding there

@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 514,
-    "suites": 977,
-    "tests": 4462,
+    "files": 515,
+    "suites": 979,
+    "tests": 4470,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 418,
-      "suites": 868,
-      "tests": 4064,
+      "files": 419,
+      "suites": 870,
+      "tests": 4072,
       "benchmarks": 0
     }
   },
@@ -1110,14 +1110,21 @@
       "path": "tests/unit/codegen/annotate-plugin.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 14,
+      "tests": 15,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/codegen/annotate-refusals.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/codegen/annotate.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 9,
+      "tests": 10,
       "benchmarks": 0
     },
     {

@@ -498,22 +498,34 @@ exit code is 3 when a dry run found work — a pre-commit hook can tell that apa
 from "nothing to do".
 
 It annotates one shape, the one that means the same thing in Astro, JSX and
-Svelte: an element whose entire content is a single field access whose path the
-schema has.
+Svelte: an element whose entire content is a single field access, on a variable
+the same file already binds a field of by hand. That hand binding is what says
+the variable holds the document being previewed. `post` in a card, `settings`
+in a footer and `page` in a route look alike, and nothing else in a template
+tells them apart. The path must be in a collection or global that also has the
+fields bound by hand on that variable.
 
 ```astro
-<h1>{page.title}</h1>          →  <h1 data-payload-field="title">{page.title}</h1>
+<h1 data-payload-field="title">{page.title}</h1>   (bound by hand)
+<p>{page.subtitle}</p>         →  <p data-payload-field="subtitle">{page.subtitle}</p>
 <p>{page.hero.eyebrow}</p>     →  <p data-payload-field="hero.eyebrow">…</p>
 ```
 
+The hand binding is the attribute or a spread of a binding helper, as in
+`<h1 {...preview.bind('title')}>{page.title}</h1>`. It counts when the path is
+a string literal and the element prints exactly that field of the variable.
+
 These are left alone and listed with a reason:
 
-| Left alone                                               | Why                                                                                                                         |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `<p>Published {page.date}</p>`                           | A binding replaces the element's whole text, label included. Split the markup first.                                        |
-| `<p>{formatDate(page.date)}</p>`                         | Derived: no single field to name. `data-payload-format` covers dates and numbers ([above](#formatting-a-date-or-a-number)). |
-| `<p>{page.internalNote}</p>`                             | The schema has no such field, so the binding would name something that never arrives.                                       |
-| `{page.slides.map((slide) => <li>{slide.caption}</li>)}` | `slide` is a loop item, not the document; bind the array on its container ([attributes](#attribute-reference)).             |
+| Left alone                                                                             | Why                                                                                                                                      |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `<p>Published {page.date}</p>`                                                         | A binding replaces the element's whole text, label included. Split the markup first.                                                     |
+| `<p>{formatDate(page.date)}</p>`                                                       | Derived: no single field to name. `data-payload-format` covers dates and numbers ([above](#formatting-a-date-or-a-number)).              |
+| `<p>{page.internalNote}</p>`                                                           | The schema has no such field, so the binding would name something that never arrives.                                                    |
+| `{page.slides.map((slide) => <li>{slide.caption}</li>)}`                               | `slide` is a loop item, not the document; bind the array on its container ([attributes](#attribute-reference)).                          |
+| `<h2>{post.title}</h2>`, the file binding no field of `post`                           | Nothing says `post` is the document being previewed. In a card it is another post, and the binding would write the page's title into it. |
+| `<p>{page.excerpt}</p>`, no collection having `excerpt` and the fields bound on `page` | One variable holds one document.                                                                                                         |
+| `<p {...rest}>{page.subtitle}</p>`                                                     | The scan cannot read the spread, and it may bind the element already.                                                                    |
 
 A loop item is a name bound as the first parameter of a `map`, `flatMap` or
 `forEach` callback, as a `for … of` variable or as a Svelte
@@ -525,9 +537,10 @@ cost the preview.
 Some places are left alone without a line in the report. The scan reads
 lowercase elements only, so a component, `<Hero title={page.title} />` or
 `<Hero>{page.title}</Hero>`, is never looked at: its props and children are its
-own business. An element that already carries `data-payload-field` is skipped:
-yours wins, always. A value printed in an attribute, or in an element that also
-contains other elements, is not read at all.
+own business. An element that already carries `data-payload-field`, or spreads
+a call of `bind()` or `bindByPath()`, is skipped: yours wins, always. A value
+printed in an attribute, or in an element that also contains other elements, is
+not read at all.
 
 A missing binding costs an editor one invisible edit; a wrong one writes a value
 into the wrong element on every keystroke. That asymmetry is why the tool reports
@@ -551,8 +564,13 @@ export default defineConfig({
 ```
 
 ```astro
-<h1>{page.title}</h1>   →   <h1 {...__lpPreview.bind('title')}>{page.title}</h1>
+<h1 {...preview.bind('title')}>{page.title}</h1>   (bound by hand, gated)
+<p>{page.subtitle}</p>   →   <p {...__lpPreview.bind('subtitle')}>{page.subtitle}</p>
 ```
+
+The plugin needs the same hand binding per variable as the codemod. Write it
+with `createPreviewBindings()` ([above](#keeping-binding-attributes-off-public-responses))
+so that it is gated as well.
 
 `inventory` is the `inventory` property of what `generateTypes()` resolves
 to, or the file `pll-codegen --inventory` writes; only the field paths are read. The helper is built once per
