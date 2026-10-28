@@ -163,6 +163,33 @@ const bindings = useState('preview-bindings', () => {
 
 On a public response the helpers return empty objects, and the markup carries no `data-payload-*` attribute at all. The initial draft read is server code — `definePreview()` from `payload-live-preview/server` — and a Nitro route that serves the page's data is its own request, so it authorizes that request with the same strategy; [authorization.md](authorization.md) has the read.
 
+### Rich text on the server
+
+`lexicalToHtml()` sanitizes with a DOM, and Nitro has none. Render the HTML in server code, with a document for each render from jsdom (your own dependency), so the DOM library stays out of the browser bundle. With `requireDocument: true` a render without one throws instead of returning a custom node's markup unsanitized:
+
+```ts
+// server/utils/rich-text.ts
+import { JSDOM } from 'jsdom';
+import { lexicalToHtml, type LexicalRoot } from 'payload-live-preview/lexical';
+
+export function richText(value: LexicalRoot | null | undefined): string {
+  if (!value) return '';
+  // A document for this render alone: two requests in flight never share one.
+  const { document } = new JSDOM('<!doctype html><html><body></body></html>').window;
+  return lexicalToHtml(value, { document, requireDocument: true });
+}
+```
+
+The Nitro route that serves the page's data returns `bodyHtml: richText(page.body)` beside the document. The page adds `body: preview.bind('body', { richtext: true })` to the bindings in its `useState` call and writes the HTML into the bound element:
+
+```vue
+<template>
+  <div v-bind="bindings.body" v-html="page.bodyHtml"></div>
+</template>
+```
+
+The element is there while the field is empty too, so the first edit has somewhere to land. `richtext: true` writes `data-payload-richtext`, which forces Lexical rendering and has every edit ask Payload to fill in the value's nodes ([bindings.md](bindings.md)).
+
 ## Client navigation and route refreshes
 
 The Nitro adapter arms preview responses for the package's navigation event;

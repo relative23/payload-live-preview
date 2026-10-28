@@ -22,7 +22,7 @@
   "totals": {
     "files": 519,
     "suites": 1001,
-    "tests": 4550,
+    "tests": 4551,
     "benchmarks": 12
   },
   "groups": {
@@ -41,7 +41,7 @@
     "e2e": {
       "files": 57,
       "suites": 62,
-      "tests": 252,
+      "tests": 253,
       "benchmarks": 0
     },
     "integration": {
@@ -277,7 +277,7 @@
       "path": "tests/e2e/specs/hybrid-fragment.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 17,
+      "tests": 18,
       "benchmarks": 0
     },
     {

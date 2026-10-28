@@ -309,6 +309,35 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
 `PageDocument` is your document type. The `signed-token` strategy reads its token from the query string, so build the `url` from `searchParams` as well. A page rendered at build time has no request: it reads the published document, and the runtime patches it from there.
 
+### Rich text on the server
+
+`lexicalToHtml()` sanitizes with a DOM, and a server component has none. Hand it a document for each render, from jsdom (your own dependency). With `requireDocument: true` a render without one throws instead of returning a custom node's markup unsanitized:
+
+```tsx
+// app/[slug]/rich-text.tsx — a server component
+import { JSDOM } from 'jsdom';
+import { lexicalToHtml, type LexicalRoot } from 'payload-live-preview/lexical';
+import type { PreviewBindings } from 'payload-live-preview/server';
+
+export function RichText(props: {
+  value: LexicalRoot | null | undefined;
+  field: string;
+  bindings: PreviewBindings;
+}) {
+  // A document for this render alone: two requests in flight never share one.
+  const { document } = new JSDOM('<!doctype html><html><body></body></html>').window;
+  const html = props.value ? lexicalToHtml(props.value, { document, requireDocument: true }) : '';
+  return (
+    <div
+      {...props.bindings.bind(props.field, { richtext: true })}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+```
+
+The page above renders it as `<RichText value={result.data.body} field="body" bindings={bindings} />`. The element is there while the field is empty too, so the first edit has somewhere to land. `richtext: true` writes `data-payload-richtext`, which forces Lexical rendering and has every edit ask Payload to fill in the value's nodes ([bindings.md](bindings.md)); on a public response `bind()` writes nothing.
+
 ## Server-rendered boundaries
 
 A patch reaches what the markup annotates. It cannot create a section the

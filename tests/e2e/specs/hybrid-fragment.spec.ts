@@ -215,12 +215,29 @@ test.describe('hybrid fragment preview', () => {
       },
       OWNER,
     );
-    await expect(frame.getByTestId('callout')).toHaveText(
+    // A class, not a test id: the sanitizer strips data-* attributes it was not told to keep.
+    await expect(frame.locator('aside.callout')).toHaveText(
       'Rendered by the site’s own node renderer',
     );
     await expect(frame.getByTestId('hero-body').locator('p')).toHaveText('Intro words');
     // The count is of the whole Lexical text, callout included: 2 + 7 words.
     await expect(frame.getByTestId('hero-words')).toHaveText('9 words');
+  });
+
+  test("a custom Lexical node's text reaches the page as text, not as markup", async ({ page }) => {
+    const frame = await open(page);
+    const typed = '<img src=x onerror="document.title=1">';
+    await post(
+      page,
+      {
+        title: 'Lexical',
+        body: { root: { type: 'root', children: [{ type: 'callout', text: typed }] } },
+      },
+      OWNER,
+    );
+    const callout = frame.locator('aside.callout');
+    await expect(callout).toHaveText(typed);
+    await expect(callout.locator('img')).toHaveCount(0);
   });
 
   test('focus and a typed value survive a server render of the boundary', async ({ page }) => {

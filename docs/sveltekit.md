@@ -118,6 +118,31 @@ export const load: PageServerLoad = async ({ locals, params, request }) => {
 </section>
 ```
 
+### Rich text on the server
+
+`lexicalToHtml()` sanitizes with a DOM, and `load` runs where there is none. Hand it a document for each render, from jsdom (your own dependency), in a module under `$lib/server` so it never reaches the browser bundle. With `requireDocument: true` a render without one throws instead of returning a custom node's markup unsanitized:
+
+```ts
+// src/lib/server/rich-text.ts
+import { JSDOM } from 'jsdom';
+import { lexicalToHtml, type LexicalRoot } from 'payload-live-preview/lexical';
+
+export function richText(value: LexicalRoot | null | undefined): string {
+  if (!value) return '';
+  // A document for this render alone: two requests in flight never share one.
+  const { document } = new JSDOM('<!doctype html><html><body></body></html>').window;
+  return lexicalToHtml(value, { document, requireDocument: true });
+}
+```
+
+`load` above then returns `body: richText(result.data.body)` and a binding for it, `bindings.bind<PageDocument>('body', { richtext: true })`, and the template writes the HTML into the bound element:
+
+```svelte
+<div {...data.bindings.body}>{@html data.body}</div>
+```
+
+The element is there while the field is empty too, so the first edit has somewhere to land. `richtext: true` writes `data-payload-richtext`, which forces Lexical rendering and has every edit ask Payload to fill in the value's nodes ([bindings.md](bindings.md)).
+
 ## Client navigation and route refreshes
 
 The handle arms preview responses for the package's navigation event; it does
