@@ -177,9 +177,9 @@ const COMMENT_NODE = 8;
 
 /**
  * Thrown when `sanitizeHtml` is invoked in an environment without a
- * `document` (e.g., server-side rendering). Callers should catch this
- * and either degrade to plain-text rendering or route the work to a
- * deferred client-side render.
+ * `document` (e.g., server-side rendering), or with one that cannot write
+ * what it cleaned. Callers should catch this and either degrade to
+ * plain-text rendering or route the work to a deferred client-side render.
  */
 export class SanitizerEnvironmentError extends Error {
   override readonly name = 'SanitizerEnvironmentError';
@@ -239,7 +239,7 @@ let documentOverride: SanitizerDocument | undefined;
  * libraries:
  *
  *   ```ts
- *   // linkedom — recommended (smallest, fastest)
+ *   // linkedom — 1.8.2 or later; up to 1.8.1 its output was the input, unsanitised
  *   import { parseHTML } from 'linkedom';
  *   import { setSanitizerDocument } from 'payload-live-preview';
  *   const { document } = parseHTML('<!doctype html><html><body></body></html>');
@@ -265,7 +265,8 @@ export function setSanitizerDocument(doc: SanitizerDocument | null): void {
  * browser parser silently recovers and the sanitizer continues from
  * the recovered tree.
  *
- * @throws {SanitizerEnvironmentError} when no DOM is available.
+ * @throws {SanitizerEnvironmentError} when no DOM is available, or when its
+ * document cannot write the cleaned nodes.
  */
 export function sanitizeHtml(html: string, options?: SanitizeOptions): string {
   const doc = resolveDocument();
@@ -279,8 +280,29 @@ export function sanitizeHtml(html: string, options?: SanitizeOptions): string {
   const policy = resolvePolicy(options);
   const template = doc.createElement('template');
   template.innerHTML = html;
-  sanitizeFragment(template.content, policy);
-  return template.innerHTML;
+  // Read once, and never write the template back: linkedom's `content` is a
+  // copy of the template's children, so the template still held the parse
+  // and the input came back unsanitised (1.8.2).
+  const fragment = template.content;
+  sanitizeFragment(fragment, policy);
+  return serialize(fragment);
+}
+
+/**
+ * Writes the cleaned nodes themselves, through an element of their own
+ * document, where a browser keeps them inert. No such element, or one that does
+ * not end up holding them, would write something else: refused, not returned.
+ */
+function serialize(fragment: ParentNode): string {
+  const writer = fragment.ownerDocument?.createElement('div');
+  const first = fragment.firstChild;
+  if (writer !== undefined) {
+    writer.append(fragment);
+    if (writer.firstChild === first) return writer.innerHTML;
+  }
+  throw new SanitizerEnvironmentError(
+    'sanitizeHtml could not write what it cleaned with this document; use a browser, jsdom or linkedom document.',
+  );
 }
 
 function resolveDocument(): SanitizerDocument | undefined {

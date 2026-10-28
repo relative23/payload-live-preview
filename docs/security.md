@@ -88,6 +88,17 @@ their own HTML:
 - **External `<a>` hardened.** Auto-applies `rel="noopener noreferrer"` and `target="_blank"`.
 - **HTML comments removed.**
 
+**What it writes is what it cleaned.** Since 1.8.2 the sanitizer writes the
+cleaned nodes themselves, through an element of their own document. Up to
+1.8.1 it read the template back, and linkedom's `template.content` is a copy
+of the template's children: with a linkedom document, given to
+`setSanitizerDocument()` or set as the global `document`, `sanitizeHtml()`
+returned its input unsanitised. `lexicalToHtml()` escapes the values of its
+built-in nodes itself, so there only markup from custom block renderers came
+through unsanitised. jsdom and happy-dom were not affected. A document that
+gives no such element, or one that does not end up holding the cleaned nodes,
+now makes the call throw `SanitizerEnvironmentError` instead.
+
 ### 4. URL validation
 
 `isSafeUrl` accepts only:
