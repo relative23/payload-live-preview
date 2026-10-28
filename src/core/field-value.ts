@@ -71,7 +71,10 @@ export function bindingValue(
   );
 }
 
-/** Identity of everything a binding renders: its value plus any sibling href/src/alt fields. */
+/**
+ * Identity of everything a binding renders: its value, any sibling
+ * href/src/alt fields, and the format and locale the renderer writes it in.
+ */
 export function bindingIdentity(
   target: CachedElement,
   value: unknown,
@@ -81,7 +84,9 @@ export function bindingIdentity(
   const own = valueIdentity(value);
   if (own === undefined) return undefined;
   const siblings = [target.hrefField, target.srcField, target.altField];
-  let combined = own;
+  // The same 12.34 is a new write under `number:2` or `de-DE`. JSON keeps the
+  // two apart from each other and from the value, whatever they contain.
+  let combined = JSON.stringify([target.format, target.locale ?? locale]) + own;
   for (const sibling of siblings) {
     if (sibling === undefined || sibling.length === 0) continue;
     const resolved = bindingValue(fields, target, sibling, locale);

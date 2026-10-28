@@ -185,3 +185,59 @@ describe('data-payload-covers', () => {
     runtime.destroy();
   });
 });
+
+/**
+ * A declaration is read when the cache is built, like a binding's own
+ * attributes; a page that changes it after the first message has to reach the
+ * next decision, or an edit the page no longer accounts for is dropped.
+ */
+describe('a declaration the page changes after the first message', () => {
+  const COVERED = '<h1 data-payload-field="title">T</h1><i data-payload-covers="seo"></i>';
+
+  async function editSeoAfter(change: () => void): Promise<void> {
+    await send({ title: 'T', seo: { title: 'Saved' } });
+    change();
+    // Past the mutation observer's 100 ms debounce.
+    await vi.advanceTimersByTimeAsync(250);
+    await send({ title: 'T', seo: { title: 'Edited' } });
+  }
+
+  it('stops covering a field the rewritten data-payload-covers no longer names', async () => {
+    const { runtime, refresh } = start(COVERED);
+    await editSeoAfter(() => {
+      document.querySelector('i')!.setAttribute('data-payload-covers', 'meta');
+    });
+    expect(refresh).toHaveBeenCalledOnce();
+    runtime.destroy();
+  });
+
+  it('stops covering a field once the declaring element leaves the page', async () => {
+    const { runtime, refresh } = start(COVERED);
+    await editSeoAfter(() => {
+      document.querySelector('i')!.remove();
+    });
+    expect(refresh).toHaveBeenCalledOnce();
+    runtime.destroy();
+  });
+
+  it('covers a field once a declaring element arrives', async () => {
+    const { runtime, refresh } = start('<h1 data-payload-field="title">T</h1>');
+    await editSeoAfter(() => {
+      document.body.insertAdjacentHTML('beforeend', '<i data-payload-covers="seo"></i>');
+    });
+    expect(refresh).not.toHaveBeenCalled();
+    runtime.destroy();
+  });
+
+  it('stops counting a field a route marker no longer depends on', async () => {
+    const { runtime, refresh } = start(
+      '<h1 data-payload-field="title">T</h1>' +
+        '<div data-payload-strategy="route" data-payload-depends="seo"></div>',
+    );
+    await editSeoAfter(() => {
+      document.querySelector('div')!.setAttribute('data-payload-depends', 'meta');
+    });
+    expect(refresh).toHaveBeenCalledOnce();
+    runtime.destroy();
+  });
+});

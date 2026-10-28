@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 512,
-    "suites": 968,
-    "tests": 4420,
+    "files": 514,
+    "suites": 973,
+    "tests": 4438,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 416,
-      "suites": 859,
-      "tests": 4022,
+      "files": 418,
+      "suites": 864,
+      "tests": 4040,
       "benchmarks": 0
     }
   },
@@ -1219,6 +1219,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/binding-attribute-contract.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/binding-owner-scope.test.ts",
       "group": "unit",
       "suites": 2,
@@ -1382,8 +1389,8 @@
     {
       "path": "tests/unit/core/field-value.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 1,
+      "suites": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -1391,6 +1398,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/format-and-locale-changes.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1915,7 +1929,7 @@
       "path": "tests/unit/core/observers-mutations.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 12,
+      "tests": 15,
       "benchmarks": 0
     },
     {
@@ -2166,8 +2180,8 @@
     {
       "path": "tests/unit/core/subfield-coverage.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 10,
+      "suites": 4,
+      "tests": 14,
       "benchmarks": 0
     },
     {
