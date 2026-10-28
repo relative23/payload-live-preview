@@ -1,18 +1,29 @@
 ---
 /**
- * A page with no binding attributes in it. `livePreviewAnnotate()` (see
- * astro.config.mjs) rewrites `<h1>{page.title}</h1>` into a call to the
- * request-scoped helper, so the attributes exist only for a preview the
- * middleware authorized — a public response carries none.
+ * A page with no binding attributes in it. The title is bound by hand through
+ * the gated helper, and that binding is what tells `livePreviewAnnotate()`
+ * (see astro.config.mjs) that `page` holds the document. The plugin rewrites
+ * `<p>{page.subtitle}</p>` into a call to the request-scoped helper, so the
+ * attributes exist only for a preview the middleware authorized — a public
+ * response carries none.
  *
  * Nothing here is generated: this is what a site writes.
  */
+import {
+  createPreviewBindings,
+  type AuthorizedPreviewContext,
+} from 'payload-live-preview/server';
+
 export const prerender = false;
 
 const page = {
   title: 'Annotated title',
   subtitle: 'Annotated subtitle',
 };
+const locals = Astro.locals as { livePreviewAuthorization?: AuthorizedPreviewContext };
+const preview = createPreviewBindings({
+  authorization: locals.livePreviewAuthorization ?? null,
+});
 ---
 
 <html lang="en">
@@ -21,7 +32,7 @@ const page = {
     <title>Annotated</title>
   </head>
   <body>
-    <h1>{page.title}</h1>
+    <h1 {...preview.bind('title')}>{page.title}</h1>
     <p>{page.subtitle}</p>
     <footer data-testid="stamp">{Date.now()}</footer>
   </body>

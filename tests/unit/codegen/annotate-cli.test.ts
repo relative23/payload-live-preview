@@ -19,16 +19,19 @@ const CONFIG = `
         fields: [
           { name: 'title', type: 'text' },
           { name: 'subtitle', type: 'text' },
+          { name: 'lede', type: 'text' },
         ],
       },
     ],
   };
 `;
 
+/** The last line is bound by hand: it is what says `page` holds the document. */
 const TEMPLATE = `<article>
   <h1>{page.title}</h1>
   <p>Published {page.subtitle}</p>
   <p>{page.missing}</p>
+  <p data-payload-field="lede">{page.lede}</p>
 </article>
 `;
 

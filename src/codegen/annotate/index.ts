@@ -76,22 +76,27 @@ export interface AnnotatableSchema {
 }
 
 /**
- * Every path the schema can address, in one set.
+ * The paths each collection and global can address, one set per entity.
  *
  * An array's items are spelled `slides.*.caption` in the inventory because that
  * is how the runtime resolves them; a template writes `slide.caption` inside a
  * loop, where nothing connects `slide` to `slides`. Those paths are therefore
  * kept out: the scanner would otherwise match a name that only looks right.
+ * The sets stay apart because one template variable holds one document, so a
+ * path is only bindable together with the fields bound by hand on the same
+ * variable.
  * @internal
  */
+export function annotatableEntities(inventory: AnnotatableSchema): readonly ReadonlySet<string>[] {
+  return [...inventory.globals, ...inventory.collections].map(
+    (entry) =>
+      new Set(entry.fields.map((field) => field.path).filter((path) => !path.includes('*'))),
+  );
+}
+
+/** Every path of every collection and global, in one set: the same paths, not kept apart. @internal */
 export function annotatablePaths(inventory: AnnotatableSchema): ReadonlySet<string> {
-  const paths = new Set<string>();
-  for (const entry of [...inventory.globals, ...inventory.collections]) {
-    for (const field of entry.fields) {
-      if (!field.path.includes('*')) paths.add(field.path);
-    }
-  }
-  return paths;
+  return new Set(annotatableEntities(inventory).flatMap((paths) => [...paths]));
 }
 
 /** @internal */
@@ -100,12 +105,12 @@ export async function annotateTemplates(options: AnnotateOptions): Promise<Annot
   const write =
     options.io?.write ?? ((path: string, content: string) => writeFile(path, content, 'utf8'));
   const root = options.cwd ?? process.cwd();
-  const paths = annotatablePaths(options.inventory);
+  const entities = annotatableEntities(options.inventory);
   const files: AnnotateFileResult[] = [];
 
   for (const file of options.files) {
     const source = await read(file);
-    const { candidates, refusals } = scanTemplate(source, { paths });
+    const { candidates, refusals } = scanTemplate(source, { entities });
     const code = candidates.length === 0 ? source : applyAnnotations(source, candidates);
     const changed = code !== source;
     if (changed && options.write === true) await write(file, code);

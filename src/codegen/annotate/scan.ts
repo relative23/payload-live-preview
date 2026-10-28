@@ -6,15 +6,21 @@
  * template language the package adapts:
  *
  * ```
- * <h1>{page.title}</h1>          Astro, JSX, Svelte
+ * <h1 data-payload-field="title">{page.title}</h1>    bound by hand
+ * <p>{page.subtitle}</p>                               → subtitle
  * ```
  *
- * An element whose entire content is one member expression, rooted at some
- * variable, whose remaining path is a field the schema actually has. Everything
- * else — an interpolation next to text, a call, a ternary, a path the schema
- * does not know, a component instead of an element — is reported instead, with
- * the reason. A wrong `data-payload-field` is worse than a missing one: it makes
- * the runtime write a value into markup that was never meant for it.
+ * An element whose entire content is one member expression, rooted at a
+ * variable the file already binds a field of by hand, whose remaining path a
+ * collection or global has together with those hand-bound fields. The hand
+ * binding is the only thing in a template that says which variable holds the
+ * previewed document: `post` in a card, `settings` in a footer and `page` in a
+ * route look alike, and on four sites 16 of the 17 bindings proposed without
+ * it were wrong, most of them a field of some other document. Everything
+ * else — an interpolation next to text, a call, a path the schema does not
+ * know, a component instead of an element — is reported instead, with
+ * the reason. A wrong `data-payload-field` is worse than a missing one: it
+ * makes the runtime write a value into markup that was never meant for it.
  *
  * Markup rather than an AST on purpose. Astro and Svelte templates are not
  * TypeScript, so ts-morph would only cover the JSX third of the problem, and
@@ -51,16 +57,24 @@ export interface ScanResult {
 }
 
 export interface ScanOptions {
-  /** Field paths the schema has, exactly as a binding must spell them. */
-  readonly paths: ReadonlySet<string>;
+  /**
+   * The paths of each collection and global, one set per entity, exactly as a
+   * binding must spell them. Kept apart because one variable holds one
+   * document: a path is only bindable on a variable whose hand-bound fields
+   * the same entity has.
+   */
+  readonly entities: readonly ReadonlySet<string>[];
 }
 
 /**
  * `<tag attrs>content</tag>` with no element inside it, the closing tag
  * repeating the name. Only lowercase tags: an uppercase one is a component,
- * whose children are its own business.
+ * whose children are its own business. An attribute in braces is read as one
+ * unit, two levels deep, so the `>` of `bind<Page>(…)` or of an arrow function
+ * does not end the tag.
  */
-const ELEMENT = /<([a-z][a-z0-9-]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>([^<]*)<\/\1\s*>/gu;
+const ELEMENT =
+  /<([a-z][a-z0-9-]*)((?:"[^"]*"|'[^']*'|\{(?:[^{}]|\{[^{}]*\})*\}|[^>"'{])*)>([^<]*)<\/\1\s*>/gu;
 
 /** The whole content is one interpolation, and nothing else. */
 const ONLY_INTERPOLATION = /^\s*\{([^{}]*)\}\s*$/u;
@@ -72,6 +86,21 @@ const ANY_INTERPOLATION = /\{([^{}]*)\}/u;
 const MEMBER_CHAIN = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+$/u;
 
 const FIELD_ATTRIBUTE = 'data-payload-field';
+
+/** The path a hand-written attribute names: `="title"`, `='title'` or `={'title'}`. */
+const FIELD_LITERAL =
+  /\bdata-payload-field\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*(["'`])([^"'`]*)\3\s*\})/u;
+
+/**
+ * A spread of a binding helper: `{...preview.bind('title')}`,
+ * `{...bind<Page>("title")}`, `{...bindByPath((d) => d.title)}`. The path is
+ * captured when it is a string literal.
+ */
+const BINDING_SPREAD =
+  /\{\s*\.\.\.\s*(?:[\w$]+\s*\.\s*)*(?:bind|bindByPath)\s*(?:<[^>]*>)?\s*\(\s*(?:(["'`])([^"'`]*)\1)?/u;
+
+/** Any other spread: attributes the scan cannot see, a binding among them or not. */
+const ANY_SPREAD = /\{\s*\.\.\./u;
 
 /**
  * Where a template names one array item at a time: a `.map`, `.flatMap` or
@@ -115,59 +144,136 @@ function pathOf(chain: string): string {
   return chain.slice(chain.indexOf('.') + 1);
 }
 
+function rootOf(chain: string): string {
+  return chain.slice(0, chain.indexOf('.'));
+}
+
 function describe(expression: string): string {
   const flat = expression.replace(/\s+/gu, ' ').trim();
   return flat.length > 60 ? `${flat.slice(0, 57)}…` : flat;
 }
 
+/**
+ * How an element is bound already, or `null`. `path` is the field when the
+ * binding spells it as a literal, which is what lets it name its variable.
+ */
+function bindingOf(attributes: string): { readonly path: string | undefined } | null {
+  if (attributes.includes(FIELD_ATTRIBUTE)) {
+    const literal = FIELD_LITERAL.exec(attributes);
+    return { path: literal?.[1] ?? literal?.[2] ?? literal?.[4] };
+  }
+  const spread = BINDING_SPREAD.exec(attributes);
+  return spread === null ? null : { path: spread[2] };
+}
+
+/** What a file says about its variables, read from the bindings written by hand. */
+interface FileContext {
+  /** Every path the schema has, whichever entity. */
+  readonly known: ReadonlySet<string>;
+  readonly entities: readonly ReadonlySet<string>[];
+  readonly items: ReadonlySet<string>;
+  /** A variable whose field is bound by hand, with the paths bound on it. */
+  readonly anchors: ReadonlyMap<string, ReadonlySet<string>>;
+}
+
 /** Why this interpolation cannot become a binding, in the words of the report. */
-function refusalReason(
-  expression: string,
-  paths: ReadonlySet<string>,
-  items: ReadonlySet<string>,
-): string | undefined {
+function refusalReason(expression: string, file: FileContext): string | undefined {
   const trimmed = expression.trim();
   if (trimmed.length === 0) return 'the element is empty';
   if (!MEMBER_CHAIN.test(trimmed)) {
     return 'not a plain field access — a call, an operator or an index cannot be traced to one field';
   }
   const path = pathOf(trimmed);
-  const root = trimmed.slice(0, trimmed.indexOf('.'));
-  if (items.has(root)) {
+  const root = rootOf(trimmed);
+  if (file.items.has(root)) {
     return `\`${root}\` is a loop item — a binding names a field of the document, and \`${path}\` there is a different value, or none`;
   }
-  if (!paths.has(path)) {
+  if (!file.known.has(path)) {
     return `the schema has no field \`${path}\`; the binding would name something that never arrives`;
   }
+  const anchored = file.anchors.get(root);
+  if (anchored === undefined) {
+    return `this file binds no field of \`${root}\` by hand, so nothing says it holds the previewed document rather than another one — bind one of its fields and the rest can follow`;
+  }
+  const together = [...anchored, path];
+  if (!file.entities.some((entity) => together.every((each) => entity.has(each)))) {
+    const bound = [...anchored].map((each) => `\`${each}\``).join(', ');
+    return `no single collection or global has \`${path}\` and what this file binds on \`${root}\` (${bound}) — one variable holds one document`;
+  }
   return undefined;
+}
+
+/**
+ * Why this element cannot carry a binding whatever it prints: its attributes
+ * decide, before the content is read.
+ */
+function elementRefusal(attributes: string): string | undefined {
+  if (ANY_SPREAD.test(attributes)) {
+    return 'the element spreads attributes the scan cannot read, and one of them may already bind it';
+  }
+  return undefined;
+}
+
+/**
+ * The variables a file binds by hand: an element bound to `P` whose content
+ * is `{v.P}` says that `v` holds the document. A loop item never does — its
+ * binding names the field of one item, which is a different statement.
+ */
+function anchorsOf(
+  elements: readonly RegExpMatchArray[],
+  items: ReadonlySet<string>,
+): ReadonlyMap<string, ReadonlySet<string>> {
+  const anchors = new Map<string, Set<string>>();
+  for (const [, , attributes = '', content = ''] of elements) {
+    const path = bindingOf(attributes)?.path;
+    const chain = ONLY_INTERPOLATION.exec(content)?.[1]?.trim();
+    if (path === undefined || chain === undefined || !MEMBER_CHAIN.test(chain)) continue;
+    const root = rootOf(chain);
+    if (pathOf(chain) !== path || items.has(root)) continue;
+    const paths = anchors.get(root) ?? new Set<string>();
+    paths.add(path);
+    anchors.set(root, paths);
+  }
+  return anchors;
 }
 
 export function scanTemplate(source: string, options: ScanOptions): ScanResult {
   const candidates: AnnotationCandidate[] = [];
   const refusals: AnnotationRefusal[] = [];
   const items = loopVariables(source);
-  for (const match of source.matchAll(ELEMENT)) {
+  const elements = [...source.matchAll(ELEMENT)];
+  const file: FileContext = {
+    known: new Set(options.entities.flatMap((entity) => [...entity])),
+    entities: options.entities,
+    items,
+    anchors: anchorsOf(elements, items),
+  };
+  for (const match of elements) {
     const [, tag = '', attributes = '', content = ''] = match;
     const line = lineAt(source, match.index);
-    if (attributes.includes(FIELD_ATTRIBUTE)) continue;
+    // Bound already, by an attribute or a helper's spread: yours wins, always.
+    if (bindingOf(attributes) !== null) continue;
+    if (ANY_INTERPOLATION.exec(content) === null) continue;
+    const refusedElement = elementRefusal(attributes);
+    if (refusedElement !== undefined) {
+      refusals.push({ line, reason: refusedElement, expression: describe(content) });
+      continue;
+    }
     const only = ONLY_INTERPOLATION.exec(content);
     if (only === null) {
       // A value printed beside a label — `Published {page.publishedAt}`. The
       // runtime writes an element's whole text, so a binding here would eat the
       // label; splitting the markup is a decision for whoever wrote it.
-      const beside = ANY_INTERPOLATION.exec(content);
-      if (beside !== null) {
-        refusals.push({
-          line,
-          reason:
-            'the value is printed beside other content — a binding replaces the whole text, so the markup has to be split first',
-          expression: describe(content),
-        });
-      }
+      refusals.push({
+        line,
+        reason:
+          'the value is printed beside other content — a binding replaces the whole text, so the markup has to be split first',
+        expression: describe(content),
+      });
       continue;
     }
     const expression = only[1] ?? '';
-    const reason = refusalReason(expression, options.paths, items);
+    const reason = refusalReason(expression, file);
     if (reason !== undefined) {
       refusals.push({ line, reason, expression: describe(expression) });
       continue;
