@@ -8,8 +8,9 @@
  * not the bindings — everything about elements lives in the runtime instead.
  *
  * The session is per instance (ADR 0002): two hooks on one page have two
- * mergers, two revisions and two snapshots, and neither can hand the other a
- * document it never asked for.
+ * mergers, two revisions and two snapshots, so a request or an error in one
+ * never reaches the other. Both follow the document the admin sends: a session
+ * merges every message the bus lets through, whichever document it started from.
  */
 
 import { DataMerger } from '@core/data-merger';
