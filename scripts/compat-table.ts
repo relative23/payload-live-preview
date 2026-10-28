@@ -11,6 +11,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { matrixValues, parseWorkflow } from './workflow-contracts';
 import { matrixJobProblems, type MATRIX_JOBS } from './compat-matrix-jobs';
+import { checkEngines } from './compat-engines';
 import {
   featureEvidenceProblems,
   peerFloor,
@@ -407,6 +408,11 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
       `Node matrix: file lists [${matrix.node.tested.join(', ')}], workflow runs [${workflowNode.join(', ')}]`,
     );
   }
+  const engines = await checkEngines(ROOT);
+  problems.push(...engines.problems);
+  console.log(
+    `compat-engines: ${String(engines.installs.length)} fixture installs by CI jobs held against their Node`,
+  );
   return problems;
 }
 
