@@ -8,6 +8,7 @@ import {
   parseDependencyList,
 } from '@core/dependencies';
 import type { FieldRenderer } from '@core/types';
+import { buildBuiltinRenderers } from '@field-types/index';
 
 /**
  * Roadmap 1.3.0, "conditional and derived markup ergonomics":
@@ -53,9 +54,15 @@ function afterUpdate(): Promise<void> {
     });
   });
 }
-function start(options: { skipUnchanged?: boolean; warn?: (...args: unknown[]) => void } = {}) {
+function start(
+  options: {
+    skipUnchanged?: boolean;
+    warn?: (...args: unknown[]) => void;
+    renderers?: Record<string, FieldRenderer>;
+  } = {},
+) {
   runtime = new LivePreviewRuntime({
-    renderers: { text: textRenderer },
+    renderers: options.renderers ?? { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],
     emitter,
@@ -171,6 +178,24 @@ describe('data-payload-boundary', () => {
     await done;
     expect(anchor.hasAttribute('hidden')).toBe(hidden);
     expect(renders).toEqual(['subtitle', 'subtitle']);
+  });
+  // Site audit of 27.10.2026, B5: an emptied Lexical editor holds one empty paragraph.
+  it('hides a rich-text anchor again when the editor empties the field', async () => {
+    document.body.innerHTML = '<div data-payload-field="body" data-payload-boundary hidden></div>';
+    const anchor = document.querySelector('div') as HTMLElement;
+    start({ renderers: buildBuiltinRenderers() });
+    const paragraph = (children: unknown[]) => ({
+      root: { type: 'root', children: [{ type: 'paragraph', children }] },
+    });
+    let done = afterUpdate();
+    post({ body: paragraph([{ type: 'text', text: 'Now present' }]) });
+    await done;
+    expect(anchor.hasAttribute('hidden')).toBe(false);
+    done = afterUpdate();
+    post({ body: paragraph([]) });
+    await done;
+    expect(anchor.hasAttribute('hidden')).toBe(true);
+    expect(anchor.innerHTML).toBe('');
   });
   it('unhides the anchor when the field gets a value and hides it again when emptied', async () => {
     document.body.innerHTML = '<p data-payload-field="subtitle" data-payload-boundary hidden></p>';

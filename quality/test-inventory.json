@@ -22,7 +22,7 @@
   "totals": {
     "files": 514,
     "suites": 975,
-    "tests": 4445,
+    "tests": 4449,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 418,
       "suites": 866,
-      "tests": 4047,
+      "tests": 4051,
       "benchmarks": 0
     }
   },
@@ -1775,7 +1775,7 @@
       "path": "tests/unit/core/markup-ergonomics.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2405,7 +2405,7 @@
       "path": "tests/unit/field-types/html-renderers.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 26,
+      "tests": 29,
       "benchmarks": 0
     },
     {

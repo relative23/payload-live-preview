@@ -227,7 +227,8 @@ item without an anchor is a template decision.
 `PreviewBoundary` renders that anchor with `data-payload-boundary`: as an
 empty `hidden` element while the value is empty, so a visitor and a screen
 reader see nothing, and the runtime removes `hidden` when an update fills the
-field and restores it when the field is emptied again:
+field and restores it when the field is emptied again. A Lexical value whose
+nodes are all empty paragraphs counts as empty too:
 
 ```astro
 ---
