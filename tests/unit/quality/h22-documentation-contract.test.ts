@@ -82,6 +82,7 @@ describe('H22 documentation contract', () => {
     expect(readme).toContain('`@payloadcms/live-preview`');
     expect(readme).toContain('`@payloadcms/live-preview-react`');
     expect(readme).toMatch(/no direct dependencies[\s\S]*optional peer/u);
-    expect(manifest.description).toMatch(/no direct dependencies/u);
+    // The npm description is the repository's one line; the README carries the dependency story.
+    expect(manifest.description).toMatch(/with React and Vue hooks for client-rendered apps\.$/u);
   });
 });
