@@ -304,3 +304,112 @@ describe('media renderers — a path on the Payload server', () => {
     },
   );
 });
+
+/**
+ * Site audit of 27.10.2026, B3. A string is an image source only when it can
+ * name one; a binding whose alt is its own field holds alt text; and the
+ * rebuilt `srcset` offers the browser only the picture the element shows.
+ */
+describe('image renderer — what the element is given', () => {
+  it.each([
+    ['alt text', 'Partner GmbH'],
+    ['a document id', '6721f3a9c2e4b5d6e7f80912'],
+    ['a number as text', '16'],
+  ])('does not write %s as src', (_case, value) => {
+    const el = document.createElement('img');
+    el.setAttribute('src', 'https://cdn.example.com/logo.png');
+    expect(rendererNamed('image').render(makeTarget(el), value, emptyContext())).toBe(false);
+    expect(el.getAttribute('src')).toBe('https://cdn.example.com/logo.png');
+  });
+
+  it.each([
+    ['a file name', 'logo.png'],
+    ['a path', '/img/logo'],
+    ['an absolute URL', 'https://cdn.example.com/logo'],
+  ])('writes %s as src', (_case, value) => {
+    const el = document.createElement('img');
+    rendererNamed('image').render(makeTarget(el), value, emptyContext());
+    expect(el.getAttribute('src')).toBe(value);
+  });
+
+  it('writes the value as alt alone when the binding reads its alt from its own field', () => {
+    const el = document.createElement('img');
+    el.setAttribute('src', 'https://cdn.example.com/logo.png');
+    rendererNamed('image').render(
+      makeTarget(el, { fieldName: 'partners.0.name', altField: 'partners.0.name' }),
+      'Partner GmbH',
+      emptyContext({ partners: [{ name: 'Partner GmbH' }] }),
+    );
+    expect(el.getAttribute('src')).toBe('https://cdn.example.com/logo.png');
+    expect(el.alt).toBe('Partner GmbH');
+  });
+});
+
+describe('image renderer — the picture the element shows', () => {
+  // The shape of a Payload upload collection with crops, a format variant and two sizes of one width.
+  const jpeg = (name: string, width: number, height: number) => ({
+    url: `https://cdn.example.com/${name}`,
+    width,
+    height,
+    mimeType: 'image/jpeg',
+  });
+  const photo = {
+    ...jpeg('photo.jpg', 1600, 1067),
+    sizes: {
+      thumbnail: jpeg('photo-400x300.jpg', 400, 300),
+      square: jpeg('photo-800x800.jpg', 800, 800),
+      card: jpeg('photo-900x600.jpg', 900, 600),
+      cardAvif: { ...jpeg('photo-900x600.avif', 900, 600), mimeType: 'image/avif' },
+      cardCopy: jpeg('photo-900x601.jpg', 900, 601),
+      portrait: jpeg('photo-900x1200.jpg', 900, 1200),
+      og: jpeg('photo-1200x630.jpg', 1200, 630),
+      wide: jpeg('photo-1200x800.jpg', 1200, 800),
+    },
+  };
+
+  it('offers only the sizes in the original shape and format, one per width', () => {
+    const el = document.createElement('img');
+    rendererNamed('image').render(makeTarget(el), photo, emptyContext());
+    expect(el.getAttribute('src')).toBe('https://cdn.example.com/photo.jpg');
+    expect(el.getAttribute('srcset')).toBe(
+      'https://cdn.example.com/photo-900x600.jpg 900w, https://cdn.example.com/photo-1200x800.jpg 1200w, https://cdn.example.com/photo.jpg 1600w',
+    );
+  });
+
+  it('keeps the size the template chose, and offers that crop', () => {
+    const el = document.createElement('img');
+    el.setAttribute('src', 'https://cdn.example.com/photo-800x800.jpg');
+    rendererNamed('image').render(makeTarget(el), photo, emptyContext());
+    expect(el.getAttribute('src')).toBe('https://cdn.example.com/photo-800x800.jpg');
+    expect(el.getAttribute('srcset')).toBe('https://cdn.example.com/photo-800x800.jpg 800w');
+  });
+
+  it('keeps that size when the editor picks another image', () => {
+    const el = document.createElement('img');
+    el.setAttribute('src', 'https://cdn.example.com/photo-900x600.jpg');
+    const renderer = rendererNamed('image');
+    renderer.render(makeTarget(el), photo, emptyContext());
+    const other = JSON.parse(JSON.stringify(photo).replaceAll('photo', 'other')) as typeof photo;
+    renderer.render(makeTarget(el), other, emptyContext());
+    expect(el.getAttribute('src')).toBe('https://cdn.example.com/other-900x600.jpg');
+  });
+
+  it('keeps every size whose shape it cannot tell', () => {
+    const el = document.createElement('img');
+    rendererNamed('image').render(
+      makeTarget(el),
+      {
+        url: 'https://cdn.example.com/a.jpg',
+        width: 1600,
+        sizes: {
+          small: { url: 'https://cdn.example.com/a-400.jpg', width: 400 },
+          crop: { url: 'https://cdn.example.com/a-800.jpg', width: 800, height: 800 },
+        },
+      },
+      emptyContext(),
+    );
+    expect(el.getAttribute('srcset')).toBe(
+      'https://cdn.example.com/a-400.jpg 400w, https://cdn.example.com/a-800.jpg 800w, https://cdn.example.com/a.jpg 1600w',
+    );
+  });
+});

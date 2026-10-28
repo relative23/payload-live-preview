@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 514,
-    "suites": 973,
-    "tests": 4438,
+    "suites": 975,
+    "tests": 4445,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 418,
-      "suites": 864,
-      "tests": 4040,
+      "suites": 866,
+      "tests": 4047,
       "benchmarks": 0
     }
   },
@@ -2418,8 +2418,8 @@
     {
       "path": "tests/unit/field-types/media-renderers.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 26,
+      "suites": 6,
+      "tests": 33,
       "benchmarks": 0
     },
     {
