@@ -7,12 +7,15 @@ Its preview request carries `?preview=true`, the intent a 2.0 adapter counts;
 `--param <name>` sends another where `previewQueryParams` replaces the default.
 A preview behind `authorizePreview` refuses that request without an editor's
 credentials, so pass them the way the strategy reads them: a Payload session as
-`--header "Cookie: payload-token=…"`, a signed token in the URL
-(`pll doctor "https://www.example.com/page?previewToken=…"`, which the visitor
-request drops; `--token-param <name>` where the strategy's `transport` reads
-another parameter), or `--header "x-preview-token: …"` only where the strategy sets
-`transport: { kind: 'header' }`. Headers go with the preview request only and
-their values are never printed; a token in the URL is printed as `previewToken=…`.
+`--header "Cookie: payload-token=$PAYLOAD_TOKEN"`, a signed token in the URL
+(`node_modules/.bin/pll doctor "https://www.example.com/page?previewToken=$PREVIEW_TOKEN"`,
+which the visitor request drops; `--token-param <name>` where the strategy's
+`transport` reads another parameter), or `--header "x-preview-token: $PREVIEW_TOKEN"`
+only where the strategy sets `transport: { kind: 'header' }`. Headers go with the
+preview request only and their values are never printed; a token in the URL is
+printed as `previewToken=…`. Run the doctor as `node_modules/.bin/pll` with the
+credential in an environment variable: `npx` prints the whole command line
+([troubleshooting.md](troubleshooting.md#auditing-a-deployment-pll-doctor)).
 
 ## Preview responses and caches
 
