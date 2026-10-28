@@ -2,7 +2,8 @@
  * The `pll doctor` audit: judge what a deployment serves from two fetches of
  * one URL, as a visitor and as the admin's iframe. Pure — the caller fetches.
  * Markup is read with regular expressions, which is enough to count
- * attributes and find the runtime marker; findings say what was observed.
+ * attributes inside start tags and find the runtime marker; findings say what
+ * was observed.
  */
 import { DIAGNOSTIC_CODES } from '../core/diagnostic-codes';
 import { frameAncestorsAdmits, frameAncestorsOf } from './csp';
@@ -17,8 +18,17 @@ import type {
 
 /** Survives minification; the banner comment does not. */
 const RUNTIME_MARKER = '__LIVE_PREVIEW_CONFIG__';
-const BINDING_ATTRIBUTE = /\bdata-payload-field\s*=/gu;
-const OWNER_ATTRIBUTE = /\bdata-payload-owner\s*=/gu;
+/**
+ * A start tag, quoted values read whole so a `>` inside one does not end it.
+ * Text is never a tag: `&lt;h1 data-payload-field=…&gt;` in a code sample, or
+ * a sentence that names the attribute, is what a page shows, not what it binds.
+ * A raw `<` outside quotes ends the attempt, which keeps the scan linear: with
+ * it, `<a<a<a…` and no `>` took 645 ms for 20 000 repetitions, 15 times the
+ * time of 5 000.
+ */
+const START_TAG = /<[a-zA-Z](?:"[^"]*"|'[^']*'|[^"'<>])*>/gu;
+/** One attribute of a start tag: its name, and its value when it has one. */
+const TAG_ATTRIBUTE = /([^\s"'>/=]+)(\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/gu;
 /** Mirrors the scheduler default; the audit must not import the runtime. */
 const DEFAULT_VISIBILITY_GATE_THRESHOLD = 50;
 const LEVEL_ORDER = { error: 0, warning: 1, info: 2 } as const;
@@ -43,14 +53,43 @@ function visibleMarkup(body: string): string {
   }
 }
 
-function count(haystack: string, pattern: RegExp): number {
-  return haystack.match(pattern)?.length ?? 0;
+/** An attribute as the markup carries it, at the offset of its tag. */
+interface MarkupAttribute {
+  readonly name: string;
+  readonly value: string;
+  readonly at: number;
+}
+
+/**
+ * Every attribute with a value, in document order. Names are compared in lower
+ * case, as a browser parses them; the tag name is read along and never matches
+ * an attribute the audit asks about.
+ */
+function markupAttributes(markup: string): readonly MarkupAttribute[] {
+  const found: MarkupAttribute[] = [];
+  for (const tag of markup.matchAll(START_TAG)) {
+    for (const [, name = '', assigned, double, single, bare] of tag[0].matchAll(TAG_ATTRIBUTE)) {
+      if (assigned === undefined) continue;
+      found.push({
+        name: name.toLowerCase(),
+        value: double ?? single ?? bare ?? '',
+        at: tag.index,
+      });
+    }
+  }
+  return found;
+}
+
+function named(attributes: readonly MarkupAttribute[], name: string): readonly MarkupAttribute[] {
+  return attributes.filter((attribute) => attribute.name === name);
 }
 
 /** Bindings before the first owner marker are certainly unowned; nesting is not modelled, so this under-reports. */
-function unownedBindingsBeforeFirstOwner(markup: string): number {
-  const firstOwner = markup.search(/\bdata-payload-owner\s*=/u);
-  return firstOwner === -1 ? 0 : count(markup.slice(0, firstOwner), BINDING_ATTRIBUTE);
+function unownedBindingsBeforeFirstOwner(attributes: readonly MarkupAttribute[]): number {
+  const firstOwner = named(attributes, 'data-payload-owner')[0];
+  if (firstOwner === undefined) return 0;
+  return named(attributes, 'data-payload-field').filter((binding) => binding.at < firstOwner.at)
+    .length;
 }
 
 function tryUrl(value: string | undefined): URL | undefined {
@@ -241,9 +280,16 @@ function bindingFindings(
   gate: ServedGate,
 ): DoctorFinding[] {
   const findings: DoctorFinding[] = [];
-  const previewBindings = count(previewMarkup, BINDING_ATTRIBUTE);
-  const publicBindings = count(publicMarkup, BINDING_ATTRIBUTE);
-  const owners = count(previewMarkup, OWNER_ATTRIBUTE);
+  const preview = markupAttributes(previewMarkup);
+  const previewBindings = named(preview, 'data-payload-field').length;
+  const publicBindings = named(markupAttributes(publicMarkup), 'data-payload-field').length;
+  const owners = named(preview, 'data-payload-owner').length;
+  // A boundary is rendered by the server from the form state, so an edit of a
+  // field it depends on arrives without one field binding; an empty id names
+  // no registry entry, and no strategy renders it.
+  const boundaries = named(preview, 'data-payload-fragment').filter(
+    (boundary) => boundary.value.length > 0,
+  ).length;
   if (publicBindings > 0) {
     findings.push({
       code: 'LP0704',
@@ -273,20 +319,21 @@ function bindingFindings(
         'confirm that deferring below the fold is acceptable here.',
     });
   }
-  if (runtime && previewBindings === 0) {
+  if (runtime && previewBindings === 0 && boundaries === 0) {
     findings.push({
       code: 'LP0707',
       level: 'error',
       title: 'Preview response carries no bindings',
       detail:
         'The runtime is present but there is not one data-payload-field element for it to ' +
-        'write into, so no edit can ever be visible on this page.',
+        'write into and not one data-payload-fragment boundary for a server to render, so ' +
+        'no edit can ever be visible on this page.',
       remedy:
-        'Add binding attributes to the markup. pll-codegen --inventory lists every field ' +
-        'the schema makes addressable.',
+        'Add binding attributes or fragment boundaries to the markup. pll-codegen --inventory ' +
+        'lists every field the schema makes addressable.',
     });
   }
-  const unowned = unownedBindingsBeforeFirstOwner(previewMarkup);
+  const unowned = unownedBindingsBeforeFirstOwner(preview);
   if (owners > 0 && unowned > 0) {
     findings.push({
       code: 'LP0706',

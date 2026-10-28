@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 518,
-    "suites": 994,
-    "tests": 4518,
+    "suites": 995,
+    "tests": 4525,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 422,
-      "suites": 885,
-      "tests": 4119,
+      "suites": 886,
+      "tests": 4126,
       "benchmarks": 0
     }
   },
@@ -2334,8 +2334,8 @@
     {
       "path": "tests/unit/doctor/analyze-bindings.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 14,
+      "suites": 5,
+      "tests": 21,
       "benchmarks": 0
     },
     {

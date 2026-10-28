@@ -81,6 +81,56 @@ describe('what the public response gives away', () => {
     expect(finding?.title).toContain('2 binding');
   });
 
+  describe('counts attributes, not text that names them', () => {
+    // Site audit of 2026-10-27 (G7): a project page that documents the
+    // package showed `<h1 data-payload-field="title">` as a code sample, and
+    // LP0704 reported three binding attributes on a page that served none.
+    const publicBody = (body: string) =>
+      analyzeProbe({ ...healthy(), publicResponse: response({ body }) }, context).findings;
+
+    it.each([
+      [
+        'an escaped code sample',
+        '<pre><code>&lt;h1 data-payload-field=&quot;title&quot;&gt;{page.title}&lt;/h1&gt;</code></pre>',
+      ],
+      ['a sentence that names the attribute', '<p>Mark it with data-payload-field="title".</p>'],
+      ['an attribute value', '<meta name="description" content="data-payload-field=title" />'],
+    ])('is quiet about %s', (_label, body) => {
+      expect(publicBody(body).map((f) => f.code)).not.toContain('LP0704');
+    });
+
+    it('still counts the attributes of the elements around it', () => {
+      const body =
+        '<h1 data-payload-field="title">t</h1>' +
+        '<pre><code>&lt;p data-payload-field=&quot;x&quot;&gt;</code></pre>' +
+        "<p class=lede DATA-PAYLOAD-FIELD='sub'>s</p>";
+
+      expect(publicBody(body).find((f) => f.code === 'LP0704')?.title).toContain('2 binding');
+    });
+
+    it('does not take a code sample for a binding the runtime can write into', () => {
+      const body = `${RUNTIME}<pre><code>&lt;h1 data-payload-field=&quot;title&quot;&gt;</code></pre>`;
+
+      expect(codes(withPreview(body))).toContain('LP0707');
+    });
+
+    it('reads a page of unclosed tags in linear time', () => {
+      // A scan that let a raw `<` into a tag went quadratic on this body; on a
+      // slow runner 100 000 repetitions would outlast the test's timeout.
+      const body = `${RUNTIME}<h1 data-payload-field="title">t</h1>${'<a'.repeat(100_000)}`;
+
+      expect(codes(withPreview(body))).toEqual([]);
+    });
+
+    it('does not take a sentence about owners for an owner marker', () => {
+      const body =
+        `${RUNTIME}<h1 data-payload-field="title">t</h1>` +
+        '<p>Scope it with data-payload-owner="global:home".</p>';
+
+      expect(codes(withPreview(body))).not.toContain('LP0706');
+    });
+  });
+
   it('mentions the runtime on the public response only as information, under its own code', () => {
     const probe = healthy();
     const report = analyzeProbe({ ...probe, publicResponse: response({ body: RUNTIME }) }, context);
@@ -137,6 +187,24 @@ describe('binding health', () => {
   it('reports LP0707 when the runtime has nothing to write into', () => {
     const report = analyzeProbe(withPreview(`${RUNTIME}<h1>Title</h1>`), context);
     expect(report.findings.find((f) => f.code === 'LP0707')?.level).toBe('error');
+  });
+
+  it('takes a fragment boundary for a place an edit arrives', () => {
+    // Site audit of 2026-10-27 (G8): pages with 8 and 14 boundaries and no
+    // field binding were told "no edit can ever be visible on this page",
+    // while the server rendered every edit into them. One boundary per
+    // component is the route bindings.md recommends for a server-rendered page.
+    const body =
+      `${RUNTIME}<section data-payload-fragment="hero" data-payload-depends="title">` +
+      '<h1>Title</h1></section>';
+
+    expect(codes(withPreview(body))).not.toContain('LP0707');
+  });
+
+  it('does not take a boundary without an id, which no strategy renders', () => {
+    const body = `${RUNTIME}<section data-payload-fragment=""><h1>Title</h1></section>`;
+
+    expect(codes(withPreview(body))).toContain('LP0707');
   });
 
   it('warns LP0706 for bindings that sit outside every owner marker', () => {
