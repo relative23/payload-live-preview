@@ -141,7 +141,8 @@
 // 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+199/+199 B; prior reserves kept.
 // 2026-10-26 (the 2.2 review fixes): paired Node24.22.1/npm12.0.2; +60/+21/+22 B; prior reserves kept.
 // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +34/+22/+35 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 160_737, gzip: 50_900, brotli: 44_244 } as const;
+// 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1192/+419/+333 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 161_929, gzip: 51_319, brotli: 44_577 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -273,4 +274,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 160_737, gzip: 50_900, brotli: 44_2
 // 2026-10-26 (the merge decision reads rich text by its shape): paired Node24.22.1/npm12.0.2; +612/+242/+166 B; prior reserves kept.
 // 2026-10-26 (the 2.2 review fixes): paired Node24.22.1/npm12.0.2; +60/+22/+25 B; prior reserves kept.
 // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +34/+20/+34 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 155_152, gzip: 48_996, brotli: 42_597 } as const;
+// 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1192/+406/+362 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 156_344, gzip: 49_402, brotli: 42_959 } as const;
