@@ -6,7 +6,9 @@
  * merely because npm or GitHub Actions changes how it interprets a default.
  */
 
+import { createHash } from 'node:crypto';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { RELEASE_BRANCHES } from './release-gate';
 
 export const FORBIDDEN_PACKAGE_LIFECYCLE_SCRIPTS = [
   'preinstall',
@@ -731,12 +733,37 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
 }
 
 /**
- * Validate the exact-commit release invariant.
+ * The git blob of the guarded release workflow on main (b25b566 since main
+ * 1b64269, 2026-10-16). Main's router hands a certified release/1.x run to this
+ * branch's release.yml only when both files are this blob, and otherwise stops
+ * with "source receiver workflow differs" before anything reaches npm. A change
+ * to release.yml therefore lands on main first and is copied here unchanged.
+ */
+export const ROUTED_RELEASE_WORKFLOW_BLOB = 'b25b5661b5208bab6caee11edbcb2a02e66ea442';
+
+/** The object id git and the GitHub contents API give a file's bytes. */
+export function gitBlobId(source: string): string {
+  const bytes = Buffer.from(source, 'utf8');
+  return createHash('sha1')
+    .update(`blob ${String(bytes.length)}\0`)
+    .update(bytes)
+    .digest('hex');
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\/]/gu, '\\$&');
+}
+
+/**
+ * Validate the guarded release path that main's Release workflow routes to.
  *
- * `changesets/action` prepares a version branch from `github.context.sha`, not
- * from the preceding checkout alone. For `workflow_run`, that SHA is the
- * default-branch tip captured by the event. The gate must therefore prove it is
- * identical to the CI-tested `head_sha` before any version or publish job runs.
+ * `workflow_run` always runs the default branch's file at main's tip, so a
+ * certified release/1.x commit cannot publish from there: the router dispatches
+ * release.yml on release/1.x instead, and only the dispatched run, whose
+ * signed workflow identity is the tested commit, may request an npm OIDC token.
+ * The gate decides through scripts/release-gate.ts, whose registry and release
+ * lookups are unit-tested there; these checks pin how the jobs bind to its
+ * outputs.
  */
 export function findReleaseWorkflowViolations(
   releaseWorkflow: string,
@@ -746,6 +773,12 @@ export function findReleaseWorkflowViolations(
     ...findCiWorkflowViolations(ciWorkflow),
     ...findNonImmutableActionReferences(releaseWorkflow, 'release'),
   ];
+  const blob = gitBlobId(releaseWorkflow);
+  if (blob !== ROUTED_RELEASE_WORKFLOW_BLOB) {
+    violations.push(
+      `release workflow is blob ${blob}, not main's routed workflow ${ROUTED_RELEASE_WORKFLOW_BLOB}`,
+    );
+  }
   if (
     !has(
       releaseWorkflow,
@@ -757,7 +790,15 @@ export function findReleaseWorkflowViolations(
   if (
     !has(
       releaseWorkflow,
-      /concurrency:\s*group:\s*release-\$\{\{\s*github\.event\.workflow_run\.head_branch\s*\}\}\s*cancel-in-progress:\s*false/,
+      /workflow_dispatch:\s*inputs:\s*run_id:\s*description:[^:]*required:\s*true\s*type:\s*string/,
+    )
+  ) {
+    violations.push('release cannot be dispatched with a certified CI run id');
+  }
+  if (
+    !has(
+      releaseWorkflow,
+      /concurrency:\s*group:\s*release-\$\{\{\s*github\.event\.workflow_run\.head_branch\s*\|\|\s*github\.ref_name\s*\}\}\s*cancel-in-progress:\s*false/,
     )
   ) {
     violations.push('release workflow can cancel an in-flight publish');
@@ -772,104 +813,99 @@ export function findReleaseWorkflowViolations(
     return violations;
   }
   const gateCondition = jobCondition(gate);
-
   const gateConditions: readonly [label: string, pattern: RegExp][] = [
+    [
+      'a dispatched re-entry or a completed CI run',
+      /github\.event_name\s*==\s*['"]workflow_dispatch['"]\s*\|\|\s*\(/,
+    ],
     ['successful CI conclusion', /github\.event\.workflow_run\.conclusion\s*==\s*['"]success['"]/],
     ['push event', /github\.event\.workflow_run\.event\s*==\s*['"]push['"]/],
-    ['main branch', /github\.event\.workflow_run\.head_branch\s*==\s*['"]main['"]/],
     [
       'same repository',
       /github\.event\.workflow_run\.head_repository\.full_name\s*==\s*github\.repository/,
     ],
-    ['exact tested commit', /github\.event\.workflow_run\.head_sha\s*==\s*github\.sha/],
   ];
   for (const [label, pattern] of gateConditions) {
     if (!has(gateCondition, pattern)) violations.push(`gate does not require ${label}`);
   }
-  if (
-    !has(gate, /for\s+changeset\s+in\s+\.changeset\/\*\.md/) ||
-    !has(gate, /["']\$changeset["']\s*!=\s*["']\.changeset\/README\.md["']/)
-  ) {
-    violations.push('gate does not exclude only the Changesets README');
+  // The condition repeats RELEASE_BRANCHES; a branch added to one and not the
+  // other would be certified by CI and then never released, or the reverse.
+  const gateBranches = [
+    ...gateCondition.matchAll(/github\.event\.workflow_run\.head_branch\s*==\s*'([^']+)'/gu),
+  ].map((match) => match[1]);
+  if (gateBranches.join(',') !== RELEASE_BRANCHES.join(',')) {
+    violations.push(
+      `gate does not accept exactly the release branches ${RELEASE_BRANCHES.join(', ')}`,
+    );
   }
   requirePatterns(
     gate,
     'release gate job',
     [
-      ['does not use read-only contents permission', /permissions:\s*contents:\s*read/],
+      [
+        'does not limit itself to reading runs and contents',
+        /permissions:\s*actions:\s*read\s*contents:\s*read/,
+      ],
       [
         'does not install the repository npm version',
         /run:\s*npm install --global .*packageManager/,
       ],
+      ['does not run npm ci', /run:\s*npm ci(?:\s|$)/],
+      [
+        'does not decide through scripts/release-gate.ts',
+        /id:\s*release_gate\s*env:\s*GH_TOKEN:\s*\$\{\{\s*github\.token\s*\}\}\s*RELEASE_RUN_ID:\s*\$\{\{\s*inputs\.run_id\s*\|\|\s*github\.event\.workflow_run\.id\s*\}\}\s*run:\s*npx tsx scripts\/release-gate\.ts/,
+      ],
+      [
+        'does not refuse a dispatch whose workflow source differs from the certified run',
+        /if:\s*github\.event_name\s*==\s*'workflow_dispatch'\s*shell:\s*bash\s*env:\s*TESTED_SHA:\s*\$\{\{\s*steps\.release_gate\.outputs\.tested_sha\s*\}\}\s*TESTED_BRANCH:\s*\$\{\{\s*steps\.release_gate\.outputs\.tested_branch\s*\}\}\s*run:\s*\|\s*if \[ "\$GITHUB_SHA" != "\$TESTED_SHA" \] \|\| \[ "\$GITHUB_REF" != "refs\/heads\/\$TESTED_BRANCH" \] \|\| \[ "\$GITHUB_WORKFLOW_SHA" != "\$TESTED_SHA" \] \|\| \[ "\$GITHUB_WORKFLOW_REF" != "\$GITHUB_REPOSITORY\/\.github\/workflows\/release\.yml@refs\/heads\/\$TESTED_BRANCH" \]; then .* exit 1/,
+      ],
     ],
     violations,
   );
-  // stderr must stay out of $registry_result. It is compared against the
-  // package version to decide whether to publish, and npm writes config
-  // warnings to stderr: merging them made the two unequal for reasons that
-  // have nothing to do with the registry, so the gate read an already
-  // published version as unpublished. The final clause forbids that regression
-  // rather than pinning only the shape of the command.
-  if (
-    !has(gate, /registry_result=\$\(npm view "\$name@\$version" version 2>"\$registry_stderr"\)/) ||
-    !has(gate, /registry_status=\$\?/) ||
-    !has(gate, /elif grep -q ['"]E404['"] "\$registry_stderr"; then/) ||
-    !has(gate, /else .*exit "\$registry_status" .*fi/) ||
-    has(gate, /npm view .*\|\|\s*true/) ||
-    has(gate, /registry_result=\$\([^)]*2>&1[^)]*\)/)
-  ) {
-    violations.push('release registry lookup does not fail closed');
-  }
-  if (
-    !has(
-      gate,
-      /if \[ ["']\$released["'] = ["']true["'] \]; then.*if \[ ["']\$tagged["'] != ["']true["'] \]; then.*publish=false.*elif \[ ["']\$tagged["'] = ["']true["'] \] && \[ ["']\$tagged_sha["'] != ["']\$TESTED_SHA["'] \]; then.*exit 1.*else.*publish=true/,
-    )
-  ) {
-    violations.push(
-      'release reconciliation does not preserve completed historical releases as a no-op',
-    );
-  }
 
-  for (const name of ['gate', 'version', 'publish'] as const) {
+  for (const name of ['version', 'source-dispatch', 'publish'] as const) {
     const block = jobBlock(releaseWorkflow, name);
     if (block === undefined) {
       violations.push(`missing ${name} job`);
       continue;
     }
-    if (name !== 'gate') {
-      if (!has(block, /needs:\s*gate/)) violations.push(`${name} job does not depend on gate`);
-      if (!has(jobCondition(block), /github\.event\.workflow_run\.head_sha\s*==\s*github\.sha/)) {
-        violations.push(`${name} job does not require the exact tested commit`);
-      }
-    }
-    if (!has(block, /ref:\s*\$\{\{\s*github\.event\.workflow_run\.head_sha\s*\}\}/)) {
+    if (!has(block, /needs:\s*gate/)) violations.push(`${name} job does not depend on gate`);
+    if (name === 'source-dispatch') continue;
+    if (!has(block, /ref:\s*\$\{\{\s*needs\.gate\.outputs\.tested_sha\s*\}\}/)) {
       violations.push(`${name} job does not check out the tested commit`);
     }
-    if (!has(block, /TESTED_SHA:\s*\$\{\{\s*github\.event\.workflow_run\.head_sha\s*\}\}/)) {
-      violations.push(`${name} job does not verify the tested commit`);
-    }
-    if (!has(block, /git\s+rev-parse\s+HEAD/) || !has(block, /\$TESTED_SHA/)) {
+    if (
+      !has(block, /TESTED_SHA:\s*\$\{\{\s*needs\.gate\.outputs\.tested_sha\s*\}\}/) ||
+      !has(block, /run:\s*test "\$\(git rev-parse HEAD\)" = "\$TESTED_SHA"/)
+    ) {
       violations.push(`${name} job does not compare its checkout with the tested commit`);
     }
-    if (name !== 'gate') {
-      requirePatterns(
-        block,
-        `${name} job`,
+    requirePatterns(
+      block,
+      `${name} job`,
+      [
         [
-          [
-            'does not install the repository npm version',
-            /run:\s*npm install --global .*packageManager/,
-          ],
-          ['does not run npm ci', /run:\s*npm ci(?:\s|$)/],
+          'does not install the repository npm version',
+          /run:\s*npm install --global .*packageManager/,
         ],
-        violations,
-      );
-    }
+        ['does not run npm ci', /run:\s*npm ci(?:\s|$)/],
+      ],
+      violations,
+    );
   }
 
   const version = jobBlock(releaseWorkflow, 'version');
   if (version !== undefined) {
+    if (
+      !has(
+        jobCondition(version),
+        /needs\.gate\.outputs\.version_pr\s*==\s*'true'\s*&&\s*needs\.gate\.outputs\.tested_sha\s*==\s*github\.sha/,
+      )
+    ) {
+      violations.push(
+        'version job does not require the tested commit to be the default-branch tip',
+      );
+    }
     requirePatterns(
       version,
       'version job',
@@ -883,8 +919,57 @@ export function findReleaseWorkflowViolations(
     );
   }
 
+  const dispatch = jobBlock(releaseWorkflow, 'source-dispatch');
+  if (dispatch !== undefined) {
+    if (
+      !has(
+        jobCondition(dispatch),
+        /github\.event_name\s*==\s*'workflow_run'\s*&&\s*needs\.gate\.outputs\.publish\s*==\s*'true'\s*&&\s*\(github\.sha\s*!=\s*needs\.gate\.outputs\.tested_sha\s*\|\|\s*github\.ref\s*!=\s*format\('refs\/heads\/\{0\}',\s*needs\.gate\.outputs\.tested_branch\)\s*\|\|\s*github\.workflow_sha\s*!=\s*needs\.gate\.outputs\.tested_sha\s*\|\|\s*github\.workflow_ref\s*!=\s*format\('\{0\}\/\.github\/workflows\/release\.yml@refs\/heads\/\{1\}',\s*github\.repository,\s*needs\.gate\.outputs\.tested_branch\)\)/,
+      )
+    ) {
+      violations.push('source-dispatch job does not route only certified runs it cannot publish');
+    }
+    requirePatterns(
+      dispatch,
+      'source-dispatch job',
+      [
+        [
+          'does not limit itself to dispatching workflows',
+          /permissions:\s*actions:\s*write\s*contents:\s*read/,
+        ],
+        [
+          'does not accept exactly the release branches',
+          new RegExp(
+            `case "\\$TESTED_BRANCH" in ${RELEASE_BRANCHES.map(escapeRegExp).join('\\|')}\\) ;; \\*\\) echo "invalid certified release branch"; exit 1 ;; esac`,
+          ),
+        ],
+        [
+          'does not refuse a branch that moved past the certified commit',
+          /actual_head="\$\(gh api "repos\/\$GITHUB_REPOSITORY\/git\/ref\/heads\/\$TESTED_BRANCH" --jq '\.object\.sha'\)" if \[ "\$actual_head" != "\$TESTED_SHA" \]; then echo "certified branch moved; refusing source dispatch" exit 1/,
+        ],
+        [
+          'does not refuse a source branch whose release workflow differs',
+          /router_workflow="\$\(gh api "repos\/\$GITHUB_REPOSITORY\/contents\/\.github\/workflows\/release\.yml\?ref=\$GITHUB_WORKFLOW_SHA" --jq '\.sha'\)" source_workflow="\$\(gh api "repos\/\$GITHUB_REPOSITORY\/contents\/\.github\/workflows\/release\.yml\?ref=\$TESTED_SHA" --jq '\.sha'\)" if ! \[\[ "\$router_workflow" =~ \^\[0-9a-f\]\{40\}\$ \]\] \|\| \[ "\$source_workflow" != "\$router_workflow" \]; then echo "source receiver workflow differs; backport the guarded workflow and certify CI again" exit 1/,
+        ],
+        [
+          'does not dispatch the certified branch with its CI run id',
+          /jq -n --arg ref "\$TESTED_BRANCH" --arg run_id "\$TESTED_RUN_ID" \\ '\{ref:\$ref, inputs:\{run_id:\$run_id\}\}' > "\$RUNNER_TEMP\/source-dispatch\.json" gh api --method POST "repos\/\$GITHUB_REPOSITORY\/actions\/workflows\/release\.yml\/dispatches" \\ --input "\$RUNNER_TEMP\/source-dispatch\.json"/,
+        ],
+      ],
+      violations,
+    );
+  }
+
   const publish = jobBlock(releaseWorkflow, 'publish');
   if (publish !== undefined) {
+    if (
+      !has(
+        jobCondition(publish),
+        /needs\.gate\.outputs\.publish\s*==\s*'true'\s*&&\s*github\.sha\s*==\s*needs\.gate\.outputs\.tested_sha\s*&&\s*github\.ref\s*==\s*format\('refs\/heads\/\{0\}',\s*needs\.gate\.outputs\.tested_branch\)\s*&&\s*github\.workflow_sha\s*==\s*needs\.gate\.outputs\.tested_sha\s*&&\s*github\.workflow_ref\s*==\s*format\('\{0\}\/\.github\/workflows\/release\.yml@refs\/heads\/\{1\}',\s*github\.repository,\s*needs\.gate\.outputs\.tested_branch\)/,
+      )
+    ) {
+      violations.push('publish job does not require the certified source workflow');
+    }
     requirePatterns(
       publish,
       'publish job',
@@ -892,28 +977,34 @@ export function findReleaseWorkflowViolations(
         ['does not grant id-token write', /id-token:\s*write/],
         ['does not grant artifact read access', /actions:\s*read/],
         ['does not pin the release verifier Node version', /node-version:\s*22\.23\.2/],
-        ['does not run Changesets', /uses:\s*changesets\/action@[a-fA-F0-9]{40}/],
-        ['does not publish the exact verified tarball', /publish:\s*npm run release/],
         [
-          'does not enable Changesets tag/GitHub Release reconciliation',
-          /createGithubReleases:\s*true/,
-        ],
-        ['does not request provenance', /NPM_CONFIG_PROVENANCE:\s*['"]true['"]/],
-        [
-          'does not download the triggering CI run artifact',
-          /uses:\s*actions\/download-artifact@[a-fA-F0-9]{40}.*name:\s*release-candidate-\$\{\{\s*github\.event\.workflow_run\.head_sha\s*\}\}.*github-token:\s*\$\{\{\s*secrets\.GITHUB_TOKEN\s*\}\}.*run-id:\s*\$\{\{\s*github\.event\.workflow_run\.id\s*\}\}/,
+          'does not download the certified CI run artifact',
+          /uses:\s*actions\/download-artifact@[a-fA-F0-9]{40}.*name:\s*release-candidate-\$\{\{\s*needs\.gate\.outputs\.tested_sha\s*\}\}.*github-token:\s*\$\{\{\s*secrets\.GITHUB_TOKEN\s*\}\}.*run-id:\s*\$\{\{\s*needs\.gate\.outputs\.run_id\s*\}\}/,
         ],
         [
           'does not recheck the downloaded tarball',
           /npm run test:package -- --tarball ["']?\$\{tarballs\[0\]\}["']? --source-commit ["']?\$TESTED_SHA["']?/,
         ],
+        ['does not request provenance', /NPM_CONFIG_PROVENANCE:\s*['"]true['"]/],
         [
           'does not bind the publisher to the tested artifact source',
-          /PACKAGE_ARTIFACT_DIR:\s*release-artifact.*PACKAGE_SOURCE_COMMIT:\s*\$\{\{\s*github\.event\.workflow_run\.head_sha\s*\}\}.*SOURCE_DATE_EPOCH:\s*\$\{\{\s*steps\.source_date\.outputs\.epoch\s*\}\}/,
+          /PACKAGE_ARTIFACT_DIR:\s*release-artifact.*PACKAGE_SOURCE_COMMIT:\s*\$\{\{\s*needs\.gate\.outputs\.tested_sha\s*\}\}.*SOURCE_DATE_EPOCH:\s*\$\{\{\s*steps\.source_date\.outputs\.epoch\s*\}\}/,
         ],
+        [
+          'does not publish the exact verified tarball',
+          /if \[ "\$GITHUB_SHA" != "\$PACKAGE_SOURCE_COMMIT" \] .* echo "publisher workflow source differs from certified CI" exit 1 fi npm run release/,
+        ],
+        [
+          'does not create the tag and GitHub Release after registry proof',
+          /DIST_TAG:\s*\$\{\{\s*steps\.publish\.outputs\.dist_tag\s*\}\}.*run:\s*npx tsx scripts\/github-release\.ts/,
+        ],
+        ['does not smoke-test the published package', /run:\s*npm run test:smoke/],
       ],
       violations,
     );
+    if (has(publish, /changeset publish|npm publish/)) {
+      violations.push('publish job publishes something other than the exact verified tarball');
+    }
   }
 
   return violations;

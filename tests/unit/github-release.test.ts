@@ -4,8 +4,8 @@ import {
   planGithubRelease,
   publishGithubRelease,
   remoteTagCommit,
-  type CommandResult,
 } from '../../scripts/github-release';
+import type { CommandResult } from '../../scripts/release-gate';
 
 const TESTED = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);

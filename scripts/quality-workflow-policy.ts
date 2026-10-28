@@ -334,9 +334,11 @@ export function findDeepQualityWorkflowViolations(workflow: string): readonly st
  * defeats the comparison: an npm config warning once made `published` unequal
  * to `version` for reasons unrelated to the registry, so the gate concluded an
  * already-published version was unpublished and asked the publisher to release
- * over it. Only the exact-artifact check downstream stopped it.
+ * over it. Only the exact-artifact check downstream stopped it. The comparison
+ * now lives in scripts/release-gate.ts, which reads stdout alone and is
+ * unit-tested; the workflow must decide through it and capture nothing merged.
  */
-function findReleaseGateViolations(release: string): string[] {
+export function findReleaseGateViolations(release: string): string[] {
   const violations: string[] = [];
   const gate = jobBlock(release, 'gate');
   forbidMatch(
@@ -348,8 +350,8 @@ function findReleaseGateViolations(release: string): string[] {
   requireMatch(
     violations,
     gate,
-    /registry_result=\$\(npm view "\$name@\$version" version 2>"\$registry_stderr"\)/u,
-    'release gate must read the published version with stderr kept separate',
+    /^\s+run:\s*npx tsx scripts\/release-gate\.ts\s*$/mu,
+    'release gate must decide through scripts/release-gate.ts, which reads the published version with stderr kept separate',
   );
   return violations;
 }
