@@ -9,6 +9,7 @@ import {
   registryLatestFrom,
   registryStateFrom,
 } from '../../scripts/publish-artifact';
+import { releaseTaggerEnvironment, repositoryHasIdentity } from '../../scripts/release-tagger';
 import { distTagForVersion } from '../../scripts/release-version';
 
 describe('exact artifact publisher', () => {
@@ -263,5 +264,61 @@ describe('registry propagation delays', () => {
     expect(isRegistryPropagationDelay('npm error code ENEEDAUTH')).toBe(false);
     expect(isRegistryPropagationDelay('integrity checksum failed')).toBe(false);
     expect(isRegistryPropagationDelay('')).toBe(false);
+  });
+});
+
+describe('release tagger identity', () => {
+  it('supplies one when neither the environment nor the repository has one', () => {
+    const environment = releaseTaggerEnvironment({ PATH: '/usr/bin' }, false);
+
+    expect(environment['GIT_COMMITTER_NAME']).toBe('github-actions[bot]');
+    expect(environment['GIT_AUTHOR_EMAIL']).toBe(
+      '41898282+github-actions[bot]@users.noreply.github.com',
+    );
+    expect(environment['PATH']).toBe('/usr/bin');
+  });
+
+  it('leaves a repository that has one alone', () => {
+    const environment = releaseTaggerEnvironment({ PATH: '/usr/bin' }, true);
+
+    expect(environment['GIT_COMMITTER_NAME']).toBeUndefined();
+    expect(environment['GIT_AUTHOR_NAME']).toBeUndefined();
+  });
+
+  it('never overrides an identity the environment already carries', () => {
+    const environment = releaseTaggerEnvironment(
+      { GIT_COMMITTER_NAME: 'release', GIT_COMMITTER_EMAIL: 'release@example.com' },
+      false,
+    );
+
+    expect(environment['GIT_COMMITTER_NAME']).toBe('release');
+    expect(environment['GIT_COMMITTER_EMAIL']).toBe('release@example.com');
+  });
+
+  it('completes a half-set environment rather than trusting it', () => {
+    const environment = releaseTaggerEnvironment({ GIT_COMMITTER_NAME: 'release' }, false);
+
+    expect(environment['GIT_COMMITTER_NAME']).toBe('release');
+    expect(environment['GIT_COMMITTER_EMAIL']).toBe(
+      '41898282+github-actions[bot]@users.noreply.github.com',
+    );
+  });
+});
+
+describe('repository identity probe', () => {
+  const answer =
+    (stdout: string, status = 0) =>
+    () => ({ status, stdout });
+
+  it('accepts a repository that names both halves', () => {
+    expect(repositoryHasIdentity(answer('release\n'))).toBe(true);
+  });
+
+  it('refuses one that prints an empty value', () => {
+    expect(repositoryHasIdentity(answer('\n'))).toBe(false);
+  });
+
+  it('refuses one where git answers with a failure', () => {
+    expect(repositoryHasIdentity(answer('release\n', 1))).toBe(false);
   });
 });
