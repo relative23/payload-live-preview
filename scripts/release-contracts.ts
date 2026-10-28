@@ -579,7 +579,7 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
     ],
     'browser-soak': [
       ['does not set a bounded timeout', /timeout-minutes:\s*60/],
-      ['does not pin the quality Node version', /node-version:\s*22\.23\.2/],
+      ['does not pin the Astro fixture Node version', /node-version:\s*22\.23\.4/],
       ['does not install Chromium', /run:\s*npx playwright install --with-deps chromium/],
       ['does not run npm run build', /run:\s*npm run build(?:\s|$)/],
       [
@@ -594,6 +594,7 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
       ['does not run npm run test:soak', /run:\s*npm run test:soak(?:\s|$)/],
     ],
     e2e: [
+      ['does not pin the Astro fixture Node version', /node-version:\s*22\.23\.4/],
       ['does not run npm run build', /run:\s*npm run build(?:\s|$)/],
       [
         'does not clean-install examples/astro-payload',
@@ -633,6 +634,7 @@ function findCiWorkflowViolations(workflow: string): readonly string[] {
       ],
     ],
     'real-payload-e2e': [
+      ['does not pin the Astro fixture Node version', /node-version:\s*22\.23\.4/],
       ['does not run npm run build', /run:\s*npm run build(?:\s|$)/],
       [
         'does not clean-install examples/astro-payload',
