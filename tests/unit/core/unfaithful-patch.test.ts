@@ -412,8 +412,10 @@ describe('a value the binding cannot represent', () => {
  * dropped still is.)
  */
 describe('a Lexical block whose markup the write cannot keep', () => {
+  // A second wrapper around the field: nothing in it pairs with the rendered document.
   const SERVER_MARKUP =
-    '<p>intro</p>' + '<figure><img src="https://cdn.example.com/a.jpg" alt="a"></figure>';
+    '<div class="frame"><div class="prose"><p>intro</p>' +
+    '<figure><img src="https://cdn.example.com/a.jpg" alt="a"></figure></div></div>';
 
   function documentWith(intro: string): Record<string, unknown> {
     return {
@@ -432,8 +434,7 @@ describe('a Lexical block whose markup the write cannot keep', () => {
 
   it('refreshes the route instead of leaving an empty placeholder behind', async () => {
     __resetBlockRegistryForTests();
-    // The server dropped the empty outro paragraph: two live children against
-    // three rendered ones, so the descent stops before it reaches the placeholder.
+    // Two wrappers: the outer one is written into, and nothing inside it lines up.
     document.body.innerHTML = `<div data-payload-field="content">${SERVER_MARKUP}</div>`;
     const route = fakeRoute();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

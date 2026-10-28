@@ -161,10 +161,10 @@ describe('a Lexical block without a renderer', () => {
  * verdict now comes after the write, in two texts, and `inspect()` counts it.
  */
 describe('a Lexical block whose server markup the write loses', () => {
-  /** The server dropped the empty outro paragraph: two live children against three rendered. */
+  /** A second wrapper around the field: one live child against three rendered, none alike. */
   const DROPPED_PARAGRAPH =
-    '<p>intro</p>' +
-    '<figure class="mx-auto"><img src="https://cdn.example.com/a.jpg" alt="a"></figure>';
+    '<div class="frame"><div class="prose"><p>intro</p>' +
+    '<figure class="mx-auto"><img src="https://cdn.example.com/a.jpg" alt="a"></figure></div></div>';
 
   it('says so (LP0413), not the opposite (LP0410), and counts the patch', async () => {
     document.body.innerHTML = `<div data-payload-field="content">${DROPPED_PARAGRAPH}</div>`;
@@ -299,6 +299,31 @@ describe('a Lexical block inside the wrapper a template puts around rich text', 
       escalated: 0,
       fields: ['title'],
     });
+    warn.mockRestore();
+    runtime.destroy();
+  });
+
+  // C10, measured on the demo post (27.10.2026): a paragraph typed before the
+  // list made six rendered children against five, and the figure was lost.
+  it('keeps the block when a paragraph is typed before the list', async () => {
+    const { content, figure } = mount();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const runtime = makeRuntime({ renderers: buildBuiltinRenderers() });
+    runtime.start();
+
+    const typed = demoDocument('Die Lichtprobe') as { content: { root: { children: unknown[] } } };
+    typed.content.root.children.splice(4, 0, {
+      type: 'paragraph',
+      children: [{ type: 'text', text: 'Ein neuer Absatz.' }],
+    });
+    fireMessage({ type: 'payload-live-preview', data: typed });
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(content.querySelector('figure')).toBe(figure);
+    expect(content.querySelectorAll('.prose-h7 > p')).toHaveLength(3);
+    const warned = warn.mock.calls.map(String).join(' ');
+    expect(warned).toContain('LP0410');
+    expect(warned).not.toContain('LP0413');
     warn.mockRestore();
     runtime.destroy();
   });
