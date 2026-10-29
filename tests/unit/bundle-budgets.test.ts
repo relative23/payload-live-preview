@@ -37,10 +37,12 @@ describe('release bundle budgets', () => {
     // +1192/+389/+374 lean, +1192/+406/+362 route, +1192/+419/+333 fragments; reserves unchanged.
     // 2026-10-28 (fidelity escalates again on a new value): +704/+241/+301 default,
     // +704/+265/+213 lean, +704/+222/+185 route, +704/+218/+202 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 149_762, gzip: 47_170, brotli: 41_480 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 121_765, gzip: 38_340, brotli: 33_820 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 158_357, gzip: 50_060, brotli: 43_554 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 163_942, gzip: 51_973, brotli: 45_315 });
+    // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): +193/+49/+139 default,
+    // +193/+61/+82 lean, +193/+49/+107 route, +193/+49/-26 fragments (Brotli left); reserves unchanged.
+    expect(INLINE_BUDGET).toEqual({ raw: 149_955, gzip: 47_219, brotli: 41_619 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 121_958, gzip: 38_401, brotli: 33_902 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 158_550, gzip: 50_109, brotli: 43_661 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 164_135, gzip: 52_022, brotli: 45_315 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

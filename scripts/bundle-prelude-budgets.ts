@@ -145,7 +145,8 @@
 // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+218/+202 B; prior reserves kept.
 // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+294/+301 B; prior reserves kept.
 // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+142/+235 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 163_942, gzip: 51_973, brotli: 45_315 } as const;
+// 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+49/-26 B; prior reserves kept, the brotli figure that fell left where it was.
+export const INLINE_FRAGMENT_BUDGET = { raw: 164_135, gzip: 52_022, brotli: 45_315 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -281,4 +282,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 163_942, gzip: 51_973, brotli: 45_3
 // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+222/+185 B; prior reserves kept.
 // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+288/+334 B; prior reserves kept.
 // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+148/+76 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 158_357, gzip: 50_060, brotli: 43_554 } as const;
+// 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+49/+107 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 158_550, gzip: 50_109, brotli: 43_661 } as const;

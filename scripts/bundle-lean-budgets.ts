@@ -146,4 +146,5 @@
 // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+265/+213 B; prior reserves kept.
 // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +476/+151/+142 B; prior reserves kept.
 // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+135/+108 B; prior reserves kept.
-export const INLINE_LEAN_BUDGET = { raw: 121_765, gzip: 38_340, brotli: 33_820 } as const;
+// 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+61/+82 B; prior reserves kept.
+export const INLINE_LEAN_BUDGET = { raw: 121_958, gzip: 38_401, brotli: 33_902 } as const;
