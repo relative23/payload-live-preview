@@ -22,7 +22,7 @@
   "totals": {
     "files": 520,
     "suites": 1002,
-    "tests": 4554,
+    "tests": 4555,
     "benchmarks": 12
   },
   "groups": {
@@ -41,7 +41,7 @@
     "e2e": {
       "files": 57,
       "suites": 62,
-      "tests": 253,
+      "tests": 254,
       "benchmarks": 0
     },
     "integration": {
@@ -340,7 +340,7 @@
       "path": "tests/e2e/specs/nextjs-live-preview.spec.ts",
       "group": "e2e",
       "suites": 4,
-      "tests": 9,
+      "tests": 10,
       "benchmarks": 0
     },
     {

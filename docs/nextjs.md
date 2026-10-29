@@ -469,6 +469,41 @@ another `ready` for the unsaved state to survive the commit.
 
 When it is not there, the strategy fetches and morphs as before.
 
+### Rich text React renders itself
+
+The runtime writes rich text by replacing the bound element's children. When
+React rendered those children as elements of its own (Payload's `RichText`
+from `@payloadcms/richtext-lexical/react`, for one), it still holds the nodes
+the runtime took out. A route refresh that brings a saved value of another
+shape then has React remove nodes that are no longer in the element: the frame
+throws `Failed to execute 'removeChild' on 'Node'`, and the refresh does not
+appear. Key the bound element by the saved value, so React replaces the element
+instead of reconciling its children:
+
+```tsx
+/** FNV-1a over the serialized value: it changes exactly when the saved value does. */
+function fingerprint(value: unknown): string {
+  const text = JSON.stringify(value) ?? '';
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+// in the server component that renders the field
+<div key={fingerprint(page.body)} {...bindings.bind('body', { richtext: true })}>
+  <RichText data={page.body} disableContainer />
+</div>;
+```
+
+The example renders such a field at `/route-commit`, and
+`tests/e2e/specs/nextjs-live-preview.spec.ts` changes its saved value between
+App Router refreshes. Without the key, Chromium, Firefox and WebKit each logged
+the `removeChild` error and the first refresh never landed; with it, both
+refreshes land in all three.
+
 ## Point the Payload admin at this site
 
 The admin has to know which URL to show for each document. In the Payload project's `payload.config.ts`, the config plugin from `payload-live-preview/plugin` maps collections and globals to paths on this site and enables Live Preview for them. If Payload is a separate project, install `payload-live-preview` there too.
