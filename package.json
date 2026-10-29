@@ -1,6 +1,6 @@
 {
   "name": "payload-live-preview",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Live preview for Payload CMS on server-rendered and static frontends (Astro, Next.js, SvelteKit, Nuxt, plain HTML), with React and Vue hooks for client-rendered apps.",
   "author": "relative23",
   "license": "MIT",
