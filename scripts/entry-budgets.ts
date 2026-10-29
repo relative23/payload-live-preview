@@ -428,7 +428,8 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // gzip by 3–21 B, ~+50 B raw — the generator resolves `defaults` and writes it
   // into fixed slot 24 of every script. gzip to the measurement ×1.0014, and nuxt brotli, 26 B under, back to the ~130 B cushion.
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 2 950 → 3 426 (+476 B, measured 2 924 → 3 400); gzip 1 544 → 1 733 (+189 B, measured 1 529 → 1 718); brotli 1 380 → 1 566 (measured 1 538; under the 2 % notice).
-  'annotate.js': { raw: 3_426, gzip: 1_733, brotli: 1_567 },
+  // 2026-10-29 (annotate binds only what the file owns: hand-binding anchors, binding spreads, masked code blocks, exit 2 on an empty schema): paired Node24.22.1/npm12.0.2; +1892/+798/+693 B; prior reserves kept.
+  'annotate.js': { raw: 5_318, gzip: 2_531, brotli: 2_260 },
   // The framework adapters are logged in `entry-budgets-adapters.ts`, split off at 600 lines (PHD-02).
   ...ADAPTER_ENTRY_BUDGETS,
   // The build tools (codegen, doctor, codemods) are logged in `entry-budgets-tools.ts`, split off at 500 lines (Z37).

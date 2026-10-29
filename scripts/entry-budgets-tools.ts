@@ -28,11 +28,14 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // module too, so the binary went on resolving the peer before its first flag.
   'codegen-astro.js': { raw: 13_070, gzip: 4_610, brotli: 4_217 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 100 → 20 809 (+709 B, measured 20 003 → 20 712); gzip 6 950 → 7 184 (+234 B, measured 6 946 → 7 180); brotli 6 270 → 6 593 (measured 6 473; ~120 B).
-  'codegen-cli.js': { raw: 20_809, gzip: 7_192, brotli: 6_593 },
+  // 2026-10-29 (annotate binds only what the file owns: hand-binding anchors, binding spreads, masked code blocks, exit 2 on an empty schema): paired Node24.22.1/npm12.0.2; +3199/+1233/+1092 B; prior reserves kept.
+  'codegen-cli.js': { raw: 24_008, gzip: 8_425, brotli: 7_685 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 15 420 → 15 899 (+479 B, measured 15 345 → 15 824); gzip 5 530 → 5 730 (+200 B, measured 5 510 → 5 710); brotli 5 060 → 5 223 (measured 5 133; under the 2 % notice).
-  'codegen.cjs': { raw: 15_159, gzip: 5_490, brotli: 5_001 },
+  // 2026-10-29 (annotate binds only what the file owns: hand-binding anchors, binding spreads, masked code blocks, exit 2 on an empty schema): paired Node24.22.1/npm12.0.2; +2244/+896/+798 B; prior reserves kept.
+  'codegen.cjs': { raw: 17_403, gzip: 6_386, brotli: 5_799 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 15 230 → 15 708 (+478 B, measured 15 152 → 15 630); gzip 5 430 → 5 631 (+201 B, measured 5 410 → 5 611); brotli 4 890 → 5 164 (measured 5 074; under the 2 % notice).
-  'codegen.js': { raw: 14_968, gzip: 5_398, brotli: 4_938 },
+  // 2026-10-29 (annotate binds only what the file owns: hand-binding anchors, binding spreads, masked code blocks, exit 2 on an empty schema): paired Node24.22.1/npm12.0.2; +2249/+911/+804 B; prior reserves kept.
+  'codegen.js': { raw: 17_217, gzip: 6_309, brotli: 5_742 },
   //
   // 2026-09-11 (Z37, the doctor reads which defaults a script means):
   // `doctor.js` +2 158 B raw / ~+830 gzip / ~+740 brotli, `doctor-cli.js`
