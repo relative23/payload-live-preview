@@ -49,7 +49,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +46/+19/+32 B; prior reserves kept.
   // 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1251/+445/+350 B; prior reserves kept.
   // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +735/+239/+207 B; prior reserves kept.
-  'client.cjs': { raw: 164_424, gzip: 51_460, brotli: 44_510 },
+  // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +920/+282/+273 B; prior reserves kept.
+  'client.cjs': { raw: 165_344, gzip: 51_742, brotli: 44_783 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -82,7 +83,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +46/+18/+12 B; prior reserves kept.
   // 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1251/+444/+431 B; prior reserves kept.
   // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +735/+239/+99 B; prior reserves kept.
-  'client.js': { raw: 164_343, gzip: 51_447, brotli: 44_471 },
+  // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +920/+284/+305 B; prior reserves kept.
+  'client.js': { raw: 165_263, gzip: 51_731, brotli: 44_776 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).
@@ -125,7 +127,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +34/+36/+47 B; prior reserves kept.
   // 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1194/+388/+365 B; prior reserves kept.
   // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+258/+222 B; prior reserves kept.
-  'lean.cjs': { raw: 121_233, gzip: 38_295, brotli: 33_908 },
+  // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +476/+153/+114 B; prior reserves kept.
+  'lean.cjs': { raw: 121_709, gzip: 38_448, brotli: 34_022 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 757 → 91 791 (+34 B, measured 91 738 → 91 772).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 791 → 91 840 (+49 B, measured 91 772 → 91 821); gzip 29 171 → 29 183 (+12 B, measured 29 167 → 29 179).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 91 840 → 91 858 (+18 B, measured 91 821 → 91 839); gzip 29 183 → 29 190 (+7 B, measured 29 179 → 29 186).
@@ -154,7 +157,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +34/+35/+30 B; prior reserves kept.
   // 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1194/+389/+427 B; prior reserves kept.
   // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+259/+130 B; prior reserves kept.
-  'lean.js': { raw: 121_222, gzip: 38_288, brotli: 33_839 },
+  // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +476/+152/+144 B; prior reserves kept.
+  'lean.js': { raw: 121_698, gzip: 38_440, brotli: 33_983 },
   // 2026-09-16 (2.0.1 Version PR): gzip 5 602 → 5 612. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 5 600 against a cushion of 2 B. Twelve bytes over that measurement  as the rows that never flipped carry.
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 16 307 → 16 527 (+220 B, measured 16 305 → 16 525); gzip 5 612 → 5 665 (+53 B, measured 5 600 → 5 653); brotli 5 072 → 5 162 (measured 5 072; under the 2 % notice).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 16 527 → 16 755 (+228 B, measured 16 525 → 16 753); gzip 5 665 → 5 720 (+55 B, measured 5 653 → 5 708).
@@ -183,12 +187,14 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -32/+3/-15 B; same 86/37/61 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2605/+920/+856 B; same 86/37/61 B cushions.
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+11/-9 B; same 86/37/61 B cushions.
-  'plugins.cjs': { raw: 21_984, gzip: 8_069, brotli: 7_124 },
+  // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +404/+129/+108 B; prior reserves kept.
+  'plugins.cjs': { raw: 22_388, gzip: 8_198, brotli: 7_232 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+12/+1 B; same 86/33/92 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -32/+0/+9 B; same 86/33/92 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2605/+921/+832 B; same 86/33/92 B cushions.
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+11/+10 B; same 86/33/92 B cushions.
-  'plugins.js': { raw: 21_960, gzip: 8_051, brotli: 7_148 },
+  // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +404/+136/+112 B; prior reserves kept.
+  'plugins.js': { raw: 22_364, gzip: 8_187, brotli: 7_260 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+423/+399 B; same 20/3/84 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+13/-6 B; same 20/3/84 B cushions.
   // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+0/+2 B; same 20/3/84 B cushions.

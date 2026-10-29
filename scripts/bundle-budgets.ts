@@ -544,7 +544,9 @@
 // 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1192/+403/+343 B; prior reserves kept.
 // 2026-10-28 (fidelity escalates again on a new value): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2, epoch1793120979): `core.cjs` +731 / +243 / +179, `core.js` +730 / +237 / +189, `index.cjs` +1434 / +479 / +636, `index.js` +1434 / +476 / +575.
 // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+241/+301 B; prior reserves kept.
-export const INLINE_BUDGET = { raw: 148_453, gzip: 46_770, brotli: 41_194 } as const;
+// 2026-10-29 (the route renders only for real changes): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2): `core.cjs` +920 / +262 / +214, `core.js` +920 / +270 / +261, `index.cjs` +1821 / +565 / +325, `index.js` +1821 / +569 / +455.
+// 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+256/+238 B; prior reserves kept.
+export const INLINE_BUDGET = { raw: 149_354, gzip: 47_026, brotli: 41_432 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

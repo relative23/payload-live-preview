@@ -37,10 +37,10 @@ describe('release bundle budgets', () => {
     // +1192/+389/+374 lean, +1192/+406/+362 route, +1192/+419/+333 fragments; reserves unchanged.
     // 2026-10-28 (fidelity escalates again on a new value): +704/+241/+301 default,
     // +704/+265/+213 lean, +704/+222/+185 route, +704/+218/+202 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 148_453, gzip: 46_770, brotli: 41_194 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 120_881, gzip: 38_054, brotli: 33_570 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 157_048, gzip: 49_624, brotli: 43_144 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 162_633, gzip: 51_537, brotli: 44_779 });
+    expect(INLINE_BUDGET).toEqual({ raw: 149_354, gzip: 47_026, brotli: 41_432 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 121_357, gzip: 38_205, brotli: 33_712 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 157_949, gzip: 49_912, brotli: 43_478 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 163_534, gzip: 51_831, brotli: 45_080 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

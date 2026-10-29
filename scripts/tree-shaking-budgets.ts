@@ -442,10 +442,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +26 B gzip; reserve kept.
     // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +478 B gzip; reserve kept.
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +288 B gzip; reserve kept.
+    // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
+    // without the change: +318 B gzip; retain the reserve it had.
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 57_051,
+    gzip: 57_369,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -464,10 +466,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +20 B gzip; reserve kept.
     // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +412 B gzip; reserve kept.
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +239 B gzip; reserve kept.
+    // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
+    // without the change: +270 B gzip; retain the reserve it had.
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 54_674,
+    gzip: 54_944,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -486,10 +490,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +41 B gzip; reserve kept.
     // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +466 B gzip; reserve kept.
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +293 B gzip; reserve kept.
+    // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
+    // without the change: +326 B gzip; retain the reserve it had.
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 57_045,
+    gzip: 57_371,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -527,10 +533,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +21 B gzip; reserve kept.
     // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +412 B gzip; reserve kept.
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +244 B gzip; reserve kept.
+    // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
+    // without the change: +266 B gzip; retain the reserve it had.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 60_122,
+    gzip: 60_388,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
@@ -547,10 +555,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +37 B gzip; reserve kept.
     // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +385 B gzip; reserve kept.
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +261 B gzip; reserve kept.
+    // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
+    // without the change: +151 B gzip; retain the reserve it had.
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 38_335,
+    gzip: 38_486,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
