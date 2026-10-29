@@ -148,6 +148,58 @@ test.describe('live preview (Next.js) — admin → iframe updates', () => {
     );
   });
 
+  test('keeps a rich text the runtime rewrote working across App Router refreshes that change the saved value', async ({
+    page,
+    context,
+  }) => {
+    const failures: string[] = [];
+    page.on('pageerror', (error) => failures.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') failures.push(message.text());
+    });
+    await page.goto(`${ADMIN_URL}?target=/route-commit`);
+    const frame = await waitForPreviewFrame(page, '/route-commit');
+    const generation = frame.getByTestId('server-generation');
+    const title = frame.locator('[data-payload-field="title"]');
+    const richText = frame.getByTestId('rich-text');
+    await expect
+      .poll(() =>
+        frame.evaluate(
+          () =>
+            typeof (window as Window & { __livePreviewRouteRefresh?: unknown })
+              .__livePreviewRouteRefresh,
+        ),
+      )
+      .toBe('function');
+    // An edit sends the whole document: its rich text replaces the paragraphs React rendered.
+    await page.getByTestId('title-input').fill('Unsaved before the save');
+    await expect(title).toHaveText('Unsaved before the save');
+    await expect(richText.locator('h2')).toHaveText('Rich text from Lexical');
+    const first = await generation.textContent();
+
+    // A save: the next server render has one paragraph where React rendered three.
+    await context.addCookies([
+      {
+        name: 'route-commit-saved-body',
+        value: 'second',
+        domain: new URL(NEXT_ORIGIN).hostname,
+        path: '/',
+      },
+    ]);
+    // An unbound field asks for the App Router's refresh.
+    await page.getByTestId('show-extra-input').check();
+    await expect(generation).not.toHaveText(first ?? '');
+    const second = await generation.textContent();
+
+    // The route keeps rendering, and the replaced element takes the next edit.
+    await page.getByTestId('show-extra-input').uncheck();
+    await expect(generation).not.toHaveText(second ?? '');
+    await page.getByTestId('title-input').fill('Unsaved after two refreshes');
+    await expect(title).toHaveText('Unsaved after two refreshes');
+    await expect(richText.locator('h2')).toHaveText('Rich text from Lexical');
+    expect(failures.filter((text) => text.includes('removeChild'))).toEqual([]);
+  });
+
   test('locally reapplies one unchanged unsaved document after each committed App Router navigation', async ({
     page,
   }) => {
