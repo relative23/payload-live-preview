@@ -38,7 +38,7 @@
   ],
   "baseline": {
     "total": 3877,
-    "mutationScoreMinimum": 80.27,
+    "mutationScoreMinimum": 80.29,
     "mutationScorePrecision": 2,
     "mutationScoreDriftMutants": 1,
     "noCoverageMaximum": 62,
