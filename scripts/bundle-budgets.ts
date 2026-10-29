@@ -546,7 +546,10 @@
 // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+241/+301 B; prior reserves kept.
 // 2026-10-29 (the route renders only for real changes): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2): `core.cjs` +920 / +262 / +214, `core.js` +920 / +270 / +261, `index.cjs` +1821 / +565 / +325, `index.js` +1821 / +569 / +455.
 // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+256/+238 B; prior reserves kept.
-export const INLINE_BUDGET = { raw: 149_354, gzip: 47_026, brotli: 41_432 } as const;
+// 2026-10-29 (the handshake and the gate respect the page): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2): `core.cjs` +462 / +157 / +151, `core.js` +462 / +154 / +126, `index.cjs` +870 / +323 / +1719, `index.js` +870 / +306 / +988.
+// 2026-10-29 (the handshake and the gate respect the page): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; each keeps the reserve it had): `initLivePreview` +177 from the root and +171 from ./core, `generateInlineScript` +138, `createLivePreviewMiddleware` +130, `LEAN_RUNTIME` +139, `useLivePreviewDocument` +47 from ./react and +49 from ./vue.
+// 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+144/+48 B; prior reserves kept.
+export const INLINE_BUDGET = { raw: 149_762, gzip: 47_170, brotli: 41_480 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the
