@@ -143,7 +143,8 @@
 // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +34/+22/+35 B; prior reserves kept.
 // 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1192/+419/+333 B; prior reserves kept.
 // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+218/+202 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 162_633, gzip: 51_537, brotli: 44_779 } as const;
+// 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+294/+301 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 163_534, gzip: 51_831, brotli: 45_080 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -277,4 +278,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 162_633, gzip: 51_537, brotli: 44_7
 // 2026-10-28 (format and locale reach the binding): paired Node24.22.1/npm12.0.2, epoch1793120979; +34/+20/+34 B; prior reserves kept.
 // 2026-10-28 (the renderers write what the element expects): paired Node24.22.1/npm12.0.2, epoch1793120979; +1192/+406/+362 B; prior reserves kept.
 // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+222/+185 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 157_048, gzip: 49_624, brotli: 43_144 } as const;
+// 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+288/+334 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 157_949, gzip: 49_912, brotli: 43_478 } as const;
