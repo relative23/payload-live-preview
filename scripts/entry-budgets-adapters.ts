@@ -69,7 +69,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+244/+257 B; prior reserves kept.
   // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+260/+242 B; prior reserves kept.
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+144/+174 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 214_655, gzip: 67_184, brotli: 57_097 },
+  // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+45/+58 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 214_848, gzip: 67_229, brotli: 57_155 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -106,7 +107,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+229/+242 B; prior reserves kept.
   // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+276/+235 B; prior reserves kept.
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+134/+149 B; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 189_964, gzip: 59_446, brotli: 50_744 },
+  // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+47/+35 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 190_157, gzip: 59_493, brotli: 50_779 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -178,7 +180,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+231/+200 B; prior reserves kept.
   // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+277/+264 B; prior reserves kept.
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+131/+128 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 208_680, gzip: 65_403, brotli: 55_662 },
+  // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+52/+70 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 208_873, gzip: 65_455, brotli: 55_732 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -266,7 +269,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+227/+222 B; prior reserves kept.
   // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+273/+272 B; prior reserves kept.
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+131/+153 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 208_951, gzip: 65_498, brotli: 55_645 },
+  // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+49/+4 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 209_144, gzip: 65_547, brotli: 55_649 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -305,5 +309,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-28 (fidelity escalates again on a new value): paired Node24.22.1/npm12.0.2, epoch1793120979; +704/+233/+235 B; prior reserves kept.
   // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +901/+275/+266 B; prior reserves kept.
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+139/+153 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 208_028, gzip: 65_210, brotli: 55_415 },
+  // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+51/+63 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 208_221, gzip: 65_261, brotli: 55_478 },
 };
