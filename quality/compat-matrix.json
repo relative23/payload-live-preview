@@ -488,7 +488,7 @@
       "feature": "prebuilt inline runtime",
       "version": {
         "kind": "exact",
-        "value": "2.2.0",
+        "value": "2.2.1",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -513,7 +513,7 @@
       "feature": "bundled client entry",
       "version": {
         "kind": "exact",
-        "value": "2.2.0",
+        "value": "2.2.1",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -538,7 +538,7 @@
       "feature": "immutable-tarball build, nonce and hash CSP, and the origin rules",
       "version": {
         "kind": "exact",
-        "value": "2.2.0",
+        "value": "2.2.1",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -567,7 +567,7 @@
       "feature": "authorized renderer service path",
       "version": {
         "kind": "exact",
-        "value": "2.2.0",
+        "value": "2.2.1",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -984,7 +984,7 @@
       "feature": "live preview against the real Payload admin, runtime baked in, origin rule as the gate",
       "version": {
         "kind": "exact",
-        "value": "2.2.0",
+        "value": "2.2.1",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1061,7 +1061,7 @@
       "feature": "every export-map entry in isolated package consumers",
       "version": {
         "kind": "exact",
-        "value": "2.2.0",
+        "value": "2.2.1",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1115,7 +1115,7 @@
       "feature": "code generation, annotation, doctor, migration and executable entrypoints",
       "version": {
         "kind": "exact",
-        "value": "2.2.0",
+        "value": "2.2.1",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1262,7 +1262,7 @@
       "feature": "manual navigation commit and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "2.2.0",
+        "value": "2.2.1",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1291,7 +1291,7 @@
       "feature": "client navigation method and inline soft-navigation configuration",
       "version": {
         "kind": "exact",
-        "value": "2.2.0",
+        "value": "2.2.1",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
