@@ -22,7 +22,7 @@
   "totals": {
     "files": 529,
     "suites": 1021,
-    "tests": 4618,
+    "tests": 4619,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 432,
       "suites": 911,
-      "tests": 4216,
+      "tests": 4217,
       "benchmarks": 0
     }
   },
@@ -3707,7 +3707,7 @@
       "path": "tests/unit/security/trusted-types.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 11,
+      "tests": 12,
       "benchmarks": 0
     },
     {

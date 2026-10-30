@@ -383,6 +383,12 @@ and, since 2.1, `tests/unit/security/sanitizer-settling.test.ts` for S10.
   list the name, the sink assignment surfaces the enforcement error rather
   than this module swallowing it.
 - **T3** Without the Trusted Types API, strings pass through unchanged.
+- **T4** The registry symbol that lets the bundles share the policy lets any
+  script on the page reach it, and set an override the way
+  `setTrustedTypesPolicy()` does. No realm-wide handle can be kept from page
+  scripts, so this is a documented limit, not a guarantee: a site that wants
+  no identity policy sets its own before the first write, and `auto` is then
+  never created.
 
 Held by: gate 2; the core mutation profile; `tests/unit/security/trusted-types.test.ts`.
 
