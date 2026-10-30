@@ -58,8 +58,12 @@ The strategy first sends the existing cookie-only request. Payload 3.89 refuses
 that cookie when its `csrf` list is not empty and the request has neither an
 `Origin` nor safe browser fetch metadata. If `/me` answers with `user: null`,
 the strategy retries once with the origin of `serverURL`, within the same
-timeout. Payload adds its configured `serverURL` to the CSRF list. Set `origin`
-to a listed origin to send it from the first request and disable the retry.
+timeout. Payload adds its configured `serverURL` to the CSRF list. Once a user
+was found that way, the strategy sends the origin from the first request to
+that `/me`, so a token it refuses costs one request, not two; once a minute it
+tries the cookie alone again and returns to it when that finds the user. Set
+`origin` to a listed origin to send it from the first request and disable the
+retry.
 `payloadHeaders` retains the headers of the accepted request for draft reads.
 Payload 2.32.3 accepts the cookie-only request even with a CSRF list; preserving
 it also preserves sessions whose list holds only the frontend's origin.

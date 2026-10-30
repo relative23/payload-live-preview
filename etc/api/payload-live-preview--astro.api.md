@@ -4,14 +4,14 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-DGGLIijM.js';
+import { a } from '../../fragment-endpoint-CLRpNQ3n.js';
 import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-zz2gi9dj.js';
 import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-zz2gi9dj.js';
-import { b } from '../../fragment-endpoint-DGGLIijM.js';
-import { c } from '../../fragment-endpoint-DGGLIijM.js';
+import { b } from '../../fragment-endpoint-CLRpNQ3n.js';
+import { c } from '../../fragment-endpoint-CLRpNQ3n.js';
 import { c as createLivePreviewMiddleware } from '../../middleware-CI-UTf6R.js';
-import { F } from '../../fragment-endpoint-DGGLIijM.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-DGGLIijM.js';
+import { F } from '../../fragment-endpoint-CLRpNQ3n.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-CLRpNQ3n.js';
 import { h as hasPreviewIntent } from '../../options-CnYybG51.js';
 import { L as LivePreviewAstroOptions } from '../../middleware-CI-UTf6R.js';
 import { L as LivePreviewLocals } from '../../locals-zz2gi9dj.js';

@@ -320,3 +320,138 @@ describe('the payload-session strategy sends an origin with the cookie', () => {
     expect(seen).toHaveLength(1);
   });
 });
+
+describe('the payload-session strategy remembers that /me needs the origin', () => {
+  interface Cms {
+    accepts: 'with-origin' | 'without-origin';
+  }
+  /** One `/me`: `good.token` is a session, counted only in the form the CMS accepts. */
+  function cms(seen: Record<string, string>[], state: Cms): FetchLike {
+    return (_input, init) => {
+      seen.push(init.headers);
+      const withOrigin = init.headers['origin'] === CMS;
+      const accepted =
+        init.headers['cookie'] === 'payload-token=good.token' &&
+        withOrigin === (state.accepts === 'with-origin');
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ user: accepted ? { id: 7 } : null, collection: 'users' }),
+      });
+    };
+  }
+  const withToken = (token: string): PreviewAuthorizationRequest =>
+    request({ cookie: `payload-token=${token}` });
+  const origins = (seen: Record<string, string>[]): string[] =>
+    seen.map((headers) => headers['origin'] ?? 'none');
+
+  it('asks once for a token /me refuses, once a session needed the origin', async () => {
+    const seen: Record<string, string>[] = [];
+    const fetch = cms(seen, { accepts: 'with-origin' });
+    // A new strategy object per request, as the framework recipes build it.
+    const each = (): PayloadSessionStrategy => strategy(seen, { fetch });
+    expect((await authorizePreviewRequest(withToken('good.token'), each())).authorized).toBe(true);
+    expect(origins(seen)).toStrictEqual(['none', CMS]);
+    seen.length = 0;
+    const forged = await authorizePreviewRequest(withToken('forged.token'), each());
+    const good = await authorizePreviewRequest(withToken('good.token'), each());
+    expect(forged.outcome).toBe('invalid');
+    expect(good.authorized).toBe(true);
+    expect(origins(seen)).toStrictEqual([CMS, CMS]);
+    if (!good.authorized) throw new Error('expected the session');
+    expect(good.context.payloadHeaders).toStrictEqual({
+      cookie: 'payload-token=good.token',
+      origin: CMS,
+    });
+  });
+
+  it('tries the cookie alone again at most once a minute, and forgets the origin when that works', async () => {
+    let clock = NOW;
+    const state: Cms = { accepts: 'with-origin' };
+    const seen: Record<string, string>[] = [];
+    const each = (): PayloadSessionStrategy => strategy(seen, { fetch: shared, now: () => clock });
+    const shared = cms(seen, state);
+    await authorizePreviewRequest(withToken('good.token'), each());
+    seen.length = 0;
+    await authorizePreviewRequest(withToken('forged.token'), each());
+    clock = NOW + 59_999;
+    await authorizePreviewRequest(withToken('forged.token'), each());
+    clock = NOW + 60_000;
+    await authorizePreviewRequest(withToken('forged.token'), each());
+    await authorizePreviewRequest(withToken('forged.token'), each());
+    expect(origins(seen)).toStrictEqual([CMS, CMS, CMS, 'none', CMS]);
+
+    // The CMS went back to accepting the cookie alone, e.g. a rollback to Payload 2.
+    state.accepts = 'without-origin';
+    clock = NOW + 120_000;
+    seen.length = 0;
+    const back = await authorizePreviewRequest(withToken('good.token'), each());
+    expect(back.authorized).toBe(true);
+    if (!back.authorized) throw new Error('expected the session');
+    expect(back.context.payloadHeaders).toStrictEqual({ cookie: 'payload-token=good.token' });
+    await authorizePreviewRequest(withToken('good.token'), each());
+    expect(origins(seen)).toStrictEqual([CMS, 'none', 'none']);
+  });
+
+  it('learns from a signed-in user of another auth collection, which it still refuses', async () => {
+    const seen: Record<string, string>[] = [];
+    const fetch: FetchLike = (_input, init) => {
+      seen.push(init.headers);
+      const user = init.headers['origin'] === CMS ? { id: 3 } : null;
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ user, collection: 'customers' }),
+      });
+    };
+    const first = await authorizePreviewRequest(
+      withToken('customer.token'),
+      strategy(seen, { fetch }),
+    );
+    const next = await authorizePreviewRequest(
+      withToken('customer.token'),
+      strategy(seen, { fetch }),
+    );
+    expect([first.outcome, next.outcome]).toStrictEqual(['invalid', 'invalid']);
+    expect(origins(seen)).toStrictEqual(['none', CMS, CMS]);
+  });
+
+  it('keeps what it learned per fetch and per endpoint', async () => {
+    const seen: Record<string, string>[] = [];
+    const fetch = cms(seen, { accepts: 'with-origin' });
+    await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch }));
+    seen.length = 0;
+    await authorizePreviewRequest(
+      withToken('good.token'),
+      strategy(seen, { fetch: cms(seen, { accepts: 'with-origin' }) }),
+    );
+    await authorizePreviewRequest(
+      withToken('good.token'),
+      strategy(seen, { fetch, usersSlug: 'admins' }),
+    );
+    expect(origins(seen)).toStrictEqual(['none', CMS, 'none', CMS]);
+  });
+
+  it.each([{}, { user: 'tok.en' }, { user: [] }, null])(
+    'learns nothing from an origin answer without a user: %j',
+    async (answer) => {
+      const seen: Record<string, string>[] = [];
+      const fetch: FetchLike = (_input, init) => {
+        seen.push(init.headers);
+        const body = init.headers['origin'] === undefined ? { user: null } : answer;
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) });
+      };
+      await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch }));
+      await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch }));
+      expect(origins(seen)).toStrictEqual(['none', CMS, 'none', CMS]);
+    },
+  );
+
+  it('learns nothing from an explicit origin, which is one request already', async () => {
+    const seen: Record<string, string>[] = [];
+    const fetch = cms(seen, { accepts: 'with-origin' });
+    await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch, origin: CMS }));
+    await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch }));
+    expect(origins(seen)).toStrictEqual([CMS, 'none', CMS]);
+  });
+});

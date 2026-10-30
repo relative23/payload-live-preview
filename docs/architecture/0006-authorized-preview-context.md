@@ -360,3 +360,19 @@ replace session verification.
 The compatibility probe executes both released cookie extractors, including
 the list that holds only the frontend origin. This proves header compatibility
 for Payload 2.32.3 and 3.89.0; it is not a Payload 2 real-admin run.
+
+## Addendum (2026-10-30): the strategy remembers that `/me` needs the origin
+
+The retry made every token `/me` refuses cost two requests: an invalid or
+expired cookie, and on Payload 3 every signed-in user of another auth
+collection on every page that checks the session. The strategy now keeps, per
+`fetch` and per `/me` endpoint, that the origin found a user, and sends it from
+the first request after that. It is keyed by endpoint, not by strategy object,
+because the framework recipes build the strategy per request. Such a refusal is
+then one request. To notice a CMS that stopped needing the origin, for example
+a rollback to Payload 2 whose CSRF list holds only the frontend, the strategy
+asks once more with the cookie alone at most once a minute and goes back to it
+when that finds the user. Until then, sessions on that CMS are refused for up
+to a minute. A CMS that accepts the cookie alone is not remembered: a later
+upgrade to Payload 3 needs no restart, and a token such a CMS refuses still
+costs two requests. An explicit `origin` makes it one.
