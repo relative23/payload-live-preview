@@ -12,7 +12,7 @@
     "playwright.astro-continuation.config.ts": "ed6c35a84830b857f1463e2a55a8c3f36a2dae1b8b27f01365116e7d19f6643a",
     "playwright.config.ts": "b482f7758414803fcaeefbe67ca8119260104d9722a345102f4fabcced7afd89",
     "playwright.next-continuation.config.ts": "d62804613a00c57dfe027a7c4128e6493a4a40542fcf761e915289875360c798",
-    "playwright.real-payload.config.ts": "5e16fe9ef5220f2c37f262d1c5fde349080893442c394e3a71c5750aae36e6e6",
+    "playwright.real-payload.config.ts": "56c23c3b148b4bed3b58964f736cce9d6e68a37b1b9a107ebda0ab61081d57e8",
     "scripts/astro-production-fixture.mjs": "6708448c67e8bb6f4590c57b9b0343b242c99e5cb0454e9fcecc248eb2889dca",
     "scripts/fixture-proxy-lifetime.mjs": "1404361dbfc1d740daa0b80cb40301016c351726210ae865daca85784700a3f5",
     "scripts/node-production-fixture.mjs": "49cae197cc4e7cbb8f6f44653888c888c9488aea8bed8d3395e6efa68bf9b1bd",
