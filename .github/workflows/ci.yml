@@ -618,10 +618,10 @@ jobs:
             test-results/
           retention-days: 7
 
-  # Next.js, SvelteKit and Nuxt production hosts: each an application of its own on the versions the
-  # example locks, with the archive the Build job stored, built for production and served behind TLS.
-  # A real Payload 3 signs two editors in and enforces their access; the test sends the editor's
-  # messages, not Payload's admin UI.
+  # Next.js, SvelteKit, Nuxt, plain HTML and standalone Vue production hosts: each an application of
+  # its own on the versions its reviewed lock pins, with the archive the Build job stored, built for
+  # production and served behind TLS. A real Payload 3 signs two editors in and enforces their access;
+  # the test sends the editor's messages, not Payload's admin UI.
   production-lifecycle:
     name: Production lifecycle (${{ matrix.framework }})
     needs: build
@@ -630,7 +630,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [next, sveltekit, nuxt]
+        framework: [next, sveltekit, nuxt, html, vue]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4

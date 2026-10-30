@@ -519,12 +519,14 @@ behind a throw-away TLS proxy. `fixture-audit` covers `examples/`, not these loc
 
 ## Production hosts
 
-The `production-lifecycle` job builds a Next.js, a SvelteKit and a Nuxt host for
-production, one matrix entry each, in Chromium
+The `production-lifecycle` job builds a Next.js, a SvelteKit, a Nuxt, a plain HTML and a
+standalone Vue host for production, one matrix entry each, in Chromium
 ([spec](../tests/e2e/continuation/next-host.spec.ts)). Each host is an application of its own
 ([Next.js](../tests/fixtures/next-continuation/), and the same for the others) on the
-dependencies the matching example locks, with the archive the Build job stored in place of the
-package, served behind a throw-away TLS proxy. Beside it runs Payload 3.92.1 on SQLite
+dependencies a reviewed lock pins: the matching example's, and for Vue
+[`tests/fixtures/vue-host-deps`](../tests/fixtures/vue-host-deps/package-lock.json). The
+archive the Build job stored stands in place of the package, and the host is served behind a
+throw-away TLS proxy. Beside it runs Payload 3.92.1 on SQLite
 ([lock](../tests/fixtures/payload-acl/package-lock.json)): two editors sign in there, and its
 access control decides what each one may read. The seven cases:
 
@@ -541,12 +543,20 @@ access control decides what each one may read. The seven cases:
   and no preview script;
 - a missing browser cookie is not replaced by a query or header.
 
+The HTML and Vue hosts run one case more each. The HTML one removes a preview owner while
+its request is in flight and mounts it again: the late response is dropped, and a title with
+markup stays text ([spec](../tests/e2e/continuation/html-owner.spec.ts)). The Vue one disposes of the
+composable's scope mid-request, ignores the messages that arrive after it and mounts exactly
+one replacement ([spec](../tests/e2e/continuation/vue-owner.spec.ts)).
+
 To run them yourself, build and pack as above, then:
 
 ```sh
 npx playwright test --config playwright.next-continuation.config.ts --project=chromium       # port 4284
 npx playwright test --config playwright.sveltekit-continuation.config.ts --project=chromium  # port 4285
 npx playwright test --config playwright.nuxt-continuation.config.ts --project=chromium       # port 4286
+npx playwright test --config playwright.html-continuation.config.ts --project=chromium       # port 4288
+npx playwright test --config playwright.vue-continuation.config.ts --project=chromium        # port 4289
 ```
 
 What they do not show. The test posts the editor's messages itself, so Payload's admin UI

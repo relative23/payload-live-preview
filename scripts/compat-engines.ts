@@ -104,6 +104,14 @@ export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
     config: 'playwright.nuxt-continuation.config.ts',
     fixtures: ['tests/fixtures/payload-acl', 'examples/nuxt-payload'],
   },
+  {
+    config: 'playwright.html-continuation.config.ts',
+    fixtures: ['tests/fixtures/payload-acl', 'examples/pure-html'],
+  },
+  {
+    config: 'playwright.vue-continuation.config.ts',
+    fixtures: ['tests/fixtures/payload-acl', 'tests/fixtures/vue-host-deps'],
+  },
 ];
 
 /** What `ubuntu-latest` and `ubuntu-<version>` run: npm installs the packages that admit this. */
