@@ -250,8 +250,8 @@ describe('workflow contracts', () => {
     {
       label: 'a fragment ladder that drops its floor',
       file: 'ci.yml',
-      original: "astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2']",
-      replacement: "astro: ['4.16.19', '5.18.2', '6.4.8', '7.3.2']",
+      original: "astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4']",
+      replacement: "astro: ['4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4']",
       violation: 'ci.yml job astro-fragment-versions does not run the reviewed matrix',
     },
     {
@@ -552,6 +552,7 @@ describe('workflow contracts', () => {
       '5.18.2',
       '6.4.8',
       '7.3.2',
+      '7.4.4',
     ]);
     expect(matrixValues(ci, 'lint', 'node')).toEqual([]);
   });

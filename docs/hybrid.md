@@ -159,9 +159,9 @@ on 2026-09-27 and [ADR 0021](architecture/0021-fragment-islands-hydrate-from-the
 on 2026-09-28. The specs named below are what runs today. Three jobs run from
 the package archive on every push, in Chromium: base integration on Astro
 4.0.0, fragment islands on 4.16.19, and fragment rendering with page-owned
-resources on 4.9.0, 4.16.19, 5.18.2, 6.4.8 and 7.3.2. The other engines, the
-islands on 7.3.2, verified React context and page ownership are run by hand
-([Astro peer floors](testing.md#astro-peer-floors)).
+resources on 4.9.0, 4.16.19, 5.18.2, 6.4.8, 7.3.2 and 7.4.4. The other
+engines, the islands on 7.3.2, verified React context and page ownership
+are run by hand ([Astro peer floors](testing.md#astro-peer-floors)).
 
 A successful isolated container render does not register the component's CSS
 with the page. On the measured Astro 7.3.2 production path, a component imported

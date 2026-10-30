@@ -23,7 +23,7 @@ describe('Astro React resource selection', () => {
     },
   );
 
-  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8'])(
+  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.4'])(
     'does not infer React recipe support for %s',
     (version) => {
       expect(() => astroResourceRenderer(version, 'react-server')).toThrow(

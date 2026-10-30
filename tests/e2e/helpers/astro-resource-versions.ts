@@ -49,7 +49,7 @@ export function astroResourceVersion(
       artifactRoot: 'test-results/hardening/h05-astro-resources',
     };
   }
-  if (!['4.9.0', '4.16.19', '5.18.2', '6.4.8'].includes(version)) {
+  if (!['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.4'].includes(version)) {
     throw new Error('Unreviewed Astro resource version: ' + version);
   }
   return {

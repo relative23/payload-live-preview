@@ -26,12 +26,15 @@ describe('native Astro island characterization', () => {
     });
     expect(astroResourceRenderer('4.16.19', 'react-islands')).toBe('react-islands');
   });
-  it.each(['4.9.0', '5.18.2', '6.4.8'])('refuses unreviewed island mode on %s', (version) => {
-    expect(() => astroResourceVersion(version, 'react-islands')).toThrow(
-      'Unreviewed Astro React version',
-    );
-    expect(() => astroResourceRenderer(version, 'react-islands')).toThrow(
-      'Unreviewed Astro React version',
-    );
-  });
+  it.each(['4.9.0', '5.18.2', '6.4.8', '7.4.4'])(
+    'refuses unreviewed island mode on %s',
+    (version) => {
+      expect(() => astroResourceVersion(version, 'react-islands')).toThrow(
+        'Unreviewed Astro React version',
+      );
+      expect(() => astroResourceRenderer(version, 'react-islands')).toThrow(
+        'Unreviewed Astro React version',
+      );
+    },
+  );
 });

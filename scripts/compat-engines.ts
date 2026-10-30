@@ -87,6 +87,7 @@ export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
         '5.18.2': 'tests/fixtures/astro-resource-versions/5.18.2',
         '6.4.8': 'tests/fixtures/astro-resource-versions/6.4.8',
         '7.3.2': 'tests/fixtures/astro-resource-deps',
+        '7.4.4': 'tests/fixtures/astro-resource-versions/7.4.4',
       },
     },
   },

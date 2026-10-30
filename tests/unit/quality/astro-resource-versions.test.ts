@@ -22,7 +22,7 @@ describe('Astro resource version selection', () => {
     });
   });
 
-  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8'])(
+  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.4'])(
     'pins %s and its strict native build',
     (version) => {
       const selected = astroResourceVersion(version);
