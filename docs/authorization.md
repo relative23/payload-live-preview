@@ -31,6 +31,11 @@ The editor's own Payload session. The site forwards exactly one cookie
 (`payload-token` by default) to `GET <serverURL>/api/<usersSlug>/me?depth=0`
 and authorizes when a user of that collection comes back: `subject` is the
 user id, `payloadHeaders` carries the cookie, a draft read runs as the editor.
+Authorized means signed in as a user of that collection, not allowed to read
+drafts: the strategy checks no role. A draft read through `definePreview()`
+sends that cookie to Payload's REST API, so the collection's `read` access
+decides what comes back; a page that reads drafts another way, such as the
+Local API, applies the same access itself.
 Payload side: the ordinary preview URL from `livePreview()` in
 `payload-live-preview/plugin`, or from the lower-level `buildLivePreviewUrl()`
 in `payload-live-preview/payload`; the cookie travels with the iframe request
@@ -154,7 +159,8 @@ as `headers` — a server-side credential of your own, never one from the reques
 
 Your own check, for SSO or edge authentication. `verify` returns claims
 (`subject`, `expiresAt` in Unix ms, `scope`, `payloadHeaders`) or `null`
-(`'invalid'`); a throw is `'unavailable'`, a passed `expiresAt` `'expired'`:
+(`'invalid'`); a throw is `'unavailable'`, a passed `expiresAt` `'expired'`.
+What `verify` accepts is authorized; the package checks nothing beyond it:
 
 ```ts
 authorizePreview: (request) =>

@@ -558,14 +558,24 @@ export const authorizePreview = (request: PreviewAuthorizationRequest) =>
       if (cookie === null) return null;
       const payload = await getPayload({ config });
       const { user } = await payload.auth({ headers: new Headers({ cookie }) });
-      return user === null ? null : { subject: String(user.id) };
+      // `auth()` answers for every auth collection: a signed-in customer is not an editor.
+      if (user === null || user.collection !== 'users') return null;
+      return { subject: String(user.id) };
     },
   });
 ```
 
-It returns no `payloadHeaders`, so a draft read through `definePreview()`
-carries no credential; a page in the same app can read the draft through the
-Local API instead.
+`payload.auth()` returns a user of any auth collection, with its slug in
+`user.collection` (Payload 3.92.1, `auth/strategies/jwt.js`), so the check
+keeps the preview to the admin's collection; add a role check when not every
+user there may see drafts. The verifier returns no `payloadHeaders`, so a
+draft read through `definePreview()` carries no credential. A page in the same
+app that reads the draft through the Local API passes the user and
+`overrideAccess: false`, as in
+`payload.find({ collection, draft: true, user, overrideAccess: false })`:
+the Local API's default is `overrideAccess: true`, which skips the
+collection's access control and shows the draft to whoever the verifier
+admitted.
 
 ## Example
 
