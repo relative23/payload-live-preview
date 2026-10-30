@@ -5,7 +5,7 @@
 
 import { injectIntoHead } from '@adapters/shared/html-inject';
 import { createPreviewPolicy, type PreviewPolicy } from '@adapters/shared/policy';
-import { bindDecisionHooks, withCspHeader } from '@adapters/shared/response';
+import { bindDecisionHooks, changesResponse, withCspHeader } from '@adapters/shared/response';
 import { exposeDecision, type LivePreviewLocalsSink } from '@adapters/shared/locals';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PageFacts } from '@adapters/shared/policy-options';
@@ -72,7 +72,7 @@ export function livePreviewHandle(options: LivePreviewSvelteKitOptions = {}): Sv
       event,
       transform !== undefined ? { transformPageChunk: transform } : {},
     );
-    if (!decision.inject && decision.cspMode === false) return response;
+    if (!changesResponse(decision)) return response;
     return withCspHeader(response, policy, decision, nonce);
   };
 }
