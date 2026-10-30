@@ -12,10 +12,11 @@ function gh(args) {
 }
 
 /**
- * @param {{ label: string; labelDescription: string; title: string; body: string; log: string }} issue
+ * `pin` puts a new issue at the top of the issue list, for one that stands for a whole lane.
+ * @param {{ label: string; labelDescription: string; title: string; body: string; log: string; pin?: boolean }} issue
  * @returns {void}
  */
-export function fileIssue({ label, labelDescription, title, body, log }) {
+export function fileIssue({ label, labelDescription, title, body, log, pin = false }) {
   const existing = gh([
     'issue',
     'list',
@@ -40,6 +41,7 @@ export function fileIssue({ label, labelDescription, title, body, log }) {
     }
     const url = gh(['issue', 'create', '--title', title, '--body', body, '--label', label]);
     process.stdout.write(`[${log}] filed ${url}\n`);
+    if (pin) gh(['issue', 'pin', url]);
     return;
   }
   gh(['issue', 'comment', existing, '--body', body]);

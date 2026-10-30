@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 527,
-    "suites": 1013,
-    "tests": 4592,
+    "files": 528,
+    "suites": 1016,
+    "tests": 4601,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 430,
-      "suites": 903,
-      "tests": 4190,
+      "files": 431,
+      "suites": 906,
+      "tests": 4199,
       "benchmarks": 0
     }
   },
@@ -2621,8 +2621,8 @@
     {
       "path": "tests/unit/latest-watch-report.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 5,
+      "suites": 4,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2896,6 +2896,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/prerelease-channel.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 6,
       "benchmarks": 0
     },
     {

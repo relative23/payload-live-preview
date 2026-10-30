@@ -8,4 +8,5 @@ export function fileIssue(issue: {
   readonly title: string;
   readonly body: string;
   readonly log: string;
+  readonly pin?: boolean;
 }): void;
