@@ -22,9 +22,9 @@
     "examples/astro-hybrid/src/preview.ts": "5dcb260a5383fa6c54b2d2f9041607e2f431ea0a6cab3f7489ca48dcd66f7b2f",
     "examples/astro-hybrid/tsconfig.json": "974b0a3b37e52f3649d9df63e72e374794e9e797c8ae61eca4812f844406f7ef",
     "examples/shared/fragment-lifetime-probe.ts": "3490df5f3818d9d02e2f9066feabb6b31f00405175ba340ef02c6def1edf0bc9",
-    "playwright.config.ts": "715a83a82cbec342ce844d3fa4cf0c129611be85571c7842568d3b00673b9a7c",
+    "playwright.config.ts": "d0dc2fc85d0e9b88f0c867832bb3085b1e52a33309a71312e18792bdf2595d99",
     "playwright.fragment-lifetime.config.ts": "c2dac52bfb8d24ecc72b8e2fa81c343be404baa85601254c5a6f9b023899a071",
-    "playwright.real-payload.config.ts": "db81a7c9a1ad982f2a1731ffb5d2121a6dd04080f49ed2b127a5656f82278e54"
+    "playwright.real-payload.config.ts": "5575f26a275a64b535e9209f194cc6183a33f7e9def675bbbea4a02f427117b4"
   },
   "directories": ["examples/astro-hybrid"],
   "absentFiles": [],

@@ -1,0 +1,76 @@
+/**
+ * SvelteKit server hook for the live preview example.
+ *
+ * `livePreviewHandle` injects the inline runtime into the `<head>` of
+ * responses that carry preview intent, merges a `frame-ancestors` CSP so
+ * the admin may frame the page, and — since 1.1.0 — verifies that intent
+ * before doing either. The hook below uses the `signed-token` strategy: a
+ * request is a preview only if it carries a token bound to this site, this
+ * path and the next few minutes. Everything else is a public response,
+ * byte for byte.
+ *
+ * `defaults: 'v2'` implies `strict`: the handle refuses to start without the
+ * hook and requires https admin origins outside development; the example
+ * runs under `vite dev`, where http://localhost is allowed.
+ *
+ * Two handles, differing in one option. Everything is delivered inline except
+ * `/asset`, which carries the bootstrap and fetches the runtime from
+ * `src/routes/payload-live-preview/[file]` — so one dev server shows both
+ * deliveries, and the split is per route because a handle sees the request.
+ */
+import type { Handle } from '@sveltejs/kit/hooks';
+import {
+  livePreviewHandle,
+  type LivePreviewSvelteKitOptions,
+} from 'payload-live-preview/sveltekit';
+import { authorizePreviewRequest } from 'payload-live-preview';
+import {
+  PAYLOAD_SERVER_URL,
+  PREVIEW_ADMIN_ORIGIN,
+  PREVIEW_AUDIENCE,
+  PREVIEW_TOKEN_SECRET,
+} from '#lib/preview.server.js';
+
+const options = {
+  allowedOrigins: [PREVIEW_ADMIN_ORIGIN],
+  debug: true,
+  debounceMs: 25,
+  // Reveal the edited section. `/reveal` is this fixture's row in
+  // reveal.spec.ts; the test mints the token for that route itself, since
+  // the mock admin only mints for the routes on its allowlist.
+  revealEditedField: true,
+  // Two documents may share a field name on one page (`/owners`); an update
+  // names its document and patches only that one.
+  scopeBindingsByOwner: true,
+  // Server-rendered boundaries: /hybrid marks one, every other route has none
+  // and is patched as before. Exercised by sveltekit-fragment.spec.ts.
+  fragments: { endpoint: '/payload/fragment' },
+  // Every 2.0 default that exists today (ADR 0007): strict configuration,
+  // query-only intent, no referrer trust, updates only from the window that
+  // framed or opened the page, unchanged bindings skipped.
+  defaults: 'v2',
+  // Against a real Payload admin (tests/real-payload) the editor's own session
+  // reaches this site, so the documented `payload-session` strategy applies.
+  authorizePreview: (request: Request) =>
+    authorizePreviewRequest(
+      request,
+      PAYLOAD_SERVER_URL === undefined
+        ? { type: 'signed-token', secret: PREVIEW_TOKEN_SECRET, audience: PREVIEW_AUDIENCE }
+        : { type: 'payload-session', serverURL: PAYLOAD_SERVER_URL },
+    ),
+  // A real admin posts a relationship as an id; the runtime populates it from Payload's REST API
+  // as the editor, so a binding on the populated path (`author.email`) has something to show.
+  ...(PAYLOAD_SERVER_URL === undefined ? {} : { serverURL: PAYLOAD_SERVER_URL, mergeDepth: 1 }),
+} satisfies LivePreviewSvelteKitOptions;
+
+export const assetOptions = { ...options, delivery: 'asset' } as const;
+
+const inline = livePreviewHandle(options);
+const asset = livePreviewHandle(assetOptions);
+
+export const handle: Handle = (input) => {
+  // What an app's own hook puts on a request (a session, a locale, a client):
+  // the page's load reads it, and so do the fragment's props (ADR 0029).
+  input.event.locals.edition = 'Preview edition';
+  return input.event.url.pathname.startsWith('/asset') ? asset(input) : inline(input);
+};

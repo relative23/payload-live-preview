@@ -140,7 +140,7 @@ export const CI: WorkflowSpec = {
         CHECKOUT,
         SETUP_NODE,
         NPM_VERSION,
-        ...[...CI_FIXTURES, 'payload-backend'].map(fixtureAudit),
+        ...[...CI_FIXTURES, 'sveltekit3-payload', 'payload-backend'].map(fixtureAudit),
       ],
     },
     build: callBuild,
@@ -153,6 +153,42 @@ export const CI: WorkflowSpec = {
         DOWNLOAD_DIST,
         ...CI_FIXTURES.map(fixtureInstall),
         { run: 'npx playwright test --project=${{ matrix.browser }}' },
+      ],
+    },
+    // The SvelteKit 3 twin of the SvelteKit example: the SvelteKit-only files whole, the shared
+    // files' SvelteKit cases and the byte-for-byte public response, which is the SvelteKit fixture's.
+    // The public-response rows need the runtime the Astro fixture serves, which the job does not start.
+    sveltekit3: {
+      needs: ['build'],
+      matrix: { browser: [...BROWSERS] },
+      steps: [
+        ...FIXTURE_SETUP,
+        { run: 'bash scripts/ci-install-browser.sh ${{ matrix.browser }}' },
+        DOWNLOAD_DIST,
+        fixtureInstall('sveltekit3-payload'),
+        {
+          run: [
+            'npx playwright test --project=${{ matrix.browser }}',
+            'tests/e2e/specs/owner-scoping.spec.ts',
+            'tests/e2e/specs/sveltekit-asset-delivery.spec.ts',
+            'tests/e2e/specs/sveltekit-fragment.spec.ts',
+            'tests/e2e/specs/sveltekit-live-preview.spec.ts',
+            'tests/e2e/specs/sveltekit-owner-fragments.spec.ts',
+          ].join(' '),
+          env: { PLP_E2E_SERVERS: 'sveltekit', PLP_SVELTEKIT_FIXTURE: 'sveltekit3-payload' },
+        },
+        {
+          run: [
+            'npx playwright test --project=${{ matrix.browser }} -g "[Ss]velte[Kk]it|byte for byte"',
+            '--grep-invert "public response carries"',
+            'tests/e2e/specs/auto-bind-hit-rate.spec.ts',
+            'tests/e2e/specs/fragment-request-bounds.spec.ts',
+            'tests/e2e/specs/navigation-lifecycle-per-framework.spec.ts',
+            'tests/e2e/specs/public-response.spec.ts',
+            'tests/e2e/specs/reveal.spec.ts',
+          ].join(' '),
+          env: { PLP_E2E_SERVERS: 'sveltekit', PLP_SVELTEKIT_FIXTURE: 'sveltekit3-payload' },
+        },
       ],
     },
     'astro-matrix': {
@@ -303,6 +339,8 @@ export const CI: WorkflowSpec = {
           'astro-session',
           'nextjs-autologin',
           'create',
+          'sveltekit3',
+          'sveltekit3-create',
         ],
         browser: [...BROWSERS],
       },
@@ -314,7 +352,7 @@ export const CI: WorkflowSpec = {
           run: 'bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"',
           env: {
             EXAMPLE:
-              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload"}\')[matrix.target] }}',
+              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","sveltekit3":"sveltekit3-payload","sveltekit3-create":"sveltekit3-payload"}\')[matrix.target] }}',
           },
         },
         fixtureInstall('payload-backend'),

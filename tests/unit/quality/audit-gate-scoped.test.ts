@@ -383,7 +383,7 @@ describe('scoped audit register', () => {
     );
   });
 
-  it('keeps all ten fixture audits and the Root audit in CI', () => {
+  it('keeps all eleven fixture audits and the Root audit in CI', () => {
     const workflow = parseWorkflow(
       readFileSync(resolve(process.cwd(), '.github/workflows/ci.yml'), 'utf8'),
     );
@@ -392,7 +392,7 @@ describe('scoped audit register', () => {
       jobs['fixture-audit']?.steps
         .flatMap(({ run }) => (run === undefined ? [] : [run]))
         .filter((run) => run.startsWith('node scripts/audit-gate.ts')) ?? [];
-    expect(fixtureCommands).toHaveLength(10);
+    expect(fixtureCommands).toHaveLength(11);
     expect(new Set(fixtureCommands.map((command) => command.split('--prefix ')[1]))).toEqual(
       new Set(Object.keys(model.projects).filter((project) => project !== '.')),
     );

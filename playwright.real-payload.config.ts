@@ -9,6 +9,7 @@ const isCI = process.env['CI'] === 'true';
  * the editor's real session, the plain HTML example (`html`), the Next.js example
  * framed from an admin that keeps its autoLogin (`nextjs-autologin`), or the SvelteKit
  * example's collection pages framed from an admin with two more collections (`create`).
+ * `sveltekit3` and `sveltekit3-create` are those two SvelteKit targets on the SvelteKit 3 fixture.
  */
 const requested = process.env['PLP_REAL_PAYLOAD_TARGET'] ?? 'astro';
 /**
@@ -38,6 +39,11 @@ interface Surface {
 const SESSION_SURFACES: Record<string, Surface> = {
   nextjs: { port: '4474', directory: 'nextjs-payload', command: 'npx next dev --port 4474' },
   sveltekit: { port: '4475', directory: 'sveltekit-payload', command: 'npx vite dev --port 4475' },
+  sveltekit3: {
+    port: '4475',
+    directory: 'sveltekit3-payload',
+    command: 'npx vite dev --port 4475',
+  },
   nuxt: { port: '4476', directory: 'nuxt-payload', command: 'npx nuxt dev --port 4476' },
   // The Astro integration's middleware delivery under the strict default: the hook is
   // `payload-session`, in the module PLP_PAYLOAD_SERVER_URL makes astro.config.mjs name.
@@ -75,6 +81,12 @@ const SESSION_SURFACES: Record<string, Surface> = {
   create: {
     port: '4475',
     directory: 'sveltekit-payload',
+    command: 'npx vite dev --port 4475',
+    spec: 'create',
+  },
+  'sveltekit3-create': {
+    port: '4475',
+    directory: 'sveltekit3-payload',
     command: 'npx vite dev --port 4475',
     spec: 'create',
   },

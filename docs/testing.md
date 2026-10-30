@@ -367,7 +367,9 @@ What is proven about the Payload wire protocol, from the outside in:
    fixed string URL, and frames the SvelteKit example's pages for them: on the
    create screen neither has a preview toggle or frame, and after the first
    save the frame takes the editor's unsaved edits while REST reads show that
-   the collection kept only the save. CI runs every target on every
+   the collection kept only the save. The `sveltekit3` and `sveltekit3-create`
+   targets are the SvelteKit and `create` targets on the SvelteKit 3 example.
+   CI runs every target on every
    push: the Astro default in Chromium, the others in all three browsers, and
    the Next.js session target and its hook page once more in Chromium with
    Payload's CSRF list on. The Next.js, SvelteKit and Nuxt targets run their
@@ -424,7 +426,10 @@ three engines; the Astro
 4–7 peer range is wider than the single-major browser fixture and is backed
 by the `astro-matrix` job, and Next.js 15.5 by the `next-matrix` job, which
 installs it over the Next.js fixture and runs the development, webpack
-production and base-path suites in Chromium.
+production and base-path suites in Chromium. SvelteKit 3 has a fixture of its
+own, `examples/sveltekit3-payload`, the SvelteKit example migrated with
+`npx sv migrate sveltekit-3`; the `sveltekit3` job runs its SvelteKit specs
+in all three engines.
 
 ## Local release checks
 

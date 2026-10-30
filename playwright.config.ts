@@ -11,6 +11,15 @@ const astroPort = process.env['PLP_E2E_PORT'] ?? '4173';
  * Which fixture servers to start, e.g. `PLP_E2E_SERVERS=astro` for a job that
  * installs only the Astro fixture (the Astro matrix). Default: all four.
  */
+/**
+ * Which SvelteKit example serves port 4175: the SvelteKit 2 fixture, or with
+ * `PLP_SVELTEKIT_FIXTURE=sveltekit3-payload` its SvelteKit 3 twin. Any other
+ * value is refused before a server starts from an unreviewed directory.
+ */
+const svelteKitFixture = process.env['PLP_SVELTEKIT_FIXTURE'] ?? 'sveltekit-payload';
+if (svelteKitFixture !== 'sveltekit-payload' && svelteKitFixture !== 'sveltekit3-payload') {
+  throw new Error(`Unreviewed SvelteKit fixture: ${svelteKitFixture}`);
+}
 const servers = new Set(
   (
     process.env['PLP_E2E_SERVERS'] ??
@@ -85,7 +94,7 @@ const config: PlaywrightTestConfig = {
     },
     {
       name: 'sveltekit',
-      command: 'npm --prefix examples/sveltekit-payload run dev',
+      command: `npm --prefix examples/${svelteKitFixture} run dev`,
       url: 'http://localhost:4175/admin.html',
       reuseExistingServer: !isCI,
       timeout: 60_000,

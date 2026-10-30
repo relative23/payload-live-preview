@@ -1,0 +1,207 @@
+<!doctype html>
+<!--
+  Mock Payload admin - emulates the postMessage protocol so the demo
+  works without a real Payload backend. Served as a plain static file
+  (SvelteKit `static/`), mirroring examples/astro-payload's /admin page.
+
+  Visit /admin.html in dev mode and type into the inputs to see updates
+  flow into the iframe in real time. The exact same flow drives the
+  Playwright integration tests. Because the preview is loaded inside an
+  iframe, the request carries `Sec-Fetch-Dest: iframe` and the
+  livePreviewHandle hook injects the runtime - no ?preview=true needed.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mock Payload Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 1rem;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 1rem;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+      form {
+        display: grid;
+        gap: 0.75rem;
+        align-content: start;
+      }
+      label {
+        display: grid;
+        gap: 0.25rem;
+        font-size: 0.85rem;
+      }
+      input,
+      textarea {
+        font: inherit;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        min-height: 90vh;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+      }
+      h1 {
+        margin: 0 0 1rem;
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <form id="admin-form" data-testid="admin-form">
+      <h1>Mock Admin</h1>
+      <label>
+        Title
+        <input name="title" value="Hello from the demo" data-testid="title-input" />
+      </label>
+      <label>
+        Subtitle
+        <input
+          name="subtitle"
+          value="Type in the admin panel to see live updates."
+          data-testid="subtitle-input"
+        />
+      </label>
+      <label>
+        Hero image URL
+        <input
+          name="heroUrl"
+          value="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200"
+          data-testid="hero-url-input"
+        />
+      </label>
+      <label>
+        Count
+        <input name="count" type="number" value="12" data-testid="count-input" />
+      </label>
+      <label>
+        CTA label
+        <input name="ctaLabel" value="Visit Payload" data-testid="cta-label-input" />
+      </label>
+      <label>
+        CTA URL
+        <input name="ctaUrl" value="https://payloadcms.com" data-testid="cta-url-input" />
+      </label>
+      <label>
+        Tags (comma separated)
+        <input name="tags" value="sveltekit, payload, live-preview" data-testid="tags-input" />
+      </label>
+    </form>
+
+    <iframe id="preview" data-testid="preview-frame" title="Live preview"></iframe>
+
+    <script>
+      const PREVIEW_ORIGIN = window.location.origin;
+      const form = document.getElementById('admin-form');
+      const iframe = document.getElementById('preview');
+      // A real Payload admin gets the token from its `livePreview.url`
+      // callback; this fixture has no Payload, so it asks the example's own
+      // fixture endpoint. Without the token the page is a public response:
+      // no runtime, no bindings, nothing to preview.
+      // `?target=/owners` previews another route of this site (tests use it).
+      // The framed route comes out of this list, never out of the query: the
+      // parameter only selects an entry, so a crafted `?target=` has no path to
+      // `iframe.src` at all. A mock admin is the first integration a reader
+      // copies, so it models the check a real one needs.
+      const ROUTES = ['/', '/owners', '/owners-hybrid', '/asset', '/navigation'];
+      const requested = new URLSearchParams(window.location.search).get('target');
+      const target = ROUTES.find((route) => route === requested) ?? ROUTES[0];
+      const fixtureNow = new Date();
+      fetch(`/preview-token?path=${encodeURIComponent(target)}`)
+        .then((response) => response.text())
+        .then((token) => {
+          // `preview=true` is the intent signal `buildLivePreviewUrl` appends;
+          // the token rides alongside it and is what the hook verifies.
+          iframe.src = `${target}?preview=true&previewToken=${encodeURIComponent(token)}`;
+        });
+
+      function buildData() {
+        const fd = new FormData(form);
+        return {
+          title: String(fd.get('title') ?? ''),
+          subtitle: String(fd.get('subtitle') ?? ''),
+          hero: { url: String(fd.get('heroUrl') ?? ''), alt: 'Hero image' },
+          count: Number(fd.get('count') ?? 0),
+          publishedAt: fixtureNow.toISOString(),
+          tags: String(fd.get('tags') ?? '')
+            .split(',')
+            .map((t) => t.trim())
+            .filter((t) => t.length > 0),
+          ctaLabel: String(fd.get('ctaLabel') ?? ''),
+          ctaUrl: String(fd.get('ctaUrl') ?? ''),
+          body: {
+            root: {
+              children: [
+                {
+                  type: 'heading',
+                  tag: 'h2',
+                  children: [{ type: 'text', text: 'Rich text from Lexical' }],
+                },
+                {
+                  type: 'paragraph',
+                  children: [
+                    { type: 'text', text: 'Live preview rendered at ' },
+                    { type: 'text', text: fixtureNow.toLocaleTimeString(), format: 1 },
+                  ],
+                },
+              ],
+            },
+          },
+        };
+      }
+
+      let currentData = buildData();
+
+      function sendUpdate() {
+        const message = {
+          type: 'payload-live-preview',
+          data: currentData,
+          collectionSlug: 'pages',
+          locale: 'en',
+        };
+        document.dispatchEvent(
+          new CustomEvent('payload-live-preview:fixture-document', { detail: currentData }),
+        );
+        if (iframe.contentWindow) {
+          iframe.contentWindow.postMessage(message, PREVIEW_ORIGIN);
+        }
+      }
+
+      let pending = null;
+      form.addEventListener('input', () => {
+        currentData = buildData();
+        if (pending) clearTimeout(pending);
+        pending = setTimeout(sendUpdate, 16);
+      });
+
+      // Payload sends the document for the startup handshake, not every later
+      // ready signal. Matching that matters: navigation replay must be local.
+      // Messages from any other origin are ignored.
+      let answeredReady = false;
+      window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin) return;
+        const data = event.data;
+        if (!answeredReady && data && data.type === 'payload-live-preview' && data.ready === true) {
+          answeredReady = true;
+          sendUpdate();
+        }
+      });
+    </script>
+  </body>
+</html>
