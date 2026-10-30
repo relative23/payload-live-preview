@@ -1,6 +1,6 @@
 /** The reviewed shape of the release, benchmark and protocol-watch workflows. */
 
-import type { WorkflowSpec } from './workflow-contracts';
+import type { StepSpec, WorkflowSpec } from './workflow-contracts';
 import { RELEASE_BRANCHES } from './release-gate';
 import { BUILD, CI, CRITICAL_GATES, DEEP_QUALITY } from './workflow-expectations-ci';
 import {
@@ -343,6 +343,15 @@ const PROTOCOL_WATCH: WorkflowSpec = {
 };
 
 const LATEST_STATUS = 'Record what was installed and how the job ended';
+const LANES = { lane: ['latest', 'prerelease'] };
+/** Every step after the channel step: an entry with no channel above `latest` stops there. */
+const HAS_CHANNEL = "steps.channel.outputs.tag != ''";
+const HAS_HOOK_CHANNEL =
+  "steps.react.outputs.tag != '' || steps.vue.outputs.tag != '' || steps.svelte.outputs.tag != ''";
+const channelStep = (name: string): StepSpec => ({
+  run: `node scripts/prerelease-channel.ts ${name} \${{ matrix.lane }}`,
+});
+const PRERELEASE_SOFT = "${{ matrix.lane == 'prerelease' }}";
 const LATEST_WATCH: WorkflowSpec = {
   name: 'Latest Watch',
   // Read-only for the jobs that install published code; the report job alone writes issues.
@@ -350,24 +359,33 @@ const LATEST_WATCH: WorkflowSpec = {
   jobs: {
     hooks: {
       timeoutMinutes: 20,
+      continueOnError: PRERELEASE_SOFT,
+      matrix: LANES,
       steps: [
         { uses: 'actions/checkout', with: { 'persist-credentials': 'false' } },
         SETUP_NODE,
-        NPM_VERSION,
-        NPM_CI,
-        BUILD_RUNTIME,
+        channelStep('react'),
+        channelStep('vue'),
+        channelStep('svelte'),
+        { ...NPM_VERSION, condition: HAS_HOOK_CHANNEL },
+        { ...NPM_CI, condition: HAS_HOOK_CHANNEL },
+        { ...BUILD_RUNTIME, condition: HAS_HOOK_CHANNEL },
         {
-          name: "Install the latest hooks' peers over the lockfile, without saving them",
+          name: "Install the hooks' peers over the lockfile, without saving them",
           run:
-            'npm install --no-save --no-audit --no-fund --ignore-scripts react@latest ' +
-            'react-dom@latest @types/react@latest @types/react-dom@latest vue@latest svelte@latest',
+            'npm install --no-save --no-audit --no-fund --ignore-scripts ' +
+            '"react@${{ steps.react.outputs.install }}" ' +
+            '"react-dom@${{ steps.react.outputs.install }}" @types/react@latest ' +
+            '@types/react-dom@latest "vue@${{ steps.vue.outputs.install }}" ' +
+            '"svelte@${{ steps.svelte.outputs.install }}"',
+          condition: HAS_HOOK_CHANNEL,
         },
         {
           name: LATEST_STATUS,
           run: [
             'mkdir -p latest-watch',
             'npm ls --json --depth=0 react react-dom vue svelte > latest-watch/npm-ls.json || true',
-            `echo '{"integration":"hooks","outcome":"\${{ job.status }}"}' > latest-watch/result.json`,
+            `echo '{"integration":"hooks","lane":"\${{ matrix.lane }}","channel":"\${{ steps.react.outputs.tag }} \${{ steps.vue.outputs.tag }} \${{ steps.svelte.outputs.tag }}","outcome":"\${{ (steps.react.outputs.tag == '' && steps.vue.outputs.tag == '' && steps.svelte.outputs.tag == '') && 'none' || job.status }}"}' > latest-watch/result.json`,
           ].join('\n'),
           condition: 'always()',
           operators: true,
@@ -375,25 +393,32 @@ const LATEST_WATCH: WorkflowSpec = {
         {
           uses: 'actions/upload-artifact',
           condition: 'always()',
-          with: { name: 'latest-watch-hooks', path: 'latest-watch/' },
+          with: { name: 'latest-watch-hooks-${{ matrix.lane }}', path: 'latest-watch/' },
         },
       ],
     },
     frameworks: {
       timeoutMinutes: 30,
+      continueOnError: PRERELEASE_SOFT,
       steps: [
         { uses: 'actions/checkout', with: { 'persist-credentials': 'false' } },
         FIXTURE_CACHE,
-        NPM_VERSION,
-        NPM_CI,
-        { run: 'bash scripts/ci-install-browser.sh chromium' },
-        { run: 'npm run build' },
-        { run: 'bash scripts/ci-install-fixture.sh "examples/${{ matrix.fixture }}"' },
+        { run: 'node scripts/prerelease-channel.ts "${{ matrix.main }}" ${{ matrix.lane }}' },
+        { ...NPM_VERSION, condition: HAS_CHANNEL },
+        { ...NPM_CI, condition: HAS_CHANNEL },
+        { run: 'bash scripts/ci-install-browser.sh chromium', condition: HAS_CHANNEL },
+        { run: 'npm run build', condition: HAS_CHANNEL },
         {
-          name: "Install the integration's latest packages over the fixture",
+          run: 'bash scripts/ci-install-fixture.sh "examples/${{ matrix.fixture }}"',
+          condition: HAS_CHANNEL,
+        },
+        {
+          name: "Install the integration's channel over the fixture",
           run:
             'npm --prefix "examples/${{ matrix.fixture }}" install --no-audit --no-fund ' +
-            '--no-package-lock --ignore-scripts ${{ matrix.packages }}',
+            '--no-package-lock --ignore-scripts ' +
+            '"${{ matrix.main }}@${{ steps.channel.outputs.tag }}" ${{ matrix.peers }}',
+          condition: HAS_CHANNEL,
         },
         {
           run: 'npx playwright test --project=chromium ${{ matrix.specs }}',
@@ -402,21 +427,23 @@ const LATEST_WATCH: WorkflowSpec = {
             PLP_SVELTEKIT_FIXTURE: '${{ matrix.sveltekit-fixture }}',
             PLP_NUXT_FIXTURE: '${{ matrix.nuxt-fixture }}',
           },
+          condition: HAS_CHANNEL,
         },
-        fixtureInstall('payload-backend'),
+        { ...fixtureInstall('payload-backend'), condition: HAS_CHANNEL },
         {
           run: 'npm run test:e2e:real-payload',
           env: {
             PLP_REAL_PAYLOAD_TARGET: '${{ matrix.real-admin }}',
             PLP_REAL_PAYLOAD_BROWSERS: 'chromium',
           },
+          condition: HAS_CHANNEL,
         },
         {
           name: LATEST_STATUS,
           run: [
             'mkdir -p latest-watch',
             'npm --prefix "examples/${{ matrix.fixture }}" ls --json --depth=0 > latest-watch/npm-ls.json || true',
-            `echo '{"integration":"\${{ matrix.integration }}","outcome":"\${{ job.status }}"}' > latest-watch/result.json`,
+            `echo '{"integration":"\${{ matrix.integration }}","lane":"\${{ matrix.lane }}","channel":"\${{ steps.channel.outputs.tag }}","outcome":"\${{ steps.channel.outputs.tag == '' && 'none' || job.status }}"}' > latest-watch/result.json`,
           ].join('\n'),
           condition: 'always()',
           operators: true,
@@ -424,7 +451,10 @@ const LATEST_WATCH: WorkflowSpec = {
         {
           uses: 'actions/upload-artifact',
           condition: 'always()',
-          with: { name: 'latest-watch-${{ matrix.integration }}', path: 'latest-watch/' },
+          with: {
+            name: 'latest-watch-${{ matrix.integration }}-${{ matrix.lane }}',
+            path: 'latest-watch/',
+          },
         },
       ],
     },

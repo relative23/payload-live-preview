@@ -426,6 +426,13 @@ What is proven about the Payload wire protocol, from the outside in:
    leaves its result and `npm ls` as an artifact, and a report job that
    installs nothing files an issue per integration that failed
    (`scripts/report-latest-watch.ts`). A red run is news, not a release gate.
+   Every entry runs a second time on a pre-release channel, which
+   `scripts/prerelease-channel.ts` picks: one of `alpha`, `beta`, `rc`,
+   `canary` and `next` whose version is above `latest`, and of those the one
+   published last. A canary of a version already released, a channel that
+   stopped and an internal tag are therefore never installed, and an entry
+   with no such channel stops after asking. Those entries may fail without
+   failing the run, and they share one pinned issue.
 
 Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
 quickly, tier 3 pins the exact wire shape Payload emits, tier 4 catches

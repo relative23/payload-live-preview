@@ -5,10 +5,15 @@ name: Latest Watch
 # `latest` dist-tag, with the peers that release asks for, over its fixture without the
 # lockfile, and runs that integration's browser specs and a real-admin smoke against it.
 #
+# Each entry runs twice: on `latest`, and on the pre-release channel `scripts/prerelease-channel.ts`
+# picks (a usual channel above `latest`, the one published last). An entry with no such channel
+# today stops after asking. Pre-release entries may fail without failing the run: they are early
+# warning, and they share one pinned issue rather than one each.
+#
 # The watch jobs run published install-time code, so they get read-only permissions, keep no
 # checkout credentials and install with `--ignore-scripts`. Each leaves a result and its
-# `npm ls` as an artifact; the report job, which installs nothing, files an issue per
-# integration that failed. Not a release gate (yet): a red run is news, not a broken build.
+# `npm ls` as an artifact; the report job, which installs nothing, files the issues. Not a
+# release gate (yet): a red run is news, not a broken build.
 
 on:
   schedule:
@@ -20,9 +25,14 @@ permissions:
 
 jobs:
   hooks:
-    name: Latest hooks (React, Vue, Svelte)
+    name: Hooks on ${{ matrix.lane }} (React, Vue, Svelte)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    continue-on-error: ${{ matrix.lane == 'prerelease' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [latest, prerelease]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -31,38 +41,54 @@ jobs:
         with:
           node-version: 22.23.4
           cache: npm
+      - id: react
+        run: node scripts/prerelease-channel.ts react ${{ matrix.lane }}
+      - id: vue
+        run: node scripts/prerelease-channel.ts vue ${{ matrix.lane }}
+      - id: svelte
+        run: node scripts/prerelease-channel.ts svelte ${{ matrix.lane }}
       - name: Use repository npm version
+        if: steps.react.outputs.tag != '' || steps.vue.outputs.tag != '' || steps.svelte.outputs.tag != ''
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
-      - run: npm ci
-      - run: npm run build:runtime
-      - name: Install the latest hooks' peers over the lockfile, without saving them
-        run: npm install --no-save --no-audit --no-fund --ignore-scripts react@latest react-dom@latest @types/react@latest @types/react-dom@latest vue@latest svelte@latest
+      - if: steps.react.outputs.tag != '' || steps.vue.outputs.tag != '' || steps.svelte.outputs.tag != ''
+        run: npm ci
+      - if: steps.react.outputs.tag != '' || steps.vue.outputs.tag != '' || steps.svelte.outputs.tag != ''
+        run: npm run build:runtime
+      # A package with no channel above latest stays on latest beside the one that has one.
+      - name: Install the hooks' peers over the lockfile, without saving them
+        if: steps.react.outputs.tag != '' || steps.vue.outputs.tag != '' || steps.svelte.outputs.tag != ''
+        run: npm install --no-save --no-audit --no-fund --ignore-scripts "react@${{ steps.react.outputs.install }}" "react-dom@${{ steps.react.outputs.install }}" @types/react@latest @types/react-dom@latest "vue@${{ steps.vue.outputs.install }}" "svelte@${{ steps.svelte.outputs.install }}"
       - name: Run the hook, route-refresh and fragment suites
+        if: steps.react.outputs.tag != '' || steps.vue.outputs.tag != '' || steps.svelte.outputs.tag != ''
         run: npx vitest run tests/unit/adapters/react-hook.test.tsx tests/unit/adapters/react-route-refresh.test.tsx tests/unit/adapters/nextjs-fragments.test.ts tests/unit/adapters/vue-composable.test.ts tests/unit/core/hydration-vue.test.ts tests/unit/adapters/nuxt-fragments.test.ts tests/unit/adapters/sveltekit-fragments-real.test.ts tests/unit/adapters/sveltekit-fragments.test.ts
       - name: Record what was installed and how the job ended
         if: always()
         run: |
           mkdir -p latest-watch
           npm ls --json --depth=0 react react-dom vue svelte > latest-watch/npm-ls.json || true
-          echo '{"integration":"hooks","outcome":"${{ job.status }}"}' > latest-watch/result.json
+          echo '{"integration":"hooks","lane":"${{ matrix.lane }}","channel":"${{ steps.react.outputs.tag }} ${{ steps.vue.outputs.tag }} ${{ steps.svelte.outputs.tag }}","outcome":"${{ (steps.react.outputs.tag == '' && steps.vue.outputs.tag == '' && steps.svelte.outputs.tag == '') && 'none' || job.status }}"}' > latest-watch/result.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: latest-watch-hooks
+          name: latest-watch-hooks-${{ matrix.lane }}
           path: latest-watch/
           retention-days: 14
 
   frameworks:
-    name: Latest ${{ matrix.integration }}
+    name: ${{ matrix.integration }} on ${{ matrix.lane }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    continue-on-error: ${{ matrix.lane == 'prerelease' }}
     strategy:
       fail-fast: false
       matrix:
+        lane: [latest, prerelease]
+        integration: [astro, next, sveltekit, nuxt]
         include:
           - integration: astro
             fixture: astro-payload
-            packages: astro@latest
+            main: astro
+            peers: ''
             servers: astro
             sveltekit-fixture: sveltekit-payload
             nuxt-fixture: nuxt-payload
@@ -70,7 +96,8 @@ jobs:
             real-admin: astro
           - integration: next
             fixture: nextjs-payload
-            packages: next@latest react@latest react-dom@latest
+            main: next
+            peers: react@latest react-dom@latest
             servers: nextjs
             sveltekit-fixture: sveltekit-payload
             nuxt-fixture: nuxt-payload
@@ -78,7 +105,8 @@ jobs:
             real-admin: nextjs
           - integration: sveltekit
             fixture: sveltekit3-payload
-            packages: '@sveltejs/kit@latest @sveltejs/adapter-node@latest @sveltejs/adapter-auto@latest @sveltejs/vite-plugin-svelte@latest svelte@latest vite@latest'
+            main: '@sveltejs/kit'
+            peers: '@sveltejs/adapter-node@latest @sveltejs/adapter-auto@latest @sveltejs/vite-plugin-svelte@latest svelte@latest vite@latest'
             servers: sveltekit
             sveltekit-fixture: sveltekit3-payload
             nuxt-fixture: nuxt-payload
@@ -86,7 +114,8 @@ jobs:
             real-admin: sveltekit3
           - integration: nuxt
             fixture: nuxt4-payload
-            packages: nuxt@latest vue@latest @vitejs/plugin-vue@latest
+            main: nuxt
+            peers: vue@latest @vitejs/plugin-vue@latest
             servers: nuxt
             sveltekit-fixture: sveltekit-payload
             nuxt-fixture: nuxt4-payload
@@ -103,25 +132,36 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             examples/*/package-lock.json
+      - id: channel
+        run: node scripts/prerelease-channel.ts "${{ matrix.main }}" ${{ matrix.lane }}
       - name: Use repository npm version
+        if: steps.channel.outputs.tag != ''
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
-      - run: npm ci
-      - run: bash scripts/ci-install-browser.sh chromium
+      - if: steps.channel.outputs.tag != ''
+        run: npm ci
+      - if: steps.channel.outputs.tag != ''
+        run: bash scripts/ci-install-browser.sh chromium
       # No build job to download from in a scheduled workflow, so the package the fixtures
       # install is built here.
-      - run: npm run build
-      - run: bash scripts/ci-install-fixture.sh "examples/${{ matrix.fixture }}"
+      - if: steps.channel.outputs.tag != ''
+        run: npm run build
+      - if: steps.channel.outputs.tag != ''
+        run: bash scripts/ci-install-fixture.sh "examples/${{ matrix.fixture }}"
       # `--no-package-lock`: the lock pins the whole tree, and a release whose peers moved
       # would be an ERESOLVE before a single assertion ran (as in protocol-watch.yml).
-      - name: Install the integration's latest packages over the fixture
-        run: npm --prefix "examples/${{ matrix.fixture }}" install --no-audit --no-fund --no-package-lock --ignore-scripts ${{ matrix.packages }}
-      - env:
+      - name: Install the integration's channel over the fixture
+        if: steps.channel.outputs.tag != ''
+        run: npm --prefix "examples/${{ matrix.fixture }}" install --no-audit --no-fund --no-package-lock --ignore-scripts "${{ matrix.main }}@${{ steps.channel.outputs.tag }}" ${{ matrix.peers }}
+      - if: steps.channel.outputs.tag != ''
+        env:
           PLP_E2E_SERVERS: ${{ matrix.servers }}
           PLP_SVELTEKIT_FIXTURE: ${{ matrix.sveltekit-fixture }}
           PLP_NUXT_FIXTURE: ${{ matrix.nuxt-fixture }}
         run: npx playwright test --project=chromium ${{ matrix.specs }}
-      - run: bash scripts/ci-install-fixture.sh examples/payload-backend
-      - env:
+      - if: steps.channel.outputs.tag != ''
+        run: bash scripts/ci-install-fixture.sh examples/payload-backend
+      - if: steps.channel.outputs.tag != ''
+        env:
           PLP_REAL_PAYLOAD_TARGET: ${{ matrix.real-admin }}
           PLP_REAL_PAYLOAD_BROWSERS: chromium
         run: npm run test:e2e:real-payload
@@ -130,17 +170,17 @@ jobs:
         run: |
           mkdir -p latest-watch
           npm --prefix "examples/${{ matrix.fixture }}" ls --json --depth=0 > latest-watch/npm-ls.json || true
-          echo '{"integration":"${{ matrix.integration }}","outcome":"${{ job.status }}"}' > latest-watch/result.json
+          echo '{"integration":"${{ matrix.integration }}","lane":"${{ matrix.lane }}","channel":"${{ steps.channel.outputs.tag }}","outcome":"${{ steps.channel.outputs.tag == '' && 'none' || job.status }}"}' > latest-watch/result.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: latest-watch-${{ matrix.integration }}
+          name: latest-watch-${{ matrix.integration }}-${{ matrix.lane }}
           path: latest-watch/
           retention-days: 14
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
-          name: playwright-report-latest-${{ matrix.integration }}
+          name: playwright-report-${{ matrix.integration }}-${{ matrix.lane }}
           path: playwright-report/
           retention-days: 7
 

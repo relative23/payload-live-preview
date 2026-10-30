@@ -2,7 +2,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { issueBody, issueTitle, readResults } from '../../scripts/report-latest-watch';
+import {
+  PRERELEASE_TITLE,
+  issueBody,
+  issueTitle,
+  issuesFor,
+  readResults,
+  type LatestResult,
+} from '../../scripts/report-latest-watch';
 import { WORKFLOW_EXPECTATIONS } from '../../scripts/workflow-expectations';
 
 /**
@@ -28,6 +35,10 @@ function artifacts(entries: Record<string, { result: unknown; ls?: unknown }>): 
   return root;
 }
 
+function result(partial: Partial<LatestResult> & { integration: string }): LatestResult {
+  return { lane: 'latest', channel: 'latest', outcome: 'failure', versions: {}, ...partial };
+}
+
 afterEach(() => {
   for (const folder of folders.splice(0)) rmSync(folder, { recursive: true, force: true });
 });
@@ -35,32 +46,42 @@ afterEach(() => {
 describe('what the report job reads', () => {
   it('reads one result per artifact folder, with the versions npm resolved', () => {
     const root = artifacts({
-      'latest-watch-nuxt': {
-        result: { integration: 'nuxt', outcome: 'failure' },
+      'latest-watch-nuxt-latest': {
+        result: { integration: 'nuxt', lane: 'latest', channel: 'latest', outcome: 'failure' },
         ls: { dependencies: { nuxt: { version: '4.7.0' }, vue: { version: '3.6.0' }, broken: {} } },
       },
-      'latest-watch-hooks': { result: { integration: 'hooks', outcome: 'success' } },
+      'latest-watch-hooks-prerelease': {
+        result: { integration: 'hooks', lane: 'prerelease', channel: '  rc ', outcome: 'success' },
+      },
     });
 
     expect(readResults(root)).toEqual([
-      { integration: 'hooks', outcome: 'success', versions: {} },
-      { integration: 'nuxt', outcome: 'failure', versions: { nuxt: '4.7.0', vue: '3.6.0' } },
+      { integration: 'hooks', lane: 'prerelease', channel: 'rc', outcome: 'success', versions: {} },
+      {
+        integration: 'nuxt',
+        lane: 'latest',
+        channel: 'latest',
+        outcome: 'failure',
+        versions: { nuxt: '4.7.0', vue: '3.6.0' },
+      },
     ]);
   });
 
   it('names no version when npm wrote nothing it can read', () => {
     const root = artifacts({
-      'latest-watch-next': { result: { integration: 'next', outcome: 'failure' }, ls: '' },
+      'latest-watch-next-latest': { result: { integration: 'next', outcome: 'failure' }, ls: '' },
     });
 
-    expect(readResults(root)).toEqual([{ integration: 'next', outcome: 'failure', versions: {} }]);
+    expect(readResults(root)).toEqual([
+      { integration: 'next', lane: 'latest', channel: '', outcome: 'failure', versions: {} },
+    ]);
   });
 });
 
 describe('the issue', () => {
   it('names the integration, how the job ended, the run and what was installed', () => {
     const body = issueBody(
-      { integration: 'sveltekit', outcome: 'failure', versions: { '@sveltejs/kit': '3.2.0' } },
+      result({ integration: 'sveltekit', versions: { '@sveltejs/kit': '3.2.0' } }),
       'https://github.com/owner/repo/actions/runs/1',
     );
 
@@ -71,13 +92,57 @@ describe('the issue', () => {
     expect(body).toContain('`failure`');
     expect(body).toContain('https://github.com/owner/repo/actions/runs/1');
     expect(body).toContain('| `@sveltejs/kit` | 3.2.0 |');
-    expect(body).toContain('`latest-watch-sveltekit`');
+    expect(body).toContain('`latest-watch-sveltekit-latest`');
   });
 
   it('says so when the install did not get far enough to list anything', () => {
-    expect(issueBody({ integration: 'astro', outcome: 'failure', versions: {} }, 'run')).toContain(
+    expect(issueBody(result({ integration: 'astro' }), 'run')).toContain(
       'The install did not get far enough to list what it resolved.',
     );
+  });
+});
+
+describe('which issues a run files', () => {
+  it('one per integration that failed on latest, none for a success', () => {
+    const issues = issuesFor(
+      [result({ integration: 'next' }), result({ integration: 'astro', outcome: 'success' })],
+      'run',
+    );
+
+    expect(issues.map(({ label, pin }) => ({ label, pin }))).toEqual([
+      { label: 'latest-watch-next', pin: false },
+    ]);
+  });
+
+  it('one pinned issue for the whole pre-release lane, listing every entry', () => {
+    const issues = issuesFor(
+      [
+        result({ integration: 'next', lane: 'prerelease', channel: 'canary' }),
+        result({ integration: 'astro', lane: 'prerelease', channel: '', outcome: 'none' }),
+        result({ integration: 'hooks', lane: 'prerelease', channel: 'rc', outcome: 'success' }),
+      ],
+      'run',
+    );
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]?.label).toBe('prerelease-watch');
+    expect(issues[0]?.title).toBe(PRERELEASE_TITLE);
+    expect(issues[0]?.pin).toBe(true);
+    expect(issues[0]?.body).toContain('| next | `canary` | failure |');
+    expect(issues[0]?.body).toContain('| astro | (none above latest) | none |');
+    expect(issues[0]?.body).toContain('| hooks | `rc` | success |');
+  });
+
+  it('nothing when no channel was above latest and latest passed', () => {
+    expect(
+      issuesFor(
+        [
+          result({ integration: 'nuxt', outcome: 'success' }),
+          result({ integration: 'nuxt', lane: 'prerelease', channel: '', outcome: 'none' }),
+        ],
+        'run',
+      ),
+    ).toEqual([]);
   });
 });
 
