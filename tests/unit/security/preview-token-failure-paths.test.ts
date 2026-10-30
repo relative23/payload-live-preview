@@ -196,6 +196,27 @@ describe('signed tokens whose payload survives the signature but not the parse',
   });
 });
 
+describe('signed tokens that claim a longer life than any issuer of the format gives', () => {
+  // issuePreviewToken caps `ttlMs` at one hour; a correctly signed token that claims more was
+  // made by something else holding the secret, and verification holds it to the same bound.
+  const claims = (iat: number, exp: number): string =>
+    JSON.stringify({ v: 1, aud: SITE, pur: 'live-preview', iat, exp, jti: 'id' });
+  const verdict = async (iat: number, exp: number) =>
+    authorizePreviewRequest(
+      request(`${SITE}/page?previewToken=${await signedAround(claims(iat, exp))}`),
+      strategy,
+    );
+
+  it('refuses one that lives a millisecond longer than an hour', async () => {
+    expect((await verdict(NOW - 1_000, NOW - 1_000 + 3_600_001)).outcome).toBe('invalid');
+    expect((await verdict(NOW - 1_000, NOW + 365 * 86_400_000)).outcome).toBe('invalid');
+  });
+
+  it('accepts one that lives exactly the hour', async () => {
+    expect((await verdict(NOW - 1_000, NOW - 1_000 + 3_600_000)).authorized).toBe(true);
+  });
+});
+
 describe('signed tokens at the edges of the accepted input', () => {
   it('accepts a raw-bytes secret as the equal of the same string', async () => {
     const bytes = new TextEncoder().encode(SECRET);

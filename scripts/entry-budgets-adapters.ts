@@ -76,7 +76,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (an authorized preview is never cached): paired Node24.22.1/npm12.0.2; +47/+8/+29 B; prior reserves kept.
   // 2026-10-30 (the forwarded cookie is not enumerable): paired Node24.22.1/npm12.0.2; +68/+20/-7 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-30 (strict says when NODE_ENV is unset): paired Node24.22.1/npm12.0.2; +354/+146/+151 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 216_227, gzip: 67_669, brotli: 57_598 },
+  // 2026-10-30 (a token lives at most an hour when verified): paired Node24.22.1/npm12.0.2; +40/+9/-19 B; the Brotli ceiling stays, it fell; prior reserves kept.
+  'adapters/astro/index.js': { raw: 216_267, gzip: 67_678, brotli: 57_598 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -197,7 +198,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (an authorized preview is never cached): paired Node24.22.1/npm12.0.2; +47/+12/-7 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-30 (the forwarded cookie is not enumerable): paired Node24.22.1/npm12.0.2; +68/+18/+21 B; prior reserves kept.
   // 2026-10-30 (strict says when NODE_ENV is unset): paired Node24.22.1/npm12.0.2; +354/+145/+22 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 210_250, gzip: 65_899, brotli: 56_067 },
+  // 2026-10-30 (a token lives at most an hour when verified): paired Node24.22.1/npm12.0.2; +40/+10/+128 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 210_290, gzip: 65_909, brotli: 56_195 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -292,7 +294,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (an authorized preview is never cached): paired Node24.22.1/npm12.0.2; +46/+8/+5 B; prior reserves kept.
   // 2026-10-30 (the forwarded cookie is not enumerable): paired Node24.22.1/npm12.0.2; +68/+17/-22 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-30 (strict says when NODE_ENV is unset): paired Node24.22.1/npm12.0.2; +354/+147/+165 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 210_520, gzip: 66_012, brotli: 56_111 },
+  // 2026-10-30 (a token lives at most an hour when verified): paired Node24.22.1/npm12.0.2; +40/+11/-11 B; the Brotli ceiling stays, it fell; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 210_560, gzip: 66_023, brotli: 56_111 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -338,5 +341,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (an authorized preview is never cached): paired Node24.22.1/npm12.0.2; +47/+12/+63 B; prior reserves kept.
   // 2026-10-30 (the forwarded cookie is not enumerable): paired Node24.22.1/npm12.0.2; +68/+22/+38 B; prior reserves kept.
   // 2026-10-30 (strict says when NODE_ENV is unset): paired Node24.22.1/npm12.0.2; +354/+151/+49 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 209_597, gzip: 65_736, brotli: 55_822 },
+  // 2026-10-30 (a token lives at most an hour when verified): paired Node24.22.1/npm12.0.2; +40/+11/+22 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 209_637, gzip: 65_747, brotli: 55_844 },
 };

@@ -285,6 +285,8 @@ export async function authorizeToken(
   if (claims === undefined) return refused('invalid');
   const now = (strategy.now ?? Date.now)();
   if (claims.exp <= now || claims.iat > claims.exp) return refused('expired');
+  // No issuer of this format signs for longer; one that claims more was not issuePreviewToken.
+  if (claims.exp - claims.iat > MAX_TTL_MS) return refused('invalid');
   if (claims.aud !== strategy.audience) return refused('wrong-audience');
   if (claims.pur !== (strategy.purpose ?? DEFAULT_PURPOSE)) return refused('wrong-purpose');
   if (claims.pth !== undefined) {

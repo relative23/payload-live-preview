@@ -138,7 +138,8 @@ authorizePreview: (request) =>
 
 Claims (`issuePreviewToken`): `audience` (required), `path` (recommended),
 `locale`, `subject`, `purpose` (`live-preview`), `ttlMs` (ten minutes, capped
-at one hour). Strategy options: `secret` (at least 32 bytes), `audience`,
+at one hour; the strategy refuses a token whose `exp` lies more than an hour
+after its `iat` as `'invalid'`). Strategy options: `secret` (at least 32 bytes), `audience`,
 `purpose`, `transport` (`{ kind: 'query', param }`, default `previewToken`,
 or `{ kind: 'header', name }`, default `x-preview-token`), `locale` (a
 resolver; without one a token carrying a locale is `'wrong-locale'`) and
