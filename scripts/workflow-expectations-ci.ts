@@ -330,6 +330,9 @@ export const CI: WorkflowSpec = {
           'sveltekit3-create',
           'nuxt4',
           'nuxt4-composable',
+          'nextjs-production',
+          'sveltekit-production',
+          'nuxt-production',
         ],
         browser: [...BROWSERS],
       },
@@ -341,7 +344,7 @@ export const CI: WorkflowSpec = {
           run: 'bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"',
           env: {
             EXAMPLE:
-              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","sveltekit3":"sveltekit3-payload","sveltekit3-create":"sveltekit3-payload","nuxt4":"nuxt4-payload","nuxt4-composable":"nuxt4-payload"}\')[matrix.target] }}',
+              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","sveltekit3":"sveltekit3-payload","sveltekit3-create":"sveltekit3-payload","nuxt4":"nuxt4-payload","nuxt4-composable":"nuxt4-payload","nextjs-production":"nextjs-payload","sveltekit-production":"sveltekit-payload","nuxt-production":"nuxt-payload"}\')[matrix.target] }}',
           },
         },
         fixtureInstall('payload-backend'),

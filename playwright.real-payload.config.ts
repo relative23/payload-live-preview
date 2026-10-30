@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test';
 
 const isCI = process.env['CI'] === 'true';
@@ -11,6 +12,8 @@ const isCI = process.env['CI'] === 'true';
  * example's collection pages framed from an admin with two more collections (`create`).
  * `sveltekit3` and `sveltekit3-create` are those two SvelteKit targets on the SvelteKit 3 fixture,
  * `nuxt4` and `nuxt4-composable` the two Nuxt targets on the Nuxt 4 fixture.
+ * `nextjs-production`, `sveltekit-production` and `nuxt-production` are the session targets
+ * built for production and served behind TLS, with the admin behind an HTTPS front too.
  */
 const requested = process.env['PLP_REAL_PAYLOAD_TARGET'] ?? 'astro';
 /**
@@ -36,6 +39,11 @@ interface Surface {
    * `surface-create.spec.ts` against an admin that has those collections.
    */
   readonly spec?: 'hook' | 'autologin' | 'create';
+  /**
+   * Built for production by `command` (a `scripts/*-production-fixture.mjs` launcher) and served
+   * behind TLS on `port`; `prefix` names the launcher's variables (`<prefix>_ORIGIN`, …).
+   */
+  readonly production?: { readonly prefix: string };
 }
 const SESSION_SURFACES: Record<string, Surface> = {
   nextjs: { port: '4474', directory: 'nextjs-payload', command: 'npx next dev --port 4474' },
@@ -99,6 +107,26 @@ const SESSION_SURFACES: Record<string, Surface> = {
     command: 'npx vite dev --port 4475',
     spec: 'create',
   },
+  // Strict mode accepts only https admin origins in production, so these run against the admin's
+  // HTTPS front; the launchers build and start the example and put their own TLS front before it.
+  'nextjs-production': {
+    port: '4474',
+    directory: 'nextjs-payload',
+    command: 'node ../../scripts/next-production-fixture.mjs',
+    production: { prefix: 'PLP_NEXT' },
+  },
+  'sveltekit-production': {
+    port: '4475',
+    directory: 'sveltekit-payload',
+    command: 'node ../../scripts/sveltekit-production-fixture.mjs',
+    production: { prefix: 'PLP_SVELTE' },
+  },
+  'nuxt-production': {
+    port: '4476',
+    directory: 'nuxt-payload',
+    command: 'node ../../scripts/nuxt-production-fixture.mjs',
+    production: { prefix: 'PLP_NUXT' },
+  },
 };
 /** A plain HTML page has no request time: the runtime is baked in and the origin rule is its gate. */
 const STATIC_SURFACES: Record<string, Surface> = {
@@ -113,9 +141,18 @@ const target = requested === 'hybrid' || surface !== undefined ? requested : 'as
 /** The Astro preview app's port; the admin's Live Preview iframe is pointed at it. */
 const ports: Record<string, string> = { astro: '4173', hybrid: '4177' };
 const previewPort = process.env['PLP_E2E_PORT'] ?? surface?.port ?? ports[target] ?? '4173';
-const previewURL = `http://localhost:${previewPort}`;
-/** The admin's own origin: the preview site asks it who the editor is. */
-const ADMIN = 'http://localhost:3001';
+const production = surface?.production;
+const previewURL = `${production === undefined ? 'http' : 'https'}://localhost:${previewPort}`;
+/** Where `next dev` serves the admin; a production target reaches it through an HTTPS front. */
+const ADMIN_SERVER = 'http://localhost:3001';
+/** The admin's own origin: the editor's browser opens it, and the preview site asks it who the editor is. */
+const ADMIN = production === undefined ? ADMIN_SERVER : 'https://localhost:3443';
+/**
+ * The front's throw-away certificate, which the preview's server trusts through
+ * NODE_EXTRA_CA_CERTS when it asks the admin who the editor is. Outside `outputDir`, which
+ * Playwright empties before the run.
+ */
+const ADMIN_CERTIFICATE = 'test-results/real-payload-admin-front/certificate.pem';
 /**
  * The session is real where the preview site verifies it. Payload's autoLogin
  * authenticates every request on the server and issues no cookie, so there the
@@ -128,8 +165,102 @@ process.env['PLP_REAL_PAYLOAD_SESSION'] = session ? '1' : '';
 process.env['PLP_REAL_PAYLOAD_PORT'] = previewPort;
 process.env['PLP_REAL_PAYLOAD_SURFACE'] = target;
 process.env['PLP_REAL_PAYLOAD_PATH'] = surface?.path ?? '/';
+process.env['PLP_REAL_PAYLOAD_ADMIN_ORIGIN'] = ADMIN;
+process.env['PLP_REAL_PAYLOAD_PREVIEW_ORIGIN'] = previewURL;
 /** Browsers to run; the hybrid gate wants all three. */
 const browsers = (process.env['PLP_REAL_PAYLOAD_BROWSERS'] ?? 'chromium').split(',');
+
+/** One entry of `webServer`; Playwright does not export the type by name. */
+type WebServer = Extract<
+  NonNullable<PlaywrightTestConfig['webServer']>,
+  readonly unknown[]
+>[number];
+/** The preview app the admin's Live Preview iframe points at. */
+const previewServer: WebServer =
+  target === 'hybrid'
+    ? {
+        command: `npm --prefix examples/astro-hybrid run build && HOST=127.0.0.1 PORT=${previewPort} node examples/astro-hybrid/dist/server/entry.mjs`,
+        url: `${previewURL}/bench`,
+        reuseExistingServer: !isCI,
+        timeout: 120_000,
+      }
+    : surface !== undefined && production !== undefined
+      ? {
+          command: surface.command,
+          cwd: `examples/${surface.directory}`,
+          env: {
+            PLP_PRODUCTION_ADMIN_ORIGIN: ADMIN,
+            PLP_PAYLOAD_SERVER_URL: ADMIN,
+            NODE_EXTRA_CA_CERTS: resolve(ADMIN_CERTIFICATE),
+            [`${production.prefix}_ORIGIN`]: previewURL,
+            // Below the ephemeral range (32768-60999), like the launchers' own defaults.
+            [`${production.prefix}_INTERNAL_PORT`]: String(Number(previewPort) + 10_000),
+          },
+          url: `${previewURL}${surface.path ?? '/'}`,
+          ignoreHTTPSErrors: true,
+          reuseExistingServer: false,
+          // The launcher builds the example first.
+          timeout: 300_000,
+        }
+      : surface !== undefined
+        ? {
+            command: surface.command,
+            cwd: `examples/${surface.directory}`,
+            env: { PAYLOAD_ADMIN_ORIGIN: ADMIN, PLP_PAYLOAD_SERVER_URL: ADMIN },
+            url: `${previewURL}${surface.path ?? '/'}`,
+            reuseExistingServer: !isCI,
+            timeout: 180_000,
+          }
+        : {
+            // Astro 7's `astro dev` daemonizes (the foreground CLI exits after
+            // spawning a background server), which Playwright reads as a
+            // web-server crash. `astro preview` on a static build stays in the
+            // foreground and serves the same runtime-injected HTML, so it's the
+            // reliable choice for a managed web server.
+            command: `npm --prefix examples/astro-payload run build && cd examples/astro-payload && npx astro preview --host --port ${previewPort}`,
+            // Suppress Astro's AI-agent auto-background mode so Playwright owns the
+            // foreground process and can reliably observe and terminate it.
+            env: { ASTRO_PREVIEW_BACKGROUND: '1' },
+            url: `${previewURL}/`,
+            reuseExistingServer: !isCI,
+            timeout: 120_000,
+          };
+const adminServer: WebServer = {
+  // `e2e:serve` regenerates the admin import map before booting so a
+  // fresh checkout (where importMap.js is gitignored) still works.
+  command: 'npm --prefix examples/payload-backend run e2e:serve',
+  env: {
+    FRONTEND_URL: previewURL,
+    ...(session
+      ? {
+          PLP_REAL_PAYLOAD_LOGIN: '1',
+          PLP_REAL_PAYLOAD_PATH: surface?.path ?? '/',
+          PLP_REAL_PAYLOAD_ORIGINS: previewURL,
+        }
+      : {}),
+    ...(surface?.spec === 'create' ? { PLP_REAL_PAYLOAD_COLLECTIONS: '1' } : {}),
+  },
+  url: `${ADMIN_SERVER}/admin`,
+  reuseExistingServer: !isCI,
+  // Payload + Next's first cold compile is slow.
+  timeout: 180_000,
+};
+/**
+ * The admin's HTTPS front for a production target. Playwright starts the servers in order, so
+ * the certificate exists before the preview's server reads it.
+ */
+const adminFront: WebServer = {
+  command: 'node scripts/admin-tls-front.mjs',
+  env: {
+    PLP_ADMIN_ORIGIN: ADMIN,
+    PLP_ADMIN_INTERNAL_PORT: new URL(ADMIN_SERVER).port,
+    PLP_ADMIN_CERTIFICATE: resolve(ADMIN_CERTIFICATE),
+  },
+  url: `${ADMIN}/admin`,
+  ignoreHTTPSErrors: true,
+  reuseExistingServer: false,
+  timeout: 60_000,
+};
 
 /**
  * Dedicated config for the full-chain E2E against a REAL Payload server.
@@ -181,7 +312,8 @@ const config: PlaywrightTestConfig = {
     ? [['github'], ['html'], ['./scripts/playwright-zero-skip-reporter.ts']]
     : [['list'], ['./scripts/playwright-zero-skip-reporter.ts']],
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: ADMIN,
+    ignoreHTTPSErrors: production !== undefined,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -190,58 +322,10 @@ const config: PlaywrightTestConfig = {
     { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ].filter((project) => browsers.includes(project.name)),
-  webServer: [
-    target === 'hybrid'
-      ? {
-          command: `npm --prefix examples/astro-hybrid run build && HOST=127.0.0.1 PORT=${previewPort} node examples/astro-hybrid/dist/server/entry.mjs`,
-          url: `${previewURL}/bench`,
-          reuseExistingServer: !isCI,
-          timeout: 120_000,
-        }
-      : surface !== undefined
-        ? {
-            command: surface.command,
-            cwd: `examples/${surface.directory}`,
-            env: { PAYLOAD_ADMIN_ORIGIN: ADMIN, PLP_PAYLOAD_SERVER_URL: ADMIN },
-            url: `${previewURL}${surface.path ?? '/'}`,
-            reuseExistingServer: !isCI,
-            timeout: 180_000,
-          }
-        : {
-            // Astro 7's `astro dev` daemonizes (the foreground CLI exits after
-            // spawning a background server), which Playwright reads as a
-            // web-server crash. `astro preview` on a static build stays in the
-            // foreground and serves the same runtime-injected HTML, so it's the
-            // reliable choice for a managed web server.
-            command: `npm --prefix examples/astro-payload run build && cd examples/astro-payload && npx astro preview --host --port ${previewPort}`,
-            // Suppress Astro's AI-agent auto-background mode so Playwright owns the
-            // foreground process and can reliably observe and terminate it.
-            env: { ASTRO_PREVIEW_BACKGROUND: '1' },
-            url: `${previewURL}/`,
-            reuseExistingServer: !isCI,
-            timeout: 120_000,
-          },
-    {
-      // `e2e:serve` regenerates the admin import map before booting so a
-      // fresh checkout (where importMap.js is gitignored) still works.
-      command: 'npm --prefix examples/payload-backend run e2e:serve',
-      env: {
-        FRONTEND_URL: previewURL,
-        ...(session
-          ? {
-              PLP_REAL_PAYLOAD_LOGIN: '1',
-              PLP_REAL_PAYLOAD_PATH: surface?.path ?? '/',
-              PLP_REAL_PAYLOAD_ORIGINS: previewURL,
-            }
-          : {}),
-        ...(surface?.spec === 'create' ? { PLP_REAL_PAYLOAD_COLLECTIONS: '1' } : {}),
-      },
-      url: `${ADMIN}/admin`,
-      reuseExistingServer: !isCI,
-      // Payload + Next's first cold compile is slow.
-      timeout: 180_000,
-    },
-  ],
+  webServer:
+    production === undefined
+      ? [previewServer, adminServer]
+      : [adminServer, adminFront, previewServer],
 };
 
 export default defineConfig(config);

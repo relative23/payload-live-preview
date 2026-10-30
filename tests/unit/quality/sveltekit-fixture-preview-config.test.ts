@@ -105,7 +105,10 @@ describe('SvelteKit fixture preview configuration', () => {
     expect(launcher).toContain("from './node-production-fixture.mjs'");
     expect(launcher).toContain("runNodeProductionFixture('sveltekit')");
     expect(productionFixture).toContain("NODE_ENV: 'production'");
-    expect(productionFixture).toContain('PAYLOAD_ADMIN_ORIGIN: publicUrl.origin');
+    expect(productionFixture).toContain(
+      "const adminOrigin = process.env['PLP_PRODUCTION_ADMIN_ORIGIN'] ?? publicUrl.origin;",
+    );
+    expect(productionFixture).toContain('PAYLOAD_ADMIN_ORIGIN: adminOrigin');
   });
 });
 

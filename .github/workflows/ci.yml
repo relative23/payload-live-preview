@@ -737,7 +737,9 @@ jobs:
   # admin that keeps its autoLogin, which issues no cookie; create frames the SvelteKit
   # example's collection pages from an admin that has two collections for the create screen;
   # sveltekit3 and sveltekit3-create are those two SvelteKit targets on the SvelteKit 3 fixture,
-  # nuxt4 and nuxt4-composable the two Nuxt targets on the Nuxt 4 fixture.
+  # nuxt4 and nuxt4-composable the two Nuxt targets on the Nuxt 4 fixture. The -production targets
+  # build the Next.js, SvelteKit and Nuxt examples for production behind TLS, with the admin behind
+  # an HTTPS front, since strict mode accepts only https admin origins there.
   # The fixture each target frames is looked up by name.
   real-payload-surfaces:
     name: Real Payload E2E (${{ matrix.target }}, ${{ matrix.browser }})
@@ -762,6 +764,9 @@ jobs:
             sveltekit3-create,
             nuxt4,
             nuxt4-composable,
+            nextjs-production,
+            sveltekit-production,
+            nuxt-production,
           ]
         browser: [chromium, firefox, webkit]
     steps:
@@ -783,7 +788,7 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist
       - env:
-          EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","sveltekit3":"sveltekit3-payload","sveltekit3-create":"sveltekit3-payload","nuxt4":"nuxt4-payload","nuxt4-composable":"nuxt4-payload"}')[matrix.target] }}
+          EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","sveltekit3":"sveltekit3-payload","sveltekit3-create":"sveltekit3-payload","nuxt4":"nuxt4-payload","nuxt4-composable":"nuxt4-payload","nextjs-production":"nextjs-payload","sveltekit-production":"sveltekit-payload","nuxt-production":"nuxt-payload"}')[matrix.target] }}
         run: bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"
       - run: bash scripts/ci-install-fixture.sh examples/payload-backend
       - env:

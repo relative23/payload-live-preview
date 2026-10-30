@@ -24,7 +24,7 @@
     "examples/shared/fragment-lifetime-probe.ts": "3490df5f3818d9d02e2f9066feabb6b31f00405175ba340ef02c6def1edf0bc9",
     "playwright.config.ts": "b482f7758414803fcaeefbe67ca8119260104d9722a345102f4fabcced7afd89",
     "playwright.fragment-lifetime.config.ts": "c2dac52bfb8d24ecc72b8e2fa81c343be404baa85601254c5a6f9b023899a071",
-    "playwright.real-payload.config.ts": "08d395313ea170a4a305649b5b128121e2726d0bc1b70b7d65e600c78151eb1d"
+    "playwright.real-payload.config.ts": "5e16fe9ef5220f2c37f262d1c5fde349080893442c394e3a71c5750aae36e6e6"
   },
   "directories": ["examples/astro-hybrid"],
   "absentFiles": [],

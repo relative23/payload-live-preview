@@ -93,8 +93,10 @@ describe('native Astro host fixture configuration', () => {
     expect(config).toContain("from './playwright.next-continuation.config'");
     expect(config).toContain("continuationFramework: 'astro'");
     expect(launcher).toContain("runNodeProductionFixture('astro')");
+    const front = read('scripts/tls-front.mjs');
     expect(runner).toContain("'dist/server/entry.mjs'");
-    expect(runner).toContain("proxy.listen(publicPort, '127.0.0.1'");
-    expect(runner).toContain('bindProxyLifetime(incoming, outgoing, upstream)');
+    expect(runner).toContain("from './tls-front.mjs'");
+    expect(front).toContain("proxy.listen(publicPort, '127.0.0.1'");
+    expect(front).toContain('bindProxyLifetime(incoming, outgoing, upstream)');
   });
 });

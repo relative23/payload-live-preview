@@ -13,13 +13,13 @@ import {
   waitForPopulation,
 } from './upload-media';
 import { openLivePreviewPanel } from './live-preview-panel';
+import { ADMIN_ORIGIN, PREVIEW_ORIGIN } from './origins';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs';
-const PREVIEW_ORIGIN = `http://localhost:${PORT}`;
 const PREVIEW_IFRAME = `iframe[src*="localhost:${PORT}"]`;
 /** The admin's own requests carry its origin; with Payload's CSRF list on, one without it is not the editor's. */
-const ADMIN_ORIGIN = { origin: 'http://localhost:3001' };
+const FROM_ADMIN = { origin: ADMIN_ORIGIN };
 
 /** The editor signs in through the real login form: Payload issues `payload-token`. */
 async function signIn(page: Page): Promise<void> {
@@ -134,7 +134,7 @@ async function cutPopulation(
 ): Promise<{ cuts: () => number; restore: () => void }> {
   let failing = true;
   let cut = 0;
-  await page.route('http://localhost:3001/api/globals/homepage**', async (route) => {
+  await page.route(`${ADMIN_ORIGIN}/api/globals/homepage**`, async (route) => {
     const request = route.request();
     const fromPreview = request.frame().url().startsWith(PREVIEW_ORIGIN);
     if (failing && fromPreview && request.headers()['x-payload-http-method-override'] === 'GET') {
@@ -197,14 +197,14 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
     // is, so the frame is the only thing that can show what the preview site decides next.
     const loggedOut = await page
       .context()
-      .request.post('/api/users/logout', { headers: ADMIN_ORIGIN });
+      .request.post('/api/users/logout', { headers: FROM_ADMIN });
     expect(loggedOut.ok()).toBe(true);
     await reload();
     await expect.poll(runtime, { timeout: 30_000 }).toBe('undefined');
 
     const loggedIn = await page.context().request.post('/api/users/login', {
       data: { email: 'e2e@example.com', password: 'test1234' },
-      headers: ADMIN_ORIGIN,
+      headers: FROM_ADMIN,
     });
     expect(loggedIn.ok()).toBe(true);
     await reload();

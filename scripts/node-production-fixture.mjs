@@ -5,13 +5,9 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
-import { request as requestHttp } from 'node:http';
-import { createServer } from 'node:https';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bindProxyLifetime } from './fixture-proxy-lifetime.mjs';
+import { startTlsFront } from './tls-front.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 /** @param {'sveltekit' | 'nuxt' | 'astro' | 'html' | 'vue'} framework */
@@ -55,16 +51,18 @@ export function runNodeProductionFixture(framework) {
   if (publicUrl.protocol !== 'https:') {
     throw new Error(`${prefix}_ORIGIN must use HTTPS for the production fixture.`);
   }
-  const publicPort = Number(publicUrl.port || 443);
   // The private listener sits below the ephemeral range (32768-60999), so an outbound connection cannot claim it.
   const internalPort = Number(
     process.env[`${prefix}_INTERNAL_PORT`] ??
       (isNuxt ? '14276' : isAstro ? '14277' : isHTML ? '14288' : isVue ? '14289' : '14275'),
   );
+  // The mock admin is a page of the fixture itself. A run against a real admin names that
+  // admin's HTTPS origin instead (playwright.real-payload.config.ts).
+  const adminOrigin = process.env['PLP_PRODUCTION_ADMIN_ORIGIN'] ?? publicUrl.origin;
   const environment = {
     ...process.env,
     NODE_ENV: 'production',
-    PAYLOAD_ADMIN_ORIGIN: publicUrl.origin,
+    PAYLOAD_ADMIN_ORIGIN: adminOrigin,
     ORIGIN: publicUrl.origin,
     HOST: '127.0.0.1',
     PORT: String(internalPort),
@@ -79,42 +77,6 @@ export function runNodeProductionFixture(framework) {
     stdio: 'inherit',
   });
   if (build.status !== 0) process.exit(build.status ?? 1);
-
-  const certificateDirectory = mkdtempSync(join(tmpdir(), `plp-${framework}-production-`));
-  const keyPath = join(certificateDirectory, 'localhost-key.pem');
-  const certificatePath = join(certificateDirectory, 'localhost-certificate.pem');
-  const certificate = spawnSync(
-    'openssl',
-    [
-      'req',
-      '-x509',
-      '-newkey',
-      'rsa:2048',
-      '-sha256',
-      '-nodes',
-      '-days',
-      '1',
-      '-keyout',
-      keyPath,
-      '-out',
-      certificatePath,
-      '-subj',
-      '/CN=localhost',
-      '-addext',
-      'subjectAltName=DNS:localhost,IP:127.0.0.1',
-    ],
-    { encoding: 'utf8' },
-  );
-  if (certificate.status !== 0) {
-    process.stderr.write(certificate.stderr);
-    process.exit(certificate.status ?? 1);
-  }
-  // Export only the public certificate for the lifetime probe's pinned TLS client.
-  const probeCertificate = process.env['PLP_LIFETIME_CERTIFICATE'];
-  if (probeCertificate) {
-    mkdirSync(dirname(probeCertificate), { recursive: true });
-    copyFileSync(certificatePath, probeCertificate);
-  }
 
   const app = spawn(
     process.execPath,
@@ -137,45 +99,7 @@ export function runNodeProductionFixture(framework) {
     },
   );
 
-  const proxy = createServer(
-    {
-      key: readFileSync(keyPath),
-      cert: readFileSync(certificatePath),
-    },
-    (incoming, outgoing) => {
-      const host = incoming.headers.host ?? publicUrl.host;
-      const upstream = requestHttp(
-        {
-          hostname: '127.0.0.1',
-          port: internalPort,
-          method: incoming.method,
-          path: incoming.url,
-          headers: {
-            ...incoming.headers,
-            host,
-            'x-forwarded-host': host,
-            'x-forwarded-port': String(publicPort),
-            'x-forwarded-proto': 'https',
-          },
-        },
-        (response) => {
-          outgoing.writeHead(response.statusCode ?? 502, response.headers);
-          response.pipe(outgoing);
-        },
-      );
-      upstream.on('error', (error) => {
-        if (outgoing.destroyed) return;
-        if (outgoing.headersSent) {
-          outgoing.destroy(error);
-          return;
-        }
-        outgoing.writeHead(502, { 'content-type': 'text/plain' });
-        outgoing.end(`${label} production fixture is not ready: ${error.message}`);
-      });
-      bindProxyLifetime(incoming, outgoing, upstream);
-      incoming.pipe(upstream);
-    },
-  );
+  const proxy = startTlsFront({ label: `${label} production fixture`, publicUrl, internalPort });
 
   let stopping = false;
   /** @type {(signal: NodeJS.Signals) => void} */
@@ -203,12 +127,5 @@ export function runNodeProductionFixture(framework) {
       process.exitCode = code ?? (signal === null ? 1 : 0);
       proxy.close();
     }
-  });
-  process.once('exit', () => {
-    rmSync(certificateDirectory, { recursive: true, force: true });
-  });
-
-  proxy.listen(publicPort, '127.0.0.1', () => {
-    process.stdout.write(`${label} production fixture listening on ${publicUrl.origin}\n`);
   });
 }
