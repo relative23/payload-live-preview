@@ -565,6 +565,8 @@
 // 2026-10-30 (a CSP source must fit its header): the tree-shaking ceiling in tree-shaking-budgets.ts moves with the same change and is recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; it keeps the reserve it had): `createLivePreviewMiddleware` +130. policy.ts is adapter code: no root, client or inline row moves.
 // 2026-10-30 (a ping keeps its safe targets around any whitespace): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +1 / +0 / +35, `core.js` +1 / +0 / +0, `index.cjs` +2 / +2 / +30, `index.js` +2 / +1 / -3.
 // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+2/+21 B; prior reserves kept.
+// 2026-10-30 (the CSP fallback table is a Map): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `index.cjs` +220 / +6 / +42, `index.js` +220 / +3 / +53.
+// 2026-10-30 (the CSP fallback table is a Map): the tree-shaking ceiling in tree-shaking-budgets.ts moves with the same change and is recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; it keeps the reserve it had): `createLivePreviewMiddleware` +3. csp.ts is server code: no client or inline row moves.
 export const INLINE_BUDGET = { raw: 150_029, gzip: 47_247, brotli: 41_640 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps

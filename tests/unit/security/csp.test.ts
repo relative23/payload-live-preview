@@ -284,6 +284,75 @@ describe('mergeCspHeader', () => {
     );
   });
 
+  const FETCH = [
+    'child-src',
+    'connect-src',
+    'font-src',
+    'frame-src',
+    'img-src',
+    'manifest-src',
+    'media-src',
+    'object-src',
+    'script-src',
+    'script-src-elem',
+    'script-src-attr',
+    'style-src',
+    'style-src-elem',
+    'style-src-attr',
+    'worker-src',
+  ];
+
+  it.each(FETCH)('starts %s from default-src when nothing nearer is set', (name) => {
+    expect(mergeCspHeader('default-src https://d.example', { [name]: "'nonce-n'" })).toBe(
+      `default-src https://d.example; ${name} https://d.example 'nonce-n'`,
+    );
+  });
+
+  it.each([
+    ['frame-src', 'child-src'],
+    ['script-src-elem', 'script-src'],
+    ['script-src-attr', 'script-src'],
+    ['style-src-elem', 'style-src'],
+    ['style-src-attr', 'style-src'],
+    ['worker-src', 'child-src'],
+    ['worker-src', 'script-src'],
+  ])('starts %s from %s before default-src', (name, nearer) => {
+    expect(
+      mergeCspHeader(`default-src https://d.example; ${nearer} https://n.example`, {
+        [name]: "'nonce-n'",
+      }),
+    ).toBe(
+      `default-src https://d.example; ${nearer} https://n.example; ${name} https://n.example 'nonce-n'`,
+    );
+  });
+
+  it('starts worker-src from child-src before script-src, as CSP3 orders them', () => {
+    expect(
+      mergeCspHeader('script-src https://s.example; child-src https://c.example', {
+        'worker-src': "'nonce-n'",
+      }),
+    ).toBe(
+      "script-src https://s.example; child-src https://c.example; worker-src https://c.example 'nonce-n'",
+    );
+  });
+
+  it.each(['frame-ancestors', 'base-uri', 'form-action', '__proto__', 'constructor'])(
+    'gives %s no fallback: it is not a fetch directive',
+    (name) => {
+      expect(mergeCspHeader('default-src https://d.example', { [name]: "'self'" })).toBe(
+        `default-src https://d.example; ${name} 'self'`,
+      );
+    },
+  );
+
+  it('takes a replace merge as given, whatever the directive would fall back to', () => {
+    expect(
+      mergeCspHeader('default-src https://d.example', {
+        'script-src': { value: "'nonce-n'", mode: 'replace' },
+      }),
+    ).toBe("default-src https://d.example; script-src 'nonce-n'");
+  });
+
   it('unions sources into an existing directive instead of replacing it', () => {
     const merged = mergeCspHeader("script-src 'self' https://cdn.example.com", {
       'script-src': "'nonce-abc'",

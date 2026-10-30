@@ -142,32 +142,32 @@ export interface CspDirectiveMerge {
 }
 
 /**
- * Where a browser looks for a fetch directive the policy does not have (CSP3 §6.8.3), before
- * `default-src`. A merge that adds the directive must start from that value: otherwise it drops
- * what the page allowed and allows what the page did not.
+ * Where a browser looks, in order, for a fetch directive the policy does not have (CSP3 §6.8.3).
+ * A merge that adds the directive must start from that value: otherwise it drops what the page
+ * allowed and allows what the page did not. A `Map`, so a name such as `__proto__` finds nothing.
  */
-const FETCH_FALLBACKS: Readonly<Record<string, readonly string[]>> = {
-  'child-src': [],
-  'connect-src': [],
-  'font-src': [],
-  'frame-src': ['child-src'],
-  'img-src': [],
-  'manifest-src': [],
-  'media-src': [],
-  'object-src': [],
-  'script-src': [],
-  'script-src-elem': ['script-src'],
-  'script-src-attr': ['script-src'],
-  'style-src': [],
-  'style-src-elem': ['style-src'],
-  'style-src-attr': ['style-src'],
-  'worker-src': ['child-src', 'script-src'],
-};
+const FETCH_FALLBACKS: ReadonlyMap<string, readonly string[]> = new Map([
+  ['child-src', ['default-src']],
+  ['connect-src', ['default-src']],
+  ['font-src', ['default-src']],
+  ['frame-src', ['child-src', 'default-src']],
+  ['img-src', ['default-src']],
+  ['manifest-src', ['default-src']],
+  ['media-src', ['default-src']],
+  ['object-src', ['default-src']],
+  ['script-src', ['default-src']],
+  ['script-src-elem', ['script-src', 'default-src']],
+  ['script-src-attr', ['script-src', 'default-src']],
+  ['style-src', ['default-src']],
+  ['style-src-elem', ['style-src', 'default-src']],
+  ['style-src-attr', ['style-src', 'default-src']],
+  ['worker-src', ['child-src', 'script-src', 'default-src']],
+]);
 
 function fallbackValue(name: string, directives: ReadonlyMap<string, string>): string | undefined {
-  const chain = FETCH_FALLBACKS[name];
+  const chain = FETCH_FALLBACKS.get(name);
   if (chain === undefined) return undefined;
-  for (const fallback of [...chain, 'default-src']) {
+  for (const fallback of chain) {
     const value = directives.get(fallback);
     if (value !== undefined) return value;
   }
@@ -211,8 +211,7 @@ function mergeCspPolicy(
     const addition: CspDirectiveMerge =
       typeof rawAddition === 'string' ? { value: rawAddition } : rawAddition;
     const mode = addition.mode ?? 'union';
-    const current =
-      directives.get(name) ?? (mode === 'union' ? fallbackValue(name, directives) : undefined);
+    const current = directives.get(name) ?? fallbackValue(name, directives);
     if (mode === 'replace' || current === undefined || current.length === 0) {
       directives.set(name, addition.value);
       continue;
