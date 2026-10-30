@@ -1,8 +1,9 @@
 /**
  * Record the CI run a release ships as the result of the compatibility rows it ran. The Version
- * PR job calls this before `changesets/action` commits, so the record moves with each release
- * and nothing between releases writes to the repository. A row may only name an unconditional
- * job that cannot fail softly (`compat:check`), so a green run means every such row passed.
+ * PR job runs this from `changesets/action`'s version command (`npm run version:release`), after
+ * the action has reset the tree, so the record moves with each release and nothing between
+ * releases writes to the repository. A row may only name an unconditional job that cannot fail
+ * softly (`compat:check`), so a green run means every such row passed.
  */
 
 import { execFileSync } from 'node:child_process';

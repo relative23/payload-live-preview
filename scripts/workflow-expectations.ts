@@ -92,16 +92,16 @@ const RELEASE: WorkflowSpec = {
         SETUP_NODE,
         NPM_VERSION,
         NPM_CI,
-        // Before the action commits: the record of the released run goes into the Version PR.
+        // The record of the released run is written inside the action's version command: the
+        // action resets the tree before it runs, so a step before it loses what it wrote.
         {
-          name: 'Record the released CI run as the compatibility result',
-          run: 'npm run compat:record',
+          uses: 'changesets/action',
+          with: { version: 'npm run version:release' },
           env: {
             GH_TOKEN: '${{ github.token }}',
             PLP_CI_RUN_ID: '${{ needs.gate.outputs.run_id }}',
           },
         },
-        { uses: 'changesets/action', with: { version: 'npm run version' } },
       ],
     },
     'source-dispatch': {
