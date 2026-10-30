@@ -142,6 +142,39 @@ export interface CspDirectiveMerge {
 }
 
 /**
+ * Where a browser looks for a fetch directive the policy does not have (CSP3 §6.8.3), before
+ * `default-src`. A merge that adds the directive must start from that value: otherwise it drops
+ * what the page allowed and allows what the page did not.
+ */
+const FETCH_FALLBACKS: Readonly<Record<string, readonly string[]>> = {
+  'child-src': [],
+  'connect-src': [],
+  'font-src': [],
+  'frame-src': ['child-src'],
+  'img-src': [],
+  'manifest-src': [],
+  'media-src': [],
+  'object-src': [],
+  'script-src': [],
+  'script-src-elem': ['script-src'],
+  'script-src-attr': ['script-src'],
+  'style-src': [],
+  'style-src-elem': ['style-src'],
+  'style-src-attr': ['style-src'],
+  'worker-src': ['child-src', 'script-src'],
+};
+
+function fallbackValue(name: string, directives: ReadonlyMap<string, string>): string | undefined {
+  const chain = FETCH_FALLBACKS[name];
+  if (chain === undefined) return undefined;
+  for (const fallback of [...chain, 'default-src']) {
+    const value = directives.get(fallback);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
+/**
  * Merge directives into an existing `Content-Security-Policy` header value.
  * Commas separate policies (that is how `Headers.get()` joins repeated
  * headers); each is merged, because a browser enforces every policy and
@@ -178,7 +211,8 @@ function mergeCspPolicy(
     const addition: CspDirectiveMerge =
       typeof rawAddition === 'string' ? { value: rawAddition } : rawAddition;
     const mode = addition.mode ?? 'union';
-    const current = directives.get(name);
+    const current =
+      directives.get(name) ?? (mode === 'union' ? fallbackValue(name, directives) : undefined);
     if (mode === 'replace' || current === undefined || current.length === 0) {
       directives.set(name, addition.value);
       continue;
