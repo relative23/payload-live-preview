@@ -699,11 +699,20 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "authorized Node host (tests/e2e/continuation/html-owner.spec.ts), run locally and in no workflow",
+      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads behind an authorized Node host; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "open",
-        "sources": ["tests/e2e/continuation/html-owner.spec.ts"]
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "production-lifecycle"
+        },
+        "sources": [
+          "tests/e2e/continuation/html-owner.spec.ts",
+          "tests/e2e/continuation/next-host.spec.ts",
+          "tests/e2e/helpers/native-continuation.ts",
+          "playwright.html-continuation.config.ts"
+        ]
       }
     },
     {
@@ -783,22 +792,33 @@
     {
       "id": "vue-composable-production",
       "surface": "Vue composable",
-      "feature": "standalone browser lifecycle and real-admin unsaved output",
+      "feature": "standalone browser lifecycle, scope disposal and unsaved related drafts under a real Payload login",
       "version": {
-        "kind": "floor",
-        "value": "3.3.0",
+        "kind": "exact",
+        "value": "3.5.41",
         "package": "vue",
         "source": {
-          "kind": "peer-floor"
+          "kind": "lockfile",
+          "fixture": "tests/fixtures/vue-host-deps"
         }
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload admin not yet wired",
+      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "open",
-        "sources": ["src/adapters/vue/index.ts", "tests/unit/adapters/vue-composable.test.ts"]
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "production-lifecycle"
+        },
+        "sources": [
+          "tests/e2e/continuation/vue-owner.spec.ts",
+          "tests/e2e/continuation/next-host.spec.ts",
+          "tests/e2e/helpers/native-continuation.ts",
+          "playwright.vue-continuation.config.ts",
+          "tests/fixtures/vue-continuation/src/Preview.vue.fixture"
+        ]
       }
     },
     {
