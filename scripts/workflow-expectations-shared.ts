@@ -89,6 +89,26 @@ export const twinFixtureJob = (
     ],
   };
 };
+/** A Chromium job that runs one Playwright config against the archive the Build job stored. */
+export const archiveJob = (
+  config: string,
+  timeoutMinutes: number,
+  matrix?: JobSpec['matrix'],
+  env?: Readonly<Record<string, string>>,
+): JobSpec => ({
+  needs: ['build'],
+  timeoutMinutes,
+  ...(matrix === undefined ? {} : { matrix }),
+  steps: [
+    ...FIXTURE_SETUP,
+    { run: 'bash scripts/ci-install-browser.sh chromium' },
+    DOWNLOAD_ARCHIVE,
+    {
+      run: `PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config ${config} --project=chromium`,
+      ...(env === undefined ? {} : { env }),
+    },
+  ],
+});
 export const fixtureAudit = (fixture: string): StepSpec => ({
   run: `node scripts/audit-gate.ts --package-lock-only --prefix examples/${fixture}`,
 });
