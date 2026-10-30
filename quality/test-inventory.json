@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 529,
-    "suites": 1021,
-    "tests": 4620,
+    "suites": 1022,
+    "tests": 4622,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 432,
-      "suites": 911,
-      "tests": 4218,
+      "suites": 912,
+      "tests": 4220,
       "benchmarks": 0
     }
   },
@@ -3629,8 +3629,8 @@
     {
       "path": "tests/unit/security/preview-token-failure-paths.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 17,
+      "suites": 6,
+      "tests": 19,
       "benchmarks": 0
     },
     {
