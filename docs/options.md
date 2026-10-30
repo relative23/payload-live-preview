@@ -198,7 +198,10 @@ Notes on the rows that need one:
   ([ADR 0024](architecture/0024-authorization-by-module-reference.md)).
 - `manageCsp: 'full'` also manages a nonce'd `script-src`; `strictDynamic`
   adds `'strict-dynamic'`, after which CSP 3 ignores `'self'` and host
-  sources, so every script on the page must carry the nonce. The Next.js
+  sources, so every script on the page must carry the nonce. When the page's
+  policy has no `script-src`, the merge starts from what the browser used
+  instead (`default-src`) and adds the nonce to it, so the page's own script
+  sources keep working. The Next.js
   middleware writes that `script-src` only into a response it injects the
   script into; on any other response, such as `NextResponse.next()`, it keeps
   `frame-ancestors` and warns once in development.

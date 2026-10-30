@@ -253,6 +253,37 @@ describe('mergeCspHeader', () => {
     expect(merged).toBe(`script-src${whitespace}*; script-src 'none'`);
   });
 
+  it('starts a missing fetch directive from what the browser fell back to, not from nothing', () => {
+    // Without script-src a browser takes scripts from default-src. Setting script-src to the
+    // additions alone would block that CDN and admit 'self', which the page never allowed.
+    expect(
+      mergeCspHeader("default-src https://cdn.example.com; frame-ancestors 'none'", {
+        'script-src': "'self' 'nonce-abc'",
+      }),
+    ).toBe(
+      "default-src https://cdn.example.com; frame-ancestors 'none'; script-src https://cdn.example.com 'self' 'nonce-abc'",
+    );
+    // script-src-elem falls back to script-src before default-src.
+    expect(
+      mergeCspHeader("default-src 'none'; script-src https://js.example.com", {
+        'script-src-elem': "'nonce-abc'",
+      }),
+    ).toBe(
+      "default-src 'none'; script-src https://js.example.com; script-src-elem https://js.example.com 'nonce-abc'",
+    );
+    // 'none' as the fallback still gives way to the additions.
+    expect(mergeCspHeader("default-src 'none'", { 'style-src': "'nonce-abc'" })).toBe(
+      "default-src 'none'; style-src 'nonce-abc'",
+    );
+    // A directive with no fallback, and a policy with no default-src, take the additions as they are.
+    expect(mergeCspHeader("default-src 'self'", { 'frame-ancestors': "'self'" })).toBe(
+      "default-src 'self'; frame-ancestors 'self'",
+    );
+    expect(mergeCspHeader("img-src 'self'", { 'script-src': "'nonce-abc'" })).toBe(
+      "img-src 'self'; script-src 'nonce-abc'",
+    );
+  });
+
   it('unions sources into an existing directive instead of replacing it', () => {
     const merged = mergeCspHeader("script-src 'self' https://cdn.example.com", {
       'script-src': "'nonce-abc'",
@@ -335,11 +366,12 @@ describe('mergeCspHeader — several policies in one header value', () => {
   });
 
   it('drops empty policies and keeps the single-policy path unchanged', () => {
+    // img-src starts from the default-src it falls back to, so 'self' stays.
     expect(mergeCspHeader("default-src 'self', , ", { 'img-src': '*' })).toBe(
-      "default-src 'self'; img-src *",
+      "default-src 'self'; img-src 'self' *",
     );
     expect(mergeCspHeader("default-src 'self'", { 'img-src': '*' })).toBe(
-      "default-src 'self'; img-src *",
+      "default-src 'self'; img-src 'self' *",
     );
     expect(mergeCspHeader('', { 'img-src': '*' })).toBe('img-src *');
   });
