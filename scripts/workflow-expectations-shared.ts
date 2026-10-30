@@ -58,6 +58,37 @@ export const CI_FIXTURES = [
 export const fixtureInstall = (fixture: string): StepSpec => ({
   run: `bash scripts/ci-install-fixture.sh examples/${fixture}`,
 });
+/**
+ * The browser job of a fixture's twin on the next framework major: the framework's own spec
+ * files whole, then the shared ones filtered by `grep`, both against the twin `env` selects.
+ */
+export const twinFixtureJob = (
+  fixture: string,
+  env: Readonly<Record<string, string>>,
+  files: readonly string[],
+  shared: { readonly grep: string; readonly files: readonly string[] },
+): JobSpec => {
+  const playwright = (args: readonly string[], names: readonly string[]): StepSpec => ({
+    run: [
+      'npx playwright test --project=${{ matrix.browser }}',
+      ...args,
+      ...names.map((name) => `tests/e2e/specs/${name}.spec.ts`),
+    ].join(' '),
+    env,
+  });
+  return {
+    needs: ['build'],
+    matrix: { browser: [...BROWSERS] },
+    steps: [
+      ...FIXTURE_SETUP,
+      { run: 'bash scripts/ci-install-browser.sh ${{ matrix.browser }}' },
+      DOWNLOAD_DIST,
+      fixtureInstall(fixture),
+      playwright([], files),
+      playwright([shared.grep], shared.files),
+    ],
+  };
+};
 export const fixtureAudit = (fixture: string): StepSpec => ({
   run: `node scripts/audit-gate.ts --package-lock-only --prefix examples/${fixture}`,
 });

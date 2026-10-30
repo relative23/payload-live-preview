@@ -17,8 +17,8 @@
     "examples/astro-payload/src/pages/structural.astro": "ad216442c4a8a0e10aa46366655665fb490fb8f2f71b0854c894d608daa99214",
     "examples/astro-payload/src/sanitizer.ts": "91dccf9b97bd9041a64f32c465ed2670efe496e51d17bd3b693a3cac579802c8",
     "examples/astro-payload/tsconfig.json": "b5b0a5b04a14cddd7713c5e1c82e86c79c17c2f86b170e26e9b170b3d5e01cd9",
-    "playwright.config.ts": "d0dc2fc85d0e9b88f0c867832bb3085b1e52a33309a71312e18792bdf2595d99",
-    "playwright.real-payload.config.ts": "5575f26a275a64b535e9209f194cc6183a33f7e9def675bbbea4a02f427117b4"
+    "playwright.config.ts": "b482f7758414803fcaeefbe67ca8119260104d9722a345102f4fabcced7afd89",
+    "playwright.real-payload.config.ts": "08d395313ea170a4a305649b5b128121e2726d0bc1b70b7d65e600c78151eb1d"
   },
   "directories": ["examples/astro-payload"],
   "absentFiles": [],

@@ -17,6 +17,7 @@ from npm and drops `install-links=true` from its `.npmrc`, where it has one.
 | `sveltekit-payload`  | `livePreviewHandle` from `payload-live-preview/sveltekit`, `delivery: 'asset'` on `/asset`                                                      | 4175 | `sveltekit-live-preview`, `sveltekit-asset-delivery`, `sveltekit-fragment`, `owner-scoping`, `navigation-lifecycle-per-framework`, `reveal`, `public-response`, `auto-bind-hit-rate`; E2E | copy                  |
 | `sveltekit3-payload` | The `sveltekit-payload` example migrated to SvelteKit 3 with `npx sv migrate sveltekit-3`; the Node adapter is set in `vite.config.ts`          | 4175 | the SvelteKit files and the SvelteKit cases of the shared ones, as for `sveltekit-payload`; SvelteKit 3 E2E, Real Payload E2E (`sveltekit3`, `sveltekit3-create`)                         | copy                  |
 | `nuxt-payload`       | The module `payload-live-preview/nuxt-module` with `delivery: 'asset'` and `defaults: 'v1'`                                                     | 4176 | `nuxt-live-preview`, `nuxt-asset-delivery`, `nuxt-fragment`, `navigation-lifecycle-per-framework`, `reveal`, `public-response`, `auto-bind-hit-rate`; E2E                                 | copy                  |
+| `nuxt4-payload`      | The `nuxt-payload` example on Nuxt 4, its pages, components and plugin under `app/`                                                             | 4176 | the Nuxt files and the Nuxt cases of the shared ones, as for `nuxt-payload`; Nuxt 4 E2E, Real Payload E2E (`nuxt4`, `nuxt4-composable`)                                                   | copy                  |
 | `pure-html`          | Static HTML carrying the inline runtime from `generateInlineScript()`, and `LEAN_RUNTIME` on `lean.html`                                        | 4180 | `reveal`, `lean-profile`; E2E                                                                                                                                                             | link                  |
 | `vanilla-client`     | Bundled SPA calling `initLivePreview()` from `payload-live-preview/client`, with the unbound-fields overlay from `payload-live-preview/plugins` | 4181 | `reveal`, `unbound-overlay`; E2E                                                                                                                                                          | link                  |
 | `payload-backend`    | A real Payload admin configured through the copy-installed `payload-live-preview/plugin`                                                        | 3001 | `tests/real-payload/` through `npm run test:e2e:real-payload`; Real Payload E2E, Real Payload E2E (hybrid)                                                                                | copy                  |
@@ -27,9 +28,10 @@ The ports, start commands and the name each fixture answers to are in
 `sveltekit`, `nuxt`, `hybrid`, `pure-html`, `vanilla-client`, `astro-inline`,
 `astro-middleware` — and `PLP_E2E_PORT` moves `astro-payload` off 4173 when
 another project holds it. `PLP_SVELTEKIT_FIXTURE=sveltekit3-payload` serves the
-SvelteKit 3 example on 4175 in place of `sveltekit-payload`. The CI E2E job installs all nine package fixtures
+SvelteKit 3 example on 4175 in place of `sveltekit-payload`, and
+`PLP_NUXT_FIXTURE=nuxt4-payload` the Nuxt 4 example on 4176 in place of `nuxt-payload`. The CI E2E job installs all nine package fixtures
 (`CI_FIXTURES` in `scripts/workflow-expectations-shared.ts`); the fixture audit
-job runs `npm audit` on all eleven lockfiles.
+job runs `npm audit` on all twelve lockfiles.
 
 ## Refresh after a build
 

@@ -9,7 +9,8 @@ const isCI = process.env['CI'] === 'true';
  * the editor's real session, the plain HTML example (`html`), the Next.js example
  * framed from an admin that keeps its autoLogin (`nextjs-autologin`), or the SvelteKit
  * example's collection pages framed from an admin with two more collections (`create`).
- * `sveltekit3` and `sveltekit3-create` are those two SvelteKit targets on the SvelteKit 3 fixture.
+ * `sveltekit3` and `sveltekit3-create` are those two SvelteKit targets on the SvelteKit 3 fixture,
+ * `nuxt4` and `nuxt4-composable` the two Nuxt targets on the Nuxt 4 fixture.
  */
 const requested = process.env['PLP_REAL_PAYLOAD_TARGET'] ?? 'astro';
 /**
@@ -45,6 +46,7 @@ const SESSION_SURFACES: Record<string, Surface> = {
     command: 'npx vite dev --port 4475',
   },
   nuxt: { port: '4476', directory: 'nuxt-payload', command: 'npx nuxt dev --port 4476' },
+  nuxt4: { port: '4476', directory: 'nuxt4-payload', command: 'npx nuxt dev --port 4476' },
   // The Astro integration's middleware delivery under the strict default: the hook is
   // `payload-session`, in the module PLP_PAYLOAD_SERVER_URL makes astro.config.mjs name.
   'astro-session': {
@@ -64,6 +66,13 @@ const SESSION_SURFACES: Record<string, Surface> = {
   'nuxt-composable': {
     port: '4476',
     directory: 'nuxt-payload',
+    command: 'npx nuxt dev --port 4476',
+    path: '/composable',
+    spec: 'hook',
+  },
+  'nuxt4-composable': {
+    port: '4476',
+    directory: 'nuxt4-payload',
     command: 'npx nuxt dev --port 4476',
     path: '/composable',
     spec: 'hook',
