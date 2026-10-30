@@ -52,6 +52,22 @@ export function previewIntentFor(
   );
 }
 
+/** `;` ends a CSP directive and `,` a policy: a source holding either would add one of its own. */
+const CSP_DELIMITER = /[;,\p{Cc}]/u;
+
+/** Every configured CSP source is one a header can carry; the error names the option that is not. */
+function assertCspSources(options: PreviewPolicyOptions): void {
+  for (const name of ['allowedOrigins', 'frameAncestorsExtra', 'scriptSrcExtra'] as const) {
+    const unfit = (options[name] ?? []).find((source) => CSP_DELIMITER.test(source));
+    if (unfit !== undefined) {
+      throw new Error(
+        `payload-live-preview: \`${name}\` holds ${JSON.stringify(unfit)}, which a CSP header ` +
+          'cannot carry: ";" ends a directive and "," a policy.',
+      );
+    }
+  }
+}
+
 /** The CSP header after merging: `frame-ancestors` always, a nonce'd `script-src` only in `'full'` mode. */
 export function buildPreviewCsp(
   options: PreviewPolicyOptions,
@@ -59,6 +75,8 @@ export function buildPreviewCsp(
   existing: string,
   mode: Exclude<CspMode, false>,
 ): string {
+  // Also here: `buildLivePreviewCsp()` reaches this without a policy.
+  assertCspSources(options);
   const additions: Record<string, string> = {
     'frame-ancestors': buildFrameAncestors({
       self: true,
@@ -132,6 +150,7 @@ export function createPreviewPolicy(
 ): PreviewPolicy {
   const resolved = resolvePolicyOptions(options);
   assertMergeDepthExplicit(options);
+  assertCspSources(options);
   const authorizes = typeof options.authorizePreview === 'function';
   if (resolved.strict) {
     assertStrictConfiguration(options);

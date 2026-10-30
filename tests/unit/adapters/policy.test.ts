@@ -7,6 +7,7 @@ import {
   normalizeCspMode,
 } from '@adapters/shared/policy';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
+import { buildLivePreviewCsp } from '@adapters/nuxt/adapter';
 import { generateInlineScript } from '@inline/generator';
 import { LEAN_RUNTIME } from '@/lean';
 
@@ -195,6 +196,38 @@ describe('buildPreviewCsp', () => {
     expect(full).toContain("'nonce-n0nce'");
     expect(full).toContain("'strict-dynamic'");
     expect(full).toContain('https://cdn.example.com');
+  });
+
+  it.each([
+    ['frameAncestorsExtra', { frameAncestorsExtra: ['https://embed.example.com; script-src *'] }],
+    ['scriptSrcExtra', { scriptSrcExtra: ['https://cdn.example.com, script-src *'] }],
+    ['allowedOrigins', { allowedOrigins: [ADMIN, 'https://b.example.com;report-uri /x'] }],
+    [
+      'frameAncestorsExtra',
+      { frameAncestorsExtra: ['https://embed.example.com\r\nX-Injected: 1'] },
+    ],
+  ])(
+    'refuses an entry of %s that a CSP header cannot carry, at startup and when built',
+    (name, extra) => {
+      // `;` ends the directive and `,` the policy: the rest would become a directive of its own.
+      const options = { allowedOrigins: [ADMIN], ...extra };
+      expect(() => createPreviewPolicy({ defaults: 'v1', ...options })).toThrow(new RegExp(name));
+      expect(() => buildPreviewCsp(options, 'n0nce', '', 'full')).toThrow(new RegExp(name));
+      expect(() => buildLivePreviewCsp(options, 'n0nce', '', 'full')).toThrow(new RegExp(name));
+    },
+  );
+
+  it('keeps several space-separated sources in one entry, which a header carries', () => {
+    const csp = buildPreviewCsp(
+      {
+        allowedOrigins: [ADMIN],
+        frameAncestorsExtra: ['https://a.example.com https://b.example.com'],
+      },
+      'n0nce',
+      '',
+      'frame-ancestors',
+    );
+    expect(csp).toContain('https://a.example.com https://b.example.com');
   });
 });
 

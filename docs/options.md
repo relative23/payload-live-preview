@@ -116,7 +116,10 @@ fifty-five rows.
 - **What the response's CSP says** — `manageCsp`, `strictDynamic`,
   `frameAncestorsExtra`, `scriptSrcExtra`. The admin has to be allowed to frame
   the page and the injected script has to be allowed to run, without the package
-  ever loosening a policy the site already sends.
+  ever loosening a policy the site already sends. An entry of
+  `allowedOrigins`, `frameAncestorsExtra` or `scriptSrcExtra` that holds `;`,
+  `,` or a control character is refused at startup: in the header it would end
+  the directive and start one of its own.
 - **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
   `routeStrategy`, `onUnfaithfulPatch` and its 1.x name `onUnboundChange`,
   `strategies`, `dependencies`, `autoBind`, `subfieldCoverage`. Three
