@@ -91,7 +91,7 @@ export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedP
 export function createAuthorizedPreviewContext(
   fields: Omit<AuthorizedPreviewContext, typeof AUTHORIZED_PREVIEW_BRAND_KEY>,
 ): AuthorizedPreviewContext {
-  const context = Object.freeze({
+  const context = {
     ...fields,
     scope: Object.freeze({
       ...fields.scope,
@@ -106,8 +106,11 @@ export function createAuthorizedPreviewContext(
     }),
     payloadHeaders: Object.freeze({ ...fields.payloadHeaders }),
     [BRAND]: true,
-    [AUTHORIZED_PREVIEW_BRAND_KEY]: true,
-  });
+    [AUTHORIZED_PREVIEW_BRAND_KEY]: true as const,
+  };
+  // The cookie is HttpOnly in the browser. Not enumerable, so `JSON.stringify(locals)`, a log,
+  // a spread or a framework serializer leaves it out; a draft read still reads it by name.
+  Object.defineProperty(context, 'payloadHeaders', { enumerable: false });
   // No cast: the frozen object carries the brand key the interface declares.
-  return context;
+  return Object.freeze(context);
 }

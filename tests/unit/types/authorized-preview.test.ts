@@ -1,3 +1,4 @@
+import { inspect } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import {
   AUTHORIZED_PREVIEW_BRAND_KEY,
@@ -44,5 +45,26 @@ describe('authorized preview brand', () => {
     expect(isAuthorizedPreviewContext({ ...value })).toBe(false);
     expect(isAuthorizedPreviewContext(JSON.parse(JSON.stringify(value)))).toBe(false);
     expect(isAuthorizedPreviewContext({ authorized: true })).toBe(false);
+  });
+
+  it('keeps the forwarded cookie out of every enumeration: JSON, a spread, the keys, a log', () => {
+    // The cookie is HttpOnly in the browser; `JSON.stringify(locals)` or a page that returns the
+    // context must not hand it to the page.
+    const value = createAuthorizedPreviewContext({
+      strategy: 'payload-session',
+      subject: '7',
+      authorizedAt: 0,
+      expiresAt: undefined,
+      scope: {},
+      payloadHeaders: { cookie: 'payload-token=secret.jwt' },
+    });
+    expect(value.payloadHeaders).toStrictEqual({ cookie: 'payload-token=secret.jwt' });
+    expect(JSON.stringify({ livePreviewAuthorization: value })).not.toContain('secret.jwt');
+    expect(Object.keys(value)).not.toContain('payloadHeaders');
+    expect({ ...value }).not.toHaveProperty('payloadHeaders');
+    expect(inspect(value, { depth: 4 })).not.toContain('secret.jwt');
+    expect(Object.isFrozen(value)).toBe(true);
+    expect(Object.isFrozen(value.payloadHeaders)).toBe(true);
+    expect(isAuthorizedPreviewContext(value)).toBe(true);
   });
 });

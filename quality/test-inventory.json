@@ -22,7 +22,7 @@
   "totals": {
     "files": 529,
     "suites": 1021,
-    "tests": 4617,
+    "tests": 4618,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 432,
       "suites": 911,
-      "tests": 4215,
+      "tests": 4216,
       "benchmarks": 0
     }
   },
@@ -3742,7 +3742,7 @@
       "path": "tests/unit/types/authorized-preview.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {

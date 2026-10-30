@@ -17,9 +17,11 @@ use — the first preview request that reaches the hook, not startup.
 The `context` is an `AuthorizedPreviewContext`: frozen, branded, produced
 only there, carrying `strategy`, `subject`, `authorizedAt`, `expiresAt`,
 `scope` (`audience`, `path`, `locale`, optional `payload`) and `payloadHeaders`, the request
-material a draft read forwards to Payload. Pass the object itself: a spread
-copy, which is not frozen, or a JSON round trip is refused wherever a context
-is read. Threat model: [ADR 0006 — Authorized preview context](architecture/0006-authorized-preview-context.md).
+material a draft read forwards to Payload. `payloadHeaders` can carry the
+editor's HttpOnly session cookie, so it is not enumerable: `JSON.stringify`,
+a spread, `Object.keys` and a log leave it out, while reading it by name works.
+Pass the object itself: a spread copy, which is not frozen, or a JSON round
+trip is refused wherever a context is read. Threat model: [ADR 0006 — Authorized preview context](architecture/0006-authorized-preview-context.md).
 
 ## Strategies
 
