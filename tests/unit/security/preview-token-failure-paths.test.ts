@@ -161,6 +161,8 @@ describe('signed tokens whose payload survives the signature but not the parse',
       { ...valid, aud: 1 },
       { ...valid, pur: null },
       { ...valid, iat: '0' },
+      // A numeric string that passes every comparison, so only the type check refuses it.
+      { ...valid, iat: String(NOW) },
       { ...valid, exp: '0' },
       { ...valid, jti: 7 },
       { ...valid, pth: 5 },

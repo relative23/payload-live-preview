@@ -212,6 +212,9 @@ describe('buildPreviewCsp', () => {
       // `;` ends the directive and `,` the policy: the rest would become a directive of its own.
       const options = { allowedOrigins: [ADMIN], ...extra };
       expect(() => createPreviewPolicy({ defaults: 'v1', ...options })).toThrow(new RegExp(name));
+      expect(() => createPreviewPolicy({ defaults: 'v1', ...options })).toThrow(
+        'cannot carry: ";" ends a directive and "," a policy.',
+      );
       expect(() => buildPreviewCsp(options, 'n0nce', '', 'full')).toThrow(new RegExp(name));
       expect(() => buildLivePreviewCsp(options, 'n0nce', '', 'full')).toThrow(new RegExp(name));
     },
