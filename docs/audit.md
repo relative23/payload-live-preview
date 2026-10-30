@@ -331,9 +331,11 @@ Held by: the core mutation profile; `tests/unit/security/escape.test.ts`.
   `data-*` pass only when a `sanitizeHtml()` call lists them in
   `allowedDataAttributes`; the runtime's own writes list none, so it removes
   them too. `'compat'` keeps `id` and every `data-*`, as 1.x did.
-- **S5** `href`, `src`, `cite` and `poster` are removed when `isSafeUrl`
-  refuses them; every `srcset` candidate is checked, whole as well as by its
-  URL, and the attribute goes if one fails. `isSafeUrl` reads a scheme through
+- **S5** `href`, `src`, `cite`, `poster`, `action` and `formaction` are removed
+  when `isSafeUrl` refuses them, however they were admitted, so an
+  `additionalAllowedAttributes` entry cannot bring back an unsafe one; every
+  `srcset` candidate is checked, whole as well as by its URL, and so is every
+  target of a re-admitted `ping`, and the attribute goes if one fails. `isSafeUrl` reads a scheme through
   whitespace and control characters, as DOMPurify does.
 - **S6** An anchor to another HTTP origin gets `rel="noopener noreferrer"` and,
   if it had none, `target="_blank"`.

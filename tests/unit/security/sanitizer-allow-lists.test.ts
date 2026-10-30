@@ -98,7 +98,14 @@ describe('SANITIZER_POLICY', () => {
       'role',
       'tabindex',
     ]);
-    expect([...SANITIZER_POLICY.urlAttributes]).toEqual(['href', 'src', 'cite', 'poster']);
+    expect([...SANITIZER_POLICY.urlAttributes]).toEqual([
+      'href',
+      'src',
+      'cite',
+      'poster',
+      'action',
+      'formaction',
+    ]);
   });
 
   it('exposes the complete reviewed per-tag attribute policy', () => {
