@@ -23,5 +23,6 @@ export async function openLivePreviewPanel(page: Page): Promise<void> {
     )
     .toBe(true);
   await toggler.dispatchEvent('click');
-  await expect.poll(isOpen, { timeout: 15_000 }).toBe(true);
+  // The toggle loads the panel's chunks; a cold `next dev` compiles them first (see the config's timeout).
+  await expect.poll(isOpen, { timeout: 45_000 }).toBe(true);
 }

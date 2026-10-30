@@ -303,6 +303,11 @@ const config: PlaywrightTestConfig = {
                 ? /surface-(?:smoke|session)\.spec\.ts$/u
                 : /surface-smoke\.spec\.ts$/u,
   fullyParallel: false,
+  // The admin runs `next dev`, and the first test of a job pays its cold compile of the admin
+  // page and of the chunks the Live Preview toggle loads. On a loaded CI runner that took more
+  // than the default 30 s in WebKit while the dev tools showed "Compiling" (run 41078740864, html);
+  // the retry, warm, spent 4 s in its beforeEach. The budget covers the compile, not the tests.
+  timeout: 60_000,
   forbidOnly: true,
   // A pass on retry must not hide nondeterminism in the release fixture.
   failOnFlakyTests: true,
