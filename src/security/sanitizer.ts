@@ -490,7 +490,7 @@ function sanitizeAttributes(element: Element, tag: string, policy: ResolvedPolic
         element.removeAttribute(attr.name);
       } else if (name === 'srcset' && !isSafeSrcset(attr.value)) {
         element.removeAttribute(attr.name);
-      } else if (name === 'ping' && !attr.value.split(/\s+/u).every((url) => isSafeUrl(url))) {
+      } else if (name === 'ping' && !attr.value.trim().split(/\s+/u).every(isSafeUrl)) {
         // `ping` is a list of URLs; one unsafe target refuses the attribute.
         element.removeAttribute(attr.name);
       }

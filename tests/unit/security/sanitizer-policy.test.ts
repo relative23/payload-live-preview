@@ -129,6 +129,21 @@ describe('policy extension collisions', () => {
       expect(safe).toContain('ping="/p /q"');
     },
   );
+
+  it.each(POLICIES)(
+    '[%s] a ping keeps its safe targets however much whitespace stands around and between them',
+    (policy) => {
+      // The value is a set of space-separated tokens: no target is the empty string.
+      const options = { policy, additionalAllowedAttributes: { a: ['ping'] } } as const;
+      for (const ping of [' /p', '/p  /q', '/p\t/q ', '\n/p\n']) {
+        const out = sanitizeHtml(`<a href="/ok" ping="${ping}">l</a>`, options);
+        expect(out, JSON.stringify(ping)).toContain('ping=');
+      }
+      expect(sanitizeHtml('<a href="/ok" ping=" /p  javascript:y()">l</a>', options)).not.toContain(
+        'ping',
+      );
+    },
+  );
 });
 
 describe('sanitizeHtmlWithPolicy — the instance layer between a call and the process default', () => {
