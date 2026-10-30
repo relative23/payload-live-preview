@@ -59,7 +59,7 @@ What differs between Payload 2, 3 and 4:
 
 Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-The 50 feature rows of `quality/compat-matrix.json` each name the CI job that runs them on every push; a Version PR records the run it releases as their result.
+Of the 50 feature rows of `quality/compat-matrix.json`, 47 passed in the CI run the last Version PR recorded (commit `83f66e9`, 2026-10-30, `quality/compat-results.json`); the other 3 have no recorded result.
 
 Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 2 → 5/6/7/8, Nuxt 3 → 7), measured 2026-09-06. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
