@@ -212,9 +212,12 @@ Nothing is published from a laptop. From a merge to npm:
    changesets → Version PR; it is, with no changesets and no GitHub Release yet
    → publish, which skips the upload when npm holds the certified bytes and
    creates the missing tag and Release; the GitHub Release exists → nothing.
-3. Version PR: `changesets/action` runs `npm run version` and opens or updates
-   the PR titled `chore: release`. Review the CHANGELOG entry and merge it;
-   that merge is the push that publishes.
+3. Version PR: `npm run compat:record` records the CI run that triggered the
+   workflow as the result of the compatibility rows it ran
+   (`quality/compat-results.json`, rows in `quality/compat-matrix.json` set to
+   `passed`). Then `changesets/action` runs `npm run version` and opens or
+   updates the PR titled `chore: release` with both. Review the CHANGELOG entry
+   and merge it; that merge is the push that publishes.
 4. Publish: the workflow downloads the exact CI artifact, reruns the package
    gate on it, publishes those bytes with provenance (`npm run release`),
    verifies the registry copy, pushes the `v<version>` tag, creates the GitHub
