@@ -1,0 +1,31 @@
+{
+  "name": "sveltekit3-payload-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@12.0.2",
+  "scripts": {
+    "dev": "vite dev --port 4175",
+    "build": "vite build",
+    "preview": "vite preview --port 4175",
+    "prepare": "svelte-kit sync || echo ''"
+  },
+  "dependencies": {
+    "payload-live-preview": "file:../.."
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-auto": "^8.0.0",
+    "@sveltejs/adapter-node": "^6.0.1",
+    "@sveltejs/kit": "^3.1.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "svelte": "^5.57.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.5"
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": false
+  },
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  }
+}

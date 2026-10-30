@@ -14,6 +14,7 @@ examples/**/.astro/
 examples/**/.next/
 examples/**/.svelte-kit/
 examples/sveltekit-payload/build/
+examples/sveltekit3-payload/build/
 examples/**/.nuxt/
 examples/**/.output/
 examples/**/next-env.d.ts

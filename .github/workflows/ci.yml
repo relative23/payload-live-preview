@@ -214,6 +214,7 @@ jobs:
       - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/vanilla-client
       - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-inline
       - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-middleware
+      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/sveltekit3-payload
       - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/payload-backend
 
   # A job that calls a reusable workflow reports its check as
@@ -271,6 +272,67 @@ jobs:
         if: failure()
         with:
           name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 7
+
+  # The SvelteKit example's SvelteKit 3 twin (examples/sveltekit3-payload), beside the SvelteKit 2
+  # fixture the E2E job serves. The files that test only SvelteKit run whole; the shared ones run
+  # their SvelteKit cases, and the byte-for-byte public response is the SvelteKit fixture's too.
+  # The public-response rows weigh each page against the runtime the Astro fixture serves, which
+  # this job does not start.
+  sveltekit3:
+    name: SvelteKit 3 E2E (${{ matrix.browser }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          # SvelteKit 3 needs >=22.17; the job matches the E2E job's Node
+          node-version: 22.23.4
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: bash scripts/ci-install-browser.sh ${{ matrix.browser }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+      - run: bash scripts/ci-install-fixture.sh examples/sveltekit3-payload
+      - env:
+          PLP_E2E_SERVERS: sveltekit
+          PLP_SVELTEKIT_FIXTURE: sveltekit3-payload
+        run: >-
+          npx playwright test --project=${{ matrix.browser }}
+          tests/e2e/specs/owner-scoping.spec.ts
+          tests/e2e/specs/sveltekit-asset-delivery.spec.ts
+          tests/e2e/specs/sveltekit-fragment.spec.ts
+          tests/e2e/specs/sveltekit-live-preview.spec.ts
+          tests/e2e/specs/sveltekit-owner-fragments.spec.ts
+      - env:
+          PLP_E2E_SERVERS: sveltekit
+          PLP_SVELTEKIT_FIXTURE: sveltekit3-payload
+        run: >-
+          npx playwright test --project=${{ matrix.browser }} -g "[Ss]velte[Kk]it|byte for byte"
+          --grep-invert "public response carries"
+          tests/e2e/specs/auto-bind-hit-rate.spec.ts
+          tests/e2e/specs/fragment-request-bounds.spec.ts
+          tests/e2e/specs/navigation-lifecycle-per-framework.spec.ts
+          tests/e2e/specs/public-response.spec.ts
+          tests/e2e/specs/reveal.spec.ts
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-sveltekit3-${{ matrix.browser }}
           path: playwright-report/
           retention-days: 7
 
@@ -575,7 +637,8 @@ jobs:
   # The targets whose preview verifies the editor's real session (or, for html, the origin
   # rule) against the real Payload admin; nextjs-autologin frames the Next.js example from an
   # admin that keeps its autoLogin, which issues no cookie; create frames the SvelteKit
-  # example's collection pages from an admin that has two collections for the create screen.
+  # example's collection pages from an admin that has two collections for the create screen;
+  # sveltekit3 and sveltekit3-create are those two SvelteKit targets on the SvelteKit 3 fixture.
   # The fixture each target frames is looked up by name.
   real-payload-surfaces:
     name: Real Payload E2E (${{ matrix.target }}, ${{ matrix.browser }})
@@ -596,6 +659,8 @@ jobs:
             astro-session,
             nextjs-autologin,
             create,
+            sveltekit3,
+            sveltekit3-create,
           ]
         browser: [chromium, firefox, webkit]
     steps:
@@ -617,7 +682,7 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist
       - env:
-          EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload"}')[matrix.target] }}
+          EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","sveltekit3":"sveltekit3-payload","sveltekit3-create":"sveltekit3-payload"}')[matrix.target] }}
         run: bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"
       - run: bash scripts/ci-install-fixture.sh examples/payload-backend
       - env:

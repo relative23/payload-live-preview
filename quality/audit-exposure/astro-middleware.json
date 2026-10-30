@@ -10,9 +10,9 @@
     "examples/astro-middleware/src/pages/index.astro": "b4496a6a565a831d06aba40185686a4639bad10cf6f15f7bca0d908dc27df0d9",
     "examples/astro-middleware/src/pages/reveal.astro": "806cdfbd5b4f4049cd6853d78fb65c11e0cf45e82d375ce2a9d394a852975437",
     "playwright.astro-continuation.config.ts": "ed6c35a84830b857f1463e2a55a8c3f36a2dae1b8b27f01365116e7d19f6643a",
-    "playwright.config.ts": "715a83a82cbec342ce844d3fa4cf0c129611be85571c7842568d3b00673b9a7c",
+    "playwright.config.ts": "d0dc2fc85d0e9b88f0c867832bb3085b1e52a33309a71312e18792bdf2595d99",
     "playwright.next-continuation.config.ts": "d62804613a00c57dfe027a7c4128e6493a4a40542fcf761e915289875360c798",
-    "playwright.real-payload.config.ts": "db81a7c9a1ad982f2a1731ffb5d2121a6dd04080f49ed2b127a5656f82278e54",
+    "playwright.real-payload.config.ts": "5575f26a275a64b535e9209f194cc6183a33f7e9def675bbbea4a02f427117b4",
     "scripts/astro-production-fixture.mjs": "6708448c67e8bb6f4590c57b9b0343b242c99e5cb0454e9fcecc248eb2889dca",
     "scripts/fixture-proxy-lifetime.mjs": "1404361dbfc1d740daa0b80cb40301016c351726210ae865daca85784700a3f5",
     "scripts/node-production-fixture.mjs": "b106d3c7b9a408506149b5d1fa40de0fdea2461cb393fb3aac726c101cd36e0b"

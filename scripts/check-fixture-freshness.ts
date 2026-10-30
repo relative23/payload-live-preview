@@ -3,11 +3,12 @@
  *
  * Every fixture depends on the package through `file:../..`, and the lockfiles
  * record that two different ways. Five say `"link": true` and get a symlink to
- * the repository root, so they are current by construction. Five —
- * astro-payload, nextjs-payload, nuxt-payload, sveltekit-payload and payload-backend — resolve to
- * `file:../..` with a version, and npm materialises a packed copy instead.
+ * the repository root, so they are current by construction. Six —
+ * astro-payload, nextjs-payload, nuxt-payload, sveltekit-payload, sveltekit3-payload and
+ * payload-backend — resolve to `file:../..` with a version, and npm materialises a packed copy
+ * instead.
  *
- * Keeping both is deliberate: a copy is what a consumer installs, so those five
+ * Keeping both is deliberate: a copy is what a consumer installs, so those six
  * exercise the packed layout and the `files` field rather than the working
  * tree. The cost is that `npm install` reuses the copy while the manifest is
  * unchanged, so the fixture keeps running the library as it was when the copy
