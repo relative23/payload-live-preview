@@ -31,8 +31,9 @@ ledger, and `pll migrate` rewrites neither `onUnboundChange` nor
 ### 1. One development warning per deprecated form
 
 Each of the six warns once per process outside production, through the
-`warnOnce` the adapters already use: `NODE_ENV` is set and is not
-`production`, and the issued keys live on `globalThis`, so two copies of the
+`warnOnce` the adapters already use: `NODE_ENV` is not `production` (an
+unset `NODE_ENV` counts as development too, corrected 2026-10-30; without a
+`process.env` nothing warns), and the issued keys live on `globalThis`, so two copies of the
 package in one process warn once. The helper moves from `adapters/shared` to
 `types`, the leaf that the sanitizer and the token strategy may import. The
 warning names the replacement, says that 3.0 removes the old form, and names

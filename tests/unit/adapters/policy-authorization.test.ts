@@ -249,6 +249,30 @@ describe('strict', () => {
     ).not.toThrow();
   });
 
+  it('says once when it accepts an http admin origin only because NODE_ENV is not set', () => {
+    // A production server without NODE_ENV counts as development, so the https rule is off there.
+    delete process.env['NODE_ENV'];
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const options = {
+      authorizePreview: hook,
+      allowedOrigins: ['https://admin.example.com', 'http://admin.local'],
+    };
+    expect(() => assertStrictConfiguration(options)).not.toThrow();
+    assertStrictConfiguration(options);
+    expect(warn).toHaveBeenCalledOnce();
+    expect(String(warn.mock.calls[0]?.[0])).toContain('`NODE_ENV` is not set');
+    expect(String(warn.mock.calls[0]?.[0])).toContain('"http://admin.local"');
+    expect(String(warn.mock.calls[0]?.[0])).not.toContain('https://admin.example.com');
+
+    warn.mockClear();
+    resetDevWarnings();
+    process.env['NODE_ENV'] = 'development';
+    assertStrictConfiguration(options);
+    delete process.env['NODE_ENV'];
+    assertStrictConfiguration({ authorizePreview: hook, allowedOrigins: [ADMIN] });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
   it('accepts https admin origins in production, which is the configuration strict exists for', () => {
     process.env['NODE_ENV'] = 'production';
     expect(() =>

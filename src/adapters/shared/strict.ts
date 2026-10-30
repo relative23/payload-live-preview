@@ -3,7 +3,7 @@
  * rather than a public response (ADR 0006).
  */
 
-import { isDevelopmentProcess } from '@/types/dev-warning';
+import { isDevelopmentProcess, warnOnce } from '@/types/dev-warning';
 import { resolvePolicyOptions, type PreviewPolicyOptions } from './policy-options';
 
 /**
@@ -32,21 +32,24 @@ export function assertStrictConfiguration(options: PreviewPolicyOptions): void {
       'payload-live-preview: strict mode requires explicit, non-empty `allowedOrigins`.' + STAGED,
     );
   }
-  if (!isDevelopmentProcess()) {
-    for (const origin of origins) {
-      let protocol: string | undefined;
-      try {
-        protocol = new URL(origin).protocol;
-      } catch {
-        protocol = undefined;
-      }
-      if (protocol !== 'https:') {
-        throw new Error(
-          `payload-live-preview: strict mode requires https admin origins in production; got "${origin}".` +
-            STAGED,
-        );
-      }
-    }
+  const plain = origins.filter((origin) => !isHttpsOrigin(origin));
+  if (plain.length > 0 && !isDevelopmentProcess()) {
+    throw new Error(
+      `payload-live-preview: strict mode requires https admin origins in production; got "${plain[0]}".` +
+        STAGED,
+    );
+  }
+  // Past the refusal `process.env` was readable and not production. Unset counts as
+  // development there, which a production server without it is not.
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
+    ?.env;
+  if (plain.length > 0 && env?.['NODE_ENV'] === undefined) {
+    warnOnce(
+      'strict-http-without-node-env',
+      `strict mode accepted ${plain.map((origin) => `"${origin}"`).join(', ')} because \`NODE_ENV\` ` +
+        'is not set, which it treats as development. Set `NODE_ENV=production` on a production ' +
+        'server, and strict mode requires https admin origins there.',
+    );
   }
   // The resolved signals, not the option: `defaults: 'v1'` fills in `referer`.
   if (resolvePolicyOptions(options).previewSignals?.includes('referer') === true) {
@@ -54,5 +57,14 @@ export function assertStrictConfiguration(options: PreviewPolicyOptions): void {
       "payload-live-preview: strict mode disables referrer trust; remove 'referer' from " +
         "`previewSignals` (the 'v1' profile includes it).",
     );
+  }
+}
+
+/** Unparseable is not https: strict mode may not fall through to "fine". */
+function isHttpsOrigin(origin: string): boolean {
+  try {
+    return new URL(origin).protocol === 'https:';
+  } catch {
+    return false;
   }
 }

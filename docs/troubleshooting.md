@@ -103,7 +103,9 @@ Development forgives what production refuses:
 - The localhost matcher accepts any `localhost` port; deployed, only
   `allowedOrigins` counts. `origins.trusted` must hold the deployed admin origin.
 - `strict` accepts `http:` admin origins only while `NODE_ENV` is not
-  `production`.
+  `production`, and an unset `NODE_ENV` is not `production`. A server started
+  without it, such as `node build` from SvelteKit's Node adapter, accepts them
+  and warns once that it did; set `NODE_ENV=production` there.
 - A proxy or CDN may strip `Sec-Fetch-Dest`, the CSP header or the cache
   headers, or hand the admin a cached public page. `pll doctor` fetches the URL
   as a visitor and as the admin's iframe and reports the difference: `LP0701`
