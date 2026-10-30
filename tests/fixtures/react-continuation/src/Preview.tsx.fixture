@@ -1,0 +1,70 @@
+/**
+ * React owns the rendered snapshot; the packed hook owns its subscription.
+ * The session component that calls the hook can unmount on its own, then be
+ * replaced once. The local envelope bridge supplies no browser authority.
+ */
+import { useEffect, useMemo, useState } from 'react';
+import { useLivePreviewDocument } from 'payload-live-preview/react';
+import type { PreviewDocument, PreviewView } from './types';
+
+interface Snapshot {
+  data: PreviewDocument;
+  status: string;
+}
+
+function labels(values: unknown[] = []): string {
+  return values.map(value => typeof value === 'object' && value !== null && 'title' in value ? String(value.title) : 'ID:' + String(value)).join(' | ');
+}
+
+function Session({ view, onSnapshot }: { view: PreviewView; onSnapshot: (snapshot: Snapshot) => void }) {
+  const transport = useMemo<typeof fetch>(() => {
+    let revision = 0;
+    return async (input, init) => {
+      const expected = ++revision;
+      const { data, locale } = JSON.parse(String(init?.body));
+      const endpoint = new URL(input instanceof Request ? input.url : String(input));
+      if (endpoint.pathname !== '/api/articles/' + view.initialData.id || String(data.id) !== String(view.initialData.id) || locale !== view.locale) throw new Error('Reference identity mismatch');
+      const response = await fetch(view.path + '/data?preview=true&locale=' + view.locale, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', signal: init?.signal,
+        body: JSON.stringify({ version: 1, revision: expected, data: { title: data.title, related: data.related, files: data.files } }),
+      });
+      if (!response.ok) { await response.body?.cancel(); return new Response(null, { status: response.status }); }
+      const envelope = await response.json();
+      if (envelope.version !== 1 || envelope.ok !== true || envelope.revision !== expected || String(envelope.data?.id) !== String(view.initialData.id)) throw new Error('Reference revision mismatch');
+      return Response.json(envelope.data);
+    };
+  }, [view]);
+  const { data, status, isLoading } = useLivePreviewDocument<PreviewDocument>({
+    initialData: view.initialData, serverURL: view.origin, allowedOrigins: [view.origin],
+    fetchFn: transport, depth: 2, eventSourcePolicy: 'parent-or-opener',
+    enableReferrerDetection: false, enableLocalhostMatching: false,
+  });
+  const shown = status === 'idle' ? 'idle' : isLoading ? 'loading' : status;
+  useEffect(() => { onSnapshot({ data, status: shown }); }, [data, shown, onSnapshot]);
+  return null;
+}
+
+export default function Preview(view: PreviewView) {
+  const [count, setCount] = useState(0);
+  const [ready, setReady] = useState(false);
+  const [active, setActive] = useState(true);
+  const [generation, setGeneration] = useState(1);
+  const [snapshot, setSnapshot] = useState<Snapshot>({ data: view.initialData, status: 'idle' });
+  useEffect(() => { setReady(true); }, []);
+  return <main data-payload-island="">
+    {active ? <Session key={generation} view={view} onSnapshot={setSnapshot} /> : null}
+    <h1 data-testid="title">{snapshot.data.title}</h1>
+    <p data-testid="related">{labels(snapshot.data.related)}</p>
+    <p data-testid="files">{labels(snapshot.data.files)}</p>
+    <output data-testid="ready">{ready ? 'ready' : 'hydrating'}</output>
+    <output data-testid="status">{snapshot.status}</output>
+    <output data-testid="scope">{active ? 'active' : 'stopped'}</output>
+    <output data-testid="generation">{generation}</output>
+    <button data-testid="counter" onClick={() => setCount(count + 1)}>{count}</button>
+    <input aria-label="Visitor state" data-testid="visitor" defaultValue="Visitor state" />
+    <button data-testid="stop-scope" onClick={() => setActive(false)}>Stop preview session</button>
+    <button data-testid="restart-scope" onClick={() => { setGeneration(generation + 1); setActive(true); }}>Start a new preview session</button>
+    <a data-testid="valid-navigation" href={view.path + '?locale=' + view.locale + '&preview=true'}>Reload server data</a>
+    <a data-testid="denied-navigation" href={view.path + '?preview=true&locale=' + view.locale + '&invalid=1'}>Denied navigation</a>
+  </main>;
+}

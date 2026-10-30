@@ -10,6 +10,10 @@ import { expect, test, type Page, type Frame, type Request } from '@playwright/t
 import { startNativeContinuation } from '../helpers/native-continuation';
 import { startNextContinuation } from '../helpers/next-continuation';
 
+/** The hosts the config's `continuationFramework` may name; anything else runs the Next.js host. */
+const NATIVE_FRAMEWORKS = ['sveltekit', 'nuxt', 'astro', 'html', 'vue', 'react'] as const;
+/** The element a component host mounts into; the HTML host's owner is its custom element. */
+const APP_ROOTS: Partial<Record<string, string>> = { vue: '#vue-app', react: '#react-app' };
 let fixture: Awaited<ReturnType<typeof startNativeContinuation>>;
 let artifact: string;
 let closeFixture: (() => Promise<void>) | undefined;
@@ -55,7 +59,7 @@ async function enter(
 }
 async function openFrame(page: Page, editor: 'a' | 'b', locale: 'de' | 'en'): Promise<Frame> {
   const before = fixture.backend.requests.length;
-  const ssr = ['nuxt', 'astro', 'html', 'vue'].includes(fixture.framework)
+  const ssr = ['nuxt', 'astro', 'html', 'vue', 'react'].includes(fixture.framework)
     ? page.waitForResponse(
         (response) =>
           response.request().resourceType() === 'document' &&
@@ -86,7 +90,7 @@ async function openFrame(page: Page, editor: 'a' | 'b', locale: 'de' | 'en'): Pr
     expect(response.headers()['content-security-policy']).toContain('frame-ancestors');
     expect(response.headers()['content-security-policy']).toContain(fixture.origin);
     const html = await response.text();
-    if (fixture.framework === 'vue') {
+    if (fixture.framework === 'vue' || fixture.framework === 'react') {
       expect(
         html.includes('<h1 data-testid="title">' + editor + '-draft-' + locale + '</h1>'),
       ).toBe(true);
@@ -149,14 +153,7 @@ test.describe('native production host continuation', () => {
   test.beforeAll(async ({ browserName, browser }, info) => {
     test.setTimeout(240_000);
     const selected: unknown = info.config.metadata['continuationFramework'];
-    const framework =
-      selected === 'sveltekit' ||
-      selected === 'nuxt' ||
-      selected === 'astro' ||
-      selected === 'html' ||
-      selected === 'vue'
-        ? selected
-        : 'next';
+    const framework = NATIVE_FRAMEWORKS.find((name) => name === selected) ?? 'next';
     artifact = resolve(
       `test-results/hardening/h04-${framework}-host`,
       process.env['PLP_HOST_RUN'] ?? 'native-first',
@@ -228,7 +225,7 @@ test.describe('native production host continuation', () => {
       (window as Window & { __nativeHostMarker?: string }).__nativeHostMarker = value;
       return value;
     });
-    const documentNavigation = fixture.framework === 'html' || fixture.framework === 'vue';
+    const documentNavigation = ['html', 'vue', 'react'].includes(fixture.framework);
     if (fixture.framework !== 'next') {
       const before = fixture.backend.requests.length;
       if (documentNavigation) {
@@ -246,7 +243,7 @@ test.describe('native production host continuation', () => {
               },
               { once: true },
             ),
-          fixture.framework === 'vue' ? '#vue-app' : 'plp-html-preview',
+          APP_ROOTS[fixture.framework] ?? 'plp-html-preview',
         );
       }
       const priorOwner =
@@ -555,8 +552,8 @@ test.describe('native production host continuation', () => {
     expect(publicHTML).not.toContain('draft-de');
     expect(publicHTML).not.toContain('payload-live-preview');
     // Without a cookie the document of the preview route is answered 200 by Next, Nuxt and SvelteKit and refused with
-    // 403 by Astro, the HTML host and Vue (measured on the packed archive); the data route refuses in every host.
-    const refusedDocument = ['astro', 'html', 'vue'].includes(fixture.framework);
+    // 403 by Astro, the HTML host, Vue and React (measured on the packed archive); the data route refuses in every host.
+    const refusedDocument = ['astro', 'html', 'vue', 'react'].includes(fixture.framework);
     for (const [path, status] of [
       ['/continuation/a/de?preview=true&locale=de', refusedDocument ? 403 : 200],
       ['/continuation/a/de/data?preview=true&locale=de', 403],

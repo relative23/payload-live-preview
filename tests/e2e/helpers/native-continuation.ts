@@ -54,7 +54,7 @@ const checksum = (value: Uint8Array | string): string =>
   createHash('sha256').update(value).digest('hex');
 export async function startNativeContinuation(
   artifact: string,
-  framework: 'next' | 'sveltekit' | 'nuxt' | 'astro' | 'html' | 'vue',
+  framework: 'next' | 'sveltekit' | 'nuxt' | 'astro' | 'html' | 'vue' | 'react',
   baseline = false,
   profile: 'continuation' | 'astro-resources' = 'continuation',
 ) {
@@ -63,6 +63,7 @@ export async function startNativeContinuation(
   const isAstro = framework === 'astro';
   const isHTML = framework === 'html';
   const isVue = framework === 'vue';
+  const isReact = framework === 'react';
   const isAstroResources = profile === 'astro-resources';
   assert.ok(!isAstroResources || isAstro, 'The resource profile requires native Astro');
   const resourceVersion = isAstroResources
@@ -82,7 +83,7 @@ export async function startNativeContinuation(
   const example = isNext ? 'nextjs-payload' : isHTML ? 'pure-html' : `${framework}-payload`;
   const dependencyRoot = isAstroResources
     ? resolve(ROOT, resourceVersion!.dependencyRoot)
-    : isAstro || isVue
+    : isAstro || isVue || isReact
       ? resolve(ROOT, `tests/fixtures/${framework}-host-deps`)
       : resolve(ROOT, 'examples', example);
   const prefix = isNext
@@ -95,7 +96,9 @@ export async function startNativeContinuation(
           ? 'PLP_HTML'
           : isVue
             ? 'PLP_VUE'
-            : 'PLP_SVELTE';
+            : isReact
+              ? 'PLP_REACT'
+              : 'PLP_SVELTE';
   const versionsToCheck = isAstroResources
     ? [
         'astro',
@@ -119,22 +122,31 @@ export async function startNativeContinuation(
           'typescript',
           'payload-live-preview',
         ]
-      : isHTML
-        ? ['payload-live-preview']
-        : isNext
-          ? ['next', 'react', 'react-dom', 'payload-live-preview']
-          : isNuxt
-            ? ['nuxt', 'vue', 'nitropack', 'h3', 'vite', 'payload-live-preview']
-            : isAstro
-              ? ['astro', '@astrojs/node', 'vite', 'payload-live-preview']
-              : [
-                  '@sveltejs/kit',
-                  '@sveltejs/adapter-node',
-                  '@sveltejs/vite-plugin-svelte',
-                  'svelte',
-                  'vite',
-                  'payload-live-preview',
-                ];
+      : isReact
+        ? [
+            'react',
+            'react-dom',
+            '@vitejs/plugin-react',
+            'vite',
+            'typescript',
+            'payload-live-preview',
+          ]
+        : isHTML
+          ? ['payload-live-preview']
+          : isNext
+            ? ['next', 'react', 'react-dom', 'payload-live-preview']
+            : isNuxt
+              ? ['nuxt', 'vue', 'nitropack', 'h3', 'vite', 'payload-live-preview']
+              : isAstro
+                ? ['astro', '@astrojs/node', 'vite', 'payload-live-preview']
+                : [
+                    '@sveltejs/kit',
+                    '@sveltejs/adapter-node',
+                    '@sveltejs/vite-plugin-svelte',
+                    'svelte',
+                    'vite',
+                    'payload-live-preview',
+                  ];
   const tarball = process.env['PLP_CONTINUATION_TARBALL'];
   assert.ok(tarball, 'PLP_CONTINUATION_TARBALL must name the retained archive');
   const archive = resolve(tarball);
@@ -151,7 +163,9 @@ export async function startNativeContinuation(
           ? '4288'
           : isVue
             ? '4289'
-            : '4285';
+            : isReact
+              ? '4291'
+              : '4285';
   // 428x0 overlaps this host's ephemeral range (32768-60999). Keep private
   // listeners below it so outbound fixture connections cannot claim the port.
   const internalPort = String(Number(port) + 10_000);
@@ -241,24 +255,24 @@ export async function startNativeContinuation(
       );
       assert.deepEqual(installed, ['payload-live-preview']);
     }
-    if (isVue) {
+    if (isVue || isReact) {
+      const label = isVue ? 'Vue' : 'React';
       const probe = probeUnavailableDependencies(app, [
         'nuxt',
         'nitropack',
         'next',
-        'react',
-        'react-dom',
+        ...(isVue ? ['react', 'react-dom'] : ['vue']),
         'astro',
         '@astrojs/node',
         'svelte',
         '@sveltejs/kit',
         'payload',
       ]);
-      logs.push(`Standalone Vue resolution probe\n${probe.stdout}\n${probe.stderr}`);
+      logs.push(`Standalone ${label} resolution probe\n${probe.stdout}\n${probe.stderr}`);
       assert.equal(
         probe.status,
         0,
-        'Standalone Vue consumer resolved an unrelated framework or CMS',
+        `Standalone ${label} consumer resolved an unrelated framework or CMS`,
       );
     }
     for (const name of versionsToCheck) {
@@ -320,19 +334,23 @@ export async function startNativeContinuation(
         resourceRenderer === 'react-islands',
       );
     }
-    if (isVue) {
-      const counterexample = join(app, 'src/__typecheck_counterexample.vue');
-      await copyFile(join(app, 'type-contracts/Negative.vue'), counterexample);
+    if (isVue || isReact) {
+      // One component that transpiles but does not type-check: an SFC for vue-tsc, TSX for tsc.
+      const extension = isVue ? 'vue' : 'tsx';
+      const counterexample = join(app, `src/__typecheck_counterexample.${extension}`);
+      await copyFile(join(app, `type-contracts/Negative.${extension}`), counterexample);
       const negative = spawnSync('npm', ['run', 'typecheck'], {
         cwd: app,
         env: environment,
         encoding: 'utf8',
         timeout: 60_000,
       });
-      logs.push(`npm run typecheck (negative SFC control)\n${negative.stdout}\n${negative.stderr}`);
+      logs.push(
+        `npm run typecheck (negative component control)\n${negative.stdout}\n${negative.stderr}`,
+      );
       await unlink(counterexample);
       assert.equal(negative.status, 2, 'Semantic template counterexample must fail');
-      assert.ok(negative.stdout.includes('__typecheck_counterexample.vue'));
+      assert.ok(negative.stdout.includes(`__typecheck_counterexample.${extension}`));
       assert.ok(negative.stdout.includes('TS2551'));
       assert.ok(negative.stdout.includes("Property 'toFixed' does not exist on type 'string'"));
       assert.equal((negative.stdout.match(/error TS/gu) ?? []).length, 1);
@@ -343,7 +361,7 @@ export async function startNativeContinuation(
           {
             argv: ['npm', 'run', 'typecheck'],
             exit: negative.status,
-            counterexample: 'src/__typecheck_counterexample.vue',
+            counterexample: `src/__typecheck_counterexample.${extension}`,
             error: 'TS2551',
             removedBeforeProductionBuild: true,
           },
@@ -355,10 +373,10 @@ export async function startNativeContinuation(
     await build({
       entryPoints: {
         reference: resolve(ROOT, 'tests/fixtures/preview-next-host.ts'),
-        ...(isNuxt || isHTML || isVue
+        ...(isNuxt || isHTML || isVue || isReact
           ? { 'native-request': resolve(ROOT, 'tests/fixtures/preview-native-request.ts') }
           : {}),
-        ...(isHTML || isVue
+        ...(isHTML || isVue || isReact
           ? { 'html-host': resolve(ROOT, 'tests/fixtures/preview-html-host.ts') }
           : {}),
       },
@@ -444,7 +462,9 @@ export async function startNativeContinuation(
     const entry = (await import(
       pathToFileURL(join(app, 'node_modules/payload-live-preview/dist/server.js')).href
     )) as typeof ServerEntry;
-    if (isHTML || isVue) await copyFile(join(app, 'dist/build.json'), join(artifact, 'build.json'));
+    if (isHTML || isVue || isReact) {
+      await copyFile(join(app, 'dist/build.json'), join(artifact, 'build.json'));
+    }
     if (isAstroResources) {
       await recordAstroResources(app, artifact);
       await checkAstroBridgeRuntime(artifact, internalPort);
@@ -475,7 +495,7 @@ export async function startNativeContinuation(
                 await readFile(
                   join(
                     app,
-                    isHTML || isVue
+                    isHTML || isVue || isReact
                       ? 'dist/build.json'
                       : isNuxt
                         ? '.output/nitro.json'

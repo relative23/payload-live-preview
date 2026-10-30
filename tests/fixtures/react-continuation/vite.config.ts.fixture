@@ -1,0 +1,16 @@
+/**
+ * Compile the same real components for browser hydration and native Node SSR.
+ * Runtime dependencies resolve inside this clean app; no source aliases,
+ * framework layer or development server participates in the accepted build.
+ */
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig(({ isSsrBuild }) => ({
+  plugins: [react()],
+  build: {
+    manifest: !isSsrBuild,
+    sourcemap: false,
+    ...(isSsrBuild ? {} : { rolldownOptions: { input: 'src/entry-client.tsx' } }),
+  },
+}));
