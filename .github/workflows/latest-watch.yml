@@ -1,0 +1,171 @@
+name: Latest Watch
+
+# CI installs exact lockfiles, so a framework release that breaks an adapter reaches this
+# repository only when someone updates a lock. This daily job installs each integration at its
+# `latest` dist-tag, with the peers that release asks for, over its fixture without the
+# lockfile, and runs that integration's browser specs and a real-admin smoke against it.
+#
+# The watch jobs run published install-time code, so they get read-only permissions, keep no
+# checkout credentials and install with `--ignore-scripts`. Each leaves a result and its
+# `npm ls` as an artifact; the report job, which installs nothing, files an issue per
+# integration that failed. Not a release gate (yet): a red run is news, not a broken build.
+
+on:
+  schedule:
+    - cron: '30 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hooks:
+    name: Latest hooks (React, Vue, Svelte)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.4
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npm run build:runtime
+      - name: Install the latest hooks' peers over the lockfile, without saving them
+        run: npm install --no-save --no-audit --no-fund --ignore-scripts react@latest react-dom@latest @types/react@latest @types/react-dom@latest vue@latest svelte@latest
+      - name: Run the hook, route-refresh and fragment suites
+        run: npx vitest run tests/unit/adapters/react-hook.test.tsx tests/unit/adapters/react-route-refresh.test.tsx tests/unit/adapters/nextjs-fragments.test.ts tests/unit/adapters/vue-composable.test.ts tests/unit/core/hydration-vue.test.ts tests/unit/adapters/nuxt-fragments.test.ts tests/unit/adapters/sveltekit-fragments-real.test.ts tests/unit/adapters/sveltekit-fragments.test.ts
+      - name: Record what was installed and how the job ended
+        if: always()
+        run: |
+          mkdir -p latest-watch
+          npm ls --json --depth=0 react react-dom vue svelte > latest-watch/npm-ls.json || true
+          echo '{"integration":"hooks","outcome":"${{ job.status }}"}' > latest-watch/result.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: latest-watch-hooks
+          path: latest-watch/
+          retention-days: 14
+
+  frameworks:
+    name: Latest ${{ matrix.integration }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - integration: astro
+            fixture: astro-payload
+            packages: astro@latest
+            servers: astro
+            sveltekit-fixture: sveltekit-payload
+            nuxt-fixture: nuxt-payload
+            specs: tests/e2e/specs/live-preview.spec.ts tests/e2e/specs/island-bridge.spec.ts tests/e2e/specs/navigation-lifecycle.spec.ts tests/e2e/specs/structural-morph.spec.ts
+            real-admin: astro
+          - integration: next
+            fixture: nextjs-payload
+            packages: next@latest react@latest react-dom@latest
+            servers: nextjs
+            sveltekit-fixture: sveltekit-payload
+            nuxt-fixture: nuxt-payload
+            specs: tests/e2e/specs/nextjs-live-preview.spec.ts tests/e2e/specs/nextjs-asset-delivery.spec.ts tests/e2e/specs/nextjs-fragment.spec.ts
+            real-admin: nextjs
+          - integration: sveltekit
+            fixture: sveltekit3-payload
+            packages: '@sveltejs/kit@latest @sveltejs/adapter-node@latest @sveltejs/adapter-auto@latest @sveltejs/vite-plugin-svelte@latest svelte@latest vite@latest'
+            servers: sveltekit
+            sveltekit-fixture: sveltekit3-payload
+            nuxt-fixture: nuxt-payload
+            specs: tests/e2e/specs/sveltekit-live-preview.spec.ts tests/e2e/specs/sveltekit-asset-delivery.spec.ts tests/e2e/specs/sveltekit-fragment.spec.ts
+            real-admin: sveltekit3
+          - integration: nuxt
+            fixture: nuxt4-payload
+            packages: nuxt@latest vue@latest @vitejs/plugin-vue@latest
+            servers: nuxt
+            sveltekit-fixture: sveltekit-payload
+            nuxt-fixture: nuxt4-payload
+            specs: tests/e2e/specs/nuxt-live-preview.spec.ts tests/e2e/specs/nuxt-asset-delivery.spec.ts tests/e2e/specs/nuxt-fragment.spec.ts
+            real-admin: nuxt4
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.4
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: bash scripts/ci-install-browser.sh chromium
+      # No build job to download from in a scheduled workflow, so the package the fixtures
+      # install is built here.
+      - run: npm run build
+      - run: bash scripts/ci-install-fixture.sh "examples/${{ matrix.fixture }}"
+      # `--no-package-lock`: the lock pins the whole tree, and a release whose peers moved
+      # would be an ERESOLVE before a single assertion ran (as in protocol-watch.yml).
+      - name: Install the integration's latest packages over the fixture
+        run: npm --prefix "examples/${{ matrix.fixture }}" install --no-audit --no-fund --no-package-lock --ignore-scripts ${{ matrix.packages }}
+      - env:
+          PLP_E2E_SERVERS: ${{ matrix.servers }}
+          PLP_SVELTEKIT_FIXTURE: ${{ matrix.sveltekit-fixture }}
+          PLP_NUXT_FIXTURE: ${{ matrix.nuxt-fixture }}
+        run: npx playwright test --project=chromium ${{ matrix.specs }}
+      - run: bash scripts/ci-install-fixture.sh examples/payload-backend
+      - env:
+          PLP_REAL_PAYLOAD_TARGET: ${{ matrix.real-admin }}
+          PLP_REAL_PAYLOAD_BROWSERS: chromium
+        run: npm run test:e2e:real-payload
+      - name: Record what was installed and how the job ended
+        if: always()
+        run: |
+          mkdir -p latest-watch
+          npm --prefix "examples/${{ matrix.fixture }}" ls --json --depth=0 > latest-watch/npm-ls.json || true
+          echo '{"integration":"${{ matrix.integration }}","outcome":"${{ job.status }}"}' > latest-watch/result.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: latest-watch-${{ matrix.integration }}
+          path: latest-watch/
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-latest-${{ matrix.integration }}
+          path: playwright-report/
+          retention-days: 7
+
+  report:
+    name: File failed integrations as issues
+    needs: [hooks, frameworks]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The only job that may write an issue, and the only one that installs nothing.
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: latest-watch-*
+          path: latest-watch
+      - run: node scripts/report-latest-watch.ts latest-watch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLP_LATEST_WATCH_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

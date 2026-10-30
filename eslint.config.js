@@ -79,9 +79,10 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/audit-graph.mjs', 'scripts/audit-registry.mjs'],
+    files: ['scripts/audit-graph.mjs', 'scripts/audit-registry.mjs', 'scripts/github-issue.mjs'],
     // 2026-10-03: native Node CLI modules use checked JSDoc and declaration contracts;
     // this rule reads TypeScript return syntax and does not recognize JSDoc.
+    // 2026-10-30: github-issue.mjs joins them; the latest watch's report job runs it without npm ci.
     rules: { '@typescript-eslint/explicit-function-return-type': 'off' },
   },
   {
