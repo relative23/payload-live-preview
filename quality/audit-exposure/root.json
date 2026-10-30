@@ -1,6 +1,6 @@
 {
   "sources": {
-    ".github/workflows/release.yml": "1b397632ebfb00e8840c983fc96eaa39c869c3476791c827ae4505bffa4f6d8f"
+    ".github/workflows/release.yml": "b900619c35a0fa5356f56c437d5e8c1d145d96bcb5990fac24fa0c2f1f37e644"
   },
   "directories": [],
   "absentFiles": ["pnpm-workspace.yaml", "lerna.json"],
@@ -77,6 +77,7 @@
           "prepublishOnly": "npm run build && npm run check && npm run format:check && npm run test:package",
           "changeset": "changeset",
           "version": "changeset version && tsx scripts/sync-lockfile-metadata.ts && npm run build:runtime",
+          "version:release": "npm run version && npm run compat:record",
           "release": "tsx scripts/publish-artifact.ts",
           "test:docs": "tsx scripts/docs-contracts.ts"
         },

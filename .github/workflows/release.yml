@@ -125,23 +125,21 @@ jobs:
 
       - run: npm ci
 
-      # The CI run this Version PR releases becomes the result of the compatibility rows it ran.
-      # changesets/action commits the record with the version, so it moves with each release and
-      # nothing between releases writes to the repository.
-      - name: Record the released CI run as the compatibility result
-        run: npm run compat:record
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PLP_CI_RUN_ID: ${{ needs.gate.outputs.run_id }}
-
+      # version:release also records the CI run this Version PR releases as the result of the
+      # compatibility rows it ran, so the record moves with each release and nothing between
+      # releases writes to the repository. It runs inside the action's version command because
+      # the action resets the tree to github.sha first: a step before it lost every tracked
+      # change it made.
       - name: Create Version PR
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
         with:
-          version: npm run version
+          version: npm run version:release
           commit: 'chore: release'
           title: 'chore: release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          PLP_CI_RUN_ID: ${{ needs.gate.outputs.run_id }}
 
   source-dispatch:
     name: Route publication to certified source workflow
