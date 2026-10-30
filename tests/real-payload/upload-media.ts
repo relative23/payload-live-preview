@@ -4,6 +4,7 @@
  * preview makes when it asks Payload for the document behind an id.
  */
 import { expect, type Locator, type Page, type Response } from '@playwright/test';
+import { ADMIN_ORIGIN } from './origins';
 
 /**
  * The seeded `media` document: the file's name and the alt text the admin posts and Payload returns, and
@@ -14,7 +15,7 @@ export const SEEDED_MEDIA = {
   filename: 'e2e-pixel.png',
   alt: 'A single pixel',
   path: '/api/media/file/e2e-pixel.png',
-  src: 'http://localhost:3001/api/media/file/e2e-pixel.png',
+  src: `${ADMIN_ORIGIN}/api/media/file/e2e-pixel.png`,
 } as const;
 
 /**
@@ -56,7 +57,7 @@ export async function chooseSeededMedia(page: Page): Promise<void> {
 export function waitForPopulation(page: Page): Promise<Response> {
   return page.waitForResponse(
     (response) =>
-      response.url().startsWith('http://localhost:3001/api/globals/homepage') &&
+      response.url().startsWith(`${ADMIN_ORIGIN}/api/globals/homepage`) &&
       response.request().method() === 'POST' &&
       response.request().headers()['x-payload-http-method-override'] === 'GET',
     { timeout: 30_000 },

@@ -33,14 +33,17 @@ describe('fragment lifetime production fixture', () => {
     expect(probe).not.toContain('rejectUnauthorized: false');
     for (const name of ['next', 'sveltekit', 'nuxt', 'astro', 'html']) {
       const launcher = readFileSync(`scripts/${name}-production-fixture.mjs`, 'utf8');
-      const proxy =
+      const runner =
         name === 'next' ? launcher : readFileSync('scripts/node-production-fixture.mjs', 'utf8');
       if (name !== 'next') {
         expect(launcher).toContain("from './node-production-fixture.mjs'");
         expect(launcher).toContain(`runNodeProductionFixture('${name}')`);
       }
-      expect(proxy).toContain('copyFileSync(certificatePath, probeCertificate)');
-      expect(proxy).not.toContain('copyFileSync(keyPath');
+      expect(runner).toContain("import { startTlsFront } from './tls-front.mjs';");
     }
+    const front = readFileSync('scripts/tls-front.mjs', 'utf8');
+    expect(front).toContain("process.env['PLP_LIFETIME_CERTIFICATE']");
+    expect(front).toContain('copyFileSync(certificatePath, probeCertificate)');
+    expect(front).not.toContain('copyFileSync(keyPath');
   });
 });

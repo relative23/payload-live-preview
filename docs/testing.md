@@ -370,12 +370,17 @@ What is proven about the Payload wire protocol, from the outside in:
    the collection kept only the save. The `sveltekit3` and `sveltekit3-create`
    targets are the SvelteKit and `create` targets on the SvelteKit 3 example,
    `nuxt4` and `nuxt4-composable` the two Nuxt targets on the Nuxt 4 example.
+   `nextjs-production`, `sveltekit-production` and `nuxt-production` are the
+   Next.js, SvelteKit and Nuxt session targets built for production and served
+   behind TLS. Strict mode accepts only https admin origins there, so the admin
+   is reached through an HTTPS front too, and the preview's server asks it who
+   the editor is through that front, trusting its throw-away certificate.
    CI runs every target on every
    push: the Astro default in Chromium, the others in all three browsers, and
    the Next.js session target and its hook page once more in Chromium with
-   Payload's CSRF list on. The Next.js, SvelteKit and Nuxt targets run their
-   development servers, and the admin itself runs `next dev`; the Astro, hybrid
-   and HTML targets serve a build. The three browsers are Playwright's Chromium,
+   Payload's CSRF list on. The other Next.js, SvelteKit and Nuxt targets run
+   their development servers, and the admin itself runs `next dev`; the Astro,
+   hybrid and HTML targets serve a build. The three browsers are Playwright's Chromium,
    Firefox and WebKit builds on Linux; Safari itself is not run. On a host that starts and stops containers while a
    dev-server target runs, Chromium can report `net::ERR_NETWORK_CHANGED` for
    the preview's module requests; the page then keeps its server render and a
@@ -546,7 +551,8 @@ npx playwright test --config playwright.nuxt-continuation.config.ts --project=ch
 
 What they do not show. The test posts the editor's messages itself, so Payload's admin UI
 is not part of it; the `real-payload-surfaces` targets drive the admin UI, against the
-development servers. The locked versions are those of the SvelteKit 2 and Nuxt 3 examples,
+development servers and, for the three `-production` targets, against production builds.
+The locked versions are those of the SvelteKit 2 and Nuxt 3 examples,
 and the job runs Chromium only.
 
 ## Tree-shaking gate

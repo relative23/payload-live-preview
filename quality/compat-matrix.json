@@ -345,6 +345,38 @@
       }
     },
     {
+      "id": "next-production-admin",
+      "surface": "Next.js",
+      "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
+      "version": {
+        "kind": "exact",
+        "value": "16.4.3",
+        "package": "next",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nextjs-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "playwright.real-payload.config.ts",
+          "scripts/admin-tls-front.mjs",
+          "scripts/next-production-fixture.mjs",
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts"
+        ]
+      }
+    },
+    {
       "id": "sveltekit-base-current",
       "surface": "SvelteKit",
       "feature": "server handle, base live preview and asset delivery",
@@ -428,6 +460,38 @@
       }
     },
     {
+      "id": "sveltekit-production-admin",
+      "surface": "SvelteKit",
+      "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
+      "version": {
+        "kind": "exact",
+        "value": "2.70.3",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "playwright.real-payload.config.ts",
+          "scripts/admin-tls-front.mjs",
+          "scripts/sveltekit-production-fixture.mjs",
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts"
+        ]
+      }
+    },
+    {
       "id": "nuxt-base-current",
       "surface": "Nuxt",
       "feature": "Nitro integration, base live preview and asset delivery",
@@ -507,6 +571,38 @@
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.nuxt-continuation.config.ts",
           "tests/fixtures/nuxt-continuation/nuxt.config.ts.fixture"
+        ]
+      }
+    },
+    {
+      "id": "nuxt-production-admin",
+      "surface": "Nuxt",
+      "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
+      "version": {
+        "kind": "exact",
+        "value": "3.21.11",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "playwright.real-payload.config.ts",
+          "scripts/admin-tls-front.mjs",
+          "scripts/nuxt-production-fixture.mjs",
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts"
         ]
       }
     },
