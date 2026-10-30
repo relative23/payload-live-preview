@@ -281,6 +281,26 @@ describe('installs a Playwright helper makes', () => {
     ]);
   });
 
+  it('reads a config the matrix names, and installs what each one installs', () => {
+    const matrix = `    strategy:
+      matrix:
+        framework: [next, nuxt]
+`;
+    const steps = run('playwright.${{ matrix.framework }}-continuation.config.ts');
+    expect(
+      readInstalls('ci.yml', job('22.23.4', steps, matrix)).installs.map(
+        (install) => install.fixture,
+      ),
+    ).toEqual(['tests/fixtures/payload-acl', 'examples/nextjs-payload', 'examples/nuxt-payload']);
+  });
+
+  it('refuses a config name it cannot resolve over the matrix', () => {
+    const steps = run('playwright.${{ matrix.host }}-continuation.config.ts');
+    expect(readInstalls('ci.yml', job('22.23.4', steps)).problems).toEqual([
+      'ci.yml job probe runs `playwright.${{ matrix.host }}-continuation.config.ts`, which this gate cannot resolve to a config',
+    ]);
+  });
+
   it('names the consumer the helper itself selects for every version', () => {
     const resources = HARNESS_INSTALLS.find(
       (entry) => entry.config === 'playwright.astro-resources.config.ts',

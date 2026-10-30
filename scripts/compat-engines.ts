@@ -55,8 +55,9 @@ export interface HarnessInstall {
 
 /**
  * The helpers behind these configs: `tests/e2e/helpers/astro-floor-base.ts`, and
- * `native-continuation.ts`, which installs the ACL fixture as its CMS and the consumer
- * `astro-resource-versions.ts` selects. A unit test holds the selections to that helper.
+ * `native-continuation.ts`, which installs the ACL fixture as its CMS beside a consumer: the
+ * one `astro-resource-versions.ts` selects, or the example of the framework the config names.
+ * A unit test holds the selections to that helper.
  */
 export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
   {
@@ -90,6 +91,18 @@ export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
         '7.4.4': 'tests/fixtures/astro-resource-versions/7.4.4',
       },
     },
+  },
+  {
+    config: 'playwright.next-continuation.config.ts',
+    fixtures: ['tests/fixtures/payload-acl', 'examples/nextjs-payload'],
+  },
+  {
+    config: 'playwright.sveltekit-continuation.config.ts',
+    fixtures: ['tests/fixtures/payload-acl', 'examples/sveltekit-payload'],
+  },
+  {
+    config: 'playwright.nuxt-continuation.config.ts',
+    fixtures: ['tests/fixtures/payload-acl', 'examples/nuxt-payload'],
   },
 ];
 
@@ -337,16 +350,26 @@ export function readInstalls(
             found.push({ fixture: path, replaced: install.replaced ?? [] });
           }
         }
-        const entry = harness.find((candidate) => candidate.config === install.config);
-        if (entry === undefined) continue;
-        const selected = harnessFixtures(entry, words, { env: (name) => env[name], matrix });
-        found.push(...selected.fixtures.map((fixture) => ({ fixture, replaced: [] })));
-        problems.push(
-          ...selected.unmapped.map(
-            (value) =>
-              `${label} runs ${entry.config} with ${entry.select?.env ?? ''}=${value}, which this gate maps to no fixture`,
-          ),
-        );
+        if (install.config === undefined) continue;
+        // A matrix job may name its config through the matrix: each value is one helper's install.
+        const configs = expand(install.config, scope);
+        if (configs === undefined) {
+          problems.push(
+            `${label} runs \`${install.config}\`, which this gate cannot resolve to a config`,
+          );
+        }
+        for (const config of configs ?? []) {
+          const entry = harness.find((candidate) => candidate.config === config);
+          if (entry === undefined) continue;
+          const selected = harnessFixtures(entry, words, { env: (name) => env[name], matrix });
+          found.push(...selected.fixtures.map((fixture) => ({ fixture, replaced: [] })));
+          problems.push(
+            ...selected.unmapped.map(
+              (value) =>
+                `${label} runs ${entry.config} with ${entry.select?.env ?? ''}=${value}, which this gate maps to no fixture`,
+            ),
+          );
+        }
       }
     }
     if (found.length === 0) continue;

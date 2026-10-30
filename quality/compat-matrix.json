@@ -315,7 +315,7 @@
     {
       "id": "next-production-lifecycle",
       "surface": "Next.js",
-      "feature": "production build/start, native navigation and real-admin unsaved output",
+      "feature": "production build/start, native navigation and reload, unsaved related drafts under a real Payload login",
       "version": {
         "kind": "exact",
         "value": "16.4.3",
@@ -327,11 +327,21 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.x admin not yet wired",
+      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "open",
-        "sources": ["examples/nextjs-payload/package.json", "playwright.config.ts"]
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "production-lifecycle"
+        },
+        "sources": [
+          "tests/e2e/continuation/next-host.spec.ts",
+          "tests/e2e/helpers/native-continuation.ts",
+          "playwright.next-continuation.config.ts",
+          "tests/e2e/helpers/next-continuation.ts",
+          "tests/fixtures/next-continuation/next.config.mjs.fixture"
+        ]
       }
     },
     {
@@ -389,7 +399,7 @@
     {
       "id": "sveltekit-production-lifecycle",
       "surface": "SvelteKit",
-      "feature": "production preview, hydrated navigation and real-admin unsaved output",
+      "feature": "production build/start, native navigation and reload, unsaved related drafts under a real Payload login",
       "version": {
         "kind": "exact",
         "value": "2.70.3",
@@ -401,11 +411,20 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.x admin not yet wired",
+      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "open",
-        "sources": ["examples/sveltekit-payload/package.json", "playwright.config.ts"]
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "production-lifecycle"
+        },
+        "sources": [
+          "tests/e2e/continuation/next-host.spec.ts",
+          "tests/e2e/helpers/native-continuation.ts",
+          "playwright.sveltekit-continuation.config.ts",
+          "tests/fixtures/sveltekit-continuation/svelte.config.js.fixture"
+        ]
       }
     },
     {
@@ -463,7 +482,7 @@
     {
       "id": "nuxt-production-lifecycle",
       "surface": "Nuxt",
-      "feature": "production preview, native navigation and real-admin unsaved output",
+      "feature": "production build/start, native navigation and reload, unsaved related drafts under a real Payload login",
       "version": {
         "kind": "exact",
         "value": "3.21.11",
@@ -475,11 +494,20 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.x admin not yet wired",
+      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "open",
-        "sources": ["examples/nuxt-payload/package.json", "playwright.config.ts"]
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "production-lifecycle"
+        },
+        "sources": [
+          "tests/e2e/continuation/next-host.spec.ts",
+          "tests/e2e/helpers/native-continuation.ts",
+          "playwright.nuxt-continuation.config.ts",
+          "tests/fixtures/nuxt-continuation/nuxt.config.ts.fixture"
+        ]
       }
     },
     {

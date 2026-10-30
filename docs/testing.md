@@ -512,6 +512,43 @@ the Astro 4.16.19 React lock). Only the tests install them, in a temporary direc
 repository; the base lane serves a static build and the other lanes a Node server on loopback
 behind a throw-away TLS proxy. `fixture-audit` covers `examples/`, not these locks.
 
+## Production hosts
+
+The `production-lifecycle` job builds a Next.js, a SvelteKit and a Nuxt host for
+production, one matrix entry each, in Chromium
+([spec](../tests/e2e/continuation/next-host.spec.ts)). Each host is an application of its own
+([Next.js](../tests/fixtures/next-continuation/), and the same for the others) on the
+dependencies the matching example locks, with the archive the Build job stored in place of the
+package, served behind a throw-away TLS proxy. Beside it runs Payload 3.92.1 on SQLite
+([lock](../tests/fixtures/payload-acl/package-lock.json)): two editors sign in there, and its
+access control decides what each one may read. The seven cases:
+
+- unsaved related drafts render, local state stays, and the preview survives native
+  navigation and a reload;
+- two logins and two locale tabs stay apart, including relationships one editor may not
+  read, and recover;
+- concurrent server renders and data reads stay bound to their user and locale;
+- anonymous, foreign-target, replayed and logged-out requests are refused before any
+  private read;
+- the last good DOM survives a network failure, late data from an old revision is
+  rejected, and an expired grant is refused;
+- preview responses carry private cache headers, and public HTML carries no draft data
+  and no preview script;
+- a missing browser cookie is not replaced by a query or header.
+
+To run them yourself, build and pack as above, then:
+
+```sh
+npx playwright test --config playwright.next-continuation.config.ts --project=chromium       # port 4284
+npx playwright test --config playwright.sveltekit-continuation.config.ts --project=chromium  # port 4285
+npx playwright test --config playwright.nuxt-continuation.config.ts --project=chromium       # port 4286
+```
+
+What they do not show. The test posts the editor's messages itself, so Payload's admin UI
+is not part of it; the `real-payload-surfaces` targets drive the admin UI, against the
+development servers. The locked versions are those of the SvelteKit 2 and Nuxt 3 examples,
+and the job runs Chromium only.
+
 ## Tree-shaking gate
 
 The root barrel tree-shakes, and that is measured rather than declared:

@@ -22,7 +22,7 @@
   "totals": {
     "files": 522,
     "suites": 1006,
-    "tests": 4573,
+    "tests": 4575,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 426,
       "suites": 897,
-      "tests": 4172,
+      "tests": 4174,
       "benchmarks": 0
     }
   },
@@ -3098,7 +3098,7 @@
       "path": "tests/unit/quality/compat-engines.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 23,
+      "tests": 25,
       "benchmarks": 0
     },
     {

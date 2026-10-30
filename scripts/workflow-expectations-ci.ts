@@ -6,7 +6,6 @@ import {
   BUILD_RUNTIME,
   CHECKOUT,
   CI_FIXTURES,
-  DOWNLOAD_ARCHIVE,
   DOWNLOAD_DIST,
   FIXTURE_SETUP,
   RELEASE_PUSH,
@@ -17,6 +16,7 @@ import {
   SETUP_NODE,
   READ_ONLY,
   SETUP,
+  archiveJob,
   callBuild,
   callCriticalGates,
   fixtureAudit,
@@ -257,47 +257,27 @@ export const CI: WorkflowSpec = {
     // The Astro floors the matrix above cannot reach. Each consumes the archive the Build job stored,
     // in a consumer of its own with a reviewed lock; the run line names the archive and the Playwright
     // scope, so a job that quietly tests the checkout instead stops matching.
-    'astro-floor-base': {
-      needs: ['build'],
-      timeoutMinutes: 25,
-      steps: [
-        ...FIXTURE_SETUP,
-        { run: 'bash scripts/ci-install-browser.sh chromium' },
-        DOWNLOAD_ARCHIVE,
-        {
-          run: 'PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-floor-base.config.ts --project=chromium',
-        },
-      ],
-    },
-    'astro-floor-islands': {
-      needs: ['build'],
-      timeoutMinutes: 25,
-      matrix: { astro: ['4.16.19'] },
-      steps: [
-        ...FIXTURE_SETUP,
-        { run: 'bash scripts/ci-install-browser.sh chromium' },
-        DOWNLOAD_ARCHIVE,
-        {
-          run: 'PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-islands.config.ts --project=chromium',
-          env: { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
-        },
-      ],
-    },
+    'astro-floor-base': archiveJob('playwright.astro-floor-base.config.ts', 25),
+    'astro-floor-islands': archiveJob(
+      'playwright.astro-islands.config.ts',
+      25,
+      { astro: ['4.16.19'] },
+      { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
+    ),
     // Native fragment rendering and page-owned resources on the exact Astro versions the record names.
-    'astro-fragment-versions': {
-      needs: ['build'],
-      timeoutMinutes: 25,
-      matrix: { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4'] },
-      steps: [
-        ...FIXTURE_SETUP,
-        { run: 'bash scripts/ci-install-browser.sh chromium' },
-        DOWNLOAD_ARCHIVE,
-        {
-          run: 'PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts --project=chromium',
-          env: { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
-        },
-      ],
-    },
+    'astro-fragment-versions': archiveJob(
+      'playwright.astro-resources.config.ts',
+      25,
+      { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4'] },
+      { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
+    ),
+    // Next.js, SvelteKit and Nuxt production hosts on the stored archive, against a real Payload 3
+    // login and access control (tests/e2e/continuation/next-host.spec.ts).
+    'production-lifecycle': archiveJob(
+      'playwright.${{ matrix.framework }}-continuation.config.ts',
+      30,
+      { framework: ['next', 'sveltekit', 'nuxt'] },
+    ),
     'real-payload-e2e': {
       needs: ['build'],
       steps: [
