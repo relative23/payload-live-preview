@@ -1,0 +1,419 @@
+{
+  "workflow": "ci.yml",
+  "id": 41113847498,
+  "url": "https://github.com/relative23/payload-live-preview/actions/runs/41113847498",
+  "commit": "83f66e927fb8f97ff3e707e938d90fc6995720cc",
+  "event": "push",
+  "conclusion": "success",
+  "executedAt": "2026-10-30T21:54:56Z",
+  "jobs": [
+    {
+      "conclusion": "success",
+      "name": "Astro floor (React islands, Astro 4.16.19)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro floor 4.0.0 (static base adapter)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro fragment rendering (Astro 4.16.19)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro fragment rendering (Astro 4.9.0)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro fragment rendering (Astro 5.18.2)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro fragment rendering (Astro 6.4.8)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro fragment rendering (Astro 7.3.2)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro fragment rendering (Astro 7.4.4)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro matrix (Astro 4)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro matrix (Astro 5)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Astro matrix (Astro 6)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Build / Build"
+    },
+    {
+      "conclusion": "success",
+      "name": "Coverage"
+    },
+    {
+      "conclusion": "skipped",
+      "name": "Dependency Review"
+    },
+    {
+      "conclusion": "success",
+      "name": "E2E (chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "E2E (firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "E2E (webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Fixture Dependency Audit"
+    },
+    {
+      "conclusion": "success",
+      "name": "Hooks at the peer floor (React 18.0.0, Vue 3.3.0, Svelte 5.0.0)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Lint & Typecheck"
+    },
+    {
+      "conclusion": "success",
+      "name": "Next.js matrix (Next 15)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Nuxt 4 E2E (chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Nuxt 4 E2E (firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Nuxt 4 E2E (webkit)"
+    },
+    {
+      "conclusion": "skipped",
+      "name": "PR Critical Mutation Tests"
+    },
+    {
+      "conclusion": "success",
+      "name": "Production lifecycle (html)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Production lifecycle (next)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Production lifecycle (nuxt)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Production lifecycle (react)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Production lifecycle (sveltekit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Production lifecycle (vue)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (astro-session, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (astro-session, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (astro-session, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (create, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (create, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (create, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (html, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (html, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (html, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (hybrid, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (hybrid, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (hybrid, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs, CSRF list)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-autologin, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-autologin, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-autologin, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-hook, CSRF list)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-hook, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-hook, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-hook, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-production, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-production, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nextjs-production, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt-composable, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt-composable, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt-composable, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt-production, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt-production, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt-production, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt4, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt4, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt4, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt4-composable, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt4-composable, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt4-composable, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit-production, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit-production, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit-production, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit3, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit3, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit3, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit3-create, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit3-create, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit3-create, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Release Chromium Update & Heap Soak"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Release Critical Mutation Baseline"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Release Critical Mutation Shard 1/6"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Release Critical Mutation Shard 2/6"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Release Critical Mutation Shard 3/6"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Release Critical Mutation Shard 4/6"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Release Critical Mutation Shard 5/6"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Release Critical Mutation Shard 6/6"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Release Node Lifecycle Leak Gate"
+    },
+    {
+      "conclusion": "success",
+      "name": "Release Gates / Trusted Core Mutation"
+    },
+    {
+      "conclusion": "success",
+      "name": "SvelteKit 3 E2E (chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "SvelteKit 3 E2E (firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "SvelteKit 3 E2E (webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Unit Tests (Node 20)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Unit Tests (Node 22)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Unit Tests (Node 24)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Unit Tests (Node 26)"
+    }
+  ]
+}
