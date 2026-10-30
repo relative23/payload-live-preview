@@ -64,8 +64,9 @@ behavior, with a one-time development warning, for a staged migration; so does
 the deprecated `defaults: 'v1'`, which 3.0 removes.
 
 When verification fails or is unavailable the adapters serve the ordinary
-published response unchanged. A response an adapter did change — runtime
-injected or CSP merged — is sent with `Cache-Control: private, no-store` and
+published response unchanged. An authorized response, and any other response
+an adapter changed by injecting the runtime or merging CSP, is sent with
+`Cache-Control: private, no-store` and
 `Vary: Cookie`, so a preview is never stored as the public page; your own
 page cache should consume the same authorization. Astro, SvelteKit and Nuxt
 publish the authorization as `livePreviewAuthorization` and the hook's

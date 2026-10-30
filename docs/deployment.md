@@ -29,7 +29,10 @@ Cache-Control: private, no-store
 Vary: Cookie
 ```
 
-An existing `Cache-Control` that already says `no-store` is kept; `Cookie` is
+An authorized response gets them even when the adapter injects nothing and
+writes no CSP (`autoInject: false` with `manageCsp: false`): its page may
+render drafts. An existing `Cache-Control` that already says `no-store` is
+kept; `Cookie` is
 appended to an existing `Vary` unless it lists `Cookie` or `*`. A response the
 adapter did not change — no intent, or a refused request — keeps whatever
 headers the application set, so the public page stays cacheable.

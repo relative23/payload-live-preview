@@ -220,6 +220,18 @@ export function adapterConformance(harness: ConformanceHarness): void {
       expect(csp(out)).toContain('frame-ancestors');
       expect(out.locals['livePreviewAuthorization']).toBe(harness.exposesLocals ? ctx : undefined);
     });
+    it('an authorized preview is uncacheable even when nothing is injected and CSP is off', async () => {
+      // The page may render drafts with the verdict's headers; a shared cache must not keep it.
+      const ctx = await authorized();
+      const out = await run(
+        { authorizePreview: () => ctx, autoInject: false, manageCsp: false },
+        { url: INTENT },
+      );
+      expect(out.body).not.toContain(MARKER);
+      expect(csp(out)).toBeNull();
+      expect(out.header('cache-control')).toBe('private, no-store');
+      expect(out.header('vary')).toBe('Cookie');
+    });
     it('authorization is consulted only once intent is established', async () => {
       const authorizePreview = vi.fn(() => null);
       await run({ authorizePreview }, { url: PLAIN });

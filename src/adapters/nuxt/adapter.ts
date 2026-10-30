@@ -11,7 +11,12 @@ import {
   type PreviewDecision,
   type PreviewPolicy,
 } from '@adapters/shared/policy';
-import { applyCspHeaders, bindDecisionHooks, renderScriptTag } from '@adapters/shared/response';
+import {
+  applyCspHeaders,
+  bindDecisionHooks,
+  changesResponse,
+  renderScriptTag,
+} from '@adapters/shared/response';
 import { exposeDecision } from '@adapters/shared/locals';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PageFacts } from '@adapters/shared/policy-options';
@@ -100,7 +105,7 @@ export function livePreviewNitroPlugin(
       if (!decision.isPreview) return;
       if (decision.inject) html.head.push(policy.scriptTag(nonce));
       const headers = responseHeaders(event);
-      if (headers === undefined || (!decision.inject && decision.cspMode === false)) return;
+      if (headers === undefined || !changesResponse(decision)) return;
       applyCspHeaders(headers, policy, decision, nonce);
     });
   };

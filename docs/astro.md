@@ -208,7 +208,7 @@ declare global {
 }
 ```
 
-To place the tag yourself, give the middleware `autoInject: false`: it still decides and publishes on `Astro.locals`, and under the default `manageCsp` merges the CSP and marks the response `private, no-store`, but injects nothing. `renderLivePreviewScript()` from `payload-live-preview/astro` returns the complete tag for `<Fragment set:html={…} />`. It builds the tag for whoever renders it, so render it only when `Astro.locals.livePreviewAuthorization` is set, and pass the same options with `nonce: Astro.locals.livePreviewNonce`.
+To place the tag yourself, give the middleware `autoInject: false`: it still decides and publishes on `Astro.locals`, merges the CSP under the default `manageCsp`, and marks an authorized response `private, no-store`, but injects nothing. `renderLivePreviewScript()` from `payload-live-preview/astro` returns the complete tag for `<Fragment set:html={…} />`. It builds the tag for whoever renders it, so render it only when `Astro.locals.livePreviewAuthorization` is set, and pass the same options with `nonce: Astro.locals.livePreviewNonce`.
 
 Three strategies exist. `payload-session` is the one above. `signed-token` verifies a short-lived HMAC token the Payload side mints with `issuePreviewToken()` — bound to this site, this path, the locale and a few minutes — which is how a preview works without a cookie crossing origins. `verifier` is your own async function for an SSO or edge-auth setup; it returns claims or `null`. [authorization.md](authorization.md) has all three and the threat model behind them.
 

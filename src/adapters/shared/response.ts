@@ -100,9 +100,18 @@ export function withHeaders(response: Response, apply: (headers: Headers) => voi
 }
 
 /**
+ * Whether a decision changes the response. An authorized preview does even
+ * with nothing injected and CSP off: its page may render drafts with the
+ * verdict's headers, so it must not be cached as the public one.
+ */
+export function changesResponse(decision: PreviewDecision): boolean {
+  return decision.inject || decision.cspMode !== false || decision.authorization !== null;
+}
+
+/**
  * The header side of a decision on any sink: the merged CSP for its mode,
  * then the cache headers — those also when the mode is off, because an
- * injected body alone already makes the response private.
+ * injected body or an authorized preview alone makes the response private.
  */
 export function applyCspHeaders(
   headers: HeaderSink,
@@ -137,7 +146,7 @@ export async function applyDecision(
   decision: PreviewDecision,
   nonce: string,
 ): Promise<Response> {
-  if (!decision.inject && decision.cspMode === false) return response;
+  if (!changesResponse(decision)) return response;
   const injected = decision.inject
     ? await injectIntoResponse(response, policy.scriptTag(nonce))
     : response;
