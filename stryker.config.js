@@ -132,6 +132,12 @@ export default {
   // do not terminate. It costs those mutants three times as long, about four
   // minutes per shard against a 150-minute cap.
   timeoutMS: 60_000,
+  // Stryker cuts the initial test run off at 5 minutes by default. In the five
+  // green main runs of 2026-10-29 that run took 285-297 s on shard 6/6 and up
+  // to 279 s on shard 5/6; on 2cc0619 shard 5/6 passed 300 s and failed before
+  // a single mutant ran. 15 minutes is three times the slowest run measured
+  // and still small against the 150-minute cap.
+  dryRunTimeoutMinutes: 15,
   cleanTempDir: 'always',
   // CI and baselines are full runs. Local repeat runs can opt into the cache.
   incremental: process.env['STRYKER_INCREMENTAL'] === '1',
