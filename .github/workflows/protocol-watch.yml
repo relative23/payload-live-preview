@@ -17,11 +17,13 @@ on:
   workflow_dispatch:
 
 # The watch installs a published package and compares its wire shape; it writes
-# nothing to the repository. `issues: write` is for the one thing a red cron job
-# cannot do on its own — say so somewhere a person will look.
+# nothing to the repository. The two watch jobs run that published code, so they
+# may only read and keep no checkout credentials; each leaves how it ended, and
+# the drift report when there is one, as an artifact. The report job installs
+# nothing and is the only one with `issues: write`: the one thing a red cron job
+# cannot do on its own is say so somewhere a person will look.
 permissions:
   contents: read
-  issues: write
 
 jobs:
   protocol-watch:
@@ -42,6 +44,8 @@ jobs:
     continue-on-error: ${{ matrix.soft-fail }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
@@ -54,20 +58,25 @@ jobs:
       - run: npx tsx scripts/check-protocol-drift.ts
         env:
           PROTOCOL_WATCH_PACKAGE: '@payloadcms/live-preview@${{ matrix.dist-tag }}'
-      # Only for the gate matrix entry: `beta` churns before it stabilises,
-      # and an issue per pre-release would train everyone to ignore the label.
-      - name: File the drift as an issue
-        if: failure() && matrix.dist-tag == 'latest'
-        run: npx tsx scripts/report-protocol-drift.ts
-        env:
-          GH_TOKEN: ${{ github.token }}
-      # Last, and deliberately after the issue step: this one re-runs the
+      # Last, and deliberately after the drift check: this one re-runs the
       # behaviours docs/react.md compares against on the published dist. A red
       # run means one of them was fixed upstream — news for the docs, not drift
-      # to file an issue about.
+      # to file an issue about, so it writes no drift report.
       - run: npm run test:upstream-findings
         env:
           UPSTREAM_FINDINGS_PACKAGE: '@payloadcms/live-preview@${{ matrix.dist-tag }}'
+      - name: Record how the job ended
+        if: always()
+        run: |
+          mkdir -p protocol-watch
+          if [ -f protocol-drift.json ]; then cp protocol-drift.json protocol-watch/; fi
+          echo '{"job":"protocol-watch","distTag":"${{ matrix.dist-tag }}","outcome":"${{ job.status }}"}' > protocol-watch/result.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: protocol-watch-wire-${{ matrix.dist-tag }}
+          path: protocol-watch/
+          retention-days: 14
 
   admin-e2e:
     name: Real admin E2E (${{ matrix.dist-tag }})
@@ -91,6 +100,8 @@ jobs:
     continue-on-error: ${{ matrix.soft-fail }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ matrix.node }}
@@ -113,7 +124,9 @@ jobs:
       # exact. Resolving against it makes any Payload release after the pinned one
       # an ERESOLVE before a single assertion runs — which is what happened on
       # 2026-09-12 for both rows. The watch tests a foreign version on purpose.
-      - run: npm --prefix examples/payload-backend install --no-audit --no-fund --no-package-lock --dangerously-allow-all-scripts "payload@${{ matrix.dist-tag }}" "@payloadcms/next@${{ matrix.dist-tag }}" "@payloadcms/db-sqlite@${{ matrix.dist-tag }}" "@payloadcms/richtext-lexical@${{ matrix.dist-tag }}"
+      # `--ignore-scripts`: what it installs is published code nobody reviewed, and
+      # the admin boots without its install scripts (measured 2026-10-30, 6 of 6).
+      - run: npm --prefix examples/payload-backend install --no-audit --no-fund --no-package-lock --ignore-scripts "payload@${{ matrix.dist-tag }}" "@payloadcms/next@${{ matrix.dist-tag }}" "@payloadcms/db-sqlite@${{ matrix.dist-tag }}" "@payloadcms/richtext-lexical@${{ matrix.dist-tag }}"
       - run: node -p "'payload ' + require('./examples/payload-backend/node_modules/payload/package.json').version"
       # The recorder runs as an assertion, not as a recorder: it fails if the
       # session no longer crosses a save, and CI cannot commit what it captures.
@@ -121,18 +134,49 @@ jobs:
       - run: npm run test:e2e:real-payload
       # The admin half never writes a drift report: it fails before any
       # invariant runs when the install or the boot goes wrong, and that is
-      # exactly as invisible as drift. Same gate entry, same issue, and the
-      # fallback is asked for by name so no unrelated red step files one.
-      - name: File the failed admin run as an issue
-        if: failure() && matrix.dist-tag == 'latest'
-        run: npx tsx scripts/report-protocol-drift.ts
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PROTOCOL_WATCH_PACKAGE: 'payload@${{ matrix.dist-tag }}'
-          PROTOCOL_WATCH_FALLBACK: 'the real admin E2E job failed before its assertions; read the run log'
+      # exactly as invisible as drift. Its result tells the report job to file
+      # the fallback on the gate entry.
+      - name: Record how the job ended
+        if: always()
+        run: |
+          mkdir -p protocol-watch
+          echo '{"job":"admin-e2e","distTag":"${{ matrix.dist-tag }}","outcome":"${{ job.status }}"}' > protocol-watch/result.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: protocol-watch-admin-${{ matrix.dist-tag }}
+          path: protocol-watch/
+          retention-days: 14
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: playwright-report-admin-${{ matrix.dist-tag }}
           path: playwright-report/
           retention-days: 7
+
+  report:
+    name: File drift as an issue
+    needs: [protocol-watch, admin-e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The only job that may write an issue, and the only one that installs nothing.
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: protocol-watch-*
+          path: protocol-watch
+      # Only the gate entry files: `beta` churns before it stabilises, and an
+      # issue per pre-release would train everyone to ignore the label.
+      - run: node scripts/report-protocol-drift.ts protocol-watch
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   findActionPinViolations,
+  findCheckoutCredentialViolations,
   findWorkflowContractViolations,
   matrixValues,
   parseWorkflow,
@@ -65,7 +66,7 @@ describe('workflow contracts', () => {
       expect(checkouts).toHaveLength(1);
       expect(checkouts?.[0]?.['with']).toEqual(
         jobName === 'gate'
-          ? { 'fetch-depth': 0 }
+          ? { 'fetch-depth': 0, 'persist-credentials': false }
           : { ref: '${{ needs.gate.outputs.tested_sha }}', 'fetch-depth': 0 },
       );
     }
@@ -461,8 +462,8 @@ describe('workflow contracts', () => {
     {
       label: 'a floating action tag',
       file: 'ci.yml',
-      original: `      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 22\n          cache: npm\n${NPM_VERSION_STEP}      - run: npm ci\n      # The generated`,
-      replacement: `      - uses: actions/checkout@v4\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 22\n          cache: npm\n${NPM_VERSION_STEP}      - run: npm ci\n      # The generated`,
+      original: `      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 22\n          cache: npm\n${NPM_VERSION_STEP}      - run: npm ci\n      # The generated`,
+      replacement: `      - uses: actions/checkout@v4\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 22\n          cache: npm\n${NPM_VERSION_STEP}      - run: npm ci\n      # The generated`,
       violation: 'ci.yml job lint uses an unpinned action: actions/checkout@v4',
     },
     {
@@ -518,6 +519,38 @@ describe('workflow contracts', () => {
       violations.some((candidate) => candidate.includes(violation)),
       violations.join('\n'),
     ).toBe(true);
+  });
+
+  it('keeps checkout credentials out of every job that does not push', () => {
+    const document = parseWorkflow(
+      [
+        'jobs:',
+        '  test:',
+        '    steps:',
+        '      - uses: actions/checkout@0123456789012345678901234567890123456789',
+        '  quiet:',
+        '    steps:',
+        '      - uses: actions/checkout@0123456789012345678901234567890123456789',
+        '        with:',
+        '          persist-credentials: false',
+        '',
+      ].join('\n'),
+    );
+    expect(findCheckoutCredentialViolations([{ name: 'x.yml', document }])).toEqual([
+      'x.yml job test keeps checkout credentials; set persist-credentials: false',
+    ]);
+  });
+
+  it('lets the release jobs that push keep their credentials, and no other', () => {
+    const pushing = parseWorkflow(
+      'jobs:\n  publish:\n    steps:\n      - uses: actions/checkout@0123456789012345678901234567890123456789\n  version:\n    steps:\n      - uses: actions/checkout@0123456789012345678901234567890123456789\n',
+    );
+    expect(findCheckoutCredentialViolations([{ name: 'release.yml', document: pushing }])).toEqual(
+      [],
+    );
+    expect(findCheckoutCredentialViolations([{ name: 'ci.yml', document: pushing }])).toHaveLength(
+      2,
+    );
   });
 
   it('pins job-level reusable workflow references as strictly as step actions', () => {

@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 529,
-    "suites": 1019,
-    "tests": 4606,
+    "suites": 1020,
+    "tests": 4609,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 432,
-      "suites": 909,
-      "tests": 4204,
+      "suites": 910,
+      "tests": 4207,
       "benchmarks": 0
     }
   },
@@ -2971,8 +2971,8 @@
     {
       "path": "tests/unit/protocol-drift-report.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 6,
+      "suites": 4,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -3427,7 +3427,7 @@
       "path": "tests/unit/quality/workflow-contracts.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 10,
       "benchmarks": 0
     },
     {
