@@ -244,7 +244,7 @@ export const CI: WorkflowSpec = {
     'astro-fragment-versions': {
       needs: ['build'],
       timeoutMinutes: 25,
-      matrix: { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2'] },
+      matrix: { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4'] },
       steps: [
         ...FIXTURE_SETUP,
         { run: 'bash scripts/ci-install-browser.sh chromium' },

@@ -17,7 +17,7 @@ describe('native Astro page-owned React fixture', () => {
     });
     expect(astroResourceRenderer('7.3.2', 'react-owned')).toBe('react-owned');
   });
-  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8'])(
+  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.4'])(
     'refuses unreviewed page-owned mode on %s',
     (version) => {
       expect(() => astroResourceVersion(version, 'react-owned')).toThrow(

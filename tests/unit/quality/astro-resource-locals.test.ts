@@ -18,7 +18,7 @@ describe('Astro request-local catalog fixture', () => {
     expect(astroResourceRenderer('7.3.2', 'locals-catalog')).toBe('locals-catalog');
   });
 
-  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2'])(
+  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4'])(
     'allows an explicit installed-default countercheck on %s',
     (version) => expect(astroResourceRenderer(version, 'package-default')).toBe('package-default'),
   );
