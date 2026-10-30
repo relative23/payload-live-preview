@@ -78,7 +78,7 @@ describe('the fallback the admin half asks for', () => {
 });
 
 describe('the workflow that files it', () => {
-  it('is the only one allowed to write an issue, and only on the gate entry', () => {
+  it('is the only workflow allowed to write an issue, and only on the gate entry', () => {
     const watch = WORKFLOW_EXPECTATIONS['protocol-watch.yml'];
     const step = watch?.jobs['protocol-watch']?.steps?.find(
       (candidate) => 'run' in candidate && candidate.run.includes('report-protocol-drift'),
@@ -91,8 +91,15 @@ describe('the workflow that files it', () => {
       // A workflow without a reviewed `permissions` block inherits the
       // repository default, which is not this file's business; one that has
       // it must not ask for issues.
-      if (spec.permissions === undefined || spec.permissions === null) continue;
-      expect(spec.permissions, name).not.toHaveProperty('issues');
+      if (spec.permissions !== undefined && spec.permissions !== null) {
+        expect(spec.permissions, name).not.toHaveProperty('issues');
+      }
+      // A job may ask for it only where it installs nothing: the latest watch's report job
+      // (tests/unit/latest-watch-report.test.ts holds that job to it).
+      for (const [job, jobSpec] of Object.entries(spec.jobs)) {
+        if (name === 'latest-watch.yml' && job === 'report') continue;
+        expect(jobSpec.permissions ?? {}, `${name} ${job}`).not.toHaveProperty('issues');
+      }
     }
   });
 });

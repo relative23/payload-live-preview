@@ -5,6 +5,7 @@ import { RELEASE_BRANCHES } from './release-gate';
 import { BUILD, CI, CRITICAL_GATES, DEEP_QUALITY } from './workflow-expectations-ci';
 import {
   BUILD_RUNTIME,
+  FIXTURE_CACHE,
   FIXTURE_SETUP,
   fixtureInstall,
   NPM_CI,
@@ -341,12 +342,124 @@ const PROTOCOL_WATCH: WorkflowSpec = {
   },
 };
 
+const LATEST_STATUS = 'Record what was installed and how the job ended';
+const LATEST_WATCH: WorkflowSpec = {
+  name: 'Latest Watch',
+  // Read-only for the jobs that install published code; the report job alone writes issues.
+  permissions: { contents: 'read' },
+  jobs: {
+    hooks: {
+      timeoutMinutes: 20,
+      steps: [
+        { uses: 'actions/checkout', with: { 'persist-credentials': 'false' } },
+        SETUP_NODE,
+        NPM_VERSION,
+        NPM_CI,
+        BUILD_RUNTIME,
+        {
+          name: "Install the latest hooks' peers over the lockfile, without saving them",
+          run:
+            'npm install --no-save --no-audit --no-fund --ignore-scripts react@latest ' +
+            'react-dom@latest @types/react@latest @types/react-dom@latest vue@latest svelte@latest',
+        },
+        {
+          name: LATEST_STATUS,
+          run: [
+            'mkdir -p latest-watch',
+            'npm ls --json --depth=0 react react-dom vue svelte > latest-watch/npm-ls.json || true',
+            `echo '{"integration":"hooks","outcome":"\${{ job.status }}"}' > latest-watch/result.json`,
+          ].join('\n'),
+          condition: 'always()',
+          operators: true,
+        },
+        {
+          uses: 'actions/upload-artifact',
+          condition: 'always()',
+          with: { name: 'latest-watch-hooks', path: 'latest-watch/' },
+        },
+      ],
+    },
+    frameworks: {
+      timeoutMinutes: 30,
+      steps: [
+        { uses: 'actions/checkout', with: { 'persist-credentials': 'false' } },
+        FIXTURE_CACHE,
+        NPM_VERSION,
+        NPM_CI,
+        { run: 'bash scripts/ci-install-browser.sh chromium' },
+        { run: 'npm run build' },
+        { run: 'bash scripts/ci-install-fixture.sh "examples/${{ matrix.fixture }}"' },
+        {
+          name: "Install the integration's latest packages over the fixture",
+          run:
+            'npm --prefix "examples/${{ matrix.fixture }}" install --no-audit --no-fund ' +
+            '--no-package-lock --ignore-scripts ${{ matrix.packages }}',
+        },
+        {
+          run: 'npx playwright test --project=chromium ${{ matrix.specs }}',
+          env: {
+            PLP_E2E_SERVERS: '${{ matrix.servers }}',
+            PLP_SVELTEKIT_FIXTURE: '${{ matrix.sveltekit-fixture }}',
+            PLP_NUXT_FIXTURE: '${{ matrix.nuxt-fixture }}',
+          },
+        },
+        fixtureInstall('payload-backend'),
+        {
+          run: 'npm run test:e2e:real-payload',
+          env: {
+            PLP_REAL_PAYLOAD_TARGET: '${{ matrix.real-admin }}',
+            PLP_REAL_PAYLOAD_BROWSERS: 'chromium',
+          },
+        },
+        {
+          name: LATEST_STATUS,
+          run: [
+            'mkdir -p latest-watch',
+            'npm --prefix "examples/${{ matrix.fixture }}" ls --json --depth=0 > latest-watch/npm-ls.json || true',
+            `echo '{"integration":"\${{ matrix.integration }}","outcome":"\${{ job.status }}"}' > latest-watch/result.json`,
+          ].join('\n'),
+          condition: 'always()',
+          operators: true,
+        },
+        {
+          uses: 'actions/upload-artifact',
+          condition: 'always()',
+          with: { name: 'latest-watch-${{ matrix.integration }}', path: 'latest-watch/' },
+        },
+      ],
+    },
+    report: {
+      needs: ['hooks', 'frameworks'],
+      if: 'always()',
+      timeoutMinutes: 10,
+      permissions: { contents: 'read', issues: 'write' },
+      steps: [
+        { uses: 'actions/checkout', with: { 'persist-credentials': 'false' } },
+        SETUP_NODE,
+        {
+          uses: 'actions/download-artifact',
+          with: { pattern: 'latest-watch-*', path: 'latest-watch' },
+        },
+        {
+          run: 'node scripts/report-latest-watch.ts latest-watch',
+          env: {
+            GH_TOKEN: '${{ github.token }}',
+            PLP_LATEST_WATCH_RUN:
+              '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+          },
+        },
+      ],
+    },
+  },
+};
+
 export const WORKFLOW_EXPECTATIONS: Readonly<Record<string, WorkflowSpec>> = {
   'build.yml': BUILD,
   'ci.yml': CI,
   'codspeed.yml': CODSPEED,
   'critical-gates.yml': CRITICAL_GATES,
   'deep-quality.yml': DEEP_QUALITY,
+  'latest-watch.yml': LATEST_WATCH,
   'protocol-watch.yml': PROTOCOL_WATCH,
   'release.yml': RELEASE,
 };

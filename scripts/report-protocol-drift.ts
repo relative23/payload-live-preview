@@ -5,18 +5,14 @@
  * client stops behaving the way this package's hand-mirrored protocol expects.
  * A red scheduled run is easy to miss — nobody watches a cron job — so the same
  * finding is filed as an issue, and updated rather than duplicated while it is
- * still open.
- *
- * `gh` is used instead of a pinned action: the token is the workflow's own, the
- * two commands are auditable here, and there is one less third-party step in a
- * job that already runs published code.
+ * still open (`scripts/github-issue.mjs`).
  */
 
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { DriftReport } from './check-protocol-drift';
+import { fileIssue } from './github-issue.mjs';
 
 const REPORT_PATH = process.env['PROTOCOL_WATCH_REPORT'] ?? 'protocol-drift.json';
 const LABEL = 'protocol-drift';
@@ -52,28 +48,6 @@ function escapeCell(value: string): string {
   return value.replace(/\\/gu, '\\\\').replace(/\|/gu, '\\|').replace(/\r?\n/gu, ' ');
 }
 
-function gh(args: readonly string[]): string {
-  return execFileSync('gh', [...args], { encoding: 'utf8' }).trim();
-}
-
-function openIssueNumber(): string | undefined {
-  const found = gh([
-    'issue',
-    'list',
-    '--state',
-    'open',
-    '--label',
-    LABEL,
-    '--limit',
-    '1',
-    '--json',
-    'number',
-    '--jq',
-    '.[0].number // empty',
-  ]);
-  return found.length > 0 ? found : undefined;
-}
-
 /**
  * The admin half of the watch never writes a drift report: it boots a real
  * admin against the published Payload and fails before any invariant runs when
@@ -103,22 +77,13 @@ function main(): void {
 }
 
 function file(report: DriftReport): void {
-  const body = issueBody(report);
-  const existing = openIssueNumber();
-  if (existing === undefined) {
-    // The label is created on demand: a fresh checkout of this repository has
-    // no labels, and a missing one would fail the create.
-    try {
-      gh(['label', 'create', LABEL, '--description', 'Payload wire-format drift', '--force']);
-    } catch {
-      // A repository where labels cannot be written still gets the issue.
-    }
-    const url = gh(['issue', 'create', '--title', TITLE, '--body', body, '--label', LABEL]);
-    console.log(`[protocol-watch] filed ${url}`);
-    return;
-  }
-  gh(['issue', 'comment', existing, '--body', body]);
-  console.log(`[protocol-watch] updated issue #${existing}`);
+  fileIssue({
+    label: LABEL,
+    labelDescription: 'Payload wire-format drift',
+    title: TITLE,
+    body: issueBody(report),
+    log: 'protocol-watch',
+  });
 }
 
 const invokedPath = process.argv[1] === undefined ? undefined : resolve(process.argv[1]);

@@ -415,10 +415,22 @@ What is proven about the Payload wire protocol, from the outside in:
    of the same workflow points `examples/payload-backend` at each channel and
    runs the real admin E2E against it; `beta` is a major and may not boot, so
    that row is soft-fail like its wire-format twin.
+5. **Daily latest watch** (`.github/workflows/latest-watch.yml`) does the same
+   for the frameworks. CI installs exact lockfiles, so this job installs Astro,
+   Next.js, SvelteKit 3 and Nuxt 4 at their `latest` dist-tag, with the peers
+   each release asks for, over the matching example without its lockfile. It
+   then runs that framework's browser specs in Chromium and a real-admin smoke.
+   A separate job runs the React, Vue and Svelte hook suites against `latest`.
+   Those jobs run published install-time code, so they install with
+   `--ignore-scripts`, keep no checkout credentials and may only read. Each
+   leaves its result and `npm ls` as an artifact, and a report job that
+   installs nothing files an issue per integration that failed
+   (`scripts/report-latest-watch.ts`). A red run is news, not a release gate.
 
 Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
-quickly, tier 3 pins the exact wire shape Payload emits, and tier 4 catches
-drift the moment Payload ships it. Per Payload version that means: 2.x is
+quickly, tier 3 pins the exact wire shape Payload emits, tier 4 catches
+drift the moment Payload ships it, and tier 5 does the same for a framework
+release. Per Payload version that means: 2.x is
 covered by a corpus captured from a real 2.32.3 admin, captured-message
 integration tests and `fieldSchemaJSON` typing;
 3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.92.1 by the
