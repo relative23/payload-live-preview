@@ -3,7 +3,7 @@
   "projects": {
     ".": {
       "exposure": "quality/audit-exposure/root.json",
-      "exposureSha256": "d2c979512ee4b96f610de876e44b2b199a957a45119554eb7b9f3300e0cd170d",
+      "exposureSha256": "661ef80d8bf5e8b9607f582b448f86f8165cbcf5c50018b90d9d2e695edd1f54",
       "exceptions": []
     },
     "examples/astro-payload": {

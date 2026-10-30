@@ -99,6 +99,8 @@ jobs:
       needs.gate.outputs.tested_sha == github.sha
     runs-on: ubuntu-latest
     permissions:
+      # actions: read is for the jobs of the CI run that compat:record reads.
+      actions: read
       contents: write
       pull-requests: write
     steps:
@@ -121,6 +123,15 @@ jobs:
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
 
       - run: npm ci
+
+      # The CI run this Version PR releases becomes the result of the compatibility rows it ran.
+      # changesets/action commits the record with the version, so it moves with each release and
+      # nothing between releases writes to the repository.
+      - name: Record the released CI run as the compatibility result
+        run: npm run compat:record
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLP_CI_RUN_ID: ${{ needs.gate.outputs.run_id }}
 
       - name: Create Version PR
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1

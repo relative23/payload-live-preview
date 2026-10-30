@@ -89,6 +89,20 @@ function label(entry: Tested): string {
   return `${what} (${entry.browsers.join(', ')})`;
 }
 
+/**
+ * What the feature rows say about their last run. A Version PR records the CI run it releases
+ * (`scripts/record-compat-results.ts`), so a passed row names that run's commit and date.
+ */
+export function evidenceLine(cells: readonly CompatEvidenceCell[]): string {
+  const passed = cells.filter((cell) => cell.evidence.status === 'passed');
+  const others = cells.length - passed.length;
+  const result = passed[0]?.evidence.result;
+  if (result === undefined) {
+    return `The ${String(cells.length)} feature rows of \`quality/compat-matrix.json\` each name the CI job that runs them on every push; a Version PR records the run it releases as their result.`;
+  }
+  return `Of the ${String(cells.length)} feature rows of \`quality/compat-matrix.json\`, ${String(passed.length)} passed in the CI run the last Version PR recorded (commit \`${result.commit.slice(0, 7)}\`, ${result.executedAt.slice(0, 10)}, \`quality/compat-results.json\`); the other ${String(others)} have no recorded result.`;
+}
+
 export function render(matrix: Matrix, viteLine = ''): string {
   const rows = matrix.frameworks.map(
     (framework) =>
@@ -103,6 +117,8 @@ export function render(matrix: Matrix, viteLine = ''): string {
     ...rows,
     '',
     `Node ${matrix.node.engines}; the unit and integration suites run on Node ${matrix.node.tested.join(', ')}. Every version in the table is what the fixture lockfile or the matrix job installs, checked by \`npm run compat:check\`.`,
+    '',
+    evidenceLine(matrix.featureEvidence),
     '',
     ...(viteLine === '' ? [] : [viteLine, '']),
     `The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the \`hook-matrix\` job runs after installing the floors over the lockfile (${matrix.hooks.map((hook) => `${hook.name} ${hook.floor}`).join(', ')}), and at what the lockfile installs (${matrix.hooks.map((hook) => `${hook.name} ${hook.current}`).join(', ')}), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by \`svelte/compiler\` and rendered by the real \`svelte/server\`.`,

@@ -85,13 +85,22 @@ const RELEASE: WorkflowSpec = {
     version: {
       if: "needs.gate.outputs.version_pr == 'true' && needs.gate.outputs.tested_sha == github.sha",
       needs: ['gate'],
-      permissions: { contents: 'write', 'pull-requests': 'write' },
+      permissions: { actions: 'read', contents: 'write', 'pull-requests': 'write' },
       steps: [
         { uses: 'actions/checkout', with: { ref: TESTED_SHA, 'fetch-depth': '0' } },
         testedCommit(TESTED_SHA),
         SETUP_NODE,
         NPM_VERSION,
         NPM_CI,
+        // Before the action commits: the record of the released run goes into the Version PR.
+        {
+          name: 'Record the released CI run as the compatibility result',
+          run: 'npm run compat:record',
+          env: {
+            GH_TOKEN: '${{ github.token }}',
+            PLP_CI_RUN_ID: '${{ needs.gate.outputs.run_id }}',
+          },
+        },
         { uses: 'changesets/action', with: { version: 'npm run version' } },
       ],
     },

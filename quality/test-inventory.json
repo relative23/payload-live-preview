@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 528,
-    "suites": 1016,
-    "tests": 4601,
+    "files": 529,
+    "suites": 1019,
+    "tests": 4606,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 431,
-      "suites": 906,
-      "tests": 4199,
+      "files": 432,
+      "suites": 909,
+      "tests": 4204,
       "benchmarks": 0
     }
   },
@@ -3428,6 +3428,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/record-compat-results.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {

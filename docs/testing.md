@@ -288,6 +288,13 @@ have a budget of zero. Playwright retries may collect diagnostics, but
   `npm ci` or `npm install` with `--prefix`, or a Playwright helper listed in
   `scripts/compat-engines.ts`) and fails when a locked package's `engines.node`
   refuses the job's Node. A bare `node-version: 22` counts as 22.0.0.
+  Each feature row of the matrix names the CI job that runs it. A Version PR
+  records the CI run it releases (`npm run compat:record`, in the Release
+  workflow): the run and its jobs go to `quality/compat-results.json`, and
+  every row at an exact version becomes `passed` with that file's digest, the
+  commit and the date. The check then fails when the file no longer has that
+  digest. A row on a floating range stays `configured`, since nobody pinned
+  the version it ran.
 
 ## Coverage and mutation policy
 

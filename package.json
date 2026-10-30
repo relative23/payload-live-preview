@@ -263,6 +263,7 @@
     "compat:check": "tsx scripts/compat-table.ts --check",
     "compat:write": "tsx scripts/compat-table.ts --write",
     "compat:refresh": "tsx scripts/compat-table.ts --refresh",
+    "compat:record": "tsx scripts/record-compat-results.ts && prettier --write quality/compat-matrix.json && tsx scripts/compat-table.ts --write && prettier --write README.md",
     "diagnostics:check": "tsx scripts/diagnostic-table.ts --check",
     "test:package": "tsx scripts/check-package.ts",
     "audit:gate": "tsx scripts/audit-gate.ts",
