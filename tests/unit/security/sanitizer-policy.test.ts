@@ -104,6 +104,31 @@ describe('policy extension collisions', () => {
     expect(out).not.toContain('javascript:');
     expect(out).toContain('ping="/p"');
   });
+
+  it.each(POLICIES)(
+    '[%s] an extension checks every URL it re-admits: formaction, action and each ping target',
+    (policy) => {
+      const options = {
+        policy,
+        allowFormControls: true,
+        additionalAllowedAttributes: { button: ['formaction'], a: ['ping'], img: ['action'] },
+      } as const;
+      const unsafe = sanitizeHtml(
+        '<button formaction="javascript:x()">b</button><a href="/ok" ping="/p javascript:y()">l</a><img src="/i.png" action="javascript:z()">',
+        options,
+      );
+      expect(unsafe).not.toContain('javascript:');
+      expect(unsafe).not.toContain('formaction');
+      expect(unsafe).not.toContain('ping');
+
+      const safe = sanitizeHtml(
+        '<button formaction="/submit">b</button><a href="/ok" ping="/p /q">l</a>',
+        options,
+      );
+      expect(safe).toContain('formaction="/submit"');
+      expect(safe).toContain('ping="/p /q"');
+    },
+  );
 });
 
 describe('sanitizeHtmlWithPolicy — the instance layer between a call and the process default', () => {

@@ -158,7 +158,15 @@ const ATTR_BY_TAG: Readonly<Record<string, ReadonlySet<string>>> = {
   pre: new Set(['class']),
 };
 
-const URL_ATTRIBUTES: ReadonlySet<string> = new Set(['href', 'src', 'cite', 'poster']);
+// Checked however the attribute was admitted: `additionalAllowedAttributes` can re-admit the form ones.
+const URL_ATTRIBUTES: ReadonlySet<string> = new Set([
+  'href',
+  'src',
+  'cite',
+  'poster',
+  'action',
+  'formaction',
+]);
 
 /** Parses `sanitizeHtml` spends before it gives up on an output that will not settle. */
 const MAX_PASSES = 6;
@@ -193,8 +201,8 @@ export interface SanitizeOptions {
   /** Extra tags to allow. Lower-case, untrimmed. */
   readonly additionalAllowedTags?: readonly string[];
   /**
-   * Extra per-tag attributes, lower-case. Cannot re-admit handlers, `style`,
-   * or — under `'strict'` — `id`, `name` and `data-payload-*`.
+   * Extra per-tag attributes, lower-case. Cannot re-admit handlers, `style`, or —
+   * under `'strict'` — `id`, `name` and `data-payload-*`; their URLs are checked.
    */
   readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
   /**
@@ -481,6 +489,9 @@ function sanitizeAttributes(element: Element, tag: string, policy: ResolvedPolic
       if (URL_ATTRIBUTES.has(name) && !isSafeUrl(attr.value)) {
         element.removeAttribute(attr.name);
       } else if (name === 'srcset' && !isSafeSrcset(attr.value)) {
+        element.removeAttribute(attr.name);
+      } else if (name === 'ping' && !attr.value.split(/\s+/u).every((url) => isSafeUrl(url))) {
+        // `ping` is a list of URLs; one unsafe target refuses the attribute.
         element.removeAttribute(attr.name);
       }
       continue;

@@ -22,7 +22,7 @@
   "totals": {
     "files": 529,
     "suites": 1020,
-    "tests": 4609,
+    "tests": 4610,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 432,
       "suites": 910,
-      "tests": 4207,
+      "tests": 4208,
       "benchmarks": 0
     }
   },
@@ -3672,7 +3672,7 @@
       "path": "tests/unit/security/sanitizer-policy.test.ts",
       "group": "unit",
       "suites": 5,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
