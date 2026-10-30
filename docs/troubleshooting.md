@@ -198,6 +198,14 @@ a CI log. The doctor itself never prints it. Measured on 2026-10-28 with npm
 12.0.2 and a made-up token: `npx` and `npm exec` printed it once each,
 `node_modules/.bin/pll` not at all.
 
+The environment variable keeps the value out of logs, not out of the process:
+the shell puts it into the doctor's command line, which every user of a Linux
+host can read while it runs. With a made-up token, `ps` and
+`/proc/<pid>/cmdline` (mode `444`, `/proc` without `hidepid`) showed
+`payload-token=…` in full (measured 2026-10-30). Run a command that carries a
+credential where no one else has a shell, and with one you can revoke
+afterwards: a short-lived signed token, or a session you sign out of.
+
 It fetches the URL twice — once as an ordinary visitor, once the way the
 admin's iframe loads it — and reports the difference. That comparison is the
 point: a config can say `allowedOrigins: [...]` while a proxy strips the
