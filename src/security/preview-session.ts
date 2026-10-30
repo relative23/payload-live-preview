@@ -2,7 +2,8 @@
  * The `payload-session` strategy: forward exactly one named cookie to
  * `GET <serverURL>/api/<usersSlug>/me` and authorize when a user comes back.
  * A cookie-only request preserves working Payload 2 sessions. When `/me`
- * reports no user, one retry adds an `Origin` for Payload 3's CSRF check.
+ * reports no user, one retry adds an `Origin` for Payload 3's CSRF check, and
+ * an endpoint that needed it gets it on the first request from then on.
  */
 
 import { createAuthorizedPreviewContext } from '@/types/authorized-preview';
@@ -30,7 +31,8 @@ export interface PayloadSessionStrategy {
   /**
    * Send this listed origin with the cookie from the first request. Without
    * it, try the existing cookie-only request, then the origin of `serverURL`
-   * once when `/me` reports a null user. Draft reads keep the accepted headers.
+   * once when `/me` reports a null user; an endpoint that needed the origin
+   * gets it first from then on. Draft reads keep the accepted headers.
    */
   readonly origin?: string;
   /** Upper bound for the `/me` round trip. Below 250 ms is raised to 250 ms; default 3000. */
@@ -51,6 +53,15 @@ const COOKIE_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 const COOKIE_VALUE_PATTERN = /^[A-Za-z0-9._~-]+$/;
 /** Below this an `exp` is Unix seconds; a millisecond timestamp passed it in 1973. */
 const SECONDS_CEILING = 1e11;
+/** How often a `/me` known to need the origin is asked once more with the cookie alone. */
+const COOKIE_ONLY_RETRY_MS = 60_000;
+
+/**
+ * The `/me` endpoints that answered a user only with the origin, per fetch, with when the
+ * cookie alone was last tried. Keyed by endpoint, not by strategy object: the recipes build
+ * one per request. Without it, every token `/me` refuses costs two round trips.
+ */
+const originNeeded = new WeakMap<FetchLike, Map<string, number>>();
 
 /**
  * Exactly one value for `name`, or `null` when absent, empty, over `maxLength`
@@ -125,9 +136,13 @@ export async function authorizeSession(
   if (!Number.isSafeInteger(timeoutMs)) return refused('unavailable');
   const fetchImpl: FetchLike = strategy.fetch ?? globalThis.fetch;
   const usersSlug = encodeURIComponent(strategy.usersSlug ?? DEFAULT_USERS_SLUG);
+  // `depth=0`: the verdict needs the user's id, not its populated relations.
+  const endpoint = `${origin}/api/${usersSlug}/me?depth=0`;
+  let learned = originNeeded.get(fetchImpl);
   const forwarded = `${cookieName}=${value}`;
   let payloadHeaders: Record<string, string> = { cookie: forwarded };
   if (sentOrigin !== undefined) payloadHeaders['origin'] = sentOrigin;
+  else if (learned?.has(endpoint) === true) payloadHeaders['origin'] = origin;
   const controller = new AbortController();
   const abort = (): void => {
     controller.abort(request.signal?.reason);
@@ -143,8 +158,7 @@ export async function authorizeSession(
       controller.abort(new DOMException('The operation timed out', 'TimeoutError'));
     }, timeoutMs);
     for (let attempt = 0; attempt < 2; attempt++) {
-      // `depth=0`: the verdict needs the user's id, not its populated relations.
-      const response = await fetchImpl(`${origin}/api/${usersSlug}/me?depth=0`, {
+      const response = await fetchImpl(endpoint, {
         headers: { ...payloadHeaders, accept: 'application/json' },
         signal: controller.signal,
       });
@@ -152,18 +166,31 @@ export async function authorizeSession(
       if (!response.ok) return refused(response.status === 401 ? 'invalid' : 'unavailable');
       body = await response.json();
       if (isAborted()) return refused('unavailable');
-      // Payload 2 accepts an absent Origin; adding one unconditionally can
-      // reject its valid session when only the frontend is in the CSRF list.
-      if (
-        attempt !== 0 ||
-        sentOrigin !== undefined ||
-        typeof body !== 'object' ||
-        body === null ||
-        (body as { user?: unknown }).user !== null
-      ) {
+      const user =
+        typeof body === 'object' && body !== null ? (body as { user?: unknown }).user : undefined;
+      if (attempt !== 0) {
+        // The other form found a user: it is the one this endpoint takes.
+        if (typeof user !== 'object' || user === null || Array.isArray(user)) break;
+        if (payloadHeaders['origin'] === undefined) {
+          learned?.delete(endpoint);
+        } else {
+          learned = originNeeded.get(fetchImpl) ?? new Map<string, number>();
+          originNeeded.set(fetchImpl, learned);
+          learned.set(endpoint, now());
+        }
         break;
       }
-      payloadHeaders = { cookie: forwarded, origin };
+      if (sentOrigin !== undefined || user !== null) break;
+      if (payloadHeaders['origin'] === undefined) {
+        // Payload 2 accepts an absent Origin; adding one unconditionally can
+        // reject its valid session when only the frontend is in the CSRF list.
+        payloadHeaders = { cookie: forwarded, origin };
+        continue;
+      }
+      // Known to need the origin: a CMS that stopped needing it is noticed within a minute.
+      if (now() - (learned?.get(endpoint) ?? 0) < COOKIE_ONLY_RETRY_MS) break;
+      learned?.set(endpoint, now());
+      payloadHeaders = { cookie: forwarded };
     }
   } catch {
     return refused('unavailable');

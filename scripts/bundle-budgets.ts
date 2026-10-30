@@ -557,6 +557,7 @@
 // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +73/+26/-8 B; prior reserves kept. The Brotli ceiling stays where it was: it fell.
 // 2026-10-30 (the CSP merge starts from the fallback): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2): `index.cjs` +494 / +158 / +78, `index.js` +494 / +141 / +154. csp.ts is server code: no client entry and no inline script moves.
 // 2026-10-30 (the CSP merge starts from the fallback): the tree-shaking ceiling in tree-shaking-budgets.ts moves with the same change and is recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; it keeps the reserve it had): `createLivePreviewMiddleware` +164.
+// 2026-10-30 (the session strategy remembers the origin): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2): `index.cjs` +339 / +106 / +174, `index.js` +339 / +105 / +154, `server.cjs` +335 / +119 / +109, `server.js` +335 / +122 / +124. preview-session.ts is server code: no client entry, no inline script and no tree-shaking row moves.
 export const INLINE_BUDGET = { raw: 150_028, gzip: 47_245, brotli: 41_619 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
