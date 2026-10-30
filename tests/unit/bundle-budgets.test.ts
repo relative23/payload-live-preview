@@ -41,10 +41,12 @@ describe('release bundle budgets', () => {
     // +193/+61/+82 lean, +193/+49/+107 route, +193/+49/-26 fragments (Brotli left); reserves unchanged.
     // 2026-10-30 (the sanitizer checks every URL it admits): +73/+26/0 default (Brotli fell, left),
     // +73/+28/+36 lean, +73/+26/+37 route, +73/+25/+13 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 150_028, gzip: 47_245, brotli: 41_619 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 122_031, gzip: 38_429, brotli: 33_938 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 158_623, gzip: 50_135, brotli: 43_698 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 164_208, gzip: 52_047, brotli: 45_328 });
+    // 2026-10-30 (a ping keeps its safe targets around any whitespace): +1/+2/+21 default,
+    // +1/+1/-2 lean (Brotli left), +1/+1/+63 route, +1/+1/+99 fragments; reserves unchanged.
+    expect(INLINE_BUDGET).toEqual({ raw: 150_029, gzip: 47_247, brotli: 41_640 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 122_032, gzip: 38_430, brotli: 33_938 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 158_624, gzip: 50_136, brotli: 43_761 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 164_209, gzip: 52_048, brotli: 45_427 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

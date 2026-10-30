@@ -53,7 +53,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +462/+159/+77 B; prior reserves kept.
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +199/+45/+62 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +84/+39/+35 B; prior reserves kept.
-  'client.cjs': { raw: 166_089, gzip: 51_985, brotli: 44_957 },
+  // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-1/+30 B; the gzip ceiling stays, it fell; prior reserves kept.
+  'client.cjs': { raw: 166_090, gzip: 51_985, brotli: 44_987 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -90,7 +91,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +462/+159/+115 B; prior reserves kept.
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +199/+44/+91 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +84/+40/-15 B; prior reserves kept. The Brotli ceiling stays where it was: it fell.
-  'client.js': { raw: 166_008, gzip: 51_974, brotli: 44_982 },
+  // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+0/+28 B; prior reserves kept.
+  'client.js': { raw: 166_009, gzip: 51_974, brotli: 45_010 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).
@@ -99,7 +101,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +624/+255/+245 B; same 87/12/87 B cushions.
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +200/+57/+54 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +84/+29/+23 B; prior reserves kept.
-  'structural.cjs': { raw: 22_708, gzip: 7_940, brotli: 7_219 },
+  // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+4/+5 B; prior reserves kept.
+  'structural.cjs': { raw: 22_709, gzip: 7_944, brotli: 7_224 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 019 → 7 029 (+10 B, measured 7 014 → 7 024); brotli 6 326 → 6 427 (measured 6 307, 19 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 19 958 → 20 091 (+133 B, measured 19 870 → 20 003); gzip 7 029 → 7 068 (+39 B, measured 7 024 → 7 063).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 091 → 20 323 (+232 B, measured 20 003 → 20 235); gzip 7 068 → 7 120 (+52 B, measured 7 063 → 7 115).
@@ -108,7 +111,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +625/+261/+236 B; same 88/12/90 B cushions.
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +199/+56/+56 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +84/+28/+19 B; prior reserves kept.
-  'structural.js': { raw: 22_663, gzip: 7_943, brotli: 7_232 },
+  // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+4/+4 B; prior reserves kept.
+  'structural.js': { raw: 22_664, gzip: 7_947, brotli: 7_236 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 768 → 91 802 (+34 B, measured 91 749 → 91 783).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 802 → 91 851 (+49 B, measured 91 783 → 91 832); gzip 29 177 → 29 190 (+13 B, measured 29 171 → 29 184).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 91 851 → 91 869 (+18 B, measured 91 832 → 91 850); gzip 29 190 → 29 197 (+7 B, measured 29 184 → 29 191).
@@ -141,7 +145,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+138/+160 B; prior reserves kept.
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+59/+29 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +74/+28/+30 B; prior reserves kept.
-  'lean.cjs': { raw: 122_384, gzip: 38_673, brotli: 34_241 },
+  // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-3/+5 B; the gzip ceiling stays, it fell; prior reserves kept.
+  'lean.cjs': { raw: 122_385, gzip: 38_673, brotli: 34_246 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 757 → 91 791 (+34 B, measured 91 738 → 91 772).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 791 → 91 840 (+49 B, measured 91 772 → 91 821); gzip 29 171 → 29 183 (+12 B, measured 29 167 → 29 179).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 91 840 → 91 858 (+18 B, measured 91 821 → 91 839); gzip 29 183 → 29 190 (+7 B, measured 29 179 → 29 186).
@@ -174,7 +179,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+138/+94 B; prior reserves kept.
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+60/+101 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +74/+28/+28 B; prior reserves kept.
-  'lean.js': { raw: 122_373, gzip: 38_666, brotli: 34_206 },
+  // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-3/-4 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
+  'lean.js': { raw: 122_374, gzip: 38_666, brotli: 34_206 },
   // 2026-09-16 (2.0.1 Version PR): gzip 5 602 → 5 612. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 5 600 against a cushion of 2 B. Twelve bytes over that measurement  as the rows that never flipped carry.
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 16 307 → 16 527 (+220 B, measured 16 305 → 16 525); gzip 5 612 → 5 665 (+53 B, measured 5 600 → 5 653); brotli 5 072 → 5 162 (measured 5 072; under the 2 % notice).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 16 527 → 16 755 (+228 B, measured 16 525 → 16 753); gzip 5 665 → 5 720 (+55 B, measured 5 653 → 5 708).
@@ -183,7 +189,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +328/+143/+135 B; same 2/12/97 B cushions.
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +198/+65/+61 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +84/+32/+30 B; prior reserves kept.
-  'lexical.cjs': { raw: 18_636, gzip: 6_388, brotli: 5_837 },
+  // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+1/+1 B; prior reserves kept.
+  'lexical.cjs': { raw: 18_637, gzip: 6_389, brotli: 5_838 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 16 278 → 16 490 (+212 B, measured 16 276 → 16 488); gzip 5 606 → 5 658 (+52 B, measured 5 602 → 5 654); brotli 5 079 → 5 165 (measured 5 075; under the 2 % notice).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 16 490 → 16 718 (+228 B, measured 16 488 → 16 716); gzip 5 658 → 5 715 (+57 B, measured 5 654 → 5 711).
   // 2026-09-29 (H10, lexical render can require a document, ADR 0025): measured +81/+45/+44 B; same 2/12/97 B cushions.
@@ -191,7 +198,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-02 (PHD-19, the sanitizer settles on a fixed point and reads a scheme through whitespace, ADR 0016): measured +326/+153/+139 B; same 2/12/97 B cushions.
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +198/+65/+55 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +84/+33/+32 B; prior reserves kept.
-  'lexical.js': { raw: 18_597, gzip: 6_391, brotli: 5_832 },
+  // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+1/+1 B; prior reserves kept.
+  'lexical.js': { raw: 18_598, gzip: 6_392, brotli: 5_833 },
   //
   // 2026-09-06 (Ü10): `plugins.*` rise ~2 900 raw / ~1 150 gzip for the
   // unbound-fields overlay — the development panel that lists the fields an

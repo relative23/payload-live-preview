@@ -148,4 +148,5 @@
 // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +408/+135/+108 B; prior reserves kept.
 // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +193/+61/+82 B; prior reserves kept.
 // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +73/+28/+36 B; prior reserves kept.
-export const INLINE_LEAN_BUDGET = { raw: 122_031, gzip: 38_429, brotli: 33_938 } as const;
+// 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+1/-2 B; the Brotli ceiling stays, it fell; prior reserves kept.
+export const INLINE_LEAN_BUDGET = { raw: 122_032, gzip: 38_430, brotli: 33_938 } as const;
