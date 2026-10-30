@@ -95,6 +95,19 @@ describe('trustedHtml', () => {
     expect(trustedHtml('<i>x</i>')).toBe('<i>x</i>');
   });
 
+  it('never creates its identity policy when the site hands in its own before the first write', () => {
+    // docs/security.md: the realm slot is reachable from page scripts, so a site that wants no
+    // identity policy on the page sets its own first.
+    const created = installFakeApi();
+    setTrustedTypesPolicy({ createHTML: (input: string) => `mine:${input}` });
+    expect(trustedHtml('<i>x</i>')).toBe('mine:<i>x</i>');
+    expect(created).toStrictEqual([]);
+    const slot = (globalThis as Record<symbol, { auto?: unknown } | undefined>)[
+      Symbol.for('payload-live-preview.trusted-types')
+    ];
+    expect(slot?.auto).toBeUndefined();
+  });
+
   it('tolerates a CSP that refuses the policy name and lets the sink report enforcement', () => {
     installFakeApi({ refuse: true });
     expect(() => trustedHtml('<p>x</p>')).not.toThrow();

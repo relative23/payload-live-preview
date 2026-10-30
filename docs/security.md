@@ -213,7 +213,15 @@ once per page: every package entry is its own bundle, and the runtime beside
 `payload-live-preview/lexical` shares the one policy rather than asking for a
 second of the same name. A site enforcing `require-trusted-types-for 'script'`
 lists that name in its `trusted-types` directive, or hands its own policy to
-`setTrustedTypesPolicy()`, which reaches every entry on the page. The route strategy's page refresh is outside that
+`setTrustedTypesPolicy()`, which reaches every entry on the page. Being shared
+through a registry symbol on `globalThis`, the policy is reachable from every
+script on the page, its identity `createHTML` included, and so is the slot
+`setTrustedTypesPolicy()` writes. Trusted Types do not guard against a script
+that already runs; what this exposes is a script gadget that can call a
+function reachable from `globalThis` with a string of its choice. A site that
+wants no identity policy on its pages hands its own sanitizing policy to
+`setTrustedTypesPolicy()` before the runtime's first write: the package then
+never creates `payload-live-preview`. The route strategy's page refresh is outside that
 policy: it parses the fetched page with `DOMParser.parseFromString()` from a
 plain string, so under enforcement that parse throws unless the page's own
 `default` policy admits the string; the refresh then counts as failed
