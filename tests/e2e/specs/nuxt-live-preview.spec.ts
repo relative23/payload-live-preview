@@ -44,6 +44,14 @@ async function hydrated(page: Page): Promise<Frame> {
   return frame;
 }
 
+/**
+ * The same wait on a page loaded directly. Before hydration a NuxtLink is a plain link, whose
+ * click loads a new document, and a button has no handler yet, so its click does nothing.
+ */
+async function pageHydrated(page: Page): Promise<void> {
+  await page.waitForFunction(() => (window as ProbedWindow).useNuxtApp?.().isHydrating === false);
+}
+
 test.describe('nuxt live preview — admin → iframe updates', () => {
   test('updating the title field in the admin updates the preview iframe', async ({ page }) => {
     await page.goto(`${APP}/admin.html`);
@@ -153,6 +161,7 @@ test.describe('nuxt live preview — admin → iframe updates', () => {
     // This v1-profile fixture treats the token as opaque. The contract here is
     // URL retention; signed-token authorization is covered by the strict suites.
     await page.goto(`${APP}/navigation?preview=true&previewToken=kept-for-navigation`);
+    await pageHydrated(page);
 
     await page.getByTestId('navigate-query').click();
     await expect.poll(() => new URL(page.url()).searchParams.get('view')).toBe('query');

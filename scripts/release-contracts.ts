@@ -118,6 +118,16 @@ export const MAINTAINER_INSTALL_POLICIES = [
     },
   },
   {
+    label: 'Nuxt 4 fixture',
+    directory: 'examples/nuxt4-payload',
+    npmrc: 'strict-allow-scripts=true\ninstall-links=true\n',
+    packageManager: REVIEWED_PACKAGE_MANAGER,
+    allowScripts: {
+      'esbuild@0.28.2': true,
+      'fsevents@2.3.3': false,
+    },
+  },
+  {
     label: 'real Payload fixture',
     directory: 'examples/payload-backend',
     npmrc: 'strict-allow-scripts=true\ninstall-links=true\n',
@@ -195,6 +205,7 @@ export const COPY_INSTALLED_LOCAL_FILE_PACKAGE_FIXTURES = [
   { label: 'SvelteKit fixture', directory: 'examples/sveltekit-payload', mode: 'copy' },
   { label: 'SvelteKit 3 fixture', directory: 'examples/sveltekit3-payload', mode: 'copy' },
   { label: 'Nuxt fixture', directory: 'examples/nuxt-payload', mode: 'copy' },
+  { label: 'Nuxt 4 fixture', directory: 'examples/nuxt4-payload', mode: 'copy' },
   { label: 'real Payload fixture', directory: 'examples/payload-backend', mode: 'copy' },
 ] as const;
 

@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 521,
-    "suites": 1005,
-    "tests": 4568,
+    "files": 522,
+    "suites": 1006,
+    "tests": 4573,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 425,
-      "suites": 896,
-      "tests": 4167,
+      "files": 426,
+      "suites": 897,
+      "tests": 4172,
       "benchmarks": 0
     }
   },
@@ -3253,6 +3253,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/nuxt-fixture-layout.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {
