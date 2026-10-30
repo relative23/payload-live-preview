@@ -144,6 +144,38 @@ export function findActionPinViolations(workflows: readonly WorkflowDocument[]):
   return violations;
 }
 
+/**
+ * The jobs that push with the checkout's credentials: the publish job pushes the release tag, and
+ * changesets/action pushes the Version PR branch. Every other checkout leaves no token in
+ * `.git/config` for a later step, installed package or action to read.
+ */
+const PUSHING_JOBS: Readonly<Record<string, readonly string[]>> = {
+  'release.yml': ['publish', 'version'],
+};
+
+export function findCheckoutCredentialViolations(
+  workflows: readonly WorkflowDocument[],
+): readonly string[] {
+  const violations: string[] = [];
+  for (const workflow of workflows) {
+    for (const [jobName, job] of Object.entries(jobs(workflow.document))) {
+      if (!isRecord(job) || PUSHING_JOBS[workflow.name]?.includes(jobName) === true) continue;
+      const kept = steps(job).some(
+        (step) =>
+          typeof step['uses'] === 'string' &&
+          actionName(step['uses']) === 'actions/checkout' &&
+          String((isRecord(step['with']) ? step['with'] : {})['persist-credentials']) !== 'false',
+      );
+      if (kept) {
+        violations.push(
+          `${workflow.name} job ${jobName} keeps checkout credentials; set persist-credentials: false`,
+        );
+      }
+    }
+  }
+  return violations;
+}
+
 function matchesStep(step: YamlRecord, spec: StepSpec): boolean {
   if (spec.name !== undefined && step['name'] !== spec.name) return false;
   if ('run' in spec) {
@@ -310,6 +342,7 @@ export function findWorkflowContractViolations(
     }
   }
   violations.push(...findActionPinViolations(documents));
+  violations.push(...findCheckoutCredentialViolations(documents));
   for (const [name, spec] of Object.entries(WORKFLOW_EXPECTATIONS)) {
     const document = documents.find((candidate) => candidate.name === name);
     if (document === undefined) {

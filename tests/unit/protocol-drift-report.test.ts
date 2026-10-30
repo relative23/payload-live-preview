@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { fallbackReport, issueBody } from '../../scripts/report-protocol-drift';
+import { afterEach, describe, expect, it } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
+  ADMIN_FALLBACK,
+  fallbackReport,
+  issueBody,
+  readWatchResults,
+  reportsToFile,
+} from '../../scripts/report-protocol-drift';
 import { WORKFLOW_EXPECTATIONS } from '../../scripts/workflow-expectations';
 
 /**
@@ -64,40 +73,81 @@ describe('the fallback the admin half asks for', () => {
     // issue up lands on the same three files.
     expect(issueBody(report)).toContain('src/core/message-bus.ts');
   });
+});
 
-  it('is wired into the admin job on the gate entry only', () => {
-    const watch = WORKFLOW_EXPECTATIONS['protocol-watch.yml'];
-    const steps = watch?.jobs['admin-e2e']?.steps ?? [];
-    const step = steps
-      .filter((candidate) => 'run' in candidate)
-      .find((candidate) => candidate.run.includes('report-protocol-drift'));
+describe('what the report job files', () => {
+  const folders: string[] = [];
+  afterEach(() => {
+    for (const folder of folders.splice(0)) rmSync(folder, { recursive: true, force: true });
+  });
+  function artifacts(entries: Record<string, { result: unknown; report?: unknown }>): string {
+    const root = mkdtempSync(join(tmpdir(), 'plp-protocol-watch-'));
+    folders.push(root);
+    for (const [name, { result, report }] of Object.entries(entries)) {
+      mkdirSync(join(root, name));
+      writeFileSync(join(root, name, 'result.json'), JSON.stringify(result));
+      if (report !== undefined) {
+        writeFileSync(join(root, name, 'protocol-drift.json'), JSON.stringify(report));
+      }
+    }
+    return root;
+  }
 
-    expect(step?.condition).toBe("failure() && matrix.dist-tag == 'latest'");
-    expect(step?.env?.['PROTOCOL_WATCH_FALLBACK']).toBeDefined();
+  it('the drift the gate entry wrote down, and the admin run that never reached an assertion', () => {
+    const root = artifacts({
+      'protocol-watch-wire-latest': {
+        result: { job: 'protocol-watch', distTag: 'latest', outcome: 'failure' },
+        report: REPORT,
+      },
+      'protocol-watch-admin-latest': {
+        result: { job: 'admin-e2e', distTag: 'latest', outcome: 'failure' },
+      },
+    });
+
+    const [admin, drift] = reportsToFile(readWatchResults(root));
+    expect(drift).toEqual(REPORT);
+    expect(admin?.package).toBe('payload@latest');
+    expect(admin?.failures).toEqual(fallbackReport('payload@latest', ADMIN_FALLBACK).failures);
+  });
+
+  it('nothing for the pre-release entries, a green run or an upstream finding without drift', () => {
+    const root = artifacts({
+      'protocol-watch-wire-beta': {
+        result: { job: 'protocol-watch', distTag: 'beta', outcome: 'failure' },
+        report: REPORT,
+      },
+      'protocol-watch-admin-beta': {
+        result: { job: 'admin-e2e', distTag: 'beta', outcome: 'failure' },
+      },
+      'protocol-watch-admin-latest': {
+        result: { job: 'admin-e2e', distTag: 'latest', outcome: 'success' },
+      },
+      'protocol-watch-wire-latest': {
+        result: { job: 'protocol-watch', distTag: 'latest', outcome: 'failure' },
+      },
+    });
+
+    expect(reportsToFile(readWatchResults(root))).toEqual([]);
   });
 });
 
 describe('the workflow that files it', () => {
-  it('is the only workflow allowed to write an issue, and only on the gate entry', () => {
+  it('writes the issue from its report job only, and no other workflow may write one at all', () => {
     const watch = WORKFLOW_EXPECTATIONS['protocol-watch.yml'];
-    const step = watch?.jobs['protocol-watch']?.steps?.find(
-      (candidate) => 'run' in candidate && candidate.run.includes('report-protocol-drift'),
-    );
 
-    expect(watch?.permissions).toEqual({ contents: 'read', issues: 'write' });
-    expect(step?.condition).toBe("failure() && matrix.dist-tag == 'latest'");
+    expect(watch?.permissions).toEqual({ contents: 'read' });
+    expect(watch?.jobs['report']?.permissions).toEqual({ contents: 'read', issues: 'write' });
+    expect(
+      (watch?.jobs['report']?.steps ?? []).flatMap((step) => ('run' in step ? [step.run] : [])),
+    ).toEqual(['node scripts/report-protocol-drift.ts protocol-watch']);
+    // Each watch writes its issues from a report job that installs nothing.
+    const reporting = new Set(['protocol-watch.yml report', 'latest-watch.yml report']);
     for (const [name, spec] of Object.entries(WORKFLOW_EXPECTATIONS)) {
-      if (name === 'protocol-watch.yml') continue;
-      // A workflow without a reviewed `permissions` block inherits the
-      // repository default, which is not this file's business; one that has
-      // it must not ask for issues.
       if (spec.permissions !== undefined && spec.permissions !== null) {
         expect(spec.permissions, name).not.toHaveProperty('issues');
       }
-      // A job may ask for it only where it installs nothing: the latest watch's report job
-      // (tests/unit/latest-watch-report.test.ts holds that job to it).
       for (const [job, jobSpec] of Object.entries(spec.jobs)) {
-        if (name === 'latest-watch.yml' && job === 'report') continue;
+        if (reporting.has(`${name} ${job}`)) continue;
         expect(jobSpec.permissions ?? {}, `${name} ${job}`).not.toHaveProperty('issues');
       }
     }

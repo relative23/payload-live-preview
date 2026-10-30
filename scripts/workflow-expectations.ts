@@ -280,8 +280,8 @@ const CODSPEED: WorkflowSpec = {
 const PAYLOAD_CHANNEL = '${{ matrix.dist-tag }}';
 const PROTOCOL_WATCH: WorkflowSpec = {
   name: 'Protocol Watch',
-  // The one workflow that may write an issue, and only that.
-  permissions: { contents: 'read', issues: 'write' },
+  // Read-only for the jobs that run published code; the report job alone writes the issue.
+  permissions: { contents: 'read' },
   jobs: {
     'protocol-watch': {
       continueOnError: '${{ matrix.soft-fail }}',
@@ -291,17 +291,26 @@ const PROTOCOL_WATCH: WorkflowSpec = {
           run: 'npx tsx scripts/check-protocol-drift.ts',
           env: { PROTOCOL_WATCH_PACKAGE: `@payloadcms/live-preview@${PAYLOAD_CHANNEL}` },
         },
-        {
-          name: 'File the drift as an issue',
-          run: 'npx tsx scripts/report-protocol-drift.ts',
-          condition: "failure() && matrix.dist-tag == 'latest'",
-          env: { GH_TOKEN: '${{ github.token }}' },
-        },
-        // After the issue step on purpose: a finding that stops reproducing is
+        // After the drift check on purpose: a finding that stops reproducing is
         // upstream fixing something, which the docs answer, not an issue.
         {
           run: 'npm run test:upstream-findings',
           env: { UPSTREAM_FINDINGS_PACKAGE: `@payloadcms/live-preview@${PAYLOAD_CHANNEL}` },
+        },
+        {
+          name: 'Record how the job ended',
+          run: [
+            'mkdir -p protocol-watch',
+            'if [ -f protocol-drift.json ]; then cp protocol-drift.json protocol-watch/; fi',
+            `echo '{"job":"protocol-watch","distTag":"${PAYLOAD_CHANNEL}","outcome":"\${{ job.status }}"}' > protocol-watch/result.json`,
+          ].join('\n'),
+          condition: 'always()',
+          operators: true,
+        },
+        {
+          uses: 'actions/upload-artifact',
+          condition: 'always()',
+          with: { name: `protocol-watch-wire-${PAYLOAD_CHANNEL}`, path: 'protocol-watch/' },
         },
       ],
     },
@@ -318,7 +327,7 @@ const PROTOCOL_WATCH: WorkflowSpec = {
         {
           run:
             'npm --prefix examples/payload-backend install --no-audit --no-fund --no-package-lock ' +
-            `--dangerously-allow-all-scripts "payload@${PAYLOAD_CHANNEL}" ` +
+            `--ignore-scripts "payload@${PAYLOAD_CHANNEL}" ` +
             `"@payloadcms/next@${PAYLOAD_CHANNEL}" "@payloadcms/db-sqlite@${PAYLOAD_CHANNEL}" ` +
             `"@payloadcms/richtext-lexical@${PAYLOAD_CHANNEL}"`,
         },
@@ -327,15 +336,18 @@ const PROTOCOL_WATCH: WorkflowSpec = {
         },
         { run: 'npm run test:e2e:real-payload' },
         {
-          name: 'File the failed admin run as an issue',
-          run: 'npx tsx scripts/report-protocol-drift.ts',
-          condition: "failure() && matrix.dist-tag == 'latest'",
-          env: {
-            GH_TOKEN: '${{ github.token }}',
-            PROTOCOL_WATCH_PACKAGE: `payload@${PAYLOAD_CHANNEL}`,
-            PROTOCOL_WATCH_FALLBACK:
-              'the real admin E2E job failed before its assertions; read the run log',
-          },
+          name: 'Record how the job ended',
+          run: [
+            'mkdir -p protocol-watch',
+            `echo '{"job":"admin-e2e","distTag":"${PAYLOAD_CHANNEL}","outcome":"\${{ job.status }}"}' > protocol-watch/result.json`,
+          ].join('\n'),
+          condition: 'always()',
+          operators: true,
+        },
+        {
+          uses: 'actions/upload-artifact',
+          condition: 'always()',
+          with: { name: `protocol-watch-admin-${PAYLOAD_CHANNEL}`, path: 'protocol-watch/' },
         },
         {
           uses: 'actions/upload-artifact',
@@ -345,6 +357,24 @@ const PROTOCOL_WATCH: WorkflowSpec = {
             path: 'playwright-report/',
             'retention-days': '7',
           },
+        },
+      ],
+    },
+    report: {
+      needs: ['protocol-watch', 'admin-e2e'],
+      if: 'always()',
+      timeoutMinutes: 10,
+      permissions: { contents: 'read', issues: 'write' },
+      steps: [
+        { uses: 'actions/checkout', with: { 'persist-credentials': 'false' } },
+        SETUP_NODE,
+        {
+          uses: 'actions/download-artifact',
+          with: { pattern: 'protocol-watch-*', path: 'protocol-watch' },
+        },
+        {
+          run: 'node scripts/report-protocol-drift.ts protocol-watch',
+          env: { GH_TOKEN: '${{ github.token }}' },
         },
       ],
     },

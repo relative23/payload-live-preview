@@ -206,7 +206,7 @@ export const CI: WorkflowSpec = {
         { run: 'bash scripts/ci-install-browser.sh chromium' },
         DOWNLOAD_DIST,
         {
-          run: 'npm --prefix examples/astro-payload install --no-audit --no-fund --dangerously-allow-all-scripts "astro@^${{ matrix.astro }}"',
+          run: 'npm --prefix examples/astro-payload install --no-audit --no-fund --ignore-scripts "astro@^${{ matrix.astro }}"',
         },
         {
           run: [

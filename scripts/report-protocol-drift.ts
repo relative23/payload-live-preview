@@ -5,16 +5,19 @@
  * client stops behaving the way this package's hand-mirrored protocol expects.
  * A red scheduled run is easy to miss — nobody watches a cron job — so the same
  * finding is filed as an issue, and updated rather than duplicated while it is
- * still open (`scripts/github-issue.mjs`).
+ * still open (`scripts/github-issue.mjs`). The watch jobs run published code with
+ * read-only permissions and leave their results as artifacts; the report job reads
+ * them with plain `node` and is the only one that may write the issue.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { DriftReport } from './check-protocol-drift';
 import { fileIssue } from './github-issue.mjs';
 
-const REPORT_PATH = process.env['PROTOCOL_WATCH_REPORT'] ?? 'protocol-drift.json';
+/** The file `check-protocol-drift.ts` writes on drift, which the wire job uploads as it is. */
+const REPORT_FILE = 'protocol-drift.json';
 const LABEL = 'protocol-drift';
 const TITLE = 'Protocol drift: @payloadcms/live-preview no longer matches this runtime';
 
@@ -63,17 +66,54 @@ export function fallbackReport(pkg: string, detail: string): DriftReport {
   };
 }
 
+/** What one watch job left as its artifact: how it ended, and the drift report when it wrote one. */
+export interface WatchResult {
+  readonly job: string;
+  readonly distTag: string;
+  readonly outcome: string;
+  readonly report?: DriftReport;
+}
+
+export const ADMIN_FALLBACK =
+  'the real admin E2E job failed before its assertions; read the run log';
+
+export function readWatchResults(directory: string): WatchResult[] {
+  return readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => join(directory, entry.name))
+    .filter((folder) => existsSync(join(folder, 'result.json')))
+    .sort()
+    .map((folder) => {
+      const result = JSON.parse(readFileSync(join(folder, 'result.json'), 'utf8')) as WatchResult;
+      const drift = join(folder, REPORT_FILE);
+      return existsSync(drift)
+        ? { ...result, report: JSON.parse(readFileSync(drift, 'utf8')) as DriftReport }
+        : result;
+    });
+}
+
+/**
+ * What the report job files, on the gate entry only: drift the wire check wrote down, and the
+ * admin run that failed without reaching an assertion. A red wire job with no report failed in
+ * the upstream-findings step, which is news for the docs, not drift.
+ */
+export function reportsToFile(results: readonly WatchResult[]): DriftReport[] {
+  return results
+    .filter((result) => result.distTag === 'latest' && result.outcome !== 'success')
+    .flatMap((result) =>
+      result.report !== undefined
+        ? [result.report]
+        : result.job === 'admin-e2e'
+          ? [fallbackReport('payload@latest', ADMIN_FALLBACK)]
+          : [],
+    );
+}
+
 function main(): void {
-  const fallback = process.env['PROTOCOL_WATCH_FALLBACK'];
-  if (!existsSync(REPORT_PATH) && fallback !== undefined && fallback.length > 0) {
-    file(fallbackReport(process.env['PROTOCOL_WATCH_PACKAGE'] ?? 'unknown', fallback));
-    return;
-  }
-  if (!existsSync(REPORT_PATH)) {
-    console.log(`[protocol-watch] no ${REPORT_PATH}; nothing to report`);
-    return;
-  }
-  file(JSON.parse(readFileSync(REPORT_PATH, 'utf8')) as DriftReport);
+  const directory = process.argv[2] ?? 'protocol-watch';
+  const reports = reportsToFile(readWatchResults(directory));
+  if (reports.length === 0) console.log('[protocol-watch] nothing to report');
+  for (const report of reports) file(report);
 }
 
 function file(report: DriftReport): void {
