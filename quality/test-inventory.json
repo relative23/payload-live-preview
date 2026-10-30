@@ -22,7 +22,7 @@
   "totals": {
     "files": 529,
     "suites": 1022,
-    "tests": 4622,
+    "tests": 4624,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 432,
       "suites": 912,
-      "tests": 4220,
+      "tests": 4222,
       "benchmarks": 0
     }
   },
@@ -1005,7 +1005,7 @@
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 30,
+      "tests": 32,
       "benchmarks": 0
     },
     {

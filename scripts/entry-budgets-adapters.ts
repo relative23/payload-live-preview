@@ -77,7 +77,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (the forwarded cookie is not enumerable): paired Node24.22.1/npm12.0.2; +68/+20/-7 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-30 (strict says when NODE_ENV is unset): paired Node24.22.1/npm12.0.2; +354/+146/+151 B; prior reserves kept.
   // 2026-10-30 (a token lives at most an hour when verified): paired Node24.22.1/npm12.0.2; +40/+9/-19 B; the Brotli ceiling stays, it fell; prior reserves kept.
-  'adapters/astro/index.js': { raw: 216_267, gzip: 67_678, brotli: 57_598 },
+  // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +325/+119/+84 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 216_592, gzip: 67_797, brotli: 57_682 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -119,7 +120,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (the CSP merge starts from the fallback): paired Node24.22.1/npm12.0.2; +490/+155/+128 B; prior reserves kept.
   // 2026-10-30 (an authorized preview is never cached): paired Node24.22.1/npm12.0.2; +47/+10/-26 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-30 (strict says when NODE_ENV is unset): paired Node24.22.1/npm12.0.2; +354/+138/+101 B; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 191_122, gzip: 59_819, brotli: 51_008 },
+  // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +320/+124/+180 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 191_442, gzip: 59_943, brotli: 51_188 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -199,7 +201,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (the forwarded cookie is not enumerable): paired Node24.22.1/npm12.0.2; +68/+18/+21 B; prior reserves kept.
   // 2026-10-30 (strict says when NODE_ENV is unset): paired Node24.22.1/npm12.0.2; +354/+145/+22 B; prior reserves kept.
   // 2026-10-30 (a token lives at most an hour when verified): paired Node24.22.1/npm12.0.2; +40/+10/+128 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 210_290, gzip: 65_909, brotli: 56_195 },
+  // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +325/+126/+38 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 210_615, gzip: 66_035, brotli: 56_233 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -295,7 +298,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (the forwarded cookie is not enumerable): paired Node24.22.1/npm12.0.2; +68/+17/-22 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-30 (strict says when NODE_ENV is unset): paired Node24.22.1/npm12.0.2; +354/+147/+165 B; prior reserves kept.
   // 2026-10-30 (a token lives at most an hour when verified): paired Node24.22.1/npm12.0.2; +40/+11/-11 B; the Brotli ceiling stays, it fell; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 210_560, gzip: 66_023, brotli: 56_111 },
+  // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +325/+126/+104 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 210_885, gzip: 66_149, brotli: 56_215 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -342,5 +346,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (the forwarded cookie is not enumerable): paired Node24.22.1/npm12.0.2; +68/+22/+38 B; prior reserves kept.
   // 2026-10-30 (strict says when NODE_ENV is unset): paired Node24.22.1/npm12.0.2; +354/+151/+49 B; prior reserves kept.
   // 2026-10-30 (a token lives at most an hour when verified): paired Node24.22.1/npm12.0.2; +40/+11/+22 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 209_637, gzip: 65_747, brotli: 55_844 },
+  // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +327/+126/+124 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 209_964, gzip: 65_873, brotli: 55_968 },
 };
