@@ -746,22 +746,33 @@
     {
       "id": "react-hook-production",
       "surface": "React hook",
-      "feature": "standalone browser lifecycle and real-admin unsaved output",
+      "feature": "standalone browser lifecycle, unmount and unsaved related drafts under a real Payload login",
       "version": {
-        "kind": "floor",
-        "value": "18.0.0",
+        "kind": "exact",
+        "value": "19.3.1",
         "package": "react",
         "source": {
-          "kind": "peer-floor"
+          "kind": "lockfile",
+          "fixture": "tests/fixtures/react-host-deps"
         }
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload admin not yet wired",
+      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "open",
-        "sources": ["src/adapters/react/index.ts", "tests/unit/adapters/react-hook.test.tsx"]
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "production-lifecycle"
+        },
+        "sources": [
+          "tests/e2e/continuation/react-owner.spec.ts",
+          "tests/e2e/continuation/next-host.spec.ts",
+          "tests/e2e/helpers/native-continuation.ts",
+          "playwright.react-continuation.config.ts",
+          "tests/fixtures/react-continuation/src/Preview.tsx.fixture"
+        ]
       }
     },
     {

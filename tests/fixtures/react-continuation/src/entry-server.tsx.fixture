@@ -1,0 +1,15 @@
+/**
+ * Native React SSR escapes the authorized view before the browser hydrates it.
+ * The attribute serializes presentation data only and cannot terminate its
+ * quoted boundary; the service supplies the fixed public client asset.
+ */
+import { renderToString } from 'react-dom/server';
+import Preview from './Preview';
+import type { PreviewView } from './types';
+
+export function render(view: PreviewView): string {
+  const markup = renderToString(<Preview {...view} />);
+  const entities: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  const encoded = JSON.stringify(view).replace(/[&<>"']/gu, character => entities[character]!);
+  return '<div id="react-app" data-stopped="false" data-preview-view="' + encoded + '">' + markup + '</div>';
+}

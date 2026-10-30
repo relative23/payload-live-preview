@@ -112,6 +112,10 @@ export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
     config: 'playwright.vue-continuation.config.ts',
     fixtures: ['tests/fixtures/payload-acl', 'tests/fixtures/vue-host-deps'],
   },
+  {
+    config: 'playwright.react-continuation.config.ts',
+    fixtures: ['tests/fixtures/payload-acl', 'tests/fixtures/react-host-deps'],
+  },
 ];
 
 /** What `ubuntu-latest` and `ubuntu-<version>` run: npm installs the packages that admit this. */

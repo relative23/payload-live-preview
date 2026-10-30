@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 524,
-    "suites": 1008,
-    "tests": 4582,
+    "files": 526,
+    "suites": 1010,
+    "tests": 4587,
     "benchmarks": 12
   },
   "groups": {
@@ -39,9 +39,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 57,
-      "suites": 62,
-      "tests": 254,
+      "files": 58,
+      "suites": 63,
+      "tests": 255,
       "benchmarks": 0
     },
     "integration": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 428,
-      "suites": 899,
-      "tests": 4181,
+      "files": 429,
+      "suites": 900,
+      "tests": 4185,
       "benchmarks": 0
     }
   },
@@ -145,6 +145,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/react-owner.spec.ts",
+      "group": "e2e",
+      "suites": 1,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -3295,6 +3302,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 2,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/react-host-fixture-config.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
       "benchmarks": 0
     },
     {

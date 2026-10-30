@@ -10,13 +10,14 @@ import { fileURLToPath } from 'node:url';
 import { startTlsFront } from './tls-front.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-/** @param {'sveltekit' | 'nuxt' | 'astro' | 'html' | 'vue'} framework */
+/** @param {'sveltekit' | 'nuxt' | 'astro' | 'html' | 'vue' | 'react'} framework */
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- plain Node entry shared by fixture launchers
 export function runNodeProductionFixture(framework) {
   const isNuxt = framework === 'nuxt';
   const isAstro = framework === 'astro';
   const isHTML = framework === 'html';
   const isVue = framework === 'vue';
+  const isReact = framework === 'react';
   const prefix = isNuxt
     ? 'PLP_NUXT'
     : isAstro
@@ -25,7 +26,9 @@ export function runNodeProductionFixture(framework) {
         ? 'PLP_HTML'
         : isVue
           ? 'PLP_VUE'
-          : 'PLP_SVELTE';
+          : isReact
+            ? 'PLP_REACT'
+            : 'PLP_SVELTE';
   const label = isNuxt
     ? 'Nuxt'
     : isAstro
@@ -34,19 +37,24 @@ export function runNodeProductionFixture(framework) {
         ? 'Plain HTML'
         : isVue
           ? 'Vue'
-          : 'SvelteKit';
+          : isReact
+            ? 'React'
+            : 'SvelteKit';
   if (isHTML && !process.env.PLP_HTML_FIXTURE_DIRECTORY) {
     throw new Error('PLP_HTML_FIXTURE_DIRECTORY must name the isolated Node host.');
   }
   if (isVue && !process.env.PLP_VUE_FIXTURE_DIRECTORY) {
     throw new Error('PLP_VUE_FIXTURE_DIRECTORY must name the isolated Node host.');
   }
+  if (isReact && !process.env.PLP_REACT_FIXTURE_DIRECTORY) {
+    throw new Error('PLP_REACT_FIXTURE_DIRECTORY must name the isolated Node host.');
+  }
   const FIXTURE = process.env[`${prefix}_FIXTURE_DIRECTORY`]
     ? resolve(process.env[`${prefix}_FIXTURE_DIRECTORY`])
     : resolve(ROOT, `examples/${isAstro ? 'astro-middleware' : `${framework}-payload`}`);
   const PUBLIC_ORIGIN =
     process.env[`${prefix}_ORIGIN`] ??
-    `https://localhost:${isNuxt ? '4276' : isAstro ? '4277' : isHTML ? '4288' : isVue ? '4289' : '4275'}`;
+    `https://localhost:${isNuxt ? '4276' : isAstro ? '4277' : isHTML ? '4288' : isVue ? '4289' : isReact ? '4291' : '4275'}`;
   const publicUrl = new URL(PUBLIC_ORIGIN);
   if (publicUrl.protocol !== 'https:') {
     throw new Error(`${prefix}_ORIGIN must use HTTPS for the production fixture.`);
@@ -54,7 +62,17 @@ export function runNodeProductionFixture(framework) {
   // The private listener sits below the ephemeral range (32768-60999), so an outbound connection cannot claim it.
   const internalPort = Number(
     process.env[`${prefix}_INTERNAL_PORT`] ??
-      (isNuxt ? '14276' : isAstro ? '14277' : isHTML ? '14288' : isVue ? '14289' : '14275'),
+      (isNuxt
+        ? '14276'
+        : isAstro
+          ? '14277'
+          : isHTML
+            ? '14288'
+            : isVue
+              ? '14289'
+              : isReact
+                ? '14291'
+                : '14275'),
   );
   // The mock admin is a page of the fixture itself. A run against a real admin names that
   // admin's HTTPS origin instead (playwright.real-payload.config.ts).
@@ -87,7 +105,7 @@ export function runNodeProductionFixture(framework) {
           ? '.output/server/index.mjs'
           : isAstro
             ? 'dist/server/entry.mjs'
-            : isHTML || isVue
+            : isHTML || isVue || isReact
               ? 'dist/server.mjs'
               : 'build/index.js',
       ),
