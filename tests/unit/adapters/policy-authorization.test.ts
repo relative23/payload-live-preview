@@ -255,14 +255,19 @@ describe('strict', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const options = {
       authorizePreview: hook,
-      allowedOrigins: ['https://admin.example.com', 'http://admin.local'],
+      allowedOrigins: ['https://admin.example.com', 'http://admin.local', 'http://cms.local'],
     };
     expect(() => assertStrictConfiguration(options)).not.toThrow();
     assertStrictConfiguration(options);
     expect(warn).toHaveBeenCalledOnce();
-    expect(String(warn.mock.calls[0]?.[0])).toContain('`NODE_ENV` is not set');
-    expect(String(warn.mock.calls[0]?.[0])).toContain('"http://admin.local"');
-    expect(String(warn.mock.calls[0]?.[0])).not.toContain('https://admin.example.com');
+    const message = String(warn.mock.calls[0]?.[0]);
+    expect(message).toContain(
+      '"http://admin.local", "http://cms.local" because `NODE_ENV` is not set',
+    );
+    expect(message).toContain(
+      'Set `NODE_ENV=production` on a production server, and strict mode requires https admin origins there.',
+    );
+    expect(message).not.toContain('https://admin.example.com');
 
     warn.mockClear();
     resetDevWarnings();

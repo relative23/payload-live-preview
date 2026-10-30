@@ -58,7 +58,7 @@ const CSP_DELIMITER = /[;,\p{Cc}]/u;
 /** Every configured CSP source is one a header can carry; the error names the option that is not. */
 function assertCspSources(options: PreviewPolicyOptions): void {
   for (const name of ['allowedOrigins', 'frameAncestorsExtra', 'scriptSrcExtra'] as const) {
-    const unfit = (options[name] ?? []).find((source) => CSP_DELIMITER.test(source));
+    const unfit = options[name]?.find((source) => CSP_DELIMITER.test(source));
     if (unfit !== undefined) {
       throw new Error(
         `payload-live-preview: \`${name}\` holds ${JSON.stringify(unfit)}, which a CSP header ` +

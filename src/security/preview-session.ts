@@ -138,11 +138,12 @@ export async function authorizeSession(
   const usersSlug = encodeURIComponent(strategy.usersSlug ?? DEFAULT_USERS_SLUG);
   // `depth=0`: the verdict needs the user's id, not its populated relations.
   const endpoint = `${origin}/api/${usersSlug}/me?depth=0`;
-  let learned = originNeeded.get(fetchImpl);
+  // Registered on the first lesson; two first requests racing may drop one, learned again.
+  const learned = originNeeded.get(fetchImpl) ?? new Map<string, number>();
   const forwarded = `${cookieName}=${value}`;
   let payloadHeaders: Record<string, string> = { cookie: forwarded };
   if (sentOrigin !== undefined) payloadHeaders['origin'] = sentOrigin;
-  else if (learned?.has(endpoint) === true) payloadHeaders['origin'] = origin;
+  else if (learned.has(endpoint)) payloadHeaders['origin'] = origin;
   const controller = new AbortController();
   const abort = (): void => {
     controller.abort(request.signal?.reason);
@@ -172,9 +173,8 @@ export async function authorizeSession(
         // The other form found a user: it is the one this endpoint takes.
         if (typeof user !== 'object' || user === null || Array.isArray(user)) break;
         if (payloadHeaders['origin'] === undefined) {
-          learned?.delete(endpoint);
+          learned.delete(endpoint);
         } else {
-          learned = originNeeded.get(fetchImpl) ?? new Map<string, number>();
           originNeeded.set(fetchImpl, learned);
           learned.set(endpoint, now());
         }
@@ -188,8 +188,8 @@ export async function authorizeSession(
         continue;
       }
       // Known to need the origin: a CMS that stopped needing it is noticed within a minute.
-      if (now() - (learned?.get(endpoint) ?? 0) < COOKIE_ONLY_RETRY_MS) break;
-      learned?.set(endpoint, now());
+      if (now() - (learned.get(endpoint) ?? 0) < COOKIE_ONLY_RETRY_MS) break;
+      learned.set(endpoint, now());
       payloadHeaders = { cookie: forwarded };
     }
   } catch {
