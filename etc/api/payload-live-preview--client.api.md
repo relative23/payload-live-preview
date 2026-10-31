@@ -319,6 +319,7 @@ export interface LivePreviewClientConfig {
     readonly enableA11y?: boolean;
     readonly eventSourcePolicy?: EventSourcePolicy;
     readonly heartbeatMs?: number;
+    readonly internalLinkPattern?: string;
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     readonly mergeFetch?: typeof fetch;
@@ -586,6 +587,7 @@ export function registerRouteRefresh(refresh: RouteRefresh): () => void;
 // @public
 export interface RenderContext {
     readonly allFields: Record<string, unknown>;
+    readonly internalLinkPattern?: string;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
     readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;

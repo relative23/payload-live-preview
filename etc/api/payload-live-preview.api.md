@@ -489,6 +489,7 @@ export interface InlineScriptConfig {
     readonly fragmentEndpoint?: string;
     readonly heartbeatMs?: number;
     readonly hydration?: 'react' | 'vue' | 'sveltekit' | 'manual';
+    readonly internalLinkPattern?: string;
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     readonly mergeTimeoutMs?: number;
@@ -683,7 +684,9 @@ export interface LexicalNode {
 // @public
 interface LexicalRenderOptions {
     readonly document?: SanitizerDocument;
-    readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string) => void;
+    readonly internalLinkPattern?: string | undefined;
+    readonly locale?: string | undefined;
+    readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string, fields: unknown) => void;
     readonly requireDocument?: boolean;
     readonly sanitize?: boolean;
 }
@@ -751,6 +754,7 @@ export interface LivePreviewClientConfig {
     readonly enableA11y?: boolean;
     readonly eventSourcePolicy?: EventSourcePolicy;
     readonly heartbeatMs?: number;
+    readonly internalLinkPattern?: string;
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     readonly mergeFetch?: typeof fetch;
@@ -1313,6 +1317,7 @@ export function registerRouteRefresh(refresh: RouteRefresh): () => void;
 // @public
 export interface RenderContext {
     readonly allFields: Record<string, unknown>;
+    readonly internalLinkPattern?: string;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
     readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;

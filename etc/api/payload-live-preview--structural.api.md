@@ -175,6 +175,7 @@ export interface PayloadLivePreviewData {
 // @public
 export interface RenderContext {
     readonly allFields: Record<string, unknown>;
+    readonly internalLinkPattern?: string;
     readonly locale: string | undefined;
     readonly renderRichText?: RichTextRenderer;
     readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;

@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 533,
-    "suites": 1031,
-    "tests": 4670,
+    "files": 536,
+    "suites": 1040,
+    "tests": 4704,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 436,
-      "suites": 921,
-      "tests": 4267,
+      "files": 439,
+      "suites": 930,
+      "tests": 4301,
       "benchmarks": 0
     }
   },
@@ -1401,6 +1401,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/edits-the-page-cannot-show.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 15,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/field-changes.test.ts",
       "group": "unit",
       "suites": 1,
@@ -2075,8 +2082,8 @@
     {
       "path": "tests/unit/core/reveal.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 10,
+      "suites": 7,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -2479,6 +2486,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/field-types/image-variants-and-picture.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/field-types/link-renderers.test.ts",
       "group": "unit",
       "suites": 4,
@@ -2658,6 +2672,13 @@
       "group": "unit",
       "suites": 9,
       "tests": 22,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/lexical/internal-link-pattern.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 10,
       "benchmarks": 0
     },
     {
