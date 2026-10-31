@@ -14,7 +14,7 @@ const initial = {
   title: 'Hello from the demo',
   subtitle: 'Type in the admin panel to see live updates.',
   hero: {
-    url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200',
+    url: '/hero.svg',
     alt: 'Mountains at dusk',
   },
   count: 12,
