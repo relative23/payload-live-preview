@@ -95,7 +95,7 @@ export class LivePreviewRuntime {
         this.pipeline.handleReplay(message, origin, revision);
       },
       onDocumentEvent: () => {
-        this.state.protocol.observe(['document-events'], log);
+        this.state.protocol.observe(['document-events'], log, warn);
         void emitter.emit('documentSave', { timestamp: Date.now() });
         this.pipeline.documentSaved();
       },

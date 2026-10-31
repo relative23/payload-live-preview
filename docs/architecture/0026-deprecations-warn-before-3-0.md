@@ -119,3 +119,18 @@ that option; a consumer who builds a detector opts in now by passing it.
   replacement named) and each codemod (rewrites, refusals, idempotence); the
   migrated fixture in three browsers; the full chain, the nightly and the core
   scope, since the sanitizer changed.
+
+## Addendum (2026-10-31): the end of Payload 2 support warns in the browser
+
+Ledger row 25 said nothing at run time, because no option or name in a project
+marks it as being on Payload 2. The message does: `fieldSchemaJSON` is the Payload
+2 signature `src/core/protocol-profile.ts` already reads. The first such update
+warns once per runtime and once per hook session.
+
+This warning does not use `warnOnce`. It runs in the browser, where an inline
+script has no `process.env`, so `warnOnce` would never fire there. It uses
+`isDevMode()`, which falls back to `localhost` and `127.0.0.1` where `NODE_ENV`
+cannot be read. A staging preview on another host hears nothing.
+
+The lean inline profile leaves the warning out, as it leaves out other
+features, and Payload 2 behaves there as before. Nothing else on Payload 2 changes.
