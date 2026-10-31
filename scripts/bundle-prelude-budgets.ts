@@ -149,7 +149,8 @@
 // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +73/+25/+13 B; prior reserves kept.
 // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+1/+99 B; prior reserves kept.
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+143/+89 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 164_594, gzip: 52_191, brotli: 45_516 } as const;
+// 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+89/+16 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 164_820, gzip: 52_280, brotli: 45_532 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -289,4 +290,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 164_594, gzip: 52_191, brotli: 45_5
 // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +73/+26/+37 B; prior reserves kept.
 // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+1/+63 B; prior reserves kept.
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+146/+187 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 159_009, gzip: 50_282, brotli: 43_948 } as const;
+// 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+90/+19 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 159_235, gzip: 50_372, brotli: 43_967 } as const;

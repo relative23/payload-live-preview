@@ -655,7 +655,7 @@ export interface LivePreviewInspection {
     readonly fidelity: InspectionFidelity;
     readonly fragments: InspectionFragments;
     readonly hydration: {
-        readonly mode: 'off' | 'react' | 'vue' | 'sveltekit';
+        readonly mode: 'off' | 'react' | 'vue' | 'sveltekit' | 'manual';
         readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
     };
     // (undocumented)

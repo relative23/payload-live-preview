@@ -488,7 +488,7 @@ export interface InlineScriptConfig {
     readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
     readonly fragmentEndpoint?: string;
     readonly heartbeatMs?: number;
-    readonly hydration?: 'react' | 'vue' | 'sveltekit';
+    readonly hydration?: 'react' | 'vue' | 'sveltekit' | 'manual';
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     readonly mergeTimeoutMs?: number;
@@ -845,7 +845,7 @@ export interface LivePreviewInspection {
     readonly fidelity: InspectionFidelity;
     readonly fragments: InspectionFragments;
     readonly hydration: {
-        readonly mode: 'off' | 'react' | 'vue' | 'sveltekit';
+        readonly mode: 'off' | 'react' | 'vue' | 'sveltekit' | 'manual';
         readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
     };
     // (undocumented)
@@ -876,6 +876,9 @@ export interface LivePreviewPlugin {
     // (undocumented)
     readonly version?: string;
 }
+
+// @public
+export function markHydrated(): void;
 
 // @public
 export function mergeCspHeader(existing: string, additions: Readonly<Record<string, string | CspDirectiveMerge>>): string;

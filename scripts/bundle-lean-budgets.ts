@@ -150,4 +150,5 @@
 // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +73/+28/+36 B; prior reserves kept.
 // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+1/-2 B; the Brotli ceiling stays, it fell; prior reserves kept.
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+157/+88 B; prior reserves kept.
-export const INLINE_LEAN_BUDGET = { raw: 122_417, gzip: 38_587, brotli: 34_026 } as const;
+// 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+76/+37 B; prior reserves kept.
+export const INLINE_LEAN_BUDGET = { raw: 122_643, gzip: 38_663, brotli: 34_063 } as const;

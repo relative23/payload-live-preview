@@ -116,6 +116,7 @@ describe('inlineScriptConfig', () => {
     ['onUnfaithfulPatch', 'warn', 'onUnfaithfulPatch', 'warn'],
     ['autoBind', 'unique', 'autoBind', 'unique'],
     ['subfieldCoverage', 'declared', 'subfieldCoverage', 'declared'],
+    ['hydration', 'manual', 'hydration', 'manual'],
   ] as const;
 
   it.each(WIRE)('puts %s on the wire', (option, value, wireKey, wireValue) => {
@@ -164,6 +165,11 @@ describe('inlineScriptConfig', () => {
     // ADR 0015: the framework that hydrates the page is a fact the adapter
     // states, never an option a project sets, so it arrives on its own.
     expect(inlineScriptConfig({}, { hydration: 'react' })).toEqual({ hydration: 'react' });
+    // A page this adapter cannot read says so itself, over what the adapter assumes.
+    expect(inlineScriptConfig({ hydration: 'manual' }, { hydration: 'react' })).toEqual({
+      hydration: 'manual',
+    });
+    expect(inlineScriptConfig({ hydration: 'manual' })).toEqual({ hydration: 'manual' });
     expect(inlineScriptConfig({}, { softNavigationEvents: ['framework:navigated'] })).toEqual({
       softNavigationEvents: ['framework:navigated'],
     });

@@ -491,3 +491,20 @@ flag and settled hydration, with the same 30-second deadline. A
 missing runtime cannot satisfy the predicate, and script errors still fail the
 check. Title and subtitle assertions are unchanged. The original failed run
 is retained; native acceptance still requires the complete current lane.
+
+## Addendum, 2026-10-31 — a page that says so itself
+
+**Status:** Accepted.
+
+The React, Vue and SvelteKit waits each read a trace their framework leaves, and a
+framework's next major can take that trace away. A page on any other host had no wait
+at all. `hydration: 'manual'` holds the first write until the page calls
+`markHydrated()` from `payload-live-preview`, with the same five-second cap and the same
+`LP0607`. The adapters take this value, and it replaces the wait they set themselves, so
+a page can also use it when the trace an adapter reads has moved.
+
+The page's bundle and the runtime are separate scripts, and either may run first. So
+the signal is a state on `window` (`__livePreviewHydrated`) and not an event, as the
+SvelteKit announcer is. `tests/unit/core/hydration-manual.test.ts` holds it against a second copy of
+the module, and against the slot name in the built runtime; no browser test runs it on
+a real framework. Small components per framework that call it for the page may follow.

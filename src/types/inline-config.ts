@@ -83,10 +83,11 @@ export interface InlineScriptConfig {
    * mounted, on a page SvelteKit's client runs on — otherwise Svelte's
    * hydration sets its own text back over it, as quietly. The Next.js, Nuxt
    * and SvelteKit adapters set it on every script they emit; a page built by
-   * hand with `generateInlineScript()` may. Omitted: the runtime starts on
-   * `DOMContentLoaded`, as on a static page.
+   * hand with `generateInlineScript()` may. Under `'manual'` it holds the write
+   * until the page calls `markHydrated()`, for a framework this package cannot
+   * observe. Omitted: the runtime starts on `DOMContentLoaded`, as on a static page.
    */
-  readonly hydration?: 'react' | 'vue' | 'sveltekit';
+  readonly hydration?: 'react' | 'vue' | 'sveltekit' | 'manual';
   /**
    * Which defaults the omitted options fall back to, resolved by the generator
    * rather than the runtime, whose own fallbacks are the 2.0 rows: `'v1'`

@@ -121,7 +121,9 @@ export function inlineScriptConfig(
     ...(options.subfieldCoverage !== undefined
       ? { subfieldCoverage: options.subfieldCoverage }
       : {}),
-    ...(facts.hydration !== undefined ? { hydration: facts.hydration } : {}),
+    ...(options.hydration !== undefined || facts.hydration !== undefined
+      ? { hydration: options.hydration ?? facts.hydration }
+      : {}),
     ...(facts.softNavigationEvents !== undefined
       ? { softNavigationEvents: facts.softNavigationEvents }
       : {}),
