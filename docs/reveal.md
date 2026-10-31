@@ -43,6 +43,9 @@ It is deliberately quiet:
   never re-scrolls, and scrolling away from the field being edited is not
   fought.
 - It honors **`prefers-reduced-motion`** (no smooth-scroll animation then).
+- It opens a closed **`<details>`** around the field, which lays nothing out
+  while it is closed. A section the editor closes again stays closed while
+  they type on in the same field.
 - The first message is a **baseline** — the initial document load never scrolls,
   and neither does a binding that has just appeared on the page.
 - A value too large or too complex to compare (longer than 65 536 characters,

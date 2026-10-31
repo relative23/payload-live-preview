@@ -133,3 +133,35 @@ describe('revealBinding', () => {
     expect(revealBinding(revealer, binding(undefined))).toBe('revealed');
   });
 });
+
+describe('a binding inside a closed <details>', () => {
+  const scroll = vi.fn();
+
+  function place(html: string): Element {
+    document.body.innerHTML = html;
+    const target = document.querySelector('[data-payload-field]')!;
+    target.scrollIntoView = scroll;
+    return target;
+  }
+
+  it('opens every closed ancestor, since a closed one lays nothing out', () => {
+    const target = place(
+      '<details id="outer"><details id="inner"><p data-payload-field="a">a</p></details></details>',
+    );
+    revealBinding(new FieldRevealer(), { element: target, fieldName: 'a' });
+    expect(document.querySelector<HTMLDetailsElement>('#outer')?.open).toBe(true);
+    expect(document.querySelector<HTMLDetailsElement>('#inner')?.open).toBe(true);
+    expect(document.querySelector('#outer')?.getAttribute('open')).toBe('');
+    expect(scroll).toHaveBeenCalledOnce();
+  });
+
+  it('leaves a section the editor closed again while typing on in the same field', () => {
+    const target = place('<details><p data-payload-field="a">a</p></details>');
+    const revealer = new FieldRevealer();
+    revealBinding(revealer, { element: target, fieldName: 'a' });
+    const details = document.querySelector('details')!;
+    details.open = false;
+    revealBinding(revealer, { element: target, fieldName: 'a' });
+    expect(details.open).toBe(false);
+  });
+});

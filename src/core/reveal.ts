@@ -2,7 +2,9 @@
  * Scroll the edited field's bound element into view. Deliberately quiet: only
  * when the target is off-screen and only when the edited field changed since
  * the last reveal, so continuous typing never re-scrolls and a deliberate
- * scroll-away is not fought. Honours `prefers-reduced-motion`.
+ * scroll-away is not fought. Honours `prefers-reduced-motion`. A closed
+ * `<details>` around the element lays nothing out, so it opens first; the same
+ * ledger means a section the editor closes again stays closed.
  */
 
 /** The slice of `Window` this reads, so it tests without a browser. */
@@ -24,7 +26,10 @@ export interface RevealElement {
     behavior?: 'auto' | 'smooth';
     block?: 'center' | 'nearest' | 'start';
   }) => void;
+  closest?: (selector: string) => { setAttribute: (name: string, value: string) => void } | null;
 }
+
+const CLOSED_DETAILS = 'details:not([open])';
 
 /** Whether the viewer asked for reduced motion; smooth scrolling is suppressed when so. */
 export function prefersReducedMotion(win: RevealWindow): boolean {
@@ -48,6 +53,8 @@ export type RevealOutcome = 'revealed' | 'already-visible';
 
 /** Scroll `element` into view only when it is off-screen. */
 export function revealElement(element: RevealElement, win: RevealWindow): RevealOutcome {
+  // Each pass opens the nearest closed one, so the next finds the one outside it.
+  for (let closed; (closed = element.closest?.(CLOSED_DETAILS));) closed.setAttribute('open', '');
   if (isInViewport(element, win)) return 'already-visible';
   element.scrollIntoView({
     behavior: prefersReducedMotion(win) ? 'auto' : 'smooth',
