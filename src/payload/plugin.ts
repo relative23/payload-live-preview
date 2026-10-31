@@ -1,6 +1,6 @@
 /**
- * `payload-live-preview/plugin` configures Payload 2 or 3 without importing
- * either version. It owns URL selection and root preview metadata, while
+ * `payload-live-preview/plugin` configures Payload 2, 3 or 4 without importing
+ * any of them. It owns URL selection and root preview metadata, while
  * authentication remains an explicit server-side integration.
  */
 import { buildLivePreviewUrl, type LivePreviewUrlArgs } from './index';
@@ -15,47 +15,55 @@ export interface LivePreviewBreakpoint {
 export interface LivePreviewPluginOptions {
   /** Frontend origin, e.g. `https://site.example`. */
   readonly baseUrl: string;
-  /** Per-collection path resolvers keyed by collection slug. */
+  /** Per-collection path resolvers keyed by collection slug. `null` means this document has no preview. */
   readonly collections?: Readonly<
     Record<
       string,
       | string
+      | null
       | ((context: {
           readonly data: Record<string, unknown>;
           readonly locale: string | undefined;
-        }) => string)
+        }) => string | null)
     >
   >;
-  /** Per-global path resolvers keyed by global slug. */
+  /** Per-global path resolvers keyed by global slug. `null` means this document has no preview. */
   readonly globals?: Readonly<
     Record<
       string,
       | string
+      | null
       | ((context: {
           readonly data: Record<string, unknown>;
           readonly locale: string | undefined;
-        }) => string)
+        }) => string | null)
     >
   >;
-  /** Path used when no resolver matches or one returns `''`. Default `/`. */
-  readonly fallback?: string;
+  /** Path used when no resolver matches or one returns `''`; `null` declines those documents. Default `/`. */
+  readonly fallback?: string | null;
   /** Preview-intent query parameter. Keep it in the frontend adapter's `previewQueryParams`; `null` needs another intent signal. */
   readonly previewParam?: string | null;
   /** Device sizes displayed by Payload's live-preview toolbar. */
   readonly breakpoints?: readonly LivePreviewBreakpoint[];
+  /** Where this plugin runs: Payload 3 and 4 sort plugins by ascending `order`, `0` when unset. Payload 2 keeps list order. */
+  readonly order?: number;
 }
 
 type UnknownRecord = Record<string, unknown>;
 
 /** Configure mapped entities and one shared live-preview URL callback. */
-export function livePreview(
-  options: LivePreviewPluginOptions,
-): <TConfig extends object>(config: TConfig) => TConfig {
+export function livePreview(options: LivePreviewPluginOptions): (<TConfig extends object>(
+  config: TConfig,
+) => TConfig) & {
+  /** Payload reads this name when another plugin looks this one up in `config.plugins`. */
+  readonly slug: string;
+  readonly order?: number;
+} {
   const resolveUrl = buildLivePreviewUrl(options);
   const collectionSlugs = Object.keys(options.collections ?? {});
   const globalSlugs = Object.keys(options.globals ?? {});
 
-  return <TConfig extends object>(config: TConfig): TConfig => {
+  const transform = <TConfig extends object>(config: TConfig): TConfig => {
     const root = config as UnknownRecord;
     const admin = record(root['admin']);
     const current = record(admin['livePreview']);
@@ -74,7 +82,7 @@ export function livePreview(
       ...current,
       collections: stableUnion(current['collections'], collectionSlugs),
       globals: stableUnion(current['globals'], globalSlugs),
-      url: resolveUrl satisfies (args: LivePreviewUrlArgs) => string,
+      url: resolveUrl satisfies (args: LivePreviewUrlArgs) => string | null,
     };
     if (options.breakpoints !== undefined) {
       configured['breakpoints'] = options.breakpoints.map((breakpoint) => ({ ...breakpoint }));
@@ -88,6 +96,10 @@ export function livePreview(
       },
     } as TConfig;
   };
+
+  const identity: { slug: string; order?: number } = { slug: 'payload-live-preview' };
+  if (options.order !== undefined) identity.order = options.order;
+  return Object.assign(transform, identity);
 }
 
 function assertNoEntityUrl(

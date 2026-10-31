@@ -592,7 +592,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/plugin',
     symbol: 'livePreview',
     use: "export const out = livePreview({ baseUrl: 'https://site.example.com', fallback: '/' });",
-    gzip: 1_228,
+    gzip: 1_268,
     why: 'the Payload config transform and URL builder, without Payload itself',
   },
 ];
