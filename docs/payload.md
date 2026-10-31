@@ -84,23 +84,30 @@ order. Make it run after any URL-writing plugin when it should detect that
 conflict.
 
 That order is not always the list order. The `buildConfig()` of Payload
-3.90.2, 3.92.0 and 4.0.0-beta.4 sorts plugins by their `order` property, lower
+3.90.2, 3.92.0, 3.92.1, 4.0.0-beta.4 and 4.0.0-beta.6 sorts plugins by their `order` property, lower
 first and `0` when it is unset (Payload marks `order` experimental); plugins
 with the same `order` keep their list order. The function `livePreview()`
 returns has no `order`, so a URL-writing plugin with a higher one runs after it
-wherever it is listed. To move this plugin later, give it a higher value:
-`Object.assign(livePreview({ … }), { order: 1000 })`.
+wherever it is listed. To move this plugin later, give it a higher value with
+the `order` option: `livePreview({ …, order: 1000 })`. Without the option it has
+no `order`, as before. Payload 2.32.3 runs plugins in list order and ignores it.
+
+The function also carries `slug: 'payload-live-preview'`, the name another
+plugin finds it under in `config.plugins`. Payload's telemetry (read in 3.92.1
+and 4.0.0-beta.6) reports only slugs that start with `@payloadcms/`, so this one
+is not sent.
 
 ## Options
 
 | Option         | Meaning                                                                                                            | Default     |
 | -------------- | ------------------------------------------------------------------------------------------------------------------ | ----------- |
 | `baseUrl`      | Frontend origin used for every generated iframe URL                                                                | required    |
-| `collections`  | Collection slug to path string or `({ data, locale }) => string`                                                   | `{}`        |
-| `globals`      | Global slug to path string or `({ data, locale }) => string`                                                       | `{}`        |
-| `fallback`     | Path for an unmapped entity or a resolver that returns `''`                                                        | `'/'`       |
+| `collections`  | Collection slug to path string, `null`, or `({ data, locale }) => string \| null`                                  | `{}`        |
+| `globals`      | Global slug to path string, `null`, or `({ data, locale }) => string \| null`                                      | `{}`        |
+| `fallback`     | Path for an unmapped entity or a resolver that returns `''`; `null` means no preview                               | `'/'`       |
 | `previewParam` | Query parameter added as `<name>=true`; keep a custom name in the adapter's `previewQueryParams`; `null` adds none | `'preview'` |
 | `breakpoints`  | Payload toolbar breakpoints with number or CSS-string dimensions; supplied values replace the existing root list   | preserved   |
+| `order`        | Plugin position in Payload 3 and 4, lower runs first; Payload 2 ignores it                                         | unset (`0`) |
 
 The default frontend adapters recognize query intent through `preview`,
 `draft` and `livePreview`. Add a custom `previewParam` to the adapter's
@@ -138,31 +145,33 @@ target covers collection documents. Payload posts the document when its form
 state changes, not when the frame loads, so a bare reload of the preview frame
 shows the saved document until the next change in the form.
 
-The config plugin's path resolvers return strings. For a document that should
-have no iframe, use the lower-level `buildLivePreviewUrl()` callback directly:
-its nullable overload accepts a resolver or fallback of `null`.
+A path resolver or the `fallback` may be `null`: that document has no preview.
 
 ```ts
-import { buildLivePreviewUrl } from 'payload-live-preview/payload';
-
-const url = buildLivePreviewUrl({
+livePreview({
   baseUrl: process.env.FRONTEND_URL!,
   collections: {
-    posts: ({ data }) => (data['slug'] ? `/blog/${String(data['slug'])}` : null),
+    posts: ({ data }) => (typeof data['slug'] === 'string' ? `/blog/${data['slug']}` : null),
   },
   fallback: null,
 });
 ```
 
-Payload 3's published callback type accepts this nullable result. Payload
-2.32.3's published `LivePreviewConfig['url']` function type accepts only a
-string or `Promise<string>`; use the non-null overload and a string fallback in
-a typed Payload 2 config. The config plugin stays inside that common,
-string-only result contract.
+In the Payload 3.92.1 admin, a saved document whose resolver returns `null` has
+no toggle, no panel and no frame; the `create` target of the real-admin suite
+checks that in Chromium, Firefox and WebKit. The same target passed once in
+Chromium against 4.0.0-beta.6, outside CI, on 2026-10-31. A slug that declines
+stays in the root list, because the decision is made per document.
 
-The `/payload` entry remains the manual building block. Use it when another
-plugin already owns the surrounding config, when nullable routes matter, or
-when an application deliberately composes a more involved callback.
+Keep to strings on Payload 2. Its published `LivePreviewConfig['url']` function
+type accepts only a string or `Promise<string>`, which this plugin's structural
+types cannot check for you. In the 2.32.3 source the panel still opens and
+renders no frame; that was read, not run.
+
+`buildLivePreviewUrl()` from `/payload` has the same nullable overload, and it
+remains the manual building block. Use it when another plugin already owns the
+surrounding config or when an application deliberately composes a more involved
+callback.
 
 ## Authorization stays outside the config plugin
 

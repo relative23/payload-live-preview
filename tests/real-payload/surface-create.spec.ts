@@ -3,8 +3,9 @@
  * created, and these journeys ask it: the create screen is opened, its real fields are typed into,
  * and neither the toggle nor the frame appears. After the first save both do, the frame shows the
  * saved document, and the editor's unsaved edits reach it while REST reads show that the collection
- * still holds only what was saved. `playwright.real-payload.config.ts` starts the SvelteKit example
- * and an admin that has the two collections (`create`).
+ * still holds only what was saved. A resolver that returns `null` leaves a saved document without a
+ * toggle too. `playwright.real-payload.config.ts` starts the SvelteKit example and an admin that has
+ * the three collections (`create`).
  */
 import { expect, test, type FrameLocator, type Page } from '@playwright/test';
 import { openLivePreviewPanel } from './live-preview-panel';
@@ -266,5 +267,32 @@ test.describe('real Payload admin → collection documents in their create state
     page,
   }, testInfo) => {
     await createThenEdit(page, testInfo.project.name, MANUAL);
+  });
+
+  test('a collection whose resolver declines a document has no preview after the first save either', async ({
+    page,
+  }, testInfo) => {
+    const title = `Declined saved title ${testInfo.project.name} ${String(Date.now())}`;
+    await signIn(page);
+    await page.goto('/admin/collections/declined-pages/create');
+    await expect(page.locator('#field-title')).toBeVisible(COLD);
+    await documentFormReady(page);
+    await expectNoPreview(page);
+    await page.locator('#field-title').fill(title);
+    await documentFormReady(page);
+
+    const created = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/api/declined-pages' &&
+        response.request().method() === 'POST',
+    );
+    await page.locator('#action-save').click();
+    expect((await created).status()).toBe(201);
+    await expect(page).toHaveURL(/\/admin\/collections\/declined-pages\/\d+(?:\?.*)?$/u, COLD);
+
+    // The saved document's edit screen is rendered with its fields by now, and the function has answered.
+    await documentFormReady(page);
+    await expect(page.locator('#field-title')).toHaveValue(title);
+    await expectNoPreview(page);
   });
 });

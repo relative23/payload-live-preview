@@ -323,18 +323,19 @@ into the frontend runtime:
 | Option         | Meaning                                                                                                               | Default     |
 | -------------- | --------------------------------------------------------------------------------------------------------------------- | ----------- |
 | `baseUrl`      | Frontend origin used by the installed `admin.livePreview.url` callback                                                | required    |
-| `collections`  | Collection slug to a path string or `({ data, locale }) => string`                                                    | `{}`        |
-| `globals`      | Global slug to a path string or `({ data, locale }) => string`                                                        | `{}`        |
-| `fallback`     | Path for an unmapped entity or a resolver that returns `''`                                                           | `'/'`       |
+| `collections`  | Collection slug to a path string, `null`, or `({ data, locale }) => string \| null`; `null` means no preview          | `{}`        |
+| `globals`      | Global slug to a path string, `null`, or `({ data, locale }) => string \| null`; `null` means no preview              | `{}`        |
+| `fallback`     | Path for an unmapped entity or a resolver that returns `''`; `null` means no preview                                  | `'/'`       |
 | `previewParam` | Query parameter appended as `<name>=true`; keep a custom name in the adapter's `previewQueryParams`; `null` adds none | `'preview'` |
 | `breakpoints`  | Toolbar breakpoints with number or CSS-string dimensions; a supplied list replaces the root list                      | preserved   |
+| `order`        | Position among plugins in Payload 3 and 4, which run lower values first; Payload 2 ignores it                         | unset (`0`) |
 
 The mapped keys are added to the existing root collection/global lists with
 stable order and no duplicates. Other root Live Preview fields are preserved.
 The plugin refuses a competing root URL and a URL on a selected entity when
 either is already present. A plugin that runs later in Payload's effective
 execution order can still replace that URL; make this transform run after
-URL-writing plugins or compose their callbacks explicitly. It accepts no
+URL-writing plugins with `order`, or compose their callbacks explicitly. It accepts no
 signing secret, token or authorization hook. Full setup and conflict rules:
 [payload.md](payload.md). The reason this cross-version surface stays structural
 and authorization-free is [ADR 0017](architecture/0017-structural-payload-config-plugin.md).

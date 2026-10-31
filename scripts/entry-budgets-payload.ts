@@ -27,6 +27,8 @@ export const PAYLOAD_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-24 (Payload 3's non-localized callback and encoded custom query
   // key): CJS measured 2 327 / 1 073 / 966 and ESM 2 319 / 1 067 / 953;
   // each dimension retains the entry's five-byte cushion.
-  'plugin.cjs': { raw: 2_332, gzip: 1_078, brotli: 971 },
-  'plugin.js': { raw: 2_324, gzip: 1_072, brotli: 958 },
+  // 2026-10-31 (`order`, nullable resolvers, `slug`): paired on the same HEAD,
+  // CJS +85 / +29 / +23 and ESM +85 / +27 / +26; the cushion stays five bytes.
+  'plugin.cjs': { raw: 2_417, gzip: 1_107, brotli: 994 },
+  'plugin.js': { raw: 2_409, gzip: 1_099, brotli: 984 },
 };

@@ -8,7 +8,7 @@ import type { LivePreviewUrlArgs } from '@/payload/index';
 
 const BASE = 'https://site.example';
 
-type UrlCallback = (args: LivePreviewUrlArgs) => string;
+type UrlCallback = (args: LivePreviewUrlArgs) => string | null;
 
 interface TestLivePreviewConfig {
   breakpoints?: {
@@ -220,6 +220,48 @@ describe('Payload live preview config plugin', () => {
 
     expect(output.collections[2]?.admin?.livePreview?.url).toBe('/users-preview');
     expect(unrelated.collections[2]?.admin?.livePreview?.url).toBe('/users-preview');
+  });
+
+  it('lets a resolver decline a document, and a null fallback decline every unmapped one', () => {
+    const output = livePreview({
+      baseUrl: BASE,
+      collections: {
+        posts: ({ data }) => (typeof data['slug'] === 'string' ? `/posts/${data['slug']}` : null),
+        articles: null,
+        pages: ({ data }) => (typeof data['slug'] === 'string' ? data['slug'] : ''),
+      },
+      fallback: null,
+    })(config());
+    const url = output.admin.livePreview.url as UrlCallback;
+    const collection = (slug: string, data: Record<string, unknown>): string | null =>
+      url({ data, collectionConfig: { slug } });
+
+    expect(collection('posts', { slug: 'one' })).toBe(`${BASE}/posts/one?preview=true`);
+    expect(collection('posts', {})).toBeNull();
+    expect(collection('articles', { slug: 'one' })).toBeNull();
+    // `''` still means "use the fallback", and here the fallback declines.
+    expect(collection('pages', {})).toBeNull();
+    expect(collection('unmapped', { slug: 'one' })).toBeNull();
+    // A declined slug stays enabled: the decision is per document, and Payload asks the callback.
+    expect(output.admin.livePreview.collections).toEqual(['articles', 'posts', 'pages']);
+  });
+
+  it('names itself for Payload, and has an order only when it is given one', () => {
+    const plain = livePreview({ baseUrl: BASE });
+    expect(plain.slug).toBe('payload-live-preview');
+    // Payload reads a missing order as 0, so without the option nothing about its position changes.
+    expect(Object.hasOwn(plain, 'order')).toBe(false);
+
+    const late = livePreview({ baseUrl: BASE, order: 1000 });
+    expect(late.slug).toBe('payload-live-preview');
+    expect(late.order).toBe(1000);
+    expect(livePreview({ baseUrl: BASE, order: 0 }).order).toBe(0);
+
+    // The plugin reads neither option into the config, and still reapplies to the same result.
+    const once = late(config());
+    expect(once).not.toHaveProperty('order');
+    expect(once).not.toHaveProperty('slug');
+    expect(late(once).admin.livePreview.url).toBe(once.admin.livePreview.url);
   });
 
   it('does not mint or accept a signing secret in the cross-version plugin', () => {

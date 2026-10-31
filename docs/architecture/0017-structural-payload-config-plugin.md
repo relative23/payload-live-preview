@@ -108,8 +108,9 @@ continuation needs its own security decision before the plugin can own one.
 - Payload 3.89 disables native Live Preview during a collection's initial
   create state for both callback and string URLs. It evaluates the shared
   routing callback after the first save.
-- Projects that need nullable routes or custom callback composition keep using
-  `buildLivePreviewUrl()` from `payload-live-preview/payload`.
+- Projects that need custom callback composition keep using
+  `buildLivePreviewUrl()` from `payload-live-preview/payload`. Nullable routes
+  moved into the plugin on 2026-10-31 (addendum below).
 - Projects still configure request authorization, draft reads and frontend
   delivery explicitly. Installing the config plugin alone grants no access.
 
@@ -162,3 +163,43 @@ The structural types needed no change for this pre-release. The run happened onc
 outside CI, and did not cover globals, the create screen, drafts and autosave,
 other plugins that write a Live Preview URL or replacing existing breakpoints.
 The decision above still names Payload 2.32.3 and 3.x.
+
+## Addendum (2026-10-31): `order`, `slug` and nullable resolvers
+
+Two consumers could not use the plugin as it stood. One has documents with no
+preview target, and the plugin's resolvers had to return strings, although the
+callback underneath already passed `null` on. The other runs Payload 4, whose
+`buildConfig()` sorts plugins by `order`, so the advice to list this plugin
+after a URL-writing one did nothing there.
+
+The options now take `order`, written to the returned function only when it is
+given, and resolvers and `fallback` may be `null`. The function always carries
+`slug: 'payload-live-preview'`. A higher default `order` would have made the
+conflict check reach more plugins, but it moves the plugin in every existing
+config, so 2.x keeps it opt-in. `options`, the third experimental plugin property,
+stays unset: it exists for other plugins to edit a plugin's options, and this
+plugin's options hold no value another plugin should change.
+
+Section 2's common result contract was the reason for strings. It no longer
+holds for the plugin: Payload 2.32.3's published callback type accepts only
+strings, and the structural types cannot see which major a config belongs to, so
+a Payload 2 project that returns `null` gets no type error. Its 2.32.3 source
+renders the panel without a frame; that was read, not run. The guide says to keep
+to strings there. `order` has no effect on Payload 2, whose `buildConfig()` runs
+the list as written (read in 2.32.3).
+
+Measured on 2026-10-31 with Node 24.22.1:
+
+- Real `buildConfig()` of 3.92.1 and 4.0.0-beta.6, with a URL-writing plugin at
+  `order: 500`: without the option, that plugin's URL wins and nothing is
+  reported; with `order: 1000`, this plugin runs later and throws its conflict
+  error.
+- The `create` target of the real-admin suite in Chromium, 3 of 3 against each
+  version: a saved document whose resolver returns `null` has no toggle, panel or
+  frame, and a mapped one still has them. CI runs this against the fixture's 3.x
+  in three browsers; the 4.0.0-beta.6 run happened once, outside CI.
+- The fixture lists a probe after this plugin and orders it first, so its boot
+  fails if Payload stops sorting. Without `order` the same probe throws under
+  `buildConfig()`, on both versions.
+- `tsc` reports nothing in the fixture's `payload.config.ts` against either
+  version's `Plugin` type.

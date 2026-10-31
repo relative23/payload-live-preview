@@ -9,7 +9,7 @@
     "examples/astro-inline/src/pages/soft-navigation/one.astro": "4e0a92aa62f4f727ee04550cae877df6fcd92f132f8919904aba00a53af2f432",
     "examples/astro-inline/src/pages/soft-navigation/two.astro": "3864ac3da121631850c3a5b2014ab1ba46ed8a26a7a6cee440f529891a4d395c",
     "playwright.config.ts": "b482f7758414803fcaeefbe67ca8119260104d9722a345102f4fabcced7afd89",
-    "playwright.real-payload.config.ts": "56c23c3b148b4bed3b58964f736cce9d6e68a37b1b9a107ebda0ab61081d57e8"
+    "playwright.real-payload.config.ts": "c8e1ec82e6f5e1cb810df6c4c62b26f10233b81a45c760cde3535631e7b4c73f"
   },
   "directories": ["examples/astro-inline"],
   "absentFiles": [],
