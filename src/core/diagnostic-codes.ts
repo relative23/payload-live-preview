@@ -129,6 +129,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   V2ReadinessGap: 'LP0709',
   /** The preview runtime is served to anonymous visitors, not only inside the admin frame. */
   RuntimeOnPublicPage: 'LP0710',
+  /** An element carries attributes that only mean something beside `data-payload-field`, and has none. */
+  AuditModifierWithoutField: 'LP0711',
 } as const);
 
 /** A diagnostic code, as it appears in log output and on the `error` event. */
