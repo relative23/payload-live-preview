@@ -108,4 +108,29 @@ describe('companion attributes (1.1.0)', () => {
       'data-payload-array-template': '<li>{{value}}</li>',
     });
   });
+
+  it('writes the companions a gated binding has no other way to carry', () => {
+    expect(
+      bind('price', {
+        format: 'number:2',
+        text: true,
+        strategy: 'route',
+        dependsOn: ['currency', 'region'],
+        anchor: true,
+      }),
+    ).toEqual({
+      'data-payload-field': 'price',
+      'data-payload-format': 'number:2',
+      'data-payload-text': '',
+      'data-payload-strategy': 'route',
+      'data-payload-depends': 'currency,region',
+      'data-payload-boundary': '',
+    });
+  });
+
+  it('leaves out what the options turn off', () => {
+    expect(bind('price', { text: false, anchor: false, dependsOn: [] })).toEqual({
+      'data-payload-field': 'price',
+    });
+  });
 });

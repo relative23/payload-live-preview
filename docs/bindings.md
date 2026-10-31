@@ -453,6 +453,10 @@ locale, rich-text marker and owner: pass companions through `BindOptions`
 where they would stay behind when the gate closes. Where the authorization
 comes from is in [docs/authorization.md](authorization.md).
 
+`BindOptions` also takes `format`, `text`, `strategy` and `dependsOn`. `anchor: true`
+writes `data-payload-boundary`, the gated form of an anchor for a field that may be
+empty; set `hidden` yourself while the value is empty.
+
 `preview.boundary()` gates a server-rendered boundary the same way, because a
 registry id and the fields it depends on describe the content model as much as a
 binding does:
