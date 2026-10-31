@@ -9,7 +9,7 @@ const isCI = process.env['CI'] === 'true';
  * example (`nextjs`, `sveltekit`, `nuxt`, `astro-session`) whose preview authorizes
  * the editor's real session, the plain HTML example (`html`), the Next.js example
  * framed from an admin that keeps its autoLogin (`nextjs-autologin`), or the SvelteKit
- * example's collection pages framed from an admin with two more collections (`create`).
+ * example's collection pages framed from an admin with three more collections (`create`).
  * `sveltekit3` and `sveltekit3-create` are those two SvelteKit targets on the SvelteKit 3 fixture,
  * `nuxt4` and `nuxt4-composable` the two Nuxt targets on the Nuxt 4 fixture.
  * `nextjs-production`, `sveltekit-production` and `nuxt-production` are the session targets
@@ -94,7 +94,7 @@ const SESSION_SURFACES: Record<string, Surface> = {
     spec: 'autologin',
   },
   // The SvelteKit example's `/mapped/<id>` and `/manual` pages, framed from an admin that has
-  // the `mapped-pages` and `manual-pages` collections (PLP_REAL_PAYLOAD_COLLECTIONS).
+  // the `mapped-pages`, `declined-pages` and `manual-pages` collections (PLP_REAL_PAYLOAD_COLLECTIONS).
   create: {
     port: '4475',
     directory: 'sveltekit-payload',

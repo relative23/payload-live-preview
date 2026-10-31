@@ -22,7 +22,7 @@ const SITE_ORIGINS = (process.env.PLP_REAL_PAYLOAD_ORIGINS ?? '').split(',').fil
 const ADMIN_ORIGIN = 'http://localhost:3001';
 
 /**
- * `PLP_REAL_PAYLOAD_COLLECTIONS=1` (the `create` target) adds the two collections whose create screen
+ * `PLP_REAL_PAYLOAD_COLLECTIONS=1` (the `create` target) adds the three collections whose create screen
  * the spec looks at. Every other target runs without them, so none sees them in the admin's navigation,
  * and they get a database of their own: a boot without them would have to drop their tables from a
  * shared `e2e.db`.
@@ -38,6 +38,8 @@ const documentFields = (): Field[] => [
 const CREATE_STATE_COLLECTIONS: CollectionConfig[] = [
   // Routed by the plugin: `collections` in the plugin options maps this slug to a function of the saved document.
   { slug: 'mapped-pages', admin: { useAsTitle: 'title' }, fields: documentFields() },
+  // Mapped too, and its function returns `null`: a saved document of this collection has no preview.
+  { slug: 'declined-pages', admin: { useAsTitle: 'title' }, fields: documentFields() },
   // Not mapped: Payload's own option with a fixed string, which the plugin leaves alone.
   {
     slug: 'manual-pages',
@@ -89,10 +91,21 @@ export default buildConfig({
       baseUrl: FRONTEND_URL,
       globals: { homepage: PREVIEW_PATH },
       collections: COLLECTIONS
-        ? { 'mapped-pages': ({ data }) => `/mapped/${String(data['id'])}` }
+        ? {
+            'mapped-pages': ({ data }) => `/mapped/${String(data['id'])}`,
+            'declined-pages': () => null,
+          }
         : {},
       breakpoints: [{ name: 'plugin-mobile', label: 'Plugin mobile', width: 390, height: 844 }],
+      order: 10,
     }),
+    // Listed after the plugin and ordered before it: this boot fails if Payload stops sorting by `order`.
+    (config) => {
+      if (config.admin?.livePreview?.url !== undefined) {
+        throw new Error('Payload ran the plugins in list order, not by their order');
+      }
+      return config;
+    },
   ],
   editor: lexicalEditor(),
   db: sqliteAdapter({

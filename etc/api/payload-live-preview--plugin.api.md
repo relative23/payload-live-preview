@@ -5,7 +5,10 @@
 ```ts
 
 // @public
-export function livePreview(options: LivePreviewPluginOptions): <TConfig extends object>(config: TConfig) => TConfig;
+export function livePreview(options: LivePreviewPluginOptions): (<TConfig extends object>(config: TConfig) => TConfig) & {
+    readonly slug: string;
+    readonly order?: number;
+};
 
 // @public (undocumented)
 export interface LivePreviewBreakpoint {
@@ -23,15 +26,16 @@ export interface LivePreviewBreakpoint {
 export interface LivePreviewPluginOptions {
     readonly baseUrl: string;
     readonly breakpoints?: readonly LivePreviewBreakpoint[];
-    readonly collections?: Readonly<Record<string, string | ((context: {
+    readonly collections?: Readonly<Record<string, string | null | ((context: {
         readonly data: Record<string, unknown>;
         readonly locale: string | undefined;
-    }) => string)>>;
-    readonly fallback?: string;
-    readonly globals?: Readonly<Record<string, string | ((context: {
+    }) => string | null)>>;
+    readonly fallback?: string | null;
+    readonly globals?: Readonly<Record<string, string | null | ((context: {
         readonly data: Record<string, unknown>;
         readonly locale: string | undefined;
-    }) => string)>>;
+    }) => string | null)>>;
+    readonly order?: number;
     readonly previewParam?: string | null;
 }
 

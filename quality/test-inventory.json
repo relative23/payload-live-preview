@@ -22,7 +22,7 @@
   "totals": {
     "files": 532,
     "suites": 1029,
-    "tests": 4662,
+    "tests": 4665,
     "benchmarks": 12
   },
   "groups": {
@@ -53,7 +53,7 @@
     "real-payload": {
       "files": 8,
       "suites": 8,
-      "tests": 33,
+      "tests": 34,
       "benchmarks": 0
     },
     "soak": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 435,
       "suites": 919,
-      "tests": 4260,
+      "tests": 4262,
       "benchmarks": 0
     }
   },
@@ -718,7 +718,7 @@
       "path": "tests/real-payload/surface-create.spec.ts",
       "group": "real-payload",
       "suites": 1,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -2818,7 +2818,7 @@
       "path": "tests/unit/payload/plugin.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 9,
+      "tests": 11,
       "benchmarks": 0
     },
     {
