@@ -112,8 +112,10 @@ export function inlineScriptConfig(
     ...(options.fragments !== undefined ? { fragmentEndpoint: options.fragments.endpoint } : {}),
     // Only when no endpoint is configured: that prelude carries the route
     // strategy already, and asking for both would emit the larger one twice.
-    ...(options.routeStrategy === true && options.fragments === undefined
-      ? { routeStrategy: true }
+    // Fragments carry the route prelude, but only this slot says when it may run.
+    ...(options.routeStrategy === 'after-save' ||
+    (options.routeStrategy === true && options.fragments === undefined)
+      ? { routeStrategy: options.routeStrategy }
       : {}),
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 name is carried through exactly here
     ...(options.onUnboundChange !== undefined ? { onUnboundChange: options.onUnboundChange } : {}),

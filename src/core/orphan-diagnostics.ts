@@ -13,6 +13,7 @@
  * addressability rules from `unbound-fields.ts`.
  */
 
+import { isDevMode } from '@detection/environment';
 import type { ElementCache } from './cache';
 import type { RuntimeDeps } from './runtime-state';
 import {
@@ -24,6 +25,9 @@ import {
   type FieldAddressability,
   type OwnerScope,
 } from './unbound-fields';
+
+/** Marks the warning as said, in the set of field names already warned about. */
+const COVERAGE_WARNING = ' subfieldCoverage';
 
 interface OrphanDiagnosticContext {
   readonly cache: ElementCache;
@@ -37,7 +41,10 @@ interface OrphanDiagnosticContext {
  * are not fields of this document an anchor could show.
  */
 export function diagnoseOrphanFields(
-  deps: Pick<RuntimeDeps, 'cache' | 'warn' | 'subfieldCoverage' | 'strategies'>,
+  deps: Pick<
+    RuntimeDeps,
+    'cache' | 'warn' | 'subfieldCoverage' | 'strategies' | 'coverageByDefault'
+  >,
   warned: Set<string>,
   fields: Readonly<Record<string, unknown>>,
   locale: string | undefined,
@@ -74,7 +81,10 @@ export function diagnoseOrphanFields(
       report(context, isAddressable, `${group}.${childName}`, locale, childValue);
     }
   }
-  if (deps.subfieldCoverage !== 'declared') return;
+  if (deps.subfieldCoverage !== 'declared') {
+    warnCoverageDefault(deps, warned, fields, locale, ownerKeys);
+    return;
+  }
   // ADR 0022: inside a group the page reaches only below the top level, each
   // uncovered path is named the same way, scalars and one level of a group.
   const uncovered = uncoveredDocumentPaths(cache, fields, locale, ownerKeys, strategies);
@@ -87,6 +97,30 @@ export function diagnoseOrphanFields(
       }
     }
   }
+}
+
+/**
+ * Once, in development, for a page that left the option alone: under `declared`,
+ * the 3.0 default, a path no binding names asks for the route, where today a
+ * binding beside it covers it and an edit there changes nothing on the page.
+ */
+function warnCoverageDefault(
+  deps: Pick<RuntimeDeps, 'cache' | 'warn' | 'strategies' | 'coverageByDefault'>,
+  warned: Set<string>,
+  fields: Record<string, unknown>,
+  locale: string | undefined,
+  ownerKeys: OwnerScope,
+): void {
+  if (typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__) return;
+  if (!deps.coverageByDefault || warned.has(COVERAGE_WARNING) || !isDevMode()) return;
+  warned.add(COVERAGE_WARNING);
+  const [first] = uncoveredDocumentPaths(deps.cache, fields, locale, ownerKeys, deps.strategies);
+  if (first === undefined) return;
+  deps.warn(
+    `[live-preview] LP0204: no binding names "${first.path}", and a binding elsewhere in its group ` +
+      'covers it, so an edit there changes nothing on the page. 3.0 makes ' +
+      "subfieldCoverage: 'declared' the default, where it refreshes the route. Set the option to choose now.",
+  );
 }
 
 function report(

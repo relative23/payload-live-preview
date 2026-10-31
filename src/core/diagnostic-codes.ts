@@ -35,6 +35,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   UnattributableUpdate: 'LP0202',
   /** An update carried a value for a field the page binds nowhere; editing it changes nothing on this page. */
   UnboundField: 'LP0203',
+  /** In development: a bound path covers its group under the `descendant` default, which 3.0 changes. */
+  CoverageDefaultChanges: 'LP0204',
 
   /** The visibility gate held offscreen writes back until they scroll into view. */
   VisibilityGateDeferred: 'LP0301',

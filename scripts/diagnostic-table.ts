@@ -131,6 +131,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     "Once per session. Set `routeStrategy: true` (an adapter that serves the runtime asset, or the route prelude) or `fragments: { endpoint }` so a server can draw what the patch could not, or set `onUnfaithfulPatch: 'warn'` to keep the patch and say so; `inspect().fidelity.canEscalate` reports which it is. With a fragment strategy and no route (a client given `strategies.fragment` alone), the line says the fields fell short outside every boundary: cover them with a `data-payload-fragment` boundary or add the route strategy.",
   LP0807:
     "Informational: the field has no `data-payload-field` anywhere on the page, so the route was refreshed instead of patched. Bind the field to patch it in place, or set `onUnfaithfulPatch: 'ignore'` to accept the stale value.",
+  LP0204:
+    "Under the 2.x default a binding covers its whole group, so an edit to the rest of it does nothing. 3.0 changes that default. Set `subfieldCoverage: 'declared'` to get the route refresh now, or `'descendant'` to keep today's behaviour and end this note.",
   LP0411:
     "The value could not be written the way the server wrote it: no renderer accepted it, a Lexical block with no renderer replaced markup the server had rendered or changed behind the markup it kept, or the row behind an index path moved. Under the default `onUnfaithfulPatch: 'escalate'` the enclosing fragment boundary is re-rendered, or the whole route when none covers it — so a page with neither `fragments` nor `routeStrategy` keeps the patch and this stays a note. Register the renderer the message names, or accept the escalation.",
 });

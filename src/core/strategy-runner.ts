@@ -428,6 +428,11 @@ export class StrategyRunner {
     forSave: boolean,
   ): Promise<void> {
     const { deps, state } = this;
+    if (deps.routeAfterSave && !forSave) {
+      state.routeAwaitsSave = true;
+      state.display.shortfall(transaction, { kind: 'route-saved' });
+      return;
+    }
     const stats = state.routeStats;
     const controller = new AbortController();
     state.routeController?.abort();

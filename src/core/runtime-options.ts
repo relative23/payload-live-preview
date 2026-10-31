@@ -20,6 +20,8 @@ export interface RuntimeOptions {
   readonly renderRichText?: RichTextRenderer;
   /** The route of a Lexical internal link: `{slug}`, `{id}`, `{collection}`, `{locale}`. */
   readonly internalLinkPattern?: string;
+  /** Hold a route render until Payload reports the save: the route shows what is saved. */
+  readonly routeAfterSave?: boolean;
   /**
    * Sanitizer policy for this instance's rich-text and HTML writes, handed to
    * every renderer through its context. Without one, the process default set

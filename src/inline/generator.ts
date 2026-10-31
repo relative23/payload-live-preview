@@ -31,6 +31,10 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
   return [configStatement(config), ...strategyPrelude(config), runtime].join('\n');
 }
 
+function hasRouteStrategy(config: InlineScriptConfig): boolean {
+  return config.routeStrategy === true || config.routeStrategy === 'after-save';
+}
+
 /**
  * The full runtime, or the artifact the consumer imported. The lean one leaves
  * out the strategies (docs/options.md), so the two preludes are refused with it
@@ -43,7 +47,7 @@ function runtimeFor(config: InlineScriptConfig): string {
     return RUNTIME_SOURCE;
   }
   assertBuilt(artifact.source, `the ${artifact.profile} runtime`);
-  if (config.fragmentEndpoint != null || config.routeStrategy === true) {
+  if (config.fragmentEndpoint != null || hasRouteStrategy(config)) {
     throw new Error(
       `[live-preview] the ${artifact.profile} runtime and the fragment or route strategy exclude ` +
         'each other: it carries no strategy runner, so the prelude would have nothing to talk to. ' +
@@ -63,7 +67,7 @@ function strategyPrelude(config: InlineScriptConfig): readonly string[] {
     assertBuilt(FRAGMENT_SOURCE, 'fragment.generated.ts');
     return [FRAGMENT_SOURCE];
   }
-  if (config.routeStrategy === true) {
+  if (hasRouteStrategy(config)) {
     assertBuilt(ROUTE_SOURCE, 'route.generated.ts');
     return [ROUTE_SOURCE];
   }

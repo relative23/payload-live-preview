@@ -85,6 +85,7 @@ export class LivePreviewClient {
           config.resolveRenderer?.(fieldType, target) ?? this.#rendererRegistry.resolve(fieldType),
         renderRichText: config.renderRichText,
         internalLinkPattern: config.internalLinkPattern,
+        routeAfterSave: config.routeAfterSave,
         sanitizerPolicy: config.sanitizerPolicy,
         transformValue: (
           fieldName: string,
