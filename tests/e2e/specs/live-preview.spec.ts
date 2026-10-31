@@ -36,7 +36,7 @@ test.describe('live preview — admin → iframe updates', () => {
   test('updating the hero image URL swaps the <img src>', async ({ page }) => {
     await page.goto('/admin');
     const preview = page.frameLocator('[data-testid="preview-frame"]');
-    const newUrl = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200';
+    const newUrl = '/new-hero.svg';
     await page.getByTestId('hero-url-input').fill(newUrl);
     await expect(preview.locator('img[data-payload-field="hero"]')).toHaveAttribute('src', newUrl);
   });
