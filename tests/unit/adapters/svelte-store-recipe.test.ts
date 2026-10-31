@@ -6,13 +6,17 @@
 
 import { readable } from 'svelte/store';
 import { describe, expect, it, vi } from 'vitest';
-import { DocumentSession, type DocumentSessionOptions } from '@/core-entry';
+import {
+  createDocumentSession,
+  type DocumentSession,
+  type DocumentSessionOptions,
+} from '@/core-entry';
 
 function livePreviewDocument<T extends Record<string, unknown>>(
   initialData: T,
   options: DocumentSessionOptions,
 ): ReturnType<typeof readable<ReturnType<DocumentSession<T>['getSnapshot']>>> {
-  const session = new DocumentSession<T>(initialData, options);
+  const session = createDocumentSession(initialData, options);
   return readable(session.getSnapshot(), (set) =>
     session.subscribe(() => {
       set(session.getSnapshot());

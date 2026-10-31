@@ -23,7 +23,7 @@ const DIST = resolve(ROOT, 'dist');
  */
 const PUBLIC_FUNCTION_NAMES: readonly string[] = [
   'EventEmitter',
-  'DocumentSession',
+  'createDocumentSession',
   'LivePreviewClient',
   'OriginDetector',
   'generateInlineScript',

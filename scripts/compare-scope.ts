@@ -67,7 +67,8 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // opt-in deadline (+35) and document-session.ts passes the option and names it in its error (+3).
 // 2026-10-31: +6 measured code lines: a message with `fieldSchemaJSON` warns once in development that
 // 3.0 ends Payload 2 support, from the protocol tracker and from document-session.ts. No request path changes.
-export const REVIEWED_SCOPE_LINES = 1585;
+// 2026-10-31: 1 585 → 1 591, the factory and its header that make the session public.
+export const REVIEWED_SCOPE_LINES = 1591;
 
 interface OurFile {
   readonly file: string;

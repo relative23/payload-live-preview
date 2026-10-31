@@ -258,17 +258,17 @@ the abuse model: [hybrid.md](hybrid.md).
 
 ## A client-rendered component
 
-The runtime patches what SvelteKit rendered on the server. A component that renders from a document itself, the way React's `useLivePreviewDocument()` does, can read `DocumentSession` from `payload-live-preview/core`, which needs no framework. Its `subscribe` and `getSnapshot` fit a Svelte store:
+The runtime patches what SvelteKit rendered on the server. A component that renders from a document itself, the way React's `useLivePreviewDocument()` does, can use `createDocumentSession()` from `payload-live-preview/core`, which needs no framework. The session's `subscribe` and `getSnapshot` fit a Svelte store:
 
 ```ts
 import { readable } from 'svelte/store';
-import { DocumentSession, type DocumentSessionOptions } from 'payload-live-preview/core';
+import { createDocumentSession, type DocumentSessionOptions } from 'payload-live-preview/core';
 
 export function livePreviewDocument<T extends Record<string, unknown>>(
   initialData: T,
   options: DocumentSessionOptions,
 ) {
-  const session = new DocumentSession<T>(initialData, options);
+  const session = createDocumentSession(initialData, options);
   return readable(session.getSnapshot(), (set) =>
     session.subscribe(() => {
       set(session.getSnapshot());
@@ -277,7 +277,7 @@ export function livePreviewDocument<T extends Record<string, unknown>>(
 }
 ```
 
-Then `$doc.data`, `$doc.status` and `$doc.error` read as in the React hook, and the last subscriber leaving ends the session. `DocumentSession` is `@beta`. This recipe is held by a unit test on `svelte/store`, not by a browser test in a Svelte component.
+Then `$doc.data`, `$doc.status` and `$doc.error` read as in the React hook, and the last subscriber leaving ends the session. `createDocumentSession()` is `@beta`. This recipe is held by a unit test on `svelte/store`, not by a browser test in a Svelte component.
 
 ## Point the Payload admin at this site
 

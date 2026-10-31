@@ -61,12 +61,17 @@ export function bindByPath<T = Record<string, unknown>>(picker: (data: T) => unk
 // @public (undocumented)
 export interface BindOptions {
     readonly alt?: string;
+    readonly anchor?: boolean;
     readonly arrayTemplate?: string;
     readonly attribute?: string;
+    readonly dependsOn?: readonly string[];
+    readonly format?: string;
     readonly href?: string;
     readonly html?: boolean;
     readonly locale?: string;
     readonly richtext?: boolean;
+    readonly strategy?: 'patch' | 'fragment' | 'route';
+    readonly text?: boolean;
     readonly type?: string;
 }
 
@@ -98,7 +103,13 @@ export interface FieldBindingAttributes {
     // (undocumented)
     readonly 'data-payload-attribute'?: string;
     // (undocumented)
+    readonly 'data-payload-boundary'?: string;
+    // (undocumented)
+    readonly 'data-payload-depends'?: string;
+    // (undocumented)
     readonly 'data-payload-field': string;
+    // (undocumented)
+    readonly 'data-payload-format'?: string;
     // (undocumented)
     readonly 'data-payload-href'?: string;
     // (undocumented)
@@ -107,6 +118,10 @@ export interface FieldBindingAttributes {
     readonly 'data-payload-locale'?: string;
     // (undocumented)
     readonly 'data-payload-richtext'?: string;
+    // (undocumented)
+    readonly 'data-payload-strategy'?: string;
+    // (undocumented)
+    readonly 'data-payload-text'?: string;
     // (undocumented)
     readonly 'data-payload-type'?: string;
 }
@@ -222,7 +237,7 @@ export interface PreviewBindings {
     owner: () => OwnerBindingAttributes | SuppressedBinding;
 }
 
-// @internal
+// @public
 export function previewBindingsFromLocals(locals: unknown, options?: {
     readonly owner?: string;
 }): PreviewBindings;

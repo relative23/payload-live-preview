@@ -159,7 +159,8 @@ export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/is
 
 // The framework-free session behind the React and Vue hooks, for a store of your own.
 export {
-  DocumentSession,
+  createDocumentSession,
+  type DocumentSession,
   type DocumentSessionOptions,
   type DocumentSnapshot,
   type DocumentStatus,

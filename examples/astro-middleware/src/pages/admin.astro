@@ -6,7 +6,7 @@
 import { issuePreviewToken } from 'payload-live-preview';
 import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '../live-preview/settings';
 
-const ROUTES = ['/', '/reveal'];
+const ROUTES = ['/', '/reveal', '/gated'];
 const requested = Astro.url.searchParams.get('target');
 const target = ROUTES.find((route) => route === requested) ?? ROUTES[0];
 const token = await issuePreviewToken(

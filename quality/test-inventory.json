@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 536,
-    "suites": 1040,
-    "tests": 4704,
+    "files": 540,
+    "suites": 1046,
+    "tests": 4732,
     "benchmarks": 12
   },
   "groups": {
@@ -41,7 +41,7 @@
     "e2e": {
       "files": 58,
       "suites": 63,
-      "tests": 255,
+      "tests": 256,
       "benchmarks": 0
     },
     "integration": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 439,
-      "suites": 930,
-      "tests": 4301,
+      "files": 443,
+      "suites": 936,
+      "tests": 4328,
       "benchmarks": 0
     }
   },
@@ -228,7 +228,7 @@
       "path": "tests/e2e/specs/astro-middleware-authorized.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -1012,7 +1012,7 @@
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 32,
+      "tests": 33,
       "benchmarks": 0
     },
     {
@@ -1034,6 +1034,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/svelte-store-recipe.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -1166,7 +1173,7 @@
       "path": "tests/unit/codegen/extract-schema-resolution.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 15,
+      "tests": 21,
       "benchmarks": 0
     },
     {
@@ -1279,6 +1286,13 @@
       "group": "unit",
       "suites": 5,
       "tests": 37,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/coverage-default-warning.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1517,6 +1531,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 18,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/inline-slots-route-and-coverage.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -2150,6 +2171,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/route-waits-for-the-save.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/runtime-v2-locale-population.test.ts",
       "group": "unit",
       "suites": 1,
@@ -2383,8 +2411,8 @@
     {
       "path": "tests/unit/doctor/analyze-bindings.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 21,
+      "suites": 6,
+      "tests": 24,
       "benchmarks": 0
     },
     {
@@ -2440,7 +2468,7 @@
       "path": "tests/unit/dsl/bind.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 13,
+      "tests": 15,
       "benchmarks": 0
     },
     {
@@ -2643,7 +2671,7 @@
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 36,
+      "tests": 37,
       "benchmarks": 0
     },
     {

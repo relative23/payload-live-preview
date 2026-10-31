@@ -104,11 +104,6 @@ function reasonFrom(line: readonly unknown[]): string {
   return 'the update could not be merged';
 }
 
-/**
- * One preview document, with no framework around it: `subscribe` and `getSnapshot`
- * fit a `useSyncExternalStore` or a Svelte store.
- * @beta
- */
 export class DocumentSession<T> {
   readonly #merger: DataMerger;
   readonly #bus: MessageBus;
@@ -312,4 +307,16 @@ export class DocumentSession<T> {
     this.#snapshot = next;
     for (const listener of [...this.#listeners]) listener();
   }
+}
+
+/**
+ * One preview document, with no framework around it: `subscribe` and `getSnapshot`
+ * fit a `useSyncExternalStore` or a Svelte store.
+ * @beta
+ */
+export function createDocumentSession<T extends Record<string, unknown>>(
+  initialData: T,
+  options: DocumentSessionOptions,
+): DocumentSession<T> {
+  return new DocumentSession<T>(initialData, options);
 }

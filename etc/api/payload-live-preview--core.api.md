@@ -58,12 +58,17 @@ export function bindByPath<T = Record<string, unknown>>(picker: (data: T) => unk
 // @public (undocumented)
 export interface BindOptions {
     readonly alt?: string;
+    readonly anchor?: boolean;
     readonly arrayTemplate?: string;
     readonly attribute?: string;
+    readonly dependsOn?: readonly string[];
+    readonly format?: string;
     readonly href?: string;
     readonly html?: boolean;
     readonly locale?: string;
     readonly richtext?: boolean;
+    readonly strategy?: 'patch' | 'fragment' | 'route';
+    readonly text?: boolean;
     readonly type?: string;
 }
 
@@ -157,6 +162,9 @@ export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 // @internal (undocumented)
 export const CORE_ENTRY = true;
 
+// @beta
+export function createDocumentSession<T extends Record<string, unknown>>(initialData: T, options: DocumentSessionOptions): DocumentSession<T>;
+
 // @public
 export function createPreviewBindings(options: PreviewBindingsOptions): PreviewBindings;
 
@@ -181,6 +189,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly UnboundField: "LP0203";
+    readonly CoverageDefaultChanges: "LP0204";
     readonly VisibilityGateDeferred: "LP0301";
     readonly UnsafeAttributeWrite: "LP0401";
     readonly TextTargetHasChildren: "LP0402";
@@ -224,10 +233,49 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RouteRefreshUnconfirmed: "LP0810";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
+    readonly AuditModifierWithoutField: "LP0711";
 }>;
 
 // @public
 export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_CODES];
+
+// @public (undocumented)
+export class DocumentSession<T> {
+    constructor(initialData: T, options: DocumentSessionOptions);
+    getServerSnapshot: () => DocumentSnapshot<T>;
+    // (undocumented)
+    getSnapshot: () => DocumentSnapshot<T>;
+    // Warning: (ae-forgotten-export) The symbol "Listener" needs to be exported by the entry point core.d.ts
+    subscribe: (listener: Listener) => (() => void);
+}
+
+// @public (undocumented)
+export interface DocumentSessionOptions {
+    readonly allowedOrigins?: readonly string[];
+    readonly apiRoute?: string;
+    readonly depth?: number;
+    readonly document?: PreviewDocument;
+    readonly enableLocalhostMatching?: boolean;
+    readonly enableReferrerDetection?: boolean;
+    readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
+    readonly fetchFn?: typeof fetch;
+    readonly serverURL: string;
+    readonly target?: Window;
+    readonly timeoutMs?: number;
+}
+
+// @public (undocumented)
+export interface DocumentSnapshot<T> {
+    readonly data: T;
+    readonly error: Error | undefined;
+    readonly isLoading: boolean;
+    readonly revision: number;
+    // (undocumented)
+    readonly status: DocumentStatus;
+}
+
+// @public
+export type DocumentStatus = 'idle' | 'live' | 'unavailable';
 
 // @public
 export function escapeHtml(text: string): string;
@@ -266,7 +314,13 @@ export interface FieldBindingAttributes {
     // (undocumented)
     readonly 'data-payload-attribute'?: string;
     // (undocumented)
+    readonly 'data-payload-boundary'?: string;
+    // (undocumented)
+    readonly 'data-payload-depends'?: string;
+    // (undocumented)
     readonly 'data-payload-field': string;
+    // (undocumented)
+    readonly 'data-payload-format'?: string;
     // (undocumented)
     readonly 'data-payload-href'?: string;
     // (undocumented)
@@ -275,6 +329,10 @@ export interface FieldBindingAttributes {
     readonly 'data-payload-locale'?: string;
     // (undocumented)
     readonly 'data-payload-richtext'?: string;
+    // (undocumented)
+    readonly 'data-payload-strategy'?: string;
+    // (undocumented)
+    readonly 'data-payload-text'?: string;
     // (undocumented)
     readonly 'data-payload-type'?: string;
 }
@@ -520,6 +578,9 @@ export function isSafeUrl(url: unknown): boolean;
 // @internal
 export const LIBRARY_PROTOCOL_VERSION = 4;
 
+// @public (undocumented)
+type Listener = () => void;
+
 // @public
 export class LivePreviewClient {
     constructor(rawConfig?: LivePreviewClientConfig);
@@ -570,6 +631,7 @@ export interface LivePreviewClientConfig {
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
     readonly revealEditedField?: boolean;
     readonly root?: Document | Element;
+    readonly routeAfterSave?: boolean;
     readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
@@ -899,6 +961,16 @@ export interface PreviewBindingsOptions {
     readonly authorization: AuthorizedPreviewContext | null;
     readonly owner?: string;
 }
+
+// @public
+export type PreviewDocument = {
+    readonly collection: string;
+    readonly id: string | number;
+    readonly locale?: string;
+} | {
+    readonly global: string;
+    readonly locale?: string;
+};
 
 // @internal
 export const PROTOCOL_CAPABILITIES: readonly ProtocolCapability[];
