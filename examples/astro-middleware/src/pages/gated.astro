@@ -1,0 +1,12 @@
+---
+// The package's two binding components on a page the authorizePreview hook decides for.
+import PreviewBoundary from 'payload-live-preview/astro/PreviewBoundary.astro';
+import RichText from 'payload-live-preview/astro/RichText.astro';
+---
+<html lang="en">
+  <head><meta charset="utf-8" /><title>Gated components</title></head>
+  <body>
+    <PreviewBoundary field="subtitle" value="" as="p" data-testid="anchor" />
+    <RichText field="body" value={null} data-testid="body" />
+  </body>
+</html>
