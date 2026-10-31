@@ -45,7 +45,7 @@ test.describe('the Astro middleware setup under the strict default', () => {
       expect(html, path).toContain('data-testid="anchor"');
       expect(html, path).not.toContain('data-payload-');
     }
-    await page.goto(`${APP}/admin`);
+    await page.goto(`${APP}/admin?target=/gated`);
     const token = new URL(
       (await waitForPreviewFrame(page, 'previewToken=')).url(),
     ).searchParams.get('previewToken');

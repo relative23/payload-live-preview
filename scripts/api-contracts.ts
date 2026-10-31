@@ -87,7 +87,8 @@ export interface ApiReportCheckOptions {
  * shared chunk under their own names instead. Nothing was hidden to achieve it:
  * the surface is the same, named once instead of copied into two entries.
  */
-export const FORGOTTEN_EXPORT_BASELINE = 50;
+// 2026-10-31: +1, the session's `Listener`, a plain `() => void` that `createDocumentSession()` reaches from `/core`.
+export const FORGOTTEN_EXPORT_BASELINE = 51;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

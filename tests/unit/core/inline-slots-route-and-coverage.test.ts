@@ -4,7 +4,7 @@
  * the page chose, which decides whether it hears about the 3.0 default.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { bootstrapInlineRuntime } from '@core/runtime';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 import { IO } from './lifecycle-startup-harness';
@@ -83,7 +83,7 @@ describe('the routeStrategy slot', () => {
 });
 
 describe('the subfieldCoverage slot', () => {
-  const warned = (spy: ReturnType<typeof vi.spyOn>): string[] =>
+  const warned = (spy: MockInstance<typeof console.warn>): string[] =>
     spy.mock.calls.map((call) => String(call[0])).filter((line) => line.includes('LP0204'));
 
   it('leaves the choice open when empty, and LP0204 says so', async () => {

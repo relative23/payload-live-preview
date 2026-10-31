@@ -26,16 +26,20 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // tree-shaking a named import allows, and it did not even work: esbuild hoists
   // an external import to the top of the bundle out of a dynamically imported
   // module too, so the binary went on resolving the peer before its first flag.
-  'codegen-astro.js': { raw: 13_070, gzip: 4_610, brotli: 4_217 },
+  // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +666/+170/+168 B; prior reserves kept.
+  'codegen-astro.js': { raw: 13_736, gzip: 4_780, brotli: 4_385 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 100 → 20 809 (+709 B, measured 20 003 → 20 712); gzip 6 950 → 7 184 (+234 B, measured 6 946 → 7 180); brotli 6 270 → 6 593 (measured 6 473; ~120 B).
   // 2026-10-29 (annotate binds only what the file owns: hand-binding anchors, binding spreads, masked code blocks, exit 2 on an empty schema): paired Node24.22.1/npm12.0.2; +3199/+1233/+1092 B; prior reserves kept.
-  'codegen-cli.js': { raw: 24_008, gzip: 8_425, brotli: 7_685 },
+  // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +669/+170/+171 B; prior reserves kept.
+  'codegen-cli.js': { raw: 24_677, gzip: 8_595, brotli: 7_856 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 15 420 → 15 899 (+479 B, measured 15 345 → 15 824); gzip 5 530 → 5 730 (+200 B, measured 5 510 → 5 710); brotli 5 060 → 5 223 (measured 5 133; under the 2 % notice).
   // 2026-10-29 (annotate binds only what the file owns: hand-binding anchors, binding spreads, masked code blocks, exit 2 on an empty schema): paired Node24.22.1/npm12.0.2; +2244/+896/+798 B; prior reserves kept.
-  'codegen.cjs': { raw: 17_403, gzip: 6_386, brotli: 5_799 },
+  // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +668/+171/+150 B; prior reserves kept.
+  'codegen.cjs': { raw: 18_071, gzip: 6_557, brotli: 5_949 },
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 15 230 → 15 708 (+478 B, measured 15 152 → 15 630); gzip 5 430 → 5 631 (+201 B, measured 5 410 → 5 611); brotli 4 890 → 5 164 (measured 5 074; under the 2 % notice).
   // 2026-10-29 (annotate binds only what the file owns: hand-binding anchors, binding spreads, masked code blocks, exit 2 on an empty schema): paired Node24.22.1/npm12.0.2; +2249/+911/+804 B; prior reserves kept.
-  'codegen.js': { raw: 17_217, gzip: 6_309, brotli: 5_742 },
+  // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +668/+169/+144 B; prior reserves kept.
+  'codegen.js': { raw: 17_885, gzip: 6_478, brotli: 5_886 },
   //
   // 2026-09-11 (Z37, the doctor reads which defaults a script means):
   // `doctor.js` +2 158 B raw / ~+830 gzip / ~+740 brotli, `doctor-cli.js`
@@ -65,7 +69,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-29 (the doctor counts attributes in start tags, and a fragment boundary is a place an edit arrives): paired Node24.22.1/npm12.0.2; +514/+177/+164 B; prior reserves kept.
   // 2026-10-31 (the runtime takes the merge deadline): paired Node24.22.1/npm12.0.2; +17/+5/+21 B; prior reserves kept.
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +22/+12/-23 B; the Brotli ceiling stays, it fell; prior reserves kept.
-  'doctor.js': { raw: 21_912, gzip: 8_540, brotli: 7_559 },
+  // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +790/+283/+272 B; prior reserves kept.
+  'doctor.js': { raw: 22_702, gzip: 8_823, brotli: 7_831 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -110,7 +115,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31 (pll doctor --header-env): paired Node24.22.1/npm12.0.2; +1110/+306/+282 B; prior reserves kept.
   // 2026-10-31 (the runtime takes the merge deadline): paired Node24.22.1/npm12.0.2; +17/+5/+13 B; prior reserves kept.
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +22/+11/+38 B; prior reserves kept.
-  'doctor-cli.js': { raw: 54_000, gzip: 18_624, brotli: 16_773 },
+  // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +793/+277/+227 B; prior reserves kept.
+  'doctor-cli.js': { raw: 54_793, gzip: 18_901, brotli: 17_000 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
   // 2026-10-22 (the same codemod change): measured 19 958 → 20 931 / 6 964 → 7 166 / 6 240 → 6 427 (+973/+202/+187 B); same 17/12/93 B cushions.

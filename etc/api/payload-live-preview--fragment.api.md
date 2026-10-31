@@ -28,6 +28,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly UnboundField: "LP0203";
+    readonly CoverageDefaultChanges: "LP0204";
     readonly VisibilityGateDeferred: "LP0301";
     readonly UnsafeAttributeWrite: "LP0401";
     readonly TextTargetHasChildren: "LP0402";
@@ -71,6 +72,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly RouteRefreshUnconfirmed: "LP0810";
     readonly V2ReadinessGap: "LP0709";
     readonly RuntimeOnPublicPage: "LP0710";
+    readonly AuditModifierWithoutField: "LP0711";
 }>;
 
 // @public
