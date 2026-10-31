@@ -315,7 +315,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+0/+46 B; prior reserves kept.
   // 2026-10-30 (the CSP fallback table is a Map): paired Node24.22.1/npm12.0.2; +220/+4/-87 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+144/+140 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 211_491, gzip: 66_297, brotli: 56_401 },
+  // 2026-10-31 (the runtime takes the merge deadline): paired Node24.22.1/npm12.0.2; -33/-19/+9 B; the raw and gzip ceilings stay, they fell; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 211_491, gzip: 66_297, brotli: 56_410 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).

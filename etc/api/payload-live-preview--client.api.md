@@ -322,6 +322,7 @@ export interface LivePreviewClientConfig {
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     readonly mergeFetch?: typeof fetch;
+    readonly mergeTimeoutMs?: number;
     readonly renderRichText?: RichTextRenderer;
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
     readonly revealEditedField?: boolean;

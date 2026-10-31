@@ -113,6 +113,8 @@ export interface InlineScriptConfig {
    * declaration; an uncovered one is an unbound change.
    */
   readonly subfieldCoverage?: 'descendant' | 'declared';
+  /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */
+  readonly mergeTimeoutMs?: number;
   /**
    * A runtime artifact to embed instead of the full one — today only
    * `LEAN_RUNTIME` from `payload-live-preview/lean`, which leaves out the
@@ -174,4 +176,5 @@ export const INLINE_CONFIG_KEYS = [
   'defaults',
   'softNavigationEvents',
   'subfieldCoverage',
+  'mergeTimeoutMs',
 ] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'runtime'>[];

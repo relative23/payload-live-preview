@@ -31,6 +31,8 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly apiRoute?: string;
   /** Population depth for `serverURL` re-fetches, required with it (`0` for none); `defaults: 'v1'` falls back to `1`. */
   readonly mergeDepth?: number;
+  /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */
+  readonly mergeTimeoutMs?: number;
   /** Inject the runtime into preview responses. Default `true`; with `false`, CSP is still managed. */
   readonly autoInject?: boolean;
   /** `'preview-only'` (default) gates on an intent signal; `'always'` treats every request as intent, so the hook runs on each. */

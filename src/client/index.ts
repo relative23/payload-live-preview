@@ -103,6 +103,7 @@ export class LivePreviewClient {
                 serverURL,
                 apiRoute: config.apiRoute,
                 depth: config.mergeDepth,
+                timeoutMs: config.mergeTimeoutMs,
                 fetchFn: config.mergeFetch,
               }),
         debounceMs: config.debounceMs,

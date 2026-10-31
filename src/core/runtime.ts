@@ -90,6 +90,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     _defaults,
     softNavigationEvents = [],
     subfieldCoverage = 'descendant',
+    mergeTimeoutMs,
   ] = readBuildConfig();
   // `routeStrategy` is destructured only to hold its wire slot: it decides
   // which prelude the generator emitted, and the prelude's presence is what the
@@ -130,6 +131,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
             serverURL,
             apiRoute,
             depth: mergeDepth,
+            ...(mergeTimeoutMs === undefined ? {} : { timeoutMs: mergeTimeoutMs }),
           },
         }
       : {}),

@@ -24,6 +24,7 @@ options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The led
 | `serverURL`                | yes    | yes           | yes                                                      | yes, required            | — (no REST merge)                                   | same                                 |
 | `apiRoute`                 | yes    | yes           | yes                                                      | yes                      | `/api`                                              | same                                 |
 | `mergeDepth`               | yes    | yes           | yes                                                      | as `depth`, required     | — (required with `serverURL`; `0` for none)         | `1`                                  |
+| `mergeTimeoutMs`           | yes    | yes           | yes                                                      | —                        | off                                                 | same                                 |
 | `mergeFetch`               | yes    | —             | —                                                        | as `fetch`               | global `fetch`                                      | same                                 |
 | `timeoutMs`                | —      | —             | —                                                        | yes                      | `5000` (floor `250`)                                | same                                 |
 | `onDiagnostic`             | —      | —             | —                                                        | yes                      | —                                                   | same                                 |
@@ -170,7 +171,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 164 627 for authorized inline delivery. It fetches one
+  (ADR 0015), against 164 511 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -423,11 +424,13 @@ never answers leaves its update unshown: after ten minutes the DOM runtime still
 shows what it showed before, with `inspect().revisions.display` at `pending`, and
 a hook still has `isLoading: true` and `status: 'idle'` with no `error`
 (`tests/unit/core/merge-without-deadline.test.ts`). A slow or stalled Payload
-API then shows up as an update that never arrives, not as a failure. A hook's
-`timeoutMs` sets a deadline: when it passes, the merge is aborted, the update is
-`unavailable` with the last good document kept, and an answer that comes later
-is not read (`tests/unit/core/merge-timeout.test.ts`). It is off by default in
-2.x.
+API then shows up as an update that never arrives, not as a failure.
+`mergeTimeoutMs` sets a deadline for the DOM runtime and a hook's `timeoutMs` for
+a hook: when it passes, the merge is aborted and an answer that comes later is not
+read. The runtime then renders the raw values and reports the shortfall, as it
+does for a merge the server refused; a hook reports `unavailable` and keeps the
+last good document (`tests/unit/core/merge-timeout.test.ts`). Both are off by
+default in 2.x.
 
 Payload 2 uses the accepted `fieldSchemaJSON` instead of a v3 merge
 target. It retains the schema for later updates that omit it, settles scalar
