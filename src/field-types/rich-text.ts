@@ -27,6 +27,8 @@ import { isEmptyValue } from './utils';
 /** Block slugs already reported, one set per verdict: a block kept once may still be lost later. */
 const warnedKept = new Set<string>();
 const warnedLost = new Set<string>();
+/** The fields of the blocks each element last kept, to tell an edit to a block from one around it. */
+const lastKeptBlocks = new WeakMap<Element, string>();
 
 /** The containers a template wraps rich text in; Lexical renders none of them for content. */
 const WRAPPER_TAGS: ReadonlySet<string> = new Set(['DIV', 'SECTION', 'ARTICLE']);
@@ -57,12 +59,14 @@ const richTextRenderer: FieldRenderer = {
       }
       // Slug by placeholder class: the class is what the write finds standing.
       const unrendered = new Map<string, string>();
+      const blockFields: unknown[] = [];
       const lexical = lexicalToHtml(value, {
         // Lexical would otherwise sanitise with the process default; the sink
         // below does it with the instance's policy instead.
         sanitize: false,
-        onUnrenderedBlock: (blockType, placeholderClass) => {
+        onUnrenderedBlock: (blockType, placeholderClass, fields) => {
           unrendered.set(placeholderClass, blockType);
+          blockFields.push(fields);
         },
       });
       const verdicts = writeKeepingUnrenderedBlocks(
@@ -73,6 +77,7 @@ const richTextRenderer: FieldRenderer = {
         const blockType = unrendered.get(placeholderClass);
         if (blockType !== undefined) reportUnrenderedBlock(target, context, blockType, lost);
       }
+      reportChangedKeptBlocks(target, context, blockFields, verdicts);
       return;
     }
     if (typeof value === 'string') {
@@ -230,6 +235,45 @@ function reportUnrenderedBlock(
         : `LP0410: no renderer for block "${blockType}"; keeping what the server rendered for it.`
     } Register one with registerBlockRenderer().`,
   );
+}
+
+/**
+ * The server's markup for a kept block is right until the block itself changes.
+ * The next edit to it writes nothing the page can show, so the region goes to a
+ * strategy, as for a block whose markup was lost. Text typed around it changes
+ * nothing here.
+ */
+function reportChangedKeptBlocks(
+  target: CachedElement,
+  context: RenderContext,
+  blockFields: readonly unknown[],
+  verdicts: ReadonlyMap<string, boolean>,
+): void {
+  const seen = keptBlockFields(blockFields);
+  const prior = lastKeptBlocks.get(target.element);
+  if (seen === undefined) lastKeptBlocks.delete(target.element);
+  else lastKeptBlocks.set(target.element, seen);
+  if (seen === undefined || prior === undefined || seen === prior) return;
+  if ([...verdicts.values()].includes(false)) {
+    context.reportUnfaithful?.(target, 'changed a block no renderer draws');
+  }
+}
+
+/**
+ * The blocks as a string, with a populated document reduced to its id: the merge
+ * turns `media: 2` into the upload, and that is not an edit. The timestamps tell
+ * a document from an array row, whose `id` says nothing about its text.
+ */
+function keptBlockFields(blockFields: readonly unknown[]): string | undefined {
+  try {
+    return JSON.stringify(blockFields, (_key, value: Record<string, unknown> | null) =>
+      typeof value === 'object' && value !== null && 'id' in value && 'updatedAt' in value
+        ? value['id']
+        : value,
+    );
+  } catch {
+    return undefined;
+  }
 }
 
 /** Test-only: let LP0410 and LP0413 fire again. */

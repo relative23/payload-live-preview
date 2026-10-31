@@ -153,6 +153,8 @@ export class RuntimeState {
   readonly reportedUnfaithful = new WeakMap<Element, UnfaithfulReport>();
   /** Bindings whose first write has already been held against what the template printed (LP0412). */
   readonly checkedServerFormat = new WeakSet<Element>();
+  /** The rows each binding on an index path last stood in (`moved-rows.ts`). */
+  readonly rowsOfBinding = new WeakMap<Element, string>();
   /** Bindings this revision could not patch faithfully, drained by the flush that escalates them. */
   unfaithfulPatches: CachedElement[] = [];
   /** Every binding ever reported unfaithful, and how many of them a strategy was handed; `inspect().fidelity`. */

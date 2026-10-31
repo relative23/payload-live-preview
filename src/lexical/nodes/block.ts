@@ -38,7 +38,7 @@ function renderBlockNode(
     if (custom) return custom(fields, { renderChildren: ctx.renderChildren });
     // The real slug is known only here — the class carries `sanitizeIdent(slug)`,
     // and a hint that names the wrong one to register is no hint.
-    ctx.onUnrenderedBlock?.(blockType, classes);
+    ctx.onUnrenderedBlock?.(blockType, classes, fields);
   }
   return `<${tag} class="${classes}"></${tag}>`;
 }

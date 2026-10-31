@@ -665,7 +665,9 @@ default), and a revision refreshes at most once — a second attempt is refused
 as `LP0805`. A page that binds little and edits much will still refresh often;
 that is the trade, and `onUnfaithfulPatch: 'warn'` is the other side of it: it
 hands nothing to a server and leaves the patch where it is. It reports a patch
-that fell short as `LP0411`, once per element. A changed field with no binding
+that fell short as `LP0411`, once per element: a value no renderer accepts, a
+Lexical block with no renderer that changed or lost its markup, or a binding on
+an index path whose row moved. A changed field with no binding
 is not one of those: `inspect().fidelity` counts it under every mode, and
 `LP0203` names a scalar one (`LP0201` when its value is empty).
 

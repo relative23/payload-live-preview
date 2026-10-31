@@ -61,7 +61,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   UnrenderedBlockKept: 'LP0410',
   /** A patch cannot reach what the server would have drawn; `onUnfaithfulPatch` decided what happens next. */
   UnfaithfulPatch: 'LP0411',
-  /** The first write to a date, number or checkbox binding replaced a different reading of the same value. */
+  /** The first write to a date, number, checkbox, select or radio binding replaced a different reading of the same value. */
   ServerFormatReplaced: 'LP0412',
   /** A Lexical block has no renderer, and the write could not keep the markup the server rendered for it; it is gone. */
   UnrenderedBlockLost: 'LP0413',

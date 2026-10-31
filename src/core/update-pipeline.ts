@@ -11,6 +11,7 @@ import type { MergeResult } from './data-merger';
 import { mergeDependencyMaps } from './dependencies';
 import { bindingIdentity, bindingValue } from './field-value';
 import { type MessageRevision, sameRevision } from './message-bus';
+import { reportMovedRow } from './moved-rows';
 import { NavigationReplay } from './navigation-replay';
 import { diagnoseOrphanFields } from './orphan-diagnostics';
 import { reportOmittedFeature } from './profile';
@@ -387,7 +388,6 @@ export class UpdatePipeline {
       onlyElements,
     );
     if (!isCurrent()) return;
-    // Only `skipUnchanged` needs it now; the reveal keeps its own ledger.
     const trackIdentity = deps.skipUnchanged;
     let scheduled = 0;
     for (const [fieldName, bindings] of deps.cache.entries()) {
@@ -417,9 +417,9 @@ export class UpdatePipeline {
           state.absentFields.add(fieldName);
           continue;
         }
-        // Noted before `skipUnchanged` can skip the write: the reveal ledger is
-        // its own record, and a binding whose write is unchanged since the last
-        // one that landed may still be the field whose reveal was superseded.
+        reportMovedRow(deps, state, target, data.fields, transaction.navigated);
+        // Before `skipUnchanged` can skip the write: a binding unchanged since the
+        // last write that landed may still be the field whose reveal was superseded.
         if (!lateBindings && deps.revealEditedField) {
           state.revealLedger.note(transaction, target, value);
         }
