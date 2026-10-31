@@ -26,12 +26,16 @@ export interface LexicalRenderOptions {
   readonly requireDocument?: boolean;
   /**
    * Called for every `block` or `inlineBlock` the registry has no renderer
-   * for, with the block's slug as Payload sent it and the class its empty
-   * placeholder carries. The `richText` write listens: it is the one caller
+   * for, with the block's slug as Payload sent it, the class its empty
+   * placeholder carries and the block's fields. The `richText` write listens: it is the one caller
    * that later knows whether the server's markup for the block survived, so
    * the diagnostic is spoken there (LP0410, LP0413), not here.
    */
-  readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string) => void;
+  readonly onUnrenderedBlock?: (
+    blockType: string,
+    placeholderClass: string,
+    fields: unknown,
+  ) => void;
 }
 
 let warnedNoSanitizer = false;

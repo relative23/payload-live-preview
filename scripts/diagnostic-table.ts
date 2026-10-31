@@ -67,7 +67,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0407:
     'Only `patch`, `fragment` and `route` exist; fix the `data-payload-strategy` value. The element is left unchanged.',
   LP0412:
-    'The template printed this value one way and the renderer another, so the preview no longer matches the server. Set `data-payload-format` to the format the template uses — or, when the difference was an edit that arrived before the preview connected, nothing is wrong and the next message settles it.',
+    'The template printed this value one way and the renderer another, so the preview no longer matches the server. Set `data-payload-format` to the format the template uses — or, when the difference was an edit that arrived before the preview connected, nothing is wrong and the next message settles it. A select or radio prints a label where Payload sends the option value: render the label in a fragment boundary, or bind it with `data-payload-strategy="route"`.',
   LP0501:
     "The reason is one of origin, shape, type, token, source. Most are visible only with `debug: true`; a source reason is reported once without it, because that default changed. An origin reason means `allowedOrigins` does not list the sender. A source reason means the message came from a window that is neither this page's parent nor its opener — `eventSourcePolicy` is `'parent-or-opener'` since 2.0, where 1.x accepted any window on a trusted origin; set `eventSourcePolicy: 'any'` if your admin posts from elsewhere.",
   LP0502:
@@ -132,7 +132,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0807:
     "Informational: the field has no `data-payload-field` anywhere on the page, so the route was refreshed instead of patched. Bind the field to patch it in place, or set `onUnfaithfulPatch: 'ignore'` to accept the stale value.",
   LP0411:
-    "The value could not be written the way the server wrote it: no renderer accepted it, or a Lexical block with no renderer replaced markup the server had rendered. Under the default `onUnfaithfulPatch: 'escalate'` the enclosing fragment boundary is re-rendered, or the whole route when none covers it — so a page with neither `fragments` nor `routeStrategy` keeps the patch and this stays a note. Register the renderer the message names, or accept the escalation.",
+    "The value could not be written the way the server wrote it: no renderer accepted it, a Lexical block with no renderer replaced markup the server had rendered or changed behind the markup it kept, or the row behind an index path moved. Under the default `onUnfaithfulPatch: 'escalate'` the enclosing fragment boundary is re-rendered, or the whole route when none covers it — so a page with neither `fragments` nor `routeStrategy` keeps the patch and this stays a note. Register the renderer the message names, or accept the escalation.",
 });
 
 /**

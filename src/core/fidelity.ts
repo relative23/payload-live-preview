@@ -141,7 +141,17 @@ export function reportUnboundChange(state: RuntimeState, fieldName: string): boo
  * differs is two answers to the question the runtime cannot ask —
  * `data-payload-format` is where the answer belongs.
  */
-const FORMATTING_RENDERERS: ReadonlySet<string> = new Set(['date', 'number', 'checkbox']);
+const FORMATTING_RENDERERS: ReadonlySet<string> = new Set([
+  'date',
+  'number',
+  'checkbox',
+  'select',
+  'radio',
+]);
+
+function isOptionType(type: string): boolean {
+  return type === 'select' || type === 'radio';
+}
 
 /** Cap on either reading in the message: a diagnostic is a pointer, not a dump. */
 const EXCERPT = 40;
@@ -163,6 +173,8 @@ export function watchServerFormatting(
 ): string | undefined {
   if (deps.onUnfaithfulPatch === 'ignore') return undefined;
   if (target.format !== undefined || !FORMATTING_RENDERERS.has(type)) return undefined;
+  // A form control holds the value itself; only printed text can be a label.
+  if (isOptionType(type) && target.element.matches('select,input')) return undefined;
   if (state.checkedServerFormat.has(target.element)) return undefined;
   state.checkedServerFormat.add(target.element);
   const shown = shownValue(target.element);
@@ -183,17 +195,22 @@ export function reportServerFormatting(
   deps: RuntimeDeps,
   target: CachedElement,
   before: string,
+  type: string,
 ): void {
   const after = shownValue(target.element);
   if (after === before) return;
   deps.warn(
     `[live-preview] LP0412: "${target.fieldName}" showed ${excerpt(before)}, the patch wrote ` +
-      `${excerpt(after)} — either an edit that arrived before the preview connected, or a ` +
-      'template that formats this value differently. Set data-payload-format to match it.',
+      `${excerpt(after)} — ` +
+      (isOptionType(type)
+        ? 'Payload sends the value of an option, not its label. Render the label in a ' +
+          'data-payload-fragment boundary, or bind it with data-payload-strategy="route".'
+        : 'either an edit that arrived before the preview connected, or a template that ' +
+          'formats this value differently. Set data-payload-format to match it.'),
   );
 }
 
-/** The channel the date, number and checkbox renderers write. */
+/** The channel the formatting renderers write. */
 function shownValue(element: Element): string {
   if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
     return (element as HTMLInputElement).value;

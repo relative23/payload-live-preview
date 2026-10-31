@@ -15,7 +15,8 @@ export interface RenderNodeContext {
    * slug Payload sent and the class of the placeholder written in its place.
    * `undefined` on a plain `lexicalToHtml()` call; the `richText` write sets it.
    */
-  readonly onUnrenderedBlock?: ((blockType: string, placeholderClass: string) => void) | undefined;
+  readonly onUnrenderedBlock?:
+    ((blockType: string, placeholderClass: string, fields: unknown) => void) | undefined;
 }
 
 export type NodeRenderer = (node: LexicalNode, context: RenderNodeContext) => string;

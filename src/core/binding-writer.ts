@@ -116,7 +116,7 @@ export class BindingWriter {
           );
           return false;
         }
-        if (shown !== undefined) reportServerFormatting(deps, target, shown);
+        if (shown !== undefined) reportServerFormatting(deps, target, shown, type);
       } else {
         deps.log('no renderer for', type);
         reportUnfaithfulPatch(deps, state, target, `has no renderer for "${type}"`, value);

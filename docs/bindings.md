@@ -146,9 +146,12 @@ the page the server would send. The runtime cannot tell which of the two is
 right — the element's text is the only evidence it has, and the first message of
 a connection may already carry unsaved edits — so it says what it saw instead of
 guessing. The first write to a date, number or checkbox binding without this
-attribute is held against what the element showed, and a difference is reported
+attribute, or to a select or radio binding that prints its value as text, is held against what the element showed, and a difference is reported
 once as [`LP0412`](troubleshooting.md#diagnostic-codes) with both readings in
-it. Setting `data-payload-format` to the format the template uses ends it.
+it. Setting `data-payload-format` to the format the template uses ends it. A
+select or radio has no format to set: Payload sends the option's value, not its
+label, so print the label from a `data-payload-fragment` boundary or bind it with
+`data-payload-strategy="route"`.
 
 Three things it does not do. It formats the amount it is given, so a field
 holding minor units renders as minor units — dividing would be data shaping, and
@@ -233,6 +236,14 @@ The warning reaches one level into a group: a document with an unbound
 rather than the object around it. A group with a binding on any path inside it
 counts as addressed and is not reported, and arrays are left alone — an array
 item without an anchor is a template decision.
+
+A binding on an index path such as `items.0.title` follows the position, not the
+row. When another row now stands at that position, going by the rows' `id`, the
+title still lands, but the image and any other markup without a binding belong
+to the row that stood there. The runtime counts that as a patch that fell short
+([`LP0411`](troubleshooting.md#diagnostic-codes)) and hands it to the fragment or
+route strategy. The route renders what is saved, so the order is right after the
+next save. `data-payload-structural` moves the rows themselves.
 
 `PreviewBoundary` renders that anchor with `data-payload-boundary`: as an
 empty `hidden` element while the value is empty, so a visitor and a screen
