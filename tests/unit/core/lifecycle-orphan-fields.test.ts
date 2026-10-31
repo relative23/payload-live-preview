@@ -299,8 +299,8 @@ describe('LivePreviewRuntime — the orphan-field diagnostic, one level down', (
 
     // The whole point of the restraint: `onUnfaithfulPatch` reads the same
     // predicate and calls this group addressable, so the diagnostic may not
-    // call it unbound.
-    expect(joinLog(warn)).not.toContain('admission');
+    // call it unbound. LP0204 may name it: it says that the binding covers the rest.
+    expect(joinLog(warn)).not.toMatch(/LP020[13][^\n]*admission/u);
     runtime.destroy();
   });
 

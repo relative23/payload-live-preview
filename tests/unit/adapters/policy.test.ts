@@ -149,6 +149,15 @@ describe('inlineScriptConfig', () => {
     );
   });
 
+  it("keeps routeStrategy: 'after-save' beside fragments, since only that slot says when a route may run", () => {
+    expect(
+      inlineScriptConfig({ routeStrategy: 'after-save', fragments: { endpoint: '/f' } }),
+    ).toMatchObject({ routeStrategy: 'after-save' });
+    expect(inlineScriptConfig({ routeStrategy: 'after-save' })).toMatchObject({
+      routeStrategy: 'after-save',
+    });
+  });
+
   it('asks for the route prelude only when no fragment endpoint carries the strategy already', () => {
     // The fragment prelude includes the route strategy; asking for both would
     // emit the larger one twice.
