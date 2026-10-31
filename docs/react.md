@@ -58,6 +58,7 @@ credentials; keep preview tokens and other secrets in server-only variables.
 | `serverURL`               | required             | Payload origin the update is re-fetched from. A trailing slash is fine                                                   |
 | `initialData`             | required             | The document the page rendered; returned until an update merges                                                          |
 | `depth`                   | `1`                  | Population depth for the merge                                                                                           |
+| `timeoutMs`               | off                  | Milliseconds a merge may wait for the server before the update is `'unavailable'`                                        |
 | `apiRoute`                | `/api`               | REST route prefix                                                                                                        |
 | `allowedOrigins`          | —                    | Admin origins allowed to post updates                                                                                    |
 | `eventSourcePolicy`       | `'parent-or-opener'` | `'any'` accepts a message from any window at an allowed origin                                                           |
@@ -156,8 +157,10 @@ document being edited, and render other documents from the data your server
 loaded.
 
 The failed update is not retried: this hook reports it and catches up on the
-next message. A merge request that never answers is not a failure: it has no
-deadline, and the hook stays `isLoading` with its last document
+next message. Without `timeoutMs`, a merge request that never answers is not a
+failure: it has no deadline, and the hook stays `isLoading` with its last
+document. With `timeoutMs`, the update becomes `unavailable` once that many
+milliseconds pass, and an answer that comes later is not read
 ([options.md](options.md#serverurl-and-mergedepth)). On Payload 3 the hook sends one merge request per accepted
 message, at any typing pace: 18 requests for an 18-keystroke burst. The DOM
 runtime asks less. It sends none for an edit that moves no populated value (the

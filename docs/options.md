@@ -170,7 +170,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 164 242 for authorized inline delivery. It fetches one
+  (ADR 0015), against 164 627 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -417,13 +417,17 @@ update through the Payload REST API (`POST` with
 request the official client makes) and renders the populated document; on
 failure it renders the raw values.
 
-The merge request has no deadline of its own. A fragment render gives up after
-5 seconds and a route refresh after 8, but a merge that never answers leaves its
-update unshown: after ten minutes the DOM runtime still shows what it showed
-before, with `inspect().revisions.display` at `pending`, and a hook still has
-`isLoading: true` and `status: 'idle'` with no `error`
+The merge request has no deadline unless you set one. A fragment render gives up
+after 5 seconds and a route refresh after 8, but without a deadline a merge that
+never answers leaves its update unshown: after ten minutes the DOM runtime still
+shows what it showed before, with `inspect().revisions.display` at `pending`, and
+a hook still has `isLoading: true` and `status: 'idle'` with no `error`
 (`tests/unit/core/merge-without-deadline.test.ts`). A slow or stalled Payload
-API shows up as an update that never arrives, not as a failure.
+API then shows up as an update that never arrives, not as a failure. A hook's
+`timeoutMs` sets a deadline: when it passes, the merge is aborted, the update is
+`unavailable` with the last good document kept, and an answer that comes later
+is not read (`tests/unit/core/merge-timeout.test.ts`). It is off by default in
+2.x.
 
 Payload 2 uses the accepted `fieldSchemaJSON` instead of a v3 merge
 target. It retains the schema for later updates that omit it, settles scalar

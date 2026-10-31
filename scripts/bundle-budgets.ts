@@ -568,7 +568,10 @@
 // 2026-10-30 (the CSP fallback table is a Map): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `index.cjs` +220 / +6 / +42, `index.js` +220 / +3 / +53.
 // 2026-10-30 (the CSP fallback table is a Map): the tree-shaking ceiling in tree-shaking-budgets.ts moves with the same change and is recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; it keeps the reserve it had): `createLivePreviewMiddleware` +3. csp.ts is server code: no client or inline row moves.
 // 2026-10-31 (a hook given a document merges only its updates): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; each keeps the reserve it had): `useLivePreviewDocument` +400 from ./react and +342 from ./vue.
-export const INLINE_BUDGET = { raw: 150_029, gzip: 47_247, brotli: 41_640 } as const;
+// 2026-10-31 (an opt-in deadline for the merge): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +386 / +131 / +93, `core.js` +386 / +140 / +134, `index.cjs` +771 / +276 / +175, `index.js` +771 / +285 / +131.
+// 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+144/+111 B; prior reserves kept.
+// 2026-10-31 (an opt-in deadline for the merge): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; each keeps the reserve it had): `initLivePreview` +136 from the root, `generateInlineScript` +146, +158 from ./core, `createLivePreviewMiddleware` +142, `LEAN_RUNTIME` +157, `useLivePreviewDocument` +228 from ./react, +217 from ./vue.
+export const INLINE_BUDGET = { raw: 150_414, gzip: 47_391, brotli: 41_751 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

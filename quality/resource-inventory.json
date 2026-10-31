@@ -42,6 +42,10 @@
       "release": "scope",
       "why": "2026-10-03: Both legacy collection GETs and v3 merge POSTs acquire an owned controller. A newer merge aborts the old one; DataMerger.destroy() aborts any remaining request, and the session scope owns that destroy."
     },
+    "src/core/data-merger.ts::timer = setTimeout(() => {": {
+      "release": "scope",
+      "why": "2026-10-31: The opt-in deadline of one merge attempt. The attempt's finally clears it on every outcome; an attempt whose fetch shim ignores an abort ends when the deadline fires, so the timer never outlives it."
+    },
     "src/core/hydration.ts::timer = setTimeout(() => {": {
       "release": "scope",
       "why": "The cap on the wait for the framework's first commit; the cancel the startup host hands to the scope clears it, and it clears itself when the commit lands."

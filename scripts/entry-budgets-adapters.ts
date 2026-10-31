@@ -80,7 +80,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +325/+119/+84 B; prior reserves kept.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-4/-34 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
   // 2026-10-30 (the CSP fallback table is a Map): paired Node24.22.1/npm12.0.2; +220/+6/+54 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 216_813, gzip: 67_803, brotli: 57_736 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+146/+85 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 217_198, gzip: 67_949, brotli: 57_821 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -125,7 +126,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +320/+124/+180 B; prior reserves kept.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-1/-36 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
   // 2026-10-30 (the CSP fallback table is a Map): paired Node24.22.1/npm12.0.2; +220/+0/-33 B; the Brotli ceiling stays, it fell; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 191_663, gzip: 59_943, brotli: 51_188 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+140/+141 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 192_048, gzip: 60_083, brotli: 51_329 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -208,7 +210,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +325/+126/+38 B; prior reserves kept.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-1/+27 B; the gzip ceiling stays, it fell; prior reserves kept.
   // 2026-10-30 (the CSP fallback table is a Map): paired Node24.22.1/npm12.0.2; +220/+4/-29 B; the Brotli ceiling stays, it fell; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 210_836, gzip: 66_039, brotli: 56_260 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+140/+103 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 211_221, gzip: 66_179, brotli: 56_363 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -229,7 +232,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // retain the prior 16/12/120 B reserves.
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +177/+54/+49 B; prior reserves kept.
   // 2026-10-31 (a hook given a document merges only its updates): paired Node24.22.1/npm12.0.2; +1086/+364/+349 B; prior reserves kept.
-  'adapters/react/index.js': { raw: 24_490, gzip: 8_036, brotli: 7_445 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +562/+196/+154 B; prior reserves kept.
+  'adapters/react/index.js': { raw: 25_052, gzip: 8_232, brotli: 7_599 },
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +80/+22/+22 B; same 16/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -165/-26/-29 B; same 16/12/120 B cushions.
   // 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7766/+2534/+2343 B; cushions 16/12/120 B.
@@ -240,7 +244,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // retain the prior 16/12/120 B reserves.
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +177/+56/+51 B; prior reserves kept.
   // 2026-10-31 (a hook given a document merges only its updates): paired Node24.22.1/npm12.0.2; +920/+312/+290 B; prior reserves kept.
-  'adapters/vue/index.js': { raw: 23_574, gzip: 7_790, brotli: 7_207 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +505/+179/+151 B; prior reserves kept.
+  'adapters/vue/index.js': { raw: 24_079, gzip: 7_969, brotli: 7_358 },
   //
   // 2026-09-06 (R4, zero-config setup): one new row. `adapters/nuxt/module.js`
   // is the build-time Nuxt module — a few hundred bytes, because all it does is
@@ -309,7 +314,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +325/+126/+104 B; prior reserves kept.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+0/+46 B; prior reserves kept.
   // 2026-10-30 (the CSP fallback table is a Map): paired Node24.22.1/npm12.0.2; +220/+4/-87 B; the Brotli ceiling stays, it fell; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 211_106, gzip: 66_153, brotli: 56_261 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+144/+140 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 211_491, gzip: 66_297, brotli: 56_401 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -359,5 +365,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (a CSP source must fit its header): paired Node24.22.1/npm12.0.2; +327/+126/+124 B; prior reserves kept.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-1/+19 B; the gzip ceiling stays, it fell; prior reserves kept.
   // 2026-10-30 (the CSP fallback table is a Map): paired Node24.22.1/npm12.0.2; +220/+3/+26 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 210_185, gzip: 65_876, brotli: 56_013 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+137/+110 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 210_570, gzip: 66_013, brotli: 56_123 },
 };
