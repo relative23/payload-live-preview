@@ -151,7 +151,8 @@
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+143/+89 B; prior reserves kept.
 // 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+89/+16 B; prior reserves kept.
 // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+97/+61 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 165_046, gzip: 52_377, brotli: 45_593 } as const;
+// 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2132/+722/+539 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 167_178, gzip: 53_099, brotli: 46_132 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -293,4 +294,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 165_046, gzip: 52_377, brotli: 45_5
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+146/+187 B; prior reserves kept.
 // 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+90/+19 B; prior reserves kept.
 // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+110/-13 B; the Brotli ceiling stays, it fell; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 159_461, gzip: 50_482, brotli: 43_967 } as const;
+// 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2132/+726/+627 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 161_593, gzip: 51_208, brotli: 44_594 } as const;

@@ -45,10 +45,12 @@ describe('release bundle budgets', () => {
     // +1/+1/-2 lean (Brotli left), +1/+1/+63 route, +1/+1/+99 fragments; reserves unchanged.
     // 2026-10-31 (a project on Payload 2 hears that 3.0 ends its support): +226/+106/-33 default,
     // +11/+5/+1 lean, +226/+110/-13 route, +226/+97/+61 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 150_866, gzip: 47_586, brotli: 41_892 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 122_654, gzip: 38_668, brotli: 34_064 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 159_461, gzip: 50_482, brotli: 43_967 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 165_046, gzip: 52_377, brotli: 45_593 });
+    // 2026-10-31 (moved rows, kept blocks, select labels, the details reveal, variants, picture
+    // sources and internalLinkPattern): the pins follow the paired measurement in the budget files.
+    expect(INLINE_BUDGET).toEqual({ raw: 152_998, gzip: 48_319, brotli: 42_482 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 124_326, gzip: 39_280, brotli: 34_551 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 161_593, gzip: 51_208, brotli: 44_594 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 167_178, gzip: 53_099, brotli: 46_132 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

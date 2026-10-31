@@ -152,4 +152,5 @@
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+157/+88 B; prior reserves kept.
 // 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+76/+37 B; prior reserves kept.
 // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +11/+5/+1 B; prior reserves kept.
-export const INLINE_LEAN_BUDGET = { raw: 122_654, gzip: 38_668, brotli: 34_064 } as const;
+// 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +1672/+612/+487 B; prior reserves kept.
+export const INLINE_LEAN_BUDGET = { raw: 124_326, gzip: 39_280, brotli: 34_551 } as const;
