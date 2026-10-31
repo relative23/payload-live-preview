@@ -105,7 +105,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-26 (the doctor reads a page's configuration element): paired Node24.22.1/npm12.0.2; +592/+206/+168 B; prior reserves kept.
   // 2026-10-26 (the 2.2 review fixes): paired Node24.22.1/npm12.0.2; +628/+227/+241 B; prior reserves kept.
   // 2026-10-29 (the doctor counts attributes in start tags, and a fragment boundary is a place an edit arrives): paired Node24.22.1/npm12.0.2; +517/+179/+155 B; prior reserves kept.
-  'doctor-cli.js': { raw: 52_851, gzip: 18_302, brotli: 16_440 },
+  // 2026-10-31 (pll doctor --header-env): paired Node24.22.1/npm12.0.2; +1110/+306/+282 B; prior reserves kept.
+  'doctor-cli.js': { raw: 53_961, gzip: 18_608, brotli: 16_722 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
   // 2026-10-22 (the same codemod change): measured 19 958 → 20 931 / 6 964 → 7 166 / 6 240 → 6 427 (+973/+202/+187 B); same 17/12/93 B cushions.

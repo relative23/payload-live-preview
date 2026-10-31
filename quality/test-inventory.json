@@ -22,7 +22,7 @@
   "totals": {
     "files": 530,
     "suites": 1023,
-    "tests": 4639,
+    "tests": 4642,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 433,
       "suites": 913,
-      "tests": 4237,
+      "tests": 4240,
       "benchmarks": 0
     }
   },
@@ -2377,7 +2377,7 @@
       "path": "tests/unit/doctor/cli.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 38,
+      "tests": 41,
       "benchmarks": 0
     },
     {

@@ -40,6 +40,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe('runDoctor probing', () => {
@@ -431,6 +432,60 @@ describe('pll doctor output', () => {
     expect(calls).toHaveLength(0);
     expect(err).toContain('given twice');
     expect(err).not.toContain('a=1');
+  });
+
+  it('reads a header line from the variable --header-env names and never prints it', async () => {
+    // The shell expands --header "Cookie: payload-token=$TOKEN" into the doctor's argv, which
+    // /proc/<pid>/cmdline shows to every user of the host; the environment is the owner's alone.
+    vi.stubEnv('PLP_DOCTOR_COOKIE', 'Cookie: payload-token=s3cret');
+    vi.stubEnv('PLP_DOCTOR_TOKEN', 'x-preview-token: tok3n');
+    const { fetchImpl, calls } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND }, CSP);
+    const code = await run(
+      [
+        'doctor',
+        'https://example.com/',
+        '--header-env',
+        'PLP_DOCTOR_COOKIE',
+        '--header-env=PLP_DOCTOR_TOKEN',
+        '--json',
+      ],
+      fetchImpl,
+    );
+    expect(code).toBe(0);
+    expect(calls[1]).toMatchObject({ Cookie: 'payload-token=s3cret', 'x-preview-token': 'tok3n' });
+    expect(calls[0]).not.toHaveProperty('Cookie');
+    expect(out).not.toContain('s3cret');
+    expect(out).not.toContain('tok3n');
+  });
+
+  it('refuses a --header-env it cannot read before probing, without printing the value', async () => {
+    vi.stubEnv('PLP_DOCTOR_UNSET', undefined);
+    vi.stubEnv('PLP_DOCTOR_BAD', 'payload-token=s3cret');
+    vi.stubEnv('PLP_DOCTOR_COOKIE', 'cookie: payload-token=s3cret');
+    const { fetchImpl, calls } = serverFetch({ publicBody: '<h1>t</h1>', previewBody: BOUND });
+    const url = 'https://example.com/';
+    for (const [args, message] of [
+      [['--header-env'], '--header-env takes the name of an environment variable'],
+      [['--header-env', '--v2'], '--header-env takes the name of an environment variable'],
+      [['--header-env', 'not a name'], '--header-env takes the name of an environment variable'],
+      [
+        ['--header-env', 'PLP_DOCTOR_UNSET'],
+        '--header-env PLP_DOCTOR_UNSET: the variable is not set',
+      ],
+      [['--header-env', 'PLP_DOCTOR_BAD'], '--header-env PLP_DOCTOR_BAD must hold "Name: value"'],
+      [['-H', 'Cookie: a=1', '--header-env', 'PLP_DOCTOR_COOKIE'], '"cookie" is given twice'],
+    ] as const) {
+      err = '';
+      expect(await run(['doctor', url, ...args], fetchImpl)).toBe(1);
+      expect(err).toContain(message);
+      expect(err).not.toContain('s3cret');
+    }
+    expect(calls).toHaveLength(0);
+  });
+
+  it('names --header-env in its help', async () => {
+    await run(['doctor', '--help']);
+    expect(out).toContain('--header-env <var>');
   });
 
   it('threads --param into the probe and rejects a name that is not one', async () => {
