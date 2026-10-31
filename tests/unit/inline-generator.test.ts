@@ -165,6 +165,15 @@ describe('generateInlineScript', () => {
     );
   });
 
+  it("carries the route prelude for routeStrategy: 'after-save', and refuses it with the lean runtime", () => {
+    expect(generateInlineScript({ routeStrategy: 'after-save' })).toContain(
+      '__LIVE_PREVIEW_ROUTE__',
+    );
+    expect(() =>
+      generateInlineScript({ runtime: LEAN_RUNTIME, routeStrategy: 'after-save' }),
+    ).toThrow(/exclude/u);
+  });
+
   it('no longer accepts the 1.x nonce option; the nonce belongs to wrapWithScriptTag', () => {
     // @ts-expect-error -- removed in 2.0 (ADR 0007 §2); ignored at runtime.
     const withNonce = generateInlineScript({ nonce: 'abc123' });
