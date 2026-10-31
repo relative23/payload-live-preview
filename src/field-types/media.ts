@@ -19,6 +19,13 @@ const chosenSizes = new WeakMap<HTMLImageElement, string>();
 
 export function clearImage(img: HTMLImageElement): void {
   for (const name of IMAGE_SOURCE_ATTRIBUTES) img.removeAttribute(name);
+  dropPictureSources(img);
+}
+
+/** A `<picture>`'s `<source>` wins over any `src`, and it still names the old image. */
+function dropPictureSources(img: HTMLImageElement): void {
+  if (img.parentElement?.tagName !== 'PICTURE') return;
+  for (const source of img.parentElement.querySelectorAll('source')) source.remove();
 }
 
 /**
@@ -28,7 +35,8 @@ export function clearImage(img: HTMLImageElement): void {
  * the last write's once the editor picks another image — else the original,
  * and of the rest only what has its shape and format, one per width. A crop
  * of another shape is another picture. `url` is already resolved; the sizes
- * are resolved against `serverURL`.
+ * are resolved against `serverURL`. A `<picture>` keeps its sources while the
+ * image is still the one they were drawn for.
  */
 export function writeImage(
   img: HTMLImageElement,
@@ -43,6 +51,9 @@ export function writeImage(
     sizes.find((size) => size.name === chosenSizes.get(img));
   if (chosen?.name === undefined) chosenSizes.delete(img);
   else chosenSizes.set(img, chosen.name);
+  if (shown === null || (chosen === undefined && !sameUrl(img, url, shown))) {
+    dropPictureSources(img);
+  }
   img.src = chosen?.url ?? url;
   const shape = chosen ?? media;
   const candidates = sizes.filter((size) => sameShape(size, shape));
@@ -70,7 +81,7 @@ export function writeImage(
 
 function sizeSources(media: MediaShape | undefined, serverURL: string | undefined): Source[] {
   const sources: Source[] = [];
-  for (const [name, size] of Object.entries(media?.sizes ?? {})) {
+  for (const [name, size] of Object.entries(media?.sizes ?? media?.variants ?? {})) {
     if (typeof size.url !== 'string' || typeof size.width !== 'number') continue;
     const url = resolveMediaUrl(size.url, serverURL);
     if (isSafeUrl(url)) sources.push({ ...size, name, url, width: size.width });

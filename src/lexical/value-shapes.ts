@@ -12,18 +12,22 @@ export interface MediaShape {
   readonly mimeType?: string;
   readonly width?: number;
   readonly height?: number;
-  readonly sizes?: Readonly<
-    Record<
-      string,
-      {
-        readonly url?: string;
-        readonly width?: number;
-        readonly height?: number;
-        readonly mimeType?: string;
-      }
-    >
-  >;
+  readonly sizes?: MediaSizes;
+  /** Payload 4's name for `sizes`. */
+  readonly variants?: MediaSizes;
 }
+
+type MediaSizes = Readonly<
+  Record<
+    string,
+    {
+      readonly url?: string;
+      readonly width?: number;
+      readonly height?: number;
+      readonly mimeType?: string;
+    }
+  >
+>;
 
 export interface RelationShape {
   readonly id?: string | number;
