@@ -576,7 +576,10 @@
 // 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+89/+141 B; prior reserves kept.
 // 2026-10-31 (a page can say when it has hydrated): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; each keeps the reserve it had): `initLivePreview` +53 from the root, `generateInlineScript` +89 from the root, `initLivePreview` +64 from ./core, `createLivePreviewMiddleware` +106 from ./nextjs, `LEAN_RUNTIME` +74 from ./lean.
 // 2026-10-31 (the config plugin takes `order` and nullable resolvers and carries its slug): the tree-shaking ceiling of `livePreview` in tree-shaking-budgets.ts moves 1 228 → 1 268 B gzip, measured 1 223 → 1 263 on the same HEAD, recorded here, that file being at its line limit; the five-byte cushion stays.
-export const INLINE_BUDGET = { raw: 150_640, gzip: 47_480, brotli: 41_892 } as const;
+// 2026-10-31 (a project on Payload 2 hears that 3.0 ends its support): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired on the same HEAD): root client +132, root generator +101, core client +114, Next.js middleware +105, React hook +90, Vue composable +84, lean +2; the cushions stay.
+// a project on Payload 2 hears that 3.0 ends its support: the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +274 / +122 / +94, `core.js` +274 / +125 / +59, `index.cjs` +500 / +234 / +365, `index.js` +500 / +249 / +335.
+// a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+106/-33 B; the Brotli ceiling stays, it fell; prior reserves kept.
+export const INLINE_BUDGET = { raw: 150_866, gzip: 47_586, brotli: 41_892 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 532,
-    "suites": 1029,
-    "tests": 4665,
+    "files": 533,
+    "suites": 1031,
+    "tests": 4670,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 435,
-      "suites": 919,
-      "tests": 4262,
+      "files": 436,
+      "suites": 921,
+      "tests": 4267,
       "benchmarks": 0
     }
   },
@@ -1993,6 +1993,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/payload-2-hint.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
       "benchmarks": 0
     },
     {
