@@ -39,6 +39,8 @@ interface Tested {
   readonly version?: string;
   readonly major?: number;
   readonly source: 'lockfile' | (typeof MATRIX_JOBS)[number]['source'];
+  /** The fixture whose lockfile installs this version, when it is not the framework's own. */
+  readonly fixture?: string;
   readonly browsers: readonly string[];
   readonly job: string;
   /** The Vite range this framework version declares; absent for a framework that has none. */
@@ -145,7 +147,11 @@ async function viteLockfiles(
   matrix: Matrix,
 ): Promise<readonly { readonly fixture: string; readonly version: string }[]> {
   const found: { fixture: string; version: string }[] = [];
-  for (const fixture of new Set(matrix.frameworks.map((framework) => framework.fixture))) {
+  const fixtures = matrix.frameworks.flatMap((framework) => [
+    framework.fixture,
+    ...framework.tested.flatMap((entry) => (entry.fixture === undefined ? [] : [entry.fixture])),
+  ]);
+  for (const fixture of new Set(fixtures)) {
     const version = await lockfileVersion(fixture, 'vite');
     if (version !== undefined) found.push({ fixture, version });
   }
@@ -343,10 +349,11 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
   for (const framework of matrix.frameworks) {
     for (const entry of framework.tested) {
       if (entry.source === 'lockfile') {
-        const actual = await lockfileVersion(framework.fixture, framework.package);
+        const fixture = entry.fixture ?? framework.fixture;
+        const actual = await lockfileVersion(fixture, framework.package);
         if (actual !== entry.version) {
           problems.push(
-            `${framework.name}: matrix says ${String(entry.version)}, ${framework.fixture} lockfile has ${String(actual)}`,
+            `${framework.name}: matrix says ${String(entry.version)}, ${fixture} lockfile has ${String(actual)}`,
           );
         }
       }

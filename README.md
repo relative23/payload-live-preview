@@ -50,18 +50,18 @@ What differs between Payload 2, 3 and 4:
 
 <!-- compat-matrix:start -->
 
-| Framework | Supported                                                                    | Tested in CI on every push (version, browsers)                                    |
-| --------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Astro     | >=4.0.0 <8.0.0                                                               | 7.4.2 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
-| Next.js   | App Router, 15.5 and 16                                                      | 16.4.3 (chromium, firefox, webkit); 15.x (chromium)                               |
-| SvelteKit | 2.x                                                                          | 2.70.3 (chromium, firefox, webkit)                                                |
-| Nuxt      | 3.x (end of life since 31 July 2026: kept working, not officially supported) | 3.21.11 (chromium, firefox, webkit)                                               |
+| Framework | Supported                                                                         | Tested in CI on every push (version, browsers)                                    |
+| --------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Astro     | >=4.0.0 <8.0.0                                                                    | 7.4.2 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
+| Next.js   | App Router, 15.5 and 16                                                           | 16.4.3 (chromium, firefox, webkit); 15.x (chromium)                               |
+| SvelteKit | 2.x and 3.x                                                                       | 3.1.1 (chromium, firefox, webkit); 2.70.3 (chromium, firefox, webkit)             |
+| Nuxt      | 4.x; 3.x (end of life since 31 July 2026: kept working, not officially supported) | 4.6.3 (chromium, firefox, webkit); 3.21.11 (chromium, firefox, webkit)            |
 
 Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-Of the 50 feature rows of `quality/compat-matrix.json`, 47 passed in the CI run the last Version PR recorded (commit `83f66e9`, 2026-10-30, `quality/compat-results.json`); the other 3 have no recorded result.
+Of the 58 feature rows of `quality/compat-matrix.json`, 47 passed in the CI run the last Version PR recorded (commit `83f66e9`, 2026-10-30, `quality/compat-results.json`); the other 11 have no recorded result.
 
-Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 2 → 5/6/7/8, Nuxt 3 → 7), measured 2026-09-06. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
+Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 3 → 8, SvelteKit 2 → 5/6/7/8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-10-31. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
 The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the `hook-matrix` job runs after installing the floors over the lockfile (React 18.0.0, Vue 3.3.0, Svelte 5.0.0), and at what the lockfile installs (React 19.3.1, Vue 3.5.44, Svelte 5.57.3), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by `svelte/compiler` and rendered by the real `svelte/server`.
 
@@ -78,7 +78,7 @@ The framework hooks and fragment renderers run twice on every push: at the floor
 
 <!-- compat-matrix:end -->
 
-Nuxt 4 and SvelteKit 3 have no row yet; each gets one with the release that declares it supported. Since 2026-10-30 CI runs both on every push. The `nuxt4` job runs the Nuxt example in Nuxt 4.6.3's `app/` layout, and the `sveltekit3` job runs the SvelteKit example migrated to SvelteKit 3.1.1 with `npx sv migrate sveltekit-3`. Both run against the mock admin in Chromium, Firefox and WebKit, and `real-payload-surfaces` drives both from the real admin in the same three engines. The SvelteKit example needed the migration's changes ([docs/sveltekit.md](docs/sveltekit.md)); the package needed no change for either.
+SvelteKit 3 and Nuxt 4 are supported. The `sveltekit3` job runs the SvelteKit example migrated to SvelteKit 3.1.1 with `npx sv migrate sveltekit-3`, and the `nuxt4` job runs the Nuxt example in Nuxt 4.6.3's `app/` layout. Both run on the development server against the mock admin in Chromium, Firefox and WebKit, and `real-payload-surfaces` drives both from the real admin in the same three engines. The production jobs still build the SvelteKit 2 and Nuxt 3 examples. The SvelteKit example needed the migration's changes ([docs/sveltekit.md](docs/sveltekit.md)); the package needed no change for either.
 
 **A client-rendered app takes a hook.** `useLivePreviewDocument()` from `payload-live-preview/react` or `payload-live-preview/vue` returns the merged document and re-renders your tree. Payload 3 updates use the method-override merge request; Payload 2 scalar updates settle locally and raw relationships use schema-based collection GETs. A newer update aborts any request in flight; an HTTP error is refused instead of becoming the document; each hook keeps its own state, requests and errors, and a hook given a `document` merges only that document's updates; without one it follows the document the admin sends, whichever one it started from ([docs/react.md](docs/react.md), [docs/vue.md](docs/vue.md)). The official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` hooks ship in lockstep with Payload and remain the safe default if that matters more to you; running either alongside the DOM runtime on one page: [docs/interop.md](docs/interop.md).
 
