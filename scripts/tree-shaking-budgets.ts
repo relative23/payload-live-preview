@@ -569,7 +569,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 8_650,
+    gzip: 9_050,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
@@ -578,7 +578,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 8_634,
+    gzip: 8_976,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {

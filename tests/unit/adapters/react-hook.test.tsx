@@ -2,6 +2,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { StrictMode, useEffect } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useLivePreviewDocument } from '@adapters/react/index';
+import type { PreviewDocument } from '@adapters/shared/document-session';
 
 /**
  * The hook itself: that it subscribes once, re-renders the tree with the merged
@@ -37,6 +38,7 @@ interface PreviewProps {
   readonly initialData?: Page;
   readonly serverURL?: string;
   readonly target?: Window;
+  readonly document?: PreviewDocument;
 }
 
 function Preview({
@@ -44,6 +46,7 @@ function Preview({
   initialData = INITIAL,
   serverURL = SERVER,
   target,
+  document,
 }: PreviewProps): React.JSX.Element {
   const { data, isLoading, status, error } = useLivePreviewDocument<Page>({
     serverURL,
@@ -52,6 +55,7 @@ function Preview({
     initialData,
     fetchFn,
     ...(target === undefined ? {} : { target }),
+    ...(document === undefined ? {} : { document }),
   });
   return (
     <article>
@@ -231,6 +235,46 @@ describe('useLivePreviewDocument', () => {
     view.rerender(<Preview fetchFn={fetchFn} />);
 
     expect(screen.getByTestId('title').textContent).toBe('Merged');
+  });
+
+  it('merges only the updates for its document, and starts a new session when the document changes', async () => {
+    const fetchFn = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as { data: Page };
+      return Promise.resolve(
+        new Response(JSON.stringify(body.data), {
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+    });
+    const view = render(
+      <Preview
+        fetchFn={fetchFn as unknown as typeof fetch}
+        document={{ collection: 'pages', id: '1' }}
+      />,
+    );
+    await act(async () => {
+      window.dispatchEvent(update('For page two', '2'));
+      await Promise.resolve();
+    });
+    await settle();
+    expect(fetchFn).not.toHaveBeenCalled();
+    expect(screen.getByTestId('title').textContent).toBe('From the server');
+
+    view.rerender(
+      <Preview
+        fetchFn={fetchFn}
+        document={{ collection: 'pages', id: '2' }}
+        initialData={{ id: '2', title: 'Page two' }}
+      />,
+    );
+    expect(screen.getByTestId('title').textContent).toBe('Page two');
+    await act(async () => {
+      window.dispatchEvent(update('Typed into two', '2'));
+      await Promise.resolve();
+    });
+    await settle();
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('title').textContent).toBe('Typed into two');
   });
 
   it('moves its listener when the target connection option changes', async () => {

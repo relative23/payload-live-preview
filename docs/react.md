@@ -53,17 +53,18 @@ export function PagePreview({ page }: { page: Page }) {
 Both `NEXT_PUBLIC_` values ship to the browser. They are origins, not
 credentials; keep preview tokens and other secrets in server-only variables.
 
-| Option                    | Default              | What it does                                                           |
-| ------------------------- | -------------------- | ---------------------------------------------------------------------- |
-| `serverURL`               | required             | Payload origin the update is re-fetched from. A trailing slash is fine |
-| `initialData`             | required             | The document the page rendered; returned until an update merges        |
-| `depth`                   | `1`                  | Population depth for the merge                                         |
-| `apiRoute`                | `/api`               | REST route prefix                                                      |
-| `allowedOrigins`          | —                    | Admin origins allowed to post updates                                  |
-| `eventSourcePolicy`       | `'parent-or-opener'` | `'any'` accepts a message from any window at an allowed origin         |
-| `enableReferrerDetection` | `false`              | Trust `document.referrer` as an origin source                          |
-| `enableLocalhostMatching` | `true`               | Match `localhost` origins in development                               |
-| `target`                  | the global `window`  | Window to listen on                                                    |
+| Option                    | Default              | What it does                                                                                                             |
+| ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `serverURL`               | required             | Payload origin the update is re-fetched from. A trailing slash is fine                                                   |
+| `initialData`             | required             | The document the page rendered; returned until an update merges                                                          |
+| `depth`                   | `1`                  | Population depth for the merge                                                                                           |
+| `apiRoute`                | `/api`               | REST route prefix                                                                                                        |
+| `allowedOrigins`          | —                    | Admin origins allowed to post updates                                                                                    |
+| `eventSourcePolicy`       | `'parent-or-opener'` | `'any'` accepts a message from any window at an allowed origin                                                           |
+| `enableReferrerDetection` | `false`              | Trust `document.referrer` as an origin source                                                                            |
+| `enableLocalhostMatching` | `true`               | Match `localhost` origins in development                                                                                 |
+| `target`                  | the global `window`  | Window to listen on                                                                                                      |
+| `document`                | —                    | The document this hook previews: `{ collection, id }` or `{ global }`, with an optional `locale`; only its updates merge |
 
 A hook instance owns one document session. A fresh `initialData` object on an
 ordinary re-render does not replace data that already merged. A changed value
@@ -131,20 +132,28 @@ React wrapper.
 
 ### Five where the results differ
 
-| Measured with                                                                  | `@payloadcms/live-preview` 3.88.0                                              | This hook                                                                                                                                        |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                                                                                                       |
-| Two messages, the first answered after 40 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands                                                                                |
-| HTTP 403 with Payload's error body, `{"errors":[{"message":…}]}`               | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403                                                                                 |
-| Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | the merge for `2` fetches `pages/2`; each hook keeps its own state, requests and errors (ADR 0002), and both follow the document the admin sends |
-| `fetch` rejecting with `TypeError: Failed to fetch`                            | the rejection escapes the async listener                                       | last good document kept, `status: 'unavailable'`, `error` names it                                                                               |
+| Measured with                                                                  | `@payloadcms/live-preview` 3.88.0                                              | This hook                                                                                                                                                                         |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                                                                                                                                        |
+| Two messages, the first answered after 40 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands                                                                                                                 |
+| HTTP 403 with Payload's error body, `{"errors":[{"message":…}]}`               | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403                                                                                                                  |
+| Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | the merge for `2` fetches `pages/2`; each hook keeps its own state, requests and errors (ADR 0002), and both follow the document the admin sends unless each names its `document` |
+| `fetch` rejecting with `TypeError: Failed to fetch`                            | the rejection escapes the async listener                                       | last good document kept, `status: 'unavailable'`, `error` names it                                                                                                                |
 
-Both follow the document the admin sends: a hook takes every update from an
-allowed admin window, whichever document its `initialData` came from. On a page
-that previews document `1`, a second hook started from document `2` shows
-document `1` after the first update. Give the hook to the component that
-renders the document being edited, and render other documents from the data
-your server loaded.
+Without `document`, both follow the document the admin sends: a hook takes every
+update from an allowed admin window, whichever document its `initialData` came
+from. On a page that previews document `1`, a second hook started from document
+`2` shows document `1` after the first update. Given
+`document: { collection: 'pages', id: 2 }`, that hook leaves the update for
+`pages/1` alone: it sends no request and keeps its state. `{ global: 'header' }`
+names a global, and `locale` also leaves alone an update the admin sends for
+another locale. An update that does not say which document it is for is left
+alone as well, with one warning per hook in development: Payload 2 sends no
+collection or global slug, so leave `document` out on Payload 2, and a create
+screen has no id yet. A changed `document` replaces the session, like the other
+options. Without `document`, give the hook to the component that renders the
+document being edited, and render other documents from the data your server
+loaded.
 
 The failed update is not retried: this hook reports it and catches up on the
 next message. A merge request that never answers is not a failure: it has no

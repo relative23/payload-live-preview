@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 529,
-    "suites": 1022,
-    "tests": 4630,
+    "files": 530,
+    "suites": 1023,
+    "tests": 4639,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 432,
-      "suites": 912,
-      "tests": 4228,
+      "files": 433,
+      "suites": 913,
+      "tests": 4237,
       "benchmarks": 0
     }
   },
@@ -827,6 +827,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/document-session-identity.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 8,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/document-session-v2-safety.test.ts",
       "group": "unit",
       "suites": 1,
@@ -1019,7 +1026,7 @@
       "path": "tests/unit/adapters/react-hook.test.tsx",
       "group": "unit",
       "suites": 1,
-      "tests": 9,
+      "tests": 10,
       "benchmarks": 0
     },
     {
