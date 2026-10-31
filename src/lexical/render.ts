@@ -36,6 +36,14 @@ export interface LexicalRenderOptions {
     placeholderClass: string,
     fields: unknown,
   ) => void;
+  /**
+   * The route of an internal link whose document has no `url` of its own, such
+   * as `/{locale}/{slug}/`. `{slug}`, `{id}`, `{collection}` and `{locale}` are
+   * filled in and encoded; with one of them empty the link falls back to `/<slug>`.
+   */
+  readonly internalLinkPattern?: string | undefined;
+  /** What `{locale}` reads in `internalLinkPattern`. */
+  readonly locale?: string | undefined;
 }
 
 let warnedNoSanitizer = false;
@@ -53,7 +61,7 @@ export function isLexicalContent(value: unknown): value is LexicalRoot {
 /** Render a Lexical document to HTML; without a document the result is unsanitised and warns once, or throws under `requireDocument`. */
 export function lexicalToHtml(content: LexicalRoot, options: LexicalRenderOptions = {}): string {
   if (!isLexicalContent(content)) return '';
-  const html = createContext(options.onUnrenderedBlock).renderChildren(content.root.children);
+  const html = createContext(options).renderChildren(content.root.children);
   if (options.sanitize === false) return html;
   if (options.document !== undefined) return sanitizeHtml(html, { document: options.document });
   // Without a DOM this throws the sanitizer's own error.
@@ -78,9 +86,7 @@ export function __resetSanitizerWarningForTests(): void {
  * block — a `block` inside a list item, an `inlineBlock` inside a paragraph —
  * reports to the same listener as a top-level one.
  */
-function createContext(
-  onUnrenderedBlock: RenderNodeContext['onUnrenderedBlock'],
-): RenderNodeContext {
+function createContext(options: LexicalRenderOptions): RenderNodeContext {
   const context: RenderNodeContext = {
     renderChildren: (children) => {
       let out = '';
@@ -89,7 +95,9 @@ function createContext(
     },
     resolveAlignment,
     resolveIndent,
-    onUnrenderedBlock,
+    onUnrenderedBlock: options.onUnrenderedBlock,
+    internalLinkPattern: options.internalLinkPattern,
+    locale: options.locale,
   };
   return context;
 }

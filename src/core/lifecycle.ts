@@ -153,6 +153,7 @@ export class LivePreviewRuntime {
       resolveRenderer: options.resolveRenderer ?? ((fieldType) => renderers[fieldType]),
       transformValue: options.transformValue,
       renderRichText: options.renderRichText,
+      internalLinkPattern: options.internalLinkPattern,
       sanitizerPolicy: options.sanitizerPolicy,
       root,
       readyTargets:

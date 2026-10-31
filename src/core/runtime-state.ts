@@ -91,6 +91,7 @@ export interface RuntimeDeps {
   readonly resolveRenderer: NonNullable<RuntimeOptions['resolveRenderer']>;
   readonly transformValue: RuntimeOptions['transformValue'];
   readonly renderRichText: RichTextRenderer | undefined;
+  readonly internalLinkPattern: string | undefined;
   readonly sanitizerPolicy: SanitizerPolicyMode | undefined;
   readonly root: Document | Element;
   readonly readyTargets: () => readonly string[];

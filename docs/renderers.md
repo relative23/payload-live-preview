@@ -340,8 +340,8 @@ the root's setter had run.
 The built-in nodes read the shapes `@payloadcms/richtext-lexical` actually
 serializes, not vanilla Lexical's: a link is
 `{ type: 'link', fields: { linkType, url, newTab, doc } }` (an `internal`
-link needs `doc.value` populated to have a URL at all — a bare id renders the
-link text only), and `block`, `inlineBlock`, `table`, `tablerow` and
+link takes the document's own `url`, then `internalLinkPattern`, then `/<slug>`;
+a bare id with no pattern renders the link text only), and `block`, `inlineBlock`, `table`, `tablerow` and
 `tablecell` all have renderers, so a table stays a table instead of
 collapsing into its text.
 

@@ -33,6 +33,8 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly mergeDepth?: number;
   /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */
   readonly mergeTimeoutMs?: number;
+  /** The route of a Lexical internal link with no `url` of its own, as `/{locale}/{slug}/`. */
+  readonly internalLinkPattern?: string;
   /**
    * `'manual'` holds the runtime's first write until the page calls `markHydrated()`, capped at
    * five seconds, for a framework this adapter cannot observe. It replaces the wait the adapter

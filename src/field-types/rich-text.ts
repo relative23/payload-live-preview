@@ -64,6 +64,8 @@ const richTextRenderer: FieldRenderer = {
         // Lexical would otherwise sanitise with the process default; the sink
         // below does it with the instance's policy instead.
         sanitize: false,
+        internalLinkPattern: context.internalLinkPattern,
+        locale: context.locale,
         onUnrenderedBlock: (blockType, placeholderClass, fields) => {
           unrendered.set(placeholderClass, blockType);
           blockFields.push(fields);

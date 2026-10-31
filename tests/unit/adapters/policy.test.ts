@@ -98,6 +98,7 @@ describe('inlineScriptConfig', () => {
     ['apiRoute', '/api', 'apiRoute', '/api'],
     ['mergeDepth', 2, 'mergeDepth', 2],
     ['mergeTimeoutMs', 5000, 'mergeTimeoutMs', 5000],
+    ['internalLinkPattern', '/{slug}/', 'internalLinkPattern', '/{slug}/'],
     ['revealEditedField', true, 'revealEditedField', true],
     ['debug', true, 'debug', true],
     ['debounceMs', 5, 'debounceMs', 5],

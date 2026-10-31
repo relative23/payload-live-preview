@@ -17,6 +17,10 @@ export interface RenderNodeContext {
    */
   readonly onUnrenderedBlock?:
     ((blockType: string, placeholderClass: string, fields: unknown) => void) | undefined;
+  /** The route of an internal link, with `{slug}`, `{id}`, `{collection}` and `{locale}`. */
+  readonly internalLinkPattern?: string | undefined;
+  /** What `{locale}` reads. */
+  readonly locale?: string | undefined;
 }
 
 export type NodeRenderer = (node: LexicalNode, context: RenderNodeContext) => string;
