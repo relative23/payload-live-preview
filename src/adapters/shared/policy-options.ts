@@ -77,6 +77,9 @@ export function inlineScriptConfig(
     ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
     ...(options.mergeDepth !== undefined ? { mergeDepth: options.mergeDepth } : {}),
     ...(options.mergeTimeoutMs !== undefined ? { mergeTimeoutMs: options.mergeTimeoutMs } : {}),
+    ...(options.internalLinkPattern !== undefined
+      ? { internalLinkPattern: options.internalLinkPattern }
+      : {}),
     ...(options.revealEditedField !== undefined
       ? { revealEditedField: options.revealEditedField }
       : {}),

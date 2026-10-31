@@ -21,7 +21,7 @@ export class BindingWriter {
   /** The instance's share of every `RenderContext`, built once: a write allocates the context alone. */
   private readonly instanceContext: Pick<
     RenderContext,
-    'renderRichText' | 'sanitizerPolicy' | 'serverURL' | 'reportUnfaithful'
+    'renderRichText' | 'sanitizerPolicy' | 'serverURL' | 'reportUnfaithful' | 'internalLinkPattern'
   >;
 
   constructor(
@@ -30,6 +30,7 @@ export class BindingWriter {
   ) {
     this.instanceContext = definedOnly({
       renderRichText: deps.renderRichText,
+      internalLinkPattern: deps.internalLinkPattern,
       sanitizerPolicy: deps.sanitizerPolicy,
       serverURL: deps.serverURL,
       // A renderer already holds its target, so one closure per instance says

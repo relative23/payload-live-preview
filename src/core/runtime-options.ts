@@ -18,6 +18,8 @@ export interface RuntimeOptions {
   ) => FieldRenderer | undefined;
   /** Project rich-text renderer, handed to the `richText` renderer through its context. */
   readonly renderRichText?: RichTextRenderer;
+  /** The route of a Lexical internal link: `{slug}`, `{id}`, `{collection}`, `{locale}`. */
+  readonly internalLinkPattern?: string;
   /**
    * Sanitizer policy for this instance's rich-text and HTML writes, handed to
    * every renderer through its context. Without one, the process default set

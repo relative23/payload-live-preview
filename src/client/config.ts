@@ -22,6 +22,8 @@ export interface LivePreviewClientConfig {
   readonly mergeDepth?: number;
   /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */
   readonly mergeTimeoutMs?: number;
+  /** The route of a Lexical internal link with no `url` of its own, as `/{locale}/{slug}/`. */
+  readonly internalLinkPattern?: string;
   /** Custom fetch for the `serverURL` merge request: attach auth headers or route through a proxy. */
   readonly mergeFetch?: typeof fetch;
   /** Verbose console output. Defaults to dev-mode detection. */

@@ -116,6 +116,8 @@ export interface InlineScriptConfig {
   readonly subfieldCoverage?: 'descendant' | 'declared';
   /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */
   readonly mergeTimeoutMs?: number;
+  /** The route of a Lexical internal link with no `url` of its own, as `/{locale}/{slug}/`. */
+  readonly internalLinkPattern?: string;
   /**
    * A runtime artifact to embed instead of the full one — today only
    * `LEAN_RUNTIME` from `payload-live-preview/lean`, which leaves out the
@@ -178,4 +180,5 @@ export const INLINE_CONFIG_KEYS = [
   'softNavigationEvents',
   'subfieldCoverage',
   'mergeTimeoutMs',
+  'internalLinkPattern',
 ] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'runtime'>[];

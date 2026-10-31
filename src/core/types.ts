@@ -103,6 +103,8 @@ export interface RenderContext {
    * completes the sentence 'field "x" …' in LP0411.
    */
   readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
+  /** The route of a Lexical internal link, as `internalLinkPattern` gives it. */
+  readonly internalLinkPattern?: string;
 }
 
 /**
