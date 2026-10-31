@@ -156,10 +156,11 @@ left out, and of two candidates with one width the first stays. A size without
 `height`, and every size of a picture without `width` and `height`, is kept:
 its shape cannot be told. Media with no
 usable `sizes` removes `srcset` **and** `sizes`. An author-written `sizes`
-layout hint survives a rebuild — it describes the layout, not the media. The
-`<source>` elements of a `<picture>` are not rewritten, and Payload 4's
-`variants` are not read: a picture that needs either is rendered by a fragment
-boundary or the route.
+layout hint survives a rebuild — it describes the layout, not the media. Payload
+4's `variants` are read as `sizes`. The `<source>` elements of a `<picture>` are
+not rewritten: they stay while the image is the one they were drawn for and are
+removed once the editor picks another or clears it, so a picture that needs its
+sources for a new image is rendered by a fragment boundary or the route.
 
 ### Media URLs
 
