@@ -169,7 +169,7 @@ export default buildConfig({
 
 The callback appends `?preview=true`, which the frontend reads as preview intent — a delivery hint, not a credential. Breakpoints, merge rules and conflicts are in [payload.md](payload.md).
 
-Use `buildLivePreviewUrl` from `payload-live-preview/payload` instead when a document without a route should show no preview (the plugin's resolvers return strings), when another plugin already sets the Live Preview URL, or when the iframe request has to be verifiable without a cookie. The plugin takes no secret, so for the last case wrap the helper's callback and add a token from `issuePreviewToken()`; the middleware in step 5 then verifies it with the `signed-token` strategy. Both sides are in [authorization.md](authorization.md).
+Use `buildLivePreviewUrl` from `payload-live-preview/payload` instead when another plugin already sets the Live Preview URL, or when the iframe request has to be verifiable without a cookie. The plugin takes no secret, so for the last case wrap the helper's callback and add a token from `issuePreviewToken()`; the middleware in step 5 then verifies it with the `signed-token` strategy. Both sides are in [authorization.md](authorization.md).
 
 ## 5. Authorize, then read the draft
 

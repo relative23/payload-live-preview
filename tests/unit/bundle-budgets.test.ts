@@ -43,10 +43,12 @@ describe('release bundle budgets', () => {
     // +73/+28/+36 lean, +73/+26/+37 route, +73/+25/+13 fragments; reserves unchanged.
     // 2026-10-30 (a ping keeps its safe targets around any whitespace): +1/+2/+21 default,
     // +1/+1/-2 lean (Brotli left), +1/+1/+63 route, +1/+1/+99 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 150_640, gzip: 47_480, brotli: 41_892 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 122_643, gzip: 38_663, brotli: 34_063 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 159_235, gzip: 50_372, brotli: 43_967 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 164_820, gzip: 52_280, brotli: 45_532 });
+    // 2026-10-31 (a project on Payload 2 hears that 3.0 ends its support): +226/+106/-33 default,
+    // +11/+5/+1 lean, +226/+110/-13 route, +226/+97/+61 fragments; reserves unchanged.
+    expect(INLINE_BUDGET).toEqual({ raw: 150_866, gzip: 47_586, brotli: 41_892 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 122_654, gzip: 38_668, brotli: 34_064 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 159_461, gzip: 50_482, brotli: 43_967 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 165_046, gzip: 52_377, brotli: 45_593 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

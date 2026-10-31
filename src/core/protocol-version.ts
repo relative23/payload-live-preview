@@ -86,6 +86,11 @@ export function hasCapability(
   return negotiation.capabilities.has(capability);
 }
 
+/** What a project on Payload 2 hears in development, from the runtime and from a hook. @internal */
+export const PAYLOAD_2_HINT =
+  '[payload-live-preview] This admin sends fieldSchemaJSON, which only Payload 2 does. ' +
+  'Every 2.x release of this package supports Payload 2; 3.0 supports Payload 3 and 4.';
+
 /** The capabilities a single message demonstrates, by its shape alone. */
 export function observeCapabilities(message: {
   readonly fieldSchemaJSON?: unknown;

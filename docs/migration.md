@@ -24,8 +24,12 @@ Each form 3.0 removes warns once per process while it runs in development,
 never in production, and names what replaces it, so the server log lists what
 is left. The rows that change a default or a surface instead of removing a form
 (sub-field coverage, referrer trust, the route refresh, the `@internal` names)
-and the end of Payload 2 support say nothing at run time, except that `LP0810` names a refresh that returns no
-promise, under `debug`. The first row is the one that also warns in production. The first three rows are not mechanical rewrites: whether a call site
+say nothing at run time, except that `LP0810` names a refresh that returns no
+promise, under `debug`. The end of Payload 2 support warns once in the browser when
+the first update with `fieldSchemaJSON` arrives, from the runtime and from a hook:
+where `NODE_ENV` is readable, unless it is `production`, and elsewhere, such as an
+inline script, on `localhost` or `127.0.0.1`. The lean inline profile leaves that
+warning out. The first row is the one that also warns in production. The first three rows are not mechanical rewrites: whether a call site
 has a DOM, or which fields a page shows on purpose, is a fact about the
 project that `pll migrate` cannot read from the source. The codemods rewrite
 options that a file hands to the package, directly or through a `const` it

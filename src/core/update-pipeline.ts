@@ -74,7 +74,7 @@ export class UpdatePipeline {
   ): void {
     const { deps, state } = this;
     deps.heartbeat.kick();
-    state.protocol.observe(observeCapabilities(message), deps.log);
+    state.protocol.observe(observeCapabilities(message), deps.log, deps.warn);
     const rawData = message.data;
     if (rawData === undefined) {
       if (message.protocolVersion !== undefined) {

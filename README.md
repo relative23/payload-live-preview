@@ -125,8 +125,10 @@ the mappings. Existing breakpoints stay when the option is omitted; supplying
 it replaces the list. A competing root URL or a URL on a selected entity that
 already exists when this transform runs is a configuration error. Make this
 transform run after any plugin that may write a Live Preview URL in Payload's
-effective execution order, or compose both routing policies explicitly. The
-complete merge and conflict rules are in [docs/payload.md](docs/payload.md).
+effective execution order (Payload 3 and 4 sort by the `order` option), or
+compose both routing policies explicitly. A resolver or the `fallback` may be
+`null` for a document without a preview on Payload 3 and 4. The complete merge
+and conflict rules are in [docs/payload.md](docs/payload.md).
 
 In the Payload 3.92.1 admin, a collection document gets its native Live
 Preview after its first save. The create screen has no preview toggle and no
@@ -137,10 +139,11 @@ Firefox and WebKit.
 
 Payload 4 is still a pre-release ([Compatibility](#compatibility)). The plugin
 was measured once against 4.0.0-beta.4, outside CI; the compatibility list says
-what that run covered and what it left out.
+what that run covered and what it left out. Its `order` option and `null`
+resolvers were measured once against 4.0.0-beta.6, also outside CI
+([ADR 0017](docs/architecture/0017-structural-payload-config-plugin.md)).
 
-Use the lower-level callback when another plugin owns the surrounding config or
-when a document may have no preview route:
+Use the lower-level callback when another plugin owns the surrounding config:
 
 ```ts
 import { buildLivePreviewUrl } from 'payload-live-preview/payload';
@@ -171,7 +174,7 @@ export default buildConfig({
 });
 ```
 
-The helper appends `?preview=true`, one of the query parameters (`preview`, `draft`, `livePreview`) the adapters read as preview intent. The parameter is client-controlled: it selects delivery and never authorizes draft access. A hand-written `url: ({ data, locale, collectionConfig, globalConfig }) => string` callback works the same way; the [official docs](https://payloadcms.com/docs/live-preview/overview) have the full contract. The helper's nullable overload lets a resolver return `null` for a document without a route, and `fallback: null` declines every unmapped one; Payload 3 then shows no iframe. Payload 2.32.3's published callback result is string-only, so use the non-null overload and a string fallback there. The config plugin deliberately stays inside that common contract.
+The helper appends `?preview=true`, one of the query parameters (`preview`, `draft`, `livePreview`) the adapters read as preview intent. The parameter is client-controlled: it selects delivery and never authorizes draft access. A hand-written `url: ({ data, locale, collectionConfig, globalConfig }) => string` callback works the same way; the [official docs](https://payloadcms.com/docs/live-preview/overview) have the full contract. The helper's nullable overload lets a resolver return `null` for a document without a route, and `fallback: null` declines every unmapped one; Payload 3 then shows no iframe. Payload 2.32.3's published callback result is string-only, so use the non-null overload and a string fallback there, and keep the config plugin's resolvers to strings.
 
 The config plugin accepts no signing secret or token option. Where no session
 cookie crosses origins, the manual `signed-token` URL callback is a Payload 3

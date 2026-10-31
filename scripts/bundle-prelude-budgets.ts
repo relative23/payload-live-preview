@@ -150,7 +150,8 @@
 // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+1/+99 B; prior reserves kept.
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+143/+89 B; prior reserves kept.
 // 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+89/+16 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 164_820, gzip: 52_280, brotli: 45_532 } as const;
+// a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+97/+61 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 165_046, gzip: 52_377, brotli: 45_593 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -291,4 +292,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 164_820, gzip: 52_280, brotli: 45_5
 // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+1/+63 B; prior reserves kept.
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+146/+187 B; prior reserves kept.
 // 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+90/+19 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 159_235, gzip: 50_372, brotli: 43_967 } as const;
+// a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+110/-13 B; the Brotli ceiling stays, it fell; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 159_461, gzip: 50_482, brotli: 43_967 } as const;
