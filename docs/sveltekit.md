@@ -256,6 +256,29 @@ the abuse model: [hybrid.md](hybrid.md).
 <ul data-payload-field="posts" data-payload-array data-payload-array-template={template}></ul>
 ```
 
+## A client-rendered component
+
+The runtime patches what SvelteKit rendered on the server. A component that renders from a document itself, the way React's `useLivePreviewDocument()` does, can read `DocumentSession` from `payload-live-preview/core`, which needs no framework. Its `subscribe` and `getSnapshot` fit a Svelte store:
+
+```ts
+import { readable } from 'svelte/store';
+import { DocumentSession, type DocumentSessionOptions } from 'payload-live-preview/core';
+
+export function livePreviewDocument<T extends Record<string, unknown>>(
+  initialData: T,
+  options: DocumentSessionOptions,
+) {
+  const session = new DocumentSession<T>(initialData, options);
+  return readable(session.getSnapshot(), (set) =>
+    session.subscribe(() => {
+      set(session.getSnapshot());
+    }),
+  );
+}
+```
+
+Then `$doc.data`, `$doc.status` and `$doc.error` read as in the React hook, and the last subscriber leaving ends the session. `DocumentSession` is `@beta`. This recipe is held by a unit test on `svelte/store`, not by a browser test in a Svelte component.
+
 ## Point the Payload admin at this site
 
 The admin has to know which URL to show for each document. In the Payload project's `payload.config.ts`, the config plugin from `payload-live-preview/plugin` maps collections and globals to paths on this site and enables Live Preview for them. If Payload is a separate project, install `payload-live-preview` there too.

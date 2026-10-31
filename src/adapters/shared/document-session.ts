@@ -104,6 +104,11 @@ function reasonFrom(line: readonly unknown[]): string {
   return 'the update could not be merged';
 }
 
+/**
+ * One preview document, with no framework around it: `subscribe` and `getSnapshot`
+ * fit a `useSyncExternalStore` or a Svelte store.
+ * @beta
+ */
 export class DocumentSession<T> {
   readonly #merger: DataMerger;
   readonly #bus: MessageBus;

@@ -156,3 +156,12 @@ export type { SanitizerPolicyMode } from './security';
 
 // Island interoperability — the bridge event and the boundary test (docs/renderers.md, islands).
 export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/islands';
+
+// The framework-free session behind the React and Vue hooks, for a store of your own.
+export {
+  DocumentSession,
+  type DocumentSessionOptions,
+  type DocumentSnapshot,
+  type DocumentStatus,
+  type PreviewDocument,
+} from '@adapters/shared/document-session';
