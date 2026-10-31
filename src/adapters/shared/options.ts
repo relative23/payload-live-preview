@@ -33,6 +33,12 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly mergeDepth?: number;
   /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */
   readonly mergeTimeoutMs?: number;
+  /**
+   * `'manual'` holds the runtime's first write until the page calls `markHydrated()`, capped at
+   * five seconds, for a framework this adapter cannot observe. It replaces the wait the adapter
+   * sets itself.
+   */
+  readonly hydration?: 'manual';
   /** Inject the runtime into preview responses. Default `true`; with `false`, CSP is still managed. */
   readonly autoInject?: boolean;
   /** `'preview-only'` (default) gates on an intent signal; `'always'` treats every request as intent, so the hook runs on each. */

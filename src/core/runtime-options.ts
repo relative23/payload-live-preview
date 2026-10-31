@@ -71,8 +71,9 @@ export interface RuntimeOptions {
    * SvelteKit's root has mounted, so Svelte's hydration does not set its own
    * text back over the write. Capped at five seconds, then LP0607. The
    * Next.js, Nuxt and SvelteKit adapters set it; nothing else does by default.
+   * Under `'manual'` it waits for the page's own `markHydrated()`, with the same cap.
    */
-  readonly hydration?: 'react' | 'vue' | 'sveltekit';
+  readonly hydration?: 'react' | 'vue' | 'sveltekit' | 'manual';
   /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn — a renderer that cannot represent the value, a Lexical

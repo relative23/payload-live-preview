@@ -161,7 +161,7 @@ export interface LivePreviewInspection {
    * SvelteKit page is not connected yet; `timed-out` is LP0607.
    */
   readonly hydration: {
-    readonly mode: 'off' | 'react' | 'vue' | 'sveltekit';
+    readonly mode: 'off' | 'react' | 'vue' | 'sveltekit' | 'manual';
     readonly state: 'idle' | 'waiting' | 'committed' | 'timed-out';
   };
 }

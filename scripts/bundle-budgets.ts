@@ -572,7 +572,10 @@
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+144/+111 B; prior reserves kept.
 // 2026-10-31 (an opt-in deadline for the merge): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; each keeps the reserve it had): `initLivePreview` +136 from the root, `generateInlineScript` +146, +158 from ./core, `createLivePreviewMiddleware` +142, `LEAN_RUNTIME` +157, `useLivePreviewDocument` +228 from ./react, +217 from ./vue.
 // 2026-10-31 (the runtime takes the merge deadline): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` -122 / -44 / +8, `index.js` -221 / -71 / +42.
-export const INLINE_BUDGET = { raw: 150_414, gzip: 47_391, brotli: 41_751 } as const;
+// 2026-10-31 (a page can say when it has hydrated): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +223 / +44 / +26, `core.js` +223 / +45 / +50, `index.cjs` +521 / +164 / +56, `index.js` +521 / +147 / +65.
+// 2026-10-31 (a page can say when it has hydrated): paired Node24.22.1/npm12.0.2; +226/+89/+141 B; prior reserves kept.
+// 2026-10-31 (a page can say when it has hydrated): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; each keeps the reserve it had): `initLivePreview` +53 from the root, `generateInlineScript` +89 from the root, `initLivePreview` +64 from ./core, `createLivePreviewMiddleware` +106 from ./nextjs, `LEAN_RUNTIME` +74 from ./lean.
+export const INLINE_BUDGET = { raw: 150_640, gzip: 47_480, brotli: 41_892 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

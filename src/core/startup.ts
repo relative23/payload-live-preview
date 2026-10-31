@@ -1,7 +1,8 @@
 /**
  * When the runtime may start: after the document has parsed, and on a page
  * that declares hydration after the framework's first commit — React's, Vue's
- * mount, or SvelteKit's root mounting — or the cap (ADR 0015).
+ * mount, SvelteKit's root mounting, or the page's own `markHydrated()` — or the
+ * cap (ADR 0015).
  *
  * `lifecycle.ts` owns the resources a start acquires and how a failed one is
  * rolled back; this module owns only the waiting. It moved out when the
@@ -22,6 +23,7 @@ import {
 } from './hydration';
 import { armVueMountSignal, whenVueMounted } from './hydration-vue';
 import { whenSvelteKitMounted } from './hydration-sveltekit';
+import { whenMarkedHydrated } from './hydration-manual';
 
 /** What the startup chain needs from the runtime. */
 export interface StartupHost {
@@ -95,6 +97,7 @@ const WAITS: Record<
   react: (_root, onSettled) => whenReactCommitted(onSettled),
   vue: whenVueMounted,
   sveltekit: whenSvelteKitMounted,
+  manual: whenMarkedHydrated,
 };
 
 /** What LP0607 says the runtime waited for. */
@@ -102,6 +105,7 @@ const AWAITED: Record<HydrationMode, string> = {
   react: 'React commit',
   vue: 'Vue mount',
   sveltekit: 'SvelteKit mount',
+  manual: 'markHydrated() call',
 };
 
 function startHydrated(host: StartupHost, mode: HydrationMode, outcome: HydrationOutcome): void {
