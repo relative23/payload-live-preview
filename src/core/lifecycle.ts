@@ -168,16 +168,7 @@ export class LivePreviewRuntime {
       warn,
       a11y: createA11y(options),
       serverURL: merge?.serverURL,
-      merger:
-        merge === undefined
-          ? null
-          : new DataMerger({
-              serverURL: merge.serverURL,
-              ...(merge.apiRoute !== undefined ? { apiRoute: merge.apiRoute } : {}),
-              ...(merge.depth !== undefined ? { depth: merge.depth } : {}),
-              ...(merge.fetchFn !== undefined ? { fetchFn: merge.fetchFn } : {}),
-              log,
-            }),
+      merger: merge === undefined ? null : new DataMerger({ ...merge, log }),
       mergeWindowMs: options.debounceMs ?? DEFAULT_DEBOUNCE_MS,
       scopeBindingsByOwner: options.scopeBindingsByOwner === true,
       subfieldCoverage: options.subfieldCoverage ?? 'descendant',

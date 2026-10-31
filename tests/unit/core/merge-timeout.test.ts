@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataMerger, type MergeResult } from '@core/data-merger';
 import { DocumentSession } from '@adapters/shared/document-session';
+import { EventEmitter } from '@events/emitter';
+import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewClient } from '@/client/index';
+import { bootstrapInlineRuntime } from '@core/runtime';
+import { buildBuiltinRenderers } from '@field-types/index';
+import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 import { parseFieldSchema } from '@schema/parser';
 import { jsonResponse } from './data-merger-harness';
 
@@ -32,8 +38,21 @@ function settledWith(promise: Promise<MergeResult>): { result: MergeResult | und
   return box;
 }
 
+class IO implements IntersectionObserver {
+  readonly root: Element | Document | null = null;
+  readonly rootMargin = '';
+  readonly thresholds: readonly number[] = [];
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
+  globalThis.IntersectionObserver = IO;
 });
 
 afterEach(() => {
@@ -181,5 +200,130 @@ describe('a hook session with timeoutMs', () => {
       error: 'live preview: the server did not answer within 5000 ms',
     });
     stop();
+  });
+});
+
+describe('the DOM runtime with a merge deadline', () => {
+  /** What the runtime shows after one update with a relation, an hour after it arrived. */
+  async function settledAfter(dataMerge: { fetchFn: typeof fetch; timeoutMs?: number }) {
+    document.body.innerHTML = `
+      <h1 data-payload-field="title">From the server</h1>
+      <span data-payload-field="author" data-payload-type="relationship">Ada</span>`;
+    const runtime = new LivePreviewRuntime({
+      renderers: buildBuiltinRenderers(),
+      originMatcher: (origin) => origin === ADMIN,
+      readyTargets: [ADMIN],
+      emitter: new EventEmitter(),
+      debounceMs: 0,
+      heartbeatMs: 0,
+      disableVisibilityGate: true,
+      enableA11y: false,
+      warn: () => undefined,
+      dataMerge: { serverURL: SERVER, ...dataMerge },
+    });
+    runtime.start();
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        origin: ADMIN,
+        data: {
+          type: 'payload-live-preview',
+          collectionSlug: 'pages',
+          data: { id: '1', title: 'Typed', author: 7 },
+        },
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(4_999);
+    const before = document.querySelector('h1')?.textContent;
+    await vi.advanceTimersByTimeAsync(3_600_000);
+    const { revisions } = runtime.inspect();
+    const settled = {
+      title: document.querySelector('h1')?.textContent,
+      completed: revisions.completed,
+      active: revisions.active,
+      display: revisions.display?.state,
+    };
+    runtime.destroy();
+    return { before, settled };
+  }
+
+  it('ends where a merge the server refused ends, once the deadline passes', async () => {
+    const refused = await settledAfter({
+      fetchFn: () => Promise.resolve(jsonResponse({}, 500)),
+    });
+    const timedOut = await settledAfter({ fetchFn: hangingFetch().fetchFn, timeoutMs: 5_000 });
+    expect(timedOut.before).toBe('From the server');
+    expect(timedOut.settled).toEqual(refused.settled);
+  });
+});
+
+describe('mergeTimeoutMs on the way to the merger', () => {
+  const message = (): MessageEvent =>
+    new MessageEvent('message', {
+      origin: ADMIN,
+      data: {
+        type: 'payload-live-preview',
+        collectionSlug: 'pages',
+        data: { id: '1', title: 'Typed', author: 7 },
+      },
+    });
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <h1 data-payload-field="title">From the server</h1>
+      <span data-payload-field="author" data-payload-type="relationship">Ada</span>`;
+    // Both start only in a preview context, and a popup's opener is the simplest one to give.
+    Object.defineProperty(window, 'opener', { value: {}, configurable: true, writable: true });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, 'opener', { value: null, configurable: true, writable: true });
+  });
+
+  it('reaches the merger from LivePreviewClient', async () => {
+    const { fetchFn, signals } = hangingFetch();
+    const client = new LivePreviewClient({
+      allowedOrigins: [ADMIN],
+      serverURL: SERVER,
+      mergeDepth: 1,
+      mergeTimeoutMs: 5_000,
+      mergeFetch: fetchFn,
+      eventSourcePolicy: 'any',
+      debounceMs: 0,
+      disableVisibilityGate: true,
+    });
+    client.start();
+    window.dispatchEvent(message());
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(signals[0]?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(signals[0]?.aborted).toBe(true);
+    await client.destroy();
+  });
+
+  it('reaches the merger from slot 27 of the inline script', async () => {
+    const { fetchFn, signals } = hangingFetch();
+    vi.stubGlobal('fetch', fetchFn);
+    const given: Partial<Record<(typeof INLINE_CONFIG_KEYS)[number], unknown>> = {
+      allowedOrigins: [ADMIN],
+      serverURL: SERVER,
+      mergeDepth: 1,
+      mergeTimeoutMs: 5_000,
+      eventSourcePolicy: 'any',
+      debounceMs: 0,
+      disableVisibilityGate: true,
+    };
+    vi.stubGlobal(
+      '__LIVE_PREVIEW_CONFIG__',
+      INLINE_CONFIG_KEYS.map((key) => given[key]),
+    );
+    const api = bootstrapInlineRuntime();
+    window.dispatchEvent(message());
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(signals[0]?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(signals[0]?.aborted).toBe(true);
+    api?.destroy();
+    delete (window as { __livePreview?: unknown }).__livePreview;
+    vi.unstubAllGlobals();
   });
 });

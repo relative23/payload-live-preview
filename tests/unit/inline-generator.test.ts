@@ -218,7 +218,7 @@ describe('generateInlineScript', () => {
   });
 
   it('writes the slots in INLINE_CONFIG_KEYS order, the one table the runtime destructures', () => {
-    expect(INLINE_CONFIG_KEYS).toHaveLength(27);
+    expect(INLINE_CONFIG_KEYS).toHaveLength(28);
     expect(INLINE_CONFIG_KEYS.indexOf('fragmentEndpoint')).toBe(17);
     expect(INLINE_CONFIG_KEYS.indexOf('revealEditedField')).toBe(18);
     expect(INLINE_CONFIG_KEYS.indexOf('routeStrategy')).toBe(19);
@@ -229,6 +229,7 @@ describe('generateInlineScript', () => {
     expect(INLINE_CONFIG_KEYS.indexOf('defaults')).toBe(24);
     expect(INLINE_CONFIG_KEYS.indexOf('softNavigationEvents')).toBe(25);
     expect(INLINE_CONFIG_KEYS.indexOf('subfieldCoverage')).toBe(26);
+    expect(INLINE_CONFIG_KEYS.indexOf('mergeTimeoutMs')).toBe(27);
     const every = Object.fromEntries(
       INLINE_CONFIG_KEYS.map((key, index) => [key, `slot-${String(index)}`]),
     ) as unknown as InlineScriptConfig;

@@ -97,6 +97,7 @@ describe('inlineScriptConfig', () => {
     ['serverURL', 'https://cms.example.com', 'serverURL', 'https://cms.example.com'],
     ['apiRoute', '/api', 'apiRoute', '/api'],
     ['mergeDepth', 2, 'mergeDepth', 2],
+    ['mergeTimeoutMs', 5000, 'mergeTimeoutMs', 5000],
     ['revealEditedField', true, 'revealEditedField', true],
     ['debug', true, 'debug', true],
     ['debounceMs', 5, 'debounceMs', 5],

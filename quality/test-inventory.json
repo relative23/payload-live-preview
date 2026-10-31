@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 531,
-    "suites": 1025,
-    "tests": 4650,
+    "suites": 1027,
+    "tests": 4653,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 434,
-      "suites": 915,
-      "tests": 4248,
+      "suites": 917,
+      "tests": 4251,
       "benchmarks": 0
     }
   },
@@ -1837,8 +1837,8 @@
     {
       "path": "tests/unit/core/merge-timeout.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 7,
+      "suites": 4,
+      "tests": 10,
       "benchmarks": 0
     },
     {

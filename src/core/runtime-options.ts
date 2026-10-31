@@ -157,6 +157,8 @@ export interface RuntimeOptions {
     readonly apiRoute?: string;
     /** Population depth. */
     readonly depth?: number;
+    /** Milliseconds the merge may wait for the server. Off unless a positive finite number. */
+    readonly timeoutMs?: number;
     readonly fetchFn?: typeof fetch;
   };
   /** Debug log sink. */

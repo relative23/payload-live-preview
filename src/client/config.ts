@@ -20,6 +20,8 @@ export interface LivePreviewClientConfig {
   readonly apiRoute?: string;
   /** Population depth used with `serverURL`. Required with it; `defaults: 'v1'` falls back to `1`. */
   readonly mergeDepth?: number;
+  /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */
+  readonly mergeTimeoutMs?: number;
   /** Custom fetch for the `serverURL` merge request: attach auth headers or route through a proxy. */
   readonly mergeFetch?: typeof fetch;
   /** Verbose console output. Defaults to dev-mode detection. */

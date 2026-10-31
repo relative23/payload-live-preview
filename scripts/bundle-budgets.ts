@@ -571,6 +571,7 @@
 // 2026-10-31 (an opt-in deadline for the merge): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +386 / +131 / +93, `core.js` +386 / +140 / +134, `index.cjs` +771 / +276 / +175, `index.js` +771 / +285 / +131.
 // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+144/+111 B; prior reserves kept.
 // 2026-10-31 (an opt-in deadline for the merge): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; each keeps the reserve it had): `initLivePreview` +136 from the root, `generateInlineScript` +146, +158 from ./core, `createLivePreviewMiddleware` +142, `LEAN_RUNTIME` +157, `useLivePreviewDocument` +228 from ./react, +217 from ./vue.
+// 2026-10-31 (the runtime takes the merge deadline): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` -122 / -44 / +8, `index.js` -221 / -71 / +42.
 export const INLINE_BUDGET = { raw: 150_414, gzip: 47_391, brotli: 41_751 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps

@@ -491,6 +491,7 @@ export interface InlineScriptConfig {
     readonly hydration?: 'react' | 'vue' | 'sveltekit';
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
+    readonly mergeTimeoutMs?: number;
     // @deprecated
     readonly onUnboundChange?: 'ignore' | 'route';
     readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
@@ -753,6 +754,7 @@ export interface LivePreviewClientConfig {
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     readonly mergeFetch?: typeof fetch;
+    readonly mergeTimeoutMs?: number;
     readonly renderRichText?: RichTextRenderer;
     readonly resolveRenderer?: (fieldType: RendererKey, target: CachedElement) => FieldRenderer | undefined;
     readonly revealEditedField?: boolean;

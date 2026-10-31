@@ -55,7 +55,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +84/+39/+35 B; prior reserves kept.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-1/+30 B; the gzip ceiling stays, it fell; prior reserves kept.
   // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +386/+143/+93 B; prior reserves kept.
-  'client.cjs': { raw: 166_476, gzip: 52_128, brotli: 45_080 },
+  // 2026-10-31 (the runtime takes the merge deadline): paired Node24.22.1/npm12.0.2; -122/-45/+3 B; the raw and gzip ceilings stay, they fell; prior reserves kept.
+  'client.cjs': { raw: 166_476, gzip: 52_128, brotli: 45_083 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
