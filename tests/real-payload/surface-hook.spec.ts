@@ -259,8 +259,16 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
       headers: ADMIN_ORIGIN,
     });
     expect(loggedIn.ok()).toBe(true);
-    await page.locator('#field-title').fill('Typed after signing in again');
-    await expect(preview.getByTestId('title')).toHaveText('Typed after signing in again');
+    // The admin's answer to the edit refused above can still put that edit back into the field
+    // (WebKit, 2026-10-31: the input read "Typed after the session ended" 5 s later, so no message
+    // carried the new text). Only a fill the field keeps is an edit to wait for.
+    await expect(async () => {
+      await page.locator('#field-title').fill('Typed after signing in again');
+      await expect(page.locator('#field-title')).toHaveValue('Typed after signing in again');
+      await expect(preview.getByTestId('title')).toHaveText('Typed after signing in again', {
+        timeout: 3_000,
+      });
+    }).toPass({ timeout: 15_000 });
     await expect(preview.getByTestId('status')).toHaveText('live');
     await expect(preview.getByTestId('error')).toHaveCount(0);
   });
