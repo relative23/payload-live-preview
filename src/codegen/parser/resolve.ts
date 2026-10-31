@@ -5,7 +5,13 @@
  */
 import { createRequire } from 'node:module';
 import type * as TsMorphModule from 'ts-morph';
-import type { ArrayLiteralExpression, Identifier, Node, ObjectLiteralExpression } from 'ts-morph';
+import type {
+  ArrayLiteralExpression,
+  CallExpression,
+  Identifier,
+  Node,
+  ObjectLiteralExpression,
+} from 'ts-morph';
 
 let tsMorph: typeof TsMorphModule | undefined;
 
@@ -109,6 +115,39 @@ export function hasProperty(literal: ObjectLiteralExpression, name: string): boo
   return literal.getProperty(name) !== undefined;
 }
 
+/**
+ * What a function in this project hands back: an arrow's expression, or the
+ * `return` of a body with nothing else in it. A body that decides is left alone,
+ * since the schema would then be a guess, and the caller reports the entry.
+ */
+function returnedBy(call: CallExpression): Node | undefined {
+  const callee = unwrap(call.getExpression());
+  if (!tsNode().isIdentifier(callee)) return undefined;
+  for (const declaration of definitionsOf(callee)) {
+    const fn = tsNode().isVariableDeclaration(declaration)
+      ? declaration.getInitializer()
+      : declaration;
+    if (
+      fn === undefined ||
+      !(
+        tsNode().isFunctionDeclaration(fn) ||
+        tsNode().isArrowFunction(fn) ||
+        tsNode().isFunctionExpression(fn)
+      )
+    ) {
+      continue;
+    }
+    const body = fn.getBody();
+    if (body === undefined) continue;
+    if (!tsNode().isBlock(body)) return body;
+    const [only, ...rest] = body.getStatements();
+    if (only !== undefined && rest.length === 0 && tsNode().isReturnStatement(only)) {
+      return only.getExpression();
+    }
+  }
+  return undefined;
+}
+
 export function resolveToObjectLiteral(
   node: Node | undefined,
   seen = new Set<Node>(),
@@ -117,8 +156,14 @@ export function resolveToObjectLiteral(
   seen.add(node);
   const target = unwrap(node);
   if (tsNode().isObjectLiteralExpression(target)) return target;
-  // `buildConfig({...})`, `defineConfig({...})`: the literal is the first argument.
   if (tsNode().isCallExpression(target)) {
+    // A local field factory. One that spreads its argument over the result is a
+    // wrapper, and the field is the argument, as below.
+    const returned = resolveToObjectLiteral(returnedBy(target), seen);
+    if (returned !== undefined && !returned.getProperties().some(tsNode().isSpreadAssignment)) {
+      return returned;
+    }
+    // `buildConfig({...})`, `defineConfig({...})`: the literal is the first argument.
     return resolveToObjectLiteral(target.getArguments()[0], seen);
   }
   if (tsNode().isIdentifier(target)) {
@@ -144,6 +189,13 @@ export function resolveToArrayLiteral(
   seen.add(node);
   const target = unwrap(node);
   if (tsNode().isArrayLiteralExpression(target)) return target;
+  if (tsNode().isCallExpression(target)) {
+    const callee = target.getExpression();
+    // `fields.map(wrapper)`: a wrapper keeps each field's name and type.
+    return tsNode().isPropertyAccessExpression(callee) && callee.getName() === 'map'
+      ? resolveToArrayLiteral(callee.getExpression(), seen)
+      : resolveToArrayLiteral(returnedBy(target), seen);
+  }
   if (tsNode().isIdentifier(target)) {
     for (const declaration of definitionsOf(target)) {
       const resolved = resolveToArrayLiteral(valueOf(declaration), seen);

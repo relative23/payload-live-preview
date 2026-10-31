@@ -251,4 +251,82 @@ describe('resolution paths a config reaches by another route', () => {
       localized: false,
     });
   });
+
+  it('follows a local factory to the field it returns', () => {
+    const schema = extract({
+      '/fields.ts': `
+        export function slugField() { return { name: 'slug', type: 'text' }; }
+        export const linkField = () => ({ name: 'link', type: 'group', fields: [{ name: 'url', type: 'text' }] });
+      `,
+      '/payload.config.ts': `
+        import { slugField, linkField } from './fields';
+        export default { collections: [{ slug: 'posts', fields: [slugField(), linkField()] }] };
+      `,
+    });
+    expect(schema.diagnostics).toEqual([]);
+    expect(fieldNames(schema)).toEqual(['slug', 'link']);
+  });
+
+  it('follows a factory that returns several fields, and one behind a spread', () => {
+    const schema = extract({
+      '/payload.config.ts': `
+        function seoFields() { return [{ name: 'metaTitle', type: 'text' }]; }
+        const shared = () => [{ name: 'kicker', type: 'text' }];
+        export default {
+          collections: [{ slug: 'posts', fields: [...seoFields(), ...shared()] }],
+        };
+      `,
+    });
+    expect(schema.diagnostics).toEqual([]);
+    expect(fieldNames(schema)).toEqual(['metaTitle', 'kicker']);
+  });
+
+  it('reads through array.map(wrapper) to the fields it wraps', () => {
+    const schema = extract({
+      '/payload.config.ts': `
+        const withAdmin = (field) => ({ ...field, admin: { position: 'sidebar' } });
+        const fields = [{ name: 'title', type: 'text' }, { name: 'body', type: 'richText' }];
+        export default { collections: [{ slug: 'posts', fields: fields.map(withAdmin) }] };
+      `,
+    });
+    expect(schema.diagnostics).toEqual([]);
+    expect(fieldNames(schema)).toEqual(['title', 'body']);
+  });
+
+  it('reads a wrapper that spreads its argument by that argument', () => {
+    const schema = extract({
+      '/payload.config.ts': `
+        const withAdmin = (field) => ({ ...field, admin: { position: 'sidebar' } });
+        export default {
+          collections: [{ slug: 'posts', fields: [withAdmin({ name: 'title', type: 'text' })] }],
+        };
+      `,
+    });
+    expect(schema.diagnostics).toEqual([]);
+    expect(fieldNames(schema)).toEqual(['title']);
+  });
+
+  it('still reads buildConfig() and its like by their first argument', () => {
+    const schema = extract({
+      '/payload.config.ts': `
+        import { buildConfig } from 'payload';
+        export default buildConfig({ collections: [{ slug: 'posts', fields: [{ name: 'a', type: 'text' }] }] });
+      `,
+    });
+    expect(fieldNames(schema)).toEqual(['a']);
+  });
+
+  it('reports a factory whose return it cannot read, instead of guessing', () => {
+    const schema = extract({
+      '/payload.config.ts': `
+        import { imported } from 'some-plugin';
+        const conditional = (on) => { if (on) return { name: 'a', type: 'text' }; return { name: 'b', type: 'text' }; };
+        export default {
+          collections: [{ slug: 'posts', fields: [imported(), conditional(true), { name: 'c', type: 'text' }] }],
+        };
+      `,
+    });
+    expect(fieldNames(schema)).toEqual(['c']);
+    expect(schema.diagnostics).toHaveLength(2);
+  });
 });
