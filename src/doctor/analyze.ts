@@ -53,6 +53,27 @@ function visibleMarkup(body: string): string {
   }
 }
 
+/** Read only beside `data-payload-field`; an owner, a strategy or a dependency also means something alone. */
+const FIELD_MODIFIERS: ReadonlySet<string> = new Set(
+  [
+    'type',
+    'attribute',
+    'href',
+    'src',
+    'alt',
+    'richtext',
+    'html',
+    'text',
+    'array',
+    'array-template',
+    'array-separator',
+    'structural',
+    'locale',
+    'format',
+    'boundary',
+  ].map((name) => `data-payload-${name}`),
+);
+
 /** An attribute as the markup carries it, at the offset of its tag. */
 interface MarkupAttribute {
   readonly name: string;
@@ -78,6 +99,16 @@ function markupAttributes(markup: string): readonly MarkupAttribute[] {
     }
   }
   return found;
+}
+
+/** The modifiers on start tags that bind no field, one entry per tag. */
+function modifiersWithoutField(attributes: readonly MarkupAttribute[]): readonly string[] {
+  const bound = new Set(named(attributes, 'data-payload-field').map((attribute) => attribute.at));
+  const tags = new Map<number, string>();
+  for (const { name, at } of attributes) {
+    if (FIELD_MODIFIERS.has(name) && !bound.has(at) && !tags.has(at)) tags.set(at, name);
+  }
+  return [...tags.values()];
 }
 
 function named(attributes: readonly MarkupAttribute[], name: string): readonly MarkupAttribute[] {
@@ -302,6 +333,18 @@ function bindingFindings(
       remedy:
         'Gate binding emission on an authorized preview context — see ' +
         'createPreviewBindings(), whose suppressed form emits nothing at all.',
+    });
+  }
+  const stranded = modifiersWithoutField(preview);
+  if (stranded.length > 0) {
+    findings.push({
+      code: 'LP0711',
+      level: 'warning',
+      title: `${String(stranded.length)} element(s) carry ${stranded[0] ?? ''} or the like without a field`,
+      detail:
+        'The runtime reads these attributes only on a bound element, so they do nothing here, ' +
+        'and it says nothing about them either.',
+      remedy: 'Add data-payload-field to the element, or remove them.',
     });
   }
   if (gate.threshold !== undefined && previewBindings > gate.threshold) {

@@ -228,3 +228,42 @@ describe('binding health', () => {
     expect(report.findings.map((f) => f.code)).not.toContain('LP0706');
   });
 });
+
+describe('LP0711', () => {
+  const found = (body: string): ReturnType<typeof analyzeProbe>['findings'] =>
+    analyzeProbe(withPreview(`${RUNTIME}${body}`, CSP), context).findings.filter(
+      (finding) => finding.code === 'LP0711',
+    );
+
+  it('names a modifier on an element without a field, counted per element', () => {
+    const [finding, ...rest] = found(
+      '<h1 data-payload-field="title">T</h1>' +
+        '<span data-payload-format="number:2" data-payload-type="number">1</span>' +
+        '<a data-payload-href="url">x</a>',
+    );
+    expect(rest).toEqual([]);
+    expect(finding?.level).toBe('warning');
+    expect(finding?.title).toBe(
+      '2 element(s) carry data-payload-format or the like without a field',
+    );
+  });
+
+  it('leaves a bound element and what means something alone', () => {
+    expect(
+      found(
+        '<h1 data-payload-field="title" data-payload-format="number:2">T</h1>' +
+          '<section data-payload-owner="global:a" data-payload-depends="x" data-payload-strategy="route">' +
+          '<p data-payload-fragment="hero" data-payload-fragment-key="k"></p></section>',
+      ),
+    ).toEqual([]);
+  });
+
+  it('does not read a code sample or a script as markup', () => {
+    expect(
+      found(
+        '<h1 data-payload-field="title">T</h1><pre>&lt;i data-payload-type="x"&gt;</pre>' +
+          '<script>const s = \'<i data-payload-type="x">\';</script>',
+      ),
+    ).toEqual([]);
+  });
+});

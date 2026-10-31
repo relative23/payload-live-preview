@@ -104,6 +104,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     "A runtime row is at its 1.x value — set explicitly, by `defaults: 'v1'`, or read from a script older than 2.0.0-rc.1 that does not name its defaults (an `info` line says so). The finding says which, and what to change.",
   LP0710:
     "Correct for `inject: 'always'`. Under `'preview-only'` it means every request counts as intent: check `previewSignals` and `previewQueryParams`.",
+  LP0711:
+    'The runtime reads these attributes only on a bound element, so they do nothing here and say nothing. Add `data-payload-field` to the element, or remove them.',
   LP0801:
     "Network, timeout, or any status but 2xx, 401 and 403 from the fragment endpoint (its own 400, 404, 405, 408, 413, 415, 500 and 504 among them); the boundary was patched from the same revision. Check the endpoint's logs and its limits: a 413 means the document is larger than `limits.bodyBytes` (64 KiB by default, at least about 4 500 words of rich text). Behind some proxies, and from Firefox and WebKit on some hosts, that 413 arrives as a 502 or a network error: [deployment.md](deployment.md#the-fragment-endpoint-behind-a-proxy).",
   LP0802:
