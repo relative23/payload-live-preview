@@ -60,7 +60,10 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // marker could come back as the parsed value. No limit, capability or request path changes.
 // 2026-10-29: +11 measured code lines in origin.ts read the frame's parent where the browser names it
 // (`location.ancestorOrigins`) and send the ready handshake there instead of to the guessed localhost ports.
-export const REVIEWED_SCOPE_LINES = 1499;
+// 2026-10-31: +42 measured code lines in document-session.ts: a session given a `document` checks
+// each update's collection, global, id and locale before it moves its revision, and warns once in
+// development about an update that names no document. No request path changes.
+export const REVIEWED_SCOPE_LINES = 1541;
 
 interface OurFile {
   readonly file: string;

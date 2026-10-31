@@ -9,12 +9,15 @@
  *
  * The session is per instance (ADR 0002): two hooks on one page have two
  * mergers, two revisions and two snapshots, so a request or an error in one
- * never reaches the other. Both follow the document the admin sends: a session
- * merges every message the bus lets through, whichever document it started from.
+ * never reaches the other. A session given a `document` merges only the
+ * messages for that document; without one it follows the document the admin
+ * sends, whichever document it started from.
  */
 
+import { readDocumentId } from '@core/binding-owner';
 import { DataMerger } from '@core/data-merger';
 import { MessageBus } from '@core/message-bus';
+import { isDevMode } from '@detection/environment';
 import { OriginDetector } from '@detection/origin';
 import type { PayloadFieldSchema, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 
@@ -42,6 +45,14 @@ export interface DocumentSnapshot<T> {
   readonly revision: number;
 }
 
+/**
+ * The document a session previews: a collection document by its id, or a global by its slug.
+ * `locale` narrows it to the updates the admin sends for that locale.
+ */
+export type PreviewDocument =
+  | { readonly collection: string; readonly id: string | number; readonly locale?: string }
+  | { readonly global: string; readonly locale?: string };
+
 export interface DocumentSessionOptions {
   /** Payload server origin the update is re-fetched from. */
   readonly serverURL: string;
@@ -60,6 +71,12 @@ export interface DocumentSessionOptions {
   readonly enableReferrerDetection?: boolean;
   /** Match `localhost` origins in development. Default `true`. */
   readonly enableLocalhostMatching?: boolean;
+  /**
+   * The document this session previews. An update for another document is ignored, and so is
+   * one that does not say which document it is for: Payload 2 sends no collection or global
+   * slug, and a create screen has no id yet. Without it the session merges every update.
+   */
+  readonly document?: PreviewDocument;
   /** Injected for tests. */
   readonly fetchFn?: typeof fetch;
   /** Window to listen on. Default the global one. */
@@ -93,6 +110,8 @@ export class DocumentSession<T> {
   #attached = false;
   #schema: readonly PayloadFieldSchema[] | undefined;
   #locale: string | undefined;
+  readonly #document: PreviewDocument | undefined;
+  #warnedUnproven = false;
 
   constructor(initialData: T, options: DocumentSessionOptions) {
     this.#detector = new OriginDetector({
@@ -124,6 +143,7 @@ export class DocumentSession<T> {
       sourcePolicy: options.eventSourcePolicy ?? 'parent-or-opener',
     });
     this.#target = options.target;
+    this.#document = options.document;
     this.#initial = {
       data: initialData,
       isLoading: true,
@@ -182,9 +202,46 @@ export class DocumentSession<T> {
     return this.#attached && revision === this.#revision;
   }
 
+  /** Whether the update is for the document this session previews; any update is without one. */
+  #accepts(message: PayloadLivePreviewMessage, data: Record<string, unknown>): boolean {
+    const target = this.#document;
+    if (target === undefined) return true;
+    const { locale, globalSlug, collectionSlug } = message;
+    if (target.locale !== undefined && locale !== undefined && locale !== target.locale) {
+      return false;
+    }
+    if ('global' in target) {
+      if (globalSlug !== undefined) return globalSlug === target.global;
+      if (collectionSlug !== undefined) return false;
+    } else {
+      if (globalSlug !== undefined) return false;
+      if (collectionSlug !== undefined && collectionSlug !== target.collection) return false;
+      const id = collectionSlug === undefined ? undefined : readDocumentId(data);
+      if (id !== undefined) return id === String(target.id);
+    }
+    this.#warnUnproven(target);
+    return false;
+  }
+
+  #warnUnproven(target: PreviewDocument): void {
+    if (this.#warnedUnproven || !isDevMode()) return;
+    this.#warnedUnproven = true;
+    const named =
+      'global' in target
+        ? `global "${target.global}"`
+        : `collection "${target.collection}", id "${String(target.id)}"`;
+    console.warn(
+      `[payload-live-preview] This hook previews ${named} and ignored an update that does not ` +
+        'say which document it is for: Payload 2 sends no collection or global slug, and a ' +
+        'create screen has no id yet.',
+    );
+  }
+
   async #handle(message: PayloadLivePreviewMessage): Promise<void> {
     const data = message.data;
     if (data === undefined) return;
+    // Before the revision moves: an update for another document must not abort this one's merge.
+    if (!this.#accepts(message, data)) return;
     const revision = (this.#revision += 1);
     if (message.fieldSchemaJSON !== undefined) this.#schema = message.fieldSchemaJSON;
     const schema = this.#schema;

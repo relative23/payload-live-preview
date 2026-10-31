@@ -567,6 +567,7 @@
 // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+2/+21 B; prior reserves kept.
 // 2026-10-30 (the CSP fallback table is a Map): the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `index.cjs` +220 / +6 / +42, `index.js` +220 / +3 / +53.
 // 2026-10-30 (the CSP fallback table is a Map): the tree-shaking ceiling in tree-shaking-budgets.ts moves with the same change and is recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; it keeps the reserve it had): `createLivePreviewMiddleware` +3. csp.ts is server code: no client or inline row moves.
+// 2026-10-31 (a hook given a document merges only its updates): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, Node24.22.1, the same HEAD with and without the change; each keeps the reserve it had): `useLivePreviewDocument` +400 from ./react and +342 from ./vue.
 export const INLINE_BUDGET = { raw: 150_029, gzip: 47_247, brotli: 41_640 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps

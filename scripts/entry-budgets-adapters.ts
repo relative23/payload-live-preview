@@ -228,7 +228,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // Node24.19/npm12.0.2, epoch1791096072: +21/+10/+13 B raw/gzip/Brotli;
   // retain the prior 16/12/120 B reserves.
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +177/+54/+49 B; prior reserves kept.
-  'adapters/react/index.js': { raw: 23_404, gzip: 7_672, brotli: 7_096 },
+  // 2026-10-31 (a hook given a document merges only its updates): paired Node24.22.1/npm12.0.2; +1086/+364/+349 B; prior reserves kept.
+  'adapters/react/index.js': { raw: 24_490, gzip: 8_036, brotli: 7_445 },
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +80/+22/+22 B; same 16/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -165/-26/-29 B; same 16/12/120 B cushions.
   // 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7766/+2534/+2343 B; cushions 16/12/120 B.
@@ -238,7 +239,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // Node24.19/npm12.0.2, epoch1791096072: +21/+10/+13 B raw/gzip/Brotli;
   // retain the prior 16/12/120 B reserves.
   // 2026-10-29 (the handshake and the gate respect the page): paired Node24.22.1/npm12.0.2; +177/+56/+51 B; prior reserves kept.
-  'adapters/vue/index.js': { raw: 22_654, gzip: 7_478, brotli: 6_917 },
+  // 2026-10-31 (a hook given a document merges only its updates): paired Node24.22.1/npm12.0.2; +920/+312/+290 B; prior reserves kept.
+  'adapters/vue/index.js': { raw: 23_574, gzip: 7_790, brotli: 7_207 },
   //
   // 2026-09-06 (R4, zero-config setup): one new row. `adapters/nuxt/module.js`
   // is the build-time Nuxt module — a few hundred bytes, because all it does is

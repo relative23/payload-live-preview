@@ -75,6 +75,7 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
     eventSourcePolicy,
     enableReferrerDetection,
     enableLocalhostMatching,
+    document,
     fetchFn,
     target,
   } = options;
@@ -86,6 +87,11 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
     eventSourcePolicy ?? '',
     String(enableReferrerDetection ?? ''),
     String(enableLocalhostMatching ?? ''),
+    document === undefined
+      ? ''
+      : 'global' in document
+        ? `global ${document.global} ${document.locale ?? ''}`
+        : `collection ${document.collection} ${String(document.id)} ${document.locale ?? ''}`,
     // A separator no origin, route prefix or policy name can contain.
   ].join(' | ');
   const held = useRef<{
@@ -105,6 +111,7 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
         ...(eventSourcePolicy !== undefined ? { eventSourcePolicy } : {}),
         ...(enableReferrerDetection !== undefined ? { enableReferrerDetection } : {}),
         ...(enableLocalhostMatching !== undefined ? { enableLocalhostMatching } : {}),
+        ...(document !== undefined ? { document } : {}),
         ...(fetchFn !== undefined ? { fetchFn } : {}),
         ...(target !== undefined ? { target } : {}),
       }),
