@@ -39,6 +39,7 @@ interface PreviewProps {
   readonly serverURL?: string;
   readonly target?: Window;
   readonly document?: PreviewDocument;
+  readonly timeoutMs?: number;
 }
 
 function Preview({
@@ -47,6 +48,7 @@ function Preview({
   serverURL = SERVER,
   target,
   document,
+  timeoutMs,
 }: PreviewProps): React.JSX.Element {
   const { data, isLoading, status, error } = useLivePreviewDocument<Page>({
     serverURL,
@@ -56,6 +58,7 @@ function Preview({
     fetchFn,
     ...(target === undefined ? {} : { target }),
     ...(document === undefined ? {} : { document }),
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
   });
   return (
     <article>
@@ -275,6 +278,23 @@ describe('useLivePreviewDocument', () => {
     await settle();
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('title').textContent).toBe('Typed into two');
+  });
+
+  it('reports an update unavailable once its merge outlives timeoutMs', async () => {
+    const hanging = (() => new Promise<Response>(() => undefined)) as typeof fetch;
+    render(<Preview fetchFn={hanging} timeoutMs={20} />);
+    await act(async () => {
+      window.dispatchEvent(update('Typed'));
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 80));
+    });
+    expect(screen.getByTestId('status').textContent).toBe('unavailable');
+    expect(screen.getByTestId('error').textContent).toBe(
+      'live preview: the server did not answer within 20 ms',
+    );
+    expect(screen.getByTestId('title').textContent).toBe('From the server');
   });
 
   it('moves its listener when the target connection option changes', async () => {

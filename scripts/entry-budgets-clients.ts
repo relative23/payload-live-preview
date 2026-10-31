@@ -54,7 +54,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +199/+45/+62 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +84/+39/+35 B; prior reserves kept.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-1/+30 B; the gzip ceiling stays, it fell; prior reserves kept.
-  'client.cjs': { raw: 166_090, gzip: 51_985, brotli: 44_987 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +386/+143/+93 B; prior reserves kept.
+  'client.cjs': { raw: 166_476, gzip: 52_128, brotli: 45_080 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -92,7 +93,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-29 (2.2.1, the sanitizer writes the nodes it cleaned): paired Node24.22.1/npm12.0.2; +199/+44/+91 B; prior reserves kept.
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +84/+40/-15 B; prior reserves kept. The Brotli ceiling stays where it was: it fell.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/+0/+28 B; prior reserves kept.
-  'client.js': { raw: 166_009, gzip: 51_974, brotli: 45_010 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +386/+140/+118 B; prior reserves kept.
+  'client.js': { raw: 166_395, gzip: 52_114, brotli: 45_128 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).
@@ -147,7 +149,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +74/+28/+30 B; prior reserves kept.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-3/+5 B; the gzip ceiling stays, it fell; prior reserves kept.
   // 2026-10-30 (2.2.2 Version PR): gzip 38 673 → 38 678 (+5 B). The version string 2.2.1 → 2.2.2 keeps its length and still moved gzip: CI (Node 22.23.2) measured 38 669 at 83f66e9 and 38 674 on the Version PR, and Node 22.23.2 locally gave the same bytes; the 4 B reserve is kept.
-  'lean.cjs': { raw: 122_385, gzip: 38_678, brotli: 34_246 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+157/+115 B; prior reserves kept.
+  'lean.cjs': { raw: 122_770, gzip: 38_835, brotli: 34_361 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 757 → 91 791 (+34 B, measured 91 738 → 91 772).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 791 → 91 840 (+49 B, measured 91 772 → 91 821); gzip 29 171 → 29 183 (+12 B, measured 29 167 → 29 179).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 91 840 → 91 858 (+18 B, measured 91 821 → 91 839); gzip 29 183 → 29 190 (+7 B, measured 29 179 → 29 186).
@@ -182,7 +185,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-30 (the sanitizer checks every URL it admits): paired Node24.22.1/npm12.0.2; +74/+28/+28 B; prior reserves kept.
   // 2026-10-30 (a ping keeps its safe targets around any whitespace): paired Node24.22.1/npm12.0.2; +1/-3/-4 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
   // 2026-10-30 (2.2.2 Version PR): gzip 38 666 → 38 671 (+5 B). The version string 2.2.1 → 2.2.2 keeps its length and still moved gzip: CI (Node 22.23.2) measured 38 662 at 83f66e9 and 38 667 on the Version PR, and Node 22.23.2 locally gave the same bytes; the 4 B reserve is kept.
-  'lean.js': { raw: 122_374, gzip: 38_671, brotli: 34_206 },
+  // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +385/+157/+120 B; prior reserves kept.
+  'lean.js': { raw: 122_759, gzip: 38_828, brotli: 34_326 },
   // 2026-09-16 (2.0.1 Version PR): gzip 5 602 → 5 612. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 5 600 against a cushion of 2 B. Twelve bytes over that measurement  as the rows that never flipped carry.
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 16 307 → 16 527 (+220 B, measured 16 305 → 16 525); gzip 5 612 → 5 665 (+53 B, measured 5 600 → 5 653); brotli 5 072 → 5 162 (measured 5 072; under the 2 % notice).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 16 527 → 16 755 (+228 B, measured 16 525 → 16 753); gzip 5 665 → 5 720 (+55 B, measured 5 653 → 5 708).

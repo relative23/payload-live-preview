@@ -63,7 +63,9 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // 2026-10-31: +42 measured code lines in document-session.ts: a session given a `document` checks
 // each update's collection, global, id and locale before it moves its revision, and warns once in
 // development about an update that names no document. No request path changes.
-export const REVIEWED_SCOPE_LINES = 1541;
+// 2026-10-31: +38 measured code lines: data-merger.ts races every wait on the server against an
+// opt-in deadline (+35) and document-session.ts passes the option and names it in its error (+3).
+export const REVIEWED_SCOPE_LINES = 1579;
 
 interface OurFile {
   readonly file: string;

@@ -61,6 +61,12 @@ export interface DocumentSessionOptions {
   /** Population depth for the merge. Default `1`, as Payload's own hook. */
   readonly depth?: number;
   /**
+   * Milliseconds a merge may wait for the server; after that the update is `unavailable`
+   * and `data` stays the last good document. Off by default: a merge waits as long as the
+   * server takes.
+   */
+  readonly timeoutMs?: number;
+  /**
    * Admin origins allowed to post updates. Without one the session falls back
    * to the localhost matcher in development and trusts nothing in production.
    */
@@ -89,6 +95,7 @@ type Listener = () => void;
 function reasonFrom(line: readonly unknown[]): string {
   const [label, detail] = line;
   if (label === 'merge HTTP') return `the server answered ${String(detail)}`;
+  if (label === 'merge timeout') return `the server did not answer within ${String(detail)} ms`;
   if (label === 'merge invalid') return 'the server answered with something other than a document';
   if (label === 'merge exception') {
     return detail instanceof Error ? detail.message : 'the request failed';
@@ -127,6 +134,7 @@ export class DocumentSession<T> {
       serverURL: options.serverURL,
       ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
       ...(options.depth !== undefined ? { depth: options.depth } : {}),
+      ...(options.timeoutMs !== undefined ? { timeoutMs: options.timeoutMs } : {}),
       ...(options.fetchFn !== undefined ? { fetchFn: options.fetchFn } : {}),
       log: (...args: unknown[]) => {
         this.#lastLog = args;

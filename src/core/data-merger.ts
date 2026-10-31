@@ -3,6 +3,7 @@
  * Payload 2 sends a schema instead of a target, so it uses local values and
  * collection GETs to populate references. A newer merge aborts the one in flight,
  * and captured attempt identity drops obsolete results even when a shim ignores abort.
+ * An optional deadline aborts a merge that has not answered in time.
  */
 
 import { isolateDiagnostic, noopDiagnostic } from './diagnostics';
@@ -18,6 +19,11 @@ export interface DataMergerOptions {
   readonly depth?: number;
   readonly fetchFn?: typeof fetch;
   readonly log?: (...args: unknown[]) => void;
+  /**
+   * Milliseconds a merge may wait for the server before it is aborted and reported
+   * `unavailable`. Off unless a positive finite number.
+   */
+  readonly timeoutMs?: number;
 }
 
 export interface MergeRequest {
@@ -78,6 +84,9 @@ function isSafeId(value: unknown): value is string | number {
  * backtracks over a long run of slashes and takes quadratic time on input the
  * page supplies (CodeQL js/polynomial-redos).
  */
+/** What the deadline rejects with: no fetch, body or shim rejects with this object. */
+const TIMED_OUT = new Error();
+
 function withoutTrailingSlashes(value: string): string {
   let end = value.length;
   while (value.endsWith('/', end)) end -= 1;
@@ -90,6 +99,7 @@ export class DataMerger {
   private readonly depth: number;
   private readonly fetchFn: typeof fetch | undefined;
   private readonly log: (...args: unknown[]) => void;
+  private readonly timeoutMs: number | undefined;
   private inflight: AbortController | null = null;
   private attempt = 0;
   private destroyDepth = 0;
@@ -101,6 +111,8 @@ export class DataMerger {
     this.depth = options.depth ?? 1;
     this.fetchFn = options.fetchFn;
     this.log = isolateDiagnostic(options.log ?? noopDiagnostic);
+    const timeoutMs = options.timeoutMs ?? 0;
+    this.timeoutMs = timeoutMs > 0 && timeoutMs < Number.POSITIVE_INFINITY ? timeoutMs : undefined;
   }
 
   /** A v2 schema plans local values and GETs; a v3 target needs its document identity. */
@@ -171,6 +183,25 @@ export class DataMerger {
     let controller: AbortController | null = null;
     let legacy = false;
     const superseded = (): boolean => this.attempt !== attempt;
+    // Every wait on the server races one deadline, armed with the attempt's controller at its
+    // first request; a shim that ignores the abort cannot hold the merge past it, and what it
+    // answers later is never read.
+    const timeoutMs = this.timeoutMs;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let deadline: Promise<never> | undefined;
+    const within = <T>(work: Promise<T>, owned: AbortController): Promise<T> => {
+      if (timeoutMs === undefined) return work;
+      if (deadline === undefined) {
+        deadline = new Promise<never>((_resolve, reject) => {
+          timer = setTimeout(() => {
+            owned.abort();
+            reject(TIMED_OUT);
+          }, timeoutMs);
+        });
+        deadline.catch(() => undefined);
+      }
+      return Promise.race([work, deadline]);
+    };
     try {
       previous?.abort();
       if (superseded()) return { status: 'superseded' };
@@ -193,12 +224,15 @@ export class DataMerger {
         controller = new AbortController();
         this.inflight = controller;
         for (const population of plan.requests) {
-          const response = await fetchFn(population.url, {
-            method: 'GET',
-            credentials: 'include',
-            redirect: 'error',
-            signal: controller.signal,
-          });
+          const response = await within(
+            fetchFn(population.url, {
+              method: 'GET',
+              credentials: 'include',
+              redirect: 'error',
+              signal: controller.signal,
+            }),
+            controller,
+          );
           if (superseded()) return { status: 'superseded' };
           const ok = response.ok;
           if (superseded()) return { status: 'superseded' };
@@ -210,7 +244,10 @@ export class DataMerger {
             this.log('merge HTTP', status);
             return superseded() ? { status: 'superseded' } : { status: 'unavailable' };
           }
-          const body = await populationBody(response, controller.signal, () => !superseded());
+          const body = await within(
+            populationBody(response, controller.signal, () => !superseded()),
+            controller,
+          );
           if (superseded()) return { status: 'superseded' };
           fillLegacyPopulation(population, body);
           if (superseded()) return { status: 'superseded' };
@@ -236,18 +273,21 @@ export class DataMerger {
       controller = new AbortController();
       this.inflight = controller;
       const url = `${this.serverURL}${this.apiRoute}/${endpoint.path}`;
-      const response = await fetchFn(url, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Payload-HTTP-Method-Override': 'GET',
-        },
-        // The admin already flattens locales before posting; an absent locale
-        // is left out of the JSON.
-        body,
-        signal: controller.signal,
-      });
+      const response = await within(
+        fetchFn(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Payload-HTTP-Method-Override': 'GET',
+          },
+          // The admin already flattens locales before posting; an absent locale
+          // is left out of the JSON.
+          body,
+          signal: controller.signal,
+        }),
+        controller,
+      );
       // A fetch shim may ignore the signal; the attempt is authoritative.
       if (superseded()) return { status: 'superseded' };
       const ok = response.ok;
@@ -260,7 +300,7 @@ export class DataMerger {
       }
       const json: () => Promise<unknown> = response.json.bind(response);
       if (superseded()) return { status: 'superseded' };
-      const merged: unknown = await json();
+      const merged: unknown = await within(json(), controller);
       if (superseded()) return { status: 'superseded' };
       if (merged === null || typeof merged !== 'object' || Array.isArray(merged)) {
         this.log('merge invalid', url);
@@ -283,6 +323,10 @@ export class DataMerger {
       return { status: 'merged', doc };
     } catch (error) {
       if (superseded()) return { status: 'superseded' };
+      if (error === TIMED_OUT) {
+        this.log('merge timeout', timeoutMs);
+        return { status: 'unavailable' };
+      }
       if (legacy) {
         controller?.abort();
         if (superseded()) return { status: 'superseded' };
@@ -294,6 +338,7 @@ export class DataMerger {
       if (superseded()) return { status: 'superseded' };
       return { status: 'unavailable' };
     } finally {
+      clearTimeout(timer);
       // Only the newest attempt's controller is ever in flight: a superseded
       // attempt's is gone already, and its successor's is left alone.
       if (this.inflight === controller) this.inflight = null;
