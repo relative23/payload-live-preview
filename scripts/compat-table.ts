@@ -203,7 +203,8 @@ async function refresh(matrix: Matrix): Promise<Matrix> {
       entry.vite = range;
     }
   }
-  return { ...matrix, vite: { measured: new Date().toISOString().slice(0, 10) } };
+  // The date moves; a recorded reason (`devBelowNewest`) stays until someone removes it.
+  return { ...matrix, vite: { ...matrix.vite, measured: new Date().toISOString().slice(0, 10) } };
 }
 
 async function lockfileVersion(fixture: string, name: string): Promise<string | undefined> {
