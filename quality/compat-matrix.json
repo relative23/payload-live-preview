@@ -480,6 +480,32 @@
       }
     },
     {
+      "id": "sveltekit3-base-current",
+      "surface": "SvelteKit",
+      "feature": "server handle, base live preview and asset delivery",
+      "version": {
+        "kind": "exact",
+        "value": "3.1.1",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit3-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "sveltekit3"
+        },
+        "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"]
+      }
+    },
+    {
       "id": "sveltekit-fragment-current",
       "surface": "SvelteKit",
       "feature": "native fragment rendering",
@@ -510,6 +536,32 @@
           "executedAt": "2026-10-30T21:54:56Z",
           "conclusion": "success"
         }
+      }
+    },
+    {
+      "id": "sveltekit3-fragment-current",
+      "surface": "SvelteKit",
+      "feature": "native fragment rendering",
+      "version": {
+        "kind": "exact",
+        "value": "3.1.1",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit3-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and signed fragment endpoint",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "sveltekit3"
+        },
+        "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"]
       }
     },
     {
@@ -623,6 +675,32 @@
       }
     },
     {
+      "id": "nuxt4-base-current",
+      "surface": "Nuxt",
+      "feature": "Nitro integration, base live preview and asset delivery",
+      "version": {
+        "kind": "exact",
+        "value": "4.6.3",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt4-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "nuxt4"
+        },
+        "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"]
+      }
+    },
+    {
       "id": "nuxt-fragment-current",
       "surface": "Nuxt",
       "feature": "native Vue fragment rendering",
@@ -653,6 +731,32 @@
           "executedAt": "2026-10-30T21:54:56Z",
           "conclusion": "success"
         }
+      }
+    },
+    {
+      "id": "nuxt4-fragment-current",
+      "surface": "Nuxt",
+      "feature": "native Vue fragment rendering",
+      "version": {
+        "kind": "exact",
+        "value": "4.6.3",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt4-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and signed fragment endpoint",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "nuxt4"
+        },
+        "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"]
       }
     },
     {
@@ -1312,6 +1416,36 @@
       }
     },
     {
+      "id": "sveltekit3-real-admin-session-current",
+      "surface": "SvelteKit",
+      "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
+      "version": {
+        "kind": "exact",
+        "value": "3.1.1",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit3-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.92.1 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts",
+          "playwright.real-payload.config.ts"
+        ]
+      }
+    },
+    {
       "id": "nuxt-real-admin-session-current",
       "surface": "Nuxt",
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
@@ -1346,6 +1480,36 @@
           "executedAt": "2026-10-30T21:54:56Z",
           "conclusion": "success"
         }
+      }
+    },
+    {
+      "id": "nuxt4-real-admin-session-current",
+      "surface": "Nuxt",
+      "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
+      "version": {
+        "kind": "exact",
+        "value": "4.6.3",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt4-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.92.1 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts",
+          "playwright.real-payload.config.ts"
+        ]
       }
     },
     {
@@ -1693,6 +1857,36 @@
       }
     },
     {
+      "id": "sveltekit3-navigation-replay-current",
+      "surface": "SvelteKit",
+      "feature": "afterNavigate commit, invalidation and streamed binding replay",
+      "version": {
+        "kind": "exact",
+        "value": "3.1.1",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit3-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and hydrated SvelteKit route",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "sveltekit3"
+        },
+        "sources": [
+          "examples/sveltekit3-payload/src/routes/navigation/NavigationBridge.svelte",
+          "tests/e2e/specs/sveltekit-live-preview.spec.ts",
+          "playwright.config.ts"
+        ]
+      }
+    },
+    {
       "id": "nuxt-navigation-replay-current",
       "surface": "Nuxt",
       "feature": "route commit, refresh ordering and accepted-document replay",
@@ -1727,6 +1921,36 @@
           "executedAt": "2026-10-30T21:54:56Z",
           "conclusion": "success"
         }
+      }
+    },
+    {
+      "id": "nuxt4-navigation-replay-current",
+      "surface": "Nuxt",
+      "feature": "route commit, refresh ordering and accepted-document replay",
+      "version": {
+        "kind": "exact",
+        "value": "4.6.3",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt4-payload"
+        }
+      },
+      "mode": "development",
+      "packageForm": "copied-local-package",
+      "backend": "mock admin and hydrated Nuxt route",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "nuxt4"
+        },
+        "sources": [
+          "examples/nuxt4-payload/app/plugins/payload-live-preview-navigation.client.ts",
+          "tests/e2e/specs/nuxt-live-preview.spec.ts",
+          "playwright.config.ts"
+        ]
       }
     },
     {
@@ -1866,9 +2090,17 @@
     {
       "name": "SvelteKit",
       "package": "@sveltejs/kit",
-      "supported": "2.x",
+      "supported": "2.x and 3.x",
       "fixture": "examples/sveltekit-payload",
       "tested": [
+        {
+          "version": "3.1.1",
+          "source": "lockfile",
+          "fixture": "examples/sveltekit3-payload",
+          "browsers": ["chromium", "firefox", "webkit"],
+          "job": "sveltekit3",
+          "vite": "^8.0.12"
+        },
         {
           "version": "2.70.3",
           "source": "lockfile",
@@ -1885,9 +2117,17 @@
     {
       "name": "Nuxt",
       "package": "nuxt",
-      "supported": "3.x (end of life since 31 July 2026: kept working, not officially supported)",
+      "supported": "4.x; 3.x (end of life since 31 July 2026: kept working, not officially supported)",
       "fixture": "examples/nuxt-payload",
       "tested": [
+        {
+          "version": "4.6.3",
+          "source": "lockfile",
+          "fixture": "examples/nuxt4-payload",
+          "browsers": ["chromium", "firefox", "webkit"],
+          "job": "nuxt4",
+          "vite": "^8.3.5"
+        },
         {
           "version": "3.21.11",
           "source": "lockfile",
@@ -1958,7 +2198,7 @@
     }
   ],
   "vite": {
-    "measured": "2026-09-06",
+    "measured": "2026-10-31",
     "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE — every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 5 through 8. Remove this line when the dev tooling accepts 8."
   },
   "hooks": [
