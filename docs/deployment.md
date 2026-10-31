@@ -14,7 +14,9 @@ which the visitor request drops; `--token-param <name>` where the strategy's
 only where the strategy sets `transport: { kind: 'header' }`. Headers go with the
 preview request only and their values are never printed; a token in the URL is
 printed as `previewToken=…`. Run the doctor as `node_modules/.bin/pll` with the
-credential in an environment variable: `npx` prints the whole command line
+credential in an environment variable: `npx` prints the whole command line.
+`--header-env <var>` reads a header from the environment variable `<var>`, so
+neither that line nor the process's command line holds its value
 ([troubleshooting.md](troubleshooting.md#auditing-a-deployment-pll-doctor)).
 
 ## Preview responses and caches

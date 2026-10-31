@@ -15,9 +15,9 @@ interface ParsedArgs {
   v2: boolean;
   showHelp: boolean;
   unknown: string[];
-  /** Headers for the preview probe, from every `--header`/`-H`. */
+  /** Headers for the preview probe, from every `--header`/`-H` and `--header-env`. */
   headers: Record<string, string>;
-  /** The first `--header` or `--param` that could not be read, as the message to print. */
+  /** The first `--header`, `--header-env` or `--param` that could not be read, as the message to print. */
   usageError: string | undefined;
   /** Query parameter names from every `--param`. */
   params: string[];
@@ -31,7 +31,13 @@ const PARAM_NAME = /^[^\s&=#?-][^\s&=#]*$/u;
 /** An HTTP field name (RFC 9110 token), a colon, then the value. */
 const HEADER_LINE = /^([!#$%&'*+.^_`|~0-9A-Za-z-]+):[ \t]*(.*)$/u;
 
-function addHeader(parsed: ParsedArgs, line: string | undefined): void {
+/** A POSIX shell variable name. */
+const ENV_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/u;
+
+const HEADER_USAGE =
+  'pll doctor: --header takes "Name: value", such as --header "Cookie: payload-token=…"';
+
+function addHeader(parsed: ParsedArgs, line: string | undefined, invalid = HEADER_USAGE): void {
   // A missing value would otherwise read the next argument: `https://example.com/`
   // matches as name `https`, and `--v2` as no header at all.
   const match =
@@ -42,8 +48,7 @@ function addHeader(parsed: ParsedArgs, line: string | undefined): void {
   const value = match?.[2];
   if (name === undefined || value === undefined) {
     // The value is not echoed: a mistyped header can still hold half a token.
-    parsed.usageError ??=
-      'pll doctor: --header takes "Name: value", such as --header "Cookie: payload-token=…"';
+    parsed.usageError ??= invalid;
     return;
   }
   // Header names are case-insensitive; a second spelling would be joined onto
@@ -53,6 +58,29 @@ function addHeader(parsed: ParsedArgs, line: string | undefined): void {
     return;
   }
   parsed.headers[name] = value;
+}
+
+/**
+ * A header line read from the environment. The shell expands `--header "Cookie: …=$TOKEN"` into
+ * the doctor's argv, which every user of a Linux host can read in /proc/<pid>/cmdline while it
+ * runs; /proc/<pid>/environ is readable by the owner alone.
+ */
+function addHeaderFromEnv(parsed: ParsedArgs, name: string | undefined): void {
+  if (name === undefined || !ENV_NAME.test(name)) {
+    parsed.usageError ??=
+      'pll doctor: --header-env takes the name of an environment variable that holds "Name: value", such as --header-env PLP_DOCTOR_HEADER';
+    return;
+  }
+  const line = process.env[name];
+  if (line === undefined || line === '') {
+    parsed.usageError ??= `pll doctor: --header-env ${name}: the variable is not set`;
+    return;
+  }
+  addHeader(
+    parsed,
+    line,
+    `pll doctor: --header-env ${name} must hold "Name: value", such as "Cookie: payload-token=…"`,
+  );
 }
 
 function addParam(parsed: ParsedArgs, name: string | undefined): void {
@@ -99,7 +127,12 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
       addHeader(parsed, argv[i + 1]);
       i += 1;
     } else if (token.startsWith('--header=')) addHeader(parsed, token.slice('--header='.length));
-    else if (token === '--param') {
+    else if (token === '--header-env') {
+      addHeaderFromEnv(parsed, argv[i + 1]);
+      i += 1;
+    } else if (token.startsWith('--header-env=')) {
+      addHeaderFromEnv(parsed, token.slice('--header-env='.length));
+    } else if (token === '--param') {
       addParam(parsed, argv[i + 1]);
       i += 1;
     } else if (token.startsWith('--param=')) addParam(parsed, token.slice('--param='.length));
@@ -118,8 +151,8 @@ const HELP_TEXT = `pll doctor — audit what a live-preview deployment actually 
 pll migrate — rewrite 1.x APIs to their 2.0 names and homes
 
 Usage:
-  pll doctor <url> [--admin <origin>] [--header <name: value>]... [--param <name>]...
-             [--token-param <name>] [--json] [--v2]
+  pll doctor <url> [--admin <origin>] [--header <name: value>]... [--header-env <var>]...
+             [--param <name>]... [--token-param <name>] [--json] [--v2]
   pll migrate <path> [--write] [--only <id,id>]
 
 The URL is fetched twice: once as an ordinary visitor, without any intent
@@ -141,6 +174,12 @@ Options of pll doctor:
                         request drops. The visitor request stays anonymous and
                         values are never printed, but a shell keeps them in its
                         history, so prefer a short-lived token.
+      --header-env <var>
+                        Like --header, with "Name: value" read from the
+                        environment variable <var>; repeat it for more. The
+                        shell puts a --header value into the doctor's command
+                        line, which other users of the host can read while it
+                        runs; the environment only the doctor's owner can.
       --param <name>    A query parameter the deployment reads as preview intent,
                         for an adapter whose previewQueryParams replaces the
                         default preview, draft and livePreview; repeat it for
@@ -166,6 +205,8 @@ Examples:
   pll doctor https://example.com/blog/hello --admin https://cms.example.com
   pll doctor "https://example.com/?previewToken=$PREVIEW_TOKEN" --v2
   pll doctor https://example.com/ --header "Cookie: payload-token=$PAYLOAD_TOKEN"
+  PLP_DOCTOR_HEADER="Cookie: payload-token=$PAYLOAD_TOKEN" \\
+    pll doctor https://example.com/ --header-env PLP_DOCTOR_HEADER
 `;
 
 function isAbsoluteUrl(value: string): boolean {

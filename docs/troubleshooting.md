@@ -188,6 +188,8 @@ npx pll doctor https://www.example.com/page --admin https://cms.example.com --js
 npx pll doctor https://www.example.com/page --v2
 node_modules/.bin/pll doctor "https://www.example.com/page?previewToken=$PREVIEW_TOKEN"
 node_modules/.bin/pll doctor https://www.example.com/page --header "Cookie: payload-token=$PAYLOAD_TOKEN"
+PLP_DOCTOR_HEADER="Cookie: payload-token=$PAYLOAD_TOKEN" \
+  node_modules/.bin/pll doctor https://www.example.com/page --header-env PLP_DOCTOR_HEADER
 ```
 
 Run a command that carries a credential as `node_modules/.bin/pll`, with the
@@ -198,13 +200,18 @@ a CI log. The doctor itself never prints it. Measured on 2026-10-28 with npm
 12.0.2 and a made-up token: `npx` and `npm exec` printed it once each,
 `node_modules/.bin/pll` not at all.
 
-The environment variable keeps the value out of logs, not out of the process:
-the shell puts it into the doctor's command line, which every user of a Linux
-host can read while it runs. With a made-up token, `ps` and
+With `--header`, the environment variable keeps the value out of logs, not out
+of the process: the shell puts it into the doctor's command line, which every
+user of a Linux host can read while it runs. With a made-up token, `ps` and
 `/proc/<pid>/cmdline` (mode `444`, `/proc` without `hidepid`) showed
-`payload-token=…` in full (measured 2026-10-30). Run a command that carries a
-credential where no one else has a shell, and with one you can revoke
-afterwards: a short-lived signed token, or a session you sign out of.
+`payload-token=…` in full (measured 2026-10-30). `--header-env <var>` reads the
+whole `Name: value` line from the environment variable `<var>` instead, so the
+command line holds only the variable's name. `/proc/<pid>/environ` has mode
+`400`: another user's read of it was refused (measured 2026-10-31 on Linux 7.0),
+while the doctor's owner and root can still read it. A URL token has no such
+option, so run that command where no one else has a shell, and prefer a
+credential you can revoke afterwards: a short-lived signed token, or a session
+you sign out of.
 
 It fetches the URL twice — once as an ordinary visitor, once the way the
 admin's iframe loads it — and reports the difference. That comparison is the
@@ -228,7 +235,10 @@ and a token in the URL is shown as `previewToken=…` in the report, in `--json`
 and in a failure line. Typed out, a value stays in the shell's history; from an
 environment variable only its name does, and a short-lived token limits what a
 leak costs. A value that is
-not `Name: value`, or one header name given twice, is a usage error. `--param <name>` names a query parameter the deployment reads as
+not `Name: value`, or one header name given twice, is a usage error.
+`--header-env <var>` adds the `Name: value` line the environment variable
+`<var>` holds, under the same rules; an unset variable is a usage error too, and
+its value is not printed either. `--param <name>` names a query parameter the deployment reads as
 intent, for an adapter whose `previewQueryParams` replaces the default
 `preview`, `draft` and `livePreview`; repeat it for more. `--token-param <name>` names
 the query parameter a `signed-token` strategy reads when its transport is not the
