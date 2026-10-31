@@ -92,6 +92,9 @@ export interface RuntimeDeps {
   readonly transformValue: RuntimeOptions['transformValue'];
   readonly renderRichText: RichTextRenderer | undefined;
   readonly internalLinkPattern: string | undefined;
+  readonly routeAfterSave: boolean;
+  /** The page left `subfieldCoverage` to the 2.x default. */
+  readonly coverageByDefault: boolean;
   readonly sanitizerPolicy: SanitizerPolicyMode | undefined;
   readonly root: Document | Element;
   readonly readyTargets: () => readonly string[];

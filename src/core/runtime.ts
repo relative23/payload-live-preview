@@ -82,20 +82,19 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     sanitizerPolicy = 'strict',
     fragmentEndpoint,
     revealEditedField = false,
-    _routeStrategy = false,
+    routeStrategy = false,
     onUnboundChange,
     onUnfaithfulPatch,
     autoBind = 'off',
     hydration,
     _defaults,
     softNavigationEvents = [],
-    subfieldCoverage = 'descendant',
+    subfieldCoverage,
     mergeTimeoutMs,
     internalLinkPattern,
   ] = readBuildConfig();
-  // `routeStrategy` is destructured only to hold its wire slot: it decides
-  // which prelude the generator emitted, and the prelude's presence is what the
-  // runtime can observe.
+  // Which prelude the generator emitted is what the runtime can observe of
+  // `routeStrategy`, whose slot adds only when a route may run.
   const strategies = resolveStrategyPreludes(fragmentEndpoint);
 
   const detector = new OriginDetector({
@@ -137,6 +136,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
         }
       : {}),
     ...(internalLinkPattern === undefined ? {} : { internalLinkPattern }),
+    ...(routeStrategy === 'after-save' ? { routeAfterSave: true } : {}),
     debounceMs,
     heartbeatMs,
     intersectionRootMargin,
@@ -144,7 +144,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     visibilityGateThreshold,
     enableA11y,
     scopeBindingsByOwner,
-    subfieldCoverage,
+    ...(subfieldCoverage === undefined ? {} : { subfieldCoverage }),
     skipUnchanged,
     revealEditedField,
     // Resolved here rather than passed through as two slots: an empty slot must

@@ -232,6 +232,10 @@ Notes on the rows that need one:
   same-origin path the runtime posts to, and which framework serves that path
   is the endpoint's business, not the option's. `LivePreviewClient` takes
   `strategies` instead ([docs/hybrid.md](hybrid.md)).
+- `routeStrategy: 'after-save'` holds every route render until Payload reports a
+  save: before it, a GET shows nothing the editor typed and costs a server render.
+  It also applies beside `fragments`. `LivePreviewClient` takes `routeAfterSave:
+true`.
 - `routeStrategy` puts the route strategy alone ahead of the runtime, for a page
   that wants a route refresh without a fragment endpoint. `fragmentEndpoint`
   implies it and the two are never emitted together, because the fragment

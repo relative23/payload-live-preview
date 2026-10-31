@@ -24,6 +24,8 @@ export interface LivePreviewClientConfig {
   readonly mergeTimeoutMs?: number;
   /** The route of a Lexical internal link with no `url` of its own, as `/{locale}/{slug}/`. */
   readonly internalLinkPattern?: string;
+  /** Hold a route render until Payload reports the save: the route shows what is saved. */
+  readonly routeAfterSave?: boolean;
   /** Custom fetch for the `serverURL` merge request: attach auth headers or route through a proxy. */
   readonly mergeFetch?: typeof fetch;
   /** Verbose console output. Defaults to dev-mode detection. */

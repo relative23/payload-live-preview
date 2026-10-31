@@ -154,6 +154,7 @@ export class LivePreviewRuntime {
       transformValue: options.transformValue,
       renderRichText: options.renderRichText,
       internalLinkPattern: options.internalLinkPattern,
+      routeAfterSave: options.routeAfterSave === true,
       sanitizerPolicy: options.sanitizerPolicy,
       root,
       readyTargets:
@@ -173,6 +174,7 @@ export class LivePreviewRuntime {
       mergeWindowMs: options.debounceMs ?? DEFAULT_DEBOUNCE_MS,
       scopeBindingsByOwner: options.scopeBindingsByOwner === true,
       subfieldCoverage: options.subfieldCoverage ?? 'descendant',
+      coverageByDefault: options.subfieldCoverage === undefined,
       lockedOrigin: options.lockedOrigin ?? ((): undefined => undefined),
       skipUnchanged: options.skipUnchanged === true,
       dependencies: options.dependencies ?? {},

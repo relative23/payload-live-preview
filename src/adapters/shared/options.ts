@@ -119,8 +119,10 @@ export interface PreviewAdapterOptions<Req = Request> {
    * Carry the route strategy: a binding in `<head>` or one marked
    * `data-payload-strategy="route"` then refreshes the route. Implied by
    * `fragments`, whose prelude already contains it. Default `false`.
+   * `'after-save'` renders the route only once Payload reports a save: before it, a
+   * GET shows nothing the editor typed and costs a server render.
    */
-  readonly routeStrategy?: boolean;
+  readonly routeStrategy?: boolean | 'after-save';
   /**
    * The 2.0 name for `onUnfaithfulPatch`, kept until 3.0. `'route'` means
    * `'escalate'`, `'ignore'` means `'ignore'`.
