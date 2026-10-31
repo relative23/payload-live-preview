@@ -237,6 +237,19 @@ rather than the object around it. A group with a binding on any path inside it
 counts as addressed and is not reported, and arrays are left alone — an array
 item without an anchor is a template decision.
 
+A template that renders an element only for a value, `{x && <p>{x}</p>}`, leaves
+nothing to patch while the value is empty. Render the anchor unconditionally, as
+above. A choice between two fields, `a ?? b`, is a decision the runtime cannot
+see, so put it in a `data-payload-fragment` boundary or bind it with
+`data-payload-strategy="route"`; the server then decides it again.
+
+In a locale other than the default, Payload sends `null`, or no key, for a field
+with no translation. The admin's form state does not apply `fallbackLocale`, so
+`null` clears what the server drew from the fallback, and the page shows an empty
+element until the next render. Where that matters, render the field from a
+`data-payload-fragment` boundary or the route, where your server applies the
+fallback.
+
 A binding on an index path such as `items.0.title` follows the position, not the
 row. When another row now stands at that position, going by the rows' `id`, the
 title still lands, but the image and any other markup without a binding belong

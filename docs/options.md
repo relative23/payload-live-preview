@@ -391,6 +391,10 @@ ones, as `@beta` on the declarations in the API reports (`etc/api/*.api.md`):
   minor with a changeset, and the exit codes and the report shapes are the
   contract.
 
+The options in the table at the top of this page are all Stable: none of them
+carries `@beta`, in the adapter options, the inline configuration, the client or
+the runtime.
+
 | Entry                                                | Class        | Contents                                                                                                                                                                                                  |
 | ---------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `payload-live-preview`                               | Stable       | Client, inline script generator, renderers, built-in plugins, authorization and binding helpers; not the exports named above.                                                                             |
