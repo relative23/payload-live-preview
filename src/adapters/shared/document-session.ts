@@ -17,6 +17,7 @@
 import { readDocumentId } from '@core/binding-owner';
 import { DataMerger } from '@core/data-merger';
 import { MessageBus } from '@core/message-bus';
+import { PAYLOAD_2_HINT } from '@core/protocol-version';
 import { isDevMode } from '@detection/environment';
 import { OriginDetector } from '@detection/origin';
 import type { PayloadFieldSchema, PayloadLivePreviewMessage } from '@/types/payload-protocol';
@@ -119,6 +120,7 @@ export class DocumentSession<T> {
   #locale: string | undefined;
   readonly #document: PreviewDocument | undefined;
   #warnedUnproven = false;
+  #warnedPayload2 = false;
 
   constructor(initialData: T, options: DocumentSessionOptions) {
     this.#detector = new OriginDetector({
@@ -248,6 +250,10 @@ export class DocumentSession<T> {
   async #handle(message: PayloadLivePreviewMessage): Promise<void> {
     const data = message.data;
     if (data === undefined) return;
+    if (message.fieldSchemaJSON !== undefined && !this.#warnedPayload2 && isDevMode()) {
+      this.#warnedPayload2 = true;
+      console.warn(PAYLOAD_2_HINT);
+    }
     // Before the revision moves: an update for another document must not abort this one's merge.
     if (!this.#accepts(message, data)) return;
     const revision = (this.#revision += 1);

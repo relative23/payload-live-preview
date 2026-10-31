@@ -65,7 +65,9 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // development about an update that names no document. No request path changes.
 // 2026-10-31: +38 measured code lines: data-merger.ts races every wait on the server against an
 // opt-in deadline (+35) and document-session.ts passes the option and names it in its error (+3).
-export const REVIEWED_SCOPE_LINES = 1579;
+// 2026-10-31: +6 measured code lines: a message with `fieldSchemaJSON` warns once in development that
+// 3.0 ends Payload 2 support, from the protocol tracker and from document-session.ts. No request path changes.
+export const REVIEWED_SCOPE_LINES = 1585;
 
 interface OurFile {
   readonly file: string;
