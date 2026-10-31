@@ -24,6 +24,9 @@
  * `data-payload-strategy="patch"` is written explicitly: the wrapper is a
  * patch target; markup a server renders instead lives in a
  * `data-payload-fragment` boundary (docs/hybrid.md).
+ *
+ * Where `authorizePreview` decides, a response it did not authorize keeps the
+ * wrapper and carries no `data-payload-*`, as the gated helpers do (ADR 0006).
  */
 
 interface Props {
@@ -50,14 +53,24 @@ function isEmpty(candidate: unknown): boolean {
 
 const Tag = as;
 const empty = isEmpty(value);
+const locals = Astro.locals as {
+  livePreviewRequiresAuthorization?: boolean;
+  livePreviewAuthorization?: unknown;
+};
+const binding =
+  locals.livePreviewRequiresAuthorization === true && locals.livePreviewAuthorization === undefined
+    ? {}
+    : {
+        'data-payload-field': field,
+        'data-payload-type': type,
+        'data-payload-boundary': '',
+        'data-payload-strategy': 'patch',
+      };
 ---
 
 <Tag
   {...rest}
-  data-payload-field={field}
-  data-payload-type={type}
-  data-payload-boundary=""
-  data-payload-strategy="patch"
+  {...binding}
   hidden={empty ? true : undefined}
 >
   <slot />

@@ -23,6 +23,12 @@ export interface LivePreviewLocals {
   readonly livePreviewAuthorization?: AuthorizedPreviewContext;
   /** The hook's `PreviewAuthorizationOutcome`, refusals included. Set whenever the hook ran: on intent, with `authorizePreview` configured. */
   readonly livePreviewAuthorizationOutcome?: PreviewAuthorizationOutcome;
+  /**
+   * `true` on a request the Astro middleware decides with `authorizePreview`:
+   * without `livePreviewAuthorization`, `PreviewBoundary` and `RichText` then write
+   * no binding. Absent on a prerendered page, which has no request to decide for.
+   */
+  readonly livePreviewRequiresAuthorization?: boolean;
 }
 
 /** The request-scoped nonce, for templates that nonce their own scripts. @internal */
@@ -79,7 +85,7 @@ export function exposeDecision(
  * `App.Locals` declaration in the project it writes into. The verdict is
  * checked, not trusted — only a context `authorizePreviewRequest()` produced
  * emits anything (ADR 0006).
- * @internal
+ * @public
  */
 export function previewBindingsFromLocals(
   locals: unknown,

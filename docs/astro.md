@@ -260,6 +260,8 @@ It writes `data-payload-strategy="patch"` explicitly. Markup whose conditional l
 
 Wrap such a component in a `data-payload-fragment` boundary, export an endpoint from a route with `createFragmentEndpoint()` (from `payload-live-preview/astro`), and pass its path to the integration or the middleware as `fragments: { endpoint: '/payload/fragment' }`, with a trailing slash under `trailingSlash: 'always'` ([hybrid.md](hybrid.md#what-a-deployment-needs)). The runtime then posts the unsaved fields to that endpoint and morphs the server-rendered result in. A boundary on a page without a configured endpoint is patched instead and reports `LP0806` once. Markup, endpoint, registry and deployment requirements: [hybrid.md](hybrid.md).
 
+`PreviewBoundary` and `RichText` read the verdict the middleware published. Where `authorizePreview` decides, a response it did not authorize keeps the element and carries no `data-payload-*`. A prerendered page or a page outside the middleware has no request to decide for, so it keeps the attributes, as `mode: 'inline'` does.
+
 ## Client navigation
 
 With Astro's `<ClientRouter />` no bridge is needed: the integration declares `astro:page-load`, so after each swap the runtime rebuilds its bindings and reapplies the last accepted editor document. The first `astro:page-load` of a document is ignored, because it is not a router commit. The Next.js, SvelteKit and Nuxt guides install a small host bridge instead ([deployment.md](deployment.md#navigation)).

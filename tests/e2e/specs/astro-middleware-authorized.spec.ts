@@ -32,6 +32,31 @@ test.describe('the Astro middleware setup under the strict default', () => {
     expect(html).not.toContain('__LIVE_PREVIEW_CONFIG__');
   });
 
+  test('PreviewBoundary and RichText carry no binding attribute for anyone unauthorized', async ({
+    request,
+    page,
+  }) => {
+    for (const path of [
+      '/gated',
+      '/gated?preview=true',
+      '/gated?preview=true&previewToken=x.y.z',
+    ]) {
+      const html = await (await request.get(`${APP}${path}`)).text();
+      expect(html, path).toContain('data-testid="anchor"');
+      expect(html, path).not.toContain('data-payload-');
+    }
+    await page.goto(`${APP}/admin`);
+    const token = new URL(
+      (await waitForPreviewFrame(page, 'previewToken=')).url(),
+    ).searchParams.get('previewToken');
+    const authorized = await (
+      await request.get(`${APP}/gated?preview=true&previewToken=${token ?? ''}`)
+    ).text();
+    expect(authorized).toContain('data-payload-field="subtitle"');
+    expect(authorized).toContain('data-payload-boundary');
+    expect(authorized).toContain('data-payload-field="body"');
+  });
+
   test('a forged token receives the public page', async ({ request }) => {
     const response = await request.get(`${APP}/?preview=true&previewToken=forged.token.value`);
     const html = await response.text();

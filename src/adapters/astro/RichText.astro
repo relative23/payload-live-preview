@@ -70,6 +70,17 @@ const {
   requireDocument,
 } = Astro.props;
 const Tag = tag;
+const locals = Astro.locals as {
+  livePreviewRequiresAuthorization?: boolean;
+  livePreviewAuthorization?: unknown;
+};
+// Where `authorizePreview` decides, a response it did not authorize carries no binding (ADR 0006).
+const bound =
+  field !== undefined &&
+  !(
+    locals.livePreviewRequiresAuthorization === true &&
+    locals.livePreviewAuthorization === undefined
+  );
 const html = isLexicalContent(value)
   ? lexicalToHtml(value, {
       ...(sanitizerDocument === undefined ? {} : { document: sanitizerDocument }),
@@ -80,7 +91,7 @@ const html = isLexicalContent(value)
 
 <Tag
   class={className}
-  data-payload-field={field}
-  data-payload-richtext={field !== undefined ? '' : undefined}
+  data-payload-field={bound ? field : undefined}
+  data-payload-richtext={bound ? '' : undefined}
   set:html={html}
 />
