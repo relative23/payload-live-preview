@@ -16,6 +16,11 @@ export interface FieldBindingAttributes {
   readonly 'data-payload-alt'?: string;
   readonly 'data-payload-href'?: string;
   readonly 'data-payload-array-template'?: string;
+  readonly 'data-payload-format'?: string;
+  readonly 'data-payload-text'?: string;
+  readonly 'data-payload-strategy'?: string;
+  readonly 'data-payload-depends'?: string;
+  readonly 'data-payload-boundary'?: string;
 }
 
 export interface BindOptions {
@@ -35,6 +40,19 @@ export interface BindOptions {
   readonly href?: string;
   /** Markup per array item with `{{value}}` placeholders. */
   readonly arrayTemplate?: string;
+  /** How a date or number is written, from `data-payload-format`'s vocabulary. */
+  readonly format?: string;
+  /** Let a text write replace the element's children. */
+  readonly text?: boolean;
+  /** Who shows this field: the patch (default), a server-rendered fragment, or the route. */
+  readonly strategy?: 'patch' | 'fragment' | 'route';
+  /** Fields whose change re-applies this binding under `skipUnchanged`. */
+  readonly dependsOn?: readonly string[];
+  /**
+   * An anchor for a field that may be empty, so an edit that fills it has somewhere to
+   * land. Set `hidden` yourself while the value is empty; the runtime keeps it right after that.
+   */
+  readonly anchor?: boolean;
 }
 
 /** `bind<Homepage>('heroTitle')`; without `T` any string is accepted. */
@@ -76,6 +94,11 @@ function buildAttributes(field: string, options: BindOptions | undefined): Field
     'data-payload-alt'?: string;
     'data-payload-href'?: string;
     'data-payload-array-template'?: string;
+    'data-payload-format'?: string;
+    'data-payload-text'?: string;
+    'data-payload-strategy'?: string;
+    'data-payload-depends'?: string;
+    'data-payload-boundary'?: string;
   } = { 'data-payload-field': field };
   if (options?.attribute !== undefined) attrs['data-payload-attribute'] = options.attribute;
   if (options?.type !== undefined) attrs['data-payload-type'] = options.type;
@@ -88,6 +111,13 @@ function buildAttributes(field: string, options: BindOptions | undefined): Field
   if (options?.arrayTemplate !== undefined) {
     attrs['data-payload-array-template'] = options.arrayTemplate;
   }
+  if (options?.format !== undefined) attrs['data-payload-format'] = options.format;
+  if (options?.text === true) attrs['data-payload-text'] = '';
+  if (options?.strategy !== undefined) attrs['data-payload-strategy'] = options.strategy;
+  if (options?.dependsOn !== undefined && options.dependsOn.length > 0) {
+    attrs['data-payload-depends'] = options.dependsOn.join(',');
+  }
+  if (options?.anchor === true) attrs['data-payload-boundary'] = '';
   return attrs;
 }
 
