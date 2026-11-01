@@ -1,11 +1,11 @@
 {
   "workflow": "ci.yml",
-  "id": 41113847498,
-  "url": "https://github.com/relative23/payload-live-preview/actions/runs/41113847498",
-  "commit": "83f66e927fb8f97ff3e707e938d90fc6995720cc",
+  "id": 41324897947,
+  "url": "https://github.com/relative23/payload-live-preview/actions/runs/41324897947",
+  "commit": "c9ffe5da3c063d64f473c0b3f0beffe701758b90",
   "event": "push",
   "conclusion": "success",
-  "executedAt": "2026-10-30T21:54:56Z",
+  "executedAt": "2026-11-01T18:58:23Z",
   "jobs": [
     {
       "conclusion": "success",
