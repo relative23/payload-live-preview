@@ -1,6 +1,6 @@
 # Payload version lanes
 
-Prepare separate Linux consumers for Payload 2.32.3, 3.90.2 and 4.0.0-beta.4.
+Prepare separate Linux consumers for Payload 2.32.3, 3.90.2 and 4.0.0-beta.6.
 Each consumer keeps its own archive, dependency lock, database and reports.
 Use this example from the repository root with a selected package archive.
 
@@ -12,7 +12,7 @@ Use this example from the repository root with a selected package archive.
 
 These Node values are lane requirements, not measurements of the SDK's Node
 floor. Pre-release results do not grant stable Payload support. A v4 protocol
-profile needs actual wire evidence and a separate review; the 4.0.0-beta.4 corpus
+profile needs actual wire evidence and a separate review; the 4.0.0-beta.6 corpus
 in `tests/fixtures/wire-corpus` is that evidence for this version, and the review
 is still open. An API change can leave this lane red.
 

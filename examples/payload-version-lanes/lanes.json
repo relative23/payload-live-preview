@@ -157,14 +157,14 @@
       "scope": "Fresh isolated regular dependency consumer, actual native SSR/hydration/remount/document/target and credential-free actual wire metadata. v4 remains a pre-release characterization with profile review required, never transferred to v3 support."
     },
     "v4": {
-      "version": "4.0.0-beta.4",
+      "version": "4.0.0-beta.6",
       "nodeMinimum": "24.22.1",
       "admin": "Next16.4.3 webpack",
       "versions": {
-        "payload": "4.0.0-beta.4",
-        "@payloadcms/next": "4.0.0-beta.4",
-        "@payloadcms/db-sqlite": "4.0.0-beta.4",
-        "@payloadcms/richtext-lexical": "4.0.0-beta.4",
+        "payload": "4.0.0-beta.6",
+        "@payloadcms/next": "4.0.0-beta.6",
+        "@payloadcms/db-sqlite": "4.0.0-beta.6",
+        "@payloadcms/richtext-lexical": "4.0.0-beta.6",
         "next": "16.4.3",
         "react": "19.2.8",
         "react-dom": "19.2.8",
@@ -184,57 +184,57 @@
       "officialReceipts": [
         {
           "name": "payload",
-          "version": "4.0.0-beta.4",
+          "version": "4.0.0-beta.6",
           "peerDependencies": {
             "graphql": "^16.8.1"
           },
           "nodeEngine": ">=24.22.1",
-          "primarySource": "https://registry.npmjs.org/payload/-/payload-4.0.0-beta.4.tgz",
-          "integrity": "sha512-dBQY7gAQsQWMLnh3HabHkTHb+8KFn1LcQJh+mLUQfNcbWUU6NDl77Q8U/sNz05QmUBwkEhkLvc7MgnFKkWK5Ow==",
+          "primarySource": "https://registry.npmjs.org/payload/-/payload-4.0.0-beta.6.tgz",
+          "integrity": "sha512-4mqkbVq8N+M8Cw1GYohU6f8X38RtcZUCBBDMIULT90/Kaj06wMPYjBzyLWYRuxsMMcY+ihpYtBex3swPCjrxpw==",
           "receiptSource": "registry/v4-payload.json",
-          "receiptSHA256": "ef85fff73b9f372831ce731cb4920ee670536de8c809e86dbecb3bfb71908d0d"
+          "receiptSHA256": "b48453b763c3648ff8d3f849ab55d98475357476e0a337046d59d6fb562f07ea"
         },
         {
           "name": "@payloadcms/next",
-          "version": "4.0.0-beta.4",
+          "version": "4.0.0-beta.6",
           "peerDependencies": {
             "next": ">=16.4.0 <17.0.0",
             "graphql": "^16.8.1",
-            "payload": "4.0.0-beta.4"
+            "payload": "4.0.0-beta.6"
           },
           "nodeEngine": ">=24.22.1",
-          "primarySource": "https://registry.npmjs.org/@payloadcms/next/-/next-4.0.0-beta.4.tgz",
-          "integrity": "sha512-abQ/AjGpx44vSQeTukkPE/1SgKmsdWcZjdFOrYU8ofDsHC9dc3IFQX/Yi5Cg3X395WhB09TZHB8oqbZ8r86V3Q==",
+          "primarySource": "https://registry.npmjs.org/@payloadcms/next/-/next-4.0.0-beta.6.tgz",
+          "integrity": "sha512-arkEmZKAm0OC1qSnnbMEeKfEfM3Pp3Nic6Xf6eLZWck6o9Kwh6KQdlm1id9k1Hy52VC3YuQd58jjl+AOun1+aA==",
           "receiptSource": "registry/v4-next.json",
-          "receiptSHA256": "23fe4be4aa9fdc6f3aa17c6422cda5a7047f11cdd1d8ee33870bf0ac8c532835"
+          "receiptSHA256": "0c257f296905da580000710779bd3da0ad7fad31d52d307fb59553895fcd083e"
         },
         {
           "name": "@payloadcms/db-sqlite",
-          "version": "4.0.0-beta.4",
+          "version": "4.0.0-beta.6",
           "peerDependencies": {
-            "payload": "4.0.0-beta.4"
+            "payload": "4.0.0-beta.6"
           },
           "nodeEngine": null,
-          "primarySource": "https://registry.npmjs.org/@payloadcms/db-sqlite/-/db-sqlite-4.0.0-beta.4.tgz",
-          "integrity": "sha512-wBYg3izzaG8AmIquo3yX0tGJgrLQNmkC/YMPHAZa2mPzVGnjnuc2b+8sHhXJm02MKf7LHd/d3pIuDYYoLfL8Ig==",
+          "primarySource": "https://registry.npmjs.org/@payloadcms/db-sqlite/-/db-sqlite-4.0.0-beta.6.tgz",
+          "integrity": "sha512-M1i74O0pYZCc8+Apjh30raTFmDsVyfoIisadABjqpqONTWMOXHMdD+OLBsdB5ZEov0g9RHtub2Zeahe6NY5vqA==",
           "receiptSource": "registry/v4-db-sqlite.json",
-          "receiptSHA256": "007d91fd62bc55ac981622f57514f58eb28556280335db8f36d06a423462091a"
+          "receiptSHA256": "ea3c8f40f59b6ba480ecdd3de664e1cf8f5a4cdef26f17d3d80210f15e62d2e4"
         },
         {
           "name": "@payloadcms/richtext-lexical",
-          "version": "4.0.0-beta.4",
+          "version": "4.0.0-beta.6",
           "peerDependencies": {
             "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
-            "payload": "4.0.0-beta.4",
+            "payload": "4.0.0-beta.6",
             "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1",
             "@faceless-ui/modal": "3.0.2",
             "@faceless-ui/scroll-info": "2.0.0"
           },
           "nodeEngine": ">=24.22.1",
-          "primarySource": "https://registry.npmjs.org/@payloadcms/richtext-lexical/-/richtext-lexical-4.0.0-beta.4.tgz",
-          "integrity": "sha512-5YOj8fAd0kl7EZRv6XMkkJWWiX2PvIOo9Uwu+PI4GDY6qJyVTX2oO78kNYPDevYfY4P0tfZEn+TBItsHWD1SCg==",
+          "primarySource": "https://registry.npmjs.org/@payloadcms/richtext-lexical/-/richtext-lexical-4.0.0-beta.6.tgz",
+          "integrity": "sha512-yQJkQVQvRLj9mOWoDnD6x2dLyA2Mwf6Oy9ZVJ/8DScw13h1fA98rnoBKNYhZSOsOrL/uYBWxrzpMJ2f0/Aurtw==",
           "receiptSource": "registry/v4-richtext-lexical.json",
-          "receiptSHA256": "91b53e6ae385d2fa8198eec4df0c8fb7719995bf3afc67d45932c1da8c135e66"
+          "receiptSHA256": "30f1ed7bd9be08c79da753eb4cbdadf2ef9cd78c4c0cc37484ead16787ddfc47"
         }
       ],
       "ports": {
@@ -255,6 +255,6 @@
     "Explicit resource release; no active mutation",
     "Fresh own DB and no earlier native probe output"
   ],
-  "v4ProfileDecision": "Observed credential-free wire shape only. The 4.0.0-beta.4 corpus in tests/fixtures/wire-corpus is the captured evidence for this version; a production v4 profile still requires review under ADR0010.",
+  "v4ProfileDecision": "Observed credential-free wire shape only. The 4.0.0-beta.6 corpus in tests/fixtures/wire-corpus is the captured evidence for this version; a production v4 profile still requires review under ADR0010.",
   "integrationTarget": "examples/payload-version-lanes; a portable developmental fixture with no dependency trees, reports, databases, private maintainer docs or retained archives in its source tree."
 }

@@ -2230,6 +2230,11 @@
       "source": "tests"
     },
     {
+      "version": "4.0.0-beta.6",
+      "how": "wire corpus captured on 2026-11-01 from a real Payload 4 admin (examples/payload-backend with payload@4.0.0-beta.6 installed over it, Node 24.22.1), replayed in tests/integration/wire-corpus.test.ts. The messages have the same top-level and field keys as the 4.0.0-beta.4 capture",
+      "source": "corpus"
+    },
+    {
       "version": "4.0.0-beta.4",
       "how": "wire corpus captured on 2026-10-26 from a real Payload 4 admin (examples/payload-backend with payload@4.0.0-beta.4 installed over it, Node 24.22.1), replayed in tests/integration/wire-corpus.test.ts; the fixture itself stays on 3.x",
       "source": "corpus"
