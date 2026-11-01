@@ -34,7 +34,7 @@
     "playwright.config.ts": "b482f7758414803fcaeefbe67ca8119260104d9722a345102f4fabcced7afd89",
     "playwright.fragment-lifetime.config.ts": "c2dac52bfb8d24ecc72b8e2fa81c343be404baa85601254c5a6f9b023899a071",
     "playwright.nuxt-production.config.ts": "cd46c65535ba0df2f133ec9ef66d21eb2a7e7ce7f148aff64e4106e073ef5a07",
-    "playwright.real-payload.config.ts": "c8e1ec82e6f5e1cb810df6c4c62b26f10233b81a45c760cde3535631e7b4c73f",
+    "playwright.real-payload.config.ts": "1ccfbf3d15da9028e73cf864269bd6e8f9112d664f3a28bbde3051b55cad5b6c",
     "scripts/fixture-proxy-lifetime.mjs": "1404361dbfc1d740daa0b80cb40301016c351726210ae865daca85784700a3f5",
     "scripts/node-production-fixture.mjs": "49cae197cc4e7cbb8f6f44653888c888c9488aea8bed8d3395e6efa68bf9b1bd",
     "scripts/nuxt-production-fixture.mjs": "23f0901a640383662021cd08722d7ad511327ab72aff0ed88c08d401b7eed8be",

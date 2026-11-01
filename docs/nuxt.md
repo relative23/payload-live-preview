@@ -2,7 +2,7 @@
 
 Nuxt with server-side rendering. A Nitro plugin injects the runtime into authorized preview responses and merges the CSP; a server handler decides before the Vue app renders, so pages can read the decision from `event.context`.
 
-Nuxt 4 is supported. Nuxt 3 reached its [end of life](https://nuxt.com/docs/4.x/community/roadmap) on 31 July 2026 and is no longer supported here officially. It keeps working: the example still runs on Nuxt 3.21.11, and nothing in 2.x breaks it on purpose. CI runs the example in Nuxt 4.6.3's `app/` layout on every push (`examples/nuxt4-payload`), against the mock admin and from the real admin in Chromium, Firefox and WebKit, on its development server. The production jobs build the Nuxt 3 example; the Nuxt 4 production build passed the production suite outside CI (54 of 54, 2026-10-30).
+Nuxt 4 is supported. Nuxt 3 reached its [end of life](https://nuxt.com/docs/4.x/community/roadmap) on 31 July 2026 and is no longer supported here officially. It keeps working: the example still runs on Nuxt 3.21.11, and nothing in 2.x breaks it on purpose. CI runs the example in Nuxt 4.6.3's `app/` layout on every push (`examples/nuxt4-payload`), against the mock admin and from the real admin in Chromium, Firefox and WebKit, on its development server. CI also drives the Nuxt 4 production build from the real admin. The `production-lifecycle` job builds the Nuxt 3 example; the Nuxt 4 production build passed the production suite outside CI (54 of 54, 2026-10-30).
 
 Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to, `SITE_ORIGIN` this site's own origin, and `TOKEN_SECRET` the secret the Payload side shares for signed tokens.
 

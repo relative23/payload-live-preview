@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 540,
-    "suites": 1046,
-    "tests": 4732,
+    "files": 541,
+    "suites": 1047,
+    "tests": 4739,
     "benchmarks": 12
   },
   "groups": {
@@ -51,9 +51,9 @@
       "benchmarks": 0
     },
     "real-payload": {
-      "files": 8,
-      "suites": 8,
-      "tests": 34,
+      "files": 9,
+      "suites": 9,
+      "tests": 41,
       "benchmarks": 0
     },
     "soak": {
@@ -719,6 +719,13 @@
       "group": "real-payload",
       "suites": 1,
       "tests": 3,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/real-payload/surface-findings.spec.ts",
+      "group": "real-payload",
+      "suites": 1,
+      "tests": 7,
       "benchmarks": 0
     },
     {

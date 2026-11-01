@@ -1,9 +1,9 @@
 import { rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { buildConfig, type CollectionConfig, type Field } from 'payload';
+import { buildConfig, type CollectionConfig, type Field, type GlobalConfig } from 'payload';
 import { sqliteAdapter } from '@payloadcms/db-sqlite';
-import { lexicalEditor } from '@payloadcms/richtext-lexical';
+import { BlocksFeature, lexicalEditor } from '@payloadcms/richtext-lexical';
 import { livePreview } from 'payload-live-preview/plugin';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,6 +28,8 @@ const ADMIN_ORIGIN = 'http://localhost:3001';
  * shared `e2e.db`.
  */
 const COLLECTIONS = process.env.PLP_REAL_PAYLOAD_COLLECTIONS === '1';
+/** `PLP_REAL_PAYLOAD_FINDINGS=1` (the `findings` target) adds the global its page shows. */
+const FINDINGS = process.env.PLP_REAL_PAYLOAD_FINDINGS === '1';
 
 /** The two fields the preview pages bind: a required title and an optional subtitle. A fresh list per collection, since Payload sanitizes the objects in place. */
 const documentFields = (): Field[] => [
@@ -63,6 +65,45 @@ const SEED_MEDIA = {
   ),
 } as const;
 
+const FINDINGS_GLOBAL: GlobalConfig = {
+  slug: 'findings',
+  fields: [
+    { name: 'title', type: 'text' },
+    {
+      name: 'status',
+      type: 'select',
+      options: [
+        { label: 'Coming soon', value: 'soon' },
+        { label: 'On sale', value: 'sale' },
+      ],
+    },
+    { name: 'notes', type: 'text' },
+    {
+      name: 'seo',
+      type: 'group',
+      fields: [
+        { name: 'title', type: 'text' },
+        { name: 'description', type: 'text' },
+      ],
+    },
+    { name: 'rows', type: 'array', fields: [{ name: 'label', type: 'text' }] },
+    { name: 'deep', type: 'text' },
+    { name: 'photo', type: 'upload', relationTo: 'media' },
+    {
+      name: 'rich',
+      type: 'richText',
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          BlocksFeature({
+            blocks: [{ slug: 'callout', fields: [{ name: 'text', type: 'text' }] }],
+          }),
+        ],
+      }),
+    },
+  ],
+};
+
 export default buildConfig({
   secret: 'e2e-fixture-secret-not-for-production',
   ...(SITE_ORIGINS.length > 0 ? { cors: [ADMIN_ORIGIN, ...SITE_ORIGINS] } : {}),
@@ -89,7 +130,7 @@ export default buildConfig({
   plugins: [
     livePreview({
       baseUrl: FRONTEND_URL,
-      globals: { homepage: PREVIEW_PATH },
+      globals: { homepage: PREVIEW_PATH, ...(FINDINGS ? { findings: PREVIEW_PATH } : {}) },
       collections: COLLECTIONS
         ? {
             'mapped-pages': ({ data }) => `/mapped/${String(data['id'])}`,
@@ -111,7 +152,12 @@ export default buildConfig({
   db: sqliteAdapter({
     client: {
       url:
-        process.env.DATABASE_URI || (COLLECTIONS ? 'file:./e2e-collections.db' : 'file:./e2e.db'),
+        process.env.DATABASE_URI ||
+        (COLLECTIONS
+          ? 'file:./e2e-collections.db'
+          : FINDINGS
+            ? 'file:./e2e-findings.db'
+            : 'file:./e2e.db'),
     },
   }),
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
@@ -132,6 +178,7 @@ export default buildConfig({
     ...(COLLECTIONS ? CREATE_STATE_COLLECTIONS : []),
   ],
   globals: [
+    ...(FINDINGS ? [FINDINGS_GLOBAL] : []),
     {
       slug: 'homepage',
       fields: [
@@ -190,5 +237,68 @@ export default buildConfig({
       },
       overrideAccess: true,
     });
+    if (FINDINGS) {
+      const [editor] = (await payload.find({ collection: 'users', limit: 1, overrideAccess: true }))
+        .docs;
+      const text = (value: string): Record<string, unknown> => ({
+        type: 'text',
+        text: value,
+        version: 1,
+        format: 0,
+        detail: 0,
+        mode: 'normal',
+        style: '',
+      });
+      const element = { version: 1, format: '', indent: 0, direction: 'ltr' };
+      await payload.updateGlobal({
+        slug: 'findings',
+        data: {
+          title: 'Findings title',
+          status: 'soon',
+          notes: 'Seeded notes',
+          seo: { title: 'Seo title', description: 'Seo description' },
+          rows: [{ label: 'First row' }, { label: 'Second row' }],
+          deep: 'Seeded deep text',
+          photo: null,
+          rich: {
+            root: {
+              type: 'root',
+              ...element,
+              children: [
+                {
+                  type: 'paragraph',
+                  ...element,
+                  textFormat: 0,
+                  children: [
+                    text('Seeded text '),
+                    {
+                      type: 'link',
+                      ...element,
+                      version: 3,
+                      id: 'seededlink',
+                      fields: {
+                        linkType: 'internal',
+                        doc: { relationTo: 'users', value: editor?.id },
+                        newTab: false,
+                      },
+                      children: [text('an internal link')],
+                    },
+                  ],
+                },
+                {
+                  type: 'block',
+                  version: 2,
+                  format: '',
+                  fields: { id: 'seededblock', blockType: 'callout', text: 'Seeded callout' },
+                },
+              ],
+            },
+          },
+        } as never,
+        overrideAccess: true,
+        // Lexical's link field checks the linked document as this user.
+        user: editor,
+      });
+    }
   },
 });
