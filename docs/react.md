@@ -141,7 +141,8 @@ React wrapper.
 | Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | the merge for `2` fetches `pages/2`; each hook keeps its own state, requests and errors (ADR 0002), and both follow the document the admin sends unless each names its `document` |
 | `fetch` rejecting with `TypeError: Failed to fetch`                            | the rejection escapes the async listener                                       | last good document kept, `status: 'unavailable'`, `error` names it                                                                                                                |
 
-Without `document`, both follow the document the admin sends: a hook takes every
+3.0 requires `document` (ADR 0007 ledger, row 26). Without it, both follow the
+document the admin sends: a hook takes every
 update from an allowed admin window, whichever document its `initialData` came
 from. On a page that previews document `1`, a second hook started from document
 `2` shows document `1` after the first update. Given
