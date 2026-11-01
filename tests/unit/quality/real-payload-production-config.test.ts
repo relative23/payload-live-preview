@@ -45,9 +45,11 @@ describe('real-admin targets built for production', () => {
     ['nextjs-production', 'next', 'PLP_NEXT', '4474'],
     ['sveltekit-production', 'sveltekit', 'PLP_SVELTE', '4475'],
     ['nuxt-production', 'nuxt', 'PLP_NUXT', '4476'],
+    ['sveltekit3-production', 'sveltekit', 'PLP_SVELTE', '4475', 'sveltekit3-payload'],
+    ['nuxt4-production', 'nuxt', 'PLP_NUXT', '4476', 'nuxt4-payload'],
   ])(
     '%s: the admin, its HTTPS front, then the launcher pointed at both',
-    async (target, name, prefix, port) => {
+    async (target, name, prefix, port, twin?: string) => {
       const config = await configFor(target);
       const [admin, front, preview] = servers(config);
       const certificate = resolve('test-results/real-payload-admin-front/certificate.pem');
@@ -68,6 +70,9 @@ describe('real-admin targets built for production', () => {
         NODE_EXTRA_CA_CERTS: certificate,
         [`${prefix}_ORIGIN`]: `https://localhost:${port}`,
         [`${prefix}_INTERNAL_PORT`]: String(Number(port) + 10_000),
+        ...(twin === undefined
+          ? {}
+          : { [`${prefix}_FIXTURE_DIRECTORY`]: resolve(`examples/${twin}`) }),
       });
       expect(preview?.reuseExistingServer).toBe(false);
       expect(config.use?.baseURL).toBe('https://localhost:3443');

@@ -45,6 +45,14 @@ const groupsDescendant = generateInlineScript({ ...options, routeStrategy: true 
 // (`revision-display.spec.ts`).
 const revisionDisplay = generateInlineScript({ ...options, routeStrategy: true });
 
+// The field findings against a real admin (`tests/real-payload/surface-findings.spec.ts`).
+const findings = generateInlineScript({
+  ...options,
+  routeStrategy: 'after-save',
+  internalLinkPattern: '/{collection}/{id}',
+  ...(admin ? { serverURL: admin, mergeDepth: 1 } : {}),
+});
+
 const shell = (title, body, script = inline) =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title>` +
   `<style>body{margin:0;font:16px/1.5 system-ui,sans-serif}</style>` +
@@ -122,6 +130,25 @@ await writeFile(
 await writeFile(
   join(dist, 'revision-display.html'),
   shell('Revision display', revisionDisplayBody, revisionDisplay),
+  'utf8',
+);
+await writeFile(
+  join(dist, 'findings.html'),
+  shell(
+    'Field findings',
+    '<h1 data-payload-field="title" data-testid="title">Findings title</h1>' +
+      '<p data-payload-field="status" data-payload-type="select" data-testid="status">Coming soon</p>' +
+      '<p data-payload-field="seo.title" data-testid="seo">Seo title</p>' +
+      '<ul><li data-payload-field="rows.0.label">First row</li>' +
+      '<li data-payload-field="rows.1.label">Second row</li></ul>' +
+      '<details data-testid="details"><summary>More</summary>' +
+      '<p data-payload-field="deep" data-testid="deep">Seeded deep text</p></details>' +
+      '<picture data-testid="picture"><source srcset="/old.webp" type="image/webp">' +
+      '<img data-payload-field="photo" data-testid="photo" src="/old.png" alt=""></picture>' +
+      '<div data-payload-field="rich" data-payload-richtext data-testid="rich">' +
+      '<p>Seeded text</p><aside data-testid="callout">Drawn by the server</aside></div>',
+    findings,
+  ),
   'utf8',
 );
 await copyFile(join(here, 'admin.html'), join(dist, 'admin.html'));

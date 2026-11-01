@@ -377,11 +377,15 @@ What is proven about the Payload wire protocol, from the outside in:
    the collection kept only the save. The `sveltekit3` and `sveltekit3-create`
    targets are the SvelteKit and `create` targets on the SvelteKit 3 example,
    `nuxt4` and `nuxt4-composable` the two Nuxt targets on the Nuxt 4 example.
-   `nextjs-production`, `sveltekit-production` and `nuxt-production` are the
+   `nextjs-production`, `sveltekit-production`, `sveltekit3-production`, `nuxt-production` and `nuxt4-production` are the
    Next.js, SvelteKit and Nuxt session targets built for production and served
    behind TLS. Strict mode accepts only https admin origins there, so the admin
    is reached through an HTTPS front too, and the preview's server asks it who
    the editor is through that front, trusting its throw-away certificate.
+   `findings` frames `examples/pure-html/dist/findings.html` from an admin with a
+   global of its own, and shows that Payload's own messages carry what the field
+   rules read: row ids after a move, an option's value, an edit in a block no
+   renderer draws, and the save a route waits for.
    CI runs every target on every
    push: the Astro default in Chromium, the others in all three browsers, and
    the Next.js session target and its hook page once more in Chromium with

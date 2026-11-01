@@ -656,6 +656,38 @@
       }
     },
     {
+      "id": "sveltekit3-production-admin",
+      "surface": "SvelteKit",
+      "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
+      "version": {
+        "kind": "exact",
+        "value": "3.1.1",
+        "package": "@sveltejs/kit",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/sveltekit3-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "playwright.real-payload.config.ts",
+          "scripts/admin-tls-front.mjs",
+          "scripts/sveltekit-production-fixture.mjs",
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts"
+        ]
+      }
+    },
+    {
       "id": "nuxt-base-current",
       "surface": "Nuxt",
       "feature": "Nitro integration, base live preview and asset delivery",
@@ -862,6 +894,38 @@
           "executedAt": "2026-11-01T18:58:23Z",
           "conclusion": "success"
         }
+      }
+    },
+    {
+      "id": "nuxt4-production-admin",
+      "surface": "Nuxt",
+      "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
+      "version": {
+        "kind": "exact",
+        "value": "4.6.3",
+        "package": "nuxt",
+        "source": {
+          "kind": "lockfile",
+          "fixture": "examples/nuxt4-payload"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "playwright.real-payload.config.ts",
+          "scripts/admin-tls-front.mjs",
+          "scripts/nuxt-production-fixture.mjs",
+          "tests/real-payload/surface-smoke.spec.ts",
+          "tests/real-payload/surface-session.spec.ts"
+        ]
       }
     },
     {
@@ -1624,6 +1688,35 @@
           "executedAt": "2026-11-01T18:58:23Z",
           "conclusion": "success"
         }
+      }
+    },
+    {
+      "id": "field-findings-real-admin-current",
+      "surface": "Plain HTML",
+      "feature": "the field findings from Payload's own messages: a moved row, an option's value, a changed block no renderer draws, closed details, a picture's sources, an internal link, the coverage warning, a route that waits for the save",
+      "version": {
+        "kind": "exact",
+        "value": "2.3.0",
+        "package": "payload-live-preview",
+        "source": {
+          "kind": "root-package"
+        }
+      },
+      "mode": "production",
+      "packageForm": "copied-local-package",
+      "backend": "Payload 3.92.1 admin",
+      "browsers": ["chromium", "firefox", "webkit"],
+      "evidence": {
+        "status": "configured",
+        "workflow": {
+          "file": "ci.yml",
+          "job": "real-payload-surfaces"
+        },
+        "sources": [
+          "playwright.real-payload.config.ts",
+          "examples/pure-html/build.mjs",
+          "tests/real-payload/surface-findings.spec.ts"
+        ]
       }
     },
     {

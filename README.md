@@ -59,7 +59,7 @@ What differs between Payload 2, 3 and 4:
 
 Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-Of the 58 feature rows of `quality/compat-matrix.json`, 55 passed in the CI run the last Version PR recorded (commit `c9ffe5d`, 2026-11-01, `quality/compat-results.json`); the other 3 have no recorded result.
+Of the 61 feature rows of `quality/compat-matrix.json`, 55 passed in the CI run the last Version PR recorded (commit `c9ffe5d`, 2026-11-01, `quality/compat-results.json`); the other 6 have no recorded result.
 
 Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 3 → 8, SvelteKit 2 → 5/6/7/8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-10-31. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
@@ -79,7 +79,7 @@ The framework hooks and fragment renderers run twice on every push: at the floor
 
 <!-- compat-matrix:end -->
 
-SvelteKit 3 and Nuxt 4 are supported. The `sveltekit3` job runs the SvelteKit example migrated to SvelteKit 3.1.1 with `npx sv migrate sveltekit-3`, and the `nuxt4` job runs the Nuxt example in Nuxt 4.6.3's `app/` layout. Both run on the development server against the mock admin in Chromium, Firefox and WebKit, and `real-payload-surfaces` drives both from the real admin in the same three engines. The production jobs still build the SvelteKit 2 and Nuxt 3 examples. The SvelteKit example needed the migration's changes ([docs/sveltekit.md](docs/sveltekit.md)); the package needed no change for either.
+SvelteKit 3 and Nuxt 4 are supported. The `sveltekit3` job runs the SvelteKit example migrated to SvelteKit 3.1.1 with `npx sv migrate sveltekit-3`, and the `nuxt4` job runs the Nuxt example in Nuxt 4.6.3's `app/` layout. Both run on the development server against the mock admin in Chromium, Firefox and WebKit, and `real-payload-surfaces` drives both from the real admin in the same three engines. `real-payload-surfaces` also drives both production builds; the `production-lifecycle` job still builds SvelteKit 2 and Nuxt 3. The SvelteKit example needed the migration's changes ([docs/sveltekit.md](docs/sveltekit.md)); the package needed no change for either.
 
 **A client-rendered app takes a hook.** `useLivePreviewDocument()` from `payload-live-preview/react` or `payload-live-preview/vue` returns the merged document and re-renders your tree. Payload 3 updates use the method-override merge request; Payload 2 scalar updates settle locally and raw relationships use schema-based collection GETs. A newer update aborts any request in flight; an HTTP error is refused instead of becoming the document; each hook keeps its own state, requests and errors, and a hook given a `document` merges only that document's updates; without one it follows the document the admin sends, whichever one it started from ([docs/react.md](docs/react.md), [docs/vue.md](docs/vue.md)). The official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` hooks ship in lockstep with Payload and remain the safe default if that matters more to you; running either alongside the DOM runtime on one page: [docs/interop.md](docs/interop.md).
 

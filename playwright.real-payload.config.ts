@@ -12,7 +12,8 @@ const isCI = process.env['CI'] === 'true';
  * example's collection pages framed from an admin with three more collections (`create`).
  * `sveltekit3` and `sveltekit3-create` are those two SvelteKit targets on the SvelteKit 3 fixture,
  * `nuxt4` and `nuxt4-composable` the two Nuxt targets on the Nuxt 4 fixture.
- * `nextjs-production`, `sveltekit-production` and `nuxt-production` are the session targets
+ * `nextjs-production`, `sveltekit-production`, `sveltekit3-production`, `nuxt-production` and
+ * `nuxt4-production` are the session targets
  * built for production and served behind TLS, with the admin behind an HTTPS front too.
  */
 const requested = process.env['PLP_REAL_PAYLOAD_TARGET'] ?? 'astro';
@@ -38,12 +39,13 @@ interface Surface {
    * `create`: the create screen and the first save of a collection document, tested by
    * `surface-create.spec.ts` against an admin that has those collections.
    */
-  readonly spec?: 'hook' | 'autologin' | 'create';
+  readonly spec?: 'hook' | 'autologin' | 'create' | 'findings';
   /**
    * Built for production by `command` (a `scripts/*-production-fixture.mjs` launcher) and served
    * behind TLS on `port`; `prefix` names the launcher's variables (`<prefix>_ORIGIN`, …).
+   * `twin` builds `directory` with the launcher of the older major's example.
    */
-  readonly production?: { readonly prefix: string };
+  readonly production?: { readonly prefix: string; readonly twin?: boolean };
 }
 const SESSION_SURFACES: Record<string, Surface> = {
   nextjs: { port: '4474', directory: 'nextjs-payload', command: 'npx next dev --port 4474' },
@@ -127,9 +129,29 @@ const SESSION_SURFACES: Record<string, Surface> = {
     command: 'node ../../scripts/nuxt-production-fixture.mjs',
     production: { prefix: 'PLP_NUXT' },
   },
+  'sveltekit3-production': {
+    port: '4475',
+    directory: 'sveltekit3-payload',
+    command: 'node ../../scripts/sveltekit-production-fixture.mjs',
+    production: { prefix: 'PLP_SVELTE', twin: true },
+  },
+  'nuxt4-production': {
+    port: '4476',
+    directory: 'nuxt4-payload',
+    command: 'node ../../scripts/nuxt-production-fixture.mjs',
+    production: { prefix: 'PLP_NUXT', twin: true },
+  },
 };
 /** A plain HTML page has no request time: the runtime is baked in and the origin rule is its gate. */
 const STATIC_SURFACES: Record<string, Surface> = {
+  // A page each field finding needs, in one document: `surface-findings.spec.ts`.
+  findings: {
+    port: '4477',
+    directory: 'pure-html',
+    command: 'node build.mjs && PORT=4477 node serve.mjs',
+    path: '/findings.html',
+    spec: 'findings',
+  },
   html: {
     port: '4477',
     directory: 'pure-html',
@@ -195,6 +217,13 @@ const previewServer: WebServer =
             [`${production.prefix}_ORIGIN`]: previewURL,
             // Below the ephemeral range (32768-60999), like the launchers' own defaults.
             [`${production.prefix}_INTERNAL_PORT`]: String(Number(previewPort) + 10_000),
+            ...(production.twin === true
+              ? {
+                  [`${production.prefix}_FIXTURE_DIRECTORY`]: resolve(
+                    `examples/${surface.directory}`,
+                  ),
+                }
+              : {}),
           },
           url: `${previewURL}${surface.path ?? '/'}`,
           ignoreHTTPSErrors: true,
@@ -239,6 +268,13 @@ const adminServer: WebServer = {
         }
       : {}),
     ...(surface?.spec === 'create' ? { PLP_REAL_PAYLOAD_COLLECTIONS: '1' } : {}),
+    ...(surface?.spec === 'findings'
+      ? {
+          PLP_REAL_PAYLOAD_FINDINGS: '1',
+          PLP_REAL_PAYLOAD_PATH: surface.path ?? '/',
+          PLP_REAL_PAYLOAD_ORIGINS: previewURL,
+        }
+      : {}),
   },
   url: `${ADMIN_SERVER}/admin`,
   reuseExistingServer: !isCI,
@@ -299,9 +335,11 @@ const config: PlaywrightTestConfig = {
             ? /surface-autologin\.spec\.ts$/u
             : surface.spec === 'create'
               ? /surface-create\.spec\.ts$/u
-              : session
-                ? /surface-(?:smoke|session)\.spec\.ts$/u
-                : /surface-smoke\.spec\.ts$/u,
+              : surface.spec === 'findings'
+                ? /surface-findings\.spec\.ts$/u
+                : session
+                  ? /surface-(?:smoke|session)\.spec\.ts$/u
+                  : /surface-smoke\.spec\.ts$/u,
   fullyParallel: false,
   // The admin runs `next dev`, and the first test of a job pays its cold compile of the admin
   // page and of the chunks the Live Preview toggle loads. On a loaded CI runner that took more
