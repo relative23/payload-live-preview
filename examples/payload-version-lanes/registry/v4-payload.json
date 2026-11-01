@@ -1,13 +1,13 @@
 [
   {
-    "version": "4.0.0-beta.4",
+    "version": "4.0.0-beta.6",
     "peerDependencies": {
       "graphql": "^16.8.1"
     },
     "engines": {
       "node": ">=24.22.1"
     },
-    "dist.integrity": "sha512-dBQY7gAQsQWMLnh3HabHkTHb+8KFn1LcQJh+mLUQfNcbWUU6NDl77Q8U/sNz05QmUBwkEhkLvc7MgnFKkWK5Ow==",
-    "dist.tarball": "https://registry.npmjs.org/payload/-/payload-4.0.0-beta.4.tgz"
+    "dist.integrity": "sha512-4mqkbVq8N+M8Cw1GYohU6f8X38RtcZUCBBDMIULT90/Kaj06wMPYjBzyLWYRuxsMMcY+ihpYtBex3swPCjrxpw==",
+    "dist.tarball": "https://registry.npmjs.org/payload/-/payload-4.0.0-beta.6.tgz"
   }
 ]

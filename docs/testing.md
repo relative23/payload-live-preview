@@ -448,8 +448,8 @@ release. Per Payload version that means: 2.x is
 covered by a corpus captured from a real 2.32.3 admin, captured-message
 integration tests and `fieldSchemaJSON` typing;
 3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.92.1 by the
-real-admin E2E on every push; 4.0.0-beta.4 by a corpus captured from a real
-Payload 4 admin (the fixture stays on 3.x) and by one measurement of the config
+real-admin E2E on every push; 4.0.0-beta.4 and beta.6 by corpora captured from
+a real Payload 4 admin (the fixture stays on 3.x) and by one measurement of the config
 plugin against a real admin, outside CI ([compatibility list](../README.md#compatibility)); `latest`
 and the 4.0 pre-releases by the daily watch — wire format, sender source and
 a real admin — the latter as early warning only. The

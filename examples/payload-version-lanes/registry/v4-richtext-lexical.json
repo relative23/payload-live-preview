@@ -1,9 +1,9 @@
 [
   {
-    "version": "4.0.0-beta.4",
+    "version": "4.0.0-beta.6",
     "peerDependencies": {
       "react": "^19.0.1 || ^19.1.2 || ^19.2.1",
-      "payload": "4.0.0-beta.4",
+      "payload": "4.0.0-beta.6",
       "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1",
       "@faceless-ui/modal": "3.0.2",
       "@faceless-ui/scroll-info": "2.0.0"
@@ -11,7 +11,7 @@
     "engines": {
       "node": ">=24.22.1"
     },
-    "dist.integrity": "sha512-5YOj8fAd0kl7EZRv6XMkkJWWiX2PvIOo9Uwu+PI4GDY6qJyVTX2oO78kNYPDevYfY4P0tfZEn+TBItsHWD1SCg==",
-    "dist.tarball": "https://registry.npmjs.org/@payloadcms/richtext-lexical/-/richtext-lexical-4.0.0-beta.4.tgz"
+    "dist.integrity": "sha512-yQJkQVQvRLj9mOWoDnD6x2dLyA2Mwf6Oy9ZVJ/8DScw13h1fA98rnoBKNYhZSOsOrL/uYBWxrzpMJ2f0/Aurtw==",
+    "dist.tarball": "https://registry.npmjs.org/@payloadcms/richtext-lexical/-/richtext-lexical-4.0.0-beta.6.tgz"
   }
 ]

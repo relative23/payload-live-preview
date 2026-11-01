@@ -1,10 +1,10 @@
 [
   {
-    "version": "4.0.0-beta.4",
+    "version": "4.0.0-beta.6",
     "peerDependencies": {
-      "payload": "4.0.0-beta.4"
+      "payload": "4.0.0-beta.6"
     },
-    "dist.integrity": "sha512-wBYg3izzaG8AmIquo3yX0tGJgrLQNmkC/YMPHAZa2mPzVGnjnuc2b+8sHhXJm02MKf7LHd/d3pIuDYYoLfL8Ig==",
-    "dist.tarball": "https://registry.npmjs.org/@payloadcms/db-sqlite/-/db-sqlite-4.0.0-beta.4.tgz"
+    "dist.integrity": "sha512-M1i74O0pYZCc8+Apjh30raTFmDsVyfoIisadABjqpqONTWMOXHMdD+OLBsdB5ZEov0g9RHtub2Zeahe6NY5vqA==",
+    "dist.tarball": "https://registry.npmjs.org/@payloadcms/db-sqlite/-/db-sqlite-4.0.0-beta.6.tgz"
   }
 ]

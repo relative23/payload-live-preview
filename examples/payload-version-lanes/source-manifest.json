@@ -3,7 +3,7 @@
   "status": "portable-development-fixture-sources-not-native-results",
   "files": {
     "README.md": {
-      "sha256": "96d3ffc082ff7c67a549f4a53726dd1eab375a274c2e803ea52691086a5ef8ff",
+      "sha256": "9a5b80787ca83f497f76c8a2906a76d192e50bf65fb7222ba9ca3b04da5a1611",
       "bytes": 7395
     },
     "admin/next-env.d.ts": {
@@ -103,7 +103,7 @@
       "bytes": 1940
     },
     "lanes.json": {
-      "sha256": "6a6ba1b2a20a6f072573f0f81d4f4611e02758ad818bccbda7e44ba57b53ea91",
+      "sha256": "efe857525927c03934ea6aee5998a4271373766fa2f714d4fd85c2b9d3bacce1",
       "bytes": 13032
     },
     "lifecycle.config.mjs": {
@@ -139,19 +139,19 @@
       "bytes": 1530
     },
     "registry/v4-db-sqlite.json": {
-      "sha256": "007d91fd62bc55ac981622f57514f58eb28556280335db8f36d06a423462091a",
+      "sha256": "ea3c8f40f59b6ba480ecdd3de664e1cf8f5a4cdef26f17d3d80210f15e62d2e4",
       "bytes": 329
     },
     "registry/v4-next.json": {
-      "sha256": "23fe4be4aa9fdc6f3aa17c6422cda5a7047f11cdd1d8ee33870bf0ac8c532835",
+      "sha256": "0c257f296905da580000710779bd3da0ad7fad31d52d307fb59553895fcd083e",
       "bytes": 431
     },
     "registry/v4-payload.json": {
-      "sha256": "ef85fff73b9f372831ce731cb4920ee670536de8c809e86dbecb3bfb71908d0d",
+      "sha256": "b48453b763c3648ff8d3f849ab55d98475357476e0a337046d59d6fb562f07ea",
       "bytes": 358
     },
     "registry/v4-richtext-lexical.json": {
-      "sha256": "91b53e6ae385d2fa8198eec4df0c8fb7719995bf3afc67d45932c1da8c135e66",
+      "sha256": "30f1ed7bd9be08c79da753eb4cbdadf2ef9cd78c4c0cc37484ead16787ddfc47",
       "bytes": 573
     },
     "run-lane.mjs": {
