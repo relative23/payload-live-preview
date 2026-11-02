@@ -2,7 +2,7 @@
   "sources": {
     "examples/astro-payload/.gitignore": "c760594e89b7b78ec030eb86107c075f9d8177fa7987881c04ff6ea47d5d40cc",
     "examples/astro-payload/.npmrc": "88bc01af10b36e60a8586eb1daf94c4203ab005202836da0afe4b486af5323d0",
-    "examples/astro-payload/README.md": "03ddfc06aaea2adcfdb942dad51c809a10cb6567c6830c92e7ef95cccaa19159",
+    "examples/astro-payload/README.md": "593fa0b66661fd6bc3c89983230d5a303de4693c922357de4995fafed049d45f",
     "examples/astro-payload/astro.config.mjs": "5073e2986941d6736485f78a11d5a53137ba2dbac4fdb5b6d59e6f41ba4d5a0c",
     "examples/astro-payload/public/hero.svg": "84d84934ec2fa764f60486f254cb06fb17777c0a61715371da262f717359e5cf",
     "examples/astro-payload/src/env.d.ts": "cc719d1ef0609cd73ab9d19df5df62df8a3f84bed76b9e6b0ae1f669c67a1ff8",

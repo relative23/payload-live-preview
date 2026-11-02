@@ -1,6 +1,8 @@
 # ADR 0026 — What 3.0 removes warns in 2.x, and `pll migrate` writes it out
 
-**Status:** Proposed • **Date:** 2026-09-29
+**Status:** Accepted • **Date:** 2026-09-29
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 This record makes every name and value that 3.0 removes say so while a 2.x
 project still runs it, and adds the two rewrites `pll migrate` was missing.
@@ -113,7 +115,7 @@ that option; a consumer who builds a detector opts in now by passing it.
 - `pll migrate` has six codemods. The `astro-hybrid` fixture, which shares
   `defaults: 'v1'` and `onUnboundChange` between two middlewares, is migrated
   by them and passes its browser suites unchanged. The Nuxt fixture keeps the
-  profile until its own unit (H18); its options object is the case the
+  profile until the Nuxt work of its own; its options object is the case the
   codemod cannot see.
 - Acceptance: unit tests for each warning (once, silent in production, the
   replacement named) and each codemod (rewrites, refusals, idempotence); the

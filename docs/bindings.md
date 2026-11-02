@@ -294,8 +294,11 @@ import RichText from 'payload-live-preview/astro/RichText.astro';
 Props: `value`, `field` (without it no binding is written), `as` (default
 `div`), `class`, and `document` / `requireDocument` for the sanitizer on a
 server without a global DOM ([astro.md](astro.md#3-mark-what-should-update)).
-Neither component is gated by the request's authorization: both write their
-`data-payload-*` attributes on every response.
+Where the Astro middleware decides with `authorizePreview`, a response it did
+not authorize keeps both elements and carries none of their `data-payload-*`
+attributes, as the gated helpers do. A prerendered page, or a page outside the
+middleware, has no request to decide for: there both write their attributes on
+every response.
 
 ## Letting the runtime find bindings by value
 
@@ -466,6 +469,15 @@ locale, rich-text marker and owner: pass companions through `BindOptions`
 where they would stay behind when the gate closes. Where the authorization
 comes from is in [docs/authorization.md](authorization.md).
 
+`previewBindingsFromLocals(Astro.locals, { owner })`, from
+`payload-live-preview/server`, is the same call. It reads
+`livePreviewAuthorization` from whatever the framework calls locals
+(`Astro.locals`, SvelteKit's `event.locals`, Nuxt's `event.context`) and takes
+`unknown`, so a project needs no `App.Locals` declaration for it. The
+build-time annotation ([below](#annotating-at-build-time-instead)) writes this
+call into the components it changes. Either way, only a context that
+`authorizePreviewRequest()` produced makes a helper emit anything.
+
 `BindOptions` also takes `format`, `text`, `strategy` and `dependsOn`. `anchor: true`
 writes `data-payload-boundary`, the gated form of an anchor for a field that may be
 empty; set `hidden` yourself while the value is empty.
@@ -503,6 +515,14 @@ Flags: `-c/--config`, `-o/--out` (both required), `--inventory <path>`,
 `--tsconfig <path>`, `-q/--quiet`. `livePreviewCodegen({ configPath, outPath })`
 from `payload-live-preview/codegen/astro` runs the same generation on start
 and, during `astro dev`, whenever the config or a file beside it changes.
+
+The config is read from its source, not run. Identifiers, imports, spreads and
+wrappers are followed to the literals they stand for, and so is a field factory
+in the project, such as `slugField()`, `linkField()` or `...seoFields()`, when
+its body returns one expression; `fields.map(wrapper)` is read as the fields it
+wraps. A function whose body decides what it returns, or one from a package, is
+reported rather than guessed: every shape that cannot be resolved is a
+diagnostic, never a silent gap.
 
 ```astro
 ---
@@ -620,7 +640,7 @@ so that it is gated as well.
 
 `inventory` is the `inventory` property of what `generateTypes()` resolves
 to, or the file `pll-codegen --inventory` writes; only the field paths are read. The helper is built once per
-file from `Astro.locals`, which is why this is Astro-only: the rewrite needs a
+file, with `previewBindingsFromLocals(Astro.locals)`, which is why this is Astro-only: the rewrite needs a
 template whose own scope reaches the request context, and a Svelte or Vue
 component's does not — there the verdict would have to travel through `load` or
 a serialized payload, where a function cannot go. Both routes decide what is

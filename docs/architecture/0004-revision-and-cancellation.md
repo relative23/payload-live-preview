@@ -199,7 +199,7 @@ raw-value fallback; `DocumentSession` keeps its last good document and reports
 an injected fetch shim may re-enter the merger, so validation rechecks the
 attempt before returning either a document or a refusal. No response body or
 credential is added to diagnostics. The response and session regression suites
-pin these boundaries separately from the H04/H11 authorization continuation.
+pin these boundaries separately from the authorization continuation (ADR 0019).
 
 2026-10-04 (2.1 addendum): endpoint accessors and request serialization are
 reentrant boundaries too. The merger checks its attempt after reading the target

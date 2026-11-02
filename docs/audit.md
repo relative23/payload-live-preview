@@ -29,16 +29,16 @@ The modules that answer them are the **trusted core**:
 | ------------------------------- | --------: | ----------------------------------------------------------- |
 | `src/core/message-guards.ts`    |        94 | which shapes are a message                                  |
 | `src/core/message-bus.ts`       |       467 | which window may send and which verdict commits             |
-| `src/core/data-merger.ts`       |       315 | credentialed transport and which attempt wins               |
+| `src/core/data-merger.ts`       |       364 | credentialed transport and which attempt wins               |
 | `src/core/legacy-population.ts` |       425 | bounded v2 planning, response identity and body teardown    |
 | `src/core/attribute-binding.ts` |        68 | which attribute a remote value may become                   |
 | `src/security/url-validator.ts` |        60 | which URL is safe                                           |
 | `src/security/escape.ts`        |        48 | how text becomes escaped markup                             |
-| `src/security/sanitizer.ts`     |       501 | which tags and attributes CMS content keeps                 |
+| `src/security/sanitizer.ts`     |       530 | which tags and attributes CMS content keeps                 |
 | `src/security/trusted-types.ts` |        87 | the policy every HTML sink goes through                     |
-| **Total**                       | **2 065** | 1 645 without blank/comment lines; 47 exported declarations |
+| **Total**                       | **2 143** | 1 701 without blank/comment lines; 47 exported declarations |
 
-Measured on 2026-10-16. The full 425-line population primitive is counted:
+Measured on 2026-11-02, for 2.3.1. The full 425-line population primitive is counted:
 417 lines in the initial v2 correction, then two lines for the separately
 reviewed native-stream work bound, two for shared polymorphic-target work
 and three for bounded block-definition lookup, which made 424; three later
@@ -94,7 +94,10 @@ mutator and the text it replaced — with one sentence saying why the program
 does the same with and without it: 13 in `legacy-population.ts`, six in
 `message-bus.ts`, two in `url-validator.ts` and one in `trusted-types.ts`. The
 policy fails the run when a survivor is missing from the list or a listed one
-is killed now, and the survivors stay visible in the report.
+is killed now, and the survivors stay visible in the report. For 2.3.1, after
+the changes to `data-merger.ts` and `sanitizer.ts` since then, the scope holds
+2 133 mutants: 2 095 killed, 16 timeouts and the same 22 survivors, 98.97 %
+(2026-11-02).
 
 Before `legacy-population.ts` joined, the core was eight modules, measured at
 1 202 mutants on 2026-09-11, 99.17 % killed, 10 survived and none left
@@ -124,7 +127,9 @@ The Nightly scope, 80 files, was measured in full the same day
 mutants, 88.20 %, 54 without coverage; measured changes since then moved the
 baseline to 11 670 mutants and 53 without coverage. In 2.2 the inline generator
 and the doctor's reader of a served configuration joined as critical files, so
-the scope is 82 files and 12 114 mutants, 55 of them without coverage. The four
+the scope is 82 files and 12 114 mutants, 55 of them without coverage. For
+2.3.1 the same 82 files hold 12 657 mutants, 89.16 % detected, 48 without
+coverage (2026-11-02). The four
 critical coverage cells added in 2.1 cover the population primitive, document
 session, parser and walker; the Coverage job holds their floors (95 % of lines and
 branches, every function) on every push, like every other critical file.
@@ -151,9 +156,10 @@ function that is handed `fetch` under another name. The core's own imports are
 held exact so that this stays a short list to check by hand.
 
 A thousand lines is about what one reader holds in one sitting, and that was
-the size this core set out to be. It is 2 065, and the difference is not a
+the size this core set out to be. It is 2 143, and the difference is not a
 second responsibility hiding in the list:
-133 of the sanitizer's lines are the allow-lists a reader has to read anyway,
+157 of the sanitizer's lines are the allow-lists a reader has to read anyway
+(`ALLOWED_TAGS` to `URL_ATTRIBUTES`),
 and about 130 of the bus's are the queue that commits token verdicts in arrival
 order. Moving either into a file of its own would leave the reader the same
 lines in two places. The number stands as measured; it was 1 392 when this

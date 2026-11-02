@@ -1,6 +1,8 @@
 # ADR 0025 — A server render can require a sanitizer document
 
-**Status:** Proposed • **Date:** 2026-09-29
+**Status:** Accepted • **Date:** 2026-09-29
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 This record adds an opt-in to `lexicalToHtml()` and the `RichText` Astro
 component and records the 3.0 default it becomes. The 2.x default does not
@@ -11,7 +13,7 @@ change.
 `sanitizeHtml()` needs a DOM and throws `SanitizerEnvironmentError` without
 one. `lexicalToHtml()` does not: during server rendering without a document
 (the per-call `document`, the deprecated process-wide slot, or a global DOM)
-it warns once and returns its markup unsanitised (H10). Built-in node
+it warns once and returns its markup unsanitised. Built-in node
 renderers escape every value they interpolate, so their output is safe
 either way; a custom node or block renderer's markup is then trusted as
 written. The browser runtime and a server render with a document pass both

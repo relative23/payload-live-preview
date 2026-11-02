@@ -453,8 +453,9 @@ covered by a corpus captured from a real 2.32.3 admin, captured-message
 integration tests and `fieldSchemaJSON` typing;
 3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.92.1 by the
 real-admin E2E on every push; 4.0.0-beta.4 and beta.6 by corpora captured from
-a real Payload 4 admin (the fixture stays on 3.x) and by one measurement of the config
-plugin against a real admin, outside CI ([compatibility list](../README.md#compatibility)); `latest`
+a real Payload 4 admin (the fixture stays on 3.x), by one measurement of the config
+plugin against a real admin and, for beta.6, by one run of the field-findings suite in
+three engines, all outside CI ([compatibility list](../README.md#compatibility)); `latest`
 and the 4.0 pre-releases by the daily watch — wire format, sender source and
 a real admin — the latter as early warning only. The
 four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all
@@ -595,7 +596,7 @@ npx playwright test --config playwright.react-continuation.config.ts --project=c
 
 What they do not show. The test posts the editor's messages itself, so Payload's admin UI
 is not part of it; the `real-payload-surfaces` targets drive the admin UI, against the
-development servers and, for the three `-production` targets, against production builds.
+development servers and, for the five `-production` targets, against production builds.
 The locked versions are those of the SvelteKit 2 and Nuxt 3 examples,
 and the Vue and React hosts run the versions their locks pin, 3.5.41 and 19.3.1, not the peer
 floors 3.3 and 18. The job runs Chromium only.

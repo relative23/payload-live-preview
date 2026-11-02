@@ -1,6 +1,8 @@
 # ADR 0021 — Fragment islands hydrate from the build, and Astro keeps them
 
-**Status:** Proposed • **Date:** 2026-09-28
+**Status:** Accepted • **Date:** 2026-09-28
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 This record changes the package: it adds build-owned island resolution to the
 Astro adapter and an island handoff to the morph. ADR 0020's page-owned recipe

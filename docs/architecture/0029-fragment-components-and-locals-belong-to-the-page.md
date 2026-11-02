@@ -1,6 +1,8 @@
 # ADR 0029 — A fragment's components and its request context are the page's
 
-**Status:** Proposed • **Date:** 2026-10-01
+**Status:** Accepted • **Date:** 2026-10-01
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 This record extends ADR 0020's rule for Astro resources to SvelteKit, measured,
 and gives a fragment's `props` the same request context a page's `load` has.
