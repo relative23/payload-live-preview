@@ -113,6 +113,20 @@ async function documentFormReady(page: Page): Promise<void> {
 }
 
 /**
+ * Types a value and waits until the field holds it. In WebKit the admin once dropped the title typed
+ * on the create screen and kept the subtitle typed after it (CI run 41502396659): the save went out
+ * without a title, and Payload refused it with "The following field is invalid: Title". A field that
+ * does not hold its value is typed into again.
+ */
+async function typeInto(page: Page, selector: string, value: string): Promise<void> {
+  const field = page.locator(selector);
+  await expect(async () => {
+    if ((await field.inputValue()) !== value) await field.fill(value);
+    await expect(field).toHaveValue(value, { timeout: 1_000 });
+  }).toPass(COLD);
+}
+
+/**
  * The document controls are on screen (the Save button is one of them) and the toggle, the panel and
  * the frame are not: the toggle belongs to the same controls, so it cannot be late.
  */
@@ -187,13 +201,16 @@ async function createThenEdit(page: Page, browser: string, subject: Subject): Pr
   await expect(page.locator('#field-title')).toBeVisible(COLD);
   await documentFormReady(page);
   await expectNoPreview(page);
-  await page.locator('#field-title').fill(saved.title);
-  await page.locator('#field-subtitle').fill(saved.subtitle);
+  await typeInto(page, '#field-title', saved.title);
+  await typeInto(page, '#field-subtitle', saved.subtitle);
   await page.locator('#field-subtitle').blur();
   await documentFormReady(page);
   await expect(page).toHaveURL(new RegExp(`/${subject.collection}/create$`, 'u'));
   await expectNoPreview(page);
   expect((await documentsTitled(page, subject.collection, saved.title)).totalDocs).toBe(0);
+  // The save sends what the fields hold when it is clicked.
+  await typeInto(page, '#field-title', saved.title);
+  await typeInto(page, '#field-subtitle', saved.subtitle);
 
   // The server assigns the id, and the frame's URL and the owner marker are built from it.
   const created = page.waitForResponse(
