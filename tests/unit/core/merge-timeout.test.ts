@@ -80,6 +80,24 @@ describe('DataMerger with timeoutMs', () => {
     expect(log).toHaveBeenCalledWith('merge timeout', 5_000);
   });
 
+  it('names the deadline when the fetch rejects at the moment it is aborted', async () => {
+    const fetchFn = ((_input: RequestInfo | URL, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('The operation was aborted', 'AbortError'));
+        });
+      })) as typeof fetch;
+    const log = vi.fn();
+    const merger = new DataMerger({ serverURL: SERVER, fetchFn, log, timeoutMs: 5_000 });
+    const box = settledWith(
+      merger.merge({ collectionSlug: 'pages', data: { id: '1', title: 'x' } }),
+    );
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(box.result).toEqual({ status: 'unavailable' });
+    expect(log).toHaveBeenCalledWith('merge timeout', 5_000);
+    expect(log).not.toHaveBeenCalledWith('merge exception', expect.anything());
+  });
+
   it('counts the body against the same deadline as the request', async () => {
     // The server answers after 3 s, and its JSON body never arrives.
     const signals: AbortSignal[] = [];
