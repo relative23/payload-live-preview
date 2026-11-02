@@ -85,7 +85,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+102/-34 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2240/+755/+500 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +825/+275/+292 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 220_753, gzip: 69_185, brotli: 58_793 },
+  // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+86/+22 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 220_900, gzip: 69_271, brotli: 58_815 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -135,7 +136,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+108/-46 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2240/+747/+542 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +822/+266/+285 B; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 195_600, gzip: 61_305, brotli: 52_237 },
+  // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+91/-27 B; the Brotli ceiling stays, it fell; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 195_747, gzip: 61_396, brotli: 52_237 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -223,7 +225,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+106/+95 B; prior reserves kept.
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2240/+754/+529 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +764/+247/+250 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 214_715, gzip: 67_391, brotli: 57_237 },
+  // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+91/+75 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 214_862, gzip: 67_482, brotli: 57_312 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -246,7 +249,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31 (a hook given a document merges only its updates): paired Node24.22.1/npm12.0.2; +1086/+364/+349 B; prior reserves kept.
   // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +562/+196/+154 B; prior reserves kept.
   // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +254/+91/+69 B; prior reserves kept.
-  'adapters/react/index.js': { raw: 25_306, gzip: 8_323, brotli: 7_668 },
+  // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +6/+1/-2 B; the Brotli ceiling stays, it fell; prior reserves kept.
+  'adapters/react/index.js': { raw: 25_312, gzip: 8_324, brotli: 7_668 },
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +80/+22/+22 B; same 16/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -165/-26/-29 B; same 16/12/120 B cushions.
   // 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7766/+2534/+2343 B; cushions 16/12/120 B.
@@ -259,7 +263,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31 (a hook given a document merges only its updates): paired Node24.22.1/npm12.0.2; +920/+312/+290 B; prior reserves kept.
   // 2026-10-31 (an opt-in deadline for the merge): paired Node24.22.1/npm12.0.2; +505/+179/+151 B; prior reserves kept.
   // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +254/+86/+72 B; prior reserves kept.
-  'adapters/vue/index.js': { raw: 24_333, gzip: 8_055, brotli: 7_430 },
+  // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +6/+3/-2 B; the Brotli ceiling stays, it fell; prior reserves kept.
+  'adapters/vue/index.js': { raw: 24_339, gzip: 8_058, brotli: 7_430 },
   //
   // 2026-09-06 (R4, zero-config setup): one new row. `adapters/nuxt/module.js`
   // is the build-time Nuxt module — a few hundred bytes, because all it does is
@@ -334,7 +339,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+110/+44 B; prior reserves kept.
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2240/+752/+542 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +764/+244/+285 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 214_985, gzip: 67_508, brotli: 57_343 },
+  // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+88/-25 B; the Brotli ceiling stays, it fell; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 215_132, gzip: 67_596, brotli: 57_343 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -389,5 +395,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+116/+94 B; prior reserves kept.
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2240/+748/+534 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +764/+239/+171 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 214_064, gzip: 67_213, brotli: 57_015 },
+  // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+93/+105 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 214_211, gzip: 67_306, brotli: 57_120 },
 };

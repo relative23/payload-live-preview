@@ -585,7 +585,7 @@
 // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +4817 / +1500 / +1319, `core.js` +4808 / +1529 / +1291, `index.cjs` +1828 / +565 / +390, `index.js` +1828 / +558 / +315, `server.cjs` +303 / +68 / +58, `server.js` +303 / +65 / +56.
 // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +673/+225/+196 B; prior reserves kept.
 // 2026-10-31 (gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired, same epoch): initLivePreview from root +255, generateInlineScript from root +253, initLivePreview from core +242, createLivePreviewMiddleware from nextjs +254, LEAN_RUNTIME from lean +38.
-export const INLINE_BUDGET = { raw: 153_671, gzip: 48_544, brotli: 42_678 } as const;
+export const INLINE_BUDGET = { raw: 153_815, gzip: 48_655, brotli: 42_802 } as const;
 
 // The lean profile, the same runtime with its optional halves left out, keeps
 // its budget and its log in bundle-lean-budgets.ts: this log reached the

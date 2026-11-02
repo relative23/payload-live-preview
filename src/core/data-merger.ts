@@ -189,14 +189,15 @@ export class DataMerger {
     const timeoutMs = this.timeoutMs;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let deadline: Promise<never> | undefined;
-    let expired = false;
+    let timedOut = false;
+    const expired = (): boolean => timedOut;
     const within = <T>(work: Promise<T>, owned: AbortController): Promise<T> => {
       if (timeoutMs === undefined) return work;
       if (deadline === undefined) {
         deadline = new Promise<never>((_resolve, reject) => {
           timer = setTimeout(() => {
             // First: a fetch that rejects as it is aborted must still read as the deadline.
-            expired = true;
+            timedOut = true;
             owned.abort();
             reject(TIMED_OUT);
           }, timeoutMs);
@@ -326,7 +327,7 @@ export class DataMerger {
       return { status: 'merged', doc };
     } catch (error) {
       if (superseded()) return { status: 'superseded' };
-      if (expired) {
+      if (expired()) {
         this.log('merge timeout', timeoutMs);
         return { status: 'unavailable' };
       }

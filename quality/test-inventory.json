@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 541,
-    "suites": 1047,
-    "tests": 4739,
+    "files": 542,
+    "suites": 1049,
+    "tests": 4746,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 443,
-      "suites": 936,
-      "tests": 4328,
+      "files": 444,
+      "suites": 938,
+      "tests": 4335,
       "benchmarks": 0
     }
   },
@@ -1047,7 +1047,7 @@
       "path": "tests/unit/adapters/svelte-store-recipe.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -1880,7 +1880,7 @@
       "path": "tests/unit/core/merge-timeout.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 10,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -2521,10 +2521,17 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/field-types/image-url-strings.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/field-types/image-variants-and-picture.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 7,
+      "suites": 3,
+      "tests": 10,
       "benchmarks": 0
     },
     {

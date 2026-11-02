@@ -163,7 +163,7 @@ export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 export const CORE_ENTRY = true;
 
 // @beta
-export function createDocumentSession<T extends Record<string, unknown>>(initialData: T, options: DocumentSessionOptions): DocumentSession<T>;
+export function createDocumentSession<T>(initialData: T, options: DocumentSessionOptions): DocumentSession<T>;
 
 // @public
 export function createPreviewBindings(options: PreviewBindingsOptions): PreviewBindings;
