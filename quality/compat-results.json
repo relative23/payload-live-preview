@@ -1,11 +1,11 @@
 {
   "workflow": "ci.yml",
-  "id": 41324897947,
-  "url": "https://github.com/relative23/payload-live-preview/actions/runs/41324897947",
-  "commit": "c9ffe5da3c063d64f473c0b3f0beffe701758b90",
+  "id": 41386676393,
+  "url": "https://github.com/relative23/payload-live-preview/actions/runs/41386676393",
+  "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
   "event": "push",
   "conclusion": "success",
-  "executedAt": "2026-11-01T18:58:23Z",
+  "executedAt": "2026-11-02T07:02:34Z",
   "jobs": [
     {
       "conclusion": "success",
@@ -161,6 +161,18 @@
     },
     {
       "conclusion": "success",
+      "name": "Real Payload E2E (findings, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (findings, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (findings, webkit)"
+    },
+    {
+      "conclusion": "success",
       "name": "Real Payload E2E (html, chromium)"
     },
     {
@@ -301,6 +313,18 @@
     },
     {
       "conclusion": "success",
+      "name": "Real Payload E2E (nuxt4-production, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt4-production, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (nuxt4-production, webkit)"
+    },
+    {
+      "conclusion": "success",
       "name": "Real Payload E2E (sveltekit, chromium)"
     },
     {
@@ -346,6 +370,18 @@
     {
       "conclusion": "success",
       "name": "Real Payload E2E (sveltekit3-create, webkit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit3-production, chromium)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit3-production, firefox)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Real Payload E2E (sveltekit3-production, webkit)"
     },
     {
       "conclusion": "success",
