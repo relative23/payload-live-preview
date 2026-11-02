@@ -355,7 +355,7 @@ That is it: the runtime detects the admin's iframe and starts patching. Rich tex
 | Rich text and empty fields on the server                 | the `RichText` and `PreviewBoundary` components | `lexicalToHtml()` and a `data-payload-boundary` element          | `lexicalToHtml()` and a `data-payload-boundary` element | `lexicalToHtml()` and a `data-payload-boundary` element |
 | `pll-codegen annotate` reads                             | `.astro`, also as a Vite plugin                 | `.jsx`, `.tsx`                                                   | `.svelte`                                               | not `.vue` files                                        |
 
-Astro also writes the runtime into a static build (`inline`, `loader`). Its `RichText` and `PreviewBoundary` components write the same markup the other frameworks write by hand with `lexicalToHtml()` and a `data-payload-boundary` element ([docs/bindings.md](docs/bindings.md)). The test depth differs: CI installs Astro 4 to 7 and Next.js 15.5 and 16, SvelteKit 2 and Nuxt 3. Nuxt 3 reached its end of life on 31 July 2026, and no job installs Nuxt 4 yet.
+Astro also writes the runtime into a static build (`inline`, `loader`). Its `RichText` and `PreviewBoundary` components write the same markup the other frameworks write by hand with `lexicalToHtml()` and a `data-payload-boundary` element ([docs/bindings.md](docs/bindings.md)). The test depth differs: CI installs Astro 4 to 7, Next.js 15.5 and 16, SvelteKit 2 and 3, and Nuxt 3 and 4. Nuxt 3 reached its end of life on 31 July 2026.
 
 ## Patch, fragment, route
 
