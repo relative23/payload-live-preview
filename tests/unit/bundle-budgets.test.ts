@@ -47,10 +47,10 @@ describe('release bundle budgets', () => {
     // +11/+5/+1 lean, +226/+110/-13 route, +226/+97/+61 fragments; reserves unchanged.
     // 2026-10-31 (moved rows, kept blocks, select labels, the details reveal, variants, picture
     // sources and internalLinkPattern): the pins follow the paired measurement in the budget files.
-    expect(INLINE_BUDGET).toEqual({ raw: 153_671, gzip: 48_544, brotli: 42_678 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 124_458, gzip: 39_320, brotli: 34_580 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 162_266, gzip: 51_432, brotli: 44_742 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 167_851, gzip: 53_326, brotli: 46_392 });
+    expect(INLINE_BUDGET).toEqual({ raw: 153_815, gzip: 48_655, brotli: 42_802 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 124_602, gzip: 39_411, brotli: 34_598 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 162_410, gzip: 51_519, brotli: 44_752 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 167_995, gzip: 53_414, brotli: 46_561 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

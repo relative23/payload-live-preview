@@ -154,4 +154,5 @@
 // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +11/+5/+1 B; prior reserves kept.
 // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +1672/+612/+487 B; prior reserves kept.
 // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +132/+40/+29 B; prior reserves kept.
-export const INLINE_LEAN_BUDGET = { raw: 124_458, gzip: 39_320, brotli: 34_580 } as const;
+// 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +144/+91/+18 B; prior reserves kept.
+export const INLINE_LEAN_BUDGET = { raw: 124_602, gzip: 39_411, brotli: 34_598 } as const;

@@ -264,10 +264,7 @@ The runtime patches what SvelteKit rendered on the server. A component that rend
 import { readable } from 'svelte/store';
 import { createDocumentSession, type DocumentSessionOptions } from 'payload-live-preview/core';
 
-export function livePreviewDocument<T>(
-  initialData: T,
-  options: DocumentSessionOptions,
-) {
+export function livePreviewDocument<T>(initialData: T, options: DocumentSessionOptions) {
   const session = createDocumentSession(initialData, options);
   return readable(session.getSnapshot(), (set) =>
     session.subscribe(() => {

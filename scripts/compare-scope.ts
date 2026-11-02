@@ -68,7 +68,8 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // 2026-10-31: +6 measured code lines: a message with `fieldSchemaJSON` warns once in development that
 // 3.0 ends Payload 2 support, from the protocol tracker and from document-session.ts. No request path changes.
 // 2026-10-31: 1 585 → 1 591, the factory and its header that make the session public.
-export const REVIEWED_SCOPE_LINES = 1591;
+// 2026-11-02: +3 in data-merger.ts, the flag that reports a merge deadline as one.
+export const REVIEWED_SCOPE_LINES = 1594;
 
 interface OurFile {
   readonly file: string;

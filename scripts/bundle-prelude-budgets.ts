@@ -153,7 +153,12 @@
 // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+97/+61 B; prior reserves kept.
 // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2132/+722/+539 B; prior reserves kept.
 // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +673/+227/+260 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 167_851, gzip: 53_326, brotli: 46_392 } as const;
+// 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +144/+88/+169 B; prior reserves kept.
+// The ledger of bundle-budgets.ts continues here: that file is at its line limit.
+// 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +141 / +87 / +66, `core.js` +141 / +84 / +41, `index.cjs` +288 / +181 / +97, `index.js` +288 / +183 / +80.
+// 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +144/+111/+124 B; prior reserves kept.
+// 2026-11-02 (2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired, same epoch): initLivePreview from root +92, generateInlineScript from root +89, initLivePreview from core +91, createLivePreviewMiddleware from nextjs +89, LEAN_RUNTIME from lean +96, useLivePreviewDocument from vue +8.
+export const INLINE_FRAGMENT_BUDGET = { raw: 167_995, gzip: 53_414, brotli: 46_561 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -297,4 +302,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 167_851, gzip: 53_326, brotli: 46_3
 // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +226/+110/-13 B; the Brotli ceiling stays, it fell; prior reserves kept.
 // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2132/+726/+627 B; prior reserves kept.
 // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +673/+224/+148 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 162_266, gzip: 51_432, brotli: 44_742 } as const;
+// 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +144/+87/+10 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 162_410, gzip: 51_519, brotli: 44_752 } as const;
