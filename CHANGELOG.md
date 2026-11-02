@@ -1,5 +1,15 @@
 # payload-live-preview
 
+## 2.3.1
+
+### Patch Changes
+
+- be4604c: `createDocumentSession()` accepts a document typed by an interface, such as the types `payload generate:types` writes. Its `Record<string, unknown>` constraint rejected those with TS2344, though `DocumentSession` itself takes them.
+- 4f7d609: An image binding takes a path with a space in it again. Since 2.3.0 `/media/my photo.png` was refused as if it were alt text and the old image stayed; 2.2 wrote it and the browser encoded the space. A string now names an address when it starts with `/`, `./` or `../`, ends in an image's file extension, or holds a `/`, `.` or `:` and no whitespace. A bare word such as `hero` stays text, as it could be a name or an id: write `./hero` for a relative path.
+- ac2bb76: A merge that passes `timeoutMs` or `mergeTimeoutMs` now reports the deadline when `fetch` rejects as it is aborted, which most do. The hook's `error` said only that the operation was aborted. The merge itself ended correctly before too.
+- e7ef01e: An image from Payload 4's sharp transformer gets its `srcset` back. The transformer writes WebP variants of a JPEG original, and the rule that keeps one format in a `srcset` dropped them all, so the browser only had the original. When no size has the format the element shows, the sizes of its shape are offered. Measured on a real upload under 4.0.0-beta.6.
+- e7ef01e: Choosing another image for an `<img>` in a `<picture>` now always removes the `<source>` elements. When the new image had a size of the name the element had kept, the sources stayed, and a browser that picked one went on showing the old image.
+
 ## 2.3.0
 
 ### Minor Changes
