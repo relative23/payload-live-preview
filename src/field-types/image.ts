@@ -14,8 +14,13 @@ import { clearImage, writeImage } from './media';
 import { acceptUrl } from './unsafe-url';
 import { isEmptyValue } from './utils';
 
-/** A path, a file name or a URL: a `/`, `.` or `:` somewhere, and no whitespace anywhere. */
-const NAMES_A_SOURCE = /^\S*[/.:]\S*$/;
+/**
+ * A path from `/`, `./` or `../`; a file name with an image's extension; or a
+ * `/`, `.` or `:` somewhere and no whitespace. The first two may hold a space,
+ * which the browser encodes. A bare word stays text: it could be a name or an id.
+ */
+const NAMES_A_SOURCE =
+  /^(?:\.{0,2}\/|\S*[/.:]\S*$|.*\.(?:avif|bmp|gif|ico|jpe?g|png|svg|tiff?|webp)$)/i;
 
 const imageRenderer: FieldRenderer = {
   name: 'image',

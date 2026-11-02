@@ -110,8 +110,10 @@ change the page must show, not a message to ignore.
 
 A value that carries no usable URL, a media object without `url` or a bare
 relation id, is the third question, and the renderers differ in what they have
-left to write. For `image` that includes a string that names no address: one
-with whitespace in it, or with no `/`, `.` or `:` (alt text, a document id).
+left to write. For `image` that includes a string that names no address (alt
+text, a document id). A string names one when it starts with `/`, `./` or `../`,
+ends in an image's file extension, or holds a `/`, `.` or `:` and no whitespace.
+A bare word such as `hero` stays text; write `./hero` for a relative path.
 `image` and `upload` have nothing else, so they leave the element
 untouched and count as **no** write; the runtime treats that as a patch that
 fell short, and `onUnfaithfulPatch` decides what follows (`LP0411`).
