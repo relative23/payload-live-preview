@@ -181,6 +181,30 @@ describe('native host login reference', () => {
       await pending;
     }
   });
+  it('signs in when Payload takes longer than two seconds to answer the login', async () => {
+    // CI run 41426856661: two concurrent logins on a loaded runner were refused,
+    // while the Payload behind the host answered both with 200.
+    const h = harness();
+    const answer = h.calls.getMockImplementation()!;
+    h.calls.mockImplementationOnce(
+      (url, init) =>
+        new Promise<Response>((resolve, reject) => {
+          const timer = setTimeout(() => resolve(answer(url, init)), 2_500);
+          init?.signal?.addEventListener(
+            'abort',
+            () => {
+              clearTimeout(timer);
+              reject(init.signal!.reason as Error);
+            },
+            { once: true },
+          );
+        }),
+    );
+    const result = await h.host.login(
+      h.request('/login', '', 'POST', { email: 'a@fixture.invalid', password: 'local test' }),
+    );
+    expect(result.status).toBe(204);
+  }, 10_000);
   it('refuses the disabled route before login or private reads', async () => {
     const h = harness(false);
     expect(
