@@ -6,17 +6,17 @@ Executable reference contract, not a public package API.
 
 ## Problem and boundary
 
-H04 reproduces an availability conflict: a page consumes its signed entry
+A measurement reproduces an availability conflict: a page consumes its signed entry
 token, then fragments and reloads present the same token and are refused.
 Moving that token from a query to a header does not change its one-time
-meaning. H11 adds a second constraint: the browser must not inherit a private
+meaning. The relationship and upload merge adds a second constraint: the browser must not inherit a private
 Payload credential from the server's initial read.
 
 Keep the existing signed-token, Payload-session and verifier strategies. The
 first implementation is an application-side reference under `tests/fixtures/`,
 using the real authorization and fragment modules. It selects a contract for
 later package and native-framework work; it is not a shipped session store or
-a claim that H04/H11 are closed. There is no 2.x default or token-format change.
+a claim that the authorization lifecycle or that merge are settled. There is no 2.x default or token-format change.
 
 ## Verified binding, not posted authority
 
@@ -571,11 +571,11 @@ ACL changes. Next and SvelteKit each pass 18/18 again, and the unchanged
 SvelteKit production fixture passes 63/63 through the shared runner.
 
 This proves the selected Nuxt SSR/composable owner, not all fragment-provider,
-head/CSS/resource or module-onboarding contracts in H18. The build compiles
+head/CSS/resource or module-onboarding contracts of the Nuxt work. The build compiles
 SFCs but is not a separate semantic `vue-tsc` check; that remains required
 before public recipe extraction. Test parent messages/proof issuance, same-site
 cookies and process-local storage retain the earlier limits. There is no
-public API/default/version change or claim that H04/H11/H18 are closed.
+public API/default/version change or claim that the authorization lifecycle, the merge or the Nuxt work are settled.
 
 ### Native Astro host and element lifetime (2026-09-27)
 
@@ -618,7 +618,7 @@ browser records 168 REST requests, zero content writes and two local ACL
 changes. The shared contract now also checks concurrent SSR and data reads
 for two users/locales, beyond the existing sequential tab checks.
 
-This is a native page/host proof, not closure of H05's isolated fragment
+This is a native page/host proof, not closure of the Astro fragment work's isolated fragment
 rendering-context, first-use CSS/resource or configured-renderer obligations.
 Astro 4-6 and the exact Container feature floor remain separate. This Node
 24.19.0 result does not establish Astro 7 on the package's Node 20 floor.

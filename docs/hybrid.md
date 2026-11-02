@@ -637,9 +637,16 @@ renders nothing more. Without a save, the edit stays out of the preview until
 the next one. Where a binding exists the page is still patched in place, with
 focus and scroll intact.
 
+That first render costs a server render per unbound edit and shows nothing the
+editor typed. `routeStrategy: 'after-save'` holds every route render until
+Payload reports a save, beside `fragments` too; the revision reports that it
+waits for the save, and after it the route renders once
+([options.md](options.md)). `LivePreviewClient` takes `routeAfterSave: true`.
+
 The same decision covers the other ways a patch falls short of the server's own
-render: a value no renderer can represent, and a Lexical block whose markup the
-write has to drop. Those name an element, so they escalate to the fragment
+render: a value no renderer can represent, a Lexical block with no renderer that
+changed or whose markup the write has to drop, and a binding on an index path
+whose row moved ([bindings.md](bindings.md)). Those name an element, so they escalate to the fragment
 boundary around it when there is one, and to the route when there is not. A
 later edit of the same element escalates again, at most once a second per
 element, because what the server drew still shows the old value. The value it

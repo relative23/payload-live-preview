@@ -1,6 +1,6 @@
 # ADR 0014 — Auto-binding: what the runtime may guess, and what it must never
 
-**Status:** Accepted • **Date:** 2026-09-10 (written before any Z9 commit; default decided the same day)
+**Status:** Accepted • **Date:** 2026-09-10 (written before the first auto-binding commit; default decided the same day)
 
 ## Context
 
@@ -11,9 +11,10 @@ Every measured area of the audit is closed or on its way except one:
 remove it, and for a project that will not carry the attributes at all the
 honest answer today is "use the hook", which is Payload's answer.
 
-Z9 asks whether the runtime can find the bindings itself.
+The question is whether the runtime can find the bindings itself.
 
-The idea is small. Since Z2 and Z3 the runtime knows that the first message of
+The idea is small. Since the first message became the baseline and a patch
+that falls short escalates, the runtime knows that the first message of
 a connection describes a state the server has already rendered. In that one
 moment the document and the DOM are two views of the same thing, so a field's
 value can be looked for in the page — and where it is found exactly once, the
@@ -21,7 +22,7 @@ element that holds it is the element that field renders.
 
 ### Why the alternatives do not reach the goal
 
-- **Build-time annotation** (what `R8` gives Astro) rewrites the template, so
+- **Build-time annotation** (what `livePreviewAnnotate()` gives Astro) rewrites the template, so
   no attribute is written by hand. It needs a template whose own scope reaches
   the request context: Astro's frontmatter and `Astro.locals` do, a Svelte or
   Vue component does not, and Next brings no Vite. It closes one framework,
@@ -61,14 +62,14 @@ It is therefore constrained the way a guess should be:
 
 - **Never** inside `<script>`, `<style>`, `<template>`, `<title>`, a form
   control's value, a `contenteditable` subtree, a shadow root, or an element
-  or ancestor carrying the opt-out attribute. Z9's first commit named it
+  or ancestor carrying the opt-out attribute. The first auto-binding commit named it
   `data-payload-no-bind` (`src/core/auto-bind.ts`); until then this record
   left the name open on purpose, because the docs gate rightly refuses an
   attribute name the code does not define. `data-payload-owned` and an island
   are boundaries here as they are for the morph, and the search stays in the
   body — a `<head>` binding needs the attribute and the route strategy.
 - **Never** an attribute other than the ones `isWritableAttribute` already
-  admits (Z22 extracted it; there is no second rule).
+  admits (one function; there is no second rule).
 - **Never** a value shorter than a floor, and never one that is only digits,
   a boolean, an enum-looking token or a locale code — those match by accident.
   The floor is a measurement, not a guess: 13, the shortest length at which
@@ -87,7 +88,7 @@ for the rest — `autoBind` is what opts in.
 
 ### 3. It fails closed
 
-A field the search cannot place stays unbound, and unbound since Z3 means
+A field the search cannot place stays unbound, and an unbound change goes to
 `onUnfaithfulPatch: 'escalate'`. A page with `autoBind` on and no strategy
 therefore behaves exactly as it does today for anything the guess misses:
 nothing is written, and the diagnostic says which field.
@@ -99,10 +100,11 @@ low hit rate is a disappointment rather than a hazard.
 
 The server writes `Apr 12, 2025`, the document carries
 `2025-04-12T08:30:00.000Z`, the two do not match, no binding is made. That is
-the correct outcome and it is also the reason Z20 exists: without a
+the correct outcome and it is also the reason a server-formatted value is
+reported rather than guessed: without a
 diagnostic, "the runtime silently did not bind your date" is indistinguishable
-from "there is nothing there". Z9 depends on Z20 having landed, or on landing
-its diagnostic itself.
+from "there is nothing there". Auto-binding depends on that report having
+landed, or on landing it itself.
 
 ## What counts as failure
 
@@ -163,7 +165,7 @@ writes to the wrong element is worse than an attribute someone has to type.
   the wrong element is worse than an attribute someone has to type.
 - **A route refresh lost every guess once, and this is how it was closed.**
   The refresh morphs the page toward the server's own markup, which carries
-  no stamp; measured on 2026-09-10 (Z26), two guesses were gone after the
+  no stamp; measured on 2026-09-10, two guesses were gone after the
   first refresh and every later edit to a guessed field fetched the route
   again instead of patching. Since then the runtime looks for the baseline's
   own guesses again on the fresh markup, once per refresh — by the value each
@@ -184,8 +186,8 @@ writes to the wrong element is worse than an attribute someone has to type.
   its artifact is byte-identical with and without the change.
 - **Measured on a real project, the rule finds less than on the fixtures, and
   the reason is a mirror, not a miss.** On the four fixtures the search finds
-  5 of 8 declared bindings (Z9); on the Halle Sieben demo it found 3 of 17
-  (Z17, 2026-09-10), and 0 of 11 on the magazine and programme pages. The SEO
+  5 of 8 declared bindings; on the Halle Sieben demo it found 3 of 17
+  (2026-09-10), and 0 of 11 on the magazine and programme pages. The SEO
   plugin copies `title` into `meta.title` and `excerpt`/`subtitle` into
   `meta.description`, value for value, and §1's duplicate rule then binds
   nothing: a value two fields share is searched for neither, because the

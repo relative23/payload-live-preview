@@ -7,7 +7,7 @@ It extends the resource boundary in ADR 0011 without changing its wire format.
 
 ## Observation
 
-The native Astro 7.3.2 production consumer reproduces H05 on the retained
+The native Astro 7.3.2 production consumer reproduces the first-use resource gap on the retained
 package archive: two initially empty boundaries receive real component markup
 and Astro scope attributes, but computed border width is `0px`, not `7px`.
 A nested component's letter spacing is `normal`, not `3px`. The isolated
@@ -82,7 +82,7 @@ Rollback removes the application recipe, resource-profile fixture, independent
 dependency lock, tests and runner branch. Product sources, exports, defaults,
 budgets and the retained archive are unchanged; no package changeset is needed
 for this test-and-documentation charge. The hardening records retain failed
-attempts and do not close H05 beyond the measured recipe.
+attempts and do not close the Astro fragment work beyond the measured recipe.
 
 ## Exact-version follow-up (2026-09-27)
 
@@ -277,7 +277,7 @@ external module, and disposes that root on disconnect. Its committed effect and
 working counter must be observed. The fragment's static HTML must not be claimed
 as interactive just because it contains a button or a successful render event.
 This control is not an Astro `client:*` or post-morph hydration implementation.
-Those contracts remain separate H05 work and require a resource/ownership
+Those contracts remain separate Astro fragment work and require a resource/ownership
 decision before changing the product.
 
 Acceptance requires consecutive unsaved React text and derived values, computed

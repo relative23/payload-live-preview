@@ -1,8 +1,10 @@
 # ADR 0030 — A Nuxt fragment is a standalone Vue app
 
-**Status:** Proposed • **Date:** 2026-10-02 (H18; measured on `examples/nuxt-payload`
+**Status:** Accepted • **Date:** 2026-10-02 (measured on `examples/nuxt-payload`
 with Nuxt 3.21.11, Nitro 2.13.4 and Vue 3.5.41, and on a copy in Nuxt 4.5.2's
 `app/` layout)
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 ## Context
 

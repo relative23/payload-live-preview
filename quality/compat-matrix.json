@@ -2349,6 +2349,10 @@
       "source": "corpus"
     },
     {
+      "version": "4.0.0-beta.6 (pre-release)",
+      "how": "measured on 2026-11-02, outside CI, with tests/real-payload/surface-findings.spec.ts against examples/payload-backend with payload@4.0.0-beta.6 installed over it (Node 24.22.1): its 7 cases passed in Chromium, Firefox and WebKit. Among them an upload chosen in the admin reached an `<img>` inside a `<picture>` through the REST merge, and an edit in Lexical rich text was written by the client-side renderer, internal link included. Relationships were not part of the run"
+    },
+    {
       "version": "4.0.0-beta.4",
       "how": "wire corpus captured on 2026-10-26 from a real Payload 4 admin (examples/payload-backend with payload@4.0.0-beta.4 installed over it, Node 24.22.1), replayed in tests/integration/wire-corpus.test.ts; the fixture itself stays on 3.x",
       "source": "corpus"

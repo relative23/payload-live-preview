@@ -14,7 +14,8 @@ of this package ([ADR 0007](architecture/0007-v2-defaults-and-renames-ledger.md#
 entry 25); every 2.x release keeps it. The plugin was measured once
 against 4.0.0-beta.4, outside CI, and the
 [compatibility list](../README.md#compatibility) says what that run covered and
-what it left out.
+what it left out; its `order` option and `null` resolvers were measured once
+against 4.0.0-beta.6, also outside CI.
 
 ## Configure the panel
 

@@ -31,7 +31,7 @@ Then open:
 | Field bindings (text, image, number, array, date, link, rich text)                                           | `src/pages/index.astro`                                   |
 | postMessage protocol                                                                                         | `src/pages/admin.astro`                                   |
 | Lexical rich text rendered on the server by `RichText.astro`                                                 | `body` in `src/pages/index.astro`                         |
-| A DOM for the server-side sanitizer (`setSanitizerDocument()` with linkedom)                                 | `src/sanitizer.ts`                                        |
+| A linkedom document for the server-side sanitizer, handed to `RichText` per render with `requireDocument`    | `src/sanitizer.ts`                                        |
 | Origin validation                                                                                            | Try messaging from another origin via DevTools — rejected |
 
 ## Production setup
