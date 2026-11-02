@@ -12,7 +12,7 @@ import {
   expectImageLoaded,
   waitForPopulation,
 } from './upload-media';
-import { openLivePreviewPanel } from './live-preview-panel';
+import { openLivePreviewPanel, reloadPreviewFrame } from './live-preview-panel';
 import { ADMIN_ORIGIN, PREVIEW_ORIGIN } from './origins';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
@@ -181,15 +181,7 @@ test.describe(`real Payload session → ${SURFACE} preview`, () => {
       body
         .evaluate(() => typeof (window as Window & { __livePreview?: unknown }).__livePreview)
         .catch(() => 'navigating');
-    const reload = (): Promise<void> =>
-      page.locator(PREVIEW_IFRAME).evaluate(
-        (frame) =>
-          new Promise<void>((resolve) => {
-            const element = frame as HTMLIFrameElement;
-            element.addEventListener('load', () => resolve(), { once: true });
-            element.setAttribute('src', element.src);
-          }),
-      );
+    const reload = (): Promise<void> => reloadPreviewFrame(page, PREVIEW_IFRAME);
 
     await expect.poll(runtime, { timeout: 60_000 }).toBe('object');
 

@@ -26,3 +26,33 @@ export async function openLivePreviewPanel(page: Page): Promise<void> {
   // The toggle loads the panel's chunks; a cold `next dev` compiles them first (see the config's timeout).
   await expect.poll(isOpen, { timeout: 45_000 }).toBe(true);
 }
+
+/**
+ * The preview frame reloaded, as the editor's browser would after a sign-in or a sign-out. In WebKit one such
+ * reload fired no `load` within the test's minute (run 41507231988, the nuxt4 session spec), so a reload that has
+ * not loaded after 20 s is started again, at most three times. A cold dev server that compiles the page for longer
+ * goes on compiling, and the next request is answered when it is done.
+ */
+export async function reloadPreviewFrame(page: Page, selector: string): Promise<void> {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const loaded = await page.locator(selector).evaluate(
+      (frame, timeout) =>
+        new Promise<boolean>((resolve) => {
+          const element = frame as HTMLIFrameElement;
+          const timer = setTimeout(() => resolve(false), timeout);
+          element.addEventListener(
+            'load',
+            () => {
+              clearTimeout(timer);
+              resolve(true);
+            },
+            { once: true },
+          );
+          element.setAttribute('src', element.src);
+        }),
+      20_000,
+    );
+    if (loaded) return;
+  }
+  throw new Error('the preview frame fired no load event after three reloads');
+}
