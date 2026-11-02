@@ -264,7 +264,7 @@ The runtime patches what SvelteKit rendered on the server. A component that rend
 import { readable } from 'svelte/store';
 import { createDocumentSession, type DocumentSessionOptions } from 'payload-live-preview/core';
 
-export function livePreviewDocument<T extends Record<string, unknown>>(
+export function livePreviewDocument<T>(
   initialData: T,
   options: DocumentSessionOptions,
 ) {

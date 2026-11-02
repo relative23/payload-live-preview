@@ -12,7 +12,7 @@ import {
   type DocumentSessionOptions,
 } from '@/core-entry';
 
-function livePreviewDocument<T extends Record<string, unknown>>(
+function livePreviewDocument<T>(
   initialData: T,
   options: DocumentSessionOptions,
 ): ReturnType<typeof readable<ReturnType<DocumentSession<T>['getSnapshot']>>> {
@@ -26,6 +26,12 @@ function livePreviewDocument<T extends Record<string, unknown>>(
 
 const ADMIN = 'https://admin.example.com';
 
+/** A generated Payload document: an interface, which has no index signature. */
+interface Page {
+  id: string;
+  title: string;
+}
+
 function post(title: string): void {
   window.dispatchEvent(
     new MessageEvent('message', {
@@ -37,6 +43,12 @@ function post(title: string): void {
 }
 
 describe('the Svelte store recipe', () => {
+  it('takes a document typed by an interface', () => {
+    const page: Page = { id: '1', title: 'Typed' };
+    const session = createDocumentSession<Page>(page, { serverURL: 'https://cms.example.com' });
+    expect(session.getSnapshot().data.title).toBe('Typed');
+  });
+
   it('hands a subscriber the document, then each update, and stops with the last one', async () => {
     const fetchFn = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
       Promise.resolve(

@@ -314,7 +314,7 @@ export class DocumentSession<T> {
  * fit a `useSyncExternalStore` or a Svelte store.
  * @beta
  */
-export function createDocumentSession<T extends Record<string, unknown>>(
+export function createDocumentSession<T>(
   initialData: T,
   options: DocumentSessionOptions,
 ): DocumentSession<T> {
