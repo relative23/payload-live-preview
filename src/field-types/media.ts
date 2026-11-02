@@ -33,8 +33,8 @@ function dropPictureSources(img: HTMLImageElement): void {
  * rebuilt or removed together with `sizes`. It offers the picture the element
  * shows: the size whose URL the element's `src` is — the template's choice, or
  * the last write's once the editor picks another image — else the original,
- * and of the rest only what has its shape and format, one per width. A crop
- * of another shape is another picture. `url` is already resolved; the sizes
+ * and of the rest only what has its shape and format, or its shape alone when
+ * no size has its format, one per width. A crop of another shape is another picture. `url` is already resolved; the sizes
  * are resolved against `serverURL`. A `<picture>` keeps its sources while the
  * image is still the one they were drawn for.
  */
@@ -51,12 +51,21 @@ export function writeImage(
     sizes.find((size) => size.name === chosenSizes.get(img));
   if (chosen?.name === undefined) chosenSizes.delete(img);
   else chosenSizes.set(img, chosen.name);
-  if (shown === null || (chosen === undefined && !sameUrl(img, url, shown))) {
+  // A size of the same name on another image is still another image.
+  if (
+    shown === null ||
+    !(sameUrl(img, url, shown) || sizes.some((s) => sameUrl(img, s.url, shown)))
+  ) {
     dropPictureSources(img);
   }
   img.src = chosen?.url ?? url;
   const shape = chosen ?? media;
-  const candidates = sizes.filter((size) => sameShape(size, shape));
+  const sameFormat = sizes.filter((size) => sameShape(size, shape));
+  // Payload 4's sharp transformer writes WebP variants of a JPEG: another format, the same picture.
+  const candidates =
+    sameFormat.length > 0
+      ? sameFormat
+      : sizes.filter((size) => sameShape({ ...size, mimeType: undefined }, shape));
   if (candidates.length === 0) {
     img.removeAttribute('srcset');
     img.removeAttribute('sizes');
