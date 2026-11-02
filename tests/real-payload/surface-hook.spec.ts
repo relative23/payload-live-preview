@@ -9,7 +9,7 @@
  */
 import { expect, test } from '@playwright/test';
 import { SEEDED_MEDIA, chooseSeededMedia, waitForPopulation } from './upload-media';
-import { openLivePreviewPanel } from './live-preview-panel';
+import { openLivePreviewPanel, reloadPreviewFrame } from './live-preview-panel';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs-hook';
@@ -207,14 +207,7 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
         }
       });
     }, `http://localhost:${PORT}`);
-    await page.locator(PREVIEW_IFRAME).evaluate(
-      (frame) =>
-        new Promise<void>((resolve) => {
-          const element = frame as HTMLIFrameElement;
-          element.addEventListener('load', () => resolve(), { once: true });
-          element.setAttribute('src', element.src);
-        }),
-    );
+    await reloadPreviewFrame(page, PREVIEW_IFRAME);
     await expect
       .poll(
         () =>

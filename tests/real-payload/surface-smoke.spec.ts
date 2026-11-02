@@ -11,7 +11,7 @@
  * the surface named by `PLP_REAL_PAYLOAD_TARGET` and the admin beside it.
  */
 import { expect, test, type Page } from '@playwright/test';
-import { openLivePreviewPanel } from './live-preview-panel';
+import { openLivePreviewPanel, reloadPreviewFrame } from './live-preview-panel';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs';
@@ -116,20 +116,7 @@ test.describe(`real Payload admin → ${SURFACE} live preview`, () => {
     await expect(title).toHaveText('Title typed before the reload');
     await page.waitForTimeout(1_000);
     // The new document, not the old one still on screen while a dev server renders.
-    await page.locator(PREVIEW_IFRAME).evaluate(
-      (frame) =>
-        new Promise<void>((resolve) => {
-          const element = frame as HTMLIFrameElement;
-          element.addEventListener(
-            'load',
-            () => {
-              resolve();
-            },
-            { once: true },
-          );
-          element.setAttribute('src', element.src);
-        }),
-    );
+    await reloadPreviewFrame(page, PREVIEW_IFRAME);
     await preview.locator('body').waitForFunction(
       () => {
         const runtime = (

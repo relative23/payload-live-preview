@@ -7,7 +7,7 @@
  * autoLogin; `playwright.real-payload.config.ts` starts both (`nextjs-autologin`).
  */
 import { expect, test, type Page, type Response } from '@playwright/test';
-import { openLivePreviewPanel } from './live-preview-panel';
+import { openLivePreviewPanel, reloadPreviewFrame } from './live-preview-panel';
 
 const PORT = process.env['PLP_REAL_PAYLOAD_PORT'] ?? '4474';
 const SURFACE = process.env['PLP_REAL_PAYLOAD_SURFACE'] ?? 'nextjs-autologin';
@@ -106,14 +106,7 @@ test.describe(`real Payload admin on autoLogin → ${SURFACE} preview`, () => {
     });
     expect(loggedIn.ok()).toBe(true);
     expect(await cookieNames(page)).toContain('payload-token');
-    await page.locator(PREVIEW_IFRAME).evaluate(
-      (frame) =>
-        new Promise<void>((resolve) => {
-          const element = frame as HTMLIFrameElement;
-          element.addEventListener('load', () => resolve(), { once: true });
-          element.setAttribute('src', element.src);
-        }),
-    );
+    await reloadPreviewFrame(page, PREVIEW_IFRAME);
     await expect.poll(runtime, { timeout: 30_000 }).toBe('object');
     await page.locator('#field-title').fill('Typed once the cookie exists');
     await expect(title).toHaveText('Typed once the cookie exists');
