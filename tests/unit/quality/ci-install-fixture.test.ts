@@ -1,12 +1,14 @@
 /**
  * `scripts/ci-install-fixture.sh` installs a fixture again when npm fails on the network, and
  * only then. The script runs against a stand-in `npm` that follows a plan, one outcome per call,
- * so the attempts can be counted without a registry.
+ * so the attempts can be counted without a registry. A stand-in `node` passes the platform
+ * check, which has tests of its own (platform-packages.test.ts) and is a `.ts` file that the
+ * Node 20 unit job cannot run.
  */
 import { spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { delimiter, dirname, join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 type Outcome = 'ok' | 'network' | 'error';
@@ -26,16 +28,17 @@ case "$(sed -n "\${n}p" "$STATE/plan")" in
 esac
 `;
 
+const FAKE_NODE = `#!/usr/bin/env bash
+[ "$1" = scripts/check-platform-packages.ts ] && [ -n "$2" ]
+`;
+
 let directory: string;
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), 'plp-ci-install-fixture-'));
   await mkdir(join(directory, 'bin'));
   await writeFile(join(directory, 'bin/npm'), FAKE_NPM, { mode: 0o755 });
+  await writeFile(join(directory, 'bin/node'), FAKE_NODE, { mode: 0o755 });
   await mkdir(join(directory, 'fixture'));
-  await writeFile(
-    join(directory, 'fixture/package-lock.json'),
-    JSON.stringify({ lockfileVersion: 3, packages: { '': { name: 'fixture' } } }),
-  );
 });
 afterEach(async () => {
   await rm(directory, { recursive: true, force: true });
@@ -52,9 +55,7 @@ async function install(plan: readonly Outcome[]): Promise<{
     env: {
       ...process.env,
       STATE: directory,
-      PATH: [join(directory, 'bin'), dirname(process.execPath), process.env['PATH']].join(
-        delimiter,
-      ),
+      PATH: [join(directory, 'bin'), process.env['PATH']].join(delimiter),
     },
   });
   const calls = Number(await readFile(join(directory, 'calls'), 'utf8'));
