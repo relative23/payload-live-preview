@@ -182,7 +182,9 @@ export function createNextHostReference(options: HostOptions) {
     async login(request: Request): Promise<Response> {
       if (!safe(request, true)) return empty(403);
       if (request.method !== 'POST') return empty(405);
-      const signal = AbortSignal.any([request.signal, AbortSignal.timeout(2_000)]);
+      // A real Payload login hashes the password and writes a session; on a loaded
+      // CI runner two at once took longer than two seconds (run 41426856661).
+      const signal = AbortSignal.any([request.signal, AbortSignal.timeout(10_000)]);
       try {
         if (logins.size >= 32) return empty(503);
         const input = await json(request, signal, 1_024);

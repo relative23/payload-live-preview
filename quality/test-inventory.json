@@ -22,7 +22,7 @@
   "totals": {
     "files": 542,
     "suites": 1049,
-    "tests": 4746,
+    "tests": 4747,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 444,
       "suites": 938,
-      "tests": 4335,
+      "tests": 4336,
       "benchmarks": 0
     }
   },
@@ -3672,7 +3672,7 @@
       "path": "tests/unit/security/preview-next-host.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {
