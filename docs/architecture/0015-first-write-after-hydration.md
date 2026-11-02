@@ -7,8 +7,9 @@
 The runtime is an inline script in `<head>`. It starts on `DOMContentLoaded`,
 posts `ready`, and the admin answers with the document. On a static page that
 is the right order: the markup is final the moment it is parsed, and the first
-message may repaint every binding — Z2 measured what happens when it does not
-(`examples/pure-html` shows its placeholder text for good), and Z3 built on it.
+message may repaint every binding — a measurement showed what happens when it
+does not (`examples/pure-html` shows its placeholder text for good), and the
+escalation of a patch that falls short built on it.
 
 On a page a framework hydrates, the markup is _not_ final when it is parsed. The
 framework's client bundle arrives later, walks the server markup and claims it,
@@ -84,7 +85,7 @@ several steps (2026-09-24 addendum).
 
 ### Why the alternatives do not reach the goal
 
-- **Z2's half-step, "the first message writes nothing"**, is right for this
+- **The half-step "the first message writes nothing"** is right for this
   page and wrong for every static one. Measured and refused on 2026-09-07; the
   decision then was to leave the first write alone, and it stands.
 - **A client component that signals "hydrated"** from the package's `react`

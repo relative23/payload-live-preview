@@ -1,6 +1,8 @@
 # ADR 0031 — Next.js 15.5 is supported because a job installs it
 
-**Status:** Proposed • **Date:** 2026-10-17
+**Status:** Accepted • **Date:** 2026-10-17
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 Applies the rule of ADR 0009 to Next.js: a version in the README is a version a job installed.
 

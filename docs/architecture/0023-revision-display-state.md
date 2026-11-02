@@ -1,6 +1,8 @@
 # ADR 0023 — A revision reports how completely the page shows it
 
-**Status:** Proposed • **Date:** 2026-09-29
+**Status:** Accepted • **Date:** 2026-09-29
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 This record adds a headless, per-revision display state to the DOM runtime,
 an acknowledgement for islands and the message revision to the hooks'
@@ -17,7 +19,7 @@ framework commits. `inspect()` counts each of them across the session
 revision, whether the page now shows it. `revisions.completed` means that the
 scheduled writes landed and no boundary is pending, which is true of a
 revision whose boundary fell back to a patch, whose route render showed the
-saved draft, or whose island never rendered it (H13).
+saved draft, or whose island never rendered it.
 
 A page or tool that wants to tell an editor "the preview is current" has had
 to combine those counters itself, and it could not attribute them: a route

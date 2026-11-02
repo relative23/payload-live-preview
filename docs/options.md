@@ -398,13 +398,13 @@ the runtime.
 | Entry                                                | Class        | Contents                                                                                                                                                                                                  |
 | ---------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `payload-live-preview`                               | Stable       | Client, inline script generator, renderers, built-in plugins, authorization and binding helpers; not the exports named above.                                                                             |
-| `payload-live-preview/core`                          | Stable       | The client and runtime without the built-in plugin constructors, generator or adapters.                                                                                                                   |
+| `payload-live-preview/core`                          | Stable       | The client and runtime without the built-in plugin constructors, generator or adapters; `createDocumentSession()` (`@beta`).                                                                              |
 | `payload-live-preview/client`                        | Stable       | `LivePreviewClient` and `initLivePreview()` alone.                                                                                                                                                        |
 | `payload-live-preview/structural`                    | Experimental | The structural array renderer, the keyed morph and the `data-payload-depends` helpers; `morphElement()`, `MorphOptions`, `isMorphBoundary()` and `retainIslandBoundary()` are `@beta`, ADR 0008's engine. |
 | `payload-live-preview/lexical`                       | Stable       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`, `setSanitizerDocument()`.                                                                                  |
 | `payload-live-preview/plugins`                       | Stable       | `PluginManager`, plugin types and the built-in plugins.                                                                                                                                                   |
 | `payload-live-preview/fragment`                      | Stable       | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                                                                                                          |
-| `payload-live-preview/server`                        | Stable       | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `bind()`.                                                                                               |
+| `payload-live-preview/server`                        | Stable       | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `previewBindingsFromLocals()`, `bind()`.                                                                |
 | `payload-live-preview/plugin`                        | Stable       | `livePreview()` configures Payload 2.32.3 or 3.x structurally: one root URL callback, merged entity lists and optional root breakpoints; no authentication or Payload import.                             |
 | `payload-live-preview/payload`                       | Stable       | The lower-level `buildLivePreviewUrl()` callback for manual or nullable `payload.config.ts` routing; imports nothing from `payload`.                                                                      |
 | `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | Stable       | One framework adapter each.                                                                                                                                                                               |
@@ -422,6 +422,26 @@ the runtime.
 
 `payload-live-preview/astro/middleware-entry` also exists; Astro's
 `mode: 'middleware'` registers it and nothing else imports it.
+
+A few exports serve integrations more than pages:
+
+- `createDocumentSession()` (`/core`, `@beta`) returns a `DocumentSession`, the
+  session behind the React and Vue hooks, for a framework that has no hook
+  ([docs/sveltekit.md](sveltekit.md) has a store recipe).
+- `isAuthorizedPreviewContext()` (root, `/core`, `/server`) says whether a value
+  carries the brand `authorizePreviewRequest()` gives it.
+  `AUTHORIZED_PREVIEW_BRAND_KEY` is the name of that brand's property; writing it
+  by hand buys nothing ([ADR 0006](architecture/0006-authorized-preview-context.md)).
+- `extractCookie()` (`/server`) returns exactly one value for a cookie name from
+  a `Cookie` header, or `null` when it is absent, empty, too long or repeated.
+- `negotiateProtocol()`, `detectProtocolProfile()` and `CAPABILITY_DECLARATIONS`
+  (root, `/core`) are the protocol version, capabilities and Payload profile the
+  runtime settles on ([ADR 0010](architecture/0010-protocol-capabilities-by-observation.md)).
+- `EventEmitter` (root, `/core`, `/client`, `/plugins`) is the per-instance typed
+  emitter behind the client's events: handlers run in registration order, and
+  one that throws is logged and isolated.
+- `registerBuiltinRenderer()` (root) registers or replaces a field renderer for
+  the renderer maps built after the call ([docs/renderers.md](renderers.md)).
 
 ## `serverURL` and `mergeDepth`
 

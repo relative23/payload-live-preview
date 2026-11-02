@@ -1,6 +1,8 @@
 # ADR 0022 — Sub-field coverage is declared, not implied by one descendant
 
-**Status:** Proposed • **Date:** 2026-09-29
+**Status:** Accepted • **Date:** 2026-09-29
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 This record adds an opt-in coverage rule and a declaration attribute. The 2.x
 default does not change; flipping it is recorded as a 3.0 candidate in the
@@ -16,7 +18,7 @@ bound. The rule is shared by the unbound-change escalation
 (`onUnfaithfulPatch`), the orphan report (LP0203) and the unbound-fields
 overlay, which must answer alike.
 
-The rule is a heuristic (H02). A page that binds `hero.eyebrow` and shows
+The rule is a heuristic. A page that binds `hero.eyebrow` and shows
 `hero.description` from the saved document does not escalate an edit of
 `hero.description`: the top-level field `hero` is "addressable", the edit
 stays invisible and nothing says so. The opposite reading is not always right

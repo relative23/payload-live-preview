@@ -257,8 +257,8 @@ adapter; otherwise pass the browser's origin as `serverURL` and take `apiRoute`
 and `mergeDepth` from it. The same `authorization` gates the binding attributes
 ([docs/bindings.md](bindings.md)) and the fragment endpoint ([docs/hybrid.md](hybrid.md)).
 
-Payload 4 can keep `_status` per locale. Payload 4.0.0-beta.4 sets
-`versions.drafts.localizeStatus` itself when the config has localization and
+Payload 4 can keep `_status` per locale. Payload 4.0.0-beta.4 and beta.6 set
+`versions.drafts.localizeStatus` themselves when the config has localization and
 the collection or global has localized fields, and a document can then be
 published in one locale and a draft in another. A public read (`authorization:
 null`) in a locale where it was never published finds nothing when the read

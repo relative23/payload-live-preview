@@ -1,6 +1,8 @@
 # ADR 0024 — The one-line setups take the authorization hook by module reference
 
-**Status:** Proposed • **Date:** 2026-09-29
+**Status:** Accepted • **Date:** 2026-09-29
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 This record adds one option to the two setups that serialize their options:
 the Astro integration's `mode: 'middleware'` and the Nuxt module. Nothing
@@ -17,7 +19,7 @@ registers, and the Nuxt module writes them into a Nitro plugin in `.nuxt/`;
 both go through `JSON.stringify`, which drops a function. Their guides
 therefore showed `strict: false` or `defaults: 'v1'`, which delivers on
 client-controlled intent alone, as the short path, and the secure setup as
-the longer alternative (H12). The shortest working path was the one that is
+the longer alternative. The shortest working path was the one that is
 not authorization.
 
 ## Decision
@@ -89,7 +91,7 @@ heading that says it is not authorization.
 - Additive minor option on the Astro integration and the Nuxt module.
 - The strict default works with the one-line setups. The Astro middleware
   fixture moves to it; the Nuxt fixture keeps the 1.x profile its runtime
-  suites are written for (H18), and the Nuxt setup is proven in a clean
+  suites are written for, and the Nuxt setup is proven in a clean
   project.
 - Acceptance: unit tests of the generated sources and the refusals; native
   proof that an authorized request receives the runtime and an intent-only

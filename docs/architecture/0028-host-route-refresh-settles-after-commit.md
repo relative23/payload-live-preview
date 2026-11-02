@@ -1,6 +1,8 @@
 # ADR 0028 — A host route refresh settles after the host commits
 
-**Status:** Proposed • **Date:** 2026-09-29
+**Status:** Accepted • **Date:** 2026-09-29
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 This record states when a route refresh the host lends the runtime is done,
 what the runtime does with one that cannot say, and how the four frameworks'

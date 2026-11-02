@@ -2,8 +2,8 @@
 
 A minimal, self-contained **Payload 3.x** server used to prove the live
 preview runtime against a _real_ Payload admin — not a mock, not a
-replayed message. It is the backend behind `tests/real-payload/` and the
-two `Real Payload E2E` CI jobs.
+replayed message. It is the backend behind `tests/real-payload/` and every
+`Real Payload E2E` CI job.
 
 What it is:
 
@@ -29,11 +29,22 @@ What it is:
 Surfaces whose preview verifies the editor's session (`payload-session`) need a
 real cookie, which auto-login never issues: `PLP_REAL_PAYLOAD_LOGIN=1` leaves it
 off and the Playwright suite signs in through the login form. The suite starts
-the backend and the surface named by `PLP_REAL_PAYLOAD_TARGET` (`astro`,
-`hybrid`, `nextjs`, `sveltekit`, `nuxt`, `html`, and the hook and composable
-pages `nextjs-hook` and `nuxt-composable`) with `FRONTEND_URL` pointing at it. A
-schema change needs a fresh `e2e.db` (and, for the media, a fresh `media/`): the
-dev push does not repeat itself.
+the backend and the surface named by `PLP_REAL_PAYLOAD_TARGET` with
+`FRONTEND_URL` pointing at it. The targets are listed in
+`playwright.real-payload.config.ts`: `astro` (the default) and `hybrid`; the
+framework pages `nextjs`, `sveltekit`, `sveltekit3`, `nuxt`, `nuxt4` and `html`;
+the hook and composable pages `nextjs-hook`, `nuxt-composable` and
+`nuxt4-composable`; `astro-session` and `nextjs-autologin`; the create screens
+`create` and `sveltekit3-create`; the production builds `nextjs-production`,
+`sveltekit-production`, `sveltekit3-production`, `nuxt-production` and
+`nuxt4-production`; and `findings`. A schema change needs a fresh `e2e.db`
+(and, for the media, a fresh `media/`): the dev push does not repeat itself.
+
+`PLP_REAL_PAYLOAD_ORIGINS` names the preview sites that call this REST API with
+the editor's session, as the hook's and the composable's merge do: Payload then
+answers CORS for exactly those and the admin. `PLP_REAL_PAYLOAD_CSRF=1` also
+sets them as Payload's `csrf` list, which makes Payload refuse a cookie that
+arrives without an `Origin` header.
 
 The `create` target sets `PLP_REAL_PAYLOAD_COLLECTIONS=1`, which adds three
 collections to the admin, `mapped-pages` (its preview URL comes from the
@@ -44,6 +55,12 @@ profile, so no other target sees them, and the profile keeps its own database,
 `e2e-collections.db`, which a schema change replaces like `e2e.db`. Locally,
 Playwright reuses an admin that already listens on 3001: stop it before you
 switch to this target.
+
+The `findings` target sets `PLP_REAL_PAYLOAD_FINDINGS=1`, which adds a
+`findings` global: a select, a group, an array, an upload and Lexical rich text
+with a `callout` block, seeded on every boot. Its page is
+`examples/pure-html/dist/findings.html`, and the profile keeps its own database,
+`e2e-findings.db`.
 
 > ⚠️ Throwaway fixture. The secret is hard-coded and auth auto-logs-in. The
 > database is not reset: `e2e.db` persists between boots, and `body` keeps
@@ -74,8 +91,13 @@ iframe URL and breakpoint. From the repo root:
 npm run test:e2e:real-payload
 ```
 
-CI runs it twice: against `examples/astro-payload` on `:4173` in Chromium
-(`Real Payload E2E`), and with `PLP_REAL_PAYLOAD_TARGET=hybrid` against
-`examples/astro-hybrid` on `:4177` in Chromium, Firefox and WebKit
-(`Real Payload E2E (hybrid, …)`), where `FRONTEND_URL` points the admin's
-iframe at that app.
+CI runs it in four jobs, each with `FRONTEND_URL` pointing the admin's iframe
+at its app:
+
+- `Real Payload E2E`: against `examples/astro-payload` on `:4173` in Chromium.
+- `Real Payload E2E (hybrid, …)`: with `PLP_REAL_PAYLOAD_TARGET=hybrid` against
+  `examples/astro-hybrid` on `:4177` in Chromium, Firefox and WebKit.
+- `Real Payload E2E (<target>, …)`: every other target above in Chromium,
+  Firefox and WebKit.
+- `Real Payload E2E (<target>, CSRF list)`: `nextjs` and `nextjs-hook` with
+  `PLP_REAL_PAYLOAD_CSRF=1`, in Chromium.

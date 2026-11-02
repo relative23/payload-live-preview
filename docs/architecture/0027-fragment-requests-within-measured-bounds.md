@@ -1,6 +1,8 @@
 # ADR 0027 — A fragment request carries the whole document, within measured bounds
 
-**Status:** Proposed • **Date:** 2026-09-29
+**Status:** Accepted • **Date:** 2026-09-29
+
+Shipped in 2.1.0 (2026-10-23), after the full release chain ran on it.
 
 This record measures what a fragment request carries, keeps the protocol as it
 is, and replaces a depth ceiling that refused ordinary content.

@@ -1,21 +1,26 @@
 # Benchmarks
 
 Hot-path timings from `npm run test:bench -- --run` (Vitest bench, jsdom,
-Node 24.19, 2026-10, on a machine shared with other jobs). jsdom is not a
+Node 24.22.1, 2026-11-02 for 2.3.1, on a machine shared with other jobs). jsdom is not a
 browser — read these as **relative regression signals**, not absolute browser
 timings. Refresh this table when touching the cache, scheduler, message bus,
 sanitizer, or Lexical renderer.
 
 | Hot path                                          |   ops/sec |     mean |
 | ------------------------------------------------- | --------: | -------: |
-| `resolveFieldValue` — 4-level nested path         | 7,738,966 |  0.13 µs |
-| `diffArray` — 100 items (insert + remove + moves) |   251,847 |   4.0 µs |
-| `escapeHtml` — ~2 KB string                       |   136,328 |   7.3 µs |
-| No-listener `elementUpdate` path — 300 bindings   |   768,567 |   1.3 µs |
-| `lexicalToHtml` — 30 paragraphs with links        |       776 | 1.289 ms |
-| `sanitizeHtml` — ~2 KB mixed document             |       537 | 1.862 ms |
-| Ordered async token pipeline — 1,000 messages     |       312 | 3.205 ms |
-| `ElementCache.buildFromRoot` — 300 bound elements |       127 | 7.874 ms |
+| `resolveFieldValue` — 4-level nested path         | 7,885,164 |  0.13 µs |
+| `diffArray` — 100 items (insert + remove + moves) |   236,400 |   4.2 µs |
+| `escapeHtml` — ~2 KB string                       |   130,894 |   7.6 µs |
+| No-listener `elementUpdate` path — 300 bindings   |   547,954 |   1.8 µs |
+| `lexicalToHtml` — 30 paragraphs with links        |       737 | 1.358 ms |
+| `sanitizeHtml` — ~2 KB mixed document             |       546 | 1.832 ms |
+| Ordered async token pipeline — 1,000 messages     |       250 | 4.005 ms |
+| `ElementCache.buildFromRoot` — 300 bound elements |       128 | 7.827 ms |
+
+A single row moves between runs on this machine. The no-listener row measured
+385,367 ops/sec in a run directly after a build and 547,954 in the run above;
+alone, back to back with the tree of 2026-10-16, both trees measured 766,500 to
+784,553. Re-measure a row that moved before reading it as a regression.
 
 `sanitizeHtml` parses markup it rewrote a second time, to confirm that its
 output settled (ADR 0016, addendum of 2026-10-02). This document is one the
@@ -26,7 +31,7 @@ Interpretation for a live-editing session: a keystroke triggers field
 resolution (~µs), possibly a Lexical render + sanitize (~3.2 ms for a
 sizeable rich-text field), and a scheduler flush. The dominant cost —
 cache building — happens once at startup and after DOM mutations, not
-per keystroke; 300 bindings build in ~7.9 ms. Dotted-path lookup validates every
+per keystroke; 300 bindings build in ~7.8 ms. Dotted-path lookup validates every
 segment as an own, pollution-safe property and still completes in about 0.13 µs.
 Each measured representative operation on the per-keystroke path stays comfortably
 below a 60 fps frame budget (16.7 ms), even in jsdom, which is substantially slower
@@ -85,6 +90,11 @@ the spread rather than the median that the pause fixes:
 |    1,000 | 23.5/36.7 · 24.1/35.5 · 23.5/36.5 | 6.5/12.3 · 5.6/11.6 · 6.4/11.8    |
 |    5,000 | 16.4/31.0 · 16.4/30.3 · 16.3/30.2 | 16.0/20.1 · 15.7/19.9 · 16.2/20.3 |
 
+Re-measured 2026-11-02 for 2.3.1, three runs, with the pause (p50/p95 in ms):
+300 bindings 6.9/17.3 · 4.7/15.0 · 4.4/13.9, 1,000 bindings 4.4/11.4 ·
+5.7/11.8 · 3.5/10.9, and 5,000 bindings 18.7/30.0 · 19.5/33.2 · 21.5/32.3, every
+scenario within its 100 ms p95 budget.
+
 The 5,000-binding row barely moves because its driver round trip was already
 longer than the window — those samples were quiet-phase messages by accident,
 which is also why that page used to measure _faster_ than the 1,000-binding one.
@@ -114,8 +124,11 @@ work.
 
 | Population             | off, mean | on, mean | work removed |
 | ---------------------- | --------: | -------: | -----------: |
-| 300 text bindings      |   22.7 ms |  17.8 ms |         ~4 × |
-| 300 rich-text bindings |   98.5 ms |  18.9 ms |        ~30 × |
+| 300 text bindings      |   19.3 ms |  16.6 ms |         ~5 × |
+| 300 rich-text bindings |   95.0 ms |  19.1 ms |        ~25 × |
+
+Measured 2026-11-02 for 2.3.1; the first measurement gave 22.7 / 17.8 ms and
+98.5 / 18.9 ms.
 
 Two findings from getting these numbers right. The first version of this
 bench awaited a `setTimeout(0)` and reported ~1.6 ms in both modes: the
@@ -135,12 +148,13 @@ What the morph keeps and what it never crosses is
 
 | Case                     | replace  | morph    | Δ             |
 | ------------------------ | -------- | -------- | ------------- |
-| one of 100 items changed | 0.425 ms | 0.455 ms | +7 % (~30 µs) |
-| 100 items reordered      | 0.357 ms | 0.361 ms | within noise  |
+| one of 100 items changed | 1.185 ms | 1.280 ms | +8 % (~95 µs) |
+| 100 items reordered      | 1.184 ms | 1.112 ms | −6 %          |
 
 The morph keeps the live element and edits it; the difference on a changed
 item is the attribute diff and child walk that retention costs. Measured
-2026-08-27 in jsdom; a trend, not a gate.
+2026-11-02 in jsdom, for 2.3.1; a trend, not a gate. On 2026-08-27 the same
+cases measured 0.425 / 0.455 ms and 0.357 / 0.361 ms.
 
 ## Tree shaking — what one import costs
 
