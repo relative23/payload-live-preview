@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 542,
-    "suites": 1049,
-    "tests": 4746,
+    "files": 543,
+    "suites": 1050,
+    "tests": 4750,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 444,
-      "suites": 938,
-      "tests": 4335,
+      "files": 445,
+      "suites": 939,
+      "tests": 4339,
       "benchmarks": 0
     }
   },
@@ -3194,6 +3194,13 @@
     },
     {
       "path": "tests/unit/quality/build-define-policy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/ci-install-fixture.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 4,
