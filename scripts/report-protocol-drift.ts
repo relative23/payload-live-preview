@@ -20,8 +20,27 @@ import { fileIssue } from './github-issue.mjs';
 const REPORT_FILE = 'protocol-drift.json';
 const LABEL = 'protocol-drift';
 const TITLE = 'Protocol drift: @payloadcms/live-preview no longer matches this runtime';
+const NOT_RUN_LABEL = 'protocol-watch-not-run';
+const NOT_RUN_TITLE = 'Protocol watch could not run: the real admin failed before its assertions';
+const NOT_RUN_CHECK = 'the real admin run did not reach its assertions';
+
+/** A run that never reached an assertion says nothing about the protocol. */
+function didNotRun(report: DriftReport): boolean {
+  return report.failures.every((failure) => failure.check === NOT_RUN_CHECK);
+}
 
 export function issueBody(report: DriftReport): string {
+  if (didNotRun(report)) {
+    return [
+      `The nightly protocol watch tried \`${report.package}\` at ${report.checkedAt}, and the real`,
+      'admin run stopped before its first assertion, usually at the install or the boot.',
+      'This says nothing about the protocol: the wire checks report drift on their own.',
+      '',
+      ...report.failures.map((failure) => `- ${failure.detail}`),
+      '',
+      'Filed by `scripts/report-protocol-drift.ts` from the Protocol Watch workflow.',
+    ].join('\n');
+  }
   const lines = [
     `The nightly protocol watch executed \`${report.package}\` at ${report.checkedAt} and found`,
     `${String(report.failures.length)} behaviour(s) this package mirrors differently:`,
@@ -62,7 +81,7 @@ export function fallbackReport(pkg: string, detail: string): DriftReport {
   return {
     package: pkg,
     checkedAt: new Date().toISOString(),
-    failures: [{ check: 'the real admin run did not reach its assertions', detail }],
+    failures: [{ check: NOT_RUN_CHECK, detail }],
   };
 }
 
@@ -117,10 +136,13 @@ function main(): void {
 }
 
 function file(report: DriftReport): void {
+  const notRun = didNotRun(report);
   fileIssue({
-    label: LABEL,
-    labelDescription: 'Payload wire-format drift',
-    title: TITLE,
+    label: notRun ? NOT_RUN_LABEL : LABEL,
+    labelDescription: notRun
+      ? 'A Protocol Watch run that never asserted'
+      : 'Payload wire-format drift',
+    title: notRun ? NOT_RUN_TITLE : TITLE,
     body: issueBody(report),
     log: 'protocol-watch',
   });

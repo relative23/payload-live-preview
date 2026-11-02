@@ -69,9 +69,10 @@ describe('the fallback the admin half asks for', () => {
     expect(report.package).toBe('payload@latest');
     expect(report.failures).toHaveLength(1);
     expect(report.failures[0]?.detail).toBe('the boot never finished');
-    // The body is the same one a drift report produces, so whoever picks the
-    // issue up lands on the same three files.
-    expect(issueBody(report)).toContain('src/core/message-bus.ts');
+    // A run that never asserted says nothing about the protocol, so it does not claim drift.
+    expect(issueBody(report)).toContain('the boot never finished');
+    expect(issueBody(report)).toContain('says nothing about the protocol');
+    expect(issueBody(report)).not.toContain('mirrors differently');
   });
 });
 
