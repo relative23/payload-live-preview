@@ -19,12 +19,13 @@ const isCI = process.env['CI'] === 'true';
 const requested = process.env['PLP_REAL_PAYLOAD_TARGET'] ?? 'astro';
 /**
  * The frameworks whose example verifies the editor's real session
- * (`payload-session`) before it starts the runtime. None runs with
- * `NODE_ENV=production`: strict mode refuses an admin origin that is not HTTPS
- * only there, and this admin is plain HTTP on localhost. The Next.js, SvelteKit
- * and Nuxt examples run their dev server; Astro's built Node server qualifies
- * because nothing sets NODE_ENV (`astro dev` daemonizes in Astro 7, which
- * Playwright reads as a crash).
+ * (`payload-session`) before it starts the runtime. Strict mode refuses an admin
+ * origin that is not HTTPS only under `NODE_ENV=production`, and this admin is
+ * plain HTTP on localhost, so the targets that frame it run without it: the
+ * Next.js, SvelteKit and Nuxt examples on their dev server, and Astro's built
+ * Node server because nothing sets NODE_ENV (`astro dev` daemonizes in Astro 7,
+ * which Playwright reads as a crash). The `*-production` targets run with
+ * `NODE_ENV=production`, against the admin's HTTPS front.
  */
 interface Surface {
   readonly port: string;
@@ -254,6 +255,11 @@ const previewServer: WebServer =
             reuseExistingServer: !isCI,
             timeout: 120_000,
           };
+/**
+ * The preview server with its own output in the job's log. Playwright passes on only its stderr by default, and a
+ * frame whose first load never completed (run 41629530551, nuxt in WebKit) left no word from the server it waited on.
+ */
+const loggedPreviewServer: WebServer = { ...previewServer, stdout: 'pipe' };
 const adminServer: WebServer = {
   // `e2e:serve` regenerates the admin import map before booting so a
   // fresh checkout (where importMap.js is gitignored) still works.
@@ -357,7 +363,9 @@ const config: PlaywrightTestConfig = {
   use: {
     baseURL: ADMIN,
     ignoreHTTPSErrors: production !== undefined,
-    trace: 'on-first-retry',
+    // The failed attempt of a flaky test is the one to read: `on-first-retry` kept only the passing retry of a frame
+    // load that never completed (run 41629530551). Every attempt records; a trace stays where an attempt failed.
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
   projects: [
@@ -367,8 +375,8 @@ const config: PlaywrightTestConfig = {
   ].filter((project) => browsers.includes(project.name)),
   webServer:
     production === undefined
-      ? [previewServer, adminServer]
-      : [adminServer, adminFront, previewServer],
+      ? [loggedPreviewServer, adminServer]
+      : [adminServer, adminFront, loggedPreviewServer],
 };
 
 export default defineConfig(config);
