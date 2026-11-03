@@ -1,0 +1,11 @@
+/** All native host endpoints use the same lazy body and socket lifetime. H3 sends the result without re-reading or decoding the request. */
+import { sendWebResponse, type H3Event } from 'h3';
+import { withNativeHostRequest } from '../../native-request.mjs';
+import { fixture, target, refused } from './host';
+
+export async function action(event: H3Event, method: 'login' | 'logout' | 'exchange' | 'load' | 'update', suffix = '') {
+  const active = fixture();
+  const url = target(event, suffix);
+  const response = active && url ? await withNativeHostRequest(event.node.req, url, active.host[method]) : refused();
+  return sendWebResponse(event, response);
+}

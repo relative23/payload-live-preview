@@ -7,11 +7,9 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { expect, test, type Page, type Frame, type Request } from '@playwright/test';
-import { startNativeContinuation } from '../helpers/native-continuation';
+import { NATIVE_HOSTS, startNativeContinuation } from '../helpers/native-continuation';
 import { startNextContinuation } from '../helpers/next-continuation';
 
-/** The hosts the config's `continuationFramework` may name; anything else runs the Next.js host. */
-const NATIVE_FRAMEWORKS = ['sveltekit', 'nuxt', 'astro', 'html', 'vue', 'react'] as const;
 /** The element a component host mounts into; the HTML host's owner is its custom element. */
 const APP_ROOTS: Partial<Record<string, string>> = { vue: '#vue-app', react: '#react-app' };
 let fixture: Awaited<ReturnType<typeof startNativeContinuation>>;
@@ -153,7 +151,8 @@ test.describe('native production host continuation', () => {
   test.beforeAll(async ({ browserName, browser }, info) => {
     test.setTimeout(240_000);
     const selected: unknown = info.config.metadata['continuationFramework'];
-    const framework = NATIVE_FRAMEWORKS.find((name) => name === selected) ?? 'next';
+    // A host the config's `continuationFramework` names; anything else runs the Next.js host.
+    const framework = NATIVE_HOSTS.find((name) => name === selected) ?? 'next';
     artifact = resolve(
       `test-results/hardening/h04-${framework}-host`,
       process.env['PLP_HOST_RUN'] ?? 'native-first',

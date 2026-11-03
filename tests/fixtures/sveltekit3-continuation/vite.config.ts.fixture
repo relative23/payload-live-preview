@@ -1,0 +1,5 @@
+/** Use Kit's native plugin so routing and module isolation stay real; SvelteKit 3 takes the adapter here. Adapter-node no longer reads ORIGIN at run time, so the build bakes it in. */
+import adapter from '@sveltejs/adapter-node';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+export default defineConfig({ plugins: [sveltekit({ adapter: adapter(), paths: { origin: process.env['ORIGIN'] } })] });

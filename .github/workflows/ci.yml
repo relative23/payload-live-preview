@@ -660,7 +660,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [next, sveltekit, nuxt, html, vue, react]
+        framework: [next, sveltekit, sveltekit3, nuxt, nuxt4, html, vue, react]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
