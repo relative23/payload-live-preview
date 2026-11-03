@@ -71,7 +71,11 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // 2026-11-02: +3 in data-merger.ts, the flag that reports a merge deadline as one.
 // 2026-11-03: +5 in document-session.ts (227 → 232), the `DocumentSession` interface the factory
 // returns, so no entry's declarations offer the class as a value. No request path changes.
-export const REVIEWED_SCOPE_LINES = 1599;
+// 2026-11-03 (2.4): 1 599 → 1 639. origin.ts +13 (1 367 → 1 380 with the rest of its scope), a
+// detector that trusts the referrer by default says once that 3.0 stops; document-session.ts
+// +27 (232 → 259), the three hook notices for the defaults 3.0 changes and `requireLocale`, which
+// takes row 31's 3.0 behaviour now. No request path changes.
+export const REVIEWED_SCOPE_LINES = 1639;
 
 interface OurFile {
   readonly file: string;

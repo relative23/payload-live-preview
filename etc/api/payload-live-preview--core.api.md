@@ -256,6 +256,7 @@ export interface DocumentSessionOptions {
     readonly enableReferrerDetection?: boolean;
     readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
     readonly fetchFn?: typeof fetch;
+    readonly requireLocale?: boolean;
     readonly serverURL: string;
     readonly target?: Window;
     readonly timeoutMs?: number;

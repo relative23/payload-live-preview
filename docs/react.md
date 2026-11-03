@@ -66,6 +66,7 @@ credentials; keep preview tokens and other secrets in server-only variables.
 | `enableLocalhostMatching` | `true`               | Match `localhost` origins in development                                                                                 |
 | `target`                  | the global `window`  | Window to listen on                                                                                                      |
 | `document`                | —                    | The document this hook previews: `{ collection, id }` or `{ global }`, with an optional `locale`; only its updates merge |
+| `requireLocale`           | `false`              | With a `locale` in `document`, also leave alone an update that names no locale, as 3.0 does                              |
 
 A hook instance owns one document session. A fresh `initialData` object on an
 ordinary re-render does not replace data that already merged. A changed value
@@ -164,7 +165,10 @@ next message. Without `timeoutMs`, a merge request that never answers is not a
 failure: it has no deadline, and the hook stays `isLoading` with its last
 document. With `timeoutMs`, the update becomes `unavailable` once that many
 milliseconds pass, and an answer that comes later is not read
-([options.md](options.md#serverurl-and-mergedepth)). On Payload 3 the hook sends one merge request per accepted
+([options.md](options.md#serverurl-and-mergedepth)). 3.0 gives the hook a
+default deadline; until then a hook without `timeoutMs` says so once in
+development, and so does one without `document` ([migration.md](migration.md#preparing-for-30)).
+On Payload 3 the hook sends one merge request per accepted
 message, at any typing pace: 18 requests for an 18-keystroke burst. The DOM
 runtime asks less. It sends none for an edit that moves no populated value (the
 first message on a page that reads one, and the first value of a field that held

@@ -14,31 +14,16 @@ import {
   applyDecision,
   bindDecisionHooks,
   injectIntoResponse,
-  renderScriptBody,
   renderScriptTag,
   withCspHeader,
 } from '@adapters/shared/response';
-import { assertNonce } from '@inline/generator';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
-import type { PageFacts } from '@adapters/shared/policy-options';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
 import { warnOnce } from '@/types/dev-warning';
+import { REACT_PAGE, scriptElementProps, type LivePreviewScriptProps } from './script-element';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
 
 export type LivePreviewNextOptions = PreviewAdapterOptions;
-
-/**
- * A Next page is a React tree, so every script this adapter emits declares
- * that React hydrates it (ADR 0015): the runtime then holds its first write
- * until React has committed the tree that holds the bindings, instead of
- * writing into markup React is about to compare with its own render. Knowledge
- * the adapter has, not an option a project sets.
- */
-const REACT_PAGE: PageFacts = {
-  hydration: 'react',
-  softNavigationEvents: [NAVIGATION_COMMIT_EVENT],
-};
 
 /**
  * Middleware over the standard `Request`/`Response` pair: on preview intent it
@@ -85,32 +70,48 @@ async function withCarriedNonce(
   return withCspHeader(response, policy, { ...decision, cspMode: 'frame-ancestors' }, nonce);
 }
 
-/** What a `<script>` element needs to carry the runtime; see `livePreviewScriptProps`. */
-export interface LivePreviewScriptProps {
-  readonly dangerouslySetInnerHTML: { readonly __html: string };
-  /** Present only when a nonce was passed, so React omits the attribute otherwise. */
-  readonly nonce?: string;
-}
+export type { LivePreviewScriptProps } from './script-element';
 
 /**
- * Props for the `<script>` in `app/layout.tsx`:
+ * Props for the `<script>` in `app/layout.tsx`, with `delivery: 'asset'`: the
+ * page carries a bootstrap that fetches the runtime only in a preview context.
  *
  * ```tsx
- * <script {...livePreviewScriptProps({ allowedOrigins: [ADMIN], serverURL: ADMIN, mergeDepth: 1 })} />
+ * <script {...livePreviewScriptProps({ ...livePreviewOptions, delivery: 'asset' })} />
  * ```
- *
- * The nonce stays a prop rather than going into the body, because that is where
- * the framework — and any CSP handling built on it — expects the attribute.
  */
+export function livePreviewScriptProps(
+  options: LivePreviewNextOptions & { readonly delivery: 'asset'; readonly nonce?: string },
+): LivePreviewScriptProps;
+/**
+ * Props for a `<script>` that carries the whole runtime. A synchronous helper
+ * cannot await an authorization verdict, so a root layout that renders it
+ * hands the runtime to every visitor, twice with React's flight payload.
+ *
+ * @deprecated 3.0 removes inline delivery from this helper (ADR 0007, row 32). Render
+ * `await LivePreviewScript({ request, ...options })` from this entry instead, which renders
+ * nothing for a request the policy does not authorize, or pass `delivery: 'asset'`;
+ * `renderLivePreviewScript()` stays for HTML a server builds as a string.
+ */
+export function livePreviewScriptProps(
+  options?: LivePreviewNextOptions & { readonly nonce?: string },
+): LivePreviewScriptProps;
 export function livePreviewScriptProps(
   options: LivePreviewNextOptions & { readonly nonce?: string } = {},
 ): LivePreviewScriptProps {
-  const html = renderScriptBody(options, REACT_PAGE);
-  if (options.nonce === undefined) return { dangerouslySetInnerHTML: { __html: html } };
-  return {
-    dangerouslySetInnerHTML: { __html: html },
-    nonce: assertNonce(options.nonce),
-  };
+  const props = scriptElementProps(options);
+  if (options.delivery !== 'asset') {
+    const bytes = new TextEncoder().encode(props.dangerouslySetInnerHTML.__html).length;
+    warnOnce(
+      'next-script-props',
+      `\`livePreviewScriptProps()\` put ${String(bytes)} bytes of runtime into this page, and ` +
+        "React's flight payload carries them a second time; in a root layout every visitor gets " +
+        'both. 3.0 removes inline delivery from it: `await LivePreviewScript({ request, ...options })` ' +
+        "renders nothing for a request it does not authorize, and `delivery: 'asset'` a bootstrap " +
+        '(ADR 0007, row 32).',
+    );
+  }
+  return props;
 }
 
 /**

@@ -409,6 +409,8 @@ export interface Fixture {
  * HEAD without and with the change: root client +60, generator +66, core client
  * +61, Next middleware +59 (not red, but its cushion had shrunk to 6 B) and
  * lean +71 B gzip; every ceiling keeps its cushion.
+ * 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired, same Node, each row by its
+ * gzip delta with its reserve kept — `initLivePreview` +172 (root) / +166 (core), `generateInlineScript` +99, `createLivePreviewMiddleware` +100, `useLivePreviewDocument` +404 (React) / +381 (Vue).
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -447,7 +449,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 59_188,
+    gzip: 59_360,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -471,7 +473,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 56_585,
+    gzip: 56_684,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -495,7 +497,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 59_164,
+    gzip: 59_330,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -538,7 +540,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 62_505,
+    gzip: 62_605,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
@@ -569,7 +571,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 9_368,
+    gzip: 9_772,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
@@ -578,7 +580,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 9_285,
+    gzip: 9_666,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {

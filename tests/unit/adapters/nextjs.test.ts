@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is held on purpose until 3.0 */
 import { runInNewContext } from 'node:vm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {

@@ -19,6 +19,7 @@ import { DataMerger } from '@core/data-merger';
 import { MessageBus } from '@core/message-bus';
 import { PAYLOAD_2_HINT } from '@core/protocol-version';
 import { isDevMode } from '@detection/environment';
+import { noticeOnce } from '@detection/notice';
 import { OriginDetector } from '@detection/origin';
 import type { PayloadFieldSchema, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 
@@ -64,7 +65,7 @@ export interface DocumentSessionOptions {
   /**
    * Milliseconds a merge may wait for the server; after that the update is `unavailable`
    * and `data` stays the last good document. Off by default: a merge waits as long as the
-   * server takes.
+   * server takes. `0` keeps it off when 3.0 gives it a default (ADR 0007, row 27).
    */
   readonly timeoutMs?: number;
   /**
@@ -84,6 +85,12 @@ export interface DocumentSessionOptions {
    * slug, and a create screen has no id yet. Without it the session merges every update.
    */
   readonly document?: PreviewDocument;
+  /**
+   * With a `locale` in `document`, also leave alone an update that names no locale, as 3.0
+   * does for every hook with a `locale` (ADR 0007, row 31). Off by default: such an update is
+   * merged.
+   */
+  readonly requireLocale?: boolean;
   /** Injected for tests. */
   readonly fetchFn?: typeof fetch;
   /** Window to listen on. Default the global one. */
@@ -141,6 +148,8 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
   #schema: readonly PayloadFieldSchema[] | undefined;
   #locale: string | undefined;
   readonly #document: PreviewDocument | undefined;
+  readonly #requireLocale: boolean;
+  readonly #deadline: boolean;
   #warnedUnproven = false;
   #warnedPayload2 = false;
 
@@ -176,6 +185,8 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     });
     this.#target = options.target;
     this.#document = options.document;
+    this.#requireLocale = options.requireLocale === true;
+    this.#deadline = options.timeoutMs !== undefined;
     this.#initial = {
       data: initialData,
       isLoading: true,
@@ -210,6 +221,19 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     this.#attached = true;
     this.#bus.attach(this.#target ?? window);
     MessageBus.sendReady(this.#readyTargets(), this.#detector.enumerate());
+    if (this.#document === undefined) {
+      noticeOnce(
+        'hook-document',
+        'A hook without `document` merges any document; 3.0 requires it (ADR 0007, row 26).',
+      );
+    }
+    if (!this.#deadline) {
+      noticeOnce(
+        'hook-deadline',
+        'A hook without `timeoutMs` waits for a merge; 3.0 sets a default, `0` keeps none ' +
+          '(ADR 0007, row 27).',
+      );
+    }
   }
 
   #detach(): void {
@@ -239,8 +263,8 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     const target = this.#document;
     if (target === undefined) return true;
     const { locale, globalSlug, collectionSlug } = message;
-    if (target.locale !== undefined && locale !== undefined && locale !== target.locale) {
-      return false;
+    if (target.locale !== undefined && locale !== target.locale) {
+      if (locale !== undefined || this.#requireLocale) return false;
     }
     if ('global' in target) {
       if (globalSlug !== undefined) return globalSlug === target.global;
@@ -278,6 +302,14 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     }
     // Before the revision moves: an update for another document must not abort this one's merge.
     if (!this.#accepts(message, data)) return;
+    const target = this.#document;
+    if (target?.locale !== undefined && message.locale === undefined) {
+      noticeOnce(
+        'hook-locale',
+        `A hook for locale "${target.locale}" merged an update without one; 3.0 skips it, as ` +
+          '`requireLocale: true` does now (ADR 0007, row 31).',
+      );
+    }
     const revision = (this.#revision += 1);
     if (message.fieldSchemaJSON !== undefined) this.#schema = message.fieldSchemaJSON;
     const schema = this.#schema;

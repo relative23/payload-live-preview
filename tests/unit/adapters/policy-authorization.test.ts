@@ -171,12 +171,13 @@ describe("decide — without a hook (defaults: 'v1')", () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
     createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
-    // The profile's own deprecation (ADR 0026) is the other line.
+    // The profile's own deprecation (ADR 0026) and the merge deadline 3.0
+    // adds (ADR 0007, row 27) are the other two lines.
     const intentOnly = warn.mock.calls.filter(([message]) =>
       String(message).includes('authorizePreview'),
     );
     expect(intentOnly).toHaveLength(1);
-    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledTimes(3);
     const decision = await policy.decide(request(INTENT));
     expect(decision).toMatchObject({
       isPreview: true,
@@ -195,9 +196,13 @@ describe("decide — without a hook (defaults: 'v1')", () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('does not warn when a hook is configured', () => {
+  it('does not warn when a hook and a merge deadline are configured', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    createPreviewPolicy({ allowedOrigins: [ADMIN], authorizePreview: () => null });
+    createPreviewPolicy({
+      allowedOrigins: [ADMIN],
+      authorizePreview: () => null,
+      mergeTimeoutMs: 10_000,
+    });
     expect(warn).not.toHaveBeenCalled();
   });
 });
@@ -256,6 +261,7 @@ describe('strict', () => {
     const options = {
       authorizePreview: hook,
       allowedOrigins: ['https://admin.example.com', 'http://admin.local', 'http://cms.local'],
+      mergeTimeoutMs: 10_000,
     };
     expect(() => assertStrictConfiguration(options)).not.toThrow();
     assertStrictConfiguration(options);
@@ -274,7 +280,11 @@ describe('strict', () => {
     process.env['NODE_ENV'] = 'development';
     assertStrictConfiguration(options);
     delete process.env['NODE_ENV'];
-    assertStrictConfiguration({ authorizePreview: hook, allowedOrigins: [ADMIN] });
+    assertStrictConfiguration({
+      authorizePreview: hook,
+      allowedOrigins: [ADMIN],
+      mergeTimeoutMs: 10_000,
+    });
     expect(warn).not.toHaveBeenCalled();
   });
 
@@ -323,7 +333,12 @@ describe('strict', () => {
   it('starts with a complete configuration and does not warn', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(() =>
-      createPreviewPolicy({ strict: true, authorizePreview: hook, allowedOrigins: [ADMIN] }),
+      createPreviewPolicy({
+        strict: true,
+        authorizePreview: hook,
+        allowedOrigins: [ADMIN],
+        mergeTimeoutMs: 10_000,
+      }),
     ).not.toThrow();
     expect(warn).not.toHaveBeenCalled();
   });

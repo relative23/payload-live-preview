@@ -31,7 +31,7 @@ either way, and the only question the component answers is who receives them.
 | --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
 | `await LivePreviewScript(…)`, an async server component   | nothing                   | the default: the render can await an authorization verdict                    |
 | `livePreviewScriptProps()` with `delivery: 'asset'`       | a bootstrap               | the script is built once at module scope and the page has no verdict to await |
-| `livePreviewScriptProps()` or `renderLivePreviewScript()` | the whole runtime         | a page that is not gated at all, or HTML a server assembles as a string       |
+| `livePreviewScriptProps()` or `renderLivePreviewScript()` | the whole runtime         | HTML a server assembles as a string; the helper is deprecated for this        |
 
 ## Nothing for a public visitor
 
@@ -208,6 +208,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
 Compute the props once at module scope, as above: the configuration does not
 change per request, and the script body is the same bytes every time.
+
+This form is deprecated since 2.4: 3.0 removes inline delivery from the helper
+(ADR 0007, row 32). In development it says so once per process and names the
+bytes it put into the page. With `delivery: 'asset'` the helper stays.
 
 The script stays inert outside the admin's preview iframe, but written this
 way it ships to everyone: `livePreviewScriptProps()` is synchronous, so it

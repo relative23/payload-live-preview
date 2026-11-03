@@ -56,6 +56,23 @@ export function warnDeprecatedOptions(options: {
   }
 }
 
+/**
+ * The adapter and generator options whose 2.x default 3.0 changes, said once
+ * per process in development (ADR 0026, 2026-11-03). A browser-only client
+ * hears nothing, as for the removals above.
+ */
+export function warnChangingDefaults(options: {
+  readonly mergeTimeoutMs?: number | undefined;
+}): void {
+  if (options.mergeTimeoutMs === undefined) {
+    warnOnce(
+      'merge-deadline',
+      '`mergeTimeoutMs` is not set, so a merge waits as long as the server takes; 3.0 gives it a ' +
+        'default deadline. Set `mergeTimeoutMs` now, or `0` to keep none (ADR 0007, row 27).',
+    );
+  }
+}
+
 /** Test hook: forget every warning issued so far. */
 export function resetDevWarnings(): void {
   const holder = globalThis as unknown as Record<string, Set<string> | undefined>;

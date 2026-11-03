@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 549,
-    "suites": 1058,
-    "tests": 4787,
+    "files": 551,
+    "suites": 1064,
+    "tests": 4805,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 451,
-      "suites": 947,
-      "tests": 4376,
+      "files": 453,
+      "suites": 953,
+      "tests": 4394,
       "benchmarks": 0
     }
   },
@@ -838,6 +838,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/document-session-notices.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -3876,6 +3883,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/three-zero-defaults.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 7,
       "benchmarks": 0
     },
     {

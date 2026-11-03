@@ -464,7 +464,11 @@ a hook: when it passes, the merge is aborted and an answer that comes later is n
 read. The runtime then renders the raw values and reports the shortfall, as it
 does for a merge the server refused; a hook reports `unavailable` and keeps the
 last good document (`tests/unit/core/merge-timeout.test.ts`). Both are off by
-default in 2.x; 3.0 gives them a default deadline (ADR 0007 ledger, row 27).
+default in 2.x; 3.0 gives them a default deadline, proposed at 10 000 ms from a
+measurement against Payload 3.92.1 (ADR 0026, 2026-11-03), and an explicit value
+still wins, `0` for none. Until then an adapter or `generateInlineScript()`
+without `mergeTimeoutMs`, and a hook without `timeoutMs`, says so once in
+development (ADR 0007 ledger, row 27).
 
 Payload 2 uses the accepted `fieldSchemaJSON` instead of a v3 merge
 target. It retains the schema for later updates that omit it, settles scalar

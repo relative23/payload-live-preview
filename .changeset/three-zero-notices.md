@@ -1,0 +1,5 @@
+---
+'payload-live-preview': minor
+---
+
+What 3.0 changes now says so once in development, never in production, and only where a project would notice the difference. A hook or `createDocumentSession()` without `document`, or without `timeoutMs`, says so in the browser. So does a hook with a `locale` that merged an update naming none, and a `new OriginDetector()` that trusts the referrer by default. An adapter or `generateInlineScript()` without `mergeTimeoutMs` says so on the server. `livePreviewScriptProps()` without `delivery: 'asset'` names the bytes of runtime it put into the page, because 3.0 removes inline delivery from it; `await LivePreviewScript()` and `delivery: 'asset'` stay. It is marked deprecated for that use. The Astro integration without `mode` names the inline and loader sizes for the project's own options, because 3.0 makes `loader` the default. The new hook option `requireLocale: true` leaves an update without a locale alone, which is what 3.0 does for every hook with a `locale`. For the merge deadline 3.0 adds, a measurement against Payload 3.92.1 proposes 10 000 ms. Until then any value, or `0` for none, turns the notice off.
