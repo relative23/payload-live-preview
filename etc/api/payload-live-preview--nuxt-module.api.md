@@ -35,6 +35,7 @@ export default livePreviewModule;
 // @public
 export type LivePreviewModuleOptions = Omit<P<a>, 'authorizePreview' | 'shouldInject'> & {
     readonly authorizePreviewModule?: string;
+    readonly navigation?: boolean;
 };
 
 // @public
@@ -54,13 +55,21 @@ export interface NuxtLike {
     // (undocumented)
     readonly options: {
         readonly rootDir?: string;
+        readonly srcDir?: string;
         readonly buildDir: string;
         readonly build: {
             templates: NuxtTemplateLike[];
         };
+        plugins?: (NuxtPluginLike | string)[];
         readonly alias?: Readonly<Record<string, string>>;
         livePreview?: LivePreviewModuleOptions;
     };
+}
+
+// @public
+export interface NuxtPluginLike {
+    readonly mode?: 'client' | 'server' | 'all';
+    readonly src: string;
 }
 
 // @public

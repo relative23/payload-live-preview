@@ -1839,8 +1839,10 @@
         "./lexical",
         "./migrate",
         "./nextjs",
+        "./nextjs/client",
         "./nuxt",
         "./nuxt-module",
+        "./nuxt/client",
         "./package.json",
         "./payload",
         "./plugin",
@@ -1849,6 +1851,7 @@
         "./server",
         "./structural",
         "./sveltekit",
+        "./sveltekit/client",
         "./vue"
       ],
       "evidence": {
@@ -1962,7 +1965,8 @@
           "job": "e2e"
         },
         "sources": [
-          "examples/nextjs-payload/app/(inline)/soft-navigation/PreviewNavigationBridge.tsx",
+          "examples/nextjs-payload/app/(inline)/soft-navigation/layout.tsx",
+          "src/adapters/nextjs/client.ts",
           "tests/e2e/specs/nextjs-live-preview.spec.ts",
           "playwright.config.ts"
         ],
@@ -2000,6 +2004,7 @@
         },
         "sources": [
           "examples/sveltekit-payload/src/routes/navigation/NavigationBridge.svelte",
+          "src/adapters/sveltekit/client.ts",
           "tests/e2e/specs/sveltekit-live-preview.spec.ts",
           "playwright.config.ts"
         ],
@@ -2037,6 +2042,7 @@
         },
         "sources": [
           "examples/sveltekit3-payload/src/routes/navigation/NavigationBridge.svelte",
+          "src/adapters/sveltekit/client.ts",
           "tests/e2e/specs/sveltekit-live-preview.spec.ts",
           "playwright.config.ts"
         ],
@@ -2073,7 +2079,8 @@
           "job": "e2e"
         },
         "sources": [
-          "examples/nuxt-payload/plugins/payload-live-preview-navigation.client.ts",
+          "src/adapters/nuxt/module.ts",
+          "src/adapters/nuxt/client.ts",
           "tests/e2e/specs/nuxt-live-preview.spec.ts",
           "playwright.config.ts"
         ],
@@ -2110,7 +2117,8 @@
           "job": "nuxt4"
         },
         "sources": [
-          "examples/nuxt4-payload/app/plugins/payload-live-preview-navigation.client.ts",
+          "src/adapters/nuxt/module.ts",
+          "src/adapters/nuxt/client.ts",
           "tests/e2e/specs/nuxt-live-preview.spec.ts",
           "playwright.config.ts"
         ],

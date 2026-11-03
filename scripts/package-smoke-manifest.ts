@@ -23,8 +23,11 @@ const ESM_ONLY_ARTIFACT_STEMS = [
   'dist/adapters/astro/index',
   'dist/adapters/astro/middleware-entry',
   'dist/adapters/nextjs/index',
+  'dist/adapters/nextjs/client',
   'dist/adapters/nuxt/index',
+  'dist/adapters/nuxt/client',
   'dist/adapters/sveltekit/index',
+  'dist/adapters/sveltekit/client',
   'dist/adapters/react/index',
   'dist/adapters/vue/index',
   'dist/codegen-astro',
@@ -44,9 +47,16 @@ export const CODEGEN_EXPORT_NAMES = new Set(['./codegen', './codegen/astro']);
 /**
  * Entries that cannot load without their optional peer, so the peer-free smoke
  * would rightly fail on them: a hook has to import its framework at module
- * scope. They are imported in a consumer that installs the peer instead.
+ * scope, and so does each navigation entry (`./nextjs/client` and its two
+ * siblings). They are imported in a consumer that installs the peer instead.
  */
-export const PEER_REQUIRED_EXPORT_NAMES = new Set(['./react', './vue']);
+export const PEER_REQUIRED_EXPORT_NAMES = new Set([
+  './react',
+  './vue',
+  './nextjs/client',
+  './sveltekit/client',
+  './nuxt/client',
+]);
 
 export async function findPackedContentFailures(
   packedFiles: ReadonlySet<string>,

@@ -415,9 +415,12 @@ async function main(): Promise<void> {
   const covered = new Set([
     './astro',
     './nextjs',
+    './nextjs/client',
     './nuxt',
+    './nuxt/client',
     './nuxt-module',
     './sveltekit',
+    './sveltekit/client',
     './react',
     './vue',
     './astro/middleware-entry',

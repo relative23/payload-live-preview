@@ -145,50 +145,44 @@ The element is there while the field is empty too, so the first edit has somewhe
 
 ## Client navigation and route refreshes
 
-The handle arms preview responses for the package's navigation event; it does
-not import SvelteKit's browser APIs or install a router hook. Mount this
-application-owned bridge once in a layout that remains present across the
-preview routes:
+The handle arms preview responses for the package's navigation event; the
+browser half is `livePreviewNavigation()` from
+`payload-live-preview/sveltekit/client` (since 2.4). Call it once from a layout
+that remains present across the preview routes, with SvelteKit's own two
+functions:
 
 ```svelte
-<!-- src/lib/LivePreviewNavigation.svelte -->
+<!-- src/routes/+layout.svelte -->
 <script lang="ts">
   import { afterNavigate, invalidateAll } from '$app/navigation';
-  import { onMount, tick } from 'svelte';
-  import { registerRouteRefresh } from 'payload-live-preview';
+  import { livePreviewNavigation } from 'payload-live-preview/sveltekit/client';
 
-  const NAVIGATION_COMMIT_EVENT = 'payload-live-preview:navigation';
-
-  afterNavigate(({ from }) => {
-    if (from === null) return;
-    document.dispatchEvent(new Event(NAVIGATION_COMMIT_EVENT));
-  });
-
-  onMount(() =>
-    registerRouteRefresh(async () => {
-      await invalidateAll();
-      await tick();
-    }),
-  );
+  livePreviewNavigation({ afterNavigate, invalidateAll });
 </script>
 ```
 
-`afterNavigate` runs once on the initial mount with `from: null`; skipping that
-call avoids a second startup replay. Later calls happen after SvelteKit has
-committed the destination. `registerRouteRefresh()` returns the cleanup that
-`onMount` uses when the bridge unmounts. For an unbound or conditional field,
-`invalidateAll()` settles the route's server and universal loads, `tick()`
-settles the DOM, and only then does the runtime reapply the unsaved document.
+It must run while the component initialises, as `afterNavigate` must. The
+functions are passed in because `$app/navigation` exists only inside a Kit
+build: a package that imported it would have to be compiled by the app as a
+Svelte library, which changes how Vite treats every other import of the package.
+
+After a committed client navigation the runtime rebuilds its bindings and
+locally reapplies the last accepted editor document, so this does not depend on
+the editor answering another `ready`. `afterNavigate` runs once on the initial
+mount with `from: null`, and a shallow `goto` (SvelteKit 3) keeps the rendered
+route; neither counts as a navigation. For an unbound or conditional field the
+route strategy uses `invalidateAll()`, which settles the route's server and
+universal loads, then `tick()`, which settles the DOM, and only then does the
+runtime reapply the unsaved document. When the layout unmounts, the refresh is
+released.
+
+Before 2.4 this guide had the project copy a 16-line bridge for the same job.
+It keeps working; replace it with the call above.
 
 The adapter authorizes SvelteKit's internal data requests against `event.url`,
 the normalized page URL rather than its `__data.json` transport path. Keep a
 query-carried preview credential in navigation links; a session cookie needs no
 special URL handling.
-
-The event string and bridge are a host recipe, not a SvelteKit import hidden in
-the package. On a commit the runtime rebuilds its bindings and locally reapplies
-the last accepted editor document, so this does not depend on the editor
-answering another `ready`.
 
 ## Server-rendered boundaries
 

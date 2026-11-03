@@ -100,13 +100,15 @@ would tax every consumer for a feature most never use, so it is not done.
 
 2026-09-14 (2.0.1): seven peers are declared now, all of them optional in
 `peerDependenciesMeta`: `astro`, `react`, `react-dom`, `svelte`, `ts-morph`,
-`vite` and `vue`.
+`vite` and `vue`. 2026-11-03: `next` (`>=15.5.0`), for
+`payload-live-preview/nextjs/client` alone (ADR 0032).
 
 ## Consequences
 
 - Each entry has an API report; 18 are committed under `etc/api/` (23 on
-  2026-09-14, 2.0.1), and a change to a public surface fails the package gate
-  until the report is regenerated and reviewed.
+  2026-09-14, 2.0.1; 27 on 2026-11-03, with the three navigation entries of
+  ADR 0032), and a change to a public surface fails the package gate until the
+  report is regenerated and reviewed.
 - Moving a module between groups is a visible event: it changes an API report,
   the architecture verdict, or both.
 - The rules are structural, so they hold for code nobody re-reads. What they

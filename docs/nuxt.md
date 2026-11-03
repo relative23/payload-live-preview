@@ -192,67 +192,38 @@ The element is there while the field is empty too, so the first edit has somewhe
 
 ## Client navigation and route refreshes
 
-The Nitro adapter arms preview responses for the package's navigation event;
-it does not import Nuxt's client router or install a browser plugin. Add this
-application-owned plugin:
+Since 2.4 the module registers a client plugin of its own; a project that loads
+`payload-live-preview/nuxt-module` writes nothing for this. The plugin does two
+things:
 
-```ts
-// plugins/payload-live-preview-navigation.client.ts
-import { nextTick } from 'vue';
-import { registerRouteRefresh } from 'payload-live-preview';
+- It lends the route strategy `refreshNuxtData()`, so an unbound or conditional
+  field is shown by Nuxt re-running the page's `useAsyncData` and `useFetch`
+  calls rather than by fetched HTML morphed over Vue's nodes. The runtime
+  reapplies the unsaved document after the refresh and the next Vue tick.
+- After a client navigation has committed, it tells the runtime, which then
+  rebuilds its bindings and locally reapplies the last accepted editor document;
+  it does not require the editor to answer another `ready`.
 
-const NAVIGATION_COMMIT_EVENT = 'payload-live-preview:navigation';
+It listens for `page:loading:end`, which runs after a destination's Suspense has
+resolved and also after a same-page query update, where Nuxt does not emit
+`page:finish`. Comparing `fullPath` skips the initial hook and duplicate
+finishes, while a cancelled navigation never becomes the committed route. The
+hook reads the route immediately so a redirect cannot make an earlier
+completion claim the later route. A back/forward-cache page keeps the plugin;
+an ordinary unload or a hot replacement releases it.
 
-export default defineNuxtPlugin((nuxtApp) => {
-  let committedRoute = nuxtApp.$router.currentRoute.value.fullPath;
-  const removeLoadingEnd = nuxtApp.hook('page:loading:end', () => {
-    const route = nuxtApp.$router.currentRoute.value.fullPath;
-    if (route === committedRoute) return;
-    committedRoute = route;
-    document.dispatchEvent(new Event(NAVIGATION_COMMIT_EVENT));
-  });
-  const removeRefresh = registerRouteRefresh(async () => {
-    await refreshNuxtData();
-    await nextTick();
-  });
-
-  let cleaned = false;
-  const cleanup = (): void => {
-    if (cleaned) return;
-    cleaned = true;
-    removeLoadingEnd();
-    removeRefresh();
-    window.removeEventListener('pagehide', onPageHide);
-  };
-  const onPageHide = (event: PageTransitionEvent): void => {
-    if (!event.persisted) cleanup();
-  };
-
-  window.addEventListener('pagehide', onPageHide);
-  import.meta.hot?.dispose(cleanup);
-});
-```
-
-`page:loading:end` runs after a destination's Suspense has resolved and also
-after a same-page query update, where Nuxt does not emit `page:finish`.
-Comparing `fullPath` skips the initial hook and duplicate finishes, while a
-cancelled navigation never becomes the committed route. The hook reads the
-route immediately so a redirect cannot make an earlier completion claim the
-later route.
-`refreshNuxtData()` settles the current page's `useAsyncData` and
-`useFetch` calls before the runtime reapplies an unsaved document. The cleanup
-keeps a bfcache page intact but unregisters both seams on an ordinary unload or
-hot replacement.
+The plugin is generated into `.nuxt/` as `payload-live-preview-navigation.client.mjs`
+and imports `bindNuxtNavigation` from `payload-live-preview/nuxt/client`. Before
+2.4 this guide had the project copy a 29-line plugin to
+`plugins/payload-live-preview-navigation.client.ts`. When that file is still
+there, the module leaves it in charge, registers nothing beside it, and says so
+once in development; delete it to use the packaged one. To keep your own plugin
+under another name, set `livePreview: { navigation: false }`.
 
 Keep query-carried preview intent and credentials when building Nuxt links or
 calling `navigateTo`. A token scoped to one pathname cannot authorize another:
 for a cross-path navigation, have Payload mint the destination URL or use a
 session or deliberately site-scoped credential instead of reusing that token.
-
-This plugin and its event dispatch are host code, not a Nuxt bridge exported by
-the package. After the event, the runtime rebuilds its bindings and locally
-reapplies the last accepted editor document; it does not require the editor to
-answer another `ready`.
 
 ## Server-rendered boundaries
 

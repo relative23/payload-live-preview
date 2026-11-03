@@ -42,12 +42,22 @@ const SHARED_OPTIONS = {
   // `svelte/server` is an optional peer written as a real specifier (see
   // src/adapters/sveltekit/fragments.ts on why that one cannot be hidden behind
   // a variable); `react` and `vue` are the optional peers the `./react` and
-  // `./vue` entries import statically, because a hook cannot be lazy. All are
-  // named external so the build never inlines them — a consumer resolves its
-  // own copy.
+  // `./vue` entries import statically, because a hook cannot be lazy, and
+  // `svelte` and `next/navigation` are what the `*/client` navigation entries
+  // import for the same reason. All are named external so the build never
+  // inlines them — a consumer resolves its own copy.
   // The internal template is copied verbatim; only the consumer's Astro compiler
   // can turn it into a component compatible with that consumer's Astro version.
-  external: ['ts-morph', 'react', 'svelte/server', 'vue', /^virtual:/, './FragmentBridge.astro'],
+  external: [
+    'ts-morph',
+    'react',
+    'svelte',
+    'svelte/server',
+    'vue',
+    'next/navigation',
+    /^virtual:/,
+    './FragmentBridge.astro',
+  ],
   tsconfig: 'tsconfig.json',
 } satisfies Options;
 

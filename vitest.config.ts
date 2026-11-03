@@ -46,6 +46,18 @@ export default defineConfig({
         return 'throw new Error("FragmentBridge.astro requires the native Astro compiler; mock it only in unit tests"); export default undefined;';
       },
     },
+    {
+      name: 'unit-next-navigation-boundary',
+      // `next` is an optional peer the root does not install; the one module
+      // that imports it is tested against a `vi.mock` of its three hooks.
+      resolveId(id) {
+        return id === 'next/navigation' ? '\0unit-next-navigation' : null;
+      },
+      load(id) {
+        if (id !== '\0unit-next-navigation') return null;
+        return 'throw new Error("next/navigation is not installed at the root; vi.mock it in unit tests");';
+      },
+    },
   ],
   test: {
     environment: 'jsdom',
