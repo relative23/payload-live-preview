@@ -1,5 +1,8 @@
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { FullResult, TestCase, TestResult } from '@playwright/test/reporter';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import PlaywrightZeroSkipReporter, {
   findPlaywrightRuntimePolicyViolations,
   REPEATED_ATTEMPT,
@@ -45,9 +48,21 @@ describe('Playwright runtime test policy', () => {
     ]);
   });
 
+  const directories: string[] = [];
+  afterEach(() => {
+    for (const directory of directories.splice(0)) rmSync(directory, { recursive: true });
+  });
+  /** Where a reporter under test writes its list; CI uploads the real one per job. */
+  const attemptsFile = () => {
+    const directory = mkdtempSync(join(tmpdir(), 'plp-reporter-'));
+    directories.push(directory);
+    return join(directory, 'results', 'repeated-attempts.json');
+  };
+
   it('lists a step a test started again at the end of the run, and the run still passes', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const reporter = new PlaywrightZeroSkipReporter();
+    const file = attemptsFile();
+    const reporter = new PlaywrightZeroSkipReporter({ attemptsFile: file });
     const reload = 'the preview frame fired no load within 20 s; reload 2 of 3';
     reporter.onTestEnd(
       {
@@ -68,6 +83,19 @@ describe('Playwright runtime test policy', () => {
     expect(log).toHaveBeenCalledWith(
       `Steps a test started again (1, allowed):\n- webkit › surface-session.spec.ts › a reloaded frame is the public page: ${reload}`,
     );
+    // The same list goes to the file CI sums across the run (scripts/count-repeated-attempts.ts).
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({
+      attempts: [
+        `webkit › surface-session.spec.ts › a reloaded frame is the public page: ${reload}`,
+      ],
+    });
     log.mockRestore();
+  });
+
+  it('writes an empty list when no step was started again, so the job still counts as reported', async () => {
+    const file = attemptsFile();
+    const reporter = new PlaywrightZeroSkipReporter({ attemptsFile: file });
+    await expect(reporter.onEnd({ status: 'passed' } as FullResult)).resolves.toBeUndefined();
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ attempts: [] });
   });
 });

@@ -720,6 +720,13 @@ jobs:
       - run: bash scripts/ci-install-fixture.sh examples/payload-backend
       - run: npm run test:e2e:real-payload
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: repeated-attempts-real-payload
+          path: test-results/repeated-attempts.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: playwright-report-real-payload
@@ -761,6 +768,13 @@ jobs:
           PLP_REAL_PAYLOAD_TARGET: hybrid
           PLP_REAL_PAYLOAD_BROWSERS: ${{ matrix.browser }}
         run: npm run test:e2e:real-payload
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: repeated-attempts-real-payload-hybrid-${{ matrix.browser }}
+          path: test-results/repeated-attempts.json
+          if-no-files-found: ignore
+          retention-days: 7
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
@@ -837,6 +851,13 @@ jobs:
           PLP_REAL_PAYLOAD_BROWSERS: ${{ matrix.browser }}
         run: npm run test:e2e:real-payload
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: repeated-attempts-real-payload-${{ matrix.target }}-${{ matrix.browser }}
+          path: test-results/repeated-attempts.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: playwright-report-real-payload-${{ matrix.target }}-${{ matrix.browser }}
@@ -883,11 +904,40 @@ jobs:
           PLP_REAL_PAYLOAD_CSRF: '1'
         run: npm run test:e2e:real-payload
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: repeated-attempts-real-payload-csrf-${{ matrix.target }}
+          path: test-results/repeated-attempts.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: playwright-report-real-payload-csrf-${{ matrix.target }}
           path: playwright-report/
           retention-days: 7
+
+  # Every real-admin job above uploads the steps its tests started again. The run may need two:
+  # one stall that should be rare is absorbed, and scripts/count-repeated-attempts.ts holds the
+  # measured budget, so more of them turn the run red until someone has looked.
+  repeated-attempts:
+    name: Steps the real-admin suites started again
+    needs: [real-payload-e2e, real-payload-hybrid, real-payload-surfaces, real-payload-csrf]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: repeated-attempts-*
+          path: repeated-attempts
+      - run: node scripts/count-repeated-attempts.ts repeated-attempts
 
   release-gates:
     name: Release Gates

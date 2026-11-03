@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 544,
-    "suites": 1052,
-    "tests": 4762,
+    "files": 545,
+    "suites": 1053,
+    "tests": 4768,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 446,
-      "suites": 941,
-      "tests": 4351,
+      "files": 447,
+      "suites": 942,
+      "tests": 4357,
       "benchmarks": 0
     }
   },
@@ -3270,6 +3270,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/count-repeated-attempts.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/coverage-policy.test.ts",
       "group": "unit",
       "suites": 2,
@@ -3420,7 +3427,7 @@
       "path": "tests/unit/quality/playwright-runtime-policy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {
