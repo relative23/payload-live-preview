@@ -191,7 +191,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # The soak serves the Astro fixture, and Astro 7.4.2 needs >=22.23.4 (2026-10-27)
+          # The soak serves the Astro fixture, and Astro 7.4 needs >=22.23.4 (7.4.2 on 2026-10-27, 7.4.5 still)
           node-version: 22.23.4
           cache: npm
           cache-dependency-path: |

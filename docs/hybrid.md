@@ -533,8 +533,9 @@ in whatever it does hand a handler — that is all either binding does.
   `_payload`. In Next.js it is `app/payload/fragment/route.ts`, and the path
   follows the directory. With `trailingSlash: 'always'` in `astro.config`, name
   the path with its slash, `fragments: { endpoint: '/payload/fragment/' }`:
-  Astro 7.4.2 with the Node adapter answers a POST to `/payload/fragment` with
-  a 301 instead of running the endpoint (measured on 2026-10-28), a browser
+  Astro 7.4.2 and 7.4.5 with the Node adapter answer a POST to `/payload/fragment`
+  with a 301 instead of running the endpoint (measured on 2026-10-28 and
+  2026-11-03), a browser
   follows a 301 with a GET, and the boundary falls back to its patch.
 - A server to render in: an Astro SSR adapter (`@astrojs/node`, Vercel, …)
   with `prerender = false` on the route, or a Next.js deployment that is not a
