@@ -223,10 +223,9 @@ export async function startNativeContinuation(
     for (const file of ['package.json', 'package-lock.json', '.npmrc']) {
       await copyFile(resolve(ROOT, 'tests/fixtures/payload-acl', file), join(cms, file));
     }
-    await copyFile(
-      resolve(ROOT, 'examples/payload-backend/acl-fixture.ts'),
-      join(cms, 'acl-fixture.ts'),
-    );
+    for (const name of ['acl-fixture.ts', 'fixture-http.ts']) {
+      await copyFile(resolve(ROOT, 'examples/payload-backend', name), join(cms, name));
+    }
     command(
       ['ci', ...install.filter((arg) => arg !== '--package-lock=false' && arg !== '--no-save')],
       cms,
