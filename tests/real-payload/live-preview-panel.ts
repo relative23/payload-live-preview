@@ -4,7 +4,8 @@
  * Playwright's click: that waits for two animation frames first, and WebKit on a loaded CI runner can give the admin
  * none for the rest of the test (PR #180, run 40508357795: the click never got past "visible, enabled and stable").
  */
-import { expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { REPEATED_ATTEMPT } from '../../scripts/playwright-zero-skip-reporter';
 
 /** The panel open. A 0×0 panel is closed; the iframe is no signal, its loader keeps it hidden until `onLoad`. */
 export async function openLivePreviewPanel(page: Page): Promise<void> {
@@ -30,8 +31,9 @@ export async function openLivePreviewPanel(page: Page): Promise<void> {
 /**
  * The preview frame reloaded, as the editor's browser would after a sign-in or a sign-out. In WebKit one such
  * reload fired no `load` within the test's minute (run 41507231988, the nuxt4 session spec), so a reload that has
- * not loaded after 20 s is started again, at most three times. A cold dev server that compiles the page for longer
- * goes on compiling, and the next request is answered when it is done.
+ * not loaded after 20 s is started again, up to three reloads in all. A cold dev server that compiles the page for
+ * longer goes on compiling, and the next request is answered when it is done. Each reload started again is listed
+ * at the end of the run (scripts/playwright-zero-skip-reporter.ts): the test passes, but a growing count shows.
  */
 export async function reloadPreviewFrame(page: Page, selector: string): Promise<void> {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
@@ -53,6 +55,12 @@ export async function reloadPreviewFrame(page: Page, selector: string): Promise<
       20_000,
     );
     if (loaded) return;
+    if (attempt < 3) {
+      test.info().annotations.push({
+        type: REPEATED_ATTEMPT,
+        description: `the preview frame fired no load within 20 s; reload ${String(attempt + 1)} of 3`,
+      });
+    }
   }
   throw new Error('the preview frame fired no load event after three reloads');
 }

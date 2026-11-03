@@ -12,9 +12,29 @@ export interface PlaywrightRuntimePolicyInput {
   readonly retry: number;
   readonly repeatEachIndex: number;
   readonly annotations: readonly string[];
+  /** The descriptions of its `repeated-attempt` annotations, one per step it started again. */
+  readonly repeatedAttempts: readonly string[];
 }
 
 const FORBIDDEN_ANNOTATIONS = new Set(['fail', 'fixme', 'skip']);
+
+/**
+ * The annotation a test adds when it starts a step again itself, as the real-admin
+ * specs do with a frame reload that fired no `load` (tests/real-payload/live-preview-panel.ts).
+ */
+export const REPEATED_ATTEMPT = 'repeated-attempt';
+
+/**
+ * A step a test starts again itself is no retry, and it passes the policy. Every
+ * one is listed at the end of the run instead, so a repeat that grows common shows.
+ */
+export function listRepeatedAttempts(
+  tests: readonly PlaywrightRuntimePolicyInput[],
+): readonly string[] {
+  return tests.flatMap((test) =>
+    test.repeatedAttempts.map((attempt) => `${test.title}: ${attempt}`),
+  );
+}
 
 export function findPlaywrightRuntimePolicyViolations(
   tests: readonly PlaywrightRuntimePolicyInput[],
@@ -61,10 +81,21 @@ export default class PlaywrightZeroSkipReporter implements Reporter {
       retry: result.retry,
       repeatEachIndex: test.repeatEachIndex,
       annotations: test.annotations.map(({ type }) => type),
+      repeatedAttempts: test.annotations
+        .filter(({ type }) => type === REPEATED_ATTEMPT)
+        .map(({ description }) => description ?? REPEATED_ATTEMPT),
     });
   }
 
   onEnd(_result: FullResult): Promise<{ status: FullResult['status'] } | undefined> {
+    const repeated = listRepeatedAttempts(this.#tests);
+    if (repeated.length > 0) {
+      console.log(
+        `Steps a test started again (${String(repeated.length)}, allowed):\n${repeated
+          .map((attempt) => `- ${attempt}`)
+          .join('\n')}`,
+      );
+    }
     const violations = findPlaywrightRuntimePolicyViolations(this.#tests);
     if (violations.length === 0) return Promise.resolve(undefined);
     console.error(
