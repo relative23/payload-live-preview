@@ -16,13 +16,13 @@ import {
 describe('Astro resource version selection', () => {
   it('keeps the existing Astro 7 fixture as the default', () => {
     expect(astroResourceVersion()).toEqual({
-      version: '7.3.2',
+      version: '7.4.5',
       dependencyRoot: 'tests/fixtures/astro-resource-deps',
       artifactRoot: 'test-results/hardening/h05-astro-resources',
     });
   });
 
-  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.4'])(
+  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8'])(
     'pins %s and its strict native build',
     (version) => {
       const selected = astroResourceVersion(version);
@@ -86,6 +86,6 @@ describe('Astro resource version selection', () => {
   });
 
   it('leaves modern router templates untouched', async () => {
-    await expect(prepareAstroResourceVersion('/does-not-exist', '7.3.2')).resolves.toBeUndefined();
+    await expect(prepareAstroResourceVersion('/does-not-exist', '7.4.5')).resolves.toBeUndefined();
   });
 });

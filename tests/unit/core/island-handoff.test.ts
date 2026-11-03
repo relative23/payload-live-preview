@@ -2,7 +2,8 @@
  * ADR 0021's island handoff, against a stand-in with the semantics read from
  * Astro 7.3.2 and @astrojs/react 6.0.6: the island observes `props`, its
  * hydrator ignores a call without `ssr`, keeps one root per element and drops
- * it on `astro:unmount`. The native suite proves the real packages.
+ * it on `astro:unmount`. The native suite proves the real packages, today Astro 7.4.5 and
+ * @astrojs/react 7.1.2.
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {

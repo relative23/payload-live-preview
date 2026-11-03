@@ -245,7 +245,7 @@ describe('installs a Playwright helper makes', () => {
   it('installs the consumer the matrix selects, and the CMS beside it', () => {
     const matrix = `    strategy:
       matrix:
-        astro: ['4.9.0', '7.3.2']
+        astro: ['4.9.0', '7.4.5']
 `;
     const steps = run(
       'playwright.astro-resources.config.ts',

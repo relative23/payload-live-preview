@@ -14,16 +14,16 @@ describe('Astro React resource selection', () => {
   it.each(['react-server', 'react-unconfigured'])(
     'isolates the %s consumer and artifacts',
     (renderer) => {
-      expect(astroResourceRenderer('7.3.2', renderer)).toBe(renderer);
-      expect(astroResourceVersion('7.3.2', renderer)).toEqual({
-        version: '7.3.2',
+      expect(astroResourceRenderer('7.4.5', renderer)).toBe(renderer);
+      expect(astroResourceVersion('7.4.5', renderer)).toEqual({
+        version: '7.4.5',
         dependencyRoot: 'tests/fixtures/astro-react-deps',
         artifactRoot: 'test-results/hardening/h05-astro-react/native',
       });
     },
   );
 
-  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.4'])(
+  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8'])(
     'does not infer React recipe support for %s',
     (version) => {
       expect(() => astroResourceRenderer(version, 'react-server')).toThrow(
@@ -44,9 +44,9 @@ describe('Astro React resource selection', () => {
     const react = read('astro-react-deps');
     expect(react.private).toBe(true);
     expect(react.dependencies).toMatchObject({
-      astro: '7.3.2',
-      '@astrojs/react': '6.0.6',
-      vite: '8.1.4',
+      astro: '7.4.5',
+      '@astrojs/react': '7.1.2',
+      vite: '8.3.5',
       react: '19.2.8',
       'react-dom': '19.2.8',
     });

@@ -13,22 +13,26 @@ describe('native Astro host fixture configuration', () => {
   it('pins the SSR dependency graph without changing the static example', () => {
     const manifest = JSON.parse(read('tests/fixtures/astro-host-deps/package.json')) as {
       dependencies: Record<string, string>;
-      overrides: Record<string, string>;
+      overrides?: Record<string, string>;
       allowScripts: Record<string, boolean>;
     };
     const lock = JSON.parse(read('tests/fixtures/astro-host-deps/package-lock.json')) as {
       packages: Record<string, { version: string }>;
     };
     for (const [name, version] of Object.entries({
-      astro: '7.3.2',
-      '@astrojs/node': '11.1.4',
-      vite: '8.1.4',
+      astro: '7.4.5',
+      '@astrojs/node': '11.1.9',
+      vite: '8.3.5',
     })) {
       expect(manifest.dependencies[name]).toBe(version);
       expect(lock.packages[`node_modules/${name}`]?.version).toBe(version);
     }
-    expect(manifest.overrides['esbuild']).toBe('0.28.1');
-    expect(manifest.allowScripts).toEqual({ 'esbuild@0.28.1': true, 'fsevents@2.3.3': false });
+    // Astro 7.4 on Vite 8.3 installs no esbuild, so nothing is left to pin or to allow a script for.
+    expect(manifest.overrides).toBeUndefined();
+    expect(Object.keys(lock.packages).some((path) => path.endsWith('node_modules/esbuild'))).toBe(
+      false,
+    );
+    expect(manifest.allowScripts).toEqual({ 'fsevents@2.3.3': false });
     expect(read('tests/fixtures/astro-host-deps/.npmrc')).toBe(
       'strict-allow-scripts=true\ninstall-links=true\n',
     );

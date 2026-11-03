@@ -13,12 +13,12 @@ const source = (path: string): string =>
 describe('Astro request-local catalog fixture', () => {
   it('keeps the default floor reproduction distinct from a chosen recipe', () => {
     expect(astroResourceRenderer('4.9.0')).toBe('package-default');
-    expect(astroResourceRenderer('7.3.2')).toBe('verified-context');
+    expect(astroResourceRenderer('7.4.5')).toBe('verified-context');
     expect(astroResourceRenderer('4.9.0', 'locals-catalog')).toBe('locals-catalog');
-    expect(astroResourceRenderer('7.3.2', 'locals-catalog')).toBe('locals-catalog');
+    expect(astroResourceRenderer('7.4.5', 'locals-catalog')).toBe('locals-catalog');
   });
 
-  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4'])(
+  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.5'])(
     'allows an explicit installed-default countercheck on %s',
     (version) => expect(astroResourceRenderer(version, 'package-default')).toBe('package-default'),
   );

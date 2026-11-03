@@ -10,14 +10,14 @@ import {
 
 describe('native Astro page-owned React fixture', () => {
   it('isolates the page-owned renderer using the unchanged exact React lock', () => {
-    expect(astroResourceVersion('7.3.2', 'react-owned')).toEqual({
-      version: '7.3.2',
+    expect(astroResourceVersion('7.4.5', 'react-owned')).toEqual({
+      version: '7.4.5',
       dependencyRoot: 'tests/fixtures/astro-react-deps',
       artifactRoot: 'test-results/hardening/h05-astro-owner/native',
     });
-    expect(astroResourceRenderer('7.3.2', 'react-owned')).toBe('react-owned');
+    expect(astroResourceRenderer('7.4.5', 'react-owned')).toBe('react-owned');
   });
-  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.4'])(
+  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8'])(
     'refuses unreviewed page-owned mode on %s',
     (version) => {
       expect(() => astroResourceVersion(version, 'react-owned')).toThrow(

@@ -159,8 +159,8 @@ on 2026-09-27 and [ADR 0021](architecture/0021-fragment-islands-hydrate-from-the
 on 2026-09-28. The specs named below are what runs today. Three jobs run from
 the package archive on every push, in Chromium: base integration on Astro
 4.0.0, fragment islands on 4.16.19, and fragment rendering with page-owned
-resources on 4.9.0, 4.16.19, 5.18.2, 6.4.8, 7.3.2 and 7.4.4. The other
-engines, the islands on 7.3.2, verified React context and page ownership
+resources on 4.9.0, 4.16.19, 5.18.2, 6.4.8 and 7.4.5. The other engines,
+the islands on 7.4.5, verified React context and page ownership
 are run by hand ([Astro peer floors](testing.md#astro-peer-floors)).
 
 A successful isolated container render does not register the component's CSS
@@ -247,8 +247,8 @@ loading the default. [ADR 0020](architecture/0020-astro-page-owned-resources.md)
 defines the patch boundary. Verified page context and additional framework
 hydration remain separate.
 
-For an additional React child, the native reference pins Astro 7.3.2,
-`@astrojs/react` 6.0.6 and React/React DOM 19.2.8. The app integration alone
+For an additional React child, the native reference pins Astro 7.4.5,
+`@astrojs/react` 7.1.2 and React/React DOM 19.2.8. The app integration alone
 does not configure a separately created fragment container: its explicit
 renderer registers `@astrojs/react/server.js` with the public
 `addServerRenderer` method. See the
@@ -288,21 +288,22 @@ revisions reach the same island through Astro's own props handoff, so React
 keeps its state; a different component, changed slot content or an island the
 revision removes is replaced or released. A module the build did not emit, or a
 build without the table, fails the render instead of sending a source path.
-This is measured on Astro 7.3.2 with `@astrojs/react` 6.0.6 in three browsers
+This is measured on Astro 7.4.5 with `@astrojs/react` 7.1.2 in three browsers
+(2026-11-03; first on 7.3.2 with 6.0.6)
 ([native contract](../tests/e2e/continuation/astro-islands.spec.ts),
 [ADR 0021](architecture/0021-fragment-islands-hydrate-from-the-build.md)), for
 React islands with `client:load`. The other directives (`client:idle`,
 `client:visible`, `client:media`, `client:only`) and the clients of other
 frameworks are not measured. `resolve` is a container option of Astro 4.16 and
-later, and the island lane runs Astro 7.3.2 and 4.16.19; earlier versions are
+later, and the island lane runs Astro 7.4.5 and 4.16.19; earlier versions are
 not claimed, and neither is `astro dev`. Without the build's table the render
 refuses with a message that names `livePreview()` and `astro build`
 ([unit test](../tests/unit/adapters/astro-island-modules.test.ts)).
 
 The finite page-owned native React recipe now has a separate
 [native contract](../tests/e2e/continuation/astro-owner.spec.ts) of eight cases
-per browser (24 runs in three browsers) on exact Astro 7.3.2 /
-`@astrojs/react` 6.0.6 / React 19.2.8. A core correction restores island events
+per browser (24 runs in three browsers) on exact Astro 7.4.5 /
+`@astrojs/react` 7.1.2 / React 19.2.8, measured on 2026-11-03. A core correction restores island events
 beside fragment work without duplicate fallback delivery. What remains is
 application glue: a
 [page-owned store](../tests/fixtures/astro-react-owned/src/client/island-snapshots.ts.fixture)

@@ -10,21 +10,17 @@
     "start": "node ./dist/server/entry.mjs"
   },
   "dependencies": {
-    "astro": "7.3.2",
-    "@astrojs/node": "11.1.4",
-    "vite": "8.1.4",
+    "astro": "7.4.5",
+    "@astrojs/node": "11.1.9",
+    "vite": "8.3.5",
     "payload-live-preview": "file:../../.."
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.10",
+    "@astrojs/check": "0.9.12",
     "typescript": "5.9.3",
     "@types/node": "22.20.1"
   },
-  "overrides": {
-    "esbuild": "0.28.1"
-  },
   "allowScripts": {
-    "esbuild@0.28.1": true,
     "fsevents@2.3.3": false
   }
 }
