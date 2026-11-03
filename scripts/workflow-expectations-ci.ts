@@ -272,12 +272,15 @@ export const CI: WorkflowSpec = {
       { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4'] },
       { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
     ),
-    // Next.js, SvelteKit, Nuxt, plain HTML, Vue and React production hosts on the stored archive,
-    // against a real Payload 3 login and access control (tests/e2e/continuation/next-host.spec.ts).
+    // Next.js, SvelteKit 2 and 3, Nuxt 3 and 4, plain HTML, Vue and React production hosts on the
+    // stored archive, against a real Payload 3 login and access control
+    // (tests/e2e/continuation/next-host.spec.ts).
     'production-lifecycle': archiveJob(
       'playwright.${{ matrix.framework }}-continuation.config.ts',
       30,
-      { framework: ['next', 'sveltekit', 'nuxt', 'html', 'vue', 'react'] },
+      {
+        framework: ['next', 'sveltekit', 'sveltekit3', 'nuxt', 'nuxt4', 'html', 'vue', 'react'],
+      },
     ),
     'real-payload-e2e': {
       needs: ['build'],

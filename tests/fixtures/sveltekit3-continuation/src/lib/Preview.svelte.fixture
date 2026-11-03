@@ -1,0 +1,61 @@
+<script lang="ts">
+  /** Svelte owns the hydrated document and visitor state. The public package client supplies guarded ingress, not a competing DOM writer. */
+  import { onMount, untrack } from 'svelte';
+  import { LivePreviewClient } from 'payload-live-preview/client';
+  type Document = { id: number; title: string; related?: unknown[]; files?: unknown[] };
+  let { initialData, path, locale, origin }: { initialData: Document; path: string; locale: string; origin: string } = $props();
+  // The route key remounts this owner when its target/query changes.
+  let data = $state(untrack(() => initialData));
+  let status = $state('idle');
+  let ready = $state(false);
+  let count = $state(0);
+  let visitor = $state('Visitor state');
+  const labels = (values?: unknown[]) => (values ?? []).map(value => typeof value === 'object' && value !== null && 'title' in value ? String(value.title) : `ID:${String(value)}`).join(' | ');
+  onMount(() => {
+    let revision = 0;
+    let active: AbortController | undefined;
+    const client = new LivePreviewClient({ allowedOrigins: [origin], defaults: 'v2', autoStart: false, debug: false, autoBind: 'off' });
+    client.events.on('beforeUpdate', event => {
+      // A Svelte-owned document consumes ingress without letting the DOM
+      // runtime mutate its nodes. Only a current authorized envelope commits.
+      event.cancel();
+      if (event.data.collectionSlug !== 'articles' || String(event.data.fields.id) !== String(initialData.id) || event.data.locale !== locale) return;
+      const expected = ++revision;
+      active?.abort();
+      active = new AbortController();
+      const signal = AbortSignal.any([active.signal, AbortSignal.timeout(5_000)]);
+      status = 'loading';
+      void (async () => {
+        try {
+          const fields = event.data.fields;
+          const response = await fetch(`${path}/data?preview=true&locale=${locale}`, {
+            method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'same-origin', signal,
+            body: JSON.stringify({ version: 1, revision: expected, data: { title: fields.title, related: fields.related, files: fields.files } }),
+          });
+          if (!response.ok) { await response.body?.cancel(); throw new Error('Preview unavailable'); }
+          const envelope = await response.json();
+          if (envelope.version !== 1 || envelope.ok !== true || envelope.revision !== expected || String(envelope.data?.id) !== String(initialData.id)) throw new Error('Preview unavailable');
+          if (revision !== expected || signal.aborted) return;
+          data = envelope.data;
+          status = 'live';
+        } catch {
+          if (revision === expected) status = 'unavailable';
+        }
+      })();
+    });
+    client.start();
+    ready = true;
+    return () => { revision++; active?.abort(); void client.destroy(); };
+  });
+</script>
+<main data-payload-island>
+  <h1 data-testid="title">{data.title}</h1>
+  <p data-testid="related">{labels(data.related)}</p><p data-testid="files">{labels(data.files)}</p>
+  <output data-testid="ready">{ready ? 'ready' : 'hydrating'}</output>
+  <output data-testid="status">{status}</output>
+  <button data-testid="counter" onclick={() => count++}>{count}</button>
+  <input aria-label="Visitor state" data-testid="visitor" bind:value={visitor} />
+  <a data-sveltekit-preload-data="off" href={`${path}?locale=${locale}&preview=true`} data-testid="valid-navigation">Reload server data</a>
+  <a data-sveltekit-preload-data="off" href={`${path}?preview=true&locale=${locale}&invalid=1`} data-testid="denied-navigation">Denied navigation</a>
+  <a data-sveltekit-preload-data="off" href={`/?from=${locale}`} data-testid="navigation">Public shell</a>
+</main>

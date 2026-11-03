@@ -562,9 +562,12 @@ behind a throw-away TLS proxy. `fixture-audit` covers `examples/`, not these loc
 
 ## Production hosts
 
-The `production-lifecycle` job builds a Next.js, a SvelteKit, a Nuxt, a plain HTML, a
-standalone Vue and a standalone React host for production, one matrix entry each, in Chromium
-([spec](../tests/e2e/continuation/next-host.spec.ts)). Each host is an application of its own
+The `production-lifecycle` job builds a Next.js host, a SvelteKit 2 and a SvelteKit 3 host, a
+Nuxt 3 and a Nuxt 4 host, a plain HTML, a standalone Vue and a standalone React host for
+production, one matrix entry each, in Chromium
+([spec](../tests/e2e/continuation/next-host.spec.ts)). The SvelteKit 3 host is the SvelteKit
+one as `npx sv migrate sveltekit-3` changed the example, and the Nuxt 4 host the Nuxt one in
+Nuxt 4's `app/` layout. Each host is an application of its own
 ([Next.js](../tests/fixtures/next-continuation/), and the same for the others) on the
 dependencies a reviewed lock pins: the matching example's, and for Vue and React
 [`tests/fixtures/vue-host-deps`](../tests/fixtures/vue-host-deps/package-lock.json) and
@@ -601,6 +604,8 @@ To run them yourself, build and pack as above, then:
 npx playwright test --config playwright.next-continuation.config.ts --project=chromium       # port 4284
 npx playwright test --config playwright.sveltekit-continuation.config.ts --project=chromium  # port 4285
 npx playwright test --config playwright.nuxt-continuation.config.ts --project=chromium       # port 4286
+npx playwright test --config playwright.sveltekit3-continuation.config.ts --project=chromium # port 4292
+npx playwright test --config playwright.nuxt4-continuation.config.ts --project=chromium      # port 4293
 npx playwright test --config playwright.html-continuation.config.ts --project=chromium       # port 4288
 npx playwright test --config playwright.vue-continuation.config.ts --project=chromium        # port 4289
 npx playwright test --config playwright.react-continuation.config.ts --project=chromium      # port 4291
@@ -609,7 +614,7 @@ npx playwright test --config playwright.react-continuation.config.ts --project=c
 What they do not show. The test posts the editor's messages itself, so Payload's admin UI
 is not part of it; the `real-payload-surfaces` targets drive the admin UI, against the
 development servers and, for the five `-production` targets, against production builds.
-The locked versions are those of the SvelteKit 2 and Nuxt 3 examples,
+The locked versions are those of the SvelteKit 2 and 3 and the Nuxt 3 and 4 examples,
 and the Vue and React hosts run the versions their locks pin, 3.5.41 and 19.3.1, not the peer
 floors 3.3 and 18. The job runs Chromium only.
 

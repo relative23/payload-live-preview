@@ -73,6 +73,8 @@ The `sveltekit3` job runs the SvelteKit example migrated to SvelteKit 3.1.1 with
 4.6.3's `app/` layout. Both run on the development server against the mock
 admin in Chromium, Firefox and WebKit, and `real-payload-surfaces` drives both
 from the real admin in the same three engines. `real-payload-surfaces` also
-drives both production builds; the `production-lifecycle` job still builds
-SvelteKit 2 and Nuxt 3. The SvelteKit example needed the migration's changes
-([sveltekit.md](sveltekit.md)); the package needed no change for either.
+drives both production builds, and the `production-lifecycle` job builds a
+SvelteKit 3 and a Nuxt 4 host from the stored package archive, beside the
+SvelteKit 2 and Nuxt 3 ones ([testing.md](testing.md#production-hosts)). The
+SvelteKit example needed the migration's changes ([sveltekit.md](sveltekit.md));
+the package needed no change for either.

@@ -1,0 +1,2 @@
+<!-- The public shell supplies the real parent window. It never receives a login or signing secret. -->
+<template><main><h1>Public editor shell</h1><iframe id="preview" title="Local preview" /></main></template>
