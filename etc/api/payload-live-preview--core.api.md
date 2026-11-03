@@ -239,14 +239,11 @@ export const DIAGNOSTIC_CODES: Readonly<{
 // @public
 export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_CODES];
 
-// @public (undocumented)
-export class DocumentSession<T> {
-    constructor(initialData: T, options: DocumentSessionOptions);
-    getServerSnapshot: () => DocumentSnapshot<T>;
-    // (undocumented)
-    getSnapshot: () => DocumentSnapshot<T>;
-    // Warning: (ae-forgotten-export) The symbol "Listener" needs to be exported by the entry point core.d.ts
-    subscribe: (listener: Listener) => (() => void);
+// @beta
+export interface DocumentSession<T> {
+    readonly getServerSnapshot: () => DocumentSnapshot<T>;
+    readonly getSnapshot: () => DocumentSnapshot<T>;
+    readonly subscribe: (listener: () => void) => () => void;
 }
 
 // @public (undocumented)
@@ -577,9 +574,6 @@ export function isSafeUrl(url: unknown): boolean;
 
 // @internal
 export const LIBRARY_PROTOCOL_VERSION = 4;
-
-// @public (undocumented)
-type Listener = () => void;
 
 // @public
 export class LivePreviewClient {

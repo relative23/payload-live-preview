@@ -5,7 +5,7 @@
  */
 import { createServer } from 'node:http';
 import { describe, expect, it, vi } from 'vitest';
-import { DocumentSession } from '@adapters/shared/document-session';
+import { createDocumentSession } from '@adapters/shared/document-session';
 import { createReferenceContinuation } from '../fixtures/preview-continuation';
 import { createReferenceDataHandler } from '../fixtures/preview-continuation-data';
 import { continuationHarness, CONTINUATION_SITE } from '../fixtures/preview-continuation-harness';
@@ -180,7 +180,7 @@ describe('continuation data over local HTTP', () => {
       const cookie = await login(s);
       const initial = { id: 'post-a', title: 'Initial' };
       let requests = 0;
-      const session = new DocumentSession(initial, {
+      const session = createDocumentSession(initial, {
         target,
         serverURL: CONTINUATION_SITE,
         allowedOrigins: [CONTINUATION_SITE],

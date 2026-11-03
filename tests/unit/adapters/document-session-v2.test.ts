@@ -3,7 +3,7 @@
  * HTTP responses are unit seams only; wire data never receives invented slugs.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DocumentSession } from '@adapters/shared/document-session';
+import { createDocumentSession } from '@adapters/shared/document-session';
 import historical from '../../fixtures/wire-corpus/payload-2.32.3.json' with { type: 'json' };
 import actual from '../../fixtures/payload-2-r4-relationship.json' with { type: 'json' };
 import { populationURL } from '../../helpers/population';
@@ -28,7 +28,7 @@ function send(packet: Record<string, unknown>, origin: string): void {
 describe('DocumentSession — actual Payload 2 message shape', () => {
   it('accepts the first scalar schema and schema-free next update without any HTTP', async () => {
     const fetchFn = vi.fn<typeof fetch>();
-    const session = new DocumentSession(
+    const session = createDocumentSession(
       { title: 'Initial' },
       {
         serverURL: historical.adminOrigin,
@@ -56,7 +56,7 @@ describe('DocumentSession — actual Payload 2 message shape', () => {
     const fetchFn = vi
       .fn<typeof fetch>()
       .mockResolvedValue(new Response(JSON.stringify({ docs: [{ id, name: 'Ada Fixture' }] })));
-    const session = new DocumentSession<Record<string, unknown>>(
+    const session = createDocumentSession<Record<string, unknown>>(
       { title: 'Initial' },
       {
         serverURL: first.origin,
@@ -117,7 +117,7 @@ describe('DocumentSession — Payload 2 empty-container form sentinel', () => {
       const raw = { title: 'Unsaved fixture title', author: null, [name]: 0 };
       const before = JSON.stringify(raw);
       const fetchFn = vi.fn<typeof fetch>();
-      const session = new DocumentSession<Record<string, unknown>>(
+      const session = createDocumentSession<Record<string, unknown>>(
         { title: 'Last good', [name]: [{ label: 'Saved row' }] },
         {
           serverURL: first.origin,
@@ -162,7 +162,7 @@ describe('DocumentSession — Payload 2 empty-container form sentinel', () => {
       const fetchFn = vi
         .fn<typeof fetch>()
         .mockResolvedValue(new Response(JSON.stringify({ docs: [{ id: 'A', name: 'Ada' }] })));
-      const session = new DocumentSession<Record<string, unknown>>(
+      const session = createDocumentSession<Record<string, unknown>>(
         { title: 'Initial' },
         {
           serverURL: first.origin,

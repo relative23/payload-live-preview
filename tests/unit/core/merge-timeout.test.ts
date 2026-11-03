@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataMerger, type MergeResult } from '@core/data-merger';
-import { DocumentSession } from '@adapters/shared/document-session';
+import { createDocumentSession } from '@adapters/shared/document-session';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import { LivePreviewClient } from '@/client/index';
@@ -186,7 +186,7 @@ describe('DataMerger with timeoutMs', () => {
 describe('a hook session with timeoutMs', () => {
   it('reports the update unavailable, keeps its document and names the deadline', async () => {
     const { fetchFn } = hangingFetch();
-    const session = new DocumentSession(
+    const session = createDocumentSession(
       { id: '1', title: 'From the server' },
       {
         serverURL: SERVER,

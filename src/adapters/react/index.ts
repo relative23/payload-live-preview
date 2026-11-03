@@ -21,7 +21,8 @@
 
 import { useRef, useSyncExternalStore } from 'react';
 import {
-  DocumentSession,
+  LiveDocumentSession,
+  type DocumentSession,
   type DocumentSessionOptions,
   type DocumentSnapshot,
   type DocumentStatus,
@@ -105,7 +106,7 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
     held.current = {
       key,
       target,
-      session: new DocumentSession<T>(initialData, {
+      session: new LiveDocumentSession<T>(initialData, {
         serverURL,
         ...(apiRoute !== undefined ? { apiRoute } : {}),
         ...(depth !== undefined ? { depth } : {}),

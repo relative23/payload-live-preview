@@ -4,7 +4,7 @@
  * real-Payload probe establishes population and ACL behavior on the database.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { DocumentSession } from '@adapters/shared/document-session';
+import { createDocumentSession } from '@adapters/shared/document-session';
 import { createReferenceContinuation } from '../fixtures/preview-continuation';
 import { createReferenceUnsavedHandler } from '../fixtures/preview-continuation-unsaved';
 import { continuationHarness, CONTINUATION_SITE } from '../fixtures/preview-continuation-harness';
@@ -83,7 +83,7 @@ describe('unsaved continuation document consumer', () => {
       });
       let revision = 0;
       let finished = 0;
-      const session = new DocumentSession(initial, {
+      const session = createDocumentSession(initial, {
         target,
         serverURL: CONTINUATION_SITE,
         allowedOrigins: [CONTINUATION_SITE],

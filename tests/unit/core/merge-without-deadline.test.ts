@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataMerger } from '@core/data-merger';
-import { DocumentSession } from '@adapters/shared/document-session';
+import { createDocumentSession } from '@adapters/shared/document-session';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/lifecycle';
 import { buildBuiltinRenderers } from '@field-types/index';
@@ -67,7 +67,7 @@ describe('a merge request that never answers', () => {
 
   it('keeps the hook session loading, on its first document and without an error', async () => {
     const { fetchFn } = hangingFetch();
-    const session = new DocumentSession(
+    const session = createDocumentSession(
       { id: '1', title: 'From the server' },
       { serverURL: SERVER, allowedOrigins: [ADMIN], eventSourcePolicy: 'any', fetchFn },
     );

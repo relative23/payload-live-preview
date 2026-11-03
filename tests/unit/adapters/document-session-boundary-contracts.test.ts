@@ -4,7 +4,10 @@
  * and save messages do not replace the last good document or its server snapshot.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DocumentSession, type DocumentSessionOptions } from '@adapters/shared/document-session';
+import {
+  createDocumentSession,
+  type DocumentSessionOptions,
+} from '@adapters/shared/document-session';
 
 const ADMIN = 'https://admin.example.com';
 const SERVER = 'https://cms.example.com';
@@ -12,7 +15,7 @@ const INITIAL = { id: '1', title: 'Saved' };
 const releases: (() => void)[] = [];
 
 function open(options: Partial<DocumentSessionOptions> = {}) {
-  const session = new DocumentSession(INITIAL, {
+  const session = createDocumentSession(INITIAL, {
     serverURL: SERVER,
     allowedOrigins: [ADMIN],
     enableLocalhostMatching: false,
@@ -86,7 +89,7 @@ describe('DocumentSession caller boundaries', () => {
   it('stays at its initial snapshot during SSR without an injected target', () => {
     vi.stubGlobal('window', undefined);
     const fetchFn = vi.fn<typeof fetch>(() => Promise.resolve(response()));
-    const session = new DocumentSession(INITIAL, { serverURL: SERVER, fetchFn });
+    const session = createDocumentSession(INITIAL, { serverURL: SERVER, fetchFn });
     const release = session.subscribe(() => {});
     releases.push(release);
     expect(session.getSnapshot()).toBe(session.getServerSnapshot());

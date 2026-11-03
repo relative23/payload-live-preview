@@ -90,6 +90,24 @@ export interface DocumentSessionOptions {
   readonly target?: Window;
 }
 
+/**
+ * One preview document, with no framework around it: `subscribe` and `getSnapshot`
+ * fit a `useSyncExternalStore` or a Svelte store. `createDocumentSession()` makes
+ * one; no entry exports the class behind it.
+ * @beta
+ */
+export interface DocumentSession<T> {
+  /**
+   * Called with every new snapshot. The first listener starts listening for the
+   * admin's messages, and the last one to unsubscribe stops it.
+   */
+  readonly subscribe: (listener: () => void) => () => void;
+  /** The current snapshot; a new object only when something in it changed. */
+  readonly getSnapshot: () => DocumentSnapshot<T>;
+  /** Server rendering has no window and no messages: the initial snapshot a client render starts from. */
+  readonly getServerSnapshot: () => DocumentSnapshot<T>;
+}
+
 type Listener = () => void;
 
 /** What the merger logged for the attempt that failed, turned into one sentence. */
@@ -104,7 +122,11 @@ function reasonFrom(line: readonly unknown[]): string {
   return 'the update could not be merged';
 }
 
-export class DocumentSession<T> {
+// No entry exports this class, not even as a type: the declaration bundler writes
+// a class out as a value even when it is exported with `type`, and the published
+// types then offered a constructor no entry has (scripts/package-smoke-values.ts).
+// The hooks construct it directly, which keeps the factory's name out of their bundles.
+export class LiveDocumentSession<T> implements DocumentSession<T> {
   readonly #merger: DataMerger;
   readonly #bus: MessageBus;
   readonly #detector: OriginDetector;
@@ -310,13 +332,12 @@ export class DocumentSession<T> {
 }
 
 /**
- * One preview document, with no framework around it: `subscribe` and `getSnapshot`
- * fit a `useSyncExternalStore` or a Svelte store.
+ * A session for one preview document. Nothing listens before the first `subscribe`.
  * @beta
  */
 export function createDocumentSession<T>(
   initialData: T,
   options: DocumentSessionOptions,
 ): DocumentSession<T> {
-  return new DocumentSession<T>(initialData, options);
+  return new LiveDocumentSession<T>(initialData, options);
 }

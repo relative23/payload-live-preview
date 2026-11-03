@@ -15,7 +15,7 @@
 
 import { computed, getCurrentScope, onScopeDispose, shallowRef, type ComputedRef } from 'vue';
 import {
-  DocumentSession,
+  LiveDocumentSession,
   type DocumentSessionOptions,
   type DocumentSnapshot,
   type DocumentStatus,
@@ -74,7 +74,7 @@ export function useLivePreviewDocument<T>(
     );
   }
   const { initialData, ...connection } = options;
-  const session = new DocumentSession<T>(initialData, connection);
+  const session = new LiveDocumentSession<T>(initialData, connection);
   const snapshot = shallowRef<DocumentSnapshot<T>>(session.getSnapshot());
   onScopeDispose(
     session.subscribe(() => {

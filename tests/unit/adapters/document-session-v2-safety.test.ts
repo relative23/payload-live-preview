@@ -3,7 +3,7 @@
  * after detachment; explicit locale survives a schema-free legacy packet.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DocumentSession } from '@adapters/shared/document-session';
+import { createDocumentSession, type DocumentSession } from '@adapters/shared/document-session';
 import { populationURL } from '../../helpers/population';
 const ADMIN = 'https://admin.example.com';
 const schema = [{ name: 'author', type: 'relationship', relationTo: 'authors' }];
@@ -31,7 +31,7 @@ function session(
   fetchFn: typeof fetch,
   target: Window = window,
 ): DocumentSession<Record<string, unknown>> {
-  return new DocumentSession(
+  return createDocumentSession(
     { author: { id: 'Initial', name: 'Last good' } },
     {
       serverURL: ADMIN,
