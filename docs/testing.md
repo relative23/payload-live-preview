@@ -426,8 +426,8 @@ What is proven about the Payload wire protocol, from the outside in:
    of the same workflow points `examples/payload-backend` at each channel and
    runs the real admin E2E against it; `beta` is a major and may not boot, so
    that row is soft-fail like its wire-format twin.
-5. **Daily latest watch** (`.github/workflows/latest-watch.yml`) does the same
-   for the frameworks. CI installs exact lockfiles, so this job installs Astro,
+5. **Latest watch** (`.github/workflows/latest-watch.yml`), daily and on every
+   push to `main`, does the same for the frameworks. CI installs exact lockfiles, so this job installs Astro,
    Next.js, SvelteKit 3 and Nuxt 4 at their `latest` dist-tag, with the peers
    each release asks for, over the matching example without its lockfile. It
    then runs that framework's browser specs in Chromium and a real-admin smoke.
@@ -436,8 +436,13 @@ What is proven about the Payload wire protocol, from the outside in:
    `--ignore-scripts`, keep no checkout credentials and may only read. Each
    leaves its result and `npm ls` as an artifact, and a report job that
    installs nothing files an issue per integration that failed
-   (`scripts/report-latest-watch.ts`). A red run is news, not a release gate.
-   Every entry runs a second time on a pre-release channel, which
+   (`scripts/report-latest-watch.ts`). A publish from `main` waits for it:
+   the release gate (`scripts/release-gate.ts`) refuses one unless the newest
+   run with a verdict on the release commit passed, and the push to `main`
+   starts that run while CI certifies the commit. A cancelled or skipped run
+   has no verdict. After a red run on an external cause, a new run on the
+   commit and `gh workflow run release.yml -f run_id=<CI run>` re-enter the
+   release. Every entry runs a second time on a pre-release channel, which
    `scripts/prerelease-channel.ts` picks: one of `alpha`, `beta`, `rc`,
    `canary` and `next` whose version is above `latest`, and of those the one
    published last. A canary of a version already released, a channel that

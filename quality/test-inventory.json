@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 544,
-    "suites": 1051,
-    "tests": 4755,
+    "suites": 1052,
+    "tests": 4762,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 446,
-      "suites": 940,
-      "tests": 4344,
+      "suites": 941,
+      "tests": 4351,
       "benchmarks": 0
     }
   },
@@ -3552,8 +3552,8 @@
     {
       "path": "tests/unit/release-gate.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 26,
+      "suites": 5,
+      "tests": 33,
       "benchmarks": 0
     },
     {

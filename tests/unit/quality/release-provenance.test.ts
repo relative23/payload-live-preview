@@ -60,6 +60,14 @@ function gate(branch: string, runId = '42') {
       if (command.startsWith('gh api repos/') && command.includes('/releases/')) {
         return { status: 1, stdout: '', stderr: 'HTTP 404' };
       }
+      // A publish from main waits for the Latest Watch run on the commit (release-gate.test.ts).
+      if (command.includes(`/workflows/latest-watch.yml/runs?head_sha=${CERTIFIED_SHA}&`)) {
+        return ok(
+          JSON.stringify([
+            { id: 7, conclusion: 'success', created_at: '2026-11-03T14:31:58Z', html_url: '' },
+          ]),
+        );
+      }
       throw new Error(`unexpected release command ${command}`);
     },
   });
