@@ -8,7 +8,7 @@
       "feature": "base live preview and structural updates",
       "version": {
         "kind": "exact",
-        "value": "7.4.2",
+        "value": "7.4.5",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -104,7 +104,7 @@
       "feature": "native fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "7.4.2",
+        "value": "7.4.5",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -215,7 +215,7 @@
       "feature": "real Payload admin to production preview",
       "version": {
         "kind": "exact",
-        "value": "7.4.2",
+        "value": "7.4.5",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -1638,7 +1638,7 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session), middleware delivery on the built Node server run without NODE_ENV=production",
       "version": {
         "kind": "exact",
-        "value": "7.4.2",
+        "value": "7.4.5",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -1907,7 +1907,7 @@
       "feature": "ClientRouter commit and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "7.4.2",
+        "value": "7.4.5",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -2204,11 +2204,11 @@
       "fixture": "examples/astro-payload",
       "tested": [
         {
-          "version": "7.4.2",
+          "version": "7.4.5",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E",
-          "vite": "^8.3.4"
+          "vite": "^8.3.5"
         },
         {
           "major": 6,
@@ -2380,7 +2380,7 @@
     }
   ],
   "vite": {
-    "measured": "2026-10-31",
+    "measured": "2026-11-03",
     "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE — every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 5 through 8. Remove this line when the dev tooling accepts 8."
   },
   "hooks": [
