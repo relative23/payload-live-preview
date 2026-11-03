@@ -149,7 +149,9 @@ from. On a page that previews document `1`, a second hook started from document
 `document: { collection: 'pages', id: 2 }`, that hook leaves the update for
 `pages/1` alone: it sends no request and keeps its state. `{ global: 'header' }`
 names a global, and `locale` also leaves alone an update the admin sends for
-another locale. An update that does not say which document it is for is left
+another locale. One that names no locale still merges; 3.0 leaves that one
+alone too (ADR 0007 ledger, row 31). An update that does not say which
+document it is for is left
 alone as well, with one warning per hook in development: Payload 2 sends no
 collection or global slug, so leave `document` out on Payload 2, and a create
 screen has no id yet. A changed `document` replaces the session, like the other
