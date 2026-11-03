@@ -13,7 +13,7 @@ becomes official with the stable 4.0 release. Payload 2 support ends with 3.0
 of this package ([ADR 0007](architecture/0007-v2-defaults-and-renames-ledger.md#ledger),
 entry 25); every 2.x release keeps it. The plugin was measured once
 against 4.0.0-beta.4, outside CI, and the
-[compatibility list](../README.md#compatibility) says what that run covered and
+[compatibility page](compatibility.md#what-runs-against-each-version) says what that run covered and
 what it left out; its `order` option and `null` resolvers were measured once
 against 4.0.0-beta.6, also outside CI.
 

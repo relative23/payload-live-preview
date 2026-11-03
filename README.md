@@ -31,22 +31,11 @@ One runtime serves every framework. The Astro, Next.js, SvelteKit and Nuxt adapt
 
 ## Compatibility
 
-| Payload | Status                                     | Checked by                                                                                                                                                                                                                                                                                           |
-| ------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2.x     | supported in 2.x; ends with 3.0            | the 2.32.3 wire corpus replayed in CI; real-admin release checks of the DOM runtime and the React and Vue hooks ([docs/testing.md](docs/testing.md#local-release-checks))                                                                                                                            |
-| 3.x     | supported                                  | the real admin on every push (3.92.1, three engines); the 3.85, 3.88 and 3.89 wire corpora replayed in CI                                                                                                                                                                                            |
-| 4.x     | pre-release, the direction of this package | the 4.0.0-beta.4 and 4.0.0-beta.6 wire corpora replayed in CI; the real-admin suite against `payload@beta` every day, as an early warning; the field-findings suite against 4.0.0-beta.6 in three engines, once, outside CI; a 2.2 release candidate on a site running 4.0.0-beta.4 with Astro 7.4.2 |
-
-**Payload 4** is where this package is headed. Its pre-releases are followed as they appear, and support becomes official with the stable 4.0 release; until then the daily run against `payload@beta` warns early and does not gate a release. The Payload 4 pre-release captured so far passes the same protocol checks as the 3.x corpora. As of 4.0.0-beta.6, as since beta.4, Payload 4 needs Node 24.22.1 or later, and its admin Next.js 16.4 or a later 16.x release. Payload 2.x support ends with the next major release of this package: 3.0 supports Payload 3.x and 4.x, and every 2.x release keeps supporting Payload 2 ([ADR 0007 ledger, entry 25](docs/architecture/0007-v2-defaults-and-renames-ledger.md#ledger), [Preparing for 3.0](docs/migration.md#preparing-for-30)). 3.0 also needs Node 22 or newer and drops no framework major (entries 28 and 29). Payload 3.x stays supported. The manifest declares `payload` as an optional peer, `^2.0.0 || ^3.0.0 || ^4.0.0-0`: npm never installs it, and a project that has Payload outside that range gets npm's `ERESOLVE` error.
-
-What differs between Payload 2, 3 and 4:
-
-|                                                | Payload 2.x                                                                                                                                              | Payload 3.x                                                           | Payload 4.x (measured on 4.0.0-beta.4 and beta.6)                           |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Scalar field updates                           | ✅                                                                                                                                                       | ✅                                                                    | ✅                                                                          |
-| Rich text (Lexical)                            | ✅                                                                                                                                                       | ✅                                                                    | ✅ through a fragment render (beta.4) and the client-side renderer (beta.6) |
-| Relationship / upload population               | Collection GETs from the accepted schema with `serverURL` and matching depth (relationships measured against a real 2.32.3 admin, uploads by unit tests) | ✅ with `serverURL` (REST merge)                                      | uploads ✅ with `serverURL` (beta.6); relationships not measured yet        |
-| Schema-driven field typing (`fieldSchemaJSON`) | ✅                                                                                                                                                       | — (3.x removed it; DOM heuristics + Lexical auto-detection take over) | — (as in 3.x)                                                               |
+| Payload | Status                                   | Tested                                                                                                     |
+| ------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 3.x     | supported                                | the real admin on every push (3.92.1; Chromium, Firefox, WebKit), and against `payload@latest` every day   |
+| 4.x     | pre-release, followed; official with 4.0 | captured beta messages on every push; the real admin against `payload@beta` every day, as an early warning |
+| 2.x     | supported in 2.x; ends with 3.0          | captured admin messages on every push                                                                      |
 
 <!-- compat-matrix:start -->
 
@@ -57,32 +46,11 @@ What differs between Payload 2, 3 and 4:
 | SvelteKit | 2.x and 3.x                                                                       | 3.1.1 (chromium, firefox, webkit); 2.70.3 (chromium, firefox, webkit)             |
 | Nuxt      | 4.x; 3.x (end of life since 31 July 2026: kept working, not officially supported) | 4.6.3 (chromium, firefox, webkit); 3.21.11 (chromium, firefox, webkit)            |
 
-Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26. Every version in the table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
-
-Of the 61 feature rows of `quality/compat-matrix.json`, 58 passed in the CI run the last Version PR recorded (commit `d9e3d19`, 2026-11-03, `quality/compat-results.json`); the other 3 have no recorded result.
-
-Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 3 → 8, SvelteKit 2 → 5/6/7/8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-10-31. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
-
-The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the `hook-matrix` job runs after installing the floors over the lockfile (React 18.0.0, Vue 3.3.0, Svelte 5.0.0), and at what the lockfile installs (React 19.3.1, Vue 3.5.44, Svelte 5.57.3), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by `svelte/compiler` and rendered by the real `svelte/server`.
-
-- Payload 2.32.3: wire corpus captured from a real admin and replayed in tests/integration/wire-corpus.test.ts, plus fieldSchemaJSON typing in tests/integration/schema-driven.test.ts; local release checks also exercise the real admin in DOM, React and Vue previews, each in frontend-only and serverURL modes (24 browser cases per variant), and run the React hook and the Vue composable through three lifecycle journeys (9 browser cases per variant) and seven guard journeys (21 browser cases per variant) in development builds; the legacy dependency graph retains upstream audit findings.
-- Payload 3.85.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
-- Payload 3.88.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
-- Payload 3.89.0: wire corpus captured from a real admin, replayed in tests/integration/wire-corpus.test.ts.
-- Payload 3.92.1: real admin E2E fixture (examples/payload-backend), run by CI on every push.
-- Payload 4.0.0-beta.6: wire corpus captured on 2026-11-01 from a real Payload 4 admin (examples/payload-backend with payload@4.0.0-beta.6 installed over it, Node 24.22.1), replayed in tests/integration/wire-corpus.test.ts. The messages have the same top-level and field keys as the 4.0.0-beta.4 capture.
-- Payload 4.0.0-beta.6 (pre-release): measured on 2026-11-02, outside CI, with tests/real-payload/surface-findings.spec.ts against examples/payload-backend with payload@4.0.0-beta.6 installed over it (Node 24.22.1): its 7 cases passed in Chromium, Firefox and WebKit. Among them an upload chosen in the admin reached an `<img>` inside a `<picture>` through the REST merge, and an edit in Lexical rich text was written by the client-side renderer, internal link included. Relationships were not part of the run.
-- Payload 4.0.0-beta.4: wire corpus captured on 2026-10-26 from a real Payload 4 admin (examples/payload-backend with payload@4.0.0-beta.4 installed over it, Node 24.22.1), replayed in tests/integration/wire-corpus.test.ts; the fixture itself stays on 3.x.
-- Payload 4.0.0-beta.4 (pre-release): measured once on 2026-10-24, outside CI, in a consumer project that runs 2.1.0 from npm (Next 16, Node 24, Postgres 18, the real admin driven by headless Chromium). The config plugin type-checks against Payload's declarations and passes its config sanitizing. For six collection documents in two locales, the admin's preview frame loads the URL a hand-written callback produced, apart from the order of the query parameters, with the same breakpoint menu and no page errors, and the locale reaches the path resolvers. Against an admin with a `csrf` list, the `payload-session` strategy authorizes once its `origin` option is set. That run did not cover globals, the create screen, drafts and autosave, other plugins that write a Live Preview URL, or replacing existing breakpoints. Since 2026-10-25 the daily protocol watch installs payload@beta into the admin fixture as a soft-fail early warning.
-- Payload 4.0.0-beta.4 with Astro 7.4.2 (pre-release): measured on 2026-10-26, outside CI, with a 2.2 release candidate on a consumer site (the real admin driven by headless Chromium). Typing into a title and a text line patched the preview, typing into a rich-text field updated it through 7 fragment renders that answered 200, the frame never reloaded, and all 31 live-preview messages had the shape of the recorded capture. Relationship and upload population were not part of the run.
-- Payload latest: daily protocol watch executes @payloadcms/live-preview@latest against the corpus.
-- Payload 4.0 pre-releases: daily protocol watch against @payloadcms/live-preview@beta and the real admin against payload@beta, early warning only.
+Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26.
 
 <!-- compat-matrix:end -->
 
-SvelteKit 3 and Nuxt 4 are supported. The `sveltekit3` job runs the SvelteKit example migrated to SvelteKit 3.1.1 with `npx sv migrate sveltekit-3`, and the `nuxt4` job runs the Nuxt example in Nuxt 4.6.3's `app/` layout. Both run on the development server against the mock admin in Chromium, Firefox and WebKit, and `real-payload-surfaces` drives both from the real admin in the same three engines. `real-payload-surfaces` also drives both production builds; the `production-lifecycle` job still builds SvelteKit 2 and Nuxt 3. The SvelteKit example needed the migration's changes ([docs/sveltekit.md](docs/sveltekit.md)); the package needed no change for either.
-
-**A client-rendered app takes a hook.** `useLivePreviewDocument()` from `payload-live-preview/react` or `payload-live-preview/vue` returns the merged document and re-renders your tree. Payload 3 updates use the method-override merge request; Payload 2 scalar updates settle locally and raw relationships use schema-based collection GETs. A newer update aborts any request in flight; an HTTP error is refused instead of becoming the document; each hook keeps its own state, requests and errors, and a hook given a `document` merges only that document's updates; without one it follows the document the admin sends, whichever one it started from ([docs/react.md](docs/react.md), [docs/vue.md](docs/vue.md)). The official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) / `-vue` hooks ship in lockstep with Payload and remain the safe default if that matters more to you; running either alongside the DOM runtime on one page: [docs/interop.md](docs/interop.md).
+`payload` is an optional peer, `^2.0.0 || ^3.0.0 || ^4.0.0-0`, so npm never installs it. Payload 4 pre-releases need Node 24.22.1 or later. Version 3.0 of this package drops Payload 2 and needs Node 22 or newer ([Preparing for 3.0](docs/migration.md#preparing-for-30)). What runs against each version, and what differs between Payload 2, 3 and 4: [docs/compatibility.md](docs/compatibility.md).
 
 ## Install
 
@@ -139,11 +107,9 @@ appears after the save loads the URL the plugin's function builds from the saved
 document. `tests/real-payload/surface-create.spec.ts` checks this in Chromium,
 Firefox and WebKit.
 
-Payload 4 is still a pre-release ([Compatibility](#compatibility)). The plugin
-was measured once against 4.0.0-beta.4, outside CI; the compatibility list says
-what that run covered and what it left out. Its `order` option and `null`
-resolvers were measured once against 4.0.0-beta.6, also outside CI
-([ADR 0017](docs/architecture/0017-structural-payload-config-plugin.md)).
+Payload 4 is still a pre-release. The plugin was measured against its betas
+outside CI ([docs/compatibility.md](docs/compatibility.md#what-runs-against-each-version),
+[ADR 0017](docs/architecture/0017-structural-payload-config-plugin.md)).
 
 Use the lower-level callback when another plugin owns the surrounding config:
 
@@ -356,7 +322,7 @@ That is it: the runtime detects the admin's iframe and starts patching. Rich tex
 | Rich text and empty fields on the server                 | the `RichText` and `PreviewBoundary` components | `lexicalToHtml()` and a `data-payload-boundary` element          | `lexicalToHtml()` and a `data-payload-boundary` element | `lexicalToHtml()` and a `data-payload-boundary` element |
 | `pll-codegen annotate` reads                             | `.astro`, also as a Vite plugin                 | `.jsx`, `.tsx`                                                   | `.svelte`                                               | not `.vue` files                                        |
 
-Astro also writes the runtime into a static build (`inline`, `loader`). Its `RichText` and `PreviewBoundary` components write the same markup the other frameworks write by hand with `lexicalToHtml()` and a `data-payload-boundary` element ([docs/bindings.md](docs/bindings.md)). The test depth differs: CI installs Astro 4 to 7, Next.js 15.5 and 16, SvelteKit 2 and 3, and Nuxt 3 and 4. Nuxt 3 reached its end of life on 31 July 2026.
+Astro also writes the runtime into a static build (`inline`, `loader`). Its `RichText` and `PreviewBoundary` components write the same markup the other frameworks write by hand with `lexicalToHtml()` and a `data-payload-boundary` element ([docs/bindings.md](docs/bindings.md)). A client-rendered app takes a hook instead: `useLivePreviewDocument()` from `payload-live-preview/react` or `payload-live-preview/vue` returns the merged document and re-renders your tree ([docs/react.md](docs/react.md), [docs/vue.md](docs/vue.md)). The official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) and `-vue` hooks ship in lockstep with Payload and remain the safe default if that matters more to you; [docs/interop.md](docs/interop.md) covers running either beside the DOM runtime on one page.
 
 ## Patch, fragment, route
 
@@ -449,6 +415,7 @@ The reading path, with a glossary: [docs/README.md](docs/README.md).
 - Framework guides: [Astro](docs/astro.md) · [Next.js](docs/nextjs.md) · [SvelteKit](docs/sveltekit.md) · [Nuxt](docs/nuxt.md) · [Plain HTML](docs/html.md) · [React hook](docs/react.md) · [Vue composable](docs/vue.md)
 - [docs/bindings.md](docs/bindings.md) — data attributes, field types, owners, typed bindings and codegen
 - [docs/payload.md](docs/payload.md) — Payload 2/3 config plugin, merge rules and URL conflicts
+- [docs/compatibility.md](docs/compatibility.md) — support per Payload major, what differs between them, what runs against each version
 - [docs/options.md](docs/options.md) — package entries, every option and its default, Payload 3.x population
 - [docs/authorization.md](docs/authorization.md) — strategies, signed tokens, the initial draft read
 - [docs/hybrid.md](docs/hybrid.md) — patch, fragment and route

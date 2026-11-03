@@ -136,7 +136,7 @@ export function viteProblems(facts: ViteFacts): readonly string[] {
   return problems;
 }
 
-/** The sentence the README carries, built from the record rather than written beside it. */
+/** The sentence `docs/compatibility.md` carries, built from the record rather than written beside it. */
 export function renderViteLine(facts: ViteFacts, measured: string): string {
   const span = majorSpan(facts.recorded.map((entry) => entry.range));
   if (span === undefined) return '';

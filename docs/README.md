@@ -14,7 +14,7 @@
 10. [migration.md](migration.md) — from every earlier version, and `pll migrate`.
 11. [payload.md](payload.md) — the Payload side: the config plugin, its merge rules and URL conflicts.
 
-Related: [renderers.md](renderers.md) (events, transforms, renderers, plugins), [reveal.md](reveal.md) (follow the edited field), [interop.md](interop.md) (running both this package and the official hooks).
+Related: [compatibility.md](compatibility.md) (support per Payload major, what runs against each version), [renderers.md](renderers.md) (events, transforms, renderers, plugins), [reveal.md](reveal.md) (follow the edited field), [interop.md](interop.md) (running both this package and the official hooks).
 
 ## For maintainers
 
