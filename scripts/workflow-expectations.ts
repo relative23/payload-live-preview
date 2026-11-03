@@ -393,6 +393,12 @@ const channelStep = (name: string): StepSpec => ({
 const PRERELEASE_SOFT = "${{ matrix.lane == 'prerelease' }}";
 const LATEST_WATCH: WorkflowSpec = {
   name: 'Latest Watch',
+  // The release gate waits for a run on the commit main publishes; the push trigger starts it.
+  on: {
+    push: { branches: ['main'] },
+    schedule: [{ cron: '30 6 * * *' }],
+    workflow_dispatch: null,
+  },
   // Read-only for the jobs that install published code; the report job alone writes issues.
   permissions: { contents: 'read' },
   jobs: {

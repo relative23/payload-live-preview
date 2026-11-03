@@ -160,6 +160,75 @@ export function decideReleaseAction(facts: ReleaseFacts, testedSha: string): Rel
   return 'publish';
 }
 
+/**
+ * The branch the Latest Watch runs on. A maintenance branch keeps the framework versions its
+ * lockfiles name, so only a publish from main waits for the watch.
+ */
+const WATCHED_BRANCH: ReleaseBranch = 'main';
+
+/** A conclusion that says nothing about the commit: the run stopped before its verdict. */
+const NO_VERDICT: ReadonlySet<string> = new Set(['cancelled', 'skipped']);
+
+export interface WatchRun {
+  readonly id: number;
+  readonly conclusion: string;
+  readonly createdAt: string;
+  readonly url: string;
+}
+
+/** The finished runs as the gate's `--jq` prints them; any other shape is no verdict to trust. */
+export function watchRunsFrom(stdout: string): readonly WatchRun[] {
+  const parsed: unknown = JSON.parse(stdout);
+  if (!Array.isArray(parsed)) throw new Error('the Latest Watch run list is not an array');
+  return parsed.map((entry: unknown): WatchRun => {
+    if (
+      !isRecord(entry) ||
+      typeof entry['id'] !== 'number' ||
+      typeof entry['conclusion'] !== 'string' ||
+      typeof entry['created_at'] !== 'string' ||
+      typeof entry['html_url'] !== 'string'
+    ) {
+      throw new Error(`a Latest Watch run is malformed: ${JSON.stringify(entry)}`);
+    }
+    return {
+      id: entry['id'],
+      conclusion: entry['conclusion'],
+      createdAt: entry['created_at'],
+      url: entry['html_url'],
+    };
+  });
+}
+
+/**
+ * Why main may not publish the tested commit yet, or `undefined`. CI installs exact lockfiles;
+ * the Latest Watch installs each framework at its newest release over the same commit, and
+ * every push to main starts one. The newest run with a verdict decides.
+ */
+export function latestWatchProblem(
+  runs: readonly WatchRun[],
+  sha: string,
+  runId: string,
+): string | undefined {
+  const reenter = `\`gh workflow run release.yml -f run_id=${runId}\` re-enters this release`;
+  const [newest] = runs
+    .filter((candidate) => !NO_VERDICT.has(candidate.conclusion))
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  if (newest === undefined) {
+    return (
+      `no finished Latest Watch run on ${sha}, and a publish from main waits for one. Every push ` +
+      'to main starts it; while main still points at the commit, `gh workflow run latest-watch.yml ' +
+      `--ref main\` starts another, and once it passed ${reenter}`
+    );
+  }
+  if (newest.conclusion !== 'success') {
+    return (
+      `the newest Latest Watch run on ${sha} ended ${newest.conclusion}: ${newest.url}. A publish ` +
+      `from main waits for a run on the commit to pass; once one has, ${reenter}`
+    );
+  }
+  return undefined;
+}
+
 export interface ReleaseGateEnvironment {
   readonly repository: string;
   readonly runId: string;
@@ -247,6 +316,26 @@ export function runReleaseGate(environment: ReleaseGateEnvironment): ReleaseGate
         `is opened on ${VERSION_PR_BRANCH} only. Version this branch by hand: run "npm run version" ` +
         `on a branch from ${certified.branch}, commit it as "chore: release" and merge it there.`,
     );
+  }
+  if (action === 'publish' && certified.branch === WATCHED_BRANCH) {
+    const listing = run('gh', [
+      'api',
+      `repos/${repository}/actions/workflows/latest-watch.yml/runs?head_sha=${certified.headSha}&status=completed&per_page=100`,
+      '--jq',
+      '[.workflow_runs[] | {id, conclusion, created_at, html_url}]',
+    ]);
+    if (listing.status !== 0) {
+      throw new Error(
+        `cannot list the Latest Watch runs on ${certified.headSha}; refusing to publish without ` +
+          `its verdict:\n${detail(listing)}`,
+      );
+    }
+    const problem = latestWatchProblem(
+      watchRunsFrom(listing.stdout),
+      certified.headSha,
+      String(certified.id),
+    );
+    if (problem !== undefined) throw new Error(problem);
   }
   return {
     run_id: String(certified.id),

@@ -37,6 +37,14 @@ const facts = (overrides: Partial<ReleaseFacts> = {}): ReleaseFacts => ({
   ...overrides,
 });
 
+const watchRun = (id: number, conclusion: string, createdAt: string) => ({
+  id,
+  conclusion,
+  created_at: createdAt,
+  html_url: `https://github.com/${REPOSITORY}/actions/runs/${String(id)}`,
+});
+const WATCH_PASSED = ok(JSON.stringify([watchRun(7, 'success', '2026-11-03T14:31:58Z')]));
+
 interface FakeWorld {
   readonly run?: Record<string, unknown>;
   readonly ancestor?: boolean;
@@ -45,6 +53,8 @@ interface FakeWorld {
   readonly registry?: CommandResult;
   readonly tagSha?: string;
   readonly release?: CommandResult;
+  /** The finished Latest Watch runs on the tested commit, as the gate's `--jq` prints them. */
+  readonly latestWatch?: CommandResult;
   readonly commands?: string[];
 }
 
@@ -54,6 +64,9 @@ function runner(world: FakeWorld): (executable: string, args: readonly string[])
     world.commands?.push(command);
     if (command.startsWith('gh api') && command.includes('/actions/runs/')) {
       return ok(JSON.stringify(world.run ?? run()));
+    }
+    if (command.startsWith('gh api') && command.includes('/workflows/latest-watch.yml/runs')) {
+      return world.latestWatch ?? WATCH_PASSED;
     }
     if (command.startsWith('git merge-base')) return (world.ancestor ?? true) ? ok() : failed('');
     if (command.startsWith('git show')) {
@@ -357,5 +370,95 @@ describe('release gate run', () => {
     expect(() =>
       runReleaseGate({ repository: REPOSITORY, runId: 'latest', run: runner({}) }),
     ).toThrow(/run id/u);
+  });
+});
+
+// CI installs exact lockfiles; the Latest Watch installs each framework at its newest release over
+// the same commit. A publish from main waits for that run's verdict, not for the next morning's.
+describe('the Latest Watch run on the commit main publishes', () => {
+  const gate = (world: FakeWorld) =>
+    runReleaseGate({ repository: REPOSITORY, runId: '42', run: runner(world) });
+
+  it('publishes once the newest finished run on the tested commit passed', () => {
+    const commands: string[] = [];
+    expect(gate({ commands })).toMatchObject({ publish: 'true', version_pr: 'false' });
+    expect(commands).toContainEqual(
+      expect.stringContaining(
+        `repos/${REPOSITORY}/actions/workflows/latest-watch.yml/runs?head_sha=${TESTED}&status=completed`,
+      ),
+    );
+  });
+
+  it('refuses to publish when that run failed, and names it', () => {
+    expect(() =>
+      gate({
+        latestWatch: ok(
+          JSON.stringify([
+            watchRun(8, 'failure', '2026-11-04T06:40:00Z'),
+            watchRun(7, 'success', '2026-11-03T14:31:58Z'),
+          ]),
+        ),
+      }),
+    ).toThrow(/Latest Watch run on a{40} ended failure: .*\/actions\/runs\/8/u);
+  });
+
+  it('judges by the newest run, whatever order GitHub lists them in', () => {
+    const listed = (first: string, second: string) =>
+      ok(
+        JSON.stringify([
+          watchRun(7, first, '2026-11-03T14:31:58Z'),
+          watchRun(8, second, '2026-11-04T06:40:00Z'),
+        ]),
+      );
+    expect(gate({ latestWatch: listed('failure', 'success') })).toMatchObject({ publish: 'true' });
+    expect(() => gate({ latestWatch: listed('success', 'failure') })).toThrow(/ended failure/u);
+  });
+
+  it('skips a cancelled or skipped run, which reached no verdict', () => {
+    expect(
+      gate({
+        latestWatch: ok(
+          JSON.stringify([
+            watchRun(9, 'cancelled', '2026-11-04T07:00:00Z'),
+            watchRun(8, 'skipped', '2026-11-04T06:50:00Z'),
+            watchRun(7, 'success', '2026-11-03T14:31:58Z'),
+          ]),
+        ),
+      }),
+    ).toMatchObject({ publish: 'true' });
+  });
+
+  it('refuses to publish when no run on the tested commit reached a verdict', () => {
+    expect(() => gate({ latestWatch: ok('[]') })).toThrow(
+      /no finished Latest Watch run on a{40}[\s\S]*gh workflow run release\.yml -f run_id=42/u,
+    );
+  });
+
+  it('fails closed when GitHub cannot list the runs', () => {
+    expect(() => gate({ latestWatch: failed('HTTP 502') })).toThrow(
+      /refusing to publish without its verdict/u,
+    );
+  });
+
+  it('asks nothing of a maintenance branch, or of a Version PR', () => {
+    const maintenance: string[] = [];
+    gate({
+      run: run({ head_branch: 'release/1.x' }),
+      manifest: { name: 'pkg', version: '1.8.3' },
+      latestWatch: ok('[]'),
+      commands: maintenance,
+    });
+    const versionPr: string[] = [];
+    expect(
+      gate({
+        registry: ok('2.0.0\n'),
+        changesets: '.changeset/README.md\n.changeset/next.md\n',
+        latestWatch: ok('[]'),
+        commands: versionPr,
+      }),
+    ).toMatchObject({ version_pr: 'true' });
+    for (const commands of [maintenance, versionPr]) {
+      expect(commands.some((command) => command.includes('latest-watch.yml'))).toBe(false);
+    }
   });
 });

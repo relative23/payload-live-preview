@@ -1,7 +1,7 @@
 name: Latest Watch
 
 # CI installs exact lockfiles, so a framework release that breaks an adapter reaches this
-# repository only when someone updates a lock. This daily job installs each integration at its
+# repository only when someone updates a lock. This job installs each integration at its
 # `latest` dist-tag, with the peers that release asks for, over its fixture without the
 # lockfile, and runs that integration's browser specs and a real-admin smoke against it.
 #
@@ -12,10 +12,16 @@ name: Latest Watch
 #
 # The watch jobs run published install-time code, so they get read-only permissions, keep no
 # checkout credentials and install with `--ignore-scripts`. Each leaves a result and its
-# `npm ls` as an artifact; the report job, which installs nothing, files the issues. Not a
-# release gate (yet): a red run is news, not a broken build.
+# `npm ls` as an artifact; the report job, which installs nothing, files the issues.
+#
+# A publish from main waits for this run: `scripts/release-gate.ts` refuses one unless the
+# newest run with a verdict on the release commit passed. Every push to main starts a run, so
+# the commit CI certifies has one by the time CI ends; the daily run keeps watching between
+# releases.
 
 on:
+  push:
+    branches: [main]
   schedule:
     - cron: '30 6 * * *'
   workflow_dispatch:
