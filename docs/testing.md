@@ -173,6 +173,13 @@ It is regenerated with `tsx scripts/test-policy.ts --write`; CI fails if it is
 stale. Focused, skipped, conditional, todo, and expected-failure declarations
 have a budget of zero. Playwright retries may collect diagnostics, but
 `failOnFlakyTests` prevents a retry from turning a flaky test into a passing gate.
+A step a real-admin test starts again itself, a preview frame whose load stalled,
+is no retry: the zero-skip reporter lists it at the end of the job and writes it
+to `test-results/repeated-attempts.json`. Every real-admin job uploads that file,
+and the `repeated-attempts` job sums them across the run. Two in one run pass,
+since none appeared in the 435 real-admin jobs of the 11 runs measured on
+2026-11-03; a third turns the run red (`scripts/count-repeated-attempts.ts`), so
+a stall that grows common is looked into instead of absorbed.
 
 ### Contracts that hold several things together
 

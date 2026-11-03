@@ -26,6 +26,12 @@ export const DOWNLOAD_DIST: StepSpec = {
   uses: 'actions/download-artifact',
   with: { name: 'dist-${{ github.sha }}', path: 'dist' },
 };
+/** Each real-admin job's list of the steps its tests started again, which `repeated-attempts` sums. */
+export const attemptsUpload = (name: string): StepSpec => ({
+  uses: 'actions/upload-artifact',
+  condition: 'always()',
+  with: { name: `repeated-attempts-${name}`, path: 'test-results/repeated-attempts.json' },
+});
 /** The exact archive the Build job stored, which the Release workflow later publishes. */
 export const DOWNLOAD_ARCHIVE: StepSpec = {
   uses: 'actions/download-artifact',

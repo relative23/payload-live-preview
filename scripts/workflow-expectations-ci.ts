@@ -17,6 +17,7 @@ import {
   READ_ONLY,
   SETUP,
   archiveJob,
+  attemptsUpload,
   callBuild,
   callCriticalGates,
   fixtureAudit,
@@ -287,6 +288,7 @@ export const CI: WorkflowSpec = {
         fixtureInstall('astro-payload'),
         fixtureInstall('payload-backend'),
         { run: 'npm run test:e2e:real-payload' },
+        attemptsUpload('real-payload'),
       ],
     },
     'real-payload-hybrid': {
@@ -305,6 +307,7 @@ export const CI: WorkflowSpec = {
             PLP_REAL_PAYLOAD_BROWSERS: '${{ matrix.browser }}',
           },
         },
+        attemptsUpload('real-payload-hybrid-${{ matrix.browser }}'),
       ],
     },
     // The other targets of playwright.real-payload.config.ts: the frameworks whose preview verifies
@@ -358,6 +361,7 @@ export const CI: WorkflowSpec = {
             PLP_REAL_PAYLOAD_BROWSERS: '${{ matrix.browser }}',
           },
         },
+        attemptsUpload('real-payload-${{ matrix.target }}-${{ matrix.browser }}'),
       ],
     },
     // Payload's CSRF list on, for the target that verifies the editor's session and the one that
@@ -375,6 +379,27 @@ export const CI: WorkflowSpec = {
           run: 'npm run test:e2e:real-payload',
           env: { PLP_REAL_PAYLOAD_TARGET: '${{ matrix.target }}', PLP_REAL_PAYLOAD_CSRF: '1' },
         },
+        attemptsUpload('real-payload-csrf-${{ matrix.target }}'),
+      ],
+    },
+    // The run's sum of those lists, held to the measured budget (scripts/count-repeated-attempts.ts).
+    'repeated-attempts': {
+      needs: [
+        'real-payload-e2e',
+        'real-payload-hybrid',
+        'real-payload-surfaces',
+        'real-payload-csrf',
+      ],
+      if: 'always()',
+      timeoutMinutes: 10,
+      steps: [
+        { uses: 'actions/checkout', with: { 'persist-credentials': 'false' } },
+        { uses: 'actions/setup-node', with: { 'node-version': '22.23.4' } },
+        {
+          uses: 'actions/download-artifact',
+          with: { pattern: 'repeated-attempts-*', path: 'repeated-attempts' },
+        },
+        { run: 'node scripts/count-repeated-attempts.ts repeated-attempts' },
       ],
     },
     'release-gates': callCriticalGates('300000', RELEASE_PUSH),
